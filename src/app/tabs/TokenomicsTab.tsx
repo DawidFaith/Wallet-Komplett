@@ -1,31 +1,78 @@
 import { useState, useEffect } from "react";
+import { createThirdwebClient, getContract } from "thirdweb";
+import { base } from "thirdweb/chains";
+import { readContract } from "thirdweb";
+
+// Smart Contract Setup
+const CONTRACT_ADDRESS = "0xe85b32a44b9eD3ecf8bd331FED46fbdAcDBc9940";
+const REWARD_TOKEN_ADDRESS = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1"; // D.FAITH
 
 export default function TokenomicsTab() {
   const [contractBalance, setContractBalance] = useState<number | null>(null);
   const [totalStaked, setTotalStaked] = useState<number | null>(null);
   const [totalRewardsDistributed, setTotalRewardsDistributed] = useState<number | null>(null);
   const [currentStage, setCurrentStage] = useState<number | null>(null);
+  const [currentRewardRate, setCurrentRewardRate] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Smart Contract Balance und Stats abrufen
+  // Smart Contract Daten abrufen
   useEffect(() => {
     const fetchContractData = async () => {
       setLoading(true);
       try {
-        // Hier würde normalerweise ein Web3 Call gemacht werden
-        // Für jetzt simulieren wir Live-Daten basierend auf dem echten Contract
-        // In einer echten Implementation würde man thirdweb oder ethers.js verwenden
-        
-        // Simulierte Live-Daten basierend auf Contract-Funktionen
-        setTimeout(() => {
-          setContractBalance(15234); // D.FAITH verfügbar im Contract
-          setTotalStaked(127); // Gestakte D.INVEST Token
-          setTotalRewardsDistributed(4766); // Bereits verteilte D.FAITH
-          setCurrentStage(1); // Aktuelle Reward Stage (1-6)
-          setLoading(false);
-        }, 1000);
+        const client = createThirdwebClient({
+          clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "your-client-id"
+        });
+
+        const stakingContract = getContract({
+          client,
+          chain: base,
+          address: CONTRACT_ADDRESS,
+        });
+
+        const rewardContract = getContract({
+          client,
+          chain: base,
+          address: REWARD_TOKEN_ADDRESS,
+        });
+
+        // Contract Info abrufen
+        const contractInfo = await readContract({
+          contract: stakingContract,
+          method: "function getContractInfo() view returns (uint256 totalStakedTokens, uint256 rewardBalance, uint8 currentStage, uint256 currentRate)",
+          params: []
+        });
+
+        // Total Rewards Distributed
+        const totalRewards = await readContract({
+          contract: stakingContract,
+          method: "function totalRewardsDistributed() view returns (uint256)",
+          params: []
+        });
+
+        // Contract Balance (D.FAITH im Contract)
+        const balance = await readContract({
+          contract: rewardContract,
+          method: "function balanceOf(address) view returns (uint256)",
+          params: [CONTRACT_ADDRESS]
+        });
+
+        // Daten konvertieren (D.FAITH hat 2 Decimals)
+        setTotalStaked(Number(contractInfo[0])); // D.INVEST hat 0 Decimals
+        setContractBalance(Math.floor(Number(balance) / 100)); // D.FAITH: 2 Decimals -> ganze Token
+        setCurrentStage(Number(contractInfo[2]));
+        setCurrentRewardRate(Number(contractInfo[3]) / 100); // Rate in Prozent
+        setTotalRewardsDistributed(Math.floor(Number(totalRewards) / 100)); // D.FAITH: 2 Decimals
+
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching contract data:", error);
+        // Fallback zu Dummy-Daten bei Fehlern
+        setContractBalance(0);
+        setTotalStaked(0);
+        setTotalRewardsDistributed(0);
+        setCurrentStage(1);
+        setCurrentRewardRate(10);
         setLoading(false);
       }
     };
@@ -176,7 +223,7 @@ export default function TokenomicsTab() {
                   </div>
                 </div>
                 <div className="text-xs text-zinc-500 mt-1 text-center">
-                  Live Verteilung • Aktualisiert alle 30 Sekunden
+                  Live Blockchain Daten • Aktualisiert alle 30 Sekunden
                 </div>
               </div>
             </div>
@@ -264,7 +311,7 @@ export default function TokenomicsTab() {
               <div className="col-span-2">
                 <span className="text-zinc-400">Contract Adresse:</span>
                 <div className="flex items-center gap-2 mt-1">
-                  <div className="text-purple-400 font-mono text-xs break-all">0xe85b...9940</div>
+                  <div className="text-purple-400 font-mono text-xs break-all">0xe85b32a44b9eD3ecf8bd331FED46fbdAcDBc9940</div>
                   <a 
                     href="https://basescan.org/address/0xe85b32a44b9eD3ecf8bd331FED46fbdAcDBc9940#code" 
                     target="_blank" 
@@ -316,14 +363,16 @@ export default function TokenomicsTab() {
               </div>
               
               <div className="bg-zinc-800/40 rounded-lg p-3">
-                <span className="text-zinc-400 block mb-1">Reward Stage:</span>
+                <span className="text-zinc-400 block mb-1">Aktuelle APR:</span>
                 <div className="text-purple-400 font-bold text-lg flex items-center gap-2">
                   {loading ? (
-                    <div className="animate-pulse bg-zinc-600 h-5 w-12 rounded"></div>
+                    <div className="animate-pulse bg-zinc-600 h-5 w-16 rounded"></div>
                   ) : (
                     <>
-                      <span>{currentStage || "..."}/6</span>
-                      {currentStage === 1 && <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">10% APR</span>}
+                      <span>{currentRewardRate || "..."}% pro Woche</span>
+                      {currentStage === 1 && <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">Stage {currentStage}</span>}
+                      {currentStage === 2 && <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">Stage {currentStage}</span>}
+                      {currentStage && currentStage > 2 && <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">Stage {currentStage}</span>}
                     </>
                   )}
                 </div>
@@ -333,19 +382,20 @@ export default function TokenomicsTab() {
             {/* Reward Progression Bar */}
             <div className="mt-4">
               <div className="flex justify-between text-xs text-zinc-500 mb-2">
-                <span>Reward Progression</span>
-                <span>{totalRewardsDistributed || 0} / 10,000 D.FAITH (Stage 1)</span>
+                <span>Reward Progression (Stage {currentStage || 1})</span>
+                <span>{totalRewardsDistributed || 0} / {currentStage === 1 ? "10,000" : currentStage === 2 ? "20,000" : currentStage === 3 ? "40,000" : currentStage === 4 ? "60,000" : currentStage === 5 ? "80,000" : "∞"} D.FAITH</span>
               </div>
               <div className="w-full bg-zinc-700 rounded-full h-2 overflow-hidden">
                 <div 
                   className="bg-gradient-to-r from-purple-500 to-blue-500 h-full transition-all duration-500"
                   style={{ 
-                    width: `${totalRewardsDistributed ? Math.min((totalRewardsDistributed / 10000) * 100, 100) : 0}%` 
+                    width: `${totalRewardsDistributed && currentStage ? 
+                      Math.min((totalRewardsDistributed / (currentStage === 1 ? 10000 : currentStage === 2 ? 20000 : currentStage === 3 ? 40000 : currentStage === 4 ? 60000 : currentStage === 5 ? 80000 : 100000)) * 100, 100) : 0}%` 
                   }}
                 ></div>
               </div>
               <div className="text-xs text-zinc-500 mt-1 text-center">
-                Live Daten • Aktualisiert alle 30 Sekunden
+                Live Blockchain Daten • Aktualisiert alle 30 Sekunden
               </div>
             </div>
           </div>
