@@ -68,7 +68,7 @@ export default function InstagramTab() {
   const [showExpSources, setShowExpSources] = useState(false);
 
   // Modale
-  const [modal, setModal] = useState<null | "upgrade" | "claim" | "storyHelp" | "likeSave" | "confirmCheckInitial" | "confirmCheckAfter" | "info" | "walletInfo">(null);
+  const [modal, setModal] = useState<null | "upgrade" | "claim" | "storyHelp" | "likeSave" | "confirmCheckInitial" | "confirmCheckAfter" | "info" | "walletInfo" | "noValuesFound">(null);
   // Like/Save Check Werte
   const [likeStart, setLikeStart] = useState<number | null>(null);
   const [saveStart, setSaveStart] = useState<number | null>(null);
@@ -133,6 +133,10 @@ export default function InstagramTab() {
     fetch(`https://hook.eu2.make.com/bli0jo4nik0m9r4x9aj76ptktghdzckd?uuid=${encodeURIComponent(uuid)}`)
       .then((res) => res.json())
       .then((data) => {
+        if (data.likes === undefined || data.saves === undefined || data.likes === null || data.saves === null) {
+          setModal("noValuesFound");
+          return;
+        }
         setLikeStart(Number(data.likes));
         setSaveStart(Number(data.saves));
         if (typeof window !== "undefined") {
@@ -140,6 +144,7 @@ export default function InstagramTab() {
           localStorage.setItem("dfaith_saveStart", String(data.saves));
         }
       })
+      .catch(() => setModal("noValuesFound"))
       .finally(() => setLoading(false));
   };
   const checkAfter = () => {
@@ -213,10 +218,6 @@ export default function InstagramTab() {
         </div>
       </Modal>
       <Modal open={modal === "claim"} onClose={() => setModal(null)}>
-        <div className="flex justify-center mb-2">
-          <div onClick={() => setModal("walletInfo")}
-            className="bg-white text-pink-600 font-bold rounded-full w-7 h-7 flex items-center justify-center shadow cursor-pointer">i</div>
-        </div>
         <p className="text-lg font-bold mb-2">🪙 Wallet benötigt für Claim</p>
         {!wallet || !wallet.startsWith("0x") ? (
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-3 text-zinc-800 text-base flex flex-col items-center animate-pulse">
@@ -230,14 +231,23 @@ export default function InstagramTab() {
             <span className="text-xs text-zinc-500 mt-2">Du findest den Wallet Tab auch oben im Menü.</span>
           </div>
         ) : null}
-        <input
-          className="w-full p-2 my-2 rounded-lg border border-gray-300 text-black text-base focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
-          type="text"
-          placeholder="0x..."
-          value={wallet}
-          onChange={e => setWallet(e.target.value)}
-          readOnly={!!wallet && wallet.startsWith("0x")}
-        />
+        <div className="relative">
+          <input
+            className="w-full p-2 pr-10 my-2 rounded-lg border border-gray-300 text-black text-base focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
+            type="text"
+            placeholder="0x..."
+            value={wallet}
+            onChange={e => setWallet(e.target.value)}
+            readOnly={!!wallet && wallet.startsWith("0x")}
+          />
+          <button
+            onClick={() => setModal("walletInfo")}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-sm transition-all duration-200 text-xs"
+            title="Wallet Info"
+          >
+            i
+          </button>
+        </div>
         <button
           className="modal-btn w-full py-3 rounded-2xl font-semibold bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400 text-zinc-900 shadow-lg hover:from-yellow-500 hover:to-orange-500 active:from-yellow-600 active:to-orange-600 transition text-base tracking-tight flex items-center justify-center gap-2 border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:opacity-60 disabled:cursor-not-allowed"
           onClick={submitClaim}
@@ -252,18 +262,9 @@ export default function InstagramTab() {
         <p>📣 Bitte teile meinen Beitrag in deiner Instagram-Story<br/><b>@dawidfaith</b>, damit du dein Upgrade erhältst.</p>
       </Modal>
       <Modal open={modal === "likeSave"} onClose={() => setModal(null)}>
-        <div className="flex flex-col items-center gap-2 mb-2">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-            <defs>
-              <linearGradient id="gold-gradient-modal" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#FFD700"/>
-                <stop offset="1" stopColor="#FFA500"/>
-              </linearGradient>
-            </defs>
-            <path d="M3 21l2-2 7-7V7.83l2-2V11l7 7 2 2-1.41 1.41L12 13.41l-7.59 7.59L3 21z" fill="url(#gold-gradient-modal)"/>
-            <rect x="11" y="2" width="2" height="6" rx="1" fill="url(#gold-gradient-modal)"/>
-          </svg>
-          <p className="text-lg font-bold text-zinc-900">Like & Save Test</p>
+        <div className="flex flex-col items-center gap-2 mb-4">
+          <p className="text-xl font-bold text-zinc-900">📊 Like & Save Verification</p>
+          <p className="text-sm text-zinc-600">Verifiziere deine Interaktionen für EXP-Belohnungen</p>
         </div>
         <div className="flex flex-col gap-4">
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-zinc-800 text-base flex flex-col items-center">
@@ -316,6 +317,34 @@ export default function InstagramTab() {
       </Modal>
       <Modal open={modal === "walletInfo"} onClose={() => setModal(null)}>
         <p><b>🔒 Wichtiger Hinweis:</b><br/><br/>Deine Wallet-Adresse wird dauerhaft mit deinem Social-Media-Account verbunden.<br/><br/>Wenn du sie ändern willst, schreib mir eine <b>DM mit dem Stichwort „Wallet“</b> auf <b>Instagram</b>.</p>
+      </Modal>
+      <Modal open={modal === "noValuesFound"} onClose={() => setModal(null)}>
+        <div className="flex flex-col items-center gap-3 mb-4">
+          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
+            <span className="text-2xl">⚠️</span>
+          </div>
+          <p className="text-lg font-bold text-zinc-900">Versuch bereits unternommen</p>
+        </div>
+        <div className="text-center space-y-3">
+          <p className="text-zinc-700">
+            Es scheint, als hättest du bereits einen Versuch für diesen Beitrag unternommen.
+          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+            <p className="text-blue-800 font-medium text-sm">
+              💡 <strong>Nächste Möglichkeit:</strong><br/>
+              Warte auf meinen nächsten Instagram-Beitrag für eine neue Chance!
+            </p>
+          </div>
+          <p className="text-xs text-zinc-500">
+            Jeder Beitrag bietet neue Möglichkeiten für EXP-Belohnungen.
+          </p>
+        </div>
+        <button 
+          className="modal-btn w-full mt-4 py-2 rounded-xl font-semibold bg-zinc-900/90 text-white shadow hover:bg-zinc-900/95 active:bg-zinc-800 transition text-base border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-300"
+          onClick={() => setModal(null)}
+        >
+          Verstanden
+        </button>
       </Modal>
 
       {/* Card */}
