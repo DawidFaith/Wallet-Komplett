@@ -1,7 +1,4 @@
 import { useState, useEffect } from "react";
-import { createThirdwebClient, getContract } from "thirdweb";
-import { base } from "thirdweb/chains";
-import { readContract } from "thirdweb";
 
 // Smart Contract Setup
 const CONTRACT_ADDRESS = "0xe85b32a44b9eD3ecf8bd331FED46fbdAcDBc9940";
@@ -15,68 +12,73 @@ export default function TokenomicsTab() {
   const [currentRewardRate, setCurrentRewardRate] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Smart Contract Daten abrufen
+  // Smart Contract Daten über RPC abrufen
   useEffect(() => {
     const fetchContractData = async () => {
       setLoading(true);
       try {
-        const client = createThirdwebClient({
-          clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "your-client-id"
-        });
+        const RPC_URL = "https://mainnet.base.org";
+        
+        // Helper function für RPC calls
+        const callContract = async (to: string, data: string) => {
+          const response = await fetch(RPC_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              method: 'eth_call',
+              params: [
+                {
+                  to: to,
+                  data: data
+                },
+                'latest'
+              ],
+              id: 1
+            })
+          });
+          
+          const result = await response.json();
+          return result.result;
+        };
 
-        const stakingContract = getContract({
-          client,
-          chain: base,
-          address: CONTRACT_ADDRESS,
-        });
+        // Function selectors für Contract calls
+        const totalStakedSelector = "0x817b1cd2"; // totalStaked()
+        const totalRewardsDistributedSelector = "0x91040b2b"; // totalRewardsDistributed()
+        const getCurrentStageSelector = "0x0f644e70"; // getCurrentStage()
+        const getCurrentRewardRateSelector = "0x49bb6f94"; // getCurrentRewardRate()
+        const balanceOfSelector = "0x70a08231"; // balanceOf(address)
 
-        const rewardContract = getContract({
-          client,
-          chain: base,
-          address: REWARD_TOKEN_ADDRESS,
-        });
+        // Contract calls ausführen
+        const [
+          totalStakedHex,
+          totalRewardsHex, 
+          currentStageHex,
+          rewardRateHex,
+          balanceHex
+        ] = await Promise.all([
+          callContract(CONTRACT_ADDRESS, totalStakedSelector),
+          callContract(CONTRACT_ADDRESS, totalRewardsDistributedSelector),
+          callContract(CONTRACT_ADDRESS, getCurrentStageSelector),
+          callContract(CONTRACT_ADDRESS, getCurrentRewardRateSelector),
+          callContract(REWARD_TOKEN_ADDRESS, balanceOfSelector + CONTRACT_ADDRESS.slice(2).padStart(64, '0'))
+        ]);
 
-        // Total Staked abrufen
-        const totalStakedAmount = await readContract({
-          contract: stakingContract,
-          method: "function totalStaked() view returns (uint256)",
-          params: []
-        });
+        // Hex zu Number konvertieren
+        const totalStakedAmount = parseInt(totalStakedHex, 16);
+        const totalRewards = parseInt(totalRewardsHex, 16);
+        const stage = parseInt(currentStageHex, 16);
+        const rewardRate = parseInt(rewardRateHex, 16);
+        const balance = parseInt(balanceHex, 16);
 
-        // Total Rewards Distributed abrufen
-        const totalRewards = await readContract({
-          contract: stakingContract,
-          method: "function totalRewardsDistributed() view returns (uint256)",
-          params: []
-        });
-
-        // Current Stage abrufen
-        const stage = await readContract({
-          contract: stakingContract,
-          method: "function getCurrentStage() view returns (uint8)",
-          params: []
-        });
-
-        // Current Reward Rate abrufen
-        const rewardRate = await readContract({
-          contract: stakingContract,
-          method: "function getCurrentRewardRate() view returns (uint256)",
-          params: []
-        });
-
-        // Contract Balance (D.FAITH im Contract)
-        const balance = await readContract({
-          contract: rewardContract,
-          method: "function balanceOf(address) view returns (uint256)",
-          params: [CONTRACT_ADDRESS]
-        });
-
-        // Daten konvertieren (D.FAITH hat 2 Decimals)
-        setTotalStaked(Number(totalStakedAmount)); // D.INVEST hat 0 Decimals
-        setContractBalance(Math.floor(Number(balance) / 100)); // D.FAITH: 2 Decimals -> ganze Token
-        setCurrentStage(Number(stage));
-        setCurrentRewardRate(Number(rewardRate) / 100); // Rate in Prozent
-        setTotalRewardsDistributed(Math.floor(Number(totalRewards) / 100)); // D.FAITH: 2 Decimals
+        // Daten setzen (D.FAITH hat 2 Decimals)
+        setTotalStaked(totalStakedAmount); // D.INVEST hat 0 Decimals
+        setContractBalance(Math.floor(balance / 100)); // D.FAITH: 2 Decimals -> ganze Token
+        setCurrentStage(stage);
+        setCurrentRewardRate(rewardRate / 100); // Rate in Prozent
+        setTotalRewardsDistributed(Math.floor(totalRewards / 100)); // D.FAITH: 2 Decimals
 
         setLoading(false);
       } catch (error) {
