@@ -424,7 +424,7 @@ export default function TokenomicsTab() {
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/50">
                 <div className="flex items-center justify-between">
-                  <span className="text-zinc-400 text-xs">💰 Rewards Pool</span>
+                  <span className="text-zinc-400 text-xs">💰 Rewards</span>
                   {loading ? (
                     <div className="animate-pulse bg-zinc-600 h-4 w-16 rounded"></div>
                   ) : (
