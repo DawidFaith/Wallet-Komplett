@@ -309,38 +309,51 @@ export default function InstagramTab() {
       </Modal>
 
       {/* Card */}
-      <div className="card w-full max-w-[350px] bg-white/90 rounded-3xl shadow-xl border border-zinc-200/80 relative overflow-hidden p-6 sm:p-8 text-zinc-900 text-center flex flex-col items-center" style={{boxShadow:'0 8px 32px 0 #0001, 0 1.5px 8px 0 #fff8'}}>
+      <div className="card w-full max-w-[350px] bg-white/90 rounded-3xl shadow-xl border border-zinc-200/80 relative overflow-hidden p-6 sm:p-8 text-zinc-900 text-center flex flex-col items-center backdrop-blur-sm" style={{boxShadow:'0 8px 32px 0 rgba(0,0,0,0.08), 0 1.5px 8px 0 rgba(255,255,255,0.5), inset 0 1px 0 rgba(255,255,255,0.8)'}}>
         <style jsx>{`
           @keyframes shine {
             0% { transform: translateX(-100%); }
             100% { transform: translateX(100%); }
           }
+          @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-2px); }
+          }
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+          }
+          @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.4); }
+          }
         `}</style>
-        <div className="username text-[2.1rem] sm:text-[2.4rem] font-semibold mb-2 flex items-center justify-center gap-2 tracking-tight" style={{fontFamily:'SF Pro Display,Poppins,Arial,sans-serif', letterSpacing:'0.01em'}}>
+        <div className="username text-[2.1rem] sm:text-[2.4rem] font-semibold mb-2 flex items-center justify-center gap-2 tracking-tight hover:scale-105 transition-transform duration-300" style={{fontFamily:'SF Pro Display,Poppins,Arial,sans-serif', letterSpacing:'0.01em'}}>
           <span className="text-zinc-900/90">{username}</span>
         </div>
-        <div className="relative mb-4">
+        <div className="relative mb-4 group">
           <img
             src={profileImage || "https://via.placeholder.com/100"}
             alt="Profilbild"
-            className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover mx-auto border-4 border-zinc-200 shadow-md"
-            style={{boxShadow:'0 0 0 4px #e5e7eb, 0 2px 16px 0 #0001'}}
+            className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover mx-auto border-4 border-zinc-200 shadow-md transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg"
+            style={{boxShadow:'0 0 0 4px #e5e7eb, 0 2px 16px 0 rgba(0,0,0,0.1)'}}
           />
-          <div className="absolute -inset-1 rounded-full bg-white/60 blur-[8px] z-[-1]"></div>
+          <div className="absolute -inset-1 rounded-full bg-white/60 blur-[8px] z-[-1] group-hover:bg-white/80 transition-all duration-300"></div>
+          <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white shadow-sm animate-pulse"></div>
         </div>
-        <div className="level-box bg-gradient-to-br from-white/80 to-white/60 backdrop-blur-sm rounded-2xl p-4 sm:p-5 mb-4 w-full border border-white/40 shadow-lg">
+        <div className="level-box bg-gradient-to-br from-white/80 to-white/60 backdrop-blur-sm rounded-2xl p-4 sm:p-5 mb-4 w-full border border-white/40 shadow-lg hover:shadow-xl transition-all duration-300 group">
           <div className="flex justify-between items-center mb-3">
-            <div className="level font-bold text-lg sm:text-xl text-zinc-900 tracking-tight flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-md">
+            <div className="level font-bold text-lg sm:text-xl text-zinc-900 tracking-tight flex items-center gap-2 group-hover:text-zinc-800 transition-colors duration-200">
+              <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110" style={{animation: level > 10 ? 'glow 2s ease-in-out infinite' : 'none'}}>
                 {level}
               </div>
               Level {level}
             </div>
-            <div className="exp text-sm sm:text-base font-semibold text-zinc-600 bg-white/60 px-3 py-1 rounded-full border border-zinc-200">{exp} / {maxExp}</div>
-            <button className="bg-white/80 text-zinc-600 font-bold rounded-full w-8 h-8 flex items-center justify-center shadow-md border border-white/60 hover:scale-110 hover:bg-white transition-all duration-200" title="Info" onClick={() => setModal("info")}>i</button>
+            <div className="exp text-sm sm:text-base font-semibold text-zinc-600 bg-white/60 px-3 py-1 rounded-full border border-zinc-200 hover:bg-white/80 transition-all duration-200">{exp.toLocaleString()} / {maxExp.toLocaleString()}</div>
+            <button className="bg-white/80 text-zinc-600 font-bold rounded-full w-8 h-8 flex items-center justify-center shadow-md border border-white/60 hover:scale-110 hover:bg-white hover:text-zinc-800 transition-all duration-200 hover:shadow-lg" title="Info" onClick={() => setModal("info")}>i</button>
           </div>
           <div className="progress-container relative mb-3">
-            <div className="progress-bar relative w-full h-6 bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200 rounded-full overflow-hidden border-2 border-white/60 shadow-inner backdrop-blur-sm">
+            <div className="progress-bar relative w-full h-6 bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200 rounded-full overflow-hidden border-2 border-white/60 shadow-inner backdrop-blur-sm hover:shadow-lg transition-shadow duration-300">
               <div
                 className="progress-fill absolute left-0 top-0 h-full rounded-full transition-all duration-1000 ease-out hover:shadow-lg"
                 style={{
@@ -357,19 +370,19 @@ export default function InstagramTab() {
                 zIndex: 2
               }}></div>
               <div className="progress-label absolute w-full h-full flex items-center justify-center text-sm font-bold text-zinc-800 drop-shadow-sm" style={{zIndex:3, letterSpacing:'0.01em'}}>
-                {currentLevelExp} / {levelRange} EXP
+                {currentLevelExp.toLocaleString()} / {levelRange.toLocaleString()} EXP
               </div>
             </div>
             <div className="flex justify-between items-center mt-2 text-xs text-zinc-500">
-              <span>0</span>
-              <span className="font-semibold text-zinc-700">{progressPercent}%</span>
-              <span>{levelRange}</span>
+              <span className="transition-colors duration-200 hover:text-zinc-700">0</span>
+              <span className="font-semibold text-zinc-700 bg-white/50 px-2 py-1 rounded-full transition-all duration-200 hover:bg-white/70">{progressPercent}%</span>
+              <span className="transition-colors duration-200 hover:text-zinc-700">{levelRange.toLocaleString()}</span>
             </div>
           </div>
-          <div className="mining-power bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-3 text-center">
+          <div className="mining-power bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-3 text-center hover:from-yellow-100 hover:to-orange-100 transition-all duration-300 hover:shadow-md" style={{animation: miningPower > 0 ? 'float 3s ease-in-out infinite' : 'none'}}>
             <div className="text-zinc-700 text-sm font-medium mb-1">Mining Power</div>
             <div className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-600 to-orange-600 flex items-center justify-center gap-2">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="animate-pulse">
                 <circle cx="12" cy="12" r="10" fill="url(#coinGradient)" stroke="#FFA500" strokeWidth="2"/>
                 <defs>
                   <linearGradient id="coinGradient" x1="0" y1="0" x2="24" y2="24">
@@ -379,22 +392,50 @@ export default function InstagramTab() {
                 </defs>
                 <text x="12" y="16" textAnchor="middle" fontSize="10" fill="#fff" fontWeight="bold">₿</text>
               </svg>
-              +{miningPower} D.FAITH
+              +{miningPower.toLocaleString()} D.FAITH
             </div>
           </div>
         </div>
         {/* System-Check */}
-        <div className="system-check border border-zinc-200 rounded-2xl p-4 sm:p-5 bg-white/60 mb-4 w-full shadow-sm">
-          <div className="system-check-header font-semibold text-sm sm:text-base mb-2 text-zinc-700">✅ System Check</div>
-          <div className="check-item flex justify-between mb-1 text-[1rem] sm:text-[1.1rem] font-medium"><span>❤️ Like</span><span className={checkLike ? "text-green-500" : "text-red-400"}>{checkLike ? "✅" : "❌"} +10 EXP</span></div>
-          <div className="check-item flex justify-between mb-1 text-[1rem] sm:text-[1.1rem] font-medium"><span>💬 Kommentar</span><span className={checkComment ? "text-green-500" : "text-red-400"}>{checkComment ? "✅" : "❌"} +10 EXP</span></div>
-          <div className="check-item flex justify-between mb-1 text-[1rem] sm:text-[1.1rem] font-medium"><span>📣 Story</span><span className={checkStory ? "text-green-500" : "text-red-400"}>{checkStory ? "✅" : "❌"} +20 EXP</span></div>
-          <div className="check-item flex justify-between mb-1 text-[1rem] sm:text-[1.1rem] font-medium"><span>💾 Save</span><span className={checkSave ? "text-green-500" : "text-red-400"}>{checkSave ? "✅" : "❌"} +10 EXP</span></div>
+        <div className="system-check border border-zinc-200 rounded-2xl p-4 sm:p-5 bg-white/60 mb-4 w-full shadow-sm hover:shadow-md transition-all duration-300 backdrop-blur-sm">
+          <div className="system-check-header font-semibold text-sm sm:text-base mb-3 text-zinc-700 flex items-center gap-2">
+            <span className="animate-pulse">✅</span> System Check
+          </div>
+          <div className="space-y-2">
+            <div className="check-item flex justify-between items-center p-2 rounded-lg hover:bg-white/40 transition-all duration-200 text-[1rem] sm:text-[1.1rem] font-medium">
+              <span className="flex items-center gap-2">❤️ Like</span>
+              <span className={`px-2 py-1 rounded-full text-sm font-bold transition-all duration-200 ${checkLike ? "text-green-600 bg-green-50" : "text-red-500 bg-red-50"}`}>
+                {checkLike ? "✅" : "❌"} +10 EXP
+              </span>
+            </div>
+            <div className="check-item flex justify-between items-center p-2 rounded-lg hover:bg-white/40 transition-all duration-200 text-[1rem] sm:text-[1.1rem] font-medium">
+              <span className="flex items-center gap-2">💬 Kommentar</span>
+              <span className={`px-2 py-1 rounded-full text-sm font-bold transition-all duration-200 ${checkComment ? "text-green-600 bg-green-50" : "text-red-500 bg-red-50"}`}>
+                {checkComment ? "✅" : "❌"} +10 EXP
+              </span>
+            </div>
+            <div className="check-item flex justify-between items-center p-2 rounded-lg hover:bg-white/40 transition-all duration-200 text-[1rem] sm:text-[1.1rem] font-medium">
+              <span className="flex items-center gap-2">📣 Story</span>
+              <span className={`px-2 py-1 rounded-full text-sm font-bold transition-all duration-200 ${checkStory ? "text-green-600 bg-green-50" : "text-red-500 bg-red-50"}`}>
+                {checkStory ? "✅" : "❌"} +20 EXP
+              </span>
+            </div>
+            <div className="check-item flex justify-between items-center p-2 rounded-lg hover:bg-white/40 transition-all duration-200 text-[1rem] sm:text-[1.1rem] font-medium">
+              <span className="flex items-center gap-2">💾 Save</span>
+              <span className={`px-2 py-1 rounded-full text-sm font-bold transition-all duration-200 ${checkSave ? "text-green-600 bg-green-50" : "text-red-500 bg-red-50"}`}>
+                {checkSave ? "✅" : "❌"} +10 EXP
+              </span>
+            </div>
+          </div>
         </div>
         {/* Buttons */}
         <div className="button-row flex flex-col gap-3 mt-6 w-full">
-          <button className="btn-upgrade w-full py-3 rounded-2xl font-semibold bg-zinc-900/90 text-white shadow hover:bg-zinc-900/95 active:bg-zinc-800 transition text-base sm:text-lg tracking-tight flex items-center justify-center gap-2 border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-300" onClick={() => setModal("upgrade")}>✨ Sammle mehr EXP</button>
-          <button className="btn-claim w-full py-3 rounded-2xl font-semibold bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400 text-zinc-900 shadow-lg hover:from-yellow-500 hover:to-orange-500 active:from-yellow-600 active:to-orange-600 transition text-base sm:text-lg tracking-tight flex items-center justify-center gap-2 border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400" onClick={() => setModal("claim")}>🪙 Claim</button>
+          <button className="btn-upgrade w-full py-3 rounded-2xl font-semibold bg-zinc-900/90 text-white shadow hover:bg-zinc-900/95 active:bg-zinc-800 transition-all duration-200 text-base sm:text-lg tracking-tight flex items-center justify-center gap-2 border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-300 hover:scale-105 hover:shadow-lg active:scale-95" onClick={() => setModal("upgrade")}>
+            <span className="animate-pulse">✨</span> Sammle mehr EXP
+          </button>
+          <button className="btn-claim w-full py-3 rounded-2xl font-semibold bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400 text-zinc-900 shadow-lg hover:from-yellow-500 hover:to-orange-500 active:from-yellow-600 active:to-orange-600 transition-all duration-200 text-base sm:text-lg tracking-tight flex items-center justify-center gap-2 border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 hover:scale-105 hover:shadow-xl active:scale-95" onClick={() => setModal("claim")}>
+            <span className="animate-bounce">🪙</span> Claim
+          </button>
         </div>
       </div>
     </div>
