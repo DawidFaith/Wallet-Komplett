@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
+import { createThirdwebClient, getContract, readContract } from "thirdweb";
+import { base } from "thirdweb/chains";
 
 // Smart Contract Setup
 const CONTRACT_ADDRESS = "0xe85b32a44b9eD3ecf8bd331FED46fbdAcDBc9940";
 const REWARD_TOKEN_ADDRESS = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1"; // D.FAITH
+const DFAITH_DECIMALS = 2;
+
+const client = createThirdwebClient({ clientId: process.env.NEXT_PUBLIC_TEMPLATE_CLIENT_ID! });
 
 export default function TokenomicsTab() {
   const [contractBalance, setContractBalance] = useState<number | null>(null);
@@ -21,49 +26,47 @@ export default function TokenomicsTab() {
     priceChange24h: null
   });
 
-  // Smart Contract Daten über RPC abrufen
+  // Smart Contract Daten abrufen
   useEffect(() => {
     const fetchContractData = async () => {
       setLoading(true);
       try {
-        const RPC_URL = "https://mainnet.base.org";
-        
-        // Helper function für RPC calls
-        const callContract = async (to: string, data: string) => {
-          const response = await fetch(RPC_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              jsonrpc: '2.0',
-              method: 'eth_call',
-              params: [
-                {
-                  to: to,
-                  data: data
-                },
-                'latest'
-              ],
-              id: 1
-            })
-          });
-          
-          const result = await response.json();
-          return result.result;
-        };
+        const staking = getContract({
+          client,
+          chain: base,
+          address: CONTRACT_ADDRESS,
+        });
 
-        // Preis-Daten parallel abrufen
+        const rewardToken = getContract({
+          client,
+          chain: base,
+          address: REWARD_TOKEN_ADDRESS,
+        });
+
+        // Preis-Daten von DexScreener abrufen (wie im WalletTab)
         const fetchPriceData = async () => {
           try {
-            const response = await fetch('https://api.dexscreener.com/latest/dex/pairs/base/0x7109214bafde13a6ef8060644656464bccab93cd');
-            const data = await response.json();
-            
-            if (data.pair) {
-              setPriceData({
-                price: parseFloat(data.pair.priceUsd) || null,
-                priceChange24h: parseFloat(data.pair.priceChange.h24) || null
-              });
+            // Hole ETH-Preis von CoinGecko
+            const ethResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+            const ethData = await ethResponse.json();
+            const ethUsd = ethData['ethereum']?.usd;
+
+            if (ethUsd) {
+              // Hole D.FAITH/ETH Rate von OpenOcean
+              const dfaithResponse = await fetch(`https://open-api.openocean.finance/v3/base/quote?inTokenAddress=0x69eFD833288605f320d77eB2aB99DDE62919BbC1&outTokenAddress=0x4200000000000000000000000000000000000006&amount=${Math.pow(10, DFAITH_DECIMALS)}&gasPrice=5`);
+              const dfaithData = await dfaithResponse.json();
+              
+              if (dfaithData.code === 200 && dfaithData.data?.outAmount) {
+                const ethPerDfaith = Number(dfaithData.data.outAmount) / Math.pow(10, 18);
+                const dfaithPriceUsd = ethPerDfaith * ethUsd;
+                
+                console.log('D.FAITH Preis berechnet:', { ethUsd, ethPerDfaith, dfaithPriceUsd });
+                
+                setPriceData({
+                  price: dfaithPriceUsd,
+                  priceChange24h: null // TODO: 24h Change implementieren
+                });
+              }
             }
           } catch (error) {
             console.error("Error fetching price data:", error);
@@ -74,53 +77,47 @@ export default function TokenomicsTab() {
           }
         };
 
-        // Function selectors für Contract calls
-        const totalStakedSelector = "0x817b1cd2"; // totalStaked()
-        const totalRewardsDistributedSelector = "0x91040b2b"; // totalRewardsDistributed()
-        const getCurrentStageSelector = "0x0f644e70"; // getCurrentStage()
-        const getCurrentRewardRateSelector = "0x49bb6f94"; // getCurrentRewardRate()
-        const balanceOfSelector = "0x70a08231"; // balanceOf(address)
-
-        // Contract calls und Preis-Daten parallel ausführen
+        // Contract calls (wie im StakeTab)
         const [
-          [
-            totalStakedHex,
-            totalRewardsHex, 
-            currentStageHex,
-            rewardRateHex,
-            balanceHex
-          ]
+          totalStakedResult,
+          totalRewardsResult,
+          currentStageResult,
+          contractBalanceResult
         ] = await Promise.all([
-          Promise.all([
-            callContract(CONTRACT_ADDRESS, totalStakedSelector),
-            callContract(CONTRACT_ADDRESS, totalRewardsDistributedSelector),
-            callContract(CONTRACT_ADDRESS, getCurrentStageSelector),
-            callContract(CONTRACT_ADDRESS, getCurrentRewardRateSelector),
-            callContract(REWARD_TOKEN_ADDRESS, balanceOfSelector + CONTRACT_ADDRESS.slice(2).padStart(64, '0'))
-          ]),
+          readContract({
+            contract: staking,
+            method: "function totalStaked() view returns (uint256)",
+            params: []
+          }).catch(() => "0"),
+          readContract({
+            contract: staking,
+            method: "function totalRewardsDistributed() view returns (uint256)",
+            params: []
+          }).catch(() => "0"),
+          readContract({
+            contract: staking,
+            method: "function getCurrentStage() view returns (uint8)",
+            params: []
+          }).catch(() => "1"),
+          readContract({
+            contract: rewardToken,
+            method: "function balanceOf(address) view returns (uint256)",
+            params: [CONTRACT_ADDRESS]
+          }).catch(() => "0"),
           fetchPriceData() // Preis-Daten parallel laden
         ]);
 
-        // Hex zu Number konvertieren (mit besserer Error-Behandlung)
-        const totalStakedAmount = totalStakedHex ? parseInt(totalStakedHex, 16) : 0;
-        const totalRewards = totalRewardsHex ? parseInt(totalRewardsHex, 16) : 0;
-        const stage = currentStageHex ? parseInt(currentStageHex, 16) : 1;
-        const rewardRate = rewardRateHex ? parseInt(rewardRateHex, 16) : 1000;
-        const balance = balanceHex ? parseInt(balanceHex, 16) : 0;
+        // Daten setzen (D.FAITH hat 2 Decimals, wie im StakeTab)
+        setTotalStaked(Number(totalStakedResult)); // D.INVEST hat 0 Decimals
+        setContractBalance(Number(contractBalanceResult) / Math.pow(10, DFAITH_DECIMALS)); // D.FAITH: 2 Decimals
+        setCurrentStage(Number(currentStageResult));
+        setTotalRewardsDistributed(Number(totalRewardsResult) / Math.pow(10, DFAITH_DECIMALS)); // D.FAITH: 2 Decimals
 
-        // Daten setzen (D.FAITH hat 2 Decimals)
-        setTotalStaked(totalStakedAmount); // D.INVEST hat 0 Decimals
-        setContractBalance(balance / 100); // D.FAITH: 2 Decimals mit Dezimalstellen
-        setCurrentStage(stage);
-        setCurrentRewardRate(rewardRate / 100); // Rate in Prozent
-        setTotalRewardsDistributed(totalRewards / 100); // D.FAITH: 2 Decimals mit Dezimalstellen
-
-        console.log("Contract Data:", {
-          totalStaked: totalStakedAmount,
-          totalRewards: totalRewards,
-          stage: stage,
-          rewardRate: rewardRate / 100,
-          balance: balance / 100
+        console.log("Contract Data (TokenomicsTab):", {
+          totalStaked: Number(totalStakedResult),
+          contractBalance: Number(contractBalanceResult) / Math.pow(10, DFAITH_DECIMALS),
+          currentStage: Number(currentStageResult),
+          totalRewards: Number(totalRewardsResult) / Math.pow(10, DFAITH_DECIMALS)
         });
 
         setLoading(false);
@@ -213,9 +210,9 @@ export default function TokenomicsTab() {
                   ) : (
                     <>
                       <span className="text-green-400 font-semibold">
-                        ${priceData.price ? priceData.price.toFixed(6) : "..."}
+                        ${priceData.price && !isNaN(priceData.price) ? priceData.price.toFixed(6) : "Lädt..."}
                       </span>
-                      {priceData.priceChange24h !== null && (
+                      {priceData.priceChange24h !== null && !isNaN(priceData.priceChange24h) && (
                         <span className={`text-xs px-2 py-1 rounded font-medium ${
                           priceData.priceChange24h >= 0 
                             ? 'bg-green-500/20 text-green-400' 
