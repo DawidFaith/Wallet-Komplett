@@ -11,6 +11,15 @@ export default function TokenomicsTab() {
   const [currentStage, setCurrentStage] = useState<number | null>(null);
   const [currentRewardRate, setCurrentRewardRate] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // Preis-Daten für D.FAITH
+  const [priceData, setPriceData] = useState<{
+    price: number | null;
+    priceChange24h: number | null;
+  }>({
+    price: null,
+    priceChange24h: null
+  });
 
   // Smart Contract Daten über RPC abrufen
   useEffect(() => {
@@ -44,6 +53,27 @@ export default function TokenomicsTab() {
           return result.result;
         };
 
+        // Preis-Daten parallel abrufen
+        const fetchPriceData = async () => {
+          try {
+            const response = await fetch('https://api.dexscreener.com/latest/dex/pairs/base/0x7109214bafde13a6ef8060644656464bccab93cd');
+            const data = await response.json();
+            
+            if (data.pair) {
+              setPriceData({
+                price: parseFloat(data.pair.priceUsd) || null,
+                priceChange24h: parseFloat(data.pair.priceChange.h24) || null
+              });
+            }
+          } catch (error) {
+            console.error("Error fetching price data:", error);
+            setPriceData({
+              price: null,
+              priceChange24h: null
+            });
+          }
+        };
+
         // Function selectors für Contract calls
         const totalStakedSelector = "0x817b1cd2"; // totalStaked()
         const totalRewardsDistributedSelector = "0x91040b2b"; // totalRewardsDistributed()
@@ -51,19 +81,24 @@ export default function TokenomicsTab() {
         const getCurrentRewardRateSelector = "0x49bb6f94"; // getCurrentRewardRate()
         const balanceOfSelector = "0x70a08231"; // balanceOf(address)
 
-        // Contract calls ausführen
+        // Contract calls und Preis-Daten parallel ausführen
         const [
-          totalStakedHex,
-          totalRewardsHex, 
-          currentStageHex,
-          rewardRateHex,
-          balanceHex
+          [
+            totalStakedHex,
+            totalRewardsHex, 
+            currentStageHex,
+            rewardRateHex,
+            balanceHex
+          ]
         ] = await Promise.all([
-          callContract(CONTRACT_ADDRESS, totalStakedSelector),
-          callContract(CONTRACT_ADDRESS, totalRewardsDistributedSelector),
-          callContract(CONTRACT_ADDRESS, getCurrentStageSelector),
-          callContract(CONTRACT_ADDRESS, getCurrentRewardRateSelector),
-          callContract(REWARD_TOKEN_ADDRESS, balanceOfSelector + CONTRACT_ADDRESS.slice(2).padStart(64, '0'))
+          Promise.all([
+            callContract(CONTRACT_ADDRESS, totalStakedSelector),
+            callContract(CONTRACT_ADDRESS, totalRewardsDistributedSelector),
+            callContract(CONTRACT_ADDRESS, getCurrentStageSelector),
+            callContract(CONTRACT_ADDRESS, getCurrentRewardRateSelector),
+            callContract(REWARD_TOKEN_ADDRESS, balanceOfSelector + CONTRACT_ADDRESS.slice(2).padStart(64, '0'))
+          ]),
+          fetchPriceData() // Preis-Daten parallel laden
         ]);
 
         // Hex zu Number konvertieren (mit besserer Error-Behandlung)
@@ -169,6 +204,29 @@ export default function TokenomicsTab() {
               <div>
                 <span className="text-zinc-400">Total Supply:</span>
                 <div className="text-white font-semibold">{totalSupply.toLocaleString()}</div>
+              </div>
+              <div>
+                <span className="text-zinc-400">Live Preis:</span>
+                <div className="flex items-center gap-2">
+                  {loading ? (
+                    <div className="animate-pulse bg-zinc-600 h-4 w-16 rounded"></div>
+                  ) : (
+                    <>
+                      <span className="text-green-400 font-semibold">
+                        ${priceData.price ? priceData.price.toFixed(6) : "..."}
+                      </span>
+                      {priceData.priceChange24h !== null && (
+                        <span className={`text-xs px-2 py-1 rounded font-medium ${
+                          priceData.priceChange24h >= 0 
+                            ? 'bg-green-500/20 text-green-400' 
+                            : 'bg-red-500/20 text-red-400'
+                        }`}>
+                          {priceData.priceChange24h >= 0 ? '+' : ''}{priceData.priceChange24h.toFixed(2)}%
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
               <div>
                 <span className="text-zinc-400">Adresse:</span>
