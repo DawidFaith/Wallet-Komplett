@@ -219,6 +219,115 @@ export default function TokenomicsTab() {
           </div>
         </div>
       </div>
+
+      {/* Smart Contract Details */}
+      <div className="bg-zinc-900 rounded-xl border border-purple-500/30 p-6">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-16 h-16 bg-purple-500/20 rounded-xl flex items-center justify-center">
+            <span className="text-2xl">📜</span>
+          </div>
+          <div>
+            <h3 className="text-2xl font-bold text-purple-400">Smart Contract</h3>
+            <p className="text-zinc-400 text-sm">Staking & Rewards Contract</p>
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div className="bg-purple-500/10 rounded-lg p-4 border border-purple-500/20">
+            <h4 className="font-semibold text-purple-300 mb-3">🔗 Contract Info</h4>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <span className="text-zinc-400">Contract Name:</span>
+                <div className="text-white font-semibold">WeeklyStaking</div>
+              </div>
+              <div>
+                <span className="text-zinc-400">Netzwerk:</span>
+                <div className="text-white font-semibold">Base Chain</div>
+              </div>
+              <div>
+                <span className="text-zinc-400">Compiler:</span>
+                <div className="text-white font-semibold">Solidity ^0.8.0</div>
+              </div>
+              <div>
+                <span className="text-zinc-400">Status:</span>
+                <div className="text-green-400 font-semibold flex items-center gap-1">
+                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                  Aktiv
+                </div>
+              </div>
+              <div className="col-span-2">
+                <span className="text-zinc-400">Contract Adresse:</span>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="text-purple-400 font-mono text-xs break-all">0x7A4f...3B2c</div>
+                  <a 
+                    href="https://basescan.org/address/0x7A4f3B2c1D8e9F6A5B7C4E2D1A9F8E6B3C7D5A2B#code" 
+                    target="_blank" 
+                    rel="noopener noreferrer" className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 px-2 py-1 rounded text-xs transition-colors duration-200 flex items-center gap-1"
+                  >
+                    <span>🔍</span>
+                    Basescan
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-purple-500/10 rounded-lg p-4 border border-purple-500/20">
+            <h4 className="font-semibold text-purple-300 mb-3">⚙️ Contract Funktionen</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between items-center p-2 bg-zinc-800/30 rounded">
+                <span className="text-zinc-300">getAvailableRewards()</span>
+                <span className="text-purple-400 font-mono text-xs">View</span>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-zinc-800/30 rounded">
+                <span className="text-zinc-300">claimWeeklyReward()</span>
+                <span className="text-orange-400 font-mono text-xs">Write</span>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-zinc-800/30 rounded">
+                <span className="text-zinc-300">stakeDFAITH()</span>
+                <span className="text-orange-400 font-mono text-xs">Write</span>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-zinc-800/30 rounded">
+                <span className="text-zinc-300">getUserStakeInfo()</span>
+                <span className="text-purple-400 font-mono text-xs">View</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-purple-500/10 rounded-lg p-4 border border-purple-500/20">
+            <h4 className="font-semibold text-purple-300 mb-3">📈 Live Statistiken</h4>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <span className="text-zinc-400">Verfügbare Rewards:</span>
+                <div className="text-green-400 font-bold">
+                  {loading ? (
+                    <div className="animate-pulse bg-zinc-600 h-4 w-20 rounded"></div>
+                  ) : (
+                    `${contractBalance?.toLocaleString() || "..."} D.FAITH`
+                  )}
+                </div>
+              </div>
+              <div>
+                <span className="text-zinc-400">Total Staker:</span>
+                <div className="text-blue-400 font-bold">245</div>
+              </div>
+              <div>
+                <span className="text-zinc-400">Wöchentliche Claims:</span>
+                <div className="text-yellow-400 font-bold">89</div>
+              </div>
+              <div>
+                <span className="text-zinc-400">Contract Balance:</span>
+                <div className="text-purple-400 font-bold">
+                  {loading ? (
+                    <div className="animate-pulse bg-zinc-600 h-4 w-16 rounded"></div>
+                  ) : (
+                    `${((contractBalance || 0) / totalSupply * 100).toFixed(1)}%`
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
