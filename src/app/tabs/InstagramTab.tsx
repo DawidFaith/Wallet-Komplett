@@ -310,6 +310,12 @@ export default function InstagramTab() {
 
       {/* Card */}
       <div className="card w-full max-w-[350px] bg-white/90 rounded-3xl shadow-xl border border-zinc-200/80 relative overflow-hidden p-6 sm:p-8 text-zinc-900 text-center flex flex-col items-center" style={{boxShadow:'0 8px 32px 0 #0001, 0 1.5px 8px 0 #fff8'}}>
+        <style jsx>{`
+          @keyframes shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
+        `}</style>
         <div className="username text-[2.1rem] sm:text-[2.4rem] font-semibold mb-2 flex items-center justify-center gap-2 tracking-tight" style={{fontFamily:'SF Pro Display,Poppins,Arial,sans-serif', letterSpacing:'0.01em'}}>
           <span className="text-zinc-900/90">{username}</span>
         </div>
@@ -322,30 +328,59 @@ export default function InstagramTab() {
           />
           <div className="absolute -inset-1 rounded-full bg-white/60 blur-[8px] z-[-1]"></div>
         </div>
-        <div className="level-box bg-white/70 rounded-2xl p-4 sm:p-5 mb-4 w-full border border-zinc-200 shadow-inner">
-          <div className="flex justify-between items-center mb-2">
-            <div className="level font-semibold text-lg sm:text-xl text-zinc-900 tracking-tight flex items-center gap-2">
+        <div className="level-box bg-gradient-to-br from-white/80 to-white/60 backdrop-blur-sm rounded-2xl p-4 sm:p-5 mb-4 w-full border border-white/40 shadow-lg">
+          <div className="flex justify-between items-center mb-3">
+            <div className="level font-bold text-lg sm:text-xl text-zinc-900 tracking-tight flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-md">
+                {level}
+              </div>
               Level {level}
             </div>
-            <div className="exp text-sm sm:text-base font-semibold text-zinc-500">{exp} / {maxExp} EXP</div>
-            <button className="bg-zinc-100 text-zinc-500 font-bold rounded-full w-8 h-8 flex items-center justify-center shadow border border-zinc-200 hover:scale-110 transition" title="Info" onClick={() => setModal("info")}>i</button>
+            <div className="exp text-sm sm:text-base font-semibold text-zinc-600 bg-white/60 px-3 py-1 rounded-full border border-zinc-200">{exp} / {maxExp}</div>
+            <button className="bg-white/80 text-zinc-600 font-bold rounded-full w-8 h-8 flex items-center justify-center shadow-md border border-white/60 hover:scale-110 hover:bg-white transition-all duration-200" title="Info" onClick={() => setModal("info")}>i</button>
           </div>
-          <div className="progress-bar relative w-full h-4 bg-gradient-to-r from-yellow-200 via-yellow-400 to-orange-300 rounded-full overflow-hidden mb-2 border border-yellow-300 shadow-inner">
-            <div
-              className="absolute left-0 top-0 h-full rounded-full transition-all duration-700"
-              style={{
-                width: `${progressPercent}%`,
-                background: "linear-gradient(90deg, #FFD700 0%, #FFA500 100%)",
-                boxShadow: '0 0 8px 2px #FFD70055',
-                zIndex: 1
-              }}
-            ></div>
-            <div className="progress-label absolute w-full h-full flex items-center justify-center text-xs sm:text-sm font-bold text-zinc-800" style={{zIndex:2, letterSpacing:'0.01em'}}>
-              {currentLevelExp} / {levelRange} EXP
+          <div className="progress-container relative mb-3">
+            <div className="progress-bar relative w-full h-6 bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200 rounded-full overflow-hidden border-2 border-white/60 shadow-inner backdrop-blur-sm">
+              <div
+                className="progress-fill absolute left-0 top-0 h-full rounded-full transition-all duration-1000 ease-out hover:shadow-lg"
+                style={{
+                  width: `${progressPercent}%`,
+                  background: "linear-gradient(90deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%)",
+                  boxShadow: '0 0 20px 4px rgba(255, 215, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
+                  zIndex: 1,
+                  borderRadius: 'inherit'
+                }}
+              ></div>
+              <div className="progress-shine absolute left-0 top-0 h-full w-full rounded-full opacity-30" style={{
+                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)',
+                animation: progressPercent > 0 ? 'shine 2s ease-in-out infinite' : 'none',
+                zIndex: 2
+              }}></div>
+              <div className="progress-label absolute w-full h-full flex items-center justify-center text-sm font-bold text-zinc-800 drop-shadow-sm" style={{zIndex:3, letterSpacing:'0.01em'}}>
+                {currentLevelExp} / {levelRange} EXP
+              </div>
+            </div>
+            <div className="flex justify-between items-center mt-2 text-xs text-zinc-500">
+              <span>0</span>
+              <span className="font-semibold text-zinc-700">{progressPercent}%</span>
+              <span>{levelRange}</span>
             </div>
           </div>
-          <div className="mt-1 text-zinc-700 text-sm sm:text-base flex items-center justify-center gap-1 font-medium">
-            <span>+{miningPower} D.FAITH</span>
+          <div className="mining-power bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-3 text-center">
+            <div className="text-zinc-700 text-sm font-medium mb-1">Mining Power</div>
+            <div className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-600 to-orange-600 flex items-center justify-center gap-2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="url(#coinGradient)" stroke="#FFA500" strokeWidth="2"/>
+                <defs>
+                  <linearGradient id="coinGradient" x1="0" y1="0" x2="24" y2="24">
+                    <stop stopColor="#FFD700"/>
+                    <stop offset="1" stopColor="#FFA500"/>
+                  </linearGradient>
+                </defs>
+                <text x="12" y="16" textAnchor="middle" fontSize="10" fill="#fff" fontWeight="bold">₿</text>
+              </svg>
+              +{miningPower} D.FAITH
+            </div>
           </div>
         </div>
         {/* System-Check */}
