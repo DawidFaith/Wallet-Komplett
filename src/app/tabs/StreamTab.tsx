@@ -1,5 +1,5 @@
 export default function StreamTab() {
   return (
-    <div className="text-white text-xl">Streama Bereich</div>
+    <div className="text-white text-xl">Stream Bereich</div>
   );
 }
