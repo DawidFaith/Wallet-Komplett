@@ -339,7 +339,6 @@ export default function InstagramTab() {
             style={{boxShadow:'0 0 0 4px #e5e7eb, 0 2px 16px 0 rgba(0,0,0,0.1)'}}
           />
           <div className="absolute -inset-1 rounded-full bg-white/60 blur-[8px] z-[-1] group-hover:bg-white/80 transition-all duration-300"></div>
-          <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white shadow-sm animate-pulse"></div>
         </div>
         <div className="level-box bg-gradient-to-br from-white/80 to-white/60 backdrop-blur-sm rounded-2xl p-3 sm:p-4 mb-3 w-full border border-white/40 shadow-lg hover:shadow-xl transition-all duration-300 group">
           <div className="flex justify-between items-center mb-2">
@@ -401,26 +400,26 @@ export default function InstagramTab() {
           <div className="system-check-header font-semibold text-sm mb-2 text-zinc-700 flex items-center gap-2">
             <span className="animate-pulse">✅</span> System Check
           </div>
-          <div className="space-y-1">
-            <div className="check-item flex justify-between items-center p-1.5 rounded-lg hover:bg-white/40 transition-all duration-200 text-sm sm:text-base font-medium">
+          <div className="space-y-0">
+            <div className="check-item flex justify-between items-center p-1 rounded-lg hover:bg-white/40 transition-all duration-200 text-sm sm:text-base font-medium">
               <span className="flex items-center gap-2">❤️ Like</span>
               <span className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all duration-200 ${checkLike ? "text-green-600 bg-green-50" : "text-red-500 bg-red-50"}`}>
                 {checkLike ? "✅" : "❌"} +10 EXP
               </span>
             </div>
-            <div className="check-item flex justify-between items-center p-1.5 rounded-lg hover:bg-white/40 transition-all duration-200 text-sm sm:text-base font-medium">
+            <div className="check-item flex justify-between items-center p-1 rounded-lg hover:bg-white/40 transition-all duration-200 text-sm sm:text-base font-medium">
               <span className="flex items-center gap-2">💬 Kommentar</span>
               <span className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all duration-200 ${checkComment ? "text-green-600 bg-green-50" : "text-red-500 bg-red-50"}`}>
                 {checkComment ? "✅" : "❌"} +10 EXP
               </span>
             </div>
-            <div className="check-item flex justify-between items-center p-1.5 rounded-lg hover:bg-white/40 transition-all duration-200 text-sm sm:text-base font-medium">
+            <div className="check-item flex justify-between items-center p-1 rounded-lg hover:bg-white/40 transition-all duration-200 text-sm sm:text-base font-medium">
               <span className="flex items-center gap-2">📣 Story</span>
               <span className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all duration-200 ${checkStory ? "text-green-600 bg-green-50" : "text-red-500 bg-red-50"}`}>
                 {checkStory ? "✅" : "❌"} +20 EXP
               </span>
             </div>
-            <div className="check-item flex justify-between items-center p-1.5 rounded-lg hover:bg-white/40 transition-all duration-200 text-sm sm:text-base font-medium">
+            <div className="check-item flex justify-between items-center p-1 rounded-lg hover:bg-white/40 transition-all duration-200 text-sm sm:text-base font-medium">
               <span className="flex items-center gap-2">💾 Save</span>
               <span className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all duration-200 ${checkSave ? "text-green-600 bg-green-50" : "text-red-500 bg-red-50"}`}>
                 {checkSave ? "✅" : "❌"} +10 EXP
