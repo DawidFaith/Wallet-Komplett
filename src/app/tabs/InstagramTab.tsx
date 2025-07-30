@@ -208,18 +208,16 @@ export default function InstagramTab() {
           <div onClick={() => setModal("walletInfo")}
             className="bg-white text-pink-600 font-bold rounded-full w-7 h-7 flex items-center justify-center shadow cursor-pointer">i</div>
         </div>
-        <p>Gib deine Wallet-Adresse ein, um deinen Claim zu erhalten:</p>
+        <p className="text-lg font-bold mb-2">🪙 Wallet benötigt für Claim</p>
         {!wallet || !wallet.startsWith("0x") ? (
-          <div>
-            {/* Hinweistext */}
-            <a href="/wallet">➡️ Zum Wallet Tab wechseln</a>
-            <button onClick={() => window.location.href = '/wallet'}>
-              Wallet jetzt erstellen
-            </button>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-3 text-zinc-800 text-base flex flex-col items-center animate-pulse">
+            <span className="font-semibold mb-2 text-center">Du hast noch keine Wallet hinterlegt.<br/>Erstelle jetzt deine Wallet, um deine Belohnung zu erhalten!</span>
+            <a href="/tabs/wallet" className="w-full mt-2 mb-1 py-2 px-4 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400 text-zinc-900 shadow-lg hover:from-yellow-500 hover:to-orange-500 active:from-yellow-600 active:to-orange-600 transition text-base border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-center block">🚀 Wallet jetzt anlegen</a>
+            <span className="text-xs text-zinc-500 mt-2">Du findest den Wallet Tab auch oben im Menü.</span>
           </div>
         ) : null}
         <input
-          className="w-full p-2 my-2 rounded-lg border border-gray-300 text-black text-base"
+          className="w-full p-2 my-2 rounded-lg border border-gray-300 text-black text-base focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
           type="text"
           placeholder="0x..."
           value={wallet}
@@ -227,13 +225,14 @@ export default function InstagramTab() {
           readOnly={!!wallet && wallet.startsWith("0x")}
         />
         <button
-          className="modal-btn w-full py-3 rounded-2xl font-semibold bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400 text-zinc-900 shadow-lg hover:from-yellow-500 hover:to-orange-500 active:from-yellow-600 active:to-orange-600 transition text-base tracking-tight flex items-center justify-center gap-2 border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          className="modal-btn w-full py-3 rounded-2xl font-semibold bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400 text-zinc-900 shadow-lg hover:from-yellow-500 hover:to-orange-500 active:from-yellow-600 active:to-orange-600 transition text-base tracking-tight flex items-center justify-center gap-2 border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:opacity-60 disabled:cursor-not-allowed"
           onClick={submitClaim}
+          disabled={!wallet || !wallet.startsWith("0x")}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="mr-1"><circle cx="12" cy="12" r="10" fill="#FFD700" stroke="#FFA500" strokeWidth="2"/><text x="12" y="16" textAnchor="middle" fontSize="12" fill="#fff" fontWeight="bold">₿</text></svg>
           Claim
         </button>
-        <p className="mt-2" style={{ color: claimStatus.startsWith("✅") ? "green" : claimStatus.startsWith("❌") ? "red" : undefined }}>{claimStatus}</p>
+        <p className="mt-2 min-h-[1.5em] text-center" style={{ color: claimStatus.startsWith("✅") ? "green" : claimStatus.startsWith("❌") ? "red" : undefined }}>{claimStatus}</p>
       </Modal>
       <Modal open={modal === "storyHelp"} onClose={() => setModal(null)}>
         <p>📣 Bitte teile meinen Beitrag in deiner Instagram-Story<br/><b>@dawidfaith</b>, damit du dein Upgrade erhältst.</p>
