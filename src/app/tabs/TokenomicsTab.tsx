@@ -66,12 +66,12 @@ export default function TokenomicsTab() {
           callContract(REWARD_TOKEN_ADDRESS, balanceOfSelector + CONTRACT_ADDRESS.slice(2).padStart(64, '0'))
         ]);
 
-        // Hex zu Number konvertieren
-        const totalStakedAmount = parseInt(totalStakedHex, 16);
-        const totalRewards = parseInt(totalRewardsHex, 16);
-        const stage = parseInt(currentStageHex, 16);
-        const rewardRate = parseInt(rewardRateHex, 16);
-        const balance = parseInt(balanceHex, 16);
+        // Hex zu Number konvertieren (mit besserer Error-Behandlung)
+        const totalStakedAmount = totalStakedHex ? parseInt(totalStakedHex, 16) : 0;
+        const totalRewards = totalRewardsHex ? parseInt(totalRewardsHex, 16) : 0;
+        const stage = currentStageHex ? parseInt(currentStageHex, 16) : 1;
+        const rewardRate = rewardRateHex ? parseInt(rewardRateHex, 16) : 1000;
+        const balance = balanceHex ? parseInt(balanceHex, 16) : 0;
 
         // Daten setzen (D.FAITH hat 2 Decimals)
         setTotalStaked(totalStakedAmount); // D.INVEST hat 0 Decimals
@@ -79,6 +79,14 @@ export default function TokenomicsTab() {
         setCurrentStage(stage);
         setCurrentRewardRate(rewardRate / 100); // Rate in Prozent
         setTotalRewardsDistributed(Math.floor(totalRewards / 100)); // D.FAITH: 2 Decimals
+
+        console.log("Contract Data:", {
+          totalStaked: totalStakedAmount,
+          totalRewards: totalRewards,
+          stage: stage,
+          rewardRate: rewardRate / 100,
+          balance: Math.floor(balance / 100)
+        });
 
         setLoading(false);
       } catch (error) {
@@ -373,22 +381,47 @@ export default function TokenomicsTab() {
                   {loading ? (
                     <div className="animate-pulse bg-zinc-600 h-5 w-20 rounded"></div>
                   ) : (
-                    `${totalRewardsDistributed?.toLocaleString() || "..."} D.FAITH`
+                    `${(totalRewardsDistributed !== null && !isNaN(totalRewardsDistributed)) ? totalRewardsDistributed.toLocaleString() : "0"} D.FAITH`
                   )}
                 </div>
               </div>
               
               <div className="bg-zinc-800/40 rounded-lg p-3">
-                <span className="text-zinc-400 block mb-1">Aktuelle APR:</span>
-                <div className="text-purple-400 font-bold text-lg flex items-center gap-2">
+                <span className="text-zinc-400 block mb-1">Reward Stage:</span>
+                <div className="text-purple-400 font-bold text-lg">
                   {loading ? (
-                    <div className="animate-pulse bg-zinc-600 h-5 w-16 rounded"></div>
+                    <div className="animate-pulse bg-zinc-600 h-5 w-12 rounded"></div>
                   ) : (
-                    <>
-                      <span>{currentRewardRate || "..."}% pro Woche</span>
-                      <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">Stage {currentStage || 1}</span>
-                    </>
+                    <span className="text-xs bg-purple-500/20 text-purple-400 px-3 py-2 rounded-lg font-bold text-base">
+                      Stage {currentStage || 1}/6
+                    </span>
                   )}
+                </div>
+              </div>
+            </div>
+            
+            {/* APR Info als separate Sektion */}
+            <div className="mt-4 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg p-4 border border-purple-500/30">
+              <div className="flex justify-between items-center">
+                <div>
+                  <span className="text-zinc-400 text-sm">Aktuelle Reward Rate:</span>
+                  <div className="text-purple-400 font-bold text-xl">
+                    {loading ? (
+                      <div className="animate-pulse bg-zinc-600 h-6 w-20 rounded"></div>
+                    ) : (
+                      `${(currentRewardRate !== null && !isNaN(currentRewardRate)) ? currentRewardRate.toFixed(2) : "10.00"}% pro Woche`
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-zinc-400 text-sm">Entspricht jährlich:</span>
+                  <div className="text-amber-400 font-bold text-lg">
+                    {loading ? (
+                      <div className="animate-pulse bg-zinc-600 h-5 w-16 rounded"></div>
+                    ) : (
+                      `${(currentRewardRate !== null && !isNaN(currentRewardRate)) ? (currentRewardRate * 52).toFixed(0) : "520"}% APR`
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
