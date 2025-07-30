@@ -418,73 +418,77 @@ export default function TokenomicsTab() {
           </div>
 
           <div className="bg-purple-500/10 rounded-lg p-4 border border-purple-500/20">
-            <h4 className="font-semibold text-purple-300 mb-3">📈 Live Contract Statistiken</h4>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="bg-zinc-800/40 rounded-lg p-3">
-                <span className="text-zinc-400 block mb-1">Verfügbare Rewards:</span>
-                <div className="text-green-400 font-bold text-lg">
+            <h4 className="font-semibold text-purple-300 mb-4">📈 Live Contract Statistiken</h4>
+            
+            {/* Kompakte 2x2 Grid */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400 text-xs">💰 Rewards Pool</span>
                   {loading ? (
-                    <div className="animate-pulse bg-zinc-600 h-5 w-24 rounded"></div>
+                    <div className="animate-pulse bg-zinc-600 h-4 w-16 rounded"></div>
                   ) : (
-                    `${contractBalance?.toFixed(2) || "0.00"} D.FAITH`
+                    <span className="text-green-400 font-bold text-sm">{contractBalance?.toFixed(2) || "0.00"}</span>
                   )}
                 </div>
               </div>
               
-              <div className="bg-zinc-800/40 rounded-lg p-3">
-                <span className="text-zinc-400 block mb-1">Gestakte D.INVEST:</span>
-                <div className="text-blue-400 font-bold text-lg">
+              <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400 text-xs">🔒 Gestaked</span>
                   {loading ? (
-                    <div className="animate-pulse bg-zinc-600 h-5 w-16 rounded"></div>
+                    <div className="animate-pulse bg-zinc-600 h-4 w-12 rounded"></div>
                   ) : (
-                    `${totalStaked?.toLocaleString() || "..."}`
+                    <span className="text-blue-400 font-bold text-sm">{totalStaked?.toLocaleString() || "0"}</span>
                   )}
                 </div>
               </div>
               
-              <div className="bg-zinc-800/40 rounded-lg p-3">
-                <span className="text-zinc-400 block mb-1">Verteilte Rewards:</span>
-                <div className="text-yellow-400 font-bold text-lg">
+              <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400 text-xs">📤 Verteilt</span>
                   {loading ? (
-                    <div className="animate-pulse bg-zinc-600 h-5 w-20 rounded"></div>
+                    <div className="animate-pulse bg-zinc-600 h-4 w-16 rounded"></div>
                   ) : (
-                    `${(totalRewardsDistributed !== null && !isNaN(totalRewardsDistributed)) ? totalRewardsDistributed.toFixed(2) : "0.00"} D.FAITH`
+                    <span className="text-yellow-400 font-bold text-sm">{totalRewardsDistributed?.toFixed(2) || "0.00"}</span>
                   )}
                 </div>
               </div>
               
-              <div className="bg-zinc-800/40 rounded-lg p-3">
-                <span className="text-zinc-400 block mb-1">Reward Stage:</span>
-                <div className="text-purple-400 font-bold text-lg">
+              <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400 text-xs">⚡ Stage</span>
                   {loading ? (
-                    <div className="animate-pulse bg-zinc-600 h-5 w-12 rounded"></div>
+                    <div className="animate-pulse bg-zinc-600 h-4 w-8 rounded"></div>
                   ) : (
-                    <span className="text-xs bg-purple-500/20 text-purple-400 px-3 py-2 rounded-lg font-bold text-base">
-                      Stage {currentStage || 1}/6
-                    </span>
+                    <span className="text-purple-400 font-bold text-sm">{currentStage || 1}/6</span>
                   )}
                 </div>
               </div>
             </div>
             
-            {/* Reward Progression Bar */}
-            <div className="mt-4">
-              <div className="flex justify-between text-xs text-zinc-500 mb-2">
-                <span>Reward Progression (Stage {currentStage || 1})</span>
-                <span>{totalRewardsDistributed || 0} / {currentStage === 1 ? "10,000" : currentStage === 2 ? "20,000" : currentStage === 3 ? "40,000" : currentStage === 4 ? "60,000" : currentStage === 5 ? "80,000" : "∞"} D.FAITH</span>
+            {/* Kompakte Progress Bar */}
+            <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-zinc-400 text-xs font-medium">Stage {currentStage || 1} Progress</span>
+                <span className="text-zinc-500 text-xs">
+                  {totalRewardsDistributed?.toFixed(0) || 0} / {currentStage === 1 ? "10K" : currentStage === 2 ? "20K" : currentStage === 3 ? "40K" : currentStage === 4 ? "60K" : currentStage === 5 ? "80K" : "∞"}
+                </span>
               </div>
-              <div className="w-full bg-zinc-700 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-zinc-700 rounded-full h-1.5 overflow-hidden">
                 <div 
-                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-full transition-all duration-500"
+                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-full transition-all duration-700 ease-out"
                   style={{ 
                     width: `${totalRewardsDistributed && currentStage ? 
                       Math.min((totalRewardsDistributed / (currentStage === 1 ? 10000 : currentStage === 2 ? 20000 : currentStage === 3 ? 40000 : currentStage === 4 ? 60000 : currentStage === 5 ? 80000 : 100000)) * 100, 100) : 0}%` 
                   }}
                 ></div>
               </div>
-              <div className="text-xs text-zinc-500 mt-1 text-center">
-                Live Blockchain Daten • Aktualisiert alle 30 Sekunden
-              </div>
+            </div>
+            
+            <div className="text-xs text-zinc-500 mt-3 text-center flex items-center justify-center gap-1">
+              <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+              Live • Aktualisiert alle 30s
             </div>
           </div>
         </div>
