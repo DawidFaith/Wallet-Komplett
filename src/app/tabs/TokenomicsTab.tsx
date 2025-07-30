@@ -110,17 +110,17 @@ export default function TokenomicsTab() {
 
         // Daten setzen (D.FAITH hat 2 Decimals)
         setTotalStaked(totalStakedAmount); // D.INVEST hat 0 Decimals
-        setContractBalance(Math.floor(balance / 100)); // D.FAITH: 2 Decimals -> ganze Token
+        setContractBalance(balance / 100); // D.FAITH: 2 Decimals mit Dezimalstellen
         setCurrentStage(stage);
         setCurrentRewardRate(rewardRate / 100); // Rate in Prozent
-        setTotalRewardsDistributed(Math.floor(totalRewards / 100)); // D.FAITH: 2 Decimals
+        setTotalRewardsDistributed(totalRewards / 100); // D.FAITH: 2 Decimals mit Dezimalstellen
 
         console.log("Contract Data:", {
           totalStaked: totalStakedAmount,
           totalRewards: totalRewards,
           stage: stage,
           rewardRate: rewardRate / 100,
-          balance: Math.floor(balance / 100)
+          balance: balance / 100
         });
 
         setLoading(false);
@@ -255,7 +255,7 @@ export default function TokenomicsTab() {
                     <div className="animate-pulse bg-zinc-600 h-4 w-16 rounded"></div>
                   ) : (
                     <>
-                      <div className="text-blue-400 font-bold">{contractBalance?.toLocaleString() || "..."}</div>
+                      <div className="text-blue-400 font-bold">{contractBalance?.toFixed(2) || "0.00"}</div>
                       <div className="text-xs text-zinc-500">{contractBalance ? `${((contractBalance / totalSupply) * 100).toFixed(1)}%` : ""}</div>
                     </>
                   )}
@@ -417,7 +417,7 @@ export default function TokenomicsTab() {
                   {loading ? (
                     <div className="animate-pulse bg-zinc-600 h-5 w-24 rounded"></div>
                   ) : (
-                    `${contractBalance?.toLocaleString() || "..."} D.FAITH`
+                    `${contractBalance?.toFixed(2) || "0.00"} D.FAITH`
                   )}
                 </div>
               </div>
@@ -439,7 +439,7 @@ export default function TokenomicsTab() {
                   {loading ? (
                     <div className="animate-pulse bg-zinc-600 h-5 w-20 rounded"></div>
                   ) : (
-                    `${(totalRewardsDistributed !== null && !isNaN(totalRewardsDistributed)) ? totalRewardsDistributed.toLocaleString() : "0"} D.FAITH`
+                    `${(totalRewardsDistributed !== null && !isNaN(totalRewardsDistributed)) ? totalRewardsDistributed.toFixed(2) : "0.00"} D.FAITH`
                   )}
                 </div>
               </div>
@@ -454,32 +454,6 @@ export default function TokenomicsTab() {
                       Stage {currentStage || 1}/6
                     </span>
                   )}
-                </div>
-              </div>
-            </div>
-            
-            {/* APR Info als separate Sektion */}
-            <div className="mt-4 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg p-4 border border-purple-500/30">
-              <div className="flex justify-between items-center">
-                <div>
-                  <span className="text-zinc-400 text-sm">Aktuelle Reward Rate:</span>
-                  <div className="text-purple-400 font-bold text-xl">
-                    {loading ? (
-                      <div className="animate-pulse bg-zinc-600 h-6 w-20 rounded"></div>
-                    ) : (
-                      `${(currentRewardRate !== null && !isNaN(currentRewardRate)) ? currentRewardRate.toFixed(2) : "10.00"}% pro Woche`
-                    )}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="text-zinc-400 text-sm">Entspricht jährlich:</span>
-                  <div className="text-amber-400 font-bold text-lg">
-                    {loading ? (
-                      <div className="animate-pulse bg-zinc-600 h-5 w-16 rounded"></div>
-                    ) : (
-                      `${(currentRewardRate !== null && !isNaN(currentRewardRate)) ? (currentRewardRate * 52).toFixed(0) : "520"}% APR`
-                    )}
-                  </div>
                 </div>
               </div>
             </div>
