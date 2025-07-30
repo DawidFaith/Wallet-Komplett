@@ -31,8 +31,15 @@ function Modal({ open, onClose, children }: { open: boolean; onClose: () => void
   return (
     <div className="fixed z-[1000] left-0 top-0 w-full h-full bg-black/60 flex justify-center items-center">
       <div className="bg-white text-black font-bold p-6 rounded-2xl max-w-sm w-full text-center text-base relative">
+        <button
+          className="absolute top-3 right-3 text-zinc-500 hover:text-zinc-900 text-xl font-bold focus:outline-none"
+          onClick={onClose}
+          aria-label="Schließen"
+          style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+        >
+          ×
+        </button>
         {children}
-        <button className="modal-btn mt-4" onClick={onClose} style={{ color: "black" }}>❌ Schließen</button>
       </div>
     </div>
   );
