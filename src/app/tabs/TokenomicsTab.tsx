@@ -43,30 +43,42 @@ export default function TokenomicsTab() {
           address: REWARD_TOKEN_ADDRESS,
         });
 
-        // Preis-Daten von DexScreener abrufen (wie im WalletTab)
+        // Preis-Daten mit Paraswap API abrufen
         const fetchPriceData = async () => {
           try {
-            // Hole ETH-Preis von CoinGecko
-            const ethResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
-            const ethData = await ethResponse.json();
-            const ethUsd = ethData['ethereum']?.usd;
-
-            if (ethUsd) {
-              // Hole D.FAITH/ETH Rate von OpenOcean
-              const dfaithResponse = await fetch(`https://open-api.openocean.finance/v3/base/quote?inTokenAddress=0x69eFD833288605f320d77eB2aB99DDE62919BbC1&outTokenAddress=0x4200000000000000000000000000000000000006&amount=${Math.pow(10, DFAITH_DECIMALS)}&gasPrice=5`);
-              const dfaithData = await dfaithResponse.json();
+            // Hole EUR-Preis von CoinGecko für USDC (als EUR-Referenz)
+            const eurResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=usd-coin&vs_currencies=eur');
+            const eurData = await eurResponse.json();
+            const usdcEur = eurData['usd-coin']?.eur || 0.92; // Fallback zu ~0.92 EUR pro USDC
+            
+            // Hole D.FAITH/USDC Rate von Paraswap (1 D.FAITH = ? USDC)
+            const paraswapResponse = await fetch(`https://apiv5.paraswap.io/prices/?srcToken=0x69eFD833288605f320d77eB2aB99DDE62919BbC1&destToken=0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913&amount=${Math.pow(10, DFAITH_DECIMALS)}&srcDecimals=${DFAITH_DECIMALS}&destDecimals=6&side=SELL&network=8453`);
+            const paraswapData = await paraswapResponse.json();
+            
+            console.log('Paraswap Response:', paraswapData);
+            
+            if (paraswapData.priceRoute?.destAmount) {
+              // Konvertierung: destAmount ist in USDC (6 Decimals)
+              const usdcPerDfaith = Number(paraswapData.priceRoute.destAmount) / Math.pow(10, 6);
+              const dfaithPriceEur = usdcPerDfaith * usdcEur;
               
-              if (dfaithData.code === 200 && dfaithData.data?.outAmount) {
-                const ethPerDfaith = Number(dfaithData.data.outAmount) / Math.pow(10, 18);
-                const dfaithPriceUsd = ethPerDfaith * ethUsd;
-                
-                console.log('D.FAITH Preis berechnet:', { ethUsd, ethPerDfaith, dfaithPriceUsd });
-                
-                setPriceData({
-                  price: dfaithPriceUsd,
-                  priceChange24h: null // TODO: 24h Change implementieren
-                });
-              }
+              console.log('D.FAITH Preis berechnet (Paraswap):', { 
+                usdcPerDfaith, 
+                usdcEur, 
+                dfaithPriceEur,
+                destAmount: paraswapData.priceRoute.destAmount 
+              });
+              
+              setPriceData({
+                price: dfaithPriceEur,
+                priceChange24h: null // TODO: 24h Change implementieren
+              });
+            } else {
+              console.log('Paraswap: Keine priceRoute.destAmount gefunden');
+              setPriceData({
+                price: null,
+                priceChange24h: null
+              });
             }
           } catch (error) {
             console.error("Error fetching price data:", error);
@@ -210,7 +222,7 @@ export default function TokenomicsTab() {
                   ) : (
                     <>
                       <span className="text-green-400 font-semibold">
-                        ${priceData.price && !isNaN(priceData.price) ? priceData.price.toFixed(6) : "Lädt..."}
+                        €{priceData.price && !isNaN(priceData.price) ? priceData.price.toFixed(4) : "Lädt..."}
                       </span>
                       {priceData.priceChange24h !== null && !isNaN(priceData.priceChange24h) && (
                         <span className={`text-xs px-2 py-1 rounded font-medium ${
