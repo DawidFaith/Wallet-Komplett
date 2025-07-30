@@ -1,5 +1,4 @@
 import { useState } from "react";
-import StakingContractDetails from "./StakingContractDetails";
 
 export default function TokenomicsTab() {
   // Nur DexScreener-Chart bleibt erhalten
@@ -67,24 +66,15 @@ export default function TokenomicsTab() {
                 <div className="text-blue-400 font-mono text-xs break-all">0x69eF...BbC1</div>
                 <a href="https://basescan.org/address/0x69eFD833288605f320d77eB2aB99DDE62919BbC1#code" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs">Vollständige Adresse</a>
               </div>
+              <div>
+                <span className="text-zinc-400">Verfügbare Rewards:</span>
+                <div className="text-green-400 font-semibold">15.000 D.FAITH</div>
+              </div>
+              <div>
+                <span className="text-zinc-400">Contract Status:</span>
+                <div className="text-green-400 font-semibold">Live & Aktiv</div>
+              </div>
             </div>
-          </div>
-          <div className="bg-zinc-800/50 rounded-lg p-4">
-            <h4 className="font-semibold text-white mb-3">💰 Nutzen</h4>
-            <ul className="text-sm text-zinc-300 space-y-1">
-              <li className="flex items-start gap-2">
-                <span className="text-green-400 mt-1">✓</span>
-                <span>Handel auf der Base Chain</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-green-400 mt-1">✓</span>
-                <span>Exklusiver Merch-Kauf</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-green-400 mt-1">✓</span>
-                <span>Social Media Boost & Community</span>
-              </li>
-            </ul>
           </div>
         </div>
       </div>
@@ -129,28 +119,8 @@ export default function TokenomicsTab() {
               </div>
             </div>
           </div>
-          <div className="bg-zinc-800/50 rounded-lg p-4">
-            <h4 className="font-semibold text-white mb-3">🎯 Vorteile</h4>
-            <ul className="text-sm text-zinc-300 space-y-1">
-              <li className="flex items-start gap-2">
-                <span className="text-green-400 mt-1">✓</span>
-                <span>D.FAITH-Staking für Rewards</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-green-400 mt-1">✓</span>
-                <span>Zugang zu 80% D.FAITH Supply</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-green-400 mt-1">✓</span>
-                <span>Rewards ab 0.01 D.FAITH jederzeit</span>
-              </li>
-            </ul>
-          </div>
         </div>
       </div>
-
-      {/* Vertragsdetails Staking Smart Contract (Live) */}
-      <StakingContractDetails />
     </div>
   );
 }
