@@ -404,25 +404,25 @@ export default function InstagramTab() {
             <div className="check-item flex justify-between items-center p-1 rounded-lg hover:bg-white/40 transition-all duration-200 text-sm sm:text-base font-medium">
               <span className="flex items-center gap-2">❤️ Like</span>
               <span className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all duration-200 ${checkLike ? "text-green-600 bg-green-50" : "text-red-500 bg-red-50"}`}>
-                {checkLike ? "✅" : "❌"} +10 EXP
+                {checkLike ? "✅ +10 EXP" : "❌ +10 EXP"}
               </span>
             </div>
             <div className="check-item flex justify-between items-center p-1 rounded-lg hover:bg-white/40 transition-all duration-200 text-sm sm:text-base font-medium">
               <span className="flex items-center gap-2">💬 Kommentar</span>
               <span className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all duration-200 ${checkComment ? "text-green-600 bg-green-50" : "text-red-500 bg-red-50"}`}>
-                {checkComment ? "✅" : "❌"} +10 EXP
+                {checkComment ? "✅ +10 EXP" : "❌ +10 EXP"}
               </span>
             </div>
             <div className="check-item flex justify-between items-center p-1 rounded-lg hover:bg-white/40 transition-all duration-200 text-sm sm:text-base font-medium">
               <span className="flex items-center gap-2">📣 Story</span>
               <span className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all duration-200 ${checkStory ? "text-green-600 bg-green-50" : "text-red-500 bg-red-50"}`}>
-                {checkStory ? "✅" : "❌"} +20 EXP
+                {checkStory ? "✅ +20 EXP" : "❌ +20 EXP"}
               </span>
             </div>
             <div className="check-item flex justify-between items-center p-1 rounded-lg hover:bg-white/40 transition-all duration-200 text-sm sm:text-base font-medium">
               <span className="flex items-center gap-2">💾 Save</span>
               <span className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all duration-200 ${checkSave ? "text-green-600 bg-green-50" : "text-red-500 bg-red-50"}`}>
-                {checkSave ? "✅" : "❌"} +10 EXP
+                {checkSave ? "✅ +10 EXP" : "❌ +10 EXP"}
               </span>
             </div>
           </div>
