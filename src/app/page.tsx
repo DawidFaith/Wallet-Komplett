@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Navigation from "./Navigation";
 import WalletTab from "./tabs/WalletTab";
 import TokenomicsTab from "./tabs/TokenomicsTab";
@@ -13,6 +14,15 @@ import FacebookTab from "./tabs/FacebookTab";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("wallet");
+  const searchParams = useSearchParams();
+
+  // URL-Parameter für Tab laden
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab");
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
 
   return (
     <main className="min-h-screen flex flex-col bg-zinc-950">

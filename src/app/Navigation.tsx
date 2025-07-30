@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import {
   FaWallet,
   FaChartBar,
@@ -28,6 +29,22 @@ const socialIcons = {
 export default function Navigation({ activeTab, setActiveTab }: NavigationProps) {
   const [open, setOpen] = useState(false);
   const [activeSocial, setActiveSocial] = useState<"instagram" | "tiktok" | "facebook">("instagram");
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Funktionen für Navigation
+  const navigateToTab = (tab: string) => {
+    if (pathname === "/wallet" && tab !== "wallet") {
+      // Wenn wir auf der Wallet-Seite sind und zu einem anderen Tab wechseln wollen
+      router.push(`/?tab=${tab}`);
+    } else if (pathname === "/" || pathname === "/wallet") {
+      // Auf der Hauptseite oder Wallet-Seite
+      setActiveTab(tab);
+    } else {
+      // Von anderen Seiten zur Hauptseite mit Tab
+      router.push(`/?tab=${tab}`);
+    }
+  };
 
   return (
     <nav className="fixed top-0 left-0 w-full bg-zinc-900 border-b border-zinc-800 z-50">
@@ -36,7 +53,7 @@ export default function Navigation({ activeTab, setActiveTab }: NavigationProps)
         <li>
           <button
             title="Tokenomics"
-            onClick={() => setActiveTab("tokenomics")}
+            onClick={() => navigateToTab("tokenomics")}
             className="flex items-center"
           >
             <FaChartBar
@@ -51,7 +68,7 @@ export default function Navigation({ activeTab, setActiveTab }: NavigationProps)
         <li>
           <button
             title="Wallet"
-            onClick={() => setActiveTab("wallet")}
+            onClick={() => navigateToTab("wallet")}
             className="flex items-center"
           >
             <FaWallet
@@ -85,7 +102,7 @@ export default function Navigation({ activeTab, setActiveTab }: NavigationProps)
                 onClick={() => {
                   setOpen(false);
                   setActiveSocial("instagram");
-                  setActiveTab("instagram");
+                  navigateToTab("instagram");
                 }}
                 className="flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200 border-b border-zinc-700"
               >
@@ -95,7 +112,7 @@ export default function Navigation({ activeTab, setActiveTab }: NavigationProps)
               <button
                 onClick={() => {
                   setActiveSocial("tiktok");
-                  setActiveTab("tiktok");
+                  navigateToTab("tiktok");
                   setOpen(false);
                 }}
                 className="flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200 border-b border-zinc-700"
@@ -106,7 +123,7 @@ export default function Navigation({ activeTab, setActiveTab }: NavigationProps)
               <button
                 onClick={() => {
                   setActiveSocial("facebook");
-                  setActiveTab("facebook");
+                  navigateToTab("facebook");
                   setOpen(false);
                 }}
                 className="flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200"
@@ -121,7 +138,7 @@ export default function Navigation({ activeTab, setActiveTab }: NavigationProps)
         <li>
           <button
             title="Merch"
-            onClick={() => setActiveTab("merch")}
+            onClick={() => navigateToTab("merch")}
             className="flex items-center"
           >
             <FaTshirt
@@ -136,7 +153,7 @@ export default function Navigation({ activeTab, setActiveTab }: NavigationProps)
         <li>
           <button
             title="Stream"
-            onClick={() => setActiveTab("stream")}
+            onClick={() => navigateToTab("stream")}
             className="flex items-center"
           >
             <SiSpotify
@@ -151,7 +168,7 @@ export default function Navigation({ activeTab, setActiveTab }: NavigationProps)
         <li>
           <button
             title="Live"
-            onClick={() => setActiveTab("live")}
+            onClick={() => navigateToTab("live")}
             className="flex items-center"
           >
             <FaMusic
