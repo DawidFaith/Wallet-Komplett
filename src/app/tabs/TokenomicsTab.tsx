@@ -36,17 +36,31 @@ export default function TokenomicsTab() {
           address: REWARD_TOKEN_ADDRESS,
         });
 
-        // Contract Info abrufen
-        const contractInfo = await readContract({
+        // Total Staked abrufen
+        const totalStakedAmount = await readContract({
           contract: stakingContract,
-          method: "function getContractInfo() view returns (uint256 totalStakedTokens, uint256 rewardBalance, uint8 currentStage, uint256 currentRate)",
+          method: "function totalStaked() view returns (uint256)",
           params: []
         });
 
-        // Total Rewards Distributed
+        // Total Rewards Distributed abrufen
         const totalRewards = await readContract({
           contract: stakingContract,
           method: "function totalRewardsDistributed() view returns (uint256)",
+          params: []
+        });
+
+        // Current Stage abrufen
+        const stage = await readContract({
+          contract: stakingContract,
+          method: "function getCurrentStage() view returns (uint8)",
+          params: []
+        });
+
+        // Current Reward Rate abrufen
+        const rewardRate = await readContract({
+          contract: stakingContract,
+          method: "function getCurrentRewardRate() view returns (uint256)",
           params: []
         });
 
@@ -58,10 +72,10 @@ export default function TokenomicsTab() {
         });
 
         // Daten konvertieren (D.FAITH hat 2 Decimals)
-        setTotalStaked(Number(contractInfo[0])); // D.INVEST hat 0 Decimals
+        setTotalStaked(Number(totalStakedAmount)); // D.INVEST hat 0 Decimals
         setContractBalance(Math.floor(Number(balance) / 100)); // D.FAITH: 2 Decimals -> ganze Token
-        setCurrentStage(Number(contractInfo[2]));
-        setCurrentRewardRate(Number(contractInfo[3]) / 100); // Rate in Prozent
+        setCurrentStage(Number(stage));
+        setCurrentRewardRate(Number(rewardRate) / 100); // Rate in Prozent
         setTotalRewardsDistributed(Math.floor(Number(totalRewards) / 100)); // D.FAITH: 2 Decimals
 
         setLoading(false);
@@ -291,7 +305,7 @@ export default function TokenomicsTab() {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="text-zinc-400">Contract Name:</span>
-                <div className="text-white font-semibold">WeeklyTokenStaking</div>
+                <div className="text-white font-semibold">Staking Contract</div>
               </div>
               <div>
                 <span className="text-zinc-400">Netzwerk:</span>
@@ -370,9 +384,7 @@ export default function TokenomicsTab() {
                   ) : (
                     <>
                       <span>{currentRewardRate || "..."}% pro Woche</span>
-                      {currentStage === 1 && <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">Stage {currentStage}</span>}
-                      {currentStage === 2 && <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">Stage {currentStage}</span>}
-                      {currentStage && currentStage > 2 && <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">Stage {currentStage}</span>}
+                      <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">Stage {currentStage || 1}</span>
                     </>
                   )}
                 </div>
