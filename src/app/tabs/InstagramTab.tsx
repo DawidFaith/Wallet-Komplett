@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 // Hilfsfunktionen für Level/EXP
 const levelThresholds = [39, 119, 239, 399, 599, 839, 1119, 1439, 1799, 2199, 2639, 3119, 3639, 4199, 4799, 5439, 6119, 6839, 7599, 8399, 9239, 10119, 11039, 11999, 12999, 14039, 15119, 16239, 17399, 18599, 19839, 21119, 22439, 23799, 25199, 26639, 28119, 29639, 31199, 32799, 34439, 36119, 37839, 39599, 41399, 43239, 45119, 47039, 48999, 99999999];
@@ -46,6 +47,7 @@ function Modal({ open, onClose, children }: { open: boolean; onClose: () => void
 }
 
 export default function InstagramTab() {
+  const router = useRouter();
   // State für Userdaten
   const [username, setUsername] = useState("@User");
   const [profileImage, setProfileImage] = useState("");
@@ -219,7 +221,12 @@ export default function InstagramTab() {
         {!wallet || !wallet.startsWith("0x") ? (
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-3 text-zinc-800 text-base flex flex-col items-center animate-pulse">
             <span className="font-semibold mb-2 text-center">Du hast noch keine Wallet hinterlegt.<br/>Erstelle jetzt deine Wallet, um deine Belohnung zu erhalten!</span>
-            <a href="/wallet" className="w-full mt-2 mb-1 py-2 px-4 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400 text-zinc-900 shadow-lg hover:from-yellow-500 hover:to-orange-500 active:from-yellow-600 active:to-orange-600 transition text-base border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-center block">🚀 Wallet jetzt anlegen</a>
+            <button
+              className="w-full mt-2 mb-1 py-2 px-4 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400 text-zinc-900 shadow-lg hover:from-yellow-500 hover:to-orange-500 active:from-yellow-600 active:to-orange-600 transition text-base border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-center block"
+              onClick={() => router.push("/wallet")}
+            >
+              🚀 Wallet jetzt anlegen
+            </button>
             <span className="text-xs text-zinc-500 mt-2">Du findest den Wallet Tab auch oben im Menü.</span>
           </div>
         ) : null}
