@@ -263,12 +263,22 @@ export default function InstagramTab() {
             <path d="M3 21l2-2 7-7V7.83l2-2V11l7 7 2 2-1.41 1.41L12 13.41l-7.59 7.59L3 21z" fill="url(#gold-gradient-modal)"/>
             <rect x="11" y="2" width="2" height="6" rx="1" fill="url(#gold-gradient-modal)"/>
           </svg>
-          <p className="text-lg font-bold text-zinc-900">Account Upgrade</p>
+          <p className="text-lg font-bold text-zinc-900">Like & Save Test</p>
         </div>
         <div className="flex flex-col gap-4">
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-zinc-800 text-base flex flex-col items-center">
             <span className="font-semibold mb-1">1️⃣ Entferne alle Likes und Saves von meinem Beitrag.</span>
-            <button className="modal-btn w-full py-2 rounded-xl font-semibold bg-zinc-900/90 text-white shadow hover:bg-zinc-900/95 active:bg-zinc-800 transition text-base flex items-center justify-center gap-2 border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-300 mt-2" onClick={() => setModal("confirmCheckInitial")}>✅ Check aktuelle Werte</button>
+            <button 
+              className={`modal-btn w-full py-2 rounded-xl font-semibold shadow transition text-base flex items-center justify-center gap-2 border focus:outline-none focus:ring-2 mt-2 ${
+                likeStart !== null && saveStart !== null 
+                  ? "bg-gray-400 text-gray-600 border-gray-300 cursor-not-allowed opacity-60" 
+                  : "bg-zinc-900/90 text-white border-zinc-200 hover:bg-zinc-900/95 active:bg-zinc-800 focus:ring-zinc-300"
+              }`}
+              onClick={() => setModal("confirmCheckInitial")}
+              disabled={likeStart !== null && saveStart !== null}
+            >
+              {likeStart !== null && saveStart !== null ? "✅ Werte bereits erfasst" : "✅ Check aktuelle Werte"}
+            </button>
             {likeStart !== null && saveStart !== null && (
               <div className="flex gap-4 mt-2">
                 <div className="bg-white/80 border border-zinc-200 rounded-lg px-3 py-1 text-zinc-900 text-sm">Likes: <b>{likeStart}</b></div>
@@ -343,9 +353,6 @@ export default function InstagramTab() {
         <div className="level-box bg-gradient-to-br from-white/80 to-white/60 backdrop-blur-sm rounded-2xl p-3 sm:p-4 mb-3 w-full border border-white/40 shadow-lg hover:shadow-xl transition-all duration-300 group">
           <div className="flex justify-between items-center mb-2">
             <div className="level font-bold text-base sm:text-lg text-zinc-900 tracking-tight flex items-center gap-2 group-hover:text-zinc-800 transition-colors duration-200">
-              <div className="w-7 h-7 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110" style={{animation: level > 10 ? 'glow 2s ease-in-out infinite' : 'none'}}>
-                {level}
-              </div>
               Level {level}
             </div>
             <div className="exp text-xs sm:text-sm font-semibold text-zinc-600 bg-white/60 px-2 py-1 rounded-full border border-zinc-200 hover:bg-white/80 transition-all duration-200">{exp.toLocaleString()} / {maxExp.toLocaleString()}</div>
@@ -371,11 +378,6 @@ export default function InstagramTab() {
               <div className="progress-label absolute w-full h-full flex items-center justify-center text-xs font-bold text-zinc-800 drop-shadow-sm" style={{zIndex:3, letterSpacing:'0.01em'}}>
                 {currentLevelExp.toLocaleString()} / {levelRange.toLocaleString()} EXP
               </div>
-            </div>
-            <div className="flex justify-between items-center mt-1 text-[10px] text-zinc-500">
-              <span className="transition-colors duration-200 hover:text-zinc-700">0</span>
-              <span className="font-semibold text-zinc-700 bg-white/50 px-1.5 py-0.5 rounded-full transition-all duration-200 hover:bg-white/70">{progressPercent}%</span>
-              <span className="transition-colors duration-200 hover:text-zinc-700">{levelRange.toLocaleString()}</span>
             </div>
           </div>
           <div className="mining-power bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-2 text-center hover:from-yellow-100 hover:to-orange-100 transition-all duration-300 hover:shadow-md" style={{animation: miningPower > 0 ? 'float 3s ease-in-out infinite' : 'none'}}>
