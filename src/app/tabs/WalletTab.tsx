@@ -77,11 +77,13 @@ export default function WalletTab() {
   const [dfaithEurValue, setDfaithEurValue] = useState<string>("0.00");
   const [dfaithPriceEur, setDfaithPriceEur] = useState<number>(0);
   const [polPriceEur, setPolPriceEur] = useState<number>(0);
+  const [priceChange24h, setPriceChange24h] = useState<number | null>(null);
   const [lastKnownPrices, setLastKnownPrices] = useState<{
     dfaith?: number;
     dfaithEur?: number;
     ethEur?: number;
     timestamp?: number;
+    dfaithEur24h?: number; // Für 24h Vergleich
   }>({});
   const [priceError, setPriceError] = useState<string | null>(null);
   const [pricesLoaded, setPricesLoaded] = useState<boolean>(false);
@@ -457,6 +459,12 @@ export default function WalletTab() {
               setLastKnownPrices(parsed);
               if (parsed.dfaithEur) setDfaithPriceEur(parsed.dfaithEur);
               if (parsed.ethEur) setPolPriceEur(parsed.ethEur); // Rename internal state later
+              
+              // Berechne 24h Preisänderung wenn 24h-Daten vorhanden sind
+              if (parsed.dfaithEur && parsed.dfaithEur24h) {
+                const change = ((parsed.dfaithEur - parsed.dfaithEur24h) / parsed.dfaithEur24h) * 100;
+                setPriceChange24h(change);
+              }
               return true;
             }
           }
@@ -630,12 +638,38 @@ export default function WalletTab() {
         }
       }
 
-      // Speichere erfolgreiche Preise (erweitert um ethPerDfaith)
+      // Speichere erfolgreiche Preise (erweitert um 24h Daten)
       if (dfaithPriceEur && ethEur && dfaithAmount) {
+        // Lade vorherigen Preis für 24h Vergleich
+        let dfaithEur24h: number | undefined;
+        try {
+          const stored = localStorage.getItem('dawid_faith_prices');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            const timeDiff = now - (parsed.timestamp || 0);
+            // Verwende als 24h-Referenz wenn die Daten zwischen 20-28 Stunden alt sind
+            if (timeDiff >= 20 * 60 * 60 * 1000 && timeDiff <= 28 * 60 * 60 * 1000) {
+              dfaithEur24h = parsed.dfaithEur;
+            } else if (parsed.dfaithEur24h) {
+              // Verwende bereits gespeicherten 24h-Wert
+              dfaithEur24h = parsed.dfaithEur24h;
+            }
+          }
+        } catch (e) {
+          console.log('Fehler beim Laden 24h Preisdaten:', e);
+        }
+
+        // Berechne Preisänderung
+        if (dfaithEur24h && dfaithEur24h > 0) {
+          const change = ((dfaithPriceEur - dfaithEur24h) / dfaithEur24h) * 100;
+          setPriceChange24h(change);
+        }
+
         const newPrices = {
           dfaith: dfaithAmount, // Jetzt ETH pro D.FAITH (konsistent mit SellTab)
           dfaithEur: dfaithPriceEur,
           ethEur: ethEur,
+          dfaithEur24h: dfaithEur24h || dfaithPriceEur, // Speichere 24h-Referenz
           timestamp: Date.now()
         };
         setLastKnownPrices(prev => ({ ...prev, ...newPrices }));
@@ -981,9 +1015,9 @@ export default function WalletTab() {
             
             {/* Rewards Status - nur wenn vorhanden */}
             {hasRewards && (
-              <div className="flex items-center gap-1.5 bg-amber-500/10 px-2 py-1 rounded-full border border-amber-500/20">
-                <div className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></div>
-                <span className="text-amber-400 font-medium">{availableRewards} D.FAITH</span>
+              <div className="flex items-center gap-1.5 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/20">
+                <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-green-400 font-medium">{availableRewards} D.FAITH</span>
               </div>
             )}
           </div>
@@ -1077,6 +1111,23 @@ export default function WalletTab() {
                parseFloat(dfaithEurValue) > 0 && (
                 <div className="text-xs text-zinc-500 mt-2">
                   ≈ {dfaithEurValue} EUR
+                </div>
+              )}
+              
+              {/* Preisanzeige mit 24h Änderung */}
+              {dfaithPriceEur > 0 && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs text-zinc-400">
+                    €{dfaithPriceEur.toFixed(4)} pro D.FAITH
+                  </span>
+                  {priceChange24h !== null && (
+                    <span className={`text-xs font-medium flex items-center gap-1 ${
+                      priceChange24h >= 0 ? 'text-green-400' : 'text-red-400'
+                    }`}>
+                      {priceChange24h >= 0 ? '↗' : '↘'}
+                      {Math.abs(priceChange24h).toFixed(2)}%
+                    </span>
+                  )}
                 </div>
               )}
             </div>
