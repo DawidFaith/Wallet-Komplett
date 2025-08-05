@@ -269,36 +269,44 @@ export default function FacebookTab() {
           />
           
           {/* Level Box */}
-          <div className="bg-black bg-opacity-20 rounded-2xl p-4 mb-4 border border-white/10">
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-3">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">Level {level}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">Stufe</div>
+          <div className="bg-black bg-opacity-20 rounded-2xl p-5 mb-4 border border-white/10">
+            {/* Level und EXP Header */}
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex-1">
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-3xl font-bold text-white">Level</span>
+                  <span className="text-4xl font-black bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">{level}</span>
                 </div>
+                <div className="text-xs text-gray-400 uppercase tracking-widest font-medium">Aktuelle Stufe</div>
               </div>
-              <div className="text-center">
-                <div className="text-lg font-bold text-white">{userData.expTotal}</div>
-                <div className="text-xs text-gray-400">/ {maxExp} EXP</div>
+              
+              <div className="text-right">
+                <div className="flex items-baseline gap-1 justify-end mb-1">
+                  <span className="text-2xl font-bold text-white">{userData.expTotal.toLocaleString()}</span>
+                  <span className="text-sm text-gray-400">/ {maxExp.toLocaleString()}</span>
+                </div>
+                <div className="text-xs text-gray-400 uppercase tracking-widest font-medium">Experience Points</div>
               </div>
+              
               <button 
                 onClick={() => setShowInfoModal(true)}
-                className="bg-white text-pink-600 w-7 h-7 rounded-full font-bold text-sm flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-200"
+                className="ml-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white w-8 h-8 rounded-full font-bold text-sm flex items-center justify-center shadow-lg hover:scale-110 transition-all duration-200 hover:shadow-pink-500/25"
               >
                 i
               </button>
             </div>
             
             {/* Progress Bar mit Animation */}
-            <div className="relative bg-gray-800 rounded-full h-4 overflow-hidden mb-4 shadow-inner">
+            <div className="relative bg-gray-800/60 rounded-full h-5 overflow-hidden mb-4 shadow-inner border border-gray-700/50">
               <div 
-                className="h-full bg-gradient-to-r from-blue-400 via-blue-500 to-purple-600 transition-all duration-1000 ease-out relative"
+                className="h-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 transition-all duration-1000 ease-out relative shadow-lg"
                 style={{ width: `${progressPercent}%` }}
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
               </div>
               <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white drop-shadow-lg">
-                {progressPercent}%
+                {progressPercent}% Fortschritt
               </div>
             </div>
             
