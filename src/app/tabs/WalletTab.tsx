@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { createThirdwebClient, getContract, readContract } from "thirdweb";
-import { useActiveAccount, useActiveWalletConnectionStatus, useSendTransaction } from "thirdweb/react";
+import { useActiveAccount, useActiveWalletConnectionStatus, useSendTransaction, useWalletBalance, useReadContract } from "thirdweb/react";
 import { ConnectButton } from "thirdweb/react";
 import { inAppWallet, createWallet } from "thirdweb/wallets";
 import { base } from "thirdweb/chains";
@@ -53,6 +53,13 @@ const client = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_TEMPLATE_CLIENT_ID!,
 });
 
+// Token Adressen (gleich wie im SendTab)
+const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
+const DFAITH_DECIMALS = 2;
+const DINVEST_TOKEN = "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb";
+const DINVEST_DECIMALS = 0;
+const ETH_DECIMALS = 18;
+
 const wallets = [
   inAppWallet({
     auth: {
@@ -68,9 +75,55 @@ export default function WalletTab() {
   const status = useActiveWalletConnectionStatus();
   const { mutate: sendTransaction, data: transactionResult, isPending: isTransactionPending } = useSendTransaction();
 
-  // Entferne useBalance und nutze wieder eigenen State:
-  const [dfaithBalance, setDfaithBalance] = useState<{ displayValue: string } | null>(null);
-  const [dinvestBalance, setDinvestBalance] = useState<{ displayValue: string } | null>(null);
+  // Thirdweb Hooks für Balance (wie im SendTab)
+  const { data: ethBalanceData } = useWalletBalance({
+    client,
+    chain: base,
+    address: account?.address,
+  });
+
+  const { data: dfaithBalanceData } = useReadContract({
+    contract: getContract({
+      client,
+      chain: base,
+      address: DFAITH_TOKEN
+    }),
+    method: "function balanceOf(address) view returns (uint256)",
+    params: [account?.address || "0x0000000000000000000000000000000000000000"],
+    queryOptions: {
+      enabled: !!account?.address,
+      refetchInterval: 5000, // Alle 5 Sekunden aktualisieren
+    }
+  });
+
+  const { data: dinvestBalanceData } = useReadContract({
+    contract: getContract({
+      client,
+      chain: base,
+      address: DINVEST_TOKEN
+    }),
+    method: "function balanceOf(address) view returns (uint256)",
+    params: [account?.address || "0x0000000000000000000000000000000000000000"],
+    queryOptions: {
+      enabled: !!account?.address,
+      refetchInterval: 5000, // Alle 5 Sekunden aktualisieren
+    }
+  });
+
+  // Formatierte Balances berechnen (wie im SendTab)
+  const ethBalance = ethBalanceData 
+    ? (Number(ethBalanceData.value) / Math.pow(10, ETH_DECIMALS)).toFixed(4)
+    : "0.0000";
+
+  const dfaithBalance = dfaithBalanceData 
+    ? (Number(dfaithBalanceData) / Math.pow(10, DFAITH_DECIMALS)).toFixed(DFAITH_DECIMALS)
+    : "0.00";
+
+  const dinvestBalance = dinvestBalanceData 
+    ? (Number(dinvestBalanceData) / Math.pow(10, DINVEST_DECIMALS)).toString()
+    : "0";
+
+  // Alte State-Variablen entfernt, da wir jetzt direkt die berechneten Werte verwenden
   const [stakedBalance, setStakedBalance] = useState<string>("0");
   const [availableRewards, setAvailableRewards] = useState<string>("0.00");
 
@@ -104,125 +157,10 @@ export default function WalletTab() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showStakeModal, setShowStakeModal] = useState(false);
   
-  // Konstanten für Token mit BASE-Contract-Adressen
-
-  const DFAITH_TOKEN = {
-    address: "0x69eFD833288605f320d77eB2aB99DDE62919BbC1", // D.FAITH Token NEU
-    decimals: 2, 
-    symbol: "D.FAITH"
-  };
-
-  const DINVEST_TOKEN = {
-    address: "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb", // D.INVEST Token NEU
-    decimals: 0, 
-    symbol: "D.INVEST"
-  };
-
+  // Staking Contract Adresse
   const STAKING_CONTRACT = {
     address: "0xe85b32a44b9eD3ecf8bd331FED46fbdAcDBc9940", // Korrekte Staking Contract Adresse (NEU)
     name: "D.INVEST Staking"
-  };
-
-  const ETH_TOKEN = {
-    address: "0x0000000000000000000000000000000000000000", // Native ETH
-    decimals: 18,
-    symbol: "ETH"
-  };
-
-  // Neue Funktion für Balance via Thirdweb Insight API (für Base Chain)
-  const fetchTokenBalanceViaInsightApi = async (
-    tokenAddress: string,
-    accountAddress: string
-  ): Promise<string> => {
-    if (!accountAddress) return "0";
-    try {
-      const params = new URLSearchParams({
-        chain_id: "8453", // Base Chain ID
-        token_address: tokenAddress,
-        owner_address: accountAddress,
-        include_native: "true",
-        resolve_metadata_links: "true",
-        include_spam: "false",
-        limit: "50",
-        metadata: "false",
-      });
-      console.debug("Insight API Request Params:", params.toString());
-      const url = `https://insight.thirdweb.com/v1/tokens?${params.toString()}`;
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          "x-client-id": process.env.NEXT_PUBLIC_TEMPLATE_CLIENT_ID || "",
-        },
-      });
-      let data;
-      try {
-        data = await res.json();
-      } catch (jsonErr) {
-        console.error("Insight API konnte keine JSON-Antwort parsen:", jsonErr);
-        data = null;
-      }
-      if (!res.ok) {
-        console.error("Insight API Fehlerstatus:", res.status, res.statusText);
-        console.error("Insight API Fehlerantwort:", JSON.stringify(data, null, 2));
-        throw new Error("API Error");
-      }
-      console.debug("Insight API Antwort:", JSON.stringify(data, null, 2));
-      const balance = data?.data?.[0]?.balance ?? "0";
-      return balance;
-    } catch (e) {
-      console.error("Insight API Fehler:", e);
-      return "0";
-    }
-  };
-
-  // Zentrale Funktion zum Laden der Balances
-  const fetchTokenBalances = async () => {
-    if (!account?.address) return;
-
-    setIsLoadingBalances(true);
-    // Behalte die alten Werte während des Ladens bei, setze sie nicht auf null
-    const currentRequestId = ++requestIdRef.current;
-    
-    try {
-      // Keine lokale Preis-Lade-Logik hier mehr - wird zentral beim Start gemacht
-
-      // Alle Token-Balances via Insight API laden
-      const [dfaithValue, dinvestValue, ethValue] = await Promise.all([
-        fetchTokenBalanceViaInsightApi(DFAITH_TOKEN.address, account.address),
-        fetchTokenBalanceViaInsightApi(DINVEST_TOKEN.address, account.address),
-        fetchTokenBalanceViaInsightApi(ETH_TOKEN.address, account.address)
-      ]);
-      
-      if (currentRequestId !== requestIdRef.current) return;
-
-      // D.FAITH: Balance korrekt formatieren (Dezimalstellen beachten)
-      const dfaithRaw = Number(dfaithValue);
-      const dfaithDisplay = (dfaithRaw / Math.pow(10, DFAITH_TOKEN.decimals)).toFixed(DFAITH_TOKEN.decimals);
-
-      setDfaithBalance({ displayValue: dfaithDisplay });
-
-      // D.INVEST: Keine Dezimalstellen
-      setDinvestBalance({ displayValue: Math.floor(Number(dinvestValue)).toString() });
-      
-      // Gestakte Balance aus Staking Contract abrufen
-      await fetchStakedBalance();
-      
-      // Verfügbare Rewards aus Staking Contract abrufen
-      await fetchAvailableRewards();
-      
-      // EUR-Wert berechnen (verwende zentrale Funktion)
-      const newEurValue = calculateEurValue(dfaithDisplay);
-      setDfaithEurValue(newEurValue);
-
-      // Debug-Ausgabe für D.INVEST API-Antwort
-      console.debug("DINVEST Insight API Wert (raw):", dinvestValue);
-    } catch (error) {
-      console.error("Fehler beim Laden der Balances:", error);
-    } finally {
-      if (currentRequestId === requestIdRef.current) {
-        setIsLoadingBalances(false);
-      }
-    }
   };
 
   // Funktion zum Abrufen der gestakten Balance
@@ -314,7 +252,7 @@ export default function WalletTab() {
         });
         // [totalStakedTokens, rewardBalance, currentStage, currentRate]
         const rewardBalance = contractInfo[1];
-        const formattedRewards = (Number(rewardBalance) / Math.pow(10, DFAITH_TOKEN.decimals)).toFixed(DFAITH_TOKEN.decimals);
+        const formattedRewards = (Number(rewardBalance) / Math.pow(10, DFAITH_DECIMALS)).toFixed(DFAITH_DECIMALS);
         console.log("✅ Verfügbare Rewards (WalletTab):", formattedRewards);
         setAvailableRewards(formattedRewards);
         return;
@@ -327,7 +265,7 @@ export default function WalletTab() {
         const dfaithContract = getContract({ 
           client, 
           chain: base, 
-          address: DFAITH_TOKEN.address
+          address: DFAITH_TOKEN
         });
         
         const contractBalance = await readContract({
@@ -336,7 +274,7 @@ export default function WalletTab() {
           params: [STAKING_CONTRACT.address]
         });
         
-        const formattedBalance = (Number(contractBalance) / Math.pow(10, DFAITH_TOKEN.decimals)).toFixed(DFAITH_TOKEN.decimals);
+        const formattedBalance = (Number(contractBalance) / Math.pow(10, DFAITH_DECIMALS)).toFixed(DFAITH_DECIMALS);
         console.log("✅ Contract D.FAITH Balance (Fallback):", formattedBalance);
         setAvailableRewards(formattedBalance);
         return;
@@ -360,10 +298,10 @@ export default function WalletTab() {
     setIsRefreshing(true);
     
     try {
-      await fetchTokenBalances();
       await fetchDfaithPrice();
       await fetchStakedBalance(); // Gestakte Balance auch beim manuellen Refresh aktualisieren
       await fetchAvailableRewards(); // Verfügbare Rewards auch beim manuellen Refresh aktualisieren
+      // Die thirdweb Hooks aktualisieren sich automatisch durch refetchInterval
     } finally {
       // Nach einer kurzen Verzögerung den Refresh-Status zurücksetzen (Animation)
       setTimeout(() => setIsRefreshing(false), 800);
@@ -373,15 +311,7 @@ export default function WalletTab() {
   // UseEffect für initiales Laden und periodische Aktualisierung (alle 30 Sekunden)
   useEffect(() => {
     let isMounted = true;
-    let balanceIntervalId: NodeJS.Timeout | null = null;
     let priceIntervalId: NodeJS.Timeout | null = null;
-    
-    const loadBalances = async () => {
-      if (!account?.address || !isMounted) return;
-      
-      console.log("🔄 Starte automatische Balance-Aktualisierung...");
-      await fetchTokenBalances();
-    };
     
     const loadPrices = async () => {
       if (!account?.address || !isMounted) return;
@@ -394,21 +324,16 @@ export default function WalletTab() {
       if (!account?.address || !isMounted) return;
       
       console.log("🔄 Starte vollständige Aktualisierung (mit Preisen)...");
-      await fetchTokenBalances();
       await fetchDfaithPrice();
+      await fetchStakedBalance();
       await fetchAvailableRewards(); // Auch Rewards beim initialen Laden
     };
     
     // Initiales Laden mit Preisen
     loadDataWithPrices();
     
-    // Regelmäßige Balance-Aktualisierung alle 30 Sekunden
-    balanceIntervalId = setInterval(() => {
-      if (isMounted && account?.address) {
-        console.log("⏰ 30-Sekunden-Intervall: Lade Balances neu...");
-        loadBalances();
-      }
-    }, 30000); // 30 Sekunden
+    // Die Token-Balances werden automatisch durch thirdweb Hooks aktualisiert (refetchInterval: 5000)
+    // Nur Preise alle 60 Sekunden aktualisieren
     
     // Separate Preis-Aktualisierung alle 5 Minuten
     priceIntervalId = setInterval(() => {
@@ -420,10 +345,6 @@ export default function WalletTab() {
     
     return () => {
       isMounted = false;
-      if (balanceIntervalId) {
-        clearInterval(balanceIntervalId);
-        console.log("🛑 Balance-Aktualisierung gestoppt");
-      }
       if (priceIntervalId) {
         clearInterval(priceIntervalId);
         console.log("🛑 Preis-Aktualisierung gestoppt");
@@ -585,7 +506,7 @@ export default function WalletTab() {
         // 2. Hole D.FAITH Preis von OpenOcean für Base Chain (gleiche Richtung wie SellTab)
         const params = new URLSearchParams({
           chain: "base",
-          inTokenAddress: DFAITH_TOKEN.address,
+          inTokenAddress: DFAITH_TOKEN,
           outTokenAddress: "0x0000000000000000000000000000000000000000", // Native ETH
           amount: "1", // 1 D.FAITH
           gasPrice: "0.001", // Base Chain: 0.001 Gwei
@@ -632,8 +553,8 @@ export default function WalletTab() {
       if (dfaithPriceEur) {
         setDfaithPriceEur(dfaithPriceEur);
         // EUR-Wert sofort nach Preis-Update neu berechnen
-        if (dfaithBalance?.displayValue) {
-          const newEurValue = calculateEurValue(dfaithBalance.displayValue);
+        if (dfaithBalance) {
+          const newEurValue = calculateEurValue(dfaithBalance);
           setDfaithEurValue(newEurValue);
         }
       }
@@ -694,8 +615,8 @@ export default function WalletTab() {
         setPolPriceEur(lastKnownPrices.ethEur);
       }
       // EUR-Wert neu berechnen mit Fallback-Preisen
-      if (dfaithBalance?.displayValue) {
-        const newEurValue = calculateEurValue(dfaithBalance.displayValue);
+      if (dfaithBalance) {
+        const newEurValue = calculateEurValue(dfaithBalance);
         setDfaithEurValue(newEurValue);
       }
     }
@@ -820,13 +741,13 @@ export default function WalletTab() {
 
   // EUR-Wert neu berechnen wenn sich Balance, Preise oder lastKnownPrices ändern
   useEffect(() => {
-    if (dfaithBalance?.displayValue && pricesLoaded) {
-      const newEurValue = calculateEurValue(dfaithBalance.displayValue);
+    if (dfaithBalance && pricesLoaded) {
+      const newEurValue = calculateEurValue(dfaithBalance);
       setDfaithEurValue(newEurValue);
-    } else if (!dfaithBalance?.displayValue) {
+    } else if (!dfaithBalance) {
       setDfaithEurValue("0.00");
     }
-  }, [dfaithPriceEur, dfaithBalance?.displayValue, lastKnownPrices.dfaithEur, pricesLoaded, calculateEurValue]);
+  }, [dfaithPriceEur, dfaithBalance, lastKnownPrices.dfaithEur, pricesLoaded, calculateEurValue]);
 
   // Entferne fetchTokenBalanceViaContract komplett (nicht mehr benötigt)
 
@@ -976,7 +897,7 @@ export default function WalletTab() {
         
         {/* D.INVEST Balance normal anzeigen */}
         <div className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 mb-2 flex items-center">
-          {dinvestBalance?.displayValue || "0"}
+          {dinvestBalance || "0"}
           {(isLoadingBalances || isRefreshing) && (
             <span className="ml-2 text-xs text-amber-500/60 animate-pulse">↻</span>
           )}
@@ -1100,14 +1021,14 @@ export default function WalletTab() {
             <div className="flex flex-col items-center p-4 bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl border border-zinc-700 w-full mb-6">
               <span className="uppercase text-xs tracking-widest text-amber-500/80 mb-2">D.FAITH</span>
               <div className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 drop-shadow-sm">
-                {dfaithBalance ? dfaithBalance.displayValue : "0.00"}
+                {dfaithBalance ? dfaithBalance : "0.00"}
                 {(isLoadingBalances || isRefreshing) && (
                   <span className="ml-2 text-xs text-amber-500/60 animate-pulse">↻</span>
                 )}
               </div>
               {/* EUR-Wert anzeigen, wenn sowohl Balance als auch ein EUR-Wert vorhanden sind */}
-              {dfaithBalance?.displayValue && 
-               parseFloat(dfaithBalance.displayValue) > 0 && 
+              {dfaithBalance && 
+               parseFloat(dfaithBalance) > 0 && 
                parseFloat(dfaithEurValue) > 0 && (
                 <div className="text-xs text-zinc-500 mt-2">
                   ≈ {dfaithEurValue} EUR
@@ -1198,7 +1119,7 @@ export default function WalletTab() {
                 <StakeTab onStakeChanged={() => {
                   console.log("🔄 Staking-Änderung erkannt, aktualisiere Balances...");
                   fetchStakedBalance();
-                  fetchTokenBalances();
+                  // Die Token-Balances aktualisieren sich automatisch durch thirdweb Hooks
                   fetchAvailableRewards(); // Auch Rewards nach Staking-Änderung aktualisieren
                 }} />
               </div>
