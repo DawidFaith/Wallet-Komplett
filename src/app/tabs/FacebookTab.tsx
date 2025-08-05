@@ -34,6 +34,7 @@ export default function FacebookTab() {
   const [initialValues, setInitialValues] = useState<{likes: number, shares: number} | null>(null);
   const [afterValues, setAfterValues] = useState<{likes: number, shares: number} | null>(null);
   const [confirmationMessage, setConfirmationMessage] = useState(false);
+  const [showNoUuidModal, setShowNoUuidModal] = useState(false);
 
   // Level Funktionen
   const getLevelAndExpRange = (exp: number) => {
@@ -69,6 +70,14 @@ export default function FacebookTab() {
       setLoading(true);
       try {
         const uuid = getUUID();
+        
+        // UUID Überprüfung - wenn Standard UUID, dann Modal anzeigen
+        if (uuid === 'Dawidfaithtest3736FB') {
+          setLoading(false);
+          setShowNoUuidModal(true);
+          return;
+        }
+        
         const url = `https://uuid-check-fb.vercel.app/api/uuid-check?uuid=${uuid}`;
         
         const response = await fetch(url);
@@ -693,6 +702,59 @@ export default function FacebookTab() {
               >
                 ❌ Abbrechen
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* No UUID Modal */}
+      {showNoUuidModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
+            <div className="flex flex-col items-center gap-4 mb-6">
+              <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-3xl text-white">🔒</span>
+              </div>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">Profil nicht gefunden</h2>
+            </div>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6">
+              <p className="text-gray-800 leading-relaxed mb-4">
+                Dein Profil ist nur durch die <strong className="text-blue-600">Teilnahme an den Beiträgen</strong> von <strong className="text-blue-600">Dawid Faith</strong> erreichbar.
+              </p>
+              <p className="text-gray-600 text-sm">
+                💡 Like, kommentiere und teile seine Beiträge, um Zugang zu erhalten!
+              </p>
+            </div>
+            
+            <div className="space-y-3 mb-6">
+              <p className="text-gray-700 font-medium">📱 Folge Dawid Faith:</p>
+              
+              <a 
+                href="https://www.facebook.com/share/1Auve8u2CG"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3 block"
+              >
+                <span className="text-xl">📘</span>
+                <span>Facebook Profil</span>
+              </a>
+              
+              <a 
+                href="https://www.instagram.com/dawidfaith?igsh=aTF5dXBoYWxkb2Js"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-gradient-to-r from-pink-500 to-red-600 hover:from-pink-600 hover:to-red-700 text-white p-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3 block"
+              >
+                <span className="text-xl">📷</span>
+                <span>Instagram @dawidfaith</span>
+              </a>
+            </div>
+            
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3">
+              <p className="text-yellow-800 font-medium text-sm">
+                ⚡ <strong>Tipp:</strong> Nach der Teilnahme kannst du über den speziellen Link auf dein Profil zugreifen!
+              </p>
             </div>
           </div>
         </div>
