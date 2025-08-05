@@ -163,7 +163,7 @@ function TokenTransferModal({
                   type="number"
                   placeholder="0.00"
                   min="0"
-                  step={token.key === "DINVEST" ? "1" : "0.000001"}
+                  step={token.key === "DINVEST" ? "1" : token.key === "ETH" ? "0.000000000000000001" : "0.01"}
                   className={`flex-1 bg-transparent text-lg font-bold placeholder-zinc-500 focus:outline-none min-w-0 text-center ${
                     sendAmount && parseFloat(sendAmount) > parseFloat(token.balance.replace(",", ".")) 
                       ? 'text-red-400' 
@@ -172,7 +172,9 @@ function TokenTransferModal({
                   value={sendAmount}
                   onChange={e => {
                     let val = e.target.value.replace(",", ".");
-                    if (token.key === "DINVEST") val = val.replace(/\..*$/, "");
+                    if (token.key === "DINVEST") {
+                      val = val.replace(/\..*$/, "");
+                    }
                     setSendAmount(val);
                   }}
                   disabled={isSending}
@@ -362,8 +364,8 @@ export default function SendTab() {
 
   // Formatierte Balances berechnen
   const ethBalance = ethBalanceData 
-    ? (Number(ethBalanceData.value) / Math.pow(10, ETH_DECIMALS)).toFixed(4)
-    : "0.0000";
+    ? (Number(ethBalanceData.value) / Math.pow(10, ETH_DECIMALS)).toFixed(8) // 8 Dezimalstellen für präzisere ETH-Anzeige
+    : "0.00000000";
 
   const dfaithBalance = dfaithBalanceData 
     ? (Number(dfaithBalanceData) / Math.pow(10, DFAITH_DECIMALS)).toFixed(DFAITH_DECIMALS)
