@@ -1,23 +1,29 @@
 import { useState, useEffect } from "react";
 import { Button } from "../../../../components/ui/button";
 import { FaPaperPlane, FaLock, FaCoins, FaEthereum, FaExchangeAlt, FaWallet, FaTimes, FaQrcode } from "react-icons/fa";
-import { useActiveAccount, useSendTransaction } from "thirdweb/react";
+import { useActiveAccount, useSendTransaction, useWalletBalance, useReadContract } from "thirdweb/react";
 import { base } from "thirdweb/chains";
 import { getContract, prepareContractCall } from "thirdweb";
 import { client } from "../../client";
-import { fetchAllBalances, TOKEN_ADDRESSES, TOKEN_DECIMALS } from "../../utils/balanceUtils";
 import QRScanner from "../../components/QRScanner";
+
+// Token Adressen
+const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
+const DFAITH_DECIMALS = 2;
+const DINVEST_TOKEN = "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb";
+const DINVEST_DECIMALS = 0;
+const ETH_DECIMALS = 18;
 
 // Modal Komponente für Token Transfer (mit echter Transaktion und Bestätigung)
 function TokenTransferModal({ 
-  open, 
+  isOpen, 
   onClose, 
   token, 
   onSend, 
   showSuccess, 
   onSuccessClose 
 }: { 
-  open: boolean, 
+  isOpen: boolean, 
   onClose: () => void, 
   token: any | null,
   onSend: (amount: string, address: string) => Promise<boolean>,
@@ -31,15 +37,15 @@ function TokenTransferModal({
   const [showQRScanner, setShowQRScanner] = useState(false);
 
   useEffect(() => {
-    if (!open) {
+    if (!isOpen) {
       setSendAmount("");
       setSendToAddress("");
       setTxError(null);
       setShowQRScanner(false);
     }
-  }, [open]);
+  }, [isOpen]);
 
-  if (!open || !token) return null;
+  if (!isOpen || !token) return null;
 
   const handleSend = async () => {
     if (!sendAmount || !sendToAddress) return;
@@ -310,19 +316,6 @@ function TokenTransferModal({
   );
 }
 
-const getTokenIcon = (tokenKey: string) => {
-    switch (tokenKey) {
-      case "DFAITH":
-        return <FaCoins className="text-amber-400" />;
-      case "DINVEST":
-        return <FaWallet className="text-blue-400" />;
-      case "ETH":
-        return <FaEthereum className="text-purple-400" />;
-      default:
-        return <FaCoins className="text-gray-400" />;
-    }
-  };
-
 export default function SendTab() {
   const [selectedToken, setSelectedToken] = useState<any | null>(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
@@ -330,75 +323,64 @@ export default function SendTab() {
   const account = useActiveAccount();
   const { mutateAsync: sendTransaction } = useSendTransaction();
 
-  const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
-  const DFAITH_DECIMALS = TOKEN_DECIMALS.DFAITH;
-  const DINVEST_TOKEN = "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb";
-  const DINVEST_DECIMALS = TOKEN_DECIMALS.DINVEST;
-  const ETH_TOKEN = TOKEN_ADDRESSES.NATIVE_ETH;
-  const ETH_DECIMALS = TOKEN_DECIMALS.ETH;
+  // Native ETH Balance mit Thirdweb Hook
+  const { data: ethBalanceData } = useWalletBalance({
+    client,
+    chain: base,
+    address: account?.address,
+  });
 
-  // Balances
-  const [dfaithBalance, setDfaithBalance] = useState("0.00");
-  const [dinvestBalance, setDinvestBalance] = useState("0");
-  const [ethBalance, setEthBalance] = useState("0.0000");
-  const [isLoadingBalances, setIsLoadingBalances] = useState(false);
-
-  useEffect(() => {
-    if (!account?.address) {
-      setDfaithBalance("0.00");
-      setDinvestBalance("0");
-      setEthBalance("0.0000");
-      return;
+  // D.FAITH Balance mit Thirdweb Hook
+  const { data: dfaithBalanceData } = useReadContract({
+    contract: getContract({
+      client,
+      chain: base,
+      address: DFAITH_TOKEN
+    }),
+    method: "function balanceOf(address) view returns (uint256)",
+    params: [account?.address || "0x0000000000000000000000000000000000000000"],
+    queryOptions: {
+      enabled: !!account?.address,
+      refetchInterval: 5000, // Alle 5 Sekunden aktualisieren
     }
+  });
 
-    const loadBalances = async () => {
-      setIsLoadingBalances(true);
-      try {
-        const balances = await fetchAllBalances(account.address);
-        // Nur aktualisieren wenn neue Werte vorhanden sind, nicht bei undefined
-        if (balances.dfaith !== undefined) setDfaithBalance(balances.dfaith);
-        if (balances.dinvest !== undefined) setDinvestBalance(balances.dinvest);
-        if (balances.eth !== undefined) setEthBalance(balances.eth);
-      } catch (error) {
-        console.error("Fehler beim Laden der Balances:", error);
-        // Bei Fehler die Balances NICHT auf 0 setzen, sondern alte Werte behalten
-      } finally {
-        setIsLoadingBalances(false);
-      }
-    };
+  // D.INVEST Balance mit Thirdweb Hook
+  const { data: dinvestBalanceData } = useReadContract({
+    contract: getContract({
+      client,
+      chain: base,
+      address: DINVEST_TOKEN
+    }),
+    method: "function balanceOf(address) view returns (uint256)",
+    params: [account?.address || "0x0000000000000000000000000000000000000000"],
+    queryOptions: {
+      enabled: !!account?.address,
+      refetchInterval: 5000, // Alle 5 Sekunden aktualisieren
+    }
+  });
 
-    loadBalances();
-    const interval = setInterval(loadBalances, 10000);
-    return () => clearInterval(interval);
-  }, [account?.address]);
+  // Formatierte Balances berechnen
+  const ethBalance = ethBalanceData 
+    ? (Number(ethBalanceData.value) / Math.pow(10, ETH_DECIMALS)).toFixed(4)
+    : "0.0000";
 
-  // Hilfsfunktion zum Warten auf Balance-Änderung
-  const waitForBalanceChange = async (tokenKey: string, oldBalance: string, address: string, maxTries = 15) => {
-    type Balances = { dfaith: string; dinvest: string; eth: string };
-    const keyMap: Record<string, keyof Balances> = {
-      DFAITH: "dfaith",
-      DINVEST: "dinvest",
-      ETH: "eth",
-    };
+  const dfaithBalance = dfaithBalanceData 
+    ? (Number(dfaithBalanceData) / Math.pow(10, DFAITH_DECIMALS)).toFixed(DFAITH_DECIMALS)
+    : "0.00";
+
+  const dinvestBalance = dinvestBalanceData 
+    ? (Number(dinvestBalanceData) / Math.pow(10, DINVEST_DECIMALS)).toString()
+    : "0";
+
+  // Hilfsfunktion zum Warten auf Balance-Änderung (vereinfacht)
+  const waitForBalanceChange = async (tokenKey: string, oldBalance: string, maxTries = 10) => {
     for (let i = 0; i < maxTries; i++) {
-      await new Promise(res => setTimeout(res, 2000));
-      try {
-        const balances: Balances = await fetchAllBalances(address);
-        const mappedKey = keyMap[tokenKey] || (tokenKey.toLowerCase() as keyof Balances);
-        let newBalance = balances[mappedKey];
-        if (newBalance !== undefined && newBalance !== oldBalance) {
-          // Balance hat sich geändert, lokale Balances sofort aktualisieren
-          if (balances.dfaith !== undefined) setDfaithBalance(balances.dfaith);
-          if (balances.dinvest !== undefined) setDinvestBalance(balances.dinvest);
-          if (balances.eth !== undefined) setEthBalance(balances.eth);
-          return true;
-        }
-      } catch (error) {
-        console.error(`Balance-Check Versuch ${i + 1} fehlgeschlagen:`, error);
-        // Bei Fehler weiter versuchen, nicht abbrechen
-      }
+      await new Promise(res => setTimeout(res, 1000));
+      // Da Thirdweb Hooks automatisch refetchen, einfach kurz warten
+      // Die Hooks werden die neuen Balances automatisch laden
     }
-    return false;
+    return true; // Optimistisch annehmen, dass es funktioniert hat
   };
 
   // Echte Token-Transaktion
@@ -427,11 +409,9 @@ export default function SendTab() {
         });
         await sendTransaction(txCall);
       }
-      // Warte auf Balance-Änderung
-      const changed = await waitForBalanceChange(selectedToken.key, oldBalance, account.address);
-      if (changed) {
-        setShowSuccessModal(true);
-      }
+      // Warte kurz für Balance-Update
+      await waitForBalanceChange(selectedToken.key, oldBalance);
+      setShowSuccessModal(true);
       return true;
     } catch (error) {
       console.error("Fehler beim Senden:", error);
@@ -445,14 +425,14 @@ export default function SendTab() {
     setShowSuccessModal(false);
   };
 
-  // Token-Auswahl Options
+  // Token-Auswahl Options mit sofort verfügbaren Balances
   const tokenOptions = [
     {
       key: "DFAITH",
       label: "D.FAITH",
       symbol: "D.FAITH",
       balance: dfaithBalance,
-      color: "from-transparent to-transparent", // Kein Hintergrund für D.FAITH
+      color: "from-transparent to-transparent",
       description: "Dawid Faith Token",
       icon: <img src="/D.FAITH.png" alt="D.FAITH" className="w-12 h-12 object-contain" />,
     },
@@ -525,6 +505,9 @@ export default function SendTab() {
                       <div>
                         <h3 className="font-bold text-white text-lg">{token.label}</h3>
                         <p className="text-zinc-400 text-xs">{token.description}</p>
+                        <p className="text-zinc-300 text-sm font-medium mt-1">
+                          {token.balance} {token.symbol}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -537,7 +520,7 @@ export default function SendTab() {
 
       {/* Transfer Modal */}
       <TokenTransferModal
-        open={showTransferModal}
+        isOpen={showTransferModal}
         onClose={() => {
           setShowTransferModal(false);
           setSelectedToken(null);
