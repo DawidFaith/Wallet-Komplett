@@ -211,9 +211,14 @@ export default function FacebookTab() {
         }}
       >
         <div className="text-white text-center">
-          <div className="animate-spin w-16 h-16 border-4 border-white/30 border-t-white rounded-full mx-auto mb-6"></div>
-          <p className="text-xl font-semibold mb-2">Lade Daten...</p>
-          <p className="text-sm opacity-80">Bitte warten Sie einen Moment</p>
+          <div className="animate-spin w-20 h-20 border-4 border-white/20 border-t-white rounded-full mx-auto mb-8"></div>
+          <p className="text-2xl font-bold mb-3">Facebook Tab wird geladen...</p>
+          <p className="text-lg opacity-90 mb-2">Bitte warten Sie einen Moment</p>
+          <div className="flex items-center justify-center gap-2 text-sm opacity-70">
+            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+            <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+            <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+          </div>
         </div>
       </div>
     );
