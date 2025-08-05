@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { Button } from "../../../../components/ui/button";
 import { Card } from "../../../../components/ui/card";
 import { FaLock, FaUnlock, FaCoins, FaClock, FaInfoCircle, FaTimes } from "react-icons/fa";
-import { useActiveAccount } from "thirdweb/react";
+import { useActiveAccount, useWalletBalance, useReadContract } from "thirdweb/react";
 import { createThirdwebClient, getContract, prepareContractCall, resolveMethod, readContract } from "thirdweb";
 import { base } from "thirdweb/chains";
 import { useSendTransaction } from "thirdweb/react";
@@ -13,6 +13,7 @@ const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1"; // D.FAITH To
 const DFAITH_DECIMALS = 2;
 const DINVEST_TOKEN = "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb"; // D.INVEST Token NEU
 const DINVEST_DECIMALS = 0;
+const ETH_DECIMALS = 18;
 const client = createThirdwebClient({ clientId: process.env.NEXT_PUBLIC_TEMPLATE_CLIENT_ID! });
 
 interface StakeTabProps {
@@ -22,6 +23,46 @@ interface StakeTabProps {
 export default function StakeTab({ onStakeChanged }: StakeTabProps) {
   const account = useActiveAccount();
   const { mutate: sendTransaction, isPending } = useSendTransaction();
+
+  // Thirdweb Hooks für Balance (wie in den anderen Tabs)
+  const { data: dfaithBalanceData } = useReadContract({
+    contract: getContract({
+      client,
+      chain: base,
+      address: DFAITH_TOKEN
+    }),
+    method: "function balanceOf(address) view returns (uint256)",
+    params: [account?.address || "0x0000000000000000000000000000000000000000"],
+    queryOptions: {
+      enabled: !!account?.address,
+      refetchInterval: 5000, // Alle 5 Sekunden aktualisieren
+    }
+  });
+
+  const { data: dinvestBalanceData } = useReadContract({
+    contract: getContract({
+      client,
+      chain: base,
+      address: DINVEST_TOKEN
+    }),
+    method: "function balanceOf(address) view returns (uint256)",
+    params: [account?.address || "0x0000000000000000000000000000000000000000"],
+    queryOptions: {
+      enabled: !!account?.address,
+      refetchInterval: 5000, // Alle 5 Sekunden aktualisieren
+    }
+  });
+
+  // Formatierte Balances berechnen (wie in den anderen Tabs)
+  const dfaithBalance = dfaithBalanceData 
+    ? (Number(dfaithBalanceData) / Math.pow(10, DFAITH_DECIMALS)).toFixed(DFAITH_DECIMALS)
+    : "0.00";
+
+  const dinvestBalance = dinvestBalanceData 
+    ? (Number(dinvestBalanceData) / Math.pow(10, DINVEST_DECIMALS)).toString()
+    : "0";
+
+  // State-Variablen (alte dfaithBalance und dinvestBalance useState entfernt)
   const [stakeAmount, setStakeAmount] = useState("");
   const [unstakeAmount, setUnstakeAmount] = useState("");
   const [activeTab, setActiveTab] = useState("stake");
@@ -36,8 +77,6 @@ export default function StakeTab({ onStakeChanged }: StakeTabProps) {
   const [totalStakedTokens, setTotalStakedTokens] = useState("0");
   const [totalRewardsDistributed, setTotalRewardsDistributed] = useState("0.00");
   const [userCount, setUserCount] = useState(0);
-  const [dfaithBalance, setDfaithBalance] = useState("0.00");
-  const [dinvestBalance, setDinvestBalance] = useState("0");
   const [stakeTimestamp, setStakeTimestamp] = useState<number>(0);
   const [canUnstake, setCanUnstake] = useState(false);
   const [canClaim, setCanClaim] = useState(false);
@@ -63,45 +102,6 @@ export default function StakeTab({ onStakeChanged }: StakeTabProps) {
   const resetTxStatus = () => {
     setTxStatus(null);
     setLastOperation(null);
-  };
-
-  // Korrekte API-Funktion für Balance-Abfrage auf Base Chain
-  const fetchTokenBalanceViaInsightApi = async (
-    tokenAddress: string,
-    accountAddress: string
-  ): Promise<string> => {
-    if (!accountAddress) return "0";
-    try {
-      const params = new URLSearchParams({
-        chain_id: "8453", // Base Chain ID
-        token_address: tokenAddress,
-        owner_address: accountAddress,
-        include_native: "true",
-        resolve_metadata_links: "true",
-        include_spam: "false",
-        limit: "50",
-        metadata: "false",
-      });
-      const url = `https://insight.thirdweb.com/v1/tokens?${params.toString()}`;
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          "x-client-id": process.env.NEXT_PUBLIC_TEMPLATE_CLIENT_ID || "",
-        },
-      });
-      
-      if (!res.ok) {
-        console.error("Insight API Fehlerstatus:", res.status, res.statusText);
-        throw new Error("API Error");
-      }
-      
-      const data = await res.json();
-      const balance = data?.data?.[0]?.balance ?? "0";
-      return balance;
-    } catch (e) {
-      console.error("Insight API Fehler:", e);
-      return "0";
-    }
   };
 
   // Neue Funktion: Hole alle User- und Contractdaten mit neuen Methoden
@@ -322,49 +322,13 @@ export default function StakeTab({ onStakeChanged }: StakeTabProps) {
   useEffect(() => {
     if (!account?.address) return;
     
-    console.log("🔄 Account geändert oder Tab geladen, aktualisiere Balances...");
+    console.log("🔄 Account geändert oder Tab geladen, aktualisiere Staking-Daten...");
     
-    // D.INVEST Balance via Insight API (0 Decimals) mit verbesserter Aktualisierung
-    (async () => {
-      try {
-        const dinvestValue = await fetchTokenBalanceViaInsightApi(DINVEST_TOKEN, account.address);
-        const newBalance = Math.floor(Number(dinvestValue)).toString();
-        console.log("✅ Neue D.INVEST Balance geladen:", newBalance);
-        setAvailable(newBalance);
-        await fetchStakeInfo();
-      } catch (error) {
-        console.error("❌ Fehler beim Laden der initialen Balance:", error);
-        setAvailable("0");
-      }
-    })();
-  }, [account?.address, txStatus]); // txStatus Abhängigkeit für Aktualisierung nach Transaktionen
-
-  // D.FAITH und D.INVEST Balances abrufen
-  useEffect(() => {
-    if (!account?.address) {
-      setDfaithBalance("0.00");
-      setDinvestBalance("0");
-      return;
-    }
-    // D.FAITH
-    (async () => {
-      try {
-        const res = await fetch(`https://insight.thirdweb.com/v1/tokens?chain_id=8453&token_address=${DFAITH_TOKEN}&owner_address=${account.address}&include_native=true`);
-        const data = await res.json();
-        const bal = data?.data?.[0]?.balance ?? "0";
-        setDfaithBalance((Number(bal) / Math.pow(10, DFAITH_DECIMALS)).toFixed(DFAITH_DECIMALS));
-      } catch { setDfaithBalance("0.00"); }
-    })();
-    // D.INVEST
-    (async () => {
-      try {
-        const res = await fetch(`https://insight.thirdweb.com/v1/tokens?chain_id=8453&token_address=${DINVEST_TOKEN}&owner_address=${account.address}&include_native=true`);
-        const data = await res.json();
-        const bal = data?.data?.[0]?.balance ?? "0";
-        setDinvestBalance(Math.floor(Number(bal)).toString());
-      } catch { setDinvestBalance("0"); }
-    })();
-  }, [account?.address]);
+    // D.INVEST Balance wird automatisch über thirdweb hooks aktualisiert
+    // Nur Staking-Daten laden
+    setAvailable(dinvestBalance);
+    fetchStakeInfo();
+  }, [account?.address, txStatus, dinvestBalance]); // dinvestBalance Abhängigkeit für automatische Updates
 
   // State für echte Contract-Zeitberechnung
   const [timeToMinClaimForAmount, setTimeToMinClaimForAmount] = useState<number | null>(null);
@@ -405,26 +369,17 @@ export default function StakeTab({ onStakeChanged }: StakeTabProps) {
     }
   }, [stakeAmount, getTimeToMinClaimFromContract]);
 
-  // Hilfsfunktion: Verfügbare Balance aktualisieren (verbessert für korrekte Aktualisierung)
+  // Hilfsfunktion: Verfügbare Balance aktualisieren (jetzt über thirdweb hooks automatisch)
   const refreshAvailableBalance = useCallback(async () => {
     if (account?.address) {
-      console.log("🔄 Aktualisiere D.INVEST Balance nach Staking-Operation...");
-      try {
-        // Kurze Verzögerung für Blockchain-Bestätigung
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const balance = await fetchTokenBalanceViaInsightApi(DINVEST_TOKEN, account.address);
-        const newBalance = Math.floor(Number(balance)).toString();
-        console.log("✅ Neue D.INVEST Balance:", newBalance);
-        setAvailable(newBalance);
-        
-        // Zusätzlich D.INVEST Balance im State aktualisieren
-        setDinvestBalance(newBalance);
-      } catch (error) {
-        console.error("❌ Fehler beim Aktualisieren der Balance:", error);
-      }
+      console.log("🔄 Balance wird automatisch über thirdweb hooks aktualisiert...");
+      // Kurze Verzögerung für Blockchain-Bestätigung, dann wird durch hooks automatisch aktualisiert
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // available State wird über dinvestBalance automatisch aktualisiert
+      setAvailable(dinvestBalance);
     }
-  }, [account?.address]);
+  }, [account?.address, dinvestBalance]);
 
   // Stake Function (echtes Staking mit Approval-Check)
   const handleStake = async () => {
