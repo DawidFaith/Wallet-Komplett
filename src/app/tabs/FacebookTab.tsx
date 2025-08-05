@@ -482,7 +482,7 @@ export default function FacebookTab() {
             <p className="mb-4">
               <strong>🔒 Wichtiger Hinweis:</strong><br/><br/>
               Deine Wallet-Adresse wird dauerhaft mit deinem Social-Media-Account verbunden.<br/><br/>
-              Wenn du sie ändern willst, schreib mir eine <strong>DM mit dem Stichwort „Wallet"</strong> auf <strong>Facebook</strong>.
+              Wenn du sie ändern willst, schreib mir eine <strong>DM mit dem Stichwort &ldquo;Wallet&rdquo;</strong> auf <strong>Facebook</strong>.
             </p>
             <button 
               onClick={() => setShowWalletInfoModal(false)}
