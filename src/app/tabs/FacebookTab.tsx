@@ -269,31 +269,57 @@ export default function FacebookTab() {
           />
           
           {/* Level Box */}
-          <div className="bg-black bg-opacity-20 rounded-2xl p-4 mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <div className="text-xl font-bold">Level {level}</div>
-              <div className="text-base">{userData.expTotal} / {maxExp} EXP</div>
+          <div className="bg-black bg-opacity-20 rounded-2xl p-4 mb-4 border border-white/10">
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center gap-2">
+                <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                  {level}
+                </div>
+                <div className="text-xl font-bold">Level {level}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-gray-300">EXP</div>
+                <div className="text-base font-bold">{userData.expTotal} / {maxExp}</div>
+              </div>
               <button 
                 onClick={() => setShowInfoModal(true)}
-                className="bg-white text-pink-600 w-7 h-7 rounded-full font-bold text-sm flex items-center justify-center shadow-lg"
+                className="bg-white text-pink-600 w-7 h-7 rounded-full font-bold text-sm flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-200"
               >
                 i
               </button>
             </div>
             
-            {/* Progress Bar */}
-            <div className="relative bg-gray-800 rounded-full h-3.5 overflow-hidden mb-3">
+            {/* Progress Bar mit Animation */}
+            <div className="relative bg-gray-800 rounded-full h-4 overflow-hidden mb-4 shadow-inner">
               <div 
-                className="h-full bg-gradient-to-r from-blue-500 to-blue-700 transition-all duration-500"
+                className="h-full bg-gradient-to-r from-blue-400 via-blue-500 to-purple-600 transition-all duration-1000 ease-out relative"
                 style={{ width: `${progressPercent}%` }}
-              ></div>
-              <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white drop-shadow-lg">
                 {progressPercent}%
               </div>
             </div>
             
-            <div className="text-yellow-300 text-sm">
-              ⛏ +{userData.miningpower} D.Faith
+            {/* Next Level Info */}
+            <div className="flex justify-between items-center mb-3 text-xs text-gray-300">
+              <span>Noch {maxExp - userData.expTotal} EXP bis Level {level + 1}</span>
+              <span className="bg-purple-600/20 px-2 py-1 rounded-full">
+                {currentLevelExp} / {levelRange}
+              </span>
+            </div>
+            
+            {/* Mining Power mit verbessertem Design */}
+            <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-xl p-3 border border-yellow-500/30">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-2xl animate-bounce">⛏</span>
+                <div className="text-center">
+                  <div className="text-yellow-300 text-sm font-medium">Mining Power</div>
+                  <div className="text-yellow-200 text-lg font-bold">+{userData.miningpower} D.Faith</div>
+                </div>
+                <span className="text-2xl animate-pulse">💎</span>
+              </div>
             </div>
           </div>
           
