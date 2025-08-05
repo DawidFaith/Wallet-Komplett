@@ -203,12 +203,17 @@ export default function FacebookTab() {
 
   if (!userData) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{
-        background: 'linear-gradient(135deg, #1877f2, #3b5998, #1d2e70)'
-      }}>
+      <div 
+        className="min-h-screen w-full flex items-center justify-center"
+        style={{
+          background: 'linear-gradient(135deg, #1877f2, #3b5998, #1d2e70)',
+          fontFamily: 'Poppins, Segoe UI, sans-serif'
+        }}
+      >
         <div className="text-white text-center">
-          <div className="animate-spin w-12 h-12 border-4 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-lg font-semibold">Lade Daten...</p>
+          <div className="animate-spin w-16 h-16 border-4 border-white/30 border-t-white rounded-full mx-auto mb-6"></div>
+          <p className="text-xl font-semibold mb-2">Lade Daten...</p>
+          <p className="text-sm opacity-80">Bitte warten Sie einen Moment</p>
         </div>
       </div>
     );
@@ -223,10 +228,17 @@ export default function FacebookTab() {
     <>
       {/* Loading Overlay */}
       {loading && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin w-12 h-12 border-4 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-white text-lg font-bold">Wird verarbeitet...</p>
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{
+            background: 'linear-gradient(135deg, rgba(24, 119, 242, 0.95), rgba(59, 89, 152, 0.95), rgba(29, 46, 112, 0.95))',
+            backdropFilter: 'blur(8px)'
+          }}
+        >
+          <div className="text-center text-white">
+            <div className="animate-spin w-16 h-16 border-4 border-white/30 border-t-white rounded-full mx-auto mb-6"></div>
+            <p className="text-xl font-bold mb-2">Wird verarbeitet...</p>
+            <p className="text-sm opacity-80">Bitte warten Sie einen Moment</p>
           </div>
         </div>
       )}
