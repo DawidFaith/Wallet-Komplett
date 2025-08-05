@@ -269,35 +269,29 @@ export default function FacebookTab() {
           />
           
           {/* Level Box */}
-          <div className="bg-black bg-opacity-20 rounded-2xl p-5 mb-4 border border-white/10">
+          <div className="bg-black bg-opacity-20 rounded-2xl p-4 mb-4 border border-white/10">
             {/* Level und EXP Header */}
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex-1">
-                <div className="flex items-baseline gap-2 mb-1">
-                  <span className="text-3xl font-bold text-white">Level</span>
-                  <span className="text-4xl font-black bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">{level}</span>
-                </div>
-                <div className="text-xs text-gray-400 uppercase tracking-widest font-medium">Aktuelle Stufe</div>
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-bold text-white">Level</span>
+                <span className="text-2xl font-black bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">{level}</span>
               </div>
               
-              <div className="text-right">
-                <div className="flex items-baseline gap-1 justify-end mb-1">
-                  <span className="text-2xl font-bold text-white">{userData.expTotal.toLocaleString()}</span>
-                  <span className="text-sm text-gray-400">/ {maxExp.toLocaleString()}</span>
-                </div>
-                <div className="text-xs text-gray-400 uppercase tracking-widest font-medium">Experience Points</div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-bold text-white">{userData.expTotal.toLocaleString()}</span>
+                <span className="text-sm text-gray-400">/ {maxExp.toLocaleString()}</span>
               </div>
               
               <button 
                 onClick={() => setShowInfoModal(true)}
-                className="ml-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white w-8 h-8 rounded-full font-bold text-sm flex items-center justify-center shadow-lg hover:scale-110 transition-all duration-200 hover:shadow-pink-500/25"
+                className="bg-blue-500 hover:bg-blue-600 text-white w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200"
               >
                 i
               </button>
             </div>
             
             {/* Progress Bar mit Animation */}
-            <div className="relative bg-gray-800/60 rounded-full h-5 overflow-hidden mb-4 shadow-inner border border-gray-700/50">
+            <div className="relative bg-gray-800/60 rounded-full h-4 overflow-hidden mb-4 shadow-inner border border-gray-700/50">
               <div 
                 className="h-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 transition-all duration-1000 ease-out relative shadow-lg"
                 style={{ width: `${progressPercent}%` }}
@@ -306,7 +300,7 @@ export default function FacebookTab() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
               </div>
               <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white drop-shadow-lg">
-                {progressPercent}% Fortschritt
+                {progressPercent}%
               </div>
             </div>
             
