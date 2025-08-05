@@ -43,9 +43,9 @@ const getLevelAndExpRange = (exp: number) => {
 const getUUID = () => {
   if (typeof window !== 'undefined') {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('uuid') || 'dfaith3788655';
+    return urlParams.get('uuid');
   }
-  return 'dfaith3788655';
+  return null;
 };
 
 export default function InstagramTab() {
@@ -78,34 +78,29 @@ export default function InstagramTab() {
         console.log('Lade Daten für UUID:', uuid);
         
         // UUID Überprüfung - für später wenn wir wieder umstellen wollen
-        // Aktuell ist diese Prüfung deaktiviert für Tests
-        const showNoUuidModal = false; // Auf true setzen um No UUID Modal zu aktivieren
-        if (showNoUuidModal && typeof window !== 'undefined') {
-          const urlParams = new URLSearchParams(window.location.search);
-          const urlUuid = urlParams.get('uuid');
-          
-          if (!urlUuid) {
-            setLoading(false);
-            setShowNoUuidModal(true);
-            // Dummy Daten setzen damit die UI angezeigt wird
-            setUserData({
-              username: "Gast",
-              image: "https://via.placeholder.com/100",
-              expTotal: 0,
-              expTiktok: 0,
-              expInstagram: 0,
-              expFacebook: 0,
-              expStream: 0,
-              liveNFTBonus: 0,
-              miningpower: 0,
-              liked: "false",
-              commented: "false",
-              story: "false",
-              saved: "false",
-              wallet: undefined
-            });
-            return;
-          }
+        // Aktuell ist diese Prüfung aktiviert für Production
+        const showNoUuidModal = true; // Auf false setzen um No UUID Modal zu deaktivieren
+        if (showNoUuidModal && (!uuid || uuid === null)) {
+          setLoading(false);
+          setShowNoUuidModal(true);
+          // Dummy Daten setzen damit die UI angezeigt wird
+          setUserData({
+            username: "Gast",
+            image: "https://via.placeholder.com/100",
+            expTotal: 0,
+            expTiktok: 0,
+            expInstagram: 0,
+            expFacebook: 0,
+            expStream: 0,
+            liveNFTBonus: 0,
+            miningpower: 0,
+            liked: "false",
+            commented: "false",
+            story: "false",
+            saved: "false",
+            wallet: undefined
+          });
+          return;
         }
         
         const response = await fetch("https://uuid-check-insta.vercel.app/api/webhook", {
@@ -155,6 +150,8 @@ export default function InstagramTab() {
     setLoading(true);
     try {
       const uuid = getUUID();
+      if (!uuid) return;
+      
       const response = await fetch(`https://hook.eu2.make.com/bli0jo4nik0m9r4x9aj76ptktghdzckd?uuid=${encodeURIComponent(uuid)}`);
       const data = await response.json();
       
@@ -184,6 +181,8 @@ export default function InstagramTab() {
     setLoading(true);
     try {
       const uuid = getUUID();
+      if (!uuid) return;
+      
       const response = await fetch(`https://hook.eu2.make.com/bli0jo4nik0m9r4x9aj76ptktghdzckd?uuid=${encodeURIComponent(uuid)}`);
       const data = await response.json();
       
@@ -211,6 +210,11 @@ export default function InstagramTab() {
     setLoading(true);
     try {
       const uuid = getUUID();
+      if (!uuid) {
+        setClaimStatus('❌ Keine UUID verfügbar.');
+        return;
+      }
+      
       const response = await fetch('https://hook.eu2.make.com/1c62icx2yngv8v4g6y7k7songq01rblk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
