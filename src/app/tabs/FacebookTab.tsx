@@ -443,14 +443,19 @@ export default function FacebookTab() {
               <p className="font-semibold mb-3 text-blue-800">1️⃣ Entferne alle Likes und Shares von meinem Beitrag</p>
               <button 
                 onClick={() => setShowConfirmInitial(true)}
-                disabled={initialValues !== null}
+                disabled={initialValues !== null || loading}
                 className={`w-full p-3 rounded-xl font-bold transition-all duration-300 ${
-                  initialValues !== null 
+                  initialValues !== null || loading
                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
                     : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white transform hover:scale-105'
                 }`}
               >
-                {initialValues !== null ? '✅ Werte bereits erfasst' : '✅ Check aktuelle Werte'}
+                {loading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-gray-600 rounded-full"></div>
+                    <span>Erfasse Daten...</span>
+                  </div>
+                ) : initialValues !== null ? '✅ Werte bereits erfasst' : '✅ Check aktuelle Werte'}
               </button>
               {initialValues && (
                 <div className="bg-white border border-blue-300 rounded-xl p-3 mt-3 text-sm">
@@ -470,9 +475,19 @@ export default function FacebookTab() {
               <p className="font-semibold mb-3 text-green-800">2️⃣ Like und teile den Beitrag erneut!</p>
               <button 
                 onClick={() => setShowConfirmAfter(true)}
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+                disabled={loading}
+                className={`w-full p-3 rounded-xl font-bold transition-all duration-300 ${
+                  loading 
+                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white transform hover:scale-105'
+                }`}
               >
-                ✅ Check neue Werte
+                {loading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-gray-600 rounded-full"></div>
+                    <span>Prüfe Änderungen...</span>
+                  </div>
+                ) : '✅ Check neue Werte'}
               </button>
               {afterValues && (
                 <div className="bg-white border border-green-300 rounded-xl p-3 mt-3 text-sm">
