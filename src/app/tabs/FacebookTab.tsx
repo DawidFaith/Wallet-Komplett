@@ -67,7 +67,7 @@ export default function FacebookTab() {
       setLoading(true);
       try {
         const uuid = getUUID();
-        const url = `https://hook.eu2.make.com/vigvc79vrgcha3n1igkuhmvl1q84r3rf?uuid=${uuid}`;
+        const url = `https://uuid-check-fb.vercel.app/api/uuid-check?uuid=${uuid}`;
         
         const response = await fetch(url);
         const data = await response.json();
@@ -271,12 +271,7 @@ export default function FacebookTab() {
           {/* Level Box */}
           <div className="bg-black bg-opacity-20 rounded-2xl p-4 mb-4 border border-white/10">
             <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-2">
-                <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
-                  {level}
-                </div>
-                <div className="text-xl font-bold">Level {level}</div>
-              </div>
+              <div className="text-xl font-bold">Level {level}</div>
               <div className="text-right">
                 <div className="text-sm text-gray-300">EXP</div>
                 <div className="text-base font-bold">{userData.expTotal} / {maxExp}</div>
@@ -302,14 +297,6 @@ export default function FacebookTab() {
               </div>
             </div>
             
-            {/* Next Level Info */}
-            <div className="flex justify-between items-center mb-3 text-xs text-gray-300">
-              <span>Noch {maxExp - userData.expTotal} EXP bis Level {level + 1}</span>
-              <span className="bg-purple-600/20 px-2 py-1 rounded-full">
-                {currentLevelExp} / {levelRange}
-              </span>
-            </div>
-            
             {/* Mining Power mit verbessertem Design */}
             <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-xl p-3 border border-yellow-500/30">
               <div className="flex items-center justify-center gap-2">
@@ -318,7 +305,6 @@ export default function FacebookTab() {
                   <div className="text-yellow-300 text-sm font-medium">Mining Power</div>
                   <div className="text-yellow-200 text-lg font-bold">+{userData.miningpower} D.Faith</div>
                 </div>
-                <span className="text-2xl animate-pulse">💎</span>
               </div>
             </div>
           </div>
