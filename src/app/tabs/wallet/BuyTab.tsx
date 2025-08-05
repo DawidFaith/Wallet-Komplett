@@ -1,17 +1,17 @@
 import { useEffect, useState, useRef } from "react";
 import { Button } from "../../../../components/ui/button";
 import { FaLock, FaExchangeAlt, FaSync, FaRegCopy } from "react-icons/fa";
-import { useActiveAccount, useSendTransaction, BuyWidget } from "thirdweb/react";
+import { useActiveAccount, useSendTransaction, BuyWidget, useWalletBalance, useReadContract } from "thirdweb/react";
 import { base } from "thirdweb/chains";
 import { NATIVE_TOKEN_ADDRESS, getContract, prepareContractCall, sendAndConfirmTransaction, readContract } from "thirdweb";
 import { client } from "../../client";
 import { balanceOf, approve } from "thirdweb/extensions/erc20";
 
-const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1"; // D.FAITH Token auf Base (aktualisiert Juli 2025)
-const DFAITH_DECIMALS = 2; // Dezimalstellen
-const DINVEST_TOKEN = "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb"; // D.INVEST Token auf Base (aktualisiert Juli 2025)
-const DINVEST_DECIMALS = 0; // D.INVEST hat keine Dezimalstellen
-const ETH_TOKEN = "0x0000000000000000000000000000000000000000"; // Native ETH
+// Token Adressen (gleich wie im SendTab, SellTab und WalletTab)
+const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
+const DFAITH_DECIMALS = 2;
+const DINVEST_TOKEN = "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb";
+const DINVEST_DECIMALS = 0;
 const ETH_DECIMALS = 18;
 
 export default function BuyTab() {
@@ -52,6 +52,58 @@ export default function BuyTab() {
     };
   }, []);
 
+  const account = useActiveAccount();
+  const { mutate: sendTransaction, isPending: isSwapPending } = useSendTransaction();
+
+  // Thirdweb Hooks für Balance (wie im SendTab, SellTab und WalletTab)
+  const { data: ethBalanceData } = useWalletBalance({
+    client,
+    chain: base,
+    address: account?.address,
+  });
+
+  const { data: dfaithBalanceData } = useReadContract({
+    contract: getContract({
+      client,
+      chain: base,
+      address: DFAITH_TOKEN
+    }),
+    method: "function balanceOf(address) view returns (uint256)",
+    params: [account?.address || "0x0000000000000000000000000000000000000000"],
+    queryOptions: {
+      enabled: !!account?.address,
+      refetchInterval: 5000, // Alle 5 Sekunden aktualisieren
+    }
+  });
+
+  const { data: dinvestBalanceData } = useReadContract({
+    contract: getContract({
+      client,
+      chain: base,
+      address: DINVEST_TOKEN
+    }),
+    method: "function balanceOf(address) view returns (uint256)",
+    params: [account?.address || "0x0000000000000000000000000000000000000000"],
+    queryOptions: {
+      enabled: !!account?.address,
+      refetchInterval: 5000, // Alle 5 Sekunden aktualisieren
+    }
+  });
+
+  // Formatierte Balances berechnen (wie im SendTab, SellTab und WalletTab)
+  const ethBalance = ethBalanceData 
+    ? (Number(ethBalanceData.value) / Math.pow(10, ETH_DECIMALS)).toFixed(5)
+    : "0.00000";
+
+  const dfaithBalance = dfaithBalanceData 
+    ? (Number(dfaithBalanceData) / Math.pow(10, DFAITH_DECIMALS)).toFixed(DFAITH_DECIMALS)
+    : "0.00";
+
+  const dinvestBalance = dinvestBalanceData 
+    ? (Number(dinvestBalanceData) / Math.pow(10, DINVEST_DECIMALS)).toString()
+    : "0";
+
+  // Alte State-Variablen für Balances entfernt, da wir jetzt direkt die berechneten Werte verwenden
   const [dfaithPrice, setDfaithPrice] = useState<number | null>(null);
   const [dfaithPriceEur, setDfaithPriceEur] = useState<number | null>(null);
   const [ethPriceEur, setEthPriceEur] = useState<number | null>(null);
@@ -62,7 +114,6 @@ export default function BuyTab() {
     ethEur?: number;
     timestamp?: number;
   }>({});
-  const account = useActiveAccount();
   // Modal- und Token-Auswahl-States für neues Design
   const [selectedToken, setSelectedToken] = useState<null | "DFAITH" | "DINVEST" | "ETH">(null);
   const [showBuyModal, setShowBuyModal] = useState(false);
@@ -72,7 +123,6 @@ export default function BuyTab() {
   const [swapQuote, setSwapQuote] = useState<any>(null);
   const [swapLoading, setSwapLoading] = useState(false);
   const [swapError, setSwapError] = useState<string | null>(null);
-  const { mutate: sendTransaction, isPending: isSwapPending } = useSendTransaction();
   const [swapStatus, setSwapStatus] = useState<string | null>(null);
 
   // Neuer State für mehrstufigen Kaufprozess
@@ -237,147 +287,8 @@ export default function BuyTab() {
   // State für D.FAITH Swap (Modal wird jetzt zentral gesteuert)
   const [swapAmountEth, setSwapAmountEth] = useState("");
   const [slippage, setSlippage] = useState("1");
-  const [ethBalance, setEthBalance] = useState("0");
   const [isSwapping, setIsSwapping] = useState(false);
   const [swapTxStatus, setSwapTxStatus] = useState<string | null>(null);
-
-  // ETH Balance laden (auf 3 Stellen)
-  useEffect(() => {
-    const fetchEthBalance = async () => {
-      if (!account?.address) {
-        console.log("No account connected");
-        return;
-      }
-      try {
-        console.log("Fetching native ETH balance for:", account.address);
-        
-        const balance = await readContract({
-          contract: getContract({
-            client,
-            chain: base,
-            address: "0x0000000000000000000000000000000000000000"
-          }),
-          method: "function balanceOf(address) view returns (uint256)",
-          params: [account.address]
-        }).catch(async () => {
-          const response = await fetch(base.rpc, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              jsonrpc: '2.0',
-              method: 'eth_getBalance',
-              params: [account.address, 'latest'],
-              id: 1
-            })
-          });
-          const data = await response.json();
-          return BigInt(data.result);
-        });
-        
-        console.log("Native ETH Balance raw:", balance.toString());
-        
-        const ethFormatted = Number(balance) / Math.pow(10, 18);
-        console.log("Native ETH formatted:", ethFormatted);
-        
-        // Auf 5 Stellen formatieren
-        setEthBalance(ethFormatted.toFixed(5));
-        
-      } catch (error) {
-        console.error("Fehler beim Laden der ETH Balance:", error);
-        setEthBalance("0");
-      }
-    };
-    
-    fetchEthBalance();
-    const interval = setInterval(fetchEthBalance, 10000);
-    return () => clearInterval(interval);
-  }, [account?.address]);
-
-  // D.FAITH Balance und D.INVEST Balance von der Insight API laden
-  const [dfaithBalance, setDfaithBalance] = useState("0.00");
-  const [dinvestBalance, setDinvestBalance] = useState("0");
-
-      // Neue Funktion für Balance via Thirdweb Insight API für Base Chain
-  const fetchTokenBalanceViaInsightApi = async (
-    tokenAddress: string,
-    accountAddress: string
-  ): Promise<string> => {
-    if (!accountAddress) return "0";
-    try {
-      const params = new URLSearchParams({
-        chain_id: "8453", // Base Chain ID
-        token_address: tokenAddress,
-        owner_address: accountAddress,
-        include_native: "true",
-        resolve_metadata_links: "true",
-        include_spam: "false",
-        limit: "50",
-        metadata: "false",
-      });
-      
-      const url = `https://insight.thirdweb.com/v1/tokens?${params.toString()}`;
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          "x-client-id": process.env.NEXT_PUBLIC_TEMPLATE_CLIENT_ID || "",
-        },
-      });
-      
-      let data;
-      try {
-        data = await res.json();
-      } catch (jsonErr) {
-        console.error("BuyTab: Insight API konnte keine JSON-Antwort parsen:", jsonErr);
-        data = null;
-      }
-      
-      if (!res.ok) {
-        console.error("BuyTab: Insight API Fehlerstatus:", res.status, res.statusText);
-        console.error("BuyTab: Insight API Fehlerantwort:", JSON.stringify(data, null, 2));
-        throw new Error("API Error");
-      }
-      
-      const balance = data?.data?.[0]?.balance ?? "0";
-      return balance;
-    } catch (e) {
-      console.error("BuyTab: Insight API Fehler:", e);
-      return "0";
-    }
-  };
-
-  // Balances laden
-  useEffect(() => {
-    const loadBalances = async () => {
-      if (!account?.address) {
-        setDfaithBalance("0.00");
-        setDinvestBalance("0");
-        return;
-      }
-      
-      try {
-        // D.FAITH Balance laden
-        const dfaithValue = await fetchTokenBalanceViaInsightApi(DFAITH_TOKEN, account.address);
-        const dfaithRaw = Number(dfaithValue);
-        const dfaithDisplay = (dfaithRaw / Math.pow(10, DFAITH_DECIMALS)).toFixed(DFAITH_DECIMALS);
-        setDfaithBalance(dfaithDisplay);
-        
-        // D.INVEST Balance laden  
-        const dinvestValue = await fetchTokenBalanceViaInsightApi(DINVEST_TOKEN, account.address);
-        setDinvestBalance(Math.floor(Number(dinvestValue)).toString());
-        
-      } catch (error) {
-        console.error("BuyTab: Fehler beim Laden der Token-Balances:", error);
-        setDfaithBalance("0.00");
-        setDinvestBalance("0");
-      }
-    };
-    
-    loadBalances();
-    
-    // Balance alle 30 Sekunden aktualisieren
-    const interval = setInterval(loadBalances, 30000);
-    return () => clearInterval(interval);
-  }, [account?.address]);
 
   // D.FAITH Swap Funktion mit mehrstufigem Prozess angepasst für ParaSwap
   const handleGetQuote = async () => {
@@ -634,10 +545,8 @@ export default function BuyTab() {
         console.log(`D.FAITH-Balance-Verifizierung Versuch ${attempts}/${maxAttempts}`);
         
         try {
-          // D.FAITH Balance neu laden
-          const dfaithValue = await fetchTokenBalanceViaInsightApi(DFAITH_TOKEN, account.address);
-          const dfaithRaw = Number(dfaithValue);
-          const currentDFaithBalance = dfaithRaw / Math.pow(10, DFAITH_DECIMALS);
+          // D.FAITH Balance über thirdweb hooks prüfen (die werden automatisch aktualisiert)
+          const currentDFaithBalance = Number(dfaithBalance);
           
           console.log(`Initiale D.FAITH: ${initialDFaithBalance}, Aktuelle D.FAITH: ${currentDFaithBalance}`);
           
@@ -647,28 +556,7 @@ export default function BuyTab() {
           if (balanceIncrease > 0.01) { // Mindestens 0.01 D.FAITH Erhöhung
             console.log(`✅ D.FAITH-Balance-Erhöhung verifiziert: +${balanceIncrease.toFixed(2)} D.FAITH - Kauf erfolgreich!`);
             
-            // Balances aktualisieren
-            setDfaithBalance(currentDFaithBalance.toFixed(DFAITH_DECIMALS));
-            
-            // ETH Balance auch aktualisieren
-            try {
-              const response = await fetch(base.rpc, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  jsonrpc: '2.0',
-                  method: 'eth_getBalance',
-                  params: [account.address, 'latest'],
-                  id: 1
-                })
-              });
-              const data = await response.json();
-              const ethRaw = data?.result ? BigInt(data.result) : BigInt(0);
-              const currentEthBalance = Number(ethRaw) / Math.pow(10, 18);
-              setEthBalance(currentEthBalance.toFixed(5));
-            } catch (ethError) {
-              console.log("ETH Balance Update Fehler (ignoriert):", ethError);
-            }
+            // Balances werden automatisch über thirdweb hooks aktualisiert - keine manuellen Updates nötig
             
             balanceVerified = true;
             setBuyStep('completed');
