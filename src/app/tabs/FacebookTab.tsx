@@ -561,7 +561,7 @@ export default function FacebookTab() {
                 onClick={() => {
                   if (typeof window !== 'undefined') {
                     localStorage.clear();
-                    window.location.reload();
+                    window.location.href = window.location.pathname + '?tab=facebook' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
                   }
                 }}
                 className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
@@ -839,7 +839,7 @@ export default function FacebookTab() {
             
             <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 mb-4">
               <p className="text-orange-800 font-medium text-sm">
-                ⚡ <strong>Aktuell:</strong> +{userData?.miningpower || 0} D.Faith pro Tag
+                ⚡ <strong>Aktuell:</strong> +{userData?.miningpower || 0} D.Faith pro Beitrag
               </p>
             </div>
             

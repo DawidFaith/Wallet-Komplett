@@ -43,9 +43,9 @@ const getLevelAndExpRange = (exp: number) => {
 const getUUID = () => {
   if (typeof window !== 'undefined') {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('uuid') || 'dfaith3789953';
+    return urlParams.get('uuid') || 'dfaith3788655';
   }
-  return 'dfaith3789953';
+  return 'dfaith3788655';
 };
 
 export default function InstagramTab() {
@@ -77,7 +77,7 @@ export default function InstagramTab() {
         const uuid = getUUID();
         
         // UUID Überprüfung - wenn Standard UUID, dann Modal anzeigen
-        if (uuid === 'dfaith3789953') {
+        if (uuid === 'dfaith3788655') {
           setLoading(false);
           setShowNoUuidModal(true);
           // Dummy Daten setzen damit die UI angezeigt wird
@@ -250,7 +250,7 @@ export default function InstagramTab() {
       <div 
         className="min-h-screen w-full flex items-center justify-center"
         style={{
-          background: 'linear-gradient(135deg, #f093fb, #f5576c, #4facfe, #00f2fe)',
+          background: 'linear-gradient(135deg, #f093fb, #f5576c, #c471ed, #f64f59)',
           fontFamily: 'Poppins, Segoe UI, sans-serif'
         }}
       >
@@ -280,7 +280,7 @@ export default function InstagramTab() {
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center"
           style={{
-            background: 'linear-gradient(135deg, rgba(240, 147, 251, 0.95), rgba(245, 87, 108, 0.95), rgba(79, 172, 254, 0.95), rgba(0, 242, 254, 0.95))',
+            background: 'linear-gradient(135deg, rgba(240, 147, 251, 0.95), rgba(245, 87, 108, 0.95), rgba(196, 113, 237, 0.95), rgba(246, 79, 89, 0.95))',
             backdropFilter: 'blur(8px)'
           }}
         >
@@ -296,7 +296,7 @@ export default function InstagramTab() {
       <div 
         className="min-h-screen flex items-center justify-center p-8"
         style={{ 
-          background: 'linear-gradient(135deg, #f093fb, #f5576c, #4facfe, #00f2fe)',
+          background: 'linear-gradient(135deg, #f093fb, #f5576c, #c471ed, #f64f59)',
           fontFamily: 'Poppins, Segoe UI, sans-serif'
         }}
       >
@@ -337,7 +337,7 @@ export default function InstagramTab() {
             {/* Progress Bar mit Animation */}
             <div className="relative bg-gray-800/60 rounded-full h-4 overflow-hidden mb-4 shadow-inner border border-gray-700/50">
               <div 
-                className="h-full bg-gradient-to-r from-purple-400 via-pink-500 to-blue-500 transition-all duration-1000 ease-out relative shadow-lg"
+                className="h-full bg-gradient-to-r from-purple-400 via-pink-500 to-orange-500 transition-all duration-1000 ease-out relative shadow-lg"
                 style={{ width: `${progressPercent}%` }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
@@ -391,7 +391,7 @@ export default function InstagramTab() {
           <div className="flex gap-3">
             <button 
               onClick={() => setShowUpgradeModal(true)}
-              className="relative flex-1 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 px-4 py-4 rounded-2xl font-bold text-sm text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/25 border border-purple-400/30"
+              className="relative flex-1 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 px-4 py-4 rounded-2xl font-bold text-sm text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/25 border border-purple-400/30"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               <div className="relative flex items-center justify-center gap-1">
@@ -592,7 +592,7 @@ export default function InstagramTab() {
                 onClick={() => {
                   if (typeof window !== 'undefined') {
                     localStorage.clear();
-                    window.location.reload();
+                    window.location.href = window.location.pathname + '?tab=instagram' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
                   }
                 }}
                 className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
@@ -936,7 +936,7 @@ export default function InstagramTab() {
             
             <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 mb-4">
               <p className="text-orange-800 font-medium text-sm">
-                ⚡ <strong>Aktuell:</strong> +{userData.miningpower} D.Faith pro Tag
+                ⚡ <strong>Aktuell:</strong> +{userData.miningpower} D.Faith pro Beitrag
               </p>
             </div>
             
