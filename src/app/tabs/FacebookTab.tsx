@@ -280,10 +280,10 @@ export default function FacebookTab() {
           </div>
           
           {/* System Check */}
-          <div className="border-2 border-white rounded-2xl p-4 mb-6 bg-white bg-opacity-8">
-            <div className="font-bold text-lg mb-3">✅ System Check</div>
+          <div className="border-2 border-white rounded-2xl p-4 mb-6 bg-black bg-opacity-20">
+            <div className="font-bold text-lg mb-3 text-white">✅ System Check</div>
             
-            <div className="space-y-2 text-sm">
+            <div className="space-y-2 text-sm text-white">
               <div className="flex justify-between">
                 <span>❤️ Like</span>
                 <span>{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
