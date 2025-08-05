@@ -248,6 +248,7 @@ export default function FacebookTab() {
             src={userData.image || 'https://via.placeholder.com/100'} 
             alt="Profilbild"
             className="w-24 h-24 rounded-full object-cover mx-auto mb-4"
+            loading="lazy"
           />
           
           {/* Level Box */}
@@ -554,7 +555,7 @@ export default function FacebookTab() {
             <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-700 leading-relaxed">
                 Deine Wallet-Adresse wird dauerhaft mit deinem Social-Media-Account verbunden.<br/><br/>
-                Wenn du sie ändern willst, schreib mir eine <strong className="text-blue-600">DM mit dem Stichwort "Wallet"</strong> auf <strong className="text-blue-600">Facebook</strong>.
+                Wenn du sie ändern willst, schreib mir eine <strong className="text-blue-600">DM mit dem Stichwort &quot;Wallet&quot;</strong> auf <strong className="text-blue-600">Facebook</strong>.
               </p>
             </div>
             <button 
