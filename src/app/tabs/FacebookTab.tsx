@@ -35,6 +35,7 @@ export default function FacebookTab() {
   const [afterValues, setAfterValues] = useState<{likes: number, shares: number} | null>(null);
   const [confirmationMessage, setConfirmationMessage] = useState(false);
   const [showNoUuidModal, setShowNoUuidModal] = useState(false);
+  const [showMiningPowerModal, setShowMiningPowerModal] = useState(false);
 
   // Level Funktionen
   const getLevelAndExpRange = (exp: number) => {
@@ -331,7 +332,10 @@ export default function FacebookTab() {
             </div>
             
             {/* Mining Power mit verbessertem Design */}
-            <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-xl p-3 border border-yellow-500/30">
+            <button 
+              onClick={() => setShowMiningPowerModal(true)}
+              className="w-full bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-xl p-3 border border-yellow-500/30 hover:from-yellow-500/30 hover:to-orange-500/30 hover:border-yellow-500/50 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer"
+            >
               <div className="flex items-center justify-center gap-2">
                 <span className="text-2xl animate-bounce">⛏</span>
                 <div className="text-center">
@@ -339,7 +343,7 @@ export default function FacebookTab() {
                   <div className="text-yellow-200 text-lg font-bold">+{userData.miningpower} D.Faith</div>
                 </div>
               </div>
-            </div>
+            </button>
           </div>
           
           {/* System Check */}
@@ -759,7 +763,9 @@ export default function FacebookTab() {
                 rel="noopener noreferrer"
                 className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3 block"
               >
-                <span className="text-xl">📘</span>
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
                 <span>Facebook Profil</span>
               </a>
             </div>
@@ -775,6 +781,73 @@ export default function FacebookTab() {
               className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
             >
               ❌ Verstanden
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mining Power Modal */}
+      {showMiningPowerModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
+              onClick={() => setShowMiningPowerModal(false)}
+              aria-label="Schließen"
+              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+            >
+              ×
+            </button>
+            <div className="flex flex-col items-center gap-4 mb-6">
+              <div className="w-20 h-20 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                <span className="text-3xl text-white">⛏</span>
+              </div>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">Mining Power Info</h2>
+            </div>
+            
+            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-6">
+              <p className="text-gray-800 leading-relaxed mb-4">
+                Deine <strong className="text-orange-600">Mining Power</strong> ist abhängig von verschiedenen Faktoren:
+              </p>
+              
+              <div className="space-y-3 text-left">
+                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-yellow-300">
+                  <span className="text-xl">💰</span>
+                  <div>
+                    <div className="font-bold text-gray-800">Marketing Budget</div>
+                    <div className="text-sm text-gray-600">Pro User für den aktuellen Beitrag</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-yellow-300">
+                  <span className="text-xl">📊</span>
+                  <div>
+                    <div className="font-bold text-gray-800">Dein Level</div>
+                    <div className="text-sm text-gray-600">Aktuell: Level {getLevelAndExpRange(userData?.expTotal || 0).level}</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-yellow-300">
+                  <span className="text-xl">💎</span>
+                  <div>
+                    <div className="font-bold text-gray-800">D.FAITH Preis</div>
+                    <div className="text-sm text-gray-600">Aktueller Marktpreis</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 mb-4">
+              <p className="text-orange-800 font-medium text-sm">
+                ⚡ <strong>Aktuell:</strong> +{userData?.miningpower || 0} D.Faith pro Tag
+              </p>
+            </div>
+            
+            <button 
+              onClick={() => setShowMiningPowerModal(false)}
+              className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+            >
+              ✅ Verstanden
             </button>
           </div>
         </div>
