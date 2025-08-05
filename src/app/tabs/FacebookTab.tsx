@@ -75,6 +75,21 @@ export default function FacebookTab() {
         if (uuid === 'Dawidfaithtest3736FB') {
           setLoading(false);
           setShowNoUuidModal(true);
+          // Dummy Daten setzen damit die UI angezeigt wird
+          setUserData({
+            username: "Gast",
+            image: "https://via.placeholder.com/100",
+            expTotal: 0,
+            expTiktok: 0,
+            expFacebook: 0,
+            expStream: 0,
+            liveNFTBonus: 0,
+            miningpower: 0,
+            liked: "false",
+            commented: "false",
+            saved: "false",
+            wallet: undefined
+          });
           return;
         }
         

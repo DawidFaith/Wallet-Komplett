@@ -79,6 +79,23 @@ export default function InstagramTab() {
         if (uuid === 'dfaith3789953') {
           setLoading(false);
           setShowNoUuidModal(true);
+          // Dummy Daten setzen damit die UI angezeigt wird
+          setUserData({
+            username: "Gast",
+            image: "https://via.placeholder.com/100",
+            expTotal: 0,
+            expTiktok: 0,
+            expInstagram: 0,
+            expFacebook: 0,
+            expStream: 0,
+            liveNFTBonus: 0,
+            miningpower: 0,
+            liked: "false",
+            commented: "false",
+            story: "false",
+            saved: "false",
+            wallet: undefined
+          });
           return;
         }
         
@@ -232,7 +249,7 @@ export default function InstagramTab() {
       <div 
         className="min-h-screen w-full flex items-center justify-center"
         style={{
-          background: 'linear-gradient(135deg, #e1306c, #fd1d1d, #833ab4)',
+          background: 'linear-gradient(135deg, #f093fb, #f5576c, #4facfe, #00f2fe)',
           fontFamily: 'Poppins, Segoe UI, sans-serif'
         }}
       >
@@ -262,7 +279,7 @@ export default function InstagramTab() {
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center"
           style={{
-            background: 'linear-gradient(135deg, rgba(225, 48, 108, 0.95), rgba(253, 29, 29, 0.95), rgba(131, 58, 180, 0.95))',
+            background: 'linear-gradient(135deg, rgba(240, 147, 251, 0.95), rgba(245, 87, 108, 0.95), rgba(79, 172, 254, 0.95), rgba(0, 242, 254, 0.95))',
             backdropFilter: 'blur(8px)'
           }}
         >
@@ -278,7 +295,7 @@ export default function InstagramTab() {
       <div 
         className="min-h-screen flex items-center justify-center p-8"
         style={{ 
-          background: 'linear-gradient(135deg, #e1306c, #fd1d1d, #833ab4)',
+          background: 'linear-gradient(135deg, #f093fb, #f5576c, #4facfe, #00f2fe)',
           fontFamily: 'Poppins, Segoe UI, sans-serif'
         }}
       >
@@ -300,7 +317,7 @@ export default function InstagramTab() {
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-baseline gap-2">
                 <span className="text-xl font-bold text-white">Level</span>
-                <span className="text-2xl font-black bg-gradient-to-r from-pink-400 to-red-500 bg-clip-text text-transparent">{level}</span>
+                <span className="text-2xl font-black bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">{level}</span>
               </div>
               
               <div className="flex items-baseline gap-1">
@@ -310,7 +327,7 @@ export default function InstagramTab() {
               
               <button 
                 onClick={() => setShowInfoModal(true)}
-                className="bg-pink-500 hover:bg-pink-600 text-white w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200"
+                className="bg-purple-500 hover:bg-purple-600 text-white w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200"
               >
                 i
               </button>
@@ -319,7 +336,7 @@ export default function InstagramTab() {
             {/* Progress Bar mit Animation */}
             <div className="relative bg-gray-800/60 rounded-full h-4 overflow-hidden mb-4 shadow-inner border border-gray-700/50">
               <div 
-                className="h-full bg-gradient-to-r from-pink-400 via-red-500 to-purple-500 transition-all duration-1000 ease-out relative shadow-lg"
+                className="h-full bg-gradient-to-r from-purple-400 via-pink-500 to-blue-500 transition-all duration-1000 ease-out relative shadow-lg"
                 style={{ width: `${progressPercent}%` }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
@@ -370,7 +387,7 @@ export default function InstagramTab() {
           <div className="flex gap-3">
             <button 
               onClick={() => setShowUpgradeModal(true)}
-              className="relative flex-1 bg-gradient-to-r from-pink-500 via-pink-600 to-red-700 px-4 py-4 rounded-2xl font-bold text-sm text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-pink-500/25 border border-pink-400/30"
+              className="relative flex-1 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 px-4 py-4 rounded-2xl font-bold text-sm text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/25 border border-purple-400/30"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               <div className="relative flex items-center justify-center gap-1">
@@ -396,13 +413,13 @@ export default function InstagramTab() {
       {showUpgradeModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
-            <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">✨ Sammle mehr EXP!</h2>
+            <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">✨ Sammle mehr EXP!</h2>
             <button 
               onClick={() => {
                 setShowUpgradeModal(false);
                 setShowLikeSaveModal(true);
               }}
-              className="w-full bg-gradient-to-r from-pink-500 to-red-600 hover:from-pink-600 hover:to-red-700 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3"
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3"
             >
               <span className="text-xl">❤️</span>
               <span className="text-xl">💾</span>
@@ -413,7 +430,7 @@ export default function InstagramTab() {
                 setShowUpgradeModal(false);
                 setShowStoryHelpModal(true);
               }}
-              className="w-full bg-gradient-to-r from-pink-500 to-red-600 hover:from-pink-600 hover:to-red-700 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3"
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3"
             >
               <span className="text-xl">📣</span>
               <span>Story teilen</span>
@@ -494,17 +511,17 @@ export default function InstagramTab() {
       {showLikeSaveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">📊 Like & Save Verification</h2>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">📊 Like & Save Verification</h2>
             
-            <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-4">
-              <p className="font-semibold mb-3 text-pink-800">1️⃣ Entferne alle Likes und Saves von meinem Beitrag</p>
+            <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 mb-4">
+              <p className="font-semibold mb-3 text-purple-800">1️⃣ Entferne alle Likes und Saves von meinem Beitrag</p>
               <button 
                 onClick={() => setShowConfirmInitial(true)}
                 disabled={initialValues !== null || loading}
                 className={`w-full p-3 rounded-xl font-bold transition-all duration-300 ${
                   initialValues !== null || loading
                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white transform hover:scale-105'
+                    : 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white transform hover:scale-105'
                 }`}
               >
                 {loading ? (
@@ -515,14 +532,14 @@ export default function InstagramTab() {
                 ) : initialValues !== null ? '✅ Werte bereits erfasst' : '✅ Check aktuelle Werte'}
               </button>
               {initialValues && (
-                <div className="bg-white border border-pink-300 rounded-xl p-3 mt-3 text-sm">
+                <div className="bg-white border border-purple-300 rounded-xl p-3 mt-3 text-sm">
                   <div className="flex justify-between">
                     <span>Likes:</span>
-                    <span className="font-bold text-pink-600">{initialValues.likes}</span>
+                    <span className="font-bold text-purple-600">{initialValues.likes}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Saves:</span>
-                    <span className="font-bold text-pink-600">{initialValues.saves}</span>
+                    <span className="font-bold text-purple-600">{initialValues.saves}</span>
                   </div>
                 </div>
               )}
@@ -602,10 +619,10 @@ export default function InstagramTab() {
               ×
             </button>
             <div className="text-6xl mb-4">📣</div>
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">Story teilen</h2>
-            <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-6">
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Story teilen</h2>
+            <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-700 leading-relaxed">
-                Bitte teile meinen Beitrag in deiner Instagram-Story<br/><strong className="text-pink-600">@dawidfaith</strong>, damit du dein Upgrade erhältst.
+                Bitte teile meinen Beitrag in deiner Instagram-Story<br/><strong className="text-purple-600">@dawidfaith</strong>, damit du dein Upgrade erhältst.
               </p>
             </div>
           </div>
@@ -624,13 +641,13 @@ export default function InstagramTab() {
             >
               ×
             </button>
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">📊 Deine EXP-Quellen</h2>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">📊 Deine EXP-Quellen</h2>
             <div className="text-left space-y-3 mb-6">
-              <div className="flex items-center gap-3 border-l-4 border-pink-500 pl-3 bg-pink-50 py-2 rounded-r-xl">
+              <div className="flex items-center gap-3 border-l-4 border-purple-500 pl-3 bg-purple-50 py-2 rounded-r-xl">
                 <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
                 <div>
-                  <div className="font-bold text-pink-800">Instagram</div>
-                  <div className="text-pink-600 font-semibold">{userData.expInstagram} EXP</div>
+                  <div className="font-bold text-purple-800">Instagram</div>
+                  <div className="text-purple-600 font-semibold">{userData.expInstagram} EXP</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 border-l-4 border-black pl-3 bg-gray-50 py-2 rounded-r-xl">
@@ -662,7 +679,7 @@ export default function InstagramTab() {
                 </div>
               </div>
             </div>
-            <div className="bg-gradient-to-r from-pink-50 to-red-50 border border-pink-200 rounded-2xl p-4 mb-6">
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-4 mb-6">
               <p className="text-sm text-gray-700 font-medium">💡 Mehr EXP = schnelleres Level-Up. Nutze alle Plattformen! 🚀</p>
             </div>
           </div>
@@ -682,11 +699,11 @@ export default function InstagramTab() {
               ×
             </button>
             <div className="text-6xl mb-4">🔒</div>
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">Wichtiger Hinweis</h2>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Wichtiger Hinweis</h2>
             <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-700 leading-relaxed">
                 Deine Wallet-Adresse wird dauerhaft mit deinem Social-Media-Account verbunden.<br/><br/>
-                Wenn du sie ändern willst, schreib mir eine <strong className="text-pink-600">DM mit dem Stichwort &quot;Wallet&quot;</strong> auf <strong className="text-pink-600">Instagram</strong>.
+                Wenn du sie ändern willst, schreib mir eine <strong className="text-purple-600">DM mit dem Stichwort &quot;Wallet&quot;</strong> auf <strong className="text-purple-600">Instagram</strong>.
               </p>
             </div>
           </div>
@@ -699,8 +716,8 @@ export default function InstagramTab() {
           <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
             <div className="text-5xl mb-4">⚠️</div>
             <h2 className="text-xl font-bold mb-4 text-gray-800">Bestätigung erforderlich</h2>
-            <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-4">
-              <p className="text-pink-800 leading-relaxed">Bitte entferne alle Likes und Saves von meinem Beitrag – danach werden alle aktuellen Zahlen gespeichert.</p>
+            <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 mb-4">
+              <p className="text-purple-800 leading-relaxed">Bitte entferne alle Likes und Saves von meinem Beitrag – danach werden alle aktuellen Zahlen gespeichert.</p>
             </div>
             <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-6">
               <p className="text-yellow-700 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro Beitrag!</p>
@@ -746,7 +763,7 @@ export default function InstagramTab() {
                   setShowLikeSaveModal(true);
                   checkAfter();
                 }}
-                className="flex-1 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+                className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
               >
                 ✅ Ja, fortfahren
               </button>
@@ -783,8 +800,8 @@ export default function InstagramTab() {
               <p className="text-gray-700">
                 Es scheint, als hättest du bereits einen Versuch für diesen Beitrag unternommen.
               </p>
-              <div className="bg-pink-50 border border-pink-200 rounded-xl p-3">
-                <p className="text-pink-800 font-medium text-sm">
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-3">
+                <p className="text-purple-800 font-medium text-sm">
                   💡 <strong>Nächste Möglichkeit:</strong><br/>
                   Warte auf meinen nächsten Instagram-Beitrag für eine neue Chance!
                 </p>
@@ -794,7 +811,7 @@ export default function InstagramTab() {
               </p>
             </div>
             <button 
-              className="w-full mt-4 py-2 rounded-xl font-semibold bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white shadow transition-all duration-300 transform hover:scale-105"
+              className="w-full mt-4 py-2 rounded-xl font-semibold bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow transition-all duration-300 transform hover:scale-105"
               onClick={() => setShowNoValuesFoundModal(false)}
             >
               Verstanden
@@ -807,15 +824,15 @@ export default function InstagramTab() {
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
             <div className="flex flex-col items-center gap-4 mb-6">
-              <div className="w-20 h-20 bg-gradient-to-r from-pink-500 to-red-500 rounded-full flex items-center justify-center">
+              <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                 <span className="text-3xl text-white">🔒</span>
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">Profil nicht gefunden</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Profil nicht gefunden</h2>
             </div>
             
-            <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-6">
+            <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-800 leading-relaxed mb-4">
-                Dein Profil ist nur durch die <strong className="text-pink-600">Teilnahme an den Beiträgen</strong> von <strong className="text-pink-600">Dawid Faith</strong> erreichbar.
+                Dein Profil ist nur durch die <strong className="text-purple-600">Teilnahme an den Beiträgen</strong> von <strong className="text-purple-600">Dawid Faith</strong> erreichbar.
               </p>
               <p className="text-gray-600 text-sm">
                 💡 Like, kommentiere und teile seine Beiträge, um Zugang zu erhalten!
@@ -829,7 +846,7 @@ export default function InstagramTab() {
                 href="https://www.instagram.com/dawidfaith?igsh=aTF5dXBoYWxkb2Js"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full bg-gradient-to-r from-pink-500 to-red-600 hover:from-pink-600 hover:to-red-700 text-white p-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3 block"
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white p-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3 block"
               >
                 <span className="text-xl">📷</span>
                 <span>Instagram @dawidfaith</span>
