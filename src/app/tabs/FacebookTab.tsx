@@ -321,21 +321,21 @@ export default function FacebookTab() {
           <div className="flex flex-col gap-3">
             <button 
               onClick={() => setShowUpgradeModal(true)}
-              className="relative w-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 px-6 py-4 rounded-2xl font-bold text-lg text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 border border-blue-400/30"
+              className="relative w-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 px-4 py-3 rounded-2xl font-bold text-base text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 border border-blue-400/30"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               <div className="relative flex items-center justify-center gap-2">
-                <span className="text-2xl animate-pulse">✨</span>
+                <span className="text-xl animate-pulse">✨</span>
                 <span className="tracking-wider">Sammle mehr EXP</span>
               </div>
             </button>
             <button 
               onClick={() => setShowClaimModal(true)}
-              className="relative w-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 px-6 py-4 rounded-2xl font-bold text-lg text-gray-900 overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/25 border border-yellow-300/50"
+              className="relative w-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 px-4 py-3 rounded-2xl font-bold text-base text-gray-900 overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/25 border border-yellow-300/50"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               <div className="relative flex items-center justify-center gap-2">
-                <span className="text-2xl animate-bounce">🪙</span>
+                <span className="text-xl animate-bounce">🪙</span>
                 <span className="tracking-wider">Claim Belohnung</span>
               </div>
             </button>
