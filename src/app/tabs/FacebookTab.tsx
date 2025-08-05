@@ -300,18 +300,26 @@ export default function FacebookTab() {
           </div>
           
           {/* Buttons */}
-          <div className="flex justify-center gap-4">
+          <div className="flex flex-col gap-3">
             <button 
               onClick={() => setShowUpgradeModal(true)}
-              className="bg-gradient-to-r from-blue-500 to-blue-700 px-7 py-4 rounded-full font-bold text-lg hover:from-blue-600 hover:to-blue-800 transition-all duration-300 transform hover:-translate-y-1 shadow-lg"
+              className="relative w-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 px-6 py-4 rounded-2xl font-bold text-lg text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 border border-blue-400/30"
             >
-              ✨ Upgrade
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+              <div className="relative flex items-center justify-center gap-2">
+                <span className="text-2xl animate-pulse">✨</span>
+                <span className="tracking-wider">Sammle mehr EXP</span>
+              </div>
             </button>
             <button 
               onClick={() => setShowClaimModal(true)}
-              className="bg-gradient-to-r from-blue-500 to-blue-700 px-7 py-4 rounded-full font-bold text-lg hover:from-blue-600 hover:to-blue-800 transition-all duration-300 transform hover:-translate-y-1 shadow-lg"
+              className="relative w-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 px-6 py-4 rounded-2xl font-bold text-lg text-gray-900 overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/25 border border-yellow-300/50"
             >
-              🪙 Claim
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+              <div className="relative flex items-center justify-center gap-2">
+                <span className="text-2xl animate-bounce">🪙</span>
+                <span className="tracking-wider">Claim Belohnung</span>
+              </div>
             </button>
           </div>
         </div>
@@ -319,21 +327,23 @@ export default function FacebookTab() {
 
       {/* Upgrade Modal */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-2xl p-6 max-w-sm w-full text-center">
-            <p className="text-xl font-semibold mb-4">✨ Upgrade deine EXP!</p>
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
+            <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">✨ Sammle mehr EXP!</h2>
             <button 
               onClick={() => {
                 setShowUpgradeModal(false);
                 setShowLikeSaveModal(true);
               }}
-              className="w-full bg-gray-100 hover:bg-gray-200 p-3 rounded-lg font-bold mb-4 border-2 border-gray-300"
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3"
             >
-              ❤️ 🔁 Like + Share
+              <span className="text-xl">❤️</span>
+              <span className="text-xl">🔁</span>
+              <span>Like + Share</span>
             </button>
             <button 
               onClick={() => setShowUpgradeModal(false)}
-              className="w-full bg-gray-100 hover:bg-gray-200 p-3 rounded-lg font-bold border-2 border-gray-300"
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-4 rounded-2xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
             >
               ❌ Schließen
             </button>
@@ -343,39 +353,42 @@ export default function FacebookTab() {
 
       {/* Claim Modal */}
       {showClaimModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-2xl p-6 max-w-sm w-full text-center">
-            <div className="flex justify-center mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
+            <div className="flex justify-center mb-6">
               <button 
                 onClick={() => setShowWalletInfoModal(true)}
-                className="bg-white text-pink-600 w-7 h-7 rounded-full font-bold text-sm flex items-center justify-center shadow-lg border"
+                className="bg-blue-100 hover:bg-blue-200 text-blue-600 w-10 h-10 rounded-full font-bold text-lg flex items-center justify-center shadow-lg border border-blue-300 transition-all duration-300 hover:scale-110"
               >
                 i
               </button>
             </div>
-            <p className="mb-4">Gib deine Wallet-Adresse ein, um deinen Claim auszulösen:</p>
+            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">🪙 Wallet für Claim benötigt</h2>
+            <p className="mb-6 text-gray-700">Gib deine Wallet-Adresse ein, um deine Belohnung zu erhalten:</p>
             <input 
               type="text"
               value={walletInput}
               onChange={(e) => setWalletInput(e.target.value)}
               placeholder="0x..."
               readOnly={!!(userData?.wallet && userData.wallet.startsWith("0x"))}
-              className="w-full p-3 border rounded-lg mb-4 text-base"
+              className="w-full p-4 border-2 border-gray-300 rounded-2xl mb-6 text-base focus:border-blue-500 focus:outline-none transition-colors duration-300"
             />
             <button 
               onClick={submitClaim}
-              className="w-full bg-gray-100 hover:bg-gray-200 p-3 rounded-lg font-bold mb-2 border-2 border-gray-300"
+              disabled={!walletInput || !walletInput.startsWith('0x')}
+              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 hover:shadow-lg disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              ✅ Claim absenden
+              <span className="text-xl">✅</span>
+              <span>Claim absenden</span>
             </button>
             {claimStatus && (
-              <p className={`mb-4 ${claimStatus.includes('✅') ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`mb-4 p-3 rounded-xl ${claimStatus.includes('✅') ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
                 {claimStatus}
-              </p>
+              </div>
             )}
             <button 
               onClick={() => setShowClaimModal(false)}
-              className="w-full bg-gray-100 hover:bg-gray-200 p-3 rounded-lg font-bold border-2 border-gray-300"
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-4 rounded-2xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
             >
               ❌ Schließen
             </button>
@@ -385,89 +398,146 @@ export default function FacebookTab() {
 
       {/* Like & Save Modal */}
       {showLikeSaveModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-2xl p-6 max-w-sm w-full text-center">
-            <p className="mb-4">1. Bitte entferne alle Likes von meinem Beitrag.</p>
-            <button 
-              onClick={() => setShowConfirmInitial(true)}
-              className="w-full bg-gray-100 hover:bg-gray-200 p-3 rounded-lg font-bold mb-4 border-2 border-gray-300"
-            >
-              ✅ Check aktuelle Werte
-            </button>
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">📊 Like & Share Verification</h2>
             
-            {initialValues && (
-              <div className="bg-gray-100 p-3 rounded-lg mb-4 text-sm">
-                Likes: {initialValues.likes}<br/>
-                Shares: {initialValues.shares}
-              </div>
-            )}
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
+              <p className="font-semibold mb-3 text-blue-800">1️⃣ Entferne alle Likes und Shares von meinem Beitrag</p>
+              <button 
+                onClick={() => setShowConfirmInitial(true)}
+                disabled={initialValues !== null}
+                className={`w-full p-3 rounded-xl font-bold transition-all duration-300 ${
+                  initialValues !== null 
+                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white transform hover:scale-105'
+                }`}
+              >
+                {initialValues !== null ? '✅ Werte bereits erfasst' : '✅ Check aktuelle Werte'}
+              </button>
+              {initialValues && (
+                <div className="bg-white border border-blue-300 rounded-xl p-3 mt-3 text-sm">
+                  <div className="flex justify-between">
+                    <span>Likes:</span>
+                    <span className="font-bold text-blue-600">{initialValues.likes}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Shares:</span>
+                    <span className="font-bold text-blue-600">{initialValues.shares}</span>
+                  </div>
+                </div>
+              )}
+            </div>
             
-            <p className="mb-4">2. Bitte Like und Teile meinen Beitrag bevor du fortfährst!</p>
-            <button 
-              onClick={() => setShowConfirmAfter(true)}
-              className="w-full bg-gray-100 hover:bg-gray-200 p-3 rounded-lg font-bold mb-4 border-2 border-gray-300"
-            >
-              ✅ Check neue Werte
-            </button>
-            
-            {afterValues && (
-              <div className="bg-gray-100 p-3 rounded-lg mb-4 text-sm">
-                Likes: {afterValues.likes}<br/>
-                Shares: {afterValues.shares}
-              </div>
-            )}
+            <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
+              <p className="font-semibold mb-3 text-green-800">2️⃣ Like und teile den Beitrag erneut!</p>
+              <button 
+                onClick={() => setShowConfirmAfter(true)}
+                className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+              >
+                ✅ Check neue Werte
+              </button>
+              {afterValues && (
+                <div className="bg-white border border-green-300 rounded-xl p-3 mt-3 text-sm">
+                  <div className="flex justify-between">
+                    <span>Likes:</span>
+                    <span className="font-bold text-green-600">{afterValues.likes}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Shares:</span>
+                    <span className="font-bold text-green-600">{afterValues.shares}</span>
+                  </div>
+                </div>
+              )}
+            </div>
             
             {confirmationMessage && (
-              <p className="text-green-600 mb-4">✅ Erfolgreich! Bitte lade die Seite neu.</p>
+              <div className="bg-green-100 border border-green-200 rounded-xl p-3 mb-4">
+                <p className="text-green-700 font-bold">✅ Erfolgreich! Bitte lade die Seite neu.</p>
+              </div>
             )}
             
-            <button 
-              onClick={() => {
-                if (typeof window !== 'undefined') {
-                  localStorage.clear();
-                  window.location.reload();
-                }
-              }}
-              className="w-full bg-gray-100 hover:bg-gray-200 p-3 rounded-lg font-bold mb-2 border-2 border-gray-300"
-            >
-              🔄 Neu laden
-            </button>
-            <button 
-              onClick={() => setShowLikeSaveModal(false)}
-              className="w-full bg-gray-100 hover:bg-gray-200 p-3 rounded-lg font-bold border-2 border-gray-300"
-            >
-              ❌ Schließen
-            </button>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    localStorage.clear();
+                    window.location.reload();
+                  }
+                }}
+                className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+              >
+                🔄 Neu laden
+              </button>
+              <button 
+                onClick={() => setShowLikeSaveModal(false)}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
+              >
+                ❌ Schließen
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Info Modal */}
       {showInfoModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-2xl p-6 max-w-sm w-full text-center">
-            <p className="text-xl font-bold mb-4">📊 Deine EXP-Quellen</p>
-            <div className="text-left space-y-3 mb-6">
-              <div className="border-l-4 border-blue-500 pl-3">
-                <strong>Facebook:</strong> {userData.expFacebook} EXP
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
+            <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">📊 Deine EXP-Quellen</h2>
+            <div className="text-left space-y-4 mb-8">
+              <div className="border-l-4 border-blue-500 pl-4 bg-blue-50 py-2 rounded-r-xl">
+                <div className="flex items-center gap-2">
+                  <span className="text-blue-600 text-xl">👍</span>
+                  <div>
+                    <div className="font-bold text-blue-800">Facebook</div>
+                    <div className="text-blue-600 font-semibold">{userData.expFacebook} EXP</div>
+                  </div>
+                </div>
               </div>
-              <div className="border-l-4 border-black pl-3">
-                <strong>TikTok:</strong> {userData.expTiktok} EXP
+              <div className="border-l-4 border-black pl-4 bg-gray-50 py-2 rounded-r-xl">
+                <div className="flex items-center gap-2">
+                  <span className="text-black text-xl">🎵</span>
+                  <div>
+                    <div className="font-bold text-gray-800">TikTok</div>
+                    <div className="text-gray-600 font-semibold">{userData.expTiktok} EXP</div>
+                  </div>
+                </div>
               </div>
-              <div className="border-l-4 border-pink-500 pl-3">
-                <strong>Instagram:</strong> 0 EXP
+              <div className="border-l-4 border-pink-500 pl-4 bg-pink-50 py-2 rounded-r-xl">
+                <div className="flex items-center gap-2">
+                  <span className="text-pink-600 text-xl">📸</span>
+                  <div>
+                    <div className="font-bold text-pink-800">Instagram</div>
+                    <div className="text-pink-600 font-semibold">0 EXP</div>
+                  </div>
+                </div>
               </div>
-              <div className="border-l-4 border-purple-500 pl-3">
-                <strong>Stream:</strong> {userData.expStream} EXP
+              <div className="border-l-4 border-purple-500 pl-4 bg-purple-50 py-2 rounded-r-xl">
+                <div className="flex items-center gap-2">
+                  <span className="text-purple-600 text-xl">🎬</span>
+                  <div>
+                    <div className="font-bold text-purple-800">Stream</div>
+                    <div className="text-purple-600 font-semibold">{userData.expStream} EXP</div>
+                  </div>
+                </div>
               </div>
-              <div className="border-l-4 border-yellow-500 pl-3">
-                <strong>Live EXP Bonus:</strong> {userData.liveNFTBonus} EXP
+              <div className="border-l-4 border-yellow-500 pl-4 bg-yellow-50 py-2 rounded-r-xl">
+                <div className="flex items-center gap-2">
+                  <span className="text-yellow-600 text-xl">🎤</span>
+                  <div>
+                    <div className="font-bold text-yellow-800">Live EXP Bonus</div>
+                    <div className="text-yellow-600 font-semibold">{userData.liveNFTBonus} EXP</div>
+                  </div>
+                </div>
               </div>
             </div>
-            <p className="text-sm italic mb-4">💡 Mehr EXP = schnelleres Level-Up. Nutze alle Plattformen! 🚀</p>
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-2xl p-4 mb-6">
+              <p className="text-sm text-gray-700 font-medium">💡 Mehr EXP = schnelleres Level-Up. Nutze alle Plattformen! 🚀</p>
+            </div>
             <button 
               onClick={() => setShowInfoModal(false)}
-              className="w-full bg-gray-100 hover:bg-gray-200 p-3 rounded-lg font-bold border-2 border-gray-300"
+              className="w-full bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 p-4 rounded-2xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
             >
               ❌ Schließen
             </button>
@@ -477,18 +547,21 @@ export default function FacebookTab() {
 
       {/* Wallet Info Modal */}
       {showWalletInfoModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-2xl p-6 max-w-sm w-full text-center">
-            <p className="mb-4">
-              <strong>🔒 Wichtiger Hinweis:</strong><br/><br/>
-              Deine Wallet-Adresse wird dauerhaft mit deinem Social-Media-Account verbunden.<br/><br/>
-              Wenn du sie ändern willst, schreib mir eine <strong>DM mit dem Stichwort &ldquo;Wallet&rdquo;</strong> auf <strong>Facebook</strong>.
-            </p>
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
+            <div className="text-6xl mb-4">🔒</div>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Wichtiger Hinweis</h2>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-6">
+              <p className="text-gray-700 leading-relaxed">
+                Deine Wallet-Adresse wird dauerhaft mit deinem Social-Media-Account verbunden.<br/><br/>
+                Wenn du sie ändern willst, schreib mir eine <strong className="text-blue-600">DM mit dem Stichwort "Wallet"</strong> auf <strong className="text-blue-600">Facebook</strong>.
+              </p>
+            </div>
             <button 
               onClick={() => setShowWalletInfoModal(false)}
-              className="w-full bg-gray-100 hover:bg-gray-200 p-3 rounded-lg font-bold border-2 border-gray-300"
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105"
             >
-              ❌ Schließen
+              ✅ Verstanden
             </button>
           </div>
         </div>
@@ -496,50 +569,66 @@ export default function FacebookTab() {
 
       {/* Confirm Initial Modal */}
       {showConfirmInitial && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-2xl p-6 max-w-sm w-full text-center">
-            <p className="mb-4">Bitte entferne alle Likes von meinem Beitrag – danach werden alle aktuellen Zahlen gespeichert.</p>
-            <p className="text-yellow-600 font-bold mb-4">⚠️ Diese Aktion ist nur einmal möglich pro Beitrag!</p>
-            <button 
-              onClick={() => {
-                setShowConfirmInitial(false);
-                checkInitial();
-              }}
-              className="w-full bg-gray-100 hover:bg-gray-200 p-3 rounded-lg font-bold mb-2 border-2 border-gray-300"
-            >
-              ✅ Ja, fortfahren
-            </button>
-            <button 
-              onClick={() => setShowConfirmInitial(false)}
-              className="w-full bg-gray-100 hover:bg-gray-200 p-3 rounded-lg font-bold border-2 border-gray-300"
-            >
-              ❌ Abbrechen
-            </button>
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
+            <div className="text-5xl mb-4">⚠️</div>
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Bestätigung erforderlich</h2>
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
+              <p className="text-blue-800 leading-relaxed">Bitte entferne alle Likes von meinem Beitrag – danach werden alle aktuellen Zahlen gespeichert.</p>
+            </div>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-6">
+              <p className="text-yellow-700 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro Beitrag!</p>
+            </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  setShowConfirmInitial(false);
+                  checkInitial();
+                }}
+                className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+              >
+                ✅ Ja, fortfahren
+              </button>
+              <button 
+                onClick={() => setShowConfirmInitial(false)}
+                className="flex-1 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
+              >
+                ❌ Abbrechen
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Confirm After Modal */}
       {showConfirmAfter && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-2xl p-6 max-w-sm w-full text-center">
-            <p className="mb-4">Bitte Like und Share den Beitrag erneut, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert.</p>
-            <p className="text-yellow-600 font-bold mb-4">⚠️ Diese Aktion ist nur einmal möglich pro Beitrag!</p>
-            <button 
-              onClick={() => {
-                setShowConfirmAfter(false);
-                checkAfter();
-              }}
-              className="w-full bg-gray-100 hover:bg-gray-200 p-3 rounded-lg font-bold mb-2 border-2 border-gray-300"
-            >
-              ✅ Ja, fortfahren
-            </button>
-            <button 
-              onClick={() => setShowConfirmAfter(false)}
-              className="w-full bg-gray-100 hover:bg-gray-200 p-3 rounded-lg font-bold border-2 border-gray-300"
-            >
-              ❌ Abbrechen
-            </button>
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
+            <div className="text-5xl mb-4">🎯</div>
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Finale Bestätigung</h2>
+            <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
+              <p className="text-green-800 leading-relaxed">Bitte Like und Share den Beitrag erneut, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert.</p>
+            </div>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-6">
+              <p className="text-yellow-700 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro Beitrag!</p>
+            </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  setShowConfirmAfter(false);
+                  checkAfter();
+                }}
+                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+              >
+                ✅ Ja, fortfahren
+              </button>
+              <button 
+                onClick={() => setShowConfirmAfter(false)}
+                className="flex-1 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
+              >
+                ❌ Abbrechen
+              </button>
+            </div>
           </div>
         </div>
       )}
