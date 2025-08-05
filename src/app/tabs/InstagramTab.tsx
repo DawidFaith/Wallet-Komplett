@@ -75,9 +75,12 @@ export default function InstagramTab() {
       setLoading(true);
       try {
         const uuid = getUUID();
+        console.log('Lade Daten für UUID:', uuid);
         
-        // UUID Überprüfung - wenn keine UUID in URL, dann Modal anzeigen
-        if (typeof window !== 'undefined') {
+        // UUID Überprüfung - für später wenn wir wieder umstellen wollen
+        // Aktuell ist diese Prüfung deaktiviert für Tests
+        const showNoUuidModal = false; // Auf true setzen um No UUID Modal zu aktivieren
+        if (showNoUuidModal && typeof window !== 'undefined') {
           const urlParams = new URLSearchParams(window.location.search);
           const urlUuid = urlParams.get('uuid');
           
@@ -110,7 +113,10 @@ export default function InstagramTab() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ uuid })
         });
+        
+        console.log('API Response Status:', response.status);
         const data = await response.json();
+        console.log('API Response Data:', data);
         
         // Wallet setzen falls vorhanden
         if (data.wallet && data.wallet.startsWith("0x")) {
