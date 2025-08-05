@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface UserData {
   username: string;
@@ -18,6 +19,7 @@ interface UserData {
 }
 
 export default function FacebookTab() {
+  const router = useRouter();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -391,25 +393,48 @@ export default function FacebookTab() {
       {/* Claim Modal */}
       {showClaimModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
-            <div className="flex justify-center mb-6">
-              <button 
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
+              onClick={() => setShowClaimModal(false)}
+              aria-label="Schließen"
+              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+            >
+              ×
+            </button>
+            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">🪙 Wallet für Claim benötigt</h2>
+            
+            {!walletInput || !walletInput.startsWith("0x") ? (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 text-gray-800 text-base flex flex-col items-center animate-pulse">
+                <span className="font-semibold mb-3 text-center">Du hast noch keine Wallet hinterlegt.<br/>Erstelle jetzt deine Wallet, um deine Belohnung zu erhalten!</span>
+                <button
+                  className="w-full mt-2 mb-2 py-3 px-4 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400 text-gray-900 shadow-lg hover:from-yellow-500 hover:to-orange-500 active:from-yellow-600 active:to-orange-600 transition text-base border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-center block"
+                  onClick={() => router.push("/wallet")}
+                >
+                  🚀 Wallet jetzt anlegen
+                </button>
+                <span className="text-xs text-gray-500 mt-1">Du findest den Wallet Tab auch oben im Menü.</span>
+              </div>
+            ) : null}
+            
+            <p className="mb-4 text-gray-700">Gib deine Wallet-Adresse ein, um deine Belohnung zu erhalten:</p>
+            <div className="relative mb-6">
+              <input 
+                type="text"
+                value={walletInput}
+                onChange={(e) => setWalletInput(e.target.value)}
+                placeholder="0x..."
+                readOnly={!!(userData?.wallet && userData.wallet.startsWith("0x"))}
+                className="w-full p-4 pr-12 border-2 border-gray-300 rounded-2xl text-base focus:border-blue-500 focus:outline-none transition-colors duration-300"
+              />
+              <button
                 onClick={() => setShowWalletInfoModal(true)}
-                className="bg-blue-100 hover:bg-blue-200 text-blue-600 w-10 h-10 rounded-full font-bold text-lg flex items-center justify-center shadow-lg border border-blue-300 transition-all duration-300 hover:scale-110"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition-all duration-200 text-sm"
+                title="Wallet Info"
               >
                 i
               </button>
             </div>
-            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">🪙 Wallet für Claim benötigt</h2>
-            <p className="mb-6 text-gray-700">Gib deine Wallet-Adresse ein, um deine Belohnung zu erhalten:</p>
-            <input 
-              type="text"
-              value={walletInput}
-              onChange={(e) => setWalletInput(e.target.value)}
-              placeholder="0x..."
-              readOnly={!!(userData?.wallet && userData.wallet.startsWith("0x"))}
-              className="w-full p-4 border-2 border-gray-300 rounded-2xl mb-6 text-base focus:border-blue-500 focus:outline-none transition-colors duration-300"
-            />
             <button 
               onClick={submitClaim}
               disabled={!walletInput || !walletInput.startsWith('0x')}
@@ -423,12 +448,6 @@ export default function FacebookTab() {
                 {claimStatus}
               </div>
             )}
-            <button 
-              onClick={() => setShowClaimModal(false)}
-              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-4 rounded-2xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
-            >
-              ❌ Schließen
-            </button>
           </div>
         </div>
       )}
@@ -535,64 +554,56 @@ export default function FacebookTab() {
       {/* Info Modal */}
       {showInfoModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
-            <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">📊 Deine EXP-Quellen</h2>
-            <div className="text-left space-y-4 mb-8">
-              <div className="border-l-4 border-blue-500 pl-4 bg-blue-50 py-2 rounded-r-xl">
-                <div className="flex items-center gap-2">
-                  <span className="text-blue-600 text-xl">👍</span>
-                  <div>
-                    <div className="font-bold text-blue-800">Facebook</div>
-                    <div className="text-blue-600 font-semibold">{userData.expFacebook} EXP</div>
-                  </div>
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
+              onClick={() => setShowInfoModal(false)}
+              aria-label="Schließen"
+              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+            >
+              ×
+            </button>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">📊 Deine EXP-Quellen</h2>
+            <div className="text-left space-y-3 mb-6">
+              <div className="flex items-center gap-3 border-l-4 border-blue-600 pl-3 bg-blue-50 py-2 rounded-r-xl">
+                <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" className="w-6 h-6" />
+                <div>
+                  <div className="font-bold text-blue-800">Facebook</div>
+                  <div className="text-blue-600 font-semibold">{userData.expFacebook} EXP</div>
                 </div>
               </div>
-              <div className="border-l-4 border-black pl-4 bg-gray-50 py-2 rounded-r-xl">
-                <div className="flex items-center gap-2">
-                  <span className="text-black text-xl">🎵</span>
-                  <div>
-                    <div className="font-bold text-gray-800">TikTok</div>
-                    <div className="text-gray-600 font-semibold">{userData.expTiktok} EXP</div>
-                  </div>
+              <div className="flex items-center gap-3 border-l-4 border-black pl-3 bg-gray-50 py-2 rounded-r-xl">
+                <img src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" alt="TikTok" className="w-6 h-6 rounded-full" />
+                <div>
+                  <div className="font-bold text-gray-800">TikTok</div>
+                  <div className="text-gray-600 font-semibold">{userData.expTiktok} EXP</div>
                 </div>
               </div>
-              <div className="border-l-4 border-pink-500 pl-4 bg-pink-50 py-2 rounded-r-xl">
-                <div className="flex items-center gap-2">
-                  <span className="text-pink-600 text-xl">📸</span>
-                  <div>
-                    <div className="font-bold text-pink-800">Instagram</div>
-                    <div className="text-pink-600 font-semibold">0 EXP</div>
-                  </div>
+              <div className="flex items-center gap-3 border-l-4 border-pink-500 pl-3 bg-pink-50 py-2 rounded-r-xl">
+                <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
+                <div>
+                  <div className="font-bold text-pink-800">Instagram</div>
+                  <div className="text-pink-600 font-semibold">0 EXP</div>
                 </div>
               </div>
-              <div className="border-l-4 border-purple-500 pl-4 bg-purple-50 py-2 rounded-r-xl">
-                <div className="flex items-center gap-2">
-                  <span className="text-purple-600 text-xl">🎬</span>
-                  <div>
-                    <div className="font-bold text-purple-800">Stream</div>
-                    <div className="text-purple-600 font-semibold">{userData.expStream} EXP</div>
-                  </div>
+              <div className="flex items-center gap-3 border-l-4 border-purple-700 pl-3 bg-purple-50 py-2 rounded-r-xl">
+                <img src="https://cdn-icons-png.flaticon.com/512/727/727245.png" alt="Stream" className="w-6 h-6 rounded-full" />
+                <div>
+                  <div className="font-bold text-purple-800">Stream</div>
+                  <div className="text-purple-600 font-semibold">{userData.expStream} EXP</div>
                 </div>
               </div>
-              <div className="border-l-4 border-yellow-500 pl-4 bg-yellow-50 py-2 rounded-r-xl">
-                <div className="flex items-center gap-2">
-                  <span className="text-yellow-600 text-xl">🎤</span>
-                  <div>
-                    <div className="font-bold text-yellow-800">Live EXP Bonus</div>
-                    <div className="text-yellow-600 font-semibold">{userData.liveNFTBonus} EXP</div>
-                  </div>
+              <div className="flex items-center gap-3 border-l-4 border-yellow-400 pl-3 bg-yellow-50 py-2 rounded-r-xl">
+                <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Live" className="w-6 h-6 rounded-full" />
+                <div>
+                  <div className="font-bold text-yellow-800">Live EXP Bonus</div>
+                  <div className="text-yellow-600 font-semibold">{userData.liveNFTBonus} EXP</div>
                 </div>
               </div>
             </div>
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-2xl p-4 mb-6">
               <p className="text-sm text-gray-700 font-medium">💡 Mehr EXP = schnelleres Level-Up. Nutze alle Plattformen! 🚀</p>
             </div>
-            <button 
-              onClick={() => setShowInfoModal(false)}
-              className="w-full bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 p-4 rounded-2xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
-            >
-              ❌ Schließen
-            </button>
           </div>
         </div>
       )}
@@ -600,7 +611,15 @@ export default function FacebookTab() {
       {/* Wallet Info Modal */}
       {showWalletInfoModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
+              onClick={() => setShowWalletInfoModal(false)}
+              aria-label="Schließen"
+              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+            >
+              ×
+            </button>
             <div className="text-6xl mb-4">🔒</div>
             <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Wichtiger Hinweis</h2>
             <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-6">
@@ -609,12 +628,6 @@ export default function FacebookTab() {
                 Wenn du sie ändern willst, schreib mir eine <strong className="text-blue-600">DM mit dem Stichwort &quot;Wallet&quot;</strong> auf <strong className="text-blue-600">Facebook</strong>.
               </p>
             </div>
-            <button 
-              onClick={() => setShowWalletInfoModal(false)}
-              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105"
-            >
-              ✅ Verstanden
-            </button>
           </div>
         </div>
       )}
