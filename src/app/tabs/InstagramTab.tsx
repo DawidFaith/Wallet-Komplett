@@ -76,28 +76,33 @@ export default function InstagramTab() {
       try {
         const uuid = getUUID();
         
-        // UUID Überprüfung - wenn Standard UUID, dann Modal anzeigen
-        if (uuid === 'dfaith3788655') {
-          setLoading(false);
-          setShowNoUuidModal(true);
-          // Dummy Daten setzen damit die UI angezeigt wird
-          setUserData({
-            username: "Gast",
-            image: "https://via.placeholder.com/100",
-            expTotal: 0,
-            expTiktok: 0,
-            expInstagram: 0,
-            expFacebook: 0,
-            expStream: 0,
-            liveNFTBonus: 0,
-            miningpower: 0,
-            liked: "false",
-            commented: "false",
-            story: "false",
-            saved: "false",
-            wallet: undefined
-          });
-          return;
+        // UUID Überprüfung - wenn keine UUID in URL, dann Modal anzeigen
+        if (typeof window !== 'undefined') {
+          const urlParams = new URLSearchParams(window.location.search);
+          const urlUuid = urlParams.get('uuid');
+          
+          if (!urlUuid) {
+            setLoading(false);
+            setShowNoUuidModal(true);
+            // Dummy Daten setzen damit die UI angezeigt wird
+            setUserData({
+              username: "Gast",
+              image: "https://via.placeholder.com/100",
+              expTotal: 0,
+              expTiktok: 0,
+              expInstagram: 0,
+              expFacebook: 0,
+              expStream: 0,
+              liveNFTBonus: 0,
+              miningpower: 0,
+              liked: "false",
+              commented: "false",
+              story: "false",
+              saved: "false",
+              wallet: undefined
+            });
+            return;
+          }
         }
         
         const response = await fetch("https://uuid-check-insta.vercel.app/api/webhook", {
