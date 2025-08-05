@@ -1,23 +1,56 @@
 import { useEffect, useState } from "react";
 import { Button } from "../../../../components/ui/button";
 import { FaCoins, FaExchangeAlt, FaArrowDown } from "react-icons/fa";
-import { useActiveAccount, useSendTransaction } from "thirdweb/react";
+import { useActiveAccount, useSendTransaction, useWalletBalance, useReadContract } from "thirdweb/react";
 import { base } from "thirdweb/chains";
 import { getContract, prepareContractCall } from "thirdweb";
 import { client } from "../../client";
 import { balanceOf } from "thirdweb/extensions/erc20";
 
-// D.FAITH Token-Adresse auf Base (aktualisiert Juli 2025)
+// Token Adressen (gleich wie im SendTab und WalletTab)
 const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
 const DFAITH_DECIMALS = 2;
+const ETH_DECIMALS = 18;
 
 export default function SellTab() {
   const [selectedToken, setSelectedToken] = useState<"DFAITH" | "ETH" | null>(null);
   const [sellAmount, setSellAmount] = useState("");
-  const [dfaithBalance, setDfaithBalance] = useState("0.00");
-  // const [dinvestBalance, setDinvestBalance] = useState("0");
+  const account = useActiveAccount();
+  const { mutateAsync: sendTransaction } = useSendTransaction();
+
+  // Thirdweb Hooks für Balance (wie im SendTab und WalletTab)
+  const { data: ethBalanceData } = useWalletBalance({
+    client,
+    chain: base,
+    address: account?.address,
+  });
+
+  const { data: dfaithBalanceData } = useReadContract({
+    contract: getContract({
+      client,
+      chain: base,
+      address: DFAITH_TOKEN
+    }),
+    method: "function balanceOf(address) view returns (uint256)",
+    params: [account?.address || "0x0000000000000000000000000000000000000000"],
+    queryOptions: {
+      enabled: !!account?.address,
+      refetchInterval: 5000, // Alle 5 Sekunden aktualisieren
+    }
+  });
+
+  // Formatierte Balances berechnen (wie im SendTab und WalletTab)
+  const ethBalance = ethBalanceData 
+    ? (Number(ethBalanceData.value) / Math.pow(10, ETH_DECIMALS)).toFixed(4)
+    : "0.0000";
+
+  const dfaithBalance = dfaithBalanceData 
+    ? (Number(dfaithBalanceData) / Math.pow(10, DFAITH_DECIMALS)).toFixed(DFAITH_DECIMALS)
+    : "0.00";
+
+  // Alte State-Variablen für Balances entfernt, da wir jetzt direkt die berechneten Werte verwenden
   const [dfaithPrice, setDfaithPrice] = useState<number | null>(null);
-  const [dfaithPriceEur, setDfaithPriceEur] = useState<number | null>(null); // Hinzugefügt
+  const [dfaithPriceEur, setDfaithPriceEur] = useState<number | null>(null);
   const [ethPriceEur, setEthPriceEur] = useState<number | null>(null);
   const [showSellModal, setShowSellModal] = useState(false);
   const [slippage, setSlippage] = useState("1");
@@ -30,87 +63,8 @@ export default function SellTab() {
   const [spenderAddress, setSpenderAddress] = useState<string | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [sellStep, setSellStep] = useState<'initial' | 'quoteFetched' | 'approved' | 'completed'>('initial');
-  const account = useActiveAccount();
-  const { mutateAsync: sendTransaction } = useSendTransaction();
   
-  // Korrekte API-Funktion für Balance-Abfrage
-  const fetchTokenBalanceViaInsightApi = async (
-    tokenAddress: string,
-    accountAddress: string
-  ): Promise<string> => {
-    if (!accountAddress) return "0";
-    try {
-      const params = new URLSearchParams({
-        chain_id: "8453", // Base Chain ID
-        token_address: tokenAddress,
-        owner_address: accountAddress,
-        include_native: "true",
-        resolve_metadata_links: "true",
-        include_spam: "false",
-        limit: "50",
-        metadata: "false",
-      });
-      const url = `https://insight.thirdweb.com/v1/tokens?${params.toString()}`;
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          "x-client-id": process.env.NEXT_PUBLIC_TEMPLATE_CLIENT_ID || "",
-        },
-      });
-      
-      if (!res.ok) {
-        console.error("Insight API Fehlerstatus:", res.status, res.statusText);
-        throw new Error("API Error");
-      }
-      
-      const data = await res.json();
-      const balance = data?.data?.[0]?.balance ?? "0";
-      return balance;
-    } catch (e) {
-      console.error("Insight API Fehler:", e);
-      return "0";
-    }
-  };
-  
-  // D.FAITH & D.INVEST Balance laden
-  useEffect(() => {
-    let isMounted = true;
-    let latestRequest = 0;
-
-    const fetchBalances = async () => {
-      const requestId = ++latestRequest;
-      if (!account?.address) {
-        if (isMounted) setDfaithBalance("0");
-        // entfernt: setDinvestBalance("0");
-        return;
-      }
-      try {
-        // D.FAITH
-        const dfaithValue = await fetchTokenBalanceViaInsightApi(DFAITH_TOKEN, account.address);
-        const dfaithRaw = Number(dfaithValue);
-        const dfaithDisplay = (dfaithRaw / Math.pow(10, DFAITH_DECIMALS)).toFixed(DFAITH_DECIMALS);
-        if (isMounted && requestId === latestRequest) {
-          setDfaithBalance(dfaithDisplay);
-        }
-        // D.INVEST entfernt, da nicht benötigt und Konstante fehlt
-      } catch (error) {
-        console.error("Fehler beim Laden der Balances:", error);
-        if (isMounted) {
-          setDfaithBalance("0");
-          // entfernt: setDinvestBalance("0");
-        }
-      }
-    };
-
-    fetchBalances();
-    const interval = setInterval(fetchBalances, 10000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, [account?.address]);
-
-  // Preis laden (umgekehrte Richtung - D.FAITH zu ETH) mit ParaSwap
+  // D.FAITH & ETH Preis laden (umgekehrte Richtung - D.FAITH zu ETH) mit ParaSwap
   useEffect(() => {
     const fetchPrice = async () => {
       setIsLoadingPrice(true);
@@ -568,10 +522,9 @@ export default function SellTab() {
         console.log(`D.FAITH-Balance-Verifizierung Versuch ${attempts}/${maxAttempts}`);
         
         try {
-          // D.FAITH Balance neu laden
-          const dfaithValue = await fetchTokenBalanceViaInsightApi(DFAITH_TOKEN, account.address);
-          const dfaithRaw = Number(dfaithValue);
-          const currentDFaithBalance = dfaithRaw / Math.pow(10, DFAITH_DECIMALS);
+          // D.FAITH Balance wird automatisch durch thirdweb Hook aktualisiert
+          // Warten auf automatische Aktualisierung der Balance durch refetchInterval
+          const currentDFaithBalance = parseFloat(dfaithBalance);
           
           console.log(`Initiale D.FAITH: ${initialBalance}, Aktuelle D.FAITH: ${currentDFaithBalance}`);
           
@@ -585,8 +538,7 @@ export default function SellTab() {
           if (actualDecrease >= (expectedDecrease * 0.9)) {
             console.log(`✅ D.FAITH-Balance-Verringerung verifiziert: -${actualDecrease.toFixed(2)} D.FAITH - Verkauf erfolgreich!`);
             
-            // Balance aktualisieren
-            setDfaithBalance(currentDFaithBalance.toFixed(DFAITH_DECIMALS));
+            // Balance wird automatisch durch thirdweb Hook aktualisiert
             
             balanceVerified = true;
             setSellStep('completed');
@@ -628,14 +580,8 @@ export default function SellTab() {
       setSwapTxStatus("error");
       
       // Versuche trotzdem die Balance zu aktualisieren
-      try {
-        const dfaithValue = await fetchTokenBalanceViaInsightApi(DFAITH_TOKEN, account.address);
-        const dfaithRaw = Number(dfaithValue);
-        const currentBalance = (dfaithRaw / Math.pow(10, DFAITH_DECIMALS)).toFixed(DFAITH_DECIMALS);
-        setDfaithBalance(currentBalance);
-      } catch (balanceError) {
-        console.error("Fehler beim Aktualisieren der Balance nach Swap-Fehler:", balanceError);
-      }
+      // Die Balance wird automatisch durch thirdweb Hook aktualisiert
+      console.log("Balance wird automatisch durch thirdweb Hook aktualisiert");
       
       setTimeout(() => setSwapTxStatus(null), 5000);
     } finally {
