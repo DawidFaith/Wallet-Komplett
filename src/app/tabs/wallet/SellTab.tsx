@@ -846,7 +846,7 @@ const tokenOptions = [
                     />
                     <button
                       className="text-amber-400 hover:text-amber-300 font-medium px-2 py-1 rounded flex-shrink-0"
-                      onClick={() => setSellAmount((parseFloat(dfaithBalance) * 0.95).toFixed(2))}
+                      onClick={() => setSellAmount(dfaithBalance)}
                       disabled={isSwapping || parseFloat(dfaithBalance) <= 0 || sellStep !== 'initial'}
                     >
                       MAX
@@ -986,7 +986,7 @@ const tokenOptions = [
                       isSwapping || 
                       !account?.address || 
                       parseFloat(dfaithBalance) <= 0 ||
-                      parseFloat(sellAmount) > parseFloat(dfaithBalance) ||
+                      parseFloat(sellAmount) > (parseFloat(dfaithBalance) + 0.001) ||
                       parseFloat(sellAmount) < 0.01
                     }
                   >
