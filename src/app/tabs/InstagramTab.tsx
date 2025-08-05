@@ -821,8 +821,16 @@ export default function InstagramTab() {
       )}
       {/* No UUID Modal */}
       {showNoUuidModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-40 flex items-center justify-center p-4">
           <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
+              onClick={() => setShowNoUuidModal(false)}
+              aria-label="Schließen"
+              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+            >
+              ×
+            </button>
             <div className="flex flex-col items-center gap-4 mb-6">
               <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                 <span className="text-3xl text-white">🔒</span>
@@ -840,7 +848,7 @@ export default function InstagramTab() {
             </div>
             
             <div className="space-y-3 mb-6">
-              <p className="text-gray-700 font-medium">📱 Folge Dawid Faith:</p>
+              <p className="text-gray-700 font-medium">📱 Folge Dawid Faith auf Instagram:</p>
               
               <a 
                 href="https://www.instagram.com/dawidfaith?igsh=aTF5dXBoYWxkb2Js"
@@ -851,23 +859,20 @@ export default function InstagramTab() {
                 <span className="text-xl">📷</span>
                 <span>Instagram @dawidfaith</span>
               </a>
-              
-              <a 
-                href="https://www.facebook.com/share/1Auve8u2CG"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3 block"
-              >
-                <span className="text-xl">📘</span>
-                <span>Facebook Profil</span>
-              </a>
             </div>
             
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4">
               <p className="text-yellow-800 font-medium text-sm">
                 ⚡ <strong>Tipp:</strong> Nach der Teilnahme kannst du über den speziellen Link auf dein Profil zugreifen!
               </p>
             </div>
+            
+            <button 
+              onClick={() => setShowNoUuidModal(false)}
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
+            >
+              ❌ Verstanden
+            </button>
           </div>
         </div>
       )}
