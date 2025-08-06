@@ -635,13 +635,6 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
               <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-300/30 rounded-2xl p-4 mb-6">
                 <p className="text-sm text-purple-200 font-medium">💡 Mehr EXP = schnelleres Level-Up. Nutze alle Plattformen! 🚀</p>
               </div>
-              
-              <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4">
-                <h3 className="text-pink-300 font-bold mb-3">🎯 Level System</h3>
-                <p className="text-pink-200 text-sm">
-                  Sammle EXP durch TikTok Engagement. Jedes Level erhöht deine Mining Power für mehr D.FAITH Token!
-                </p>
-              </div>
             </div>
             
             <button 
@@ -988,8 +981,8 @@ export default function TiktokTab() {
                 </svg>
               </div>
               <div className="text-left">
-                <h3 className="text-white font-bold">Claim Prüfen</h3>
-                <p className="text-gray-400 text-sm">Status überprüfen</p>
+                <h3 className="text-white font-bold">Teilnahme Bestätigen</h3>
+                <p className="text-gray-400 text-sm">Kommentiere "DFaith" unter meinem neuesten Video</p>
               </div>
             </button>
 
@@ -1005,7 +998,7 @@ export default function TiktokTab() {
               </div>
               <div className="text-left">
                 <h3 className="text-white font-bold">Dashboard Login</h3>
-                <p className="text-gray-400 text-sm">Anmelden & Zugang</p>
+                <p className="text-gray-400 text-sm">Bestätige deine Teilnahme für persönliches Dashboard</p>
               </div>
             </button>
           </div>
@@ -1213,14 +1206,6 @@ export default function TiktokTab() {
               </p>
               
               <div className="space-y-3 text-left">
-                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-purple-300">
-                  <span className="text-xl">📊</span>
-                  <div>
-                    <div className="font-bold text-gray-800">Level System</div>
-                    <div className="text-sm text-gray-600">Sammle EXP durch Engagement</div>
-                  </div>
-                </div>
-                
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-purple-300">
                   <span className="text-xl">⛏️</span>
                   <div>
