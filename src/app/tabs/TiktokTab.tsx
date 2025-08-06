@@ -37,7 +37,9 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router }: ModalPro
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (username.trim() && walletAddress.trim()) {
-      onSubmit(username.trim(), walletAddress.trim());
+      // Füge @ Symbol hinzu, falls es nicht vorhanden ist
+      const formattedUsername = username.trim().startsWith('@') ? username.trim() : `@${username.trim()}`;
+      onSubmit(formattedUsername, walletAddress.trim());
     }
   };
 
@@ -63,50 +65,25 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router }: ModalPro
           </button>
         </div>
 
-        {/* Wallet Hinweis für Teilnahme Bestätigen */}
-        {title === "Claim Status Prüfen" && (
-          <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/50 rounded-xl p-4 mb-6">
-            <h3 className="text-yellow-300 font-bold mb-2 flex items-center gap-2">
-              <span>🪙</span>
-              Wallet für Belohnung benötigt
-            </h3>
-            <p className="text-yellow-200 text-sm mb-3">
-              Kommentiere &quot;DFaith&quot; unter meinem neuesten TikTok Video und hinterlege deine Wallet-Adresse, um deine Belohnung zu erhalten!
-            </p>
-            {(!walletAddress || !walletAddress.startsWith("0x")) && router && (
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-3">
-                <p className="text-yellow-200 text-sm font-medium mb-2 text-center">
-                  Du hast noch keine Wallet? Erstelle jetzt deine Wallet!
-                </p>
-                <button
-                  type="button"
-                  onClick={() => router.push("/wallet")}
-                  className="w-full py-2 px-4 rounded-lg font-semibold bg-gradient-to-r from-yellow-400 to-orange-400 text-black shadow-lg hover:from-yellow-500 hover:to-orange-500 transition-all duration-200 text-sm"
-                >
-                  🚀 Wallet jetzt anlegen
-                </button>
-                <p className="text-xs text-yellow-300 mt-1 text-center">
-                  Du findest den Wallet Tab auch oben im Menü.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-        
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-pink-300 mb-3">
               TikTok Username
             </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="@username"
-              className="w-full px-4 py-3 bg-black/50 border border-pink-500/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
-              required
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-pink-400 font-bold pointer-events-none">
+                @
+              </div>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="username"
+                className="w-full pl-8 pr-4 py-3 bg-black/50 border border-pink-500/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                required
+                disabled={isLoading}
+              />
+            </div>
           </div>
           
           <div>
@@ -123,6 +100,36 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router }: ModalPro
               disabled={isLoading}
             />
           </div>
+
+          {/* Wallet Hinweis für Teilnahme Bestätigen */}
+          {title === "Bestätige deine Teilnahme" && (
+            <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/50 rounded-xl p-4">
+              <h3 className="text-yellow-300 font-bold mb-2 flex items-center gap-2">
+                <span>🪙</span>
+                Wallet für Belohnung benötigt
+              </h3>
+              <p className="text-yellow-200 text-sm mb-3">
+                Hinterlege deine Wallet-Adresse, um deine Belohnung zu erhalten!
+              </p>
+              {(!walletAddress || !walletAddress.startsWith("0x")) && router && (
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                  <p className="text-yellow-200 text-sm font-medium mb-2 text-center">
+                    Du hast noch keine Wallet? Erstelle jetzt deine Wallet!
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/wallet")}
+                    className="w-full py-2 px-4 rounded-lg font-semibold bg-gradient-to-r from-yellow-400 to-orange-400 text-black shadow-lg hover:from-yellow-500 hover:to-orange-500 transition-all duration-200 text-sm"
+                  >
+                    🚀 Wallet jetzt anlegen
+                  </button>
+                  <p className="text-xs text-yellow-300 mt-1 text-center">
+                    Du findest den Wallet Tab auch oben im Menü.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
           
           <div className="flex space-x-4 pt-6">
             <button
@@ -1015,7 +1022,7 @@ export default function TiktokTab() {
               </div>
               <div className="text-left">
                 <h3 className="text-white font-bold">Teilnahme Bestätigen</h3>
-                <p className="text-gray-400 text-sm">Kommentiere &quot;DFaith&quot; unter meinem neuesten Video</p>
+                <p className="text-gray-400 text-sm">Hast du schon kommentiert? Dann bestätige jetzt deine Teilnahme!</p>
               </div>
             </button>
 
@@ -1090,7 +1097,7 @@ export default function TiktokTab() {
       <Modal
         isOpen={isCheckModalOpen}
         onClose={() => setIsCheckModalOpen(false)}
-        title="Claim Status Prüfen"
+        title="Bestätige deine Teilnahme"
         onSubmit={handleCheck}
         isLoading={isLoading}
         router={router}
