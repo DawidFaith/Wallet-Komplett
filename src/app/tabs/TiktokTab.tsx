@@ -368,6 +368,49 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
     }
   }, []);
 
+  // Claim Funktion mit Webhook
+  const handleClaim = async () => {
+    setLoading(true);
+    try {
+      const uuid = getUUID();
+      const response = await fetch('https://hook.eu2.make.com/fm3z0p3prr5aj41hrma4yw6os6nzzr1d', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uuid: uuid,
+          username: userData.username,
+          walletAddress: userData.walletAddress || walletInput,
+          miningpower: userData.miningpower,
+          action: 'claim_dfaith',
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      if (response.ok) {
+        setClaimStatus('✅ Claim erfolgreich gesendet!');
+        setTimeout(() => {
+          setShowClaimModal(false);
+          setClaimStatus('');
+        }, 2000);
+      } else {
+        setClaimStatus('❌ Fehler beim Claim. Bitte versuche es erneut.');
+        setTimeout(() => {
+          setClaimStatus('');
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Fehler beim Claim:', error);
+      setClaimStatus('❌ Netzwerkfehler. Bitte überprüfe deine Verbindung.');
+      setTimeout(() => {
+        setClaimStatus('');
+      }, 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <div 
@@ -654,16 +697,17 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
               </button>
               <button 
                 disabled={!userData.walletAddress && !walletInput}
-                onClick={() => {
-                  setClaimStatus('✅ Claim erfolgreich gesendet!');
-                  setTimeout(() => {
-                    setShowClaimModal(false);
-                    setClaimStatus('');
-                  }, 2000);
-                }}
+                onClick={handleClaim}
                 className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-xl py-3 font-bold transition-all hover:from-cyan-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                🚀 Claim
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                    Lädt...
+                  </div>
+                ) : (
+                  '🚀 Claim'
+                )}
               </button>
             </div>
             
@@ -896,7 +940,6 @@ export default function TiktokTab() {
   const [message, setMessage] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [savedCredentials, setSavedCredentials] = useState<{username: string, wallet: string} | null>(null);
   
   // Modal states für alle TikTok Modals
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -908,21 +951,6 @@ export default function TiktokTab() {
   const [showConfirmBefore, setShowConfirmBefore] = useState(false);
   const [showConfirmAfter, setShowConfirmAfter] = useState(false);
   const [showNoUuidModal, setShowNoUuidModal] = useState(false);
-
-  // Überprüfe gespeicherte Anmeldedaten beim Laden der Komponente
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedUsername = localStorage.getItem('tiktok_saved_username');
-      const savedWallet = localStorage.getItem('tiktok_saved_wallet');
-      
-      if (savedUsername && savedWallet) {
-        setSavedCredentials({
-          username: savedUsername,
-          wallet: savedWallet
-        });
-      }
-    }
-  }, []);
 
   // Level Funktionen (gleiche Logik wie Facebook)
   const getLevelAndExpRange = (exp: number) => {
@@ -981,12 +1009,6 @@ export default function TiktokTab() {
       'https://hook.eu2.make.com/6bp285kr8y9hoxk39j1v52qt2k4rt4id'
     );
     setIsCheckModalOpen(false);
-  };
-
-  const handleQuickLogin = async () => {
-    if (savedCredentials) {
-      await handleLogin(savedCredentials.username, savedCredentials.wallet);
-    }
   };
 
   const handleLogin = async (username: string, walletAddress: string) => {
@@ -1100,29 +1122,6 @@ export default function TiktokTab() {
 
         {/* Main Content Card */}
         <div className="bg-black/80 border border-gray-800 rounded-2xl p-6 backdrop-blur-sm">
-          {/* Quick Access Button - nur anzeigen wenn gespeicherte Daten vorhanden */}
-          {savedCredentials && !isLoggedIn && (
-            <div className="mb-4 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-green-300 font-medium mb-1">
-                    🚀 Schnellzugriff verfügbar
-                  </p>
-                  <p className="text-gray-400 text-sm">
-                    Einloggen als {savedCredentials.username}
-                  </p>
-                </div>
-                <button
-                  onClick={handleQuickLogin}
-                  disabled={isLoading}
-                  className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold rounded-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
-                >
-                  {isLoading ? '⏳' : '⚡ Schnell einloggen'}
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Action Buttons */}
           <div className="grid md:grid-cols-2 gap-4 mb-6">
             <button
