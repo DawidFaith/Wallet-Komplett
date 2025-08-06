@@ -31,6 +31,23 @@ interface UserData {
 function Modal({ isOpen, onClose, title, onSubmit, isLoading, router }: ModalProps) {
   const [username, setUsername] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
+  const [showWalletInfoModal, setShowWalletInfoModal] = useState(false);
+
+  // Gespeicherte Daten beim Öffnen des Modals laden
+  React.useEffect(() => {
+    if (isOpen && typeof window !== 'undefined') {
+      const savedUsername = localStorage.getItem('tiktok_saved_username');
+      const savedWallet = localStorage.getItem('tiktok_saved_wallet');
+      
+      if (savedUsername) {
+        // Entferne @ Symbol für die Anzeige im Input
+        setUsername(savedUsername.startsWith('@') ? savedUsername.substring(1) : savedUsername);
+      }
+      if (savedWallet) {
+        setWalletAddress(savedWallet);
+      }
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -39,6 +56,13 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router }: ModalPro
     if (username.trim() && walletAddress.trim()) {
       // Füge @ Symbol hinzu, falls es nicht vorhanden ist
       const formattedUsername = username.trim().startsWith('@') ? username.trim() : `@${username.trim()}`;
+      
+      // Speichere die Daten im localStorage für zukünftige Verwendung
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('tiktok_saved_username', formattedUsername);
+        localStorage.setItem('tiktok_saved_wallet', walletAddress.trim());
+      }
+      
       onSubmit(formattedUsername, walletAddress.trim());
     }
   };
@@ -90,44 +114,43 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router }: ModalPro
             <label className="block text-sm font-medium text-pink-300 mb-3">
               Wallet Adresse
             </label>
-            <input
-              type="text"
-              value={walletAddress}
-              onChange={(e) => setWalletAddress(e.target.value)}
-              placeholder="0x..."
-              className="w-full px-4 py-3 bg-black/50 border border-pink-500/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
-              required
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={walletAddress}
+                onChange={(e) => setWalletAddress(e.target.value)}
+                placeholder="0x..."
+                className="w-full px-4 py-3 pr-12 bg-black/50 border border-pink-500/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                required
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowWalletInfoModal(true)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 hover:text-pink-200 font-bold rounded-full w-8 h-8 flex items-center justify-center transition-all duration-200 text-sm border border-pink-500/30"
+                title="Wallet Info"
+              >
+                i
+              </button>
+            </div>
           </div>
 
           {/* Wallet Hinweis für Teilnahme Bestätigen */}
-          {title === "Bestätige deine Teilnahme" && (
-            <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/50 rounded-xl p-4">
-              <h3 className="text-yellow-300 font-bold mb-2 flex items-center gap-2">
-                <span>🪙</span>
-                Wallet für Belohnung benötigt
-              </h3>
-              <p className="text-yellow-200 text-sm mb-3">
-                Hinterlege deine Wallet-Adresse, um deine Belohnung zu erhalten!
+          {title === "Bestätige deine Teilnahme" && (!walletAddress || !walletAddress.startsWith("0x")) && router && (
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+              <p className="text-yellow-200 text-sm font-medium mb-2 text-center">
+                Du hast noch keine Wallet? Erstelle jetzt deine Wallet!
               </p>
-              {(!walletAddress || !walletAddress.startsWith("0x")) && router && (
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
-                  <p className="text-yellow-200 text-sm font-medium mb-2 text-center">
-                    Du hast noch keine Wallet? Erstelle jetzt deine Wallet!
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => router.push("/wallet")}
-                    className="w-full py-2 px-4 rounded-lg font-semibold bg-gradient-to-r from-yellow-400 to-orange-400 text-black shadow-lg hover:from-yellow-500 hover:to-orange-500 transition-all duration-200 text-sm"
-                  >
-                    🚀 Wallet jetzt anlegen
-                  </button>
-                  <p className="text-xs text-yellow-300 mt-1 text-center">
-                    Du findest den Wallet Tab auch oben im Menü.
-                  </p>
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => router.push("/wallet")}
+                className="w-full py-2 px-4 rounded-lg font-semibold bg-gradient-to-r from-yellow-400 to-orange-400 text-black shadow-lg hover:from-yellow-500 hover:to-orange-500 transition-all duration-200 text-sm"
+              >
+                🚀 Wallet jetzt anlegen
+              </button>
+              <p className="text-xs text-yellow-300 mt-1 text-center">
+                Du findest den Wallet Tab auch oben im Menü.
+              </p>
             </div>
           )}
           
@@ -156,6 +179,52 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router }: ModalPro
             </button>
           </div>
         </form>
+
+        {/* Wallet Info Modal */}
+        {showWalletInfoModal && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-yellow-500/50 rounded-2xl p-6 w-80 max-w-md mx-4 shadow-2xl">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-yellow-300 flex items-center gap-2">
+                  <span>⚠️</span>
+                  Wallet Info
+                </h3>
+                <button
+                  onClick={() => setShowWalletInfoModal(false)}
+                  className="text-gray-400 hover:text-yellow-400 text-2xl transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-4">
+                <h4 className="text-yellow-300 font-bold mb-2">🔒 Wichtiger Hinweis</h4>
+                <p className="text-yellow-200 text-sm leading-relaxed mb-3">
+                  Deine Wallet-Adresse wird <strong>dauerhaft</strong> mit deinem Account verbunden und kann nicht mehr geändert werden.
+                </p>
+                <div className="bg-yellow-600/20 border border-yellow-600/40 rounded-lg p-3">
+                  <p className="text-yellow-100 text-xs">
+                    <strong>Änderungen nur möglich durch:</strong><br/>
+                    DM an @dawidfaith mit Begründung
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
+                <p className="text-red-300 text-sm">
+                  ⚠️ Bitte überprüfe deine Wallet-Adresse sorgfältig vor der Bestätigung!
+                </p>
+              </div>
+              
+              <button 
+                onClick={() => setShowWalletInfoModal(false)}
+                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-bold py-3 rounded-xl transition-all duration-300"
+              >
+                Verstanden
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -827,6 +896,7 @@ export default function TiktokTab() {
   const [message, setMessage] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [savedCredentials, setSavedCredentials] = useState<{username: string, wallet: string} | null>(null);
   
   // Modal states für alle TikTok Modals
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -838,6 +908,21 @@ export default function TiktokTab() {
   const [showConfirmBefore, setShowConfirmBefore] = useState(false);
   const [showConfirmAfter, setShowConfirmAfter] = useState(false);
   const [showNoUuidModal, setShowNoUuidModal] = useState(false);
+
+  // Überprüfe gespeicherte Anmeldedaten beim Laden der Komponente
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedUsername = localStorage.getItem('tiktok_saved_username');
+      const savedWallet = localStorage.getItem('tiktok_saved_wallet');
+      
+      if (savedUsername && savedWallet) {
+        setSavedCredentials({
+          username: savedUsername,
+          wallet: savedWallet
+        });
+      }
+    }
+  }, []);
 
   // Level Funktionen (gleiche Logik wie Facebook)
   const getLevelAndExpRange = (exp: number) => {
@@ -896,6 +981,12 @@ export default function TiktokTab() {
       'https://hook.eu2.make.com/6bp285kr8y9hoxk39j1v52qt2k4rt4id'
     );
     setIsCheckModalOpen(false);
+  };
+
+  const handleQuickLogin = async () => {
+    if (savedCredentials) {
+      await handleLogin(savedCredentials.username, savedCredentials.wallet);
+    }
   };
 
   const handleLogin = async (username: string, walletAddress: string) => {
@@ -1009,18 +1100,36 @@ export default function TiktokTab() {
 
         {/* Main Content Card */}
         <div className="bg-black/80 border border-gray-800 rounded-2xl p-6 backdrop-blur-sm">
+          {/* Quick Access Button - nur anzeigen wenn gespeicherte Daten vorhanden */}
+          {savedCredentials && !isLoggedIn && (
+            <div className="mb-4 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-green-300 font-medium mb-1">
+                    🚀 Schnellzugriff verfügbar
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    Einloggen als {savedCredentials.username}
+                  </p>
+                </div>
+                <button
+                  onClick={handleQuickLogin}
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold rounded-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
+                >
+                  {isLoading ? '⏳' : '⚡ Schnell einloggen'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Action Buttons */}
           <div className="grid md:grid-cols-2 gap-4 mb-6">
             <button
               onClick={() => setIsCheckModalOpen(true)}
-              className="flex items-center justify-center space-x-3 p-4 bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/30 rounded-xl hover:border-pink-500/50 transition-all group"
+              className="flex items-center justify-center p-4 bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/30 rounded-xl hover:border-pink-500/50 transition-all group"
             >
-              <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-              </div>
-              <div className="text-left">
+              <div className="text-center">
                 <h3 className="text-white font-bold">Teilnahme Bestätigen</h3>
                 <p className="text-gray-400 text-sm">Hast du schon kommentiert? Dann bestätige jetzt deine Teilnahme!</p>
               </div>
@@ -1028,15 +1137,9 @@ export default function TiktokTab() {
 
             <button
               onClick={() => setIsLoginModalOpen(true)}
-              className="flex items-center justify-center space-x-3 p-4 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-cyan-500/30 rounded-xl hover:border-cyan-500/50 transition-all group"
+              className="flex items-center justify-center p-4 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-cyan-500/30 rounded-xl hover:border-cyan-500/50 transition-all group"
             >
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                  <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                </svg>
-              </div>
-              <div className="text-left">
+              <div className="text-center">
                 <h3 className="text-white font-bold">Dashboard Login</h3>
                 <p className="text-gray-400 text-sm">Tokens claimen - nur nach Teilnahme-Bestätigung möglich</p>
               </div>
