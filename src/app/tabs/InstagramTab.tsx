@@ -613,52 +613,66 @@ export default function InstagramTab() {
               )}
             </div>
             
-            {confirmationMessage && expGained && (
-              <div className="bg-green-100 border border-green-200 rounded-xl p-4 mb-4">
-                <div className="text-center mb-3">
-                  <p className="text-green-700 font-bold text-lg">🎉 Glückwunsch!</p>
-                  <p className="text-green-600 text-sm">Du hast erfolgreich EXP gesammelt:</p>
-                </div>
-                
-                <div className="space-y-2 mb-4">
-                  {expGained.likes > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-purple-600">❤️ Likes (+{expGained.likes}):</span>
-                      <span className="font-bold text-green-600">+{expGained.likes * 10} EXP</span>
+            {afterValues && (
+              <div className={`rounded-xl p-4 mb-4 ${expGained && expGained.total > 0 ? 'bg-green-100 border border-green-200' : 'bg-orange-100 border border-orange-200'}`}>
+                {expGained && expGained.total > 0 ? (
+                  <>
+                    <div className="text-center mb-3">
+                      <p className="text-green-700 font-bold text-lg">🎉 Glückwunsch!</p>
+                      <p className="text-green-600 text-sm">Du hast erfolgreich EXP gesammelt:</p>
                     </div>
-                  )}
-                  {expGained.saves > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-pink-600">💾 Saves (+{expGained.saves}):</span>
-                      <span className="font-bold text-green-600">+{expGained.saves * 10} EXP</span>
+                    
+                    <div className="space-y-2 mb-4">
+                      {expGained.likes > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-purple-600">❤️ Likes (+{expGained.likes}):</span>
+                          <span className="font-bold text-green-600">+{expGained.likes * 10} EXP</span>
+                        </div>
+                      )}
+                      {expGained.saves > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-pink-600">💾 Saves (+{expGained.saves}):</span>
+                          <span className="font-bold text-green-600">+{expGained.saves * 10} EXP</span>
+                        </div>
+                      )}
+                      <div className="border-t border-green-300 pt-2 mt-2">
+                        <div className="flex justify-between font-bold">
+                          <span className="text-green-700">Gesamt EXP:</span>
+                          <span className="text-green-600 text-lg">+{expGained.total} EXP</span>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  <div className="border-t border-green-300 pt-2 mt-2">
-                    <div className="flex justify-between font-bold">
-                      <span className="text-green-700">Gesamt EXP:</span>
-                      <span className="text-green-600 text-lg">+{expGained.total} EXP</span>
+                    
+                    <div className="text-center mb-4">
+                      <p className="text-green-600 text-xs mb-3">Lade die Seite neu, um deine neuen EXP zu sehen!</p>
                     </div>
+                  </>
+                ) : (
+                  <div className="text-center mb-4">
+                    <p className="text-orange-700 font-bold text-lg">😔 Keine neuen Interaktionen</p>
+                    <p className="text-orange-600 text-sm mb-3">Es wurden keine neuen Likes oder Saves erkannt. Du kannst die Werte zurücksetzen und es erneut versuchen.</p>
                   </div>
-                </div>
+                )}
                 
-                <div className="text-center mb-4">
-                  <p className="text-green-600 text-xs mb-3">Lade die Seite neu, um deine neuen EXP zu sehen!</p>
-                  <button 
-                    onClick={() => {
-                      if (typeof window !== 'undefined') {
-                        // Nur Like/Save Verification Daten löschen
-                        localStorage.removeItem("dfaith_likeStart");
-                        localStorage.removeItem("dfaith_saveStart");
-                        
-                        // Seite neu laden
-                        window.location.href = window.location.pathname + '?tab=instagram' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
-                      }
-                    }}
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg"
-                  >
-                    🔄 Seite neu laden
-                  </button>
-                </div>
+                <button 
+                  onClick={() => {
+                    if (typeof window !== 'undefined') {
+                      // Nur Like/Save Verification Daten löschen
+                      localStorage.removeItem("dfaith_likeStart");
+                      localStorage.removeItem("dfaith_saveStart");
+                      
+                      // Seite neu laden
+                      window.location.href = window.location.pathname + '?tab=instagram' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
+                    }
+                  }}
+                  className={`w-full p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg ${
+                    expGained && expGained.total > 0 
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
+                      : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white'
+                  }`}
+                >
+                  🔄 Seite neu laden
+                </button>
               </div>
             )}
             
