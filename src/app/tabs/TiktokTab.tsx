@@ -400,13 +400,16 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
           setTimeout(() => {
             setShowClaimModal(false);
             setClaimStatus('');
+            // Nur bei Erfolg zur UserCard weiterleiten
+            window.location.reload();
           }, 2000);
-        } else if (responseData.info) {
+        } else if (responseData.status === 'Info') {
           // Info Response - bereits geclaimed
           setClaimStatus('ℹ️ Du hast bereits geclaimed! Warte bis zum nächsten Claim-Zeitraum.');
           setTimeout(() => {
             setClaimStatus('');
           }, 4000);
+          // KEINE Weiterleitung bei Info!
         } else {
           // Fallback für andere Success-Responses
           setClaimStatus('✅ Claim erfolgreich gesendet!');
