@@ -249,6 +249,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
   const [initialValues, setInitialValues] = useState<{likes: number, shares: number, saves: number} | null>(null);
   const [afterValues, setAfterValues] = useState<{likes: number, shares: number, saves: number} | null>(null);
   const [confirmationMessage, setConfirmationMessage] = useState(false);
+  const [expGained, setExpGained] = useState<{likes: number, shares: number, saves: number, total: number} | null>(null);
 
   // Level Funktionen (gleiche Logik wie Facebook)
   const getLevelAndExpRange = (exp: number) => {
@@ -345,8 +346,22 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
       const newSaves = parseInt(data.saves) || 0;
       setAfterValues({ likes: newLikes, shares: newShares, saves: newSaves });
       
-      if (initialValues && (newLikes > initialValues.likes || newShares > initialValues.shares || newSaves > initialValues.saves)) {
-        setConfirmationMessage(true);
+      // Automatischer Vergleich und EXP Berechnung
+      if (initialValues) {
+        const likesGained = Math.max(0, newLikes - initialValues.likes);
+        const sharesGained = Math.max(0, newShares - initialValues.shares);
+        const savesGained = Math.max(0, newSaves - initialValues.saves);
+        const totalExp = (likesGained * 10) + (sharesGained * 10) + (savesGained * 10);
+        
+        if (totalExp > 0) {
+          setExpGained({
+            likes: likesGained,
+            shares: sharesGained,
+            saves: savesGained,
+            total: totalExp
+          });
+          setConfirmationMessage(true);
+        }
       }
     } catch (error) {
       console.error('Fehler beim System Check:', error);
@@ -613,9 +628,9 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
               <p className="font-semibold mb-3 text-cyan-200">2️⃣ Like, Share und Save das Video erneut!</p>
               <button 
                 onClick={() => setShowConfirmAfter(true)}
-                disabled={loading}
+                disabled={loading || !initialValues}
                 className={`w-full p-3 rounded-xl font-bold transition-all duration-300 ${
-                  loading 
+                  loading || !initialValues
                     ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                     : 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white transform hover:scale-105'
                 }`}
@@ -625,7 +640,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
                     <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-white rounded-full"></div>
                     <span>Prüfe Änderungen...</span>
                   </div>
-                ) : '✅ Check neue Werte'}
+                ) : !initialValues ? '⚠️ Zuerst Schritt 1 ausführen' : '✅ Check neue Werte'}
               </button>
               {afterValues && (
                 <div className="bg-black/30 border border-cyan-500/30 rounded-xl p-3 mt-3 text-sm">
@@ -645,9 +660,41 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
               )}
             </div>
             
-            {confirmationMessage && (
-              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3 mb-4">
-                <p className="text-green-300 font-bold">✅ Erfolgreich! Bitte lade die Seite neu.</p>
+            {confirmationMessage && expGained && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-4">
+                <div className="text-center mb-3">
+                  <p className="text-green-300 font-bold text-lg">🎉 Glückwunsch!</p>
+                  <p className="text-green-200 text-sm">Du hast erfolgreich EXP gesammelt:</p>
+                </div>
+                
+                <div className="space-y-2 mb-4">
+                  {expGained.likes > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-pink-300">❤️ Likes (+{expGained.likes}):</span>
+                      <span className="font-bold text-green-300">+{expGained.likes * 10} EXP</span>
+                    </div>
+                  )}
+                  {expGained.shares > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-purple-300">🔁 Shares (+{expGained.shares}):</span>
+                      <span className="font-bold text-green-300">+{expGained.shares * 10} EXP</span>
+                    </div>
+                  )}
+                  {expGained.saves > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-cyan-300">💾 Saves (+{expGained.saves}):</span>
+                      <span className="font-bold text-green-300">+{expGained.saves * 10} EXP</span>
+                    </div>
+                  )}
+                  <div className="border-t border-green-500/30 pt-2 mt-2">
+                    <div className="flex justify-between font-bold">
+                      <span className="text-green-200">Gesamt EXP:</span>
+                      <span className="text-green-300 text-lg">+{expGained.total} EXP</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <p className="text-green-200 text-xs text-center">Lade die Seite neu, um deine neuen EXP zu sehen!</p>
               </div>
             )}
             
