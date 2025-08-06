@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -129,9 +129,14 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showWalletInfoModal, setShowWalletInfoModal] = useState(false);
   const [showMiningPowerModal, setShowMiningPowerModal] = useState(false);
+  const [showConfirmInitial, setShowConfirmInitial] = useState(false);
+  const [showConfirmAfter, setShowConfirmAfter] = useState(false);
   const [walletInput, setWalletInput] = useState(userData.wallet || '');
   const [claimStatus, setClaimStatus] = useState('');
   const [loading, setLoading] = useState(false);
+  const [initialValues, setInitialValues] = useState<{likes: number, shares: number, saves: number} | null>(null);
+  const [afterValues, setAfterValues] = useState<{likes: number, shares: number, saves: number} | null>(null);
+  const [confirmationMessage, setConfirmationMessage] = useState(false);
 
   // Level Funktionen (gleiche Logik wie Facebook)
   const getLevelAndExpRange = (exp: number) => {
@@ -157,6 +162,103 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
   const currentLevelExp = userData.expTotal - minExp;
   const levelRange = maxExp - minExp;
   const progressPercent = Math.round((currentLevelExp / levelRange) * 100);
+
+  // TikTok Check Funktionen
+  const getUUID = () => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('uuid') || 'Dawidfaithtest3736TT';
+    }
+    return 'Dawidfaithtest3736TT';
+  };
+
+  const checkInitial = async () => {
+    setLoading(true);
+    try {
+      const uuid = getUUID();
+      const response = await fetch('https://hook.eu2.make.com/uwixmcg3w0l14ve5g0jesxec2qeuxuej', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uuid: uuid,
+          username: userData.username,
+          walletAddress: userData.walletAddress || walletInput,
+          action: 'initial_check',
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      const data = await response.json();
+      
+      const likes = parseInt(data.likes) || 0;
+      const shares = parseInt(data.shares) || 0;
+      const saves = parseInt(data.saves) || 0;
+      setInitialValues({ likes, shares, saves });
+      
+      // LocalStorage setzen
+      if (typeof window !== 'undefined') {
+        localStorage.setItem("dfaith_tiktok_likeStart", likes.toString());
+        localStorage.setItem("dfaith_tiktok_shareStart", shares.toString());
+        localStorage.setItem("dfaith_tiktok_saveStart", saves.toString());
+      }
+    } catch (error) {
+      console.error('Fehler beim TikTok Check:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkAfter = async () => {
+    setLoading(true);
+    try {
+      const uuid = getUUID();
+      const response = await fetch('https://hook.eu2.make.com/uwixmcg3w0l14ve5g0jesxec2qeuxuej', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uuid: uuid,
+          username: userData.username,
+          walletAddress: userData.walletAddress || walletInput,
+          action: 'after_check',
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      const data = await response.json();
+      
+      const newLikes = parseInt(data.likes) || 0;
+      const newShares = parseInt(data.shares) || 0;
+      const newSaves = parseInt(data.saves) || 0;
+      setAfterValues({ likes: newLikes, shares: newShares, saves: newSaves });
+      
+      if (initialValues && (newLikes > initialValues.likes || newShares > initialValues.shares || newSaves > initialValues.saves)) {
+        setConfirmationMessage(true);
+      }
+    } catch (error) {
+      console.error('Fehler beim TikTok Check:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // LocalStorage laden beim Start
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const likeStored = localStorage.getItem("dfaith_tiktok_likeStart");
+      const shareStored = localStorage.getItem("dfaith_tiktok_shareStart");
+      const saveStored = localStorage.getItem("dfaith_tiktok_saveStart");
+
+      if (likeStored && shareStored && saveStored) {
+        setInitialValues({
+          likes: parseInt(likeStored),
+          shares: parseInt(shareStored),
+          saves: parseInt(saveStored)
+        });
+      }
+    }
+  }, []);
 
   return (
     <>
@@ -287,7 +389,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
           <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-pink-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
-                ✨ TikTok Engagement
+                📊 TikTok Verification
               </h2>
               <button
                 onClick={() => setShowLikeSaveModal(false)}
@@ -297,46 +399,103 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
               </button>
             </div>
             
-            <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 mb-6">
-              <p className="text-pink-200 leading-relaxed mb-4">
-                Führe folgende Aktionen auf dem TikTok Beitrag durch:
-              </p>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-pink-400">❤️</span>
-                  <span className="text-white">Like den Beitrag</span>
-                  <span className="text-xs bg-pink-500/20 px-2 py-1 rounded text-pink-300">+10 EXP</span>
+            <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 mb-4">
+              <p className="font-semibold mb-3 text-pink-200">1️⃣ Entferne alle Likes, Shares und Saves von meinem TikTok</p>
+              <button 
+                onClick={() => setShowConfirmInitial(true)}
+                disabled={initialValues !== null || loading}
+                className={`w-full p-3 rounded-xl font-bold transition-all duration-300 ${
+                  initialValues !== null || loading
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white transform hover:scale-105'
+                }`}
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-white rounded-full"></div>
+                    <span>Erfasse Daten...</span>
+                  </div>
+                ) : initialValues !== null ? '✅ Werte bereits erfasst' : '✅ Check aktuelle Werte'}
+              </button>
+              {initialValues && (
+                <div className="bg-black/30 border border-pink-500/30 rounded-xl p-3 mt-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-pink-300">Likes:</span>
+                    <span className="font-bold text-pink-200">{initialValues.likes}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-purple-300">Shares:</span>
+                    <span className="font-bold text-purple-200">{initialValues.shares}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-cyan-300">Saves:</span>
+                    <span className="font-bold text-cyan-200">{initialValues.saves}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-purple-400">💬</span>
-                  <span className="text-white">Kommentiere</span>
-                  <span className="text-xs bg-purple-500/20 px-2 py-1 rounded text-purple-300">+10 EXP</span>
+              )}
+            </div>
+            
+            <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4 mb-4">
+              <p className="font-semibold mb-3 text-cyan-200">2️⃣ Like, Share und Save den TikTok erneut!</p>
+              <button 
+                onClick={() => setShowConfirmAfter(true)}
+                disabled={loading}
+                className={`w-full p-3 rounded-xl font-bold transition-all duration-300 ${
+                  loading 
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white transform hover:scale-105'
+                }`}
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-white rounded-full"></div>
+                    <span>Prüfe Änderungen...</span>
+                  </div>
+                ) : '✅ Check neue Werte'}
+              </button>
+              {afterValues && (
+                <div className="bg-black/30 border border-cyan-500/30 rounded-xl p-3 mt-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-pink-300">Likes:</span>
+                    <span className="font-bold text-pink-200">{afterValues.likes}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-purple-300">Shares:</span>
+                    <span className="font-bold text-purple-200">{afterValues.shares}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-cyan-300">Saves:</span>
+                    <span className="font-bold text-cyan-200">{afterValues.saves}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-cyan-400">🔄</span>
-                  <span className="text-white">Teile den Beitrag</span>
-                  <span className="text-xs bg-cyan-500/20 px-2 py-1 rounded text-cyan-300">+10 EXP</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-pink-400">🔖</span>
-                  <span className="text-white">Speichere ihn</span>
-                  <span className="text-xs bg-pink-500/20 px-2 py-1 rounded text-pink-300">+10 EXP</span>
-                </div>
+              )}
+            </div>
+            
+            {confirmationMessage && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3 mb-4">
+                <p className="text-green-300 font-bold">✅ Erfolgreich! Bitte lade die Seite neu.</p>
               </div>
-            </div>
+            )}
             
-            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-6">
-              <p className="text-yellow-200 font-medium text-sm">
-                ⚡ Nach dem Engagement lade die Seite neu für aktuelle EXP!
-              </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    localStorage.clear();
+                    window.location.href = window.location.pathname + '?tab=tiktok' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
+                  }
+                }}
+                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+              >
+                🔄 Neu laden
+              </button>
+              <button 
+                onClick={() => setShowLikeSaveModal(false)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
+              >
+                ❌ Schließen
+              </button>
             </div>
-            
-            <button 
-              onClick={() => setShowLikeSaveModal(false)}
-              className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl py-3 font-bold transition-all hover:from-pink-600 hover:to-purple-600"
-            >
-              ✅ Verstanden
-            </button>
           </div>
         </div>
       )}
@@ -528,6 +687,72 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
             >
               ✅ Verstanden
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Initial Modal */}
+      {showConfirmInitial && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-pink-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="text-5xl mb-4 text-center">⚠️</div>
+            <h2 className="text-xl font-bold mb-4 text-white text-center">Bestätigung erforderlich</h2>
+            <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 mb-4">
+              <p className="text-pink-200 leading-relaxed">Bitte entferne alle Likes, Shares und Saves von meinem TikTok – danach werden alle aktuellen Zahlen gespeichert.</p>
+            </div>
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-6">
+              <p className="text-yellow-200 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro TikTok!</p>
+            </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  setShowConfirmInitial(false);
+                  checkInitial();
+                }}
+                className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+              >
+                ✅ Ja, fortfahren
+              </button>
+              <button 
+                onClick={() => setShowConfirmInitial(false)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
+              >
+                ❌ Abbrechen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm After Modal */}
+      {showConfirmAfter && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-cyan-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="text-5xl mb-4 text-center">🎯</div>
+            <h2 className="text-xl font-bold mb-4 text-white text-center">Finale Bestätigung</h2>
+            <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4 mb-4">
+              <p className="text-cyan-200 leading-relaxed">Bitte Like, Share und Save den TikTok erneut, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert.</p>
+            </div>
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-6">
+              <p className="text-yellow-200 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro TikTok!</p>
+            </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  setShowConfirmAfter(false);
+                  checkAfter();
+                }}
+                className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+              >
+                ✅ Ja, fortfahren
+              </button>
+              <button 
+                onClick={() => setShowConfirmAfter(false)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
+              >
+                ❌ Abbrechen
+              </button>
+            </div>
           </div>
         </div>
       )}
