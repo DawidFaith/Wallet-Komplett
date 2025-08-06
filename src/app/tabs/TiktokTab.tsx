@@ -10,6 +10,21 @@ interface ModalProps {
   isLoading: boolean;
 }
 
+interface UserData {
+  username: string;
+  image: string;
+  expTotal: number;
+  expTiktok: number;
+  expFacebook: number;
+  expStream: number;
+  liveNFTBonus: number;
+  miningpower: number;
+  liked: string;
+  commented: string;
+  saved: boolean | string;
+  wallet?: string;
+}
+
 function Modal({ isOpen, onClose, title, onSubmit, isLoading }: ModalProps) {
   const [username, setUsername] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
@@ -106,11 +121,146 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading }: ModalProps) {
   );
 }
 
+function UserCard({ userData }: { userData: UserData }) {
+  // Level Funktionen (gleiche Logik wie Facebook)
+  const getLevelAndExpRange = (exp: number) => {
+    let level = 1;
+    let minExp = 0;
+    let maxExp = 39;
+    const levelThresholds = [39, 119, 239, 399, 599, 839, 1119, 1439, 1799, 2199, 2639, 3119, 3639, 4199, 4799, 5439, 6119, 6839, 7599, 8399, 9239, 10119, 11039, 11999, 12999, 14039, 15119, 16239, 17399, 18599, 19839, 21119, 22439, 23799, 25199, 26639, 28119, 29639, 31199, 32799, 34439, 36119, 37839, 39599, 41399, 43239, 45119, 47039, 48999, 99999999];
+    const levelMins = [0, 40, 120, 240, 400, 600, 840, 1120, 1440, 1800, 2200, 2640, 3120, 3640, 4200, 4800, 5440, 6120, 6840, 7600, 8400, 9240, 10120, 11040, 12000, 13000, 14040, 15120, 16240, 17400, 18600, 19840, 21120, 22440, 23800, 25200, 26640, 28120, 29640, 31200, 32800, 34440, 36120, 37840, 39600, 41400, 43240, 45120, 47040, 49000];
+    
+    for (let i = 0; i < levelThresholds.length; i++) {
+      if (exp <= levelThresholds[i]) {
+        level = i + 1;
+        minExp = levelMins[i];
+        maxExp = levelThresholds[i];
+        break;
+      }
+    }
+    
+    return { level, minExp, maxExp };
+  };
+
+  const { level, minExp, maxExp } = getLevelAndExpRange(userData.expTotal);
+  const currentLevelExp = userData.expTotal - minExp;
+  const levelRange = maxExp - minExp;
+  const progressPercent = Math.round((currentLevelExp / levelRange) * 100);
+
+  return (
+    <div 
+      className="min-h-screen flex items-center justify-center p-8"
+      style={{ 
+        background: 'linear-gradient(135deg, #ff0050, #fe2d92, #25f4ee)',
+        fontFamily: 'Poppins, Segoe UI, sans-serif'
+      }}
+    >
+      <div className="bg-black bg-opacity-15 rounded-3xl p-8 w-full max-w-sm text-center text-white border-2 border-white border-opacity-15 shadow-2xl">
+        {/* Username */}
+        <div className="text-2xl font-bold mb-4">@{userData.username}</div>
+        
+        {/* Profile Image */}
+        <img 
+          src={userData.image || 'https://via.placeholder.com/100'} 
+          alt="Profilbild"
+          className="w-24 h-24 rounded-full object-cover mx-auto mb-4"
+          loading="lazy"
+        />
+        
+        {/* Level Box */}
+        <div className="bg-black bg-opacity-20 rounded-2xl p-4 mb-4 border border-white/10">
+          {/* Level und EXP Header */}
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-baseline gap-2">
+              <span className="text-xl font-bold text-white">Level</span>
+              <span className="text-2xl font-black bg-gradient-to-r from-pink-400 to-cyan-400 bg-clip-text text-transparent">{level}</span>
+            </div>
+            
+            <div className="flex items-baseline gap-1">
+              <span className="text-lg font-bold text-white">{userData.expTotal.toLocaleString()}</span>
+              <span className="text-sm text-gray-400">/ {maxExp.toLocaleString()}</span>
+            </div>
+            
+            <button className="bg-pink-500 hover:bg-pink-600 text-white w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200">
+              i
+            </button>
+          </div>
+          
+          {/* Progress Bar mit Animation */}
+          <div className="relative bg-gray-800/60 rounded-full h-4 overflow-hidden mb-4 shadow-inner border border-gray-700/50">
+            <div 
+              className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 transition-all duration-1000 ease-out relative shadow-lg"
+              style={{ width: `${progressPercent}%` }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white drop-shadow-lg">
+              {progressPercent}%
+            </div>
+          </div>
+          
+          {/* Mining Power mit TikTok Design */}
+          <button className="w-full bg-gradient-to-r from-pink-500/20 to-cyan-500/20 rounded-xl p-3 border border-pink-500/30 hover:from-pink-500/30 hover:to-cyan-500/30 hover:border-pink-500/50 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-2xl animate-bounce">⛏</span>
+              <div className="text-center">
+                <div className="text-pink-300 text-sm font-medium">Mining Power</div>
+                <div className="text-pink-200 text-lg font-bold">+{userData.miningpower} D.Faith</div>
+              </div>
+            </div>
+          </button>
+        </div>
+        
+        {/* System Check */}
+        <div className="border-2 border-white rounded-2xl p-4 mb-6 bg-black bg-opacity-20">
+          <div className="font-bold text-lg mb-3 text-white">✅ TikTok Check</div>
+          
+          <div className="space-y-2 text-sm text-white">
+            <div className="flex justify-between">
+              <span>❤️ Like</span>
+              <span>{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
+            </div>
+            <div className="flex justify-between">
+              <span>💬 Kommentar</span>
+              <span>{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
+            </div>
+            <div className="flex justify-between">
+              <span>🔁 Share</span>
+              <span>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Buttons */}
+        <div className="flex gap-3">
+          <button className="relative flex-1 bg-gradient-to-r from-pink-500 via-pink-600 to-purple-600 px-4 py-4 rounded-2xl font-bold text-sm text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-pink-500/25 border border-pink-400/30">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+            <div className="relative flex items-center justify-center gap-1">
+              <span className="text-xl animate-pulse">✨</span>
+              <span className="tracking-wider">Sammle EXP</span>
+            </div>
+          </button>
+          <button className="relative flex-1 bg-gradient-to-r from-cyan-400 via-cyan-500 to-teal-500 px-4 py-4 rounded-2xl font-bold text-sm text-gray-900 overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/25 border border-cyan-300/50">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+            <div className="relative flex items-center justify-center gap-1">
+              <span className="text-xl animate-bounce">🪙</span>
+              <span className="tracking-wider">Claim</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TiktokTab() {
   const [isCheckModalOpen, setIsCheckModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userData, setUserData] = useState<UserData | null>(null);
 
   const sendWebhookRequest = async (username: string, walletAddress: string, webhookUrl: string) => {
     try {
@@ -131,6 +281,28 @@ export default function TiktokTab() {
 
       if (response.ok) {
         setMessage('Anfrage erfolgreich gesendet!');
+        
+        // Bei erfolgreichem Login, lade Userdaten (Mockdaten für Demo)
+        if (webhookUrl.includes('gz8xf59sl63lb5gtdirwcrvvs0f17u7f')) {
+          setTimeout(() => {
+            setUserData({
+              username: username.replace('@', ''),
+              image: 'https://via.placeholder.com/100',
+              expTotal: 1250,
+              expTiktok: 450,
+              expFacebook: 300,
+              expStream: 500,
+              liveNFTBonus: 0,
+              miningpower: 25,
+              liked: 'true',
+              commented: 'false',
+              saved: true,
+              wallet: walletAddress
+            });
+            setIsLoggedIn(true);
+            setMessage('');
+          }, 2000);
+        }
       } else {
         setMessage('Fehler beim Senden der Anfrage. Bitte versuchen Sie es erneut.');
       }
@@ -160,8 +332,31 @@ export default function TiktokTab() {
     setIsLoginModalOpen(false);
   };
 
+  // Wenn eingeloggt, zeige Userkarte
+  if (isLoggedIn && userData) {
+    return <UserCard userData={userData} />;
+  }
+
+  // Standard Dashboard
   return (
     <div className="min-h-screen bg-black relative overflow-hidden p-4">
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 0, 80, 0.95), rgba(254, 45, 146, 0.95), rgba(37, 244, 238, 0.95))',
+            backdropFilter: 'blur(8px)'
+          }}
+        >
+          <div className="text-center text-white">
+            <div className="animate-spin w-16 h-16 border-4 border-white/30 border-t-white rounded-full mx-auto mb-6"></div>
+            <p className="text-xl font-bold mb-2">Wird verarbeitet...</p>
+            <p className="text-sm opacity-80">Bitte warten Sie einen Moment</p>
+          </div>
+        </div>
+      )}
+
       {/* Compact Background */}
       <div className="absolute inset-0 z-0">
         <div className="absolute top-10 left-10 w-48 h-48 bg-gradient-to-r from-pink-500/15 to-purple-500/15 rounded-full blur-2xl animate-pulse"></div>
@@ -240,39 +435,6 @@ export default function TiktokTab() {
               </div>
             </div>
           )}
-
-          {/* Quick Info */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center p-3 bg-gray-900/50 rounded-xl border border-gray-800">
-              <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg flex items-center justify-center mx-auto mb-2">
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                </svg>
-              </div>
-              <h4 className="text-white font-bold text-sm">Sicher</h4>
-              <p className="text-gray-400 text-xs">Blockchain</p>
-            </div>
-
-            <div className="text-center p-3 bg-gray-900/50 rounded-xl border border-gray-800">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center mx-auto mb-2">
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                </svg>
-              </div>
-              <h4 className="text-white font-bold text-sm">Schnell</h4>
-              <p className="text-gray-400 text-xs">Automatisch</p>
-            </div>
-
-            <div className="text-center p-3 bg-gray-900/50 rounded-xl border border-gray-800">
-              <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mx-auto mb-2">
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                </svg>
-              </div>
-              <h4 className="text-white font-bold text-sm">Verifiziert</h4>
-              <p className="text-gray-400 text-xs">Dokumentiert</p>
-            </div>
-          </div>
         </div>
       </div>
 
