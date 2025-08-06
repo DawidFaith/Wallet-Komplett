@@ -140,8 +140,8 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router }: ModalPro
             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
               <p className="text-yellow-200 text-sm font-medium mb-2 text-center">
                 {(!walletAddress || !walletAddress.startsWith("0x")) 
-                  ? "Du hast noch keine Wallet? Erstelle jetzt deine Wallet!"
-                  : "💡 Tipp: Du kannst jederzeit eine neue Wallet im Wallet Tab erstellen!"
+                  ? "Hast noch keine Wallet? Dann erstelle sie hier!"
+                  : "💡 Du kannst jederzeit eine neue Wallet erstellen!"
                 }
               </p>
               <button
@@ -149,7 +149,7 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router }: ModalPro
                 onClick={() => router.push("/wallet")}
                 className="w-full py-2 px-4 rounded-lg font-semibold bg-gradient-to-r from-yellow-400 to-orange-400 text-black shadow-lg hover:from-yellow-500 hover:to-orange-500 transition-all duration-200 text-sm"
               >
-                🚀 {(!walletAddress || !walletAddress.startsWith("0x")) ? "Wallet jetzt anlegen" : "Wallet Tab öffnen"}
+                🚀 {(!walletAddress || !walletAddress.startsWith("0x")) ? "Wallet erstellen" : "Wallet Tab"}
               </button>
               <p className="text-xs text-yellow-300 mt-1 text-center">
                 Du findest den Wallet Tab auch oben im Menü.
@@ -392,11 +392,29 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
       });
 
       if (response.ok) {
-        setClaimStatus('✅ Claim erfolgreich gesendet!');
-        setTimeout(() => {
-          setShowClaimModal(false);
-          setClaimStatus('');
-        }, 2000);
+        const responseData = await response.json();
+        
+        // Prüfe den Response-Typ
+        if (responseData.status === 'success') {
+          setClaimStatus('✅ Claim erfolgreich gesendet!');
+          setTimeout(() => {
+            setShowClaimModal(false);
+            setClaimStatus('');
+          }, 2000);
+        } else if (responseData.info) {
+          // Info Response - bereits geclaimed
+          setClaimStatus('ℹ️ Du hast bereits geclaimed! Warte bis zum nächsten Claim-Zeitraum.');
+          setTimeout(() => {
+            setClaimStatus('');
+          }, 4000);
+        } else {
+          // Fallback für andere Success-Responses
+          setClaimStatus('✅ Claim erfolgreich gesendet!');
+          setTimeout(() => {
+            setShowClaimModal(false);
+            setClaimStatus('');
+          }, 2000);
+        }
       } else {
         setClaimStatus('❌ Fehler beim Claim. Bitte versuche es erneut.');
         setTimeout(() => {
@@ -487,7 +505,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
           
           {/* System Check */}
           <div className="bg-black/50 border border-pink-500/50 rounded-2xl p-4 mb-6">
-            <div className="font-bold text-lg mb-3 bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">✅ System Check</div>
+            <div className="font-bold text-lg mb-3 bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">🔍 System Check</div>
             
             <div className="space-y-2 text-sm text-white">
               <div className="flex justify-between">
@@ -728,7 +746,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
           <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-purple-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                📊 EXP Information
+                � EXP Information
               </h2>
               <button
                 onClick={() => setShowInfoModal(false)}
@@ -1168,7 +1186,7 @@ export default function TiktokTab() {
                 </svg>
               </a>
               <p className="text-pink-200 text-xs mt-2">
-                Kommentiere &quot;DFaith&quot; unter meinem neuesten Video für die Teilnahme-Bestätigung
+                💬 Kommentiere "D.FAITH" unter meinem neuesten Video um teilzunehmen!
               </p>
             </div>
           </div>
