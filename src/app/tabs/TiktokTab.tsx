@@ -694,35 +694,32 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
                   </div>
                 </div>
                 
-                <p className="text-green-200 text-xs text-center">Lade die Seite neu, um deine neuen EXP zu sehen!</p>
+                <div className="text-center mb-4">
+                  <p className="text-green-200 text-xs mb-3">Lade die Seite neu, um deine neuen EXP zu sehen!</p>
+                  <button 
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        // Nur EXP-Verification Daten löschen, Login-Daten behalten
+                        localStorage.removeItem("dfaith_tiktok_likeStart");
+                        localStorage.removeItem("dfaith_tiktok_shareStart");
+                        localStorage.removeItem("dfaith_tiktok_saveStart");
+                        
+                        // Seite neu laden
+                        window.location.href = window.location.pathname + '?tab=tiktok' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
+                      }
+                    }}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  >
+                    🔄 Seite neu laden
+                  </button>
+                </div>
               </div>
             )}
             
             <div className="flex gap-3">
               <button 
-                onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    // Nur EXP-Verification Daten löschen, Login-Daten behalten
-                    localStorage.removeItem("dfaith_tiktok_likeStart");
-                    localStorage.removeItem("dfaith_tiktok_shareStart");
-                    localStorage.removeItem("dfaith_tiktok_saveStart");
-                    
-                    // Seite neu laden
-                    window.location.href = window.location.pathname + '?tab=tiktok' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
-                  }
-                }}
-                disabled={!afterValues}
-                className={`flex-1 p-3 rounded-xl font-bold transition-all duration-300 transform ${
-                  afterValues 
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white hover:scale-105' 
-                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                🔄 Neu laden
-              </button>
-              <button 
                 onClick={() => setShowLikeSaveModal(false)}
-                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
+                className="w-full bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
               >
                 ❌ Schließen
               </button>
