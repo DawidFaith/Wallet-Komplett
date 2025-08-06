@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface ModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface ModalProps {
   title: string;
   onSubmit: (username: string, walletAddress: string) => void;
   isLoading: boolean;
+  router?: any;
 }
 
 interface UserData {
@@ -26,7 +28,7 @@ interface UserData {
   walletAddress?: string;
 }
 
-function Modal({ isOpen, onClose, title, onSubmit, isLoading }: ModalProps) {
+function Modal({ isOpen, onClose, title, onSubmit, isLoading, router }: ModalProps) {
   const [username, setUsername] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
 
@@ -60,6 +62,36 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading }: ModalProps) {
             ×
           </button>
         </div>
+
+        {/* Wallet Hinweis für Teilnahme Bestätigen */}
+        {title === "Claim Status Prüfen" && (
+          <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/50 rounded-xl p-4 mb-6">
+            <h3 className="text-yellow-300 font-bold mb-2 flex items-center gap-2">
+              <span>🪙</span>
+              Wallet für Belohnung benötigt
+            </h3>
+            <p className="text-yellow-200 text-sm mb-3">
+              Kommentiere &quot;DFaith&quot; unter meinem neuesten TikTok Video und hinterlege deine Wallet-Adresse, um deine Belohnung zu erhalten!
+            </p>
+            {(!walletAddress || !walletAddress.startsWith("0x")) && router && (
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-3">
+                <p className="text-yellow-200 text-sm font-medium mb-2 text-center">
+                  Du hast noch keine Wallet? Erstelle jetzt deine Wallet!
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push("/wallet")}
+                  className="w-full py-2 px-4 rounded-lg font-semibold bg-gradient-to-r from-yellow-400 to-orange-400 text-black shadow-lg hover:from-yellow-500 hover:to-orange-500 transition-all duration-200 text-sm"
+                >
+                  🚀 Wallet jetzt anlegen
+                </button>
+                <p className="text-xs text-yellow-300 mt-1 text-center">
+                  Du findest den Wallet Tab auch oben im Menü.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -163,7 +195,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
   const levelRange = maxExp - minExp;
   const progressPercent = Math.round((currentLevelExp / levelRange) * 100);
 
-  // TikTok Check Funktionen
+  // System Check Funktionen
   const getUUID = () => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
@@ -203,7 +235,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
         localStorage.setItem("dfaith_tiktok_saveStart", saves.toString());
       }
     } catch (error) {
-      console.error('Fehler beim TikTok Check:', error);
+      console.error('Fehler beim System Check:', error);
     } finally {
       setLoading(false);
     }
@@ -237,7 +269,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
         setConfirmationMessage(true);
       }
     } catch (error) {
-      console.error('Fehler beim TikTok Check:', error);
+      console.error('Fehler beim System Check:', error);
     } finally {
       setLoading(false);
     }
@@ -334,7 +366,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
           
           {/* System Check */}
           <div className="border-2 border-white rounded-2xl p-4 mb-6 bg-black bg-opacity-20">
-            <div className="font-bold text-lg mb-3 text-white">✅ TikTok Check</div>
+            <div className="font-bold text-lg mb-3 text-white">✅ System Check</div>
             
             <div className="space-y-2 text-sm text-white">
               <div className="flex justify-between">
@@ -400,7 +432,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
             </div>
             
             <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 mb-4">
-              <p className="font-semibold mb-3 text-pink-200">1️⃣ Entferne alle Likes, Shares und Saves von meinem Beitrag</p>
+              <p className="font-semibold mb-3 text-pink-200">1️⃣ Entferne alle Likes, Shares und Saves von meinem Video</p>
               <button 
                 onClick={() => setShowConfirmInitial(true)}
                 disabled={initialValues !== null || loading}
@@ -436,7 +468,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
             </div>
             
             <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4 mb-4">
-              <p className="font-semibold mb-3 text-cyan-200">2️⃣ Like, Share und Save den Beitrag erneut!</p>
+              <p className="font-semibold mb-3 text-cyan-200">2️⃣ Like, Share und Save das Video erneut!</p>
               <button 
                 onClick={() => setShowConfirmAfter(true)}
                 disabled={loading}
@@ -718,10 +750,10 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
             <div className="text-5xl mb-4 text-center">⚠️</div>
             <h2 className="text-xl font-bold mb-4 text-white text-center">Bestätigung erforderlich</h2>
             <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 mb-4">
-              <p className="text-pink-200 leading-relaxed">Bitte entferne alle Likes, Shares und Saves von meinem Beitrag – danach werden alle aktuellen Zahlen gespeichert.</p>
+              <p className="text-pink-200 leading-relaxed">Bitte entferne alle Likes, Shares und Saves von meinem Video – danach werden alle aktuellen Zahlen gespeichert.</p>
             </div>
             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-6">
-              <p className="text-yellow-200 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro TikTok!</p>
+              <p className="text-yellow-200 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro Video!</p>
             </div>
             <div className="flex gap-3">
               <button 
@@ -754,7 +786,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
               <p className="text-cyan-200 leading-relaxed">Bitte Like, Share und Save den TikTok erneut, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert.</p>
             </div>
             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-6">
-              <p className="text-yellow-200 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro TikTok!</p>
+              <p className="text-yellow-200 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro Video!</p>
             </div>
             <div className="flex gap-3">
               <button 
@@ -781,6 +813,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
 }
 
 export default function TiktokTab() {
+  const router = useRouter();
   const [isCheckModalOpen, setIsCheckModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -998,9 +1031,35 @@ export default function TiktokTab() {
               </div>
               <div className="text-left">
                 <h3 className="text-white font-bold">Dashboard Login</h3>
-                <p className="text-gray-400 text-sm">Bestätige deine Teilnahme für persönliches Dashboard</p>
+                <p className="text-gray-400 text-sm">Tokens claimen - nur nach Teilnahme-Bestätigung möglich</p>
               </div>
             </button>
+          </div>
+
+          {/* TikTok Profil Link */}
+          <div className="mb-6 p-4 bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/30 rounded-xl">
+            <div className="text-center">
+              <p className="text-pink-300 font-medium mb-3">
+                📱 Besuche mein TikTok-Profil für das neueste Video:
+              </p>
+              <a 
+                href="https://www.tiktok.com/@dawidfaith"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43V7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.43z"/>
+                </svg>
+                <span>@dawidfaith auf TikTok</span>
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                </svg>
+              </a>
+              <p className="text-pink-200 text-xs mt-2">
+                Kommentiere &quot;DFaith&quot; unter meinem neuesten Video für die Teilnahme-Bestätigung
+              </p>
+            </div>
           </div>
 
           {/* Status Message */}
@@ -1034,6 +1093,7 @@ export default function TiktokTab() {
         title="Claim Status Prüfen"
         onSubmit={handleCheck}
         isLoading={isLoading}
+        router={router}
       />
 
       <Modal
@@ -1042,6 +1102,7 @@ export default function TiktokTab() {
         title="Dashboard Login"
         onSubmit={handleLogin}
         isLoading={isLoading}
+        router={router}
       />
 
       {/* Additional TikTok Modals */}
@@ -1143,12 +1204,12 @@ export default function TiktokTab() {
             
             <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-800 leading-relaxed mb-4">
-                Bitte führe die folgenden Aktionen auf dem TikTok Beitrag durch:
+                Bitte führe die folgenden Aktionen auf dem TikTok Video durch:
               </p>
               <div className="space-y-2 text-left">
                 <div className="flex items-center gap-2">
                   <span className="text-pink-500">❤️</span>
-                  <span className="text-gray-700">Like den Beitrag</span>
+                  <span className="text-gray-700">Like das Video</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-purple-500">💬</span>
@@ -1156,7 +1217,7 @@ export default function TiktokTab() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-cyan-500">🔄</span>
-                  <span className="text-gray-700">Teile den Beitrag</span>
+                  <span className="text-gray-700">Teile das Video</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-pink-500">🔖</span>
@@ -1360,9 +1421,9 @@ export default function TiktokTab() {
               ×
             </button>
             <div className="text-5xl mb-4">🚀</div>
-            <h2 className="text-xl font-bold mb-4 text-gray-800">TikTok Check starten</h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-800">System Check starten</h2>
             <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-4">
-              <p className="text-pink-800 leading-relaxed">Like, kommentiere, teile und speichere den TikTok Beitrag. Danach klicke auf &quot;Engagement prüfen&quot;.</p>
+              <p className="text-pink-800 leading-relaxed">Like, kommentiere, teile und speichere das TikTok Video. Danach klicke auf &quot;Engagement prüfen&quot;.</p>
             </div>
             <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-6">
               <p className="text-yellow-700 font-bold text-sm">⚠️ Führe alle Aktionen durch für maximale Belohnung!</p>
@@ -1403,10 +1464,10 @@ export default function TiktokTab() {
             <div className="text-5xl mb-4">🎯</div>
             <h2 className="text-xl font-bold mb-4 text-gray-800">Finale Bestätigung</h2>
             <div className="bg-cyan-50 border border-cyan-200 rounded-2xl p-4 mb-4">
-              <p className="text-cyan-800 leading-relaxed">Bitte like, kommentiere, teile und speichere den TikTok Beitrag erneut, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert.</p>
+              <p className="text-cyan-800 leading-relaxed">Bitte like, kommentiere, teile und speichere das TikTok Video erneut, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert.</p>
             </div>
             <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-6">
-              <p className="text-yellow-700 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro Beitrag!</p>
+              <p className="text-yellow-700 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro Video!</p>
             </div>
             <div className="flex gap-3">
               <button 
