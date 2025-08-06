@@ -161,102 +161,78 @@ export default function TiktokTab() {
   };
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Animated Background Elements */}
+    <div className="min-h-screen bg-black relative overflow-hidden p-4">
+      {/* Compact Background */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-pink-500/20 to-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+        <div className="absolute top-10 left-10 w-48 h-48 bg-gradient-to-r from-pink-500/15 to-purple-500/15 rounded-full blur-2xl animate-pulse"></div>
+        <div className="absolute bottom-10 right-10 w-48 h-48 bg-gradient-to-r from-blue-500/15 to-cyan-500/15 rounded-full blur-2xl animate-pulse delay-1000"></div>
       </div>
 
-      <div className="relative z-10 container mx-auto px-4 py-12">
-        {/* Header Section */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center space-x-4 mb-6">
-            <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-2xl">
-              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+      <div className="relative z-10 max-w-4xl mx-auto">
+        {/* Compact Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center space-x-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
               </svg>
             </div>
-            <div>
-              <h1 className="text-5xl font-black bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                D.FAITH
-              </h1>
-              <p className="text-xl text-gray-300 font-medium">TikTok Claim Dashboard</p>
-            </div>
+            <h1 className="text-3xl font-black bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+              D.FAITH TikTok Claim
+            </h1>
           </div>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed">
-            Verbinden Sie Ihr TikTok-Konto und beanspruchen Sie Ihre D.FAITH Token mit unserem innovativen Claim-System
-          </p>
         </div>
 
-        {/* Main Action Cards */}
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-8 mb-12">
-            {/* Check Status Card */}
-            <div className="group relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-pink-500/20 to-purple-500/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-              <div className="relative bg-black/80 border border-pink-500/30 rounded-3xl p-8 backdrop-blur-sm hover:border-pink-500/50 transition-all duration-300">
-                <div className="text-center">
-                  <div className="w-20 h-20 bg-gradient-to-r from-pink-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
-                    <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">Claim Status Prüfen</h3>
-                  <p className="text-gray-300 mb-8 leading-relaxed">
-                    Überprüfen Sie Ihren aktuellen Claim-Status und sehen Sie verfügbare Token-Belohnungen
-                  </p>
-                  <button
-                    onClick={() => setIsCheckModalOpen(true)}
-                    className="w-full px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold rounded-2xl hover:from-pink-600 hover:to-purple-600 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
-                  >
-                    Status Überprüfen
-                  </button>
-                </div>
+        {/* Main Content Card */}
+        <div className="bg-black/80 border border-gray-800 rounded-2xl p-6 backdrop-blur-sm">
+          {/* Action Buttons */}
+          <div className="grid md:grid-cols-2 gap-4 mb-6">
+            <button
+              onClick={() => setIsCheckModalOpen(true)}
+              className="flex items-center justify-center space-x-3 p-4 bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/30 rounded-xl hover:border-pink-500/50 transition-all group"
+            >
+              <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
               </div>
-            </div>
+              <div className="text-left">
+                <h3 className="text-white font-bold">Claim Prüfen</h3>
+                <p className="text-gray-400 text-sm">Status überprüfen</p>
+              </div>
+            </button>
 
-            {/* Login Card */}
-            <div className="group relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-              <div className="relative bg-black/80 border border-cyan-500/30 rounded-3xl p-8 backdrop-blur-sm hover:border-cyan-500/50 transition-all duration-300">
-                <div className="text-center">
-                  <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
-                    <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                      <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                    </svg>
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">Dashboard Login</h3>
-                  <p className="text-gray-300 mb-8 leading-relaxed">
-                    Melden Sie sich an und erhalten Sie Zugang zu Ihrem persönlichen TikTok-Wallet Dashboard
-                  </p>
-                  <button
-                    onClick={() => setIsLoginModalOpen(true)}
-                    className="w-full px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold rounded-2xl hover:from-blue-600 hover:to-cyan-600 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
-                  >
-                    Jetzt Anmelden
-                  </button>
-                </div>
+            <button
+              onClick={() => setIsLoginModalOpen(true)}
+              className="flex items-center justify-center space-x-3 p-4 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-cyan-500/30 rounded-xl hover:border-cyan-500/50 transition-all group"
+            >
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
               </div>
-            </div>
+              <div className="text-left">
+                <h3 className="text-white font-bold">Dashboard Login</h3>
+                <p className="text-gray-400 text-sm">Anmelden & Zugang</p>
+              </div>
+            </button>
           </div>
 
           {/* Status Message */}
           {message && (
-            <div className={`mb-8 p-6 rounded-2xl text-center border backdrop-blur-sm ${
+            <div className={`mb-6 p-4 rounded-xl text-center border ${
               message.includes('erfolgreich') 
                 ? 'bg-green-500/10 border-green-500/30 text-green-300' 
                 : 'bg-red-500/10 border-red-500/30 text-red-300'
             }`}>
-              <div className="flex items-center justify-center space-x-3">
+              <div className="flex items-center justify-center space-x-2">
                 {message.includes('erfolgreich') ? (
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                   </svg>
                 ) : (
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                   </svg>
                 )}
@@ -265,36 +241,36 @@ export default function TiktokTab() {
             </div>
           )}
 
-          {/* Features Grid */}
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-black/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-sm">
-              <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+          {/* Quick Info */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center p-3 bg-gray-900/50 rounded-xl border border-gray-800">
+              <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                 </svg>
               </div>
-              <h4 className="text-lg font-bold text-white mb-2">Schnell & Sicher</h4>
-              <p className="text-gray-400 text-sm">Blitzschnelle Verarbeitung mit höchster Sicherheit für Ihre Token</p>
+              <h4 className="text-white font-bold text-sm">Sicher</h4>
+              <p className="text-gray-400 text-xs">Blockchain</p>
             </div>
 
-            <div className="bg-black/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-sm">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <div className="text-center p-3 bg-gray-900/50 rounded-xl border border-gray-800">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
                 </svg>
               </div>
-              <h4 className="text-lg font-bold text-white mb-2">Automatisch</h4>
-              <p className="text-gray-400 text-sm">Vollautomatische Claim-Verarbeitung ohne manuelle Eingriffe</p>
+              <h4 className="text-white font-bold text-sm">Schnell</h4>
+              <p className="text-gray-400 text-xs">Automatisch</p>
             </div>
 
-            <div className="bg-black/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-sm">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <div className="text-center p-3 bg-gray-900/50 rounded-xl border border-gray-800">
+              <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                 </svg>
               </div>
-              <h4 className="text-lg font-bold text-white mb-2">Verifiziert</h4>
-              <p className="text-gray-400 text-sm">Alle Transaktionen werden blockchain-verifiziert und dokumentiert</p>
+              <h4 className="text-white font-bold text-sm">Verifiziert</h4>
+              <p className="text-gray-400 text-xs">Dokumentiert</p>
             </div>
           </div>
         </div>
