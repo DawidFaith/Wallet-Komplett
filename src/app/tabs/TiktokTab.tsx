@@ -10,6 +10,7 @@ interface ModalProps {
   onSubmit: (username: string, walletAddress: string) => void;
   isLoading: boolean;
   router?: any;
+  confirmationMessage?: string;
 }
 
 interface UserData {
@@ -29,7 +30,7 @@ interface UserData {
   walletAddress?: string;
 }
 
-function Modal({ isOpen, onClose, title, onSubmit, isLoading, router }: ModalProps) {
+function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmationMessage }: ModalProps) {
   const [username, setUsername] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
   const [showWalletInfoModal, setShowWalletInfoModal] = useState(false);
@@ -158,6 +159,17 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router }: ModalPro
             </div>
           )}
           
+          {/* Bestätigungsmeldung */}
+          {confirmationMessage && (
+            <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-4">
+              <div className="flex items-center justify-center">
+                <span className="text-green-300 font-medium text-center">
+                  {confirmationMessage}
+                </span>
+              </div>
+            </div>
+          )}
+          
           <div className="flex space-x-4 pt-6">
             <button
               type="button"
@@ -248,7 +260,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
   const [loading, setLoading] = useState(false);
   const [initialValues, setInitialValues] = useState<{likes: number, shares: number, saves: number} | null>(null);
   const [afterValues, setAfterValues] = useState<{likes: number, shares: number, saves: number} | null>(null);
-  const [confirmationMessage, setConfirmationMessage] = useState(false);
+  const [confirmationMessage, setConfirmationMessage] = useState<string>('');
   const [expGained, setExpGained] = useState<{likes: number, shares: number, saves: number, total: number} | null>(null);
 
   // Level Funktionen (gleiche Logik wie Facebook)
@@ -360,7 +372,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
             saves: savesGained,
             total: totalExp
           });
-          setConfirmationMessage(true);
+          setConfirmationMessage('🎉 Glückwunsch! Du hast erfolgreich EXP gesammelt!');
         }
       }
     } catch (error) {
@@ -1011,6 +1023,7 @@ export default function TiktokTab() {
   const [message, setMessage] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [confirmationMessage, setConfirmationMessage] = useState<string>('');
   
   // Modal states für alle TikTok Modals
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -1095,28 +1108,28 @@ export default function TiktokTab() {
         
         // Prüfe den Response-Status
         if (responseData.status === 'success') {
-          setMessage('✅ Teilnahme erfolgreich bestätigt!');
+          setConfirmationMessage('✅ Teilnahme erfolgreich bestätigt!');
           // Modal bleibt offen, damit User die Erfolgsmeldung sieht
           setTimeout(() => {
-            setMessage('');
+            setConfirmationMessage('');
           }, 4000);
         } else {
-          setMessage('❌ Teilnahme fehlgeschlagen. Bitte versuche es erneut.');
+          setConfirmationMessage('❌ Teilnahme fehlgeschlagen. Bitte versuche es erneut.');
           setTimeout(() => {
-            setMessage('');
+            setConfirmationMessage('');
           }, 3000);
         }
       } else {
-        setMessage('❌ Teilnahme fehlgeschlagen. Bitte versuche es erneut.');
+        setConfirmationMessage('❌ Teilnahme fehlgeschlagen. Bitte versuche es erneut.');
         setTimeout(() => {
-          setMessage('');
+          setConfirmationMessage('');
         }, 3000);
       }
     } catch (error) {
       console.error('Webhook error:', error);
-      setMessage('❌ Netzwerkfehler. Bitte überprüfe deine Verbindung.');
+      setConfirmationMessage('❌ Netzwerkfehler. Bitte überprüfe deine Verbindung.');
       setTimeout(() => {
-        setMessage('');
+        setConfirmationMessage('');
       }, 3000);
     } finally {
       setIsLoading(false);
@@ -1311,11 +1324,15 @@ export default function TiktokTab() {
       {/* Modals */}
       <Modal
         isOpen={isCheckModalOpen}
-        onClose={() => setIsCheckModalOpen(false)}
+        onClose={() => {
+          setIsCheckModalOpen(false);
+          setConfirmationMessage('');
+        }}
         title="Bestätige deine Teilnahme"
         onSubmit={handleCheck}
         isLoading={isLoading}
         router={router}
+        confirmationMessage={confirmationMessage}
       />
 
       <Modal
