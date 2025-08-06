@@ -1186,7 +1186,7 @@ export default function TiktokTab() {
                 </svg>
               </a>
               <p className="text-pink-200 text-xs mt-2">
-                💬 Kommentiere "D.FAITH" unter meinem neuesten Video um teilzunehmen!
+                💬 Kommentiere &quot;D.FAITH&quot; unter meinem neuesten Video um teilzunehmen!
               </p>
             </div>
           </div>
