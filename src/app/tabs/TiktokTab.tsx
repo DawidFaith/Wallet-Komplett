@@ -859,7 +859,7 @@ export default function TiktokTab() {
             <div className="text-5xl mb-4">🚀</div>
             <h2 className="text-xl font-bold mb-4 text-gray-800">TikTok Check starten</h2>
             <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-4">
-              <p className="text-pink-800 leading-relaxed">Like, kommentiere, teile und speichere den TikTok Beitrag. Danach klicke auf "Engagement prüfen".</p>
+              <p className="text-pink-800 leading-relaxed">Like, kommentiere, teile und speichere den TikTok Beitrag. Danach klicke auf &quot;Engagement prüfen&quot;.</p>
             </div>
             <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-6">
               <p className="text-yellow-700 font-bold text-sm">⚠️ Führe alle Aktionen durch für maximale Belohnung!</p>
