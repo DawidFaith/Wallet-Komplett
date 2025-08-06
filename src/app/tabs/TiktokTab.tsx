@@ -141,7 +141,7 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router }: ModalPro
               <p className="text-yellow-200 text-sm font-medium mb-2 text-center">
                 {(!walletAddress || !walletAddress.startsWith("0x")) 
                   ? "Hast noch keine Wallet? Dann erstelle sie hier!"
-                  : "💡 Du kannst jederzeit eine neue Wallet erstellen!"
+                  : "Hast du noch keine Wallet? Erstelle eine neue Wallet hier!"
                 }
               </p>
               <button
