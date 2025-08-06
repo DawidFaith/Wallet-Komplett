@@ -389,7 +389,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
           <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-pink-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
-                📊 TikTok Verification
+                🎵 TikTok Verification
               </h2>
               <button
                 onClick={() => setShowLikeSaveModal(false)}
@@ -400,7 +400,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
             </div>
             
             <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 mb-4">
-              <p className="font-semibold mb-3 text-pink-200">1️⃣ Entferne alle Likes, Shares und Saves von meinem TikTok</p>
+              <p className="font-semibold mb-3 text-pink-200">1️⃣ Entferne alle Likes, Shares und Saves von meinem Beitrag</p>
               <button 
                 onClick={() => setShowConfirmInitial(true)}
                 disabled={initialValues !== null || loading}
@@ -436,7 +436,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
             </div>
             
             <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4 mb-4">
-              <p className="font-semibold mb-3 text-cyan-200">2️⃣ Like, Share und Save den TikTok erneut!</p>
+              <p className="font-semibold mb-3 text-cyan-200">2️⃣ Like, Share und Save den Beitrag erneut!</p>
               <button 
                 onClick={() => setShowConfirmAfter(true)}
                 disabled={loading}
@@ -586,27 +586,54 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
             
             <div className="space-y-4 mb-6">
               <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4">
-                <h3 className="text-purple-300 font-bold mb-3">📈 EXP Quellen</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-pink-300">TikTok EXP</span>
-                    <span className="text-pink-200 font-bold">{userData.expTiktok}</span>
+                <h3 className="text-purple-300 font-bold mb-4">📈 Deine EXP-Quellen</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 border-l-4 border-blue-600 pl-3 bg-blue-500/10 py-2 rounded-r-xl">
+                    <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" className="w-6 h-6" />
+                    <div>
+                      <div className="font-bold text-blue-300">Facebook</div>
+                      <div className="text-blue-200 font-semibold">{userData.expFacebook} EXP</div>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-blue-300">Facebook EXP</span>
-                    <span className="text-blue-200 font-bold">{userData.expFacebook}</span>
+                  <div className="flex items-center gap-3 border-l-4 border-pink-600 pl-3 bg-pink-500/10 py-2 rounded-r-xl">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" alt="TikTok" className="w-6 h-6 rounded-full" />
+                    <div>
+                      <div className="font-bold text-pink-300">TikTok</div>
+                      <div className="text-pink-200 font-semibold">{userData.expTiktok} EXP</div>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-purple-300">Stream EXP</span>
-                    <span className="text-purple-200 font-bold">{userData.expStream}</span>
+                  <div className="flex items-center gap-3 border-l-4 border-purple-600 pl-3 bg-purple-500/10 py-2 rounded-r-xl">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
+                    <div>
+                      <div className="font-bold text-purple-300">Instagram</div>
+                      <div className="text-purple-200 font-semibold">0 EXP</div>
+                    </div>
                   </div>
-                  <div className="border-t border-gray-600 pt-2 mt-3">
+                  <div className="flex items-center gap-3 border-l-4 border-cyan-600 pl-3 bg-cyan-500/10 py-2 rounded-r-xl">
+                    <img src="https://cdn-icons-png.flaticon.com/512/727/727245.png" alt="Stream" className="w-6 h-6 rounded-full" />
+                    <div>
+                      <div className="font-bold text-cyan-300">Stream</div>
+                      <div className="text-cyan-200 font-semibold">{userData.expStream} EXP</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 border-l-4 border-yellow-600 pl-3 bg-yellow-500/10 py-2 rounded-r-xl">
+                    <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Live" className="w-6 h-6 rounded-full" />
+                    <div>
+                      <div className="font-bold text-yellow-300">Live EXP Bonus</div>
+                      <div className="text-yellow-200 font-semibold">{userData.liveNFTBonus} EXP</div>
+                    </div>
+                  </div>
+                  <div className="border-t border-gray-600 pt-3 mt-4">
                     <div className="flex justify-between">
                       <span className="text-white font-bold">Gesamt EXP</span>
                       <span className="text-white font-bold">{userData.expTotal}</span>
                     </div>
                   </div>
                 </div>
+              </div>
+              
+              <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-300/30 rounded-2xl p-4 mb-6">
+                <p className="text-sm text-purple-200 font-medium">💡 Mehr EXP = schnelleres Level-Up. Nutze alle Plattformen! 🚀</p>
               </div>
               
               <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4">
@@ -698,7 +725,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
             <div className="text-5xl mb-4 text-center">⚠️</div>
             <h2 className="text-xl font-bold mb-4 text-white text-center">Bestätigung erforderlich</h2>
             <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 mb-4">
-              <p className="text-pink-200 leading-relaxed">Bitte entferne alle Likes, Shares und Saves von meinem TikTok – danach werden alle aktuellen Zahlen gespeichert.</p>
+              <p className="text-pink-200 leading-relaxed">Bitte entferne alle Likes, Shares und Saves von meinem Beitrag – danach werden alle aktuellen Zahlen gespeichert.</p>
             </div>
             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-6">
               <p className="text-yellow-200 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro TikTok!</p>
