@@ -1096,10 +1096,10 @@ export default function TiktokTab() {
         // Prüfe den Response-Status
         if (responseData.status === 'success') {
           setMessage('✅ Teilnahme erfolgreich bestätigt!');
+          // Modal bleibt offen, damit User die Erfolgsmeldung sieht
           setTimeout(() => {
             setMessage('');
-            setIsCheckModalOpen(false);
-          }, 2000);
+          }, 4000);
         } else {
           setMessage('❌ Teilnahme fehlgeschlagen. Bitte versuche es erneut.');
           setTimeout(() => {
