@@ -24,6 +24,7 @@ interface UserData {
   liked: string;
   commented: string;
   saved: boolean | string;
+  shared?: string;
   wallet?: string;
   walletAddress?: string;
 }
@@ -520,7 +521,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
               </div>
               <div className="flex justify-between">
                 <span>🔁 Share</span>
-                <span>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
+                <span>{userData.shared === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
               <div className="flex justify-between">
                 <span>💾 Save</span>
@@ -1070,6 +1071,7 @@ export default function TiktokTab() {
             liked: responseData.liked || 'false',
             commented: responseData.commented || 'false',
             saved: responseData.saved || false,
+            shared: responseData.shared || 'false',
             wallet: responseData.wallet || walletAddress
           });
           
