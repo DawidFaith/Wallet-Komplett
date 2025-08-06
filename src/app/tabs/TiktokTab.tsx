@@ -632,7 +632,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
                 className={`w-full p-3 rounded-xl font-bold transition-all duration-300 ${
                   loading || !initialValues
                     ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white transform hover:scale-105'
+                    : afterValues ? 'bg-green-600 text-white cursor-default' : 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white transform hover:scale-105'
                 }`}
               >
                 {loading ? (
@@ -640,7 +640,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
                     <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-white rounded-full"></div>
                     <span>Prüfe Änderungen...</span>
                   </div>
-                ) : !initialValues ? '⚠️ Zuerst Schritt 1 ausführen' : '✅ Check neue Werte'}
+                ) : !initialValues ? '⚠️ Zuerst Schritt 1 ausführen' : afterValues ? '✅ Neue Werte erfasst' : '✅ Check neue Werte'}
               </button>
               {afterValues && (
                 <div className="bg-black/30 border border-cyan-500/30 rounded-xl p-3 mt-3 text-sm">
@@ -711,7 +711,12 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
                     window.location.href = window.location.pathname + '?tab=tiktok' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
                   }
                 }}
-                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+                disabled={!afterValues}
+                className={`flex-1 p-3 rounded-xl font-bold transition-all duration-300 transform ${
+                  afterValues 
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white hover:scale-105' 
+                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                }`}
               >
                 🔄 Neu laden
               </button>
@@ -947,9 +952,6 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
             <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 mb-4">
               <p className="text-pink-200 leading-relaxed">Bitte entferne alle Likes, Shares und Saves von meinem Video – danach werden alle aktuellen Zahlen gespeichert.</p>
             </div>
-            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-6">
-              <p className="text-yellow-200 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro Video!</p>
-            </div>
             <div className="flex gap-3">
               <button 
                 onClick={() => {
@@ -979,9 +981,6 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
             <h2 className="text-xl font-bold mb-4 text-white text-center">Finale Bestätigung</h2>
             <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4 mb-4">
               <p className="text-cyan-200 leading-relaxed">Bitte Like, Share und Save den TikTok erneut, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert.</p>
-            </div>
-            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-6">
-              <p className="text-yellow-200 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro Video!</p>
             </div>
             <div className="flex gap-3">
               <button 
