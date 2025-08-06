@@ -628,11 +628,11 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
               <p className="font-semibold mb-3 text-cyan-200">2️⃣ Like, Share und Save das Video erneut!</p>
               <button 
                 onClick={() => setShowConfirmAfter(true)}
-                disabled={loading || !initialValues}
+                disabled={loading || !initialValues || !!afterValues}
                 className={`w-full p-3 rounded-xl font-bold transition-all duration-300 ${
                   loading || !initialValues
                     ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                    : afterValues ? 'bg-green-600 text-white cursor-default' : 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white transform hover:scale-105'
+                    : afterValues ? 'bg-green-600 text-white' : 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white transform hover:scale-105'
                 }`}
               >
                 {loading ? (
