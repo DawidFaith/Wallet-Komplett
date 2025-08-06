@@ -136,17 +136,20 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router }: ModalPro
           </div>
 
           {/* Wallet Hinweis für Teilnahme Bestätigen */}
-          {title === "Bestätige deine Teilnahme" && (!walletAddress || !walletAddress.startsWith("0x")) && router && (
+          {title === "Bestätige deine Teilnahme" && router && (
             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
               <p className="text-yellow-200 text-sm font-medium mb-2 text-center">
-                Du hast noch keine Wallet? Erstelle jetzt deine Wallet!
+                {(!walletAddress || !walletAddress.startsWith("0x")) 
+                  ? "Du hast noch keine Wallet? Erstelle jetzt deine Wallet!"
+                  : "💡 Tipp: Du kannst jederzeit eine neue Wallet im Wallet Tab erstellen!"
+                }
               </p>
               <button
                 type="button"
                 onClick={() => router.push("/wallet")}
                 className="w-full py-2 px-4 rounded-lg font-semibold bg-gradient-to-r from-yellow-400 to-orange-400 text-black shadow-lg hover:from-yellow-500 hover:to-orange-500 transition-all duration-200 text-sm"
               >
-                🚀 Wallet jetzt anlegen
+                🚀 {(!walletAddress || !walletAddress.startsWith("0x")) ? "Wallet jetzt anlegen" : "Wallet Tab öffnen"}
               </button>
               <p className="text-xs text-yellow-300 mt-1 text-center">
                 Du findest den Wallet Tab auch oben im Menü.
@@ -414,15 +417,14 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
   return (
     <>
       <div 
-        className="min-h-screen flex items-center justify-center p-8"
+        className="min-h-screen flex items-center justify-center p-8 bg-black"
         style={{ 
-          background: 'linear-gradient(135deg, #ff0050, #fe2d92, #25f4ee)',
           fontFamily: 'Poppins, Segoe UI, sans-serif'
         }}
       >
-        <div className="bg-black bg-opacity-15 rounded-3xl p-8 w-full max-w-sm text-center text-white border-2 border-white border-opacity-15 shadow-2xl">
+        <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-pink-500/30 rounded-3xl p-8 w-full max-w-sm text-center text-white shadow-2xl">
           {/* Username */}
-          <div className="text-2xl font-bold mb-4">{userData.username}</div>
+          <div className="text-2xl font-bold mb-4 bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">{userData.username}</div>
           
           {/* Profile Image */}
           <img 
@@ -433,7 +435,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
           />
           
           {/* Level Box */}
-          <div className="bg-black bg-opacity-20 rounded-2xl p-4 mb-4 border border-white/10">
+          <div className="bg-black/50 border border-pink-500/50 rounded-2xl p-4 mb-4">
             {/* Level und EXP Header */}
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-baseline gap-2">
@@ -455,7 +457,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
             </div>
             
             {/* Progress Bar mit Animation */}
-            <div className="relative bg-gray-800/60 rounded-full h-4 overflow-hidden mb-4 shadow-inner border border-gray-700/50">
+            <div className="relative bg-black/60 border border-pink-500/30 rounded-full h-4 overflow-hidden mb-4 shadow-inner">
               <div 
                 className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 transition-all duration-1000 ease-out relative shadow-lg"
                 style={{ width: `${progressPercent}%` }}
@@ -471,7 +473,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
             {/* Mining Power mit TikTok Design */}
             <button 
               onClick={() => setShowMiningPowerModal(true)}
-              className="w-full bg-gradient-to-r from-pink-500/20 to-cyan-500/20 rounded-xl p-3 border border-pink-500/30 hover:from-pink-500/30 hover:to-cyan-500/30 hover:border-pink-500/50 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer"
+              className="w-full bg-black/50 border border-pink-500/50 rounded-xl p-3 hover:bg-black/70 hover:border-pink-500/70 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer"
             >
               <div className="flex items-center justify-center gap-2">
                 <span className="text-2xl animate-bounce">⛏</span>
@@ -484,8 +486,8 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
           </div>
           
           {/* System Check */}
-          <div className="border-2 border-white rounded-2xl p-4 mb-6 bg-black bg-opacity-20">
-            <div className="font-bold text-lg mb-3 text-white">✅ System Check</div>
+          <div className="bg-black/50 border border-pink-500/50 rounded-2xl p-4 mb-6">
+            <div className="font-bold text-lg mb-3 bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">✅ System Check</div>
             
             <div className="space-y-2 text-sm text-white">
               <div className="flex justify-between">
