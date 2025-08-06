@@ -281,28 +281,6 @@ export default function TiktokTab() {
 
       if (response.ok) {
         setMessage('Anfrage erfolgreich gesendet!');
-        
-        // Bei erfolgreichem Login, lade Userdaten (Mockdaten für Demo)
-        if (webhookUrl.includes('gz8xf59sl63lb5gtdirwcrvvs0f17u7f')) {
-          setTimeout(() => {
-            setUserData({
-              username: username.replace('@', ''),
-              image: 'https://via.placeholder.com/100',
-              expTotal: 1250,
-              expTiktok: 450,
-              expFacebook: 300,
-              expStream: 500,
-              liveNFTBonus: 0,
-              miningpower: 25,
-              liked: 'true',
-              commented: 'false',
-              saved: true,
-              wallet: walletAddress
-            });
-            setIsLoggedIn(true);
-            setMessage('');
-          }, 2000);
-        }
       } else {
         setMessage('Fehler beim Senden der Anfrage. Bitte versuchen Sie es erneut.');
       }
@@ -324,11 +302,65 @@ export default function TiktokTab() {
   };
 
   const handleLogin = async (username: string, walletAddress: string) => {
-    await sendWebhookRequest(
-      username,
-      walletAddress,
-      'https://hook.eu2.make.com/gz8xf59sl63lb5gtdirwcrvvs0f17u7f'
-    );
+    try {
+      setIsLoading(true);
+      setMessage('');
+
+      const response = await fetch('https://hook.eu2.make.com/gz8xf59sl63lb5gtdirwcrvvs0f17u7f', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username,
+          walletAddress: walletAddress,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      if (response.ok) {
+        const responseData = await response.json();
+        
+        // Prüfe ob Benutzerdaten im Response sind
+        if (responseData && responseData.username) {
+          // Lade echte Userdaten aus der Response
+          setUserData({
+            username: responseData.username || username.replace('@', ''),
+            image: responseData.image?.startsWith("http://") 
+              ? responseData.image.replace("http://", "https://") 
+              : responseData.image || "https://via.placeholder.com/100",
+            expTotal: parseInt(responseData.expTotal) || 0,
+            expTiktok: responseData.expTiktok || 0,
+            expFacebook: responseData.expFacebook || 0,
+            expStream: responseData.expStream || 0,
+            liveNFTBonus: responseData.liveNFTBonus || 0,
+            miningpower: responseData.miningpower || 0,
+            liked: responseData.liked || 'false',
+            commented: responseData.commented || 'false',
+            saved: responseData.saved || false,
+            wallet: responseData.wallet || walletAddress
+          });
+          
+          setIsLoggedIn(true);
+          setMessage('Login erfolgreich! Dashboard wird geladen...');
+          
+          // Kurz warten dann Message ausblenden
+          setTimeout(() => {
+            setMessage('');
+          }, 1500);
+        } else {
+          setMessage('Login erfolgreich gesendet!');
+        }
+      } else {
+        setMessage('Fehler beim Senden der Anfrage. Bitte versuchen Sie es erneut.');
+      }
+    } catch (error) {
+      console.error('Webhook error:', error);
+      setMessage('Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.');
+    } finally {
+      setIsLoading(false);
+    }
+    
     setIsLoginModalOpen(false);
   };
 
