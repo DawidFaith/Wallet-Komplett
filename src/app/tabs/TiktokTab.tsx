@@ -400,8 +400,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
           setTimeout(() => {
             setShowClaimModal(false);
             setClaimStatus('');
-            // Nur bei Erfolg zur UserCard weiterleiten
-            window.location.reload();
+            // KEINE Weiterleitung - User bleibt in der UserCard
           }, 2000);
         } else if (responseData.status === 'Info') {
           // Info Response - bereits geclaimed
