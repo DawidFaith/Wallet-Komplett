@@ -39,10 +39,10 @@ const getLevelAndExpRange = (exp: number) => {
   return { level, minExp, maxExp };
 };
 
-// UUID aus URL Parameter holen (temporär auf dfaith378 gesetzt)
+// UUID aus URL Parameter holen (temporär auf dfaith3781123 gesetzt)
 const getUUID = () => {
-  // Temporär für Tests: dfaith378
-  return 'dfaith378';
+  // Temporär für Tests: dfaith3781123
+  return 'dfaith3781123';
   
   // Original Code:
   // if (typeof window !== 'undefined') {
@@ -81,9 +81,9 @@ export default function InstagramTab() {
         const uuid = getUUID();
         console.log('Lade Daten für UUID:', uuid);
         
-        // UUID Überprüfung - temporär deaktiviert für dfaith378
+        // UUID Überprüfung - temporär deaktiviert für dfaith3781123
         // Aktuell ist diese Prüfung deaktiviert für Tests
-        const showNoUuidModal = false; // Auf false gesetzt für temporäre UUID dfaith378
+        const showNoUuidModal = false; // Auf false gesetzt für temporäre UUID dfaith3781123
         if (showNoUuidModal && (!uuid || uuid === null)) {
           setLoading(false);
           setShowNoUuidModal(true);
