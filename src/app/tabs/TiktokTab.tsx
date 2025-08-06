@@ -23,6 +23,7 @@ interface UserData {
   commented: string;
   saved: boolean | string;
   wallet?: string;
+  walletAddress?: string;
 }
 
 function Modal({ isOpen, onClose, title, onSubmit, isLoading }: ModalProps) {
@@ -121,7 +122,17 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading }: ModalProps) {
   );
 }
 
-function UserCard({ userData }: { userData: UserData }) {
+function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void }) {
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showClaimModal, setShowClaimModal] = useState(false);
+  const [showLikeSaveModal, setShowLikeSaveModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showWalletInfoModal, setShowWalletInfoModal] = useState(false);
+  const [showMiningPowerModal, setShowMiningPowerModal] = useState(false);
+  const [walletInput, setWalletInput] = useState(userData.wallet || '');
+  const [claimStatus, setClaimStatus] = useState('');
+  const [loading, setLoading] = useState(false);
+
   // Level Funktionen (gleiche Logik wie Facebook)
   const getLevelAndExpRange = (exp: number) => {
     let level = 1;
@@ -157,7 +168,7 @@ function UserCard({ userData }: { userData: UserData }) {
     >
       <div className="bg-black bg-opacity-15 rounded-3xl p-8 w-full max-w-sm text-center text-white border-2 border-white border-opacity-15 shadow-2xl">
         {/* Username */}
-        <div className="text-2xl font-bold mb-4">@{userData.username}</div>
+        <div className="text-2xl font-bold mb-4">{userData.username}</div>
         
         {/* Profile Image */}
         <img 
@@ -229,6 +240,10 @@ function UserCard({ userData }: { userData: UserData }) {
               <span>🔁 Share</span>
               <span>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
             </div>
+            <div className="flex justify-between">
+              <span>💾 Save</span>
+              <span>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
+            </div>
           </div>
         </div>
         
@@ -261,6 +276,37 @@ export default function TiktokTab() {
   const [message, setMessage] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
+  
+  // Modal states für alle TikTok Modals
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showClaimModal, setShowClaimModal] = useState(false);
+  const [showLikeSaveModal, setShowLikeSaveModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showWalletInfoModal, setShowWalletInfoModal] = useState(false);
+  const [showMiningPowerModal, setShowMiningPowerModal] = useState(false);
+  const [showConfirmBefore, setShowConfirmBefore] = useState(false);
+  const [showConfirmAfter, setShowConfirmAfter] = useState(false);
+  const [showNoUuidModal, setShowNoUuidModal] = useState(false);
+
+  // Level Funktionen (gleiche Logik wie Facebook)
+  const getLevelAndExpRange = (exp: number) => {
+    let level = 1;
+    let minExp = 0;
+    let maxExp = 39;
+    const levelThresholds = [39, 119, 239, 399, 599, 839, 1119, 1439, 1799, 2199, 2639, 3119, 3639, 4199, 4799, 5439, 6119, 6839, 7599, 8399, 9239, 10119, 11039, 11999, 12999, 14039, 15119, 16239, 17399, 18599, 19839, 21119, 22439, 23799, 25199, 26639, 28119, 29639, 31199, 32799, 34439, 36119, 37839, 39599, 41399, 43239, 45119, 47039, 48999, 99999999];
+    const levelMins = [0, 40, 120, 240, 400, 600, 840, 1120, 1440, 1800, 2200, 2640, 3120, 3640, 4200, 4800, 5440, 6120, 6840, 7600, 8400, 9240, 10120, 11040, 12000, 13000, 14040, 15120, 16240, 17400, 18600, 19840, 21120, 22440, 23800, 25200, 26640, 28120, 29640, 31200, 32800, 34440, 36120, 37840, 39600, 41400, 43240, 45120, 47040, 49000];
+    
+    for (let i = 0; i < levelThresholds.length; i++) {
+      if (exp <= levelThresholds[i]) {
+        level = i + 1;
+        minExp = levelMins[i];
+        maxExp = levelThresholds[i];
+        break;
+      }
+    }
+    
+    return { level, minExp, maxExp };
+  };
 
   const sendWebhookRequest = async (username: string, walletAddress: string, webhookUrl: string) => {
     try {
@@ -366,7 +412,7 @@ export default function TiktokTab() {
 
   // Wenn eingeloggt, zeige Userkarte
   if (isLoggedIn && userData) {
-    return <UserCard userData={userData} />;
+    return <UserCard userData={userData} onBack={() => setIsLoggedIn(false)} />;
   }
 
   // Standard Dashboard
@@ -486,6 +532,459 @@ export default function TiktokTab() {
         onSubmit={handleLogin}
         isLoading={isLoading}
       />
+
+      {/* Additional TikTok Modals */}
+      {/* Upgrade Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
+              onClick={() => setShowUpgradeModal(false)}
+              aria-label="Schließen"
+              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+            >
+              ×
+            </button>
+            <div className="flex flex-col items-center gap-4 mb-6">
+              <div className="w-20 h-20 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-3xl text-white">⭐</span>
+              </div>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">Level Upgrade!</h2>
+            </div>
+            
+            <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-6">
+              <p className="text-gray-800 leading-relaxed mb-4">
+                <strong className="text-pink-600">Herzlichen Glückwunsch!</strong> Du hast ein neues Level erreicht!
+              </p>
+              <div className="text-2xl font-bold text-purple-600 mb-2">Level {userData && getLevelAndExpRange(userData.expTotal || 0).level}</div>
+              <p className="text-gray-600 text-sm">
+                Deine Mining Power wurde erhöht! 🚀
+              </p>
+            </div>
+            
+            <button 
+              onClick={() => setShowUpgradeModal(false)}
+              className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+            >
+              ✨ Awesome!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Claim Modal */}
+      {showClaimModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
+              onClick={() => setShowClaimModal(false)}
+              aria-label="Schließen"
+              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+            >
+              ×
+            </button>
+            <div className="flex flex-col items-center gap-4 mb-6">
+              <div className="w-20 h-20 bg-gradient-to-r from-cyan-400 to-pink-500 rounded-full flex items-center justify-center">
+                <span className="text-3xl text-white">💰</span>
+              </div>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-600 to-pink-600 bg-clip-text text-transparent">Claim erfolgreich!</h2>
+            </div>
+            
+            <div className="bg-cyan-50 border border-cyan-200 rounded-2xl p-4 mb-6">
+              <p className="text-gray-800 leading-relaxed mb-4">
+                Du hast erfolgreich <strong className="text-pink-600">+{userData?.miningpower || 0} D.FAITH</strong> für deine TikTok Aktivität erhalten!
+              </p>
+              <div className="text-sm text-gray-600">
+                💎 Weiter so und sammle mehr Token!
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setShowClaimModal(false)}
+              className="w-full bg-gradient-to-r from-cyan-400 to-pink-500 hover:from-cyan-500 hover:to-pink-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+            >
+              🚀 Weiter claimen!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* LikeSave Modal */}
+      {showLikeSaveModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
+              onClick={() => setShowLikeSaveModal(false)}
+              aria-label="Schließen"
+              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+            >
+              ×
+            </button>
+            <div className="flex flex-col items-center gap-4 mb-6">
+              <div className="w-20 h-20 bg-gradient-to-r from-pink-500 to-cyan-400 rounded-full flex items-center justify-center">
+                <span className="text-3xl text-white">❤️</span>
+              </div>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-cyan-600 bg-clip-text text-transparent">TikTok Engagement</h2>
+            </div>
+            
+            <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-6">
+              <p className="text-gray-800 leading-relaxed mb-4">
+                Bitte führe die folgenden Aktionen auf dem TikTok Beitrag durch:
+              </p>
+              <div className="space-y-2 text-left">
+                <div className="flex items-center gap-2">
+                  <span className="text-pink-500">❤️</span>
+                  <span className="text-gray-700">Like den Beitrag</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-purple-500">💬</span>
+                  <span className="text-gray-700">Kommentiere</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-cyan-500">🔄</span>
+                  <span className="text-gray-700">Teile den Beitrag</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-pink-500">🔖</span>
+                  <span className="text-gray-700">Speichere ihn</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4">
+              <p className="text-yellow-800 font-medium text-sm">
+                ⚡ Nach dem Engagement kannst du deine D.FAITH Token claimen!
+              </p>
+            </div>
+            
+            <button 
+              onClick={() => setShowLikeSaveModal(false)}
+              className="w-full bg-gradient-to-r from-pink-500 to-cyan-400 hover:from-pink-600 hover:to-cyan-500 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+            >
+              ✅ Verstanden
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Info Modal */}
+      {showInfoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
+              onClick={() => setShowInfoModal(false)}
+              aria-label="Schließen"
+              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+            >
+              ×
+            </button>
+            <div className="flex flex-col items-center gap-4 mb-6">
+              <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                <span className="text-3xl text-white">ℹ️</span>
+              </div>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">TikTok Dashboard Info</h2>
+            </div>
+            
+            <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 mb-6">
+              <p className="text-gray-800 leading-relaxed mb-4">
+                Das <strong className="text-purple-600">TikTok Dashboard</strong> ermöglicht es dir, D.FAITH Token durch TikTok Engagement zu verdienen.
+              </p>
+              
+              <div className="space-y-3 text-left">
+                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-purple-300">
+                  <span className="text-xl">📊</span>
+                  <div>
+                    <div className="font-bold text-gray-800">Level System</div>
+                    <div className="text-sm text-gray-600">Sammle EXP durch Engagement</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-purple-300">
+                  <span className="text-xl">⛏️</span>
+                  <div>
+                    <div className="font-bold text-gray-800">Mining Power</div>
+                    <div className="text-sm text-gray-600">Mehr D.FAITH pro Claim</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-purple-300">
+                  <span className="text-xl">🎯</span>
+                  <div>
+                    <div className="font-bold text-gray-800">Daily Claims</div>
+                    <div className="text-sm text-gray-600">Täglich neue Möglichkeiten</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setShowInfoModal(false)}
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+            >
+              ✅ Verstanden
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Wallet Info Modal */}
+      {showWalletInfoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
+              onClick={() => setShowWalletInfoModal(false)}
+              aria-label="Schließen"
+              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+            >
+              ×
+            </button>
+            <div className="flex flex-col items-center gap-4 mb-6">
+              <div className="w-20 h-20 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full flex items-center justify-center">
+                <span className="text-3xl text-white">👛</span>
+              </div>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">Wallet Information</h2>
+            </div>
+            
+            <div className="bg-cyan-50 border border-cyan-200 rounded-2xl p-4 mb-6">
+              <p className="text-gray-800 leading-relaxed mb-4">
+                Deine <strong className="text-purple-600">Wallet-Adresse</strong> ist sicher mit deinem TikTok Profil verknüpft.
+              </p>
+              
+              <div className="bg-white border border-cyan-300 rounded-lg p-3 mb-4">
+                <div className="text-xs text-gray-500 mb-1">Wallet Adresse:</div>
+                <div className="font-mono text-sm text-gray-800 break-all">
+                  {userData?.walletAddress || 'Nicht verfügbar'}
+                </div>
+              </div>
+              
+              <div className="text-sm text-gray-600">
+                💎 Alle D.FAITH Token werden automatisch hierhin gesendet
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setShowWalletInfoModal(false)}
+              className="w-full bg-gradient-to-r from-cyan-400 to-purple-500 hover:from-cyan-500 hover:to-purple-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+            >
+              ✅ Verstanden
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mining Power Modal */}
+      {showMiningPowerModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
+              onClick={() => setShowMiningPowerModal(false)}
+              aria-label="Schließen"
+              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+            >
+              ×
+            </button>
+            <div className="flex flex-col items-center gap-4 mb-6">
+              <div className="w-20 h-20 bg-gradient-to-r from-pink-400 to-cyan-500 rounded-full flex items-center justify-center">
+                <span className="text-3xl text-white">⛏</span>
+              </div>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-cyan-600 bg-clip-text text-transparent">Mining Power Info</h2>
+            </div>
+            
+            <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-6">
+              <p className="text-gray-800 leading-relaxed mb-4">
+                Deine <strong className="text-cyan-600">Mining Power</strong> ist abhängig von verschiedenen Faktoren:
+              </p>
+              
+              <div className="space-y-3 text-left">
+                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
+                  <span className="text-xl">💰</span>
+                  <div>
+                    <div className="font-bold text-gray-800">Marketing Budget</div>
+                    <div className="text-sm text-gray-600">Pro User für TikTok Engagement</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
+                  <span className="text-xl">📊</span>
+                  <div>
+                    <div className="font-bold text-gray-800">Dein Level</div>
+                    <div className="text-sm text-gray-600">Aktuell: Level {userData && getLevelAndExpRange(userData.expTotal || 0).level}</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
+                  <span className="text-xl">💎</span>
+                  <div>
+                    <div className="font-bold text-gray-800">D.FAITH Preis</div>
+                    <div className="text-sm text-gray-600">Aktueller Marktpreis</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-3 mb-4">
+              <p className="text-cyan-800 font-medium text-sm">
+                ⚡ <strong>Aktuell:</strong> +{userData?.miningpower || 0} D.Faith pro TikTok
+              </p>
+            </div>
+            
+            <button 
+              onClick={() => setShowMiningPowerModal(false)}
+              className="w-full bg-gradient-to-r from-pink-400 to-cyan-500 hover:from-pink-500 hover:to-cyan-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+            >
+              ✅ Verstanden
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Before Modal */}
+      {showConfirmBefore && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
+              onClick={() => setShowConfirmBefore(false)}
+              aria-label="Schließen"
+              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+            >
+              ×
+            </button>
+            <div className="text-5xl mb-4">🚀</div>
+            <h2 className="text-xl font-bold mb-4 text-gray-800">TikTok Check starten</h2>
+            <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-4">
+              <p className="text-pink-800 leading-relaxed">Like, kommentiere, teile und speichere den TikTok Beitrag. Danach klicke auf "Engagement prüfen".</p>
+            </div>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-6">
+              <p className="text-yellow-700 font-bold text-sm">⚠️ Führe alle Aktionen durch für maximale Belohnung!</p>
+            </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  setShowConfirmBefore(false);
+                  // checkBefore() function would go here
+                }}
+                className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+              >
+                ✅ Check starten
+              </button>
+              <button 
+                onClick={() => setShowConfirmBefore(false)}
+                className="flex-1 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
+              >
+                ❌ Abbrechen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm After Modal */}
+      {showConfirmAfter && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
+              onClick={() => setShowConfirmAfter(false)}
+              aria-label="Schließen"
+              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+            >
+              ×
+            </button>
+            <div className="text-5xl mb-4">🎯</div>
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Finale Bestätigung</h2>
+            <div className="bg-cyan-50 border border-cyan-200 rounded-2xl p-4 mb-4">
+              <p className="text-cyan-800 leading-relaxed">Bitte like, kommentiere, teile und speichere den TikTok Beitrag erneut, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert.</p>
+            </div>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-6">
+              <p className="text-yellow-700 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro Beitrag!</p>
+            </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  setShowConfirmAfter(false);
+                  // checkAfter() function would go here
+                }}
+                className="flex-1 bg-gradient-to-r from-cyan-500 to-pink-600 hover:from-cyan-600 hover:to-pink-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+              >
+                ✅ Ja, fortfahren
+              </button>
+              <button 
+                onClick={() => setShowConfirmAfter(false)}
+                className="flex-1 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
+              >
+                ❌ Abbrechen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* No UUID Modal */}
+      {showNoUuidModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-40 flex items-center justify-center p-4">
+          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
+              onClick={() => setShowNoUuidModal(false)}
+              aria-label="Schließen"
+              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+            >
+              ×
+            </button>
+            <div className="flex flex-col items-center gap-4 mb-6">
+              <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
+                <span className="text-3xl text-white">🔒</span>
+              </div>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-700 bg-clip-text text-transparent">Profil nicht gefunden</h2>
+            </div>
+            
+            <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 mb-6">
+              <p className="text-gray-800 leading-relaxed mb-4">
+                Dein Profil ist nur durch die <strong className="text-purple-600">Teilnahme an den TikTok Videos</strong> von <strong className="text-purple-600">Dawid Faith</strong> erreichbar.
+              </p>
+              <p className="text-gray-600 text-sm">
+                💡 Like, kommentiere, teile und speichere seine Videos, um Zugang zu erhalten!
+              </p>
+            </div>
+            
+            <div className="space-y-3 mb-6">
+              <p className="text-gray-700 font-medium">📱 Folge Dawid Faith auf TikTok:</p>
+              
+              <a 
+                href="https://www.tiktok.com/@dawidfaith"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white p-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3 block"
+              >
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43V7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.43z"/>
+                </svg>
+                <span>TikTok Profil</span>
+              </a>
+            </div>
+            
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4">
+              <p className="text-yellow-800 font-medium text-sm">
+                ⚡ <strong>Tipp:</strong> Nach dem Engagement kannst du über den speziellen Link auf dein Profil zugreifen!
+              </p>
+            </div>
+            
+            <button 
+              onClick={() => setShowNoUuidModal(false)}
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
+            >
+              ❌ Verstanden
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
