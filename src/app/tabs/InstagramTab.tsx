@@ -69,7 +69,8 @@ export default function InstagramTab() {
   const [claimStatus, setClaimStatus] = useState('');
   const [initialValues, setInitialValues] = useState<{likes: number, saves: number} | null>(null);
   const [afterValues, setAfterValues] = useState<{likes: number, saves: number} | null>(null);
-  const [confirmationMessage, setConfirmationMessage] = useState(false);
+  const [confirmationMessage, setConfirmationMessage] = useState<string>('');
+  const [expGained, setExpGained] = useState<{likes: number, saves: number, total: number} | null>(null);
   const [showNoUuidModal, setShowNoUuidModal] = useState(false);
   const [showMiningPowerModal, setShowMiningPowerModal] = useState(false);
 
@@ -194,8 +195,20 @@ export default function InstagramTab() {
       const newSaves = parseInt(data.saves);
       setAfterValues({ likes: newLikes, saves: newSaves });
       
-      if (initialValues && (newLikes > initialValues.likes || newSaves > initialValues.saves)) {
-        setConfirmationMessage(true);
+      // Automatischer Vergleich und EXP Berechnung
+      if (initialValues) {
+        const likesGained = Math.max(0, newLikes - initialValues.likes);
+        const savesGained = Math.max(0, newSaves - initialValues.saves);
+        const totalExp = (likesGained * 10) + (savesGained * 10);
+        
+        if (totalExp > 0) {
+          setExpGained({
+            likes: likesGained,
+            saves: savesGained,
+            total: totalExp
+          });
+          setConfirmationMessage('🎉 Glückwunsch! Du hast erfolgreich EXP gesammelt!');
+        }
       }
     } catch (error) {
       console.error('Fehler beim Check:', error);
@@ -572,11 +585,11 @@ export default function InstagramTab() {
               <p className="font-semibold mb-3 text-green-800">2️⃣ Like und speichere den Beitrag erneut!</p>
               <button 
                 onClick={() => setShowConfirmAfter(true)}
-                disabled={loading}
+                disabled={loading || !initialValues || !!afterValues}
                 className={`w-full p-3 rounded-xl font-bold transition-all duration-300 ${
-                  loading 
+                  loading || !initialValues
                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white transform hover:scale-105'
+                    : afterValues ? 'bg-green-600 text-white' : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white transform hover:scale-105'
                 }`}
               >
                 {loading ? (
@@ -584,7 +597,7 @@ export default function InstagramTab() {
                     <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-gray-600 rounded-full"></div>
                     <span>Prüfe Änderungen...</span>
                   </div>
-                ) : '✅ Check neue Werte'}
+                ) : !initialValues ? '⚠️ Zuerst Schritt 1 ausführen' : afterValues ? '✅ Neue Werte erfasst' : '✅ Check neue Werte'}
               </button>
               {afterValues && (
                 <div className="bg-white border border-green-300 rounded-xl p-3 mt-3 text-sm">
@@ -600,27 +613,59 @@ export default function InstagramTab() {
               )}
             </div>
             
-            {confirmationMessage && (
-              <div className="bg-green-100 border border-green-200 rounded-xl p-3 mb-4">
-                <p className="text-green-700 font-bold">✅ Erfolgreich! Bitte lade die Seite neu.</p>
+            {confirmationMessage && expGained && (
+              <div className="bg-green-100 border border-green-200 rounded-xl p-4 mb-4">
+                <div className="text-center mb-3">
+                  <p className="text-green-700 font-bold text-lg">🎉 Glückwunsch!</p>
+                  <p className="text-green-600 text-sm">Du hast erfolgreich EXP gesammelt:</p>
+                </div>
+                
+                <div className="space-y-2 mb-4">
+                  {expGained.likes > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-purple-600">❤️ Likes (+{expGained.likes}):</span>
+                      <span className="font-bold text-green-600">+{expGained.likes * 10} EXP</span>
+                    </div>
+                  )}
+                  {expGained.saves > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-pink-600">💾 Saves (+{expGained.saves}):</span>
+                      <span className="font-bold text-green-600">+{expGained.saves * 10} EXP</span>
+                    </div>
+                  )}
+                  <div className="border-t border-green-300 pt-2 mt-2">
+                    <div className="flex justify-between font-bold">
+                      <span className="text-green-700">Gesamt EXP:</span>
+                      <span className="text-green-600 text-lg">+{expGained.total} EXP</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-center mb-4">
+                  <p className="text-green-600 text-xs mb-3">Lade die Seite neu, um deine neuen EXP zu sehen!</p>
+                  <button 
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        // Nur Like/Save Verification Daten löschen
+                        localStorage.removeItem("dfaith_likeStart");
+                        localStorage.removeItem("dfaith_saveStart");
+                        
+                        // Seite neu laden
+                        window.location.href = window.location.pathname + '?tab=instagram' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
+                      }
+                    }}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  >
+                    🔄 Seite neu laden
+                  </button>
+                </div>
               </div>
             )}
             
             <div className="flex gap-3">
               <button 
-                onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    localStorage.clear();
-                    window.location.href = window.location.pathname + '?tab=instagram' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
-                  }
-                }}
-                className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
-              >
-                🔄 Neu laden
-              </button>
-              <button 
                 onClick={() => setShowLikeSaveModal(false)}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
               >
                 ❌ Schließen
               </button>
@@ -742,9 +787,6 @@ export default function InstagramTab() {
             <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 mb-4">
               <p className="text-purple-800 leading-relaxed">Bitte entferne alle Likes und Saves von meinem Beitrag – danach werden alle aktuellen Zahlen gespeichert.</p>
             </div>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-6">
-              <p className="text-yellow-700 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro Beitrag!</p>
-            </div>
             <div className="flex gap-3">
               <button 
                 onClick={() => {
@@ -775,9 +817,6 @@ export default function InstagramTab() {
             <h2 className="text-xl font-bold mb-4 text-gray-800">Finale Bestätigung</h2>
             <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
               <p className="text-green-800 leading-relaxed">Bitte Like und speichere den Beitrag erneut, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert.</p>
-            </div>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-6">
-              <p className="text-yellow-700 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro Beitrag!</p>
             </div>
             <div className="flex gap-3">
               <button 
