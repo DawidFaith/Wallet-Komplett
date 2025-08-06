@@ -159,113 +159,379 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
   const progressPercent = Math.round((currentLevelExp / levelRange) * 100);
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-8"
-      style={{ 
-        background: 'linear-gradient(135deg, #ff0050, #fe2d92, #25f4ee)',
-        fontFamily: 'Poppins, Segoe UI, sans-serif'
-      }}
-    >
-      <div className="bg-black bg-opacity-15 rounded-3xl p-8 w-full max-w-sm text-center text-white border-2 border-white border-opacity-15 shadow-2xl">
-        {/* Username */}
-        <div className="text-2xl font-bold mb-4">{userData.username}</div>
-        
-        {/* Profile Image */}
-        <img 
-          src={userData.image || 'https://via.placeholder.com/100'} 
-          alt="Profilbild"
-          className="w-24 h-24 rounded-full object-cover mx-auto mb-4"
-          loading="lazy"
-        />
-        
-        {/* Level Box */}
-        <div className="bg-black bg-opacity-20 rounded-2xl p-4 mb-4 border border-white/10">
-          {/* Level und EXP Header */}
-          <div className="flex justify-between items-center mb-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold text-white">Level</span>
-              <span className="text-2xl font-black bg-gradient-to-r from-pink-400 to-cyan-400 bg-clip-text text-transparent">{level}</span>
+    <>
+      <div 
+        className="min-h-screen flex items-center justify-center p-8"
+        style={{ 
+          background: 'linear-gradient(135deg, #ff0050, #fe2d92, #25f4ee)',
+          fontFamily: 'Poppins, Segoe UI, sans-serif'
+        }}
+      >
+        <div className="bg-black bg-opacity-15 rounded-3xl p-8 w-full max-w-sm text-center text-white border-2 border-white border-opacity-15 shadow-2xl">
+          {/* Username */}
+          <div className="text-2xl font-bold mb-4">{userData.username}</div>
+          
+          {/* Profile Image */}
+          <img 
+            src={userData.image || 'https://via.placeholder.com/100'} 
+            alt="Profilbild"
+            className="w-24 h-24 rounded-full object-cover mx-auto mb-4"
+            loading="lazy"
+          />
+          
+          {/* Level Box */}
+          <div className="bg-black bg-opacity-20 rounded-2xl p-4 mb-4 border border-white/10">
+            {/* Level und EXP Header */}
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-bold text-white">Level</span>
+                <span className="text-2xl font-black bg-gradient-to-r from-pink-400 to-cyan-400 bg-clip-text text-transparent">{level}</span>
+              </div>
+              
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-bold text-white">{userData.expTotal.toLocaleString()}</span>
+                <span className="text-sm text-gray-400">/ {maxExp.toLocaleString()}</span>
+              </div>
+              
+              <button 
+                onClick={() => setShowInfoModal(true)}
+                className="bg-pink-500 hover:bg-pink-600 text-white w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200"
+              >
+                i
+              </button>
             </div>
             
-            <div className="flex items-baseline gap-1">
-              <span className="text-lg font-bold text-white">{userData.expTotal.toLocaleString()}</span>
-              <span className="text-sm text-gray-400">/ {maxExp.toLocaleString()}</span>
+            {/* Progress Bar mit Animation */}
+            <div className="relative bg-gray-800/60 rounded-full h-4 overflow-hidden mb-4 shadow-inner border border-gray-700/50">
+              <div 
+                className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 transition-all duration-1000 ease-out relative shadow-lg"
+                style={{ width: `${progressPercent}%` }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white drop-shadow-lg">
+                {progressPercent}%
+              </div>
             </div>
             
-            <button className="bg-pink-500 hover:bg-pink-600 text-white w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200">
-              i
+            {/* Mining Power mit TikTok Design */}
+            <button 
+              onClick={() => setShowMiningPowerModal(true)}
+              className="w-full bg-gradient-to-r from-pink-500/20 to-cyan-500/20 rounded-xl p-3 border border-pink-500/30 hover:from-pink-500/30 hover:to-cyan-500/30 hover:border-pink-500/50 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-2xl animate-bounce">⛏</span>
+                <div className="text-center">
+                  <div className="text-pink-300 text-sm font-medium">Mining Power</div>
+                  <div className="text-pink-200 text-lg font-bold">+{userData.miningpower} D.Faith</div>
+                </div>
+              </div>
             </button>
           </div>
           
-          {/* Progress Bar mit Animation */}
-          <div className="relative bg-gray-800/60 rounded-full h-4 overflow-hidden mb-4 shadow-inner border border-gray-700/50">
-            <div 
-              className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 transition-all duration-1000 ease-out relative shadow-lg"
-              style={{ width: `${progressPercent}%` }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white drop-shadow-lg">
-              {progressPercent}%
-            </div>
-          </div>
-          
-          {/* Mining Power mit TikTok Design */}
-          <button className="w-full bg-gradient-to-r from-pink-500/20 to-cyan-500/20 rounded-xl p-3 border border-pink-500/30 hover:from-pink-500/30 hover:to-cyan-500/30 hover:border-pink-500/50 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer">
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-2xl animate-bounce">⛏</span>
-              <div className="text-center">
-                <div className="text-pink-300 text-sm font-medium">Mining Power</div>
-                <div className="text-pink-200 text-lg font-bold">+{userData.miningpower} D.Faith</div>
+          {/* System Check */}
+          <div className="border-2 border-white rounded-2xl p-4 mb-6 bg-black bg-opacity-20">
+            <div className="font-bold text-lg mb-3 text-white">✅ TikTok Check</div>
+            
+            <div className="space-y-2 text-sm text-white">
+              <div className="flex justify-between">
+                <span>❤️ Like</span>
+                <span>{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
+              </div>
+              <div className="flex justify-between">
+                <span>💬 Kommentar</span>
+                <span>{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
+              </div>
+              <div className="flex justify-between">
+                <span>🔁 Share</span>
+                <span>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
+              </div>
+              <div className="flex justify-between">
+                <span>💾 Save</span>
+                <span>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
             </div>
-          </button>
-        </div>
-        
-        {/* System Check */}
-        <div className="border-2 border-white rounded-2xl p-4 mb-6 bg-black bg-opacity-20">
-          <div className="font-bold text-lg mb-3 text-white">✅ TikTok Check</div>
+          </div>
           
-          <div className="space-y-2 text-sm text-white">
-            <div className="flex justify-between">
-              <span>❤️ Like</span>
-              <span>{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
-            </div>
-            <div className="flex justify-between">
-              <span>💬 Kommentar</span>
-              <span>{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
-            </div>
-            <div className="flex justify-between">
-              <span>🔁 Share</span>
-              <span>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
-            </div>
-            <div className="flex justify-between">
-              <span>💾 Save</span>
-              <span>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
-            </div>
+          {/* Buttons */}
+          <div className="flex gap-3">
+            <button 
+              onClick={() => setShowLikeSaveModal(true)}
+              className="relative flex-1 bg-gradient-to-r from-pink-500 via-pink-600 to-purple-600 px-4 py-4 rounded-2xl font-bold text-sm text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-pink-500/25 border border-pink-400/30"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+              <div className="relative flex items-center justify-center gap-1">
+                <span className="text-xl animate-pulse">✨</span>
+                <span className="tracking-wider">Sammle EXP</span>
+              </div>
+            </button>
+            <button 
+              onClick={() => setShowClaimModal(true)}
+              className="relative flex-1 bg-gradient-to-r from-cyan-400 via-cyan-500 to-teal-500 px-4 py-4 rounded-2xl font-bold text-sm text-gray-900 overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/25 border border-cyan-300/50"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+              <div className="relative flex items-center justify-center gap-1">
+                <span className="text-xl animate-bounce">🪙</span>
+                <span className="tracking-wider">Claim</span>
+              </div>
+            </button>
           </div>
         </div>
-        
-        {/* Buttons */}
-        <div className="flex gap-3">
-          <button className="relative flex-1 bg-gradient-to-r from-pink-500 via-pink-600 to-purple-600 px-4 py-4 rounded-2xl font-bold text-sm text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-pink-500/25 border border-pink-400/30">
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-            <div className="relative flex items-center justify-center gap-1">
-              <span className="text-xl animate-pulse">✨</span>
-              <span className="tracking-wider">Sammle EXP</span>
-            </div>
-          </button>
-          <button className="relative flex-1 bg-gradient-to-r from-cyan-400 via-cyan-500 to-teal-500 px-4 py-4 rounded-2xl font-bold text-sm text-gray-900 overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/25 border border-cyan-300/50">
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-            <div className="relative flex items-center justify-center gap-1">
-              <span className="text-xl animate-bounce">🪙</span>
-              <span className="tracking-wider">Claim</span>
-            </div>
-          </button>
-        </div>
       </div>
-    </div>
+
+      {/* UserCard Modals */}
+      {/* Sammle EXP (LikeSave) Modal */}
+      {showLikeSaveModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-pink-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+                ✨ TikTok Engagement
+              </h2>
+              <button
+                onClick={() => setShowLikeSaveModal(false)}
+                className="text-gray-400 hover:text-pink-400 text-2xl transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 mb-6">
+              <p className="text-pink-200 leading-relaxed mb-4">
+                Führe folgende Aktionen auf dem TikTok Beitrag durch:
+              </p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-pink-400">❤️</span>
+                  <span className="text-white">Like den Beitrag</span>
+                  <span className="text-xs bg-pink-500/20 px-2 py-1 rounded text-pink-300">+10 EXP</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-purple-400">💬</span>
+                  <span className="text-white">Kommentiere</span>
+                  <span className="text-xs bg-purple-500/20 px-2 py-1 rounded text-purple-300">+10 EXP</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-cyan-400">🔄</span>
+                  <span className="text-white">Teile den Beitrag</span>
+                  <span className="text-xs bg-cyan-500/20 px-2 py-1 rounded text-cyan-300">+10 EXP</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-pink-400">🔖</span>
+                  <span className="text-white">Speichere ihn</span>
+                  <span className="text-xs bg-pink-500/20 px-2 py-1 rounded text-pink-300">+10 EXP</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-6">
+              <p className="text-yellow-200 font-medium text-sm">
+                ⚡ Nach dem Engagement lade die Seite neu für aktuelle EXP!
+              </p>
+            </div>
+            
+            <button 
+              onClick={() => setShowLikeSaveModal(false)}
+              className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl py-3 font-bold transition-all hover:from-pink-600 hover:to-purple-600"
+            >
+              ✅ Verstanden
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Claim Modal */}
+      {showClaimModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-cyan-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                🪙 D.FAITH Claim
+              </h2>
+              <button
+                onClick={() => setShowClaimModal(false)}
+                className="text-gray-400 hover:text-cyan-400 text-2xl transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4 mb-6">
+              <p className="text-cyan-200 leading-relaxed mb-4">
+                Du kannst <strong className="text-cyan-400">+{userData.miningpower} D.FAITH</strong> für deine TikTok Aktivität claimen!
+              </p>
+              
+              <div className="bg-black/30 border border-cyan-500/20 rounded-lg p-3 mb-4">
+                <div className="text-xs text-cyan-300 mb-1">Wallet Adresse:</div>
+                <div className="font-mono text-sm text-cyan-100 break-all">
+                  {userData.walletAddress || walletInput || 'Nicht verfügbar'}
+                </div>
+              </div>
+            </div>
+            
+            {!userData.walletAddress && !walletInput && (
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-4">
+                <p className="text-yellow-200 text-sm">
+                  ⚠️ Bitte hinterlege zuerst eine Wallet-Adresse im Wallet Tab
+                </p>
+              </div>
+            )}
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowClaimModal(false)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white rounded-xl py-3 font-bold transition-all"
+              >
+                Abbrechen
+              </button>
+              <button 
+                disabled={!userData.walletAddress && !walletInput}
+                onClick={() => {
+                  setClaimStatus('✅ Claim erfolgreich gesendet!');
+                  setTimeout(() => {
+                    setShowClaimModal(false);
+                    setClaimStatus('');
+                  }, 2000);
+                }}
+                className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-xl py-3 font-bold transition-all hover:from-cyan-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                🚀 Claim
+              </button>
+            </div>
+            
+            {claimStatus && (
+              <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-xl text-green-300 text-center">
+                {claimStatus}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Info Modal (EXP Info) */}
+      {showInfoModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-purple-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                📊 EXP Information
+              </h2>
+              <button
+                onClick={() => setShowInfoModal(false)}
+                className="text-gray-400 hover:text-purple-400 text-2xl transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="space-y-4 mb-6">
+              <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4">
+                <h3 className="text-purple-300 font-bold mb-3">📈 EXP Quellen</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-pink-300">TikTok EXP</span>
+                    <span className="text-pink-200 font-bold">{userData.expTiktok}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-blue-300">Facebook EXP</span>
+                    <span className="text-blue-200 font-bold">{userData.expFacebook}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-purple-300">Stream EXP</span>
+                    <span className="text-purple-200 font-bold">{userData.expStream}</span>
+                  </div>
+                  <div className="border-t border-gray-600 pt-2 mt-3">
+                    <div className="flex justify-between">
+                      <span className="text-white font-bold">Gesamt EXP</span>
+                      <span className="text-white font-bold">{userData.expTotal}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4">
+                <h3 className="text-pink-300 font-bold mb-3">🎯 Level System</h3>
+                <p className="text-pink-200 text-sm">
+                  Sammle EXP durch TikTok Engagement. Jedes Level erhöht deine Mining Power für mehr D.FAITH Token!
+                </p>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setShowInfoModal(false)}
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl py-3 font-bold transition-all hover:from-purple-600 hover:to-pink-600"
+            >
+              ✅ Verstanden
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mining Power Modal */}
+      {showMiningPowerModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-cyan-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent">
+                ⛏️ Mining Power
+              </h2>
+              <button
+                onClick={() => setShowMiningPowerModal(false)}
+                className="text-gray-400 hover:text-cyan-400 text-2xl transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4 mb-6">
+              <p className="text-cyan-200 leading-relaxed mb-4">
+                Deine <strong className="text-cyan-400">Mining Power</strong> bestimmt, wie viele D.FAITH Token du pro TikTok Claim erhältst.
+              </p>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
+                  <span className="text-xl">💰</span>
+                  <div>
+                    <div className="font-bold text-cyan-300">Marketing Budget</div>
+                    <div className="text-sm text-cyan-400">Budget pro User für TikTok</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
+                  <span className="text-xl">📊</span>
+                  <div>
+                    <div className="font-bold text-pink-300">Dein Level</div>
+                    <div className="text-sm text-pink-400">Level {getLevelAndExpRange(userData.expTotal).level}</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
+                  <span className="text-xl">💎</span>
+                  <div>
+                    <div className="font-bold text-purple-300">D.FAITH Kurs</div>
+                    <div className="text-sm text-purple-400">Aktueller Marktpreis</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-3 mb-6">
+              <p className="text-pink-200 font-medium text-center">
+                ⚡ <strong>Aktuell:</strong> +{userData.miningpower} D.FAITH pro Claim
+              </p>
+            </div>
+            
+            <button 
+              onClick={() => setShowMiningPowerModal(false)}
+              className="w-full bg-gradient-to-r from-cyan-500 to-pink-500 text-white rounded-xl py-3 font-bold transition-all hover:from-cyan-600 hover:to-pink-600"
+            >
+              ✅ Verstanden
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
