@@ -982,7 +982,7 @@ export default function TiktokTab() {
               </div>
               <div className="text-left">
                 <h3 className="text-white font-bold">Teilnahme Bestätigen</h3>
-                <p className="text-gray-400 text-sm">Kommentiere "DFaith" unter meinem neuesten Video</p>
+                <p className="text-gray-400 text-sm">Kommentiere &quot;DFaith&quot; unter meinem neuesten Video</p>
               </div>
             </button>
 
