@@ -702,7 +702,12 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
               <button 
                 onClick={() => {
                   if (typeof window !== 'undefined') {
-                    localStorage.clear();
+                    // Nur EXP-Verification Daten löschen, Login-Daten behalten
+                    localStorage.removeItem("dfaith_tiktok_likeStart");
+                    localStorage.removeItem("dfaith_tiktok_shareStart");
+                    localStorage.removeItem("dfaith_tiktok_saveStart");
+                    
+                    // Seite neu laden
                     window.location.href = window.location.pathname + '?tab=tiktok' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
                   }
                 }}
