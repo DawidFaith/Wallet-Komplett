@@ -1074,12 +1074,53 @@ export default function TiktokTab() {
   };
 
   const handleCheck = async (username: string, walletAddress: string) => {
-    await sendWebhookRequest(
-      username,
-      walletAddress,
-      'https://hook.eu2.make.com/6bp285kr8y9hoxk39j1v52qt2k4rt4id'
-    );
-    setIsCheckModalOpen(false);
+    try {
+      setIsLoading(true);
+      setMessage('');
+
+      const response = await fetch('https://hook.eu2.make.com/6bp285kr8y9hoxk39j1v52qt2k4rt4id', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username,
+          walletAddress: walletAddress,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      if (response.ok) {
+        const responseData = await response.json();
+        
+        // Prüfe den Response-Status
+        if (responseData.status === 'success') {
+          setMessage('✅ Teilnahme erfolgreich bestätigt!');
+          setTimeout(() => {
+            setMessage('');
+            setIsCheckModalOpen(false);
+          }, 2000);
+        } else {
+          setMessage('❌ Teilnahme fehlgeschlagen. Bitte versuche es erneut.');
+          setTimeout(() => {
+            setMessage('');
+          }, 3000);
+        }
+      } else {
+        setMessage('❌ Teilnahme fehlgeschlagen. Bitte versuche es erneut.');
+        setTimeout(() => {
+          setMessage('');
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Webhook error:', error);
+      setMessage('❌ Netzwerkfehler. Bitte überprüfe deine Verbindung.');
+      setTimeout(() => {
+        setMessage('');
+      }, 3000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleLogin = async (username: string, walletAddress: string) => {
