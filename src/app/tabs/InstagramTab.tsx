@@ -570,7 +570,7 @@ export default function InstagramTab() {
       {showLikeSaveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">� Like & Save Verification</h2>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">✨ Like & Save Verification</h2>
             
             <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 mb-4">
               <p className="font-semibold mb-3 text-purple-800">1️⃣ Entferne alle Likes und Saves von meinem Beitrag</p>
@@ -680,7 +680,7 @@ export default function InstagramTab() {
                 <button 
                   onClick={() => {
                     if (typeof window !== 'undefined') {
-                      // Nur Like/Save Verification Daten löschen
+                      // Nur Instagram-spezifische Verification Daten löschen
                       localStorage.removeItem("dfaith_likeStart");
                       localStorage.removeItem("dfaith_saveStart");
                       
@@ -746,7 +746,7 @@ export default function InstagramTab() {
             >
               ×
             </button>
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">� Deine EXP-Quellen</h2>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">✨ Deine EXP-Quellen</h2>
             <div className="text-left space-y-3 mb-6">
               <div className="flex items-center gap-3 border-l-4 border-purple-500 pl-3 bg-purple-50 py-2 rounded-r-xl">
                 <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
