@@ -26,6 +26,7 @@ interface UserData {
   expTotal: number;
   expTiktok: number;
   expFacebook: number;
+  expInstagram: number;
   expStream: number;
   liveNFTBonus: number;
   miningpower: number;
@@ -889,7 +890,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
                     <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
                     <div>
                       <div className="font-bold text-purple-300">Instagram</div>
-                      <div className="text-purple-200 font-semibold">0 EXP</div>
+                      <div className="text-purple-200 font-semibold">{userData.expInstagram} EXP</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 border-l-4 border-cyan-600 pl-3 bg-cyan-500/10 py-2 rounded-r-xl">
@@ -1232,8 +1233,9 @@ export default function TiktokTab() {
             expTotal: safeParseInt(responseData.expTotal),
             expTiktok: safeParseInt(responseData.expTiktok),
             expFacebook: safeParseInt(responseData.expFacebook),
+            expInstagram: safeParseInt(responseData.expInstagram),
             expStream: safeParseInt(responseData.expStream || responseData.liveExp),
-            liveNFTBonus: safeParseInt(responseData.liveNFTBonus || responseData.liveExp),
+            liveNFTBonus: safeParseInt(responseData.liveNFTBonus),
             miningpower: safeParseFloat(responseData.miningpower),
             liked: responseData.liked === "true" ? "true" : "false",
             commented: responseData.commented === "true" ? "true" : "false",
@@ -1252,6 +1254,7 @@ export default function TiktokTab() {
             expTotal: 0,
             expTiktok: 0,
             expFacebook: 0,
+            expInstagram: 0,
             expStream: 0,
             liveNFTBonus: 0,
             miningpower: 50,
