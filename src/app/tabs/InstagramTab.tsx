@@ -245,14 +245,27 @@ export default function InstagramTab() {
       
       const data = await response.json();
       
-      if (data.status === 'success' || data.success === true || data.claimed === true) {
-        setClaimStatus(data.message || '✅ Claim erfolgreich ausgelöst!');
-        // localStorage leeren wie im Original
+      // Verschiedene Status-Responses behandeln
+      if (data.status === 'success') {
+        setClaimStatus('✅ Dein Claim war erfolgreich! Die Tokens werden in Kürze auf deine Wallet gesendet.');
+        // localStorage leeren bei erfolgreichem Claim
         if (typeof window !== 'undefined') {
           localStorage.clear();
         }
+      } else if (data.status === 'wallet') {
+        setClaimStatus('⚠️ Diese Wallet wird bereits verwendet. Bitte gib eine andere Adresse ein.');
+      } else if (data.status === 'info') {
+        setClaimStatus('ℹ️ Du hast bereits geclaimed.');
       } else {
-        setClaimStatus('❌ Fehler: ' + (data.message || 'Unbekannter Fehler.'));
+        // Fallback für unbekannte Status oder alte API-Responses
+        if (data.success === true || data.claimed === true) {
+          setClaimStatus('✅ Dein Claim war erfolgreich! Die Tokens werden in Kürze auf deine Wallet gesendet.');
+          if (typeof window !== 'undefined') {
+            localStorage.clear();
+          }
+        } else {
+          setClaimStatus('❌ Fehler: ' + (data.message || 'Unbekannter Fehler.'));
+        }
       }
     } catch (error) {
       setClaimStatus('❌ Netzwerkfehler oder ungültige Antwort.');
@@ -535,7 +548,15 @@ export default function InstagramTab() {
               <span>Claim absenden</span>
             </button>
             {claimStatus && (
-              <div className={`mb-4 p-3 rounded-xl ${claimStatus.includes('✅') ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+              <div className={`mb-4 p-3 rounded-xl ${
+                claimStatus.includes('✅') 
+                  ? 'bg-green-100 text-green-700 border border-green-200' 
+                  : claimStatus.includes('⚠️') 
+                  ? 'bg-yellow-100 text-yellow-700 border border-yellow-200'
+                  : claimStatus.includes('ℹ️')
+                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                  : 'bg-red-100 text-red-700 border border-red-200'
+              }`}>
                 {claimStatus}
               </div>
             )}
