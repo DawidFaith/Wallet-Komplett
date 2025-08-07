@@ -458,7 +458,7 @@ export default function FacebookTab() {
             >
               ×
             </button>
-            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">🪙 D.FAITH Claim</h2>
+            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">D.FAITH Claim</h2>
             
             {!walletInput || !walletInput.startsWith("0x") ? (
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 text-gray-800 text-base flex flex-col items-center animate-pulse">
@@ -471,15 +471,17 @@ export default function FacebookTab() {
                 </button>
                 <span className="text-xs text-gray-500 mt-1">Du findest den Wallet Tab auch oben im Menü.</span>
               </div>
-            ) : (
+            ) : null}
+            
+            <p className="mb-4 text-gray-700">Gib deine Wallet-Adresse ein, um deine Belohnung zu erhalten:</p>
+            
+            {walletInput && walletInput.startsWith("0x") && (
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-center">
                 <p className="text-gray-800 mb-2">
                   Du kannst <strong className="text-blue-600">+{userData.miningpower} D.FAITH</strong> für deine Facebook Aktivität claimen!
                 </p>
               </div>
             )}
-            
-            <p className="mb-4 text-gray-700">Gib deine Wallet-Adresse ein, um deine Belohnung zu erhalten:</p>
             <div className="relative mb-6">
               <input 
                 type="text"
