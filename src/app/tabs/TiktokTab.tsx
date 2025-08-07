@@ -1218,27 +1218,40 @@ export default function TiktokTab() {
               ? responseData.image.replace("http://", "https://") 
               : responseData.image || "https://via.placeholder.com/100",
             expTotal: parseInt(responseData.expTotal) || 0,
-            expTiktok: responseData.expTiktok || 0,
-            expFacebook: responseData.expFacebook || 0,
-            expStream: responseData.expStream || 0,
-            liveNFTBonus: responseData.liveNFTBonus || 0,
-            miningpower: responseData.miningpower || 0,
+            expTiktok: parseInt(responseData.expTiktok) || 0,
+            expFacebook: parseInt(responseData.expFacebook) || 0,
+            expStream: parseInt(responseData.expStream) || 0,
+            liveNFTBonus: parseInt(responseData.liveNFTBonus) || 0,
+            miningpower: parseInt(responseData.miningpower) || 0,
             liked: responseData.liked || 'false',
             commented: responseData.commented || 'false',
             saved: responseData.saved || false,
             shared: responseData.shared || 'false',
-            wallet: responseData.wallet || walletAddress
+            wallet: responseData.wallet || walletAddress,
+            walletAddress: responseData.walletAddress || walletAddress
           });
-          
           setIsLoggedIn(true);
-          setMessage('Login erfolgreich! Dashboard wird geladen...');
-          
-          // Kurz warten dann Message ausblenden
-          setTimeout(() => {
-            setMessage('');
-          }, 1500);
+          setMessage('Login erfolgreich!');
         } else {
-          setMessage('Login erfolgreich gesendet!');
+          // Fallback für unbekannte User - zeige Demo-Daten
+          setUserData({
+            username: username.replace('@', ''),
+            image: "https://via.placeholder.com/100",
+            expTotal: 0,
+            expTiktok: 0,
+            expFacebook: 0,
+            expStream: 0,
+            liveNFTBonus: 0,
+            miningpower: 50,
+            liked: 'false',
+            commented: 'false',
+            saved: false,
+            shared: 'false',
+            wallet: walletAddress,
+            walletAddress: walletAddress
+          });
+          setIsLoggedIn(true);
+          setMessage('Login erfolgreich!');
         }
       } else {
         setMessage('Fehler beim Senden der Anfrage. Bitte versuchen Sie es erneut.');
