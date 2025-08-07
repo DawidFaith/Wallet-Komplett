@@ -499,10 +499,10 @@ export default function FacebookTab() {
       {showLikeSaveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">📊 Like & Share Verification</h2>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">✨ Like & Share Verification</h2>
             
             <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
-              <p className="font-semibold mb-3 text-blue-800">1️⃣ Entferne alle Likes von meinem Beitrag (Shares können nicht entfernt werden)</p>
+              <p className="font-semibold mb-3 text-blue-800">1️⃣ Entferne alle Likes von meinem Beitrag</p>
               <button 
                 onClick={() => setShowConfirmInitial(true)}
                 disabled={initialValues !== null || loading}
@@ -534,7 +534,7 @@ export default function FacebookTab() {
             </div>
             
             <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
-              <p className="font-semibold mb-3 text-green-800">2️⃣ Like und teile den Beitrag!</p>
+              <p className="font-semibold mb-3 text-green-800">2️⃣ Bitte Like und Share den Beitrag!</p>
               <button 
                 onClick={() => setShowConfirmAfter(true)}
                 disabled={loading || !initialValues || !!afterValues}
@@ -652,7 +652,7 @@ export default function FacebookTab() {
             >
               ×
             </button>
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">📊 Deine EXP-Quellen</h2>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">✨ Deine EXP-Quellen</h2>
             <div className="text-left space-y-3 mb-6">
               <div className="flex items-center gap-3 border-l-4 border-blue-600 pl-3 bg-blue-50 py-2 rounded-r-xl">
                 <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" className="w-6 h-6" />
@@ -728,7 +728,7 @@ export default function FacebookTab() {
             <div className="text-5xl mb-4">⚠️</div>
             <h2 className="text-xl font-bold mb-4 text-gray-800">Bestätigung erforderlich</h2>
             <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
-              <p className="text-blue-800 leading-relaxed">Bitte entferne alle Likes von meinem Beitrag (Shares können nicht entfernt werden) – danach werden alle aktuellen Zahlen gespeichert.</p>
+              <p className="text-blue-800 leading-relaxed">Bitte entferne alle Likes von meinem Beitrag – danach werden alle aktuellen Zahlen gespeichert.</p>
             </div>
             <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-6">
               <p className="text-yellow-700 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro Beitrag!</p>
@@ -761,7 +761,7 @@ export default function FacebookTab() {
             <div className="text-5xl mb-4">🎯</div>
             <h2 className="text-xl font-bold mb-4 text-gray-800">Finale Bestätigung</h2>
             <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
-              <p className="text-green-800 leading-relaxed">Bitte Like und teile den Beitrag, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert.</p>
+              <p className="text-green-800 leading-relaxed">Bitte Like und Share den Beitrag, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert.</p>
             </div>
             <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-6">
               <p className="text-yellow-700 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro Beitrag!</p>
