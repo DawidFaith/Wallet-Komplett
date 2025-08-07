@@ -771,6 +771,20 @@ export default function MerchTab() {
     }, 8000);
   };
 
+  // Modal-Hintergrund fixieren
+  useEffect(() => {
+    if (showCart || showCheckout) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    // Cleanup
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showCart, showCheckout]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
@@ -794,20 +808,6 @@ export default function MerchTab() {
       </div>
     );
   }
-
-  // Modal-Hintergrund fixieren
-  useEffect(() => {
-    if (showCart || showCheckout) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    
-    // Cleanup
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [showCart, showCheckout]);
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-zinc-900 to-zinc-800 text-white">
