@@ -1106,13 +1106,24 @@ export default function TiktokTab() {
       if (response.ok) {
         const responseData = await response.json();
         
-        // Prüfe den Response-Status
+        // Verschiedene Status-Responses behandeln
         if (responseData.status === 'success') {
           setConfirmationMessage('✅ Teilnahme erfolgreich bestätigt!');
           // Modal bleibt offen, damit User die Erfolgsmeldung sieht
           setTimeout(() => {
             setConfirmationMessage('');
+            setIsCheckModalOpen(false);
           }, 4000);
+        } else if (responseData.status === 'wallet account') {
+          setConfirmationMessage('⚠️ Die angegebene Wallet stimmt nicht mit deinem Account überein. Falls du die Adresse ändern möchtest, schreibe eine DM an @dawidfaith mit dem Stichwort "Wallet".');
+          setTimeout(() => {
+            setConfirmationMessage('');
+          }, 6000);
+        } else if (responseData.status === 'wallet in use') {
+          setConfirmationMessage('❌ Diese Wallet wird bereits verwendet. Bitte verwende eine andere Wallet-Adresse.');
+          setTimeout(() => {
+            setConfirmationMessage('');
+          }, 5000);
         } else {
           setConfirmationMessage('❌ Teilnahme fehlgeschlagen. Bitte versuche es erneut.');
           setTimeout(() => {
