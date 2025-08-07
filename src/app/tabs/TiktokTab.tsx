@@ -1208,25 +1208,37 @@ export default function TiktokTab() {
 
       if (response.ok) {
         const responseData = await response.json();
+        console.log('Login Response Data:', responseData); // Debug-Log
         
-        // Prüfe ob Benutzerdaten im Response sind
-        if (responseData && responseData.username) {
+        // Hilfsfunktion für sichere Zahlen-Konvertierung
+        const safeParseInt = (value: any): number => {
+          if (value === "" || value === null || value === undefined) return 0;
+          const parsed = parseInt(value.toString());
+          return isNaN(parsed) ? 0 : parsed;
+        };
+        
+        const safeParseFloat = (value: any): number => {
+          if (value === "" || value === null || value === undefined) return 0;
+          const parsed = parseFloat(value.toString());
+          return isNaN(parsed) ? 0 : parsed;
+        };
+        
+        // Prüfe ob Benutzerdaten im Response sind (status: "ok" oder username vorhanden)
+        if (responseData && (responseData.status === "ok" || responseData.username)) {
           // Lade echte Userdaten aus der Response
           setUserData({
-            username: responseData.username || username.replace('@', ''),
-            image: responseData.image?.startsWith("http://") 
-              ? responseData.image.replace("http://", "https://") 
-              : responseData.image || "https://via.placeholder.com/100",
-            expTotal: parseInt(responseData.expTotal) || 0,
-            expTiktok: parseInt(responseData.expTiktok) || 0,
-            expFacebook: parseInt(responseData.expFacebook) || 0,
-            expStream: parseInt(responseData.expStream) || 0,
-            liveNFTBonus: parseInt(responseData.liveNFTBonus) || 0,
-            miningpower: parseInt(responseData.miningpower) || 0,
-            liked: responseData.liked || 'false',
-            commented: responseData.commented || 'false',
-            saved: responseData.saved || false,
-            shared: responseData.shared || 'false',
+            username: (responseData.username || username).replace('@', ''),
+            image: responseData.image || "https://via.placeholder.com/100",
+            expTotal: safeParseInt(responseData.expTotal),
+            expTiktok: safeParseInt(responseData.expTiktok),
+            expFacebook: safeParseInt(responseData.expFacebook),
+            expStream: safeParseInt(responseData.expStream || responseData.liveExp),
+            liveNFTBonus: safeParseInt(responseData.liveNFTBonus || responseData.liveExp),
+            miningpower: safeParseFloat(responseData.miningpower),
+            liked: responseData.liked === "true" ? "true" : "false",
+            commented: responseData.commented === "true" ? "true" : "false",
+            saved: responseData.saved === "true" || responseData.saved === true,
+            shared: responseData.shared === "true" ? "true" : "false",
             wallet: responseData.wallet || walletAddress,
             walletAddress: responseData.walletAddress || walletAddress
           });
