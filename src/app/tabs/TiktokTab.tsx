@@ -1124,6 +1124,16 @@ export default function TiktokTab() {
           setTimeout(() => {
             setConfirmationMessage('');
           }, 5000);
+        } else if (responseData.status === 'comment') {
+          setConfirmationMessage('💬 Es wurde noch kein Kommentar von dir gefunden. Bitte kommentiere den Beitrag und versuche es erneut.');
+          setTimeout(() => {
+            setConfirmationMessage('');
+          }, 5000);
+        } else if (responseData.status === 'evalued') {
+          setConfirmationMessage('ℹ️ Du hast deine Teilnahme bereits bestätigt.');
+          setTimeout(() => {
+            setConfirmationMessage('');
+          }, 4000);
         } else {
           setConfirmationMessage('❌ Teilnahme fehlgeschlagen. Bitte versuche es erneut.');
           setTimeout(() => {
