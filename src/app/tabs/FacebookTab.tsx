@@ -155,14 +155,27 @@ export default function FacebookTab() {
       
       const data = await response.json();
       
-      if (data.status === 'success' || data.success === true || data.claimed === true) {
-        setClaimStatus(data.message || '✅ Claim erfolgreich ausgelöst!');
-        // localStorage leeren wie im Original
+      // Verschiedene Status-Responses behandeln
+      if (data.status === 'success') {
+        setClaimStatus('✅ Dein Claim war erfolgreich! Die Tokens werden in Kürze auf deine Wallet gesendet.');
+        // localStorage leeren bei erfolgreichem Claim
         if (typeof window !== 'undefined') {
           localStorage.clear();
         }
+      } else if (data.status === 'wallet') {
+        setClaimStatus('⚠️ Diese Wallet wird bereits verwendet. Bitte gib eine andere Adresse ein.');
+      } else if (data.status === 'info') {
+        setClaimStatus('ℹ️ Du hast bereits geclaimed.');
       } else {
-        setClaimStatus('❌ Fehler: ' + (data.message || 'Unbekannter Fehler.'));
+        // Fallback für unbekannte Status oder alte API-Responses
+        if (data.success === true || data.claimed === true) {
+          setClaimStatus('✅ Dein Claim war erfolgreich! Die Tokens werden in Kürze auf deine Wallet gesendet.');
+          if (typeof window !== 'undefined') {
+            localStorage.clear();
+          }
+        } else {
+          setClaimStatus('❌ Fehler: ' + (data.message || 'Unbekannter Fehler.'));
+        }
       }
     } catch (error) {
       setClaimStatus('❌ Netzwerkfehler oder ungültige Antwort.');
