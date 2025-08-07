@@ -1105,31 +1105,35 @@ export default function TiktokTab() {
 
       if (response.ok) {
         const responseData = await response.json();
+        console.log('Response Data:', responseData); // Debug-Log
+        
+        // Status normalisieren (Leerzeichen entfernen, lowercase)
+        const normalizedStatus = responseData.status?.toString().trim().toLowerCase();
         
         // Verschiedene Status-Responses behandeln
-        if (responseData.status === 'success') {
+        if (normalizedStatus === 'success') {
           setConfirmationMessage('✅ Teilnahme erfolgreich bestätigt!');
           // Modal bleibt offen, damit User die Erfolgsmeldung sieht
           setTimeout(() => {
             setConfirmationMessage('');
             setIsCheckModalOpen(false);
           }, 4000);
-        } else if (responseData.status === 'wallet account') {
+        } else if (normalizedStatus === 'wallet account') {
           setConfirmationMessage('⚠️ Die angegebene Wallet stimmt nicht mit deinem Account überein. Falls du die Adresse ändern möchtest, schreibe eine DM an @dawidfaith mit dem Stichwort "Wallet".');
           setTimeout(() => {
             setConfirmationMessage('');
           }, 6000);
-        } else if (responseData.status === 'wallet in use') {
+        } else if (normalizedStatus === 'wallet in use') {
           setConfirmationMessage('❌ Diese Wallet wird bereits verwendet. Bitte verwende eine andere Wallet-Adresse.');
           setTimeout(() => {
             setConfirmationMessage('');
           }, 5000);
-        } else if (responseData.status === 'comment') {
+        } else if (normalizedStatus === 'comment') {
           setConfirmationMessage('💬 Es wurde noch kein Kommentar von dir gefunden. Bitte kommentiere den Beitrag und versuche es erneut.');
           setTimeout(() => {
             setConfirmationMessage('');
           }, 5000);
-        } else if (responseData.status === 'evalued') {
+        } else if (normalizedStatus === 'evalued') {
           setConfirmationMessage('ℹ️ Du hast deine Teilnahme bereits bestätigt.');
           setTimeout(() => {
             setConfirmationMessage('');
