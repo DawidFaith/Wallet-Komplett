@@ -515,7 +515,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
       >
         <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-pink-500/30 rounded-3xl p-8 w-full max-w-sm text-center text-white shadow-2xl">
           {/* Username */}
-          <div className="text-2xl font-bold mb-4 bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">{userData.username}</div>
+          <div className="text-2xl font-bold mb-4 bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">@{userData.username}</div>
           
           {/* Profile Image */}
           <img 
@@ -633,7 +633,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
           <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-pink-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
-                🎵 TikTok Verification
+                ✨ TikTok Verification
               </h2>
               <button
                 onClick={() => setShowLikeSaveModal(false)}
@@ -789,7 +789,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
           <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-cyan-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                🪙 D.FAITH Claim
+                D.FAITH Claim
               </h2>
               <button
                 onClick={() => setShowClaimModal(false)}
@@ -870,7 +870,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
             
             <div className="space-y-4 mb-6">
               <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4">
-                <h3 className="text-purple-300 font-bold mb-4">📈 Deine EXP-Quellen</h3>
+                <h3 className="text-purple-300 font-bold mb-4">✨ Deine EXP-Quellen</h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 border-l-4 border-blue-600 pl-3 bg-blue-500/10 py-2 rounded-r-xl">
                     <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" className="w-6 h-6" />
@@ -1519,7 +1519,7 @@ export default function TiktokTab() {
               <div className="w-20 h-20 bg-gradient-to-r from-pink-500 to-cyan-400 rounded-full flex items-center justify-center">
                 <span className="text-3xl text-white">❤️</span>
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-cyan-600 bg-clip-text text-transparent">TikTok Engagement</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-cyan-600 bg-clip-text text-transparent">✨ TikTok Engagement</h2>
             </div>
             
             <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-6">
