@@ -800,86 +800,43 @@ export default function MerchTab() {
   }
 
   return (
-    <div className="space-y-8 p-4">
-      {/* Header mit Balance und Warenkorb - Verbessertes Design */}
-      <div className="bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-2xl p-6 border border-zinc-700 shadow-xl">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
-                <FaShoppingCart className="text-2xl text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-white">D.FAITH Merch Shop</h1>
-                <p className="text-gray-400">Offizieller Shop mit exklusiven Produkten</p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-600">
-                <div className="flex items-center gap-2 mb-2">
-                  <FaCoins className="text-amber-400" />
-                  <span className="text-gray-300 text-sm font-medium">Ihr D.FAITH Guthaben</span>
-                </div>
-                <div className="text-2xl font-bold text-amber-400">{dfaithBalance}</div>
-                <div className="text-xs text-gray-500">
-                  ≈ {dfaithPriceEur > 0 ? `${(parseFloat(dfaithBalance) * dfaithPriceEur).toFixed(2)}€` : "Berechnung..."}
-                </div>
-              </div>
-              
-              <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-600">
-                <div className="flex items-center gap-2 mb-2">
-                  <FaEuroSign className="text-green-400" />
-                  <span className="text-gray-300 text-sm font-medium">Aktueller D.FAITH Preis</span>
-                </div>
-                <div className="text-2xl font-bold text-green-400">
-                  {isLoadingPrice ? (
-                    <div className="flex items-center gap-2">
-                      <FaSpinner className="animate-spin" />
-                      <span className="text-sm">Lädt...</span>
-                    </div>
-                  ) : dfaithPriceEur > 0 ? (
-                    `${dfaithPriceEur.toFixed(4)}€`
-                  ) : (
-                    <span className="text-red-400 text-sm">Fehler</span>
-                  )}
-                </div>
-                <div className="text-xs text-gray-500">
-                  {priceError ? priceError : "Live von ParaSwap"}
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Warenkorb Button */}
-          <Button
-            onClick={() => setShowCart(!showCart)}
-            className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white relative shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 px-6 py-3"
-          >
-            <FaShoppingCart className="mr-2 text-lg" />
-            <span className="font-semibold">Warenkorb</span>
-            {getCartItemCount() > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold shadow-lg animate-pulse">
-                {getCartItemCount()}
-              </span>
-            )}
-          </Button>
-        </div>
+    <div className="relative min-h-screen bg-gradient-to-br from-zinc-900 to-zinc-800 text-white">
+      {/* Header */}
+      <div className="p-4 mb-6">
+        <h1 className="text-3xl font-bold text-white mb-2">🛍️ Merch Shop</h1>
+        <p className="text-gray-400">Exklusive Produkte mit D.FAITH kaufen</p>
       </div>
 
-      {/* Status-Nachrichten */}
-      {purchaseMessage && (
-        <div className={`p-4 rounded-lg flex items-center gap-2 ${
-          purchaseStatus === "success" ? "bg-green-900/30 border border-green-600 text-green-400" :
-          purchaseStatus === "error" ? "bg-red-900/30 border border-red-600 text-red-400" :
-          "bg-yellow-900/30 border border-yellow-600 text-yellow-400"
-        }`}>
-          {purchaseStatus === "success" && <FaCheck />}
-          {purchaseStatus === "error" && <FaTimes />}
-          {purchaseStatus === "pending" && <FaSpinner className="animate-spin" />}
-          {purchaseMessage}
-        </div>
-      )}
+      {/* Schwebender Warenkorb Button - Unten rechts */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <Button
+          onClick={() => setShowCart(!showCart)}
+          className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white relative shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 rounded-full w-16 h-16 p-0"
+        >
+          <FaShoppingCart className="text-xl" />
+          {getCartItemCount() > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold shadow-lg animate-pulse">
+              {getCartItemCount()}
+            </span>
+          )}
+        </Button>
+      </div>
+
+      {/* Produktgrid - Mit margin für schwebenden Warenkorb */}
+      <div className="p-4 pb-24">
+        {/* Status-Nachrichten */}
+        {purchaseMessage && (
+          <div className={`p-4 rounded-lg flex items-center gap-2 mb-6 ${
+            purchaseStatus === "success" ? "bg-green-900/30 border border-green-600 text-green-400" :
+            purchaseStatus === "error" ? "bg-red-900/30 border border-red-600 text-red-400" :
+            "bg-yellow-900/30 border border-yellow-600 text-yellow-400"
+          }`}>
+            {purchaseStatus === "success" && <FaCheck />}
+            {purchaseStatus === "error" && <FaTimes />}
+            {purchaseStatus === "pending" && <FaSpinner className="animate-spin" />}
+            {purchaseMessage}
+          </div>
+        )}
 
       {/* Kategorie-Filter - Modernes Design */}
       <div className="bg-gradient-to-r from-zinc-900 to-zinc-800 rounded-xl p-4 border border-zinc-700 shadow-lg">
@@ -907,95 +864,6 @@ export default function MerchTab() {
           ))}
         </div>
       </div>
-
-      {/* Warenkorb Sidebar */}
-      {showCart && (
-        <Card className="bg-zinc-900 border-zinc-700">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-white">🛒 Warenkorb</h3>
-              <Button
-                onClick={() => setShowCart(false)}
-                className="bg-transparent hover:bg-zinc-800 text-amber-400 hover:text-amber-300 border-none p-2"
-              >
-                <FaTimes />
-              </Button>
-            </div>
-            
-            {Object.keys(cart).length === 0 ? (
-              <p className="text-gray-400">Warenkorb ist leer</p>
-            ) : (
-              <div className="space-y-4">
-                {Object.entries(cart).map(([productId, quantity]) => {
-                  const product = products.find(p => p.id === productId);
-                  if (!product) return null;
-                  
-                  const dfaithPrice = convertEurToDfaith(product.price);
-                  
-                  return (
-                    <div key={productId} className="flex justify-between items-center border-b border-zinc-700 pb-2">
-                      <div>
-                        <p className="text-white font-medium">{product.name}</p>
-                        <div className="text-sm space-y-1">
-                          <p className="text-amber-400">{dfaithPrice.toFixed(2)} D.FAITH</p>
-                          <p className="text-gray-400 flex items-center gap-1">
-                            <FaEuroSign className="text-xs" />
-                            {product.price.toFixed(2)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          onClick={() => removeFromCart(productId)}
-                          className="border-amber-600 text-amber-400 hover:bg-amber-600/10 bg-transparent w-8 h-8 p-0 text-sm"
-                        >
-                          -
-                        </Button>
-                        <span className="text-white w-8 text-center">{quantity}</span>
-                        <Button
-                          onClick={() => addToCart(productId)}
-                          className="border-amber-600 text-amber-400 hover:bg-amber-600/10 bg-transparent w-8 h-8 p-0 text-sm"
-                        >
-                          +
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-                
-                <div className="border-t border-zinc-700 pt-4">
-                  <div className="space-y-2 mb-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-white font-bold">Gesamt D.FAITH:</span>
-                      <span className="text-amber-400 font-bold">{getTotalPriceDfaith().toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-400">Gesamt EUR:</span>
-                      <span className="text-gray-400">{getTotalPriceEur().toFixed(2)}€</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={clearCart}
-                      className="border-red-600 text-red-400 hover:bg-red-600/10 bg-transparent flex-1"
-                    >
-                      Leeren
-                    </Button>
-                    <Button
-                      onClick={() => setShowCheckout(true)}
-                      className="bg-amber-600 hover:bg-amber-700 text-white flex-1"
-                    >
-                      <FaCoins className="mr-2" />
-                      Zur Kasse
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Checkout-Formular Modal */}
       {showCheckout && (
@@ -1301,78 +1169,294 @@ export default function MerchTab() {
           <p className="text-gray-400 text-xl">Keine Produkte in dieser Kategorie gefunden.</p>
         </div>
       )}
+      
+      </div>
 
-      {/* Info-Sektion - Verbessertes Design */}
-      <Card className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-zinc-600 shadow-xl">
-        <CardContent className="p-8">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white text-lg">ℹ️</span>
+      {/* Warenkorb Sidebar - Erweitert mit D.FAITH Balance */}
+      {showCart && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowCart(false)}></div>
+          <div className="absolute right-0 top-0 h-full w-96 bg-zinc-900 border-l border-zinc-700 shadow-2xl">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="p-6 border-b border-zinc-700">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <FaShoppingCart />
+                    Warenkorb
+                  </h3>
+                  <Button
+                    onClick={() => setShowCart(false)}
+                    className="bg-transparent hover:bg-zinc-800 text-amber-400 hover:text-amber-300 border-none p-2"
+                  >
+                    <FaTimes />
+                  </Button>
+                </div>
+                
+                {/* D.FAITH Balance - Nur sichtbar wenn Warenkorb offen */}
+                <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-600">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FaCoins className="text-amber-400" />
+                    <span className="text-gray-300 text-sm font-medium">Ihr D.FAITH Guthaben</span>
+                  </div>
+                  <div className="text-2xl font-bold text-amber-400">{dfaithBalance}</div>
+                  <div className="text-xs text-gray-500">
+                    ≈ {dfaithPriceEur > 0 ? `${(parseFloat(dfaithBalance) * dfaithPriceEur).toFixed(2)}€` : "Berechnung..."}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Cart Items */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {Object.keys(cart).length === 0 ? (
+                  <div className="text-center py-12">
+                    <FaShoppingCart className="text-4xl text-gray-600 mb-4 mx-auto" />
+                    <p className="text-gray-400">Warenkorb ist leer</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {Object.entries(cart).map(([productId, quantity]) => {
+                      const product = products.find(p => p.id === productId);
+                      if (!product) return null;
+                      
+                      const dfaithPrice = convertEurToDfaith(product.price);
+                      
+                      return (
+                        <div key={productId} className="bg-zinc-800 rounded-lg p-4 border border-zinc-700">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex-1">
+                              <h4 className="text-white font-medium text-sm">{product.name}</h4>
+                              <div className="text-xs space-y-1 mt-2">
+                                <p className="text-amber-400 font-bold">{dfaithPrice.toFixed(2)} D.FAITH</p>
+                                <p className="text-gray-400 flex items-center gap-1">
+                                  <FaEuroSign className="text-xs" />
+                                  {product.price.toFixed(2)}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              onClick={() => removeFromCart(productId)}
+                              className="bg-red-600 hover:bg-red-700 text-white p-2 text-xs"
+                            >
+                              <FaTimes />
+                            </Button>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Menge: {quantity}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              
+              {/* Footer - Checkout */}
+              {Object.keys(cart).length > 0 && (
+                <div className="p-6 border-t border-zinc-700">
+                  <div className="mb-4">
+                    <div className="flex justify-between text-lg font-bold">
+                      <span className="text-white">Gesamt:</span>
+                      <span className="text-amber-400">{getTotalPriceDfaith().toFixed(2)} D.FAITH</span>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => setShowCheckout(true)}
+                    className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white py-3"
+                    disabled={purchaseStatus === "pending"}
+                  >
+                    {purchaseStatus === "pending" ? (
+                      <div className="flex items-center gap-2">
+                        <FaSpinner className="animate-spin" />
+                        Verarbeitung...
+                      </div>
+                    ) : (
+                      <>
+                        <FaCheck className="mr-2" />
+                        Zur Kasse
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
-            <h3 className="text-white font-bold text-xl">Über den D.FAITH Merch Shop</h3>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <h4 className="text-amber-400 font-semibold mb-3 flex items-center gap-2">
-                <FaCoins />
-                Zahlungssystem
-              </h4>
-              <div className="space-y-2 text-gray-300">
-                <p className="flex items-start gap-2">
-                  <span className="text-amber-400 mt-1">•</span>
-                  Alle Artikel werden mit D.FAITH Token bezahlt
-                </p>
-                <p className="flex items-start gap-2">
-                  <span className="text-amber-400 mt-1">•</span>
-                  Live-Preisumrechnung von EUR zu D.FAITH über ParaSwap
-                </p>
-                <p className="flex items-start gap-2">
-                  <span className="text-amber-400 mt-1">•</span>
-                  Sichere Blockchain-basierte Transaktionen auf Base
-                </p>
+        </div>
+      )}
+
+      {/* Checkout Modal */}
+      {showCheckout && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto rounded-xl">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-white">🛒 Kasse</h3>
+                <Button
+                  onClick={() => setShowCheckout(false)}
+                  className="bg-transparent hover:bg-zinc-800 text-amber-400 hover:text-amber-300 border-none p-2"
+                >
+                  <FaTimes />
+                </Button>
               </div>
-            </div>
-            
-            <div className="space-y-3">
-              <h4 className="text-green-400 font-semibold mb-3 flex items-center gap-2">
-                <FaShoppingCart />
-                Produktarten
-              </h4>
-              <div className="space-y-2 text-gray-300">
-                <p className="flex items-start gap-2">
-                  <span className="text-blue-400 mt-1">📱</span>
-                  <span><strong>Digitale Produkte:</strong> Sofortiger Download nach Kauf</span>
-                </p>
-                <p className="flex items-start gap-2">
-                  <span className="text-green-400 mt-1">📦</span>
-                  <span><strong>Physische Produkte:</strong> Weltweiter Versand verfügbar</span>
-                </p>
-                <p className="flex items-start gap-2">
-                  <span className="text-purple-400 mt-1">🎵</span>
-                  <span><strong>Media-Player:</strong> Direkte Wiedergabe von Audio/Video</span>
-                </p>
+
+              {/* Bestellübersicht */}
+              <div className="mb-6 p-4 bg-zinc-800 rounded-lg">
+                <h4 className="font-bold text-white mb-3">📋 Ihre Bestellung</h4>
+                <div className="space-y-2">
+                  {Object.entries(cart).map(([productId, quantity]) => {
+                    const product = products.find(p => p.id === productId);
+                    if (!product) return null;
+                    
+                    const dfaithPrice = convertEurToDfaith(product.price);
+                    
+                    return (
+                      <div key={productId} className="flex justify-between items-center py-2 border-b border-zinc-600 last:border-b-0">
+                        <div>
+                          <p className="text-white font-medium">{product.name}</p>
+                          <p className="text-xs text-gray-400">Menge: {quantity}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-amber-400 font-bold">{(dfaithPrice * quantity).toFixed(2)} D.FAITH</p>
+                          <p className="text-xs text-gray-400">{(product.price * quantity).toFixed(2)}€</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="pt-2 mt-2 border-t border-zinc-600">
+                    <div className="flex justify-between items-center">
+                      <span className="text-white font-bold">Gesamt:</span>
+                      <span className="text-amber-400 font-bold text-lg">{getTotalPriceDfaith().toFixed(2)} D.FAITH</span>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              {/* Formular */}
+              <form onSubmit={(e) => { e.preventDefault(); handlePurchase(); }} className="space-y-4">
+                {/* E-Mail */}
+                <div>
+                  <label className="block text-white font-medium mb-2">📧 E-Mail-Adresse *</label>
+                  <input
+                    type="email"
+                    required
+                    value={checkoutForm.email}
+                    onChange={(e) => setCheckoutForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full p-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                    placeholder="ihre@email.de"
+                  />
+                </div>
+
+                {/* Versandadresse bei physischen Produkten */}
+                {hasPhysicalProducts() && (
+                  <div className="space-y-4 p-4 bg-zinc-800 rounded-lg">
+                    <h4 className="font-bold text-white mb-3">📦 Versandadresse</h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-white font-medium mb-2">Vorname *</label>
+                        <input
+                          type="text"
+                          required
+                          value={checkoutForm.firstName}
+                          onChange={(e) => setCheckoutForm(prev => ({ ...prev, firstName: e.target.value }))}
+                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          placeholder="Max"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-white font-medium mb-2">Nachname *</label>
+                        <input
+                          type="text"
+                          required
+                          value={checkoutForm.lastName}
+                          onChange={(e) => setCheckoutForm(prev => ({ ...prev, lastName: e.target.value }))}
+                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          placeholder="Mustermann"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-white font-medium mb-2">Straße & Hausnummer *</label>
+                      <input
+                        type="text"
+                        required
+                        value={checkoutForm.street}
+                        onChange={(e) => setCheckoutForm(prev => ({ ...prev, street: e.target.value }))}
+                        className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                        placeholder="Musterstraße 123"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-white font-medium mb-2">PLZ *</label>
+                        <input
+                          type="text"
+                          required
+                          value={checkoutForm.postalCode}
+                          onChange={(e) => setCheckoutForm(prev => ({ ...prev, postalCode: e.target.value }))}
+                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          placeholder="12345"
+                        />
+                      </div>
+                      
+                      <div className="md:col-span-2">
+                        <label className="block text-white font-medium mb-2">Stadt *</label>
+                        <input
+                          type="text"
+                          required
+                          value={checkoutForm.city}
+                          onChange={(e) => setCheckoutForm(prev => ({ ...prev, city: e.target.value }))}
+                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          placeholder="Berlin"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-white font-medium mb-2">Land *</label>
+                      <select
+                        required
+                        value={checkoutForm.country}
+                        onChange={(e) => setCheckoutForm(prev => ({ ...prev, country: e.target.value }))}
+                        className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                      >
+                        <option value="Deutschland">Deutschland</option>
+                        <option value="Österreich">Österreich</option>
+                        <option value="Schweiz">Schweiz</option>
+                        <option value="Andere">Andere</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Kaufen Button */}
+                <div className="pt-4">
+                  <Button
+                    type="submit"
+                    disabled={purchaseStatus === "pending"}
+                    className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white py-4 text-lg font-bold"
+                  >
+                    {purchaseStatus === "pending" ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <FaSpinner className="animate-spin" />
+                        Transaktion läuft...
+                      </div>
+                    ) : (
+                      <>
+                        <FaCoins className="mr-2" />
+                        Mit {getTotalPriceDfaith().toFixed(2)} D.FAITH kaufen
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
-          
-          <div className="mt-6 p-4 bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-600/50 rounded-xl">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-amber-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-white font-bold">💡</span>
-              </div>
-              <div>
-                <p className="text-amber-300 font-semibold mb-2">Automatisierte Abwicklung</p>
-                <p className="text-amber-100 text-sm leading-relaxed">
-                  Nach dem Kauf erhalten Sie automatisch eine E-Mail mit Download-Links (digital) 
-                  oder Versandbestätigung (physisch). Alle Transaktionen werden transparent 
-                  über die Base-Blockchain abgewickelt und sind in Echtzeit nachverfolgbar.
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
     </div>
   );
 }
