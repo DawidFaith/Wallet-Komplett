@@ -508,7 +508,10 @@ export default function InstagramTab() {
             >
               ×
             </button>
-            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">🪙 D.FAITH Claim</h2>
+            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
+              <span className="text-xl animate-bounce">🪙</span>
+              <span>D.FAITH Claim</span>
+            </h2>
             
             {!walletInput || !walletInput.startsWith("0x") ? (
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 text-gray-800 text-base flex flex-col items-center animate-pulse">
