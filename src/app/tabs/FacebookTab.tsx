@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { validateBaseAddress, validateBaseAddressRealTime } from '../utils/walletValidation';
 
 interface UserData {
   username: string;
@@ -31,6 +32,11 @@ export default function FacebookTab() {
   const [showConfirmInitial, setShowConfirmInitial] = useState(false);
   const [showConfirmAfter, setShowConfirmAfter] = useState(false);
   const [walletInput, setWalletInput] = useState('');
+  const [walletValidation, setWalletValidation] = useState<{
+    isValid: boolean;
+    isPartiallyValid: boolean;
+    error?: string;
+  }>({ isValid: false, isPartiallyValid: true });
   const [claimStatus, setClaimStatus] = useState('');
   const [initialValues, setInitialValues] = useState<{likes: number, shares: number} | null>(null);
   const [afterValues, setAfterValues] = useState<{likes: number, shares: number} | null>(null);
@@ -134,8 +140,10 @@ export default function FacebookTab() {
 
   // Claim funktionen
   const submitClaim = async () => {
-    if (!walletInput.startsWith('0x') || walletInput.length < 42) {
-      setClaimStatus('❌ Ungültige Wallet-Adresse.');
+    // Validierung der Wallet-Adresse
+    const validation = validateBaseAddress(walletInput);
+    if (!validation.isValid) {
+      setClaimStatus(`❌ ${validation.error}`);
       return;
     }
 
@@ -147,7 +155,7 @@ export default function FacebookTab() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           uuid,
-          wallet: walletInput,
+          wallet: walletInput.trim(),
           username: userData?.username || '',
           miningpower: userData?.miningpower || 0
         })
@@ -182,6 +190,18 @@ export default function FacebookTab() {
       console.error('Claim Fehler:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Wallet Input Handler mit Validierung
+  const handleWalletInputChange = (value: string) => {
+    setWalletInput(value);
+    const validation = validateBaseAddressRealTime(value);
+    setWalletValidation(validation);
+    
+    // Clear claim status wenn sich die Wallet ändert
+    if (claimStatus) {
+      setClaimStatus('');
     }
   };
 
@@ -463,9 +483,9 @@ export default function FacebookTab() {
               <span>D.FAITH Claim</span>
             </h2>
             
-            {!walletInput || !walletInput.startsWith("0x") ? (
+            {!walletInput || !walletValidation.isValid ? (
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 text-gray-800 text-base flex flex-col items-center animate-pulse">
-                <span className="font-semibold mb-3 text-center">Du hast noch keine Wallet hinterlegt.<br/>Erstelle jetzt deine Wallet, um deine Belohnung zu erhalten!</span>
+                <span className="font-semibold mb-3 text-center">Du hast noch keine gültige Base Chain Wallet hinterlegt.<br/>Erstelle jetzt deine Wallet, um deine Belohnung zu erhalten!</span>
                 <button
                   className="w-full mt-2 mb-2 py-3 px-4 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400 text-gray-900 shadow-lg hover:from-yellow-500 hover:to-orange-500 active:from-yellow-600 active:to-orange-600 transition text-base border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-center block"
                   onClick={() => router.push("/wallet")}
@@ -476,9 +496,9 @@ export default function FacebookTab() {
               </div>
             ) : null}
             
-            <p className="mb-4 text-gray-700">Gib deine Wallet-Adresse ein, um deine Belohnung zu erhalten:</p>
+            <p className="mb-4 text-gray-700">Gib deine Base Chain Wallet-Adresse ein, um deine Belohnung zu erhalten:</p>
             
-            {walletInput && walletInput.startsWith("0x") && (
+            {walletInput && walletValidation.isValid && (
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-center">
                 <p className="text-gray-800 mb-2">
                   Du kannst <strong className="text-blue-600">+{userData.miningpower} D.FAITH</strong> für deine Facebook Aktivität claimen!
@@ -489,11 +509,22 @@ export default function FacebookTab() {
               <input 
                 type="text"
                 value={walletInput}
-                onChange={(e) => setWalletInput(e.target.value)}
-                placeholder="0x..."
+                onChange={(e) => handleWalletInputChange(e.target.value)}
+                placeholder="0x... (Base Chain Adresse)"
                 readOnly={!!(userData?.wallet && userData.wallet.startsWith("0x"))}
-                className="w-full p-4 pr-12 border-2 border-gray-300 rounded-2xl text-base focus:border-blue-500 focus:outline-none transition-colors duration-300"
+                className={`w-full p-4 pr-12 border-2 rounded-2xl text-base focus:outline-none transition-colors duration-300 ${
+                  walletInput && !walletValidation.isPartiallyValid
+                    ? 'border-red-400 focus:border-red-500 bg-red-50'
+                    : walletInput && walletValidation.isValid
+                    ? 'border-green-400 focus:border-green-500 bg-green-50'
+                    : 'border-gray-300 focus:border-blue-500'
+                }`}
               />
+              {walletInput && walletValidation.error && (
+                <div className="absolute left-0 top-full mt-1 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-1 shadow-sm z-10">
+                  {walletValidation.error}
+                </div>
+              )}
               <button
                 onClick={() => setShowWalletInfoModal(true)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition-all duration-200 text-sm"
@@ -504,7 +535,7 @@ export default function FacebookTab() {
             </div>
             <button 
               onClick={submitClaim}
-              disabled={!walletInput || !walletInput.startsWith('0x')}
+              disabled={!walletInput || !walletValidation.isValid}
               className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 hover:shadow-lg disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <span>Claim absenden</span>
@@ -736,7 +767,7 @@ export default function FacebookTab() {
             <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Wichtiger Hinweis</h2>
             <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-700 leading-relaxed">
-                Deine Wallet-Adresse wird dauerhaft mit deinem Social-Media-Account verbunden.<br/><br/>
+                Deine Base Chain Wallet-Adresse wird dauerhaft mit deinem Social-Media-Account verbunden.<br/><br/>
                 Wenn du sie ändern willst, schreib mir eine <strong className="text-blue-600">DM mit dem Stichwort &quot;Wallet&quot;</strong> auf <strong className="text-blue-600">Facebook</strong>.
               </p>
             </div>
