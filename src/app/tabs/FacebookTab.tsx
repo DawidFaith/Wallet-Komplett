@@ -8,6 +8,7 @@ interface UserData {
   image: string;
   expTotal: number;
   expTiktok: number;
+  expInstagram: number;
   expFacebook: number;
   expStream: number;
   liveNFTBonus: number;
@@ -76,13 +77,13 @@ export default function FacebookTab() {
         // UUID Überprüfung - Test-UUID ist jetzt erlaubt
         if (uuid === 'Dawidfaithtest3736FB_DISABLED') {  // Disabled für Test
           setLoading(false);
-          setShowNoUuidModal(true);
           // Dummy Daten setzen damit die UI angezeigt wird
           setUserData({
             username: "Gast",
             image: "https://via.placeholder.com/100",
             expTotal: 0,
             expTiktok: 0,
+            expInstagram: 0,
             expFacebook: 0,
             expStream: 0,
             liveNFTBonus: 0,
@@ -110,6 +111,7 @@ export default function FacebookTab() {
           image: data.image?.startsWith("http://") ? data.image.replace("http://", "https://") : data.image || "https://via.placeholder.com/100",
           expTotal: parseInt(data.expTotal),
           expTiktok: data.expTiktok,
+          expInstagram: data.expInstagram,
           expFacebook: data.expFacebook,
           expStream: data.expStream,
           liveNFTBonus: data.liveNFTBonus,
@@ -500,7 +502,7 @@ export default function FacebookTab() {
             <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">📊 Like & Share Verification</h2>
             
             <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
-              <p className="font-semibold mb-3 text-blue-800">1️⃣ Entferne alle Likes und Shares von meinem Beitrag</p>
+              <p className="font-semibold mb-3 text-blue-800">1️⃣ Entferne alle Likes von meinem Beitrag (Shares können nicht entfernt werden)</p>
               <button 
                 onClick={() => setShowConfirmInitial(true)}
                 disabled={initialValues !== null || loading}
@@ -532,7 +534,7 @@ export default function FacebookTab() {
             </div>
             
             <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
-              <p className="font-semibold mb-3 text-green-800">2️⃣ Like und teile den Beitrag erneut!</p>
+              <p className="font-semibold mb-3 text-green-800">2️⃣ Like und teile den Beitrag!</p>
               <button 
                 onClick={() => setShowConfirmAfter(true)}
                 disabled={loading || !initialValues || !!afterValues}
@@ -670,7 +672,7 @@ export default function FacebookTab() {
                 <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
                 <div>
                   <div className="font-bold text-pink-800">Instagram</div>
-                  <div className="text-pink-600 font-semibold">0 EXP</div>
+                  <div className="text-pink-600 font-semibold">{userData.expInstagram} EXP</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 border-l-4 border-purple-700 pl-3 bg-purple-50 py-2 rounded-r-xl">
@@ -726,7 +728,7 @@ export default function FacebookTab() {
             <div className="text-5xl mb-4">⚠️</div>
             <h2 className="text-xl font-bold mb-4 text-gray-800">Bestätigung erforderlich</h2>
             <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
-              <p className="text-blue-800 leading-relaxed">Bitte entferne alle Likes von meinem Beitrag – danach werden alle aktuellen Zahlen gespeichert.</p>
+              <p className="text-blue-800 leading-relaxed">Bitte entferne alle Likes von meinem Beitrag (Shares können nicht entfernt werden) – danach werden alle aktuellen Zahlen gespeichert.</p>
             </div>
             <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-6">
               <p className="text-yellow-700 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro Beitrag!</p>
@@ -759,7 +761,7 @@ export default function FacebookTab() {
             <div className="text-5xl mb-4">🎯</div>
             <h2 className="text-xl font-bold mb-4 text-gray-800">Finale Bestätigung</h2>
             <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
-              <p className="text-green-800 leading-relaxed">Bitte Like und Share den Beitrag erneut, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert.</p>
+              <p className="text-green-800 leading-relaxed">Bitte Like und teile den Beitrag, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert.</p>
             </div>
             <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-6">
               <p className="text-yellow-700 font-bold text-sm">⚠️ Diese Aktion ist nur einmal möglich pro Beitrag!</p>
