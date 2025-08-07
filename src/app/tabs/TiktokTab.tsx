@@ -3,6 +3,13 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+// Base Chain Wallet-Adresse Validierung
+const isValidBaseChainAddress = (address: string): boolean => {
+  // Base Chain verwendet Ethereum-ähnliche Adressen (0x + 40 hexadezimale Zeichen)
+  const ethAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+  return ethAddressRegex.test(address);
+};
+
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -34,6 +41,7 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
   const [username, setUsername] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
   const [showWalletInfoModal, setShowWalletInfoModal] = useState(false);
+  const [walletError, setWalletError] = useState('');
 
   // Gespeicherte Daten beim Öffnen des Modals laden
   React.useEffect(() => {
@@ -55,7 +63,17 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validierung zurücksetzen
+    setWalletError('');
+    
     if (username.trim() && walletAddress.trim()) {
+      // Wallet-Adresse validieren
+      if (!isValidBaseChainAddress(walletAddress.trim())) {
+        setWalletError('Bitte gib eine gültige Base Chain Wallet-Adresse ein (0x...)');
+        return;
+      }
+      
       // Füge @ Symbol hinzu, falls es nicht vorhanden ist
       const formattedUsername = username.trim().startsWith('@') ? username.trim() : `@${username.trim()}`;
       
@@ -72,6 +90,7 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
   const handleClose = () => {
     setUsername('');
     setWalletAddress('');
+    setWalletError('');
     onClose();
   };
 
@@ -120,9 +139,25 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
               <input
                 type="text"
                 value={walletAddress}
-                onChange={(e) => setWalletAddress(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setWalletAddress(value);
+                  
+                  // Validierung zurücksetzen, wenn Feld leer ist
+                  if (!value.trim()) {
+                    setWalletError('');
+                  } else if (!isValidBaseChainAddress(value.trim())) {
+                    setWalletError('Ungültige Base Chain Wallet-Adresse');
+                  } else {
+                    setWalletError('');
+                  }
+                }}
                 placeholder="0x..."
-                className="w-full px-4 py-3 pr-12 bg-black/50 border border-pink-500/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                className={`w-full px-4 py-3 pr-12 bg-black/50 border rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                  walletError 
+                    ? 'border-red-500/50 focus:ring-red-500' 
+                    : 'border-pink-500/50 focus:ring-pink-500'
+                }`}
                 required
                 disabled={isLoading}
               />
@@ -135,6 +170,13 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
                 i
               </button>
             </div>
+            {/* Wallet-Validierungsfehler anzeigen */}
+            {walletError && (
+              <p className="mt-2 text-sm text-red-400 flex items-center">
+                <span className="mr-1">⚠️</span>
+                {walletError}
+              </p>
+            )}
           </div>
 
           {/* Wallet Hinweis für Teilnahme Bestätigen */}
@@ -182,7 +224,7 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
             <button
               type="submit"
               className="flex-1 px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl hover:from-pink-600 hover:to-purple-600 transition-all font-medium disabled:opacity-50 shadow-lg"
-              disabled={isLoading || !username.trim() || !walletAddress.trim()}
+              disabled={isLoading || !username.trim() || !walletAddress.trim() || !!walletError}
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
@@ -1036,6 +1078,13 @@ export default function TiktokTab() {
   const [showConfirmAfter, setShowConfirmAfter] = useState(false);
   const [showNoUuidModal, setShowNoUuidModal] = useState(false);
 
+  // confirmationMessage zurücksetzen wenn Modal geschlossen wird
+  React.useEffect(() => {
+    if (!isCheckModalOpen) {
+      setConfirmationMessage('');
+    }
+  }, [isCheckModalOpen]);
+
   // Level Funktionen (gleiche Logik wie Facebook)
   const getLevelAndExpRange = (exp: number) => {
     let level = 1;
@@ -1113,49 +1162,28 @@ export default function TiktokTab() {
         // Verschiedene Status-Responses behandeln
         if (normalizedStatus === 'success') {
           setConfirmationMessage('✅ Teilnahme erfolgreich bestätigt!');
-          // Modal bleibt offen, damit User die Erfolgsmeldung sieht
+          // Modal wird nach 4 Sekunden geschlossen bei Erfolg
           setTimeout(() => {
             setConfirmationMessage('');
             setIsCheckModalOpen(false);
           }, 4000);
         } else if (normalizedStatus === 'wallet account') {
           setConfirmationMessage('⚠️ Die angegebene Wallet stimmt nicht mit deinem Account überein. Falls du die Adresse ändern möchtest, schreibe eine DM an @dawidfaith mit dem Stichwort "Wallet".');
-          setTimeout(() => {
-            setConfirmationMessage('');
-          }, 6000);
         } else if (normalizedStatus === 'wallet in use') {
           setConfirmationMessage('❌ Diese Wallet wird bereits verwendet. Bitte verwende eine andere Wallet-Adresse.');
-          setTimeout(() => {
-            setConfirmationMessage('');
-          }, 5000);
         } else if (normalizedStatus === 'comment') {
           setConfirmationMessage('💬 Es wurde noch kein Kommentar von dir gefunden. Bitte kommentiere den Beitrag und versuche es erneut.');
-          setTimeout(() => {
-            setConfirmationMessage('');
-          }, 5000);
         } else if (normalizedStatus === 'evalued') {
           setConfirmationMessage('ℹ️ Du hast deine Teilnahme bereits bestätigt.');
-          setTimeout(() => {
-            setConfirmationMessage('');
-          }, 4000);
         } else {
           setConfirmationMessage('❌ Teilnahme fehlgeschlagen. Bitte versuche es erneut.');
-          setTimeout(() => {
-            setConfirmationMessage('');
-          }, 3000);
         }
       } else {
         setConfirmationMessage('❌ Teilnahme fehlgeschlagen. Bitte versuche es erneut.');
-        setTimeout(() => {
-          setConfirmationMessage('');
-        }, 3000);
       }
     } catch (error) {
       console.error('Webhook error:', error);
       setConfirmationMessage('❌ Netzwerkfehler. Bitte überprüfe deine Verbindung.');
-      setTimeout(() => {
-        setConfirmationMessage('');
-      }, 3000);
     } finally {
       setIsLoading(false);
     }
