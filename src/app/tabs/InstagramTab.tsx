@@ -127,6 +127,9 @@ export default function InstagramTab() {
         // Wallet setzen falls vorhanden
         if (data.wallet && data.wallet.startsWith("0x")) {
           setWalletInput(data.wallet);
+          // Validierung auch für automatisch gesetzte Wallet durchführen
+          const validation = validateBaseAddressRealTime(data.wallet);
+          setWalletValidation(validation);
         }
         
         setUserData({
