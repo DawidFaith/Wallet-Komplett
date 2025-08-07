@@ -1195,7 +1195,7 @@ export default function TiktokTab() {
       setIsLoading(true);
       setMessage('');
 
-      const response = await fetch('https://hook.eu2.make.com/gz8xf59sl63lb5gtdirwcrvvs0f17u7f', {
+      const response = await fetch('https://tiktok-userboard.vercel.app/api/userboard', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1203,13 +1203,18 @@ export default function TiktokTab() {
         body: JSON.stringify({
           username: username,
           walletAddress: walletAddress,
-          timestamp: new Date().toISOString(),
         }),
       });
 
       if (response.ok) {
         const responseData = await response.json();
         console.log('Login Response Data:', responseData); // Debug-Log
+        
+        // Prüfe auf Fehlermeldung "Benutzer nicht gefunden"
+        if (responseData.error === 'Benutzer nicht gefunden') {
+          setMessage('❌ Falsche Kombination: Benutzer nicht gefunden');
+          return; // Userboard nicht laden bei Fehler
+        }
         
         // Hilfsfunktion für sichere Zahlen-Konvertierung
         const safeParseInt = (value: any): number => {
@@ -1246,6 +1251,7 @@ export default function TiktokTab() {
           });
           setIsLoggedIn(true);
           setMessage('Login erfolgreich!');
+          setIsLoginModalOpen(false); // Modal nur bei erfolgreichem Login schließen
         } else {
           // Fallback für unbekannte User - zeige Demo-Daten
           setUserData({
@@ -1267,9 +1273,16 @@ export default function TiktokTab() {
           });
           setIsLoggedIn(true);
           setMessage('Login erfolgreich!');
+          setIsLoginModalOpen(false); // Modal nur bei erfolgreichem Login schließen
         }
       } else {
-        setMessage('Fehler beim Senden der Anfrage. Bitte versuchen Sie es erneut.');
+        // API Antwort war nicht erfolgreich
+        const errorData = await response.json().catch(() => ({}));
+        if (errorData.error === 'Benutzer nicht gefunden') {
+          setMessage('❌ Falsche Kombination: Benutzer nicht gefunden');
+        } else {
+          setMessage('❌ Fehler beim Login. Bitte versuche es erneut.');
+        }
       }
     } catch (error) {
       console.error('Webhook error:', error);
@@ -1277,8 +1290,6 @@ export default function TiktokTab() {
     } finally {
       setIsLoading(false);
     }
-    
-    setIsLoginModalOpen(false);
   };
 
   // Wenn eingeloggt, zeige Userkarte
@@ -1418,11 +1429,15 @@ export default function TiktokTab() {
 
       <Modal
         isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
+        onClose={() => {
+          setIsLoginModalOpen(false);
+          setMessage(''); // Message zurücksetzen beim Schließen
+        }}
         title="Dashboard Login"
         onSubmit={handleLogin}
         isLoading={isLoading}
         router={router}
+        confirmationMessage={message} // Fehlermeldungen im Modal anzeigen
       />
 
       {/* Additional TikTok Modals */}
