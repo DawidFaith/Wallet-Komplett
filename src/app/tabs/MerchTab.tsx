@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useActiveAccount, useReadContract, useSendTransaction } from "thirdweb/react";
 import { getContract, prepareContractCall } from "thirdweb";
 import { base } from "thirdweb/chains";
@@ -67,81 +67,245 @@ interface CheckoutFormData {
 // API-Konfiguration
 const API_BASE_URL = "https://merch-verwaltung.vercel.app";
 
-// Media Player Komponente
-function MediaPlayer({ media }: { media: MediaFile }) {
+// Verbesserter Audio Player mit modernem Design
+function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
   const [isPlaying, setIsPlaying] = useState(false);
-  
-  const togglePlay = (audioElement: HTMLAudioElement) => {
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const togglePlay = () => {
+    const audioElement = audioRef.current;
+    const videoElement = videoRef.current;
+    const element = audioElement || videoElement;
+    
+    if (!element) return;
+
     if (isPlaying) {
-      audioElement.pause();
+      element.pause();
     } else {
-      audioElement.play();
+      element.play();
     }
     setIsPlaying(!isPlaying);
+  };
+
+  const handleTimeUpdate = () => {
+    const element = audioRef.current || videoRef.current;
+    if (element) {
+      setCurrentTime(element.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    const element = audioRef.current || videoRef.current;
+    if (element) {
+      setDuration(element.duration);
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const element = audioRef.current || videoRef.current;
+    if (element) {
+      const newTime = parseFloat(e.target.value);
+      element.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    const element = audioRef.current || videoRef.current;
+    if (element) {
+      element.volume = newVolume;
+    }
+  };
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   switch (media.type) {
     case "AUDIO":
       return (
-        <div className="w-full">
-          <audio 
-            controls 
-            className="w-full"
+        <div className="w-full bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl p-6 border border-zinc-700 shadow-lg">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg">
+              <FaMusic className="text-2xl text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-white font-semibold text-lg truncate">{media.originalName}</h3>
+              <p className="text-gray-400 text-sm">{(media.size / 1024 / 1024).toFixed(2)} MB</p>
+            </div>
+          </div>
+          
+          <audio
+            ref={audioRef}
+            src={media.url}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
-          >
-            <source src={media.url} type={media.mimeType} />
-            Ihr Browser unterstützt Audio nicht.
-          </audio>
-          <div className="mt-2 text-xs text-gray-400">
-            <p>📁 {media.originalName}</p>
-            <p>📊 {(media.size / 1024 / 1024).toFixed(2)} MB</p>
+            onTimeUpdate={handleTimeUpdate}
+            onLoadedMetadata={handleLoadedMetadata}
+            onEnded={() => setIsPlaying(false)}
+            className="hidden"
+          />
+          
+          {/* Custom Controls */}
+          <div className="space-y-4">
+            {/* Progress Bar */}
+            <div className="space-y-2">
+              <input
+                type="range"
+                min="0"
+                max={duration || 0}
+                value={currentTime}
+                onChange={handleSeek}
+                className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, #f59e0b 0%, #f59e0b ${(currentTime / duration) * 100}%, #374151 ${(currentTime / duration) * 100}%, #374151 100%)`,
+                  WebkitAppearance: 'none',
+                  outline: 'none'
+                }}
+              />
+              <style jsx>{`
+                input[type="range"]::-webkit-slider-thumb {
+                  appearance: none;
+                  height: 16px;
+                  width: 16px;
+                  background: #f59e0b;
+                  border-radius: 50%;
+                  cursor: pointer;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                }
+                input[type="range"]::-moz-range-thumb {
+                  height: 16px;
+                  width: 16px;
+                  background: #f59e0b;
+                  border-radius: 50%;
+                  cursor: pointer;
+                  border: none;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                }
+              `}</style>
+              <div className="flex justify-between text-xs text-gray-400">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+            </div>
+            
+            {/* Controls */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={togglePlay}
+                  className="w-12 h-12 bg-amber-600 hover:bg-amber-700 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 hover:scale-105"
+                >
+                  {isPlaying ? <FaPause className="text-lg" /> : <FaPlay className="text-lg ml-1" />}
+                </button>
+              </div>
+              
+              {/* Volume Control */}
+              <div className="flex items-center gap-2 relative">
+                <button
+                  onClick={() => setShowVolumeSlider(!showVolumeSlider)}
+                  className="text-amber-400 hover:text-amber-300 transition-colors"
+                >
+                  <FaVolumeUp />
+                </button>
+                {showVolumeSlider && (
+                  <div className="absolute right-0 bottom-12 bg-zinc-800 p-3 rounded-lg shadow-xl border border-zinc-600">
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={volume}
+                      onChange={handleVolumeChange}
+                      className="w-20 h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       );
     
     case "VIDEO":
       return (
-        <div className="w-full">
-          <video controls className="w-full max-h-64 rounded">
-            <source src={media.url} type={media.mimeType} />
-            Ihr Browser unterstützt Video nicht.
-          </video>
-          <div className="mt-2 text-xs text-gray-400">
-            <p>📁 {media.originalName}</p>
-            <p>📊 {(media.size / 1024 / 1024).toFixed(2)} MB</p>
+        <div className="w-full bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl overflow-hidden border border-zinc-700 shadow-lg">
+          <div className="relative">
+            <video 
+              ref={videoRef}
+              src={media.url}
+              controls
+              className="w-full max-h-80 object-cover"
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+              onTimeUpdate={handleTimeUpdate}
+              onLoadedMetadata={handleLoadedMetadata}
+              onEnded={() => setIsPlaying(false)}
+            />
+            <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-1">
+              <FaVideo className="text-red-400 inline mr-2" />
+              <span className="text-white text-sm font-medium">Video</span>
+            </div>
+          </div>
+          <div className="p-4">
+            <h3 className="text-white font-semibold truncate">{media.originalName}</h3>
+            <p className="text-gray-400 text-sm">{(media.size / 1024 / 1024).toFixed(2)} MB</p>
           </div>
         </div>
       );
     
     case "IMAGE":
       return (
-        <div className="w-full">
-          <img 
-            src={media.url} 
-            alt={media.originalName}
-            className="w-full h-48 object-cover rounded"
-          />
-          <div className="mt-2 text-xs text-gray-400">
-            <p>📁 {media.originalName}</p>
-            <p>📊 {(media.size / 1024 / 1024).toFixed(2)} MB</p>
+        <div className="w-full bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl overflow-hidden border border-zinc-700 shadow-lg">
+          <div className="relative group">
+            <img 
+              src={media.url} 
+              alt={media.originalName}
+              className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-1">
+              <FaImage className="text-blue-400 inline mr-2" />
+              <span className="text-white text-sm font-medium">Bild</span>
+            </div>
+            <button className="absolute top-4 right-4 w-10 h-10 bg-black/70 backdrop-blur-sm rounded-lg flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-black/80">
+              <FaExpand />
+            </button>
+          </div>
+          <div className="p-4">
+            <h3 className="text-white font-semibold truncate">{media.originalName}</h3>
+            <p className="text-gray-400 text-sm">{(media.size / 1024 / 1024).toFixed(2)} MB</p>
           </div>
         </div>
       );
     
     default:
       return (
-        <div className="p-4 bg-zinc-800 rounded">
-          <FaDownload className="text-2xl text-amber-400 mb-2" />
-          <p className="text-white font-medium">{media.originalName}</p>
-          <p className="text-gray-400 text-sm">{(media.size / 1024 / 1024).toFixed(2)} MB</p>
-          <a 
-            href={media.url} 
-            download={media.originalName}
-            className="text-amber-400 hover:text-amber-300 text-sm"
-          >
-            📥 Download
-          </a>
+        <div className="w-full bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl p-6 border border-zinc-700 shadow-lg">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-gray-500 to-gray-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <FaDownload className="text-2xl text-white" />
+            </div>
+            <h3 className="text-white font-semibold text-lg mb-2">{media.originalName}</h3>
+            <p className="text-gray-400 text-sm mb-4">{(media.size / 1024 / 1024).toFixed(2)} MB</p>
+            <a 
+              href={media.url} 
+              download={media.originalName}
+              className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+            >
+              <FaDownload />
+              Download
+            </a>
+          </div>
         </div>
       );
   }
@@ -197,41 +361,164 @@ export default function MerchTab() {
     }
   }, [dfaithBalanceData]);
 
-  // D.FAITH Preis laden (ähnlich wie im WalletTab)
+  // D.FAITH Preis laden (gleiche Logik wie im BuyTab für korrekte Preise)
+  const [dfaithPrice, setDfaithPrice] = useState<number | null>(null);
+  const [ethPriceEur, setEthPriceEur] = useState<number | null>(null);
+  const [isLoadingPrice, setIsLoadingPrice] = useState(true);
+  const [lastKnownPrices, setLastKnownPrices] = useState<{
+    dfaith?: number;
+    dfaithEur?: number;
+    ethEur?: number;
+    timestamp?: number;
+  }>({});
+  const [priceError, setPriceError] = useState<string | null>(null);
+
   useEffect(() => {
-    const fetchDfaithPrice = async () => {
+    // Lade gespeicherte Preise beim Start
+    const loadStoredPrices = () => {
       try {
-        // Hier nutzen wir die gleiche Logik wie im WalletTab für Live-Preisdaten
-        const priceResponse = await fetch('/api/prices'); // Falls vorhanden
-        if (priceResponse.ok) {
-          const priceData = await priceResponse.json();
-          if (priceData.dfaithEur) {
-            setDfaithPriceEur(priceData.dfaithEur);
-          }
-        } else {
-          // Fallback: fester Preis oder gespeicherter Preis
-          const lastKnownPrices = localStorage.getItem('walletPrices');
-          if (lastKnownPrices) {
-            const parsed = JSON.parse(lastKnownPrices);
-            if (parsed.dfaithEur) {
-              setDfaithPriceEur(parsed.dfaithEur);
-            }
-          } else {
-            // Fallback Preis
-            setDfaithPriceEur(0.01); // 1 Cent als Fallback
+        const stored = localStorage.getItem('dawid_faith_prices');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const now = Date.now();
+          // Verwende gespeicherte Preise wenn sie weniger als 6 Stunden alt sind
+          if (parsed.timestamp && (now - parsed.timestamp) < 6 * 60 * 60 * 1000) {
+            setLastKnownPrices(parsed);
+            if (parsed.dfaith) setDfaithPrice(parsed.dfaith);
+            if (parsed.dfaithEur) setDfaithPriceEur(parsed.dfaithEur);
+            if (parsed.ethEur) setEthPriceEur(parsed.ethEur);
           }
         }
-      } catch (error) {
-        console.error("Fehler beim Laden der D.FAITH Preise:", error);
-        // Fallback Preis
-        setDfaithPriceEur(0.01);
+      } catch (e) {
+        console.log('Fehler beim Laden gespeicherter Preise:', e);
       }
     };
 
+    loadStoredPrices();
+
+    const fetchDfaithPrice = async () => {
+      setIsLoadingPrice(true);
+      setPriceError(null);
+      let ethEur: number | null = null;
+      let dfaithPriceEur: number | null = null;
+      let errorMsg = "";
+      
+      try {
+        // 1. Hole ETH/EUR Preis von CoinGecko
+        try {
+          const ethResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=eur');
+          if (ethResponse.ok) {
+            const ethData = await ethResponse.json();
+            ethEur = ethData['ethereum']?.eur;
+            if (ethEur) {
+              ethEur = Math.round(ethEur * 100) / 100;
+            }
+          }
+        } catch (e) {
+          console.log('ETH Preis Fehler:', e);
+        }
+        
+        // Fallback auf letzten bekannten ETH Preis
+        if (!ethEur && lastKnownPrices.ethEur) {
+          ethEur = lastKnownPrices.ethEur;
+        } else if (!ethEur) {
+          ethEur = 3000; // Hard fallback für ETH
+        }
+        
+        // 2. Hole D.FAITH Preis von ParaSwap für Base Chain
+        try {
+          const priceParams = new URLSearchParams({
+            srcToken: DFAITH_TOKEN,
+            destToken: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", // ETH address for ParaSwap
+            srcDecimals: DFAITH_DECIMALS.toString(),
+            destDecimals: "18", // ETH decimals
+            amount: "100", // 1 D.FAITH (100 mit 2 Decimals)
+            network: "8453", // Base Chain ID
+            side: "SELL"
+          });
+          
+          const priceResponse = await fetch(`https://apiv5.paraswap.io/prices?${priceParams}`);
+          
+          if (priceResponse.ok) {
+            const priceData = await priceResponse.json();
+            console.log("ParaSwap Price Response:", priceData);
+            
+            if (priceData && priceData.priceRoute && priceData.priceRoute.destAmount) {
+              // destAmount ist in ETH Wei (18 Decimals)
+              const ethPerDfaith = Number(priceData.priceRoute.destAmount) / Math.pow(10, 18);
+              setDfaithPrice(ethPerDfaith); // Wie viele ETH für 1 D.FAITH
+              // Preis pro D.FAITH in EUR: ethPerDfaith * ethEur
+              if (ethEur && ethPerDfaith > 0) {
+                dfaithPriceEur = ethPerDfaith * ethEur;
+              } else {
+                dfaithPriceEur = null;
+              }
+            } else {
+              errorMsg = "ParaSwap: Keine Liquidität verfügbar";
+            }
+          } else {
+            errorMsg = `ParaSwap: ${priceResponse.status}`;
+          }
+        } catch (e) {
+          console.log("ParaSwap Fehler:", e);
+          errorMsg = "ParaSwap API Fehler";
+        }
+        
+        // Fallback auf letzte bekannte D.FAITH Preise
+        if (!dfaithPrice && lastKnownPrices.dfaith) {
+          setDfaithPrice(lastKnownPrices.dfaith);
+          errorMsg = "";
+        }
+        if (!dfaithPriceEur && lastKnownPrices.dfaithEur) {
+          dfaithPriceEur = lastKnownPrices.dfaithEur;
+          errorMsg = "";
+        }
+        
+      } catch (e) {
+        console.error("Price fetch error:", e);
+        errorMsg = "Preis-API Fehler";
+        
+        // Verwende letzte bekannte Preise als Fallback
+        if (lastKnownPrices.dfaith) setDfaithPrice(lastKnownPrices.dfaith);
+        if (lastKnownPrices.dfaithEur) dfaithPriceEur = lastKnownPrices.dfaithEur;
+        if (lastKnownPrices.ethEur) ethEur = lastKnownPrices.ethEur;
+        
+        if (dfaithPrice && dfaithPriceEur && ethEur) {
+          errorMsg = ""; // Kein Fehler anzeigen wenn Fallback verfügbar
+        }
+      }
+      
+      // Setze Preise (entweder neue oder Fallback)
+      if (ethEur) setEthPriceEur(ethEur);
+      if (dfaithPriceEur !== null && dfaithPriceEur !== undefined) setDfaithPriceEur(dfaithPriceEur);
+      
+      // Speichere erfolgreiche Preise
+      if (dfaithPrice && dfaithPriceEur && ethEur) {
+        const newPrices = {
+          dfaith: dfaithPrice,
+          dfaithEur: dfaithPriceEur,
+          ethEur: ethEur,
+          timestamp: Date.now()
+        };
+        setLastKnownPrices(newPrices);
+        try {
+          localStorage.setItem('dawid_faith_prices', JSON.stringify(newPrices));
+        } catch (e) {
+          console.log('Fehler beim Speichern der Preise:', e);
+        }
+        setPriceError(null);
+      } else {
+        setPriceError(errorMsg || "Preise nicht verfügbar");
+      }
+      
+      setIsLoadingPrice(false);
+    };
+
     fetchDfaithPrice();
-    const interval = setInterval(fetchDfaithPrice, 30000); // Alle 30 Sekunden
+    // Preis alle 2 Minuten aktualisieren (gleich wie im BuyTab)
+    const interval = setInterval(fetchDfaithPrice, 120000);
     return () => clearInterval(interval);
-  }, []);
+  }, [lastKnownPrices.dfaith, lastKnownPrices.dfaithEur, lastKnownPrices.ethEur, dfaithPrice]);
 
   // Produkte von API laden
   useEffect(() => {
@@ -263,9 +550,9 @@ export default function MerchTab() {
     fetchProducts();
   }, []);
 
-  // EUR zu D.FAITH umrechnen
+  // EUR zu D.FAITH umrechnen (jetzt mit korrekter Preislogik)
   const convertEurToDfaith = (eurPrice: number): number => {
-    if (dfaithPriceEur === 0) return 0;
+    if (!dfaithPriceEur || dfaithPriceEur === 0) return 0;
     return eurPrice / dfaithPriceEur;
   };
 
@@ -513,34 +800,71 @@ export default function MerchTab() {
   }
 
   return (
-    <div className="space-y-6 p-4">
-      {/* Header mit Balance und Warenkorb */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white mb-2">🛍️ D.FAITH Merch Shop</h1>
-          <div className="space-y-1">
-            <p className="text-amber-400 text-sm">
-              Verfügbare D.FAITH: <span className="font-bold">{dfaithBalance}</span>
-            </p>
-            <p className="text-gray-400 text-xs">
-              D.FAITH Preis: {dfaithPriceEur > 0 ? `${dfaithPriceEur.toFixed(4)}€` : "Lädt..."}
-            </p>
+    <div className="space-y-8 p-4">
+      {/* Header mit Balance und Warenkorb - Verbessertes Design */}
+      <div className="bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-2xl p-6 border border-zinc-700 shadow-xl">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+                <FaShoppingCart className="text-2xl text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">D.FAITH Merch Shop</h1>
+                <p className="text-gray-400">Offizieller Shop mit exklusiven Produkten</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-600">
+                <div className="flex items-center gap-2 mb-2">
+                  <FaCoins className="text-amber-400" />
+                  <span className="text-gray-300 text-sm font-medium">Ihr D.FAITH Guthaben</span>
+                </div>
+                <div className="text-2xl font-bold text-amber-400">{dfaithBalance}</div>
+                <div className="text-xs text-gray-500">
+                  ≈ {dfaithPriceEur > 0 ? `${(parseFloat(dfaithBalance) * dfaithPriceEur).toFixed(2)}€` : "Berechnung..."}
+                </div>
+              </div>
+              
+              <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-600">
+                <div className="flex items-center gap-2 mb-2">
+                  <FaEuroSign className="text-green-400" />
+                  <span className="text-gray-300 text-sm font-medium">Aktueller D.FAITH Preis</span>
+                </div>
+                <div className="text-2xl font-bold text-green-400">
+                  {isLoadingPrice ? (
+                    <div className="flex items-center gap-2">
+                      <FaSpinner className="animate-spin" />
+                      <span className="text-sm">Lädt...</span>
+                    </div>
+                  ) : dfaithPriceEur > 0 ? (
+                    `${dfaithPriceEur.toFixed(4)}€`
+                  ) : (
+                    <span className="text-red-400 text-sm">Fehler</span>
+                  )}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {priceError ? priceError : "Live von ParaSwap"}
+                </div>
+              </div>
+            </div>
           </div>
+          
+          {/* Warenkorb Button */}
+          <Button
+            onClick={() => setShowCart(!showCart)}
+            className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white relative shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 px-6 py-3"
+          >
+            <FaShoppingCart className="mr-2 text-lg" />
+            <span className="font-semibold">Warenkorb</span>
+            {getCartItemCount() > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold shadow-lg animate-pulse">
+                {getCartItemCount()}
+              </span>
+            )}
+          </Button>
         </div>
-        
-        {/* Warenkorb Button */}
-        <Button
-          onClick={() => setShowCart(!showCart)}
-          className="bg-amber-600 hover:bg-amber-700 text-white relative"
-        >
-          <FaShoppingCart className="mr-2" />
-          Warenkorb
-          {getCartItemCount() > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {getCartItemCount()}
-            </span>
-          )}
-        </Button>
       </div>
 
       {/* Status-Nachrichten */}
@@ -557,22 +881,31 @@ export default function MerchTab() {
         </div>
       )}
 
-      {/* Kategorie-Filter */}
-      <div className="flex flex-wrap gap-2">
-        <FaFilter className="text-amber-400 text-lg mt-2 mr-2" />
-        {categories.map(category => (
-          <Button
-            key={category}
-            onClick={() => setSelectedCategory(category)}
-            className={`${
-              selectedCategory === category 
-                ? "bg-amber-600 hover:bg-amber-700 text-white border-amber-600" 
-                : "bg-transparent border-amber-600 text-amber-400 hover:bg-amber-600/10"
-            }`}
-          >
-            {category === "all" ? "Alle" : category}
-          </Button>
-        ))}
+      {/* Kategorie-Filter - Modernes Design */}
+      <div className="bg-gradient-to-r from-zinc-900 to-zinc-800 rounded-xl p-4 border border-zinc-700 shadow-lg">
+        <div className="flex items-center gap-4 mb-3">
+          <div className="flex items-center gap-2">
+            <FaFilter className="text-amber-400 text-lg" />
+            <span className="text-white font-semibold">Kategorien</span>
+          </div>
+          <div className="h-px bg-zinc-600 flex-1"></div>
+          <span className="text-xs text-gray-400">{filteredProducts.length} Produkt(e)</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {categories.map(category => (
+            <Button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`transition-all duration-200 ${
+                selectedCategory === category 
+                  ? "bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white border-amber-600 shadow-lg scale-105" 
+                  : "bg-transparent border-amber-600/50 text-amber-400 hover:bg-amber-600/10 hover:border-amber-600 hover:text-amber-300"
+              }`}
+            >
+              {category === "all" ? "🛍️ Alle" : `📂 ${category}`}
+            </Button>
+          ))}
+        </div>
       </div>
 
       {/* Warenkorb Sidebar */}
@@ -872,22 +1205,22 @@ export default function MerchTab() {
         </div>
       )}
 
-      {/* Produkte-Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Produkte-Grid - Modernes Design mit besserer Übersicht */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
         {filteredProducts.map(product => {
           const dfaithPrice = convertEurToDfaith(product.price);
           
           return (
-            <Card key={product.id} className="bg-zinc-900 border-zinc-700 overflow-hidden">
-              <CardContent className="p-0">
+            <Card key={product.id} className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-zinc-600 hover:border-amber-500/50 transition-all duration-300 overflow-hidden group shadow-xl hover:shadow-2xl hover:shadow-amber-500/10">
+              <CardContent className="p-0 relative">
                 {/* Digital/Physisch Badge */}
-                <div className="absolute top-2 right-2 z-10">
+                <div className="absolute top-3 right-3 z-10">
                   {product.isDigital ? (
-                    <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                    <span className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1 shadow-lg">
                       📱 Digital
                     </span>
                   ) : (
-                    <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                    <span className="bg-gradient-to-r from-green-600 to-green-700 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1 shadow-lg">
                       📦 Physisch
                     </span>
                   )}
@@ -895,61 +1228,63 @@ export default function MerchTab() {
 
                 {/* Medien-Vorschau */}
                 {product.media.length > 0 && (
-                  <div className="p-4 bg-zinc-800 relative">
-                    <MediaPlayer media={product.media[0]} />
+                  <div className="bg-gradient-to-br from-zinc-800 to-zinc-900 relative">
+                    <EnhancedMediaPlayer media={product.media[0]} />
                     {product.media.length > 1 && (
-                      <p className="text-xs text-gray-400 mt-2">
-                        +{product.media.length - 1} weitere Datei(en)
-                      </p>
+                      <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
+                        <p className="text-xs text-white font-medium">
+                          +{product.media.length - 1} weitere
+                        </p>
+                      </div>
                     )}
                   </div>
                 )}
                 
-                <div className="p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-white font-bold">{product.name}</h3>
-                    <span className="text-xs bg-amber-600 text-white px-2 py-1 rounded">
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-white font-bold text-lg leading-tight">{product.name}</h3>
+                    <span className="text-xs bg-gradient-to-r from-amber-600 to-amber-700 text-white px-3 py-1 rounded-full shadow-sm">
                       {product.category}
                     </span>
                   </div>
                   
-                  <p className="text-gray-400 text-sm mb-3 line-clamp-2">
+                  <p className="text-gray-300 text-sm mb-4 line-clamp-3 leading-relaxed">
                     {product.description}
                   </p>
                   
                   {/* Medien-Übersicht */}
                   {product.media.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {product.media.slice(0, 4).map(media => (
-                        <div key={media.id} className="flex items-center gap-1 text-xs text-gray-400 bg-zinc-800 px-2 py-1 rounded">
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {product.media.slice(0, 3).map(media => (
+                        <div key={media.id} className="flex items-center gap-1.5 text-xs text-gray-300 bg-zinc-700/50 px-2.5 py-1.5 rounded-lg backdrop-blur-sm">
                           {getMediaIcon(media.type)}
-                          {media.type}
+                          <span className="font-medium">{media.type}</span>
                         </div>
                       ))}
-                      {product.media.length > 4 && (
-                        <span className="text-xs text-gray-400">+{product.media.length - 4}</span>
+                      {product.media.length > 3 && (
+                        <span className="text-xs text-gray-400 bg-zinc-700/30 px-2 py-1 rounded-lg">+{product.media.length - 3} mehr</span>
                       )}
                     </div>
                   )}
                   
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-end mt-6">
                     <div className="space-y-1">
-                      <div className="text-amber-400 font-bold flex items-center gap-1">
-                        <FaCoins className="text-sm" />
+                      <div className="text-amber-400 font-bold text-lg flex items-center gap-2">
+                        <FaCoins className="text-amber-500" />
                         {dfaithPrice.toFixed(2)} D.FAITH
                       </div>
-                      <div className="text-gray-400 text-xs flex items-center gap-1">
+                      <div className="text-gray-400 text-sm flex items-center gap-1.5">
                         <FaEuroSign className="text-xs" />
-                        {product.price.toFixed(2)}
+                        {product.price.toFixed(2)} EUR
                       </div>
                     </div>
                     
                     <Button
                       onClick={() => addToCart(product.id)}
-                      className="bg-amber-600 hover:bg-amber-700 text-white"
+                      className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
                     >
                       <FaShoppingCart className="mr-2" />
-                      In Warenkorb
+                      Hinzufügen
                     </Button>
                   </div>
                 </div>
@@ -967,25 +1302,74 @@ export default function MerchTab() {
         </div>
       )}
 
-      {/* Info-Sektion */}
-      <Card className="bg-zinc-900 border-zinc-700">
-        <CardContent className="p-6">
-          <h3 className="text-white font-bold mb-4">ℹ️ Über den D.FAITH Merch Shop</h3>
-          <div className="text-gray-400 space-y-2">
-            <p>• Alle Artikel werden mit D.FAITH Token bezahlt</p>
-            <p>• Live-Preisumrechnung von EUR zu D.FAITH</p>
-            <p>• 📱 Digitale Produkte: Sofortiger Download nach Kauf</p>
-            <p>• 📦 Physische Produkte: Versand nach Zahlungseingang</p>
-            <p>• Direkte Medien-Wiedergabe (Audio, Video, Bilder)</p>
-            <p>• Sichere Blockchain-basierte Transaktionen</p>
-            <p>• Automatische E-Mail-Bestätigung und Webhooks</p>
-            <p>• Weltweiter Versand verfügbar</p>
+      {/* Info-Sektion - Verbessertes Design */}
+      <Card className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-zinc-600 shadow-xl">
+        <CardContent className="p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white text-lg">ℹ️</span>
+            </div>
+            <h3 className="text-white font-bold text-xl">Über den D.FAITH Merch Shop</h3>
           </div>
-          <div className="mt-4 p-3 bg-amber-900/20 border border-amber-600 rounded-lg">
-            <p className="text-amber-400 text-sm">
-              💡 <strong>Hinweis:</strong> Nach dem Kauf erhalten Sie eine E-Mail mit Download-Links (digital) 
-              oder Versandbestätigung (physisch). Alle Transaktionen werden über die Base-Blockchain abgewickelt.
-            </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <h4 className="text-amber-400 font-semibold mb-3 flex items-center gap-2">
+                <FaCoins />
+                Zahlungssystem
+              </h4>
+              <div className="space-y-2 text-gray-300">
+                <p className="flex items-start gap-2">
+                  <span className="text-amber-400 mt-1">•</span>
+                  Alle Artikel werden mit D.FAITH Token bezahlt
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-amber-400 mt-1">•</span>
+                  Live-Preisumrechnung von EUR zu D.FAITH über ParaSwap
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-amber-400 mt-1">•</span>
+                  Sichere Blockchain-basierte Transaktionen auf Base
+                </p>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <h4 className="text-green-400 font-semibold mb-3 flex items-center gap-2">
+                <FaShoppingCart />
+                Produktarten
+              </h4>
+              <div className="space-y-2 text-gray-300">
+                <p className="flex items-start gap-2">
+                  <span className="text-blue-400 mt-1">📱</span>
+                  <span><strong>Digitale Produkte:</strong> Sofortiger Download nach Kauf</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-green-400 mt-1">📦</span>
+                  <span><strong>Physische Produkte:</strong> Weltweiter Versand verfügbar</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-purple-400 mt-1">🎵</span>
+                  <span><strong>Media-Player:</strong> Direkte Wiedergabe von Audio/Video</span>
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-6 p-4 bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-600/50 rounded-xl">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-amber-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-white font-bold">💡</span>
+              </div>
+              <div>
+                <p className="text-amber-300 font-semibold mb-2">Automatisierte Abwicklung</p>
+                <p className="text-amber-100 text-sm leading-relaxed">
+                  Nach dem Kauf erhalten Sie automatisch eine E-Mail mit Download-Links (digital) 
+                  oder Versandbestätigung (physisch). Alle Transaktionen werden transparent 
+                  über die Base-Blockchain abgewickelt und sind in Echtzeit nachverfolgbar.
+                </p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
