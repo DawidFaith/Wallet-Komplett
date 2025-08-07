@@ -33,7 +33,8 @@ export default function FacebookTab() {
   const [claimStatus, setClaimStatus] = useState('');
   const [initialValues, setInitialValues] = useState<{likes: number, shares: number} | null>(null);
   const [afterValues, setAfterValues] = useState<{likes: number, shares: number} | null>(null);
-  const [confirmationMessage, setConfirmationMessage] = useState(false);
+  const [confirmationMessage, setConfirmationMessage] = useState<string>('');
+  const [expGained, setExpGained] = useState<{likes: number, shares: number, total: number} | null>(null);
   const [showNoUuidModal, setShowNoUuidModal] = useState(false);
   const [showMiningPowerModal, setShowMiningPowerModal] = useState(false);
 
@@ -203,8 +204,20 @@ export default function FacebookTab() {
       const newShares = parseInt(data.shares);
       setAfterValues({ likes: newLikes, shares: newShares });
       
-      if (initialValues && (newLikes > initialValues.likes || newShares > initialValues.shares)) {
-        setConfirmationMessage(true);
+      // Automatischer Vergleich und EXP Berechnung
+      if (initialValues) {
+        const likesGained = Math.max(0, newLikes - initialValues.likes);
+        const sharesGained = Math.max(0, newShares - initialValues.shares);
+        const totalExp = (likesGained * 10) + (sharesGained * 10);
+        
+        if (totalExp > 0) {
+          setExpGained({
+            likes: likesGained,
+            shares: sharesGained,
+            total: totalExp
+          });
+          setConfirmationMessage('🎉 Glückwunsch! Du hast erfolgreich EXP gesammelt!');
+        }
       }
     } catch (error) {
       console.error('Fehler beim Check:', error);
@@ -522,11 +535,11 @@ export default function FacebookTab() {
               <p className="font-semibold mb-3 text-green-800">2️⃣ Like und teile den Beitrag erneut!</p>
               <button 
                 onClick={() => setShowConfirmAfter(true)}
-                disabled={loading}
+                disabled={loading || !initialValues || !!afterValues}
                 className={`w-full p-3 rounded-xl font-bold transition-all duration-300 ${
-                  loading 
+                  loading || !initialValues
                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white transform hover:scale-105'
+                    : afterValues ? 'bg-green-600 text-white' : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white transform hover:scale-105'
                 }`}
               >
                 {loading ? (
@@ -534,7 +547,7 @@ export default function FacebookTab() {
                     <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-gray-600 rounded-full"></div>
                     <span>Prüfe Änderungen...</span>
                   </div>
-                ) : '✅ Check neue Werte'}
+                ) : !initialValues ? '⚠️ Zuerst Schritt 1 ausführen' : afterValues ? '✅ Neue Werte erfasst' : '✅ Check neue Werte'}
               </button>
               {afterValues && (
                 <div className="bg-white border border-green-300 rounded-xl p-3 mt-3 text-sm">
@@ -550,27 +563,73 @@ export default function FacebookTab() {
               )}
             </div>
             
-            {confirmationMessage && (
-              <div className="bg-green-100 border border-green-200 rounded-xl p-3 mb-4">
-                <p className="text-green-700 font-bold">✅ Erfolgreich! Bitte lade die Seite neu.</p>
+            {afterValues && (
+              <div className={`rounded-xl p-4 mb-4 ${expGained && expGained.total > 0 ? 'bg-green-100 border border-green-200' : 'bg-orange-100 border border-orange-200'}`}>
+                {expGained && expGained.total > 0 ? (
+                  <>
+                    <div className="text-center mb-3">
+                      <p className="text-green-700 font-bold text-lg">🎉 Glückwunsch!</p>
+                      <p className="text-green-600 text-sm">Du hast erfolgreich EXP gesammelt:</p>
+                    </div>
+                    
+                    <div className="space-y-2 mb-4">
+                      {expGained.likes > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-blue-600">❤️ Likes (+{expGained.likes}):</span>
+                          <span className="font-bold text-green-600">+{expGained.likes * 10} EXP</span>
+                        </div>
+                      )}
+                      {expGained.shares > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-blue-600">🔁 Shares (+{expGained.shares}):</span>
+                          <span className="font-bold text-green-600">+{expGained.shares * 10} EXP</span>
+                        </div>
+                      )}
+                      <div className="border-t border-green-300 pt-2 mt-2">
+                        <div className="flex justify-between font-bold">
+                          <span className="text-green-700">Gesamt EXP:</span>
+                          <span className="text-green-600 text-lg">+{expGained.total} EXP</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-center mb-4">
+                      <p className="text-green-600 text-xs mb-3">Lade die Seite neu, um deine neuen EXP zu sehen!</p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center mb-4">
+                    <p className="text-orange-700 font-bold text-lg">😔 Keine neuen Interaktionen</p>
+                    <p className="text-orange-600 text-sm mb-3">Es wurden keine neuen Likes oder Shares erkannt. Du kannst die Werte zurücksetzen und es erneut versuchen.</p>
+                  </div>
+                )}
+                
+                <button 
+                  onClick={() => {
+                    if (typeof window !== 'undefined') {
+                      // Nur Like/Share Verification Daten löschen
+                      localStorage.removeItem("dfaith_likeStart");
+                      localStorage.removeItem("dfaith_shareStart");
+                      
+                      // Seite neu laden
+                      window.location.href = window.location.pathname + '?tab=facebook' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
+                    }
+                  }}
+                  className={`w-full p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg ${
+                    expGained && expGained.total > 0 
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
+                      : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white'
+                  }`}
+                >
+                  🔄 Seite neu laden
+                </button>
               </div>
             )}
             
             <div className="flex gap-3">
               <button 
-                onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    localStorage.clear();
-                    window.location.href = window.location.pathname + '?tab=facebook' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
-                  }
-                }}
-                className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
-              >
-                🔄 Neu laden
-              </button>
-              <button 
                 onClick={() => setShowLikeSaveModal(false)}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
               >
                 ❌ Schließen
               </button>
