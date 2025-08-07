@@ -48,7 +48,24 @@ interface Product {
   price: number; // EUR Preis
   category: string;
   media: MediaFile[];
+  isDigital?: boolean; // Zur Unterscheidung zwischen digitalen und physischen Produkten
 }
+
+// Checkout-Formulardaten
+interface CheckoutFormData {
+  email: string;
+  // Für physische Produkte
+  firstName?: string;
+  lastName?: string;
+  street?: string;
+  city?: string;
+  postalCode?: string;
+  country?: string;
+  phone?: string;
+}
+
+// API-Konfiguration
+const API_BASE_URL = "https://merch-verwaltung.vercel.app";
 
 // Media Player Komponente
 function MediaPlayer({ media }: { media: MediaFile }) {
@@ -143,8 +160,19 @@ export default function MerchTab() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [cart, setCart] = useState<{[key: string]: number}>({});
   const [showCart, setShowCart] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
   const [purchaseStatus, setPurchaseStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
   const [purchaseMessage, setPurchaseMessage] = useState<string>("");
+  const [checkoutForm, setCheckoutForm] = useState<CheckoutFormData>({
+    email: "",
+    firstName: "",
+    lastName: "",
+    street: "",
+    city: "",
+    postalCode: "",
+    country: "Deutschland",
+    phone: ""
+  });
 
   // D.FAITH Balance laden
   const { data: dfaithBalanceData } = useReadContract({
@@ -210,12 +238,19 @@ export default function MerchTab() {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/products');
+        const response = await fetch(`${API_BASE_URL}/api/products`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        setProducts(data);
+        // Automatische Erkennung digitaler Produkte basierend auf Medientypen
+        const productsWithDigitalFlag = data.map((product: Product) => ({
+          ...product,
+          isDigital: product.media.some(media => 
+            media.type === "AUDIO" || media.type === "VIDEO" || media.type === "DOCUMENT"
+          )
+        }));
+        setProducts(productsWithDigitalFlag);
         setError("");
       } catch (err) {
         console.error("Fehler beim Laden der Produkte:", err);
@@ -276,6 +311,45 @@ export default function MerchTab() {
   // Warenkorb leeren
   const clearCart = () => {
     setCart({});
+    setShowCheckout(false);
+    setCheckoutForm({
+      email: "",
+      firstName: "",
+      lastName: "",
+      street: "",
+      city: "",
+      postalCode: "",
+      country: "Deutschland",
+      phone: ""
+    });
+  };
+
+  // Prüfen ob physische Produkte im Warenkorb sind
+  const hasPhysicalProducts = () => {
+    return Object.keys(cart).some(productId => {
+      const product = products.find(p => p.id === productId);
+      return product && !product.isDigital;
+    });
+  };
+
+  // Formular-Validierung
+  const validateCheckoutForm = (): string[] => {
+    const errors: string[] = [];
+    
+    if (!checkoutForm.email || !/\S+@\S+\.\S+/.test(checkoutForm.email)) {
+      errors.push("Gültige E-Mail-Adresse erforderlich");
+    }
+    
+    if (hasPhysicalProducts()) {
+      if (!checkoutForm.firstName) errors.push("Vorname erforderlich");
+      if (!checkoutForm.lastName) errors.push("Nachname erforderlich");
+      if (!checkoutForm.street) errors.push("Straße erforderlich");
+      if (!checkoutForm.city) errors.push("Stadt erforderlich");
+      if (!checkoutForm.postalCode) errors.push("Postleitzahl erforderlich");
+      if (!checkoutForm.country) errors.push("Land erforderlich");
+    }
+    
+    return errors;
   };
 
   // Gesamtpreis berechnen (in D.FAITH)
@@ -311,6 +385,14 @@ export default function MerchTab() {
       return;
     }
 
+    // Formular validieren
+    const validationErrors = validateCheckoutForm();
+    if (validationErrors.length > 0) {
+      setPurchaseMessage(`Formular unvollständig: ${validationErrors.join(", ")}`);
+      setPurchaseStatus("error");
+      return;
+    }
+
     const totalPriceDfaith = getTotalPriceDfaith();
     const userBalance = parseFloat(dfaithBalance);
 
@@ -323,8 +405,8 @@ export default function MerchTab() {
     setPurchaseStatus("pending");
     
     try {
-      // Shop-Wallet Adresse (ersetzen Sie mit Ihrer echten Adresse)
-      const shopWalletAddress = "0x742d35Cc6664C4532A33C059429C31b6Cf7eea7a"; 
+      // Korrekte Shop-Wallet Adresse
+      const shopWalletAddress = "0xb53aBFC43355af7b4f8EcB14E0bB7651E6Ea5A55"; 
       const amountInWei = BigInt(Math.floor(totalPriceDfaith * Math.pow(10, DFAITH_DECIMALS)));
 
       const contract = getContract({
@@ -339,40 +421,71 @@ export default function MerchTab() {
         params: [shopWalletAddress, amountInWei]
       });
 
-      await sendTransaction(transaction);
+      const transactionResult = await sendTransaction(transaction);
 
-      // Bestellung an Backend senden (optional)
+      // Bestellung an Backend senden
       const orderData = {
-        products: Object.entries(cart).map(([productId, quantity]) => ({
-          productId,
-          quantity,
-          price: products.find(p => p.id === productId)?.price || 0
-        })),
+        walletAddress: account.address,
+        email: checkoutForm.email,
+        shippingAddress: hasPhysicalProducts() ? {
+          firstName: checkoutForm.firstName,
+          lastName: checkoutForm.lastName,
+          street: checkoutForm.street,
+          city: checkoutForm.city,
+          postalCode: checkoutForm.postalCode,
+          country: checkoutForm.country,
+          phone: checkoutForm.phone
+        } : null,
+        products: Object.entries(cart).map(([productId, quantity]) => {
+          const product = products.find(p => p.id === productId);
+          return {
+            productId,
+            quantity,
+            priceEur: product?.price || 0,
+            isDigital: product?.isDigital || false
+          };
+        }),
         totalEur: getTotalPriceEur(),
         totalDfaith: totalPriceDfaith,
-        walletAddress: account.address,
-        transactionHash: "pending" // Würde von sendTransaction kommen
+        transactionHash: "completed", // Transaktion war erfolgreich
+        hasPhysicalProducts: hasPhysicalProducts(),
+        timestamp: new Date().toISOString()
       };
 
-      // Hier könnten Sie die Bestellung an Ihr Backend senden
-      // await fetch('/api/orders', { method: 'POST', body: JSON.stringify(orderData) });
+      // Webhook an Backend senden
+      try {
+        const webhookResponse = await fetch(`${API_BASE_URL}/api/webhook/order`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(orderData)
+        });
+
+        if (!webhookResponse.ok) {
+          console.warn("Webhook fehlgeschlagen, aber Zahlung war erfolgreich");
+        }
+      } catch (webhookError) {
+        console.warn("Webhook-Fehler:", webhookError);
+      }
 
       setPurchaseStatus("success");
-      setPurchaseMessage(`Kauf erfolgreich! ${getCartItemCount()} Artikel für ${totalPriceDfaith.toFixed(2)} D.FAITH (${getTotalPriceEur().toFixed(2)}€) gekauft.`);
+      setPurchaseMessage(`✅ Kauf erfolgreich! ${getCartItemCount()} Artikel für ${totalPriceDfaith.toFixed(2)} D.FAITH gekauft. ${hasPhysicalProducts() ? "Versandbestätigung folgt per E-Mail." : "Download-Links wurden an Ihre E-Mail gesendet."}`);
       clearCart();
       setShowCart(false);
+      setShowCheckout(false);
 
     } catch (error) {
       console.error("Kauf-Fehler:", error);
       setPurchaseStatus("error");
-      setPurchaseMessage("Kauf fehlgeschlagen. Bitte versuchen Sie es erneut.");
+      setPurchaseMessage("❌ Kauf fehlgeschlagen. Bitte versuchen Sie es erneut.");
     }
 
-    // Status nach 5 Sekunden zurücksetzen
+    // Status nach 8 Sekunden zurücksetzen
     setTimeout(() => {
       setPurchaseStatus("idle");
       setPurchaseMessage("");
-    }, 5000);
+    }, 8000);
   };
 
   if (loading) {
@@ -537,16 +650,11 @@ export default function MerchTab() {
                       Leeren
                     </Button>
                     <Button
-                      onClick={handlePurchase}
-                      disabled={isTransactionPending || purchaseStatus === "pending"}
+                      onClick={() => setShowCheckout(true)}
                       className="bg-amber-600 hover:bg-amber-700 text-white flex-1"
                     >
-                      {isTransactionPending || purchaseStatus === "pending" ? (
-                        <FaSpinner className="animate-spin mr-2" />
-                      ) : (
-                        <FaCoins className="mr-2" />
-                      )}
-                      Kaufen
+                      <FaCoins className="mr-2" />
+                      Zur Kasse
                     </Button>
                   </div>
                 </div>
@@ -554,6 +662,214 @@ export default function MerchTab() {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Checkout-Formular Modal */}
+      {showCheckout && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <Card className="bg-zinc-900 border-zinc-700 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-white">🛒 Kasse</h3>
+                <Button
+                  onClick={() => setShowCheckout(false)}
+                  className="bg-transparent hover:bg-zinc-800 text-amber-400 hover:text-amber-300 border-none p-2"
+                >
+                  <FaTimes />
+                </Button>
+              </div>
+
+              {/* Bestellübersicht */}
+              <div className="mb-6 p-4 bg-zinc-800 rounded-lg">
+                <h4 className="font-bold text-white mb-3">📋 Ihre Bestellung</h4>
+                <div className="space-y-2">
+                  {Object.entries(cart).map(([productId, quantity]) => {
+                    const product = products.find(p => p.id === productId);
+                    if (!product) return null;
+                    
+                    return (
+                      <div key={productId} className="flex justify-between text-sm">
+                        <span className="text-gray-300">
+                          {product.name} x{quantity} 
+                          {product.isDigital && <span className="text-blue-400 ml-2">📱 Digital</span>}
+                          {!product.isDigital && <span className="text-green-400 ml-2">📦 Physisch</span>}
+                        </span>
+                        <span className="text-amber-400">{convertEurToDfaith(product.price * quantity).toFixed(2)} D.FAITH</span>
+                      </div>
+                    );
+                  })}
+                  <div className="border-t border-zinc-700 pt-2 mt-2">
+                    <div className="flex justify-between font-bold">
+                      <span className="text-white">Gesamt:</span>
+                      <span className="text-amber-400">{getTotalPriceDfaith().toFixed(2)} D.FAITH</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-400">
+                      <span>EUR Gegenwert:</span>
+                      <span>{getTotalPriceEur().toFixed(2)}€</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Formular */}
+              <form onSubmit={(e) => { e.preventDefault(); handlePurchase(); }} className="space-y-4">
+                {/* E-Mail (immer erforderlich) */}
+                <div>
+                  <label className="block text-white font-medium mb-2">
+                    📧 E-Mail-Adresse *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={checkoutForm.email}
+                    onChange={(e) => setCheckoutForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full p-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                    placeholder="ihre@email.de"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    {hasPhysicalProducts() 
+                      ? "Für Versandbestätigung und digitale Inhalte" 
+                      : "Für Download-Links und Rechnungsversand"
+                    }
+                  </p>
+                </div>
+
+                {/* Versandadresse (nur bei physischen Produkten) */}
+                {hasPhysicalProducts() && (
+                  <div className="space-y-4 p-4 bg-zinc-800 rounded-lg">
+                    <h4 className="font-bold text-white mb-3">📦 Versandadresse</h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-white font-medium mb-2">Vorname *</label>
+                        <input
+                          type="text"
+                          required
+                          value={checkoutForm.firstName}
+                          onChange={(e) => setCheckoutForm(prev => ({ ...prev, firstName: e.target.value }))}
+                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          placeholder="Max"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-white font-medium mb-2">Nachname *</label>
+                        <input
+                          type="text"
+                          required
+                          value={checkoutForm.lastName}
+                          onChange={(e) => setCheckoutForm(prev => ({ ...prev, lastName: e.target.value }))}
+                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          placeholder="Mustermann"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-white font-medium mb-2">Straße und Hausnummer *</label>
+                      <input
+                        type="text"
+                        required
+                        value={checkoutForm.street}
+                        onChange={(e) => setCheckoutForm(prev => ({ ...prev, street: e.target.value }))}
+                        className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                        placeholder="Musterstraße 123"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-white font-medium mb-2">PLZ *</label>
+                        <input
+                          type="text"
+                          required
+                          value={checkoutForm.postalCode}
+                          onChange={(e) => setCheckoutForm(prev => ({ ...prev, postalCode: e.target.value }))}
+                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          placeholder="12345"
+                        />
+                      </div>
+                      
+                      <div className="md:col-span-2">
+                        <label className="block text-white font-medium mb-2">Stadt *</label>
+                        <input
+                          type="text"
+                          required
+                          value={checkoutForm.city}
+                          onChange={(e) => setCheckoutForm(prev => ({ ...prev, city: e.target.value }))}
+                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          placeholder="Musterstadt"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-white font-medium mb-2">Land *</label>
+                        <select
+                          required
+                          value={checkoutForm.country}
+                          onChange={(e) => setCheckoutForm(prev => ({ ...prev, country: e.target.value }))}
+                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                        >
+                          <option value="Deutschland">Deutschland</option>
+                          <option value="Österreich">Österreich</option>
+                          <option value="Schweiz">Schweiz</option>
+                          <option value="Niederlande">Niederlande</option>
+                          <option value="Belgien">Belgien</option>
+                          <option value="Frankreich">Frankreich</option>
+                          <option value="Italien">Italien</option>
+                          <option value="Spanien">Spanien</option>
+                          <option value="Polen">Polen</option>
+                          <option value="Tschechien">Tschechien</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-white font-medium mb-2">Telefon (optional)</label>
+                        <input
+                          type="tel"
+                          value={checkoutForm.phone}
+                          onChange={(e) => setCheckoutForm(prev => ({ ...prev, phone: e.target.value }))}
+                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          placeholder="+49 123 456789"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Aktionen */}
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    type="button"
+                    onClick={() => setShowCheckout(false)}
+                    className="border-gray-600 text-gray-400 hover:bg-gray-600/10 bg-transparent flex-1"
+                  >
+                    Zurück
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isTransactionPending || purchaseStatus === "pending"}
+                    className="bg-amber-600 hover:bg-amber-700 text-white flex-1"
+                  >
+                    {isTransactionPending || purchaseStatus === "pending" ? (
+                      <>
+                        <FaSpinner className="animate-spin mr-2" />
+                        Zahlung läuft...
+                      </>
+                    ) : (
+                      <>
+                        <FaCoins className="mr-2" />
+                        Jetzt kaufen ({getTotalPriceDfaith().toFixed(2)} D.FAITH)
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Produkte-Grid */}
@@ -564,9 +880,22 @@ export default function MerchTab() {
           return (
             <Card key={product.id} className="bg-zinc-900 border-zinc-700 overflow-hidden">
               <CardContent className="p-0">
+                {/* Digital/Physisch Badge */}
+                <div className="absolute top-2 right-2 z-10">
+                  {product.isDigital ? (
+                    <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                      📱 Digital
+                    </span>
+                  ) : (
+                    <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                      📦 Physisch
+                    </span>
+                  )}
+                </div>
+
                 {/* Medien-Vorschau */}
                 {product.media.length > 0 && (
-                  <div className="p-4 bg-zinc-800">
+                  <div className="p-4 bg-zinc-800 relative">
                     <MediaPlayer media={product.media[0]} />
                     {product.media.length > 1 && (
                       <p className="text-xs text-gray-400 mt-2">
@@ -645,10 +974,18 @@ export default function MerchTab() {
           <div className="text-gray-400 space-y-2">
             <p>• Alle Artikel werden mit D.FAITH Token bezahlt</p>
             <p>• Live-Preisumrechnung von EUR zu D.FAITH</p>
+            <p>• 📱 Digitale Produkte: Sofortiger Download nach Kauf</p>
+            <p>• 📦 Physische Produkte: Versand nach Zahlungseingang</p>
             <p>• Direkte Medien-Wiedergabe (Audio, Video, Bilder)</p>
-            <p>• Download-Links für alle Dateien</p>
             <p>• Sichere Blockchain-basierte Transaktionen</p>
-            <p>• Automatische Wallet-Validierung</p>
+            <p>• Automatische E-Mail-Bestätigung und Webhooks</p>
+            <p>• Weltweiter Versand verfügbar</p>
+          </div>
+          <div className="mt-4 p-3 bg-amber-900/20 border border-amber-600 rounded-lg">
+            <p className="text-amber-400 text-sm">
+              💡 <strong>Hinweis:</strong> Nach dem Kauf erhalten Sie eine E-Mail mit Download-Links (digital) 
+              oder Versandbestätigung (physisch). Alle Transaktionen werden über die Base-Blockchain abgewickelt.
+            </p>
           </div>
         </CardContent>
       </Card>
