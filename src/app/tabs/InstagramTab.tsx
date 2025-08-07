@@ -527,6 +527,14 @@ export default function InstagramTab() {
             ) : null}
             
             <p className="mb-4 text-gray-700">Gib deine Wallet-Adresse ein, um deine Belohnung zu erhalten:</p>
+            
+            {walletInput && walletInput.startsWith("0x") && (
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-4 text-center">
+                <p className="text-gray-800 mb-2">
+                  Du kannst <strong className="text-purple-600">+{userData.miningpower} D.FAITH</strong> für deine Instagram Aktivität claimen!
+                </p>
+              </div>
+            )}
             <div className="relative mb-6">
               <input 
                 type="text"
