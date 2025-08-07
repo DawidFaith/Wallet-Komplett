@@ -139,7 +139,6 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
               <FaMusic className="text-2xl text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-white font-semibold text-lg truncate">{media.originalName}</h3>
               <p className="text-gray-400 text-sm">{(media.size / 1024 / 1024).toFixed(2)} MB</p>
             </div>
           </div>
@@ -257,7 +256,6 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
             </div>
           </div>
           <div className="p-4">
-            <h3 className="text-white font-semibold truncate">{media.originalName}</h3>
             <p className="text-gray-400 text-sm">{(media.size / 1024 / 1024).toFixed(2)} MB</p>
           </div>
         </div>
@@ -282,7 +280,6 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
             </button>
           </div>
           <div className="p-4">
-            <h3 className="text-white font-semibold truncate">{media.originalName}</h3>
             <p className="text-gray-400 text-sm">{(media.size / 1024 / 1024).toFixed(2)} MB</p>
           </div>
         </div>
@@ -295,11 +292,10 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
             <div className="w-16 h-16 bg-gradient-to-br from-gray-500 to-gray-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
               <FaDownload className="text-2xl text-white" />
             </div>
-            <h3 className="text-white font-semibold text-lg mb-2">{media.originalName}</h3>
             <p className="text-gray-400 text-sm mb-4">{(media.size / 1024 / 1024).toFixed(2)} MB</p>
             <a 
               href={media.url} 
-              download={media.originalName}
+              download="file"
               className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
             >
               <FaDownload />
@@ -799,6 +795,20 @@ export default function MerchTab() {
     );
   }
 
+  // Modal-Hintergrund fixieren
+  useEffect(() => {
+    if (showCart || showCheckout) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    // Cleanup
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showCart, showCheckout]);
+
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-zinc-900 to-zinc-800 text-white">
       {/* Header */}
@@ -811,7 +821,7 @@ export default function MerchTab() {
       <div className="fixed bottom-6 right-6 z-50">
         <Button
           onClick={() => setShowCart(!showCart)}
-          className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white relative shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 rounded-full w-16 h-16 p-0"
+          className="bg-gradient-to-r from-amber-600/80 to-amber-700/80 hover:from-amber-700/90 hover:to-amber-800/90 backdrop-blur-sm text-white relative shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 rounded-full w-16 h-16 p-0 flex items-center justify-center"
         >
           <FaShoppingCart className="text-xl" />
           {getCartItemCount() > 0 && (
@@ -1174,8 +1184,11 @@ export default function MerchTab() {
 
       {/* Warenkorb Sidebar - Erweitert mit D.FAITH Balance */}
       {showCart && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowCart(false)}></div>
+        <div className="fixed inset-0 z-50 overflow-hidden" style={{ position: 'fixed' }}>
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+            onClick={() => setShowCart(false)}
+          ></div>
           <div className="absolute right-0 top-0 h-full w-96 bg-zinc-900 border-l border-zinc-700 shadow-2xl">
             <div className="flex flex-col h-full">
               {/* Header */}
@@ -1187,9 +1200,9 @@ export default function MerchTab() {
                   </h3>
                   <Button
                     onClick={() => setShowCart(false)}
-                    className="bg-transparent hover:bg-zinc-800 text-amber-400 hover:text-amber-300 border-none p-2"
+                    className="bg-zinc-800 hover:bg-zinc-700 text-red-400 hover:text-red-300 border border-zinc-600 hover:border-red-500 p-2 rounded-lg transition-all duration-200"
                   >
-                    <FaTimes />
+                    <FaTimes className="text-lg" />
                   </Button>
                 </div>
                 
@@ -1286,16 +1299,20 @@ export default function MerchTab() {
 
       {/* Checkout Modal */}
       {showCheckout && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto rounded-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden" style={{ position: 'fixed' }}>
+          <div 
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
+            onClick={() => setShowCheckout(false)}
+          ></div>
+          <div className="relative bg-zinc-900 border border-zinc-700 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto rounded-xl">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold text-white">🛒 Kasse</h3>
                 <Button
                   onClick={() => setShowCheckout(false)}
-                  className="bg-transparent hover:bg-zinc-800 text-amber-400 hover:text-amber-300 border-none p-2"
+                  className="bg-zinc-800 hover:bg-zinc-700 text-red-400 hover:text-red-300 border border-zinc-600 hover:border-red-500 p-2 rounded-lg transition-all duration-200"
                 >
-                  <FaTimes />
+                  <FaTimes className="text-lg" />
                 </Button>
               </div>
 
