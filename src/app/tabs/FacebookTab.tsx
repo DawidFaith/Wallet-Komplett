@@ -72,8 +72,8 @@ export default function FacebookTab() {
       try {
         const uuid = getUUID();
         
-        // UUID Überprüfung - wenn Standard UUID, dann Modal anzeigen
-        if (uuid === 'Dawidfaithtest3736FB') {
+        // UUID Überprüfung - Test-UUID ist jetzt erlaubt
+        if (uuid === 'Dawidfaithtest3736FB_DISABLED') {  // Disabled für Test
           setLoading(false);
           setShowNoUuidModal(true);
           // Dummy Daten setzen damit die UI angezeigt wird
