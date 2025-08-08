@@ -967,8 +967,8 @@ export default function MerchTab() {
         </div>
       </div>
 
-      {/* Schwebender Warenkorb Button - Unten rechts */}
-      <div className="fixed bottom-6 right-6 z-50">
+      {/* Schwebender Warenkorb Button - Unten links */}
+      <div className="fixed bottom-6 left-6 z-50">
         <Button
           onClick={() => setShowCart(!showCart)}
           className="bg-gradient-to-r from-amber-600/80 to-amber-700/80 hover:from-amber-700/90 hover:to-amber-800/90 backdrop-blur-sm text-white relative shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 rounded-full w-16 h-16 p-0 flex items-center justify-center"
@@ -1216,19 +1216,6 @@ export default function MerchTab() {
           return (
             <Card key={product.id} className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-zinc-600 hover:border-amber-500/50 transition-all duration-300 overflow-hidden group shadow-xl hover:shadow-2xl hover:shadow-amber-500/10">
               <CardContent className="p-0 relative">
-                {/* Digital/Physisch Badge */}
-                <div className="absolute top-3 right-3 z-10">
-                  {product.isDigital ? (
-                    <span className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1 shadow-lg">
-                      📱 Digital
-                    </span>
-                  ) : (
-                    <span className="bg-gradient-to-r from-green-600 to-green-700 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1 shadow-lg">
-                      📦 Physisch
-                    </span>
-                  )}
-                </div>
-
                 {/* Medien-Vorschau */}
                 {product.media.length > 0 && (
                   <div className="bg-gradient-to-br from-zinc-800 to-zinc-900 relative">
@@ -1252,10 +1239,10 @@ export default function MerchTab() {
                                   {/* Gradient Overlay für bessere Lesbarkeit */}
                                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                                   
-                                  {/* Cover Badge */}
+                                  {/* Audio Badge */}
                                   <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
-                                    <FaImage className="text-blue-400 inline mr-1 text-xs" />
-                                    <span className="text-white text-xs font-medium">Cover</span>
+                                    <FaMusic className="text-green-400 inline mr-1 text-xs" />
+                                    <span className="text-white text-xs font-medium">Audio</span>
                                   </div>
                                   
                                   {/* Titel und Beschreibung Overlay */}
