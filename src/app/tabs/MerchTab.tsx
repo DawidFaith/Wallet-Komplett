@@ -1425,11 +1425,13 @@ export default function MerchTab() {
                 {/* D.FAITH Balance - Nur sichtbar wenn Warenkorb offen */}
                 <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-600">
                   <div className="flex items-center gap-2 mb-2">
-                    <FaCoins className="text-amber-400" />
+                    <FaCoins className="text-amber-400 text-sm" />
                     <span className="text-gray-300 text-sm font-medium">Ihr D.FAITH Guthaben</span>
                   </div>
-                  <div className="text-2xl font-bold text-amber-400">{dfaithBalance}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <div className="text-2xl font-bold text-amber-400">{dfaithBalance}</div>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
                     ≈ {dfaithPriceEur > 0 ? `${(parseFloat(dfaithBalance) * dfaithPriceEur).toFixed(2)}€` : "Berechnung..."}
                   </div>
                 </div>
@@ -1501,7 +1503,6 @@ export default function MerchTab() {
                       </div>
                     ) : (
                       <>
-                        <FaCheck className="mr-2" />
                         Zur Kasse
                       </>
                     )}
