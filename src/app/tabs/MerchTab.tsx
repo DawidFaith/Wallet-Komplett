@@ -811,10 +811,45 @@ export default function MerchTab() {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-zinc-900 to-zinc-800 text-white">
-      {/* Header */}
+      {/* Header mit integrierter Kategorie-Auswahl */}
       <div className="p-4 mb-6">
-        <h1 className="text-3xl font-bold text-white mb-2">🛍️ Merch Shop</h1>
-        <p className="text-gray-400">Exklusive Produkte mit D.FAITH kaufen</p>
+        <div className="bg-gradient-to-r from-zinc-900/95 to-zinc-800/95 backdrop-blur-sm rounded-2xl p-6 border border-zinc-700/50 shadow-2xl">
+          {/* Titel-Bereich */}
+          <div className="text-center mb-6">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 bg-clip-text text-transparent mb-3">
+              🛍️ Merch Shop
+            </h1>
+            <p className="text-gray-300 text-lg">Exklusive Produkte mit D.FAITH kaufen</p>
+            <div className="w-24 h-1 bg-gradient-to-r from-amber-500 to-orange-500 mx-auto mt-3 rounded-full"></div>
+          </div>
+          
+          {/* Kategorie-Filter integriert */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-center gap-3">
+              <FaFilter className="text-amber-400 text-lg" />
+              <span className="text-white font-semibold text-lg">Kategorien</span>
+              <div className="px-3 py-1 bg-amber-600/20 rounded-full border border-amber-600/30">
+                <span className="text-amber-300 text-sm font-medium">{filteredProducts.length} Produkt(e)</span>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap justify-center gap-3">
+              {categories.map(category => (
+                <Button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`transition-all duration-300 transform hover:scale-105 ${
+                    selectedCategory === category 
+                      ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white border-amber-600 shadow-lg shadow-amber-600/30 scale-105" 
+                      : "bg-zinc-800/50 border-amber-600/40 text-amber-300 hover:bg-amber-600/20 hover:border-amber-500 hover:text-amber-200 backdrop-blur-sm"
+                  } border rounded-xl px-4 py-2.5 font-medium`}
+                >
+                  {category === "all" ? "🛍️ Alle" : `📂 ${category}`}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Schwebender Warenkorb Button - Unten rechts */}
@@ -848,32 +883,7 @@ export default function MerchTab() {
           </div>
         )}
 
-      {/* Kategorie-Filter - Modernes Design */}
-      <div className="bg-gradient-to-r from-zinc-900 to-zinc-800 rounded-xl p-4 border border-zinc-700 shadow-lg">
-        <div className="flex items-center gap-4 mb-3">
-          <div className="flex items-center gap-2">
-            <FaFilter className="text-amber-400 text-lg" />
-            <span className="text-white font-semibold">Kategorien</span>
-          </div>
-          <div className="h-px bg-zinc-600 flex-1"></div>
-          <span className="text-xs text-gray-400">{filteredProducts.length} Produkt(e)</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {categories.map(category => (
-            <Button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`transition-all duration-200 ${
-                selectedCategory === category 
-                  ? "bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white border-amber-600 shadow-lg scale-105" 
-                  : "bg-transparent border-amber-600/50 text-amber-400 hover:bg-amber-600/10 hover:border-amber-600 hover:text-amber-300"
-              }`}
-            >
-              {category === "all" ? "🛍️ Alle" : `📂 ${category}`}
-            </Button>
-          ))}
-        </div>
-      </div>
+        {/* Produktliste */}
 
       {/* Checkout-Formular Modal */}
       {showCheckout && (
