@@ -1485,6 +1485,19 @@ export default function MerchTab() {
               {/* Footer - Checkout */}
               {Object.keys(cart).length > 0 && (
                 <div className="p-6 border-t border-zinc-700">
+                  {/* Wallet-Verbindungswarnung */}
+                  {!account?.address && (
+                    <div className="mb-4 p-4 bg-red-900/30 border border-red-600/50 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FaTimes className="text-red-400" />
+                        <span className="text-red-300 font-semibold">Keine Wallet verbunden</span>
+                      </div>
+                      <p className="text-red-200 text-sm">
+                        Sie müssen eine Wallet verbinden, um Produkte kaufen zu können.
+                      </p>
+                    </div>
+                  )}
+                  
                   <div className="mb-4">
                     <div className="flex justify-between text-lg font-bold">
                       <span className="text-white">Gesamt:</span>
@@ -1493,14 +1506,18 @@ export default function MerchTab() {
                   </div>
                   <Button
                     onClick={() => setShowCheckout(true)}
-                    className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white py-3"
-                    disabled={purchaseStatus === "pending"}
+                    className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={purchaseStatus === "pending" || !account?.address}
                   >
                     {purchaseStatus === "pending" ? (
                       <div className="flex items-center gap-2">
                         <FaSpinner className="animate-spin" />
                         Verarbeitung...
                       </div>
+                    ) : !account?.address ? (
+                      <>
+                        Wallet verbinden erforderlich
+                      </>
                     ) : (
                       <>
                         Zur Kasse
@@ -1564,6 +1581,22 @@ export default function MerchTab() {
                   </div>
                 </div>
               </div>
+
+              {/* Wallet-Verbindungswarnung im Checkout */}
+              {!account?.address && (
+                <div className="mb-6 p-4 bg-red-900/30 border border-red-600/50 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FaTimes className="text-red-400 text-lg" />
+                    <span className="text-red-300 font-semibold">Keine Wallet verbunden</span>
+                  </div>
+                  <p className="text-red-200 text-sm mb-3">
+                    Um den Kauf abzuschließen, müssen Sie zunächst eine Wallet verbinden.
+                  </p>
+                  <p className="text-red-200 text-xs">
+                    💡 Tipp: Verwenden Sie den Wallet-Tab, um eine Wallet zu erstellen oder zu verbinden.
+                  </p>
+                </div>
+              )}
 
               {/* Formular */}
               <form onSubmit={(e) => { e.preventDefault(); handlePurchase(); }} className="space-y-4">
@@ -1670,14 +1703,18 @@ export default function MerchTab() {
                 <div className="pt-4">
                   <Button
                     type="submit"
-                    disabled={purchaseStatus === "pending"}
-                    className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white py-4 text-lg font-bold"
+                    disabled={purchaseStatus === "pending" || !account?.address}
+                    className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white py-4 text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {purchaseStatus === "pending" ? (
                       <div className="flex items-center justify-center gap-2">
                         <FaSpinner className="animate-spin" />
                         Transaktion läuft...
                       </div>
+                    ) : !account?.address ? (
+                      <>
+                        Wallet verbinden erforderlich
+                      </>
                     ) : (
                       <>
                         Mit {getTotalPriceDfaith().toFixed(2)} D.FAITH kaufen
