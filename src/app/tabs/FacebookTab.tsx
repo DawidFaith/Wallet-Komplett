@@ -385,13 +385,13 @@ export default function FacebookTab() {
             {/* Mining Power mit verbessertem Design */}
             <button 
               onClick={() => setShowMiningPowerModal(true)}
-              className="w-full bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-xl p-3 border border-yellow-500/30 hover:from-yellow-500/30 hover:to-orange-500/30 hover:border-yellow-500/50 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer"
+              className="w-full bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-xl p-3 border border-blue-500/30 hover:from-blue-500/30 hover:to-indigo-500/30 hover:border-blue-500/50 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer"
             >
               <div className="flex items-center justify-center gap-2">
                 <span className="text-2xl animate-bounce">⛏</span>
                 <div className="text-center">
-                  <div className="text-yellow-300 text-sm font-medium">Mining Power</div>
-                  <div className="text-yellow-200 text-lg font-bold">+{userData.miningpower} D.Faith</div>
+                  <div className="text-blue-300 text-sm font-medium">Mining Power</div>
+                  <div className="text-blue-200 text-lg font-bold">+{userData.miningpower} D.Faith</div>
                 </div>
               </div>
             </button>
@@ -431,7 +431,7 @@ export default function FacebookTab() {
             </button>
             <button 
               onClick={() => setShowClaimModal(true)}
-              className="relative flex-1 bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 px-4 py-4 rounded-2xl font-bold text-sm text-gray-900 overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/25 border border-yellow-300/50"
+              className="relative flex-1 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 px-4 py-4 rounded-2xl font-bold text-sm text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 border border-blue-300/50"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               <div className="relative flex items-center justify-center gap-1">

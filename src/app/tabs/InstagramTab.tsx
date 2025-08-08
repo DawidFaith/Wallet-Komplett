@@ -419,13 +419,13 @@ export default function InstagramTab() {
             {/* Mining Power mit verbessertem Design */}
             <button 
               onClick={() => setShowMiningPowerModal(true)}
-              className="w-full bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-xl p-3 border border-yellow-500/30 hover:from-yellow-500/30 hover:to-orange-500/30 hover:border-yellow-500/50 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer"
+              className="w-full bg-gradient-to-r from-pink-500/20 to-rose-500/20 rounded-xl p-3 border border-pink-500/30 hover:from-pink-500/30 hover:to-rose-500/30 hover:border-pink-500/50 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer"
             >
               <div className="flex items-center justify-center gap-2">
                 <span className="text-2xl animate-bounce">⛏</span>
                 <div className="text-center">
-                  <div className="text-yellow-300 text-sm font-medium">Mining Power</div>
-                  <div className="text-yellow-200 text-lg font-bold">+{userData.miningpower} D.Faith</div>
+                  <div className="text-pink-300 text-sm font-medium">Mining Power</div>
+                  <div className="text-pink-200 text-lg font-bold">+{userData.miningpower} D.Faith</div>
                 </div>
               </div>
             </button>
@@ -469,7 +469,7 @@ export default function InstagramTab() {
             </button>
             <button 
               onClick={() => setShowClaimModal(true)}
-              className="relative flex-1 bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 px-4 py-4 rounded-2xl font-bold text-sm text-gray-900 overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/25 border border-yellow-300/50"
+              className="relative flex-1 bg-gradient-to-r from-pink-400 via-pink-500 to-rose-500 px-4 py-4 rounded-2xl font-bold text-sm text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-pink-500/25 border border-pink-300/50"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               <div className="relative flex items-center justify-center gap-1">
