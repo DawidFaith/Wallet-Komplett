@@ -967,11 +967,11 @@ export default function MerchTab() {
         </div>
       </div>
 
-      {/* Schwebender Warenkorb Button - Unten links */}
-      <div className="fixed bottom-6 left-6 z-50">
+      {/* Schwebender Warenkorb Button - Unten rechts */}
+      <div className="fixed bottom-6 right-6 z-50">
         <Button
           onClick={() => setShowCart(!showCart)}
-          className="bg-gradient-to-r from-amber-600/80 to-amber-700/80 hover:from-amber-700/90 hover:to-amber-800/90 backdrop-blur-sm text-white relative shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 rounded-full w-16 h-16 p-0 flex items-center justify-center"
+          className="bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white relative shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 rounded-full w-16 h-16 p-0 flex items-center justify-center border border-white/20"
         >
           <FaShoppingCart className="text-xl" />
           {getCartItemCount() > 0 && (
