@@ -1680,7 +1680,6 @@ export default function MerchTab() {
                       </div>
                     ) : (
                       <>
-                        <FaCoins className="mr-2" />
                         Mit {getTotalPriceDfaith().toFixed(2)} D.FAITH kaufen
                       </>
                     )}
