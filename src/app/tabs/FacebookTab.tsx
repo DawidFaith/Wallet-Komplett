@@ -917,19 +917,19 @@ export default function FacebookTab() {
               ×
             </button>
             <div className="flex flex-col items-center gap-4 mb-6">
-              <div className="w-20 h-20 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+              <div className="w-20 h-20 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
                 <span className="text-3xl text-white">⛏</span>
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">Mining Power Info</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">Mining Power Info</h2>
             </div>
             
-            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-800 leading-relaxed mb-4">
-                Deine <strong className="text-orange-600">Mining Power</strong> ist abhängig von verschiedenen Faktoren:
+                Deine <strong className="text-blue-600">Mining Power</strong> ist abhängig von verschiedenen Faktoren:
               </p>
               
               <div className="space-y-3 text-left">
-                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-yellow-300">
+                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-300">
                   <span className="text-xl">💰</span>
                   <div>
                     <div className="font-bold text-gray-800">Marketing Budget</div>
@@ -937,7 +937,7 @@ export default function FacebookTab() {
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-yellow-300">
+                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-300">
                   <span className="text-xl">📊</span>
                   <div>
                     <div className="font-bold text-gray-800">Dein Level</div>
@@ -945,7 +945,7 @@ export default function FacebookTab() {
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-yellow-300">
+                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-300">
                   <span className="text-xl">💎</span>
                   <div>
                     <div className="font-bold text-gray-800">D.FAITH Preis</div>
@@ -955,15 +955,15 @@ export default function FacebookTab() {
               </div>
             </div>
             
-            <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 mb-4">
-              <p className="text-orange-800 font-medium text-sm">
+            <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 mb-4">
+              <p className="text-indigo-800 font-medium text-sm">
                 ⚡ <strong>Aktuell:</strong> +{userData?.miningpower || 0} D.Faith pro Beitrag
               </p>
             </div>
             
             <button 
               onClick={() => setShowMiningPowerModal(false)}
-              className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
             >
               ✅ Verstanden
             </button>
