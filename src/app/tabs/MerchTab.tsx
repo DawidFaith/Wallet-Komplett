@@ -956,7 +956,7 @@ export default function MerchTab() {
                   className={`transition-all duration-300 transform hover:scale-105 ${
                     selectedCategory === category 
                       ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white border-amber-600 shadow-lg shadow-amber-600/30 scale-105" 
-                      : "bg-zinc-800/50 border-amber-600/40 text-amber-200 hover:bg-amber-600/20 hover:border-amber-500 hover:text-amber-100 backdrop-blur-sm"
+                      : "bg-zinc-800/50 border-amber-600/40 text-white hover:bg-amber-600/20 hover:border-amber-500 hover:text-white backdrop-blur-sm"
                   } border rounded-xl px-4 py-2.5 font-medium`}
                 >
                   {category === "all" ? "🛍️ Alle" : `📂 ${category}`}
