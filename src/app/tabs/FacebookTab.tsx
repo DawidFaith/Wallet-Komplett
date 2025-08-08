@@ -481,7 +481,7 @@ export default function FacebookTab() {
             >
               ×
             </button>
-            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
+            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent flex items-center justify-center gap-2">
               <span className="text-xl animate-bounce">🪙</span>
               <span>D.FAITH Claim</span>
             </h2>
