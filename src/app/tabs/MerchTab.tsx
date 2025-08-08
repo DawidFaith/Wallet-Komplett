@@ -1290,6 +1290,32 @@ export default function MerchTab() {
                           );
                         })()}
                       </div>
+                    ) : product.media[0]?.type === "VIDEO" ? (
+                      /* Spezielle Darstellung für Videos - Titel/Beschreibung unter dem Video */
+                      <div className="relative">
+                        <EnhancedMediaPlayer media={product.media[0]} />
+                        
+                        {/* Titel und Beschreibung unter dem Video */}
+                        <div className="p-4 bg-zinc-800/80 backdrop-blur-sm">
+                          <div className="flex items-start justify-between mb-2">
+                            <h3 className="text-white font-bold text-lg leading-tight flex-1 mr-2">{product.name}</h3>
+                            <span className="text-xs bg-gradient-to-r from-amber-600 to-amber-700 text-white px-2 py-1 rounded-full shadow-sm whitespace-nowrap">
+                              {product.category}
+                            </span>
+                          </div>
+                          <p className="text-gray-300 text-sm line-clamp-2 leading-relaxed">
+                            {product.description}
+                          </p>
+                        </div>
+                        
+                        {product.media.length > 1 && (
+                          <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
+                            <p className="text-xs text-white font-medium">
+                              +{product.media.length - 1} weitere
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       /* Standard-Darstellung für andere Kategorien mit Overlay */
                       <div className="relative">
@@ -1322,27 +1348,52 @@ export default function MerchTab() {
                 )}
                 
                 <div className="p-6">
-                  {/* Nur noch Preis und Button, da Titel/Beschreibung jetzt im Overlay sind */}
-                  <div className="flex justify-between items-end">
-                    <div className="space-y-1">
-                      <div className="text-amber-400 font-bold text-lg flex items-center gap-2">
-                        <FaCoins className="text-amber-500" />
-                        {dfaithPrice.toFixed(2)} D.FAITH
+                  {/* Für Videos wird Titel/Beschreibung bereits über dem Video angezeigt */}
+                  {product.media.length > 0 && product.media[0]?.type === "VIDEO" ? (
+                    /* Nur Preis und Button für Videos */
+                    <div className="flex justify-between items-end">
+                      <div className="space-y-1">
+                        <div className="text-amber-400 font-bold text-lg flex items-center gap-2">
+                          <FaCoins className="text-amber-500" />
+                          {dfaithPrice.toFixed(2)} D.FAITH
+                        </div>
+                        <div className="text-gray-400 text-sm flex items-center gap-1.5">
+                          <FaEuroSign className="text-xs" />
+                          {product.price.toFixed(2)} EUR
+                        </div>
                       </div>
-                      <div className="text-gray-400 text-sm flex items-center gap-1.5">
-                        <FaEuroSign className="text-xs" />
-                        {product.price.toFixed(2)} EUR
-                      </div>
+                      
+                      <Button
+                        onClick={() => addToCart(product.id)}
+                        className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-1 px-4 py-2"
+                      >
+                        <span className="text-lg font-bold">+</span>
+                        <FaShoppingCart className="text-sm" />
+                      </Button>
                     </div>
-                    
-                    <Button
-                      onClick={() => addToCart(product.id)}
-                      className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-1 px-4 py-2"
-                    >
-                      <span className="text-lg font-bold">+</span>
-                      <FaShoppingCart className="text-sm" />
-                    </Button>
-                  </div>
+                  ) : (
+                    /* Standard Layout für MP3 und andere Kategorien (ohne Titel/Beschreibung) */
+                    <div className="flex justify-between items-end">
+                      <div className="space-y-1">
+                        <div className="text-amber-400 font-bold text-lg flex items-center gap-2">
+                          <FaCoins className="text-amber-500" />
+                          {dfaithPrice.toFixed(2)} D.FAITH
+                        </div>
+                        <div className="text-gray-400 text-sm flex items-center gap-1.5">
+                          <FaEuroSign className="text-xs" />
+                          {product.price.toFixed(2)} EUR
+                        </div>
+                      </div>
+                      
+                      <Button
+                        onClick={() => addToCart(product.id)}
+                        className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-1 px-4 py-2"
+                      >
+                        <span className="text-lg font-bold">+</span>
+                        <FaShoppingCart className="text-sm" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
