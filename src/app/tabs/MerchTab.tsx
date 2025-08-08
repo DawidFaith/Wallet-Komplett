@@ -1117,13 +1117,60 @@ export default function MerchTab() {
                 {/* Medien-Vorschau */}
                 {product.media.length > 0 && (
                   <div className="bg-gradient-to-br from-zinc-800 to-zinc-900 relative">
-                    <EnhancedMediaPlayer media={product.media[0]} />
-                    {product.media.length > 1 && (
-                      <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
-                        <p className="text-xs text-white font-medium">
-                          +{product.media.length - 1} weitere
-                        </p>
+                    {/* Spezielle Darstellung für MP3-Kategorie */}
+                    {product.category === "MP3" && product.media.length >= 2 ? (
+                      <div className="space-y-2 p-3">
+                        {/* Bild anzeigen (erstes Medium wenn es ein Bild ist, sonst nach Bild suchen) */}
+                        {(() => {
+                          const imageMedia = product.media.find(media => media.type === "IMAGE") || product.media.find(media => media.type !== "AUDIO");
+                          const audioMedia = product.media.find(media => media.type === "AUDIO");
+                          
+                          return (
+                            <>
+                              {imageMedia && (
+                                <div className="w-full h-48 rounded-lg overflow-hidden relative group">
+                                  <img 
+                                    src={imageMedia.url} 
+                                    alt={imageMedia.originalName}
+                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                  />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                  <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
+                                    <FaImage className="text-blue-400 inline mr-1 text-xs" />
+                                    <span className="text-white text-xs font-medium">Cover</span>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {audioMedia && (
+                                <div className="mt-2">
+                                  <EnhancedMediaPlayer media={audioMedia} />
+                                </div>
+                              )}
+                              
+                              {product.media.length > 2 && (
+                                <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
+                                  <p className="text-xs text-white font-medium">
+                                    +{product.media.length - 2} weitere
+                                  </p>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
+                    ) : (
+                      /* Standard-Darstellung für andere Kategorien */
+                      <>
+                        <EnhancedMediaPlayer media={product.media[0]} />
+                        {product.media.length > 1 && (
+                          <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
+                            <p className="text-xs text-white font-medium">
+                              +{product.media.length - 1} weitere
+                            </p>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
@@ -1169,9 +1216,12 @@ export default function MerchTab() {
                     
                     <Button
                       onClick={() => addToCart(product.id)}
-                      className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                      className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
                     >
-                      <FaShoppingCart className="mr-2" />
+                      <div className="flex items-center gap-1">
+                        <span className="text-lg font-bold">+</span>
+                        <FaShoppingCart className="text-sm" />
+                      </div>
                       Hinzufügen
                     </Button>
                   </div>
