@@ -956,7 +956,7 @@ export default function MerchTab() {
                   className={`transition-all duration-300 transform hover:scale-105 ${
                     selectedCategory === category 
                       ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white border-amber-600 shadow-lg shadow-amber-600/30 scale-105" 
-                      : "bg-zinc-800/50 border-amber-600/40 text-amber-300 hover:bg-amber-600/20 hover:border-amber-500 hover:text-amber-200 backdrop-blur-sm"
+                      : "bg-zinc-800/50 border-amber-600/40 text-amber-200 hover:bg-amber-600/20 hover:border-amber-500 hover:text-amber-100 backdrop-blur-sm"
                   } border rounded-xl px-4 py-2.5 font-medium`}
                 >
                   {category === "all" ? "🛍️ Alle" : `📂 ${category}`}
@@ -1234,7 +1234,7 @@ export default function MerchTab() {
                   <div className="bg-gradient-to-br from-zinc-800 to-zinc-900 relative">
                     {/* Spezielle Darstellung für MP3-Kategorie */}
                     {product.category === "MP3" && product.media.length >= 2 ? (
-                      <div className="space-y-2 p-3">
+                      <div className="space-y-2 p-3 relative">
                         {/* Bild anzeigen (erstes Medium wenn es ein Bild ist, sonst nach Bild suchen) */}
                         {(() => {
                           const imageMedia = product.media.find(media => media.type === "IMAGE") || product.media.find(media => media.type !== "AUDIO");
@@ -1249,10 +1249,26 @@ export default function MerchTab() {
                                     alt={imageMedia.originalName}
                                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                                   />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                  {/* Gradient Overlay für bessere Lesbarkeit */}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                                  
+                                  {/* Cover Badge */}
                                   <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
                                     <FaImage className="text-blue-400 inline mr-1 text-xs" />
                                     <span className="text-white text-xs font-medium">Cover</span>
+                                  </div>
+                                  
+                                  {/* Titel und Beschreibung Overlay */}
+                                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                                    <div className="flex items-start justify-between mb-2">
+                                      <h3 className="font-bold text-lg leading-tight flex-1 mr-2">{product.name}</h3>
+                                      <span className="text-xs bg-gradient-to-r from-amber-600/90 to-amber-700/90 backdrop-blur-sm text-white px-2 py-1 rounded-full shadow-sm whitespace-nowrap">
+                                        {product.category}
+                                      </span>
+                                    </div>
+                                    <p className="text-gray-200 text-sm line-clamp-2 leading-relaxed">
+                                      {product.description}
+                                    </p>
                                   </div>
                                 </div>
                               )}
@@ -1275,9 +1291,24 @@ export default function MerchTab() {
                         })()}
                       </div>
                     ) : (
-                      /* Standard-Darstellung für andere Kategorien */
-                      <>
+                      /* Standard-Darstellung für andere Kategorien mit Overlay */
+                      <div className="relative">
                         <EnhancedMediaPlayer media={product.media[0]} />
+                        
+                        {/* Titel und Beschreibung Overlay für alle anderen Kategorien */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
+                        <div className="absolute bottom-0 left-0 right-0 p-4 text-white opacity-0 hover:opacity-100 transition-opacity duration-300">
+                          <div className="flex items-start justify-between mb-2">
+                            <h3 className="font-bold text-lg leading-tight flex-1 mr-2">{product.name}</h3>
+                            <span className="text-xs bg-gradient-to-r from-amber-600/90 to-amber-700/90 backdrop-blur-sm text-white px-2 py-1 rounded-full shadow-sm whitespace-nowrap">
+                              {product.category}
+                            </span>
+                          </div>
+                          <p className="text-gray-200 text-sm line-clamp-2 leading-relaxed">
+                            {product.description}
+                          </p>
+                        </div>
+                        
                         {product.media.length > 1 && (
                           <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
                             <p className="text-xs text-white font-medium">
@@ -1285,39 +1316,14 @@ export default function MerchTab() {
                             </p>
                           </div>
                         )}
-                      </>
+                      </div>
                     )}
                   </div>
                 )}
                 
                 <div className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-white font-bold text-lg leading-tight">{product.name}</h3>
-                    <span className="text-xs bg-gradient-to-r from-amber-600 to-amber-700 text-white px-3 py-1 rounded-full shadow-sm">
-                      {product.category}
-                    </span>
-                  </div>
-                  
-                  <p className="text-gray-300 text-sm mb-4 line-clamp-3 leading-relaxed">
-                    {product.description}
-                  </p>
-                  
-                  {/* Medien-Übersicht */}
-                  {product.media.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {product.media.slice(0, 3).map(media => (
-                        <div key={media.id} className="flex items-center gap-1.5 text-xs text-gray-300 bg-zinc-700/50 px-2.5 py-1.5 rounded-lg backdrop-blur-sm">
-                          {getMediaIcon(media.type)}
-                          <span className="font-medium">{media.type}</span>
-                        </div>
-                      ))}
-                      {product.media.length > 3 && (
-                        <span className="text-xs text-gray-400 bg-zinc-700/30 px-2 py-1 rounded-lg">+{product.media.length - 3} mehr</span>
-                      )}
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-between items-end mt-6">
+                  {/* Nur noch Preis und Button, da Titel/Beschreibung jetzt im Overlay sind */}
+                  <div className="flex justify-between items-end">
                     <div className="space-y-1">
                       <div className="text-amber-400 font-bold text-lg flex items-center gap-2">
                         <FaCoins className="text-amber-500" />
