@@ -67,6 +67,121 @@ interface CheckoutFormData {
 // API-Konfiguration
 const API_BASE_URL = "https://merch-verwaltung.vercel.app";
 
+// Kompakter Audio Player im Spotify-Stil
+function CompactAudioPlayer({ media }: { media: MediaFile }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const togglePlay = () => {
+    const audioElement = audioRef.current;
+    if (!audioElement) return;
+
+    if (isPlaying) {
+      audioElement.pause();
+    } else {
+      audioElement.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleTimeUpdate = () => {
+    const element = audioRef.current;
+    if (element) {
+      setCurrentTime(element.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    const element = audioRef.current;
+    if (element) {
+      setDuration(element.duration);
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const element = audioRef.current;
+    if (element) {
+      const newTime = parseFloat(e.target.value);
+      element.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/50">
+      <audio
+        ref={audioRef}
+        src={media.url}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={() => setIsPlaying(false)}
+        className="hidden"
+      />
+      
+      <div className="flex items-center gap-3">
+        {/* Play/Pause Button */}
+        <button
+          onClick={togglePlay}
+          className="w-8 h-8 bg-amber-600 hover:bg-amber-700 rounded-full flex items-center justify-center text-white shadow-md transition-all duration-200 hover:scale-105"
+        >
+          {isPlaying ? <FaPause className="text-xs" /> : <FaPlay className="text-xs ml-0.5" />}
+        </button>
+        
+        {/* Progress Bar und Zeit */}
+        <div className="flex-1">
+          <input
+            type="range"
+            min="0"
+            max={duration || 0}
+            value={currentTime}
+            onChange={handleSeek}
+            className="w-full h-1 bg-zinc-600 rounded-lg appearance-none cursor-pointer mb-1"
+            style={{
+              background: `linear-gradient(to right, #f59e0b 0%, #f59e0b ${(currentTime / duration) * 100}%, #4b5563 ${(currentTime / duration) * 100}%, #4b5563 100%)`,
+            }}
+          />
+          <div className="flex justify-between text-xs text-gray-400">
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(duration)}</span>
+          </div>
+        </div>
+        
+        {/* Musik Icon */}
+        <FaMusic className="text-amber-400 text-sm" />
+      </div>
+      
+      <style jsx>{`
+        input[type="range"]::-webkit-slider-thumb {
+          appearance: none;
+          height: 12px;
+          width: 12px;
+          background: #f59e0b;
+          border-radius: 50%;
+          cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+          height: 12px;
+          width: 12px;
+          background: #f59e0b;
+          border-radius: 50%;
+          cursor: pointer;
+          border: none;
+        }
+      `}</style>
+    </div>
+  );
+}
+
 // Verbesserter Audio Player mit modernem Design
 function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -1144,7 +1259,7 @@ export default function MerchTab() {
                               
                               {audioMedia && (
                                 <div className="mt-2">
-                                  <EnhancedMediaPlayer media={audioMedia} />
+                                  <CompactAudioPlayer media={audioMedia} />
                                 </div>
                               )}
                               
@@ -1216,13 +1331,10 @@ export default function MerchTab() {
                     
                     <Button
                       onClick={() => addToCart(product.id)}
-                      className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
+                      className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-1 px-4 py-2"
                     >
-                      <div className="flex items-center gap-1">
-                        <span className="text-lg font-bold">+</span>
-                        <FaShoppingCart className="text-sm" />
-                      </div>
-                      Hinzufügen
+                      <span className="text-lg font-bold">+</span>
+                      <FaShoppingCart className="text-sm" />
                     </Button>
                   </div>
                 </div>
