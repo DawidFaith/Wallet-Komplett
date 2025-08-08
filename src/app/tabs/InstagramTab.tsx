@@ -318,7 +318,7 @@ export default function InstagramTab() {
       <div 
         className="min-h-screen w-full flex items-center justify-center"
         style={{
-          background: 'linear-gradient(135deg, #f093fb, #f5576c, #c471ed, #f64f59)',
+          background: 'linear-gradient(135deg, #667eea, #764ba2, #5a67d8, #667eea)',
           fontFamily: 'Poppins, Segoe UI, sans-serif'
         }}
       >
@@ -348,7 +348,7 @@ export default function InstagramTab() {
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center"
           style={{
-            background: 'linear-gradient(135deg, rgba(240, 147, 251, 0.95), rgba(245, 87, 108, 0.95), rgba(196, 113, 237, 0.95), rgba(246, 79, 89, 0.95))',
+            background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.95), rgba(90, 103, 216, 0.95), rgba(102, 126, 234, 0.95))',
             backdropFilter: 'blur(8px)'
           }}
         >
@@ -364,7 +364,7 @@ export default function InstagramTab() {
       <div 
         className="min-h-screen flex items-center justify-center p-8"
         style={{ 
-          background: 'linear-gradient(135deg, #f093fb, #f5576c, #c471ed, #f64f59)',
+          background: 'linear-gradient(135deg, #667eea, #764ba2, #5a67d8, #667eea)',
           fontFamily: 'Poppins, Segoe UI, sans-serif'
         }}
       >
@@ -386,7 +386,7 @@ export default function InstagramTab() {
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-baseline gap-2">
                 <span className="text-xl font-bold text-white">Level</span>
-                <span className="text-2xl font-black bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">{level}</span>
+                <span className="text-2xl font-black bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">{level}</span>
               </div>
               
               <div className="flex items-baseline gap-1">
@@ -396,7 +396,7 @@ export default function InstagramTab() {
               
               <button 
                 onClick={() => setShowInfoModal(true)}
-                className="bg-purple-500 hover:bg-purple-600 text-white w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200"
+                className="bg-indigo-500 hover:bg-indigo-600 text-white w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200"
               >
                 i
               </button>
@@ -405,7 +405,7 @@ export default function InstagramTab() {
             {/* Progress Bar mit Animation */}
             <div className="relative bg-gray-800/60 rounded-full h-4 overflow-hidden mb-4 shadow-inner border border-gray-700/50">
               <div 
-                className="h-full bg-gradient-to-r from-purple-400 via-pink-500 to-orange-500 transition-all duration-1000 ease-out relative shadow-lg"
+                className="h-full bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500 transition-all duration-1000 ease-out relative shadow-lg"
                 style={{ width: `${progressPercent}%` }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
@@ -419,13 +419,13 @@ export default function InstagramTab() {
             {/* Mining Power mit verbessertem Design */}
             <button 
               onClick={() => setShowMiningPowerModal(true)}
-              className="w-full bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-xl p-3 border border-yellow-500/30 hover:from-yellow-500/30 hover:to-orange-500/30 hover:border-yellow-500/50 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer"
+              className="w-full bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-xl p-3 border border-emerald-500/30 hover:from-emerald-500/30 hover:to-teal-500/30 hover:border-emerald-500/50 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer"
             >
               <div className="flex items-center justify-center gap-2">
                 <span className="text-2xl animate-bounce">⛏</span>
                 <div className="text-center">
-                  <div className="text-yellow-300 text-sm font-medium">Mining Power</div>
-                  <div className="text-yellow-200 text-lg font-bold">+{userData.miningpower} D.Faith</div>
+                  <div className="text-emerald-300 text-sm font-medium">Mining Power</div>
+                  <div className="text-emerald-200 text-lg font-bold">+{userData.miningpower} D.Faith</div>
                 </div>
               </div>
             </button>
@@ -459,7 +459,7 @@ export default function InstagramTab() {
           <div className="flex gap-3">
             <button 
               onClick={() => setShowUpgradeModal(true)}
-              className="relative flex-1 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 px-4 py-4 rounded-2xl font-bold text-sm text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/25 border border-purple-400/30"
+              className="relative flex-1 bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-500 px-4 py-4 rounded-2xl font-bold text-sm text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/25 border border-indigo-400/30"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               <div className="relative flex items-center justify-center gap-1">
@@ -469,7 +469,7 @@ export default function InstagramTab() {
             </button>
             <button 
               onClick={() => setShowClaimModal(true)}
-              className="relative flex-1 bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 px-4 py-4 rounded-2xl font-bold text-sm text-gray-900 overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/25 border border-yellow-300/50"
+              className="relative flex-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 px-4 py-4 rounded-2xl font-bold text-sm text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-teal-500/25 border border-teal-300/50"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               <div className="relative flex items-center justify-center gap-1">
@@ -493,13 +493,13 @@ export default function InstagramTab() {
             >
               ×
             </button>
-            <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">✨ Sammle mehr EXP!</h2>
+            <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">✨ Sammle mehr EXP!</h2>
             <button 
               onClick={() => {
                 setShowUpgradeModal(false);
                 setShowLikeSaveModal(true);
               }}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3"
+              className="w-full bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3"
             >
               <span className="text-xl">❤️</span>
               <span className="text-xl">💾</span>
@@ -510,7 +510,7 @@ export default function InstagramTab() {
                 setShowUpgradeModal(false);
                 setShowStoryHelpModal(true);
               }}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white p-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3"
+              className="w-full bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white p-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3"
             >
               <span className="text-xl">📣</span>
               <span>Story teilen</span>
@@ -531,7 +531,7 @@ export default function InstagramTab() {
             >
               ×
             </button>
-            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
+            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
               <span className="text-xl animate-bounce">🪙</span>
               <span>D.FAITH Claim</span>
             </h2>
@@ -540,7 +540,7 @@ export default function InstagramTab() {
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 text-gray-800 text-base flex flex-col items-center animate-pulse">
                 <span className="font-semibold mb-3 text-center">Du hast noch keine gültige Base Chain Wallet hinterlegt.<br/>Erstelle jetzt deine Wallet, um deine Belohnung zu erhalten!</span>
                 <button
-                  className="w-full mt-2 mb-2 py-3 px-4 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400 text-gray-900 shadow-lg hover:from-yellow-500 hover:to-orange-500 active:from-yellow-600 active:to-orange-600 transition text-base border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-center block"
+                  className="w-full mt-2 mb-2 py-3 px-4 rounded-xl font-semibold bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-400 text-white shadow-lg hover:from-emerald-500 hover:to-cyan-500 active:from-emerald-600 active:to-cyan-600 transition text-base border border-teal-300 focus:outline-none focus:ring-2 focus:ring-teal-400 text-center block"
                   onClick={() => router.push("/wallet")}
                 >
                   🚀 Wallet jetzt anlegen
@@ -615,7 +615,7 @@ export default function InstagramTab() {
       {showLikeSaveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">✨ Like & Save Verification</h2>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">✨ Like & Save Verification</h2>
             
             <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 mb-4">
               <p className="font-semibold mb-3 text-purple-800">1️⃣ Entferne alle Likes und Saves von meinem Beitrag</p>
@@ -625,7 +625,7 @@ export default function InstagramTab() {
                 className={`w-full p-3 rounded-xl font-bold transition-all duration-300 ${
                   initialValues !== null || loading
                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white transform hover:scale-105'
+                    : 'bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white transform hover:scale-105'
                 }`}
               >
                 {loading ? (
@@ -769,7 +769,7 @@ export default function InstagramTab() {
               ×
             </button>
             <div className="text-6xl mb-4">📣</div>
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Story teilen</h2>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">Story teilen</h2>
             <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-700 leading-relaxed">
                 Bitte teile meinen Beitrag in deiner Instagram-Story<br/><strong className="text-purple-600">@dawidfaith</strong>, damit du dein Upgrade erhältst.
@@ -791,7 +791,7 @@ export default function InstagramTab() {
             >
               ×
             </button>
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">✨ Deine EXP-Quellen</h2>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">✨ Deine EXP-Quellen</h2>
             <div className="text-left space-y-3 mb-6">
               <div className="flex items-center gap-3 border-l-4 border-purple-500 pl-3 bg-purple-50 py-2 rounded-r-xl">
                 <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
