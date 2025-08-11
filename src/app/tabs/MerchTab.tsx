@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { useActiveAccount, useReadContract, useSendTransaction } from "thirdweb/react";
+import { useActiveAccount, useReadContract, useSendAndConfirmTransaction } from "thirdweb/react";
 import { getContract, prepareContractCall } from "thirdweb";
 import { base } from "thirdweb/chains";
 import { client } from "../client";
@@ -424,7 +424,7 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
 
 export default function MerchTab() {
   const account = useActiveAccount();
-  const { mutate: sendTransaction, isPending: isTransactionPending } = useSendTransaction();
+  const { mutateAsync: sendAndConfirmTransaction, isPending: isTransactionPending } = useSendAndConfirmTransaction();
   
   // State Management
   const [products, setProducts] = useState<Product[]>([]);
@@ -819,56 +819,115 @@ export default function MerchTab() {
         params: [shopWalletAddress, amountInWei]
       });
 
-      const transactionResult = await sendTransaction(transaction);
+      // Transaktion senden und Transaction Hash erhalten
+      const transactionResult = await sendAndConfirmTransaction(transaction);
+      const transactionHash = transactionResult.transactionHash;
+      
+      // Generiere eindeutige Order-ID
+      const orderId = `ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-      // Bestellung an Backend senden
-      const orderData = {
-        walletAddress: account.address,
-        email: checkoutForm.email,
-        shippingAddress: hasPhysicalProducts() ? {
-          firstName: checkoutForm.firstName,
-          lastName: checkoutForm.lastName,
-          street: checkoutForm.street,
-          city: checkoutForm.city,
-          postalCode: checkoutForm.postalCode,
-          country: checkoutForm.country,
-          phone: checkoutForm.phone
-        } : null,
-        products: Object.entries(cart).map(([productId, quantity]) => {
-          const product = products.find(p => p.id === productId);
-          return {
-            productId,
-            quantity,
-            priceEur: product?.price || 0,
-            isDigital: product?.isDigital || false
-          };
-        }),
-        totalEur: getTotalPriceEur(),
-        totalDfaith: totalPriceDfaith,
-        transactionHash: "completed", // Transaktion war erfolgreich
-        hasPhysicalProducts: hasPhysicalProducts(),
-        timestamp: new Date().toISOString()
-      };
-
-      // Webhook an Backend senden
+      // 1. ZUERST: Transaktion mit echtem Hash verifizieren
       try {
-        const webhookResponse = await fetch(`${API_BASE_URL}/api/webhook/order`, {
+        const verifyResponse = await fetch('https://merch-balance-verifification-production.up.railway.app/api/v1/verify-purchase', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           },
-          body: JSON.stringify(orderData)
+          body: JSON.stringify({
+            transactionHash: transactionHash, // Echter Transaction Hash
+            expectedAmount: totalPriceDfaith,
+            customerData: {
+              email: checkoutForm.email,
+              userId: account.address,
+              orderId: orderId
+            },
+            productData: {
+              items: Object.entries(cart).map(([productId, quantity]) => {
+                const product = products.find(p => p.id === productId);
+                return {
+                  id: productId,
+                  name: product?.name || 'Unbekanntes Produkt',
+                  quantity: quantity,
+                  price: product?.price || 0
+                };
+              }),
+              totalAmount: totalPriceDfaith,
+              currency: 'TOKEN'
+            },
+            metadata: {
+              source: 'wallet_shop',
+              timestamp: new Date().toISOString(),
+              shopId: 'DFAITH-MERCH',
+              customerIp: 'web-app'
+            }
+          })
         });
 
-        if (!webhookResponse.ok) {
-          console.warn("Webhook fehlgeschlagen, aber Zahlung war erfolgreich");
+        const verifyResult = await verifyResponse.json();
+        
+        if (!verifyResult.success) {
+          throw new Error(`Verifizierung fehlgeschlagen: ${verifyResult.error || 'Unbekannter Fehler'}`);
         }
-      } catch (webhookError) {
-        console.warn("Webhook-Fehler:", webhookError);
+
+        // 2. NUR WENN VERIFIZIERUNG ERFOLGREICH: Bestellung an Backend senden
+        const orderData = {
+          walletAddress: account.address,
+          email: checkoutForm.email,
+          orderId: orderId,
+          shippingAddress: hasPhysicalProducts() ? {
+            firstName: checkoutForm.firstName,
+            lastName: checkoutForm.lastName,
+            street: checkoutForm.street,
+            city: checkoutForm.city,
+            postalCode: checkoutForm.postalCode,
+            country: checkoutForm.country,
+            phone: checkoutForm.phone
+          } : null,
+          products: Object.entries(cart).map(([productId, quantity]) => {
+            const product = products.find(p => p.id === productId);
+            return {
+              productId,
+              quantity,
+              priceEur: product?.price || 0,
+              isDigital: product?.isDigital || false
+            };
+          }),
+          totalEur: getTotalPriceEur(),
+          totalDfaith: totalPriceDfaith,
+          transactionHash: transactionHash, // Echter Transaction Hash
+          verificationData: verifyResult.verification, // Blockchain-Verifizierung mitgeben
+          hasPhysicalProducts: hasPhysicalProducts(),
+          timestamp: new Date().toISOString()
+        };
+
+        // Webhook an Backend senden (nur nach erfolgreicher Verifizierung)
+        try {
+          const webhookResponse = await fetch(`${API_BASE_URL}/api/webhook/order`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(orderData)
+          });
+
+          if (!webhookResponse.ok) {
+            console.warn("Webhook fehlgeschlagen, aber Zahlung war verifiziert");
+          }
+        } catch (webhookError) {
+          console.warn("Webhook-Fehler:", webhookError);
+        }
+
+      } catch (verifyError: unknown) {
+        console.error("Verifizierung fehlgeschlagen:", verifyError);
+        const errorMessage = verifyError instanceof Error ? verifyError.message : 'Unbekannter Verifizierungsfehler';
+        throw new Error(`Zahlungsverifizierung fehlgeschlagen: ${errorMessage}`);
       }
 
       setPurchaseStatus("success");
-      setPurchaseMessage(`✅ Kauf erfolgreich! ${getCartItemCount()} Artikel für ${totalPriceDfaith.toFixed(2)} D.FAITH gekauft. ${hasPhysicalProducts() ? "Versandbestätigung folgt per E-Mail." : "Download-Links wurden an Ihre E-Mail gesendet."}`);
+      setPurchaseMessage(`✅ Kauf erfolgreich verifiziert! 
+      Transaktion: ${transactionHash.substring(0, 10)}...
+      ${getCartItemCount()} Artikel für ${totalPriceDfaith.toFixed(2)} D.FAITH gekauft. 
+      ${hasPhysicalProducts() ? "Versandbestätigung folgt per E-Mail." : "Download-Links wurden an Ihre E-Mail gesendet."}`);
       clearCart();
       setShowCart(false);
       setShowCheckout(false);
