@@ -934,7 +934,13 @@ export default function MerchTab() {
               userId: account.address,
               email: checkoutForm.email,
               firstName: checkoutForm.firstName || '',
-              lastName: checkoutForm.lastName || ''
+              lastName: checkoutForm.lastName || '',
+              // Vollständige Versandadresse
+              street: checkoutForm.street || '',
+              city: checkoutForm.city || '',
+              postalCode: checkoutForm.postalCode || '',
+              country: checkoutForm.country || '',
+              phone: checkoutForm.phone || ''
             },
             productData: {
               totalAmount: totalPriceDfaith,
