@@ -1085,7 +1085,7 @@ export default function MerchTab() {
                     <img 
                       src="/D.FAITH.png" 
                       alt="D.FAITH Token" 
-                      className="relative w-24 h-24 rounded-full shadow-2xl"
+                      className="relative w-32 h-32 rounded-full shadow-2xl"
                     />
                     {/* Scan Lines */}
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent rounded-full animate-pulse"></div>
@@ -1115,7 +1115,7 @@ export default function MerchTab() {
                   → EXCLUSIVE DIGITAL MARKETPLACE ←
                 </div>
                 <div className="text-white/70 text-base">
-                  Powered by <span className="text-amber-400 font-semibold">Blockchain Technology</span>
+                  Powered by <span className="text-amber-400 font-semibold">Dawid Faith</span>
                 </div>
                 
                 {/* Terminal-Style Stats */}
@@ -1147,72 +1147,23 @@ export default function MerchTab() {
                 </div>
               </div>
               
-              {/* Hexagon Grid */}
-              <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
+              {/* Categories */}
+              <div className="flex flex-wrap justify-center gap-3 max-w-4xl mx-auto">
                 {categories.map((category, index) => (
-                  <div
+                  <button
                     key={category}
-                    className="relative group cursor-pointer"
+                    className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 border ${
+                      selectedCategory === category
+                        ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white border-amber-500 shadow-lg shadow-amber-500/30'
+                        : 'bg-zinc-800/50 text-cyan-300 border-zinc-600 hover:bg-zinc-700/70 hover:border-cyan-400/50 hover:text-white'
+                    }`}
                     onClick={() => setSelectedCategory(category)}
                     style={{
-                      animationDelay: `${index * 100}ms`
+                      animationDelay: `${index * 50}ms`
                     }}
                   >
-                    {/* Hexagon Container */}
-                    <div className={`relative w-24 h-24 transition-all duration-300 transform group-hover:scale-110 ${
-                      selectedCategory === category ? 'scale-110' : ''
-                    }`}>
-                      {/* Hexagon Background */}
-                      <div className={`absolute inset-0 transition-all duration-300 ${
-                        selectedCategory === category
-                          ? 'bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg shadow-amber-500/50'
-                          : 'bg-gradient-to-br from-cyan-900/50 to-purple-900/50 group-hover:from-cyan-700/70 group-hover:to-purple-700/70'
-                      }`}
-                      style={{
-                        clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)'
-                      }}>
-                      </div>
-                      
-                      {/* Hexagon Border */}
-                      <div className={`absolute inset-1 border-2 transition-all duration-300 ${
-                        selectedCategory === category
-                          ? 'border-white/80'
-                          : 'border-cyan-400/40 group-hover:border-cyan-300/80'
-                      }`}
-                      style={{
-                        clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)'
-                      }}>
-                      </div>
-                      
-                      {/* Content */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center space-y-1">
-                        <div className={`text-2xl transition-all duration-300 ${
-                          selectedCategory === category ? 'text-white' : 'text-cyan-300 group-hover:text-white'
-                        }`}>
-                          {getCategoryIcon(category)}
-                        </div>
-                        <div className={`text-xs font-semibold text-center px-1 transition-all duration-300 ${
-                          selectedCategory === category 
-                            ? 'text-white' 
-                            : 'text-cyan-200/80 group-hover:text-white'
-                        }`}>
-                          {getCategoryDisplayName(category).split(' ')[0]}
-                        </div>
-                      </div>
-                      
-                      {/* Selection Indicator */}
-                      {selectedCategory === category && (
-                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center animate-pulse">
-                          <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-                        </div>
-                      )}
-                      
-                      {/* Glow Effect */}
-                      {selectedCategory === category && (
-                        <div className="absolute inset-0 bg-amber-400/20 blur-xl rounded-full animate-pulse"></div>
-                      )}
-                    </div>
-                  </div>
+                    {getCategoryDisplayName(category)}
+                  </button>
                 ))}
               </div>
               
