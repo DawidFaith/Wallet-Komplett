@@ -1057,131 +1057,131 @@ export default function MerchTab() {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-zinc-900 to-zinc-800 text-white">
-      {/* Futuristischer Header mit Neon-Style */}
+      {/* Dawid Faith Fan Shop Header */}
       <div className="relative mb-8 overflow-hidden">
-        {/* Animated Background */}
+        {/* Fan Shop Background */}
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-900/20 via-purple-900/20 to-amber-900/20"></div>
-          <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,transparent_0deg,rgba(251,191,36,0.1)_60deg,transparent_120deg)] animate-spin" style={{animationDuration: '20s'}}></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-900/30 via-amber-900/30 to-red-900/30"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(251,191,36,0.15),transparent_70%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(147,51,234,0.15),transparent_70%)]"></div>
         </div>
         
-        <div className="relative bg-black/60 backdrop-blur-2xl border border-amber-400/30 shadow-2xl shadow-amber-500/20 overflow-hidden">
-          {/* Neon Glow Effects */}
-          <div className="absolute top-0 left-1/4 w-96 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-60"></div>
-          <div className="absolute bottom-0 right-1/4 w-96 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-60"></div>
+        <div className="relative bg-black/70 backdrop-blur-xl border-b-4 border-amber-500 shadow-2xl shadow-amber-500/20 overflow-hidden">
+          {/* Fan Shop Accent Lines */}
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 via-amber-500 to-red-500"></div>
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 via-purple-500 to-amber-500"></div>
           
           <div className="p-8 relative">
-            {/* Futuristic Header */}
+            {/* Fan Shop Header */}
             <div className="text-center space-y-8">
-              {/* Logo-Sektion mit Cyber-Stil */}
+              {/* Artist & Shop Logo Section */}
               <div className="relative inline-block">
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-amber-400/20 to-purple-400/20 blur-3xl rounded-full"></div>
-                <div className="relative flex items-center gap-8">
-                  {/* Token mit Scan-Lines */}
+                {/* Warm Glow Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-400/30 via-purple-400/30 to-red-400/30 blur-3xl rounded-full"></div>
+                
+                <div className="relative space-y-6">
+                  {/* Artist Name with Fan Love */}
                   <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-b from-cyan-400/30 to-amber-400/30 rounded-full animate-pulse"></div>
-                    <div className="absolute inset-2 border border-cyan-400/50 rounded-full"></div>
-                    <div className="absolute inset-4 border border-amber-400/50 rounded-full"></div>
-                    <img 
-                      src="/D.FAITH.png" 
-                      alt="D.FAITH Token" 
-                      className="relative w-32 h-32 rounded-full shadow-2xl"
-                    />
-                    {/* Scan Lines */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent rounded-full animate-pulse"></div>
+                    <div className="text-7xl font-black tracking-wider bg-gradient-to-r from-amber-300 via-red-400 to-purple-400 bg-clip-text text-transparent filter drop-shadow-2xl">
+                      DAWID FAITH
+                    </div>
+                    {/* Warm Shadow Effect */}
+                    <div className="absolute inset-0 text-7xl font-black tracking-wider text-amber-400/20 blur-sm">
+                      DAWID FAITH
+                    </div>
                   </div>
                   
-                  {/* Cyber-Titel */}
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <h1 className="text-6xl font-black tracking-wider bg-gradient-to-r from-cyan-300 via-white to-amber-300 bg-clip-text text-transparent drop-shadow-lg">
-                        D.FAITH
-                      </h1>
-                      {/* Glitch Effect */}
-                      <div className="absolute inset-0 text-6xl font-black tracking-wider text-cyan-400/30 animate-pulse">
-                        D.FAITH
-                      </div>
+                  {/* Fan Shop Title */}
+                  <div className="relative">
+                    <div className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-amber-400 to-red-400 bg-clip-text text-transparent">
+                      🎵 OFFICIAL FAN SHOP 🎵
                     </div>
-                    <div className="bg-gradient-to-r from-cyan-400 via-amber-400 to-purple-400 bg-clip-text text-transparent text-2xl font-bold tracking-[0.3em]">
-                      ◆ SHOP ◆
+                    <div className="text-lg text-amber-300/80 font-medium tracking-wide mt-2">
+                      ✨ Exklusive Musik & Merchandise ✨
                     </div>
                   </div>
                 </div>
               </div>
               
-              {/* Cyber Subtitle */}
-              <div className="space-y-4">
-                <div className="relative inline-block">
-                  {/* D.FAITH Text mit Glitch Effect */}
-                  <div className="text-6xl font-black tracking-wider bg-gradient-to-r from-cyan-400 via-amber-400 to-purple-400 bg-clip-text text-transparent animate-pulse">
-                    D.FAITH
-                  </div>
-                  {/* Glitch Effect */}
-                  <div className="absolute inset-0 text-6xl font-black tracking-wider text-cyan-400/30 animate-pulse">
-                    D.FAITH
-                  </div>
-                </div>
-                <div className="text-white/70 text-base">
-                  Powered by <span className="text-amber-400 font-semibold">Dawid Faith</span>
+              {/* Fan Shop Info */}
+              <div className="space-y-6">
+                <div className="text-purple-300/80 text-lg italic font-light tracking-wide">
+                  Unterstütze deinen Lieblingskünstler mit <span className="text-amber-400 font-semibold">D.FAITH</span> Token
                 </div>
                 
-                {/* Terminal-Style Stats */}
-                <div className="bg-black/80 border border-cyan-400/30 rounded-lg p-4 font-mono text-sm max-w-md mx-auto">
-                  <div className="flex justify-between text-cyan-300">
-                    <span>[GESAMT_ARTIKEL]:</span>
-                    <span className="text-amber-400">{products.length.toString().padStart(3, '0')}</span>
-                  </div>
-                  <div className="flex justify-between text-cyan-300">
-                    <span>[GEFILTERT]:</span>
-                    <span className="text-amber-400">{filteredProducts.length.toString().padStart(3, '0')}</span>
-                  </div>
-                  <div className="flex justify-between text-cyan-300">
-                    <span>[STATUS]:</span>
-                    <span className="text-green-400">ONLINE</span>
+                {/* Fan Shop Stats */}
+                <div className="relative">
+                  {/* Warm Background */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 via-purple-500/15 to-red-500/20 rounded-2xl blur-lg"></div>
+                  <div className="relative bg-black/50 backdrop-blur-sm border border-amber-400/40 rounded-2xl p-6 font-mono text-sm max-w-md mx-auto shadow-2xl">
+                    <div className="flex justify-between text-amber-300 mb-2">
+                      <span className="italic">🎶 Verfügbare Tracks:</span>
+                      <span className="text-amber-400 font-bold">{products.length.toString().padStart(3, '0')}</span>
+                    </div>
+                    <div className="flex justify-between text-amber-300 mb-2">
+                      <span className="italic">🔥 Aktuelle Auswahl:</span>
+                      <span className="text-amber-400 font-bold">{filteredProducts.length.toString().padStart(3, '0')}</span>
+                    </div>
+                    <div className="flex justify-between text-amber-300">
+                      <span className="italic">📡 Shop Status:</span>
+                      <span className="text-green-400 font-bold">🟢 LIVE</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
             
-            {/* Kategorien Design */}
-            <div className="mt-12 space-y-6">
+            {/* Fan Shop Kategorien */}
+            <div className="mt-12 space-y-8">
               <div className="text-center">
-                <div className="text-xl font-bold text-white mb-2 tracking-wide">
-                  ▼ PRODUKT KATEGORIEN ▼
+                <div className="text-3xl font-bold text-white mb-4">
+                  <span className="bg-gradient-to-r from-amber-400 via-purple-400 to-red-400 bg-clip-text text-transparent">
+                    🛍️ SHOP KATEGORIEN 🛍️
+                  </span>
                 </div>
-                <div className="text-cyan-300/60 text-sm font-mono">
-                  Wählen Sie Ihren gewünschten Produkttyp aus
+                <div className="text-amber-300/70 text-lg font-medium">
+                  Entdecke Dawid Faith's exklusive Kollektion
                 </div>
               </div>
               
-              {/* Categories */}
-              <div className="flex flex-wrap justify-center gap-3 max-w-4xl mx-auto">
+              {/* Fan Categories */}
+              <div className="flex flex-wrap justify-center gap-4 max-w-5xl mx-auto">
                 {categories.map((category, index) => (
                   <button
                     key={category}
-                    className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 border ${
+                    className={`relative px-8 py-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 ${
                       selectedCategory === category
-                        ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white border-amber-500 shadow-lg shadow-amber-500/30'
-                        : 'bg-zinc-800/50 text-cyan-300 border-zinc-600 hover:bg-zinc-700/70 hover:border-cyan-400/50 hover:text-white'
+                        ? 'bg-gradient-to-r from-amber-500 to-red-500 text-white shadow-2xl shadow-amber-500/50 border-2 border-amber-300'
+                        : 'bg-gradient-to-r from-purple-800/60 to-amber-800/60 text-amber-200 border-2 border-purple-400/40 hover:border-amber-400/60 hover:from-purple-700/80 hover:to-amber-700/80 hover:text-white shadow-lg'
                     }`}
                     onClick={() => setSelectedCategory(category)}
                     style={{
-                      animationDelay: `${index * 50}ms`
+                      animationDelay: `${index * 100}ms`
                     }}
                   >
-                    {getCategoryDisplayName(category)}
+                    <span className="relative z-10 flex items-center gap-2">
+                      <span className="text-xl">{getCategoryIcon(category)}</span>
+                      {getCategoryDisplayName(category)}
+                    </span>
+                    
+                    {/* Active Category Glow */}
+                    {selectedCategory === category && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-amber-400/20 to-red-400/20 rounded-2xl blur-lg"></div>
+                    )}
                   </button>
                 ))}
               </div>
               
-              {/* Category Info Bar */}
-              <div className="bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent h-px"></div>
-              <div className="text-center">
-                <div className="inline-flex items-center gap-3 bg-black/60 border border-cyan-400/30 rounded-full px-6 py-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-cyan-300 font-mono text-sm">
-                    KATEGORIE: {getCategoryDisplayName(selectedCategory).toUpperCase()}
-                  </span>
+              {/* Fan Love Info Bar */}
+              <div className="relative">
+                <div className="bg-gradient-to-r from-transparent via-amber-500/30 to-transparent h-px"></div>
+                <div className="text-center mt-4">
+                  <div className="inline-flex items-center gap-3 bg-gradient-to-r from-purple-900/60 to-amber-900/60 backdrop-blur-sm border border-amber-400/40 rounded-full px-8 py-3 shadow-lg">
+                    <div className="w-3 h-3 bg-gradient-to-r from-red-400 to-amber-400 rounded-full animate-pulse shadow-lg shadow-amber-400/50"></div>
+                    <span className="text-amber-300 font-medium italic text-sm">
+                      🎵 Aktuelle Kategorie: <span className="text-amber-400 font-bold">{getCategoryDisplayName(selectedCategory)}</span> 🎵
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
