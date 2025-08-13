@@ -49,6 +49,7 @@ interface Product {
   category: string;
   media: MediaFile[];
   isDigital?: boolean; // Zur Unterscheidung zwischen digitalen und physischen Produkten
+  stock?: number; // Verfügbare Stückanzahl für physische Produkte
 }
 
 // Checkout-Formulardaten
@@ -655,10 +656,11 @@ export default function MerchTab() {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        // Automatische Erkennung digitaler Produkte basierend auf Medientypen
+        // Automatische Erkennung digitaler Produkte
+        // Ein Produkt ist nur dann digital, wenn es AUSSCHLIESSLICH aus digitalen Dateien (Audio/Video) besteht
         const productsWithDigitalFlag = data.map((product: Product) => ({
           ...product,
-          isDigital: product.media.some(media => 
+          isDigital: product.media.length > 0 && product.media.every(media => 
             media.type === "AUDIO" || media.type === "VIDEO" || media.type === "DOCUMENT"
           )
         }));
@@ -701,6 +703,18 @@ export default function MerchTab() {
 
   // In den Warenkorb hinzufügen
   const addToCart = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    
+    // Bei physischen Produkten prüfen, ob noch Stück verfügbar sind
+    if (!product.isDigital && product.stock !== undefined) {
+      const currentInCart = cart[productId] || 0;
+      if (currentInCart >= product.stock) {
+        alert(`Nur ${product.stock} Stück von "${product.name}" verfügbar!`);
+        return;
+      }
+    }
+    
     setCart(prev => ({
       ...prev,
       [productId]: (prev[productId] || 0) + 1
@@ -734,6 +748,19 @@ export default function MerchTab() {
       country: "Deutschland",
       phone: ""
     });
+  };
+
+  // Prüft, ob ein Produkt noch zum Warenkorb hinzugefügt werden kann
+  const canAddToCart = (product: Product): boolean => {
+    // Digitale Produkte sind immer verfügbar
+    if (product.isDigital) return true;
+    
+    // Physische Produkte ohne Stock-Info sind verfügbar
+    if (product.stock === undefined) return true;
+    
+    // Prüfe verfügbaren Bestand
+    const currentInCart = cart[product.id] || 0;
+    return currentInCart < product.stock;
   };
 
   // Prüfen ob physische Produkte im Warenkorb sind
@@ -1424,14 +1451,32 @@ export default function MerchTab() {
                           <FaEuroSign className="text-xs" />
                           {product.price.toFixed(2)} EUR
                         </div>
+                        
+                        {/* Verfügbare Stückanzahl für physische Produkte */}
+                        {!product.isDigital && product.stock !== undefined && (
+                          <div className="text-green-400 text-sm flex items-center gap-1.5">
+                            <span>📦</span>
+                            <span>Verfügbar: {product.stock} Stück</span>
+                          </div>
+                        )}
                       </div>
                       
                       <Button
                         onClick={() => addToCart(product.id)}
-                        className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-1 px-4 py-2"
+                        disabled={!canAddToCart(product)}
+                        className={`${
+                          canAddToCart(product)
+                            ? "bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                            : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                        } flex items-center justify-center gap-1 px-4 py-2`}
                       >
-                        <span className="text-lg font-bold">+</span>
+                        <span className="text-lg font-bold">
+                          {canAddToCart(product) ? "+" : "✕"}
+                        </span>
                         <FaShoppingCart className="text-sm" />
+                        {!canAddToCart(product) && (
+                          <span className="text-xs ml-1">Ausverkauft</span>
+                        )}
                       </Button>
                     </div>
                   ) : (
@@ -1447,6 +1492,14 @@ export default function MerchTab() {
                           {product.price.toFixed(2)} EUR
                         </div>
                         
+                        {/* Verfügbare Stückanzahl für physische Produkte */}
+                        {!product.isDigital && product.stock !== undefined && (
+                          <div className="text-green-400 text-sm flex items-center gap-1.5">
+                            <span>📦</span>
+                            <span>Verfügbar: {product.stock} Stück</span>
+                          </div>
+                        )}
+                        
                         {/* Stückanzahl für physische Produkte */}
                         {!product.isDigital && cart[product.id] && (
                           <div className="text-amber-300 text-sm flex items-center gap-1.5 mt-1">
@@ -1458,10 +1511,20 @@ export default function MerchTab() {
                       
                       <Button
                         onClick={() => addToCart(product.id)}
-                        className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-1 px-4 py-2"
+                        disabled={!canAddToCart(product)}
+                        className={`${
+                          canAddToCart(product)
+                            ? "bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                            : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                        } flex items-center justify-center gap-1 px-4 py-2`}
                       >
-                        <span className="text-lg font-bold">+</span>
+                        <span className="text-lg font-bold">
+                          {canAddToCart(product) ? "+" : "✕"}
+                        </span>
                         <FaShoppingCart className="text-sm" />
+                        {!canAddToCart(product) && (
+                          <span className="text-xs ml-1">Ausverkauft</span>
+                        )}
                       </Button>
                     </div>
                   )}
