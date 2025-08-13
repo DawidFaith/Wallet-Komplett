@@ -688,26 +688,6 @@ export default function MerchTab() {
   };
 
   // Einzigartige Kategorien extrahieren
-  // Kategorie-Icons für bessere Shop-UX
-  const getCategoryIcon = (category: string) => {
-    const icons: { [key: string]: string } = {
-      "all": "🛍️",
-      "music": "🎵",
-      "clothing": "👕", 
-      "accessories": "💎",
-      "digital": "💾",
-      "books": "📚",
-      "art": "🎨",
-      "collectibles": "🏆",
-      "electronics": "⚡",
-      "gaming": "🎮",
-      "lifestyle": "✨",
-      "merch": "🎁",
-      "cds": "💿",
-      "cd": "💿"
-    };
-    return icons[category.toLowerCase()] || "🏷️";
-  };
 
   const getCategoryDisplayName = (category: string) => {
     if (category === "all") return "Alle Produkte";
@@ -1107,7 +1087,6 @@ export default function MerchTab() {
                   onClick={() => setSelectedCategory(category)}
                 >
                   <span className="flex items-center gap-1.5">
-                    <span className="text-xs">{getCategoryIcon(category)}</span>
                     {getCategoryDisplayName(category)}
                   </span>
                 </button>
@@ -1569,8 +1548,8 @@ export default function MerchTab() {
                                 <div className="absolute bottom-0 left-0 right-0 p-4 text-white opacity-0 hover:opacity-100 transition-opacity duration-300">
                                   <div className="flex items-start justify-between mb-2">
                                     <h3 className="font-bold text-lg leading-tight flex-1 mr-2">{product.name}</h3>
-                                    <span className="text-xs bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm text-white px-2 py-1 rounded-full shadow-sm whitespace-nowrap">
-                                      👕 {product.category}
+                                    <span className="text-xs bg-gradient-to-r from-amber-600/90 to-amber-700/90 backdrop-blur-sm text-white px-2 py-1 rounded-full shadow-sm whitespace-nowrap">
+                                      {product.category}
                                     </span>
                                   </div>
                                   <p className="text-gray-200 text-sm line-clamp-2 leading-relaxed mb-2">
@@ -1634,8 +1613,8 @@ export default function MerchTab() {
                       <div>
                         <div className="flex items-start justify-between mb-2">
                           <h3 className="text-white font-bold text-lg leading-tight flex-1 mr-2">{product.name}</h3>
-                          <span className="text-xs bg-gradient-to-r from-pink-600 to-purple-600 text-white px-2 py-1 rounded-full shadow-sm whitespace-nowrap">
-                            👕 {product.category}
+                          <span className="text-xs bg-gradient-to-r from-amber-600 to-amber-700 text-white px-2 py-1 rounded-full shadow-sm whitespace-nowrap">
+                            {product.category}
                           </span>
                         </div>
                         <p className="text-gray-300 text-sm leading-relaxed mb-3">
@@ -1645,8 +1624,8 @@ export default function MerchTab() {
                         {/* Größen-Anzeige für T-Shirts */}
                         {(product.size || product.sizes) && (
                           <div className="flex items-center gap-2 mb-3">
-                            <span className="text-amber-400 text-sm font-medium">📏 Größe:</span>
-                            <span className="bg-gradient-to-r from-pink-600/20 to-purple-600/20 border border-pink-400/30 px-3 py-1 rounded-full text-pink-300 font-medium text-sm">
+                            <span className="text-amber-400 text-sm font-medium">Größe:</span>
+                            <span className="bg-gradient-to-r from-amber-600/20 to-amber-700/20 border border-amber-400/30 px-3 py-1 rounded-full text-amber-300 font-medium text-sm">
                               {product.size || (Array.isArray(product.sizes) ? product.sizes.join(', ') : product.sizes)}
                             </span>
                           </div>
@@ -1687,7 +1666,7 @@ export default function MerchTab() {
                           disabled={!canAddToCart(product)}
                           className={`${
                             canAddToCart(product)
-                              ? "bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                              ? "bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
                               : "bg-gray-600 text-gray-400 cursor-not-allowed"
                           } flex items-center justify-center gap-1 px-4 py-2`}
                         >
