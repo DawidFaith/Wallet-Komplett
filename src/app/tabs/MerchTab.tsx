@@ -1050,7 +1050,7 @@ export default function MerchTab() {
           <div className="py-8 px-6 text-center">
             {/* Artist Name - Bold & Modern with Pirata One */}
             <div className="relative inline-block">
-              <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent tracking-wider drop-shadow-2xl">
+              <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent tracking-wider drop-shadow-2xl">
                 DAWID FAITH
               </h1>
               {/* Glowing underline effect */}
