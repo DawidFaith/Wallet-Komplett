@@ -269,7 +269,7 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
               <FaMusic className="text-2xl text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-gray-400 text-sm">{(media.size / 1024 / 1024).toFixed(2)} MB</p>
+              {/* MB-Anzeige entfernt für saubere Darstellung */}
             </div>
           </div>
           
@@ -386,7 +386,7 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
             </div>
           </div>
           <div className="p-4">
-            <p className="text-gray-400 text-sm">{(media.size / 1024 / 1024).toFixed(2)} MB</p>
+            {/* MB-Anzeige entfernt für saubere Darstellung */}
           </div>
         </div>
       );
@@ -698,7 +698,9 @@ export default function MerchTab() {
       "electronics": "⚡",
       "gaming": "🎮",
       "lifestyle": "✨",
-      "merch": "🎁"
+      "merch": "🎁",
+      "cds": "💿",
+      "cd": "💿"
     };
     return icons[category.toLowerCase()] || "🏷️";
   };
@@ -717,9 +719,29 @@ export default function MerchTab() {
       "electronics": "Elektronik",
       "gaming": "Gaming",
       "lifestyle": "Lifestyle",
-      "merch": "Merchandise"
+      "merch": "Merchandise",
+      "cds": "CD",
+      "cd": "CD"
     };
     return names[category.toLowerCase()] || category;
+  };
+
+  // Bereinigt Dateinamen von Dateierweiterungen für bessere Anzeige
+  const cleanFileName = (fileName: string): string => {
+    if (!fileName) return '';
+    
+    // Entferne Dateierweiterungen und bereinige den Namen
+    let cleaned = fileName
+      .replace(/\.(mp3|wav|m4a|aac|mp4|avi|mov|wmv|flv|jpg|jpeg|png|gif|bmp|webp|pdf|doc|docx|txt)$/i, '')
+      .replace(/[-_]/g, ' ') // Ersetze Bindestriche und Unterstriche mit Leerzeichen
+      .trim();
+    
+    // Capitalize first letter of each word
+    cleaned = cleaned.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+    
+    return cleaned || 'Unbenannte Datei';
   };
 
   const categories = ["all", ...Array.from(new Set(products.map(p => p.category)))];
@@ -1510,13 +1532,8 @@ export default function MerchTab() {
                                       <div className="flex items-center gap-2 mb-2">
                                         <FaPlay className="text-green-400 text-xs" />
                                         <span className="text-white text-sm font-medium truncate">
-                                          {audioMedia.originalName || `Audio ${index + 1}`}
+                                          {cleanFileName(audioMedia.originalName) || `Audio ${index + 1}`}
                                         </span>
-                                        {audioMedia.size && (
-                                          <span className="text-gray-400 text-xs">
-                                            ({(audioMedia.size / 1024 / 1024).toFixed(1)} MB)
-                                          </span>
-                                        )}
                                       </div>
                                       
                                       {/* Audio Player */}
