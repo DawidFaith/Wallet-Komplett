@@ -1041,39 +1041,39 @@ export default function MerchTab() {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-zinc-900 to-zinc-800 text-white">
-      {/* Dawid Faith Shop - Taylor Swift Style */}
+      {/* Dawid Faith Shop - Amber/Gold Style */}
       <div className="relative mb-6 overflow-hidden">
-        {/* Dreamy Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-pink-900/20 to-rose-900/20"></div>
+        {/* Elegant Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-900/20 via-yellow-900/20 to-amber-800/20"></div>
         
-        <div className="relative bg-gradient-to-r from-purple-950/80 via-pink-950/80 to-rose-950/80 backdrop-blur-sm border-b border-pink-400/30">
+        <div className="relative bg-gradient-to-r from-zinc-950/80 via-amber-950/40 to-zinc-950/80 backdrop-blur-sm border-b border-amber-400/30">
           <div className="p-6 text-center">
             {/* Artist Name - Elegant & Compact */}
             <div className="relative inline-block mb-3">
-              <h1 className="text-4xl md:text-5xl font-serif bg-gradient-to-r from-pink-300 via-purple-300 to-rose-300 bg-clip-text text-transparent tracking-wide">
+              <h1 className="text-4xl md:text-5xl font-serif bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-400 bg-clip-text text-transparent tracking-wide">
                 Dawid Faith
               </h1>
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-0.5 bg-gradient-to-r from-pink-400 via-purple-400 to-rose-400"></div>
+              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-0.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500"></div>
             </div>
             
             {/* Shop Subtitle */}
-            <p className="text-pink-200/80 text-lg font-light italic tracking-wide mb-4">
+            <p className="text-amber-200/80 text-lg font-light italic tracking-wide mb-4">
               Official Music Store
             </p>
             
             {/* Quick Stats - Minimal */}
-            <div className="flex justify-center items-center gap-6 text-sm text-pink-300/70">
-              <span>� {products.length} Tracks</span>
+            <div className="flex justify-center items-center gap-6 text-sm text-amber-300/70">
+              <span>{products.length} Tracks</span>
               <span>•</span>
-              <span>💎 D.FAITH Accepted</span>
+              <span>D.FAITH Accepted</span>
               <span>•</span>
-              <span className="text-green-400">✨ Live</span>
+              <span className="text-green-400">Live</span>
             </div>
           </div>
         </div>
         
-        {/* Categories - Taylor Swift Style */}
-        <div className="relative bg-gradient-to-r from-purple-950/60 via-pink-950/60 to-rose-950/60 backdrop-blur-sm border-b border-pink-400/20">
+        {/* Categories - Amber/Gold Style */}
+        <div className="relative bg-gradient-to-r from-zinc-950/60 via-amber-950/30 to-zinc-950/60 backdrop-blur-sm border-b border-amber-400/20">
           <div className="p-4">
             <div className="flex flex-wrap justify-center gap-2 max-w-4xl mx-auto">
               {categories.map((category, index) => (
@@ -1081,8 +1081,8 @@ export default function MerchTab() {
                   key={category}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
                     selectedCategory === category
-                      ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-500/30 scale-105'
-                      : 'bg-purple-900/40 text-pink-200 border border-pink-400/30 hover:bg-pink-900/40 hover:text-white hover:border-pink-300/50'
+                      ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg shadow-amber-500/30 scale-105'
+                      : 'bg-zinc-900/40 text-amber-200 border border-amber-400/30 hover:bg-amber-900/40 hover:text-white hover:border-amber-300/50'
                   }`}
                   onClick={() => setSelectedCategory(category)}
                 >
@@ -1095,7 +1095,7 @@ export default function MerchTab() {
             
             {/* Current Selection */}
             <div className="text-center mt-3">
-              <span className="text-xs text-pink-300/60 italic">
+              <span className="text-xs text-amber-300/60 italic">
                 Showing {filteredProducts.length} {selectedCategory === "all" ? "items" : getCategoryDisplayName(selectedCategory).toLowerCase()}
               </span>
             </div>
