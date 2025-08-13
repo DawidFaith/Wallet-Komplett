@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import { Inter, Pirata_One } from "next/font/google";
+import { Inter, Orbitron } from "next/font/google";
 import "./globals.css";
 import { ThirdwebProvider } from "thirdweb/react";
 import QueryProvider from "./QueryProvider";
 
 const inter = Inter({ subsets: ["latin"] });
-const pirataOne = Pirata_One({ 
-  weight: '400',
+const orbitron = Orbitron({ 
   subsets: ["latin"],
-  variable: '--font-pirata-one'
+  variable: '--font-orbitron'
 });
 
 export const metadata: Metadata = {
@@ -24,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} ${pirataOne.variable}`}>
+      <body className={`${inter.className} ${orbitron.variable}`}>
         <ThirdwebProvider>
           <QueryProvider>{children}</QueryProvider>
         </ThirdwebProvider>
