@@ -1111,8 +1111,15 @@ export default function MerchTab() {
               
               {/* Cyber Subtitle */}
               <div className="space-y-4">
-                <div className="text-cyan-300/80 text-lg font-mono tracking-wide">
-                  → EXCLUSIVE DIGITAL MARKETPLACE ←
+                <div className="relative inline-block">
+                  {/* D.FAITH Text mit Glitch Effect */}
+                  <div className="text-6xl font-black tracking-wider bg-gradient-to-r from-cyan-400 via-amber-400 to-purple-400 bg-clip-text text-transparent animate-pulse">
+                    D.FAITH
+                  </div>
+                  {/* Glitch Effect */}
+                  <div className="absolute inset-0 text-6xl font-black tracking-wider text-cyan-400/30 animate-pulse">
+                    D.FAITH
+                  </div>
                 </div>
                 <div className="text-white/70 text-base">
                   Powered by <span className="text-amber-400 font-semibold">Dawid Faith</span>
@@ -1121,11 +1128,11 @@ export default function MerchTab() {
                 {/* Terminal-Style Stats */}
                 <div className="bg-black/80 border border-cyan-400/30 rounded-lg p-4 font-mono text-sm max-w-md mx-auto">
                   <div className="flex justify-between text-cyan-300">
-                    <span>[TOTAL_ITEMS]:</span>
+                    <span>[GESAMT_ARTIKEL]:</span>
                     <span className="text-amber-400">{products.length.toString().padStart(3, '0')}</span>
                   </div>
                   <div className="flex justify-between text-cyan-300">
-                    <span>[FILTERED]:</span>
+                    <span>[GEFILTERT]:</span>
                     <span className="text-amber-400">{filteredProducts.length.toString().padStart(3, '0')}</span>
                   </div>
                   <div className="flex justify-between text-cyan-300">
@@ -1136,14 +1143,14 @@ export default function MerchTab() {
               </div>
             </div>
             
-            {/* Kategorien mit Hexagon-Design */}
+            {/* Kategorien Design */}
             <div className="mt-12 space-y-6">
               <div className="text-center">
                 <div className="text-xl font-bold text-white mb-2 tracking-wide">
-                  ▼ PRODUCT CATEGORIES ▼
+                  ▼ PRODUKT KATEGORIEN ▼
                 </div>
                 <div className="text-cyan-300/60 text-sm font-mono">
-                  Select your desired product type
+                  Wählen Sie Ihren gewünschten Produkttyp aus
                 </div>
               </div>
               
@@ -1173,7 +1180,7 @@ export default function MerchTab() {
                 <div className="inline-flex items-center gap-3 bg-black/60 border border-cyan-400/30 rounded-full px-6 py-2">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                   <span className="text-cyan-300 font-mono text-sm">
-                    CATEGORY: {getCategoryDisplayName(selectedCategory).toUpperCase()}
+                    KATEGORIE: {getCategoryDisplayName(selectedCategory).toUpperCase()}
                   </span>
                 </div>
               </div>
