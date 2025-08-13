@@ -50,6 +50,8 @@ interface Product {
   media: MediaFile[];
   isDigital?: boolean; // Zur Unterscheidung zwischen digitalen und physischen Produkten
   stock?: number; // Verfügbare Stückanzahl für physische Produkte
+  size?: string; // T-Shirt Größe
+  sizes?: string[] | string; // Multiple Größen oder Größen-String
 }
 
 // Checkout-Formulardaten
@@ -453,6 +455,8 @@ export default function MerchTab() {
   const [showCheckout, setShowCheckout] = useState(false);
   const [purchaseStatus, setPurchaseStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
   const [purchaseMessage, setPurchaseMessage] = useState<string>("");
+  // Bildindizes für T-Shirt Galleries
+  const [imageIndices, setImageIndices] = useState<{[productId: string]: number}>({});
   const [checkoutForm, setCheckoutForm] = useState<CheckoutFormData>({
     email: "",
     firstName: "",
@@ -1471,6 +1475,122 @@ export default function MerchTab() {
                             )}
                           </div>
                         );
+                      } else if (product.category.toLowerCase().includes('t.shirt') || product.category.toLowerCase().includes('tshirt') || product.category.toLowerCase().includes('shirt')) {
+                        /* Spezielle T-Shirt Darstellung mit Bildergalerie und Größenauswahl */
+                        const imageMedias = product.media.filter(media => 
+                          media.type === "IMAGE" || 
+                          media.mimeType?.includes("image") ||
+                          media.originalName.toLowerCase().match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i)
+                        );
+                        
+                        return (
+                          <div className="relative">
+                            {/* T-Shirt Bildergalerie */}
+                            {imageMedias.length > 0 && (
+                              <div className="relative">
+                                {/* Haupt-Bildergalerie mit Scroll */}
+                                <div className="w-full h-64 relative overflow-hidden bg-zinc-800 rounded-lg">
+                                  <div 
+                                    className="flex transition-transform duration-300 h-full"
+                                    style={{ 
+                                      transform: `translateX(-${(imageIndices[product.id] || 0) * 100}%)`,
+                                      width: `${imageMedias.length * 100}%`
+                                    }}
+                                  >
+                                    {imageMedias.map((media, index) => (
+                                      <div key={index} className="w-full h-full flex-shrink-0">
+                                        <img 
+                                          src={media.url} 
+                                          alt={`${product.name} - Bild ${index + 1}`}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                  
+                                  {/* Navigation Buttons bei mehreren Bildern */}
+                                  {imageMedias.length > 1 && (
+                                    <>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const currentIndex = imageIndices[product.id] || 0;
+                                          const newIndex = (currentIndex - 1 + imageMedias.length) % imageMedias.length;
+                                          setImageIndices(prev => ({
+                                            ...prev,
+                                            [product.id]: newIndex
+                                          }));
+                                        }}
+                                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/70 text-white p-2 rounded-full hover:bg-black/90 transition-all"
+                                      >
+                                        ←
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const currentIndex = imageIndices[product.id] || 0;
+                                          const newIndex = (currentIndex + 1) % imageMedias.length;
+                                          setImageIndices(prev => ({
+                                            ...prev,
+                                            [product.id]: newIndex
+                                          }));
+                                        }}
+                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/70 text-white p-2 rounded-full hover:bg-black/90 transition-all"
+                                      >
+                                        →
+                                      </button>
+                                      
+                                      {/* Bild-Indikatoren */}
+                                      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1">
+                                        {imageMedias.map((_, index) => (
+                                          <button
+                                            key={index}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setImageIndices(prev => ({
+                                                ...prev,
+                                                [product.id]: index
+                                              }));
+                                            }}
+                                            className={`w-2 h-2 rounded-full transition-all ${
+                                              index === (imageIndices[product.id] || 0) 
+                                                ? 'bg-white' 
+                                                : 'bg-white/50 hover:bg-white/70'
+                                            }`}
+                                          />
+                                        ))}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                                
+                                {/* T-Shirt Info Overlay */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
+                                <div className="absolute bottom-0 left-0 right-0 p-4 text-white opacity-0 hover:opacity-100 transition-opacity duration-300">
+                                  <div className="flex items-start justify-between mb-2">
+                                    <h3 className="font-bold text-lg leading-tight flex-1 mr-2">{product.name}</h3>
+                                    <span className="text-xs bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm text-white px-2 py-1 rounded-full shadow-sm whitespace-nowrap">
+                                      👕 {product.category}
+                                    </span>
+                                  </div>
+                                  <p className="text-gray-200 text-sm line-clamp-2 leading-relaxed mb-2">
+                                    {product.description}
+                                  </p>
+                                  
+                                  {/* Größen-Info falls verfügbar */}
+                                  {(product.size || product.sizes) && (
+                                    <div className="flex items-center gap-2 text-xs">
+                                      <span className="text-amber-400">📏 Größe:</span>
+                                      <span className="bg-white/20 px-2 py-1 rounded-full font-medium">
+                                        {product.size || (Array.isArray(product.sizes) ? product.sizes.join(', ') : product.sizes)}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
                       } else {
                         /* Standard-Darstellung für andere Kategorien mit Overlay */
                         return (
@@ -1506,8 +1626,82 @@ export default function MerchTab() {
                 )}
                 
                 <div className="p-6">
-                  {/* Für Videos wird Titel/Beschreibung bereits über dem Video angezeigt */}
-                  {product.media.length > 0 && product.media[0]?.type === "VIDEO" ? (
+                  {/* Spezielle Behandlung für T-Shirts */}
+                  {product.category.toLowerCase().includes('t.shirt') || product.category.toLowerCase().includes('tshirt') || product.category.toLowerCase().includes('shirt') ? (
+                    /* T-Shirt Layout mit Titel, Beschreibung, Größe und Preis */
+                    <div className="space-y-4">
+                      {/* Titel und Beschreibung für T-Shirts */}
+                      <div>
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="text-white font-bold text-lg leading-tight flex-1 mr-2">{product.name}</h3>
+                          <span className="text-xs bg-gradient-to-r from-pink-600 to-purple-600 text-white px-2 py-1 rounded-full shadow-sm whitespace-nowrap">
+                            👕 {product.category}
+                          </span>
+                        </div>
+                        <p className="text-gray-300 text-sm leading-relaxed mb-3">
+                          {product.description}
+                        </p>
+                        
+                        {/* Größen-Anzeige für T-Shirts */}
+                        {(product.size || product.sizes) && (
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-amber-400 text-sm font-medium">📏 Größe:</span>
+                            <span className="bg-gradient-to-r from-pink-600/20 to-purple-600/20 border border-pink-400/30 px-3 py-1 rounded-full text-pink-300 font-medium text-sm">
+                              {product.size || (Array.isArray(product.sizes) ? product.sizes.join(', ') : product.sizes)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Preis und Button */}
+                      <div className="flex justify-between items-end">
+                        <div className="space-y-1">
+                          <div className="text-amber-400 font-bold text-lg flex items-center gap-2">
+                            <FaCoins className="text-amber-500" />
+                            {dfaithPrice.toFixed(2)} D.FAITH
+                          </div>
+                          <div className="text-gray-400 text-sm flex items-center gap-1.5">
+                            <FaEuroSign className="text-xs" />
+                            {product.price.toFixed(2)} EUR
+                          </div>
+                          
+                          {/* Verfügbare Stückanzahl für physische Produkte */}
+                          {!product.isDigital && product.stock !== undefined && (
+                            <div className="text-green-400 text-sm flex items-center gap-1.5">
+                              <span>📦</span>
+                              <span>Verfügbar: {product.stock} Stück</span>
+                            </div>
+                          )}
+                          
+                          {/* Stückanzahl für physische Produkte */}
+                          {!product.isDigital && cart[product.id] && (
+                            <div className="text-amber-300 text-sm flex items-center gap-1.5 mt-1">
+                              <FaShoppingCart className="text-xs" />
+                              <span>Im Warenkorb: {cart[product.id]} Stück</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <Button
+                          onClick={() => addToCart(product.id)}
+                          disabled={!canAddToCart(product)}
+                          className={`${
+                            canAddToCart(product)
+                              ? "bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                              : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                          } flex items-center justify-center gap-1 px-4 py-2`}
+                        >
+                          <span className="text-lg font-bold">
+                            {canAddToCart(product) ? "+" : "✕"}
+                          </span>
+                          <FaShoppingCart className="text-sm" />
+                          {!canAddToCart(product) && (
+                            <span className="text-xs ml-1">Ausverkauft</span>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : product.media.length > 0 && product.media[0]?.type === "VIDEO" ? (
                     /* Nur Preis und Button für Videos */
                     <div className="flex justify-between items-end">
                       <div className="space-y-1">
