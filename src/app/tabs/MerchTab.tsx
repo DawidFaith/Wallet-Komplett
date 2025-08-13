@@ -1450,26 +1450,50 @@ export default function MerchTab() {
                       </Button>
                     </div>
                   ) : (
-                    /* Standard Layout für MP3 und andere Kategorien (ohne Titel/Beschreibung) */
-                    <div className="flex justify-between items-end">
-                      <div className="space-y-1">
-                        <div className="text-amber-400 font-bold text-lg flex items-center gap-2">
-                          <FaCoins className="text-amber-500" />
-                          {dfaithPrice.toFixed(2)} D.FAITH
+                    /* Standard Layout für alle anderen Kategorien mit vollständigen Produktinformationen */
+                    <div className="space-y-4">
+                      {/* Titel und Beschreibung */}
+                      <div>
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="text-white font-bold text-lg leading-tight flex-1 mr-2">{product.name}</h3>
+                          <span className="text-xs bg-gradient-to-r from-amber-600 to-amber-700 text-white px-2 py-1 rounded-full shadow-sm whitespace-nowrap">
+                            {product.category}
+                          </span>
                         </div>
-                        <div className="text-gray-400 text-sm flex items-center gap-1.5">
-                          <FaEuroSign className="text-xs" />
-                          {product.price.toFixed(2)} EUR
-                        </div>
+                        <p className="text-gray-300 text-sm line-clamp-3 leading-relaxed">
+                          {product.description}
+                        </p>
                       </div>
-                      
-                      <Button
-                        onClick={() => addToCart(product.id)}
-                        className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-1 px-4 py-2"
-                      >
-                        <span className="text-lg font-bold">+</span>
-                        <FaShoppingCart className="text-sm" />
-                      </Button>
+
+                      {/* Preis und Button Bereich */}
+                      <div className="flex justify-between items-end">
+                        <div className="space-y-1">
+                          <div className="text-amber-400 font-bold text-lg flex items-center gap-2">
+                            <FaCoins className="text-amber-500" />
+                            {dfaithPrice.toFixed(2)} D.FAITH
+                          </div>
+                          <div className="text-gray-400 text-sm flex items-center gap-1.5">
+                            <FaEuroSign className="text-xs" />
+                            {product.price.toFixed(2)} EUR
+                          </div>
+                          
+                          {/* Stückanzahl für physische Produkte */}
+                          {!product.isDigital && cart[product.id] && (
+                            <div className="text-amber-300 text-sm flex items-center gap-1.5 mt-1">
+                              <FaShoppingCart className="text-xs" />
+                              <span>Im Warenkorb: {cart[product.id]} Stück</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <Button
+                          onClick={() => addToCart(product.id)}
+                          className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-1 px-4 py-2"
+                        >
+                          <span className="text-lg font-bold">+</span>
+                          <FaShoppingCart className="text-sm" />
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
