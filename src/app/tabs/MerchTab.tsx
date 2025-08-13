@@ -1035,104 +1035,175 @@ export default function MerchTab() {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-zinc-900 to-zinc-800 text-white">
-      {/* Moderner Header */}
-      <div className="relative mb-8">
-        {/* Hintergrund-Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-600/10 via-orange-500/5 to-red-600/10 rounded-3xl"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-400/20 via-transparent to-transparent rounded-3xl"></div>
+      {/* Futuristischer Header mit Neon-Style */}
+      <div className="relative mb-8 overflow-hidden">
+        {/* Animated Background */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-900/20 via-purple-900/20 to-amber-900/20"></div>
+          <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,transparent_0deg,rgba(251,191,36,0.1)_60deg,transparent_120deg)] animate-spin" style={{animationDuration: '20s'}}></div>
+        </div>
         
-        <div className="relative bg-black/40 backdrop-blur-xl rounded-3xl border border-amber-500/20 shadow-2xl shadow-amber-500/10 p-8">
-          {/* Header Content */}
-          <div className="text-center space-y-6">
-            {/* Token & Titel */}
-            <div className="flex items-center justify-center gap-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-amber-400/30 rounded-full blur-xl"></div>
-                <img 
-                  src="/D.FAITH.png" 
-                  alt="D.FAITH Token" 
-                  className="relative w-20 h-20 rounded-full shadow-2xl border-3 border-amber-400/60 ring-4 ring-amber-400/20"
-                />
+        <div className="relative bg-black/60 backdrop-blur-2xl border border-amber-400/30 shadow-2xl shadow-amber-500/20 overflow-hidden">
+          {/* Neon Glow Effects */}
+          <div className="absolute top-0 left-1/4 w-96 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-60"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-60"></div>
+          
+          <div className="p-8 relative">
+            {/* Futuristic Header */}
+            <div className="text-center space-y-8">
+              {/* Logo-Sektion mit Cyber-Stil */}
+              <div className="relative inline-block">
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-amber-400/20 to-purple-400/20 blur-3xl rounded-full"></div>
+                <div className="relative flex items-center gap-8">
+                  {/* Token mit Scan-Lines */}
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-b from-cyan-400/30 to-amber-400/30 rounded-full animate-pulse"></div>
+                    <div className="absolute inset-2 border border-cyan-400/50 rounded-full"></div>
+                    <div className="absolute inset-4 border border-amber-400/50 rounded-full"></div>
+                    <img 
+                      src="/D.FAITH.png" 
+                      alt="D.FAITH Token" 
+                      className="relative w-24 h-24 rounded-full shadow-2xl"
+                    />
+                    {/* Scan Lines */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent rounded-full animate-pulse"></div>
+                  </div>
+                  
+                  {/* Cyber-Titel */}
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <h1 className="text-6xl font-black tracking-wider bg-gradient-to-r from-cyan-300 via-white to-amber-300 bg-clip-text text-transparent drop-shadow-lg">
+                        D.FAITH
+                      </h1>
+                      {/* Glitch Effect */}
+                      <div className="absolute inset-0 text-6xl font-black tracking-wider text-cyan-400/30 animate-pulse">
+                        D.FAITH
+                      </div>
+                    </div>
+                    <div className="bg-gradient-to-r from-cyan-400 via-amber-400 to-purple-400 bg-clip-text text-transparent text-2xl font-bold tracking-[0.3em]">
+                      ◆ SHOP ◆
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <h1 className="text-5xl font-black bg-gradient-to-r from-amber-300 via-amber-400 to-orange-400 bg-clip-text text-transparent tracking-tight">
-                  D.FAITH
-                </h1>
-                <div className="text-2xl font-bold text-white/90 tracking-wide">
-                  SHOP
+              
+              {/* Cyber Subtitle */}
+              <div className="space-y-4">
+                <div className="text-cyan-300/80 text-lg font-mono tracking-wide">
+                  → EXCLUSIVE DIGITAL MARKETPLACE ←
+                </div>
+                <div className="text-white/70 text-base">
+                  Powered by <span className="text-amber-400 font-semibold">Blockchain Technology</span>
+                </div>
+                
+                {/* Terminal-Style Stats */}
+                <div className="bg-black/80 border border-cyan-400/30 rounded-lg p-4 font-mono text-sm max-w-md mx-auto">
+                  <div className="flex justify-between text-cyan-300">
+                    <span>[TOTAL_ITEMS]:</span>
+                    <span className="text-amber-400">{products.length.toString().padStart(3, '0')}</span>
+                  </div>
+                  <div className="flex justify-between text-cyan-300">
+                    <span>[FILTERED]:</span>
+                    <span className="text-amber-400">{filteredProducts.length.toString().padStart(3, '0')}</span>
+                  </div>
+                  <div className="flex justify-between text-cyan-300">
+                    <span>[STATUS]:</span>
+                    <span className="text-green-400">ONLINE</span>
+                  </div>
                 </div>
               </div>
             </div>
             
-            {/* Subtitle */}
-            <p className="text-lg text-white/70 max-w-md mx-auto leading-relaxed">
-              Exklusive Produkte & Collectibles
-              <br />
-              <span className="text-amber-300 font-semibold">Bezahle mit D.FAITH Token</span>
-            </p>
-            
-            {/* Stats */}
-            <div className="flex items-center justify-center gap-8 pt-4">
+            {/* Kategorien mit Hexagon-Design */}
+            <div className="mt-12 space-y-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-amber-400">{products.length}</div>
-                <div className="text-sm text-white/60">Produkte</div>
+                <div className="text-xl font-bold text-white mb-2 tracking-wide">
+                  ▼ PRODUCT CATEGORIES ▼
+                </div>
+                <div className="text-cyan-300/60 text-sm font-mono">
+                  Select your desired product type
+                </div>
               </div>
-              <div className="w-px h-12 bg-white/20"></div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-amber-400">{filteredProducts.length}</div>
-                <div className="text-sm text-white/60">Gefiltert</div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Kategorien-Sektion */}
-          <div className="mt-8 pt-8 border-t border-white/10">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-bold text-white mb-2">Kategorien durchstöbern</h3>
-              <p className="text-white/60 text-sm">Finde genau das, was du suchst</p>
-            </div>
-            
-            {/* Kategorie-Grid */}
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-              {categories.map(category => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`group relative transition-all duration-300 ${
-                    selectedCategory === category 
-                      ? "scale-105" 
-                      : "hover:scale-105"
-                  }`}
-                >
-                  {/* Card */}
-                  <div className={`relative p-4 rounded-2xl border transition-all duration-300 ${
-                    selectedCategory === category
-                      ? "bg-gradient-to-br from-amber-500 to-orange-500 border-amber-400 shadow-lg shadow-amber-500/30"
-                      : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-amber-400/40 backdrop-blur-sm"
-                  }`}>
-                    {/* Icon */}
-                    <div className="text-3xl mb-2 transition-transform duration-300 group-hover:scale-110">
-                      {getCategoryIcon(category)}
-                    </div>
-                    
-                    {/* Text */}
-                    <div className={`text-xs font-medium text-center leading-tight transition-colors duration-300 ${
-                      selectedCategory === category
-                        ? "text-white"
-                        : "text-white/80 group-hover:text-white"
+              
+              {/* Hexagon Grid */}
+              <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
+                {categories.map((category, index) => (
+                  <div
+                    key={category}
+                    className="relative group cursor-pointer"
+                    onClick={() => setSelectedCategory(category)}
+                    style={{
+                      animationDelay: `${index * 100}ms`
+                    }}
+                  >
+                    {/* Hexagon Container */}
+                    <div className={`relative w-24 h-24 transition-all duration-300 transform group-hover:scale-110 ${
+                      selectedCategory === category ? 'scale-110' : ''
                     }`}>
-                      {getCategoryDisplayName(category)}
-                    </div>
-                    
-                    {/* Selection indicator */}
-                    {selectedCategory === category && (
-                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-                        <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                      {/* Hexagon Background */}
+                      <div className={`absolute inset-0 transition-all duration-300 ${
+                        selectedCategory === category
+                          ? 'bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg shadow-amber-500/50'
+                          : 'bg-gradient-to-br from-cyan-900/50 to-purple-900/50 group-hover:from-cyan-700/70 group-hover:to-purple-700/70'
+                      }`}
+                      style={{
+                        clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)'
+                      }}>
                       </div>
-                    )}
+                      
+                      {/* Hexagon Border */}
+                      <div className={`absolute inset-1 border-2 transition-all duration-300 ${
+                        selectedCategory === category
+                          ? 'border-white/80'
+                          : 'border-cyan-400/40 group-hover:border-cyan-300/80'
+                      }`}
+                      style={{
+                        clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)'
+                      }}>
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center space-y-1">
+                        <div className={`text-2xl transition-all duration-300 ${
+                          selectedCategory === category ? 'text-white' : 'text-cyan-300 group-hover:text-white'
+                        }`}>
+                          {getCategoryIcon(category)}
+                        </div>
+                        <div className={`text-xs font-semibold text-center px-1 transition-all duration-300 ${
+                          selectedCategory === category 
+                            ? 'text-white' 
+                            : 'text-cyan-200/80 group-hover:text-white'
+                        }`}>
+                          {getCategoryDisplayName(category).split(' ')[0]}
+                        </div>
+                      </div>
+                      
+                      {/* Selection Indicator */}
+                      {selectedCategory === category && (
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center animate-pulse">
+                          <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
+                        </div>
+                      )}
+                      
+                      {/* Glow Effect */}
+                      {selectedCategory === category && (
+                        <div className="absolute inset-0 bg-amber-400/20 blur-xl rounded-full animate-pulse"></div>
+                      )}
+                    </div>
                   </div>
-                </button>
-              ))}
+                ))}
+              </div>
+              
+              {/* Category Info Bar */}
+              <div className="bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent h-px"></div>
+              <div className="text-center">
+                <div className="inline-flex items-center gap-3 bg-black/60 border border-cyan-400/30 rounded-full px-6 py-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-cyan-300 font-mono text-sm">
+                    CATEGORY: {getCategoryDisplayName(selectedCategory).toUpperCase()}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
