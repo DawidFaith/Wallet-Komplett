@@ -868,6 +868,108 @@ export default function MerchTab() {
     return Object.values(cart).reduce((total, quantity) => total + quantity, 0);
   };
 
+  // Versanddaten an API senden
+  const sendShippingData = async (transactionHash: string, orderId: string, totalPriceDfaith: number) => {
+    const shippingData = {
+      // Transaktion & Bestellung
+      transactionHash: transactionHash,
+      expectedAmount: totalPriceDfaith,
+      
+      // Kundendaten
+      customerData: {
+        orderId: orderId,
+        userId: account?.address || '',
+        email: checkoutForm.email,
+        firstName: checkoutForm.firstName || '',
+        lastName: checkoutForm.lastName || '',
+        
+        // Versandadresse (nur bei physischen Produkten)
+        shippingAddress: hasPhysicalProducts() ? {
+          street: checkoutForm.street || '',
+          city: checkoutForm.city || '',
+          postalCode: checkoutForm.postalCode || '',
+          country: checkoutForm.country || 'Deutschland',
+          phone: checkoutForm.phone || ''
+        } : null,
+        
+        // Zusätzliche Kundendaten
+        hasPhysicalProducts: hasPhysicalProducts(),
+        preferredLanguage: 'de'
+      },
+      
+      // Produktdaten
+      productData: {
+        totalAmount: totalPriceDfaith,
+        currency: 'D.FAITH',
+        itemCount: getCartItemCount(),
+        
+        // Detaillierte Produktliste
+        items: Object.entries(cart).map(([productId, quantity]) => {
+          const product = products.find(p => p.id === productId);
+          return {
+            id: productId,
+            name: product?.name || 'Unbekanntes Produkt',
+            description: product?.description || '',
+            category: product?.category || '',
+            quantity: quantity,
+            priceEur: product?.price || 0,
+            priceDfaith: convertEurToDfaith(product?.price || 0),
+            isDigital: product?.isDigital || false,
+            
+            // T-Shirt spezifische Daten
+            size: product?.size || product?.sizes || null,
+            
+            // Medien-URLs für digitale Produkte
+            mediaUrls: product?.media?.map(media => ({
+              type: media.type,
+              url: media.url,
+              filename: media.originalName
+            })) || []
+          };
+        })
+      },
+      
+      // Zusätzliche Metadaten
+      metadata: {
+        orderDate: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        timestamp: Date.now(),
+        source: 'dawid-faith-wallet',
+        version: '1.0'
+      }
+    };
+
+    console.log('📦 Sending shipping data:', shippingData);
+
+    try {
+      const response = await fetch('https://merch-balance-verifification-production.up.railway.app/api/v1/verify-purchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(shippingData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Verifikation fehlgeschlagen');
+      }
+
+      console.log('✅ Shipping data sent successfully:', result);
+      return result;
+
+    } catch (error) {
+      console.error('❌ Error sending shipping data:', error);
+      throw error;
+    }
+  };
+
   // Kauf abwickeln
   const handlePurchase = async () => {
     if (!account?.address) {
@@ -919,74 +1021,33 @@ export default function MerchTab() {
       // Generiere eindeutige Order-ID
       const orderId = `ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-      // 1. ZUERST: Transaktion mit echtem Hash verifizieren (vereinfachtes Format)
+      // 1. ZUERST: Transaktion mit echtem Hash verifizieren und Versanddaten senden
       try {
-        const verifyResponse = await fetch('https://merch-balance-verifification-production.up.railway.app/api/v1/verify-purchase', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            transactionHash: transactionHash,
-            expectedAmount: totalPriceDfaith,
-            customerData: {
-              orderId: orderId,
-              userId: account.address,
-              email: checkoutForm.email,
-              firstName: checkoutForm.firstName || '',
-              lastName: checkoutForm.lastName || '',
-              // Vollständige Versandadresse
-              street: checkoutForm.street || '',
-              city: checkoutForm.city || '',
-              postalCode: checkoutForm.postalCode || '',
-              country: checkoutForm.country || '',
-              phone: checkoutForm.phone || ''
-            },
-            productData: {
-              totalAmount: totalPriceDfaith,
-              currency: 'TOKEN',
-              items: Object.entries(cart).map(([productId, quantity]) => {
-                const product = products.find(p => p.id === productId);
-                return {
-                  id: productId, // Existierende Produkt-ID aus dem Order Management System
-                  name: product?.name || 'Unbekanntes Produkt',
-                  quantity: quantity,
-                  price: product?.price || 0,
-                  description: product?.description || '' // Optional aber empfohlen
-                };
-              })
-            }
-          })
-        });
-
-        const verifyResult = await verifyResponse.json();
+        const verifyResult = await sendShippingData(transactionHash, orderId, totalPriceDfaith);
         
-        if (!verifyResult.success) {
-          // Detailliertes Error-Handling basierend auf API-Response
-          let errorMessage = 'Verifikation fehlgeschlagen';
-          
-          if (verifyResult.error === 'Transaction verification failed') {
-            errorMessage = 'Transaktion konnte nicht auf der Blockchain gefunden werden. Bitte prüfen Sie den Transaction Hash.';
-          } else if (verifyResult.error === 'Validation failed') {
-            errorMessage = `Validierungsfehler: ${verifyResult.details?.join(', ') || 'Ungültige Daten'}`;
-          } else if (verifyResult.details?.includes('not confirmed')) {
-            errorMessage = 'Transaktion wird noch bestätigt. Bitte warten Sie einen Moment und versuchen Sie es erneut.';
-          } else if (verifyResult.details?.includes('amount mismatch')) {
-            errorMessage = 'Bezahlter Betrag stimmt nicht überein. Bitte kontaktieren Sie den Support.';
-          } else {
-            errorMessage = verifyResult.error || 'Unbekannter Verifikationsfehler';
-          }
-          
-          throw new Error(errorMessage);
-        }
-
         // 2. API hat automatisch Webhook gesendet - wir zeigen nur noch Erfolg an
         console.log('✅ Verifikation erfolgreich:', verifyResult.verification);
         console.log('📦 Webhook Status:', verifyResult.webhook);
         
       } catch (verifyError: any) {
         console.error("Verifikations-Fehler:", verifyError);
-        throw new Error(`Verifikation fehlgeschlagen: ${verifyError.message || 'Unbekannter Fehler'}`);
+        
+        // Detailliertes Error-Handling
+        let errorMessage = 'Verifikation fehlgeschlagen';
+        
+        if (verifyError.message.includes('Transaction verification failed')) {
+          errorMessage = 'Transaktion konnte nicht auf der Blockchain gefunden werden. Bitte prüfen Sie den Transaction Hash.';
+        } else if (verifyError.message.includes('Validation failed')) {
+          errorMessage = `Validierungsfehler: Ungültige Daten`;
+        } else if (verifyError.message.includes('not confirmed')) {
+          errorMessage = 'Transaktion wird noch bestätigt. Bitte warten Sie einen Moment und versuchen Sie es erneut.';
+        } else if (verifyError.message.includes('amount mismatch')) {
+          errorMessage = 'Bezahlter Betrag stimmt nicht überein. Bitte kontaktieren Sie den Support.';
+        } else {
+          errorMessage = verifyError.message || 'Unbekannter Verifikationsfehler';
+        }
+        
+        throw new Error(errorMessage);
       }
       
       setPurchaseStatus("success");
