@@ -1057,133 +1057,64 @@ export default function MerchTab() {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-zinc-900 to-zinc-800 text-white">
-      {/* Dawid Faith Fan Shop Header */}
-      <div className="relative mb-8 overflow-hidden">
-        {/* Fan Shop Background */}
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-900/30 via-amber-900/30 to-red-900/30"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(251,191,36,0.15),transparent_70%)]"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(147,51,234,0.15),transparent_70%)]"></div>
-        </div>
+      {/* Dawid Faith Shop - Taylor Swift Style */}
+      <div className="relative mb-6 overflow-hidden">
+        {/* Dreamy Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-pink-900/20 to-rose-900/20"></div>
         
-        <div className="relative bg-black/70 backdrop-blur-xl border-b-4 border-amber-500 shadow-2xl shadow-amber-500/20 overflow-hidden">
-          {/* Fan Shop Accent Lines */}
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 via-amber-500 to-red-500"></div>
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 via-purple-500 to-amber-500"></div>
-          
-          <div className="p-8 relative">
-            {/* Fan Shop Header */}
-            <div className="text-center space-y-8">
-              {/* Artist & Shop Logo Section */}
-              <div className="relative inline-block">
-                {/* Warm Glow Effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-amber-400/30 via-purple-400/30 to-red-400/30 blur-3xl rounded-full"></div>
-                
-                <div className="relative space-y-6">
-                  {/* Artist Name with Fan Love */}
-                  <div className="relative">
-                    <div className="text-7xl font-black tracking-wider bg-gradient-to-r from-amber-300 via-red-400 to-purple-400 bg-clip-text text-transparent filter drop-shadow-2xl">
-                      DAWID FAITH
-                    </div>
-                    {/* Warm Shadow Effect */}
-                    <div className="absolute inset-0 text-7xl font-black tracking-wider text-amber-400/20 blur-sm">
-                      DAWID FAITH
-                    </div>
-                  </div>
-                  
-                  {/* Fan Shop Title */}
-                  <div className="relative">
-                    <div className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-amber-400 to-red-400 bg-clip-text text-transparent">
-                      🎵 OFFICIAL FAN SHOP 🎵
-                    </div>
-                    <div className="text-lg text-amber-300/80 font-medium tracking-wide mt-2">
-                      ✨ Exklusive Musik & Merchandise ✨
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Fan Shop Info */}
-              <div className="space-y-6">
-                <div className="text-purple-300/80 text-lg italic font-light tracking-wide">
-                  Unterstütze deinen Lieblingskünstler mit <span className="text-amber-400 font-semibold">D.FAITH</span> Token
-                </div>
-                
-                {/* Fan Shop Stats */}
-                <div className="relative">
-                  {/* Warm Background */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 via-purple-500/15 to-red-500/20 rounded-2xl blur-lg"></div>
-                  <div className="relative bg-black/50 backdrop-blur-sm border border-amber-400/40 rounded-2xl p-6 font-mono text-sm max-w-md mx-auto shadow-2xl">
-                    <div className="flex justify-between text-amber-300 mb-2">
-                      <span className="italic">🎶 Verfügbare Tracks:</span>
-                      <span className="text-amber-400 font-bold">{products.length.toString().padStart(3, '0')}</span>
-                    </div>
-                    <div className="flex justify-between text-amber-300 mb-2">
-                      <span className="italic">🔥 Aktuelle Auswahl:</span>
-                      <span className="text-amber-400 font-bold">{filteredProducts.length.toString().padStart(3, '0')}</span>
-                    </div>
-                    <div className="flex justify-between text-amber-300">
-                      <span className="italic">📡 Shop Status:</span>
-                      <span className="text-green-400 font-bold">🟢 LIVE</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        <div className="relative bg-gradient-to-r from-purple-950/80 via-pink-950/80 to-rose-950/80 backdrop-blur-sm border-b border-pink-400/30">
+          <div className="p-6 text-center">
+            {/* Artist Name - Elegant & Compact */}
+            <div className="relative inline-block mb-3">
+              <h1 className="text-4xl md:text-5xl font-serif bg-gradient-to-r from-pink-300 via-purple-300 to-rose-300 bg-clip-text text-transparent tracking-wide">
+                Dawid Faith
+              </h1>
+              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-0.5 bg-gradient-to-r from-pink-400 via-purple-400 to-rose-400"></div>
             </div>
             
-            {/* Fan Shop Kategorien */}
-            <div className="mt-12 space-y-8">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-4">
-                  <span className="bg-gradient-to-r from-amber-400 via-purple-400 to-red-400 bg-clip-text text-transparent">
-                    🛍️ SHOP KATEGORIEN 🛍️
+            {/* Shop Subtitle */}
+            <p className="text-pink-200/80 text-lg font-light italic tracking-wide mb-4">
+              Official Music Store
+            </p>
+            
+            {/* Quick Stats - Minimal */}
+            <div className="flex justify-center items-center gap-6 text-sm text-pink-300/70">
+              <span>� {products.length} Tracks</span>
+              <span>•</span>
+              <span>💎 D.FAITH Accepted</span>
+              <span>•</span>
+              <span className="text-green-400">✨ Live</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Categories - Taylor Swift Style */}
+        <div className="relative bg-gradient-to-r from-purple-950/60 via-pink-950/60 to-rose-950/60 backdrop-blur-sm border-b border-pink-400/20">
+          <div className="p-4">
+            <div className="flex flex-wrap justify-center gap-2 max-w-4xl mx-auto">
+              {categories.map((category, index) => (
+                <button
+                  key={category}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                    selectedCategory === category
+                      ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-500/30 scale-105'
+                      : 'bg-purple-900/40 text-pink-200 border border-pink-400/30 hover:bg-pink-900/40 hover:text-white hover:border-pink-300/50'
+                  }`}
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-xs">{getCategoryIcon(category)}</span>
+                    {getCategoryDisplayName(category)}
                   </span>
-                </div>
-                <div className="text-amber-300/70 text-lg font-medium">
-                  Entdecke Dawid Faith&apos;s exklusive Kollektion
-                </div>
-              </div>
-              
-              {/* Fan Categories */}
-              <div className="flex flex-wrap justify-center gap-4 max-w-5xl mx-auto">
-                {categories.map((category, index) => (
-                  <button
-                    key={category}
-                    className={`relative px-8 py-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 ${
-                      selectedCategory === category
-                        ? 'bg-gradient-to-r from-amber-500 to-red-500 text-white shadow-2xl shadow-amber-500/50 border-2 border-amber-300'
-                        : 'bg-gradient-to-r from-purple-800/60 to-amber-800/60 text-amber-200 border-2 border-purple-400/40 hover:border-amber-400/60 hover:from-purple-700/80 hover:to-amber-700/80 hover:text-white shadow-lg'
-                    }`}
-                    onClick={() => setSelectedCategory(category)}
-                    style={{
-                      animationDelay: `${index * 100}ms`
-                    }}
-                  >
-                    <span className="relative z-10 flex items-center gap-2">
-                      <span className="text-xl">{getCategoryIcon(category)}</span>
-                      {getCategoryDisplayName(category)}
-                    </span>
-                    
-                    {/* Active Category Glow */}
-                    {selectedCategory === category && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-amber-400/20 to-red-400/20 rounded-2xl blur-lg"></div>
-                    )}
-                  </button>
-                ))}
-              </div>
-              
-              {/* Fan Love Info Bar */}
-              <div className="relative">
-                <div className="bg-gradient-to-r from-transparent via-amber-500/30 to-transparent h-px"></div>
-                <div className="text-center mt-4">
-                  <div className="inline-flex items-center gap-3 bg-gradient-to-r from-purple-900/60 to-amber-900/60 backdrop-blur-sm border border-amber-400/40 rounded-full px-8 py-3 shadow-lg">
-                    <div className="w-3 h-3 bg-gradient-to-r from-red-400 to-amber-400 rounded-full animate-pulse shadow-lg shadow-amber-400/50"></div>
-                    <span className="text-amber-300 font-medium italic text-sm">
-                      🎵 Aktuelle Kategorie: <span className="text-amber-400 font-bold">{getCategoryDisplayName(selectedCategory)}</span> 🎵
-                    </span>
-                  </div>
-                </div>
-              </div>
+                </button>
+              ))}
+            </div>
+            
+            {/* Current Selection */}
+            <div className="text-center mt-3">
+              <span className="text-xs text-pink-300/60 italic">
+                Showing {filteredProducts.length} {selectedCategory === "all" ? "items" : getCategoryDisplayName(selectedCategory).toLowerCase()}
+              </span>
             </div>
           </div>
         </div>
