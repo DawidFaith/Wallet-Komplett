@@ -8,6 +8,7 @@ import { Card, CardContent } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import { 
   FaShoppingCart, 
+  FaCoins,
   FaCheck, 
   FaTimes, 
   FaSpinner, 
@@ -1318,7 +1319,7 @@ export default function MerchTab() {
                       </>
                     ) : (
                       <>
-                        <img src="/D.FAITH.png" alt="D.FAITH" className="w-4 h-4 mr-2" />
+                        <FaCoins className="mr-2" />
                         Jetzt kaufen ({getTotalPriceDfaith().toFixed(2)} D.FAITH)
                       </>
                     )}
@@ -1631,7 +1632,7 @@ export default function MerchTab() {
                       <div className="flex justify-between items-end">
                         <div className="space-y-1">
                           <div className="text-amber-400 font-bold text-lg flex items-center gap-2">
-                            <img src="/D.FAITH.png" alt="D.FAITH" className="w-5 h-5" />
+                            <FaCoins className="text-amber-500" />
                             {dfaithPrice.toFixed(2)} D.FAITH
                           </div>
                           <div className="text-gray-400 text-sm flex items-center gap-1.5">
@@ -1680,7 +1681,7 @@ export default function MerchTab() {
                     <div className="flex justify-between items-end">
                       <div className="space-y-1">
                         <div className="text-amber-400 font-bold text-lg flex items-center gap-2">
-                          <img src="/D.FAITH.png" alt="D.FAITH" className="w-5 h-5" />
+                          <FaCoins className="text-amber-500" />
                           {dfaithPrice.toFixed(2)} D.FAITH
                         </div>
                         <div className="text-gray-400 text-sm flex items-center gap-1.5">
@@ -1720,7 +1721,7 @@ export default function MerchTab() {
                     <div className="flex justify-between items-end">
                       <div className="space-y-1">
                         <div className="text-amber-400 font-bold text-lg flex items-center gap-2">
-                          <img src="/D.FAITH.png" alt="D.FAITH" className="w-5 h-5" />
+                          <FaCoins className="text-amber-500" />
                           {dfaithPrice.toFixed(2)} D.FAITH
                         </div>
                         <div className="text-gray-400 text-sm flex items-center gap-1.5">
@@ -1808,7 +1809,7 @@ export default function MerchTab() {
                 {/* D.FAITH Balance - Nur sichtbar wenn Warenkorb offen */}
                 <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-600">
                   <div className="flex items-center gap-2 mb-2">
-                    <img src="/D.FAITH.png" alt="D.FAITH" className="w-4 h-4" />
+                    <FaCoins className="text-amber-400 text-sm" />
                     <span className="text-gray-300 text-sm font-medium">Ihr D.FAITH Guthaben</span>
                   </div>
                   <div className="flex items-center gap-2">
