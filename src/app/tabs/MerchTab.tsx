@@ -1499,9 +1499,9 @@ export default function MerchTab() {
                                     {imageMedias.map((media, index) => (
                                       <div 
                                         key={index} 
-                                        className="flex-shrink-0 bg-zinc-900 relative flex items-center justify-center"
+                                        className="flex-shrink-0 bg-zinc-900 flex items-center justify-center"
                                         style={{ 
-                                          width: '100%',
+                                          width: `${100 / imageMedias.length}%`,
                                           height: '100%'
                                         }}
                                       >
