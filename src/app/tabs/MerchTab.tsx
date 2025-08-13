@@ -684,6 +684,44 @@ export default function MerchTab() {
   };
 
   // Einzigartige Kategorien extrahieren
+  // Kategorie-Icons für bessere Shop-UX
+  const getCategoryIcon = (category: string) => {
+    const icons: { [key: string]: string } = {
+      "all": "🛍️",
+      "music": "🎵",
+      "clothing": "👕", 
+      "accessories": "💎",
+      "digital": "💾",
+      "books": "📚",
+      "art": "🎨",
+      "collectibles": "🏆",
+      "electronics": "⚡",
+      "gaming": "🎮",
+      "lifestyle": "✨",
+      "merch": "🎁"
+    };
+    return icons[category.toLowerCase()] || "🏷️";
+  };
+
+  const getCategoryDisplayName = (category: string) => {
+    if (category === "all") return "Alle Produkte";
+    
+    const names: { [key: string]: string } = {
+      "music": "Musik",
+      "clothing": "Kleidung",
+      "accessories": "Accessoires", 
+      "digital": "Digital",
+      "books": "Bücher",
+      "art": "Kunst",
+      "collectibles": "Sammlerstücke",
+      "electronics": "Elektronik",
+      "gaming": "Gaming",
+      "lifestyle": "Lifestyle",
+      "merch": "Merchandise"
+    };
+    return names[category.toLowerCase()] || category;
+  };
+
   const categories = ["all", ...Array.from(new Set(products.map(p => p.category)))];
 
   // Gefilterte Produkte
@@ -1002,24 +1040,33 @@ export default function MerchTab() {
         <div className="bg-gradient-to-r from-zinc-900/95 to-zinc-800/95 backdrop-blur-sm rounded-2xl p-6 border border-zinc-700/50 shadow-2xl">
           {/* Titel-Bereich */}
           <div className="text-center mb-6">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 bg-clip-text text-transparent mb-3">
-              🛍️ Merch Shop
-            </h1>
-            <p className="text-gray-300 text-lg">Exklusive Produkte mit D.FAITH kaufen</p>
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <img 
+                src="/D.FAITH.png" 
+                alt="D.FAITH Token" 
+                className="w-16 h-16 rounded-full shadow-lg border-2 border-amber-400/50"
+              />
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 bg-clip-text text-transparent">
+                D.FAITH Shop
+              </h1>
+            </div>
+            <p className="text-gray-300 text-lg">Exklusive Produkte mit D.FAITH Token kaufen</p>
             <div className="w-24 h-1 bg-gradient-to-r from-amber-500 to-orange-500 mx-auto mt-3 rounded-full"></div>
           </div>
           
           {/* Kategorie-Filter integriert */}
           <div className="space-y-4">
             <div className="flex items-center justify-center gap-3">
-              <FaFilter className="text-amber-400 text-lg" />
-              <span className="text-white font-semibold text-lg">Kategorien</span>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🏪</span>
+                <span className="text-white font-semibold text-lg">Kategorien</span>
+              </div>
               <div className="px-3 py-1 bg-amber-600/20 rounded-full border border-amber-600/30">
                 <span className="text-amber-300 text-sm font-medium">{filteredProducts.length} Produkt(e)</span>
               </div>
             </div>
             
-            <div className="flex flex-wrap justify-center gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
               {categories.map(category => (
                 <Button
                   key={category}
@@ -1028,9 +1075,10 @@ export default function MerchTab() {
                     selectedCategory === category 
                       ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white border-amber-600 shadow-lg shadow-amber-600/30 scale-105" 
                       : "bg-zinc-800/50 border-amber-600/40 text-white hover:bg-amber-600/20 hover:border-amber-500 hover:text-white backdrop-blur-sm"
-                  } border rounded-xl px-4 py-2.5 font-medium`}
+                  } border rounded-xl px-3 py-2.5 font-medium text-sm flex flex-col items-center gap-1 min-h-[70px]`}
                 >
-                  {category === "all" ? "🛍️ Alle" : `📂 ${category}`}
+                  <span className="text-xl">{getCategoryIcon(category)}</span>
+                  <span className="text-xs text-center leading-tight">{getCategoryDisplayName(category)}</span>
                 </Button>
               ))}
             </div>
