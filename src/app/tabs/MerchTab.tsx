@@ -1499,16 +1499,17 @@ export default function MerchTab() {
                                     {imageMedias.map((media, index) => (
                                       <div 
                                         key={index} 
-                                        className="w-full h-full flex-shrink-0 bg-zinc-900 relative"
-                                        style={{ width: `${100 / imageMedias.length}%` }}
+                                        className="flex-shrink-0 bg-zinc-900 relative flex items-center justify-center"
+                                        style={{ 
+                                          width: '100%',
+                                          height: '100%'
+                                        }}
                                       >
-                                        <div className="absolute inset-0 flex items-center justify-center p-2">
-                                          <img 
-                                            src={media.url} 
-                                            alt={`${product.name} - Bild ${index + 1}`}
-                                            className="max-w-full max-h-full object-contain rounded"
-                                          />
-                                        </div>
+                                        <img 
+                                          src={media.url} 
+                                          alt={`${product.name} - Bild ${index + 1}`}
+                                          className="max-w-full max-h-full object-contain rounded"
+                                        />
                                       </div>
                                     ))}
                                   </div>
