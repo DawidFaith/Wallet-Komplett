@@ -100,6 +100,16 @@ function CompactAudioPlayer({ media }: { media: MediaFile }) {
     }
   };
 
+  const handleError = (e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
+    console.error('Audio loading error:', e);
+    console.log('Media URL:', media.url);
+    console.log('Media type:', media.mimeType);
+  };
+
+  const handleCanPlay = () => {
+    console.log('Audio can play:', media.url);
+  };
+
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const element = audioRef.current;
     if (element) {
@@ -124,8 +134,12 @@ function CompactAudioPlayer({ media }: { media: MediaFile }) {
         onPause={() => setIsPlaying(false)}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
+        onCanPlay={handleCanPlay}
+        onError={handleError}
         onEnded={() => setIsPlaying(false)}
         className="hidden"
+        crossOrigin="anonymous"
+        preload="metadata"
       />
       
       <div className="flex items-center gap-3">
@@ -1251,10 +1265,23 @@ export default function MerchTab() {
                   <div className="bg-gradient-to-br from-zinc-800 to-zinc-900 relative">
                     {/* Spezielle Darstellung wenn MP3-Dateien vorhanden sind (unabhängig von Kategorie) */}
                     {(() => {
-                      const audioMedia = product.media.find(media => media.type === "AUDIO" || media.mimeType?.includes("audio") || media.originalName.toLowerCase().includes(".mp3"));
-                      const imageMedia = product.media.find(media => media.type === "IMAGE") || product.media.find(media => media.type !== "AUDIO" && !media.mimeType?.includes("audio"));
+                      // Prüfe auf alle Audio-Dateien (unabhängig von Kategorie)
+                      const audioMedias = product.media.filter(media => 
+                        media.type === "AUDIO" || 
+                        media.mimeType?.includes("audio") || 
+                        media.originalName.toLowerCase().includes(".mp3") ||
+                        media.originalName.toLowerCase().includes(".wav") ||
+                        media.originalName.toLowerCase().includes(".m4a") ||
+                        media.originalName.toLowerCase().includes(".aac")
+                      );
+                      const imageMedia = product.media.find(media => media.type === "IMAGE") || 
+                                        product.media.find(media => 
+                                          media.type !== "AUDIO" && 
+                                          !media.mimeType?.includes("audio") &&
+                                          !media.originalName.toLowerCase().match(/\.(mp3|wav|m4a|aac)$/)
+                                        );
                       
-                      if (audioMedia) {
+                      if (audioMedias.length > 0) {
                         return (
                           <div className="space-y-2 p-3 relative">
                             {/* Bild anzeigen falls vorhanden */}
@@ -1271,7 +1298,9 @@ export default function MerchTab() {
                                 {/* Audio Preview Badge */}
                                 <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
                                   <FaMusic className="text-green-400 inline mr-1 text-xs" />
-                                  <span className="text-white text-xs font-medium">Audio Preview</span>
+                                  <span className="text-white text-xs font-medium">
+                                    {audioMedias.length} Audio Preview{audioMedias.length > 1 ? 's' : ''}
+                                  </span>
                                 </div>
                                 
                                 {/* Titel und Beschreibung Overlay */}
@@ -1289,22 +1318,46 @@ export default function MerchTab() {
                               </div>
                             )}
                             
-                            {/* MP3 Preview Player - Immer anzeigen wenn MP3 vorhanden */}
-                            <div className="mt-2">
-                              <div className="bg-amber-900/20 border border-amber-600/30 rounded-lg p-2 mb-2">
-                                <div className="flex items-center gap-2 mb-1">
+                            {/* Alle Audio-Dateien anzeigen */}
+                            <div className="space-y-2">
+                              <div className="bg-amber-900/20 border border-amber-600/30 rounded-lg p-3">
+                                <div className="flex items-center gap-2 mb-3">
                                   <FaMusic className="text-amber-400 text-sm" />
-                                  <span className="text-amber-300 text-sm font-medium">🎵 Audio Preview</span>
+                                  <span className="text-amber-300 text-sm font-medium">
+                                    🎵 Audio Previews ({audioMedias.length})
+                                  </span>
                                 </div>
-                                <CompactAudioPlayer media={audioMedia} />
+                                
+                                {/* Liste aller Audio-Dateien */}
+                                <div className="space-y-3">
+                                  {audioMedias.map((audioMedia, index) => (
+                                    <div key={audioMedia.id || index} className="bg-zinc-800/50 rounded-lg p-2">
+                                      {/* Audio-Datei Name */}
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <FaPlay className="text-green-400 text-xs" />
+                                        <span className="text-white text-sm font-medium truncate">
+                                          {audioMedia.originalName || `Audio ${index + 1}`}
+                                        </span>
+                                        {audioMedia.size && (
+                                          <span className="text-gray-400 text-xs">
+                                            ({(audioMedia.size / 1024 / 1024).toFixed(1)} MB)
+                                          </span>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Audio Player */}
+                                      <CompactAudioPlayer media={audioMedia} />
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                             
                             {/* Weitere Medien Badge */}
-                            {product.media.length > 2 && (
+                            {(product.media.length - audioMedias.length - (imageMedia ? 1 : 0)) > 0 && (
                               <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
                                 <p className="text-xs text-white font-medium">
-                                  +{product.media.length - 2} weitere
+                                  +{product.media.length - audioMedias.length - (imageMedia ? 1 : 0)} weitere
                                 </p>
                               </div>
                             )}
