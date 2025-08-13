@@ -1035,51 +1035,103 @@ export default function MerchTab() {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-zinc-900 to-zinc-800 text-white">
-      {/* Header mit integrierter Kategorie-Auswahl */}
-      <div className="p-4 mb-6">
-        <div className="bg-gradient-to-r from-zinc-900/95 to-zinc-800/95 backdrop-blur-sm rounded-2xl p-6 border border-zinc-700/50 shadow-2xl">
-          {/* Titel-Bereich */}
-          <div className="text-center mb-6">
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <img 
-                src="/D.FAITH.png" 
-                alt="D.FAITH Token" 
-                className="w-16 h-16 rounded-full shadow-lg border-2 border-amber-400/50"
-              />
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 bg-clip-text text-transparent">
-                D.FAITH Shop
-              </h1>
-            </div>
-            <p className="text-gray-300 text-lg">Exklusive Produkte mit D.FAITH Token kaufen</p>
-            <div className="w-24 h-1 bg-gradient-to-r from-amber-500 to-orange-500 mx-auto mt-3 rounded-full"></div>
-          </div>
-          
-          {/* Kategorie-Filter integriert */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-center gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">🏪</span>
-                <span className="text-white font-semibold text-lg">Kategorien</span>
+      {/* Moderner Header */}
+      <div className="relative mb-8">
+        {/* Hintergrund-Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-600/10 via-orange-500/5 to-red-600/10 rounded-3xl"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-400/20 via-transparent to-transparent rounded-3xl"></div>
+        
+        <div className="relative bg-black/40 backdrop-blur-xl rounded-3xl border border-amber-500/20 shadow-2xl shadow-amber-500/10 p-8">
+          {/* Header Content */}
+          <div className="text-center space-y-6">
+            {/* Token & Titel */}
+            <div className="flex items-center justify-center gap-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-amber-400/30 rounded-full blur-xl"></div>
+                <img 
+                  src="/D.FAITH.png" 
+                  alt="D.FAITH Token" 
+                  className="relative w-20 h-20 rounded-full shadow-2xl border-3 border-amber-400/60 ring-4 ring-amber-400/20"
+                />
               </div>
-              <div className="px-3 py-1 bg-amber-600/20 rounded-full border border-amber-600/30">
-                <span className="text-amber-300 text-sm font-medium">{filteredProducts.length} Produkt(e)</span>
+              <div className="space-y-2">
+                <h1 className="text-5xl font-black bg-gradient-to-r from-amber-300 via-amber-400 to-orange-400 bg-clip-text text-transparent tracking-tight">
+                  D.FAITH
+                </h1>
+                <div className="text-2xl font-bold text-white/90 tracking-wide">
+                  SHOP
+                </div>
               </div>
             </div>
             
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {/* Subtitle */}
+            <p className="text-lg text-white/70 max-w-md mx-auto leading-relaxed">
+              Exklusive Produkte & Collectibles
+              <br />
+              <span className="text-amber-300 font-semibold">Bezahle mit D.FAITH Token</span>
+            </p>
+            
+            {/* Stats */}
+            <div className="flex items-center justify-center gap-8 pt-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-amber-400">{products.length}</div>
+                <div className="text-sm text-white/60">Produkte</div>
+              </div>
+              <div className="w-px h-12 bg-white/20"></div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-amber-400">{filteredProducts.length}</div>
+                <div className="text-sm text-white/60">Gefiltert</div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Kategorien-Sektion */}
+          <div className="mt-8 pt-8 border-t border-white/10">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-bold text-white mb-2">Kategorien durchstöbern</h3>
+              <p className="text-white/60 text-sm">Finde genau das, was du suchst</p>
+            </div>
+            
+            {/* Kategorie-Grid */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
               {categories.map(category => (
-                <Button
+                <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`transition-all duration-300 transform hover:scale-105 ${
+                  className={`group relative transition-all duration-300 ${
                     selectedCategory === category 
-                      ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white border-amber-600 shadow-lg shadow-amber-600/30 scale-105" 
-                      : "bg-zinc-800/50 border-amber-600/40 text-white hover:bg-amber-600/20 hover:border-amber-500 hover:text-white backdrop-blur-sm"
-                  } border rounded-xl px-3 py-2.5 font-medium text-sm flex flex-col items-center gap-1 min-h-[70px]`}
+                      ? "scale-105" 
+                      : "hover:scale-105"
+                  }`}
                 >
-                  <span className="text-xl">{getCategoryIcon(category)}</span>
-                  <span className="text-xs text-center leading-tight">{getCategoryDisplayName(category)}</span>
-                </Button>
+                  {/* Card */}
+                  <div className={`relative p-4 rounded-2xl border transition-all duration-300 ${
+                    selectedCategory === category
+                      ? "bg-gradient-to-br from-amber-500 to-orange-500 border-amber-400 shadow-lg shadow-amber-500/30"
+                      : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-amber-400/40 backdrop-blur-sm"
+                  }`}>
+                    {/* Icon */}
+                    <div className="text-3xl mb-2 transition-transform duration-300 group-hover:scale-110">
+                      {getCategoryIcon(category)}
+                    </div>
+                    
+                    {/* Text */}
+                    <div className={`text-xs font-medium text-center leading-tight transition-colors duration-300 ${
+                      selectedCategory === category
+                        ? "text-white"
+                        : "text-white/80 group-hover:text-white"
+                    }`}>
+                      {getCategoryDisplayName(category)}
+                    </div>
+                    
+                    {/* Selection indicator */}
+                    {selectedCategory === category && (
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                        <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                      </div>
+                    )}
+                  </div>
+                </button>
               ))}
             </div>
           </div>
@@ -1261,23 +1313,14 @@ export default function MerchTab() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-white font-medium mb-2">Land *</label>
-                        <select
+                        <input
+                          type="text"
                           required
                           value={checkoutForm.country}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, country: e.target.value }))}
-                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
-                        >
-                          <option value="Deutschland">Deutschland</option>
-                          <option value="Österreich">Österreich</option>
-                          <option value="Schweiz">Schweiz</option>
-                          <option value="Niederlande">Niederlande</option>
-                          <option value="Belgien">Belgien</option>
-                          <option value="Frankreich">Frankreich</option>
-                          <option value="Italien">Italien</option>
-                          <option value="Spanien">Spanien</option>
-                          <option value="Polen">Polen</option>
-                          <option value="Tschechien">Tschechien</option>
-                        </select>
+                          placeholder="Deutschland"
+                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-gray-400 focus:border-amber-400 focus:outline-none"
+                        />
                       </div>
                       
                       <div>
@@ -1879,17 +1922,14 @@ export default function MerchTab() {
 
                     <div>
                       <label className="block text-white font-medium mb-2">Land *</label>
-                      <select
+                      <input
+                        type="text"
                         required
                         value={checkoutForm.country}
                         onChange={(e) => setCheckoutForm(prev => ({ ...prev, country: e.target.value }))}
-                        className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
-                      >
-                        <option value="Deutschland">Deutschland</option>
-                        <option value="Österreich">Österreich</option>
-                        <option value="Schweiz">Schweiz</option>
-                        <option value="Andere">Andere</option>
-                      </select>
+                        placeholder="Deutschland"
+                        className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-gray-400 focus:border-amber-400 focus:outline-none"
+                      />
                     </div>
                   </div>
                 )}
