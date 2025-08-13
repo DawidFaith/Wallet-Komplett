@@ -1140,7 +1140,7 @@ export default function MerchTab() {
                   </span>
                 </div>
                 <div className="text-amber-300/70 text-lg font-medium">
-                  Entdecke Dawid Faith's exklusive Kollektion
+                  Entdecke Dawid Faith&apos;s exklusive Kollektion
                 </div>
               </div>
               
