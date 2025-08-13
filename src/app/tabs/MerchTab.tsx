@@ -1473,7 +1473,7 @@ export default function MerchTab() {
                                     }}
                                   >
                                     {imageMedias.map((media, index) => (
-                                      <div key={index} className="w-full h-full flex-shrink-0">
+                                      <div key={index} className="h-full" style={{ width: `${100 / imageMedias.length}%`, flexShrink: 0 }}>
                                         <img 
                                           src={media.url} 
                                           alt={`${product.name} - Bild ${index + 1}`}
@@ -1496,7 +1496,7 @@ export default function MerchTab() {
                                             [product.id]: newIndex
                                           }));
                                         }}
-                                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/70 text-white p-2 rounded-full hover:bg-black/90 transition-all"
+                                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/80 text-white p-3 rounded-full hover:bg-black/90 transition-all duration-200 z-10 shadow-lg"
                                       >
                                         ←
                                       </button>
@@ -1510,7 +1510,7 @@ export default function MerchTab() {
                                             [product.id]: newIndex
                                           }));
                                         }}
-                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/70 text-white p-2 rounded-full hover:bg-black/90 transition-all"
+                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/80 text-white p-3 rounded-full hover:bg-black/90 transition-all duration-200 z-10 shadow-lg"
                                       >
                                         →
                                       </button>
