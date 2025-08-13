@@ -1473,7 +1473,7 @@ export default function MerchTab() {
                                     }}
                                   >
                                     {imageMedias.map((media, index) => (
-                                      <div key={index} className="h-full" style={{ width: `${100 / imageMedias.length}%`, flexShrink: 0 }}>
+                                      <div key={index} className="w-full h-full flex-shrink-0">
                                         <img 
                                           src={media.url} 
                                           alt={`${product.name} - Bild ${index + 1}`}
