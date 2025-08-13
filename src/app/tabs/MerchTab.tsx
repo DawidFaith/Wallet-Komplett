@@ -977,6 +977,12 @@ export default function MerchTab() {
         // 2. API hat automatisch Webhook gesendet - wir zeigen nur noch Erfolg an
         console.log('✅ Verifikation erfolgreich:', verifyResult.verification);
         console.log('📦 Webhook Status:', verifyResult.webhook);
+        
+      } catch (verifyError: any) {
+        console.error("Verifikations-Fehler:", verifyError);
+        throw new Error(`Verifikation fehlgeschlagen: ${verifyError.message || 'Unbekannter Fehler'}`);
+      }
+      
       setPurchaseStatus("success");
       setSuccessDetails({
         transactionHash,
@@ -991,8 +997,7 @@ export default function MerchTab() {
       setTimeout(() => {
         setShowCheckout(false);
         setShowCart(false);
-      }, 1000);ellung wurde automatisch an unser System weitergeleitet.
-      ${hasPhysicalProducts() ? "Versandbestätigung folgt per E-Mail." : "Download-Links wurden an Ihre E-Mail gesendet."}`);
+      }, 1000);
       
       // Erfolg-Modal nach 2 Sekunden schließen und dann Warenkorb/Checkout schließen
       setTimeout(() => {
@@ -2105,10 +2110,15 @@ export default function MerchTab() {
                         <FaSpinner className="animate-spin" />
                         Transaktion läuft...
                       </div>
-                    ) : !account?.address ? (
+                    ) : (
                       <>
-                        Wallet verbinden erforderlich
+                        Zur Kasse ({getTotalPriceDfaith().toFixed(2)} D.FAITH)
                       </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
@@ -2187,15 +2197,6 @@ export default function MerchTab() {
                   Transaktion auf BaseScan anzeigen →
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}                 </Button>
-                </div>
-              </form>
             </div>
           </div>
         </div>
