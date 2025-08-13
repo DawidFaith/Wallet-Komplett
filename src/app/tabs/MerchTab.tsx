@@ -849,10 +849,11 @@ export default function MerchTab() {
               items: Object.entries(cart).map(([productId, quantity]) => {
                 const product = products.find(p => p.id === productId);
                 return {
-                  id: productId,
+                  id: productId, // Existierende Produkt-ID aus dem Order Management System
                   name: product?.name || 'Unbekanntes Produkt',
                   quantity: quantity,
-                  price: product?.price || 0
+                  price: product?.price || 0,
+                  description: product?.description || '' // Optional aber empfohlen
                 };
               })
             }
