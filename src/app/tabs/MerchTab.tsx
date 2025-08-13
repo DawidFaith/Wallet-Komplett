@@ -1477,7 +1477,7 @@ export default function MerchTab() {
                                         <img 
                                           src={media.url} 
                                           alt={`${product.name} - Bild ${index + 1}`}
-                                          className="w-full h-full object-cover"
+                                          className="w-full h-full object-contain bg-zinc-900"
                                         />
                                       </div>
                                     ))}
