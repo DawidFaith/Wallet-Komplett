@@ -453,6 +453,14 @@ export default function MerchTab() {
   const [cart, setCart] = useState<{[key: string]: number}>({});
   const [showCart, setShowCart] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successDetails, setSuccessDetails] = useState<{
+    transactionHash: string;
+    orderId: string;
+    itemCount: number;
+    totalPrice: number;
+    hasPhysical: boolean;
+  } | null>(null);
   const [purchaseStatus, setPurchaseStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
   const [purchaseMessage, setPurchaseMessage] = useState<string>("");
   // Bildindizes für T-Shirt Galleries
@@ -969,24 +977,29 @@ export default function MerchTab() {
         // 2. API hat automatisch Webhook gesendet - wir zeigen nur noch Erfolg an
         console.log('✅ Verifikation erfolgreich:', verifyResult.verification);
         console.log('📦 Webhook Status:', verifyResult.webhook);
-        console.log('📋 Order Status:', verifyResult.orderBook);
-
-      } catch (verifyError: unknown) {
-        console.error("Verifizierung fehlgeschlagen:", verifyError);
-        const errorMessage = verifyError instanceof Error ? verifyError.message : 'Unbekannter Verifikationsfehler';
-        throw new Error(errorMessage);
-      }
-
       setPurchaseStatus("success");
-      setPurchaseMessage(`✅ Zahlung erfolgreich verifiziert! 
-      Transaktion: ${transactionHash.substring(0, 10)}...
-      Order-ID: ${orderId}
-      ${getCartItemCount()} Artikel für ${totalPriceDfaith.toFixed(2)} D.FAITH gekauft. 
-      Ihre Bestellung wurde automatisch an unser System weitergeleitet.
+      setSuccessDetails({
+        transactionHash,
+        orderId,
+        itemCount: getCartItemCount(),
+        totalPrice: totalPriceDfaith,
+        hasPhysical: hasPhysicalProducts()
+      });
+      setShowSuccessModal(true);
+      
+      // Nach 1 Sekunde Checkout schließen, aber Success Modal offen lassen
+      setTimeout(() => {
+        setShowCheckout(false);
+        setShowCart(false);
+      }, 1000);ellung wurde automatisch an unser System weitergeleitet.
       ${hasPhysicalProducts() ? "Versandbestätigung folgt per E-Mail." : "Download-Links wurden an Ihre E-Mail gesendet."}`);
-      clearCart();
-      setShowCart(false);
-      setShowCheckout(false);
+      
+      // Erfolg-Modal nach 2 Sekunden schließen und dann Warenkorb/Checkout schließen
+      setTimeout(() => {
+        clearCart();
+        setShowCart(false);
+        setShowCheckout(false);
+      }, 2000);
 
     } catch (error) {
       console.error("Kauf-Fehler:", error);
@@ -1473,11 +1486,11 @@ export default function MerchTab() {
                                     }}
                                   >
                                     {imageMedias.map((media, index) => (
-                                      <div key={index} className="w-full h-full flex-shrink-0">
+                                      <div key={index} className="w-full h-full flex-shrink-0 flex items-center justify-center bg-zinc-900">
                                         <img 
                                           src={media.url} 
                                           alt={`${product.name} - Bild ${index + 1}`}
-                                          className="w-full h-full object-contain bg-zinc-900"
+                                          className="max-w-full max-h-full object-contain"
                                         />
                                       </div>
                                     ))}
@@ -2096,12 +2109,91 @@ export default function MerchTab() {
                       <>
                         Wallet verbinden erforderlich
                       </>
-                    ) : (
-                      <>
-                        Mit {getTotalPriceDfaith().toFixed(2)} D.FAITH kaufen
-                      </>
-                    )}
-                  </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Erfolgs-Modal */}
+      {showSuccessModal && successDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden" style={{ position: 'fixed' }}>
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+          <div className="relative bg-gradient-to-br from-green-900 to-emerald-800 border border-green-500/50 w-full max-w-lg mx-4 rounded-2xl shadow-2xl">
+            <div className="p-8 text-center">
+              {/* Erfolgs-Icon */}
+              <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <FaCheck className="text-3xl text-white" />
+              </div>
+              
+              {/* Hauptnachricht */}
+              <h2 className="text-3xl font-bold text-white mb-4">
+                🎉 Kauf erfolgreich!
+              </h2>
+              
+              <p className="text-green-100 text-lg mb-6">
+                Ihre Zahlung wurde erfolgreich verarbeitet und Ihre Bestellung wurde automatisch an unser System weitergeleitet.
+              </p>
+              
+              {/* Details */}
+              <div className="bg-black/20 rounded-lg p-4 mb-6 text-left">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-green-200">Order-ID:</span>
+                    <span className="text-white font-mono">{successDetails.orderId}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-green-200">Transaktion:</span>
+                    <span className="text-white font-mono">{successDetails.transactionHash.substring(0, 16)}...</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-green-200">Artikel:</span>
+                    <span className="text-white">{successDetails.itemCount} Stück</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-green-200">Bezahlt:</span>
+                    <span className="text-amber-400 font-bold">{successDetails.totalPrice.toFixed(2)} D.FAITH</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Weitere Schritte */}
+              <div className="bg-green-800/30 rounded-lg p-4 mb-6">
+                <h3 className="text-white font-bold mb-2">📧 Nächste Schritte:</h3>
+                <p className="text-green-100 text-sm">
+                  {successDetails.hasPhysical 
+                    ? "Sie erhalten eine Versandbestätigung per E-Mail, sobald Ihre Bestellung versendet wird."
+                    : "Ihre Download-Links wurden bereits an Ihre E-Mail-Adresse gesendet."
+                  }
+                </p>
+              </div>
+              
+              {/* Schließen Button */}
+              <div className="space-y-3">
+                <Button
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    clearCart();
+                    setPurchaseStatus("idle");
+                    setSuccessDetails(null);
+                  }}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-bold"
+                >
+                  Weiter einkaufen
+                </Button>
+                
+                <button
+                  onClick={() => window.open(`https://basescan.org/tx/${successDetails.transactionHash}`, '_blank')}
+                  className="text-green-300 hover:text-green-200 text-sm underline"
+                >
+                  Transaktion auf BaseScan anzeigen →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}                 </Button>
                 </div>
               </form>
             </div>
