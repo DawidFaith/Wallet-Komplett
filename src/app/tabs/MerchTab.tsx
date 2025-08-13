@@ -826,7 +826,7 @@ export default function MerchTab() {
       // Generiere eindeutige Order-ID
       const orderId = `ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-      // 1. ZUERST: Transaktion mit echtem Hash verifizieren
+      // 1. ZUERST: Transaktion mit echtem Hash verifizieren (vereinfachtes Format)
       try {
         const verifyResponse = await fetch('https://merch-balance-verifification-production.up.railway.app/api/v1/verify-purchase', {
           method: 'POST',
@@ -834,14 +834,18 @@ export default function MerchTab() {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            transactionHash: transactionHash, // Echter Transaction Hash
+            transactionHash: transactionHash,
             expectedAmount: totalPriceDfaith,
             customerData: {
-              email: checkoutForm.email,
+              orderId: orderId,
               userId: account.address,
-              orderId: orderId
+              email: checkoutForm.email,
+              firstName: checkoutForm.firstName || '',
+              lastName: checkoutForm.lastName || ''
             },
             productData: {
+              totalAmount: totalPriceDfaith,
+              currency: 'TOKEN',
               items: Object.entries(cart).map(([productId, quantity]) => {
                 const product = products.find(p => p.id === productId);
                 return {
@@ -850,15 +854,7 @@ export default function MerchTab() {
                   quantity: quantity,
                   price: product?.price || 0
                 };
-              }),
-              totalAmount: totalPriceDfaith,
-              currency: 'TOKEN'
-            },
-            metadata: {
-              source: 'wallet_shop',
-              timestamp: new Date().toISOString(),
-              shopId: 'DFAITH-MERCH',
-              customerIp: 'web-app'
+              })
             }
           })
         });
@@ -866,67 +862,41 @@ export default function MerchTab() {
         const verifyResult = await verifyResponse.json();
         
         if (!verifyResult.success) {
-          throw new Error(`Verifizierung fehlgeschlagen: ${verifyResult.error || 'Unbekannter Fehler'}`);
-        }
-
-        // 2. NUR WENN VERIFIZIERUNG ERFOLGREICH: Bestellung an Backend senden
-        const orderData = {
-          walletAddress: account.address,
-          email: checkoutForm.email,
-          orderId: orderId,
-          shippingAddress: hasPhysicalProducts() ? {
-            firstName: checkoutForm.firstName,
-            lastName: checkoutForm.lastName,
-            street: checkoutForm.street,
-            city: checkoutForm.city,
-            postalCode: checkoutForm.postalCode,
-            country: checkoutForm.country,
-            phone: checkoutForm.phone
-          } : null,
-          products: Object.entries(cart).map(([productId, quantity]) => {
-            const product = products.find(p => p.id === productId);
-            return {
-              productId,
-              quantity,
-              priceEur: product?.price || 0,
-              isDigital: product?.isDigital || false
-            };
-          }),
-          totalEur: getTotalPriceEur(),
-          totalDfaith: totalPriceDfaith,
-          transactionHash: transactionHash, // Echter Transaction Hash
-          verificationData: verifyResult.verification, // Blockchain-Verifizierung mitgeben
-          hasPhysicalProducts: hasPhysicalProducts(),
-          timestamp: new Date().toISOString()
-        };
-
-        // Webhook an Backend senden (nur nach erfolgreicher Verifizierung)
-        try {
-          const webhookResponse = await fetch(`${API_BASE_URL}/api/webhook/order`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(orderData)
-          });
-
-          if (!webhookResponse.ok) {
-            console.warn("Webhook fehlgeschlagen, aber Zahlung war verifiziert");
+          // Detailliertes Error-Handling basierend auf API-Response
+          let errorMessage = 'Verifikation fehlgeschlagen';
+          
+          if (verifyResult.error === 'Transaction verification failed') {
+            errorMessage = 'Transaktion konnte nicht auf der Blockchain gefunden werden. Bitte prüfen Sie den Transaction Hash.';
+          } else if (verifyResult.error === 'Validation failed') {
+            errorMessage = `Validierungsfehler: ${verifyResult.details?.join(', ') || 'Ungültige Daten'}`;
+          } else if (verifyResult.details?.includes('not confirmed')) {
+            errorMessage = 'Transaktion wird noch bestätigt. Bitte warten Sie einen Moment und versuchen Sie es erneut.';
+          } else if (verifyResult.details?.includes('amount mismatch')) {
+            errorMessage = 'Bezahlter Betrag stimmt nicht überein. Bitte kontaktieren Sie den Support.';
+          } else {
+            errorMessage = verifyResult.error || 'Unbekannter Verifikationsfehler';
           }
-        } catch (webhookError) {
-          console.warn("Webhook-Fehler:", webhookError);
+          
+          throw new Error(errorMessage);
         }
+
+        // 2. API hat automatisch Webhook gesendet - wir zeigen nur noch Erfolg an
+        console.log('✅ Verifikation erfolgreich:', verifyResult.verification);
+        console.log('📦 Webhook Status:', verifyResult.webhook);
+        console.log('📋 Order Status:', verifyResult.orderBook);
 
       } catch (verifyError: unknown) {
         console.error("Verifizierung fehlgeschlagen:", verifyError);
-        const errorMessage = verifyError instanceof Error ? verifyError.message : 'Unbekannter Verifizierungsfehler';
-        throw new Error(`Zahlungsverifizierung fehlgeschlagen: ${errorMessage}`);
+        const errorMessage = verifyError instanceof Error ? verifyError.message : 'Unbekannter Verifikationsfehler';
+        throw new Error(errorMessage);
       }
 
       setPurchaseStatus("success");
-      setPurchaseMessage(`✅ Kauf erfolgreich verifiziert! 
+      setPurchaseMessage(`✅ Zahlung erfolgreich verifiziert! 
       Transaktion: ${transactionHash.substring(0, 10)}...
+      Order-ID: ${orderId}
       ${getCartItemCount()} Artikel für ${totalPriceDfaith.toFixed(2)} D.FAITH gekauft. 
+      Ihre Bestellung wurde automatisch an unser System weitergeleitet.
       ${hasPhysicalProducts() ? "Versandbestätigung folgt per E-Mail." : "Download-Links wurden an Ihre E-Mail gesendet."}`);
       clearCart();
       setShowCart(false);
