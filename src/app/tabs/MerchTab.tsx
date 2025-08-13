@@ -1041,33 +1041,30 @@ export default function MerchTab() {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-zinc-900 to-zinc-800 text-white">
-      {/* Dawid Faith Shop - Amber/Gold Style */}
+      {/* Dawid Faith Shop - Clean Professional Style */}
       <div className="relative mb-6 overflow-hidden">
         {/* Elegant Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-900/20 via-yellow-900/20 to-amber-800/20"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-900/10 via-yellow-900/15 to-amber-800/10"></div>
         
-        <div className="relative bg-gradient-to-r from-zinc-950/80 via-amber-950/40 to-zinc-950/80 backdrop-blur-sm border-b border-amber-400/30">
-          <div className="p-6 text-center">
-            {/* Artist Name - Elegant & Compact */}
-            <div className="relative inline-block mb-3">
-              <h1 className="text-4xl md:text-5xl font-serif bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-400 bg-clip-text text-transparent tracking-wide">
-                Dawid Faith
+        <div className="relative bg-gradient-to-r from-zinc-950/90 via-amber-950/30 to-zinc-950/90 backdrop-blur-md border-b border-amber-400/20">
+          <div className="py-8 px-6 text-center">
+            {/* Artist Name - Bold & Modern with Pirata One */}
+            <div className="relative inline-block">
+              <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent tracking-wider drop-shadow-2xl" 
+                  style={{ fontFamily: 'var(--font-pirata-one), cursive' }}>
+                DAWID FAITH
               </h1>
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-0.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500"></div>
+              {/* Glowing underline effect */}
+              <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent rounded-full shadow-lg shadow-amber-400/50"></div>
+              {/* Additional glow */}
+              <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-48 h-2 bg-gradient-to-r from-transparent via-amber-400/30 to-transparent rounded-full blur-sm"></div>
             </div>
             
-            {/* Shop Subtitle */}
-            <p className="text-amber-200/80 text-lg font-light italic tracking-wide mb-4">
-              Official Music Store
-            </p>
-            
-            {/* Quick Stats - Minimal */}
-            <div className="flex justify-center items-center gap-6 text-sm text-amber-300/70">
-              <span>{products.length} Tracks</span>
-              <span>•</span>
-              <span>D.FAITH Accepted</span>
-              <span>•</span>
-              <span className="text-green-400">Live</span>
+            {/* Shop Subtitle - Elegant */}
+            <div className="mt-6">
+              <p className="text-amber-100/90 text-xl md:text-2xl font-light italic tracking-wide">
+                Official Music Store
+              </p>
             </div>
           </div>
         </div>

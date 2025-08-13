@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Pirata_One } from "next/font/google";
 import "./globals.css";
 import { ThirdwebProvider } from "thirdweb/react";
 import QueryProvider from "./QueryProvider";
 
 const inter = Inter({ subsets: ["latin"] });
+const pirataOne = Pirata_One({ 
+  weight: '400',
+  subsets: ["latin"],
+  variable: '--font-pirata-one'
+});
 
 export const metadata: Metadata = {
   title: "thirdweb SDK + Next starter",
@@ -19,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} ${pirataOne.variable}`}>
         <ThirdwebProvider>
           <QueryProvider>{children}</QueryProvider>
         </ThirdwebProvider>
