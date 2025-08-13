@@ -1295,14 +1295,6 @@ export default function MerchTab() {
                                 {/* Gradient Overlay für bessere Lesbarkeit */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                                 
-                                {/* Audio Preview Badge */}
-                                <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
-                                  <FaMusic className="text-green-400 inline mr-1 text-xs" />
-                                  <span className="text-white text-xs font-medium">
-                                    {audioMedias.length} Audio Preview{audioMedias.length > 1 ? 's' : ''}
-                                  </span>
-                                </div>
-                                
                                 {/* Titel und Beschreibung Overlay */}
                                 <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                                   <div className="flex items-start justify-between mb-2">
@@ -1321,13 +1313,6 @@ export default function MerchTab() {
                             {/* Alle Audio-Dateien anzeigen */}
                             <div className="space-y-2">
                               <div className="bg-amber-900/20 border border-amber-600/30 rounded-lg p-3">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <FaMusic className="text-amber-400 text-sm" />
-                                  <span className="text-amber-300 text-sm font-medium">
-                                    🎵 Audio Previews ({audioMedias.length})
-                                  </span>
-                                </div>
-                                
                                 {/* Liste aller Audio-Dateien */}
                                 <div className="space-y-3">
                                   {audioMedias.map((audioMedia, index) => (
