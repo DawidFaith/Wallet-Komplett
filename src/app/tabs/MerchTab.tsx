@@ -1553,14 +1553,18 @@ export default function MerchTab() {
                                   <div 
                                     className="flex transition-transform duration-300 h-full"
                                     style={{ 
-                                      transform: `translateX(-${(imageIndices[product.id] || 0) * (100 / imageMedias.length)}%)`,
+                                      transform: `translateX(-${(imageIndices[product.id] || 0) * 100}%)`,
                                       width: `${imageMedias.length * 100}%`
                                     }}
                                   >
                                     {imageMedias.map((media, index) => (
                                       <div 
                                         key={index} 
-                                        className="w-full h-full flex-shrink-0 bg-zinc-900 flex items-center justify-center"
+                                        className="flex-shrink-0 bg-zinc-900 flex items-center justify-center"
+                                        style={{ 
+                                          width: `${100 / imageMedias.length}%`,
+                                          height: '100%'
+                                        }}
                                       >
                                         <img 
                                           src={media.url} 
