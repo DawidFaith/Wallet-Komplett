@@ -1550,30 +1550,22 @@ export default function MerchTab() {
                               <div className="relative">
                                 {/* Haupt-Bildergalerie mit Scroll */}
                                 <div className="w-full h-64 relative overflow-hidden bg-zinc-800 rounded-lg">
-                                  <div 
-                                    className="flex transition-transform duration-300 h-full"
-                                    style={{ 
-                                      transform: `translateX(-${(imageIndices[product.id] || 0) * 100}%)`,
-                                      width: `${imageMedias.length * 100}%`
-                                    }}
-                                  >
-                                    {imageMedias.map((media, index) => (
-                                      <div 
-                                        key={index} 
-                                        className="flex-shrink-0 bg-zinc-900 flex items-center justify-center"
-                                        style={{ 
-                                          width: `${100 / imageMedias.length}%`,
-                                          height: '100%'
-                                        }}
-                                      >
-                                        <img 
-                                          src={media.url} 
-                                          alt={`${product.name} - Bild ${index + 1}`}
-                                          className="max-w-full max-h-full object-contain rounded"
-                                        />
-                                      </div>
-                                    ))}
-                                  </div>
+                                  {imageMedias.map((media, index) => (
+                                    <div 
+                                      key={index} 
+                                      className="absolute inset-0 w-full h-full bg-zinc-900 flex items-center justify-center transition-opacity duration-300"
+                                      style={{ 
+                                        opacity: index === (imageIndices[product.id] || 0) ? 1 : 0,
+                                        zIndex: index === (imageIndices[product.id] || 0) ? 10 : 1
+                                      }}
+                                    >
+                                      <img 
+                                        src={media.url} 
+                                        alt={`${product.name} - Bild ${index + 1}`}
+                                        className="max-w-full max-h-full object-contain rounded"
+                                      />
+                                    </div>
+                                  ))}
                                   
                                   {/* Navigation Buttons bei mehreren Bildern */}
                                   {imageMedias.length > 1 && (
