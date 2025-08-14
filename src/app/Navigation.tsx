@@ -149,21 +149,6 @@ export default function Navigation({ activeTab, setActiveTab }: NavigationProps)
             />
           </button>
         </li>
-        {/* Stream */}
-        <li>
-          <button
-            title="Stream"
-            onClick={() => navigateToTab("stream")}
-            className="flex items-center"
-          >
-            <SiSpotify
-              size={22}
-              className={`transition-colors ${
-                activeTab === "stream" ? "text-green-500" : "text-zinc-400"
-              } hover:text-green-500`}
-            />
-          </button>
-        </li>
         {/* Live */}
         <li>
           <button
@@ -176,6 +161,21 @@ export default function Navigation({ activeTab, setActiveTab }: NavigationProps)
               className={`transition-colors ${
                 activeTab === "live" ? "text-purple-400" : "text-zinc-400"
               } hover:text-purple-400`}
+            />
+          </button>
+        </li>
+        {/* Stream */}
+        <li>
+          <button
+            title="Stream"
+            onClick={() => navigateToTab("stream")}
+            className="flex items-center"
+          >
+            <SiSpotify
+              size={22}
+              className={`transition-colors ${
+                activeTab === "stream" ? "text-green-500" : "text-zinc-400"
+              } hover:text-green-500`}
             />
           </button>
         </li>
