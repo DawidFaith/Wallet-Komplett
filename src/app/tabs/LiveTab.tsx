@@ -112,12 +112,20 @@ export default function LiveTab() {
                 ? 'bg-green-900/30 border-green-600 text-green-400' 
                 : 'bg-red-900/30 border-red-600 text-red-400'
             }`}>
-              <p className="text-sm font-medium">{result.message}</p>
-              {result.success && result.data && (
-                <div className="mt-2 text-xs space-y-1">
-                  <p>✅ +{result.data.addedAmount} Live EXP hinzugefügt!</p>
-                  <p>📊 Spalte K: {result.data.oldValueK} → {result.data.newValueK}</p>
+              {result.success ? (
+                <div className="text-center">
+                  <p className="text-sm font-bold">🎉 Erfolgreich!</p>
+                  <p className="text-lg font-bold text-green-300 mt-1">
+                    +50 Live EXP wurde deinem Konto gutgeschrieben! 🎵
+                  </p>
+                  {result.data && (
+                    <p className="text-xs mt-2 opacity-80">
+                      📊 Gesamt Live EXP: {result.data.newValueK}
+                    </p>
+                  )}
                 </div>
+              ) : (
+                <p className="text-sm font-medium">{result.message}</p>
               )}
             </div>
           )}
@@ -125,12 +133,13 @@ export default function LiveTab() {
       </div>
 
       {/* Iframe Bereich */}
-      <div className="flex-1">
+      <div className="flex-1 min-h-0">
         <iframe 
           src="https://bnds.us/9u4nop"
           className="w-full h-full border-0"
           title="Live Auftritte"
           allowFullScreen
+          style={{ minHeight: 'calc(100vh - 200px)' }}
         />
       </div>
     </div>
