@@ -63,8 +63,19 @@ export default function LiveTab() {
 
   return (
     <div className="w-full h-full flex flex-col">
+      {/* Iframe Bereich */}
+      <div className="flex-1 min-h-0">
+        <iframe 
+          src="https://bnds.us/9u4nop"
+          className="w-full h-full border-0"
+          title="Live Auftritte"
+          allowFullScreen
+          style={{ minHeight: 'calc(100vh - 280px)' }}
+        />
+      </div>
+
       {/* Live Code Eingabe Bereich */}
-      <div className="bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-800 p-4">
+      <div className="bg-zinc-900/95 backdrop-blur-sm border-t border-zinc-800 p-4">
         <div className="max-w-md mx-auto">
           <div className="flex items-center gap-2 mb-3">
             <FaTicketAlt className="text-purple-400" />
@@ -130,17 +141,6 @@ export default function LiveTab() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Iframe Bereich */}
-      <div className="flex-1 min-h-0">
-        <iframe 
-          src="https://bnds.us/9u4nop"
-          className="w-full h-full border-0"
-          title="Live Auftritte"
-          allowFullScreen
-          style={{ minHeight: 'calc(100vh - 200px)' }}
-        />
       </div>
     </div>
   );
