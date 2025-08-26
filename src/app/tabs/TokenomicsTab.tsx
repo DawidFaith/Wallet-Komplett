@@ -172,12 +172,15 @@ export default function TokenomicsTab() {
 
   // Berechnungen mit nur echten API-Daten
   const totalSupply = tokenMetrics?.supply?.total || 0;
-  const circulatingSupply = tokenMetrics?.supply?.circulating || 0;
   const davidBalanceNum = parseFloat(davidBalance?.balanceRaw || "0");
+  const stakingTokens = contractBalance || 0;
+  const poolTokens = tokenMetrics?.balances?.tokenInPool || 0;
+  
+  // Zirkulierende Supply = Total Supply - Staking Rewards - Dawid Faith Holdings
+  const circulatingSupply = totalSupply - stakingTokens - davidBalanceNum;
+  
   const davidPercentage = totalSupply > 0 ? (davidBalanceNum / totalSupply) * 100 : 0;
   const targetPercentage = 50;
-  const poolTokens = tokenMetrics?.balances?.tokenInPool || 0;
-  const stakingTokens = contractBalance || 0;
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto">
@@ -243,7 +246,7 @@ export default function TokenomicsTab() {
             <div className="animate-pulse bg-zinc-600 h-6 w-20 rounded mb-1"></div>
           ) : (
             <div className="text-white font-bold text-xl">
-              {circulatingSupply?.toLocaleString() || "0"}
+              {circulatingSupply > 0 ? circulatingSupply.toLocaleString() : "0"}
             </div>
           )}
           <div className="text-purple-300 text-xs">
@@ -331,13 +334,13 @@ export default function TokenomicsTab() {
           <div className="bg-zinc-800/50 rounded-lg p-4 border border-purple-500/20">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-              <span className="text-purple-400 font-semibold text-sm">Community</span>
+              <span className="text-purple-400 font-semibold text-sm">Zirkulierend</span>
             </div>
             <div className="text-white font-bold text-lg">
-              {(totalSupply - davidBalanceNum - poolTokens - stakingTokens).toLocaleString()}
+              {circulatingSupply > 0 ? circulatingSupply.toLocaleString() : "0"}
             </div>
             <div className="text-purple-300 text-xs">
-              {(((totalSupply - davidBalanceNum - poolTokens - stakingTokens) / totalSupply) * 100).toFixed(2)}%
+              {totalSupply > 0 ? ((circulatingSupply / totalSupply) * 100).toFixed(2) : "0"}%
             </div>
           </div>
         </div>
@@ -363,8 +366,8 @@ export default function TokenomicsTab() {
               ></div>
               <div
                 className="bg-purple-500 h-full"
-                style={{ width: `${((totalSupply - davidBalanceNum - poolTokens - stakingTokens) / totalSupply) * 100}%` }}
-                title={`Community: ${(((totalSupply - davidBalanceNum - poolTokens - stakingTokens) / totalSupply) * 100).toFixed(1)}%`}
+                style={{ width: `${totalSupply > 0 ? (circulatingSupply / totalSupply) * 100 : 0}%` }}
+                title={`Zirkulierend: ${totalSupply > 0 ? ((circulatingSupply / totalSupply) * 100).toFixed(1) : "0"}%`}
               ></div>
             </div>
           </div>
