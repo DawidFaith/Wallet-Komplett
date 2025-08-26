@@ -47,34 +47,57 @@ export default function TokenomicsTab() {
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true);
+      console.log("🔄 Fetching tokenomics data...");
+      
       try {
-        // Parallele API-Aufrufe
+        // Parallele API-Aufrufe mit besserer Fehlerbehandlung
         const [metricsRes, davidRes, dinvestRes] = await Promise.all([
-          fetch('https://dex-liquidity-zjlm8r7bl-dawid-faiths-projects.vercel.app/api/metrics?token=0x69eFD833288605f320d77eB2aB99DDE62919BbC1&chainId=8453'),
-          fetch('https://d-faith-wallet-a-pi.vercel.app/api/balance'),
+          fetch('https://dex-liquidity-zjlm8r7bl-dawid-faiths-projects.vercel.app/api/metrics?token=0x69eFD833288605f320d77eB2aB99DDE62919BbC1&chainId=8453')
+            .catch(err => {
+              console.error("❌ Metrics API Error:", err);
+              return null;
+            }),
+          fetch('https://d-faith-wallet-a-pi.vercel.app/api/balance')
+            .catch(err => {
+              console.error("❌ D.FAITH API Error:", err);
+              return null;
+            }),
           fetch('https://d-invest-api.vercel.app/api/balance')
+            .catch(err => {
+              console.error("❌ D.INVEST API Error:", err);
+              return null;
+            })
         ]);
 
         // Token Metrics verarbeiten
-        if (metricsRes.ok) {
+        if (metricsRes && metricsRes.ok) {
           const metricsData = await metricsRes.json();
+          console.log("✅ Metrics Data:", metricsData);
           setTokenMetrics(metricsData);
+        } else {
+          console.log("❌ Metrics API failed or not ok");
         }
 
         // Dawid Faith Balance verarbeiten
-        if (davidRes.ok) {
+        if (davidRes && davidRes.ok) {
           const davidData = await davidRes.json();
+          console.log("✅ David Balance Data:", davidData);
           if (davidData.success) {
             setDavidBalance(davidData.data);
           }
+        } else {
+          console.log("❌ David Balance API failed or not ok");
         }
 
         // D.INVEST Balance verarbeiten
-        if (dinvestRes.ok) {
+        if (dinvestRes && dinvestRes.ok) {
           const dinvestData = await dinvestRes.json();
+          console.log("✅ D.INVEST Data:", dinvestData);
           if (dinvestData.success) {
             setDinvestBalance(dinvestData.data);
           }
+        } else {
+          console.log("❌ D.INVEST API failed or not ok");
         }
 
         // Smart Contract Daten abrufen
@@ -123,10 +146,18 @@ export default function TokenomicsTab() {
         setCurrentStage(Number(currentStageResult));
         setTotalRewardsDistributed(Number(totalRewardsResult) / Math.pow(10, DFAITH_DECIMALS));
 
+        console.log("✅ Smart Contract Data:", {
+          totalStaked: Number(totalStakedResult),
+          contractBalance: Number(contractBalanceResult) / Math.pow(10, DFAITH_DECIMALS),
+          currentStage: Number(currentStageResult),
+          totalRewards: Number(totalRewardsResult) / Math.pow(10, DFAITH_DECIMALS)
+        });
+
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("❌ Error fetching data:", error);
       } finally {
         setLoading(false);
+        console.log("🏁 Loading complete");
       }
     };
 
@@ -135,13 +166,13 @@ export default function TokenomicsTab() {
     return () => clearInterval(interval);
   }, []);
 
-  // Berechnungen
-  const totalSupply = tokenMetrics?.supply.total || 100000;
-  const circulatingSupply = tokenMetrics?.supply.circulating || 0;
+  // Berechnungen mit nur echten API-Daten
+  const totalSupply = tokenMetrics?.supply?.total || 0;
+  const circulatingSupply = tokenMetrics?.supply?.circulating || 0;
   const davidBalanceNum = parseFloat(davidBalance?.balanceRaw || "0");
-  const davidPercentage = (davidBalanceNum / totalSupply) * 100;
+  const davidPercentage = totalSupply > 0 ? (davidBalanceNum / totalSupply) * 100 : 0;
   const targetPercentage = 50;
-  const poolTokens = tokenMetrics?.balances.tokenInPool || 0;
+  const poolTokens = tokenMetrics?.balances?.tokenInPool || 0;
   const stakingTokens = contractBalance || 0;
 
   return (
@@ -154,6 +185,12 @@ export default function TokenomicsTab() {
         <p className="text-zinc-400 text-sm">
           Live Blockchain-Daten • Marktkapitalisierung • Token-Verteilung
         </p>
+        {/* Debug Info */}
+        <div className="mt-2 text-xs text-zinc-500">
+          Status: {loading ? "🔄 Laden..." : "✅ Geladen"} | 
+          APIs: {tokenMetrics ? "✅" : "❌"} Metrics, {davidBalance ? "✅" : "❌"} David, {dinvestBalance ? "✅" : "❌"} D.INVEST |
+          Contract: {contractBalance !== null ? "✅" : "❌"}
+        </div>
       </div>
 
       {/* Key Metrics Grid */}
@@ -168,11 +205,11 @@ export default function TokenomicsTab() {
             <div className="animate-pulse bg-zinc-600 h-6 w-24 rounded mb-1"></div>
           ) : (
             <div className="text-white font-bold text-xl">
-              €{tokenMetrics?.marketCap.circulating.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "0"}
+              €{tokenMetrics?.marketCap?.circulating?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "0"}
             </div>
           )}
           <div className="text-green-300 text-xs">
-            FDV: €{tokenMetrics?.marketCap.fdv.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "0"}
+            FDV: €{tokenMetrics?.marketCap?.fdv?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "0"}
           </div>
         </div>
 
@@ -186,7 +223,7 @@ export default function TokenomicsTab() {
             <div className="animate-pulse bg-zinc-600 h-6 w-20 rounded mb-1"></div>
           ) : (
             <div className="text-white font-bold text-xl">
-              €{tokenMetrics?.priceEUR.toFixed(4) || "0.0000"}
+              €{tokenMetrics?.priceEUR?.toFixed(4) || "0.0000"}
             </div>
           )}
           <div className="text-blue-300 text-xs">Live DEX-Preis</div>
@@ -202,11 +239,11 @@ export default function TokenomicsTab() {
             <div className="animate-pulse bg-zinc-600 h-6 w-20 rounded mb-1"></div>
           ) : (
             <div className="text-white font-bold text-xl">
-              {circulatingSupply.toLocaleString()}
+              {circulatingSupply?.toLocaleString() || "0"}
             </div>
           )}
           <div className="text-purple-300 text-xs">
-            von {totalSupply.toLocaleString()} Total
+            von {totalSupply?.toLocaleString() || "0"} Total
           </div>
         </div>
 
@@ -220,11 +257,11 @@ export default function TokenomicsTab() {
             <div className="animate-pulse bg-zinc-600 h-6 w-16 rounded mb-1"></div>
           ) : (
             <div className="text-white font-bold text-xl">
-              {davidPercentage.toFixed(1)}%
+              {davidPercentage?.toFixed(1) || "0.0"}%
             </div>
           )}
           <div className="text-amber-300 text-xs">
-            {davidBalanceNum.toLocaleString()} Token
+            {davidBalanceNum?.toLocaleString() || "0"} Token
           </div>
         </div>
       </div>
