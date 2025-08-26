@@ -192,16 +192,63 @@ export default function TokenomicsTab() {
         <p className="text-zinc-400 text-sm">
           Live Blockchain-Daten • Marktkapitalisierung • Token-Verteilung
         </p>
-        {/* Debug Info */}
-        <div className="mt-2 text-xs text-zinc-500">
-          Status: {loading ? "🔄 Laden..." : "✅ Geladen"} | 
-          APIs: {tokenMetrics ? "✅" : "❌"} Metrics, {davidBalance ? "✅" : "❌"} David, {dinvestBalance ? "✅" : "❌"} D.INVEST |
-          Contract: {contractBalance !== null ? "✅" : "❌"}
+      </div>
+
+      {/* Dawid Faith Holdings & Ziel */}
+      <div className="bg-gradient-to-br from-amber-900/20 to-yellow-900/20 border border-amber-500/30 rounded-xl p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-3xl">👑</span>
+          <div>
+            <h3 className="text-amber-400 font-bold text-lg">Dawid Faith Holdings</h3>
+            <p className="text-amber-300 text-sm">Langfristiges Ziel: 50% | Quartalsweise Käufe aus Musikeinnahmen</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Aktueller Stand */}
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-amber-400 font-semibold">Aktueller Besitz</span>
+              <span className="text-white font-bold text-xl">{davidPercentage.toFixed(1)}% / 50%</span>
+            </div>
+            <div className="w-full bg-zinc-700 rounded-full h-4 overflow-hidden mb-2">
+              <div className="h-full flex">
+                <div
+                  className="bg-gradient-to-r from-amber-400 to-yellow-500 h-full transition-all duration-1000"
+                  style={{ width: `${(davidPercentage / targetPercentage) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+            <div className="text-amber-300 text-sm">
+              {davidBalanceNum?.toLocaleString() || "0"} Token • Noch {(targetPercentage - davidPercentage).toFixed(1)}% bis zum Ziel
+            </div>
+          </div>
+          
+          {/* Quartalsweise Käufe Timer */}
+          <div>
+            <div className="text-amber-400 font-semibold mb-2">Nächster Kauf aus Musikeinnahmen</div>
+            <div className="bg-amber-900/30 rounded-lg p-3 border border-amber-500/20">
+              <div className="text-white font-bold text-lg mb-1">
+                Q{Math.ceil((new Date().getMonth() + 1) / 3)} {new Date().getFullYear()}
+              </div>
+              <div className="text-amber-300 text-sm">
+                {(() => {
+                  const now = new Date();
+                  const currentQuarter = Math.ceil((now.getMonth() + 1) / 3);
+                  const nextQuarterMonth = currentQuarter * 3;
+                  const nextQuarterDate = new Date(now.getFullYear() + (nextQuarterMonth > 12 ? 1 : 0), (nextQuarterMonth - 1) % 12, 1);
+                  const daysUntil = Math.ceil((nextQuarterDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                  return `${daysUntil} Tage bis zum nächsten Quartal`;
+                })()}
+              </div>
+              <div className="text-xs text-amber-400 mt-1">🎵 Finanziert durch Musik-Royalties</div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {/* Marktkapitalisierung */}
         <div className="bg-gradient-to-br from-green-900/20 to-emerald-900/20 border border-green-500/30 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
@@ -254,23 +301,7 @@ export default function TokenomicsTab() {
           </div>
         </div>
 
-        {/* Dawid Faith Holdings */}
-        <div className="bg-gradient-to-br from-amber-900/20 to-yellow-900/20 border border-amber-500/30 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">👑</span>
-            <h3 className="text-amber-400 font-bold text-sm">Dawid Faith Holdings</h3>
-          </div>
-          {loading ? (
-            <div className="animate-pulse bg-zinc-600 h-6 w-16 rounded mb-1"></div>
-          ) : (
-            <div className="text-white font-bold text-xl">
-              {davidPercentage?.toFixed(1) || "0.0"}%
-            </div>
-          )}
-          <div className="text-amber-300 text-xs">
-            {davidBalanceNum?.toLocaleString() || "0"} Token
-          </div>
-        </div>
+        {/* Dawid Faith Holdings wurde nach oben verschoben */}
       </div>
 
       {/* Token Distribution Visualization */}
@@ -279,37 +310,8 @@ export default function TokenomicsTab() {
           🎯 Token-Verteilung Übersicht
         </h3>
         
-        {/* Dawid Faith Progress to 50% */}
-        <div className="mb-6 p-4 bg-gradient-to-r from-amber-900/20 to-yellow-900/20 rounded-lg border border-amber-500/30">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-amber-400 font-semibold">👑 Dawid Faith Ziel: 50%</span>
-            <span className="text-white font-bold">{davidPercentage.toFixed(1)}% / 50%</span>
-          </div>
-          <div className="w-full bg-zinc-700 rounded-full h-3 overflow-hidden mb-2">
-            <div className="h-full flex">
-              <div
-                className="bg-gradient-to-r from-amber-400 to-yellow-500 h-full transition-all duration-1000"
-                style={{ width: `${(davidPercentage / targetPercentage) * 100}%` }}
-              ></div>
-            </div>
-          </div>
-          <div className="text-xs text-amber-300">
-            Noch {(targetPercentage - davidPercentage).toFixed(1)}% bis zum langfristigen Ziel
-          </div>
-        </div>
-
         {/* Token Distribution Breakdown */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Dawid Faith */}
-          <div className="bg-zinc-800/50 rounded-lg p-4 border border-amber-500/20">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-              <span className="text-amber-400 font-semibold text-sm">Dawid Faith</span>
-            </div>
-            <div className="text-white font-bold text-lg">{davidBalanceNum.toLocaleString()}</div>
-            <div className="text-amber-300 text-xs">{davidPercentage.toFixed(2)}%</div>
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* DEX Pool */}
           <div className="bg-zinc-800/50 rounded-lg p-4 border border-green-500/20">
             <div className="flex items-center gap-2 mb-2">
