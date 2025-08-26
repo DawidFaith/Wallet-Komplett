@@ -18,6 +18,10 @@ interface TokenMetrics {
     circulating: number;
     fdv: number;
   };
+  marketCapEUR: {
+    circulating: number;
+    fdv: number;
+  };
   priceEUR: number;
   balances: {
     tokenInPool: number;
@@ -205,11 +209,11 @@ export default function TokenomicsTab() {
             <div className="animate-pulse bg-zinc-600 h-6 w-24 rounded mb-1"></div>
           ) : (
             <div className="text-white font-bold text-xl">
-              €{tokenMetrics?.marketCap?.circulating?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "0"}
+              €{tokenMetrics?.marketCapEUR?.circulating?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "0"}
             </div>
           )}
           <div className="text-green-300 text-xs">
-            FDV: €{tokenMetrics?.marketCap?.fdv?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "0"}
+            FDV: €{tokenMetrics?.marketCapEUR?.fdv?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "0"}
           </div>
         </div>
 
