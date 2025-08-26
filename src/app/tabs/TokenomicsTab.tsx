@@ -231,12 +231,9 @@ export default function TokenomicsTab() {
             </h2>
             <span className="text-4xl">🎵</span>
           </div>
-          <p className="text-zinc-400 text-sm">
-            🎶 Live Blockchain-Daten • Marktkapitalisierung • Token-Verteilung 🎶
-          </p>
-          <div className="mt-4 flex items-center justify-center gap-2 text-xs text-amber-400">
+          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-amber-400">
             <span>🎼</span>
-            <span>Powered by Music • Driven by Community • Built for the Future</span>
+            <span>Powered by Dawid Faith</span>
             <span>🎼</span>
           </div>
         </div>
@@ -319,7 +316,129 @@ export default function TokenomicsTab() {
         </div>
       </div>
 
-      {/* Key Metrics Grid */}
+      {/* Token Distribution Visualization - ZUERST */}
+      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+        <h3 className="text-xl font-bold text-white mb-6 flex items-center justify-center gap-2">
+          🎯 Token-Verteilung Live Dashboard
+        </h3>
+        
+        {/* Vinyl Record Progress Ring - ZUERST */}
+        <div className="relative w-64 h-64 mx-auto mb-8">
+          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+            {/* Outer ring - Background */}
+            <circle
+              cx="50" cy="50" r="45"
+              fill="none" stroke="#374151" strokeWidth="8"
+              className="opacity-20"
+            />
+            
+            {/* Dawid Faith Section */}
+            <circle
+              cx="50" cy="50" r="45"
+              fill="none" stroke="#f59e0b" strokeWidth="8"
+              strokeDasharray={`${(davidPercentage / 100) * 283} 283`}
+              strokeDashoffset="0"
+              className="transition-all duration-1000 drop-shadow-lg"
+              style={{ filter: 'drop-shadow(0 0 8px #f59e0b60)' }}
+            />
+            
+            {/* DEX Pool Section */}
+            <circle
+              cx="50" cy="50" r="45"
+              fill="none" stroke="#10b981" strokeWidth="8"
+              strokeDasharray={`${((poolTokens / totalSupply) * 100 / 100) * 283} 283`}
+              strokeDashoffset={`-${(davidPercentage / 100) * 283}`}
+              className="transition-all duration-1000 drop-shadow-lg"
+              style={{ filter: 'drop-shadow(0 0 8px #10b98160)' }}
+            />
+            
+            {/* Staking Section */}
+            <circle
+              cx="50" cy="50" r="45"
+              fill="none" stroke="#3b82f6" strokeWidth="8"
+              strokeDasharray={`${((stakingTokens / totalSupply) * 100 / 100) * 283} 283`}
+              strokeDashoffset={`-${((davidPercentage + (poolTokens / totalSupply) * 100) / 100) * 283}`}
+              className="transition-all duration-1000 drop-shadow-lg"
+              style={{ filter: 'drop-shadow(0 0 8px #3b82f660)' }}
+            />
+            
+            {/* Center vinyl hole */}
+            <circle
+              cx="50" cy="50" r="8"
+              fill="#18181b" stroke="#f59e0b" strokeWidth="1"
+              className="animate-spin"
+              style={{ animationDuration: '8s', animationTimingFunction: 'linear' }}
+            />
+            
+            {/* Vinyl grooves */}
+            <circle cx="50" cy="50" r="35" fill="none" stroke="#374151" strokeWidth="0.5" opacity="0.3"/>
+            <circle cx="50" cy="50" r="25" fill="none" stroke="#374151" strokeWidth="0.5" opacity="0.3"/>
+            <circle cx="50" cy="50" r="15" fill="none" stroke="#374151" strokeWidth="0.5" opacity="0.3"/>
+          </svg>
+          
+          {/* Center Label */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-amber-400 font-bold text-lg">🎵</div>
+              <div className="text-white text-xs font-semibold">D.FAITH</div>
+              <div className="text-zinc-400 text-xs">Live Data</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Token Distribution Legend - Kompakt nebeneinander */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          {/* Dawid Faith */}
+          <div className="bg-zinc-800/50 rounded-lg p-3 border border-amber-500/20">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+              <span className="text-amber-400 font-semibold text-xs">Dawid Faith</span>
+            </div>
+            <div className="text-white font-bold text-sm">{davidBalanceNum.toLocaleString()}</div>
+            <div className="text-amber-300 text-xs">{davidPercentage.toFixed(1)}%</div>
+          </div>
+
+          {/* DEX Pool */}
+          <div className="bg-zinc-800/50 rounded-lg p-3 border border-green-500/20">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-green-400 font-semibold text-xs">DEX Pool</span>
+            </div>
+            <div className="text-white font-bold text-sm">{poolTokens.toLocaleString()}</div>
+            <div className="text-green-300 text-xs">{((poolTokens / totalSupply) * 100).toFixed(1)}%</div>
+          </div>
+
+          {/* Staking Contract */}
+          <div className="bg-zinc-800/50 rounded-lg p-3 border border-blue-500/20">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-blue-400 font-semibold text-xs">Staking Rewards</span>
+            </div>
+            <div className="text-white font-bold text-sm">{stakingTokens.toLocaleString()}</div>
+            <div className="text-blue-300 text-xs">{((stakingTokens / totalSupply) * 100).toFixed(1)}%</div>
+          </div>
+
+          {/* Community */}
+          <div className="bg-zinc-800/50 rounded-lg p-3 border border-purple-500/20">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <span className="text-purple-400 font-semibold text-xs">Community</span>
+            </div>
+            <div className="text-white font-bold text-sm">
+              {circulatingSupply > 0 ? circulatingSupply.toLocaleString() : "0"}
+            </div>
+            <div className="text-purple-300 text-xs">
+              {totalSupply > 0 ? ((circulatingSupply / totalSupply) * 100).toFixed(1) : "0"}%
+            </div>
+          </div>
+        </div>
+        
+        <div className="text-xs text-zinc-400 text-center">
+          🎶 Live Token-Verteilung • Aktualisiert alle 30 Sekunden 🎶
+        </div>
+      </div>
+
+      {/* Key Metrics Grid - NACH der Token Distribution */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Marktkapitalisierung */}
         <div className="bg-gradient-to-br from-green-900/20 to-emerald-900/20 border border-green-500/30 rounded-xl p-4">
@@ -355,11 +474,11 @@ export default function TokenomicsTab() {
           <div className="text-blue-300 text-xs">Live DEX-Preis</div>
         </div>
 
-        {/* Zirkulierende Supply */}
+        {/* Community */}
         <div className="bg-gradient-to-br from-purple-900/20 to-pink-900/20 border border-purple-500/30 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-2xl">🌐</span>
-            <h3 className="text-purple-400 font-bold text-sm">Zirkulierende Supply</h3>
+            <h3 className="text-purple-400 font-bold text-sm">Community</h3>
           </div>
           {loading ? (
             <div className="animate-pulse bg-zinc-600 h-6 w-20 rounded mb-1"></div>
@@ -388,166 +507,6 @@ export default function TokenomicsTab() {
           )}
           <div className="text-amber-300 text-xs">
             {davidBalanceNum?.toLocaleString() || "0"} Token
-          </div>
-        </div>
-      </div>
-
-      {/* Token Distribution Visualization */}
-      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
-        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          🎯 Token-Verteilung Übersicht
-        </h3>
-        
-        {/* Token Distribution Breakdown */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Dawid Faith */}
-          <div className="bg-zinc-800/50 rounded-lg p-4 border border-amber-500/20">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-              <span className="text-amber-400 font-semibold text-sm">Dawid Faith</span>
-            </div>
-            <div className="text-white font-bold text-lg">{davidBalanceNum.toLocaleString()}</div>
-            <div className="text-amber-300 text-xs">{davidPercentage.toFixed(2)}%</div>
-          </div>
-
-          {/* DEX Pool */}
-          <div className="bg-zinc-800/50 rounded-lg p-4 border border-green-500/20">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-green-400 font-semibold text-sm">DEX Pool</span>
-            </div>
-            <div className="text-white font-bold text-lg">{poolTokens.toLocaleString()}</div>
-            <div className="text-green-300 text-xs">{((poolTokens / totalSupply) * 100).toFixed(2)}%</div>
-          </div>
-
-          {/* Staking Contract */}
-          <div className="bg-zinc-800/50 rounded-lg p-4 border border-blue-500/20">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span className="text-blue-400 font-semibold text-sm">Staking Rewards</span>
-            </div>
-            <div className="text-white font-bold text-lg">{stakingTokens.toLocaleString()}</div>
-            <div className="text-blue-300 text-xs">{((stakingTokens / totalSupply) * 100).toFixed(2)}%</div>
-          </div>
-
-          {/* Community */}
-          <div className="bg-zinc-800/50 rounded-lg p-4 border border-purple-500/20">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-              <span className="text-purple-400 font-semibold text-sm">Zirkulierend</span>
-            </div>
-            <div className="text-white font-bold text-lg">
-              {circulatingSupply > 0 ? circulatingSupply.toLocaleString() : "0"}
-            </div>
-            <div className="text-purple-300 text-xs">
-              {totalSupply > 0 ? ((circulatingSupply / totalSupply) * 100).toFixed(2) : "0"}%
-            </div>
-          </div>
-        </div>
-
-        {/* Visual Progress Bar - Vinyl Record Style */}
-        <div className="mt-6">
-          <div className="text-center mb-4">
-            <h4 className="text-white font-semibold flex items-center justify-center gap-2">
-              <span>🎵</span>
-              Live Token-Verteilung
-              <span>🎵</span>
-            </h4>
-            <p className="text-zinc-400 text-xs">Spinning like a vinyl record • Updated every 30 seconds</p>
-          </div>
-          
-          {/* Vinyl Record Progress Ring */}
-          <div className="relative w-48 h-48 mx-auto mb-6">
-            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-              {/* Outer ring - Background */}
-              <circle
-                cx="50" cy="50" r="45"
-                fill="none" stroke="#374151" strokeWidth="8"
-                className="opacity-20"
-              />
-              
-              {/* Dawid Faith Section */}
-              <circle
-                cx="50" cy="50" r="45"
-                fill="none" stroke="#f59e0b" strokeWidth="8"
-                strokeDasharray={`${(davidPercentage / 100) * 283} 283`}
-                strokeDashoffset="0"
-                className="transition-all duration-1000 drop-shadow-lg"
-                style={{ filter: 'drop-shadow(0 0 8px #f59e0b60)' }}
-              />
-              
-              {/* DEX Pool Section */}
-              <circle
-                cx="50" cy="50" r="45"
-                fill="none" stroke="#10b981" strokeWidth="8"
-                strokeDasharray={`${((poolTokens / totalSupply) * 100 / 100) * 283} 283`}
-                strokeDashoffset={`-${(davidPercentage / 100) * 283}`}
-                className="transition-all duration-1000 drop-shadow-lg"
-                style={{ filter: 'drop-shadow(0 0 8px #10b98160)' }}
-              />
-              
-              {/* Staking Section */}
-              <circle
-                cx="50" cy="50" r="45"
-                fill="none" stroke="#3b82f6" strokeWidth="8"
-                strokeDasharray={`${((stakingTokens / totalSupply) * 100 / 100) * 283} 283`}
-                strokeDashoffset={`-${((davidPercentage + (poolTokens / totalSupply) * 100) / 100) * 283}`}
-                className="transition-all duration-1000 drop-shadow-lg"
-                style={{ filter: 'drop-shadow(0 0 8px #3b82f660)' }}
-              />
-              
-              {/* Center vinyl hole */}
-              <circle
-                cx="50" cy="50" r="8"
-                fill="#18181b" stroke="#f59e0b" strokeWidth="1"
-                className="animate-spin"
-                style={{ animationDuration: '8s', animationTimingFunction: 'linear' }}
-              />
-              
-              {/* Vinyl grooves */}
-              <circle cx="50" cy="50" r="35" fill="none" stroke="#374151" strokeWidth="0.5" opacity="0.3"/>
-              <circle cx="50" cy="50" r="25" fill="none" stroke="#374151" strokeWidth="0.5" opacity="0.3"/>
-              <circle cx="50" cy="50" r="15" fill="none" stroke="#374151" strokeWidth="0.5" opacity="0.3"/>
-            </svg>
-            
-            {/* Center Label */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-amber-400 font-bold text-lg">🎵</div>
-                <div className="text-white text-xs font-semibold">D.FAITH</div>
-                <div className="text-zinc-400 text-xs">Live Data</div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Traditional Progress Bar as backup */}
-          <div className="w-full bg-zinc-700 rounded-full h-4 overflow-hidden mb-4">
-            <div className="h-full flex">
-              <div
-                className="bg-gradient-to-r from-amber-400 to-amber-500 h-full transition-all duration-1000"
-                style={{ width: `${davidPercentage}%` }}
-                title={`Dawid Faith: ${davidPercentage.toFixed(1)}%`}
-              ></div>
-              <div
-                className="bg-gradient-to-r from-green-400 to-green-500 h-full transition-all duration-1000"
-                style={{ width: `${(poolTokens / totalSupply) * 100}%` }}
-                title={`DEX Pool: ${((poolTokens / totalSupply) * 100).toFixed(1)}%`}
-              ></div>
-              <div
-                className="bg-gradient-to-r from-blue-400 to-blue-500 h-full transition-all duration-1000"
-                style={{ width: `${(stakingTokens / totalSupply) * 100}%` }}
-                title={`Staking: ${((stakingTokens / totalSupply) * 100).toFixed(1)}%`}
-              ></div>
-              <div
-                className="bg-gradient-to-r from-purple-400 to-purple-500 h-full transition-all duration-1000"
-                style={{ width: `${totalSupply > 0 ? (circulatingSupply / totalSupply) * 100 : 0}%` }}
-                title={`Zirkulierend: ${totalSupply > 0 ? ((circulatingSupply / totalSupply) * 100).toFixed(1) : "0"}%`}
-              ></div>
-            </div>
-          </div>
-          
-          <div className="text-xs text-zinc-400 text-center">
-            🎶 Live Token-Verteilung • Aktualisiert alle 30 Sekunden 🎶
           </div>
         </div>
       </div>
