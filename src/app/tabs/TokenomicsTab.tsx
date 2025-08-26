@@ -440,191 +440,245 @@ export default function TokenomicsTab() {
 
 
 
-      {/* D.INVEST Section */}
-      <div className="bg-zinc-900 rounded-xl border border-blue-500/30 p-6 mb-6">
-        <div className="flex items-center gap-4 mb-4">
-          <img src="/D.INVEST.png" alt="D.INVEST" className="w-12 h-12 object-contain" />
-          <div>
-            <h3 className="text-xl font-bold text-blue-400">D.INVEST Token</h3>
-            <p className="text-zinc-400 text-sm">Investment- & Staking-Token</p>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/20">
-            <h4 className="text-blue-300 font-semibold mb-2">Total Supply</h4>
-            <div className="text-white font-bold text-2xl">10,000</div>
-            <div className="text-blue-400 text-sm">D.INVEST Token</div>
-          </div>
-          
-          <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/20">
-            <h4 className="text-blue-300 font-semibold mb-2">Community Owned</h4>
-            {loading ? (
-              <div className="animate-pulse bg-zinc-600 h-8 w-16 rounded"></div>
-            ) : (
-              <>
-                <div className="text-white font-bold text-2xl">
-                  {dinvestBalance ? (10000 - parseInt(dinvestBalance.balance)).toLocaleString() : "0"}
-                </div>
-                <div className="text-blue-400 text-sm">
-                  {dinvestBalance ? (((10000 - parseInt(dinvestBalance.balance)) / 10000) * 100).toFixed(1) : "0"}% verkauft
-                </div>
-              </>
-            )}
-          </div>
-          
-          <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/20">
-            <h4 className="text-blue-300 font-semibold mb-2">Verfügbar</h4>
-            {loading ? (
-              <div className="animate-pulse bg-zinc-600 h-8 w-16 rounded"></div>
-            ) : (
-              <>
-                <div className="text-white font-bold text-2xl">
-                  {dinvestBalance ? parseInt(dinvestBalance.balance).toLocaleString() : "0"}
-                </div>
-                <div className="text-blue-400 text-sm">5€ pro Token</div>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Staking Stats - Music Studio Mixing Board Style */}
-      <div className="bg-zinc-900 rounded-xl border border-purple-500/30 p-6 mb-6 relative overflow-hidden">
-        {/* Musical Background */}
+      {/* D.INVEST & Staking Dashboard - Kombiniert */}
+      <div className="bg-zinc-900 rounded-xl border border-gradient-to-r from-blue-500/30 to-purple-500/30 p-6 mb-6 relative overflow-hidden">
+        {/* Artistic Background Elements */}
         <div className="absolute top-0 right-0 opacity-5 text-8xl">🎛️</div>
         <div className="absolute bottom-0 left-0 opacity-5 text-6xl">🎚️</div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-3 text-9xl">⚡</div>
         
-        <h3 className="text-xl font-bold text-purple-400 mb-4 flex items-center gap-2 relative z-10">
-          🎛️ Staking Statistiken - Live Studio Board
-          <span className="text-sm">🎵</span>
-        </h3>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
-          {/* Rewards Pool with Equalizer */}
-          <div className="bg-purple-500/10 rounded-lg p-3 border border-purple-500/20 relative">
-            <div className="text-purple-300 text-xs font-medium mb-1 flex items-center gap-1">
-              <span>🎵</span>
-              Rewards Pool
-            </div>
-            <div className="text-white font-bold text-lg flex items-center gap-2">
-              {loading ? "..." : stakingTokens.toFixed(2)}
-              {/* Mini Equalizer */}
-              <div className="flex items-end gap-0.5 h-3">
-                {[...Array(4)].map((_, i) => (
-                  <div 
-                    key={i}
-                    className="w-0.5 bg-gradient-to-t from-purple-500 to-purple-400 animate-pulse"
-                    style={{ 
-                      height: `${Math.random() * 100}%`,
-                      animationDelay: `${i * 0.2}s`,
-                      animationDuration: '1.5s'
-                    }}
-                  />
-                ))}
+        {/* Header Section */}
+        <div className="relative z-10 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <img src="/D.INVEST.png" alt="D.INVEST" className="w-12 h-12 object-contain" />
+              <div>
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
+                  D.INVEST & Staking Dashboard
+                </h3>
+                <p className="text-zinc-400 text-sm">Investment-Token meets Live Staking Analytics 🎵</p>
               </div>
             </div>
-            <div className="text-purple-400 text-xs">D.FAITH 🎶</div>
-          </div>
-          
-          {/* Total Gestaked with Equalizer */}
-          <div className="bg-purple-500/10 rounded-lg p-3 border border-purple-500/20 relative">
-            <div className="text-purple-300 text-xs font-medium mb-1 flex items-center gap-1">
-              <span>🎤</span>
-              Total Gestaked
+            <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full border border-blue-500/30">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-xs text-zinc-300">Live Dashboard</span>
             </div>
-            <div className="text-white font-bold text-lg flex items-center gap-2">
-              {loading ? "..." : totalStaked?.toLocaleString() || "0"}
-              {/* Mini Equalizer */}
-              <div className="flex items-end gap-0.5 h-3">
-                {[...Array(4)].map((_, i) => (
-                  <div 
-                    key={i}
-                    className="w-0.5 bg-gradient-to-t from-blue-500 to-blue-400 animate-pulse"
-                    style={{ 
-                      height: `${Math.random() * 100}%`,
-                      animationDelay: `${i * 0.3}s`,
-                      animationDuration: '2s'
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="text-purple-400 text-xs">D.INVEST 🎼</div>
-          </div>
-          
-          {/* Verteilt with Equalizer */}
-          <div className="bg-purple-500/10 rounded-lg p-3 border border-purple-500/20 relative">
-            <div className="text-purple-300 text-xs font-medium mb-1 flex items-center gap-1">
-              <span>🎧</span>
-              Verteilt
-            </div>
-            <div className="text-white font-bold text-lg flex items-center gap-2">
-              {loading ? "..." : totalRewardsDistributed?.toFixed(2) || "0"}
-              {/* Mini Equalizer */}
-              <div className="flex items-end gap-0.5 h-3">
-                {[...Array(4)].map((_, i) => (
-                  <div 
-                    key={i}
-                    className="w-0.5 bg-gradient-to-t from-green-500 to-green-400 animate-pulse"
-                    style={{ 
-                      height: `${Math.random() * 100}%`,
-                      animationDelay: `${i * 0.4}s`,
-                      animationDuration: '1.8s'
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="text-purple-400 text-xs">D.FAITH ♪</div>
-          </div>
-          
-          {/* Current Stage with Equalizer */}
-          <div className="bg-purple-500/10 rounded-lg p-3 border border-purple-500/20 relative">
-            <div className="text-purple-300 text-xs font-medium mb-1 flex items-center gap-1">
-              <span>🎶</span>
-              Current Stage
-            </div>
-            <div className="text-white font-bold text-lg flex items-center gap-2">
-              {loading ? "..." : `${currentStage || 1}/6`}
-              {/* Mini Equalizer */}
-              <div className="flex items-end gap-0.5 h-3">
-                {[...Array(4)].map((_, i) => (
-                  <div 
-                    key={i}
-                    className="w-0.5 bg-gradient-to-t from-amber-500 to-amber-400 animate-pulse"
-                    style={{ 
-                      height: `${Math.random() * 100}%`,
-                      animationDelay: `${i * 0.5}s`,
-                      animationDuration: '1.2s'
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="text-purple-400 text-xs">Reward Stage 🎵</div>
           </div>
         </div>
-        
-        {/* Studio Mixing Board Visual */}
-        <div className="mt-4 pt-4 border-t border-purple-500/20">
-          <div className="flex items-center justify-center gap-4">
-            <span className="text-purple-400 text-xs">🎛️ Live Audio Mixing Board 🎛️</span>
-            <div className="flex gap-1">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="flex flex-col items-center gap-1">
-                  <div className="w-1 h-8 bg-gradient-to-t from-purple-600 to-purple-300 rounded-full relative">
+
+        {/* D.INVEST Token Metrics */}
+        <div className="relative z-10 mb-8">
+          <h4 className="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+            💎 D.INVEST Token Distribution
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-lg p-4 border border-blue-500/20 relative overflow-hidden">
+              <div className="absolute top-0 right-0 opacity-10 text-2xl">📊</div>
+              <h5 className="text-blue-300 font-semibold mb-2">Total Supply</h5>
+              <div className="text-white font-bold text-2xl">10,000</div>
+              <div className="text-blue-400 text-sm">D.INVEST Token</div>
+              <div className="mt-2 w-full bg-blue-900/30 rounded-full h-1">
+                <div className="bg-gradient-to-r from-blue-400 to-blue-500 h-1 rounded-full w-full"></div>
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-br from-green-500/10 to-emerald-600/10 rounded-lg p-4 border border-green-500/20 relative overflow-hidden">
+              <div className="absolute top-0 right-0 opacity-10 text-2xl">🌐</div>
+              <h5 className="text-green-300 font-semibold mb-2">Community Owned</h5>
+              {loading ? (
+                <div className="animate-pulse bg-zinc-600 h-8 w-16 rounded"></div>
+              ) : (
+                <>
+                  <div className="text-white font-bold text-2xl">
+                    {dinvestBalance ? (10000 - parseInt(dinvestBalance.balance)).toLocaleString() : "0"}
+                  </div>
+                  <div className="text-green-400 text-sm">
+                    {dinvestBalance ? (((10000 - parseInt(dinvestBalance.balance)) / 10000) * 100).toFixed(1) : "0"}% verkauft
+                  </div>
+                  <div className="mt-2 w-full bg-green-900/30 rounded-full h-1">
                     <div 
-                      className="w-2 h-1 bg-purple-200 rounded-full absolute transform -translate-x-0.5"
+                      className="bg-gradient-to-r from-green-400 to-green-500 h-1 rounded-full transition-all duration-1000"
+                      style={{ width: `${dinvestBalance ? (((10000 - parseInt(dinvestBalance.balance)) / 10000) * 100) : 0}%` }}
+                    ></div>
+                  </div>
+                </>
+              )}
+            </div>
+            
+            <div className="bg-gradient-to-br from-amber-500/10 to-yellow-600/10 rounded-lg p-4 border border-amber-500/20 relative overflow-hidden">
+              <div className="absolute top-0 right-0 opacity-10 text-2xl">💰</div>
+              <h5 className="text-amber-300 font-semibold mb-2">Verfügbar</h5>
+              {loading ? (
+                <div className="animate-pulse bg-zinc-600 h-8 w-16 rounded"></div>
+              ) : (
+                <>
+                  <div className="text-white font-bold text-2xl">
+                    {dinvestBalance ? parseInt(dinvestBalance.balance).toLocaleString() : "0"}
+                  </div>
+                  <div className="text-amber-400 text-sm">5€ pro Token</div>
+                  <div className="mt-2 w-full bg-amber-900/30 rounded-full h-1">
+                    <div 
+                      className="bg-gradient-to-r from-amber-400 to-amber-500 h-1 rounded-full transition-all duration-1000"
+                      style={{ width: `${dinvestBalance ? ((parseInt(dinvestBalance.balance) / 10000) * 100) : 0}%` }}
+                    ></div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Divider mit Animation */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gradient-to-r from-blue-500/30 via-purple-500/50 to-blue-500/30"></div>
+          </div>
+          <div className="relative flex justify-center">
+            <div className="px-4 bg-zinc-900 text-purple-400 text-sm flex items-center gap-2">
+              <span>🎛️</span>
+              <span>Live Staking Analytics</span>
+              <span>🎵</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Staking Statistics mit Music Studio Style */}
+        <div className="relative z-10">
+          <h4 className="text-lg font-semibold text-purple-400 mb-4 flex items-center gap-2">
+            🎛️ Live Staking Board
+          </h4>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            {/* Rewards Pool */}
+            <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-lg p-3 border border-purple-500/20 relative overflow-hidden">
+              <div className="absolute top-0 right-0 opacity-10 text-lg">🎵</div>
+              <div className="text-purple-300 text-xs font-medium mb-1 flex items-center gap-1">
+                <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
+                Rewards Pool
+              </div>
+              <div className="text-white font-bold text-lg flex items-center gap-2">
+                {loading ? "..." : stakingTokens.toFixed(2)}
+                {/* Mini Equalizer */}
+                <div className="flex items-end gap-0.5 h-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div 
+                      key={i}
+                      className="w-0.5 bg-gradient-to-t from-purple-500 to-purple-400 animate-pulse"
                       style={{ 
-                        top: `${Math.random() * 80 + 10}%`,
-                        animation: `bounce 2s ease-in-out infinite ${i * 0.2}s` 
+                        height: `${Math.random() * 100}%`,
+                        animationDelay: `${i * 0.2}s`,
+                        animationDuration: '1.5s'
                       }}
                     />
-                  </div>
-                  <div className="w-1 h-1 bg-purple-400 rounded-full"></div>
+                  ))}
                 </div>
-              ))}
+              </div>
+              <div className="text-purple-400 text-xs">D.FAITH</div>
+            </div>
+            
+            {/* Total Gestaked */}
+            <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-lg p-3 border border-blue-500/20 relative overflow-hidden">
+              <div className="absolute top-0 right-0 opacity-10 text-lg">🎤</div>
+              <div className="text-blue-300 text-xs font-medium mb-1 flex items-center gap-1">
+                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                Total Gestaked
+              </div>
+              <div className="text-white font-bold text-lg flex items-center gap-2">
+                {loading ? "..." : totalStaked?.toLocaleString() || "0"}
+                {/* Mini Equalizer */}
+                <div className="flex items-end gap-0.5 h-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div 
+                      key={i}
+                      className="w-0.5 bg-gradient-to-t from-blue-500 to-blue-400 animate-pulse"
+                      style={{ 
+                        height: `${Math.random() * 100}%`,
+                        animationDelay: `${i * 0.3}s`,
+                        animationDuration: '2s'
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="text-blue-400 text-xs">D.INVEST</div>
+            </div>
+            
+            {/* Verteilt */}
+            <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-lg p-3 border border-green-500/20 relative overflow-hidden">
+              <div className="absolute top-0 right-0 opacity-10 text-lg">🎧</div>
+              <div className="text-green-300 text-xs font-medium mb-1 flex items-center gap-1">
+                <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
+                Verteilt
+              </div>
+              <div className="text-white font-bold text-lg flex items-center gap-2">
+                {loading ? "..." : totalRewardsDistributed?.toFixed(2) || "0"}
+                {/* Mini Equalizer */}
+                <div className="flex items-end gap-0.5 h-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div 
+                      key={i}
+                      className="w-0.5 bg-gradient-to-t from-green-500 to-green-400 animate-pulse"
+                      style={{ 
+                        height: `${Math.random() * 100}%`,
+                        animationDelay: `${i * 0.4}s`,
+                        animationDuration: '1.8s'
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="text-green-400 text-xs">D.FAITH</div>
+            </div>
+            
+            {/* Current Stage */}
+            <div className="bg-gradient-to-br from-amber-500/10 to-amber-600/10 rounded-lg p-3 border border-amber-500/20 relative overflow-hidden">
+              <div className="absolute top-0 right-0 opacity-10 text-lg">🎶</div>
+              <div className="text-amber-300 text-xs font-medium mb-1 flex items-center gap-1">
+                <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
+                Current Stage
+              </div>
+              <div className="text-white font-bold text-lg flex items-center gap-2">
+                {loading ? "..." : `${currentStage || 1}/6`}
+                {/* Mini Equalizer */}
+                <div className="flex items-end gap-0.5 h-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div 
+                      key={i}
+                      className="w-0.5 bg-gradient-to-t from-amber-500 to-amber-400 animate-pulse"
+                      style={{ 
+                        height: `${Math.random() * 100}%`,
+                        animationDelay: `${i * 0.5}s`,
+                        animationDuration: '1.2s'
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="text-amber-400 text-xs">Reward Stage</div>
+            </div>
+          </div>
+          
+          {/* Enhanced Studio Mixing Board Visual */}
+          <div className="pt-4 border-t border-gradient-to-r from-blue-500/20 via-purple-500/30 to-blue-500/20">
+            <div className="flex items-center justify-center gap-6">
+              <span className="text-purple-400 text-xs font-medium">🎛️ Live Audio Mixing Board</span>
+              <div className="flex gap-1">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="flex flex-col items-center gap-1">
+                    <div className="w-1 h-8 bg-gradient-to-t from-purple-600 via-blue-500 to-purple-300 rounded-full relative">
+                      <div 
+                        className="w-2 h-1 bg-white rounded-full absolute transform -translate-x-0.5 shadow-lg"
+                        style={{ 
+                          top: `${Math.random() * 80 + 10}%`,
+                          animation: `bounce 2s ease-in-out infinite ${i * 0.2}s` 
+                        }}
+                      />
+                    </div>
+                    <div className="w-1 h-1 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full"></div>
+                  </div>
+                ))}
+              </div>
+              <span className="text-blue-400 text-xs font-medium">Professional Dashboard 🎵</span>
             </div>
           </div>
         </div>
