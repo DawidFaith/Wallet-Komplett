@@ -239,64 +239,53 @@ export default function TokenomicsTab() {
         </div>
       </div>
 
-      {/* Dawid Faith Holdings & Ziel - Music Studio Style */}
-      <div className="bg-gradient-to-br from-amber-900/20 to-yellow-900/20 border border-amber-500/30 rounded-xl p-6 mb-6 relative overflow-hidden">
-        {/* Musical Background Pattern */}
-        <div className="absolute top-0 right-0 opacity-5 text-6xl">🎤</div>
-        <div className="absolute bottom-0 left-0 opacity-5 text-4xl">🎶</div>
+      {/* Dawid Faith Holdings - Minimalistisch */}
+      <div className="bg-zinc-900/50 rounded-xl border border-amber-500/20 p-6 mb-6 relative overflow-hidden backdrop-blur-sm">
+        {/* Subtle Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-900/5 to-yellow-900/5"></div>
         
-        <div className="flex items-center gap-3 mb-4 relative z-10">
-          <span className="text-3xl">👑</span>
-          <div>
-            <h3 className="text-amber-400 font-bold text-lg flex items-center gap-2">
-              Dawid Faith Holdings 
-              <span className="text-lg">🎵</span>
-            </h3>
-            <p className="text-amber-300 text-sm">Langfristiges Ziel: 75% | Quartalsweise Käufe aus Musikeinnahmen 🎼</p>
+        {/* Header - Kompakt */}
+        <div className="relative z-10 mb-6">
+          <h3 className="text-xl font-bold text-amber-400 flex items-center gap-3 mb-2">
+            👑 Dawid Faith Holdings
+          </h3>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-amber-300">Langfristiges Ziel: 75%</span>
+            <span className="text-zinc-400">Quartalsweise Käufe aus Musikeinnahmen</span>
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Aktueller Stand mit Vinyl-Style Progress */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-amber-400 font-semibold flex items-center gap-1">
-                🎧 Aktueller Besitz
-              </span>
-              <span className="text-white font-bold text-xl">{davidPercentage.toFixed(1)}% / 75%</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+          {/* Progress Section - Minimalistisch */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-amber-400 font-medium text-sm">Aktueller Besitz</span>
+              <span className="text-white font-bold">{davidPercentage.toFixed(1)}% / 75%</span>
             </div>
-            <div className="w-full bg-zinc-700 rounded-full h-4 overflow-hidden mb-2 relative">
-              <div className="h-full flex">
-                <div
-                  className="bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-400 h-full transition-all duration-1000 relative"
-                  style={{ width: `${(davidPercentage / targetPercentage) * 100}%` }}
-                >
-                  {/* Animated shine effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
-                </div>
-              </div>
+            
+            {/* Clean Progress Bar */}
+            <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-amber-400 to-amber-500 h-full transition-all duration-1000 rounded-full"
+                style={{ width: `${(davidPercentage / targetPercentage) * 100}%` }}
+              />
             </div>
-            <div className="text-amber-300 text-sm flex items-center gap-1">
-              <span>🎵</span>
-              {davidBalanceNum?.toLocaleString() || "0"} Token • Noch {(targetPercentage - davidPercentage).toFixed(1)}% bis zum Ziel
+            
+            <div className="flex justify-between text-xs">
+              <span className="text-amber-300">{davidBalanceNum?.toLocaleString() || "0"} Token</span>
+              <span className="text-zinc-400">Noch {(targetPercentage - davidPercentage).toFixed(1)}% bis zum Ziel</span>
             </div>
           </div>
           
-          {/* Quartalsweise Käufe Timer - Music Studio Style */}
-          <div>
-            <div className="text-amber-400 font-semibold mb-2 flex items-center gap-1">
-              <span>🎼</span>
-              Nächster Kauf aus Musikeinnahmen
-            </div>
-            <div className="bg-amber-900/30 rounded-lg p-3 border border-amber-500/20 relative">
-              {/* Musical note decoration */}
-              <div className="absolute top-1 right-2 text-amber-400/30 text-xs">♪♫</div>
-              
-              <div className="text-white font-bold text-lg mb-1 flex items-center gap-2">
-                <span>🎶</span>
+          {/* Next Purchase Timer - Minimalistisch */}
+          <div className="space-y-3">
+            <div className="text-amber-400 font-medium text-sm">Nächster Kauf</div>
+            
+            <div className="bg-amber-500/10 rounded-lg p-4 border border-amber-500/20">
+              <div className="text-white font-bold text-lg mb-1">
                 Q{Math.ceil((new Date().getMonth() + 1) / 3)} {new Date().getFullYear()}
               </div>
-              <div className="text-amber-300 text-sm">
+              <div className="text-amber-300 text-sm mb-2">
                 {(() => {
                   const now = new Date();
                   const currentQuarter = Math.ceil((now.getMonth() + 1) / 3);
@@ -306,10 +295,8 @@ export default function TokenomicsTab() {
                   return `${daysUntil} Tage bis zum nächsten Quartal`;
                 })()}
               </div>
-              <div className="text-xs text-amber-400 mt-1 flex items-center gap-1">
-                <span>🎵</span>
-                <span>Finanziert durch Musik-Royalties</span>
-                <span>🎤</span>
+              <div className="text-xs text-amber-400/80">
+                Finanziert durch Musik-Royalties
               </div>
             </div>
           </div>
