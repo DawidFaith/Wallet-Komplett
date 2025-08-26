@@ -50,19 +50,19 @@ export default function TokenomicsTab() {
       console.log("🔄 Fetching tokenomics data...");
       
       try {
-        // Parallele API-Aufrufe mit besserer Fehlerbehandlung
+        // Parallele API-Aufrufe mit lokalen Proxy-Routes
         const [metricsRes, davidRes, dinvestRes] = await Promise.all([
-          fetch('https://dex-liquidity-zjlm8r7bl-dawid-faiths-projects.vercel.app/api/metrics?token=0x69eFD833288605f320d77eB2aB99DDE62919BbC1&chainId=8453')
+          fetch('/api/tokenomics/metrics')
             .catch(err => {
               console.error("❌ Metrics API Error:", err);
               return null;
             }),
-          fetch('https://d-faith-wallet-a-pi.vercel.app/api/balance')
+          fetch('/api/tokenomics/dfaith-balance')
             .catch(err => {
               console.error("❌ D.FAITH API Error:", err);
               return null;
             }),
-          fetch('https://d-invest-api.vercel.app/api/balance')
+          fetch('/api/tokenomics/dinvest-balance')
             .catch(err => {
               console.error("❌ D.INVEST API Error:", err);
               return null;
