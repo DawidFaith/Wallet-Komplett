@@ -438,78 +438,7 @@ export default function TokenomicsTab() {
         </div>
       </div>
 
-      {/* Key Metrics Grid - NACH der Token Distribution */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* Marktkapitalisierung */}
-        <div className="bg-gradient-to-br from-green-900/20 to-emerald-900/20 border border-green-500/30 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">�</span>
-            <h3 className="text-green-400 font-bold text-sm">Marktkapitalisierung</h3>
-          </div>
-          {loading ? (
-            <div className="animate-pulse bg-zinc-600 h-6 w-24 rounded mb-1"></div>
-          ) : (
-            <div className="text-white font-bold text-xl">
-              €{tokenMetrics?.marketCapEUR?.circulating?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "0"}
-            </div>
-          )}
-          <div className="text-green-300 text-xs">
-            FDV: €{tokenMetrics?.marketCapEUR?.fdv?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "0"}
-          </div>
-        </div>
 
-        {/* Token Preis */}
-        <div className="bg-gradient-to-br from-blue-900/20 to-cyan-900/20 border border-blue-500/30 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">📈</span>
-            <h3 className="text-blue-400 font-bold text-sm">Token Preis</h3>
-          </div>
-          {loading ? (
-            <div className="animate-pulse bg-zinc-600 h-6 w-20 rounded mb-1"></div>
-          ) : (
-            <div className="text-white font-bold text-xl">
-              €{tokenMetrics?.priceEUR?.toFixed(4) || "0.0000"}
-            </div>
-          )}
-          <div className="text-blue-300 text-xs">Live DEX-Preis</div>
-        </div>
-
-        {/* Community */}
-        <div className="bg-gradient-to-br from-purple-900/20 to-pink-900/20 border border-purple-500/30 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">🌐</span>
-            <h3 className="text-purple-400 font-bold text-sm">Community</h3>
-          </div>
-          {loading ? (
-            <div className="animate-pulse bg-zinc-600 h-6 w-20 rounded mb-1"></div>
-          ) : (
-            <div className="text-white font-bold text-xl">
-              {circulatingSupply > 0 ? circulatingSupply.toLocaleString() : "0"}
-            </div>
-          )}
-          <div className="text-purple-300 text-xs">
-            von {totalSupply?.toLocaleString() || "0"} Total
-          </div>
-        </div>
-
-        {/* Dawid Faith Holdings - Live Werte */}
-        <div className="bg-gradient-to-br from-amber-900/20 to-yellow-900/20 border border-amber-500/30 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">👑</span>
-            <h3 className="text-amber-400 font-bold text-sm">Dawid Faith Holdings</h3>
-          </div>
-          {loading ? (
-            <div className="animate-pulse bg-zinc-600 h-6 w-16 rounded mb-1"></div>
-          ) : (
-            <div className="text-white font-bold text-xl">
-              {davidPercentage?.toFixed(1) || "0.0"}%
-            </div>
-          )}
-          <div className="text-amber-300 text-xs">
-            {davidBalanceNum?.toLocaleString() || "0"} Token
-          </div>
-        </div>
-      </div>
 
       {/* D.INVEST Section */}
       <div className="bg-zinc-900 rounded-xl border border-blue-500/30 p-6 mb-6">
@@ -719,6 +648,69 @@ export default function TokenomicsTab() {
         <div className="mt-4 text-xs text-zinc-400 text-center">
           Live-Daten von der Base Chain • Pool: 0x7109214bafde13a6ef8060644656464bccab93cd
           <span className="ml-2 text-green-400">• DexScreener: Speziell für DEX-Trading optimiert</span>
+        </div>
+        
+        {/* Market Metrics unter dem Chart - Kompakt und mobil optimiert */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+          {/* Marktkapitalisierung */}
+          <div className="bg-zinc-800/50 rounded-lg p-3 border border-green-500/20">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-green-400 font-semibold text-xs">Marktkapitalisierung</span>
+            </div>
+            {loading ? (
+              <div className="animate-pulse bg-zinc-600 h-5 w-16 rounded"></div>
+            ) : (
+              <div className="text-white font-bold text-sm">
+                €{tokenMetrics?.marketCapEUR?.circulating?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "0"}
+              </div>
+            )}
+            <div className="text-green-300 text-xs">
+              FDV: €{tokenMetrics?.marketCapEUR?.fdv?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "0"}
+            </div>
+          </div>
+
+          {/* Token Preis */}
+          <div className="bg-zinc-800/50 rounded-lg p-3 border border-blue-500/20">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-blue-400 font-semibold text-xs">Token Preis</span>
+            </div>
+            {loading ? (
+              <div className="animate-pulse bg-zinc-600 h-5 w-14 rounded"></div>
+            ) : (
+              <div className="text-white font-bold text-sm">
+                €{tokenMetrics?.priceEUR?.toFixed(4) || "0.0000"}
+              </div>
+            )}
+            <div className="text-blue-300 text-xs">Live DEX-Preis</div>
+          </div>
+
+          {/* Total Supply */}
+          <div className="bg-zinc-800/50 rounded-lg p-3 border border-yellow-500/20">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+              <span className="text-yellow-400 font-semibold text-xs">Total Supply</span>
+            </div>
+            <div className="text-white font-bold text-sm">
+              {totalSupply?.toLocaleString() || "0"}
+            </div>
+            <div className="text-yellow-300 text-xs">D.FAITH Token</div>
+          </div>
+
+          {/* Community Holdings */}
+          <div className="bg-zinc-800/50 rounded-lg p-3 border border-purple-500/20">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <span className="text-purple-400 font-semibold text-xs">Community Holdings</span>
+            </div>
+            <div className="text-white font-bold text-sm">
+              {circulatingSupply > 0 ? circulatingSupply.toLocaleString() : "0"}
+            </div>
+            <div className="text-purple-300 text-xs">
+              {totalSupply > 0 ? ((circulatingSupply / totalSupply) * 100).toFixed(1) : "0"}%
+            </div>
+          </div>
         </div>
       </div>
     </div>
