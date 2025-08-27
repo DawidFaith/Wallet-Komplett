@@ -63,7 +63,6 @@ export default function InstagramTab() {
   const [showClaimModal, setShowClaimModal] = useState(false);
   const [showLikeSaveModal, setShowLikeSaveModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
-  const [showWalletInfoModal, setShowWalletInfoModal] = useState(false);
   const [showStoryHelpModal, setShowStoryHelpModal] = useState(false);
   const [showConfirmInitial, setShowConfirmInitial] = useState(false);
   const [showConfirmAfter, setShowConfirmAfter] = useState(false);
@@ -558,8 +557,13 @@ export default function InstagramTab() {
               <span className="text-xl animate-bounce">🪙</span>
               <span>D.FAITH Claim</span>
             </h2>
+            {!account?.address && (
+              <div className="text-xs text-gray-600 mb-4 text-center">
+                💡 Wallet ändern? Schreib mir eine DM mit "Wallet" auf Instagram
+              </div>
+            )}
             
-            {/* Automatische Wallet-Erkennung oder manuelle Eingabe */}
+            {/* Automatische Wallet-Erkennung */}
             {account?.address ? (
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4 text-center">
                 <p className="text-green-800 mb-2 font-semibold">
@@ -577,7 +581,7 @@ export default function InstagramTab() {
                   Du kannst <strong className="text-green-600">+{userData.miningpower} D.FAITH</strong> für deine Instagram Aktivität claimen!
                 </p>
               </div>
-            ) : !walletInput || !walletValidation.isValid ? (
+            ) : (
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 text-gray-800 text-base flex flex-col items-center animate-pulse">
                 <span className="font-semibold mb-3 text-center">Du hast noch keine gültige Base Chain Wallet hinterlegt.<br/>Erstelle jetzt deine Wallet, um deine Belohnung zu erhalten!</span>
                 <button
@@ -588,57 +592,14 @@ export default function InstagramTab() {
                 </button>
                 <span className="text-xs text-gray-500 mt-1">Du findest den Wallet Tab auch oben im Menü.</span>
               </div>
-            ) : null}
-            
-            {/* Nur anzeigen wenn keine Wallet verbunden ist */}
-            {!account?.address && (
-              <>
-                <p className="mb-4 text-gray-700">Gib deine Base Chain Wallet-Adresse ein, um deine Belohnung zu erhalten:</p>
-                
-                {walletInput && walletValidation.isValid && (
-                  <div className="bg-pink-50 border border-pink-200 rounded-xl p-4 mb-4 text-center">
-                    <p className="text-gray-800 mb-2">
-                      Du kannst <strong className="text-pink-600">+{userData.miningpower} D.FAITH</strong> für deine Instagram Aktivität claimen!
-                    </p>
-                  </div>
-                )}
-                <div className="relative mb-6">
-                  <input 
-                    type="text"
-                    value={walletInput}
-                    onChange={(e) => handleWalletInputChange(e.target.value)}
-                    placeholder="0x... (Base Chain Adresse)"
-                    readOnly={!!(userData?.wallet && userData.wallet.startsWith("0x"))}
-                    className={`w-full p-4 pr-12 border-2 rounded-2xl text-base focus:outline-none transition-colors duration-300 ${
-                      walletInput && !walletValidation.isPartiallyValid
-                        ? 'border-red-400 focus:border-red-500 bg-red-50'
-                        : walletInput && walletValidation.isValid
-                        ? 'border-green-400 focus:border-green-500 bg-green-50'
-                        : 'border-gray-300 focus:border-pink-500'
-                    }`}
-                  />
-                  {walletInput && walletValidation.error && (
-                    <div className="absolute left-0 top-full mt-1 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-1 shadow-sm z-10">
-                      {walletValidation.error}
-                    </div>
-                  )}
-                  <button
-                    onClick={() => setShowWalletInfoModal(true)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition-all duration-200 text-sm"
-                    title="Wallet Info"
-                  >
-                    i
-                  </button>
-                </div>
-              </>
             )}
             <button 
               onClick={submitClaim}
-              disabled={!account?.address && (!walletInput || !walletValidation.isValid)}
+              disabled={!account?.address}
               className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 hover:shadow-lg disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <span className="text-xl">✅</span>
-              <span>{account?.address ? 'Mit verbundener Wallet claimen' : 'Claim absenden'}</span>
+              <span>{account?.address ? 'Mit verbundener Wallet claimen' : 'Wallet verbinden um zu claimen'}</span>
             </button>
             {claimStatus && (
               <div className={`mb-4 p-3 rounded-xl ${
@@ -877,30 +838,6 @@ export default function InstagramTab() {
             </div>
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-4 mb-6">
               <p className="text-sm text-gray-700 font-medium">💡 Mehr EXP = schnelleres Level-Up. Nutze alle Plattformen! 🚀</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Wallet Info Modal */}
-      {showWalletInfoModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
-            <button
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
-              onClick={() => setShowWalletInfoModal(false)}
-              aria-label="Schließen"
-              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
-            >
-              ×
-            </button>
-            <div className="text-6xl mb-4">🔒</div>
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Wichtiger Hinweis</h2>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-6">
-              <p className="text-gray-700 leading-relaxed">
-                Deine Base Chain Wallet-Adresse wird dauerhaft mit deinem Social-Media-Account verbunden.<br/><br/>
-                Wenn du sie ändern willst, schreib mir eine <strong className="text-purple-600">DM mit dem Stichwort &quot;Wallet&quot;</strong> auf <strong className="text-purple-600">Instagram</strong>.
-              </p>
             </div>
           </div>
         </div>
