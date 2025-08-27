@@ -383,13 +383,6 @@ export default function TokenomicsTab() {
                 <img src="/D.INVEST.png" alt="D.INVEST" className="w-full h-full object-contain" />
               </foreignObject>
             </g>
-
-            {/* Glitzer-Effekt um die fliegenden Token */}
-            <g className="animate-pulse" style={{ animationDuration: '2s' }}>
-              <circle cx="70" cy="45" r="0.5" fill="#fbbf24" opacity="0.8" />
-              <circle cx="30" cy="55" r="0.5" fill="#f59e0b" opacity="0.6" />
-              <circle cx="55" cy="30" r="0.5" fill="#eab308" opacity="0.7" />
-            </g>
           </svg>
           
           {/* Center Label */}
