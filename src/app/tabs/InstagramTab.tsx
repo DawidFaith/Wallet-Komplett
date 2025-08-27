@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { validateBaseAddress, validateBaseAddressRealTime } from '../utils/walletValidation';
+import { useActiveAccount } from 'thirdweb/react';
 
 interface UserData {
   username: string;
@@ -55,6 +56,7 @@ const getUUID = () => {
 
 export default function InstagramTab() {
   const router = useRouter();
+  const account = useActiveAccount(); // Thirdweb Hook für eingeloggte Wallet
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -159,6 +161,17 @@ export default function InstagramTab() {
     loadUserData();
   }, []);
 
+  // Automatisch eingeloggte Wallet-Adresse setzen
+  useEffect(() => {
+    if (account?.address) {
+      console.log('Eingeloggte Wallet gefunden:', account.address);
+      setWalletInput(account.address);
+      // Validierung für automatisch gesetzte Wallet durchführen
+      const validation = validateBaseAddressRealTime(account.address);
+      setWalletValidation(validation);
+    }
+  }, [account?.address]);
+
   // Like/Save Check API
   const checkInitial = async () => {
     setLoading(true);
@@ -228,8 +241,16 @@ export default function InstagramTab() {
 
   // Claim absenden
   const submitClaim = async () => {
+    // Priorität: Eingeloggte Wallet > Eingabe-Wallet > gespeicherte Wallet
+    const claimWalletAddress = account?.address || walletInput;
+    
+    if (!claimWalletAddress) {
+      setClaimStatus('❌ Keine Wallet-Adresse verfügbar. Bitte verbinde deine Wallet oder gib eine Adresse ein.');
+      return;
+    }
+    
     // Validierung der Wallet-Adresse
-    const validation = validateBaseAddress(walletInput);
+    const validation = validateBaseAddress(claimWalletAddress);
     if (!validation.isValid) {
       setClaimStatus(`❌ ${validation.error}`);
       return;
@@ -243,12 +264,14 @@ export default function InstagramTab() {
         return;
       }
       
+      console.log('Claim mit Wallet-Adresse:', claimWalletAddress);
+      
       const response = await fetch('https://hook.eu2.make.com/1c62icx2yngv8v4g6y7k7songq01rblk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           uuid,
-          wallet: walletInput.trim(),
+          wallet: claimWalletAddress.trim(),
           username: userData?.username || '',
           miningpower: userData?.miningpower || 0
         })
@@ -536,7 +559,25 @@ export default function InstagramTab() {
               <span>D.FAITH Claim</span>
             </h2>
             
-            {!walletInput || !walletValidation.isValid ? (
+            {/* Automatische Wallet-Erkennung oder manuelle Eingabe */}
+            {account?.address ? (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4 text-center">
+                <p className="text-green-800 mb-2 font-semibold">
+                  ✅ Eingeloggte Wallet erkannt!
+                </p>
+                <p className="text-gray-700 text-sm mb-3">
+                  Deine verbundene Wallet-Adresse wird automatisch für den Claim verwendet:
+                </p>
+                <div className="bg-white border border-green-300 rounded-lg p-3 mb-3">
+                  <p className="font-mono text-sm text-green-700 break-all">
+                    {account.address}
+                  </p>
+                </div>
+                <p className="text-gray-800 mb-2">
+                  Du kannst <strong className="text-green-600">+{userData.miningpower} D.FAITH</strong> für deine Instagram Aktivität claimen!
+                </p>
+              </div>
+            ) : !walletInput || !walletValidation.isValid ? (
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 text-gray-800 text-base flex flex-col items-center animate-pulse">
                 <span className="font-semibold mb-3 text-center">Du hast noch keine gültige Base Chain Wallet hinterlegt.<br/>Erstelle jetzt deine Wallet, um deine Belohnung zu erhalten!</span>
                 <button
@@ -549,50 +590,55 @@ export default function InstagramTab() {
               </div>
             ) : null}
             
-            <p className="mb-4 text-gray-700">Gib deine Base Chain Wallet-Adresse ein, um deine Belohnung zu erhalten:</p>
-            
-            {walletInput && walletValidation.isValid && (
-              <div className="bg-pink-50 border border-pink-200 rounded-xl p-4 mb-4 text-center">
-                <p className="text-gray-800 mb-2">
-                  Du kannst <strong className="text-pink-600">+{userData.miningpower} D.FAITH</strong> für deine Instagram Aktivität claimen!
-                </p>
-              </div>
-            )}
-            <div className="relative mb-6">
-              <input 
-                type="text"
-                value={walletInput}
-                onChange={(e) => handleWalletInputChange(e.target.value)}
-                placeholder="0x... (Base Chain Adresse)"
-                readOnly={!!(userData?.wallet && userData.wallet.startsWith("0x"))}
-                className={`w-full p-4 pr-12 border-2 rounded-2xl text-base focus:outline-none transition-colors duration-300 ${
-                  walletInput && !walletValidation.isPartiallyValid
-                    ? 'border-red-400 focus:border-red-500 bg-red-50'
-                    : walletInput && walletValidation.isValid
-                    ? 'border-green-400 focus:border-green-500 bg-green-50'
-                    : 'border-gray-300 focus:border-pink-500'
-                }`}
-              />
-              {walletInput && walletValidation.error && (
-                <div className="absolute left-0 top-full mt-1 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-1 shadow-sm z-10">
-                  {walletValidation.error}
+            {/* Nur anzeigen wenn keine Wallet verbunden ist */}
+            {!account?.address && (
+              <>
+                <p className="mb-4 text-gray-700">Gib deine Base Chain Wallet-Adresse ein, um deine Belohnung zu erhalten:</p>
+                
+                {walletInput && walletValidation.isValid && (
+                  <div className="bg-pink-50 border border-pink-200 rounded-xl p-4 mb-4 text-center">
+                    <p className="text-gray-800 mb-2">
+                      Du kannst <strong className="text-pink-600">+{userData.miningpower} D.FAITH</strong> für deine Instagram Aktivität claimen!
+                    </p>
+                  </div>
+                )}
+                <div className="relative mb-6">
+                  <input 
+                    type="text"
+                    value={walletInput}
+                    onChange={(e) => handleWalletInputChange(e.target.value)}
+                    placeholder="0x... (Base Chain Adresse)"
+                    readOnly={!!(userData?.wallet && userData.wallet.startsWith("0x"))}
+                    className={`w-full p-4 pr-12 border-2 rounded-2xl text-base focus:outline-none transition-colors duration-300 ${
+                      walletInput && !walletValidation.isPartiallyValid
+                        ? 'border-red-400 focus:border-red-500 bg-red-50'
+                        : walletInput && walletValidation.isValid
+                        ? 'border-green-400 focus:border-green-500 bg-green-50'
+                        : 'border-gray-300 focus:border-pink-500'
+                    }`}
+                  />
+                  {walletInput && walletValidation.error && (
+                    <div className="absolute left-0 top-full mt-1 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-1 shadow-sm z-10">
+                      {walletValidation.error}
+                    </div>
+                  )}
+                  <button
+                    onClick={() => setShowWalletInfoModal(true)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition-all duration-200 text-sm"
+                    title="Wallet Info"
+                  >
+                    i
+                  </button>
                 </div>
-              )}
-              <button
-                onClick={() => setShowWalletInfoModal(true)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition-all duration-200 text-sm"
-                title="Wallet Info"
-              >
-                i
-              </button>
-            </div>
+              </>
+            )}
             <button 
               onClick={submitClaim}
-              disabled={!walletInput || !walletValidation.isValid}
+              disabled={!account?.address && (!walletInput || !walletValidation.isValid)}
               className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 hover:shadow-lg disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <span className="text-xl">✅</span>
-              <span>Claim absenden</span>
+              <span>{account?.address ? 'Mit verbundener Wallet claimen' : 'Claim absenden'}</span>
             </button>
             {claimStatus && (
               <div className={`mb-4 p-3 rounded-xl ${
