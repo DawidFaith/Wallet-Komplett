@@ -524,8 +524,8 @@ export default function TokenomicsTab() {
 
         {/* D.INVEST Token Metrics */}
         <div className="mb-8">
-          <h4 className="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
-            💎 D.INVEST Token Distribution
+          <h4 className="text-lg font-semibold text-blue-400 mb-4">
+            D.INVEST Token Distribution
           </h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* Total Supply */}
@@ -593,8 +593,8 @@ export default function TokenomicsTab() {
 
         {/* Staking Statistics - Minimalistisch */}
         <div>
-          <h4 className="text-lg font-semibold text-purple-400 mb-4 flex items-center gap-2">
-            🎛️ Live Staking Board
+          <h4 className="text-lg font-semibold text-purple-400 mb-4">
+            Live Staking Board
           </h4>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
