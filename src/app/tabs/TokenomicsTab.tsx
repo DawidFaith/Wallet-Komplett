@@ -540,59 +540,63 @@ export default function TokenomicsTab() {
           <h4 className="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
             💎 D.INVEST Token Distribution
           </h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-lg p-4 border border-blue-500/20 relative overflow-hidden">
-              <div className="absolute top-0 right-0 opacity-10 text-2xl">📊</div>
-              <h5 className="text-blue-300 font-semibold mb-2">Total Supply</h5>
-              <div className="text-white font-bold text-2xl">10,000</div>
-              <div className="text-blue-400 text-sm">D.INVEST Token</div>
-              <div className="mt-2 w-full bg-blue-900/30 rounded-full h-1">
-                <div className="bg-gradient-to-r from-blue-400 to-blue-500 h-1 rounded-full w-full"></div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {/* Total Supply */}
+            <div className="bg-zinc-800/50 rounded-lg p-3 border border-blue-500/20">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-blue-400 font-semibold text-xs">Total Supply</span>
               </div>
+              <div className="text-white font-bold text-sm">10,000</div>
+              <div className="text-blue-300 text-xs">D.INVEST Token</div>
             </div>
             
-            <div className="bg-gradient-to-br from-green-500/10 to-emerald-600/10 rounded-lg p-4 border border-green-500/20 relative overflow-hidden">
-              <div className="absolute top-0 right-0 opacity-10 text-2xl">🌐</div>
-              <h5 className="text-green-300 font-semibold mb-2">Community Owned</h5>
+            {/* Community Owned */}
+            <div className="bg-zinc-800/50 rounded-lg p-3 border border-green-500/20">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-green-400 font-semibold text-xs">Community Owned</span>
+              </div>
               {loading ? (
-                <div className="animate-pulse bg-zinc-600 h-8 w-16 rounded"></div>
+                <div className="animate-pulse bg-zinc-600 h-4 w-12 rounded"></div>
               ) : (
                 <>
-                  <div className="text-white font-bold text-2xl">
+                  <div className="text-white font-bold text-sm">
                     {dinvestBalance ? (10000 - parseInt(dinvestBalance.balance)).toLocaleString() : "0"}
                   </div>
-                  <div className="text-green-400 text-sm">
+                  <div className="text-green-300 text-xs">
                     {dinvestBalance ? (((10000 - parseInt(dinvestBalance.balance)) / 10000) * 100).toFixed(1) : "0"}% verkauft
-                  </div>
-                  <div className="mt-2 w-full bg-green-900/30 rounded-full h-1">
-                    <div 
-                      className="bg-gradient-to-r from-green-400 to-green-500 h-1 rounded-full transition-all duration-1000"
-                      style={{ width: `${dinvestBalance ? (((10000 - parseInt(dinvestBalance.balance)) / 10000) * 100) : 0}%` }}
-                    ></div>
                   </div>
                 </>
               )}
             </div>
             
-            <div className="bg-gradient-to-br from-amber-500/10 to-yellow-600/10 rounded-lg p-4 border border-amber-500/20 relative overflow-hidden">
-              <div className="absolute top-0 right-0 opacity-10 text-2xl">💰</div>
-              <h5 className="text-amber-300 font-semibold mb-2">Verfügbar</h5>
+            {/* Verfügbar */}
+            <div className="bg-zinc-800/50 rounded-lg p-3 border border-amber-500/20">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                <span className="text-amber-400 font-semibold text-xs">Verfügbar</span>
+              </div>
               {loading ? (
-                <div className="animate-pulse bg-zinc-600 h-8 w-16 rounded"></div>
+                <div className="animate-pulse bg-zinc-600 h-4 w-12 rounded"></div>
               ) : (
                 <>
-                  <div className="text-white font-bold text-2xl">
+                  <div className="text-white font-bold text-sm">
                     {dinvestBalance ? parseInt(dinvestBalance.balance).toLocaleString() : "0"}
                   </div>
-                  <div className="text-amber-400 text-sm">5€ pro Token</div>
-                  <div className="mt-2 w-full bg-amber-900/30 rounded-full h-1">
-                    <div 
-                      className="bg-gradient-to-r from-amber-400 to-amber-500 h-1 rounded-full transition-all duration-1000"
-                      style={{ width: `${dinvestBalance ? ((parseInt(dinvestBalance.balance) / 10000) * 100) : 0}%` }}
-                    ></div>
-                  </div>
+                  <div className="text-amber-300 text-xs">5€ pro Token</div>
                 </>
               )}
+            </div>
+
+            {/* Token Wert */}
+            <div className="bg-zinc-800/50 rounded-lg p-3 border border-purple-500/20">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span className="text-purple-400 font-semibold text-xs">Gesamtwert</span>
+              </div>
+              <div className="text-white font-bold text-sm">€50,000</div>
+              <div className="text-purple-300 text-xs">10,000 × €5</div>
             </div>
           </div>
         </div>
