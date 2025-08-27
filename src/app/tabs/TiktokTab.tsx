@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useActiveAccount } from 'thirdweb/react';
 
 // Base Chain Wallet-Adresse Validierung
 const isValidBaseChainAddress = (address: string): boolean => {
@@ -18,6 +19,7 @@ interface ModalProps {
   isLoading: boolean;
   router?: any;
   confirmationMessage?: string;
+  account?: any; // Thirdweb Account
 }
 
 interface UserData {
@@ -38,7 +40,7 @@ interface UserData {
   walletAddress?: string;
 }
 
-function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmationMessage }: ModalProps) {
+function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmationMessage, account }: ModalProps) {
   const [username, setUsername] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
   const [showWalletInfoModal, setShowWalletInfoModal] = useState(false);
@@ -60,6 +62,15 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
     }
   }, [isOpen]);
 
+  // Automatisch eingeloggte Wallet-Adresse setzen
+  React.useEffect(() => {
+    if (account?.address) {
+      console.log('Eingeloggte Wallet gefunden:', account.address);
+      setWalletAddress(account.address);
+      setWalletError(''); // Clear any validation errors
+    }
+  }, [account?.address]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -68,9 +79,17 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
     // Validierung zurücksetzen
     setWalletError('');
     
-    if (username.trim() && walletAddress.trim()) {
+    // Priorität: Eingeloggte Wallet > Eingabe-Wallet
+    const claimWalletAddress = account?.address || walletAddress.trim();
+    
+    if (!claimWalletAddress) {
+      setWalletError('Keine Wallet-Adresse verfügbar. Bitte verbinde deine Wallet oder gib eine Adresse ein.');
+      return;
+    }
+    
+    if (username.trim() && claimWalletAddress) {
       // Wallet-Adresse validieren
-      if (!isValidBaseChainAddress(walletAddress.trim())) {
+      if (!isValidBaseChainAddress(claimWalletAddress)) {
         setWalletError('Bitte gib eine gültige Base Chain Wallet-Adresse ein (0x...)');
         return;
       }
@@ -81,10 +100,10 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
       // Speichere die Daten im localStorage für zukünftige Verwendung
       if (typeof window !== 'undefined') {
         localStorage.setItem('tiktok_saved_username', formattedUsername);
-        localStorage.setItem('tiktok_saved_wallet', walletAddress.trim());
+        localStorage.setItem('tiktok_saved_wallet', claimWalletAddress);
       }
       
-      onSubmit(formattedUsername, walletAddress.trim());
+      onSubmit(formattedUsername, claimWalletAddress);
     }
   };
 
@@ -132,72 +151,99 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
             </div>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-pink-300 mb-3">
-              Wallet Adresse
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={walletAddress}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setWalletAddress(value);
-                  
-                  // Validierung zurücksetzen, wenn Feld leer ist
-                  if (!value.trim()) {
-                    setWalletError('');
-                  } else if (!isValidBaseChainAddress(value.trim())) {
-                    setWalletError('Ungültige Base Chain Wallet-Adresse');
-                  } else {
-                    setWalletError('');
-                  }
-                }}
-                placeholder="0x..."
-                className={`w-full px-4 py-3 pr-12 bg-black/50 border rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                  walletError 
-                    ? 'border-red-500/50 focus:ring-red-500' 
-                    : 'border-pink-500/50 focus:ring-pink-500'
-                }`}
-                required
-                disabled={isLoading}
-              />
-              <button
-                type="button"
-                onClick={() => setShowWalletInfoModal(true)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 hover:text-pink-200 font-bold rounded-full w-8 h-8 flex items-center justify-center transition-all duration-200 text-sm border border-pink-500/30"
-                title="Wallet Info"
-              >
-                i
-              </button>
+          {/* Wallet Bereich - nur anzeigen wenn keine Wallet verbunden */}
+          {!account?.address ? (
+            <div>
+              <label className="block text-sm font-medium text-pink-300 mb-3">
+                Wallet Adresse
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={walletAddress}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setWalletAddress(value);
+                    
+                    // Validierung zurücksetzen, wenn Feld leer ist
+                    if (!value.trim()) {
+                      setWalletError('');
+                    } else if (!isValidBaseChainAddress(value.trim())) {
+                      setWalletError('Ungültige Base Chain Wallet-Adresse');
+                    } else {
+                      setWalletError('');
+                    }
+                  }}
+                  placeholder="0x..."
+                  className={`w-full px-4 py-3 pr-12 bg-black/50 border rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                    walletError 
+                      ? 'border-red-500/50 focus:ring-red-500' 
+                      : 'border-pink-500/50 focus:ring-pink-500'
+                  }`}
+                  required
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowWalletInfoModal(true)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 hover:text-pink-200 font-bold rounded-full w-8 h-8 flex items-center justify-center transition-all duration-200 text-sm border border-pink-500/30"
+                  title="Wallet Info"
+                >
+                  i
+                </button>
+              </div>
+              {/* Wallet-Validierungsfehler anzeigen */}
+              {walletError && (
+                <p className="mt-2 text-sm text-red-400 flex items-center">
+                  <span className="mr-1">⚠️</span>
+                  {walletError}
+                </p>
+              )}
             </div>
-            {/* Wallet-Validierungsfehler anzeigen */}
-            {walletError && (
-              <p className="mt-2 text-sm text-red-400 flex items-center">
-                <span className="mr-1">⚠️</span>
-                {walletError}
-              </p>
-            )}
-          </div>
+          ) : (
+            /* Verbundene Wallet anzeigen */
+            <div>
+              <label className="block text-sm font-medium text-pink-300 mb-3">
+                Verbundene Wallet
+              </label>
+              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
+                <div className="flex items-center justify-center mb-2">
+                  <span className="text-green-400 text-sm">✅ Wallet verbunden</span>
+                </div>
+                <p className="font-mono text-sm bg-black/30 border border-green-500/20 rounded-lg p-2 break-all text-green-200 text-center">
+                  {account.address}
+                </p>
+              </div>
+            </div>
+          )}
 
-          {/* Wallet Hinweis für Teilnahme Bestätigen */}
-          {title === "Bestätige deine Teilnahme" && router && (
+          {/* Wallet Hinweis - nur anzeigen wenn keine Wallet verbunden */}
+          {!account?.address && title === "Bestätige deine Teilnahme" && router && (
             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
               <p className="text-yellow-200 text-sm font-medium mb-2 text-center">
-                {(!walletAddress || !walletAddress.startsWith("0x")) 
-                  ? "Hast noch keine Wallet? Dann erstelle sie hier!"
-                  : "Hast du noch keine Wallet? Erstelle eine neue Wallet hier!"
-                }
+                Hast noch keine Wallet? Dann erstelle sie hier!
               </p>
               <button
                 type="button"
                 onClick={() => router.push("/wallet")}
                 className="w-full py-2 px-4 rounded-lg font-semibold bg-gradient-to-r from-yellow-400 to-orange-400 text-black shadow-lg hover:from-yellow-500 hover:to-orange-500 transition-all duration-200 text-sm"
               >
-                🚀 {(!walletAddress || !walletAddress.startsWith("0x")) ? "Wallet erstellen" : "Wallet Tab"}
+                🚀 Wallet erstellen
               </button>
               <p className="text-xs text-yellow-300 mt-1 text-center">
                 Du findest den Wallet Tab auch oben im Menü.
+              </p>
+            </div>
+          )}
+          
+          {/* Wallet-Verbindungshinweis wenn keine Wallet verbunden */}
+          {!account?.address && (
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-4">
+              <p className="text-blue-200 text-sm font-medium mb-2 text-center">
+                Oder verbinde deine bestehende Wallet
+              </p>
+              <p className="text-xs text-blue-300 text-center">
+                Nutze den Wallet Tab oben, um deine Wallet zu verbinden.
               </p>
             </div>
           )}
@@ -225,7 +271,7 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
             <button
               type="submit"
               className="flex-1 px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl hover:from-pink-600 hover:to-purple-600 transition-all font-medium disabled:opacity-50 shadow-lg"
-              disabled={isLoading || !username.trim() || !walletAddress.trim() || !!walletError}
+              disabled={isLoading || !username.trim() || (!account?.address && (!walletAddress.trim() || !!walletError))}
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
@@ -1060,6 +1106,7 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
 
 export default function TiktokTab() {
   const router = useRouter();
+  const account = useActiveAccount(); // Thirdweb Hook für eingeloggte Wallet
   const [isCheckModalOpen, setIsCheckModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -1429,6 +1476,7 @@ export default function TiktokTab() {
         isLoading={isLoading}
         router={router}
         confirmationMessage={confirmationMessage}
+        account={account}
       />
 
       <Modal
@@ -1442,6 +1490,7 @@ export default function TiktokTab() {
         isLoading={isLoading}
         router={router}
         confirmationMessage={message} // Fehlermeldungen im Modal anzeigen
+        account={account}
       />
 
       {/* Additional TikTok Modals */}
