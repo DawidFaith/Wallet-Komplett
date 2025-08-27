@@ -559,7 +559,7 @@ export default function InstagramTab() {
             </h2>
             {!account?.address && (
               <div className="text-xs text-gray-600 mb-4 text-center">
-                💡 Wallet ändern? Schreib mir eine DM mit "Wallet" auf Instagram
+                💡 Wallet ändern? Schreib mir eine DM mit &quot;Wallet&quot; auf Instagram
               </div>
             )}
             
