@@ -506,6 +506,12 @@ export default function FacebookTab() {
               <span>D.FAITH Claim</span>
             </h2>
             
+            {!account?.address && (
+              <div className="text-xs text-gray-600 mb-4 text-center">
+                💡 Wallet ändern? Schreib mir eine DM mit &quot;Wallet&quot; auf Facebook
+              </div>
+            )}
+            
             {/* Hinweis für Wallet-Verbindung in der Überschrift */}
             {!account?.address && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 text-gray-800 text-base flex flex-col items-center animate-pulse">
