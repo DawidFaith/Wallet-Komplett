@@ -350,14 +350,6 @@ export default function TokenomicsTab() {
               style={{ filter: 'drop-shadow(0 0 8px #3b82f660)' }}
             />
             
-            {/* Center vinyl hole */}
-            <circle
-              cx="50" cy="50" r="8"
-              fill="#18181b" stroke="#f59e0b" strokeWidth="1"
-              className="animate-spin"
-              style={{ animationDuration: '8s', animationTimingFunction: 'linear' }}
-            />
-            
             {/* Vinyl grooves */}
             <circle cx="50" cy="50" r="35" fill="none" stroke="#374151" strokeWidth="0.5" opacity="0.3"/>
             <circle cx="50" cy="50" r="25" fill="none" stroke="#374151" strokeWidth="0.5" opacity="0.3"/>
@@ -382,6 +374,13 @@ export default function TokenomicsTab() {
               <foreignObject x="48" y="23" width="5" height="5">
                 <img src="/D.INVEST.png" alt="D.INVEST" className="w-full h-full object-contain" />
               </foreignObject>
+            </g>
+
+            {/* Glitzer-Effekt um die fliegenden Token */}
+            <g className="animate-pulse" style={{ animationDuration: '2s' }}>
+              <circle cx="70" cy="45" r="0.5" fill="#fbbf24" opacity="0.8" />
+              <circle cx="30" cy="55" r="0.5" fill="#f59e0b" opacity="0.6" />
+              <circle cx="55" cy="30" r="0.5" fill="#eab308" opacity="0.7" />
             </g>
           </svg>
           
