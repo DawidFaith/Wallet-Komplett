@@ -248,7 +248,7 @@ export default function TokenomicsTab() {
               <h3 className="text-xl font-bold text-amber-400 flex items-center gap-3 mb-2">
                 👑 Dawid Faith Holdings
               </h3>
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm">
                 <span className="text-amber-300">Langfristiges Ziel: 75%</span>
                 <span className="text-zinc-400">Quartalsweise Käufe aus Musikeinnahmen</span>
               </div>
@@ -362,12 +362,37 @@ export default function TokenomicsTab() {
             <circle cx="50" cy="50" r="35" fill="none" stroke="#374151" strokeWidth="0.5" opacity="0.3"/>
             <circle cx="50" cy="50" r="25" fill="none" stroke="#374151" strokeWidth="0.5" opacity="0.3"/>
             <circle cx="50" cy="50" r="15" fill="none" stroke="#374151" strokeWidth="0.5" opacity="0.3"/>
+
+            {/* Fliegender D.FAITH Token - Position 1 */}
+            <g className="animate-spin" style={{ animationDuration: '12s', animationTimingFunction: 'linear', transformOrigin: '50px 50px' }}>
+              <circle cx="75" cy="50" r="4" fill="#f59e0b" opacity="0.8" />
+              <text x="75" y="52" textAnchor="middle" fontSize="3" fill="#fff" fontWeight="bold">D.F</text>
+            </g>
+
+            {/* Fliegender D.FAITH Token - Position 2 */}
+            <g className="animate-spin" style={{ animationDuration: '15s', animationTimingFunction: 'linear', transformOrigin: '50px 50px', animationDelay: '2s' }}>
+              <circle cx="25" cy="50" r="3.5" fill="#eab308" opacity="0.7" />
+              <text x="25" y="52" textAnchor="middle" fontSize="2.5" fill="#fff" fontWeight="bold">D.F</text>
+            </g>
+
+            {/* Fliegender D.FAITH Token - Position 3 */}
+            <g className="animate-spin" style={{ animationDuration: '18s', animationTimingFunction: 'linear', transformOrigin: '50px 50px', animationDelay: '4s' }}>
+              <circle cx="50" cy="25" r="3" fill="#f59e0b" opacity="0.6" />
+              <text x="50" y="27" textAnchor="middle" fontSize="2" fill="#fff" fontWeight="bold">D.F</text>
+            </g>
+
+            {/* Glitzer-Effekt um die fliegenden Token */}
+            <g className="animate-pulse" style={{ animationDuration: '2s' }}>
+              <circle cx="70" cy="45" r="0.5" fill="#fbbf24" opacity="0.8" />
+              <circle cx="30" cy="55" r="0.5" fill="#f59e0b" opacity="0.6" />
+              <circle cx="55" cy="30" r="0.5" fill="#eab308" opacity="0.7" />
+            </g>
           </svg>
           
           {/* Center Label */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <div className="text-amber-400 font-bold text-lg">🎵</div>
+              <div className="text-amber-400 font-bold text-lg animate-pulse">💎</div>
               <div className="text-white text-xs font-semibold">D.FAITH</div>
               <div className="text-zinc-400 text-xs">Live Data</div>
             </div>
@@ -451,7 +476,7 @@ export default function TokenomicsTab() {
           {/* Marktkapitalisierung */}
           <div className="bg-zinc-800/50 rounded-lg p-3 border border-green-500/20">
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-3 h-3 md:w-2 md:h-2 bg-green-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
               <span className="text-green-400 font-semibold text-xs">Marktkapitalisierung</span>
             </div>
             {loading ? (
@@ -469,7 +494,7 @@ export default function TokenomicsTab() {
           {/* Token Preis */}
           <div className="bg-zinc-800/50 rounded-lg p-3 border border-blue-500/20">
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-3 h-3 md:w-2 md:h-2 bg-blue-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
               <span className="text-blue-400 font-semibold text-xs">Token Preis</span>
             </div>
             {loading ? (
@@ -485,7 +510,7 @@ export default function TokenomicsTab() {
           {/* Total Supply */}
           <div className="bg-zinc-800/50 rounded-lg p-3 border border-yellow-500/20">
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-3 h-3 md:w-2 md:h-2 bg-yellow-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
               <span className="text-yellow-400 font-semibold text-xs">Total Supply</span>
             </div>
             <div className="text-white font-bold text-sm">
@@ -497,7 +522,7 @@ export default function TokenomicsTab() {
           {/* Community Holdings */}
           <div className="bg-zinc-800/50 rounded-lg p-3 border border-purple-500/20">
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-3 h-3 md:w-2 md:h-2 bg-purple-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
               <span className="text-purple-400 font-semibold text-xs">Community Holdings</span>
             </div>
             <div className="text-white font-bold text-sm">
