@@ -86,7 +86,7 @@ export default function LiveTab() {
             <div>
               <input
                 type="text"
-                placeholder="Code eingeben (LC12345678)"
+                placeholder="Code eingeben (DF12345678)"
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400"
