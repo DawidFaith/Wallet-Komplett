@@ -519,7 +519,6 @@ export default function TokenomicsTab() {
               D.INVEST & Staking Dashboard
             </h3>
           </div>
-          <p className="text-zinc-400 text-sm">Investment-Token meets Live Staking Analytics</p>
         </div>
 
         {/* D.INVEST Token Metrics */}
