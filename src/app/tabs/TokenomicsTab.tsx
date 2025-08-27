@@ -450,7 +450,7 @@ export default function TokenomicsTab() {
           {/* Marktkapitalisierung */}
           <div className="bg-zinc-800/50 rounded-lg p-3 border border-green-500/20">
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <div className="w-3 h-3 md:w-2 md:h-2 bg-green-500 rounded-full"></div>
               <span className="text-green-400 font-semibold text-xs">Marktkapitalisierung</span>
             </div>
             {loading ? (
@@ -468,7 +468,7 @@ export default function TokenomicsTab() {
           {/* Token Preis */}
           <div className="bg-zinc-800/50 rounded-lg p-3 border border-blue-500/20">
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <div className="w-3 h-3 md:w-2 md:h-2 bg-blue-500 rounded-full"></div>
               <span className="text-blue-400 font-semibold text-xs">Token Preis</span>
             </div>
             {loading ? (
@@ -484,7 +484,7 @@ export default function TokenomicsTab() {
           {/* Total Supply */}
           <div className="bg-zinc-800/50 rounded-lg p-3 border border-yellow-500/20">
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+              <div className="w-3 h-3 md:w-2 md:h-2 bg-yellow-500 rounded-full"></div>
               <span className="text-yellow-400 font-semibold text-xs">Total Supply</span>
             </div>
             <div className="text-white font-bold text-sm">
@@ -496,7 +496,7 @@ export default function TokenomicsTab() {
           {/* Community Holdings */}
           <div className="bg-zinc-800/50 rounded-lg p-3 border border-purple-500/20">
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <div className="w-3 h-3 md:w-2 md:h-2 bg-purple-500 rounded-full"></div>
               <span className="text-purple-400 font-semibold text-xs">Community Holdings</span>
             </div>
             <div className="text-white font-bold text-sm">
