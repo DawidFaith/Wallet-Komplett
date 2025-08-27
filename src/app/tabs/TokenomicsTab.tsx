@@ -365,20 +365,23 @@ export default function TokenomicsTab() {
 
             {/* Fliegender D.FAITH Token - Position 1 */}
             <g className="animate-spin" style={{ animationDuration: '12s', animationTimingFunction: 'linear', transformOrigin: '50px 50px' }}>
-              <circle cx="75" cy="50" r="4" fill="#f59e0b" opacity="0.8" />
-              <text x="75" y="52" textAnchor="middle" fontSize="3" fill="#fff" fontWeight="bold">D.F</text>
+              <foreignObject x="71" y="46" width="8" height="8">
+                <img src="/D.FAITH.png" alt="D.FAITH" className="w-full h-full object-contain" />
+              </foreignObject>
             </g>
 
             {/* Fliegender D.FAITH Token - Position 2 */}
             <g className="animate-spin" style={{ animationDuration: '15s', animationTimingFunction: 'linear', transformOrigin: '50px 50px', animationDelay: '2s' }}>
-              <circle cx="25" cy="50" r="3.5" fill="#eab308" opacity="0.7" />
-              <text x="25" y="52" textAnchor="middle" fontSize="2.5" fill="#fff" fontWeight="bold">D.F</text>
+              <foreignObject x="22.5" y="47" width="6" height="6">
+                <img src="/D.FAITH.png" alt="D.FAITH" className="w-full h-full object-contain" />
+              </foreignObject>
             </g>
 
-            {/* Fliegender D.FAITH Token - Position 3 */}
+            {/* Fliegender D.INVEST Token - Position 3 */}
             <g className="animate-spin" style={{ animationDuration: '18s', animationTimingFunction: 'linear', transformOrigin: '50px 50px', animationDelay: '4s' }}>
-              <circle cx="50" cy="25" r="3" fill="#f59e0b" opacity="0.6" />
-              <text x="50" y="27" textAnchor="middle" fontSize="2" fill="#fff" fontWeight="bold">D.F</text>
+              <foreignObject x="48" y="23" width="5" height="5">
+                <img src="/D.INVEST.png" alt="D.INVEST" className="w-full h-full object-contain" />
+              </foreignObject>
             </g>
 
             {/* Glitzer-Effekt um die fliegenden Token */}
@@ -392,8 +395,8 @@ export default function TokenomicsTab() {
           {/* Center Label */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <div className="text-amber-400 font-bold text-lg animate-pulse">💎</div>
-              <div className="text-white text-xs font-semibold">D.FAITH</div>
+              <img src="/D.FAITH.png" alt="D.FAITH Token" className="w-8 h-8 object-contain mx-auto animate-pulse" />
+              <div className="text-white text-xs font-semibold mt-1">D.FAITH</div>
               <div className="text-zinc-400 text-xs">Live Data</div>
             </div>
           </div>
@@ -473,11 +476,11 @@ export default function TokenomicsTab() {
         
         {/* Market Metrics unter dem Chart - Kompakt und mobil optimiert */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
-          {/* Marktkapitalisierung */}
+          {/* Market Cap */}
           <div className="bg-zinc-800/50 rounded-lg p-3 border border-green-500/20">
             <div className="flex items-center gap-2 mb-1">
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-green-400 font-semibold text-xs">Marktkapitalisierung</span>
+              <span className="text-green-400 font-semibold text-xs">Market Cap</span>
             </div>
             {loading ? (
               <div className="animate-pulse bg-zinc-600 h-5 w-16 rounded"></div>
