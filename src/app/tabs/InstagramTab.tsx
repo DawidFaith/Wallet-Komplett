@@ -557,11 +557,9 @@ export default function InstagramTab() {
               <span className="text-xl animate-bounce">🪙</span>
               <span>D.FAITH Claim</span>
             </h2>
-            {!account?.address && (
-              <div className="text-xs text-gray-600 mb-4 text-center">
-                💡 Wallet ändern? Schreib mir eine DM mit &quot;Wallet&quot; auf Instagram
-              </div>
-            )}
+            <div className="text-xs text-gray-600 mb-4 text-center">
+              💡 Wallet ändern? Schreib mir eine DM mit &quot;Wallet&quot; auf Instagram
+            </div>
             
             {/* Automatische Wallet-Erkennung */}
             {account?.address ? (
