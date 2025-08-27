@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { validateBaseAddress, validateBaseAddressRealTime } from '../utils/walletValidation';
+import { useActiveAccount } from 'thirdweb/react';
 
 interface UserData {
   username: string;
@@ -22,13 +23,13 @@ interface UserData {
 
 export default function FacebookTab() {
   const router = useRouter();
+  const account = useActiveAccount(); // Thirdweb Hook für eingeloggte Wallet
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
   const [showLikeSaveModal, setShowLikeSaveModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
-  const [showWalletInfoModal, setShowWalletInfoModal] = useState(false);
   const [showConfirmInitial, setShowConfirmInitial] = useState(false);
   const [showConfirmAfter, setShowConfirmAfter] = useState(false);
   const [walletInput, setWalletInput] = useState('');
@@ -141,10 +142,29 @@ export default function FacebookTab() {
     loadUserData();
   }, []);
 
+  // Automatisch eingeloggte Wallet-Adresse setzen
+  useEffect(() => {
+    if (account?.address) {
+      console.log('Eingeloggte Wallet gefunden:', account.address);
+      setWalletInput(account.address);
+      // Validierung für automatisch gesetzte Wallet durchführen
+      const validation = validateBaseAddressRealTime(account.address);
+      setWalletValidation(validation);
+    }
+  }, [account?.address]);
+
   // Claim funktionen
   const submitClaim = async () => {
+    // Priorität: Eingeloggte Wallet > Eingabe-Wallet > gespeicherte Wallet
+    const claimWalletAddress = account?.address || walletInput;
+    
+    if (!claimWalletAddress) {
+      setClaimStatus('❌ Keine Wallet-Adresse verfügbar. Bitte verbinde deine Wallet oder gib eine Adresse ein.');
+      return;
+    }
+    
     // Validierung der Wallet-Adresse
-    const validation = validateBaseAddress(walletInput);
+    const validation = validateBaseAddress(claimWalletAddress);
     if (!validation.isValid) {
       setClaimStatus(`❌ ${validation.error}`);
       return;
@@ -158,7 +178,7 @@ export default function FacebookTab() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           uuid,
-          wallet: walletInput.trim(),
+          wallet: claimWalletAddress.trim(),
           username: userData?.username || '',
           miningpower: userData?.miningpower || 0
         })
@@ -486,59 +506,79 @@ export default function FacebookTab() {
               <span>D.FAITH Claim</span>
             </h2>
             
-            {!walletInput || !walletValidation.isValid ? (
+            {/* Hinweis für Wallet-Verbindung in der Überschrift */}
+            {!account?.address && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 text-gray-800 text-base flex flex-col items-center animate-pulse">
-                <span className="font-semibold mb-3 text-center">Du hast noch keine gültige Base Chain Wallet hinterlegt.<br/>Erstelle jetzt deine Wallet, um deine Belohnung zu erhalten!</span>
+                <span className="font-semibold mb-3 text-center">Du hast noch keine Wallet verbunden.<br/>Verbinde deine Wallet, um deine Belohnung zu erhalten!</span>
+                <span className="text-xs text-gray-500 mt-1">Wenn du deine Wallet wechseln möchtest, schreib mir eine DM mit dem Stichwort &quot;Wallet&quot; auf Facebook.</span>
                 <button
                   className="w-full mt-2 mb-2 py-3 px-4 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400 text-gray-900 shadow-lg hover:from-yellow-500 hover:to-orange-500 active:from-yellow-600 active:to-orange-600 transition text-base border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-center block"
                   onClick={() => router.push("/wallet")}
                 >
-                  🚀 Wallet jetzt anlegen
+                  🚀 Wallet jetzt verbinden
                 </button>
-                <span className="text-xs text-gray-500 mt-1">Du findest den Wallet Tab auch oben im Menü.</span>
               </div>
-            ) : null}
+            )}
             
-            <p className="mb-4 text-gray-700">Gib deine Base Chain Wallet-Adresse ein, um deine Belohnung zu erhalten:</p>
+            {/* Alte Fallback-Option falls keine Wallet verbunden ist und auch keine gespeicherte Wallet */}
+            {!account?.address && !walletInput && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-gray-800 text-base flex flex-col items-center">
+                <span className="font-semibold mb-3 text-center">Alternativ kannst du auch eine Base Chain Wallet-Adresse eingeben:</span>
+              </div>
+            )}
             
-            {walletInput && walletValidation.isValid && (
+            {(account?.address || walletInput) && walletValidation.isValid && (
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-center">
                 <p className="text-gray-800 mb-2">
                   Du kannst <strong className="text-blue-600">+{userData.miningpower} D.FAITH</strong> für deine Facebook Aktivität claimen!
                 </p>
+                {account?.address && (
+                  <p className="text-sm text-green-600 mt-2">✅ Verbundene Wallet wird verwendet</p>
+                )}
               </div>
             )}
-            <div className="relative mb-6">
-              <input 
-                type="text"
-                value={walletInput}
-                onChange={(e) => handleWalletInputChange(e.target.value)}
-                placeholder="0x... (Base Chain Adresse)"
-                readOnly={!!(userData?.wallet && userData.wallet.startsWith("0x"))}
-                className={`w-full p-4 pr-12 border-2 rounded-2xl text-base focus:outline-none transition-colors duration-300 ${
-                  walletInput && !walletValidation.isPartiallyValid
-                    ? 'border-red-400 focus:border-red-500 bg-red-50'
-                    : walletInput && walletValidation.isValid
-                    ? 'border-green-400 focus:border-green-500 bg-green-50'
-                    : 'border-gray-300 focus:border-blue-500'
-                }`}
-              />
-              {walletInput && walletValidation.error && (
-                <div className="absolute left-0 top-full mt-1 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-1 shadow-sm z-10">
-                  {walletValidation.error}
+            
+            {/* Wallet Input nur anzeigen wenn keine Wallet verbunden ist */}
+            {!account?.address && (
+              <>
+                <p className="mb-4 text-gray-700">Gib deine Base Chain Wallet-Adresse ein, um deine Belohnung zu erhalten:</p>
+                <div className="relative mb-6">
+                  <input 
+                    type="text"
+                    value={walletInput}
+                    onChange={(e) => handleWalletInputChange(e.target.value)}
+                    placeholder="0x... (Base Chain Adresse)"
+                    readOnly={!!(userData?.wallet && userData.wallet.startsWith("0x"))}
+                    className={`w-full p-4 pr-12 border-2 rounded-2xl text-base focus:outline-none transition-colors duration-300 ${
+                      walletInput && !walletValidation.isPartiallyValid
+                        ? 'border-red-400 focus:border-red-500 bg-red-50'
+                        : walletInput && walletValidation.isValid
+                        ? 'border-green-400 focus:border-green-500 bg-green-50'
+                        : 'border-gray-300 focus:border-blue-500'
+                    }`}
+                  />
+                  {walletInput && walletValidation.error && (
+                    <div className="absolute left-0 top-full mt-1 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-1 shadow-sm z-10">
+                      {walletValidation.error}
+                    </div>
+                  )}
                 </div>
-              )}
-              <button
-                onClick={() => setShowWalletInfoModal(true)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition-all duration-200 text-sm"
-                title="Wallet Info"
-              >
-                i
-              </button>
-            </div>
+              </>
+            )}
+            
+            {/* Wallet Adresse anzeigen wenn Wallet verbunden ist */}
+            {account?.address && (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+                <p className="text-sm text-gray-700 mb-2">Verbundene Wallet:</p>
+                <p className="font-mono text-sm bg-white border border-green-300 rounded-lg p-2 break-all">
+                  {account.address}
+                </p>
+              </div>
+            )}
+            
             <button 
               onClick={submitClaim}
-              disabled={!walletInput || !walletValidation.isValid}
+              disabled={!account?.address && (!walletInput || !walletValidation.isValid)}
               className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 hover:shadow-lg disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <span>Claim absenden</span>
@@ -749,30 +789,6 @@ export default function FacebookTab() {
             </div>
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-2xl p-4 mb-6">
               <p className="text-sm text-gray-700 font-medium">💡 Mehr EXP = schnelleres Level-Up. Nutze alle Plattformen! 🚀</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Wallet Info Modal */}
-      {showWalletInfoModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
-            <button
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
-              onClick={() => setShowWalletInfoModal(false)}
-              aria-label="Schließen"
-              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
-            >
-              ×
-            </button>
-            <div className="text-6xl mb-4">🔒</div>
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Wichtiger Hinweis</h2>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-6">
-              <p className="text-gray-700 leading-relaxed">
-                Deine Base Chain Wallet-Adresse wird dauerhaft mit deinem Social-Media-Account verbunden.<br/><br/>
-                Wenn du sie ändern willst, schreib mir eine <strong className="text-blue-600">DM mit dem Stichwort &quot;Wallet&quot;</strong> auf <strong className="text-blue-600">Facebook</strong>.
-              </p>
             </div>
           </div>
         </div>
