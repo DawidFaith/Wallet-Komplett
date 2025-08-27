@@ -1126,29 +1126,54 @@ export default function MerchTab() {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-zinc-900 to-zinc-800 text-white">
-      {/* Dawid Faith Shop - Clean Professional Style */}
+      {/* Dawid Faith Shop - Hero Header mit Bild */}
       <div className="relative mb-6 overflow-hidden">
         {/* Elegant Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-amber-900/10 via-yellow-900/15 to-amber-800/10"></div>
         
         <div className="relative bg-gradient-to-r from-zinc-950/90 via-amber-950/30 to-zinc-950/90 backdrop-blur-md border-b border-amber-400/20">
-          <div className="py-8 px-6 text-center">
-            {/* Artist Name - Bold & Modern with Pirata One */}
-            <div className="relative inline-block">
-              <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent tracking-wider drop-shadow-2xl">
-                DAWID FAITH
-              </h1>
-              {/* Glowing underline effect */}
-              <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent rounded-full shadow-lg shadow-amber-400/50"></div>
-              {/* Additional glow */}
-              <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-48 h-2 bg-gradient-to-r from-transparent via-amber-400/30 to-transparent rounded-full blur-sm"></div>
-            </div>
-            
-            {/* Shop Subtitle - Elegant */}
-            <div className="mt-6">
-              <p className="text-amber-100/90 text-xl md:text-2xl font-light italic tracking-wide">
-                Official Music Store
-              </p>
+          <div className="py-12 px-6">
+            {/* Hauptbereich mit Bild und Text */}
+            <div className="max-w-6xl mx-auto flex items-center justify-center gap-8 flex-wrap">
+              {/* Artist Bild */}
+              <div className="relative">
+                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-amber-400/50 shadow-2xl shadow-amber-400/30">
+                  <img 
+                    src="/_ARC6705.jpg"
+                    alt="Dawid Faith"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {/* Glowing ring effect */}
+                <div className="absolute inset-0 rounded-full border-2 border-amber-400/30 animate-pulse"></div>
+                <div className="absolute -inset-2 rounded-full border border-amber-400/20 animate-pulse delay-1000"></div>
+              </div>
+              
+              {/* Artist Name & Shop Info */}
+              <div className="text-center flex-1 min-w-0">
+                {/* Artist Name mit Pirata One Font */}
+                <div className="relative inline-block">
+                  <h1 
+                    className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent tracking-wider drop-shadow-2xl font-pirata"
+                  >
+                    DAWID FAITH
+                  </h1>
+                  {/* Glowing underline effect */}
+                  <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 w-40 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent rounded-full shadow-lg shadow-amber-400/50"></div>
+                  {/* Additional glow */}
+                  <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 w-56 h-2 bg-gradient-to-r from-transparent via-amber-400/30 to-transparent rounded-full blur-sm"></div>
+                </div>
+                
+                {/* Shop Subtitle */}
+                <div className="mt-8">
+                  <p className="text-amber-100/90 text-xl md:text-2xl font-light italic tracking-wide">
+                    Official Music Store
+                  </p>
+                  <p className="text-amber-300/70 text-sm md:text-base mt-2">
+                    🎵 Exklusive Musik • 👕 Merchandise • 🎨 Digitale Inhalte
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
