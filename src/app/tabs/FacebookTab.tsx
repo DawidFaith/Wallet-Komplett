@@ -520,65 +520,28 @@ export default function FacebookTab() {
               </div>
             )}
             
-            {/* Alte Fallback-Option falls keine Wallet verbunden ist und auch keine gespeicherte Wallet */}
-            {!account?.address && !walletInput && (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-gray-800 text-base flex flex-col items-center">
-                <span className="font-semibold mb-3 text-center">Alternativ kannst du auch eine Base Chain Wallet-Adresse eingeben:</span>
-              </div>
-            )}
-            
-            {(account?.address || walletInput) && walletValidation.isValid && (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-center">
-                <p className="text-gray-800 mb-2">
-                  Du kannst <strong className="text-blue-600">+{userData.miningpower} D.FAITH</strong> für deine Facebook Aktivität claimen!
-                </p>
-                {account?.address && (
-                  <p className="text-sm text-green-600 mt-2">✅ Verbundene Wallet wird verwendet</p>
-                )}
-              </div>
-            )}
-            
-            {/* Wallet Input nur anzeigen wenn keine Wallet verbunden ist */}
-            {!account?.address && (
+            {/* Wallet Adresse anzeigen und Claim Info wenn Wallet verbunden ist */}
+            {account?.address && (
               <>
-                <p className="mb-4 text-gray-700">Gib deine Base Chain Wallet-Adresse ein, um deine Belohnung zu erhalten:</p>
-                <div className="relative mb-6">
-                  <input 
-                    type="text"
-                    value={walletInput}
-                    onChange={(e) => handleWalletInputChange(e.target.value)}
-                    placeholder="0x... (Base Chain Adresse)"
-                    readOnly={!!(userData?.wallet && userData.wallet.startsWith("0x"))}
-                    className={`w-full p-4 pr-12 border-2 rounded-2xl text-base focus:outline-none transition-colors duration-300 ${
-                      walletInput && !walletValidation.isPartiallyValid
-                        ? 'border-red-400 focus:border-red-500 bg-red-50'
-                        : walletInput && walletValidation.isValid
-                        ? 'border-green-400 focus:border-green-500 bg-green-50'
-                        : 'border-gray-300 focus:border-blue-500'
-                    }`}
-                  />
-                  {walletInput && walletValidation.error && (
-                    <div className="absolute left-0 top-full mt-1 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-1 shadow-sm z-10">
-                      {walletValidation.error}
-                    </div>
-                  )}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-center">
+                  <p className="text-gray-800 mb-2">
+                    Du kannst <strong className="text-blue-600">+{userData.miningpower} D.FAITH</strong> für deine Facebook Aktivität claimen!
+                  </p>
+                  <p className="text-sm text-green-600 mt-2">✅ Verbundene Wallet wird verwendet</p>
+                </div>
+                
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+                  <p className="text-sm text-gray-700 mb-2">Verbundene Wallet:</p>
+                  <p className="font-mono text-sm bg-white border border-green-300 rounded-lg p-2 break-all">
+                    {account.address}
+                  </p>
                 </div>
               </>
             )}
             
-            {/* Wallet Adresse anzeigen wenn Wallet verbunden ist */}
-            {account?.address && (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
-                <p className="text-sm text-gray-700 mb-2">Verbundene Wallet:</p>
-                <p className="font-mono text-sm bg-white border border-green-300 rounded-lg p-2 break-all">
-                  {account.address}
-                </p>
-              </div>
-            )}
-            
             <button 
               onClick={submitClaim}
-              disabled={!account?.address && (!walletInput || !walletValidation.isValid)}
+              disabled={!account?.address}
               className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 hover:shadow-lg disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <span>Claim absenden</span>
