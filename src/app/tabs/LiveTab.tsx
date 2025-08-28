@@ -116,12 +116,23 @@ export default function LiveTab() {
               </div>
 
               {/* Wichtiger Hinweis für Social Media Teilnahme */}
-              <div className="mb-6 p-4 bg-amber-900/30 border border-amber-600/50 rounded-lg">
+              <div className="mb-4 p-4 bg-amber-900/30 border border-amber-600/50 rounded-lg">
                 <div className="flex items-start gap-3">
                   <span className="text-amber-400 text-lg mt-0.5">⚠️</span>
                   <div className="text-amber-200 text-sm">
                     <p className="font-semibold mb-2">Wichtiger Hinweis:</p>
                     <p>Mindestens 1 Teilnahme bei TikTok, Instagram oder Facebook ist erforderlich, um Live Codes einzulösen.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Info über Live Code Vergabe */}
+              <div className="mb-6 p-4 bg-purple-900/30 border border-purple-600/50 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <span className="text-purple-400 text-lg mt-0.5">🎤</span>
+                  <div className="text-purple-200 text-sm">
+                    <p className="font-semibold mb-2">Live Codes Info:</p>
+                    <p>Live Codes werden exklusiv bei Live Konzerten und Auftritten von Dawid Faith vergeben. Sei dabei um deine Codes zu erhalten!</p>
                   </div>
                 </div>
               </div>
