@@ -82,6 +82,17 @@ export default function LiveTab() {
             <h3 className="text-lg font-bold text-white">Live Code Einlösen</h3>
           </div>
           
+          {/* Wichtiger Hinweis für Social Media Teilnahme */}
+          <div className="mb-4 p-3 bg-amber-900/30 border border-amber-600/50 rounded-lg">
+            <div className="flex items-start gap-2">
+              <span className="text-amber-400 text-sm mt-0.5">⚠️</span>
+              <div className="text-amber-200 text-xs">
+                <p className="font-semibold mb-1">Wichtiger Hinweis:</p>
+                <p>Mindestens 1 Teilnahme bei TikTok, Instagram oder Facebook ist erforderlich, um Live Codes einzulösen.</p>
+              </div>
+            </div>
+          </div>
+          
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
               <input
@@ -111,7 +122,7 @@ export default function LiveTab() {
                   Wallet verbinden erforderlich
                 </div>
               ) : (
-                '🎫 Code einlösen (+50 Live EXP)'
+                '🎫 Code einlösen (+80 Live EXP)'
               )}
             </Button>
           </form>
@@ -127,8 +138,12 @@ export default function LiveTab() {
                 <div className="text-center">
                   <p className="text-sm font-bold">🎉 Erfolgreich!</p>
                   <p className="text-lg font-bold text-green-300 mt-1">
-                    +50 Live EXP wurde deinem Konto gutgeschrieben! 🎵
+                    +80 Live EXP wurde deinem Konto gutgeschrieben! 🎵
                   </p>
+                  <div className="mt-3 p-2 bg-blue-900/30 border border-blue-600/50 rounded text-blue-200 text-xs">
+                    <p className="font-semibold">ℹ️ Hinweis:</p>
+                    <p>Die EXP werden erst bei der nächsten Teilnahme auf TikTok, Instagram oder Facebook sichtbar.</p>
+                  </div>
                   {result.data && (
                     <p className="text-xs mt-2 opacity-80">
                       📊 Gesamt Live EXP: {result.data.newValueK}
