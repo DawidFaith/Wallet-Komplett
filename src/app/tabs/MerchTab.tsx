@@ -1150,19 +1150,19 @@ export default function MerchTab() {
           </div>
         </div>
         
-        {/* Main Header Section */}
+        {/* Main Header Section - Kompakter */}
         <div className="relative">
-          <div className="container mx-auto px-6 py-20">
+          <div className="container mx-auto px-6 py-12">
             {/* Premium Artist Branding */}
             <div className="max-w-6xl mx-auto text-center">
               
               {/* Logo/Brand Section with Geometric Elements */}
-              <div className="relative mb-12">
+              <div className="relative mb-6">
                 {/* Decorative Lines */}
                 <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent transform -translate-y-1/2"></div>
                 
                 {/* Main Artist Name */}
-                <div className="relative inline-block bg-slate-900/60 backdrop-blur-lg px-12 py-8 rounded-2xl border border-amber-400/20 shadow-2xl">
+                <div className="relative inline-block bg-slate-900/60 backdrop-blur-lg px-12 py-6 rounded-2xl border border-amber-400/20 shadow-2xl">
                   <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold font-pirata tracking-[0.05em] relative">
                     <span className="bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent">
                       DAWID
@@ -1182,43 +1182,27 @@ export default function MerchTab() {
                 <div className="absolute top-1/2 right-8 w-3 h-3 bg-amber-400 rounded-full transform -translate-y-1/2 animate-pulse hidden lg:block"></div>
               </div>
               
-              {/* Professional Subtitle Section */}
-              <div className="space-y-6 mb-16">
-                <div className="bg-slate-800/40 backdrop-blur-md rounded-xl px-8 py-6 border border-slate-600/30 max-w-2xl mx-auto">
+              {/* Professional Subtitle Section - Direkter Anschluss */}
+              <div className="space-y-4 mb-8">
+                <div className="bg-slate-800/40 backdrop-blur-md rounded-xl px-8 py-4 border border-slate-600/30 max-w-2xl mx-auto">
                   <h2 className="text-2xl md:text-3xl font-light text-slate-100 tracking-wide mb-2">
                     Official Music Store
                   </h2>
-                  <div className="w-16 h-px bg-amber-400 mx-auto mb-4"></div>
+                  <div className="w-16 h-px bg-amber-400 mx-auto mb-3"></div>
                   <p className="text-slate-300 text-lg font-medium">
                     Premium Collection • Exclusive Releases • Digital Content
                   </p>
-                </div>
-                
-                {/* Stats or Features */}
-                <div className="flex justify-center gap-8 text-sm text-slate-400">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span>Authentic Merchandise</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                    <span>Instant Digital Delivery</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                    <span>Worldwide Shipping</span>
-                  </div>
                 </div>
               </div>
             </div>
           </div>
           
-          {/* Ultra Modern Category Navigation */}
+          {/* Ultra Modern Category Navigation - Direkter Anschluss */}
           <div className="relative bg-slate-900/60 backdrop-blur-lg border-y border-slate-600/30">
-            <div className="container mx-auto px-6 py-8">
+            <div className="container mx-auto px-6 py-6">
               
-              {/* Category Title */}
-              <div className="text-center mb-6">
+              {/* Category Title - Kompakter */}
+              <div className="text-center mb-4">
                 <h3 className="text-lg font-medium text-slate-200 tracking-wide">Browse Collections</h3>
                 <div className="w-12 h-px bg-amber-400 mx-auto mt-2"></div>
               </div>
@@ -1249,8 +1233,8 @@ export default function MerchTab() {
                 ))}
               </div>
               
-              {/* Elegant Results Counter */}
-              <div className="text-center mt-8">
+              {/* Elegant Results Counter - Kompakter */}
+              <div className="text-center mt-5">
                 <div className="inline-flex items-center gap-3 bg-slate-800/40 backdrop-blur-sm rounded-full px-6 py-2 border border-slate-600/30">
                   <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
                   <span className="text-slate-300 text-sm font-medium">
