@@ -1126,81 +1126,146 @@ export default function MerchTab() {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-zinc-900 to-zinc-800 text-white">
-      {/* Dawid Faith Shop - Hero Header mit Hintergrundbild (erweitert über Kategorien) */}
-      <div className="relative mb-6 overflow-hidden">
-        {/* Erweitertes Hero Hintergrundbild - umfasst jetzt auch die Kategorien */}
+      {/* Dawid Faith Shop - Ultra Professional Header Design */}
+      <div className="relative mb-8 overflow-hidden">
+        {/* Sophisticated Background with Multiple Layers */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ 
             backgroundImage: "url('/_ARC6705.jpg')",
-            backgroundPosition: "center 30%" // Fokus auf Gesicht/oberen Bereich
+            backgroundPosition: "center 25%"
           }}
         >
-          {/* Dunkler Overlay für bessere Textlesbarkeit - sanfter Übergang */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/80"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-black/40"></div>
-        </div>
-        
-        <div className="relative bg-gradient-to-r from-amber-950/40 via-transparent to-amber-950/40 backdrop-blur-sm border-b border-amber-400/30">
-          <div className="py-16 px-6">
-            {/* Zentrierter Text Content */}
-            <div className="max-w-4xl mx-auto text-center">
-              {/* Artist Name mit Pirata One Font */}
-              <div className="relative inline-block mb-8">
-                <h1 
-                  className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent tracking-wider drop-shadow-2xl font-pirata"
-                  style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}
-                >
-                  DAWID FAITH
-                </h1>
-                {/* Glowing underline effect */}
-                <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 w-48 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent rounded-full shadow-lg shadow-amber-400/50"></div>
-                {/* Additional glow */}
-                <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 w-64 h-2 bg-gradient-to-r from-transparent via-amber-400/30 to-transparent rounded-full blur-sm"></div>
-              </div>
-              
-              {/* Shop Subtitle */}
-              <div className="space-y-4">
-                <p className="text-amber-100/95 text-2xl md:text-3xl font-light italic tracking-wide drop-shadow-lg">
-                  Official Music Store
-                </p>
-                <p className="text-amber-300/80 text-lg md:text-xl font-medium drop-shadow-md">
-                  🎵 Exklusive Musik • 👕 Merchandise • 🎨 Digitale Inhalte
-                </p>
-              </div>
-              
-              {/* Zusätzlicher Glow-Effekt um den gesamten Text */}
-              <div className="absolute inset-0 bg-gradient-to-t from-amber-400/5 via-transparent to-transparent rounded-lg pointer-events-none"></div>
-            </div>
+          {/* Multi-layered Professional Overlay System */}
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-slate-800/80 to-black/90"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-transparent to-slate-900/70"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-950/30 via-transparent to-amber-950/30"></div>
+          
+          {/* Subtle Pattern Overlay for Texture */}
+          <div className="absolute inset-0 opacity-10" 
+               style={{
+                 backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)`,
+                 backgroundSize: '40px 40px'
+               }}>
           </div>
         </div>
         
-        {/* Categories - Erweitert mit Hintergrundbild */}
-        <div className="relative bg-gradient-to-r from-black/70 via-black/50 to-black/70 backdrop-blur-sm border-b border-amber-400/20">
-          <div className="p-6">
-            <div className="flex flex-wrap justify-center gap-3 max-w-5xl mx-auto">
-              {categories.map((category, index) => (
-                <button
-                  key={category}
-                  className={`px-5 py-3 rounded-full text-sm font-medium transition-all duration-300 backdrop-blur-sm ${
-                    selectedCategory === category
-                      ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg shadow-amber-500/40 scale-105 border border-amber-400/50'
-                      : 'bg-black/50 text-amber-200 border border-amber-400/40 hover:bg-amber-900/50 hover:text-white hover:border-amber-300/60 hover:scale-105'
-                  }`}
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  <span className="flex items-center gap-1.5 font-semibold">
-                    {getCategoryDisplayName(category)}
-                  </span>
-                </button>
-              ))}
+        {/* Main Header Section */}
+        <div className="relative">
+          <div className="container mx-auto px-6 py-20">
+            {/* Premium Artist Branding */}
+            <div className="max-w-6xl mx-auto text-center">
+              
+              {/* Logo/Brand Section with Geometric Elements */}
+              <div className="relative mb-12">
+                {/* Decorative Lines */}
+                <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent transform -translate-y-1/2"></div>
+                
+                {/* Main Artist Name */}
+                <div className="relative inline-block bg-slate-900/60 backdrop-blur-lg px-12 py-8 rounded-2xl border border-amber-400/20 shadow-2xl">
+                  <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold font-pirata tracking-[0.05em] relative">
+                    <span className="bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent">
+                      DAWID
+                    </span>
+                    <span className="text-white/90 mx-4">•</span>
+                    <span className="bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-300 bg-clip-text text-transparent">
+                      FAITH
+                    </span>
+                  </h1>
+                  
+                  {/* Elegant Underline */}
+                  <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
+                </div>
+                
+                {/* Side Decorative Elements */}
+                <div className="absolute top-1/2 left-8 w-3 h-3 bg-amber-400 rounded-full transform -translate-y-1/2 animate-pulse hidden lg:block"></div>
+                <div className="absolute top-1/2 right-8 w-3 h-3 bg-amber-400 rounded-full transform -translate-y-1/2 animate-pulse hidden lg:block"></div>
+              </div>
+              
+              {/* Professional Subtitle Section */}
+              <div className="space-y-6 mb-16">
+                <div className="bg-slate-800/40 backdrop-blur-md rounded-xl px-8 py-6 border border-slate-600/30 max-w-2xl mx-auto">
+                  <h2 className="text-2xl md:text-3xl font-light text-slate-100 tracking-wide mb-2">
+                    Official Music Store
+                  </h2>
+                  <div className="w-16 h-px bg-amber-400 mx-auto mb-4"></div>
+                  <p className="text-slate-300 text-lg font-medium">
+                    Premium Collection • Exclusive Releases • Digital Content
+                  </p>
+                </div>
+                
+                {/* Stats or Features */}
+                <div className="flex justify-center gap-8 text-sm text-slate-400">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <span>Authentic Merchandise</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                    <span>Instant Digital Delivery</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                    <span>Worldwide Shipping</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            
-            {/* Current Selection */}
-            <div className="text-center mt-4">
-              <span className="text-sm text-amber-300/70 italic font-medium drop-shadow-md">
-                Showing {filteredProducts.length} {selectedCategory === "all" ? "items" : getCategoryDisplayName(selectedCategory).toLowerCase()}
-              </span>
+          </div>
+          
+          {/* Ultra Modern Category Navigation */}
+          <div className="relative bg-slate-900/60 backdrop-blur-lg border-y border-slate-600/30">
+            <div className="container mx-auto px-6 py-8">
+              
+              {/* Category Title */}
+              <div className="text-center mb-6">
+                <h3 className="text-lg font-medium text-slate-200 tracking-wide">Browse Collections</h3>
+                <div className="w-12 h-px bg-amber-400 mx-auto mt-2"></div>
+              </div>
+              
+              {/* Premium Category Pills */}
+              <div className="flex flex-wrap justify-center gap-3 max-w-6xl mx-auto">
+                {categories.map((category, index) => (
+                  <button
+                    key={category}
+                    className={`group relative px-6 py-3 rounded-xl text-sm font-medium tracking-wide transition-all duration-500 transform ${
+                      selectedCategory === category
+                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/25 scale-105 translate-y-[-2px]'
+                        : 'bg-slate-800/60 text-slate-300 border border-slate-600/40 hover:bg-slate-700/80 hover:text-white hover:border-amber-400/50 hover:scale-105 hover:translate-y-[-1px]'
+                    }`}
+                    onClick={() => setSelectedCategory(category)}
+                  >
+                    {/* Button Content */}
+                    <span className="relative z-10 flex items-center gap-2">
+                      {getCategoryDisplayName(category)}
+                      {selectedCategory === category && (
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+                      )}
+                    </span>
+                    
+                    {/* Hover Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 to-amber-500/0 group-hover:from-amber-500/10 group-hover:to-amber-600/10 rounded-xl transition-all duration-300"></div>
+                  </button>
+                ))}
+              </div>
+              
+              {/* Elegant Results Counter */}
+              <div className="text-center mt-8">
+                <div className="inline-flex items-center gap-3 bg-slate-800/40 backdrop-blur-sm rounded-full px-6 py-2 border border-slate-600/30">
+                  <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+                  <span className="text-slate-300 text-sm font-medium">
+                    {filteredProducts.length} {filteredProducts.length === 1 ? 'item' : 'items'} available
+                  </span>
+                  {selectedCategory !== "all" && (
+                    <>
+                      <span className="text-slate-500">•</span>
+                      <span className="text-amber-400 text-sm font-medium">
+                        {getCategoryDisplayName(selectedCategory)}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
