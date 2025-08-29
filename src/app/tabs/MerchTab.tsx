@@ -1183,7 +1183,7 @@ export default function MerchTab() {
               </div>
               
               {/* Professional Subtitle Section - Direkter Anschluss */}
-              <div className="space-y-4 mb-8">
+              <div className="space-y-4 mb-2">
                 <div className="bg-slate-800/40 backdrop-blur-md rounded-xl px-8 py-4 border border-slate-600/30 max-w-2xl mx-auto">
                   <h2 className="text-2xl md:text-3xl font-light text-slate-100 tracking-wide mb-2">
                     Official Music Store
