@@ -1128,24 +1128,29 @@ export default function MerchTab() {
     <div className="relative min-h-screen bg-gradient-to-br from-zinc-900 to-zinc-800 text-white">
       {/* Dawid Faith Shop - Ultra Professional Header Design */}
       <div className="relative mb-8 overflow-hidden">
-        {/* Sophisticated Background with Multiple Layers */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ 
-            backgroundImage: "url('/_ARC6705.jpg')",
-            backgroundPosition: "center 25%"
-          }}
-        >
-          {/* Multi-layered Professional Overlay System */}
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-slate-800/80 to-black/90"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-transparent to-slate-900/70"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-amber-950/30 via-transparent to-amber-950/30"></div>
+        {/* Künstlerischer Gradient-Hintergrund ohne Bild */}
+        <div className="absolute inset-0">
+          {/* Hauptgradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-zinc-800 to-black"></div>
           
-          {/* Subtle Pattern Overlay for Texture */}
-          <div className="absolute inset-0 opacity-10" 
+          {/* Overlay-Gradienten für Tiefe */}
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-950/40 via-transparent to-purple-950/30"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-slate-900/70"></div>
+          
+          {/* Künstlerische Muster */}
+          <div className="absolute inset-0 opacity-20" 
+               style={{
+                 backgroundImage: `radial-gradient(circle at 20% 80%, rgba(245, 158, 11, 0.3) 0%, transparent 50%),
+                                   radial-gradient(circle at 80% 20%, rgba(139, 69, 19, 0.3) 0%, transparent 50%),
+                                   radial-gradient(circle at 40% 40%, rgba(59, 130, 246, 0.2) 0%, transparent 50%)`,
+               }}>
+          </div>
+          
+          {/* Subtile Textur */}
+          <div className="absolute inset-0 opacity-5" 
                style={{
                  backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)`,
-                 backgroundSize: '40px 40px'
+                 backgroundSize: '60px 60px'
                }}>
           </div>
         </div>
@@ -1161,15 +1166,11 @@ export default function MerchTab() {
                 {/* Decorative Lines */}
                 <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent transform -translate-y-1/2"></div>
                 
-                {/* Main Artist Name */}
+                {/* Main Artist Name - Ohne Symbol */}
                 <div className="relative inline-block bg-slate-900/60 backdrop-blur-lg px-12 py-6 rounded-2xl border border-amber-400/20 shadow-2xl">
                   <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold font-pirata tracking-[0.05em] relative">
                     <span className="bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent">
-                      DAWID
-                    </span>
-                    <span className="text-white/90 mx-4">•</span>
-                    <span className="bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-300 bg-clip-text text-transparent">
-                      FAITH
+                      DAWID FAITH
                     </span>
                   </h1>
                   
