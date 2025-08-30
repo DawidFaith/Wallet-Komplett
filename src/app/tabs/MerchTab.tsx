@@ -1128,7 +1128,7 @@ export default function MerchTab() {
     <div className="relative min-h-screen bg-gradient-to-br from-zinc-900 to-zinc-800 text-white">
       {/* Dawid Faith Shop - Ultra Professional Header Design */}
       <div className="relative mb-8 overflow-hidden">
-        {/* Künstlerischer Gradient-Hintergrund ohne Bild */}
+        {/* Künstlerischer Gradient-Hintergrund ohne Bild - Erweitert über beide Bereiche */}
         <div className="absolute inset-0">
           {/* Hauptgradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-zinc-800 to-black"></div>
@@ -1187,24 +1187,24 @@ export default function MerchTab() {
               <div className="space-y-4 mb-2">
                 <div className="bg-slate-800/40 backdrop-blur-md rounded-xl px-8 py-4 border border-slate-600/30 max-w-2xl mx-auto">
                   <h2 className="text-2xl md:text-3xl font-light text-slate-100 tracking-wide mb-2">
-                    Official Music Store
+                    Offizieller Musik Shop
                   </h2>
                   <div className="w-16 h-px bg-amber-400 mx-auto mb-3"></div>
                   <p className="text-slate-300 text-lg font-medium">
-                    Premium Collection • Exclusive Releases • Digital Content
+                    Premium Kollektion • Exklusive Veröffentlichungen • Digitale Inhalte
                   </p>
                 </div>
               </div>
             </div>
           </div>
           
-          {/* Ultra Modern Category Navigation - Direkter Anschluss */}
-          <div className="relative bg-slate-900/60 backdrop-blur-lg border-y border-slate-600/30">
+          {/* Ultra Modern Category Navigation - Direkter Anschluss mit gleichem Hintergrund */}
+          <div className="relative">
             <div className="container mx-auto px-6 py-6">
               
               {/* Category Title - Kompakter */}
               <div className="text-center mb-4">
-                <h3 className="text-lg font-medium text-slate-200 tracking-wide">Browse Collections</h3>
+                <h3 className="text-lg font-medium text-slate-200 tracking-wide">Kollektionen durchsuchen</h3>
                 <div className="w-12 h-px bg-amber-400 mx-auto mt-2"></div>
               </div>
               
@@ -1239,7 +1239,7 @@ export default function MerchTab() {
                 <div className="inline-flex items-center gap-3 bg-slate-800/40 backdrop-blur-sm rounded-full px-6 py-2 border border-slate-600/30">
                   <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
                   <span className="text-slate-300 text-sm font-medium">
-                    {filteredProducts.length} {filteredProducts.length === 1 ? 'item' : 'items'} available
+                    {filteredProducts.length} {filteredProducts.length === 1 ? 'Artikel' : 'Artikel'} verfügbar
                   </span>
                   {selectedCategory !== "all" && (
                     <>
