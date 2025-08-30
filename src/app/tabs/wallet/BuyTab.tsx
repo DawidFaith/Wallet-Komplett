@@ -6,6 +6,7 @@ import { base } from "thirdweb/chains";
 import { NATIVE_TOKEN_ADDRESS, getContract, prepareContractCall, sendAndConfirmTransaction, readContract } from "thirdweb";
 import { client } from "../../client";
 import { balanceOf, approve } from "thirdweb/extensions/erc20";
+import { StripeCheckout } from "../../components/StripeCheckout";
 
 // Token Adressen (gleich wie im SendTab, SellTab und WalletTab)
 const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
@@ -131,6 +132,13 @@ export default function BuyTab() {
   const [quoteTxData, setQuoteTxData] = useState<any>(null);
   const [spenderAddress, setSpenderAddress] = useState<string | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
+
+  // Neue States für Stripe Integration
+  const [showStripeCheckout, setShowStripeCheckout] = useState(false);
+  const [dinvestAmount, setDinvestAmount] = useState<number>(1);
+  const [eurAmount, setEurAmount] = useState<number>(5);
+  const [stripeSuccess, setStripeSuccess] = useState(false);
+  const [stripeError, setStripeError] = useState<string | null>(null);
 
   // D.FAITH Preis von ParaSwap holen und in Euro umrechnen mit Fallback
   useEffect(() => {
@@ -1006,40 +1014,90 @@ export default function BuyTab() {
                     <span><strong>Minimum:</strong> 5 EUR</span>
                   </div>
                 </div>
-                
-                <div className="mb-3 text-zinc-300 text-sm">
-                  {copied
-                    ? "✅ Wallet-Adresse wurde kopiert! Du wirst nun zu Stripe weitergeleitet. Bitte füge deine Wallet-Adresse als Verwendungszweck ein, damit wir dir die Token zuweisen können."
-                    : "Deine Wallet-Adresse wird automatisch kopiert, bevor du zu Stripe weitergeleitet wirst."}
+
+                {/* Amount Selection */}
+                <div className="space-y-3">
+                  <div className="bg-zinc-800/50 rounded-xl p-3 border border-zinc-700">
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Anzahl D.INVEST Token</label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        className="flex-1 bg-zinc-700 border border-zinc-600 rounded-lg py-2 px-3 text-white focus:border-amber-500 focus:outline-none"
+                        value={dinvestAmount}
+                        onChange={(e) => {
+                          const amount = parseInt(e.target.value) || 1;
+                          setDinvestAmount(amount);
+                          setEurAmount(amount * 5);
+                        }}
+                      />
+                      <div className="text-zinc-400 text-sm">
+                        = €{eurAmount.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    {[1, 2, 5, 10].map((amount) => (
+                      <button
+                        key={amount}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition ${
+                          dinvestAmount === amount 
+                            ? "bg-amber-500 text-black" 
+                            : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                        }`}
+                        onClick={() => {
+                          setDinvestAmount(amount);
+                          setEurAmount(amount * 5);
+                        }}
+                      >
+                        {amount}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Success/Error Messages */}
+                {stripeSuccess && (
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3 text-green-400 text-center">
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                      <span className="text-xl">🎉</span>
+                      <span className="font-semibold">Zahlung erfolgreich!</span>
+                    </div>
+                    <p className="text-sm opacity-80">
+                      Deine D.INVEST Token werden in Kürze an deine Wallet gesendet.
+                    </p>
+                  </div>
+                )}
+
+                {stripeError && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400 text-center">
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                      <span className="text-xl">❌</span>
+                      <span className="font-semibold">Zahlung fehlgeschlagen</span>
+                    </div>
+                    <p className="text-sm opacity-80">{stripeError}</p>
+                  </div>
+                )}
                 
                 <Button
-                  className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-bold py-2 rounded-xl mt-1"
-                  onClick={async () => {
+                  className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-bold py-3 rounded-xl"
+                  onClick={() => {
                     if (account?.address) {
-                      try {
-                        await navigator.clipboard.writeText(account.address);
-                        setCopied(true);
-                        // Kurz warten, damit der User die Bestätigung sieht
-                        setTimeout(() => {
-                          window.open('https://dein-stripe-link.de', '_blank');
-                        }, 1000);
-                      } catch (error) {
-                        console.error("Fehler beim Kopieren der Wallet-Adresse:", error);
-                        // Fallback: Direkt zu Stripe weiterleiten
-                        window.open('https://dein-stripe-link.de', '_blank');
-                      }
+                      setShowStripeCheckout(true);
+                      setStripeError(null);
                     } else {
                       alert('Bitte Wallet verbinden!');
                     }
                   }}
-                  autoFocus
+                  disabled={dinvestAmount < 1 || eurAmount < 5}
                 >
-                  {copied ? "Weiterleitung zu Stripe..." : "Wallet-Adresse kopieren & weiter zu Stripe"}
+                  {eurAmount.toFixed(2)}€ mit Kreditkarte bezahlen
                 </Button>
                 
                 <Button
-                  className="w-full bg-zinc-600 hover:bg-zinc-700 text-white font-bold py-2 rounded-lg text-xs mt-2"
+                  className="w-full bg-zinc-600 hover:bg-zinc-700 text-white font-bold py-2 rounded-lg text-xs"
                   onClick={() => {
                     setShowBuyModal(false);
                     setSelectedToken(null);
@@ -1052,8 +1110,11 @@ export default function BuyTab() {
                     setNeedsApproval(false);
                     setQuoteError(null);
                     setCopied(false);
+                    setStripeSuccess(false);
+                    setStripeError(null);
+                    setDinvestAmount(1);
+                    setEurAmount(5);
                   }}
-                  disabled={isSwapping}
                 >
                   Schließen
                 </Button>
@@ -1073,6 +1134,26 @@ export default function BuyTab() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Stripe Checkout Modal */}
+      {showStripeCheckout && account?.address && (
+        <StripeCheckout
+          walletAddress={account.address}
+          amount={eurAmount}
+          dinvestAmount={dinvestAmount}
+          onSuccess={() => {
+            setShowStripeCheckout(false);
+            setStripeSuccess(true);
+            setStripeError(null);
+          }}
+          onError={(error) => {
+            setShowStripeCheckout(false);
+            setStripeError(error);
+            setStripeSuccess(false);
+          }}
+          onClose={() => setShowStripeCheckout(false)}
+        />
       )}
     </div>
   );
