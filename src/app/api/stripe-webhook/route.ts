@@ -1,95 +1,139 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-});
+// Überprüfe ob Stripe verfügbar ist
+const STRIPE_AVAILABLE = process.env.STRIPE_SECRET_KEY && 
+                         process.env.STRIPE_SECRET_KEY.startsWith('sk_') &&
+                         process.env.STRIPE_WEBHOOK_SECRET;
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+// Dynamischer Import von Stripe nur wenn verfügbar
+let Stripe: typeof import('stripe').default | null = null;
+let stripe: import('stripe').default | null = null;
+
+if (STRIPE_AVAILABLE) {
+  try {
+    Stripe = require('stripe').default;
+    if (Stripe) {
+      stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+        apiVersion: '2024-12-18.acacia' as any,
+      });
+    }
+  } catch (error) {
+    console.warn('Stripe konnte nicht geladen werden:', error);
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
+    // Prüfe ob Stripe verfügbar ist
+    if (!STRIPE_AVAILABLE || !stripe) {
+      console.log('Stripe Webhook nicht verfügbar - Feature deaktiviert');
+      return NextResponse.json(
+        { 
+          error: 'Webhook Service nicht verfügbar',
+          message: 'Stripe Webhook ist nicht konfiguriert.'
+        },
+        { status: 503 }
+      );
+    }
+
     const body = await req.text();
-    const signature = req.headers.get('stripe-signature')!;
+    const signature = req.headers.get('stripe-signature');
 
-    let event: Stripe.Event;
+    if (!signature) {
+      console.error('Missing stripe-signature header');
+      return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
+    }
 
+    // Webhook Event verifizieren
+    let event: import('stripe').Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!);
     } catch (err: any) {
       console.error('Webhook signature verification failed:', err.message);
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
-    // Handle the event
+    // Event Type handling
     switch (event.type) {
       case 'payment_intent.succeeded':
-        const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        
-        // Extrahiere Metadaten
-        const walletAddress = paymentIntent.metadata.walletAddress;
-        const dinvestAmount = paymentIntent.metadata.dinvestAmount;
-        const amountPaid = paymentIntent.amount_received / 100; // Von Cent zu EUR
-        
-        console.log('✅ Payment successful:', {
-          paymentIntentId: paymentIntent.id,
-          walletAddress,
-          dinvestAmount,
-          amountPaid,
-        });
-
-        // Hier würdest du normalerweise:
-        // 1. Die Zahlung in deiner Datenbank speichern
-        // 2. D.INVEST Token an die Wallet-Adresse senden
-        // 3. Email-Bestätigung senden
-        
-        // Beispiel für Token-Transfer (du musst das an dein System anpassen):
-        await sendDinvestTokens(walletAddress, parseInt(dinvestAmount));
-        
+        await handleSuccessfulPayment(event.data.object as import('stripe').Stripe.PaymentIntent);
         break;
-
+      
       case 'payment_intent.payment_failed':
-        const failedPayment = event.data.object as Stripe.PaymentIntent;
-        console.log('❌ Payment failed:', failedPayment.id);
+        await handleFailedPayment(event.data.object as import('stripe').Stripe.PaymentIntent);
         break;
-
+      
+      case 'payment_intent.canceled':
+        await handleCanceledPayment(event.data.object as import('stripe').Stripe.PaymentIntent);
+        break;
+      
       default:
-        console.log(`Unhandled event type ${event.type}`);
+        console.log(`Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });
 
   } catch (error: any) {
     console.error('Webhook error:', error);
-    return NextResponse.json(
-      { error: 'Webhook handler failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Webhook failed' }, { status: 500 });
   }
 }
 
-// Placeholder für Token-Transfer Funktion
-async function sendDinvestTokens(walletAddress: string, amount: number) {
-  // Hier würdest du den Smart Contract aufrufen, um D.INVEST Token zu senden
-  // Beispiel mit thirdweb:
-  /*
-  const contract = getContract({
-    client,
-    chain: base,
-    address: DINVEST_TOKEN_ADDRESS
+// ✅ Erfolgreiche Zahlung - D.INVEST Token senden
+async function handleSuccessfulPayment(paymentIntent: import('stripe').Stripe.PaymentIntent) {
+  try {
+    const { walletAddress, dinvestAmount } = paymentIntent.metadata;
+    
+    console.log('🎉 Payment successful:', {
+      paymentIntentId: paymentIntent.id,
+      amount: paymentIntent.amount / 100,
+      currency: paymentIntent.currency,
+      walletAddress,
+      dinvestAmount
+    });
+
+    // TODO: Hier würdest du die D.INVEST Token an die Wallet senden
+    await sendTokensToWallet(walletAddress, parseInt(dinvestAmount), paymentIntent.id);
+    
+  } catch (error) {
+    console.error('Error handling successful payment:', error);
+  }
+}
+
+// ❌ Fehlgeschlagene Zahlung
+async function handleFailedPayment(paymentIntent: import('stripe').Stripe.PaymentIntent) {
+  console.log('❌ Payment failed:', {
+    paymentIntentId: paymentIntent.id,
+    walletAddress: paymentIntent.metadata.walletAddress,
+    reason: paymentIntent.last_payment_error?.message
   });
-  
-  const transaction = await prepareContractCall({
-    contract,
-    method: "transfer",
-    params: [walletAddress, amount]
+}
+
+// 🚫 Abgebrochene Zahlung
+async function handleCanceledPayment(paymentIntent: import('stripe').Stripe.PaymentIntent) {
+  console.log('🚫 Payment canceled:', {
+    paymentIntentId: paymentIntent.id,
+    walletAddress: paymentIntent.metadata.walletAddress
   });
-  
-  await sendAndConfirmTransaction({
-    transaction,
-    account: adminAccount // Dein Admin-Account
+}
+
+// 🚀 Token-Sending Funktion (Placeholder)
+async function sendTokensToWallet(walletAddress: string, amount: number, paymentIntentId: string) {
+  try {
+    console.log(`🚀 Sending ${amount} D.INVEST tokens to ${walletAddress}`);
+    console.log(`✅ Would send ${amount} D.INVEST to ${walletAddress} for payment ${paymentIntentId}`);
+    
+    // TODO: Implementiere Smart Contract Call hier
+    
+  } catch (error) {
+    console.error('Error sending tokens:', error);
+    throw error;
+  }
+}
+
+export async function GET() {
+  return NextResponse.json({
+    available: STRIPE_AVAILABLE,
+    message: STRIPE_AVAILABLE ? 'Stripe Webhook verfügbar' : 'Stripe Webhook nicht konfiguriert'
   });
-  */
-  
-  console.log(`Would send ${amount} D.INVEST tokens to ${walletAddress}`);
 }
