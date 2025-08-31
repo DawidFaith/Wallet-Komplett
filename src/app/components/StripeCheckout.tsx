@@ -125,29 +125,52 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
       base: {
         fontSize: '16px',
         color: '#ffffff',
-        backgroundColor: 'transparent',
+        fontFamily: 'Arial, sans-serif',
+        fontSmoothing: 'antialiased',
         '::placeholder': {
           color: '#9ca3af',
         },
+        iconColor: '#9ca3af',
       },
       invalid: {
         color: '#ef4444',
+        iconColor: '#ef4444',
+      },
+      complete: {
+        color: '#10b981',
+        iconColor: '#10b981',
       },
     },
+    hidePostalCode: true,
     disabled: isProcessing || paymentCompleted,
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className={`bg-zinc-800 p-4 rounded-lg border border-zinc-700 ${
+      <div className={`bg-zinc-800 p-4 rounded-lg border border-zinc-700 transition-all ${
         isProcessing || paymentCompleted ? 'opacity-50 pointer-events-none' : ''
       }`}>
-        <label className="block text-sm font-medium text-zinc-300 mb-2">
-          Kreditkarte
+        <label className="block text-sm font-medium text-zinc-300 mb-3">
+          Kreditkartendaten
         </label>
         <CardElement 
           options={cardElementOptions} 
+          className="text-white min-h-[40px]"
         />
+        <div className="mt-3 text-xs text-zinc-500 flex items-center gap-2">
+          <span className="text-green-400">🔒</span>
+          Sichere Zahlung über Stripe • Alle Daten werden verschlüsselt übertragen
+        </div>
+        
+        {/* Test Mode Hinweis */}
+        <div className="mt-2 bg-yellow-500/10 border border-yellow-500/30 rounded p-2">
+          <div className="text-yellow-400 text-xs font-medium mb-1">💳 Testkarten für Demo:</div>
+          <div className="text-yellow-300 text-xs space-y-1">
+            <div>• Erfolg: 4242 4242 4242 4242</div>
+            <div>• Fehler: 4000 0000 0000 0002</div>
+            <div>• Datum: 12/25 • CVC: 123</div>
+          </div>
+        </div>
       </div>
 
       <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
@@ -208,10 +231,36 @@ export const StripeCheckout: React.FC<StripeCheckoutProps> = ({
     appearance: {
       theme: 'night',
       variables: {
-        colorPrimary: '#3b82f6',
-        colorBackground: '#18181b',
+        colorPrimary: '#f59e0b', // Amber
+        colorBackground: '#18181b', // Zinc-900
         colorText: '#ffffff',
         colorDanger: '#ef4444',
+        colorTextSecondary: '#9ca3af',
+        colorTextPlaceholder: '#6b7280',
+        borderRadius: '8px',
+        fontFamily: 'system-ui, sans-serif',
+        spacingUnit: '4px',
+      },
+      rules: {
+        '.Input': {
+          backgroundColor: '#27272a', // Zinc-800
+          border: '1px solid #52525b', // Zinc-600
+          padding: '12px 16px',
+          fontSize: '16px',
+        },
+        '.Input:focus': {
+          border: '1px solid #f59e0b', // Amber-500
+          boxShadow: '0 0 0 2px rgba(245, 158, 11, 0.2)',
+        },
+        '.Input--invalid': {
+          border: '1px solid #ef4444',
+        },
+        '.Label': {
+          color: '#d4d4d8', // Zinc-300
+          fontSize: '14px',
+          fontWeight: '500',
+          marginBottom: '8px',
+        },
       },
     },
   };
