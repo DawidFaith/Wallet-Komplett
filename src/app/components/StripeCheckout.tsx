@@ -61,6 +61,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
             currency: 'eur',
             walletAddress,
             dinvestAmount,
+            customerEmail: '', // Optional - könnte später erweitert werden
           }),
         });
 

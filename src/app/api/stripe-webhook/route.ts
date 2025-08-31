@@ -82,14 +82,32 @@ export async function POST(req: NextRequest) {
 // ✅ Erfolgreiche Zahlung - D.INVEST Token senden
 async function handleSuccessfulPayment(paymentIntent: import('stripe').Stripe.PaymentIntent) {
   try {
-    const { walletAddress, dinvestAmount } = paymentIntent.metadata;
+    const { 
+      walletAddress, 
+      dinvestAmount, 
+      projectName,
+      tokenType,
+      customerEmail,
+      pricePerToken,
+      totalTokens,
+      paymentMethod,
+      timestamp
+    } = paymentIntent.metadata;
     
     console.log('🎉 Payment successful:', {
       paymentIntentId: paymentIntent.id,
       amount: paymentIntent.amount / 100,
       currency: paymentIntent.currency,
       walletAddress,
-      dinvestAmount
+      dinvestAmount,
+      projectName,
+      tokenType,
+      customerEmail,
+      pricePerToken,
+      totalTokens,
+      paymentMethod,
+      timestamp,
+      description: paymentIntent.description
     });
 
     // TODO: Hier würdest du die D.INVEST Token an die Wallet senden

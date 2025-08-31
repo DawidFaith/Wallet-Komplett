@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { amount, currency = 'eur', walletAddress, dinvestAmount } = await req.json();
+    const { amount, currency = 'eur', walletAddress, dinvestAmount, customerEmail } = await req.json();
 
     // Validierung
     if (!amount || amount < 5) {
@@ -51,7 +51,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Erstelle Payment Intent
+    if (!dinvestAmount || dinvestAmount < 1) {
+      return NextResponse.json(
+        { error: 'D.INVEST amount is required and must be at least 1' },
+        { status: 400 }
+      );
+    }
+
+    // Erstelle Payment Intent mit vollständigen Metadaten
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Stripe erwartet Cent-Beträge
       currency: currency,
@@ -61,8 +68,13 @@ export async function POST(req: NextRequest) {
       metadata: {
         walletAddress: walletAddress,
         dinvestAmount: dinvestAmount.toString(),
-        tokenType: 'DINVEST',
         projectName: 'Dawid Faith Wallet',
+        tokenType: 'DINVEST',
+        customerEmail: customerEmail || '', // Optional
+        pricePerToken: '5.00',
+        totalTokens: dinvestAmount.toString(),
+        paymentMethod: 'stripe_card',
+        timestamp: new Date().toISOString(),
       },
       description: `D.INVEST Token Purchase - ${dinvestAmount} tokens for wallet ${walletAddress.slice(0, 8)}...`,
     });
