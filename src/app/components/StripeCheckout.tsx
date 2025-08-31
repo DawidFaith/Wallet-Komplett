@@ -19,17 +19,33 @@ interface StripeCheckoutProps {
   onClose: () => void;
 }
 
-const CheckoutForm: React.FC<{
+interface CheckoutFormProps {
   walletAddress: string;
   amount: number;
   dinvestAmount: number;
   onSuccess: () => void;
   onError: (error: string) => void;
-}> = ({ walletAddress, amount, dinvestAmount, onSuccess, onError }) => {
+  onProcessingChange: (processing: boolean) => void;
+}
+
+const CheckoutForm: React.FC<CheckoutFormProps> = ({ 
+  walletAddress, 
+  amount, 
+  dinvestAmount, 
+  onSuccess, 
+  onError,
+  onProcessingChange 
+}) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [clientSecret, setClientSecret] = useState<string>('');
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
+
+  // Benachrichtige Parent über Processing-Status
+  useEffect(() => {
+    onProcessingChange(isProcessing || paymentCompleted);
+  }, [isProcessing, paymentCompleted, onProcessingChange]);
 
   // Erstelle Payment Intent beim Laden
   useEffect(() => {
@@ -66,7 +82,8 @@ const CheckoutForm: React.FC<{
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!stripe || !elements || !clientSecret) {
+    // Verhindere mehrfache Aufrufe und prüfe Zahlungsstatus
+    if (!stripe || !elements || !clientSecret || isProcessing || paymentCompleted) {
       return;
     }
 
@@ -91,12 +108,14 @@ const CheckoutForm: React.FC<{
 
       if (error) {
         onError(error.message || 'Payment failed');
+        setIsProcessing(false);
       } else if (paymentIntent?.status === 'succeeded') {
+        setPaymentCompleted(true);
+        setIsProcessing(false);
         onSuccess();
       }
     } catch (error: any) {
       onError(error.message || 'Payment processing failed');
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -115,15 +134,20 @@ const CheckoutForm: React.FC<{
         color: '#ef4444',
       },
     },
+    disabled: isProcessing || paymentCompleted,
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="bg-zinc-800 p-4 rounded-lg border border-zinc-700">
+      <div className={`bg-zinc-800 p-4 rounded-lg border border-zinc-700 ${
+        isProcessing || paymentCompleted ? 'opacity-50 pointer-events-none' : ''
+      }`}>
         <label className="block text-sm font-medium text-zinc-300 mb-2">
           Kreditkarte
         </label>
-        <CardElement options={cardElementOptions} />
+        <CardElement 
+          options={cardElementOptions} 
+        />
       </div>
 
       <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
@@ -145,14 +169,19 @@ const CheckoutForm: React.FC<{
 
       <button
         type="submit"
-        disabled={!stripe || isProcessing || !clientSecret}
+        disabled={!stripe || isProcessing || !clientSecret || paymentCompleted}
         className={`w-full py-3 px-4 rounded-xl font-bold text-white transition-all ${
-          isProcessing || !clientSecret
+          isProcessing || !clientSecret || paymentCompleted
             ? 'bg-zinc-600 cursor-not-allowed'
             : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transform hover:scale-[1.02]'
         }`}
       >
-        {isProcessing ? (
+        {paymentCompleted ? (
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-green-400">✓</span>
+            Zahlung erfolgreich
+          </div>
+        ) : isProcessing ? (
           <div className="flex items-center justify-center gap-2">
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             Zahlung wird verarbeitet...
@@ -173,6 +202,8 @@ export const StripeCheckout: React.FC<StripeCheckoutProps> = ({
   onError,
   onClose,
 }) => {
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
   const elementsOptions: StripeElementsOptions = {
     appearance: {
       theme: 'night',
@@ -192,7 +223,10 @@ export const StripeCheckout: React.FC<StripeCheckoutProps> = ({
           <h3 className="text-xl font-bold text-white">D.INVEST kaufen</h3>
           <button
             onClick={onClose}
-            className="p-2 text-amber-400 hover:text-yellow-300 hover:bg-zinc-800 rounded-lg transition-all"
+            disabled={isProcessingPayment}
+            className={`p-2 text-amber-400 hover:text-yellow-300 hover:bg-zinc-800 rounded-lg transition-all ${
+              isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
             <span className="text-lg">✕</span>
           </button>
@@ -214,6 +248,7 @@ export const StripeCheckout: React.FC<StripeCheckoutProps> = ({
             dinvestAmount={dinvestAmount}
             onSuccess={onSuccess}
             onError={onError}
+            onProcessingChange={setIsProcessingPayment}
           />
         </Elements>
       </div>
