@@ -473,11 +473,10 @@ export default function TokenomicsTab() {
         </div>
         <div className="mt-4 text-xs text-zinc-400 text-center">
           Live-Daten von der Base Chain • Pool: 0x7109214bafde13a6ef8060644656464bccab93cd
-          <span className="ml-2 text-green-400">• DexScreener: Speziell für DEX-Trading optimiert</span>
         </div>
         
         {/* Market Metrics unter dem Chart - Kompakt und mobil optimiert */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6">
+        <div className="grid grid-cols-1 gap-3 mt-6">
           {/* Market Cap */}
           <div className="bg-zinc-800/50 rounded-lg p-3 border border-green-500/20">
             <div className="flex items-center gap-2 mb-1">
@@ -494,22 +493,6 @@ export default function TokenomicsTab() {
             <div className="text-green-300 text-xs">
               FDV: €{tokenMetrics?.marketCapEUR?.fdv?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "0"}
             </div>
-          </div>
-
-          {/* Token Preis */}
-          <div className="bg-zinc-800/50 rounded-lg p-3 border border-blue-500/20">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span className="text-blue-400 font-semibold text-xs">Token Preis</span>
-            </div>
-            {loading ? (
-              <div className="animate-pulse bg-zinc-600 h-5 w-14 rounded"></div>
-            ) : (
-              <div className="text-white font-bold text-sm">
-                €{tokenMetrics?.priceEUR?.toFixed(4) || "0.0000"}
-              </div>
-            )}
-            <div className="text-blue-300 text-xs">Live DEX-Preis</div>
           </div>
         </div>
       </div>
