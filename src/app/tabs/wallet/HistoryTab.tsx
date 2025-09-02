@@ -329,7 +329,7 @@ export default function HistoryTab() {
             category: ["external", "erc20", "erc721", "erc1155"], // Erweiterte Kategorien
             withMetadata: true,
             excludeZeroValue: false, // Auch 0-Wert Transaktionen anzeigen
-    maxCount: "0xC8" // bis zu 200 Transfers
+  maxCount: "0x1F4" // bis zu 500 Transfers
           }],
           id: 1
         })
@@ -349,7 +349,7 @@ export default function HistoryTab() {
             category: ["external", "erc20", "erc721", "erc1155"], // Erweiterte Kategorien
             withMetadata: true,
             excludeZeroValue: false, // Auch 0-Wert Transaktionen anzeigen
-    maxCount: "0xC8" // bis zu 200 Transfers
+  maxCount: "0x1F4" // bis zu 500 Transfers
           }],
           id: 2
         })
@@ -539,11 +539,8 @@ export default function HistoryTab() {
             blockNumber: transfer.blockNum || "",
           };
         })
-        .filter((tx) => tx.hash && tx.address)
-        .sort((a, b) => {
-          return b.timestamp - a.timestamp;
-        })
-        .slice(0, 50); // Zeige die neuesten 50 Transaktionen
+  .filter((tx) => tx.hash && tx.address)
+  .sort((a, b) => b.timestamp - a.timestamp);
 
       // WICHTIG: Alle Transaktionen behalten, damit Partner-Matching (ETH/WETH) nicht durch Filter verloren geht
       const claimsCount = mappedTransactions.filter((t) => t.type === "claim").length;
