@@ -80,8 +80,8 @@ export default function HistoryTab() {
         tx.token === "D.FAITH";
 
       if (!isTokenFromClaim) {
-        groups.push(tx);
-        processed.add(tx.id);
+        // ETH-only Claim oder anderes: nicht separat anzeigen
+        // (wird nur als Partner eines D.FAITH-Claims berücksichtigt)
         continue;
       }
 
@@ -117,6 +117,7 @@ export default function HistoryTab() {
         processed.add(tx.id);
         processed.add(ethPartner.id);
       } else {
+        // Falls kein ETH-Partner gefunden wurde, trotzdem als einzelner Claim zeigen
         groups.push(tx);
         processed.add(tx.id);
       }
