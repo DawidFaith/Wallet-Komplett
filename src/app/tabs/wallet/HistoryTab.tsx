@@ -77,6 +77,7 @@ export default function HistoryTab() {
 
     const groups: (Transaction | Transaction[])[] = [];
     const processed = new Set<string>();
+    const usedHashes = new Set<string>();
     const baseTxHash = (t: Transaction) => {
       if (t.hash) return t.hash.toLowerCase();
       const id = t.id || "";
@@ -84,8 +85,46 @@ export default function HistoryTab() {
       return m ? m[1].toLowerCase() : "";
     };
 
-  for (const tx of sorted) {
+    // Hash-basierte Vor-Gruppierung für Käufe: pro Hash D.FAITH(+ vom Pool) + ETH/WETH(−)
+    const byHash = new Map<string, Transaction[]>();
+    for (const t of allSorted) {
+      const h = baseTxHash(t);
+      if (!h) continue;
+      if (!byHash.has(h)) byHash.set(h, []);
+      byHash.get(h)!.push(t);
+    }
+    for (const [h, txs] of byHash) {
+      if (usedHashes.has(h)) continue;
+      // Kauf-Anker innerhalb desselben Hashes
+      const anchor = txs.find(
+        (t) =>
+          t.token === "D.FAITH" &&
+          t.amount.startsWith("+") &&
+          t.address.toLowerCase() === DFAITH_POOL.toLowerCase()
+      );
+      if (!anchor) continue;
+      const ethCandidates = txs.filter(
+        (t) => (t.token === "ETH" || t.token === "WETH") && t.amount.startsWith("-")
+      );
+      if (ethCandidates.length === 0) continue;
+      // Pool bevorzugen, sonst größten Betrag
+      let partner = ethCandidates.find((t) => t.address.toLowerCase() === DFAITH_POOL.toLowerCase());
+      if (!partner) {
+        partner = [...ethCandidates].sort((a, b) => Math.abs(b.amountRaw) - Math.abs(a.amountRaw))[0];
+      }
+      if (partner) {
+        const pair: Transaction[] = [anchor, partner];
+        (pair as any).__groupType = "buy";
+        groups.push(pair);
+        processed.add(anchor.id);
+        processed.add(partner.id);
+        usedHashes.add(h);
+      }
+    }
+
+    for (const tx of sorted) {
       if (processed.has(tx.id)) continue;
+      if (usedHashes.has(baseTxHash(tx))) continue;
 
       // 1) Claim-Gruppierung: D.FAITH von CLAIM_ADDRESS + nahe ETH von CLAIM_ADDRESS
       const isTokenFromClaim =
