@@ -1,13 +1,12 @@
 import { useCallback } from "react";
 import { useState, useEffect } from "react";
 import { Button } from "../../../../components/ui/button";
-import { FaPaperPlane, FaArrowDown, FaExchangeAlt, FaCoins, FaLock } from "react-icons/fa";
+import { FaPaperPlane, FaArrowDown, FaExchangeAlt, FaCoins } from "react-icons/fa";
+import { useActiveAccount } from "thirdweb/react";
 
-// Token-Adressen (aktualisiert Juli 2025)
+// Token-Adressen
 const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
 const DINVEST_TOKEN = "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb";
-
-import { useActiveAccount } from "thirdweb/react";
 
 type Transaction = {
   id: string;
@@ -31,48 +30,17 @@ export default function HistoryTab() {
   } | null>(null);
   const account = useActiveAccount();
 
-  // Demo-Daten für den Fall, dass kein API-Key verfügbar ist
-  const demoTransactions: Transaction[] = [
-    {
-      id: "demo1",
-      type: "receive",
-      token: "ETH", 
-      amount: "+0.5",
-      address: "0x1234...5678",
-      hash: "0xdemo1234567890abcdef",
-      time: "15.01.2024, 14:30",
-      status: "success"
-    },
-    {
-      id: "demo2", 
-      type: "send",
-      token: "USDC",
-      amount: "-100.0",
-      address: "0xabcd...efgh",
-      hash: "0xdemo2345678901bcdef0",
-      time: "14.01.2024, 09:15",
-      status: "success"
-    }
-  ];
-
-  // Feste Wallet-Adresse für das Modal
-  const targetAddress = "0x651BACc1A1579f2FaaeDA2450CE59bB5E7D26e7d";
-  
-  // Verwende entweder die verbundene Wallet oder die feste Adresse
-  const userAddress = account?.address || targetAddress;
+  // Nur verbundene Wallet verwenden - keine Demo-Daten
+  const userAddress = account?.address;
 
   // Alchemy API Key für Base Chain
-  const ALCHEMY_API_KEY = "7zoUrdSYTUNPJ9rNEiOM8";
+  const ALCHEMY_API_KEY = "7zoUrdSYTUNPJ9rNEiOM8zUbXu5hKFgm";
   const ALCHEMY_BASE_URL = `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
 
   // Alchemy API für Base Chain Transaktionen
   const getTransactionsFromAlchemy = async (address: string) => {
     try {
-      console.log("🚀 Verwende Alchemy API für Base Chain Transaktionen");
-      console.log("📍 Wallet Adresse:", address);
-      
       // Hole ausgehende Transaktionen
-      console.log("🔄 Lade ausgehende Transaktionen...");
       const response = await fetch(ALCHEMY_BASE_URL, {
         method: 'POST',
         headers: {
@@ -86,10 +54,10 @@ export default function HistoryTab() {
               fromBlock: "0x0",
               toBlock: "latest",
               fromAddress: address,
-              category: ["external", "erc20", "erc721", "erc1155"], // "internal" entfernt für Base Chain
-              withMetadata: true, // Aktiviert für bessere Zeitstempel
+              category: ["external", "erc20", "erc721", "erc1155"],
+              withMetadata: true,
               excludeZeroValue: true,
-              maxCount: "0x32" // 50 Transaktionen
+              maxCount: "0x32"
             }
           ],
           id: 1
@@ -102,16 +70,11 @@ export default function HistoryTab() {
 
       const data = await response.json();
       
-      // Prüfe auf API-Fehler
       if (data.error) {
-        console.error("❌ Alchemy API Error (Outgoing):", data.error);
         throw new Error(`Alchemy API Error: ${data.error.message}`);
       }
       
-      console.log("✅ Alchemy API Response (FROM):", data);
-      
       // Hole eingehende Transaktionen
-      console.log("🔄 Lade eingehende Transaktionen...");
       const responseIncoming = await fetch(ALCHEMY_BASE_URL, {
         method: 'POST',
         headers: {
@@ -125,10 +88,10 @@ export default function HistoryTab() {
               fromBlock: "0x0",
               toBlock: "latest",
               toAddress: address,
-              category: ["external", "erc20", "erc721", "erc1155"], // "internal" entfernt für Base Chain
-              withMetadata: true, // Aktiviert für bessere Zeitstempel
+              category: ["external", "erc20", "erc721", "erc1155"],
+              withMetadata: true,
               excludeZeroValue: true,
-              maxCount: "0x32" // 50 Transaktionen
+              maxCount: "0x32"
             }
           ],
           id: 2
@@ -141,34 +104,26 @@ export default function HistoryTab() {
 
       const dataIncoming = await responseIncoming.json();
       
-      // Prüfe auf API-Fehler
       if (dataIncoming.error) {
-        console.error("❌ Alchemy API Error (Incoming):", dataIncoming.error);
         throw new Error(`Alchemy API Error (Incoming): ${dataIncoming.error.message}`);
       }
 
-      console.log("✅ Alchemy API Response (TO):", dataIncoming);
-      
       // Kombiniere ausgehende und eingehende Transaktionen
       const outgoingTransfers = data.result?.transfers || [];
       const incomingTransfers = dataIncoming.result?.transfers || [];
       const allTransfers = [...outgoingTransfers, ...incomingTransfers];
       
-      console.log(`📊 Transaktionen gefunden: ${outgoingTransfers.length} ausgehend, ${incomingTransfers.length} eingehend, ${allTransfers.length} total`);
-      
       return allTransfers;
     } catch (error) {
-      console.error("❌ Alchemy API Error:", error);
       throw error;
     }
   };
-
-
 
   // Funktion zum Neuladen der Transaktionen
   const refreshTransactions = useCallback(async () => {
     if (!userAddress) {
       setTransactions([]);
+      setError("Bitte verbinden Sie Ihre Wallet um Transaktionen zu sehen.");
       return;
     }
 
@@ -176,15 +131,12 @@ export default function HistoryTab() {
     setError("");
     
     try {
-      console.log("🔄 Lade Transaktionen neu mit Alchemy API...");
-      
       // Hole Transaktionen über Alchemy API
       const alchemyTransfers = await getTransactionsFromAlchemy(userAddress);
-      console.log("Alchemy Transfers:", alchemyTransfers);
       
       if (alchemyTransfers.length === 0) {
-        console.log("Keine Transaktionen gefunden, verwende Demo-Daten");
-        setTransactions(demoTransactions);
+        setTransactions([]);
+        setError("Keine Transaktionen für diese Wallet gefunden.");
         setIsLoading(false);
         return;
       }
@@ -192,15 +144,10 @@ export default function HistoryTab() {
       // Transaktionen verarbeiten und sortieren
       const mappedTransactions: Transaction[] = alchemyTransfers
         .map((transfer: any) => {
-          // Verbesserte Zeitstempel-Verarbeitung
+          // Zeitstempel-Verarbeitung
           let timestamp: Date;
           if (transfer.metadata?.blockTimestamp) {
             timestamp = new Date(transfer.metadata.blockTimestamp);
-          } else if (transfer.blockNum) {
-            // Fallback: Schätze Zeit basierend auf Block-Nummer (ungefähr)
-            const currentTime = Date.now();
-            const estimatedTime = currentTime - (transfer.blockNum * 2000); // Ungefähr 2s pro Block
-            timestamp = new Date(estimatedTime);
           } else {
             timestamp = new Date();
           }
@@ -234,17 +181,30 @@ export default function HistoryTab() {
 
           // Token-Symbol und Dezimalstellen richtig verarbeiten
           if (transfer.category === "erc20") {
-            token = transfer.asset || "TOKEN";
-            // Formatiere den Betrag basierend auf Dezimalstellen
-            if (transfer.rawContract?.decimals && transfer.rawContract.value) {
-              const decimals = parseInt(transfer.rawContract.decimals);
-              const rawValue = transfer.rawContract.value;
-              const formattedValue = (parseInt(rawValue) / Math.pow(10, decimals)).toFixed(decimals > 6 ? 6 : decimals);
-              amount = type === "receive" ? "+" + formattedValue : "-" + formattedValue;
+            // Spezielle Behandlung für D.FAITH und D.INVEST
+            if (transfer.rawContract?.address?.toLowerCase() === DFAITH_TOKEN.toLowerCase()) {
+              token = "D.FAITH";
+              if (transfer.rawContract.value) {
+                const formattedValue = (parseInt(transfer.rawContract.value) / 100).toFixed(2);
+                amount = type === "receive" ? "+" + formattedValue : "-" + formattedValue;
+              }
+            } else if (transfer.rawContract?.address?.toLowerCase() === DINVEST_TOKEN.toLowerCase()) {
+              token = "D.INVEST";
+              if (transfer.rawContract.value) {
+                const formattedValue = parseInt(transfer.rawContract.value).toString();
+                amount = type === "receive" ? "+" + formattedValue : "-" + formattedValue;
+              }
+            } else {
+              token = transfer.asset || "TOKEN";
+              if (transfer.rawContract?.decimals && transfer.rawContract.value) {
+                const decimals = parseInt(transfer.rawContract.decimals);
+                const rawValue = transfer.rawContract.value;
+                const formattedValue = (parseInt(rawValue) / Math.pow(10, decimals)).toFixed(decimals > 6 ? 6 : decimals);
+                amount = type === "receive" ? "+" + formattedValue : "-" + formattedValue;
+              }
             }
           } else if (transfer.category === "external") {
             token = "ETH";
-            // ETH hat 18 Dezimalstellen
             if (transfer.value) {
               const ethValue = parseFloat(transfer.value).toFixed(6);
               amount = type === "receive" ? "+" + ethValue : "-" + ethValue;
@@ -259,37 +219,34 @@ export default function HistoryTab() {
             address,
             hash: transfer.hash || "",
             time,
-            status: "success" as const, // Alchemy gibt nur bestätigte Transaktionen zurück
+            status: "success" as const,
           };
         })
-        .filter((tx: Transaction) => tx.hash && tx.address) // Nur vollständige Transaktionen
+        .filter((tx: Transaction) => tx.hash && tx.address)
         .sort((a: Transaction, b: Transaction) => {
-          // Sortiere nach Zeit (neueste zuerst)
           return new Date(b.time).getTime() - new Date(a.time).getTime();
         })
-        .slice(0, 50); // Limitiere auf 50 Transaktionen
+        .slice(0, 50);
 
-      console.log(`📋 Verarbeitete Transaktionen: ${mappedTransactions.length}`);
       setTransactions(mappedTransactions);
       
-      // Statistiken basierend auf geladenen Transaktionen
+      // Statistiken
       setStats({
         transactionCount: mappedTransactions.length,
         totalValue: mappedTransactions.reduce((sum, tx) => {
           const value = parseFloat(tx.amount.replace(/[+-]/g, ''));
           return sum + (isNaN(value) ? 0 : value);
         }, 0),
-        avgGas: 0.001, // Durchschnittliche Gas-Gebühr für Base Chain
+        avgGas: 0.001,
       });
       
     } catch (err) {
-      console.error("Fehler beim Laden der Transaktionen:", err);
-      setError("Fehler beim Laden der Transaktionsdaten von Alchemy. Verwende Demo-Daten.");
-      setTransactions(demoTransactions);
+      setError("Fehler beim Laden der Transaktionsdaten. Bitte versuchen Sie es erneut.");
+      setTransactions([]);
     } finally {
       setIsLoading(false);
     }
-  }, [userAddress]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userAddress]);
 
   useEffect(() => {
     refreshTransactions();
@@ -335,7 +292,7 @@ export default function HistoryTab() {
         <h2 className="text-2xl font-bold bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent mb-2">
           Transaktionshistorie
         </h2>
-        <p className="text-zinc-400">Live Transaktionsdaten vom Base Network via Alchemy API</p>
+        <p className="text-zinc-400">Live Transaktionsdaten vom Base Network</p>
         {userAddress && (
           <p className="text-xs text-zinc-500 mt-1">
             Wallet: {formatAddress(userAddress)}
@@ -343,24 +300,19 @@ export default function HistoryTab() {
         )}
       </div>
 
-      {/* Debug Info - nur in Development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700 mb-4">
-          <h3 className="text-sm font-semibold text-amber-400 mb-2">Debug Info</h3>
-          <div className="text-xs text-zinc-400 space-y-1">
-            <div>Alchemy API Key: {ALCHEMY_API_KEY ? '✓ Konfiguriert' : '✗ Fehlt'}</div>
-            <div>API: Alchemy Enhanced API (Base Chain - ohne &apos;internal&apos; Kategorie)</div>
-            <div>Base URL: {ALCHEMY_BASE_URL.substring(0, 50)}...</div>
-            <div>Chain ID: 8453 (Base)</div>
-            <div>Wallet: {userAddress || 'Nicht verbunden'}</div>
-            <div>Loading: {isLoading ? 'Ja' : 'Nein'}</div>
-            <div>Error: {error || 'Keine'}</div>
-            <div>Transactions: {transactions.length}</div>
-            <div>Kategorien: external, erc20, erc721, erc1155 (internal entfernt)</div>
-            {stats && <div>Stats: {stats.transactionCount} total, {stats.totalValue.toFixed(6)} ETH, Ø {stats.avgGas.toFixed(6)} gas</div>}
+      {/* Kompaktes Status Panel */}
+      <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/50 mb-4">
+        <div className="flex justify-between items-center text-xs text-zinc-400">
+          <div className="flex items-center gap-4">
+            <span>API: {ALCHEMY_API_KEY ? '✓ Aktiv' : '✗ Inaktiv'}</span>
+            <span>Wallet: {userAddress ? formatAddress(userAddress) : 'Nicht verbunden'}</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span>Status: {isLoading ? 'Lädt...' : error ? 'Fehler' : 'Bereit'}</span>
+            <span>Transaktionen: {transactions.length}</span>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Loading State */}
       {isLoading && (
@@ -373,7 +325,7 @@ export default function HistoryTab() {
       {/* Empty State */}
       {!isLoading && !error && !userAddress && (
         <div className="text-center py-8">
-          <p className="text-zinc-400">Keine Wallet-Adresse verfügbar.</p>
+          <p className="text-zinc-400">Bitte verbinden Sie Ihre Wallet um Transaktionen zu sehen.</p>
         </div>
       )}
 
@@ -470,14 +422,14 @@ export default function HistoryTab() {
         </div>
       )}
 
-      {/* Enhanced Summary Stats mit Thirdweb Insight Daten */}
+      {/* Summary Stats */}
       {!isLoading && !error && transactions.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
           <div className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-4 border border-zinc-700 text-center">
             <div className="text-2xl font-bold text-amber-400 mb-1">
               {transactions.length}
             </div>
-            <div className="text-xs text-zinc-500">Gezeigt</div>
+            <div className="text-xs text-zinc-500">Transaktionen</div>
           </div>
           <div className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-4 border border-zinc-700 text-center">
             <div className="text-2xl font-bold text-green-400 mb-1">
