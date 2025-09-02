@@ -139,6 +139,7 @@ export default function BuyTab() {
   const [eurAmount, setEurAmount] = useState<number>(5);
   const [stripeSuccess, setStripeSuccess] = useState(false);
   const [stripeError, setStripeError] = useState<string | null>(null);
+  const [showDinvestSuccessModal, setShowDinvestSuccessModal] = useState(false);
 
   // D.FAITH Preis von ParaSwap holen und in Euro umrechnen mit Fallback
   useEffect(() => {
@@ -1023,19 +1024,7 @@ export default function BuyTab() {
                   </div>
                 </div>
 
-                {/* Success/Error Messages */}
-                {stripeSuccess && (
-                  <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3 text-green-400 text-center">
-                    <div className="flex items-center justify-center gap-2 mb-1">
-                      <span className="text-xl">🎉</span>
-                      <span className="font-semibold">Zahlung erfolgreich!</span>
-                    </div>
-                    <p className="text-sm opacity-80">
-                      Deine D.INVEST Token werden in Kürze an deine Wallet gesendet.
-                    </p>
-                  </div>
-                )}
-
+                {/* Error Messages only - Success will show in separate modal */}
                 {stripeError && (
                   <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400 text-center">
                     <div className="flex items-center justify-center gap-2 mb-1">
@@ -1259,7 +1248,8 @@ export default function BuyTab() {
           dinvestAmount={dinvestAmount}
           onSuccess={() => {
             setShowStripeCheckout(false);
-            setStripeSuccess(true);
+            setShowBuyModal(false); // Schließe das Haupt-Buy-Modal
+            setShowDinvestSuccessModal(true); // Öffne separates Success Modal
             setStripeError(null);
           }}
           onError={(error) => {
@@ -1269,6 +1259,104 @@ export default function BuyTab() {
           }}
           onClose={() => setShowStripeCheckout(false)}
         />
+      )}
+
+      {/* D.INVEST Success Modal */}
+      {showDinvestSuccessModal && (
+        <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/80 overflow-y-auto p-4 pt-20">
+          <div className="bg-zinc-900 rounded-xl p-3 sm:p-6 max-w-sm w-full border border-green-400 max-h-[85vh] overflow-y-auto my-4 relative">
+            {/* Modal-Header - Sticky X Button */}
+            <div className="sticky top-0 z-10 bg-zinc-900 flex items-center justify-end mb-2 -mx-3 -mt-3 px-3 pt-3 sm:-mx-6 sm:-mt-6 sm:px-6 sm:pt-6">
+              <button
+                onClick={() => {
+                  setShowDinvestSuccessModal(false);
+                  setStripeSuccess(false);
+                  setDinvestAmount(1);
+                  setEurAmount(5);
+                }}
+                className="p-2 text-green-400 hover:text-green-300 hover:bg-zinc-800 rounded-lg transition-all flex-shrink-0 shadow-lg"
+              >
+                <span className="text-lg">✕</span>
+              </button>
+            </div>
+
+            <div className="w-full space-y-4">
+              {/* Success Header */}
+              <div className="text-center pb-3 border-b border-zinc-700 mb-4">
+                <div className="w-24 h-24 mx-auto mb-3 flex items-center justify-center">
+                  <img src="/D.INVEST.png" alt="D.INVEST" className="w-24 h-24 object-contain" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-1">Kauf erfolgreich!</h3>
+                <p className="text-zinc-400 text-xs">D.INVEST Token wurden bestellt</p>
+              </div>
+
+              {/* Success Message */}
+              <div className="bg-green-500/20 border border-green-500/50 rounded-xl p-4 text-center">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <span className="text-4xl">🎉</span>
+                  <span className="font-bold text-xl text-green-300">Zahlung erfolgreich!</span>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+                    <p className="text-green-200 font-semibold text-lg mb-1">
+                      {dinvestAmount} D.INVEST Token
+                    </p>
+                    <p className="text-green-300/80 text-sm">
+                      für €{eurAmount.toFixed(2)} gekauft
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2 text-sm text-green-300/90">
+                    <p className="flex items-center justify-center gap-2">
+                      <span>📧</span>
+                      <span>Bestätigungs-E-Mail wurde versendet</span>
+                    </p>
+                    <p className="flex items-center justify-center gap-2">
+                      <span>🚀</span>
+                      <span>Token werden in 24-48h an deine Wallet gesendet</span>
+                    </p>
+                    <p className="flex items-center justify-center gap-2">
+                      <span>💰</span>
+                      <span>Berechtigt zum D.FAITH Staking</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2">
+                <Button
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-3 rounded-xl text-base transition-all"
+                  onClick={() => {
+                    setShowDinvestSuccessModal(false);
+                    setStripeSuccess(false);
+                    setDinvestAmount(1);
+                    setEurAmount(5);
+                    // Öffne Buy Modal wieder für weitere Käufe
+                    setSelectedToken("DINVEST");
+                    setShowBuyModal(true);
+                  }}
+                >
+                  Weitere D.INVEST Token kaufen
+                </Button>
+                
+                <Button
+                  className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-bold py-3 rounded-xl text-base transition-all"
+                  onClick={() => {
+                    setShowDinvestSuccessModal(false);
+                    setStripeSuccess(false);
+                    setDinvestAmount(1);
+                    setEurAmount(5);
+                    setSelectedToken(null);
+                  }}
+                >
+                  Fertig
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
