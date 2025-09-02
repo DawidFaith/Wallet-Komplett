@@ -1013,12 +1013,12 @@ export default function BuyTab() {
                 <div className="space-y-3">
                   <div className="bg-zinc-800/50 rounded-xl p-3 border border-zinc-700">
                     <label className="block text-sm font-medium text-zinc-300 mb-2">Anzahl D.INVEST Token</label>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center gap-3">
                       <input
                         type="number"
                         min="1"
                         step="1"
-                        className="flex-1 bg-zinc-700 border border-zinc-600 rounded-lg py-2 px-3 text-white focus:border-amber-500 focus:outline-none"
+                        className="w-24 bg-zinc-700 border border-zinc-600 rounded-lg py-2 px-3 text-white text-center focus:border-amber-500 focus:outline-none"
                         value={dinvestAmount}
                         onChange={(e) => {
                           const amount = parseInt(e.target.value) || 1;
@@ -1026,29 +1026,13 @@ export default function BuyTab() {
                           setEurAmount(amount * 5);
                         }}
                       />
-                      <div className="text-zinc-400 text-sm">
-                        = €{eurAmount.toFixed(2)}
-                      </div>
+                      <span className="text-zinc-400 text-sm">×</span>
+                      <span className="text-zinc-300 text-sm">5€</span>
+                      <span className="text-zinc-400 text-sm">=</span>
+                      <span className="text-amber-400 font-semibold">
+                        €{eurAmount.toFixed(2)}
+                      </span>
                     </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    {[1, 2, 5, 10].map((amount) => (
-                      <button
-                        key={amount}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition ${
-                          dinvestAmount === amount 
-                            ? "bg-amber-500 text-black" 
-                            : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-                        }`}
-                        onClick={() => {
-                          setDinvestAmount(amount);
-                          setEurAmount(amount * 5);
-                        }}
-                      >
-                        {amount}
-                      </button>
-                    ))}
                   </div>
                 </div>
 
