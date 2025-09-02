@@ -439,9 +439,9 @@ export default function SellTab() {
       setSellStep('approved');
       setSwapTxStatus(null);
       
-      // Nach erfolgreichem Approval: Hole jetzt die Quote
-      console.log("Approval erfolgreich - hole jetzt Quote von ParaSwap...");
-      await handleGetQuote();
+      // Nach erfolgreichem Approval: Quote-Daten sind bereits vorhanden, kein erneuter API-Call nötig
+      console.log("Approval erfolgreich - Quote bereits vorhanden, bereit für Verkauf");
+      // NICHT: await handleGetQuote(); - Das würde die Quote überschreiben
       
     } catch (e) {
       console.error("Approve Fehler:", e);
@@ -547,10 +547,12 @@ export default function SellTab() {
             balanceVerified = true;
             setSellStep('completed');
             setSwapTxStatus("success");
-            setSellAmount("");
-            setQuoteTxData(null);
-            setSpenderAddress(null);
-            setTimeout(() => setSwapTxStatus(null), 5000);
+            // WICHTIG: Inputfelder NICHT leeren und Modal NICHT schließen, damit User die Erfolgsmeldung sehen kann
+            // setSellAmount("");
+            // setQuoteTxData(null);
+            // setSpenderAddress(null);
+            
+            // Erfolgsmeldung bleibt dauerhaft sichtbar - kein automatisches Schließen
           } else {
             console.log(`Versuch ${attempts}: D.FAITH-Balance noch nicht ausreichend verringert (-${actualDecrease.toFixed(4)}), weiter warten...`);
             
@@ -573,10 +575,8 @@ export default function SellTab() {
         console.log("⚠️ D.FAITH-Balance-Verifizierung nach mehreren Versuchen nicht erfolgreich - Transaktion könnte trotzdem erfolgreich sein");
         setSwapTxStatus("success");
         setSellStep('completed');
-        setSellAmount("");
-        setQuoteTxData(null);
-        setSpenderAddress(null);
-        setTimeout(() => setSwapTxStatus(null), 8000);
+        
+        // Erfolgsmeldung bleibt dauerhaft sichtbar - kein automatisches Schließen
       }
       
     } catch (error) {
