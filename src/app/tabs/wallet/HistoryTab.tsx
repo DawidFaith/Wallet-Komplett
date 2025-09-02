@@ -12,6 +12,12 @@ const DINVEST_TOKEN = "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb";
 const DFAITH_POOL = "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"; // D.FAITH/ETH Pool
 const DINVEST_POOL = "0xc0c3b18cdb9ee490ecda6e4a294c3499790aa0cb"; // D.INVEST/ETH Pool
 
+// Shop Adresse
+const SHOP_ADDRESS = "0xb53aBFC43355af7b4f8EcB14E0bB7651E6Ea5A55"; // Shop-Kauf Adresse
+
+// Social Media Claim Adresse
+const CLAIM_ADDRESS = "0xFe5F6cE95efB135b93899AF70B12727F93FEE6E2"; // Social Media Claim Adresse
+
 // Token-Icons Mapping
 const TOKEN_ICONS: { [key: string]: string } = {
   "D.FAITH": "/D.FAITH.png",
@@ -24,7 +30,7 @@ const TOKEN_ICONS: { [key: string]: string } = {
 
 type Transaction = {
   id: string;
-  type: "send" | "receive" | "buy" | "sell";
+  type: "send" | "receive" | "buy" | "sell" | "shop" | "claim";
   token: string;
   tokenIcon: string;
   amount: string;
@@ -37,7 +43,7 @@ type Transaction = {
   blockNumber: string;
 };
 
-type FilterType = "all" | "send" | "receive" | "buy" | "sell";
+type FilterType = "all" | "send" | "receive" | "buy" | "sell" | "shop" | "claim";
 type SortType = "newest" | "oldest" | "amount";
 
 export default function HistoryTab() {
@@ -54,6 +60,8 @@ export default function HistoryTab() {
     receives: number;
     buys: number;
     sells: number;
+    shops: number;
+    claims: number;
   } | null>(null);
   const account = useActiveAccount();
 
@@ -89,18 +97,29 @@ export default function HistoryTab() {
     for (const tx of sorted) {
       if (processed.has(tx.id)) continue;
       
-      // Suche nach Transaktionen zur gleichen Zeit (±1 Minute Toleranz)
+      // Suche nach Transaktionen zur gleichen Zeit (±2 Minuten Toleranz für Swaps/Claims)
       const sameTimeTransactions = sorted.filter(otherTx => 
         otherTx.id !== tx.id && 
         !processed.has(otherTx.id) &&
-        Math.abs(otherTx.timestamp - tx.timestamp) <= 60000 && // 1 Minute Toleranz
+        Math.abs(otherTx.timestamp - tx.timestamp) <= 120000 && // 2 Minuten Toleranz
         (
           // Swap-Paare: buy/sell mit gleicher Pool-Adresse
           ((tx.type === 'buy' || tx.type === 'sell') && 
            (otherTx.type === 'buy' || otherTx.type === 'sell') &&
            tx.address.toLowerCase() === otherTx.address.toLowerCase()) ||
+          // Claim-Paare: claim mit nachfolgender ETH-Transaktion von gleicher Adresse
+          ((tx.type === 'claim' && otherTx.type === 'claim') &&
+           tx.address.toLowerCase() === otherTx.address.toLowerCase()) ||
           // Oder gleicher Hash (falls mehrere Asset Transfers in einer TX)
-          tx.hash === otherTx.hash
+          tx.hash === otherTx.hash ||
+          // Oder Cross-Pool Swaps (verschiedene Pools zur gleichen Zeit)
+          ((tx.type === 'buy' || tx.type === 'sell') && 
+           (otherTx.type === 'buy' || otherTx.type === 'sell') &&
+           tx.address.toLowerCase() !== otherTx.address.toLowerCase()) ||
+          // Claims mit nachfolgenden ETH-Transaktionen von Claim-Adresse
+          ((tx.type === 'claim' || otherTx.type === 'claim') &&
+           (tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() || 
+            otherTx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase()))
         )
       );
       
@@ -110,10 +129,31 @@ export default function HistoryTab() {
         grouped.push(group);
         // Markiere alle als verarbeitet
         group.forEach(t => processed.add(t.id));
+        
+        // Debug: Log der gruppierten Swaps
+        console.log("🔄 Swap-Gruppe erkannt:", group.map(t => ({
+          type: t.type,
+          token: t.token,
+          amount: t.amount,
+          time: t.time,
+          hash: t.hash.slice(0, 10) + '...'
+        })));
       } else {
         // Einzelne Transaktion
         grouped.push(tx);
         processed.add(tx.id);
+        
+        // Debug: Log für einzelne Buy/Sell/Claim ohne Partner
+        if (tx.type === 'buy' || tx.type === 'sell' || tx.type === 'claim') {
+          console.log(`⚠️ Einzelner ${tx.type} ohne Partner:`, {
+            type: tx.type,
+            token: tx.token,
+            amount: tx.amount,
+            time: tx.time,
+            address: tx.address,
+            hash: tx.hash.slice(0, 10) + '...'
+          });
+        }
       }
     }
     
@@ -195,7 +235,7 @@ export default function HistoryTab() {
             fromBlock: "0x2000000", // Ab ca. August 2025 für aktuelle Transaktionen
             toBlock: "latest",
             fromAddress: address,
-            category: ["external", "erc20"],
+            category: ["external", "erc20", "erc721", "erc1155"], // Erweiterte Kategorien
             withMetadata: true,
             excludeZeroValue: false, // Auch 0-Wert Transaktionen anzeigen
             maxCount: "0x64" // Mehr Transaktionen laden (100)
@@ -215,7 +255,7 @@ export default function HistoryTab() {
             fromBlock: "0x2000000", // Ab ca. August 2025 für aktuelle Transaktionen
             toBlock: "latest",
             toAddress: address,
-            category: ["external", "erc20"],
+            category: ["external", "erc20", "erc721", "erc1155"], // Erweiterte Kategorien
             withMetadata: true,
             excludeZeroValue: false, // Auch 0-Wert Transaktionen anzeigen
             maxCount: "0x64" // Mehr Transaktionen laden (100)
@@ -246,6 +286,27 @@ export default function HistoryTab() {
       const outgoingTransfers = outgoingData.result?.transfers || [];
       const incomingTransfers = incomingData.result?.transfers || [];
       const allTransfers = [...outgoingTransfers, ...incomingTransfers];
+
+      // Debug: Detaillierte Analyse der Transfers
+      console.log("📊 Ausgehende Transfers Details:", outgoingTransfers.map((t: any) => ({
+        hash: t.hash,
+        from: t.from,
+        to: t.to,
+        asset: t.asset,
+        value: t.value,
+        timestamp: t.metadata?.blockTimestamp,
+        category: t.category
+      })));
+      
+      console.log("📊 Eingehende Transfers Details:", incomingTransfers.map((t: any) => ({
+        hash: t.hash,
+        from: t.from,
+        to: t.to,
+        asset: t.asset,
+        value: t.value,
+        timestamp: t.metadata?.blockTimestamp,
+        category: t.category
+      })));
 
       console.log(`📊 Gefundene Transfers: ${outgoingTransfers.length} ausgehend, ${incomingTransfers.length} eingehend, ${allTransfers.length} total`);
 
@@ -300,11 +361,23 @@ export default function HistoryTab() {
           const fromAddress = transfer.from?.toLowerCase();
           const toAddress = transfer.to?.toLowerCase();
           
-          let type: "send" | "receive" | "buy" | "sell";
+          let type: "send" | "receive" | "buy" | "sell" | "shop" | "claim";
           let address = isReceived ? transfer.from : transfer.to;
           
+          // Claim-Erkennung (höchste Priorität nach Shop)
+          if (fromAddress === CLAIM_ADDRESS.toLowerCase() && isReceived) {
+            // Transaktion von Claim-Adresse = Social Media Claim
+            type = "claim";
+            address = CLAIM_ADDRESS;
+          }
+          // Shop-Kauf Erkennung
+          else if (toAddress === SHOP_ADDRESS.toLowerCase() && !isReceived) {
+            // Transaktion an Shop = Kauf im Shop
+            type = "shop";
+            address = SHOP_ADDRESS;
+          } 
           // Swap-Erkennung basierend auf Pool-Adressen
-          if (fromAddress === DFAITH_POOL.toLowerCase() && isReceived) {
+          else if (fromAddress === DFAITH_POOL.toLowerCase() && isReceived) {
             // D.FAITH von Pool erhalten = D.FAITH gekauft
             type = "buy";
             address = DFAITH_POOL;
@@ -321,7 +394,7 @@ export default function HistoryTab() {
             type = "sell";
             address = DINVEST_POOL;
           } else {
-            // Normale Transaktion (nicht über Pools)
+            // Normale Transaktion (nicht über Pools, Shop oder Claim)
             type = isReceived ? "receive" : "send";
           }
           
@@ -336,10 +409,10 @@ export default function HistoryTab() {
               token = "D.FAITH";
               const value = parseFloat(transfer.value || "0");
               amountRaw = value;
-              // Bei Käufen/Verkäufen andere Formatierung
-              if (type === "buy") {
+              // Bei Käufen/Verkäufen/Shop/Claims andere Formatierung
+              if (type === "buy" || type === "claim") {
                 amount = "+" + value.toFixed(2);
-              } else if (type === "sell") {
+              } else if (type === "sell" || type === "shop") {
                 amount = "-" + value.toFixed(2);
               } else {
                 amount = (type === "receive" ? "+" : "-") + value.toFixed(2);
@@ -348,10 +421,10 @@ export default function HistoryTab() {
               token = "D.INVEST";
               const value = parseInt(transfer.value || "0");
               amountRaw = value;
-              // Bei Käufen/Verkäufen andere Formatierung
-              if (type === "buy") {
+              // Bei Käufen/Verkäufen/Shop/Claims andere Formatierung
+              if (type === "buy" || type === "claim") {
                 amount = "+" + value.toString();
-              } else if (type === "sell") {
+              } else if (type === "sell" || type === "shop") {
                 amount = "-" + value.toString();
               } else {
                 amount = (type === "receive" ? "+" : "-") + value.toString();
@@ -359,9 +432,9 @@ export default function HistoryTab() {
             } else {
               const value = parseFloat(transfer.value || "0");
               amountRaw = value;
-              if (type === "buy") {
+              if (type === "buy" || type === "claim") {
                 amount = "+" + value.toFixed(6);
-              } else if (type === "sell") {
+              } else if (type === "sell" || type === "shop") {
                 amount = "-" + value.toFixed(6);
               } else {
                 amount = (type === "receive" ? "+" : "-") + value.toFixed(6);
@@ -371,9 +444,9 @@ export default function HistoryTab() {
             // ETH-Transaktion
             const value = parseFloat(transfer.value || "0");
             amountRaw = value;
-            if (type === "buy") {
+            if (type === "buy" || type === "claim") {
               amount = "+" + value.toFixed(6);
-            } else if (type === "sell") {
+            } else if (type === "sell" || type === "shop") {
               amount = "-" + value.toFixed(6);
             } else {
               amount = (type === "receive" ? "+" : "-") + value.toFixed(6);
@@ -414,6 +487,8 @@ export default function HistoryTab() {
         receives: mappedTransactions.filter(tx => tx.type === "receive").length,
         buys: mappedTransactions.filter(tx => tx.type === "buy").length,
         sells: mappedTransactions.filter(tx => tx.type === "sell").length,
+        shops: mappedTransactions.filter(tx => tx.type === "shop").length,
+        claims: mappedTransactions.filter(tx => tx.type === "claim").length,
       });
       
     } catch (err: any) {
@@ -440,6 +515,10 @@ export default function HistoryTab() {
         return <span className="text-white text-xs">🛒</span>;
       case "sell":
         return <span className="text-white text-xs">💰</span>;
+      case "shop":
+        return <span className="text-white text-xs">🛍️</span>;
+      case "claim":
+        return <span className="text-white text-xs">🎁</span>;
       default:
         return <FaCoins className="text-white text-xs" />;
     }
@@ -455,6 +534,10 @@ export default function HistoryTab() {
         return "from-blue-400 to-blue-600";
       case "sell":
         return "from-orange-400 to-orange-600";
+      case "shop":
+        return "from-purple-400 to-purple-600";
+      case "claim":
+        return "from-cyan-400 to-cyan-600";
       default:
         return "from-zinc-400 to-zinc-600";
     }
@@ -521,6 +604,28 @@ export default function HistoryTab() {
             }`}
           >
             💰 Verkauft
+          </button>
+          
+          <button
+            onClick={() => setFilter("claim")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
+              filter === "claim" 
+                ? "bg-cyan-500 text-white shadow-lg" 
+                : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
+          >
+            🎁 Claim
+          </button>
+          
+          <button
+            onClick={() => setFilter("shop")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
+              filter === "shop" 
+                ? "bg-purple-500 text-white shadow-lg" 
+                : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
+          >
+            🛍️ Shop
           </button>
           
           <button
@@ -600,6 +705,7 @@ export default function HistoryTab() {
                             {tx.type === "sell" && "Verkauft"}
                             {tx.type === "send" && "Gesendet"}
                             {tx.type === "receive" && "Empfangen"}
+                            {tx.type === "shop" && "Shop-Kauf"}
                           </span>
                         </div>
                         <div className="text-right">
@@ -640,6 +746,8 @@ export default function HistoryTab() {
                           {tx.type === "receive" && "Empfangen"}
                           {tx.type === "buy" && "Gekauft"}
                           {tx.type === "sell" && "Verkauft"}
+                          {tx.type === "shop" && "Shop-Kauf"}
+                          {tx.type === "claim" && "Social Media Claim"}
                         </div>
                         <div className="text-xs text-zinc-500">{tx.time}</div>
                       </div>
@@ -658,13 +766,19 @@ export default function HistoryTab() {
                         {tx.type === "send" ? "An:" : 
                          tx.type === "receive" ? "Von:" :
                          tx.type === "buy" ? "Über Pool:" :
-                         tx.type === "sell" ? "An Pool:" : "Adresse:"}
+                         tx.type === "sell" ? "An Pool:" : 
+                         tx.type === "shop" ? "Shop:" :
+                         tx.type === "claim" ? "Von:" : "Adresse:"}
                       </span>
                       <span className="font-mono text-amber-400">
                         {tx.type === "buy" || tx.type === "sell" ? 
                           (tx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ? "D.FAITH Pool" :
                            tx.address.toLowerCase() === DINVEST_POOL.toLowerCase() ? "D.INVEST Pool" :
                            formatAddress(tx.address)) :
+                         tx.type === "shop" ?
+                          "Merch Shop" :
+                         tx.type === "claim" ?
+                          "Social Media Rewards" :
                           formatAddress(tx.address)
                         }
                       </span>
