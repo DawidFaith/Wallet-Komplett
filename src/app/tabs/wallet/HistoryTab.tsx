@@ -761,330 +761,219 @@ export default function HistoryTab() {
         </div>
       )}
 
-      {/* Transaktionsliste - Mobile optimierte Darstellung */}
+      {/* KOMPLETT NEUES HISTORIE-DESIGN */}
       {!isLoading && !error && filteredAndSortedTransactions.length > 0 && (
-        <div className="space-y-3 max-h-[70vh] overflow-y-auto px-1">
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
           {filteredAndSortedTransactions.map((item, index) => {
-            // Prüfe ob es eine Gruppe oder eine einzelne Transaktion ist
+            
+            // ===== GRUPPIERTE TRANSAKTIONEN =====
             if (Array.isArray(item)) {
-              // Gruppierte Transaktionen - Swaps oder Claims
               const group = item as Transaction[];
-              const mainTx = group[0]; // Für Zeitstempel
+              console.log("🎨 Rendering Gruppe:", group.length, "Transaktionen");
               
-              // Bestimme ob es eine Claim-Gruppe oder Swap-Gruppe ist
-              const isClaimGroup = group.some(tx => tx.type === 'claim') ||
-                                  group.some(tx => tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase());
+              // Bestimme Gruppentyp
+              const isClaimGroup = group.some(tx => tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase());
+              const hasTokenTx = group.some(tx => tx.token === "D.FAITH" || tx.token === "D.INVEST");
               
               if (isClaimGroup) {
-                // CLAIM-GRUPPE: Token + ETH von Social Media
+                // ===== CLAIM-GRUPPE =====
                 const tokenTx = group.find(tx => tx.token !== "ETH");
                 const ethTx = group.find(tx => tx.token === "ETH");
                 
                 return (
-                  <div key={`group-${index}`} className="bg-gradient-to-br from-cyan-900/20 to-cyan-800/20 rounded-xl p-3 border border-cyan-500/30 hover:border-cyan-400/50 transition-all">
+                  <div key={`claim-group-${index}`} className="border-l-4 border-cyan-400 bg-gradient-to-r from-cyan-950/30 to-cyan-900/20 rounded-r-xl p-4">
                     {/* Claim Header */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center flex-shrink-0">
-                          <span className="text-white text-sm">🎁</span>
+                        <div className="w-12 h-12 rounded-full bg-cyan-500 flex items-center justify-center">
+                          <span className="text-white text-lg">🎁</span>
                         </div>
-                        <div className="min-w-0">
-                          <div className="font-semibold text-cyan-300 text-sm">
-                            Social Media Claim
-                          </div>
-                          <div className="text-xs text-zinc-500 truncate">{mainTx.time}</div>
+                        <div>
+                          <h3 className="text-cyan-300 font-bold text-lg">SOCIAL MEDIA CLAIM</h3>
+                          <p className="text-zinc-400 text-sm">{group[0].time} • {group.length} Transaktionen</p>
                         </div>
                       </div>
-                      {/* Haupt-Claim-Info rechts */}
-                      {tokenTx && (
-                        <div className="text-right flex-shrink-0">
-                          <div className="font-semibold text-sm text-cyan-400">
-                            +{Math.abs(tokenTx.amountRaw).toFixed(2)} {tokenTx.token}
-                          </div>
-                          {ethTx && (
-                            <div className="text-xs text-zinc-400">
-                              +{Math.abs(ethTx.amountRaw).toFixed(7)} ETH
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      <div className="text-right">
+                        <div className="text-cyan-400 font-bold text-xl">GROUPED</div>
+                        <div className="text-zinc-400 text-sm">Gruppiert</div>
+                      </div>
                     </div>
                     
-                    {/* Claim Details */}
-                    <div className="space-y-2">
+                    {/* Claim Content */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-cyan-950/20 rounded-lg p-3">
                       {tokenTx && (
-                        <div className="flex items-center justify-between bg-cyan-900/20 rounded-lg p-2 border border-cyan-500/20">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <img 
-                              src={tokenTx.tokenIcon} 
-                              alt={tokenTx.token} 
-                              className="w-6 h-6 rounded-full flex-shrink-0"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = "/ETH.png";
-                              }}
-                            />
-                            <span className="text-xs text-cyan-300 truncate">Claim Belohnung</span>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <div className="text-cyan-400 font-semibold text-sm">
-                              {tokenTx.amount}
-                            </div>
-                            <div className="text-xs text-cyan-300">{tokenTx.token}</div>
+                        <div className="flex items-center gap-3 bg-green-900/30 rounded-lg p-3">
+                          <img src={tokenTx.tokenIcon} alt={tokenTx.token} className="w-8 h-8 rounded-full" />
+                          <div className="flex-1">
+                            <div className="text-green-400 font-bold">{tokenTx.amount}</div>
+                            <div className="text-green-300 text-sm">{tokenTx.token} Belohnung</div>
                           </div>
                         </div>
                       )}
-                      
                       {ethTx && (
-                        <div className="flex items-center justify-between bg-cyan-900/20 rounded-lg p-2 border border-cyan-500/20">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <img 
-                              src={ethTx.tokenIcon} 
-                              alt={ethTx.token} 
-                              className="w-6 h-6 rounded-full flex-shrink-0"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = "/ETH.png";
-                              }}
-                            />
-                            <span className="text-xs text-cyan-300 truncate">Gas Erstattung</span>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <div className="text-cyan-400 font-semibold text-sm">
-                              {ethTx.amount}
-                            </div>
-                            <div className="text-xs text-cyan-300">{ethTx.token}</div>
+                        <div className="flex items-center gap-3 bg-blue-900/30 rounded-lg p-3">
+                          <img src={ethTx.tokenIcon} alt="ETH" className="w-8 h-8 rounded-full" />
+                          <div className="flex-1">
+                            <div className="text-blue-400 font-bold">{ethTx.amount}</div>
+                            <div className="text-blue-300 text-sm">ETH Gas Erstattung</div>
                           </div>
                         </div>
                       )}
-                    </div>
-                    
-                    {/* Claim Source */}
-                    <div className="mt-3 pt-2 border-t border-cyan-500/20">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-zinc-500">Quelle:</span>
-                        <span className="text-cyan-300 font-mono truncate ml-2">
-                          Social Media Rewards
-                        </span>
-                      </div>
                     </div>
                   </div>
                 );
-              } else {
-                // SWAP-GRUPPE: ETH ↔ Token (2-3 Transaktionen)
-                const group = item as Transaction[];
-                const mainTx = group[0];
-                
-                // Analysiere Swap-Richtung und Transaktionen
+              } else if (hasTokenTx) {
+                // ===== SWAP-GRUPPE =====
                 const tokenTxs = group.filter(tx => tx.token === "D.FAITH" || tx.token === "D.INVEST");
                 const ethTxs = group.filter(tx => tx.token === "ETH");
-                
-                // Bestimme Haupttoken und Swap-Richtung
-                const mainToken = tokenTxs[0]?.token || "Token";
-                const isTokenSale = tokenTxs.some(tx => tx.amountRaw < 0); // Token verkauft
-                const isTokenPurchase = tokenTxs.some(tx => tx.amountRaw > 0); // Token gekauft
-                
-                // Berechne Netto-Beträge
-                const netTokenAmount = tokenTxs.reduce((sum, tx) => sum + tx.amountRaw, 0);
-                const netEthAmount = ethTxs.reduce((sum, tx) => sum + tx.amountRaw, 0);
+                const isVerkauf = tokenTxs.some(tx => tx.amountRaw < 0);
+                const isKauf = tokenTxs.some(tx => tx.amountRaw > 0);
+                const mainToken = tokenTxs[0]?.token || "TOKEN";
                 
                 return (
-                  <div key={`group-${index}`} className="bg-gradient-to-br from-purple-900/20 to-purple-800/20 rounded-xl p-3 border border-purple-500/30 hover:border-purple-400/50 transition-all">
+                  <div key={`swap-group-${index}`} className={`border-l-4 ${isVerkauf ? 'border-orange-400 bg-gradient-to-r from-orange-950/30 to-orange-900/20' : 'border-blue-400 bg-gradient-to-r from-blue-950/30 to-blue-900/20'} rounded-r-xl p-4`}>
                     {/* Swap Header */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-                          <span className="text-white text-sm">🔄</span>
+                        <div className={`w-12 h-12 rounded-full ${isVerkauf ? 'bg-orange-500' : 'bg-blue-500'} flex items-center justify-center`}>
+                          <span className="text-white text-lg">{isVerkauf ? '💰' : '🛒'}</span>
                         </div>
-                        <div className="min-w-0">
-                          <div className="font-semibold text-purple-300 text-sm">
-                            {mainToken} {isTokenSale ? "Verkauf" : isTokenPurchase ? "Kauf" : "Swap"}
-                          </div>
-                          <div className="text-xs text-zinc-500 truncate">
-                            {mainTx.time} • {group.length} Transaktionen
-                          </div>
+                        <div>
+                          <h3 className={`${isVerkauf ? 'text-orange-300' : 'text-blue-300'} font-bold text-lg`}>
+                            {mainToken} {isVerkauf ? 'VERKAUF' : 'KAUF'}
+                          </h3>
+                          <p className="text-zinc-400 text-sm">{group[0].time} • {group.length} Transaktionen</p>
                         </div>
                       </div>
-                      {/* Haupt-Swap-Info rechts */}
-                      <div className="text-right flex-shrink-0">
-                        <div className="text-xs text-purple-300">
-                          {isTokenSale ? "Verkauft" : isTokenPurchase ? "Gekauft" : "Getauscht"}
-                        </div>
-                        <div className="font-semibold text-sm text-amber-400">
-                          {Math.abs(netTokenAmount).toFixed(2)} {mainToken}
-                        </div>
-                        <div className="text-xs text-zinc-400">
-                          {netEthAmount > 0 ? "+" : ""}{netEthAmount.toFixed(6)} ETH
-                        </div>
+                      <div className="text-right">
+                        <div className={`${isVerkauf ? 'text-orange-400' : 'text-blue-400'} font-bold text-xl`}>GROUPED</div>
+                        <div className="text-zinc-400 text-sm">Swap</div>
                       </div>
                     </div>
                     
-                    {/* Kompakte Swap-Übersicht */}
+                    {/* Swap Content */}
                     <div className="space-y-2">
-                      {/* Token-Transaktion(en) */}
-                      {tokenTxs.map((tx, txIndex) => (
-                        <div key={tx.id} className={`flex items-center justify-between rounded-lg p-2 border ${
-                          tx.amountRaw < 0 ? "bg-red-900/20 border-red-500/20" : "bg-green-900/20 border-green-500/20"
-                        }`}>
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <img 
-                              src={tx.tokenIcon} 
-                              alt={tx.token} 
-                              className="w-6 h-6 rounded-full flex-shrink-0"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = "/ETH.png";
-                              }}
-                            />
-                            <span className={`text-xs truncate ${
-                              tx.amountRaw < 0 ? "text-red-300" : "text-green-300"
-                            }`}>
-                              {tx.amountRaw < 0 ? "Verkauft" : "Gekauft"}
-                            </span>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <div className={`font-semibold text-sm ${
-                              tx.amountRaw < 0 ? "text-red-400" : "text-green-400"
-                            }`}>
-                              {tx.amount}
-                            </div>
-                            <div className={`text-xs ${
-                              tx.amountRaw < 0 ? "text-red-300" : "text-green-300"
-                            }`}>
-                              {tx.token}
+                      {/* Token Transaktionen */}
+                      {tokenTxs.map((tx, idx) => (
+                        <div key={tx.id} className={`flex items-center gap-3 ${tx.amountRaw < 0 ? 'bg-red-900/30' : 'bg-green-900/30'} rounded-lg p-3`}>
+                          <img src={tx.tokenIcon} alt={tx.token} className="w-8 h-8 rounded-full" />
+                          <div className="flex-1">
+                            <div className={`${tx.amountRaw < 0 ? 'text-red-400' : 'text-green-400'} font-bold`}>{tx.amount}</div>
+                            <div className={`${tx.amountRaw < 0 ? 'text-red-300' : 'text-green-300'} text-sm`}>
+                              {tx.token} {tx.amountRaw < 0 ? 'verkauft' : 'gekauft'}
                             </div>
                           </div>
                         </div>
                       ))}
                       
-                      {/* ETH-Transaktionen (kompakt) */}
-                      {ethTxs.length > 1 && (
-                        <div className="bg-zinc-900/20 rounded-lg p-2 border border-zinc-500/20">
-                          <div className="text-xs text-zinc-400 mb-1">
-                            ETH-Transaktionen ({ethTxs.length})
-                          </div>
-                          <div className="flex justify-between text-xs">
-                            <span className="text-zinc-500">Netto ETH:</span>
-                            <span className={`font-mono ${
-                              netEthAmount > 0 ? "text-green-400" : "text-red-400"
-                            }`}>
-                              {netEthAmount > 0 ? "+" : ""}{netEthAmount.toFixed(6)} ETH
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Einzelne ETH-Transaktion */}
-                      {ethTxs.length === 1 && (
-                        <div className={`flex items-center justify-between rounded-lg p-2 border ${
-                          ethTxs[0].amountRaw < 0 ? "bg-red-900/20 border-red-500/20" : "bg-green-900/20 border-green-500/20"
-                        }`}>
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <img 
-                              src={ethTxs[0].tokenIcon} 
-                              alt="ETH" 
-                              className="w-6 h-6 rounded-full flex-shrink-0"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = "/ETH.png";
-                              }}
-                            />
-                            <span className={`text-xs truncate ${
-                              ethTxs[0].amountRaw < 0 ? "text-red-300" : "text-green-300"
-                            }`}>
-                              {ethTxs[0].amountRaw < 0 ? "Bezahlt" : "Erhalten"}
-                            </span>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <div className={`font-semibold text-sm ${
-                              ethTxs[0].amountRaw < 0 ? "text-red-400" : "text-green-400"
-                            }`}>
-                              {ethTxs[0].amount}
-                            </div>
-                            <div className={`text-xs ${
-                              ethTxs[0].amountRaw < 0 ? "text-red-300" : "text-green-300"
-                            }`}>
-                              ETH
+                      {/* ETH Transaktionen */}
+                      {ethTxs.map((tx, idx) => (
+                        <div key={tx.id} className={`flex items-center gap-3 ${tx.amountRaw < 0 ? 'bg-yellow-900/30' : 'bg-green-900/30'} rounded-lg p-3`}>
+                          <img src={tx.tokenIcon} alt="ETH" className="w-8 h-8 rounded-full" />
+                          <div className="flex-1">
+                            <div className={`${tx.amountRaw < 0 ? 'text-yellow-400' : 'text-green-400'} font-bold`}>{tx.amount}</div>
+                            <div className={`${tx.amountRaw < 0 ? 'text-yellow-300' : 'text-green-300'} text-sm`}>
+                              ETH {tx.amountRaw < 0 ? 'Gas' : 'erhalten'}
                             </div>
                           </div>
                         </div>
-                      )}
-                    </div>
-                    
-                    {/* Pool Info */}
-                    <div className="mt-3 pt-2 border-t border-purple-500/20">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-zinc-500">Pool:</span>
-                        <span className="text-purple-300 font-mono truncate ml-2">
-                          {mainTx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ? "D.FAITH Pool" :
-                           mainTx.address.toLowerCase() === DINVEST_POOL.toLowerCase() ? "D.INVEST Pool" :
-                           formatAddress(mainTx.address)}
-                        </span>
-                      </div>
+                      ))}
                     </div>
                   </div>
                 );
               }
             } else {
-              // Einzelne Transaktion - Mobile optimiert
+              // ===== EINZELNE TRANSAKTION =====
               const tx = item as Transaction;
+              console.log("🎨 Rendering Einzeltransaktion:", tx.type, tx.token);
+              
+              let borderColor = "border-zinc-600";
+              let bgColor = "from-zinc-800/90 to-zinc-900/90";
+              let iconBg = "bg-zinc-600";
+              let textColor = "text-zinc-300";
+              
+              switch (tx.type) {
+                case "shop":
+                  borderColor = "border-purple-400";
+                  bgColor = "from-purple-950/30 to-purple-900/20";
+                  iconBg = "bg-purple-500";
+                  textColor = "text-purple-300";
+                  break;
+                case "claim":
+                  borderColor = "border-cyan-400";
+                  bgColor = "from-cyan-950/30 to-cyan-900/20";
+                  iconBg = "bg-cyan-500";
+                  textColor = "text-cyan-300";
+                  break;
+                case "buy":
+                  borderColor = "border-blue-400";
+                  bgColor = "from-blue-950/30 to-blue-900/20";
+                  iconBg = "bg-blue-500";
+                  textColor = "text-blue-300";
+                  break;
+                case "sell":
+                  borderColor = "border-orange-400";
+                  bgColor = "from-orange-950/30 to-orange-900/20";
+                  iconBg = "bg-orange-500";
+                  textColor = "text-orange-300";
+                  break;
+                case "receive":
+                  borderColor = "border-green-400";
+                  bgColor = "from-green-950/30 to-green-900/20";
+                  iconBg = "bg-green-500";
+                  textColor = "text-green-300";
+                  break;
+                case "send":
+                  borderColor = "border-red-400";
+                  bgColor = "from-red-950/30 to-red-900/20";
+                  iconBg = "bg-red-500";
+                  textColor = "text-red-300";
+                  break;
+              }
               
               return (
-                <div key={tx.id} className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-3 border border-zinc-700 hover:border-zinc-600 transition-all">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      {/* Token Icon mit Type Overlay - Mobile kleiner */}
-                      <div className="relative flex-shrink-0">
-                        <img 
-                          src={tx.tokenIcon} 
-                          alt={tx.token} 
-                          className="w-10 h-10 rounded-full"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/ETH.png";
-                          }}
-                        />
-                        <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-r ${getTransactionColor(tx.type)} flex items-center justify-center text-xs border-2 border-zinc-800`}>
-                          {getTransactionIcon(tx.type)}
-                        </div>
+                <div key={tx.id} className={`border-l-4 ${borderColor} bg-gradient-to-r ${bgColor} rounded-r-xl p-4`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-12 h-12 rounded-full ${iconBg} flex items-center justify-center`}>
+                        {getTransactionIcon(tx.type)}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-medium text-amber-400 text-sm truncate">
-                          {tx.type === "send" && "Gesendet"}
-                          {tx.type === "receive" && "Empfangen"}
-                          {tx.type === "buy" && "Gekauft"}
-                          {tx.type === "sell" && "Verkauft"}
-                          {tx.type === "shop" && "Shop-Kauf"}
-                          {tx.type === "claim" && "Social Media Claim"}
-                        </div>
-                        <div className="text-xs text-zinc-500 truncate">{tx.time}</div>
+                      <div>
+                        <h3 className={`${textColor} font-bold text-lg`}>
+                          {tx.type === "send" && "GESENDET"}
+                          {tx.type === "receive" && "EMPFANGEN"}
+                          {tx.type === "buy" && "GEKAUFT"}
+                          {tx.type === "sell" && "VERKAUFT"}
+                          {tx.type === "shop" && "SHOP-KAUF"}
+                          {tx.type === "claim" && "CLAIM"}
+                        </h3>
+                        <p className="text-zinc-400 text-sm">{tx.time}</p>
                       </div>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className={`font-bold text-sm ${getAmountColor(tx.amount)}`}>
-                        {tx.amount}
-                      </div>
-                      <div className="text-xs font-semibold text-zinc-400">{tx.token}</div>
+                    <div className="text-right">
+                      <div className={`font-bold text-xl ${getAmountColor(tx.amount)}`}>{tx.amount}</div>
+                      <div className="text-zinc-400 text-sm">{tx.token}</div>
                     </div>
                   </div>
                   
-                  {/* Kompakte Adress-Info */}
-                  <div className="text-xs text-zinc-400 bg-zinc-900/50 rounded-lg p-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-500 flex-shrink-0">
+                  {/* Adresse */}
+                  <div className="mt-3 pt-3 border-t border-zinc-700/50">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-zinc-500">
                         {tx.type === "send" ? "An:" : 
                          tx.type === "receive" ? "Von:" :
-                         tx.type === "buy" ? "Pool:" :
-                         tx.type === "sell" ? "Pool:" : 
+                         tx.type === "buy" || tx.type === "sell" ? "Pool:" :
                          tx.type === "shop" ? "Shop:" :
                          tx.type === "claim" ? "Von:" : "Adresse:"}
                       </span>
-                      <span className="font-mono text-amber-400 ml-2 truncate">
+                      <span className="text-amber-400 font-mono">
                         {tx.type === "buy" || tx.type === "sell" ? 
                           (tx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ? "D.FAITH Pool" :
                            tx.address.toLowerCase() === DINVEST_POOL.toLowerCase() ? "D.INVEST Pool" :
                            formatAddress(tx.address)) :
-                         tx.type === "shop" ?
-                          "Merch Shop" :
-                         tx.type === "claim" ?
-                          "Social Media Rewards" :
-                          formatAddress(tx.address)
-                        }
+                         tx.type === "shop" ? "Merch Shop" :
+                         tx.type === "claim" ? "Social Media" :
+                         formatAddress(tx.address)}
                       </span>
                     </div>
                   </div>
