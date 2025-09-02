@@ -659,17 +659,7 @@ export default function BuyTab() {
             // setQuoteTxData(null);
             // setSpenderAddress(null);
             
-            // Erfolgsmeldung bleibt 8 Sekunden sichtbar
-            setTimeout(() => {
-              // Erst nach der Erfolgsmeldung alles zurücksetzen
-              setSwapTxStatus(null);
-              setSwapAmountEth("");
-              setSwapAmountDfaith("");
-              setQuoteTxData(null);
-              setSpenderAddress(null);
-              setShowPurchaseModal(false);
-              setBuyStep('initial');
-            }, 8000);
+            // Erfolgsmeldung bleibt dauerhaft sichtbar - kein automatisches Schließen
           } else {
             console.log(`Versuch ${attempts}: D.FAITH-Balance noch nicht erhöht (+${balanceIncrease.toFixed(4)}), weiter warten...`);
             
@@ -693,16 +683,7 @@ export default function BuyTab() {
         setSwapTxStatus("success");
         setBuyStep('completed');
         
-        // Auch hier: zeige Erfolgsmeldung und setze dann zurück
-        setTimeout(() => {
-          setSwapTxStatus(null);
-          setSwapAmountEth("");
-          setSwapAmountDfaith("");
-          setQuoteTxData(null);
-          setSpenderAddress(null);
-          setShowPurchaseModal(false);
-          setBuyStep('initial');
-        }, 8000);
+        // Erfolgsmeldung bleibt dauerhaft sichtbar - kein automatisches Schließen
       }
       
     } catch (error) {
@@ -846,7 +827,6 @@ export default function BuyTab() {
                   <div className="w-32 h-32 mx-auto mb-3 flex items-center justify-center">
                     <img src="/D.FAITH.png" alt="D.FAITH" className="w-32 h-32 object-contain" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-1">D.FAITH kaufen</h3>
                   {dfaithPriceEur && (
                     <div className="mt-2 px-2 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full inline-block">
                       <span className="text-amber-400 text-xs font-semibold">
@@ -1126,7 +1106,7 @@ export default function BuyTab() {
                 <div className="w-24 h-24 mx-auto mb-3 flex items-center justify-center">
                   <img src="/D.FAITH.png" alt="D.FAITH" className="w-24 h-24 object-contain" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-1">D.FAITH Kauf bestätigen</h3>
+                <h3 className="text-xl font-bold text-white mb-1">Kauf bestätigen</h3>
                 <p className="text-zinc-400 text-xs">Quote erhalten - bereit für den Kauf</p>
               </div>
 
@@ -1204,9 +1184,6 @@ export default function BuyTab() {
                       <p className="text-xs text-green-400/70 mt-2">
                         ✨ Deine neuen Token sind bereits in deiner Wallet verfügbar!
                       </p>
-                      <div className="mt-3 text-xs text-green-400/60">
-                        Das Modal schließt sich automatisch in wenigen Sekunden...
-                      </div>
                     </div>
                   )}
                   {swapTxStatus === "error" && quoteError && (
