@@ -797,27 +797,9 @@ export default function BuyTab() {
 
                 {/* Amount Input Section */}
                 <div className="space-y-3">
+                  {/* You Want Section - D.FAITH Input */}
                   <div className="bg-zinc-800/50 rounded-xl p-3 border border-zinc-700">
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">You Pay</label>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="flex items-center gap-2 bg-purple-500/20 rounded-lg px-2 py-1 border border-purple-500/30 flex-shrink-0">
-                        <img src="/ETH.png" alt="ETH" className="w-6 h-6 object-contain" />
-                        <span className="text-purple-400 text-xs font-semibold">{ethBalance}</span>
-                        <span className="text-purple-300 font-semibold text-xs">ETH</span>
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Berechnet automatisch"
-                        className="flex-1 bg-transparent text-lg sm:text-xl font-bold text-gray-300 focus:outline-none min-w-0 text-center"
-                        value={swapAmountEth || ''}
-                        readOnly
-                      />
-                    </div>
-                  </div>
-
-                  {/* You Receive Section mit Exchange Rate und Quote Button */}
-                  <div className="bg-zinc-800/50 rounded-xl p-3 border border-zinc-700">
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">You Receive</label>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Du möchtest kaufen</label>
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex items-center gap-2 bg-amber-500/20 rounded-lg px-2 py-1 border border-amber-500/30 flex-shrink-0">
                         <img src="/D.FAITH.png" alt="D.FAITH" className="w-6 h-6 object-contain" />
@@ -851,12 +833,45 @@ export default function BuyTab() {
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-zinc-500">
+                        Balance: {dfaithBalance ? `${Number(dfaithBalance).toFixed(2)} D.FAITH` : 'Loading...'}
+                      </span>
+                      <span className="text-zinc-500">
                         {dfaithPrice ? `1 D.FAITH = ${dfaithPrice.toFixed(6)} ETH` : "Loading..."}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Arrow */}
+                  <div className="flex justify-center">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* You Pay Section - ETH Cost Display */}
+                  <div className="bg-zinc-800/50 rounded-xl p-3 border border-zinc-700">
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Du zahlst</label>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center gap-2 bg-purple-500/20 rounded-lg px-2 py-1 border border-purple-500/30 flex-shrink-0">
+                        <img src="/ETH.png" alt="ETH" className="w-6 h-6 object-contain" />
+                        <span className="text-purple-300 font-semibold text-xs">ETH</span>
+                      </div>
+                      <div className="flex-1 text-center">
+                        <div className="text-lg sm:text-xl font-bold text-purple-300">
+                          {swapAmountEth || "0.000000"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-zinc-500">
+                        Balance: {ethBalance ? `${Number(ethBalance).toFixed(4)} ETH` : 'Loading...'}
                       </span>
                       <span className="text-zinc-500">
                         {swapAmountEth && parseFloat(swapAmountEth) > 0 && ethPriceEur
                           ? `≈ €${(parseFloat(swapAmountEth) * ethPriceEur).toFixed(2)}`
-                          : ""
+                          : "≈ €0.00"
                         }
                       </span>
                     </div>
