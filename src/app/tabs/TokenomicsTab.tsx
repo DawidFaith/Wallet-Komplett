@@ -54,9 +54,9 @@ export default function TokenomicsTab() {
       console.log("🔄 Fetching tokenomics data...");
       
       try {
-        // Parallele API-Aufrufe mit lokalen Proxy-Routes
+        // Parallele API-Aufrufe - verwende direkten externen Endpunkt für Metrics
         const [metricsRes, davidRes, dinvestRes] = await Promise.all([
-          fetch('/api/tokenomics/metrics')
+          fetch('https://dex-liquidity-3kf8hv241-dawid-faiths-projects.vercel.app/api/metrics?token=0x69eFD833288605f320d77eB2aB99DDE62919BbC1&chainId=8453')
             .catch(err => {
               console.error("❌ Metrics API Error:", err);
               return null;
