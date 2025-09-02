@@ -172,40 +172,40 @@ export default function HistoryTab() {
       const alchemyUrl = API_OPTIONS.ALCHEMY;
       
       // Hole ausgehende Transaktionen - ab August 2025 für aktuelle Daten
-      const outgoingResponse = await fetch(alchemyUrl, {
+  const outgoingResponse = await fetch(alchemyUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jsonrpc: '2.0',
           method: 'alchemy_getAssetTransfers',
           params: [{
-            fromBlock: "0x2000000", // Ab ca. August 2025 für aktuelle Transaktionen
+    fromBlock: "0x0", // so früh wie möglich, um alle historischen Transfers zu erfassen
             toBlock: "latest",
             fromAddress: address,
             category: ["external", "erc20", "erc721", "erc1155"], // Erweiterte Kategorien
             withMetadata: true,
             excludeZeroValue: false, // Auch 0-Wert Transaktionen anzeigen
-            maxCount: "0x64" // Mehr Transaktionen laden (100)
+    maxCount: "0xC8" // bis zu 200 Transfers
           }],
           id: 1
         })
       });
 
       // Hole eingehende Transaktionen - ab August 2025 für aktuelle Daten
-      const incomingResponse = await fetch(alchemyUrl, {
+  const incomingResponse = await fetch(alchemyUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jsonrpc: '2.0',
           method: 'alchemy_getAssetTransfers',
           params: [{
-            fromBlock: "0x2000000", // Ab ca. August 2025 für aktuelle Transaktionen
+    fromBlock: "0x0", // so früh wie möglich, um alle historischen Transfers zu erfassen
             toBlock: "latest",
             toAddress: address,
             category: ["external", "erc20", "erc721", "erc1155"], // Erweiterte Kategorien
             withMetadata: true,
             excludeZeroValue: false, // Auch 0-Wert Transaktionen anzeigen
-            maxCount: "0x64" // Mehr Transaktionen laden (100)
+    maxCount: "0xC8" // bis zu 200 Transfers
           }],
           id: 2
         })
@@ -280,6 +280,7 @@ export default function HistoryTab() {
       // Teste Alchemy API mit der spezifischen Wallet-Adresse
       const testAddress = userAddress || TEST_WALLET;
       const alchemyTransactions = await getTransactionsFromAlchemy(testAddress);
+  console.log("[HistoryTab] Transfers geladen:", alchemyTransactions?.length || 0);
       
       // Verarbeite die Transaktionen auch wenn wenige vorhanden sind
       if (alchemyTransactions.length === 0) {
@@ -379,7 +380,8 @@ export default function HistoryTab() {
         .slice(0, 50); // Zeige die neuesten 50 Transaktionen
 
       // Nur Claims behalten
-      const claimsOnly = mappedTransactions.filter((tx) => tx.type === "claim");
+  const claimsOnly = mappedTransactions.filter((tx) => tx.type === "claim");
+  console.log("[HistoryTab] Claims erkannt:", claimsOnly.length);
       setTransactions(claimsOnly);
       setStats({
         transactionCount: claimsOnly.length,
@@ -521,6 +523,19 @@ export default function HistoryTab() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && !error && filteredAndSortedTransactions.length === 0 && (
+        <div className="text-center py-10 px-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-800 border border-zinc-700 mb-4">
+            <span className="text-2xl">🎁</span>
+          </div>
+          <h3 className="text-lg font-semibold text-amber-400 mb-1">Keine Claims gefunden</h3>
+          <p className="text-zinc-400 text-sm max-w-md mx-auto">
+            Hier erscheinen Social Media Claims, sobald ein D.FAITH-Transfer von der Claim-Adresse eingeht.
+          </p>
         </div>
       )}
 
