@@ -116,34 +116,63 @@ export default function HistoryTab() {
         continue;
       }
       
-      // REGEL 2: CLAIMS (Social Media)
+      // REGEL 2: CLAIMS (Social Media) - VERBESSERTE ERKENNUNG
       // Token FROM Claim-Adresse + ETH (0.0000010) nach Claim-Eingang
       if (tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() && tx.type === "claim") {
         console.log("🎁 Claim erkannt, suche nach ETH...");
+        console.log("🎁 Claim Details:", {
+          token: tx.token,
+          amount: tx.amount,
+          amountRaw: tx.amountRaw,
+          address: tx.address,
+          hash: tx.hash,
+          timestamp: tx.timestamp
+        });
         
-        // Suche nach ETH-Transaktion (0.0000010) NACH dem Claim
+        // Suche nach ETH-Transaktion (0.0000010) NACH dem Claim - ERWEITERTE SUCHE
         const ethAfterClaim = sorted.find(otherTx => {
-          return (
+          const isValidEth = (
             !processed.has(otherTx.id) &&
             otherTx.id !== tx.id &&
             otherTx.token === "ETH" &&
+            otherTx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() && // Auch ETH muss von Claim-Adresse kommen
             Math.abs(otherTx.amountRaw - 0.0000010) < 0.0000001 && // Exakter ETH-Betrag
-            otherTx.timestamp >= tx.timestamp && // ETH NACH Claim
-            otherTx.timestamp - tx.timestamp <= 300000 // Max 5 Minuten später
+            Math.abs(otherTx.timestamp - tx.timestamp) <= 300000 // Max 5 Minuten Differenz (vor oder nach)
           );
+          
+          if (isValidEth) {
+            console.log("🎁 Passender ETH für Claim gefunden:", {
+              ethAmount: otherTx.amount,
+              ethAmountRaw: otherTx.amountRaw,
+              timeDiff: otherTx.timestamp - tx.timestamp,
+              address: otherTx.address
+            });
+          }
+          
+          return isValidEth;
         });
         
         if (ethAfterClaim) {
-          console.log("✅ Claim-Gruppe:", {
+          console.log("✅ Claim-Gruppe erstellt:", {
             token: tx.token,
             tokenAmount: tx.amount,
-            ethAmount: ethAfterClaim.amount
+            ethAmount: ethAfterClaim.amount,
+            groupSize: 2
           });
           grouped.push([tx, ethAfterClaim]);
           processed.add(tx.id);
           processed.add(ethAfterClaim.id);
         } else {
-          console.log("❌ Kein passender ETH für Claim gefunden");
+          console.log("❌ Kein passender ETH für Claim gefunden - als Einzeltransaktion");
+          console.log("🔍 Verfügbare ETH-Transaktionen von Claim-Adresse:", 
+            sorted.filter(t => t.token === "ETH" && t.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase())
+              .map(t => ({
+                amount: t.amount,
+                amountRaw: t.amountRaw,
+                timestamp: t.timestamp,
+                timeDiff: t.timestamp - tx.timestamp
+              }))
+          );
           grouped.push(tx);
           processed.add(tx.id);
         }
@@ -466,7 +495,17 @@ export default function HistoryTab() {
           let type: "send" | "receive" | "buy" | "sell" | "shop" | "claim";
           let address = isReceived ? transfer.from : transfer.to;
           
-          // Claim-Erkennung (höchste Priorität nach Shop) - auch für ETH
+          // Token bestimmen (früh, für besseres Debugging)
+          let token = transfer.asset || "ETH";
+          if (transfer.rawContract?.address) {
+            if (transfer.rawContract.address.toLowerCase() === DFAITH_TOKEN.toLowerCase()) {
+              token = "D.FAITH";
+            } else if (transfer.rawContract.address.toLowerCase() === DINVEST_TOKEN.toLowerCase()) {
+              token = "D.INVEST";
+            }
+          }
+          
+          // Claim-Erkennung (höchste Priorität nach Shop) - VERBESSERTE ERKENNUNG
           if (fromAddress === CLAIM_ADDRESS.toLowerCase() && isReceived) {
             // Transaktion von Claim-Adresse = Social Media Claim
             type = "claim";
@@ -476,7 +515,9 @@ export default function HistoryTab() {
               from: fromAddress,
               to: toAddress,
               asset: transfer.asset,
-              value: transfer.value
+              value: transfer.value,
+              token: token,
+              isETH: !transfer.rawContract?.address
             });
           }
           // Shop-Kauf Erkennung
@@ -507,8 +548,7 @@ export default function HistoryTab() {
             type = isReceived ? "receive" : "send";
           }
           
-          // Token und Betrag formatieren
-          let token = transfer.asset || "ETH";
+          // Token und Betrag formatieren (token bereits oben definiert)
           let amount = transfer.value || "0";
           let amountRaw = 0;
           
@@ -585,6 +625,35 @@ export default function HistoryTab() {
         .slice(0, 50); // Zeige die neuesten 50 Transaktionen
 
       setTransactions(mappedTransactions);
+      
+      // DEBUG: Zeige alle Claims
+      const allClaims = mappedTransactions.filter(tx => tx.type === "claim");
+      console.log("🎁 ALLE ERKANNTEN CLAIMS:", allClaims.length);
+      allClaims.forEach((claim, index) => {
+        console.log(`🎁 Claim ${index + 1}:`, {
+          token: claim.token,
+          amount: claim.amount,
+          amountRaw: claim.amountRaw,
+          time: claim.time,
+          address: claim.address,
+          hash: claim.hash.slice(0, 10)
+        });
+      });
+      
+      // DEBUG: Zeige alle ETH-Transaktionen von Claim-Adresse
+      const claimEthTxs = mappedTransactions.filter(tx => 
+        tx.token === "ETH" && 
+        tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase()
+      );
+      console.log("💰 ETH-Transaktionen von Claim-Adresse:", claimEthTxs.length);
+      claimEthTxs.forEach((ethTx, index) => {
+        console.log(`💰 ETH ${index + 1}:`, {
+          amount: ethTx.amount,
+          amountRaw: ethTx.amountRaw,
+          time: ethTx.time,
+          type: ethTx.type
+        });
+      });
       
       // Statistiken
       setStats({
