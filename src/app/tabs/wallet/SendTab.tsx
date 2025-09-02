@@ -107,10 +107,10 @@ function TokenTransferModal({
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="bg-zinc-900 rounded-xl p-3 sm:p-6 max-w-sm w-full border border-amber-400 max-h-[85vh] overflow-y-auto my-4 relative">
-        {/* Header */}
-        <div className="flex items-center justify-end mb-2">
+        {/* Header - Sticky X Button */}
+        <div className="sticky top-0 z-10 bg-zinc-900 flex items-center justify-end mb-2 -mx-3 -mt-3 px-3 pt-3 sm:-mx-6 sm:-mt-6 sm:px-6 sm:pt-6">
           <button 
-            className="p-2 text-amber-400 hover:text-yellow-300 hover:bg-zinc-800 rounded-lg transition-all flex-shrink-0"
+            className="p-2 text-amber-400 hover:text-yellow-300 hover:bg-zinc-800 rounded-lg transition-all flex-shrink-0 shadow-lg"
             onClick={onClose}
             disabled={isSending}
           >
