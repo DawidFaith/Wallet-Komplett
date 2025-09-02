@@ -68,7 +68,7 @@ export default function HistoryTab() {
   // Nur verbundene Wallet verwenden - keine Demo-Daten
   const userAddress = account?.address;
 
-  // Präzise Swap-Gruppierung und korrekte Claim-Erkennung
+  // Präzise Swap-Gruppierung und korrekte Claim-Erkennung - KOMPLETT NEU
   const filteredAndSortedTransactions = useMemo(() => {
     let filtered = transactions;
     
@@ -90,174 +90,174 @@ export default function HistoryTab() {
       }
     });
     
-    // Intelligente Swap-Gruppierung: Berücksichtigt komplexe Transaktionsmuster
+    // NEUE GRUPPIERUNGSLOGIK - Schritt für Schritt
     const grouped: (Transaction | Transaction[])[] = [];
     const processed = new Set<string>();
+    
+    console.log("🔍 Starte Gruppierung mit", sorted.length, "Transaktionen");
     
     for (const tx of sorted) {
       if (processed.has(tx.id)) continue;
       
-      // Sehr enge Zeittoleranz für echte Swaps - erweitert für 3-Transaktionen-Swaps
-      const timeWindow = 120000; // 2 Minuten für komplexe 3-Transaktionen-Swaps
-      
-      // Suche nach ALLEN verwandten Transaktionen für komplexe Swaps
-      const relatedTransactions = sorted.filter(otherTx => {
-        if (otherTx.id === tx.id || processed.has(otherTx.id)) return false;
-        
-        const timeDiff = Math.abs(otherTx.timestamp - tx.timestamp);
-        
-        // Gleicher Hash = definitiv gleiche Transaktion (Multi-Asset Transfer)
-        if (tx.hash === otherTx.hash) {
-          return true;
-        }
-        
-        // Social Media Claims + ETH Gruppierung (präzise Betragserkennung)
-        const isClaimWithEth = (
-          // ETH mit exaktem Claim-Betrag von Claim-Adresse
-          ((tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() && tx.token === "ETH" && tx.amountRaw === 0.0000010) &&
-           (otherTx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() && otherTx.token !== "ETH")) ||
-          // Oder umgekehrt: Token-Claim mit nachfolgendem ETH
-          ((otherTx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() && otherTx.token === "ETH" && otherTx.amountRaw === 0.0000010) &&
-           (tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() && tx.token !== "ETH"))
-        );
-        
-        // D.FAITH/D.INVEST Verkauf: Minus Token + Plus ETH vom Pool + Gas ETH
-        const isTokenSale = (
-          timeDiff <= timeWindow &&
-          (
-            // Fall 1: tx = minus Token, otherTx = plus ETH vom Pool
-            ((tx.token === "D.FAITH" || tx.token === "D.INVEST") && tx.amountRaw < 0 &&
-             otherTx.token === "ETH" && otherTx.amountRaw > 0 &&
-             (otherTx.address.toLowerCase() === DFAITH_POOL.toLowerCase() || 
-              otherTx.address.toLowerCase() === DINVEST_POOL.toLowerCase())) ||
-            
-            // Fall 2: tx = plus ETH vom Pool, otherTx = minus Token  
-            ((otherTx.token === "D.FAITH" || otherTx.token === "D.INVEST") && otherTx.amountRaw < 0 &&
-             tx.token === "ETH" && tx.amountRaw > 0 &&
-             (tx.address.toLowerCase() === DFAITH_POOL.toLowerCase() || 
-              tx.address.toLowerCase() === DINVEST_POOL.toLowerCase())) ||
-            
-            // Fall 3: Gas-ETH zu einer Token-Verkaufstransaktion
-            ((tx.token === "D.FAITH" || tx.token === "D.INVEST") && tx.amountRaw < 0 &&
-             otherTx.token === "ETH" && otherTx.amountRaw < 0) || // Gas ETH
-            ((otherTx.token === "D.FAITH" || otherTx.token === "D.INVEST") && otherTx.amountRaw < 0 &&
-             tx.token === "ETH" && tx.amountRaw < 0) // Gas ETH
-          )
-        );
-        
-        // D.FAITH/D.INVEST Kauf: Minus ETH + Plus Token vom Pool
-        const isTokenPurchase = (
-          timeDiff <= timeWindow &&
-          (
-            // Fall 1: tx = minus ETH, otherTx = plus Token vom Pool
-            (tx.token === "ETH" && tx.amountRaw < 0 &&
-             (otherTx.token === "D.FAITH" || otherTx.token === "D.INVEST") && otherTx.amountRaw > 0 &&
-             (otherTx.address.toLowerCase() === DFAITH_POOL.toLowerCase() || 
-              otherTx.address.toLowerCase() === DINVEST_POOL.toLowerCase())) ||
-            
-            // Fall 2: tx = plus Token vom Pool, otherTx = minus ETH
-            ((tx.token === "D.FAITH" || tx.token === "D.INVEST") && tx.amountRaw > 0 &&
-             (tx.address.toLowerCase() === DFAITH_POOL.toLowerCase() || 
-              tx.address.toLowerCase() === DINVEST_POOL.toLowerCase()) &&
-             otherTx.token === "ETH" && otherTx.amountRaw < 0)
-          )
-        );
-        
-        return isClaimWithEth || isTokenSale || isTokenPurchase;
+      console.log("📝 Analysiere Transaktion:", {
+        token: tx.token,
+        amount: tx.amount,
+        type: tx.type,
+        address: tx.address.slice(0, 10),
+        timestamp: new Date(tx.timestamp).toLocaleTimeString()
       });
       
-      if (relatedTransactions.length > 0) {
-        // Erstelle die Gruppe zuerst
-        const group = [tx, ...relatedTransactions];
-        
-        // Bestimme ob es eine Claim-Gruppe ist
-        const isClaimGroup = group.some(t => t.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase());
-        
-        // Sortiere die Gruppe
-        group.sort((a, b) => {
-          if (isClaimGroup) {
-            // Bei Claims: Token zuerst, dann ETH
-            if (a.token !== "ETH" && b.token === "ETH") return -1;
-            if (a.token === "ETH" && b.token !== "ETH") return 1;
-            return a.timestamp - b.timestamp;
-          } else {
-            // Bei Swaps: Sortiere logisch (Token -> ETH oder ETH -> Token)
-            // D.FAITH/D.INVEST Transaktionen zuerst, dann ETH
-            const aIsToken = a.token === "D.FAITH" || a.token === "D.INVEST";
-            const bIsToken = b.token === "D.FAITH" || b.token === "D.INVEST";
-            
-            if (aIsToken && !bIsToken) return -1;
-            if (!aIsToken && bIsToken) return 1;
-            
-            // Dann nach Betrag sortieren (negative zuerst)
-            if (a.amountRaw < 0 && b.amountRaw > 0) return -1;
-            if (a.amountRaw > 0 && b.amountRaw < 0) return 1;
-            
-            return a.timestamp - b.timestamp;
-          }
-        });
-        
-        // Nur gruppieren wenn es sinnvolle Swap-Muster sind
-        const tokenTxs = group.filter(t => t.token === "D.FAITH" || t.token === "D.INVEST");
-        const ethTxs = group.filter(t => t.token === "ETH");
-        
-        // Gruppierungsregeln:
-        // - Claims: 1 Token + 1 ETH
-        // - Kaufswaps: 1 ETH out + 1 Token in (2 Transaktionen)
-        // - Verkaufswaps: 1 Token out + 2 ETH (Gas + Erlös) (3 Transaktionen)
-        if (isClaimGroup && tokenTxs.length === 1 && ethTxs.length === 1) {
-          // Gültige Claim-Gruppe
-          grouped.push(group);
-          group.forEach(t => processed.add(t.id));
-          
-          console.log("🎁 Social Media Claim-Gruppe:", group.map(t => ({
-            token: t.token,
-            amount: t.amount,
-            type: t.type
-          })));
-        } else if (!isClaimGroup && tokenTxs.length >= 1 && ethTxs.length >= 1 && group.length >= 2 && group.length <= 3) {
-          // Gültige Swap-Gruppe (2-3 Transaktionen)
-          // 2 Transaktionen = Kauf (ETH -> Token)
-          // 3 Transaktionen = Verkauf (Token -> ETH Gas + ETH Erlös)
-          grouped.push(group);
-          group.forEach(t => processed.add(t.id));
-          
-          console.log(`🔄 ${group.length}-Transaktionen Swap-Gruppe:`, group.map(t => ({
-            token: t.token,
-            amount: t.amount,
-            amountRaw: t.amountRaw,
-            type: t.type,
-            hash: t.hash.slice(0, 10),
-            address: t.address === DFAITH_POOL ? "D.FAITH-Pool" : 
-                    t.address === DINVEST_POOL ? "D.INVEST-Pool" : 
-                    t.address.slice(0, 10),
-            direction: t.amountRaw > 0 ? "+" : "-"
-          })));
-        } else {
-          // Zu komplex oder ungültig - als einzelne Transaktionen behandeln
-          group.forEach(singleTx => {
-            if (!processed.has(singleTx.id)) {
-              grouped.push(singleTx);
-              processed.add(singleTx.id);
-            }
-          });
-        }
-      } else {
-        // Einzelne Transaktion (inkl. Claims)
+      // REGEL 1: SHOP-KÄUFE
+      // Einzeltransaktion TO Shop-Adresse
+      if (tx.address.toLowerCase() === SHOP_ADDRESS.toLowerCase() && tx.type === "shop") {
+        console.log("🛍️ Shop-Kauf erkannt");
         grouped.push(tx);
         processed.add(tx.id);
+        continue;
+      }
+      
+      // REGEL 2: CLAIMS (Social Media)
+      // Token FROM Claim-Adresse + ETH (0.0000010) nach Claim-Eingang
+      if (tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() && tx.type === "claim") {
+        console.log("🎁 Claim erkannt, suche nach ETH...");
         
-        // Debug für Claims
-        if (tx.type === 'claim') {
-          console.log("🎁 Social Media Claim erkannt:", {
+        // Suche nach ETH-Transaktion (0.0000010) NACH dem Claim
+        const ethAfterClaim = sorted.find(otherTx => {
+          return (
+            !processed.has(otherTx.id) &&
+            otherTx.id !== tx.id &&
+            otherTx.token === "ETH" &&
+            Math.abs(otherTx.amountRaw - 0.0000010) < 0.0000001 && // Exakter ETH-Betrag
+            otherTx.timestamp >= tx.timestamp && // ETH NACH Claim
+            otherTx.timestamp - tx.timestamp <= 300000 // Max 5 Minuten später
+          );
+        });
+        
+        if (ethAfterClaim) {
+          console.log("✅ Claim-Gruppe:", {
             token: tx.token,
-            amount: tx.amount,
-            address: tx.address,
-            time: tx.time
+            tokenAmount: tx.amount,
+            ethAmount: ethAfterClaim.amount
           });
+          grouped.push([tx, ethAfterClaim]);
+          processed.add(tx.id);
+          processed.add(ethAfterClaim.id);
+        } else {
+          console.log("❌ Kein passender ETH für Claim gefunden");
+          grouped.push(tx);
+          processed.add(tx.id);
+        }
+        continue;
+      }
+      
+      // REGEL 3: D.FAITH KAUF (Swap)
+      // ETH → Pool, D.FAITH ← Pool (gleiche Zeit, verzögert möglich)
+      if ((tx.token === "ETH" && tx.amountRaw < 0) || 
+          (tx.token === "D.FAITH" && tx.amountRaw > 0 && tx.address.toLowerCase() === DFAITH_POOL.toLowerCase())) {
+        
+        console.log("🛒 Möglicher D.FAITH Kauf, suche nach Partner...");
+        
+        // Suche nach dem Partner (ETH raus oder D.FAITH rein vom Pool)
+        const partner = sorted.find(otherTx => {
+          if (otherTx.id === tx.id || processed.has(otherTx.id)) return false;
+          
+          const timeDiff = Math.abs(otherTx.timestamp - tx.timestamp);
+          if (timeDiff > 120000) return false; // Max 2 Minuten
+          
+          // Fall 1: tx = ETH raus, partner = D.FAITH rein vom Pool
+          if (tx.token === "ETH" && tx.amountRaw < 0) {
+            return (
+              otherTx.token === "D.FAITH" &&
+              otherTx.amountRaw > 0 &&
+              otherTx.address.toLowerCase() === DFAITH_POOL.toLowerCase()
+            );
+          }
+          
+          // Fall 2: tx = D.FAITH rein vom Pool, partner = ETH raus
+          if (tx.token === "D.FAITH" && tx.amountRaw > 0) {
+            return (
+              otherTx.token === "ETH" &&
+              otherTx.amountRaw < 0
+            );
+          }
+          
+          return false;
+        });
+        
+        if (partner) {
+          console.log("✅ D.FAITH Kauf-Gruppe:", {
+            eth: tx.token === "ETH" ? tx.amount : partner.amount,
+            dfaith: tx.token === "D.FAITH" ? tx.amount : partner.amount
+          });
+          grouped.push([tx, partner]);
+          processed.add(tx.id);
+          processed.add(partner.id);
+          continue;
         }
       }
+      
+      // REGEL 4: D.FAITH VERKAUF (Swap)
+      // D.FAITH → Pool, ETH ← Pool (gleicher Hash) + Gas ETH (nach Pool-Eingang)
+      if (tx.token === "D.FAITH" && tx.amountRaw < 0 && tx.address.toLowerCase() === DFAITH_POOL.toLowerCase()) {
+        
+        console.log("💰 D.FAITH Verkauf erkannt, suche nach ETH vom Pool...");
+        
+        // 1. Suche ETH vom Pool (gleicher Hash = Multi-Asset Transfer)
+        const ethFromPool = sorted.find(otherTx => {
+          return (
+            !processed.has(otherTx.id) &&
+            otherTx.id !== tx.id &&
+            otherTx.hash === tx.hash && // GLEICHER HASH!
+            otherTx.token === "ETH" &&
+            otherTx.amountRaw > 0 &&
+            otherTx.address.toLowerCase() === DFAITH_POOL.toLowerCase()
+          );
+        });
+        
+        if (ethFromPool) {
+          console.log("✅ ETH vom Pool gefunden (gleicher Hash)");
+          
+          // 2. Suche Gas ETH NACH dem Pool-Eingang
+          const gasEth = sorted.find(otherTx => {
+            return (
+              !processed.has(otherTx.id) &&
+              otherTx.id !== tx.id &&
+              otherTx.id !== ethFromPool.id &&
+              otherTx.token === "ETH" &&
+              otherTx.amountRaw < 0 && // Gas ist immer minus
+              otherTx.timestamp >= ethFromPool.timestamp && // NACH Pool-ETH
+              otherTx.timestamp - ethFromPool.timestamp <= 300000 // Max 5 Minuten später
+            );
+          });
+          
+          if (gasEth) {
+            console.log("✅ D.FAITH Verkauf-Gruppe (3 Transaktionen):", {
+              dfaithOut: tx.amount,
+              ethIn: ethFromPool.amount,
+              gasEth: gasEth.amount
+            });
+            grouped.push([tx, ethFromPool, gasEth]);
+            processed.add(tx.id);
+            processed.add(ethFromPool.id);
+            processed.add(gasEth.id);
+          } else {
+            console.log("⚠️ Kein Gas ETH gefunden, nur 2er Gruppe");
+            grouped.push([tx, ethFromPool]);
+            processed.add(tx.id);
+            processed.add(ethFromPool.id);
+          }
+          continue;
+        }
+      }
+      
+      // REGEL 5 & 6: EMPFANGEN & SENDEN
+      // Einzeltransaktionen ohne Gruppierung
+      console.log("📄 Einzeltransaktion:", tx.type);
+      grouped.push(tx);
+      processed.add(tx.id);
     }
+    
+    console.log("� Gruppierung abgeschlossen:", grouped.length, "Gruppen");
     
     return grouped;
   }, [transactions, filter, sortBy]);
