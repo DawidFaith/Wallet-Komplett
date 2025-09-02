@@ -60,7 +60,7 @@ export default function HistoryTab() {
   // Nur verbundene Wallet verwenden - keine Demo-Daten
   const userAddress = account?.address;
 
-  // Gefilterte und sortierte Transaktionen
+  // Gefilterte und sortierte Transaktionen mit Swap-Gruppierung
   const filteredAndSortedTransactions = useMemo(() => {
     let filtered = transactions;
     
@@ -82,7 +82,42 @@ export default function HistoryTab() {
       }
     });
     
-    return sorted;
+    // Swap-Gruppierung: Fasse Transaktionen mit gleicher Zeit zusammen
+    const grouped: (Transaction | Transaction[])[] = [];
+    const processed = new Set<string>();
+    
+    for (const tx of sorted) {
+      if (processed.has(tx.id)) continue;
+      
+      // Suche nach Transaktionen zur gleichen Zeit (±1 Minute Toleranz)
+      const sameTimeTransactions = sorted.filter(otherTx => 
+        otherTx.id !== tx.id && 
+        !processed.has(otherTx.id) &&
+        Math.abs(otherTx.timestamp - tx.timestamp) <= 60000 && // 1 Minute Toleranz
+        (
+          // Swap-Paare: buy/sell mit gleicher Pool-Adresse
+          ((tx.type === 'buy' || tx.type === 'sell') && 
+           (otherTx.type === 'buy' || otherTx.type === 'sell') &&
+           tx.address.toLowerCase() === otherTx.address.toLowerCase()) ||
+          // Oder gleicher Hash (falls mehrere Asset Transfers in einer TX)
+          tx.hash === otherTx.hash
+        )
+      );
+      
+      if (sameTimeTransactions.length > 0) {
+        // Gruppiere zusammen
+        const group = [tx, ...sameTimeTransactions];
+        grouped.push(group);
+        // Markiere alle als verarbeitet
+        group.forEach(t => processed.add(t.id));
+      } else {
+        // Einzelne Transaktion
+        grouped.push(tx);
+        processed.add(tx.id);
+      }
+    }
+    
+    return grouped;
   }, [transactions, filter, sortBy]);
 
   // Token-Icon Hilfsfunktion
@@ -450,88 +485,201 @@ export default function HistoryTab() {
         )}
       </div>
 
-      {/* Filter - nur Transaktionstyp */}
+      {/* Filter - moderne Button-UI */}
       {!isLoading && !error && transactions.length > 0 && (
-        <div className="flex gap-2 p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/50 mb-4">
-          <select 
-            value={filter} 
-            onChange={(e) => setFilter(e.target.value as any)}
-            className="px-3 py-1 bg-zinc-700 border border-zinc-600 rounded text-sm text-white"
+        <div className="flex flex-wrap gap-2 p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/50 mb-4">
+          <span className="text-sm text-zinc-400 mr-2 flex items-center">Filter:</span>
+          
+          <button
+            onClick={() => setFilter("all")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+              filter === "all" 
+                ? "bg-amber-500 text-black shadow-lg" 
+                : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
           >
-            <option value="all">Alle</option>
-            <option value="buy">Gekauft</option>
-            <option value="sell">Verkauft</option>
-            <option value="receive">Empfangen</option>
-            <option value="send">Gesendet</option>
-          </select>
+            Alle
+          </button>
+          
+          <button
+            onClick={() => setFilter("buy")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
+              filter === "buy" 
+                ? "bg-blue-500 text-white shadow-lg" 
+                : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
+          >
+            🛒 Gekauft
+          </button>
+          
+          <button
+            onClick={() => setFilter("sell")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
+              filter === "sell" 
+                ? "bg-orange-500 text-white shadow-lg" 
+                : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
+          >
+            💰 Verkauft
+          </button>
+          
+          <button
+            onClick={() => setFilter("receive")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
+              filter === "receive" 
+                ? "bg-green-500 text-white shadow-lg" 
+                : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
+          >
+            ↓ Empfangen
+          </button>
+          
+          <button
+            onClick={() => setFilter("send")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
+              filter === "send" 
+                ? "bg-red-500 text-white shadow-lg" 
+                : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
+          >
+            ↑ Gesendet
+          </button>
         </div>
       )}
 
       {/* Transaktionsliste */}
       {!isLoading && !error && filteredAndSortedTransactions.length > 0 && (
         <div className="space-y-4 max-h-96 overflow-y-auto">
-          {filteredAndSortedTransactions.map((tx) => (
-            <div key={tx.id} className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-4 border border-zinc-700 hover:border-zinc-600 transition-all hover:shadow-lg">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  {/* Token Icon mit Type Overlay */}
-                  <div className="relative">
-                    <img 
-                      src={tx.tokenIcon} 
-                      alt={tx.token} 
-                      className="w-12 h-12 rounded-full border-2 border-zinc-600"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/ETH.png";
-                      }}
-                    />
-                    <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-r ${getTransactionColor(tx.type)} flex items-center justify-center text-xs border-2 border-zinc-800`}>
-                      {getTransactionIcon(tx.type)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-medium text-amber-400 capitalize text-lg">
-                      {tx.type === "send" && "Gesendet"}
-                      {tx.type === "receive" && "Empfangen"}
-                      {tx.type === "buy" && "Gekauft"}
-                      {tx.type === "sell" && "Verkauft"}
-                    </div>
-                    <div className="text-xs text-zinc-500">{tx.time}</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className={`font-bold text-lg ${getAmountColor(tx.amount)}`}>
-                    {tx.amount}
-                  </div>
-                  <div className="text-sm font-semibold text-zinc-400">{tx.token}</div>
-                </div>
-              </div>
+          {filteredAndSortedTransactions.map((item, index) => {
+            // Prüfe ob es eine Gruppe oder eine einzelne Transaktion ist
+            if (Array.isArray(item)) {
+              // Gruppierte Swap-Transaktionen
+              const group = item as Transaction[];
+              const mainTx = group[0]; // Haupttransaktion für Display
               
-              <div className="text-sm text-zinc-400 space-y-2 bg-zinc-900/50 rounded-lg p-3">
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">
-                    {tx.type === "send" ? "An:" : 
-                     tx.type === "receive" ? "Von:" :
-                     tx.type === "buy" ? "Über Pool:" :
-                     tx.type === "sell" ? "An Pool:" : "Adresse:"}
-                  </span>
-                  <span className="font-mono text-amber-400">
-                    {tx.type === "buy" || tx.type === "sell" ? 
-                      (tx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ? "D.FAITH Pool" :
-                       tx.address.toLowerCase() === DINVEST_POOL.toLowerCase() ? "D.INVEST Pool" :
-                       formatAddress(tx.address)) :
-                      formatAddress(tx.address)
-                    }
-                  </span>
+              return (
+                <div key={`group-${index}`} className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-4 border border-zinc-700 hover:border-zinc-600 transition-all hover:shadow-lg">
+                  {/* Swap Header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        {/* Zeige Icon für Swap */}
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-400 to-purple-600 flex items-center justify-center">
+                          <span className="text-white text-lg">🔄</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-medium text-purple-400 text-lg">
+                          Swap ({group.length} Transaktionen)
+                        </div>
+                        <div className="text-xs text-zinc-500">{mainTx.time}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-amber-400 font-bold text-lg">
+                        {group.map(tx => tx.token).join(' ⇄ ')}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Gruppierte Transaktionen anzeigen */}
+                  <div className="space-y-2 bg-zinc-900/50 rounded-lg p-3">
+                    {group.map((tx, txIndex) => (
+                      <div key={tx.id} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded">
+                        <div className="flex items-center gap-2">
+                          <img 
+                            src={tx.tokenIcon} 
+                            alt={tx.token} 
+                            className="w-6 h-6 rounded-full"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/ETH.png";
+                            }}
+                          />
+                          <span className="text-sm text-zinc-300">
+                            {tx.type === "buy" && "Gekauft"}
+                            {tx.type === "sell" && "Verkauft"}
+                            {tx.type === "send" && "Gesendet"}
+                            {tx.type === "receive" && "Empfangen"}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <div className={`text-sm font-semibold ${getAmountColor(tx.amount)}`}>
+                            {tx.amount} {tx.token}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Tx Hash:</span>
-                  <span className="font-mono text-blue-400">
-                    {formatAddress(tx.hash)}
-                  </span>
+              );
+            } else {
+              // Einzelne Transaktion
+              const tx = item as Transaction;
+              
+              return (
+                <div key={tx.id} className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-4 border border-zinc-700 hover:border-zinc-600 transition-all hover:shadow-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      {/* Token Icon mit Type Overlay */}
+                      <div className="relative">
+                        <img 
+                          src={tx.tokenIcon} 
+                          alt={tx.token} 
+                          className="w-12 h-12 rounded-full"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/ETH.png";
+                          }}
+                        />
+                        <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-r ${getTransactionColor(tx.type)} flex items-center justify-center text-xs border-2 border-zinc-800`}>
+                          {getTransactionIcon(tx.type)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-medium text-amber-400 capitalize text-lg">
+                          {tx.type === "send" && "Gesendet"}
+                          {tx.type === "receive" && "Empfangen"}
+                          {tx.type === "buy" && "Gekauft"}
+                          {tx.type === "sell" && "Verkauft"}
+                        </div>
+                        <div className="text-xs text-zinc-500">{tx.time}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`font-bold text-lg ${getAmountColor(tx.amount)}`}>
+                        {tx.amount}
+                      </div>
+                      <div className="text-sm font-semibold text-zinc-400">{tx.token}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="text-sm text-zinc-400 space-y-2 bg-zinc-900/50 rounded-lg p-3">
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">
+                        {tx.type === "send" ? "An:" : 
+                         tx.type === "receive" ? "Von:" :
+                         tx.type === "buy" ? "Über Pool:" :
+                         tx.type === "sell" ? "An Pool:" : "Adresse:"}
+                      </span>
+                      <span className="font-mono text-amber-400">
+                        {tx.type === "buy" || tx.type === "sell" ? 
+                          (tx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ? "D.FAITH Pool" :
+                           tx.address.toLowerCase() === DINVEST_POOL.toLowerCase() ? "D.INVEST Pool" :
+                           formatAddress(tx.address)) :
+                          formatAddress(tx.address)
+                        }
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">Tx Hash:</span>
+                      <span className="font-mono text-blue-400">
+                        {formatAddress(tx.hash)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              );
+            }
+          })}
         </div>
       )}
 
