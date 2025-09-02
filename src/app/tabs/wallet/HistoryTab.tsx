@@ -1,39 +1,99 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useState, useEffect } from "react";
 import { Button } from "../../../../components/ui/button";
-import { FaPaperPlane, FaArrowDown, FaExchangeAlt, FaCoins } from "react-icons/fa";
+import { FaPaperPlane, FaArrowDown, FaExchangeAlt, FaCoins, FaFilter, FaSort } from "react-icons/fa";
 import { useActiveAccount } from "thirdweb/react";
 
-// Token-Adressen
+// Token-Adressen und Konfiguration
 const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
 const DINVEST_TOKEN = "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb";
+
+// Token-Icons Mapping
+const TOKEN_ICONS: { [key: string]: string } = {
+  "D.FAITH": "/D.FAITH.png",
+  "D.INVEST": "/D.INVEST.png", 
+  "ETH": "/ETH.png",
+  "WETH": "/ETH.png",
+  "USDC": "/vercel.svg", // Placeholder
+  "DEFAULT": "/thirdweb.svg"
+};
 
 type Transaction = {
   id: string;
   type: "send" | "receive";
   token: string;
+  tokenIcon: string;
   amount: string;
+  amountRaw: number;
   address: string;
   hash: string;
   time: string;
+  timestamp: number;
   status: "success" | "pending" | "failed";
+  blockNumber: string;
 };
+
+type FilterType = "all" | "send" | "receive";
+type SortType = "newest" | "oldest" | "amount";
 
 export default function HistoryTab() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>("");
+  const [filter, setFilter] = useState<FilterType>("all");
+  const [sortBy, setSortBy] = useState<SortType>("newest");
   const [stats, setStats] = useState<{
     transactionCount: number;
     totalValue: number;
-    avgGas: number;
+    sends: number;
+    receives: number;
   } | null>(null);
   const account = useActiveAccount();
 
   // Nur verbundene Wallet verwenden - keine Demo-Daten
   const userAddress = account?.address;
 
-  /*
+  // Gefilterte und sortierte Transaktionen
+  const filteredAndSortedTransactions = useMemo(() => {
+    let filtered = transactions;
+    
+    // Filter anwenden
+    if (filter !== 'all') {
+      filtered = filtered.filter(tx => tx.type === filter);
+    }
+    
+    // Sortierung anwenden
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'oldest':
+          return a.timestamp - b.timestamp;
+        case 'amount':
+          return Math.abs(b.amountRaw) - Math.abs(a.amountRaw);
+        case 'newest':
+        default:
+          return b.timestamp - a.timestamp;
+      }
+    });
+    
+    return sorted;
+  }, [transactions, filter, sortBy]);
+
+  // Token-Icon Hilfsfunktion
+  const getTokenIcon = (token: string) => {
+    switch (token.toUpperCase()) {
+      case "D.FAITH":
+        return "/D.FAITH.png";
+      case "D.INVEST":
+        return "/D.INVEST.png";
+      case "ETH":
+        return "/ETH.png";
+      case "WETH":
+        return "/ETH.png"; // Verwende ETH Icon für WETH
+      default:
+        return "/ETH.png"; // Fallback auf ETH Icon
+    }
+  };  /*
   🔧 SETUP-OPTIONEN FÜR ECHTE BLOCKCHAIN-DATEN:
   
   1. ALCHEMY (Empfohlen):
@@ -83,7 +143,7 @@ export default function HistoryTab() {
     try {
       const alchemyUrl = API_OPTIONS.ALCHEMY;
       
-      // Hole ausgehende Transaktionen
+      // Hole ausgehende Transaktionen - ab August 2025 für aktuelle Daten
       const outgoingResponse = await fetch(alchemyUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -91,19 +151,19 @@ export default function HistoryTab() {
           jsonrpc: '2.0',
           method: 'alchemy_getAssetTransfers',
           params: [{
-            fromBlock: "0x0",
+            fromBlock: "0x2000000", // Ab ca. August 2025 für aktuelle Transaktionen
             toBlock: "latest",
             fromAddress: address,
             category: ["external", "erc20"],
             withMetadata: true,
-            excludeZeroValue: true,
-            maxCount: "0x32"
+            excludeZeroValue: false, // Auch 0-Wert Transaktionen anzeigen
+            maxCount: "0x64" // Mehr Transaktionen laden (100)
           }],
           id: 1
         })
       });
 
-      // Hole eingehende Transaktionen
+      // Hole eingehende Transaktionen - ab August 2025 für aktuelle Daten
       const incomingResponse = await fetch(alchemyUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -111,13 +171,13 @@ export default function HistoryTab() {
           jsonrpc: '2.0',
           method: 'alchemy_getAssetTransfers',
           params: [{
-            fromBlock: "0x0",
+            fromBlock: "0x2000000", // Ab ca. August 2025 für aktuelle Transaktionen
             toBlock: "latest",
             toAddress: address,
             category: ["external", "erc20"],
             withMetadata: true,
-            excludeZeroValue: true,
-            maxCount: "0x32"
+            excludeZeroValue: false, // Auch 0-Wert Transaktionen anzeigen
+            maxCount: "0x64" // Mehr Transaktionen laden (100)
           }],
           id: 2
         })
@@ -202,41 +262,53 @@ export default function HistoryTab() {
           // Token und Betrag formatieren
           let token = transfer.asset || "ETH";
           let amount = transfer.value || "0";
+          let amountRaw = 0;
           
           // Spezielle Behandlung für unsere Token
           if (transfer.rawContract?.address) {
             if (transfer.rawContract.address.toLowerCase() === DFAITH_TOKEN.toLowerCase()) {
               token = "D.FAITH";
               const value = parseFloat(transfer.value || "0");
+              amountRaw = value;
               amount = (type === "receive" ? "+" : "-") + value.toFixed(2);
             } else if (transfer.rawContract.address.toLowerCase() === DINVEST_TOKEN.toLowerCase()) {
               token = "D.INVEST";
               const value = parseInt(transfer.value || "0");
+              amountRaw = value;
               amount = (type === "receive" ? "+" : "-") + value.toString();
             } else {
-              amount = (type === "receive" ? "+" : "-") + (parseFloat(transfer.value || "0")).toFixed(6);
+              const value = parseFloat(transfer.value || "0");
+              amountRaw = value;
+              amount = (type === "receive" ? "+" : "-") + value.toFixed(6);
             }
           } else {
             // ETH-Transaktion
-            amount = (type === "receive" ? "+" : "-") + (parseFloat(transfer.value || "0")).toFixed(6);
+            const value = parseFloat(transfer.value || "0");
+            amountRaw = value;
+            amount = (type === "receive" ? "+" : "-") + value.toFixed(6);
           }
           
           return {
             id: transfer.uniqueId || transfer.hash || Math.random().toString(),
             type,
             token,
+            tokenIcon: getTokenIcon(token),
             amount,
+            amountRaw,
             address: address || "",
             hash: transfer.hash || "",
             time,
+            timestamp: timestamp.getTime(),
             status: "success" as const,
+            blockNumber: transfer.blockNum || "",
           };
         })
-        .filter((tx: Transaction) => tx.hash && tx.address)
-        .sort((a: Transaction, b: Transaction) => {
-          return new Date(b.time).getTime() - new Date(a.time).getTime();
+        .filter((tx) => tx.hash && tx.address)
+        .sort((a, b) => {
+          // Verwende die originalen Metadaten für bessere Sortierung
+          return b.timestamp - a.timestamp;
         })
-        .slice(0, 50);
+        .slice(0, 50); // Zeige die neuesten 50 Transaktionen
 
       setTransactions(mappedTransactions);
       
@@ -244,10 +316,10 @@ export default function HistoryTab() {
       setStats({
         transactionCount: mappedTransactions.length,
         totalValue: mappedTransactions.reduce((sum, tx) => {
-          const value = parseFloat(tx.amount.replace(/[+-]/g, ''));
-          return sum + (isNaN(value) ? 0 : value);
+          return sum + Math.abs(tx.amountRaw);
         }, 0),
-        avgGas: 0.001,
+        sends: mappedTransactions.filter(tx => tx.type === "send").length,
+        receives: mappedTransactions.filter(tx => tx.type === "receive").length,
       });
       
     } catch (err: any) {
@@ -311,19 +383,61 @@ export default function HistoryTab() {
         )}
       </div>
 
-      {/* Kompaktes Status Panel */}
+      {/* Status Panel ohne API Info */}
       <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/50 mb-4">
         <div className="flex justify-between items-center text-xs text-zinc-400">
           <div className="flex items-center gap-4">
-            <span>API: Thirdweb RPC (Base Chain) ✓</span>
             <span>Wallet: {userAddress ? formatAddress(userAddress) : 'Nicht verbunden'}</span>
           </div>
           <div className="flex items-center gap-4">
-            <span>Status: {isLoading ? 'Lädt...' : error ? 'Fehler' : 'Live Blockchain'}</span>
-            <span>Transaktionen: {transactions.length}</span>
+            <span>Status: {isLoading ? 'Lädt...' : error ? 'Fehler' : 'Live'}</span>
+            <span>Transaktionen: {filteredAndSortedTransactions.length}</span>
           </div>
         </div>
       </div>
+
+      {/* Filter und Sortierung */}
+      {!isLoading && !error && transactions.length > 0 && (
+        <div className="flex gap-2 p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/50 mb-4">
+          <select 
+            value={filter} 
+            onChange={(e) => setFilter(e.target.value as any)}
+            className="px-3 py-1 bg-zinc-700 border border-zinc-600 rounded text-sm text-white"
+          >
+            <option value="all">Alle Transaktionen</option>
+            <option value="receive">Nur Empfangen</option>
+            <option value="send">Nur Gesendet</option>
+          </select>
+          
+          <select 
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="px-3 py-1 bg-zinc-700 border border-zinc-600 rounded text-sm text-white"
+          >
+            <option value="newest">Neueste zuerst</option>
+            <option value="oldest">Älteste zuerst</option>
+            <option value="amount">Nach Betrag</option>
+          </select>
+        </div>
+      )}
+
+      {/* Statistiken */}
+      {!isLoading && !error && transactions.length > 0 && stats && (
+        <div className="grid grid-cols-3 gap-2 text-center text-sm mb-4">
+          <div className="p-3 bg-zinc-800/30 rounded border border-zinc-700/50">
+            <div className="text-amber-400 font-semibold text-lg">{stats.transactionCount}</div>
+            <div className="text-zinc-400 text-xs">Gesamt</div>
+          </div>
+          <div className="p-3 bg-green-900/20 rounded border border-green-800/50">
+            <div className="text-green-400 font-semibold text-lg">{stats.receives}</div>
+            <div className="text-zinc-400 text-xs">Empfangen</div>
+          </div>
+          <div className="p-3 bg-red-900/20 rounded border border-red-800/50">
+            <div className="text-red-400 font-semibold text-lg">{stats.sends}</div>
+            <div className="text-zinc-400 text-xs">Gesendet</div>
+          </div>
+        </div>
+      )}
 
       {/* Loading State */}
       {isLoading && (
@@ -354,14 +468,25 @@ export default function HistoryTab() {
       )}
 
       {/* Transaktionsliste */}
-      {!isLoading && !error && transactions.length > 0 && (
+      {!isLoading && !error && filteredAndSortedTransactions.length > 0 && (
         <div className="space-y-4 max-h-96 overflow-y-auto">
-          {transactions.map((tx) => (
+          {filteredAndSortedTransactions.map((tx) => (
             <div key={tx.id} className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-4 border border-zinc-700 hover:border-zinc-600 transition-all hover:shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${getTransactionColor(tx.type)} flex items-center justify-center shadow-lg`}>
-                    {getTransactionIcon(tx.type)}
+                  {/* Token Icon mit Type Overlay */}
+                  <div className="relative">
+                    <img 
+                      src={tx.tokenIcon} 
+                      alt={tx.token} 
+                      className="w-12 h-12 rounded-full border-2 border-zinc-600"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/ETH.png";
+                      }}
+                    />
+                    <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-r ${getTransactionColor(tx.type)} flex items-center justify-center text-xs border-2 border-zinc-800`}>
+                      {getTransactionIcon(tx.type)}
+                    </div>
                   </div>
                   <div>
                     <div className="font-medium text-amber-400 capitalize text-lg">
