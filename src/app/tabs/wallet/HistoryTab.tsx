@@ -68,7 +68,7 @@ export default function HistoryTab() {
   // Nur verbundene Wallet verwenden - keine Demo-Daten
   const userAddress = account?.address;
 
-  // Gefilterte und sortierte Transaktionen mit Swap-Gruppierung
+  // Verbesserte mobile-optimierte Swap-Gruppierung
   const filteredAndSortedTransactions = useMemo(() => {
     let filtered = transactions;
     
@@ -90,70 +90,87 @@ export default function HistoryTab() {
       }
     });
     
-    // Swap-Gruppierung: Fasse Transaktionen mit gleicher Zeit zusammen
+    // Erweiterte Swap-Gruppierung für mobile Optimierung
     const grouped: (Transaction | Transaction[])[] = [];
     const processed = new Set<string>();
     
     for (const tx of sorted) {
       if (processed.has(tx.id)) continue;
       
-      // Suche nach Transaktionen zur gleichen Zeit (±2 Minuten Toleranz für Swaps/Claims)
-      const sameTimeTransactions = sorted.filter(otherTx => 
-        otherTx.id !== tx.id && 
-        !processed.has(otherTx.id) &&
-        Math.abs(otherTx.timestamp - tx.timestamp) <= 120000 && // 2 Minuten Toleranz
-        (
-          // Swap-Paare: buy/sell mit gleicher Pool-Adresse
-          ((tx.type === 'buy' || tx.type === 'sell') && 
-           (otherTx.type === 'buy' || otherTx.type === 'sell') &&
-           tx.address.toLowerCase() === otherTx.address.toLowerCase()) ||
-          // Claim-Paare: claim mit nachfolgender ETH-Transaktion von gleicher Adresse
-          ((tx.type === 'claim' && otherTx.type === 'claim') &&
-           tx.address.toLowerCase() === otherTx.address.toLowerCase()) ||
-          // Oder gleicher Hash (falls mehrere Asset Transfers in einer TX)
-          tx.hash === otherTx.hash ||
-          // Oder Cross-Pool Swaps (verschiedene Pools zur gleichen Zeit)
-          ((tx.type === 'buy' || tx.type === 'sell') && 
-           (otherTx.type === 'buy' || otherTx.type === 'sell') &&
-           tx.address.toLowerCase() !== otherTx.address.toLowerCase()) ||
-          // Claims mit nachfolgenden ETH-Transaktionen von Claim-Adresse
-          ((tx.type === 'claim' || otherTx.type === 'claim') &&
-           (tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() || 
-            otherTx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase()))
-        )
-      );
+      // Erweiterte Zeittoleranz für bessere Swap-Erkennung
+      const timeWindow = 300000; // 5 Minuten
       
-      if (sameTimeTransactions.length > 0) {
-        // Gruppiere zusammen
-        const group = [tx, ...sameTimeTransactions];
+      const relatedTransactions = sorted.filter(otherTx => {
+        if (otherTx.id === tx.id || processed.has(otherTx.id)) return false;
+        
+        const timeDiff = Math.abs(otherTx.timestamp - tx.timestamp);
+        const isWithinTimeWindow = timeDiff <= timeWindow;
+        
+        // Präzise Swap-Erkennung: Ein negativer und ein positiver Betrag
+        const isSwapPair = (
+          isWithinTimeWindow &&
+          ((tx.amountRaw < 0 && otherTx.amountRaw > 0) || 
+           (tx.amountRaw > 0 && otherTx.amountRaw < 0))
+        );
+        
+        // Pool-basierte Swaps (gleiche oder unterschiedliche Pools)
+        const isPoolSwap = (
+          isSwapPair &&
+          ((tx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ||
+            tx.address.toLowerCase() === DINVEST_POOL.toLowerCase()) ||
+           (otherTx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ||
+            otherTx.address.toLowerCase() === DINVEST_POOL.toLowerCase()))
+        );
+        
+        // ETH <-> Token Swaps (häufigster Fall)
+        const isEthTokenSwap = (
+          isSwapPair &&
+          ((tx.token === "ETH" && otherTx.token !== "ETH") ||
+           (tx.token !== "ETH" && otherTx.token === "ETH"))
+        );
+        
+        // Token <-> Token Swaps
+        const isTokenTokenSwap = (
+          isSwapPair &&
+          tx.token !== "ETH" && otherTx.token !== "ETH" &&
+          tx.token !== otherTx.token
+        );
+        
+        // Gleiche Hash-Transaktionen
+        const isSameHash = tx.hash === otherTx.hash;
+        
+        // Shop/Claim mit ETH Kombinationen
+        const isServiceWithEth = (
+          isWithinTimeWindow &&
+          ((tx.type === 'shop' || tx.type === 'claim') && otherTx.token === 'ETH') ||
+          ((otherTx.type === 'shop' || otherTx.type === 'claim') && tx.token === 'ETH')
+        );
+        
+        return isPoolSwap || isEthTokenSwap || isTokenTokenSwap || isSameHash || isServiceWithEth;
+      });
+      
+      if (relatedTransactions.length > 0) {
+        // Erstelle Swap-Gruppe und sortiere: negative Beträge zuerst (verkauft), dann positive (gekauft)
+        const group = [tx, ...relatedTransactions].sort((a, b) => {
+          if (a.amountRaw < 0 && b.amountRaw > 0) return -1;
+          if (a.amountRaw > 0 && b.amountRaw < 0) return 1;
+          return a.timestamp - b.timestamp;
+        });
+        
         grouped.push(group);
-        // Markiere alle als verarbeitet
         group.forEach(t => processed.add(t.id));
         
-        // Debug: Log der gruppierten Swaps
         console.log("🔄 Swap-Gruppe erkannt:", group.map(t => ({
           type: t.type,
           token: t.token,
           amount: t.amount,
-          time: t.time,
-          hash: t.hash.slice(0, 10) + '...'
+          amountRaw: t.amountRaw.toFixed(4),
+          time: t.time
         })));
       } else {
         // Einzelne Transaktion
         grouped.push(tx);
         processed.add(tx.id);
-        
-        // Debug: Log für einzelne Buy/Sell/Claim ohne Partner
-        if (tx.type === 'buy' || tx.type === 'sell' || tx.type === 'claim') {
-          console.log(`⚠️ Einzelner ${tx.type} ohne Partner:`, {
-            type: tx.type,
-            token: tx.token,
-            amount: tx.amount,
-            time: tx.time,
-            address: tx.address,
-            hash: tx.hash.slice(0, 10) + '...'
-          });
-        }
       }
     }
     
@@ -555,12 +572,12 @@ export default function HistoryTab() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent mb-2">
+    <div className="flex flex-col gap-4 p-3 sm:p-6">
+      <div className="text-center mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent mb-2">
           Transaktionshistorie
         </h2>
-        <p className="text-zinc-400">Live Transaktionsdaten vom Base Network</p>
+        <p className="text-zinc-400 text-sm sm:text-base">Live Transaktionsdaten vom Base Network</p>
         {userAddress && (
           <p className="text-xs text-zinc-500 mt-1">
             Wallet: {formatAddress(userAddress)}
@@ -652,96 +669,124 @@ export default function HistoryTab() {
         </div>
       )}
 
-      {/* Transaktionsliste */}
+      {/* Transaktionsliste - Mobile optimierte Darstellung */}
       {!isLoading && !error && filteredAndSortedTransactions.length > 0 && (
-        <div className="space-y-4 max-h-96 overflow-y-auto">
+        <div className="space-y-3 max-h-[70vh] overflow-y-auto px-1">
           {filteredAndSortedTransactions.map((item, index) => {
             // Prüfe ob es eine Gruppe oder eine einzelne Transaktion ist
             if (Array.isArray(item)) {
-              // Gruppierte Swap-Transaktionen
+              // Gruppierte Swap-Transaktionen - Mobile optimiert
               const group = item as Transaction[];
-              const mainTx = group[0]; // Haupttransaktion für Display
+              const soldTx = group.find(tx => tx.amountRaw < 0); // Verkaufte Token
+              const boughtTx = group.find(tx => tx.amountRaw > 0); // Gekaufte Token
+              const mainTx = group[0]; // Für Zeitstempel
               
               return (
-                <div key={`group-${index}`} className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-4 border border-zinc-700 hover:border-zinc-600 transition-all hover:shadow-lg">
-                  {/* Swap Header */}
+                <div key={`group-${index}`} className="bg-gradient-to-br from-purple-900/20 to-purple-800/20 rounded-xl p-3 border border-purple-500/30 hover:border-purple-400/50 transition-all">
+                  {/* Mobile Swap Header */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="relative">
-                        {/* Zeige Icon für Swap */}
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-400 to-purple-600 flex items-center justify-center">
-                          <span className="text-white text-lg">🔄</span>
-                        </div>
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-sm">🔄</span>
                       </div>
-                      <div>
-                        <div className="font-medium text-purple-400 text-lg">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-purple-300 text-sm">
                           Swap ({group.length} Transaktionen)
                         </div>
-                        <div className="text-xs text-zinc-500">{mainTx.time}</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-amber-400 font-bold text-lg">
-                        {group.map(tx => tx.token).join(' ⇄ ')}
+                        <div className="text-xs text-zinc-500 truncate">{mainTx.time}</div>
                       </div>
                     </div>
                   </div>
                   
-                  {/* Gruppierte Transaktionen anzeigen */}
-                  <div className="space-y-2 bg-zinc-900/50 rounded-lg p-3">
-                    {group.map((tx, txIndex) => (
-                      <div key={tx.id} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded">
-                        <div className="flex items-center gap-2">
+                  {/* Mobile Swap Details - Optimierte 2-Spalten Darstellung */}
+                  <div className="space-y-2">
+                    {soldTx && (
+                      <div className="flex items-center justify-between bg-red-900/20 rounded-lg p-2 border border-red-500/20">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
                           <img 
-                            src={tx.tokenIcon} 
-                            alt={tx.token} 
-                            className="w-6 h-6 rounded-full"
+                            src={soldTx.tokenIcon} 
+                            alt={soldTx.token} 
+                            className="w-6 h-6 rounded-full flex-shrink-0"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = "/ETH.png";
                             }}
                           />
-                          <span className="text-sm text-zinc-300">
-                            {tx.type === "buy" && "Gekauft"}
-                            {tx.type === "sell" && "Verkauft"}
-                            {tx.type === "send" && "Gesendet"}
-                            {tx.type === "receive" && "Empfangen"}
-                            {tx.type === "shop" && "Shop-Kauf"}
-                          </span>
+                          <span className="text-xs text-red-300 truncate">Verkauft</span>
                         </div>
-                        <div className="text-right">
-                          <div className={`text-sm font-semibold ${getAmountColor(tx.amount)}`}>
-                            {tx.amount} {tx.token}
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-red-400 font-semibold text-sm">
+                            {soldTx.amount}
                           </div>
+                          <div className="text-xs text-red-300">{soldTx.token}</div>
                         </div>
                       </div>
-                    ))}
+                    )}
+                    
+                    {/* Swap Pfeil */}
+                    <div className="flex justify-center">
+                      <div className="text-purple-400 text-lg">↓</div>
+                    </div>
+                    
+                    {boughtTx && (
+                      <div className="flex items-center justify-between bg-green-900/20 rounded-lg p-2 border border-green-500/20">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <img 
+                            src={boughtTx.tokenIcon} 
+                            alt={boughtTx.token} 
+                            className="w-6 h-6 rounded-full flex-shrink-0"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/ETH.png";
+                            }}
+                          />
+                          <span className="text-xs text-green-300 truncate">Gekauft</span>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-green-400 font-semibold text-sm">
+                            {boughtTx.amount}
+                          </div>
+                          <div className="text-xs text-green-300">{boughtTx.token}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Kompakte Pool Info */}
+                  <div className="mt-3 pt-2 border-t border-purple-500/20">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-zinc-500">Pool:</span>
+                      <span className="text-purple-300 font-mono truncate ml-2">
+                        {mainTx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ? "D.FAITH" :
+                         mainTx.address.toLowerCase() === DINVEST_POOL.toLowerCase() ? "D.INVEST" :
+                         formatAddress(mainTx.address)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
             } else {
-              // Einzelne Transaktion
+              // Einzelne Transaktion - Mobile optimiert
               const tx = item as Transaction;
               
               return (
-                <div key={tx.id} className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-4 border border-zinc-700 hover:border-zinc-600 transition-all hover:shadow-lg">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      {/* Token Icon mit Type Overlay */}
-                      <div className="relative">
+                <div key={tx.id} className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-3 border border-zinc-700 hover:border-zinc-600 transition-all">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {/* Token Icon mit Type Overlay - Mobile kleiner */}
+                      <div className="relative flex-shrink-0">
                         <img 
                           src={tx.tokenIcon} 
                           alt={tx.token} 
-                          className="w-12 h-12 rounded-full"
+                          className="w-10 h-10 rounded-full"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = "/ETH.png";
                           }}
                         />
-                        <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-r ${getTransactionColor(tx.type)} flex items-center justify-center text-xs border-2 border-zinc-800`}>
+                        <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-r ${getTransactionColor(tx.type)} flex items-center justify-center text-xs border-2 border-zinc-800`}>
                           {getTransactionIcon(tx.type)}
                         </div>
                       </div>
-                      <div>
-                        <div className="font-medium text-amber-400 capitalize text-lg">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-amber-400 text-sm truncate">
                           {tx.type === "send" && "Gesendet"}
                           {tx.type === "receive" && "Empfangen"}
                           {tx.type === "buy" && "Gekauft"}
@@ -749,28 +794,29 @@ export default function HistoryTab() {
                           {tx.type === "shop" && "Shop-Kauf"}
                           {tx.type === "claim" && "Social Media Claim"}
                         </div>
-                        <div className="text-xs text-zinc-500">{tx.time}</div>
+                        <div className="text-xs text-zinc-500 truncate">{tx.time}</div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className={`font-bold text-lg ${getAmountColor(tx.amount)}`}>
+                    <div className="text-right flex-shrink-0">
+                      <div className={`font-bold text-sm ${getAmountColor(tx.amount)}`}>
                         {tx.amount}
                       </div>
-                      <div className="text-sm font-semibold text-zinc-400">{tx.token}</div>
+                      <div className="text-xs font-semibold text-zinc-400">{tx.token}</div>
                     </div>
                   </div>
                   
-                  <div className="text-sm text-zinc-400 space-y-2 bg-zinc-900/50 rounded-lg p-3">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">
+                  {/* Kompakte Adress-Info */}
+                  <div className="text-xs text-zinc-400 bg-zinc-900/50 rounded-lg p-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-zinc-500 flex-shrink-0">
                         {tx.type === "send" ? "An:" : 
                          tx.type === "receive" ? "Von:" :
-                         tx.type === "buy" ? "Über Pool:" :
-                         tx.type === "sell" ? "An Pool:" : 
+                         tx.type === "buy" ? "Pool:" :
+                         tx.type === "sell" ? "Pool:" : 
                          tx.type === "shop" ? "Shop:" :
                          tx.type === "claim" ? "Von:" : "Adresse:"}
                       </span>
-                      <span className="font-mono text-amber-400">
+                      <span className="font-mono text-amber-400 ml-2 truncate">
                         {tx.type === "buy" || tx.type === "sell" ? 
                           (tx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ? "D.FAITH Pool" :
                            tx.address.toLowerCase() === DINVEST_POOL.toLowerCase() ? "D.INVEST Pool" :
@@ -781,12 +827,6 @@ export default function HistoryTab() {
                           "Social Media Rewards" :
                           formatAddress(tx.address)
                         }
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Tx Hash:</span>
-                      <span className="font-mono text-blue-400">
-                        {formatAddress(tx.hash)}
                       </span>
                     </div>
                   </div>
@@ -807,22 +847,24 @@ export default function HistoryTab() {
         </div>
       )}
 
-      {/* Refresh Button */}
-      <div className="flex justify-center mt-6">
+      {/* Refresh Button - Mobile optimiert */}
+      <div className="flex justify-center mt-4 sm:mt-6">
         <Button
           onClick={refreshTransactions}
-          className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-black font-semibold px-6 py-2 rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-black font-semibold px-4 py-2 sm:px-6 sm:py-2 rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
           disabled={isLoading}
         >
           {isLoading ? (
             <div className="flex items-center gap-2">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
-              Lädt...
+              <span className="hidden sm:inline">Lädt...</span>
+              <span className="sm:hidden">...</span>
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <FaExchangeAlt className="text-black" />
-              Transaktionen neu laden
+              <span className="hidden sm:inline">Transaktionen neu laden</span>
+              <span className="sm:hidden">Neu laden</span>
             </div>
           )}
         </Button>
