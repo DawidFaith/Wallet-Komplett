@@ -8,6 +8,8 @@ const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
 const DINVEST_TOKEN = "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb";
 // D.FAITH/ETH Pool (für Käufe)
 const DFAITH_POOL = "0x59c7c832e96d2568bea6db468c1aadcbbda08a52";
+// WETH (Base canonical)
+const WETH_TOKEN = "0x4200000000000000000000000000000000000006";
 
 // Social Media Claim Adresse
 const CLAIM_ADDRESS = "0xFe5F6cE95efB135b93899AF70B12727F93FEE6E2"; // Social Media Claim Adresse
@@ -74,7 +76,7 @@ export default function HistoryTab() {
     const groups: (Transaction | Transaction[])[] = [];
     const processed = new Set<string>();
 
-    for (const tx of sorted) {
+  for (const tx of sorted) {
       if (processed.has(tx.id)) continue;
 
       // 1) Claim-Gruppierung: D.FAITH von CLAIM_ADDRESS + nahe ETH von CLAIM_ADDRESS
@@ -129,16 +131,35 @@ export default function HistoryTab() {
         tx.amount.startsWith("+");
 
       if (isBuyAnchor) {
-        // ETH-Partner suchen (ausgehend, an Pool)
-        let ethPartner = sorted.find(
-          (other) =>
+        // Partner suchen: Bevorzugt ETH/WETH an den Pool, ansonsten größter ETH/WETH-Abfluss im Zeitfenster
+        const inWindow = (other: Transaction) => Math.abs(other.timestamp - tx.timestamp) <= 300000;
+        const isOutflow = (other: Transaction) => other.amount.startsWith("-");
+        const isEthLike = (tkn: string) => tkn === "ETH" || tkn === "WETH";
+
+        // 1) Präferenz: an Pool
+        let partnerCandidates = sorted.filter((other) =>
+          !processed.has(other.id) &&
+          other.id !== tx.id &&
+          isEthLike(other.token) &&
+          other.address.toLowerCase() === DFAITH_POOL.toLowerCase() &&
+          isOutflow(other) &&
+          inWindow(other)
+        );
+
+        // 2) Fallback: beliebiger ETH/WETH-Abfluss im Zeitfenster, wähle größten Betrag
+        if (partnerCandidates.length === 0) {
+          partnerCandidates = sorted.filter((other) =>
             !processed.has(other.id) &&
             other.id !== tx.id &&
-            other.token === "ETH" &&
-            other.address.toLowerCase() === DFAITH_POOL.toLowerCase() &&
-            other.amount.startsWith("-") &&
-            Math.abs(other.timestamp - tx.timestamp) <= 300000
-        );
+            isEthLike(other.token) &&
+            isOutflow(other) &&
+            inWindow(other)
+          );
+          // sortiere nach absolutem Betrag desc
+          partnerCandidates.sort((a, b) => Math.abs(b.amountRaw) - Math.abs(a.amountRaw));
+        }
+
+        const ethPartner = partnerCandidates[0];
 
         if (ethPartner) {
           const pair: Transaction[] = [tx, ethPartner];
@@ -148,7 +169,7 @@ export default function HistoryTab() {
           processed.add(ethPartner.id);
           continue;
         } else {
-          // Falls kein ETH-Partner gefunden wurde, trotzdem Kauf (Token) anzeigen
+          // Falls kein Partner gefunden wurde, trotzdem Kauf (Token) anzeigen
           (tx as any).__groupType = "buy";
           groups.push(tx);
           processed.add(tx.id);
@@ -375,6 +396,8 @@ export default function HistoryTab() {
               token = "D.FAITH";
             } else if (transfer.rawContract.address.toLowerCase() === DINVEST_TOKEN.toLowerCase()) {
               token = "D.INVEST";
+            } else if (transfer.rawContract.address.toLowerCase() === WETH_TOKEN.toLowerCase()) {
+              token = "WETH";
             }
           }
           
@@ -392,13 +415,16 @@ export default function HistoryTab() {
             type = "buy";
             address = DFAITH_POOL;
           } else if (
-            // Kauf-ETH-Seite: ETH (extern) geht von uns an den Pool
+            // Kauf-ETH/WETH-Seite: ETH (extern) oder WETH (ERC20) geht von uns ab
             !isReceived &&
-            transfer.asset === "ETH" &&
-            toAddress === DFAITH_POOL.toLowerCase()
+            (
+              (transfer.asset === "ETH" && toAddress === DFAITH_POOL.toLowerCase()) ||
+              (transfer.rawContract?.address?.toLowerCase() === WETH_TOKEN.toLowerCase())
+            )
           ) {
             type = "buy";
-            address = DFAITH_POOL;
+            // wenn Pool erkennbar, setze Pool, sonst belasse default address
+            if (toAddress === DFAITH_POOL.toLowerCase()) address = DFAITH_POOL;
           }
           // Alles andere als "other" kennzeichnen und später rausfiltern
           
