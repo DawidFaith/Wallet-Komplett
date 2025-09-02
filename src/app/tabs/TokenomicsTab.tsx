@@ -54,11 +54,11 @@ export default function TokenomicsTab() {
       console.log("🔄 Fetching tokenomics data...");
       
       try {
-        // Parallele API-Aufrufe - verwende direkten externen Endpunkt für Metrics
+        // Parallele API-Aufrufe - verwende lokalen Proxy für Metrics
         const [metricsRes, davidRes, dinvestRes] = await Promise.all([
-          fetch('https://dex-liquidity-3kf8hv241-dawid-faiths-projects.vercel.app/api/metrics?token=0x69eFD833288605f320d77eB2aB99DDE62919BbC1&chainId=8453')
+          fetch('/api/metrics-proxy')
             .catch(err => {
-              console.error("❌ Metrics API Error:", err);
+              console.error("❌ Metrics Proxy Error:", err);
               return null;
             }),
           fetch('/api/tokenomics/dfaith-balance')
@@ -73,13 +73,19 @@ export default function TokenomicsTab() {
             })
         ]);
 
-        // Token Metrics verarbeiten
+        // Token Metrics verarbeiten mit detaillierter Fehlerbehandlung
         if (metricsRes && metricsRes.ok) {
-          const metricsData = await metricsRes.json();
-          console.log("✅ Metrics Data:", metricsData);
-          setTokenMetrics(metricsData);
+          try {
+            const metricsData = await metricsRes.json();
+            console.log("✅ Metrics Data:", metricsData);
+            setTokenMetrics(metricsData);
+          } catch (parseError) {
+            console.error("❌ Metrics JSON Parse Error:", parseError);
+            setTokenMetrics(null);
+          }
         } else {
-          console.log("❌ Metrics API failed or not ok");
+          console.log("❌ Metrics API failed:", metricsRes ? `Status: ${metricsRes.status}` : "No response");
+          setTokenMetrics(null);
         }
 
         // Dawid Faith Balance verarbeiten
