@@ -97,8 +97,8 @@ export default function HistoryTab() {
     for (const tx of sorted) {
       if (processed.has(tx.id)) continue;
       
-      // Sehr enge Zeittoleranz für echte Swaps
-      const timeWindow = 60000; // 1 Minute für echte Swaps
+      // Sehr enge Zeittoleranz für echte Swaps - erweitert für 3-Transaktionen-Swaps
+      const timeWindow = 120000; // 2 Minuten für komplexe 3-Transaktionen-Swaps
       
       // Suche nach ALLEN verwandten Transaktionen für komplexe Swaps
       const relatedTransactions = sorted.filter(otherTx => {
@@ -121,20 +121,49 @@ export default function HistoryTab() {
            (tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() && tx.token !== "ETH"))
         );
         
-        // Pool-basierte Swaps mit komplexen Mustern
-        const isPoolSwap = (
+        // D.FAITH/D.INVEST Verkauf: Minus Token + Plus ETH vom Pool + Gas ETH
+        const isTokenSale = (
           timeDiff <= timeWindow &&
-          // Beide von/zu Pool-Adressen
-          ((tx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ||
-            tx.address.toLowerCase() === DINVEST_POOL.toLowerCase()) ||
-           (otherTx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ||
-            otherTx.address.toLowerCase() === DINVEST_POOL.toLowerCase())) &&
-          // ETH oder Token-Transaktionen
-          (tx.token === "ETH" || tx.token === "D.FAITH" || tx.token === "D.INVEST" ||
-           otherTx.token === "ETH" || otherTx.token === "D.FAITH" || otherTx.token === "D.INVEST")
+          (
+            // Fall 1: tx = minus Token, otherTx = plus ETH vom Pool
+            ((tx.token === "D.FAITH" || tx.token === "D.INVEST") && tx.amountRaw < 0 &&
+             otherTx.token === "ETH" && otherTx.amountRaw > 0 &&
+             (otherTx.address.toLowerCase() === DFAITH_POOL.toLowerCase() || 
+              otherTx.address.toLowerCase() === DINVEST_POOL.toLowerCase())) ||
+            
+            // Fall 2: tx = plus ETH vom Pool, otherTx = minus Token  
+            ((otherTx.token === "D.FAITH" || otherTx.token === "D.INVEST") && otherTx.amountRaw < 0 &&
+             tx.token === "ETH" && tx.amountRaw > 0 &&
+             (tx.address.toLowerCase() === DFAITH_POOL.toLowerCase() || 
+              tx.address.toLowerCase() === DINVEST_POOL.toLowerCase())) ||
+            
+            // Fall 3: Gas-ETH zu einer Token-Verkaufstransaktion
+            ((tx.token === "D.FAITH" || tx.token === "D.INVEST") && tx.amountRaw < 0 &&
+             otherTx.token === "ETH" && otherTx.amountRaw < 0) || // Gas ETH
+            ((otherTx.token === "D.FAITH" || otherTx.token === "D.INVEST") && otherTx.amountRaw < 0 &&
+             tx.token === "ETH" && tx.amountRaw < 0) // Gas ETH
+          )
         );
         
-        return isClaimWithEth || isPoolSwap;
+        // D.FAITH/D.INVEST Kauf: Minus ETH + Plus Token vom Pool
+        const isTokenPurchase = (
+          timeDiff <= timeWindow &&
+          (
+            // Fall 1: tx = minus ETH, otherTx = plus Token vom Pool
+            (tx.token === "ETH" && tx.amountRaw < 0 &&
+             (otherTx.token === "D.FAITH" || otherTx.token === "D.INVEST") && otherTx.amountRaw > 0 &&
+             (otherTx.address.toLowerCase() === DFAITH_POOL.toLowerCase() || 
+              otherTx.address.toLowerCase() === DINVEST_POOL.toLowerCase())) ||
+            
+            // Fall 2: tx = plus Token vom Pool, otherTx = minus ETH
+            ((tx.token === "D.FAITH" || tx.token === "D.INVEST") && tx.amountRaw > 0 &&
+             (tx.address.toLowerCase() === DFAITH_POOL.toLowerCase() || 
+              tx.address.toLowerCase() === DINVEST_POOL.toLowerCase()) &&
+             otherTx.token === "ETH" && otherTx.amountRaw < 0)
+          )
+        );
+        
+        return isClaimWithEth || isTokenSale || isTokenPurchase;
       });
       
       if (relatedTransactions.length > 0) {
@@ -174,8 +203,8 @@ export default function HistoryTab() {
         
         // Gruppierungsregeln:
         // - Claims: 1 Token + 1 ETH
-        // - Kaufswaps: 1 ETH out + 1 Token in
-        // - Verkaufswaps: 1 Token out + 1-2 ETH (Gas + Erlös)
+        // - Kaufswaps: 1 ETH out + 1 Token in (2 Transaktionen)
+        // - Verkaufswaps: 1 Token out + 2 ETH (Gas + Erlös) (3 Transaktionen)
         if (isClaimGroup && tokenTxs.length === 1 && ethTxs.length === 1) {
           // Gültige Claim-Gruppe
           grouped.push(group);
@@ -186,16 +215,23 @@ export default function HistoryTab() {
             amount: t.amount,
             type: t.type
           })));
-        } else if (!isClaimGroup && tokenTxs.length >= 1 && ethTxs.length >= 1 && group.length <= 3) {
+        } else if (!isClaimGroup && tokenTxs.length >= 1 && ethTxs.length >= 1 && group.length >= 2 && group.length <= 3) {
           // Gültige Swap-Gruppe (2-3 Transaktionen)
+          // 2 Transaktionen = Kauf (ETH -> Token)
+          // 3 Transaktionen = Verkauf (Token -> ETH Gas + ETH Erlös)
           grouped.push(group);
           group.forEach(t => processed.add(t.id));
           
-          console.log("🔄 Swap-Gruppe erkannt:", group.map(t => ({
+          console.log(`🔄 ${group.length}-Transaktionen Swap-Gruppe:`, group.map(t => ({
             token: t.token,
             amount: t.amount,
+            amountRaw: t.amountRaw,
             type: t.type,
-            hash: t.hash.slice(0, 10)
+            hash: t.hash.slice(0, 10),
+            address: t.address === DFAITH_POOL ? "D.FAITH-Pool" : 
+                    t.address === DINVEST_POOL ? "D.INVEST-Pool" : 
+                    t.address.slice(0, 10),
+            direction: t.amountRaw > 0 ? "+" : "-"
           })));
         } else {
           // Zu komplex oder ungültig - als einzelne Transaktionen behandeln
