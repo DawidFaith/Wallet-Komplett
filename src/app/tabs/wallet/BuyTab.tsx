@@ -1036,7 +1036,7 @@ export default function BuyTab() {
                 )}
                 
                 <Button
-                  className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-bold py-3 rounded-xl"
+                  className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-bold py-3 rounded-xl flex items-center justify-center gap-3"
                   onClick={() => {
                     if (account?.address) {
                       setShowStripeCheckout(true);
@@ -1047,7 +1047,15 @@ export default function BuyTab() {
                   }}
                   disabled={dinvestAmount < 1 || eurAmount < 5}
                 >
-                  {eurAmount.toFixed(2)}€ mit Kreditkarte bezahlen
+                  <span>{eurAmount.toFixed(2)}€ bezahlen</span>
+                  <div className="flex items-center gap-1 ml-2">
+                    {/* Visa */}
+                    <div className="bg-white rounded px-1 py-0.5 text-xs font-bold text-blue-600">VISA</div>
+                    {/* Mastercard */}
+                    <div className="bg-white rounded px-1 py-0.5 text-xs font-bold text-red-600">MC</div>
+                    {/* American Express */}
+                    <div className="bg-white rounded px-1 py-0.5 text-xs font-bold text-blue-800">AMEX</div>
+                  </div>
                 </Button>
               </div>
             )}
