@@ -652,7 +652,7 @@ export default function BuyTab() {
       balance: ethBalance,
       color: "from-blue-500 to-blue-700",
       description: "Ethereum Native Token",
-      price: ethPriceEur ? `${ethPriceEur.toFixed(2)}€ pro ETH` : "~3000€ pro ETH",
+      price: ethPriceEur ? `${ethPriceEur.toFixed(2)}€ pro ETH` : "Preis wird geladen...",
       sub: "mit EUR kaufen",
       icon: <img src="/ETH.png" alt="ETH" className="w-8 h-8 object-contain" />,
     },
@@ -1088,29 +1088,6 @@ export default function BuyTab() {
                   disabled={dinvestAmount < 1 || eurAmount < 5}
                 >
                   {eurAmount.toFixed(2)}€ mit Kreditkarte bezahlen
-                </Button>
-                
-                <Button
-                  className="w-full bg-zinc-600 hover:bg-zinc-700 text-white font-bold py-2 rounded-lg text-xs"
-                  onClick={() => {
-                    setShowBuyModal(false);
-                    setSelectedToken(null);
-                    setSwapAmountEth("");
-                    setSlippage("1");
-                    setSwapTxStatus(null);
-                    setBuyStep('initial');
-                    setQuoteTxData(null);
-                    setSpenderAddress(null);
-                    setNeedsApproval(false);
-                    setQuoteError(null);
-                    setCopied(false);
-                    setStripeSuccess(false);
-                    setStripeError(null);
-                    setDinvestAmount(1);
-                    setEurAmount(5);
-                  }}
-                >
-                  Schließen
                 </Button>
               </div>
             )}
