@@ -33,87 +33,44 @@ export default function HistoryTab() {
   // Nur verbundene Wallet verwenden - keine Demo-Daten
   const userAddress = account?.address;
 
-  // Alchemy API Key für Base Chain
-  const ALCHEMY_API_KEY = "7zoUrdSYTUNPJ9rNEiOM8zUbXu5hKFgm";
-  const ALCHEMY_BASE_URL = `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
+  // Basescan API für Base Chain Transaktionen (kostenlos)
+  const BASESCAN_API_KEY = "YourApiKeyToken"; // Optional, funktioniert auch ohne
+  const BASESCAN_BASE_URL = "https://api.basescan.org/api";
 
-  // Alchemy API für Base Chain Transaktionen
-  const getTransactionsFromAlchemy = async (address: string) => {
+  // Basescan API für Base Chain Transaktionen
+  const getTransactionsFromBasescan = async (address: string) => {
     try {
-      // Hole ausgehende Transaktionen
-      const response = await fetch(ALCHEMY_BASE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          method: 'alchemy_getAssetTransfers',
-          params: [
-            {
-              fromBlock: "0x0",
-              toBlock: "latest",
-              fromAddress: address,
-              category: ["external", "erc20", "erc721", "erc1155"],
-              withMetadata: true,
-              excludeZeroValue: true,
-              maxCount: "0x32"
-            }
-          ],
-          id: 1
-        })
-      });
+      // Hole normale ETH Transaktionen
+      const ethResponse = await fetch(
+        `${BASESCAN_BASE_URL}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${BASESCAN_API_KEY}`
+      );
+      
+      // Hole ERC20 Token Transaktionen
+      const tokenResponse = await fetch(
+        `${BASESCAN_BASE_URL}?module=account&action=tokentx&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${BASESCAN_API_KEY}`
+      );
 
-      if (!response.ok) {
-        throw new Error(`Alchemy API Fehler: ${response.status} ${response.statusText}`);
+      if (!ethResponse.ok || !tokenResponse.ok) {
+        throw new Error(`Basescan API Fehler`);
       }
 
-      const data = await response.json();
+      const ethData = await ethResponse.json();
+      const tokenData = await tokenResponse.json();
       
-      if (data.error) {
-        throw new Error(`Alchemy API Error: ${data.error.message}`);
+      if (ethData.status !== "1" && ethData.message !== "No transactions found") {
+        throw new Error(`Basescan API Error: ${ethData.message}`);
       }
       
-      // Hole eingehende Transaktionen
-      const responseIncoming = await fetch(ALCHEMY_BASE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          method: 'alchemy_getAssetTransfers',
-          params: [
-            {
-              fromBlock: "0x0",
-              toBlock: "latest",
-              toAddress: address,
-              category: ["external", "erc20", "erc721", "erc1155"],
-              withMetadata: true,
-              excludeZeroValue: true,
-              maxCount: "0x32"
-            }
-          ],
-          id: 2
-        })
-      });
-
-      if (!responseIncoming.ok) {
-        throw new Error(`Alchemy API Fehler (Incoming): ${responseIncoming.status} ${responseIncoming.statusText}`);
+      if (tokenData.status !== "1" && tokenData.message !== "No transactions found") {
+        throw new Error(`Basescan API Error: ${tokenData.message}`);
       }
 
-      const dataIncoming = await responseIncoming.json();
+      // Kombiniere ETH und Token Transaktionen
+      const ethTransactions = ethData.result || [];
+      const tokenTransactions = tokenData.result || [];
+      const allTransactions = [...ethTransactions, ...tokenTransactions];
       
-      if (dataIncoming.error) {
-        throw new Error(`Alchemy API Error (Incoming): ${dataIncoming.error.message}`);
-      }
-
-      // Kombiniere ausgehende und eingehende Transaktionen
-      const outgoingTransfers = data.result?.transfers || [];
-      const incomingTransfers = dataIncoming.result?.transfers || [];
-      const allTransfers = [...outgoingTransfers, ...incomingTransfers];
-      
-      return allTransfers;
+      return allTransactions;
     } catch (error) {
       throw error;
     }
@@ -131,10 +88,10 @@ export default function HistoryTab() {
     setError("");
     
     try {
-      // Hole Transaktionen über Alchemy API
-      const alchemyTransfers = await getTransactionsFromAlchemy(userAddress);
+      // Hole Transaktionen über Basescan API
+      const basescanTransactions = await getTransactionsFromBasescan(userAddress);
       
-      if (alchemyTransfers.length === 0) {
+      if (basescanTransactions.length === 0) {
         setTransactions([]);
         setError("Keine Transaktionen für diese Wallet gefunden.");
         setIsLoading(false);
@@ -142,16 +99,10 @@ export default function HistoryTab() {
       }
 
       // Transaktionen verarbeiten und sortieren
-      const mappedTransactions: Transaction[] = alchemyTransfers
-        .map((transfer: any) => {
-          // Zeitstempel-Verarbeitung
-          let timestamp: Date;
-          if (transfer.metadata?.blockTimestamp) {
-            timestamp = new Date(transfer.metadata.blockTimestamp);
-          } else {
-            timestamp = new Date();
-          }
-          
+      const mappedTransactions: Transaction[] = basescanTransactions
+        .map((tx: any) => {
+          // Zeitstempel-Verarbeitung (Basescan gibt Unix-Timestamp)
+          const timestamp = new Date(parseInt(tx.timeStamp) * 1000);
           const time = timestamp.toLocaleString("de-DE", {
             day: "2-digit",
             month: "2-digit", 
@@ -161,63 +112,53 @@ export default function HistoryTab() {
           });
 
           let type: "send" | "receive" = "send";
-          let token = transfer.asset || "ETH";
+          let token = "ETH";
           let amount = "0";
           let address = "";
 
           // Bestimme Transaktionsrichtung
-          const isReceived = transfer.to?.toLowerCase() === userAddress.toLowerCase();
-          const isFromUser = transfer.from?.toLowerCase() === userAddress.toLowerCase();
+          const isReceived = tx.to?.toLowerCase() === userAddress.toLowerCase();
+          const isFromUser = tx.from?.toLowerCase() === userAddress.toLowerCase();
           
           if (isReceived && !isFromUser) {
             type = "receive";
-            address = transfer.from || "";
-            amount = "+" + (transfer.value || "0");
+            address = tx.from || "";
           } else if (isFromUser) {
             type = "send";
-            address = transfer.to || "";
-            amount = "-" + (transfer.value || "0");
+            address = tx.to || "";
           }
 
-          // Token-Symbol und Dezimalstellen richtig verarbeiten
-          if (transfer.category === "erc20") {
-            // Spezielle Behandlung für D.FAITH und D.INVEST
-            if (transfer.rawContract?.address?.toLowerCase() === DFAITH_TOKEN.toLowerCase()) {
+          // Unterscheide zwischen ETH und Token-Transaktionen
+          if (tx.contractAddress) {
+            // Token-Transaktion
+            if (tx.contractAddress.toLowerCase() === DFAITH_TOKEN.toLowerCase()) {
               token = "D.FAITH";
-              if (transfer.rawContract.value) {
-                const formattedValue = (parseInt(transfer.rawContract.value) / 100).toFixed(2);
-                amount = type === "receive" ? "+" + formattedValue : "-" + formattedValue;
-              }
-            } else if (transfer.rawContract?.address?.toLowerCase() === DINVEST_TOKEN.toLowerCase()) {
+              const value = parseInt(tx.value) / 100; // D.FAITH hat 2 Dezimalstellen
+              amount = type === "receive" ? "+" + value.toFixed(2) : "-" + value.toFixed(2);
+            } else if (tx.contractAddress.toLowerCase() === DINVEST_TOKEN.toLowerCase()) {
               token = "D.INVEST";
-              if (transfer.rawContract.value) {
-                const formattedValue = parseInt(transfer.rawContract.value).toString();
-                amount = type === "receive" ? "+" + formattedValue : "-" + formattedValue;
-              }
+              const value = parseInt(tx.value); // D.INVEST hat 0 Dezimalstellen
+              amount = type === "receive" ? "+" + value.toString() : "-" + value.toString();
             } else {
-              token = transfer.asset || "TOKEN";
-              if (transfer.rawContract?.decimals && transfer.rawContract.value) {
-                const decimals = parseInt(transfer.rawContract.decimals);
-                const rawValue = transfer.rawContract.value;
-                const formattedValue = (parseInt(rawValue) / Math.pow(10, decimals)).toFixed(decimals > 6 ? 6 : decimals);
-                amount = type === "receive" ? "+" + formattedValue : "-" + formattedValue;
-              }
+              token = tx.tokenSymbol || "TOKEN";
+              const decimals = parseInt(tx.tokenDecimal) || 18;
+              const value = parseInt(tx.value) / Math.pow(10, decimals);
+              amount = type === "receive" ? "+" + value.toFixed(decimals > 6 ? 6 : decimals) : "-" + value.toFixed(decimals > 6 ? 6 : decimals);
             }
-          } else if (transfer.category === "external") {
+          } else {
+            // ETH-Transaktion
             token = "ETH";
-            if (transfer.value) {
-              const ethValue = parseFloat(transfer.value).toFixed(6);
-              amount = type === "receive" ? "+" + ethValue : "-" + ethValue;
-            }
+            const ethValue = parseInt(tx.value) / Math.pow(10, 18); // ETH hat 18 Dezimalstellen
+            amount = type === "receive" ? "+" + ethValue.toFixed(6) : "-" + ethValue.toFixed(6);
           }
 
           return {
-            id: transfer.uniqueId || transfer.hash || Math.random().toString(),
+            id: tx.hash || Math.random().toString(),
             type,
             token,
             amount,
             address,
-            hash: transfer.hash || "",
+            hash: tx.hash || "",
             time,
             status: "success" as const,
           };
@@ -304,7 +245,7 @@ export default function HistoryTab() {
       <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/50 mb-4">
         <div className="flex justify-between items-center text-xs text-zinc-400">
           <div className="flex items-center gap-4">
-            <span>API: {ALCHEMY_API_KEY ? '✓ Aktiv' : '✗ Inaktiv'}</span>
+            <span>API: Basescan ✓ Aktiv</span>
             <span>Wallet: {userAddress ? formatAddress(userAddress) : 'Nicht verbunden'}</span>
           </div>
           <div className="flex items-center gap-4">
