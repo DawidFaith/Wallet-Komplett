@@ -623,14 +623,14 @@ export default function BuyTab() {
       const initialDFaithBalance = parseFloat(dfaithBalance);
       console.log("Initiale D.FAITH Balance:", initialDFaithBalance);
       
-      // D.FAITH-Balance-Verifizierung mit schnelleren Intervallen
+      // D.FAITH-Balance-Verifizierung mit optimierten, schnelleren Intervallen
       let balanceVerified = false;
       let attempts = 0;
-      const maxAttempts = 20; // Maximal 20 Versuche (60 Sekunden total)
+      const maxAttempts = 15; // Maximal 15 Versuche (ca. 20 Sekunden total)
       
-      // Erste kurze Wartezeit nach Transaktionsbestätigung
-      console.log("Warte 2 Sekunden vor erster D.FAITH Balance-Prüfung...");
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Erste sehr kurze Wartezeit nach Transaktionsbestätigung
+      console.log("Warte 1 Sekunde vor erster D.FAITH Balance-Prüfung...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       while (!balanceVerified && attempts < maxAttempts) {
         attempts++;
@@ -653,25 +653,37 @@ export default function BuyTab() {
             balanceVerified = true;
             setBuyStep('completed');
             setSwapTxStatus("success");
-            setSwapAmountEth("");
-            setSwapAmountDfaith("");
-            setQuoteTxData(null);
-            setSpenderAddress(null);
-            setTimeout(() => setSwapTxStatus(null), 5000);
+            // WICHTIG: Inputfelder NICHT leeren, damit User die Erfolgsmeldung sehen kann
+            // setSwapAmountEth("");
+            // setSwapAmountDfaith("");
+            // setQuoteTxData(null);
+            // setSpenderAddress(null);
+            
+            // Erfolgsmeldung bleibt 8 Sekunden sichtbar
+            setTimeout(() => {
+              // Erst nach der Erfolgsmeldung alles zurücksetzen
+              setSwapTxStatus(null);
+              setSwapAmountEth("");
+              setSwapAmountDfaith("");
+              setQuoteTxData(null);
+              setSpenderAddress(null);
+              setShowPurchaseModal(false);
+              setBuyStep('initial');
+            }, 8000);
           } else {
             console.log(`Versuch ${attempts}: D.FAITH-Balance noch nicht erhöht (+${balanceIncrease.toFixed(4)}), weiter warten...`);
             
-            // Warte 3 Sekunden zwischen den Versuchen
+            // Schnellere Intervalle: 1.5 Sekunden zwischen den Versuchen
             if (attempts < maxAttempts) {
-              await new Promise(resolve => setTimeout(resolve, 3000));
+              await new Promise(resolve => setTimeout(resolve, 1500));
             }
           }
         } catch (balanceError) {
           console.error(`D.FAITH-Balance-Verifizierung Versuch ${attempts} fehlgeschlagen:`, balanceError);
           
-          // Warte 3 Sekunden bei Fehlern
+          // Warte 1.5 Sekunden bei Fehlern
           if (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await new Promise(resolve => setTimeout(resolve, 1500));
           }
         }
       }
@@ -680,11 +692,17 @@ export default function BuyTab() {
         console.log("⚠️ D.FAITH-Balance-Verifizierung nach mehreren Versuchen nicht erfolgreich - Transaktion könnte trotzdem erfolgreich sein");
         setSwapTxStatus("success");
         setBuyStep('completed');
-        setSwapAmountEth("");
-        setSwapAmountDfaith("");
-        setQuoteTxData(null);
-        setSpenderAddress(null);
-        setTimeout(() => setSwapTxStatus(null), 8000);
+        
+        // Auch hier: zeige Erfolgsmeldung und setze dann zurück
+        setTimeout(() => {
+          setSwapTxStatus(null);
+          setSwapAmountEth("");
+          setSwapAmountDfaith("");
+          setQuoteTxData(null);
+          setSpenderAddress(null);
+          setShowPurchaseModal(false);
+          setBuyStep('initial');
+        }, 8000);
       }
       
     } catch (error) {
@@ -866,7 +884,6 @@ export default function BuyTab() {
                 <div className="space-y-3">
                   {/* You Want Section - D.FAITH Input */}
                   <div className="bg-zinc-800/50 rounded-xl p-3 border border-zinc-700">
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">D.FAITH Menge</label>
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex items-center gap-2 bg-amber-500/20 rounded-lg px-2 py-1 border border-amber-500/30 flex-shrink-0">
                         <img src="/D.FAITH.png" alt="D.FAITH" className="w-6 h-6 object-contain" />
@@ -917,11 +934,10 @@ export default function BuyTab() {
 
                   {/* You Pay Section - ETH Cost Display */}
                   <div className="bg-zinc-800/50 rounded-xl p-3 border border-zinc-700">
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">Kosten</label>
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex items-center gap-2 bg-purple-500/20 rounded-lg px-2 py-1 border border-purple-500/30 flex-shrink-0">
                         <img src="/ETH.png" alt="ETH" className="w-6 h-6 object-contain" />
-                        <span className="text-purple-300 font-semibold text-xs">ETH</span>
+                        <span className="text-purple-300 font-semibold text-xs">ETH Kosten</span>
                       </div>
                       <div className="flex-1 text-center">
                         <div className="text-lg sm:text-xl font-bold text-purple-300">
@@ -1158,19 +1174,19 @@ export default function BuyTab() {
 
               {/* Status Display */}
               {swapTxStatus && (
-                <div className={`rounded-xl p-3 border text-center ${
-                  swapTxStatus === "success" ? "bg-green-500/10 border-green-500/30 text-green-400" :
+                <div className={`rounded-xl p-4 border text-center ${
+                  swapTxStatus === "success" ? "bg-green-500/20 border-green-500/50 text-green-300" :
                   swapTxStatus === "error" ? "bg-red-500/10 border-red-500/30 text-red-400" :
                   "bg-blue-500/10 border-blue-500/30 text-blue-400"
                 }`}>
-                  <div className="flex items-center justify-center gap-2 mb-1">
-                    {swapTxStatus === "success" && <span className="text-xl">🎉</span>}
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    {swapTxStatus === "success" && <span className="text-3xl">🎉</span>}
                     {swapTxStatus === "error" && <span className="text-xl">❌</span>}
                     {(swapTxStatus === "confirming" || swapTxStatus === "verifying" || swapTxStatus === "swapping") && (
                       <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                     )}
-                    <span className="font-semibold text-sm">
-                      {swapTxStatus === "success" && "Kauf erfolgreich!"}
+                    <span className="font-bold text-lg">
+                      {swapTxStatus === "success" && "Kauf erfolgreich abgeschlossen!"}
                       {swapTxStatus === "error" && "Kauf fehlgeschlagen"}
                       {swapTxStatus === "confirming" && "Bestätige Transaktion..."}
                       {swapTxStatus === "verifying" && "Verifiziere Kauf..."}
@@ -1178,12 +1194,28 @@ export default function BuyTab() {
                     </span>
                   </div>
                   {swapTxStatus === "success" && (
-                    <p className="text-sm opacity-80">
-                      Deine {swapAmountDfaith} D.FAITH wurden erfolgreich gekauft!
-                    </p>
+                    <div className="space-y-2">
+                      <p className="text-base font-semibold text-green-200">
+                        🚀 {swapAmountDfaith} D.FAITH wurden erfolgreich gekauft!
+                      </p>
+                      <p className="text-sm text-green-300/80">
+                        💰 Für {swapAmountEth} ETH ({swapAmountEth && ethPriceEur ? `≈ €${(parseFloat(swapAmountEth) * ethPriceEur).toFixed(2)}` : '€0.00'})
+                      </p>
+                      <p className="text-xs text-green-400/70 mt-2">
+                        ✨ Deine neuen Token sind bereits in deiner Wallet verfügbar!
+                      </p>
+                      <div className="mt-3 text-xs text-green-400/60">
+                        Das Modal schließt sich automatisch in wenigen Sekunden...
+                      </div>
+                    </div>
                   )}
                   {swapTxStatus === "error" && quoteError && (
                     <p className="text-sm opacity-80">{quoteError}</p>
+                  )}
+                  {swapTxStatus === "verifying" && (
+                    <p className="text-sm opacity-80 mt-1">
+                      Prüfe Balance-Änderungen... Das kann einen Moment dauern.
+                    </p>
                   )}
                 </div>
               )}
