@@ -77,6 +77,12 @@ export default function HistoryTab() {
 
     const groups: (Transaction | Transaction[])[] = [];
     const processed = new Set<string>();
+    const baseTxHash = (t: Transaction) => {
+      if (t.hash) return t.hash.toLowerCase();
+      const id = t.id || "";
+      const m = id.match(/(0x[a-f0-9]{64})/i);
+      return m ? m[1].toLowerCase() : "";
+    };
 
   for (const tx of sorted) {
       if (processed.has(tx.id)) continue;
@@ -139,13 +145,13 @@ export default function HistoryTab() {
         const isEthLike = (tkn: string) => tkn === "ETH" || tkn === "WETH";
 
         // 1) Gleicher Hash (robusteste Methode)
-        let sameHash = allSorted.find(
+    let sameHash = allSorted.find(
           (other) =>
             !processed.has(other.id) &&
             other.id !== tx.id &&
             isEthLike(other.token) &&
             isOutflow(other) &&
-            other.hash && tx.hash && other.hash === tx.hash
+      baseTxHash(other) && baseTxHash(tx) && baseTxHash(other) === baseTxHash(tx)
         );
         if (sameHash) {
           const pair: Transaction[] = [tx, sameHash];
@@ -499,14 +505,13 @@ export default function HistoryTab() {
         })
         .slice(0, 50); // Zeige die neuesten 50 Transaktionen
 
-      // Nur Claims und Käufe behalten
-      const relevant = mappedTransactions.filter((tx) => tx.type === "claim" || tx.type === "buy");
-      const claimsCount = relevant.filter((t) => t.type === "claim").length;
-      const buysCount = relevant.filter((t) => t.type === "buy").length;
+      // WICHTIG: Alle Transaktionen behalten, damit Partner-Matching (ETH/WETH) nicht durch Filter verloren geht
+      const claimsCount = mappedTransactions.filter((t) => t.type === "claim").length;
+      const buysCount = mappedTransactions.filter((t) => t.type === "buy").length;
       console.log("[HistoryTab] Claims erkannt:", claimsCount, "| Käufe erkannt:", buysCount);
-      setTransactions(relevant);
+      setTransactions(mappedTransactions);
       setStats({
-        transactionCount: relevant.length,
+        transactionCount: mappedTransactions.length,
         claims: claimsCount,
       });
       
