@@ -90,7 +90,7 @@ export default function HistoryTab() {
       }
     });
     
-    // Präzise Swap-Gruppierung: Nur echte 2-Transaktions-Swaps
+    // Intelligente Swap-Gruppierung: Berücksichtigt komplexe Transaktionsmuster
     const grouped: (Transaction | Transaction[])[] = [];
     const processed = new Set<string>();
     
@@ -100,16 +100,15 @@ export default function HistoryTab() {
       // Sehr enge Zeittoleranz für echte Swaps
       const timeWindow = 60000; // 1 Minute für echte Swaps
       
-      // Suche nach EXAKT einem Partner für echte Swaps ODER Claim+ETH Kombinationen
-      const swapPartner = sorted.find(otherTx => {
+      // Suche nach ALLEN verwandten Transaktionen für komplexe Swaps
+      const relatedTransactions = sorted.filter(otherTx => {
         if (otherTx.id === tx.id || processed.has(otherTx.id)) return false;
         
         const timeDiff = Math.abs(otherTx.timestamp - tx.timestamp);
         
         // Gleicher Hash = definitiv gleiche Transaktion (Multi-Asset Transfer)
         if (tx.hash === otherTx.hash) {
-          return (tx.amountRaw < 0 && otherTx.amountRaw > 0) || 
-                 (tx.amountRaw > 0 && otherTx.amountRaw < 0);
+          return true;
         }
         
         // Social Media Claims + ETH Gruppierung (präzise Betragserkennung)
@@ -122,65 +121,88 @@ export default function HistoryTab() {
            (tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() && tx.token !== "ETH"))
         );
         
-        // Pool-basierte Swaps mit sehr enger Zeit-Toleranz
+        // Pool-basierte Swaps mit komplexen Mustern
         const isPoolSwap = (
           timeDiff <= timeWindow &&
+          // Beide von/zu Pool-Adressen
           ((tx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ||
-            tx.address.toLowerCase() === DINVEST_POOL.toLowerCase()) &&
+            tx.address.toLowerCase() === DINVEST_POOL.toLowerCase()) ||
            (otherTx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ||
             otherTx.address.toLowerCase() === DINVEST_POOL.toLowerCase())) &&
-          // Einer muss negativ, einer positiv sein
-          ((tx.amountRaw < 0 && otherTx.amountRaw > 0) || 
-           (tx.amountRaw > 0 && otherTx.amountRaw < 0)) &&
-          // ETH <-> Token Kombination
-          ((tx.token === "ETH" && (otherTx.token === "D.FAITH" || otherTx.token === "D.INVEST")) ||
-           ((tx.token === "D.FAITH" || tx.token === "D.INVEST") && otherTx.token === "ETH"))
+          // ETH oder Token-Transaktionen
+          (tx.token === "ETH" || tx.token === "D.FAITH" || tx.token === "D.INVEST" ||
+           otherTx.token === "ETH" || otherTx.token === "D.FAITH" || otherTx.token === "D.INVEST")
         );
         
         return isClaimWithEth || isPoolSwap;
       });
       
-      if (swapPartner) {
-        // Bestimme ob es ein Swap oder eine Claim-Gruppe ist
-        const isClaimGroup = (tx.type === 'claim' || swapPartner.type === 'claim') ||
-                            (tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() || 
-                             swapPartner.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase());
-        
-        // Erstelle Gruppe mit entsprechender Sortierung
-        const group = [tx, swapPartner].sort((a, b) => {
+      if (relatedTransactions.length > 0) {
+        // Komplexe Swap-Gruppe (2-3 Transaktionen je nach Swap-Richtung)
+        const group = [tx, ...relatedTransactions].sort((a, b) => {
+          // Bestimme ob es eine Claim-Gruppe ist
+          const isClaimGroup = group.some(t => t.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase());
+          
           if (isClaimGroup) {
             // Bei Claims: Token zuerst, dann ETH
             if (a.token !== "ETH" && b.token === "ETH") return -1;
             if (a.token === "ETH" && b.token !== "ETH") return 1;
             return a.timestamp - b.timestamp;
           } else {
-            // Bei Swaps: Verkaufte (negative) Beträge zuerst
+            // Bei Swaps: Sortiere logisch (Token -> ETH oder ETH -> Token)
+            // D.FAITH/D.INVEST Transaktionen zuerst, dann ETH
+            const aIsToken = a.token === "D.FAITH" || a.token === "D.INVEST";
+            const bIsToken = b.token === "D.FAITH" || b.token === "D.INVEST";
+            
+            if (aIsToken && !bIsToken) return -1;
+            if (!aIsToken && bIsToken) return 1;
+            
+            // Dann nach Betrag sortieren (negative zuerst)
             if (a.amountRaw < 0 && b.amountRaw > 0) return -1;
             if (a.amountRaw > 0 && b.amountRaw < 0) return 1;
+            
             return a.timestamp - b.timestamp;
           }
         });
         
-        grouped.push(group);
-        processed.add(tx.id);
-        processed.add(swapPartner.id);
+        // Nur gruppieren wenn es sinnvolle Swap-Muster sind
+        const tokenTxs = group.filter(t => t.token === "D.FAITH" || t.token === "D.INVEST");
+        const ethTxs = group.filter(t => t.token === "ETH");
+        const isClaimGroup = group.some(t => t.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase());
         
-        if (isClaimGroup) {
-          console.log("🎁 Social Media Claim-Gruppe (Token + ETH):", group.map(t => ({
-            type: t.type,
+        // Gruppierungsregeln:
+        // - Claims: 1 Token + 1 ETH
+        // - Kaufswaps: 1 ETH out + 1 Token in
+        // - Verkaufswaps: 1 Token out + 1-2 ETH (Gas + Erlös)
+        if (isClaimGroup && tokenTxs.length === 1 && ethTxs.length === 1) {
+          // Gültige Claim-Gruppe
+          grouped.push(group);
+          group.forEach(t => processed.add(t.id));
+          
+          console.log("🎁 Social Media Claim-Gruppe:", group.map(t => ({
             token: t.token,
             amount: t.amount,
-            time: t.time,
-            timeDiff: Math.abs(group[0].timestamp - group[1].timestamp) + 'ms'
+            type: t.type
+          })));
+        } else if (!isClaimGroup && tokenTxs.length >= 1 && ethTxs.length >= 1 && group.length <= 3) {
+          // Gültige Swap-Gruppe (2-3 Transaktionen)
+          grouped.push(group);
+          group.forEach(t => processed.add(t.id));
+          
+          console.log("🔄 Swap-Gruppe erkannt:", group.map(t => ({
+            token: t.token,
+            amount: t.amount,
+            type: t.type,
+            hash: t.hash.slice(0, 10)
           })));
         } else {
-          console.log("🔄 Echter Swap (2 Transaktionen):", group.map(t => ({
-            type: t.type,
-            token: t.token,
-            amount: t.amount,
-            hash: t.hash.slice(0, 10),
-            address: t.address.slice(0, 10)
-          })));
+          // Zu komplex oder ungültig - als einzelne Transaktionen behandeln
+          [tx, ...relatedTransactions].forEach(singleTx => {
+            if (!processed.has(singleTx.id)) {
+              grouped.push(singleTx);
+              processed.add(singleTx.id);
+            }
+          });
         }
       } else {
         // Einzelne Transaktion (inkl. Claims)
@@ -809,17 +831,26 @@ export default function HistoryTab() {
                   </div>
                 );
               } else {
-                // SWAP-GRUPPE: ETH ↔ Token
-                const soldTx = group.find(tx => tx.amountRaw < 0); // Verkaufte Token (negative Beträge)
-                const boughtTx = group.find(tx => tx.amountRaw > 0); // Gekaufte Token (positive Beträge)
+                // SWAP-GRUPPE: ETH ↔ Token (2-3 Transaktionen)
+                const group = item as Transaction[];
+                const mainTx = group[0];
                 
-                // Bestimme Haupt-Token (D.FAITH oder D.INVEST) und ETH-Gegenwert
-                const tokenTx = group.find(tx => tx.token === "D.FAITH" || tx.token === "D.INVEST");
-                const ethTx = group.find(tx => tx.token === "ETH");
+                // Analysiere Swap-Richtung und Transaktionen
+                const tokenTxs = group.filter(tx => tx.token === "D.FAITH" || tx.token === "D.INVEST");
+                const ethTxs = group.filter(tx => tx.token === "ETH");
+                
+                // Bestimme Haupttoken und Swap-Richtung
+                const mainToken = tokenTxs[0]?.token || "Token";
+                const isTokenSale = tokenTxs.some(tx => tx.amountRaw < 0); // Token verkauft
+                const isTokenPurchase = tokenTxs.some(tx => tx.amountRaw > 0); // Token gekauft
+                
+                // Berechne Netto-Beträge
+                const netTokenAmount = tokenTxs.reduce((sum, tx) => sum + tx.amountRaw, 0);
+                const netEthAmount = ethTxs.reduce((sum, tx) => sum + tx.amountRaw, 0);
                 
                 return (
                   <div key={`group-${index}`} className="bg-gradient-to-br from-purple-900/20 to-purple-800/20 rounded-xl p-3 border border-purple-500/30 hover:border-purple-400/50 transition-all">
-                    {/* Mobile Swap Header */}
+                    {/* Swap Header */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
@@ -827,80 +858,118 @@ export default function HistoryTab() {
                         </div>
                         <div className="min-w-0">
                           <div className="font-semibold text-purple-300 text-sm">
-                            {tokenTx?.token} Swap
+                            {mainToken} {isTokenSale ? "Verkauf" : isTokenPurchase ? "Kauf" : "Swap"}
                           </div>
-                          <div className="text-xs text-zinc-500 truncate">{mainTx.time}</div>
+                          <div className="text-xs text-zinc-500 truncate">
+                            {mainTx.time} • {group.length} Transaktionen
+                          </div>
                         </div>
                       </div>
                       {/* Haupt-Swap-Info rechts */}
-                      {tokenTx && ethTx && (
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-xs text-purple-300">
-                            {tokenTx.amountRaw > 0 ? "Gekauft" : "Verkauft"}
-                          </div>
-                          <div className="font-semibold text-sm text-amber-400">
-                            {Math.abs(tokenTx.amountRaw).toFixed(2)} {tokenTx.token}
-                          </div>
-                          <div className="text-xs text-zinc-400">
-                            {Math.abs(ethTx.amountRaw).toFixed(6)} ETH
-                          </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-xs text-purple-300">
+                          {isTokenSale ? "Verkauft" : isTokenPurchase ? "Gekauft" : "Getauscht"}
                         </div>
-                      )}
-                    </div>
-                    
-                    {/* Mobile Swap Details - Kompakte 2-Token Darstellung */}
-                    <div className="space-y-2">
-                      {soldTx && (
-                        <div className="flex items-center justify-between bg-red-900/20 rounded-lg p-2 border border-red-500/20">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <img 
-                              src={soldTx.tokenIcon} 
-                              alt={soldTx.token} 
-                              className="w-6 h-6 rounded-full flex-shrink-0"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = "/ETH.png";
-                              }}
-                            />
-                            <span className="text-xs text-red-300 truncate">Verkauft</span>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <div className="text-red-400 font-semibold text-sm">
-                              {soldTx.amount}
-                            </div>
-                            <div className="text-xs text-red-300">{soldTx.token}</div>
-                          </div>
+                        <div className="font-semibold text-sm text-amber-400">
+                          {Math.abs(netTokenAmount).toFixed(2)} {mainToken}
                         </div>
-                      )}
-                      
-                      {/* Swap Pfeil */}
-                      <div className="flex justify-center">
-                        <div className="text-purple-400 text-lg">↓</div>
+                        <div className="text-xs text-zinc-400">
+                          {netEthAmount > 0 ? "+" : ""}{netEthAmount.toFixed(6)} ETH
+                        </div>
                       </div>
-                      
-                      {boughtTx && (
-                        <div className="flex items-center justify-between bg-green-900/20 rounded-lg p-2 border border-green-500/20">
+                    </div>
+                    
+                    {/* Kompakte Swap-Übersicht */}
+                    <div className="space-y-2">
+                      {/* Token-Transaktion(en) */}
+                      {tokenTxs.map((tx, txIndex) => (
+                        <div key={tx.id} className={`flex items-center justify-between rounded-lg p-2 border ${
+                          tx.amountRaw < 0 ? "bg-red-900/20 border-red-500/20" : "bg-green-900/20 border-green-500/20"
+                        }`}>
                           <div className="flex items-center gap-2 min-w-0 flex-1">
                             <img 
-                              src={boughtTx.tokenIcon} 
-                              alt={boughtTx.token} 
+                              src={tx.tokenIcon} 
+                              alt={tx.token} 
                               className="w-6 h-6 rounded-full flex-shrink-0"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).src = "/ETH.png";
                               }}
                             />
-                            <span className="text-xs text-green-300 truncate">Gekauft</span>
+                            <span className={`text-xs truncate ${
+                              tx.amountRaw < 0 ? "text-red-300" : "text-green-300"
+                            }`}>
+                              {tx.amountRaw < 0 ? "Verkauft" : "Gekauft"}
+                            </span>
                           </div>
                           <div className="text-right flex-shrink-0">
-                            <div className="text-green-400 font-semibold text-sm">
-                              {boughtTx.amount}
+                            <div className={`font-semibold text-sm ${
+                              tx.amountRaw < 0 ? "text-red-400" : "text-green-400"
+                            }`}>
+                              {tx.amount}
                             </div>
-                            <div className="text-xs text-green-300">{boughtTx.token}</div>
+                            <div className={`text-xs ${
+                              tx.amountRaw < 0 ? "text-red-300" : "text-green-300"
+                            }`}>
+                              {tx.token}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {/* ETH-Transaktionen (kompakt) */}
+                      {ethTxs.length > 1 && (
+                        <div className="bg-zinc-900/20 rounded-lg p-2 border border-zinc-500/20">
+                          <div className="text-xs text-zinc-400 mb-1">
+                            ETH-Transaktionen ({ethTxs.length})
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-zinc-500">Netto ETH:</span>
+                            <span className={`font-mono ${
+                              netEthAmount > 0 ? "text-green-400" : "text-red-400"
+                            }`}>
+                              {netEthAmount > 0 ? "+" : ""}{netEthAmount.toFixed(6)} ETH
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Einzelne ETH-Transaktion */}
+                      {ethTxs.length === 1 && (
+                        <div className={`flex items-center justify-between rounded-lg p-2 border ${
+                          ethTxs[0].amountRaw < 0 ? "bg-red-900/20 border-red-500/20" : "bg-green-900/20 border-green-500/20"
+                        }`}>
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <img 
+                              src={ethTxs[0].tokenIcon} 
+                              alt="ETH" 
+                              className="w-6 h-6 rounded-full flex-shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "/ETH.png";
+                              }}
+                            />
+                            <span className={`text-xs truncate ${
+                              ethTxs[0].amountRaw < 0 ? "text-red-300" : "text-green-300"
+                            }`}>
+                              {ethTxs[0].amountRaw < 0 ? "Bezahlt" : "Erhalten"}
+                            </span>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <div className={`font-semibold text-sm ${
+                              ethTxs[0].amountRaw < 0 ? "text-red-400" : "text-green-400"
+                            }`}>
+                              {ethTxs[0].amount}
+                            </div>
+                            <div className={`text-xs ${
+                              ethTxs[0].amountRaw < 0 ? "text-red-300" : "text-green-300"
+                            }`}>
+                              ETH
+                            </div>
                           </div>
                         </div>
                       )}
                     </div>
                     
-                    {/* Kompakte Pool Info */}
+                    {/* Pool Info */}
                     <div className="mt-3 pt-2 border-t border-purple-500/20">
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-zinc-500">Pool:</span>
