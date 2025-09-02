@@ -302,6 +302,16 @@ export default function BuyTab() {
   // Neuer State für das zweite Modal (Kaufprozess)
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 
+  // Automatische ETH-Berechnung bei D.FAITH Eingabe
+  useEffect(() => {
+    if (swapAmountDfaith && parseFloat(swapAmountDfaith) > 0 && dfaithPrice && dfaithPrice > 0) {
+      const estimatedEth = parseFloat(swapAmountDfaith) * dfaithPrice;
+      setSwapAmountEth(estimatedEth.toFixed(6));
+    } else {
+      setSwapAmountEth("");
+    }
+  }, [swapAmountDfaith, dfaithPrice]);
+
   // D.FAITH Swap Funktion mit mehrstufigem Prozess angepasst für ParaSwap
   const handleGetQuote = async () => {
     setSwapTxStatus("pending");
@@ -898,15 +908,6 @@ export default function BuyTab() {
                     </div>
                   </div>
 
-                  {/* Arrow */}
-                  <div className="flex justify-center">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                      </svg>
-                    </div>
-                  </div>
-
                   {/* You Pay Section - ETH Cost Display */}
                   <div className="bg-zinc-800/50 rounded-xl p-3 border border-zinc-700">
                     <label className="block text-sm font-medium text-zinc-300 mb-2">Du zahlst</label>
@@ -1110,7 +1111,16 @@ export default function BuyTab() {
               <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3">
                 <div className="text-center space-y-2">
                   <div className="text-lg font-semibold text-green-400">
-                    {swapAmountEth} ETH → {swapAmountEth && dfaithPrice ? (parseFloat(swapAmountEth) / dfaithPrice).toFixed(2) : "0.00"} D.FAITH
+                    {swapAmountDfaith} D.FAITH
+                  </div>
+                  <div className="text-sm text-zinc-300">
+                    für {swapAmountEth} ETH
+                  </div>
+                  <div className="text-lg font-bold text-amber-400">
+                    {swapAmountEth && ethPriceEur 
+                      ? `≈ €${(parseFloat(swapAmountEth) * ethPriceEur).toFixed(2)}`
+                      : "≈ €0.00"
+                    }
                   </div>
                   <div className="text-xs text-zinc-400">
                     Slippage: 1% • Rate: {dfaithPrice ? `${dfaithPrice.toFixed(6)} ETH` : "Loading..."} per D.FAITH
@@ -1187,7 +1197,7 @@ export default function BuyTab() {
                     onClick={handleBuySwap}
                     disabled={isSwapping}
                   >
-                    {isSwapping ? "Processing Purchase..." : `Buy ${swapAmountEth || "0"} ETH worth of D.FAITH`}
+                    {isSwapping ? "Processing Purchase..." : `Kaufe ${swapAmountDfaith} D.FAITH für ${swapAmountEth && ethPriceEur ? `€${(parseFloat(swapAmountEth) * ethPriceEur).toFixed(2)}` : '€0.00'}`}
                   </Button>
                 )}
 
