@@ -68,7 +68,7 @@ export default function HistoryTab() {
   // Nur verbundene Wallet verwenden - keine Demo-Daten
   const userAddress = account?.address;
 
-  // Verbesserte mobile-optimierte Swap-Gruppierung
+  // Präzise Swap-Gruppierung und korrekte Claim-Erkennung
   const filteredAndSortedTransactions = useMemo(() => {
     let filtered = transactions;
     
@@ -90,87 +90,113 @@ export default function HistoryTab() {
       }
     });
     
-    // Erweiterte Swap-Gruppierung für mobile Optimierung
+    // Präzise Swap-Gruppierung: Nur echte 2-Transaktions-Swaps
     const grouped: (Transaction | Transaction[])[] = [];
     const processed = new Set<string>();
     
     for (const tx of sorted) {
       if (processed.has(tx.id)) continue;
       
-      // Erweiterte Zeittoleranz für bessere Swap-Erkennung
-      const timeWindow = 300000; // 5 Minuten
+      // Sehr enge Zeittoleranz für echte Swaps
+      const timeWindow = 60000; // 1 Minute für echte Swaps
       
-      const relatedTransactions = sorted.filter(otherTx => {
+      // Suche nach EXAKT einem Partner für echte Swaps ODER Claim+ETH Kombinationen
+      const swapPartner = sorted.find(otherTx => {
         if (otherTx.id === tx.id || processed.has(otherTx.id)) return false;
         
         const timeDiff = Math.abs(otherTx.timestamp - tx.timestamp);
-        const isWithinTimeWindow = timeDiff <= timeWindow;
         
-        // Präzise Swap-Erkennung: Ein negativer und ein positiver Betrag
-        const isSwapPair = (
-          isWithinTimeWindow &&
-          ((tx.amountRaw < 0 && otherTx.amountRaw > 0) || 
-           (tx.amountRaw > 0 && otherTx.amountRaw < 0))
+        // Gleicher Hash = definitiv gleiche Transaktion (Multi-Asset Transfer)
+        if (tx.hash === otherTx.hash) {
+          return (tx.amountRaw < 0 && otherTx.amountRaw > 0) || 
+                 (tx.amountRaw > 0 && otherTx.amountRaw < 0);
+        }
+        
+        // Social Media Claims + ETH Gruppierung (erweiterte Zeittoleranz)
+        const isClaimWithEth = (
+          timeDiff <= 10000 && // 10 Sekunden Toleranz für Claims
+          ((tx.type === 'claim' && otherTx.type === 'claim') ||
+           (tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() && 
+            otherTx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase())) &&
+          // Einer ist Token, einer ist ETH
+          ((tx.token !== "ETH" && otherTx.token === "ETH") ||
+           (tx.token === "ETH" && otherTx.token !== "ETH"))
         );
         
-        // Pool-basierte Swaps (gleiche oder unterschiedliche Pools)
+        // Pool-basierte Swaps mit sehr enger Zeit-Toleranz
         const isPoolSwap = (
-          isSwapPair &&
+          timeDiff <= timeWindow &&
           ((tx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ||
-            tx.address.toLowerCase() === DINVEST_POOL.toLowerCase()) ||
+            tx.address.toLowerCase() === DINVEST_POOL.toLowerCase()) &&
            (otherTx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ||
-            otherTx.address.toLowerCase() === DINVEST_POOL.toLowerCase()))
+            otherTx.address.toLowerCase() === DINVEST_POOL.toLowerCase())) &&
+          // Einer muss negativ, einer positiv sein
+          ((tx.amountRaw < 0 && otherTx.amountRaw > 0) || 
+           (tx.amountRaw > 0 && otherTx.amountRaw < 0)) &&
+          // ETH <-> Token Kombination
+          ((tx.token === "ETH" && (otherTx.token === "D.FAITH" || otherTx.token === "D.INVEST")) ||
+           ((tx.token === "D.FAITH" || tx.token === "D.INVEST") && otherTx.token === "ETH"))
         );
         
-        // ETH <-> Token Swaps (häufigster Fall)
-        const isEthTokenSwap = (
-          isSwapPair &&
-          ((tx.token === "ETH" && otherTx.token !== "ETH") ||
-           (tx.token !== "ETH" && otherTx.token === "ETH"))
-        );
-        
-        // Token <-> Token Swaps
-        const isTokenTokenSwap = (
-          isSwapPair &&
-          tx.token !== "ETH" && otherTx.token !== "ETH" &&
-          tx.token !== otherTx.token
-        );
-        
-        // Gleiche Hash-Transaktionen
-        const isSameHash = tx.hash === otherTx.hash;
-        
-        // Shop/Claim mit ETH Kombinationen
-        const isServiceWithEth = (
-          isWithinTimeWindow &&
-          ((tx.type === 'shop' || tx.type === 'claim') && otherTx.token === 'ETH') ||
-          ((otherTx.type === 'shop' || otherTx.type === 'claim') && tx.token === 'ETH')
-        );
-        
-        return isPoolSwap || isEthTokenSwap || isTokenTokenSwap || isSameHash || isServiceWithEth;
+        return isClaimWithEth || isPoolSwap;
       });
       
-      if (relatedTransactions.length > 0) {
-        // Erstelle Swap-Gruppe und sortiere: negative Beträge zuerst (verkauft), dann positive (gekauft)
-        const group = [tx, ...relatedTransactions].sort((a, b) => {
-          if (a.amountRaw < 0 && b.amountRaw > 0) return -1;
-          if (a.amountRaw > 0 && b.amountRaw < 0) return 1;
-          return a.timestamp - b.timestamp;
+      if (swapPartner) {
+        // Bestimme ob es ein Swap oder eine Claim-Gruppe ist
+        const isClaimGroup = (tx.type === 'claim' || swapPartner.type === 'claim') ||
+                            (tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() || 
+                             swapPartner.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase());
+        
+        // Erstelle Gruppe mit entsprechender Sortierung
+        const group = [tx, swapPartner].sort((a, b) => {
+          if (isClaimGroup) {
+            // Bei Claims: Token zuerst, dann ETH
+            if (a.token !== "ETH" && b.token === "ETH") return -1;
+            if (a.token === "ETH" && b.token !== "ETH") return 1;
+            return a.timestamp - b.timestamp;
+          } else {
+            // Bei Swaps: Verkaufte (negative) Beträge zuerst
+            if (a.amountRaw < 0 && b.amountRaw > 0) return -1;
+            if (a.amountRaw > 0 && b.amountRaw < 0) return 1;
+            return a.timestamp - b.timestamp;
+          }
         });
         
         grouped.push(group);
-        group.forEach(t => processed.add(t.id));
+        processed.add(tx.id);
+        processed.add(swapPartner.id);
         
-        console.log("🔄 Swap-Gruppe erkannt:", group.map(t => ({
-          type: t.type,
-          token: t.token,
-          amount: t.amount,
-          amountRaw: t.amountRaw.toFixed(4),
-          time: t.time
-        })));
+        if (isClaimGroup) {
+          console.log("🎁 Social Media Claim-Gruppe (Token + ETH):", group.map(t => ({
+            type: t.type,
+            token: t.token,
+            amount: t.amount,
+            time: t.time,
+            timeDiff: Math.abs(group[0].timestamp - group[1].timestamp) + 'ms'
+          })));
+        } else {
+          console.log("🔄 Echter Swap (2 Transaktionen):", group.map(t => ({
+            type: t.type,
+            token: t.token,
+            amount: t.amount,
+            hash: t.hash.slice(0, 10),
+            address: t.address.slice(0, 10)
+          })));
+        }
       } else {
-        // Einzelne Transaktion
+        // Einzelne Transaktion (inkl. Claims)
         grouped.push(tx);
         processed.add(tx.id);
+        
+        // Debug für Claims
+        if (tx.type === 'claim') {
+          console.log("🎁 Social Media Claim erkannt:", {
+            token: tx.token,
+            amount: tx.amount,
+            address: tx.address,
+            time: tx.time
+          });
+        }
       }
     }
     
@@ -381,11 +407,18 @@ export default function HistoryTab() {
           let type: "send" | "receive" | "buy" | "sell" | "shop" | "claim";
           let address = isReceived ? transfer.from : transfer.to;
           
-          // Claim-Erkennung (höchste Priorität nach Shop)
+          // Claim-Erkennung (höchste Priorität nach Shop) - auch für ETH
           if (fromAddress === CLAIM_ADDRESS.toLowerCase() && isReceived) {
             // Transaktion von Claim-Adresse = Social Media Claim
             type = "claim";
             address = CLAIM_ADDRESS;
+            console.log("🎁 Social Media Claim erkannt in Verarbeitung:", {
+              hash: transfer.hash,
+              from: fromAddress,
+              to: toAddress,
+              asset: transfer.asset,
+              value: transfer.value
+            });
           }
           // Shop-Kauf Erkennung
           else if (toAddress === SHOP_ADDRESS.toLowerCase() && !isReceived) {
@@ -675,94 +708,213 @@ export default function HistoryTab() {
           {filteredAndSortedTransactions.map((item, index) => {
             // Prüfe ob es eine Gruppe oder eine einzelne Transaktion ist
             if (Array.isArray(item)) {
-              // Gruppierte Swap-Transaktionen - Mobile optimiert
+              // Gruppierte Transaktionen - Swaps oder Claims
               const group = item as Transaction[];
-              const soldTx = group.find(tx => tx.amountRaw < 0); // Verkaufte Token
-              const boughtTx = group.find(tx => tx.amountRaw > 0); // Gekaufte Token
               const mainTx = group[0]; // Für Zeitstempel
               
-              return (
-                <div key={`group-${index}`} className="bg-gradient-to-br from-purple-900/20 to-purple-800/20 rounded-xl p-3 border border-purple-500/30 hover:border-purple-400/50 transition-all">
-                  {/* Mobile Swap Header */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-                        <span className="text-white text-sm">🔄</span>
-                      </div>
-                      <div className="min-w-0">
-                        <div className="font-semibold text-purple-300 text-sm">
-                          Swap ({group.length} Transaktionen)
+              // Bestimme ob es eine Claim-Gruppe oder Swap-Gruppe ist
+              const isClaimGroup = group.some(tx => tx.type === 'claim') ||
+                                  group.some(tx => tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase());
+              
+              if (isClaimGroup) {
+                // CLAIM-GRUPPE: Token + ETH von Social Media
+                const tokenTx = group.find(tx => tx.token !== "ETH");
+                const ethTx = group.find(tx => tx.token === "ETH");
+                
+                return (
+                  <div key={`group-${index}`} className="bg-gradient-to-br from-cyan-900/20 to-cyan-800/20 rounded-xl p-3 border border-cyan-500/30 hover:border-cyan-400/50 transition-all">
+                    {/* Claim Header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+                          <span className="text-white text-sm">🎁</span>
                         </div>
-                        <div className="text-xs text-zinc-500 truncate">{mainTx.time}</div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Mobile Swap Details - Optimierte 2-Spalten Darstellung */}
-                  <div className="space-y-2">
-                    {soldTx && (
-                      <div className="flex items-center justify-between bg-red-900/20 rounded-lg p-2 border border-red-500/20">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <img 
-                            src={soldTx.tokenIcon} 
-                            alt={soldTx.token} 
-                            className="w-6 h-6 rounded-full flex-shrink-0"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = "/ETH.png";
-                            }}
-                          />
-                          <span className="text-xs text-red-300 truncate">Verkauft</span>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-red-400 font-semibold text-sm">
-                            {soldTx.amount}
+                        <div className="min-w-0">
+                          <div className="font-semibold text-cyan-300 text-sm">
+                            Social Media Claim
                           </div>
-                          <div className="text-xs text-red-300">{soldTx.token}</div>
+                          <div className="text-xs text-zinc-500 truncate">{mainTx.time}</div>
                         </div>
                       </div>
-                    )}
-                    
-                    {/* Swap Pfeil */}
-                    <div className="flex justify-center">
-                      <div className="text-purple-400 text-lg">↓</div>
+                      {/* Haupt-Claim-Info rechts */}
+                      {tokenTx && (
+                        <div className="text-right flex-shrink-0">
+                          <div className="font-semibold text-sm text-cyan-400">
+                            +{Math.abs(tokenTx.amountRaw).toFixed(2)} {tokenTx.token}
+                          </div>
+                          {ethTx && (
+                            <div className="text-xs text-zinc-400">
+                              +{Math.abs(ethTx.amountRaw).toFixed(7)} ETH
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     
-                    {boughtTx && (
-                      <div className="flex items-center justify-between bg-green-900/20 rounded-lg p-2 border border-green-500/20">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <img 
-                            src={boughtTx.tokenIcon} 
-                            alt={boughtTx.token} 
-                            className="w-6 h-6 rounded-full flex-shrink-0"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = "/ETH.png";
-                            }}
-                          />
-                          <span className="text-xs text-green-300 truncate">Gekauft</span>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-green-400 font-semibold text-sm">
-                            {boughtTx.amount}
+                    {/* Claim Details */}
+                    <div className="space-y-2">
+                      {tokenTx && (
+                        <div className="flex items-center justify-between bg-cyan-900/20 rounded-lg p-2 border border-cyan-500/20">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <img 
+                              src={tokenTx.tokenIcon} 
+                              alt={tokenTx.token} 
+                              className="w-6 h-6 rounded-full flex-shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "/ETH.png";
+                              }}
+                            />
+                            <span className="text-xs text-cyan-300 truncate">Claim Belohnung</span>
                           </div>
-                          <div className="text-xs text-green-300">{boughtTx.token}</div>
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-cyan-400 font-semibold text-sm">
+                              {tokenTx.amount}
+                            </div>
+                            <div className="text-xs text-cyan-300">{tokenTx.token}</div>
+                          </div>
                         </div>
+                      )}
+                      
+                      {ethTx && (
+                        <div className="flex items-center justify-between bg-cyan-900/20 rounded-lg p-2 border border-cyan-500/20">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <img 
+                              src={ethTx.tokenIcon} 
+                              alt={ethTx.token} 
+                              className="w-6 h-6 rounded-full flex-shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "/ETH.png";
+                              }}
+                            />
+                            <span className="text-xs text-cyan-300 truncate">Gas Erstattung</span>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-cyan-400 font-semibold text-sm">
+                              {ethTx.amount}
+                            </div>
+                            <div className="text-xs text-cyan-300">{ethTx.token}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Claim Source */}
+                    <div className="mt-3 pt-2 border-t border-cyan-500/20">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-zinc-500">Quelle:</span>
+                        <span className="text-cyan-300 font-mono truncate ml-2">
+                          Social Media Rewards
+                        </span>
                       </div>
-                    )}
-                  </div>
-                  
-                  {/* Kompakte Pool Info */}
-                  <div className="mt-3 pt-2 border-t border-purple-500/20">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-zinc-500">Pool:</span>
-                      <span className="text-purple-300 font-mono truncate ml-2">
-                        {mainTx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ? "D.FAITH" :
-                         mainTx.address.toLowerCase() === DINVEST_POOL.toLowerCase() ? "D.INVEST" :
-                         formatAddress(mainTx.address)}
-                      </span>
                     </div>
                   </div>
-                </div>
-              );
+                );
+              } else {
+                // SWAP-GRUPPE: ETH ↔ Token
+                const soldTx = group.find(tx => tx.amountRaw < 0); // Verkaufte Token (negative Beträge)
+                const boughtTx = group.find(tx => tx.amountRaw > 0); // Gekaufte Token (positive Beträge)
+                
+                // Bestimme Haupt-Token (D.FAITH oder D.INVEST) und ETH-Gegenwert
+                const tokenTx = group.find(tx => tx.token === "D.FAITH" || tx.token === "D.INVEST");
+                const ethTx = group.find(tx => tx.token === "ETH");
+                
+                return (
+                  <div key={`group-${index}`} className="bg-gradient-to-br from-purple-900/20 to-purple-800/20 rounded-xl p-3 border border-purple-500/30 hover:border-purple-400/50 transition-all">
+                    {/* Mobile Swap Header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                          <span className="text-white text-sm">🔄</span>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-purple-300 text-sm">
+                            {tokenTx?.token} Swap
+                          </div>
+                          <div className="text-xs text-zinc-500 truncate">{mainTx.time}</div>
+                        </div>
+                      </div>
+                      {/* Haupt-Swap-Info rechts */}
+                      {tokenTx && ethTx && (
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-xs text-purple-300">
+                            {tokenTx.amountRaw > 0 ? "Gekauft" : "Verkauft"}
+                          </div>
+                          <div className="font-semibold text-sm text-amber-400">
+                            {Math.abs(tokenTx.amountRaw).toFixed(2)} {tokenTx.token}
+                          </div>
+                          <div className="text-xs text-zinc-400">
+                            {Math.abs(ethTx.amountRaw).toFixed(6)} ETH
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Mobile Swap Details - Kompakte 2-Token Darstellung */}
+                    <div className="space-y-2">
+                      {soldTx && (
+                        <div className="flex items-center justify-between bg-red-900/20 rounded-lg p-2 border border-red-500/20">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <img 
+                              src={soldTx.tokenIcon} 
+                              alt={soldTx.token} 
+                              className="w-6 h-6 rounded-full flex-shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "/ETH.png";
+                              }}
+                            />
+                            <span className="text-xs text-red-300 truncate">Verkauft</span>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-red-400 font-semibold text-sm">
+                              {soldTx.amount}
+                            </div>
+                            <div className="text-xs text-red-300">{soldTx.token}</div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Swap Pfeil */}
+                      <div className="flex justify-center">
+                        <div className="text-purple-400 text-lg">↓</div>
+                      </div>
+                      
+                      {boughtTx && (
+                        <div className="flex items-center justify-between bg-green-900/20 rounded-lg p-2 border border-green-500/20">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <img 
+                              src={boughtTx.tokenIcon} 
+                              alt={boughtTx.token} 
+                              className="w-6 h-6 rounded-full flex-shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "/ETH.png";
+                              }}
+                            />
+                            <span className="text-xs text-green-300 truncate">Gekauft</span>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-green-400 font-semibold text-sm">
+                              {boughtTx.amount}
+                            </div>
+                            <div className="text-xs text-green-300">{boughtTx.token}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Kompakte Pool Info */}
+                    <div className="mt-3 pt-2 border-t border-purple-500/20">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-zinc-500">Pool:</span>
+                        <span className="text-purple-300 font-mono truncate ml-2">
+                          {mainTx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ? "D.FAITH Pool" :
+                           mainTx.address.toLowerCase() === DINVEST_POOL.toLowerCase() ? "D.INVEST Pool" :
+                           formatAddress(mainTx.address)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
             } else {
               // Einzelne Transaktion - Mobile optimiert
               const tx = item as Transaction;
