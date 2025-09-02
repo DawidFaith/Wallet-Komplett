@@ -318,25 +318,43 @@ export default function BuyTab() {
         throw new Error("Minimum purchase amount ist 0.01 D.FAITH");
       }
 
-      console.log("=== ParaSwap Quote Request für Base (D.FAITH Input) ===");
+      console.log("=== ParaSwap Quote Request für Base (D.FAITH Input mit ETH SELL-side) ===");
       console.log("D.FAITH Amount:", swapAmountDfaith);
       console.log("Account Address:", account.address);
       
-      // Berechne D.FAITH in kleinste Einheit (2 Decimals)
-      const dfaithAmountWei = (parseFloat(swapAmountDfaith) * Math.pow(10, DFAITH_DECIMALS)).toString();
-      console.log("D.FAITH Amount in smallest unit:", dfaithAmountWei);
+      // Schritt 1: Berechne grob die benötigte ETH-Menge basierend auf aktuellem D.FAITH Preis
+      let estimatedEthAmount = 0.001; // Fallback minimum
+      
+      if (dfaithPrice && dfaithPrice > 0) {
+        // Verwende aktuellen D.FAITH Preis für Schätzung
+        estimatedEthAmount = parseFloat(swapAmountDfaith) * dfaithPrice;
+        console.log("Estimated ETH needed based on current price:", estimatedEthAmount);
+      } else {
+        // Fallback: Verwende kleine ETH-Menge für Quote
+        estimatedEthAmount = parseFloat(swapAmountDfaith) * 0.0001; // Sehr konservativ
+        console.log("Using fallback ETH estimation:", estimatedEthAmount);
+      }
+      
+      // Minimum ETH-Menge für Liquidität
+      if (estimatedEthAmount < 0.0001) {
+        estimatedEthAmount = 0.0001;
+      }
+      
+      // Schritt 2: Nutze SELL-side Quote mit geschätzter ETH-Menge (bewährte Methode)
+      const ethAmountWei = (estimatedEthAmount * Math.pow(10, ETH_DECIMALS)).toString();
+      console.log("ETH Amount in Wei for quote:", ethAmountWei);
       
       const priceParams = new URLSearchParams({
         srcToken: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", // ETH address for ParaSwap
         destToken: DFAITH_TOKEN, // D.FAITH
         srcDecimals: ETH_DECIMALS.toString(),
         destDecimals: DFAITH_DECIMALS.toString(),
-        amount: dfaithAmountWei, // D.FAITH in kleinste Einheit
+        amount: ethAmountWei, // ETH in Wei (SELL-side)
         network: "8453", // Base Chain ID
-        side: "BUY", // Wichtig: BUY statt SELL, da wir D.FAITH kaufen wollen
+        side: "SELL", // Zurück zu SELL-side (bewährt)
         userAddress: account.address,
         slippage: "100", // Fest 1% (100 basis points)
-        maxImpact: "50" // Erlaube bis zu 50% Price Impact (Standard ist 20%)
+        maxImpact: "50" // Erlaube bis zu 50% Price Impact
       });
       
       console.log("Price Parameters:", Object.fromEntries(priceParams));
@@ -378,14 +396,54 @@ export default function BuyTab() {
         throw new Error('ParaSwap: Keine gültige Price Route erhalten');
       }
       
-      // Bei BUY-Seite: srcAmount ist ETH (was wir zahlen müssen)
-      const requiredEthWei = priceData.priceRoute.srcAmount;
-      const requiredEth = Number(requiredEthWei) / Math.pow(10, ETH_DECIMALS);
+      // Schritt 3: Berechne das Verhältnis und skaliere für gewünschte D.FAITH-Menge
+      const receivedDfaithWei = priceData.priceRoute.destAmount;
+      const receivedDfaith = Number(receivedDfaithWei) / Math.pow(10, DFAITH_DECIMALS);
+      const usedEthWei = priceData.priceRoute.srcAmount;
+      const usedEth = Number(usedEthWei) / Math.pow(10, ETH_DECIMALS);
       
-      console.log("Required ETH for", swapAmountDfaith, "D.FAITH:", requiredEth);
+      console.log("Quote result: ETH", usedEth, "→ D.FAITH", receivedDfaith);
       
-      // Setze die berechnete ETH-Menge
-      setSwapAmountEth(requiredEth.toFixed(6));
+      // Berechne Skalierungsfaktor für gewünschte D.FAITH-Menge
+      const targetDfaith = parseFloat(swapAmountDfaith);
+      const scaleFactor = targetDfaith / receivedDfaith;
+      const requiredEth = usedEth * scaleFactor;
+      
+      console.log("Scale factor:", scaleFactor, "Required ETH for", targetDfaith, "D.FAITH:", requiredEth);
+      
+      // Schritt 4: Hole finale Quote mit korrekter ETH-Menge
+      const finalEthAmountWei = (requiredEth * Math.pow(10, ETH_DECIMALS)).toString();
+      
+      const finalPriceParams = new URLSearchParams({
+        srcToken: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+        destToken: DFAITH_TOKEN,
+        srcDecimals: ETH_DECIMALS.toString(),
+        destDecimals: DFAITH_DECIMALS.toString(),
+        amount: finalEthAmountWei,
+        network: "8453",
+        side: "SELL",
+        userAddress: account.address,
+        slippage: "100",
+        maxImpact: "50"
+      });
+      
+      const finalPriceResponse = await fetch(`https://apiv5.paraswap.io/prices?${finalPriceParams}`);
+      
+      if (!finalPriceResponse.ok) {
+        // Fallback: verwende erste Quote
+        console.log("Final quote failed, using scaled first quote");
+        setSwapAmountEth(requiredEth.toFixed(6));
+      } else {
+        const finalPriceData = await finalPriceResponse.json();
+        if (finalPriceData && finalPriceData.priceRoute) {
+          const finalEth = Number(finalPriceData.priceRoute.srcAmount) / Math.pow(10, ETH_DECIMALS);
+          setSwapAmountEth(finalEth.toFixed(6));
+          priceData.priceRoute = finalPriceData.priceRoute; // Verwende finale Quote
+          console.log("Using final quote with ETH:", finalEth);
+        } else {
+          setSwapAmountEth(requiredEth.toFixed(6));
+        }
+      }
       
       // Warnung anzeigen bei hohem Price Impact
       if (priceData.priceRoute.maxImpactReached) {
@@ -397,7 +455,6 @@ export default function BuyTab() {
         srcToken: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
         destToken: DFAITH_TOKEN,
         srcAmount: priceData.priceRoute.srcAmount,
-        destAmount: priceData.priceRoute.destAmount,
         priceRoute: priceData.priceRoute,
         userAddress: account.address,
         slippage: "100" // Fest 1% (100 basis points)
