@@ -159,7 +159,10 @@ export default function HistoryTab() {
             ethAmount: ethAfterClaim.amount,
             groupSize: 2
           });
-          grouped.push([tx, ethAfterClaim]);
+          // Markiere als Claim-Gruppe für Filter
+          const claimGroup = [tx, ethAfterClaim];
+          (claimGroup as any).__groupType = 'claim';
+          grouped.push(claimGroup);
           processed.add(tx.id);
           processed.add(ethAfterClaim.id);
         } else {
@@ -218,7 +221,10 @@ export default function HistoryTab() {
             eth: tx.token === "ETH" ? tx.amount : partner.amount,
             dfaith: tx.token === "D.FAITH" ? tx.amount : partner.amount
           });
-          grouped.push([tx, partner]);
+          // Markiere als D.FAITH Kauf-Gruppe für Filter
+          const buyGroup = [tx, partner];
+          (buyGroup as any).__groupType = 'buy';
+          grouped.push(buyGroup);
           processed.add(tx.id);
           processed.add(partner.id);
           continue;
@@ -265,13 +271,19 @@ export default function HistoryTab() {
               ethIn: ethFromPool.amount,
               gasEth: gasEth.amount
             });
-            grouped.push([tx, ethFromPool, gasEth]);
+            // Markiere als D.FAITH Verkauf-Gruppe für Filter
+            const sellGroup = [tx, ethFromPool, gasEth];
+            (sellGroup as any).__groupType = 'sell';
+            grouped.push(sellGroup);
             processed.add(tx.id);
             processed.add(ethFromPool.id);
             processed.add(gasEth.id);
           } else {
             console.log("⚠️ Kein Gas ETH gefunden, nur 2er Gruppe");
-            grouped.push([tx, ethFromPool]);
+            // Markiere als D.FAITH Verkauf-Gruppe für Filter
+            const sellGroup = [tx, ethFromPool];
+            (sellGroup as any).__groupType = 'sell';
+            grouped.push(sellGroup);
             processed.add(tx.id);
             processed.add(ethFromPool.id);
           }
@@ -287,6 +299,32 @@ export default function HistoryTab() {
     }
     
     console.log("� Gruppierung abgeschlossen:", grouped.length, "Gruppen");
+    
+    // Filter anwenden NACH Gruppierung
+    if (filter !== 'all') {
+      const filteredGroups = grouped.filter(item => {
+        if (Array.isArray(item)) {
+          // Gruppierte Transaktionen - prüfe Gruppentyp
+          const groupType = (item as any).__groupType;
+          
+          if (filter === 'buy') {
+            return groupType === 'buy'; // Nur D.FAITH Kauf-Swaps
+          } else if (filter === 'sell') {
+            return groupType === 'sell'; // Nur D.FAITH Verkauf-Swaps
+          } else if (filter === 'claim') {
+            return groupType === 'claim'; // Nur Claim-Gruppen
+          }
+          
+          return false; // Andere Gruppen nicht anzeigen bei spezifischen Filtern
+        } else {
+          // Einzeltransaktionen
+          const tx = item as Transaction;
+          return tx.type === filter;
+        }
+      });
+      
+      return filteredGroups;
+    }
     
     return grouped;
   }, [transactions, filter, sortBy]);
