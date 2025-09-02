@@ -237,8 +237,34 @@ export default function SellTab() {
     setSellStep('initial');
     
     if (token === "ETH") {
-      // Öffne externe Seite
-      window.open('https://global.transak.com/', '_blank');
+      // Versuche verschiedene Methoden um die externe Seite zu öffnen
+      try {
+        // Methode 1: Standard window.open mit zusätzlichen Parametern
+        const newWindow = window.open('https://global.transak.com/', '_blank', 'noopener,noreferrer');
+        
+        // Fallback: Wenn window.open blockiert wird
+        if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+          // Methode 2: Verwende window.location in einem neuen Tab über temporären Link
+          const link = document.createElement('a');
+          link.href = 'https://global.transak.com/';
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      } catch (error) {
+        console.error('Fehler beim Öffnen von Transak:', error);
+        // Methode 3: Fallback - Zeige Alert mit URL
+        alert('Bitte besuchen Sie manuell: https://global.transak.com/ um ETH zu verkaufen');
+        // Methode 4: Kopiere URL in Zwischenablage (falls verfügbar)
+        try {
+          navigator.clipboard.writeText('https://global.transak.com/');
+          console.log('Transak URL in Zwischenablage kopiert');
+        } catch (clipboardError) {
+          console.log('Zwischenablage nicht verfügbar');
+        }
+      }
     } else {
       setShowSellModal(true);
     }
