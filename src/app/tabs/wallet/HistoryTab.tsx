@@ -8,6 +8,10 @@ import { useActiveAccount } from "thirdweb/react";
 const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
 const DINVEST_TOKEN = "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb";
 
+// Swap Pool Adressen
+const DFAITH_POOL = "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"; // D.FAITH/ETH Pool
+const DINVEST_POOL = "0xc0c3b18cdb9ee490ecda6e4a294c3499790aa0cb"; // D.INVEST/ETH Pool
+
 // Token-Icons Mapping
 const TOKEN_ICONS: { [key: string]: string } = {
   "D.FAITH": "/D.FAITH.png",
@@ -20,7 +24,7 @@ const TOKEN_ICONS: { [key: string]: string } = {
 
 type Transaction = {
   id: string;
-  type: "send" | "receive";
+  type: "send" | "receive" | "buy" | "sell";
   token: string;
   tokenIcon: string;
   amount: string;
@@ -33,7 +37,7 @@ type Transaction = {
   blockNumber: string;
 };
 
-type FilterType = "all" | "send" | "receive";
+type FilterType = "all" | "send" | "receive" | "buy" | "sell";
 type SortType = "newest" | "oldest" | "amount";
 
 export default function HistoryTab() {
@@ -48,6 +52,8 @@ export default function HistoryTab() {
     totalValue: number;
     sends: number;
     receives: number;
+    buys: number;
+    sells: number;
   } | null>(null);
   const account = useActiveAccount();
 
@@ -254,10 +260,35 @@ export default function HistoryTab() {
             hour: "2-digit", minute: "2-digit"
           });
           
-          // Bestimme Transaktionsrichtung
+          // Bestimme Transaktionsrichtung und -typ
           const isReceived = transfer.to?.toLowerCase() === testAddress.toLowerCase();
-          const type: "send" | "receive" = isReceived ? "receive" : "send";
-          const address = isReceived ? transfer.from : transfer.to;
+          const fromAddress = transfer.from?.toLowerCase();
+          const toAddress = transfer.to?.toLowerCase();
+          
+          let type: "send" | "receive" | "buy" | "sell";
+          let address = isReceived ? transfer.from : transfer.to;
+          
+          // Swap-Erkennung basierend auf Pool-Adressen
+          if (fromAddress === DFAITH_POOL.toLowerCase() && isReceived) {
+            // D.FAITH von Pool erhalten = D.FAITH gekauft
+            type = "buy";
+            address = DFAITH_POOL;
+          } else if (toAddress === DFAITH_POOL.toLowerCase() && !isReceived) {
+            // D.FAITH an Pool gesendet = D.FAITH verkauft
+            type = "sell";
+            address = DFAITH_POOL;
+          } else if (fromAddress === DINVEST_POOL.toLowerCase() && isReceived) {
+            // D.INVEST von Pool erhalten = D.INVEST gekauft
+            type = "buy";
+            address = DINVEST_POOL;
+          } else if (toAddress === DINVEST_POOL.toLowerCase() && !isReceived) {
+            // D.INVEST an Pool gesendet = D.INVEST verkauft
+            type = "sell";
+            address = DINVEST_POOL;
+          } else {
+            // Normale Transaktion (nicht über Pools)
+            type = isReceived ? "receive" : "send";
+          }
           
           // Token und Betrag formatieren
           let token = transfer.asset || "ETH";
@@ -270,22 +301,48 @@ export default function HistoryTab() {
               token = "D.FAITH";
               const value = parseFloat(transfer.value || "0");
               amountRaw = value;
-              amount = (type === "receive" ? "+" : "-") + value.toFixed(2);
+              // Bei Käufen/Verkäufen andere Formatierung
+              if (type === "buy") {
+                amount = "+" + value.toFixed(2);
+              } else if (type === "sell") {
+                amount = "-" + value.toFixed(2);
+              } else {
+                amount = (type === "receive" ? "+" : "-") + value.toFixed(2);
+              }
             } else if (transfer.rawContract.address.toLowerCase() === DINVEST_TOKEN.toLowerCase()) {
               token = "D.INVEST";
               const value = parseInt(transfer.value || "0");
               amountRaw = value;
-              amount = (type === "receive" ? "+" : "-") + value.toString();
+              // Bei Käufen/Verkäufen andere Formatierung
+              if (type === "buy") {
+                amount = "+" + value.toString();
+              } else if (type === "sell") {
+                amount = "-" + value.toString();
+              } else {
+                amount = (type === "receive" ? "+" : "-") + value.toString();
+              }
             } else {
               const value = parseFloat(transfer.value || "0");
               amountRaw = value;
-              amount = (type === "receive" ? "+" : "-") + value.toFixed(6);
+              if (type === "buy") {
+                amount = "+" + value.toFixed(6);
+              } else if (type === "sell") {
+                amount = "-" + value.toFixed(6);
+              } else {
+                amount = (type === "receive" ? "+" : "-") + value.toFixed(6);
+              }
             }
           } else {
             // ETH-Transaktion
             const value = parseFloat(transfer.value || "0");
             amountRaw = value;
-            amount = (type === "receive" ? "+" : "-") + value.toFixed(6);
+            if (type === "buy") {
+              amount = "+" + value.toFixed(6);
+            } else if (type === "sell") {
+              amount = "-" + value.toFixed(6);
+            } else {
+              amount = (type === "receive" ? "+" : "-") + value.toFixed(6);
+            }
           }
           
           return {
@@ -320,6 +377,8 @@ export default function HistoryTab() {
         }, 0),
         sends: mappedTransactions.filter(tx => tx.type === "send").length,
         receives: mappedTransactions.filter(tx => tx.type === "receive").length,
+        buys: mappedTransactions.filter(tx => tx.type === "buy").length,
+        sells: mappedTransactions.filter(tx => tx.type === "sell").length,
       });
       
     } catch (err: any) {
@@ -342,6 +401,10 @@ export default function HistoryTab() {
         return <FaPaperPlane className="text-white text-xs" />;
       case "receive":
         return <FaArrowDown className="text-white text-xs" />;
+      case "buy":
+        return <span className="text-white text-xs">🛒</span>;
+      case "sell":
+        return <span className="text-white text-xs">💰</span>;
       default:
         return <FaCoins className="text-white text-xs" />;
     }
@@ -353,6 +416,10 @@ export default function HistoryTab() {
         return "from-red-400 to-red-600";
       case "receive":
         return "from-green-400 to-green-600";
+      case "buy":
+        return "from-blue-400 to-blue-600";
+      case "sell":
+        return "from-orange-400 to-orange-600";
       default:
         return "from-zinc-400 to-zinc-600";
     }
@@ -392,6 +459,8 @@ export default function HistoryTab() {
             className="px-3 py-1 bg-zinc-700 border border-zinc-600 rounded text-sm text-white"
           >
             <option value="all">Alle</option>
+            <option value="buy">Gekauft</option>
+            <option value="sell">Verkauft</option>
             <option value="receive">Empfangen</option>
             <option value="send">Gesendet</option>
           </select>
@@ -423,6 +492,8 @@ export default function HistoryTab() {
                     <div className="font-medium text-amber-400 capitalize text-lg">
                       {tx.type === "send" && "Gesendet"}
                       {tx.type === "receive" && "Empfangen"}
+                      {tx.type === "buy" && "Gekauft"}
+                      {tx.type === "sell" && "Verkauft"}
                     </div>
                     <div className="text-xs text-zinc-500">{tx.time}</div>
                   </div>
@@ -438,10 +509,18 @@ export default function HistoryTab() {
               <div className="text-sm text-zinc-400 space-y-2 bg-zinc-900/50 rounded-lg p-3">
                 <div className="flex justify-between">
                   <span className="text-zinc-500">
-                    {tx.type === "send" ? "An:" : "Von:"}
+                    {tx.type === "send" ? "An:" : 
+                     tx.type === "receive" ? "Von:" :
+                     tx.type === "buy" ? "Über Pool:" :
+                     tx.type === "sell" ? "An Pool:" : "Adresse:"}
                   </span>
                   <span className="font-mono text-amber-400">
-                    {formatAddress(tx.address)}
+                    {tx.type === "buy" || tx.type === "sell" ? 
+                      (tx.address.toLowerCase() === DFAITH_POOL.toLowerCase() ? "D.FAITH Pool" :
+                       tx.address.toLowerCase() === DINVEST_POOL.toLowerCase() ? "D.INVEST Pool" :
+                       formatAddress(tx.address)) :
+                      formatAddress(tx.address)
+                    }
                   </span>
                 </div>
                 <div className="flex justify-between">
