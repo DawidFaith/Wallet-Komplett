@@ -383,20 +383,7 @@ export default function HistoryTab() {
         )}
       </div>
 
-      {/* Status Panel ohne API Info */}
-      <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/50 mb-4">
-        <div className="flex justify-between items-center text-xs text-zinc-400">
-          <div className="flex items-center gap-4">
-            <span>Wallet: {userAddress ? formatAddress(userAddress) : 'Nicht verbunden'}</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span>Status: {isLoading ? 'Lädt...' : error ? 'Fehler' : 'Live'}</span>
-            <span>Transaktionen: {filteredAndSortedTransactions.length}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter und Sortierung */}
+      {/* Filter - nur Transaktionstyp */}
       {!isLoading && !error && transactions.length > 0 && (
         <div className="flex gap-2 p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/50 mb-4">
           <select 
@@ -404,66 +391,10 @@ export default function HistoryTab() {
             onChange={(e) => setFilter(e.target.value as any)}
             className="px-3 py-1 bg-zinc-700 border border-zinc-600 rounded text-sm text-white"
           >
-            <option value="all">Alle Transaktionen</option>
-            <option value="receive">Nur Empfangen</option>
-            <option value="send">Nur Gesendet</option>
+            <option value="all">Alle</option>
+            <option value="receive">Empfangen</option>
+            <option value="send">Gesendet</option>
           </select>
-          
-          <select 
-            value={sortBy} 
-            onChange={(e) => setSortBy(e.target.value as any)}
-            className="px-3 py-1 bg-zinc-700 border border-zinc-600 rounded text-sm text-white"
-          >
-            <option value="newest">Neueste zuerst</option>
-            <option value="oldest">Älteste zuerst</option>
-            <option value="amount">Nach Betrag</option>
-          </select>
-        </div>
-      )}
-
-      {/* Statistiken */}
-      {!isLoading && !error && transactions.length > 0 && stats && (
-        <div className="grid grid-cols-3 gap-2 text-center text-sm mb-4">
-          <div className="p-3 bg-zinc-800/30 rounded border border-zinc-700/50">
-            <div className="text-amber-400 font-semibold text-lg">{stats.transactionCount}</div>
-            <div className="text-zinc-400 text-xs">Gesamt</div>
-          </div>
-          <div className="p-3 bg-green-900/20 rounded border border-green-800/50">
-            <div className="text-green-400 font-semibold text-lg">{stats.receives}</div>
-            <div className="text-zinc-400 text-xs">Empfangen</div>
-          </div>
-          <div className="p-3 bg-red-900/20 rounded border border-red-800/50">
-            <div className="text-red-400 font-semibold text-lg">{stats.sends}</div>
-            <div className="text-zinc-400 text-xs">Gesendet</div>
-          </div>
-        </div>
-      )}
-
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex justify-center items-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
-          <span className="ml-3 text-zinc-400">Lade Transaktionen...</span>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!isLoading && !error && !userAddress && (
-        <div className="text-center py-8">
-          <p className="text-zinc-400">Bitte verbinden Sie Ihre Wallet um Transaktionen zu sehen.</p>
-        </div>
-      )}
-
-      {/* No Transactions */}
-      {!isLoading && !error && userAddress && transactions.length === 0 && (
-        <div className="text-center py-8">
-          <div className="bg-zinc-800/50 rounded-lg p-6 border border-zinc-700">
-            <FaCoins className="text-4xl text-zinc-500 mx-auto mb-4" />
-            <p className="text-zinc-400 text-lg mb-2">Keine Transaktionen gefunden</p>
-            <p className="text-zinc-500 text-sm">
-              Diese Wallet-Adresse hat noch keine aufgezeichneten Transaktionen auf Base Network.
-            </p>
-          </div>
         </div>
       )}
 
@@ -520,29 +451,6 @@ export default function HistoryTab() {
                   </span>
                 </div>
               </div>
-
-              {/* Status Badge */}
-              <div className="flex justify-between items-center mt-4">
-                <span className={`text-sm px-3 py-1 rounded-full font-medium ${
-                  tx.status === "success" 
-                    ? "bg-green-500/20 text-green-400 border border-green-500/30" 
-                    : tx.status === "pending"
-                    ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-                    : "bg-red-500/20 text-red-400 border border-red-500/30"
-                }`}>
-                  {tx.status === "success" && "✓ Erfolgreich"}
-                  {tx.status === "pending" && "⏳ Ausstehend"}
-                  {tx.status === "failed" && "✗ Fehlgeschlagen"}
-                </span>
-                <a
-                  href={`https://basescan.org/tx/${tx.hash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-amber-400 hover:text-amber-300 transition underline font-medium bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/20 hover:border-amber-500/40"
-                >
-                  Basescan ↗
-                </a>
-              </div>
             </div>
           ))}
         </div>
@@ -554,46 +462,7 @@ export default function HistoryTab() {
           <div className="bg-red-500/20 text-red-400 rounded-lg p-4 border border-red-500/30">
             <p className="font-semibold mb-1">Blockchain-Verbindung fehlgeschlagen</p>
             <p className="text-sm mb-2">{error}</p>
-            <div className="text-xs text-red-300 mt-3 space-y-1">
-              <p><strong>Mögliche Lösungen:</strong></p>
-              <p>• Eigenen Alchemy API Key hinzufügen</p>
-              <p>• Infura API Key konfigurieren</p>
-              <p>• QuickNode Premium Account nutzen</p>
-              <p>• Wallet mit aktiver Verbindung verwenden</p>
-            </div>
           </div>
-        </div>
-      )}
-
-      {/* Summary Stats */}
-      {!isLoading && !error && transactions.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-          <div className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-4 border border-zinc-700 text-center">
-            <div className="text-2xl font-bold text-amber-400 mb-1">
-              {transactions.length}
-            </div>
-            <div className="text-xs text-zinc-500">Transaktionen</div>
-          </div>
-          <div className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-4 border border-zinc-700 text-center">
-            <div className="text-2xl font-bold text-green-400 mb-1">
-              {transactions.filter(tx => tx.status === "success").length}
-            </div>
-            <div className="text-xs text-zinc-500">Erfolgreich</div>
-          </div>
-          <div className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-4 border border-zinc-700 text-center">
-            <div className="text-2xl font-bold text-red-400 mb-1">
-              {transactions.filter(tx => tx.status === "failed").length}
-            </div>
-            <div className="text-xs text-zinc-500">Fehlgeschlagen</div>
-          </div>
-          {stats && (
-            <div className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-4 border border-zinc-700 text-center">
-              <div className="text-2xl font-bold text-blue-400 mb-1">
-                {stats.transactionCount}
-              </div>
-              <div className="text-xs text-zinc-500">Total (API)</div>
-            </div>
-          )}
         </div>
       )}
 
