@@ -54,10 +54,16 @@ export default function SellTab() {
   const [dfaithPrice, setDfaithPrice] = useState<number | null>(null);
   const [dfaithPriceEur, setDfaithPriceEur] = useState<number | null>(null);
   const [ethPriceEur, setEthPriceEur] = useState<number | null>(null);
+  const [isLoadingPrice, setIsLoadingPrice] = useState(true);
+  const [lastKnownPrices, setLastKnownPrices] = useState<{
+    dfaith?: number;
+    dfaithEur?: number;
+    ethEur?: number;
+    timestamp?: number;
+  }>({});
   const [slippage, setSlippage] = useState("1");
   const [isSwapping, setIsSwapping] = useState(false);
   const [swapTxStatus, setSwapTxStatus] = useState<string | null>(null);
-  const [isLoadingPrice, setIsLoadingPrice] = useState(true);
   const [priceError, setPriceError] = useState<string | null>(null);
   const [needsApproval, setNeedsApproval] = useState(false);
   const [quoteTxData, setQuoteTxData] = useState<any>(null);
@@ -65,62 +71,154 @@ export default function SellTab() {
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [sellStep, setSellStep] = useState<'initial' | 'quoteFetched' | 'approved' | 'completed'>('initial');
   
-  // D.FAITH & ETH Preis laden (umgekehrte Richtung - D.FAITH zu ETH) mit ParaSwap
+  // D.FAITH Preis von ParaSwap holen und in Euro umrechnen mit Fallback (wie im BuyTab)
   useEffect(() => {
-    const fetchPrice = async () => {
+    // Lade gespeicherte Preise beim Start
+    const loadStoredPrices = () => {
+      try {
+        const stored = localStorage.getItem('dawid_faith_prices');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const now = Date.now();
+          // Verwende gespeicherte Preise wenn sie weniger als 6 Stunden alt sind
+          if (parsed.timestamp && (now - parsed.timestamp) < 6 * 60 * 60 * 1000) {
+            setLastKnownPrices(parsed);
+            if (parsed.dfaith) setDfaithPrice(parsed.dfaith);
+            if (parsed.dfaithEur) setDfaithPriceEur(parsed.dfaithEur);
+            if (parsed.ethEur) setEthPriceEur(parsed.ethEur);
+          }
+        }
+      } catch (e) {
+        console.log('Fehler beim Laden gespeicherter Preise:', e);
+      }
+    };
+
+    loadStoredPrices();
+
+    const fetchDfaithPrice = async () => {
       setIsLoadingPrice(true);
       setPriceError(null);
+      let ethEur: number | null = null;
+      let dfaithPriceEur: number | null = null;
+      let errorMsg = "";
+      
       try {
-        // 1. ETH/EUR Preis von CoinGecko holen
-        const ethResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=eur');
-        if (ethResponse.ok) {
-          const ethData = await ethResponse.json();
-          const ethEur = ethData['ethereum']?.eur || 3000;
-          setEthPriceEur(ethEur);
-        }
-        
-        // 2. D.FAITH zu ETH Preis von ParaSwap für Base Chain
-        const priceParams = new URLSearchParams({
-          srcToken: DFAITH_TOKEN, // D.FAITH
-          destToken: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", // ETH address for ParaSwap
-          srcDecimals: DFAITH_DECIMALS.toString(),
-          destDecimals: "18", // ETH has 18 decimals
-          amount: "100", // 1 D.FAITH (100 mit 2 Decimals)
-          network: "8453", // Base Chain ID
-          side: "SELL"
-        });
-        
-        const priceResponse = await fetch(`https://apiv5.paraswap.io/prices?${priceParams}`);
-        
-        if (priceResponse.ok) {
-          const priceData = await priceResponse.json();
-          console.log("ParaSwap Sell Price Response:", priceData);
-          
-          if (priceData && priceData.priceRoute && priceData.priceRoute.destAmount) {
-            // destAmount ist in ETH Wei (18 Decimals)
-            const ethPerDfaith = Number(priceData.priceRoute.destAmount) / Math.pow(10, 18);
-            setDfaithPrice(ethPerDfaith); // Wie viele ETH für 1 D.FAITH
-            // Preis pro D.FAITH in EUR: ethPerDfaith * ethEur
-            const currentEthEur = ethPriceEur || 3000;
-            setDfaithPriceEur(ethPerDfaith * currentEthEur);
-          } else {
-            setPriceError("ParaSwap: Keine Liquidität für Verkauf verfügbar");
+        // 1. Hole ETH/EUR Preis von CoinGecko
+        try {
+          const ethResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=eur');
+          if (ethResponse.ok) {
+            const ethData = await ethResponse.json();
+            ethEur = ethData['ethereum']?.eur;
+            if (ethEur) {
+              // Auf 2 Dezimalstellen runden
+              ethEur = Math.round(ethEur * 100) / 100;
+            }
           }
-        } else {
-          const errorText = await priceResponse.text();
-          console.error("ParaSwap Price Error:", priceResponse.status, errorText);
-          setPriceError(`ParaSwap Preis-API Fehler: ${priceResponse.status}`);
+        } catch (e) {
+          console.log('ETH Preis Fehler:', e);
         }
-      } catch (error) {
-        console.error("Price fetch error:", error);
-        setPriceError("Preis-API Fehler");
+        
+        // Fallback auf letzten bekannten ETH Preis
+        if (!ethEur && lastKnownPrices.ethEur) {
+          ethEur = lastKnownPrices.ethEur;
+        } else if (!ethEur) {
+          ethEur = 3000; // Hard fallback für ETH
+        }
+        
+        // 2. Hole D.FAITH zu ETH Preis von ParaSwap für Base Chain (SELL-Richtung für SellTab)
+        try {
+          const priceParams = new URLSearchParams({
+            srcToken: DFAITH_TOKEN,
+            destToken: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", // ETH address for ParaSwap
+            srcDecimals: DFAITH_DECIMALS.toString(),
+            destDecimals: "18", // ETH has 18 decimals
+            amount: "100", // 1 D.FAITH (100 mit 2 Decimals)
+            network: "8453", // Base Chain ID
+            side: "SELL"
+          });
+          
+          const priceResponse = await fetch(`https://apiv5.paraswap.io/prices?${priceParams}`);
+          
+          if (priceResponse.ok) {
+            const priceData = await priceResponse.json();
+            console.log("ParaSwap Sell Price Response:", priceData);
+            
+            if (priceData && priceData.priceRoute && priceData.priceRoute.destAmount) {
+              // destAmount ist in ETH Wei (18 Decimals)
+              const ethPerDfaith = Number(priceData.priceRoute.destAmount) / Math.pow(10, 18);
+              setDfaithPrice(ethPerDfaith); // Wie viele ETH für 1 D.FAITH
+              // Preis pro D.FAITH in EUR: ethPerDfaith * ethEur
+              if (ethEur && ethPerDfaith > 0) {
+                dfaithPriceEur = ethPerDfaith * ethEur;
+              } else {
+                dfaithPriceEur = null;
+              }
+            } else {
+              errorMsg = "ParaSwap: Keine Liquidität für Verkauf verfügbar";
+            }
+          } else {
+            errorMsg = `ParaSwap: ${priceResponse.status}`;
+          }
+        } catch (e) {
+          console.log("ParaSwap Fehler:", e);
+          errorMsg = "ParaSwap API Fehler";
+        }
+        
+        // Fallback auf letzte bekannte D.FAITH Preise
+        if (!dfaithPrice && lastKnownPrices.dfaith) {
+          setDfaithPrice(lastKnownPrices.dfaith);
+          errorMsg = "";
+        }
+        if (!dfaithPriceEur && lastKnownPrices.dfaithEur) {
+          dfaithPriceEur = lastKnownPrices.dfaithEur;
+          errorMsg = "";
+        }
+        
+      } catch (e) {
+        console.error("Price fetch error:", e);
+        errorMsg = "Preis-API Fehler";
+        
+        // Verwende letzte bekannte Preise als Fallback
+        if (lastKnownPrices.dfaith) setDfaithPrice(lastKnownPrices.dfaith);
+        if (lastKnownPrices.dfaithEur) dfaithPriceEur = lastKnownPrices.dfaithEur;
+        if (lastKnownPrices.ethEur) ethEur = lastKnownPrices.ethEur;
+        
+        if (dfaithPrice && dfaithPriceEur && ethEur) {
+          errorMsg = ""; // Kein Fehler anzeigen wenn Fallback verfügbar
+        }
       }
+      
+      // Setze Preise (entweder neue oder Fallback)
+      if (ethEur) setEthPriceEur(ethEur);
+      if (dfaithPriceEur !== null && dfaithPriceEur !== undefined) setDfaithPriceEur(dfaithPriceEur);
+      
+      // Speichere erfolgreiche Preise
+      if (dfaithPrice && dfaithPriceEur && ethEur) {
+        const newPrices = {
+          dfaith: dfaithPrice,
+          dfaithEur: dfaithPriceEur,
+          ethEur: ethEur,
+          timestamp: Date.now()
+        };
+        setLastKnownPrices(newPrices);
+        try {
+          localStorage.setItem('dawid_faith_prices', JSON.stringify(newPrices));
+        } catch (e) {
+          console.log('Fehler beim Speichern der Preise:', e);
+        }
+        setPriceError(null);
+      } else {
+        setPriceError(errorMsg || "Preise nicht verfügbar");
+      }
+      
       setIsLoadingPrice(false);
     };
-    fetchPrice();
-    const interval = setInterval(fetchPrice, 30000);
+
+    fetchDfaithPrice();
+    // Preis alle 2 Minuten aktualisieren (wie im BuyTab)
+    const interval = setInterval(fetchDfaithPrice, 120000);
     return () => clearInterval(interval);
-  }, [ethPriceEur]);
+  }, [lastKnownPrices.dfaith, lastKnownPrices.dfaithEur, lastKnownPrices.ethEur, dfaithPrice]);
 
   // Token-Auswahl-Handler wie im BuyTab
   const handleTokenSelect = (token: "DFAITH" | "ETH") => {
@@ -607,7 +705,8 @@ const tokenOptions = [
     balance: dfaithBalance,
     color: "from-transparent to-transparent", // Kein Hintergrund für D.FAITH
     description: "Dawid Faith Token",
-    price: dfaithPriceEur ? `${dfaithPriceEur.toFixed(2)}€ pro D.FAITH` : "Wird geladen...",
+    price: dfaithPriceEur ? `${dfaithPriceEur.toFixed(2)}€ pro D.FAITH` : (isLoadingPrice ? "Laden..." : (priceError || "Preis nicht verfügbar")),
+    sub: dfaithPrice ? `1 D.FAITH = ${dfaithPrice.toFixed(6)} ETH` : "Wird geladen...",
     icon: <img src="/D.FAITH.png" alt="D.FAITH" className="w-12 h-12 object-contain" />,
   },
   {
@@ -617,7 +716,7 @@ const tokenOptions = [
     balance: "–",
     color: "from-blue-500 to-blue-700",
     description: "Ethereum Native Token",
-    price: ethPriceEur ? `${ethPriceEur.toFixed(2)}€ pro ETH` : "~3000€ pro ETH",
+    price: ethPriceEur ? `${ethPriceEur.toFixed(2)}€ pro ETH` : "Preis wird geladen...",
     sub: "via Transak verkaufen",
     icon: <img src="/ETH.png" alt="ETH" className="w-8 h-8 object-contain" />,
   },
