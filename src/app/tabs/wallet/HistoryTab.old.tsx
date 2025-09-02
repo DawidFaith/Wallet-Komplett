@@ -1,12 +1,14 @@
 import { useCallback, useMemo } from "react";
 import { useState, useEffect } from "react";
 import { Button } from "../../../../components/ui/button";
-import { FaPaperPlane, FaArrowDown, FaExchangeAlt, FaCoins, FaFilter, FaSort } from "react-icons/fa";
+import { FaPaperPlane, FaArrowDown, FaExchangeAlt, FaCoins, FaFilter, FaSort, FaBitcoin } from "react-icons/fa";
 import { useActiveAccount } from "thirdweb/react";
 
 // Token-Adressen und Konfiguration
 const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
 const DINVEST_TOKEN = "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb";
+// Canonical WETH (Base)
+const WETH_TOKEN = "0x4200000000000000000000000000000000000006";
 
 // Swap Pool Adressen
 const DFAITH_POOL = "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"; // D.FAITH/ETH Pool
@@ -70,7 +72,7 @@ export default function HistoryTabOld() {
 
   // Präzise Swap-Gruppierung und korrekte Claim-Erkennung - KOMPLETT NEU
   const filteredAndSortedTransactions = useMemo(() => {
-    let filtered = transactions;
+  let filtered = transactions;
     
     // Filter anwenden
     if (filter !== 'all') {
@@ -91,8 +93,13 @@ export default function HistoryTabOld() {
     });
     
     // NEUE GRUPPIERUNGSLOGIK - Schritt für Schritt
-    const grouped: (Transaction | Transaction[])[] = [];
+  const grouped: (Transaction | Transaction[])[] = [];
     const processed = new Set<string>();
+  // Für Partner-Suche immer vollständige Liste (zeitlich sortiert) verwenden
+  const allSorted = [...transactions].sort((a, b) => b.timestamp - a.timestamp);
+  const WINDOW_MS = 10 * 60 * 1000; // ±10 Minuten
+  const isPool = (addr?: string) => (addr || "").toLowerCase() === DFAITH_POOL.toLowerCase();
+  const isEthOrWeth = (t?: string) => (t === "ETH" || t === "WETH");
     
     for (const tx of sorted) {
       if (processed.has(tx.id)) continue;
@@ -128,6 +135,55 @@ export default function HistoryTabOld() {
         }
         continue;
       }
+
+      // REGEL 3: VERKAUF (D.FAITH -> ETH)
+      // 3-Teilige Gruppe: D.FAITH minus (an Pool) + ETH Gas (Fee) + ETH plus (vom Pool)
+      if (
+        tx.token === "D.FAITH" &&
+        tx.type === "send" &&
+        isPool(tx.address)
+      ) {
+        // ETH Plus vom Pool – bevorzugt gleicher Hash, alternativ Zeitfenster ±10min
+        const sameHashPlus = allSorted.find(o =>
+          !processed.has(o.id) &&
+          o.id !== tx.id &&
+          o.hash && o.hash === tx.hash &&
+          isEthOrWeth(o.token) &&
+          o.type === "receive" &&
+          isPool(o.address)
+        );
+
+        const timeWinPlus = sameHashPlus || allSorted.find(o =>
+          !processed.has(o.id) &&
+          o.id !== tx.id &&
+          isEthOrWeth(o.token) &&
+          o.type === "receive" &&
+          isPool(o.address) &&
+          Math.abs(o.timestamp - tx.timestamp) <= WINDOW_MS
+        );
+
+        // Gas ETH – wir erkennen synthetische Gas-Einträge an gleicher Hash und token ETH
+        const gasTx = allSorted.find(o =>
+          !processed.has(o.id) &&
+          o.id !== tx.id &&
+          o.hash && o.hash === tx.hash &&
+          o.token === "ETH" &&
+          o.type === "send" &&
+          (o.address === "Gas Fee" || o.address === "GAS" || o.address === "Gas")
+        );
+
+        const group: Transaction[] = [tx];
+        if (gasTx) group.push(gasTx);
+        if (timeWinPlus) group.push(timeWinPlus);
+
+        if (group.length > 1) {
+          (group as any).__groupType = 'sell';
+          grouped.push(group);
+          for (const g of group) processed.add(g.id);
+          continue;
+        }
+        // Falls keine Partner gefunden: als Einzeltransaktion weiter unten behandeln
+      }
       
       // REGEL 3-6 etc: Rest als Einzeltransaktionen
       grouped.push(tx);
@@ -135,11 +191,12 @@ export default function HistoryTabOld() {
     }
     
     // Filter nach Gruppierung anwenden
-    if (filter !== 'all') {
+  if (filter !== 'all') {
       const filteredGroups = grouped.filter(item => {
         if (Array.isArray(item)) {
           const groupType = (item as any).__groupType;
-          if (filter === 'claim') return groupType === 'claim';
+      if (filter === 'claim') return groupType === 'claim';
+      if (filter === 'sell') return groupType === 'sell';
           return false;
         } else {
           const tx = item as Transaction;
@@ -264,7 +321,7 @@ export default function HistoryTabOld() {
         return;
       }
 
-      const mappedTransactions: Transaction[] = alchemyTransactions
+  const mappedTransactions: Transaction[] = alchemyTransactions
         .map((transfer: any) => {
           let timestamp = new Date();
           if (transfer.metadata?.blockTimestamp) {
@@ -289,6 +346,8 @@ export default function HistoryTabOld() {
               token = "D.FAITH";
             } else if (transfer.rawContract.address.toLowerCase() === DINVEST_TOKEN.toLowerCase()) {
               token = "D.INVEST";
+            } else if (transfer.rawContract.address.toLowerCase() === WETH_TOKEN.toLowerCase()) {
+              token = "WETH";
             }
           }
           
@@ -316,6 +375,11 @@ export default function HistoryTabOld() {
               const value = parseInt(transfer.value || "0");
               amountRaw = value;
               amount = (type === "receive" || type === "claim" ? "+" : "-") + value.toString();
+            } else if (transfer.rawContract.address.toLowerCase() === WETH_TOKEN.toLowerCase()) {
+              token = "WETH";
+              const value = parseFloat(transfer.value || "0");
+              amountRaw = value;
+              amount = (type === "receive" || type === "claim" ? "+" : "-") + value.toFixed(6);
             } else {
               const value = parseFloat(transfer.value || "0");
               amountRaw = value;
@@ -346,7 +410,63 @@ export default function HistoryTabOld() {
         .sort((a, b) => b.timestamp - a.timestamp)
         .slice(0, 50);
 
-      setTransactions(mappedTransactions);
+      // Zusätzliche: Gas-Fee-Einträge für D.FAITH-Verkäufe (synthetische ETH-Transaktionen)
+      const sellHashes = Array.from(new Set(
+        mappedTransactions
+          .filter(t => t.token === "D.FAITH" && t.type === "send" && t.address.toLowerCase() === DFAITH_POOL.toLowerCase() && t.hash)
+          .map(t => t.hash)
+      ));
+
+      const gasTxs: Transaction[] = [];
+
+      const hexToBigInt = (h: string) => BigInt(h || '0x0');
+      const weiToEth = (wei: bigint) => Number(wei) / 1e18;
+
+      for (const h of sellHashes) {
+        try {
+          const [receiptResp] = await Promise.all([
+            fetch(API_OPTIONS.ALCHEMY, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ jsonrpc: '2.0', id: 100, method: 'eth_getTransactionReceipt', params: [h] })
+            })
+          ]);
+
+          if (!receiptResp.ok) continue;
+          const receipt = await receiptResp.json();
+          const r = receipt?.result;
+          if (!r) continue;
+          const gasUsed = hexToBigInt(r.gasUsed || '0x0');
+          const effGasPrice = hexToBigInt(r.effectiveGasPrice || r.gasPrice || '0x0');
+          const feeWei = gasUsed * effGasPrice;
+          const feeEth = weiToEth(feeWei);
+
+          // Hole Zeitstempel vom existierenden Transfer mit gleichem Hash
+          const anchor = mappedTransactions.find(t => t.hash === h);
+          if (!anchor) continue;
+          const feeAmount = Math.max(feeEth, 0);
+          const gasTx: Transaction = {
+            id: `gas-${h}`,
+            type: "send",
+            token: "ETH",
+            tokenIcon: getTokenIcon("ETH"),
+            amount: `-${feeAmount.toFixed(6)}`,
+            amountRaw: feeAmount,
+            address: "Gas Fee",
+            hash: h,
+            time: anchor.time,
+            timestamp: anchor.timestamp,
+            status: "success",
+            blockNumber: r.blockNumber || anchor.blockNumber,
+          };
+          gasTxs.push(gasTx);
+        } catch (e) {
+          // Ignoriere Gasfehler pro Hash
+        }
+      }
+
+      const merged = [...mappedTransactions, ...gasTxs].sort((a,b)=> b.timestamp - a.timestamp);
+      setTransactions(merged);
       
       setStats({
         transactionCount: mappedTransactions.length,
@@ -379,7 +499,7 @@ export default function HistoryTabOld() {
       case "receive":
         return <FaArrowDown className="text-white text-xs" />;
       case "buy":
-        return <span className="text-white text-xs">🛒</span>;
+  return <FaBitcoin className="text-white text-xs" />;
       case "sell":
         return <span className="text-white text-xs">💰</span>;
       case "shop":
