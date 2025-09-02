@@ -162,16 +162,6 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
           <span className="text-green-400">🔒</span>
           Sichere Zahlung über Stripe • Alle Daten werden verschlüsselt übertragen
         </div>
-        
-        {/* Test Mode Hinweis */}
-        <div className="mt-2 bg-yellow-500/10 border border-yellow-500/30 rounded p-2">
-          <div className="text-yellow-400 text-xs font-medium mb-1">💳 Testkarten für Demo:</div>
-          <div className="text-yellow-300 text-xs space-y-1">
-            <div>• Erfolg: 4242 4242 4242 4242</div>
-            <div>• Fehler: 4000 0000 0000 0002</div>
-            <div>• Datum: 12/25 • CVC: 123</div>
-          </div>
-        </div>
       </div>
 
       <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
