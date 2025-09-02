@@ -9,6 +9,9 @@ const DINVEST_TOKEN = "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb";
 
 // Social Media Claim Adresse
 const CLAIM_ADDRESS = "0xFe5F6cE95efB135b93899AF70B12727F93FEE6E2"; // Social Media Claim Adresse
+// Konstanter ETH-Bonus für Claims (falls bekannt); wird bevorzugt gematcht
+const CLAIM_ETH_VALUE = 0.0000010;
+const CLAIM_ETH_EPS = 0.0000002; // Toleranz
 
 // Token-Icons Mapping
 const TOKEN_ICONS: { [key: string]: string } = {
@@ -63,7 +66,7 @@ export default function HistoryTab() {
       sortBy === "oldest" ? a.timestamp - b.timestamp : b.timestamp - a.timestamp
     );
 
-    // Gruppierung: Claim = D.FAITH von CLAIM_ADDRESS an Wallet + nahe ETH-Transfer von CLAIM_ADDRESS
+  // Gruppierung: Claim = D.FAITH von CLAIM_ADDRESS an Wallet + nahe ETH-Transfer von CLAIM_ADDRESS
     const groups: (Transaction | Transaction[])[] = [];
     const processed = new Set<string>();
 
@@ -82,15 +85,30 @@ export default function HistoryTab() {
         continue;
       }
 
-      const ethPartner = sorted.find(
+      // 1) Bevorzugt ETH mit erwartetem Fixbetrag
+      let ethPartner = sorted.find(
         (other) =>
           !processed.has(other.id) &&
           other.id !== tx.id &&
           other.type === "claim" &&
           other.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() &&
           other.token === "ETH" &&
+          Math.abs(other.amountRaw - CLAIM_ETH_VALUE) <= CLAIM_ETH_EPS &&
           Math.abs(other.timestamp - tx.timestamp) <= 300000 // 5 Minuten
       );
+
+      // 2) Fallback: irgendein ETH-Transfer nahe beieinander
+      if (!ethPartner) {
+        ethPartner = sorted.find(
+          (other) =>
+            !processed.has(other.id) &&
+            other.id !== tx.id &&
+            other.type === "claim" &&
+            other.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() &&
+            other.token === "ETH" &&
+            Math.abs(other.timestamp - tx.timestamp) <= 300000 // 5 Minuten
+        );
+      }
 
       if (ethPartner) {
         const pair: Transaction[] = [tx, ethPartner];
@@ -448,45 +466,40 @@ export default function HistoryTab() {
 
       {/* Historie: nur Social Media Claims mit Gruppierung */}
       {!isLoading && !error && filteredAndSortedTransactions.length > 0 && (
-        <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
+        <div className="space-y-3 max-h-[70vh] overflow-y-auto px-1">
           {filteredAndSortedTransactions.map((item, index) => {
             if (Array.isArray(item)) {
               const group = item as Transaction[];
               const tokenTx = group.find((t) => t.token !== "ETH");
               const ethTx = group.find((t) => t.token === "ETH");
               return (
-                <div key={`claim-group-${index}`} className="border-l-4 border-cyan-400 bg-gradient-to-r from-cyan-950/30 to-cyan-900/20 rounded-r-xl p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-cyan-500 flex items-center justify-center">
-                        <span className="text-white text-lg">🎁</span>
-                      </div>
-                      <div>
-                        <h3 className="text-cyan-300 font-bold text-lg">SOCIAL MEDIA CLAIM</h3>
-                        <p className="text-zinc-400 text-sm">{group[0].time} • {group.length} Transfers</p>
-                      </div>
+                <div key={`claim-group-${index}`} className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-600/20 text-cyan-300 text-xs font-semibold">
+                        <span>🎁</span> Claim
+                      </span>
+                      <span className="text-zinc-500 text-xs">Gruppiert</span>
                     </div>
-                    <div className="text-right">
-                      <div className="text-cyan-400 font-bold text-xl">Gruppiert</div>
-                      <div className="text-zinc-400 text-sm">Automatisch erkannt</div>
-                    </div>
+                    <span className="text-zinc-400 text-xs">{group[0].time}</span>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-cyan-950/20 rounded-lg p-3">
+
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     {tokenTx && (
-                      <div className="flex items-center gap-3 bg-green-900/30 rounded-lg p-3">
-                        <img src={tokenTx.tokenIcon} alt={tokenTx.token} className="w-8 h-8 rounded-full" />
-                        <div className="flex-1">
-                          <div className="text-green-400 font-bold">{tokenTx.amount}</div>
-                          <div className="text-green-300 text-sm">{tokenTx.token} Belohnung</div>
+                      <div className="flex items-center gap-2 flex-1 min-w-0 rounded-md border border-green-700/40 bg-green-900/20 px-2 py-1.5">
+                        <img src={tokenTx.tokenIcon} alt={tokenTx.token} className="w-6 h-6 rounded-full" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-green-300 text-sm font-semibold truncate">{tokenTx.amount} {tokenTx.token}</div>
+                          <div className="text-green-400/80 text-[11px]">Belohnung</div>
                         </div>
                       </div>
                     )}
                     {ethTx && (
-                      <div className="flex items-center gap-3 bg-blue-900/30 rounded-lg p-3">
-                        <img src={ethTx.tokenIcon} alt="ETH" className="w-8 h-8 rounded-full" />
-                        <div className="flex-1">
-                          <div className="text-blue-400 font-bold">{ethTx.amount}</div>
-                          <div className="text-blue-300 text-sm">ETH Bonus</div>
+                      <div className="flex items-center gap-2 flex-1 min-w-0 rounded-md border border-blue-700/40 bg-blue-900/20 px-2 py-1.5">
+                        <img src={ethTx.tokenIcon} alt="ETH" className="w-6 h-6 rounded-full" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-blue-300 text-sm font-semibold truncate">{ethTx.amount} ETH</div>
+                          <div className="text-blue-400/80 text-[11px]">Bonus</div>
                         </div>
                       </div>
                     )}
@@ -498,26 +511,21 @@ export default function HistoryTab() {
             const tx = item as Transaction;
             // Einzelner Claim (ohne Partner ETH)
             return (
-              <div key={tx.id} className="border-l-4 border-cyan-400 bg-gradient-to-r from-cyan-950/30 to-cyan-900/20 rounded-r-xl p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-cyan-500 flex items-center justify-center">
-                      <span className="text-white text-lg">🎁</span>
-                    </div>
-                    <div>
-                      <h3 className="text-cyan-300 font-bold text-lg">SOCIAL MEDIA CLAIM</h3>
-                      <p className="text-zinc-400 text-sm">{tx.time}</p>
-                    </div>
+              <div key={tx.id} className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-600/20 text-cyan-300 text-xs font-semibold">
+                      <span>🎁</span> Claim
+                    </span>
+                    <span className="text-zinc-500 text-xs">Einzeltransfer</span>
                   </div>
-                  <div className="text-right">
-                    <div className={`font-bold text-xl ${getAmountColor(tx.amount)}`}>{tx.amount}</div>
-                    <div className="text-zinc-400 text-sm">{tx.token}</div>
-                  </div>
+                  <span className="text-zinc-400 text-xs">{tx.time}</span>
                 </div>
-                <div className="mt-3 pt-3 border-t border-zinc-700/50 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-zinc-500">Von:</span>
-                    <span className="text-amber-400 font-mono">Social Media</span>
+                <div className="flex items-center gap-2">
+                  <img src={tx.tokenIcon} alt={tx.token} className="w-6 h-6 rounded-full" />
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm font-semibold truncate ${getAmountColor(tx.amount)}`}>{tx.amount} {tx.token}</div>
+                    <div className="text-[11px] text-zinc-400">ETH-Bonus wird separat verbucht</div>
                   </div>
                 </div>
               </div>
