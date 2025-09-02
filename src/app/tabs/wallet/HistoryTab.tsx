@@ -132,11 +132,11 @@ export default function HistoryTab() {
       }
 
       // 2) Kauf-Gruppierung: D.FAITH vom Pool (eingehend) + nahe ETH an Pool (ausgehend)
-      const isBuyAnchor =
-        tx.type === "buy" &&
-        tx.token === "D.FAITH" &&
-        tx.address.toLowerCase() === DFAITH_POOL.toLowerCase() &&
-        tx.amount.startsWith("+");
+      const isBuyAnchor = (
+        (tx.type === "buy") ||
+        // Fallback: erkenne Kauf auch, wenn Typ falsch eingestuft wurde
+        (tx.token === "D.FAITH" && tx.amount.startsWith("+") && tx.address.toLowerCase() === DFAITH_POOL.toLowerCase())
+      ) && tx.token === "D.FAITH" && tx.amount.startsWith("+");
 
       if (isBuyAnchor) {
         // Partner suchen: 1) gleicher Tx-Hash, 2) Bevorzugt ETH/WETH an den Pool, 3) größter ETH/WETH-Abfluss im Zeitfenster
@@ -485,7 +485,8 @@ export default function HistoryTab() {
           }
           
           return {
-            id: transfer.uniqueId || transfer.hash || Math.random().toString(),
+            // id enthält möglichst den echten tx hash (für späteres Same-Hash Matching)
+            id: transfer.hash || transfer.uniqueId || Math.random().toString(),
             type,
             token,
             tokenIcon: getTokenIcon(token),
@@ -590,7 +591,7 @@ export default function HistoryTab() {
               const tokenTx = group.find((t) => t.token !== "ETH");
               const ethTx = group.find((t) => t.token === "ETH");
               const groupType = (group as any).__groupType as "claim" | "buy" | undefined;
-              if (groupType === "buy") {
+        if (groupType === "buy") {
                 return (
                   <div key={`buy-group-${index}`} className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
                     <div className="flex items-center justify-between mb-2">
@@ -598,7 +599,7 @@ export default function HistoryTab() {
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-600/20 text-emerald-300 text-xs font-semibold">
                           <span>🛒</span> Kaufen
                         </span>
-                        <span className="text-zinc-500 text-xs">Gruppiert</span>
+            <span className="text-zinc-500 text-xs">Gruppiert</span>
                       </div>
                       <span className="text-zinc-400 text-xs">{group[0].time}</span>
                     </div>
@@ -616,7 +617,7 @@ export default function HistoryTab() {
                         <div className="flex items-center gap-2 flex-1 min-w-0 rounded-md border border-red-700/40 bg-red-900/20 px-2 py-1.5">
                           <img src={ethTx.tokenIcon} alt="ETH" className="w-6 h-6 rounded-full" />
                           <div className="flex-1 min-w-0">
-                            <div className="text-red-300 text-sm font-semibold truncate">{ethTx.amount} ETH</div>
+              <div className="text-red-300 text-sm font-semibold truncate">{ethTx.amount} {(ethTx.token === 'WETH' ? 'WETH' : 'ETH')}</div>
                             <div className="text-red-400/80 text-[11px]">Bezahlt</div>
                           </div>
                         </div>
