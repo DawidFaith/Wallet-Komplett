@@ -866,7 +866,7 @@ export default function BuyTab() {
                 <div className="space-y-3">
                   {/* You Want Section - D.FAITH Input */}
                   <div className="bg-zinc-800/50 rounded-xl p-3 border border-zinc-700">
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">Du möchtest kaufen</label>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">D.FAITH Menge</label>
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex items-center gap-2 bg-amber-500/20 rounded-lg px-2 py-1 border border-amber-500/30 flex-shrink-0">
                         <img src="/D.FAITH.png" alt="D.FAITH" className="w-6 h-6 object-contain" />
@@ -895,7 +895,14 @@ export default function BuyTab() {
                           swapTxStatus === "pending"
                         }
                       >
-                        {swapTxStatus === "pending" ? "..." : "Quote"}
+                        {swapTxStatus === "pending" ? (
+                          <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 border border-amber-300 border-t-transparent rounded-full animate-spin"></div>
+                            <span>...</span>
+                          </div>
+                        ) : (
+                          "Kaufen"
+                        )}
                       </button>
                     </div>
                     <div className="flex justify-between items-center text-xs">
@@ -910,7 +917,7 @@ export default function BuyTab() {
 
                   {/* You Pay Section - ETH Cost Display */}
                   <div className="bg-zinc-800/50 rounded-xl p-3 border border-zinc-700">
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">Du zahlst</label>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Kosten</label>
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex items-center gap-2 bg-purple-500/20 rounded-lg px-2 py-1 border border-purple-500/30 flex-shrink-0">
                         <img src="/ETH.png" alt="ETH" className="w-6 h-6 object-contain" />
@@ -1122,9 +1129,6 @@ export default function BuyTab() {
                       : "≈ €0.00"
                     }
                   </div>
-                  <div className="text-xs text-zinc-400">
-                    Slippage: 1% • Rate: {dfaithPrice ? `${dfaithPrice.toFixed(6)} ETH` : "Loading..."} per D.FAITH
-                  </div>
                 </div>
               </div>
 
@@ -1162,17 +1166,22 @@ export default function BuyTab() {
                   <div className="flex items-center justify-center gap-2 mb-1">
                     {swapTxStatus === "success" && <span className="text-xl">🎉</span>}
                     {swapTxStatus === "error" && <span className="text-xl">❌</span>}
-                    {swapTxStatus === "confirming" && <span className="text-xl">⏳</span>}
-                    {swapTxStatus === "verifying" && <span className="text-xl">🔎</span>}
-                    {swapTxStatus === "swapping" && <span className="text-xl">🔄</span>}
+                    {(swapTxStatus === "confirming" || swapTxStatus === "verifying" || swapTxStatus === "swapping") && (
+                      <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                    )}
                     <span className="font-semibold text-sm">
-                      {swapTxStatus === "success" && "Purchase Successful!"}
-                      {swapTxStatus === "error" && "Purchase Failed"}
-                      {swapTxStatus === "confirming" && "Confirming..."}
-                      {swapTxStatus === "verifying" && "Verifying..."}
-                      {swapTxStatus === "swapping" && "Processing Purchase..."}
+                      {swapTxStatus === "success" && "Kauf erfolgreich!"}
+                      {swapTxStatus === "error" && "Kauf fehlgeschlagen"}
+                      {swapTxStatus === "confirming" && "Bestätige Transaktion..."}
+                      {swapTxStatus === "verifying" && "Verifiziere Kauf..."}
+                      {swapTxStatus === "swapping" && "Führe Kauf durch..."}
                     </span>
                   </div>
+                  {swapTxStatus === "success" && (
+                    <p className="text-sm opacity-80">
+                      Deine {swapAmountDfaith} D.FAITH wurden erfolgreich gekauft!
+                    </p>
+                  )}
                   {swapTxStatus === "error" && quoteError && (
                     <p className="text-sm opacity-80">{quoteError}</p>
                   )}
@@ -1197,7 +1206,14 @@ export default function BuyTab() {
                     onClick={handleBuySwap}
                     disabled={isSwapping}
                   >
-                    {isSwapping ? "Processing Purchase..." : `Kaufe ${swapAmountDfaith} D.FAITH für ${swapAmountEth && ethPriceEur ? `€${(parseFloat(swapAmountEth) * ethPriceEur).toFixed(2)}` : '€0.00'}`}
+                    {isSwapping ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Kaufe...</span>
+                      </div>
+                    ) : (
+                      `Kaufe ${swapAmountDfaith} D.FAITH für ${swapAmountEth && ethPriceEur ? `€${(parseFloat(swapAmountEth) * ethPriceEur).toFixed(2)}` : '€0.00'}`
+                    )}
                   </Button>
                 )}
 
@@ -1216,7 +1232,7 @@ export default function BuyTab() {
                     }}
                     disabled={isSwapping}
                   >
-                    Make Another Purchase
+                    Weiteren Kauf tätigen
                   </Button>
                 )}
               </div>
