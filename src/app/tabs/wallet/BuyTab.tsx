@@ -827,6 +827,7 @@ export default function BuyTab() {
                   <div className="w-32 h-32 mx-auto mb-3 flex items-center justify-center">
                     <img src="/D.FAITH.png" alt="D.FAITH" className="w-32 h-32 object-contain" />
                   </div>
+                  <h3 className="text-xl font-bold text-white mb-1">D.FAITH kaufen</h3>
                   {dfaithPriceEur && (
                     <div className="mt-2 px-2 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full inline-block">
                       <span className="text-amber-400 text-xs font-semibold">
