@@ -15,6 +15,8 @@ const ETH_DECIMALS = 18;
 export default function SellTab() {
   const [selectedToken, setSelectedToken] = useState<"DFAITH" | "ETH" | null>(null);
   const [sellAmount, setSellAmount] = useState("");
+  const [showSellModal, setShowSellModal] = useState(false);
+  const [showSellConfirmModal, setShowSellConfirmModal] = useState(false);
   const account = useActiveAccount();
   const { mutateAsync: sendTransaction } = useSendTransaction();
 
@@ -48,11 +50,10 @@ export default function SellTab() {
     ? (Number(dfaithBalanceData) / Math.pow(10, DFAITH_DECIMALS)).toFixed(DFAITH_DECIMALS)
     : "0.00";
 
-  // Alte State-Variablen für Balances entfernt, da wir jetzt direkt die berechneten Werte verwenden
+  // State für Verkauf
   const [dfaithPrice, setDfaithPrice] = useState<number | null>(null);
   const [dfaithPriceEur, setDfaithPriceEur] = useState<number | null>(null);
   const [ethPriceEur, setEthPriceEur] = useState<number | null>(null);
-  const [showSellModal, setShowSellModal] = useState(false);
   const [slippage, setSlippage] = useState("1");
   const [isSwapping, setIsSwapping] = useState(false);
   const [swapTxStatus, setSwapTxStatus] = useState<string | null>(null);
@@ -121,7 +122,7 @@ export default function SellTab() {
     return () => clearInterval(interval);
   }, [ethPriceEur]);
 
-  // Token-Auswahl-Handler
+  // Token-Auswahl-Handler wie im BuyTab
   const handleTokenSelect = (token: "DFAITH" | "ETH") => {
     if (!account?.address) {
       alert('Bitte Wallet verbinden!');
@@ -145,7 +146,7 @@ export default function SellTab() {
     }
   };
 
-  // Funktion um eine Verkaufs-Quote zu erhalten mit ParaSwap
+  // Funktion um eine Verkaufs-Quote zu erhalten mit ParaSwap (wie im BuyTab)
   const handleGetQuote = async () => {
     setSwapTxStatus("pending");
     setQuoteError(null);
@@ -199,6 +200,7 @@ export default function SellTab() {
           setNeedsApproval(true);
           setSellStep('quoteFetched'); // Gehe direkt zum Approval-Schritt
           setSwapTxStatus(null);
+          setShowSellConfirmModal(true); // Öffne Bestätigungs-Modal wie im BuyTab
           return; // Stoppe hier, da Approval benötigt wird
         } else {
           console.log("Approval bereits vorhanden für TokenTransferProxy - fahre mit Quote fort");
@@ -210,6 +212,7 @@ export default function SellTab() {
         setNeedsApproval(true);
         setSellStep('quoteFetched');
         setSwapTxStatus(null);
+        setShowSellConfirmModal(true); // Öffne Bestätigungs-Modal wie im BuyTab
         return;
       }
       
@@ -317,6 +320,7 @@ export default function SellTab() {
       setQuoteTxData(buildTxData);
       setSellStep('quoteFetched');
       setSwapTxStatus(null);
+      setShowSellConfirmModal(true); // Öffne Bestätigungs-Modal wie im BuyTab
       
     } catch (e: any) {
       console.error("Quote Fehler:", e);
@@ -589,39 +593,10 @@ export default function SellTab() {
     }
   };
 
-// Alle Schritte in einer Funktion
-const handleSellAllInOne = async () => {
-  if (!sellAmount || parseFloat(sellAmount) <= 0 || isSwapping || parseFloat(sellAmount) > parseFloat(dfaithBalance)) return;
-  
-  try {
-    // Erster Schritt
-    console.log("Start des Verkaufsprozesses");
-    
-    // Nur weitere Schritte ausführen, wenn Quote erfolgreich war
-    if (sellStep === 'initial') {
-      setIsSwapping(true);
-      await handleGetQuote();
-    }
-    
-    // Nur Approve ausführen, wenn nötig
-    if (sellStep === 'quoteFetched' && needsApproval) {
-      await handleApprove();
-    }
-    
-    // Swap ausführen wenn Quote vorhanden und Approve erledigt/nicht nötig
-    if ((sellStep === 'quoteFetched' && !needsApproval) || sellStep === 'approved') {
-      await handleSellSwap();
-    }
-    
-  } catch (e: any) {
-    console.error("Verkaufsprozess Fehler:", e);
-    setQuoteError(e.message || "Fehler beim Verkauf");
-    setSwapTxStatus("error");
-    setTimeout(() => setSwapTxStatus(null), 4000);
-  } finally {
-    setIsSwapping(false);
-  }
-};
+  // MAX Button Handler
+  const handleMaxAmount = () => {
+    setSellAmount(dfaithBalance);
+  };
 
 // Token-Auswahl Options
 const tokenOptions = [
@@ -694,7 +669,7 @@ const tokenOptions = [
         </div>
       </div>
 
-      {/* Verkaufs-Modal zentral - Mobile Optimiert und zentriert */}
+      {/* Verkaufs-Modal wie im BuyTab - Input Modal */}
       {showSellModal && selectedToken === "DFAITH" && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 overflow-y-auto p-4 pt-20">
           <div
@@ -723,7 +698,7 @@ const tokenOptions = [
               </button>
             </div>
 
-            {/* Modal-Inhalt für D.FAITH Verkauf */}
+            {/* Modal-Inhalt für D.FAITH Verkauf wie im BuyTab */}
             <div className="w-full space-y-4">
               {/* Professional Sell Widget Header */}
               <div className="text-center pb-3 border-b border-zinc-700 mb-4">
@@ -740,70 +715,68 @@ const tokenOptions = [
                 )}
               </div>
 
-              {/* Sell Widget Steps Indicator */}
-              <div className="flex justify-between items-center px-2">
-                <div className={`flex items-center space-x-1 ${sellStep !== 'initial' ? 'text-green-400' : 'text-zinc-500'}`}>
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${sellStep !== 'initial' ? 'bg-green-500 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
-                    {sellStep !== 'initial' ? '✓' : '1'}
-                  </div>
-                  <span className="text-xs font-medium">Quote</span>
-                </div>
-                <div className={`w-8 h-0.5 ${sellStep === 'approved' || sellStep === 'completed' ? 'bg-green-500' : 'bg-zinc-700'}`}></div>
-                <div className={`flex items-center space-x-1 ${sellStep === 'approved' || sellStep === 'completed' ? 'text-green-400' : 'text-zinc-500'}`}>
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${sellStep === 'approved' || sellStep === 'completed' ? 'bg-green-500 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
-                    {sellStep === 'approved' || sellStep === 'completed' ? '✓' : '2'}
-                  </div>
-                  <span className="text-xs font-medium">Approve</span>
-                </div>
-                <div className={`w-8 h-0.5 ${sellStep === 'completed' ? 'bg-green-500' : 'bg-zinc-700'}`}></div>
-                <div className={`flex items-center space-x-1 ${sellStep === 'completed' ? 'text-green-400' : 'text-zinc-500'}`}>
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${sellStep === 'completed' ? 'bg-green-500 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
-                    {sellStep === 'completed' ? '✓' : '3'}
-                  </div>
-                  <span className="text-xs font-medium">Sell</span>
-                </div>
-              </div>
-
-              {/* Amount Input Section */}
+              {/* Amount Input Section wie im BuyTab */}
               <div className="space-y-3">
+                {/* You Sell Section - D.FAITH Input wie "You Want" im BuyTab */}
                 <div className="bg-zinc-800/50 rounded-xl p-3 border border-zinc-700">
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">You Sell</label>
                   <div className="flex items-center gap-3 mb-2">
                     <div className="flex items-center gap-2 bg-amber-500/20 rounded-lg px-2 py-1 border border-amber-500/30 flex-shrink-0">
                       <img src="/D.FAITH.png" alt="D.FAITH" className="w-6 h-6 object-contain" />
-                      <span className="text-amber-400 text-xs font-semibold">{dfaithBalance}</span>
                       <span className="text-amber-300 font-semibold text-xs">D.FAITH</span>
                     </div>
                     <input
                       type="number"
-                      min="0"
+                      min="0.01"
                       step="0.01"
-                      placeholder="0.0"
+                      placeholder="0.00"
                       className="flex-1 bg-transparent text-lg sm:text-xl font-bold text-white focus:outline-none min-w-0 text-center"
                       value={sellAmount}
                       onChange={e => setSellAmount(e.target.value)}
                       disabled={isSwapping || sellStep !== 'initial'}
                     />
                     <button
-                      className="text-amber-400 hover:text-amber-300 font-medium px-2 py-1 rounded flex-shrink-0"
-                      onClick={() => setSellAmount(dfaithBalance)}
-                      disabled={isSwapping || parseFloat(dfaithBalance) <= 0 || sellStep !== 'initial'}
+                      className="text-amber-400 hover:text-amber-300 font-medium px-3 py-1 rounded bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all flex-shrink-0"
+                      onClick={handleGetQuote}
+                      disabled={
+                        !sellAmount || 
+                        parseFloat(sellAmount) <= 0 || 
+                        isSwapping || 
+                        !account?.address || 
+                        parseFloat(dfaithBalance) <= 0 ||
+                        parseFloat(sellAmount) > parseFloat(dfaithBalance) ||
+                        parseFloat(sellAmount) < 0.01 ||
+                        swapTxStatus === "pending"
+                      }
                     >
-                      MAX
+                      {swapTxStatus === "pending" ? (
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 border border-amber-300 border-t-transparent rounded-full animate-spin"></div>
+                          <span>...</span>
+                        </div>
+                      ) : (
+                        "Verkaufen"
+                      )}
                     </button>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-zinc-500">
+                      Balance: {dfaithBalance ? `${Number(dfaithBalance).toFixed(2)} D.FAITH` : 'Loading...'}
+                    </span>
+                    <span className="text-zinc-500">
+                      {dfaithPrice ? `1 D.FAITH = ${dfaithPrice.toFixed(6)} ETH` : "Loading..."}
+                    </span>
                   </div>
                 </div>
 
-                {/* You Receive Section mit Exchange Rate */}
+                {/* You Receive Section - ETH wie "You Pay" im BuyTab */}
                 <div className="bg-zinc-800/50 rounded-xl p-3 border border-zinc-700">
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">You Receive</label>
                   <div className="flex items-center gap-3 mb-2">
                     <div className="flex items-center gap-2 bg-purple-500/20 rounded-lg px-2 py-1 border border-purple-500/30 flex-shrink-0">
                       <img src="/ETH.png" alt="ETH" className="w-6 h-6 object-contain" />
-                      <span className="text-purple-300 font-semibold text-xs">ETH</span>
+                      <span className="text-purple-300 font-semibold text-xs">ETH erhalten</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-lg sm:text-xl font-bold text-purple-400 text-center">
+                    <div className="flex-1 text-center">
+                      <div className="text-lg sm:text-xl font-bold text-purple-300">
                         {sellAmount && parseFloat(sellAmount) > 0 && dfaithPrice 
                           ? (parseFloat(sellAmount) * dfaithPrice).toFixed(6)
                           : "0.000000"
@@ -813,87 +786,17 @@ const tokenOptions = [
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-zinc-500">
-                      {dfaithPrice ? `1 D.FAITH = ${dfaithPrice.toFixed(6)} ETH` : "Loading..."}
+                      Balance: {ethBalance ? `${Number(ethBalance).toFixed(4)} ETH` : 'Loading...'}
                     </span>
                     <span className="text-zinc-500">
                       {sellAmount && parseFloat(sellAmount) > 0 && dfaithPrice && ethPriceEur
                         ? `≈ €${(parseFloat(sellAmount) * dfaithPrice * ethPriceEur).toFixed(2)}`
-                        : ""
+                        : "≈ €0.00"
                       }
                     </span>
                   </div>
                 </div>
               </div>
-
-              {/* Advanced Settings - Kompakt */}
-              <div className="bg-zinc-800/30 rounded-xl p-3 border border-zinc-700">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 flex-1">
-                    <span className="text-sm font-medium text-zinc-300 whitespace-nowrap">Slippage</span>
-                    <input
-                      type="number"
-                      placeholder="1.0"
-                      min="0.1"
-                      max="50"
-                      step="0.1"
-                      className="w-16 bg-zinc-700 border border-zinc-600 rounded-lg py-1 px-2 text-sm text-zinc-300 focus:border-amber-500 focus:outline-none"
-                      value={slippage}
-                      onChange={(e) => setSlippage(e.target.value)}
-                      disabled={isSwapping || sellStep !== 'initial'}
-                    />
-                    <span className="text-xs text-zinc-500">%</span>
-                  </div>
-                  <div className="flex gap-1">
-                    {["0.5", "1", "3"].map((value) => (
-                      <button
-                        key={value}
-                        className={`px-2 py-1 rounded text-xs font-medium transition ${
-                          slippage === value 
-                            ? "bg-amber-500 text-black" 
-                            : "bg-zinc-700 text-zinc-400 hover:bg-zinc-600"
-                        }`}
-                        onClick={() => setSlippage(value)}
-                        disabled={isSwapping || sellStep !== 'initial'}
-                      >
-                        {value}%
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Status Display */}
-              {swapTxStatus && (
-                <div className={`rounded-xl p-3 border text-center ${
-                  swapTxStatus === "success" ? "bg-green-500/10 border-green-500/30 text-green-400" :
-                  swapTxStatus === "error" ? "bg-red-500/10 border-red-500/30 text-red-400" :
-                  "bg-blue-500/10 border-blue-500/30 text-blue-400"
-                }`}>
-                  <div className="flex items-center justify-center gap-2 mb-1">
-                    {swapTxStatus === "success" && <span className="text-xl">🎉</span>}
-                    {swapTxStatus === "error" && <span className="text-xl">❌</span>}
-                    {swapTxStatus === "pending" && <span className="text-xl">📝</span>}
-                    {swapTxStatus === "confirming" && <span className="text-xl">⏳</span>}
-                    {swapTxStatus === "verifying" && <span className="text-xl">🔎</span>}
-                    {swapTxStatus === "swapping" && <span className="text-xl">🔄</span>}
-                    {swapTxStatus === "approving" && <span className="text-xl">🔐</span>}
-                    {swapTxStatus === "waiting_approval" && <span className="text-xl">⌛</span>}
-                    <span className="font-semibold text-sm">
-                      {swapTxStatus === "success" && "Sale Successful!"}
-                      {swapTxStatus === "error" && "Sale Failed"}
-                      {swapTxStatus === "pending" && "Getting Quote..."}
-                      {swapTxStatus === "confirming" && "Confirming..."}
-                      {swapTxStatus === "verifying" && "Verifying..."}
-                      {swapTxStatus === "swapping" && "Processing Sale..."}
-                      {swapTxStatus === "approving" && "Approving Tokens..."}
-                      {swapTxStatus === "waiting_approval" && "Waiting for Approval..."}
-                    </span>
-                  </div>
-                  {swapTxStatus === "error" && quoteError && (
-                    <p className="text-sm opacity-80">{quoteError}</p>
-                  )}
-                </div>
-              )}
 
               {/* Validation Warnings */}
               {parseFloat(sellAmount) > parseFloat(dfaithBalance) && (
@@ -914,26 +817,145 @@ const tokenOptions = [
                 </div>
               )}
 
+              {/* Status Display for Quote Errors */}
+              {swapTxStatus === "error" && quoteError && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <span className="text-xl">❌</span>
+                    <span className="font-semibold">Quote Failed</span>
+                  </div>
+                  <p className="text-sm opacity-80">{quoteError}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sell Confirm Modal - Wie Purchase Modal im BuyTab */}
+      {showSellConfirmModal && quoteTxData && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 overflow-y-auto p-4 pt-20">
+          <div className="bg-zinc-900 rounded-xl p-3 sm:p-6 max-w-sm w-full border border-red-400 max-h-[85vh] overflow-y-auto my-4 relative">
+            {/* Modal-Header - Sticky X Button */}
+            <div className="sticky top-0 z-10 bg-zinc-900 flex items-center justify-end mb-2 -mx-3 -mt-3 px-3 pt-3 sm:-mx-6 sm:-mt-6 sm:px-6 sm:pt-6">
+              <button
+                onClick={() => {
+                  setShowSellConfirmModal(false);
+                  setSellStep('initial');
+                  setQuoteTxData(null);
+                  setSpenderAddress(null);
+                  setNeedsApproval(false);
+                  setQuoteError(null);
+                  setSwapTxStatus(null);
+                }}
+                className="p-2 text-red-400 hover:text-red-300 hover:bg-zinc-800 rounded-lg transition-all flex-shrink-0 shadow-lg"
+                disabled={isSwapping}
+              >
+                <span className="text-lg">✕</span>
+              </button>
+            </div>
+
+            <div className="w-full space-y-4">
+              {/* Sell Header */}
+              <div className="text-center pb-3 border-b border-zinc-700 mb-4">
+                <div className="w-24 h-24 mx-auto mb-3 flex items-center justify-center">
+                  <img src="/D.FAITH.png" alt="D.FAITH" className="w-24 h-24 object-contain" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-1">Verkauf bestätigen</h3>
+                <p className="text-zinc-400 text-xs">Quote erhalten - bereit für den Verkauf</p>
+              </div>
+
+              {/* Sell Summary */}
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3">
+                <div className="text-center space-y-2">
+                  <div className="text-lg font-semibold text-red-400">
+                    {sellAmount} D.FAITH verkaufen
+                  </div>
+                  <div className="text-sm text-zinc-300">
+                    für {sellAmount && dfaithPrice ? (parseFloat(sellAmount) * dfaithPrice).toFixed(6) : "0.000000"} ETH
+                  </div>
+                  <div className="text-lg font-bold text-amber-400">
+                    {sellAmount && dfaithPrice && ethPriceEur 
+                      ? `≈ €${(parseFloat(sellAmount) * dfaithPrice * ethPriceEur).toFixed(2)}`
+                      : "≈ €0.00"
+                    }
+                  </div>
+                </div>
+              </div>
+
+              {/* Sell Steps Indicator */}
+              <div className="flex justify-between items-center px-2">
+                <div className={`flex items-center space-x-1 text-green-400`}>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-green-500 text-white">
+                    ✓
+                  </div>
+                  <span className="text-xs font-medium">Quote</span>
+                </div>
+                <div className={`w-8 h-0.5 ${sellStep === 'approved' || sellStep === 'completed' ? 'bg-green-500' : 'bg-zinc-700'}`}></div>
+                <div className={`flex items-center space-x-1 ${sellStep === 'approved' || sellStep === 'completed' ? 'text-green-400' : 'text-zinc-500'}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${sellStep === 'approved' || sellStep === 'completed' ? 'bg-green-500 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
+                    {sellStep === 'approved' || sellStep === 'completed' ? '✓' : '2'}
+                  </div>
+                  <span className="text-xs font-medium">Approve</span>
+                </div>
+                <div className={`w-8 h-0.5 ${sellStep === 'completed' ? 'bg-green-500' : 'bg-zinc-700'}`}></div>
+                <div className={`flex items-center space-x-1 ${sellStep === 'completed' ? 'text-green-400' : 'text-zinc-500'}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${sellStep === 'completed' ? 'bg-green-500 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
+                    {sellStep === 'completed' ? '✓' : '3'}
+                  </div>
+                  <span className="text-xs font-medium">Sell</span>
+                </div>
+              </div>
+
+              {/* Status Display */}
+              {swapTxStatus && (
+                <div className={`rounded-xl p-4 border text-center ${
+                  swapTxStatus === "success" ? "bg-green-500/20 border-green-500/50 text-green-300" :
+                  swapTxStatus === "error" ? "bg-red-500/10 border-red-500/30 text-red-400" :
+                  "bg-blue-500/10 border-blue-500/30 text-blue-400"
+                }`}>
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    {swapTxStatus === "success" && <span className="text-3xl">🎉</span>}
+                    {swapTxStatus === "error" && <span className="text-xl">❌</span>}
+                    {(swapTxStatus === "confirming" || swapTxStatus === "verifying" || swapTxStatus === "swapping" || swapTxStatus === "approving" || swapTxStatus === "waiting_approval") && (
+                      <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                    )}
+                    <span className="font-bold text-lg">
+                      {swapTxStatus === "success" && "Verkauf erfolgreich abgeschlossen!"}
+                      {swapTxStatus === "error" && "Verkauf fehlgeschlagen"}
+                      {swapTxStatus === "confirming" && "Bestätige Transaktion..."}
+                      {swapTxStatus === "verifying" && "Verifiziere Verkauf..."}
+                      {swapTxStatus === "swapping" && "Führe Verkauf durch..."}
+                      {swapTxStatus === "approving" && "Freigabe der Token..."}
+                      {swapTxStatus === "waiting_approval" && "Warte auf Freigabe..."}
+                    </span>
+                  </div>
+                  {swapTxStatus === "success" && (
+                    <div className="space-y-2">
+                      <p className="text-base font-semibold text-green-200">
+                        🚀 {sellAmount} D.FAITH wurden erfolgreich verkauft!
+                      </p>
+                      <p className="text-sm text-green-300/80">
+                        💰 Für {sellAmount && dfaithPrice ? (parseFloat(sellAmount) * dfaithPrice).toFixed(6) : "0.000000"} ETH ({sellAmount && dfaithPrice && ethPriceEur ? `≈ €${(parseFloat(sellAmount) * dfaithPrice * ethPriceEur).toFixed(2)}` : '€0.00'})
+                      </p>
+                      <p className="text-xs text-green-400/70 mt-2">
+                        ✨ Die ETH sind bereits in deiner Wallet verfügbar!
+                      </p>
+                    </div>
+                  )}
+                  {swapTxStatus === "error" && quoteError && (
+                    <p className="text-sm opacity-80">{quoteError}</p>
+                  )}
+                  {swapTxStatus === "verifying" && (
+                    <p className="text-sm opacity-80 mt-1">
+                      Prüfe Balance-Änderungen... Das kann einen Moment dauern.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="space-y-2">
-                {sellStep === 'initial' && (
-                  <Button
-                    className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-black font-bold py-3 rounded-xl text-base transition-all transform hover:scale-[1.02]"
-                    onClick={handleGetQuote}
-                    disabled={
-                      !sellAmount || 
-                      parseFloat(sellAmount) <= 0 || 
-                      isSwapping || 
-                      !account?.address || 
-                      parseFloat(dfaithBalance) <= 0 ||
-                      parseFloat(sellAmount) > (parseFloat(dfaithBalance) + 0.001) ||
-                      parseFloat(sellAmount) < 0.01
-                    }
-                  >
-                    {isSwapping ? "Processing..." : "Get Quote"}
-                  </Button>
-                )}
-
                 {sellStep === 'quoteFetched' && needsApproval && (
                   <Button
                     className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl text-base transition-all"
@@ -950,7 +972,14 @@ const tokenOptions = [
                     onClick={handleSellSwap}
                     disabled={isSwapping}
                   >
-                    {isSwapping ? "Processing Sale..." : `Sell ${sellAmount || "0"} D.FAITH`}
+                    {isSwapping ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Verkaufe...</span>
+                      </div>
+                    ) : (
+                      `Verkaufe ${sellAmount} D.FAITH für €${sellAmount && dfaithPrice && ethPriceEur ? (parseFloat(sellAmount) * dfaithPrice * ethPriceEur).toFixed(2) : '0.00'}`
+                    )}
                   </Button>
                 )}
 
@@ -958,6 +987,7 @@ const tokenOptions = [
                   <Button
                     className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-3 rounded-xl text-base transition-all"
                     onClick={() => {
+                      setShowSellConfirmModal(false);
                       setSellStep('initial');
                       setQuoteTxData(null);
                       setSpenderAddress(null);
@@ -965,11 +995,10 @@ const tokenOptions = [
                       setQuoteError(null);
                       setSellAmount("");
                       setSwapTxStatus(null);
-                      setSlippage("1");
                     }}
                     disabled={isSwapping}
                   >
-                    Make Another Sale
+                    Weiteren Verkauf tätigen
                   </Button>
                 )}
               </div>
