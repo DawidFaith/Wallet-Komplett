@@ -138,11 +138,14 @@ export default function HistoryTab() {
       });
       
       if (relatedTransactions.length > 0) {
-        // Komplexe Swap-Gruppe (2-3 Transaktionen je nach Swap-Richtung)
-        const group = [tx, ...relatedTransactions].sort((a, b) => {
-          // Bestimme ob es eine Claim-Gruppe ist
-          const isClaimGroup = group.some(t => t.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase());
-          
+        // Erstelle die Gruppe zuerst
+        const group = [tx, ...relatedTransactions];
+        
+        // Bestimme ob es eine Claim-Gruppe ist
+        const isClaimGroup = group.some(t => t.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase());
+        
+        // Sortiere die Gruppe
+        group.sort((a, b) => {
           if (isClaimGroup) {
             // Bei Claims: Token zuerst, dann ETH
             if (a.token !== "ETH" && b.token === "ETH") return -1;
@@ -168,7 +171,6 @@ export default function HistoryTab() {
         // Nur gruppieren wenn es sinnvolle Swap-Muster sind
         const tokenTxs = group.filter(t => t.token === "D.FAITH" || t.token === "D.INVEST");
         const ethTxs = group.filter(t => t.token === "ETH");
-        const isClaimGroup = group.some(t => t.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase());
         
         // Gruppierungsregeln:
         // - Claims: 1 Token + 1 ETH
@@ -197,7 +199,7 @@ export default function HistoryTab() {
           })));
         } else {
           // Zu komplex oder ungültig - als einzelne Transaktionen behandeln
-          [tx, ...relatedTransactions].forEach(singleTx => {
+          group.forEach(singleTx => {
             if (!processed.has(singleTx.id)) {
               grouped.push(singleTx);
               processed.add(singleTx.id);
