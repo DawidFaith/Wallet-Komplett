@@ -176,8 +176,8 @@ export default function TokenomicsTab() {
   const stakingTokens = contractBalance || 0;
   const poolTokens = tokenMetrics?.balances?.tokenInPool || 0;
   
-  // Zirkulierende Supply = Total Supply - Staking Rewards - Dawid Faith Holdings
-  const circulatingSupply = totalSupply - stakingTokens - davidBalanceNum;
+  // Zirkulierende Supply = Total Supply - Staking Rewards - Dawid Faith Holdings - Pool Tokens
+  const circulatingSupply = Math.max(0, totalSupply - stakingTokens - davidBalanceNum - poolTokens);
   
   const davidPercentage = totalSupply > 0 ? (davidBalanceNum / totalSupply) * 100 : 0;
   const targetPercentage = 75;
@@ -324,7 +324,7 @@ export default function TokenomicsTab() {
             <circle
               cx="50" cy="50" r="45"
               fill="none" stroke="#f59e0b" strokeWidth="8"
-              strokeDasharray={`${(davidPercentage / 100) * 283} 283`}
+              strokeDasharray={`${totalSupply > 0 ? (davidBalanceNum / totalSupply) * 283 : 0} 283`}
               strokeDashoffset="0"
               className="transition-all duration-1000 drop-shadow-lg"
               style={{ filter: 'drop-shadow(0 0 8px #f59e0b60)' }}
@@ -334,8 +334,8 @@ export default function TokenomicsTab() {
             <circle
               cx="50" cy="50" r="45"
               fill="none" stroke="#10b981" strokeWidth="8"
-              strokeDasharray={`${((poolTokens / totalSupply) * 100 / 100) * 283} 283`}
-              strokeDashoffset={`-${(davidPercentage / 100) * 283}`}
+              strokeDasharray={`${totalSupply > 0 ? (poolTokens / totalSupply) * 283 : 0} 283`}
+              strokeDashoffset={`-${totalSupply > 0 ? (davidBalanceNum / totalSupply) * 283 : 0}`}
               className="transition-all duration-1000 drop-shadow-lg"
               style={{ filter: 'drop-shadow(0 0 8px #10b98160)' }}
             />
@@ -344,10 +344,20 @@ export default function TokenomicsTab() {
             <circle
               cx="50" cy="50" r="45"
               fill="none" stroke="#3b82f6" strokeWidth="8"
-              strokeDasharray={`${((stakingTokens / totalSupply) * 100 / 100) * 283} 283`}
-              strokeDashoffset={`-${((davidPercentage + (poolTokens / totalSupply) * 100) / 100) * 283}`}
+              strokeDasharray={`${totalSupply > 0 ? (stakingTokens / totalSupply) * 283 : 0} 283`}
+              strokeDashoffset={`-${totalSupply > 0 ? ((davidBalanceNum + poolTokens) / totalSupply) * 283 : 0}`}
               className="transition-all duration-1000 drop-shadow-lg"
               style={{ filter: 'drop-shadow(0 0 8px #3b82f660)' }}
+            />
+            
+            {/* Community Section */}
+            <circle
+              cx="50" cy="50" r="45"
+              fill="none" stroke="#8b5cf6" strokeWidth="8"
+              strokeDasharray={`${totalSupply > 0 ? (circulatingSupply / totalSupply) * 283 : 0} 283`}
+              strokeDashoffset={`-${totalSupply > 0 ? ((davidBalanceNum + poolTokens + stakingTokens) / totalSupply) * 283 : 0}`}
+              className="transition-all duration-1000 drop-shadow-lg"
+              style={{ filter: 'drop-shadow(0 0 8px #8b5cf660)' }}
             />
             
             {/* Vinyl grooves */}
@@ -467,7 +477,7 @@ export default function TokenomicsTab() {
         </div>
         
         {/* Market Metrics unter dem Chart - Kompakt und mobil optimiert */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6">
           {/* Market Cap */}
           <div className="bg-zinc-800/50 rounded-lg p-3 border border-green-500/20">
             <div className="flex items-center gap-2 mb-1">
@@ -501,32 +511,6 @@ export default function TokenomicsTab() {
             )}
             <div className="text-blue-300 text-xs">Live DEX-Preis</div>
           </div>
-
-          {/* Total Supply */}
-          <div className="bg-zinc-800/50 rounded-lg p-3 border border-yellow-500/20">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-              <span className="text-yellow-400 font-semibold text-xs">Total Supply</span>
-            </div>
-            <div className="text-white font-bold text-sm">
-              {totalSupply?.toLocaleString() || "0"}
-            </div>
-            <div className="text-yellow-300 text-xs">D.FAITH Token</div>
-          </div>
-
-          {/* Community Holdings */}
-          <div className="bg-zinc-800/50 rounded-lg p-3 border border-purple-500/20">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-              <span className="text-purple-400 font-semibold text-xs">Community Holdings</span>
-            </div>
-            <div className="text-white font-bold text-sm">
-              {circulatingSupply > 0 ? circulatingSupply.toLocaleString() : "0"}
-            </div>
-            <div className="text-purple-300 text-xs">
-              {totalSupply > 0 ? ((circulatingSupply / totalSupply) * 100).toFixed(1) : "0"}%
-            </div>
-          </div>
         </div>
       </div>
 
@@ -547,17 +531,7 @@ export default function TokenomicsTab() {
           <h4 className="text-lg font-semibold text-blue-400 mb-4">
             D.INVEST Token Distribution
           </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Total Supply */}
-            <div className="bg-zinc-800/50 rounded-lg p-3 border border-blue-500/20">
-              <div className="text-blue-300 text-xs font-medium mb-1 flex items-center gap-1">
-                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
-                Total Supply
-              </div>
-              <div className="text-white font-bold text-lg">10,000</div>
-              <div className="text-blue-400 text-xs">D.INVEST Token</div>
-            </div>
-            
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Community Owned */}
             <div className="bg-zinc-800/50 rounded-lg p-3 border border-green-500/20">
               <div className="text-green-300 text-xs font-medium mb-1 flex items-center gap-1">
@@ -594,16 +568,6 @@ export default function TokenomicsTab() {
                   <div className="text-amber-400 text-xs">5€ pro Token</div>
                 </>
               )}
-            </div>
-
-            {/* Token Wert */}
-            <div className="bg-zinc-800/50 rounded-lg p-3 border border-purple-500/20">
-              <div className="text-purple-300 text-xs font-medium mb-1 flex items-center gap-1">
-                <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
-                Gesamtwert
-              </div>
-              <div className="text-white font-bold text-lg">€50,000</div>
-              <div className="text-purple-400 text-xs">10,000 × €5</div>
             </div>
           </div>
         </div>
