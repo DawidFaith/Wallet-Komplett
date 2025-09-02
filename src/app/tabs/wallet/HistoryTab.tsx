@@ -6,6 +6,8 @@ import { useActiveAccount } from "thirdweb/react";
 // Token-Adressen und Konfiguration
 const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
 const DINVEST_TOKEN = "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb";
+// D.FAITH/ETH Pool (für Käufe)
+const DFAITH_POOL = "0x59c7c832e96d2568bea6db468c1aadcbbda08a52";
 
 // Social Media Claim Adresse
 const CLAIM_ADDRESS = "0xFe5F6cE95efB135b93899AF70B12727F93FEE6E2"; // Social Media Claim Adresse
@@ -25,7 +27,7 @@ const TOKEN_ICONS: { [key: string]: string } = {
 
 type Transaction = {
   id: string;
-  type: "claim" | "other";
+  type: "claim" | "buy" | "other";
   token: string;
   tokenIcon: string;
   amount: string;
@@ -38,12 +40,12 @@ type Transaction = {
   blockNumber: string;
 };
 
-type FilterType = "all" | "claim";
+type FilterType = "all" | "claim" | "buy";
 type SortType = "newest" | "oldest";
 
 export default function HistoryTab() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
+  // Hinweis: gefilterte Liste wird per useMemo berechnet
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -58,69 +60,104 @@ export default function HistoryTab() {
   const userAddress = account?.address;
 
   const filteredAndSortedTransactions = useMemo(() => {
-    // Basisliste basierend auf Filter (aktuell nur Claims)
-    const baseList = filter === "claim" ? transactions.filter((t) => t.type === "claim") : transactions;
+    // Filter anwenden (unterstützt Claim und Buy)
+    let baseList: Transaction[];
+    if (filter === "claim") baseList = transactions.filter((t) => t.type === "claim");
+    else if (filter === "buy") baseList = transactions.filter((t) => t.type === "buy");
+    else baseList = transactions;
 
     // Sortieren
     const sorted = [...baseList].sort((a, b) =>
       sortBy === "oldest" ? a.timestamp - b.timestamp : b.timestamp - a.timestamp
     );
 
-  // Gruppierung: Claim = D.FAITH von CLAIM_ADDRESS an Wallet + nahe ETH-Transfer von CLAIM_ADDRESS
     const groups: (Transaction | Transaction[])[] = [];
     const processed = new Set<string>();
 
     for (const tx of sorted) {
       if (processed.has(tx.id)) continue;
 
-      // Nur Token-Claim (D.FAITH) als Anker verwenden
+      // 1) Claim-Gruppierung: D.FAITH von CLAIM_ADDRESS + nahe ETH von CLAIM_ADDRESS
       const isTokenFromClaim =
         tx.type === "claim" &&
         tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() &&
         tx.token === "D.FAITH";
 
-      if (!isTokenFromClaim) {
-        // ETH-only Claim oder anderes: nicht separat anzeigen
-        // (wird nur als Partner eines D.FAITH-Claims berücksichtigt)
-        continue;
-      }
-
-      // 1) Bevorzugt ETH mit erwartetem Fixbetrag
-      let ethPartner = sorted.find(
-        (other) =>
-          !processed.has(other.id) &&
-          other.id !== tx.id &&
-          other.type === "claim" &&
-          other.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() &&
-          other.token === "ETH" &&
-          Math.abs(other.amountRaw - CLAIM_ETH_VALUE) <= CLAIM_ETH_EPS &&
-          Math.abs(other.timestamp - tx.timestamp) <= 300000 // 5 Minuten
-      );
-
-      // 2) Fallback: irgendein ETH-Transfer nahe beieinander
-      if (!ethPartner) {
-        ethPartner = sorted.find(
+      if (isTokenFromClaim) {
+        let ethPartner = sorted.find(
           (other) =>
             !processed.has(other.id) &&
             other.id !== tx.id &&
             other.type === "claim" &&
             other.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() &&
             other.token === "ETH" &&
-            Math.abs(other.timestamp - tx.timestamp) <= 300000 // 5 Minuten
+            Math.abs(other.amountRaw - CLAIM_ETH_VALUE) <= CLAIM_ETH_EPS &&
+            Math.abs(other.timestamp - tx.timestamp) <= 300000
         );
+
+        if (!ethPartner) {
+          ethPartner = sorted.find(
+            (other) =>
+              !processed.has(other.id) &&
+              other.id !== tx.id &&
+              other.type === "claim" &&
+              other.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() &&
+              other.token === "ETH" &&
+              Math.abs(other.timestamp - tx.timestamp) <= 300000
+          );
+        }
+
+        if (ethPartner) {
+          const pair: Transaction[] = [tx, ethPartner];
+          (pair as any).__groupType = "claim";
+          groups.push(pair);
+          processed.add(tx.id);
+          processed.add(ethPartner.id);
+          continue;
+        } else {
+          groups.push(tx);
+          processed.add(tx.id);
+          continue;
+        }
       }
 
-      if (ethPartner) {
-        const pair: Transaction[] = [tx, ethPartner];
-        (pair as any).__groupType = "claim";
-        groups.push(pair);
-        processed.add(tx.id);
-        processed.add(ethPartner.id);
-      } else {
-        // Falls kein ETH-Partner gefunden wurde, trotzdem als einzelner Claim zeigen
-        groups.push(tx);
-        processed.add(tx.id);
+      // 2) Kauf-Gruppierung: D.FAITH vom Pool (eingehend) + nahe ETH an Pool (ausgehend)
+      const isBuyAnchor =
+        tx.type === "buy" &&
+        tx.token === "D.FAITH" &&
+        tx.address.toLowerCase() === DFAITH_POOL.toLowerCase() &&
+        tx.amount.startsWith("+");
+
+      if (isBuyAnchor) {
+        // ETH-Partner suchen (ausgehend, an Pool)
+        let ethPartner = sorted.find(
+          (other) =>
+            !processed.has(other.id) &&
+            other.id !== tx.id &&
+            other.token === "ETH" &&
+            other.address.toLowerCase() === DFAITH_POOL.toLowerCase() &&
+            other.amount.startsWith("-") &&
+            Math.abs(other.timestamp - tx.timestamp) <= 300000
+        );
+
+        if (ethPartner) {
+          const pair: Transaction[] = [tx, ethPartner];
+          (pair as any).__groupType = "buy";
+          groups.push(pair);
+          processed.add(tx.id);
+          processed.add(ethPartner.id);
+          continue;
+        } else {
+          // Falls kein ETH-Partner gefunden wurde, trotzdem Kauf (Token) anzeigen
+          (tx as any).__groupType = "buy";
+          groups.push(tx);
+          processed.add(tx.id);
+          continue;
+        }
       }
+
+      // Nicht relevante Einträge in dieser Phase unterdrücken
+      continue;
     }
 
     return groups;
@@ -284,7 +321,7 @@ export default function HistoryTab() {
     }
   };
 
-  // Funktion zum Neuladen der Transaktionen (nur Claims extrahieren)
+  // Funktion zum Neuladen der Transaktionen (Claims + Käufe extrahieren)
   const refreshTransactions = useCallback(async () => {
     if (!userAddress) {
       setTransactions([]);
@@ -309,7 +346,7 @@ export default function HistoryTab() {
         return;
       }
 
-  // Verarbeite nur relevante Transfers zu Claim-Transaktionen
+  // Verarbeite nur relevante Transfers zu Claim- und Kauf-Transaktionen
   const mappedTransactions: Transaction[] = alchemyTransactions
         .map((transfer: any) => {
           // Zeitstempel von Alchemy Metadata
@@ -328,7 +365,7 @@ export default function HistoryTab() {
           const fromAddress = transfer.from?.toLowerCase();
           const toAddress = transfer.to?.toLowerCase();
           
-          let type: "claim" | "other" = "other";
+          let type: "claim" | "buy" | "other" = "other";
           let address = isReceived ? transfer.from : transfer.to;
           
           // Token bestimmen (früh, für besseres Debugging)
@@ -346,6 +383,22 @@ export default function HistoryTab() {
             // Transaktion von Claim-Adresse = Social Media Claim
             type = "claim";
             address = CLAIM_ADDRESS;
+          } else if (
+            // Kauf-Anker: D.FAITH kommt vom Pool an unsere Wallet
+            transfer.rawContract?.address?.toLowerCase() === DFAITH_TOKEN.toLowerCase() &&
+            isReceived &&
+            fromAddress === DFAITH_POOL.toLowerCase()
+          ) {
+            type = "buy";
+            address = DFAITH_POOL;
+          } else if (
+            // Kauf-ETH-Seite: ETH (extern) geht von uns an den Pool
+            !isReceived &&
+            transfer.asset === "ETH" &&
+            toAddress === DFAITH_POOL.toLowerCase()
+          ) {
+            type = "buy";
+            address = DFAITH_POOL;
           }
           // Alles andere als "other" kennzeichnen und später rausfiltern
           
@@ -398,13 +451,15 @@ export default function HistoryTab() {
         })
         .slice(0, 50); // Zeige die neuesten 50 Transaktionen
 
-      // Nur Claims behalten
-  const claimsOnly = mappedTransactions.filter((tx) => tx.type === "claim");
-  console.log("[HistoryTab] Claims erkannt:", claimsOnly.length);
-      setTransactions(claimsOnly);
+      // Nur Claims und Käufe behalten
+      const relevant = mappedTransactions.filter((tx) => tx.type === "claim" || tx.type === "buy");
+      const claimsCount = relevant.filter((t) => t.type === "claim").length;
+      const buysCount = relevant.filter((t) => t.type === "buy").length;
+      console.log("[HistoryTab] Claims erkannt:", claimsCount, "| Käufe erkannt:", buysCount);
+      setTransactions(relevant);
       setStats({
-        transactionCount: claimsOnly.length,
-        claims: claimsOnly.length,
+        transactionCount: relevant.length,
+        claims: claimsCount,
       });
       
     } catch (err: any) {
@@ -442,7 +497,7 @@ export default function HistoryTab() {
         )}
       </div>
 
-      {/* Filter: aktuell nur Claims */}
+      {/* Filter: Claims & Käufe */}
       {!isLoading && !error && transactions.length > 0 && (
         <div className="flex flex-wrap gap-2 p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/50 mb-4">
           <span className="text-sm text-zinc-400 mr-2 flex items-center">Filter:</span>
@@ -462,10 +517,18 @@ export default function HistoryTab() {
           >
             🎁 Claim
           </button>
+          <button
+            onClick={() => setFilter("buy")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
+              filter === "buy" ? "bg-emerald-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
+          >
+            🛒 Kaufen
+          </button>
         </div>
       )}
 
-      {/* Historie: nur Social Media Claims mit Gruppierung */}
+      {/* Historie: Social Media Claims und D.FAITH Käufe (gruppiert) */}
       {!isLoading && !error && filteredAndSortedTransactions.length > 0 && (
         <div className="space-y-3 max-h-[70vh] overflow-y-auto px-1">
           {filteredAndSortedTransactions.map((item, index) => {
@@ -473,6 +536,43 @@ export default function HistoryTab() {
               const group = item as Transaction[];
               const tokenTx = group.find((t) => t.token !== "ETH");
               const ethTx = group.find((t) => t.token === "ETH");
+              const groupType = (group as any).__groupType as "claim" | "buy" | undefined;
+              if (groupType === "buy") {
+                return (
+                  <div key={`buy-group-${index}`} className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-600/20 text-emerald-300 text-xs font-semibold">
+                          <span>🛒</span> Kaufen
+                        </span>
+                        <span className="text-zinc-500 text-xs">Gruppiert</span>
+                      </div>
+                      <span className="text-zinc-400 text-xs">{group[0].time}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      {tokenTx && (
+                        <div className="flex items-center gap-2 flex-1 min-w-0 rounded-md border border-emerald-700/40 bg-emerald-900/20 px-2 py-1.5">
+                          <img src={tokenTx.tokenIcon} alt={tokenTx.token} className="w-6 h-6 rounded-full" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-emerald-300 text-sm font-semibold truncate">{tokenTx.amount} {tokenTx.token}</div>
+                            <div className="text-emerald-400/80 text-[11px]">Erhalten</div>
+                          </div>
+                        </div>
+                      )}
+                      {ethTx && (
+                        <div className="flex items-center gap-2 flex-1 min-w-0 rounded-md border border-red-700/40 bg-red-900/20 px-2 py-1.5">
+                          <img src={ethTx.tokenIcon} alt="ETH" className="w-6 h-6 rounded-full" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-red-300 text-sm font-semibold truncate">{ethTx.amount} ETH</div>
+                            <div className="text-red-400/80 text-[11px]">Bezahlt</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+              // Default: Claim-Rendering
               return (
                 <div key={`claim-group-${index}`} className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
                   <div className="flex items-center justify-between mb-2">
@@ -510,7 +610,31 @@ export default function HistoryTab() {
             }
 
             const tx = item as Transaction;
-            // Einzelner Claim (ohne Partner ETH)
+            // Einzelner Claim oder Buy (ohne Partner)
+            const groupType = (tx as any).__groupType as "buy" | undefined;
+            if (tx.type === "buy" || groupType === "buy") {
+              return (
+                <div key={tx.id} className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-600/20 text-emerald-300 text-xs font-semibold">
+                        <span>🛒</span> Kaufen
+                      </span>
+                      <span className="text-zinc-500 text-xs">Einzeltransfer</span>
+                    </div>
+                    <span className="text-zinc-400 text-xs">{tx.time}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <img src={tx.tokenIcon} alt={tx.token} className="w-6 h-6 rounded-full" />
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-semibold truncate ${getAmountColor(tx.amount)}`}>{tx.amount} {tx.token}</div>
+                      <div className="text-[11px] text-zinc-400">ETH-Zahlung wird separat verbucht</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            // Einzelner Claim
             return (
               <div key={tx.id} className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
                 <div className="flex items-center justify-between mb-2">
@@ -539,11 +663,15 @@ export default function HistoryTab() {
       {!isLoading && !error && filteredAndSortedTransactions.length === 0 && (
         <div className="text-center py-10 px-4">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-800 border border-zinc-700 mb-4">
-            <span className="text-2xl">🎁</span>
+            <span className="text-2xl">{filter === "buy" ? "🛒" : "🎁"}</span>
           </div>
-          <h3 className="text-lg font-semibold text-amber-400 mb-1">Keine Claims gefunden</h3>
+          <h3 className="text-lg font-semibold text-amber-400 mb-1">
+            {filter === "buy" ? "Keine Käufe gefunden" : "Keine Claims gefunden"}
+          </h3>
           <p className="text-zinc-400 text-sm max-w-md mx-auto">
-            Hier erscheinen Social Media Claims, sobald ein D.FAITH-Transfer von der Claim-Adresse eingeht.
+            {filter === "buy"
+              ? "Hier erscheinen D.FAITH-Käufe, wenn D.FAITH vom Pool eingeht und zeitgleich ETH an den Pool gesendet wird."
+              : "Hier erscheinen Social Media Claims, sobald ein D.FAITH-Transfer von der Claim-Adresse eingeht."}
           </p>
         </div>
       )}
