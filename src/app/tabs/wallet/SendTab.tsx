@@ -460,13 +460,6 @@ export default function SendTab() {
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-lg mx-auto">
-      {/* Header */}
-      <div className="text-center mb-4">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent mb-2">
-          Token senden
-        </h2>
-      </div>
-
       {/* Wallet Status */}
       {!account?.address && (
         <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-4 text-center">

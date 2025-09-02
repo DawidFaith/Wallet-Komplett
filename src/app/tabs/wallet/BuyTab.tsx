@@ -660,12 +660,6 @@ export default function BuyTab() {
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-lg mx-auto">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent mb-2">
-          Token kaufen
-        </h2>
-      </div>
-
       {/* Token-Auswahl Grid */}
       <div className="space-y-3">
         <div className="grid gap-3">
