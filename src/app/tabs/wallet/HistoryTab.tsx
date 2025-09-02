@@ -112,15 +112,14 @@ export default function HistoryTab() {
                  (tx.amountRaw > 0 && otherTx.amountRaw < 0);
         }
         
-        // Social Media Claims + ETH Gruppierung (erweiterte Zeittoleranz)
+        // Social Media Claims + ETH Gruppierung (präzise Betragserkennung)
         const isClaimWithEth = (
-          timeDiff <= 10000 && // 10 Sekunden Toleranz für Claims
-          ((tx.type === 'claim' && otherTx.type === 'claim') ||
-           (tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() && 
-            otherTx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase())) &&
-          // Einer ist Token, einer ist ETH
-          ((tx.token !== "ETH" && otherTx.token === "ETH") ||
-           (tx.token === "ETH" && otherTx.token !== "ETH"))
+          // ETH mit exaktem Claim-Betrag von Claim-Adresse
+          ((tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() && tx.token === "ETH" && tx.amountRaw === 0.0000010) &&
+           (otherTx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() && otherTx.token !== "ETH")) ||
+          // Oder umgekehrt: Token-Claim mit nachfolgendem ETH
+          ((otherTx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() && otherTx.token === "ETH" && otherTx.amountRaw === 0.0000010) &&
+           (tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() && tx.token !== "ETH"))
         );
         
         // Pool-basierte Swaps mit sehr enger Zeit-Toleranz
