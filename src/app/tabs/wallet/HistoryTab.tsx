@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { Button } from "../../../../components/ui/button";
-import { FaExchangeAlt } from "react-icons/fa";
+import { FaExchangeAlt, FaBitcoin } from "react-icons/fa";
 import { useActiveAccount } from "thirdweb/react";
 
 // Token-Adressen und Konfiguration
@@ -42,7 +42,7 @@ type Transaction = {
   blockNumber: string;
 };
 
-type FilterType = "all" | "claim" | "buy";
+type FilterType = "all" | "claim" | "buy" | "sell";
 type SortType = "newest" | "oldest";
 
 export default function HistoryTab() {
@@ -77,7 +77,7 @@ export default function HistoryTab() {
 
     const groups: (Transaction | Transaction[])[] = [];
     const processed = new Set<string>();
-    const usedHashes = new Set<string>();
+  const usedHashes = new Set<string>();
     const baseTxHash = (t: Transaction) => {
       if (t.hash) return t.hash.toLowerCase();
       const id = t.id || "";
@@ -122,11 +122,36 @@ export default function HistoryTab() {
       }
     }
 
+    // SELL-Gruppierung per Hash: D.FAITH(- an Pool) + optional Gas(ETH -) + ETH/WETH(+ vom Pool)
+    for (const [h, txs] of byHash) {
+      if (usedHashes.has(h)) continue; // bereits als Buy verwendet
+      const dfMinus = txs.find(
+        (t) => t.token === "D.FAITH" && t.amount.startsWith("-") && t.address.toLowerCase() === DFAITH_POOL.toLowerCase()
+      );
+      if (!dfMinus) continue;
+      const ethPlus = txs.find(
+        (t) => (t.token === "ETH" || t.token === "WETH") && t.amount.startsWith("+") && t.address.toLowerCase() === DFAITH_POOL.toLowerCase()
+      );
+      // Gas-Entry (synthetisch) hat Adresse "Gas Fee" und ETH minus
+      const gas = txs.find(
+        (t) => t.token === "ETH" && t.amount.startsWith("-") && (t.address === "Gas Fee" || t.address === "Gas" || t.address === "GAS")
+      );
+      const group: Transaction[] = [dfMinus];
+      if (gas) group.push(gas);
+      if (ethPlus) group.push(ethPlus);
+      if (group.length > 1) {
+        (group as any).__groupType = "sell";
+        groups.push(group);
+        for (const g of group) processed.add(g.id);
+        usedHashes.add(h);
+      }
+    }
+
     for (const tx of sorted) {
       if (processed.has(tx.id)) continue;
       if (usedHashes.has(baseTxHash(tx))) continue;
 
-      // 1) Claim-Gruppierung: D.FAITH von CLAIM_ADDRESS + nahe ETH von CLAIM_ADDRESS
+  // 1) Claim-Gruppierung: D.FAITH von CLAIM_ADDRESS + nahe ETH von CLAIM_ADDRESS
       const isTokenFromClaim =
         tx.type === "claim" &&
         tx.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() &&
@@ -170,7 +195,7 @@ export default function HistoryTab() {
         }
       }
 
-      // 2) Kauf-Gruppierung: D.FAITH vom Pool (eingehend) + nahe ETH an Pool (ausgehend)
+  // 2) Kauf-Gruppierung: D.FAITH vom Pool (eingehend) + nahe ETH an Pool (ausgehend)
       const isBuyAnchor = (
         (tx.type === "buy") ||
         // Fallback: erkenne Kauf auch, wenn Typ falsch eingestuft wurde
@@ -248,6 +273,20 @@ export default function HistoryTab() {
       continue;
     }
 
+    // Nach Gruppierung optional nach Filter filtern
+    if (filter !== "all") {
+      const filteredGroups = groups.filter((item) => {
+        if (Array.isArray(item)) {
+          const gt = (item as any).__groupType;
+          if (filter === "buy" || filter === "sell" || filter === "claim") return gt === filter;
+          return false;
+        } else {
+          const t = item as Transaction;
+          return (t.type as any) === filter;
+        }
+      });
+      return filteredGroups;
+    }
     return groups;
   }, [transactions, filter, sortBy]);
 
@@ -542,13 +581,68 @@ export default function HistoryTab() {
   .filter((tx) => tx.hash && tx.address)
   .sort((a, b) => b.timestamp - a.timestamp);
 
+      // Zusätzliche: Gas-Fee-Einträge für D.FAITH-Verkäufe (synthetische ETH-Transaktionen)
+      const sellHashes = Array.from(new Set(
+        mappedTransactions
+          .filter(
+            (t) =>
+              t.token === "D.FAITH" &&
+              t.amount.startsWith("-") &&
+              t.address.toLowerCase() === DFAITH_POOL.toLowerCase() &&
+              t.hash
+          )
+          .map((t) => t.hash)
+      ));
+
+      const gasTxs: Transaction[] = [];
+      const hexToBigInt = (h: string) => BigInt(h || "0x0");
+      const weiToEth = (wei: bigint) => Number(wei) / 1e18;
+
+      for (const h of sellHashes) {
+        try {
+          const resp = await fetch(API_OPTIONS.ALCHEMY, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ jsonrpc: "2.0", id: 100, method: "eth_getTransactionReceipt", params: [h] }),
+          });
+          if (!resp.ok) continue;
+          const receipt = await resp.json();
+          const r = receipt?.result;
+          if (!r) continue;
+          const gasUsed = hexToBigInt(r.gasUsed || "0x0");
+          const effGasPrice = hexToBigInt(r.effectiveGasPrice || r.gasPrice || "0x0");
+          const feeWei = gasUsed * effGasPrice;
+          const feeEth = weiToEth(feeWei);
+          const anchor = mappedTransactions.find((t) => t.hash === h);
+          if (!anchor) continue;
+          const feeAmount = Math.max(feeEth, 0);
+          const gasTx: Transaction = {
+            id: `gas-${h}`,
+            type: "other",
+            token: "ETH",
+            tokenIcon: getTokenIcon("ETH"),
+            amount: `-${feeAmount.toFixed(6)}`,
+            amountRaw: feeAmount,
+            address: "Gas Fee",
+            hash: h,
+            time: anchor.time,
+            timestamp: anchor.timestamp,
+            status: "success",
+            blockNumber: r.blockNumber || anchor.blockNumber,
+          };
+          gasTxs.push(gasTx);
+        } catch {}
+      }
+
+      const merged = [...mappedTransactions, ...gasTxs].sort((a, b) => b.timestamp - a.timestamp);
+
       // WICHTIG: Alle Transaktionen behalten, damit Partner-Matching (ETH/WETH) nicht durch Filter verloren geht
-      const claimsCount = mappedTransactions.filter((t) => t.type === "claim").length;
-      const buysCount = mappedTransactions.filter((t) => t.type === "buy").length;
+      const claimsCount = merged.filter((t) => t.type === "claim").length;
+      const buysCount = merged.filter((t) => t.type === "buy").length;
       console.log("[HistoryTab] Claims erkannt:", claimsCount, "| Käufe erkannt:", buysCount);
-      setTransactions(mappedTransactions);
+      setTransactions(merged);
       setStats({
-        transactionCount: mappedTransactions.length,
+        transactionCount: merged.length,
         claims: claimsCount,
       });
       
@@ -587,7 +681,7 @@ export default function HistoryTab() {
         )}
       </div>
 
-      {/* Filter: Claims & Käufe */}
+  {/* Filter: Claims, Käufe & Verkäufe */}
       {!isLoading && !error && transactions.length > 0 && (
         <div className="flex flex-wrap gap-2 p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/50 mb-4">
           <span className="text-sm text-zinc-400 mr-2 flex items-center">Filter:</span>
@@ -613,7 +707,15 @@ export default function HistoryTab() {
               filter === "buy" ? "bg-emerald-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
             }`}
           >
-            🛒 Kaufen
+            <FaBitcoin /> Kaufen
+          </button>
+          <button
+            onClick={() => setFilter("sell")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
+              filter === "sell" ? "bg-rose-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
+          >
+            💰 Verkaufen
           </button>
         </div>
       )}
@@ -626,14 +728,14 @@ export default function HistoryTab() {
               const group = item as Transaction[];
               const tokenTx = group.find((t) => t.token !== "ETH");
               const ethTx = group.find((t) => t.token === "ETH");
-              const groupType = (group as any).__groupType as "claim" | "buy" | undefined;
+              const groupType = (group as any).__groupType as "claim" | "buy" | "sell" | undefined;
         if (groupType === "buy") {
                 return (
                   <div key={`buy-group-${index}`} className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-600/20 text-emerald-300 text-xs font-semibold">
-                          <span>🛒</span> Kaufen
+                          <FaBitcoin className="inline" /> Kaufen
                         </span>
             <span className="text-zinc-500 text-xs">Gruppiert</span>
                       </div>
@@ -655,6 +757,53 @@ export default function HistoryTab() {
                           <div className="flex-1 min-w-0">
               <div className="text-red-300 text-sm font-semibold truncate">{ethTx.amount} {(ethTx.token === 'WETH' ? 'WETH' : 'ETH')}</div>
                             <div className="text-red-400/80 text-[11px]">Bezahlt</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+              if (groupType === "sell") {
+                const dfMinus = group.find((t) => t.token === "D.FAITH" && t.amount.startsWith("-"));
+                const gas = group.find((t) => t.address === "Gas Fee");
+                const ethPlus = group.find((t) => (t.token === "ETH" || t.token === "WETH") && t.amount.startsWith("+"));
+                return (
+                  <div key={`sell-group-${index}`} className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-600/20 text-rose-300 text-xs font-semibold">
+                          <span>💰</span> Verkaufen
+                        </span>
+                        <span className="text-zinc-500 text-xs">Gruppiert</span>
+                      </div>
+                      <span className="text-zinc-400 text-xs">{group[0].time}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      {dfMinus && (
+                        <div className="flex items-center gap-2 flex-1 min-w-0 rounded-md border border-red-700/40 bg-red-900/20 px-2 py-1.5">
+                          <img src={dfMinus.tokenIcon} alt={dfMinus.token} className="w-6 h-6 rounded-full" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-red-300 text-sm font-semibold truncate">{dfMinus.amount} {dfMinus.token}</div>
+                            <div className="text-red-400/80 text-[11px]">Abgegeben</div>
+                          </div>
+                        </div>
+                      )}
+                      {gas && (
+                        <div className="flex items-center gap-2 flex-1 min-w-0 rounded-md border border-amber-700/40 bg-amber-900/20 px-2 py-1.5">
+                          <img src={gas.tokenIcon} alt="ETH" className="w-6 h-6 rounded-full" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-amber-300 text-sm font-semibold truncate">{gas.amount} ETH</div>
+                            <div className="text-amber-400/80 text-[11px]">Gas</div>
+                          </div>
+                        </div>
+                      )}
+                      {ethPlus && (
+                        <div className="flex items-center gap-2 flex-1 min-w-0 rounded-md border border-emerald-700/40 bg-emerald-900/20 px-2 py-1.5">
+                          <img src={ethPlus.tokenIcon} alt="ETH" className="w-6 h-6 rounded-full" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-emerald-300 text-sm font-semibold truncate">{ethPlus.amount} {(ethPlus.token === 'WETH' ? 'WETH' : 'ETH')}</div>
+                            <div className="text-emerald-400/80 text-[11px]">Erhalten</div>
                           </div>
                         </div>
                       )}
@@ -708,7 +857,7 @@ export default function HistoryTab() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-600/20 text-emerald-300 text-xs font-semibold">
-                        <span>🛒</span> Kaufen
+                        <FaBitcoin className="inline" /> Kaufen
                       </span>
                       <span className="text-zinc-500 text-xs">Einzeltransfer</span>
                     </div>
@@ -750,18 +899,20 @@ export default function HistoryTab() {
       )}
 
       {/* Empty State */}
-      {!isLoading && !error && filteredAndSortedTransactions.length === 0 && (
+  {!isLoading && !error && filteredAndSortedTransactions.length === 0 && (
         <div className="text-center py-10 px-4">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-800 border border-zinc-700 mb-4">
-            <span className="text-2xl">{filter === "buy" ? "🛒" : "🎁"}</span>
+    <span className="text-2xl">{filter === "buy" ? "₿" : filter === "sell" ? "💰" : "🎁"}</span>
           </div>
           <h3 className="text-lg font-semibold text-amber-400 mb-1">
-            {filter === "buy" ? "Keine Käufe gefunden" : "Keine Claims gefunden"}
+    {filter === "buy" ? "Keine Käufe gefunden" : filter === "sell" ? "Keine Verkäufe gefunden" : "Keine Claims gefunden"}
           </h3>
           <p className="text-zinc-400 text-sm max-w-md mx-auto">
-            {filter === "buy"
-              ? "Hier erscheinen D.FAITH-Käufe, wenn D.FAITH vom Pool eingeht und zeitgleich ETH an den Pool gesendet wird."
-              : "Hier erscheinen Social Media Claims, sobald ein D.FAITH-Transfer von der Claim-Adresse eingeht."}
+    {filter === "buy"
+      ? "Hier erscheinen D.FAITH-Käufe (D.FAITH + vom Pool, ETH/WETH − an den Pool)."
+      : filter === "sell"
+      ? "Hier erscheinen D.FAITH-Verkäufe (D.FAITH − an den Pool, Gas −ETH, ETH/WETH + vom Pool)."
+      : "Hier erscheinen Social Media Claims, sobald ein D.FAITH-Transfer von der Claim-Adresse eingeht."}
           </p>
         </div>
       )}
