@@ -68,10 +68,12 @@ export default function HistoryTab() {
     else if (filter === "buy") baseList = transactions.filter((t) => t.type === "buy");
     else baseList = transactions;
 
-    // Sortieren
-    const sorted = [...baseList].sort((a, b) =>
+  // Sortieren
+  const sorted = [...baseList].sort((a, b) =>
       sortBy === "oldest" ? a.timestamp - b.timestamp : b.timestamp - a.timestamp
     );
+  // Unabhängig vom Filter: kompletter, sortierter Suchraum für Partnerzuordnung
+  const allSorted = [...transactions].sort((a, b) => b.timestamp - a.timestamp);
 
     const groups: (Transaction | Transaction[])[] = [];
     const processed = new Set<string>();
@@ -86,7 +88,7 @@ export default function HistoryTab() {
         tx.token === "D.FAITH";
 
       if (isTokenFromClaim) {
-        let ethPartner = sorted.find(
+        let ethPartner = allSorted.find(
           (other) =>
             !processed.has(other.id) &&
             other.id !== tx.id &&
@@ -94,18 +96,18 @@ export default function HistoryTab() {
             other.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() &&
             other.token === "ETH" &&
             Math.abs(other.amountRaw - CLAIM_ETH_VALUE) <= CLAIM_ETH_EPS &&
-            Math.abs(other.timestamp - tx.timestamp) <= 300000
+            Math.abs(other.timestamp - tx.timestamp) <= 600000
         );
 
         if (!ethPartner) {
-          ethPartner = sorted.find(
+          ethPartner = allSorted.find(
             (other) =>
               !processed.has(other.id) &&
               other.id !== tx.id &&
               other.type === "claim" &&
               other.address.toLowerCase() === CLAIM_ADDRESS.toLowerCase() &&
               other.token === "ETH" &&
-              Math.abs(other.timestamp - tx.timestamp) <= 300000
+              Math.abs(other.timestamp - tx.timestamp) <= 600000
           );
         }
 
@@ -131,29 +133,49 @@ export default function HistoryTab() {
         tx.amount.startsWith("+");
 
       if (isBuyAnchor) {
-        // Partner suchen: Bevorzugt ETH/WETH an den Pool, ansonsten größter ETH/WETH-Abfluss im Zeitfenster
-        const inWindow = (other: Transaction) => Math.abs(other.timestamp - tx.timestamp) <= 300000;
+        // Partner suchen: 1) gleicher Tx-Hash, 2) Bevorzugt ETH/WETH an den Pool, 3) größter ETH/WETH-Abfluss im Zeitfenster
+        const inWindow = (other: Transaction) => Math.abs(other.timestamp - tx.timestamp) <= 600000;
         const isOutflow = (other: Transaction) => other.amount.startsWith("-");
         const isEthLike = (tkn: string) => tkn === "ETH" || tkn === "WETH";
 
+        // 1) Gleicher Hash (robusteste Methode)
+        let sameHash = allSorted.find(
+          (other) =>
+            !processed.has(other.id) &&
+            other.id !== tx.id &&
+            isEthLike(other.token) &&
+            isOutflow(other) &&
+            other.hash && tx.hash && other.hash === tx.hash
+        );
+        if (sameHash) {
+          const pair: Transaction[] = [tx, sameHash];
+          (pair as any).__groupType = "buy";
+          groups.push(pair);
+          processed.add(tx.id);
+          processed.add(sameHash.id);
+          continue;
+        }
+
         // 1) Präferenz: an Pool
-        let partnerCandidates = sorted.filter((other) =>
+        let partnerCandidates = allSorted.filter((other) =>
           !processed.has(other.id) &&
           other.id !== tx.id &&
           isEthLike(other.token) &&
           other.address.toLowerCase() === DFAITH_POOL.toLowerCase() &&
           isOutflow(other) &&
-          inWindow(other)
+          inWindow(other) &&
+          other.amountRaw > 0
         );
 
         // 2) Fallback: beliebiger ETH/WETH-Abfluss im Zeitfenster, wähle größten Betrag
         if (partnerCandidates.length === 0) {
-          partnerCandidates = sorted.filter((other) =>
+          partnerCandidates = allSorted.filter((other) =>
             !processed.has(other.id) &&
             other.id !== tx.id &&
             isEthLike(other.token) &&
             isOutflow(other) &&
-            inWindow(other)
+            inWindow(other) &&
+            other.amountRaw > 0
           );
           // sortiere nach absolutem Betrag desc
           partnerCandidates.sort((a, b) => Math.abs(b.amountRaw) - Math.abs(a.amountRaw));
