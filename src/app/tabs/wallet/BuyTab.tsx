@@ -294,6 +294,7 @@ export default function BuyTab() {
 
   // State für D.FAITH Swap (Modal wird jetzt zentral gesteuert)
   const [swapAmountEth, setSwapAmountEth] = useState("");
+  const [swapAmountDfaith, setSwapAmountDfaith] = useState(""); // Neue State für D.FAITH Input
   const [slippage, setSlippage] = useState("1"); // Fest auf 1% gesetzt
   const [isSwapping, setIsSwapping] = useState(false);
   const [swapTxStatus, setSwapTxStatus] = useState<string | null>(null);
@@ -310,28 +311,29 @@ export default function BuyTab() {
     setNeedsApproval(false);
 
     try {
-      if (!swapAmountEth || parseFloat(swapAmountEth) <= 0 || !account?.address) return;
+      if (!swapAmountDfaith || parseFloat(swapAmountDfaith) <= 0 || !account?.address) return;
 
-      // Minimum Check
-      if (parseFloat(swapAmountEth) < 0.0001) {
-        throw new Error("Minimum swap amount ist 0.0001 ETH für ausreichende Liquidität");
+      // Minimum Check für D.FAITH
+      if (parseFloat(swapAmountDfaith) < 0.01) {
+        throw new Error("Minimum purchase amount ist 0.01 D.FAITH");
       }
 
-      console.log("=== ParaSwap Quote Request für Base ===");
-      console.log("ETH Amount:", swapAmountEth);
+      console.log("=== ParaSwap Quote Request für Base (D.FAITH Input) ===");
+      console.log("D.FAITH Amount:", swapAmountDfaith);
       console.log("Account Address:", account.address);
       
-      const ethAmountWei = (parseFloat(swapAmountEth) * Math.pow(10, 18)).toString();
-      console.log("ETH Amount in Wei:", ethAmountWei);
+      // Berechne D.FAITH in kleinste Einheit (2 Decimals)
+      const dfaithAmountWei = (parseFloat(swapAmountDfaith) * Math.pow(10, DFAITH_DECIMALS)).toString();
+      console.log("D.FAITH Amount in smallest unit:", dfaithAmountWei);
       
       const priceParams = new URLSearchParams({
         srcToken: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", // ETH address for ParaSwap
         destToken: DFAITH_TOKEN, // D.FAITH
         srcDecimals: ETH_DECIMALS.toString(),
         destDecimals: DFAITH_DECIMALS.toString(),
-        amount: ethAmountWei, // ETH in Wei
+        amount: dfaithAmountWei, // D.FAITH in kleinste Einheit
         network: "8453", // Base Chain ID
-        side: "SELL",
+        side: "BUY", // Wichtig: BUY statt SELL, da wir D.FAITH kaufen wollen
         userAddress: account.address,
         slippage: "100", // Fest 1% (100 basis points)
         maxImpact: "50" // Erlaube bis zu 50% Price Impact (Standard ist 20%)
@@ -351,7 +353,7 @@ export default function BuyTab() {
         
         // Spezielle Behandlung für Liquiditätsprobleme
         if (errorText.includes("No routes found with enough liquidity") || priceResponse.status === 404) {
-          throw new Error("Nicht genügend Liquidität für diesen Betrag. Versuche einen größeren Betrag (min. 0.001 ETH) oder versuche es später erneut.");
+          throw new Error("Nicht genügend Liquidität für diesen Betrag. Versuche einen kleineren Betrag oder versuche es später erneut.");
         }
         
         // Spezielle Behandlung für Price Impact Fehler
@@ -359,7 +361,7 @@ export default function BuyTab() {
           try {
             const errorData = JSON.parse(errorText);
             const impactValue = errorData.value || "unbekannt";
-            throw new Error(`Hoher Price Impact (${impactValue}) - Swap trotzdem möglich, aber mit Verlust verbunden. Versuche es mit weniger ETH.`);
+            throw new Error(`Hoher Price Impact (${impactValue}) - Swap trotzdem möglich, aber mit Verlust verbunden. Versuche weniger D.FAITH.`);
           } catch (parseError) {
             throw new Error(`Hoher Price Impact erkannt. Versuche es mit einem kleineren Betrag.`);
           }
@@ -376,17 +378,26 @@ export default function BuyTab() {
         throw new Error('ParaSwap: Keine gültige Price Route erhalten');
       }
       
+      // Bei BUY-Seite: srcAmount ist ETH (was wir zahlen müssen)
+      const requiredEthWei = priceData.priceRoute.srcAmount;
+      const requiredEth = Number(requiredEthWei) / Math.pow(10, ETH_DECIMALS);
+      
+      console.log("Required ETH for", swapAmountDfaith, "D.FAITH:", requiredEth);
+      
+      // Setze die berechnete ETH-Menge
+      setSwapAmountEth(requiredEth.toFixed(6));
+      
       // Warnung anzeigen bei hohem Price Impact
       if (priceData.priceRoute.maxImpactReached) {
         console.warn("⚠️ Hoher Price Impact erkannt:", priceData);
-        // Du könntest hier eine zusätzliche Warnung in der UI anzeigen
       }
       
-      // 2. Baue Transaction mit korrekten Parametern - OHNE destAmount
+      // 2. Baue Transaction mit korrekten Parametern
       const buildTxParams = {
         srcToken: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
         destToken: DFAITH_TOKEN,
         srcAmount: priceData.priceRoute.srcAmount,
+        destAmount: priceData.priceRoute.destAmount,
         priceRoute: priceData.priceRoute,
         userAddress: account.address,
         slippage: "100" // Fest 1% (100 basis points)
@@ -576,6 +587,7 @@ export default function BuyTab() {
             setBuyStep('completed');
             setSwapTxStatus("success");
             setSwapAmountEth("");
+            setSwapAmountDfaith("");
             setQuoteTxData(null);
             setSpenderAddress(null);
             setTimeout(() => setSwapTxStatus(null), 5000);
@@ -602,6 +614,7 @@ export default function BuyTab() {
         setSwapTxStatus("success");
         setBuyStep('completed');
         setSwapAmountEth("");
+        setSwapAmountDfaith("");
         setQuoteTxData(null);
         setSpenderAddress(null);
         setTimeout(() => setSwapTxStatus(null), 8000);
@@ -724,6 +737,7 @@ export default function BuyTab() {
                   setShowBuyModal(false);
                   setSelectedToken(null);
                   setSwapAmountEth("");
+                  setSwapAmountDfaith("");
                   setSlippage("1");
                   setSwapTxStatus(null);
                   setBuyStep('initial');
@@ -792,22 +806,12 @@ export default function BuyTab() {
                         <span className="text-purple-300 font-semibold text-xs">ETH</span>
                       </div>
                       <input
-                        type="number"
-                        min="0"
-                        step="0.001"
-                        placeholder="0.0"
-                        className="flex-1 bg-transparent text-lg sm:text-xl font-bold text-white focus:outline-none min-w-0 text-center"
-                        value={swapAmountEth}
-                        onChange={e => setSwapAmountEth(e.target.value)}
-                        disabled={isSwapping || buyStep !== 'initial'}
+                        type="text"
+                        placeholder="Berechnet automatisch"
+                        className="flex-1 bg-transparent text-lg sm:text-xl font-bold text-gray-300 focus:outline-none min-w-0 text-center"
+                        value={swapAmountEth || ''}
+                        readOnly
                       />
-                      <button
-                        className="text-purple-400 hover:text-purple-300 font-medium px-2 py-1 rounded flex-shrink-0"
-                        onClick={() => setSwapAmountEth((parseFloat(ethBalance) * 0.95).toFixed(5))}
-                        disabled={isSwapping || parseFloat(ethBalance) <= 0 || buyStep !== 'initial'}
-                      >
-                        MAX
-                      </button>
                     </div>
                   </div>
 
@@ -819,25 +823,26 @@ export default function BuyTab() {
                         <img src="/D.FAITH.png" alt="D.FAITH" className="w-6 h-6 object-contain" />
                         <span className="text-amber-300 font-semibold text-xs">D.FAITH</span>
                       </div>
-                      <div className="flex-1 min-w-0 text-center">
-                        <div className="text-lg sm:text-xl font-bold text-amber-400">
-                          {swapAmountEth && parseFloat(swapAmountEth) > 0 && dfaithPrice 
-                            ? (parseFloat(swapAmountEth) / dfaithPrice).toFixed(2)
-                            : "0.00"
-                          }
-                        </div>
-                      </div>
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="0.00"
+                        className="flex-1 bg-transparent text-lg sm:text-xl font-bold text-white focus:outline-none min-w-0 text-center"
+                        value={swapAmountDfaith}
+                        onChange={e => setSwapAmountDfaith(e.target.value)}
+                        disabled={isSwapping || buyStep !== 'initial'}
+                      />
                       <button
                         className="text-amber-400 hover:text-amber-300 font-medium px-3 py-1 rounded bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all flex-shrink-0"
                         onClick={handleGetQuote}
                         disabled={
-                          !swapAmountEth || 
-                          parseFloat(swapAmountEth) <= 0 || 
+                          !swapAmountDfaith || 
+                          parseFloat(swapAmountDfaith) <= 0 || 
                           isSwapping || 
                           !account?.address || 
                           parseFloat(ethBalance) <= 0 ||
-                          parseFloat(swapAmountEth) > parseFloat(ethBalance) ||
-                          parseFloat(swapAmountEth) < 0.0001 ||
+                          parseFloat(swapAmountDfaith) < 0.01 ||
                           swapTxStatus === "pending"
                         }
                       >
@@ -859,7 +864,7 @@ export default function BuyTab() {
                 </div>
 
                 {/* Validation Warnings */}
-                {parseFloat(swapAmountEth) > parseFloat(ethBalance) && (
+                {swapAmountEth && parseFloat(swapAmountEth) > parseFloat(ethBalance) && (
                   <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-2 text-red-400 text-sm">
                     <div className="flex items-center gap-2">
                       <span>⚠️</span>
@@ -868,11 +873,11 @@ export default function BuyTab() {
                   </div>
                 )}
 
-                {parseFloat(swapAmountEth) > 0 && parseFloat(swapAmountEth) < 0.0001 && (
+                {parseFloat(swapAmountDfaith) > 0 && parseFloat(swapAmountDfaith) < 0.01 && (
                   <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-2 text-yellow-400 text-sm">
                     <div className="flex items-center gap-2">
                       <span>💡</span>
-                      <span>Minimum swap: 0.0001 ETH für ausreichende Liquidität</span>
+                      <span>Minimum purchase: 0.01 D.FAITH</span>
                     </div>
                   </div>
                 )}
