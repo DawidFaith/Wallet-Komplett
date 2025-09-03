@@ -471,17 +471,7 @@ export default function InstagramTab() {
           fontFamily: 'Poppins, Segoe UI, sans-serif'
         }}
       >
-        <div className="bg-black bg-opacity-15 rounded-3xl p-8 w-full max-w-sm text-center text-white border-2 border-white border-opacity-15 shadow-2xl relative">
-          {/* Leaderboard trigger icon */}
-          <button
-            type="button"
-            onClick={() => setShowLeaderboardModal(true)}
-            className="absolute top-3 right-3 z-20 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-yellow-300 hover:scale-105 transition pointer-events-auto"
-            title="Leaderboard anzeigen"
-            aria-label="Leaderboard anzeigen"
-          >
-            🏆
-          </button>
+  <div className="bg-black bg-opacity-15 rounded-3xl p-8 w-full max-w-sm text-center text-white border-2 border-white border-opacity-15 shadow-2xl relative">
           {/* Username */}
           <div className="text-2xl font-bold mb-4">@{userData.username}</div>
           
@@ -1163,11 +1153,11 @@ export default function InstagramTab() {
       )}
 
       {/* Global Leaderboard Modal + optional FAB */}
-      {!showLeaderboardModal && !loading && (
+    {!showLeaderboardModal && !loading && (
         <button
           type="button"
           onClick={() => setShowLeaderboardModal(true)}
-          className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 transition flex items-center justify-center"
+      className="fixed top-4 right-4 z-40 w-10 h-10 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 transition flex items-center justify-center"
           aria-label="Leaderboard öffnen"
           title="Leaderboard öffnen"
         >
