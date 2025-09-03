@@ -1309,12 +1309,8 @@ export default function BuyTab() {
                   
                   <div className="space-y-2 text-sm text-green-300/90">
                     <p className="flex items-center justify-center gap-2">
-                      <span>�</span>
+                      <span>⚡</span>
                       <span>Token wurden sofort an deine Wallet gesendet</span>
-                    </p>
-                    <p className="flex items-center justify-center gap-2">
-                      <span>�</span>
-                      <span>Es gibt keine E-Mail-Bestätigung</span>
                     </p>
                     <p className="flex items-center justify-center gap-2">
                       <span>💰</span>
