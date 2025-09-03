@@ -366,7 +366,7 @@ export default function HistoryTab() {
     fromBlock: "0x0", // so früh wie möglich, um alle historischen Transfers zu erfassen
             toBlock: "latest",
             fromAddress: address,
-            category: ["external", "erc20", "erc721", "erc1155"], // Erweiterte Kategorien
+            category: ["external", "internal", "erc20", "erc721", "erc1155"], // Erweiterte Kategorien inkl. internal (für ETH aus Verträgen)
             withMetadata: true,
             excludeZeroValue: false, // Auch 0-Wert Transaktionen anzeigen
   maxCount: "0x1F4" // bis zu 500 Transfers
@@ -386,7 +386,7 @@ export default function HistoryTab() {
     fromBlock: "0x0", // so früh wie möglich, um alle historischen Transfers zu erfassen
             toBlock: "latest",
             toAddress: address,
-            category: ["external", "erc20", "erc721", "erc1155"], // Erweiterte Kategorien
+            category: ["external", "internal", "erc20", "erc721", "erc1155"], // Erweiterte Kategorien inkl. internal (für ETH aus Verträgen)
             withMetadata: true,
             excludeZeroValue: false, // Auch 0-Wert Transaktionen anzeigen
   maxCount: "0x1F4" // bis zu 500 Transfers
