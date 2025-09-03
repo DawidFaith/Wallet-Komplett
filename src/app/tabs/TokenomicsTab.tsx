@@ -596,18 +596,18 @@ export default function TokenomicsTab() {
               Die aktivsten Fans nach EXP – automatisch aktualisiert
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="bg-zinc-800/60 border border-zinc-700 rounded-lg px-3 py-2 flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
+            <div className="bg-zinc-800/60 border border-zinc-700 rounded-lg px-3 py-2 flex items-center gap-2 w-full sm:w-72">
               <span className="text-zinc-400 text-xs">Suche</span>
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="@handle oder Name"
-                className="bg-transparent outline-none text-sm text-white placeholder:text-zinc-500"
+                className="bg-transparent outline-none text-sm text-white placeholder:text-zinc-500 w-full"
               />
             </div>
             {leaderboard?.timer?.isActive && (
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 text-amber-300 text-sm">
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 text-amber-300 text-sm w-full sm:w-auto">
                 <div className="font-semibold">
                   {leaderboard?.timer?.title || "Contest endet in:"}
                 </div>
@@ -626,15 +626,18 @@ export default function TokenomicsTab() {
         </div>
 
         {/* Podium Top 3 */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          {[1, 0, 2].map((idx, i) => {
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          {[0, 1, 2].map((idx) => {
             const e = top3[idx];
-            const isCenter = i === 1;
             const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉";
+            const color = idx === 0 ? "text-amber-400" : idx === 1 ? "text-zinc-200" : "text-orange-300";
+            // Order for mobile vs desktop: gold first on mobile, centered on md
+            const orderClass = idx === 0 ? "order-1 md:order-2" : idx === 1 ? "order-2 md:order-1" : "order-3 md:order-3";
+            const emphasis = idx === 0 ? "md:bg-zinc-800/70 md:border-amber-500/30 md:scale-105" : "";
             return (
-              <div key={i} className={`rounded-xl border p-4 text-center ${isCenter ? "bg-zinc-800/70 border-amber-500/30" : "bg-zinc-800/40 border-zinc-700"}`}>
-                <div className={`text-3xl ${idx === 0 ? "text-amber-400" : idx === 1 ? "text-zinc-200" : "text-orange-300"}`}>{medal}</div>
-                <div className="mt-2 text-white font-bold">
+              <div key={idx} className={`rounded-xl border p-4 text-center bg-zinc-800/40 border-zinc-700 ${orderClass} ${emphasis}`}>
+                <div className={`text-2xl sm:text-3xl ${color}`}>{medal}</div>
+                <div className="mt-2 text-white font-bold truncate">
                   {e ? (e.instagram || e.tiktok || e.facebook || "- ") : "-"}
                 </div>
                 <div className="text-zinc-400 text-xs">EXP</div>
@@ -651,7 +654,7 @@ export default function TokenomicsTab() {
 
         {/* Tabelle/Liste der restlichen Plätze */}
         <div className="bg-zinc-900/60 border border-zinc-700 rounded-xl overflow-hidden">
-          <div className="grid grid-cols-6 gap-2 px-4 py-3 text-xs text-zinc-400 border-b border-zinc-700/60">
+          <div className="hidden md:grid grid-cols-6 gap-2 px-4 py-3 text-xs text-zinc-400 border-b border-zinc-700/60">
             <div>#</div>
             <div className="col-span-2">Handle</div>
             <div className="text-right">EXP</div>
@@ -667,11 +670,27 @@ export default function TokenomicsTab() {
             {!lbLoading && rest.map((e) => {
               const prize = leaderboard?.prizes?.find((p) => p.position === e.rank);
               return (
-                <div key={e.rank} className="grid grid-cols-6 gap-2 px-4 py-3 items-center hover:bg-zinc-800/40 transition-colors">
-                  <div className="text-zinc-300 font-mono">{e.rank}</div>
-                  <div className="col-span-2 text-white truncate">{e.instagram || e.tiktok || e.facebook || "-"}</div>
-                  <div className="text-right text-amber-300 font-medium">{e.expTotal.toLocaleString()}</div>
-                  <div className="col-span-2 text-right text-green-300 text-xs">{prize ? `${prize.description} • ${prize.value}` : "—"}</div>
+                <div key={e.rank} className="px-4 py-3 hover:bg-zinc-800/40 transition-colors">
+                  {/* Desktop row */}
+                  <div className="hidden md:grid grid-cols-6 gap-2 items-center">
+                    <div className="text-zinc-300 font-mono">{e.rank}</div>
+                    <div className="col-span-2 text-white truncate">{e.instagram || e.tiktok || e.facebook || "-"}</div>
+                    <div className="text-right text-amber-300 font-medium">{e.expTotal.toLocaleString()}</div>
+                    <div className="col-span-2 text-right text-green-300 text-xs">{prize ? `${prize.description} • ${prize.value}` : "—"}</div>
+                  </div>
+                  {/* Mobile card */}
+                  <div className="md:hidden flex flex-col gap-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
+                        <span className="text-white truncate">{e.instagram || e.tiktok || e.facebook || "-"}</span>
+                      </div>
+                      <div className="text-amber-300 text-sm font-medium">{e.expTotal.toLocaleString()} EXP</div>
+                    </div>
+                    {prize && (
+                      <div className="text-green-300 text-xs">{prize.description} • {prize.value}</div>
+                    )}
+                  </div>
                 </div>
               );
             })}
