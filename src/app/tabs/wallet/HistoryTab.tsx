@@ -129,6 +129,7 @@ export default function HistoryTab() {
         (t) => t.token === "D.FAITH" && t.amount.startsWith("-") && t.address.toLowerCase() === DFAITH_POOL.toLowerCase()
       );
       if (!dfMinus) continue;
+      // ETH+/WETH+ MUSS vom Pool kommen
       const ethPlus = txs.find(
         (t) => (t.token === "ETH" || t.token === "WETH") && t.amount.startsWith("+") && t.address.toLowerCase() === DFAITH_POOL.toLowerCase()
       );
@@ -715,7 +716,7 @@ export default function HistoryTab() {
               filter === "sell" ? "bg-rose-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
             }`}
           >
-            💰 Verkaufen
+            � Verkaufen
           </button>
         </div>
       )}
@@ -773,7 +774,7 @@ export default function HistoryTab() {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-600/20 text-rose-300 text-xs font-semibold">
-                          <span>💰</span> Verkaufen
+                          <span>�</span> Verkaufen
                         </span>
                         <span className="text-zinc-500 text-xs">Gruppiert</span>
                       </div>
@@ -902,7 +903,7 @@ export default function HistoryTab() {
   {!isLoading && !error && filteredAndSortedTransactions.length === 0 && (
         <div className="text-center py-10 px-4">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-800 border border-zinc-700 mb-4">
-    <span className="text-2xl">{filter === "buy" ? "₿" : filter === "sell" ? "💰" : "🎁"}</span>
+            <span className="text-2xl">{filter === "buy" ? "₿" : filter === "sell" ? "�" : "🎁"}</span>
           </div>
           <h3 className="text-lg font-semibold text-amber-400 mb-1">
     {filter === "buy" ? "Keine Käufe gefunden" : filter === "sell" ? "Keine Verkäufe gefunden" : "Keine Claims gefunden"}

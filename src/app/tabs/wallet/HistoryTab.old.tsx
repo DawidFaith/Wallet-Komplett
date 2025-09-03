@@ -238,39 +238,39 @@ export default function HistoryTabOld() {
   const getTransactionsFromAlchemy = async (address: string) => {
     try {
       const alchemyUrl = API_OPTIONS.ALCHEMY;
-      const outgoingResponse = await fetch(alchemyUrl, {
+  const outgoingResponse = await fetch(alchemyUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jsonrpc: '2.0',
           method: 'alchemy_getAssetTransfers',
           params: [{
-            fromBlock: "0x2000000",
+    fromBlock: "0x0",
             toBlock: "latest",
             fromAddress: address,
             category: ["external", "erc20", "erc721", "erc1155"],
             withMetadata: true,
             excludeZeroValue: false,
-            maxCount: "0x64"
+    maxCount: "0x1F4"
           }],
           id: 1
         })
       });
 
-      const incomingResponse = await fetch(alchemyUrl, {
+  const incomingResponse = await fetch(alchemyUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jsonrpc: '2.0',
           method: 'alchemy_getAssetTransfers',
           params: [{
-            fromBlock: "0x2000000",
+    fromBlock: "0x0",
             toBlock: "latest",
             toAddress: address,
             category: ["external", "erc20", "erc721", "erc1155"],
             withMetadata: true,
             excludeZeroValue: false,
-            maxCount: "0x64"
+    maxCount: "0x1F4"
           }],
           id: 2
         })
@@ -406,9 +406,8 @@ export default function HistoryTabOld() {
             blockNumber: transfer.blockNum || "",
           };
         })
-        .filter((tx) => tx.hash && tx.address)
-        .sort((a, b) => b.timestamp - a.timestamp)
-        .slice(0, 50);
+  .filter((tx) => tx.hash && tx.address)
+  .sort((a, b) => b.timestamp - a.timestamp);
 
       // Zusätzliche: Gas-Fee-Einträge für D.FAITH-Verkäufe (synthetische ETH-Transaktionen)
       const sellHashes = Array.from(new Set(
@@ -501,7 +500,7 @@ export default function HistoryTabOld() {
       case "buy":
   return <FaBitcoin className="text-white text-xs" />;
       case "sell":
-        return <span className="text-white text-xs">💰</span>;
+  return <span className="text-white text-xs">�</span>;
       case "shop":
         return <span className="text-white text-xs">🛍️</span>;
       case "claim":
@@ -540,21 +539,75 @@ export default function HistoryTabOld() {
         <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
           {/* Legacy Rendering aus alter Version beibehalten */}
           {filteredAndSortedTransactions.map((item, index) => (
-            Array.isArray(item) ? (
-              <div key={`group-${index}`} className="border-l-4 border-cyan-400 bg-gradient-to-r from-cyan-950/30 to-cyan-900/20 rounded-r-xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-cyan-500 flex items-center justify-center">
-                      <span className="text-white text-lg">🎁</span>
+            Array.isArray(item) ? (() => {
+              const group = item as Transaction[];
+              const gType = (group as any).__groupType as string | undefined;
+              if (gType === 'sell') {
+                const dfMinus = group.find(t => t.token === 'D.FAITH' && t.amount.startsWith('-'));
+                const gas = group.find(t => t.address === 'Gas Fee');
+                const ethPlus = group.find(t => (t.token === 'ETH' || t.token === 'WETH') && t.amount.startsWith('+'));
+                return (
+                  <div key={`group-${index}`} className="border-l-4 border-rose-400 bg-gradient-to-r from-rose-950/30 to-rose-900/20 rounded-r-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-rose-500 flex items-center justify-center">
+                          <span className="text-white text-lg">📉</span>
+                        </div>
+                        <div>
+                          <h3 className="text-rose-300 font-bold text-lg">Verkauf</h3>
+                          <p className="text-zinc-400 text-sm">{group[0]?.time} • {group.length} Transaktionen</p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-cyan-300 font-bold text-lg">Gruppiert</h3>
-                      <p className="text-zinc-400 text-sm">{(item as any)[0]?.time} • {(item as any).length} Transaktionen</p>
+                    <div className="grid sm:grid-cols-3 gap-2">
+                      {dfMinus && (
+                        <div className="flex items-center gap-2 rounded-md border border-red-700/40 bg-red-900/20 px-2 py-1.5">
+                          <img src={dfMinus.tokenIcon} alt={dfMinus.token} className="w-6 h-6 rounded-full" />
+                          <div>
+                            <div className="text-red-300 text-sm font-semibold">{dfMinus.amount} {dfMinus.token}</div>
+                            <div className="text-red-400/80 text-[11px]">Abgegeben</div>
+                          </div>
+                        </div>
+                      )}
+                      {gas && (
+                        <div className="flex items-center gap-2 rounded-md border border-amber-700/40 bg-amber-900/20 px-2 py-1.5">
+                          <img src={gas.tokenIcon} alt="ETH" className="w-6 h-6 rounded-full" />
+                          <div>
+                            <div className="text-amber-300 text-sm font-semibold">{gas.amount} ETH</div>
+                            <div className="text-amber-400/80 text-[11px]">Gas</div>
+                          </div>
+                        </div>
+                      )}
+                      {ethPlus && (
+                        <div className="flex items-center gap-2 rounded-md border border-emerald-700/40 bg-emerald-900/20 px-2 py-1.5">
+                          <img src={ethPlus.tokenIcon} alt="ETH" className="w-6 h-6 rounded-full" />
+                          <div>
+                            <div className="text-emerald-300 text-sm font-semibold">{ethPlus.amount} {(ethPlus.token === 'WETH' ? 'WETH' : 'ETH')}</div>
+                            <div className="text-emerald-400/80 text-[11px]">Erhalten</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+              // Standard-Gruppenkarte
+              return (
+                <div key={`group-${index}`} className="border-l-4 border-cyan-400 bg-gradient-to-r from-cyan-950/30 to-cyan-900/20 rounded-r-xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-cyan-500 flex items-center justify-center">
+                        <span className="text-white text-lg">🎁</span>
+                      </div>
+                      <div>
+                        <h3 className="text-cyan-300 font-bold text-lg">Gruppiert</h3>
+                        <p className="text-zinc-400 text-sm">{(item as any)[0]?.time} • {(item as any).length} Transaktionen</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : (
+              );
+            })() : (
               <div key={(item as any).id} className={`border-l-4 border-zinc-600 bg-gradient-to-r from-zinc-800/90 to-zinc-900/90 rounded-r-xl p-4`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
