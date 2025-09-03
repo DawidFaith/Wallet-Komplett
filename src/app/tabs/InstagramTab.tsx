@@ -201,6 +201,7 @@ export default function InstagramTab() {
     if (!showLeaderboardModal) return;
     let mounted = true;
     const load = async () => {
+      // Set loading, but we'll keep showing stale data to avoid flicker
       setLbLoading(true);
       try {
         const res = await fetch('/api/leaderboard-proxy', { cache: 'no-store' });
@@ -214,7 +215,8 @@ export default function InstagramTab() {
           lastUpdated: data.lastUpdated,
         });
       } catch (e) {
-        if (mounted) setLbData(null);
+        // Keep stale data on error to prevent UI from clearing
+        console.error('Leaderboard laden fehlgeschlagen:', e);
       } finally {
         if (mounted) setLbLoading(false);
       }
@@ -446,8 +448,9 @@ export default function InstagramTab() {
         <div className="bg-black bg-opacity-15 rounded-3xl p-8 w-full max-w-sm text-center text-white border-2 border-white border-opacity-15 shadow-2xl relative">
           {/* Leaderboard trigger icon */}
           <button
+            type="button"
             onClick={() => setShowLeaderboardModal(true)}
-            className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-yellow-300 hover:scale-105 transition"
+            className="absolute top-3 right-3 z-20 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-yellow-300 hover:scale-105 transition pointer-events-auto"
             title="Leaderboard anzeigen"
             aria-label="Leaderboard anzeigen"
           >
@@ -864,6 +867,19 @@ export default function InstagramTab() {
                 <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
                 <div>
 
+                {/* Floating Leaderboard FAB (fallback trigger) */}
+                {!showLeaderboardModal && !loading && (
+                  <button
+                    type="button"
+                    onClick={() => setShowLeaderboardModal(true)}
+                    className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 transition flex items-center justify-center"
+                    aria-label="Leaderboard öffnen"
+                    title="Leaderboard öffnen"
+                  >
+                    🏆
+                  </button>
+                )}
+
                 {/* Leaderboard Modal */}
                 {showLeaderboardModal && (
                   <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -885,6 +901,12 @@ export default function InstagramTab() {
                             className="bg-transparent outline-none text-sm text-white placeholder:text-zinc-500 w-full"
                           />
                         </div>
+                        {/* Legende / Kopfzeile */}
+                        <div className="text-[11px] text-zinc-400 px-1 mb-1 flex items-center justify-between">
+                          <div className="flex-1 pl-12">Name</div>
+                          <div className="w-24 text-right pr-2">EXP</div>
+                          <div className="w-28 text-right pr-3">Preis/Symbol</div>
+                        </div>
                         <div className="bg-zinc-900/60 border border-zinc-700 rounded-lg max-h-[24rem] overflow-y-auto">
                           {lbLoading && (
                             <div className="px-4 py-3 text-zinc-400 text-sm">Lade Leaderboard…</div>
@@ -892,17 +914,24 @@ export default function InstagramTab() {
                           {!lbLoading && (lbData?.entries?.length || 0) === 0 && (
                             <div className="px-4 py-3 text-zinc-400 text-sm">Keine Einträge gefunden</div>
                           )}
-                          {!lbLoading && (lbData?.entries || []).filter(e => {
+                          {(lbData?.entries || []).filter(e => {
                             if (!lbSearch) return true;
                             const name = e.instagram || e.tiktok || e.facebook || '';
                             return name.toLowerCase().includes(lbSearch.toLowerCase());
                           }).map((e) => {
                             const handle = e.instagram || e.tiktok || e.facebook || '-';
+                            // Preis anhand der Prizes-Liste ermitteln: position == rank
+                            const prize = (lbData?.prizes || []).find(p => p.position === e.rank);
+                            const prizeText = prize ? (prize.value || prize.description || '') : '';
+                            const prizeDisplay = prizeText ? prizeText : '-';
                             return (
                               <div key={e.rank} className="px-4 py-2 border-b border-zinc-800/70 last:border-b-0 flex items-center gap-3">
                                 <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
                                 <span className="text-white truncate flex-1">{handle}</span>
-                                <span className="text-amber-300 text-sm font-mono">{e.expTotal.toLocaleString()}</span>
+                                <span className="text-amber-300 text-sm font-mono w-24 text-right">{e.expTotal.toLocaleString()}</span>
+                                <span className="text-emerald-300 text-xs font-medium w-28 text-right truncate" title={prizeDisplay}>
+                                  {prizeDisplay}
+                                </span>
                               </div>
                             );
                           })}
