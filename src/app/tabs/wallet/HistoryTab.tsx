@@ -304,7 +304,13 @@ export default function HistoryTab() {
       if (filter === "send" || filter === "receive") {
         if (t.type !== filter) return false;
         if (tokenSubFilter === "all") return true;
-        if (tokenSubFilter === "ETH") return t.token === "ETH" && t.address !== "Gas Fee"; // ETH ohne Gas
+        if (tokenSubFilter === "ETH") {
+          // ETH-Ansicht: Gas ausblenden und mikroskopische Werte (< 0.000001) nicht anzeigen
+          const isEth = t.token === "ETH";
+          const isGas = t.address === "Gas Fee";
+          const isTooSmall = Math.abs(t.amountRaw || 0) < 1e-6;
+          return isEth && !isGas && !isTooSmall;
+        }
         return t.token === tokenSubFilter;
       }
       return false;
