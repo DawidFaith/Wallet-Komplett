@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { createThirdwebClient, getContract, readContract } from "thirdweb";
 import { base } from "thirdweb/chains";
 
@@ -81,6 +81,8 @@ export default function TokenomicsTab() {
   const [lbLoading, setLbLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [now, setNow] = useState<number>(Date.now());
+  const [platform, setPlatform] = useState<"all" | "instagram" | "tiktok" | "facebook">("all");
+  const mobileCarouselRef = useRef<HTMLDivElement | null>(null);
 
   // Daten von APIs abrufen
   useEffect(() => {
@@ -249,14 +251,24 @@ export default function TokenomicsTab() {
     return { days, hours, minutes, seconds, active: leaderboard?.timer?.isActive && diff > 0 };
   })();
 
-  const filteredEntries = (leaderboard?.entries || []).filter((e) => {
+  const filteredEntriesRaw = (leaderboard?.entries || []).filter((e) => {
     if (!search) return true;
     const q = search.toLowerCase();
     const name = e.instagram || e.tiktok || e.facebook || "";
     return name.toLowerCase().includes(q);
   });
+  const filteredEntries = useMemo(() => {
+    if (platform === "all") return filteredEntriesRaw;
+    return filteredEntriesRaw.filter((e) => {
+      if (platform === "instagram") return !!e.instagram;
+      if (platform === "tiktok") return !!e.tiktok;
+      if (platform === "facebook") return !!e.facebook;
+      return true;
+    });
+  }, [filteredEntriesRaw, platform]);
   const top3 = filteredEntries.slice(0, 3);
   const rest = filteredEntries.slice(3);
+  const mobileCarousel = rest.slice(0, 12);
 
   // Berechnungen mit nur echten API-Daten
   const totalSupply = tokenMetrics?.supply?.total || 0;
@@ -606,6 +618,25 @@ export default function TokenomicsTab() {
                 className="bg-transparent outline-none text-sm text-white placeholder:text-zinc-500 w-full"
               />
             </div>
+            {/* Platform Filter */}
+            <div className="flex rounded-lg overflow-hidden border border-zinc-700 w-full sm:w-auto">
+              {([
+                { k: "all", l: "Alle" },
+                { k: "instagram", l: "IG" },
+                { k: "tiktok", l: "TT" },
+                { k: "facebook", l: "FB" },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.k}
+                  onClick={() => setPlatform(opt.k)}
+                  className={`px-3 py-2 text-xs font-medium transition-colors flex-1 sm:flex-none ${
+                    platform === opt.k ? "bg-zinc-700 text-white" : "bg-zinc-800/40 text-zinc-300 hover:bg-zinc-800"
+                  }`}
+                >
+                  {opt.l}
+                </button>
+              ))}
+            </div>
             {leaderboard?.timer?.isActive && (
               <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 text-amber-300 text-sm w-full sm:w-auto">
                 <div className="font-semibold">
@@ -650,6 +681,51 @@ export default function TokenomicsTab() {
               </div>
             );
           })}
+        </div>
+
+        {/* Mobile carousel for ranks > 3 */}
+        <div className="md:hidden">
+          {mobileCarousel.length > 0 && (
+            <div className="mb-3 flex items-center justify-between">
+              <div className="text-zinc-400 text-sm">Weitere Plätze</div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const el = mobileCarouselRef.current; if (!el) return; el.scrollBy({ left: -el.clientWidth * 0.9, behavior: "smooth" });
+                  }}
+                  className="px-2 py-1 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm"
+                  aria-label="Vorherige Einträge"
+                >
+                  ◀
+                </button>
+                <button
+                  onClick={() => {
+                    const el = mobileCarouselRef.current; if (!el) return; el.scrollBy({ left: el.clientWidth * 0.9, behavior: "smooth" });
+                  }}
+                  className="px-2 py-1 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm"
+                  aria-label="Nächste Einträge"
+                >
+                  ▶
+                </button>
+              </div>
+            </div>
+          )}
+          <div ref={mobileCarouselRef} className="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-1">
+            {mobileCarousel.map((e) => {
+              const prize = leaderboard?.prizes?.find((p) => p.position === e.rank);
+              return (
+                <div key={e.rank} className="min-w-[82%] shrink-0 snap-start bg-zinc-800/50 border border-zinc-700 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
+                    {prize && <span className="text-green-300 text-xs">{prize.value}</span>}
+                  </div>
+                  <div className="text-white font-semibold truncate mb-1">{e.instagram || e.tiktok || e.facebook || "-"}</div>
+                  <div className="text-amber-300 text-sm font-mono">{e.expTotal.toLocaleString()} EXP</div>
+                  {prize && <div className="text-zinc-400 text-xs mt-1">{prize.description}</div>}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Tabelle/Liste der restlichen Plätze */}
