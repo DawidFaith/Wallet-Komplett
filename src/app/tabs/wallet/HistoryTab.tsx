@@ -45,7 +45,7 @@ type Transaction = {
   blockNumber: string;
 };
 
-type FilterType = "all" | "claim" | "buy" | "sell" | "shop" | "send" | "receive";
+type FilterType = "claim" | "buy" | "sell" | "shop" | "D.FAITH" | "D.INVEST" | "ETH";
 type SortType = "newest" | "oldest";
 
 export default function HistoryTab() {
@@ -53,7 +53,7 @@ export default function HistoryTab() {
   // Hinweis: gefilterte Liste wird per useMemo berechnet
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>("");
-  const [filter, setFilter] = useState<FilterType>("all");
+  const [filter, setFilter] = useState<FilterType>("D.FAITH");
   const [sortBy, setSortBy] = useState<SortType>("newest");
   const [stats, setStats] = useState<{
     transactionCount: number;
@@ -65,14 +65,8 @@ export default function HistoryTab() {
   const userAddress = account?.address;
 
   const filteredAndSortedTransactions = useMemo(() => {
-    // Filter anwenden (unterstützt Claim und Buy)
-    let baseList: Transaction[];
-  if (filter === "claim") baseList = transactions.filter((t) => t.type === "claim");
-  else if (filter === "buy") baseList = transactions.filter((t) => t.type === "buy");
-  else if (filter === "shop") baseList = transactions.filter((t) => t.type === "shop");
-  else if (filter === "send") baseList = transactions.filter((t) => t.type === "send");
-  else if (filter === "receive") baseList = transactions.filter((t) => t.type === "receive");
-    else baseList = transactions;
+  // Basisliste nicht zu aggressiv filtern, damit Gruppierungen funktionieren
+  let baseList: Transaction[] = transactions;
 
   // Sortieren
   const sorted = [...baseList].sort((a, b) =>
@@ -293,21 +287,33 @@ export default function HistoryTab() {
       continue;
     }
 
-    // Nach Gruppierung optional nach Filter filtern
-    if (filter !== "all") {
-      const filteredGroups = groups.filter((item) => {
-        if (Array.isArray(item)) {
-          const gt = (item as any).__groupType;
-          if (filter === "buy" || filter === "sell" || filter === "claim") return gt === filter;
-          return false;
-        } else {
-          const t = item as Transaction;
-          return (t.type as any) === filter;
+    // Nach Gruppierung Filter anwenden
+    const filteredGroups = groups.filter((item) => {
+      // Typ-basierte Filter (Gruppen)
+      if (Array.isArray(item)) {
+        const gt = (item as any).__groupType as "buy" | "sell" | "claim" | undefined;
+        if (filter === "buy" || filter === "sell" || filter === "claim") {
+          return gt === filter;
         }
-      });
-      return filteredGroups;
-    }
-    return groups;
+        // Token-Filter auf Gruppen anwenden: Gruppe behalten, wenn sie mind. eine passende Coin-Transaktion enthält
+        const txs = item as Transaction[];
+        if (filter === "D.FAITH") return txs.some((t) => t.token === "D.FAITH");
+        if (filter === "D.INVEST") return txs.some((t) => t.token === "D.INVEST");
+        if (filter === "ETH") return txs.some((t) => t.token === "ETH" && t.address !== "Gas Fee");
+        if (filter === "shop") return txs.some((t) => (t as any).type === "shop");
+        return false;
+      }
+      // Einzelitems
+      const t = item as Transaction;
+      if (filter === "buy" || filter === "sell" || filter === "claim" || filter === "shop") {
+        return (t.type as any) === filter;
+      }
+      if (filter === "D.FAITH") return t.token === "D.FAITH";
+      if (filter === "D.INVEST") return t.token === "D.INVEST";
+      if (filter === "ETH") return t.token === "ETH" && t.address !== "Gas Fee";
+      return false;
+    });
+    return filteredGroups;
   }, [transactions, filter, sortBy]);
 
   // Token-Icon Hilfsfunktion
@@ -837,18 +843,10 @@ export default function HistoryTab() {
         )}
       </div>
 
-  {/* Filter: Claims, Käufe & Verkäufe */}
+  {/* Filter: Typen & Token */}
       {!isLoading && !error && transactions.length > 0 && (
         <div className="flex flex-wrap gap-2 p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/50 mb-4">
           <span className="text-sm text-zinc-400 mr-2 flex items-center">Filter:</span>
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-              filter === "all" ? "bg-amber-500 text-black shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-            }`}
-          >
-            Alle
-          </button>
           <button
             onClick={() => setFilter("claim")}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
@@ -866,20 +864,28 @@ export default function HistoryTab() {
             <FaBitcoin /> Kaufen
           </button>
           <button
-            onClick={() => setFilter("receive")}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
-              filter === "receive" ? "bg-sky-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            onClick={() => setFilter("D.FAITH")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+              filter === "D.FAITH" ? "bg-amber-500 text-black shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
             }`}
           >
-            ⬇️ Empfangen
+            D.FAITH
           </button>
           <button
-            onClick={() => setFilter("send")}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
-              filter === "send" ? "bg-orange-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            onClick={() => setFilter("D.INVEST")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+              filter === "D.INVEST" ? "bg-amber-500 text-black shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
             }`}
           >
-            ⬆️ Gesendet
+            D.INVEST
+          </button>
+          <button
+            onClick={() => setFilter("ETH")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+              filter === "ETH" ? "bg-amber-500 text-black shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
+          >
+            ETH
           </button>
           <button
             onClick={() => setFilter("shop")}
@@ -969,7 +975,7 @@ export default function HistoryTab() {
                           </div>
                         </div>
                       )}
-                      {gas && (
+                      {gas && filter !== "ETH" && (
                         <div className="flex items-center gap-2 flex-1 min-w-0 rounded-md border border-amber-700/40 bg-amber-900/20 px-2 py-1.5">
                           <img src={gas.tokenIcon} alt="ETH" className="w-6 h-6 rounded-full" />
                           <div className="flex-1 min-w-0">
@@ -1173,8 +1179,9 @@ export default function HistoryTab() {
               filter === "buy" ? "₿" :
               filter === "sell" ? "📉" :
               filter === "shop" ? "🛍️" :
-              filter === "send" ? "⬆️" :
-              filter === "receive" ? "⬇️" :
+              filter === "ETH" ? "Ξ" :
+              filter === "D.FAITH" ? "DF" :
+              filter === "D.INVEST" ? "DI" :
               "🎁"
             }</span>
           </div>
@@ -1183,8 +1190,9 @@ export default function HistoryTab() {
       filter === "buy" ? "Keine Käufe gefunden" :
       filter === "sell" ? "Keine Verkäufe gefunden" :
       filter === "shop" ? "Keine Shop-Käufe gefunden" :
-      filter === "send" ? "Keine gesendeten Transaktionen gefunden" :
-      filter === "receive" ? "Keine empfangenen Transaktionen gefunden" :
+      filter === "ETH" ? "Keine ETH-Transaktionen gefunden" :
+      filter === "D.FAITH" ? "Keine D.FAITH-Transaktionen gefunden" :
+      filter === "D.INVEST" ? "Keine D.INVEST-Transaktionen gefunden" :
       "Keine Claims gefunden"
     }
           </h3>
@@ -1196,10 +1204,12 @@ export default function HistoryTab() {
         ? "Hier erscheinen D.FAITH-Verkäufe (D.FAITH − an den Pool, Gas −ETH, ETH/WETH + vom Pool)."
         : filter === "shop"
         ? "Hier erscheinen Zahlungen an die Shop-Adresse."
-        : filter === "send"
-        ? "Hier erscheinen alle anderen ausgehenden Transfers (exkl. Kauf/Verkauf/Shop/Gas/Claim)."
-        : filter === "receive"
-        ? "Hier erscheinen alle anderen eingehenden Transfers (exkl. Kauf/Verkauf/Shop/Gas/Claim)."
+        : filter === "ETH"
+        ? "Alle ETH-Transaktionen (ohne Gas)."
+        : filter === "D.FAITH"
+        ? "Alle D.FAITH-Transaktionen."
+        : filter === "D.INVEST"
+        ? "Alle D.INVEST-Transaktionen."
         : "Hier erscheinen Social Media Claims, sobald ein D.FAITH-Transfer von der Claim-Adresse eingeht."
     }
           </p>
