@@ -847,7 +847,7 @@ export default function HistoryTab() {
                 filter === "claim" ? "bg-cyan-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              🎁 Claim
+              Claim
             </button>
             <button
               onClick={() => setFilter("shop")}
@@ -855,7 +855,7 @@ export default function HistoryTab() {
                 filter === "shop" ? "bg-fuchsia-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              🛍️ Shop
+              Shop
             </button>
             <button
               onClick={() => setFilter("buy")}
@@ -863,7 +863,7 @@ export default function HistoryTab() {
                 filter === "buy" ? "bg-emerald-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              <FaBitcoin /> Kaufen
+              Kaufen
             </button>
             <button
               onClick={() => setFilter("sell")}
@@ -871,7 +871,7 @@ export default function HistoryTab() {
                 filter === "sell" ? "bg-rose-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              <SiTether className="inline" /> Verkaufen
+              Verkaufen
             </button>
             <button
               onClick={() => setFilter("send")}
@@ -879,7 +879,7 @@ export default function HistoryTab() {
                 filter === "send" ? "bg-orange-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              ⬆️ Gesendet
+              Gesendet
             </button>
             <button
               onClick={() => setFilter("receive")}
@@ -887,7 +887,7 @@ export default function HistoryTab() {
                 filter === "receive" ? "bg-sky-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              ⬇️ Empfangen
+              Empfangen
             </button>
           </div>
         </div>
@@ -1211,13 +1211,21 @@ export default function HistoryTab() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-800 border border-zinc-700 mb-4">
             {filter === "sell" ? (
               <SiTether className="text-2xl text-zinc-200" />
+            ) : (filter === "send" || filter === "receive") ? (
+              tokenSubFilter === "D.FAITH" ? (
+                <img src={getTokenIcon('D.FAITH')} alt="D.FAITH" className="w-8 h-8 rounded-full" />
+              ) : tokenSubFilter === "D.INVEST" ? (
+                <img src={getTokenIcon('D.INVEST')} alt="D.INVEST" className="w-8 h-8 rounded-full" />
+              ) : tokenSubFilter === "ETH" ? (
+                <img src={getTokenIcon('ETH')} alt="ETH" className="w-8 h-8 rounded-full" />
+              ) : (
+                <span className="text-2xl">{filter === "send" ? "⬆️" : "⬇️"}</span>
+              )
             ) : (
               <span className="text-2xl">{
                 filter === "buy" ? "₿" :
                 filter === "shop" ? "🛍️" :
                 filter === "claim" ? "🎁" :
-                filter === "send" ? (tokenSubFilter === "ETH" ? "Ξ" : tokenSubFilter === "D.FAITH" ? "DF" : tokenSubFilter === "D.INVEST" ? "DI" : "⬆️") :
-                filter === "receive" ? (tokenSubFilter === "ETH" ? "Ξ" : tokenSubFilter === "D.FAITH" ? "DF" : tokenSubFilter === "D.INVEST" ? "DI" : "⬇️") :
                 "🎁"
               }</span>
             )}
