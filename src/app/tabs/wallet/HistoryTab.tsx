@@ -45,7 +45,8 @@ type Transaction = {
   blockNumber: string;
 };
 
-type FilterType = "claim" | "buy" | "sell" | "shop" | "D.FAITH" | "D.INVEST" | "ETH";
+type FilterType = "claim" | "buy" | "sell" | "shop" | "send" | "receive";
+type TokenSubFilter = "all" | "D.FAITH" | "D.INVEST" | "ETH";
 type SortType = "newest" | "oldest";
 
 export default function HistoryTab() {
@@ -53,7 +54,8 @@ export default function HistoryTab() {
   // Hinweis: gefilterte Liste wird per useMemo berechnet
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>("");
-  const [filter, setFilter] = useState<FilterType>("D.FAITH");
+  const [filter, setFilter] = useState<FilterType>("receive");
+  const [tokenSubFilter, setTokenSubFilter] = useState<TokenSubFilter>("all");
   const [sortBy, setSortBy] = useState<SortType>("newest");
   const [stats, setStats] = useState<{
     transactionCount: number;
@@ -289,32 +291,26 @@ export default function HistoryTab() {
 
     // Nach Gruppierung Filter anwenden
     const filteredGroups = groups.filter((item) => {
-      // Typ-basierte Filter (Gruppen)
+      // Gruppen nur für buy/sell/claim zulassen
       if (Array.isArray(item)) {
         const gt = (item as any).__groupType as "buy" | "sell" | "claim" | undefined;
-        if (filter === "buy" || filter === "sell" || filter === "claim") {
-          return gt === filter;
-        }
-        // Token-Filter auf Gruppen anwenden: Gruppe behalten, wenn sie mind. eine passende Coin-Transaktion enthält
-        const txs = item as Transaction[];
-        if (filter === "D.FAITH") return txs.some((t) => t.token === "D.FAITH");
-        if (filter === "D.INVEST") return txs.some((t) => t.token === "D.INVEST");
-        if (filter === "ETH") return txs.some((t) => t.token === "ETH" && t.address !== "Gas Fee");
-        if (filter === "shop") return txs.some((t) => (t as any).type === "shop");
-        return false;
+        return filter === "buy" ? gt === "buy" : filter === "sell" ? gt === "sell" : filter === "claim" ? gt === "claim" : false;
       }
       // Einzelitems
       const t = item as Transaction;
       if (filter === "buy" || filter === "sell" || filter === "claim" || filter === "shop") {
         return (t.type as any) === filter;
       }
-      if (filter === "D.FAITH") return t.token === "D.FAITH";
-      if (filter === "D.INVEST") return t.token === "D.INVEST";
-      if (filter === "ETH") return t.token === "ETH" && t.address !== "Gas Fee";
+      if (filter === "send" || filter === "receive") {
+        if (t.type !== filter) return false;
+        if (tokenSubFilter === "all") return true;
+        if (tokenSubFilter === "ETH") return t.token === "ETH" && t.address !== "Gas Fee"; // ETH ohne Gas
+        return t.token === tokenSubFilter;
+      }
       return false;
     });
     return filteredGroups;
-  }, [transactions, filter, sortBy]);
+  }, [transactions, filter, sortBy, tokenSubFilter]);
 
   // Token-Icon Hilfsfunktion
   const getTokenIcon = (token: string) => {
@@ -338,7 +334,7 @@ export default function HistoryTab() {
      - Registrierung: https://alchemy.com
      - API Key ersetzen in: API_OPTIONS.ALCHEMY
      - 300M CU/Monat kostenlos
-          >
+            <span>📉</span> Verkaufen
             <FaBitcoin /> Kaufen
      - Registrierung: https://infura.io  
      - API Key ersetzen in: API_OPTIONS.INFURA
@@ -843,7 +839,7 @@ export default function HistoryTab() {
         )}
       </div>
 
-  {/* Filter: Typen & Token */}
+  {/* Filter: Typen & Token-Subfilter */}
       {!isLoading && !error && transactions.length > 0 && (
         <div className="flex flex-wrap gap-2 p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/50 mb-4">
           <span className="text-sm text-zinc-400 mr-2 flex items-center">Filter:</span>
@@ -864,28 +860,20 @@ export default function HistoryTab() {
             <FaBitcoin /> Kaufen
           </button>
           <button
-            onClick={() => setFilter("D.FAITH")}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-              filter === "D.FAITH" ? "bg-amber-500 text-black shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            onClick={() => setFilter("receive")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
+              filter === "receive" ? "bg-sky-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
             }`}
           >
-            D.FAITH
+            ⬇️ Empfangen
           </button>
           <button
-            onClick={() => setFilter("D.INVEST")}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-              filter === "D.INVEST" ? "bg-amber-500 text-black shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            onClick={() => setFilter("send")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
+              filter === "send" ? "bg-orange-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
             }`}
           >
-            D.INVEST
-          </button>
-          <button
-            onClick={() => setFilter("ETH")}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-              filter === "ETH" ? "bg-amber-500 text-black shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-            }`}
-          >
-            ETH
+            ⬆️ Gesendet
           </button>
           <button
             onClick={() => setFilter("shop")}
@@ -901,7 +889,46 @@ export default function HistoryTab() {
               filter === "sell" ? "bg-rose-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
             }`}
           >
-            <span>📉</span> Verkaufen
+            <span>�</span> Verkaufen
+          </button>
+        </div>
+      )}
+
+      {/* Token-Subfilter nur für Senden/Empfangen */}
+      {!isLoading && !error && transactions.length > 0 && (filter === "send" || filter === "receive") && (
+        <div className="flex flex-wrap gap-2 p-3 bg-zinc-800/20 rounded-lg border border-zinc-700/40 -mt-2">
+          <span className="text-sm text-zinc-400 mr-2 flex items-center">Token:</span>
+          <button
+            onClick={() => setTokenSubFilter("all")}
+            className={`px-3 py-1.0 rounded-full text-sm font-medium transition-all ${
+              tokenSubFilter === "all" ? "bg-zinc-500 text-white shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
+          >
+            Alle
+          </button>
+          <button
+            onClick={() => setTokenSubFilter("D.FAITH")}
+            className={`px-3 py-1.0 rounded-full text-sm font-medium transition-all ${
+              tokenSubFilter === "D.FAITH" ? "bg-amber-500 text-black shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
+          >
+            D.FAITH
+          </button>
+          <button
+            onClick={() => setTokenSubFilter("D.INVEST")}
+            className={`px-3 py-1.0 rounded-full text-sm font-medium transition-all ${
+              tokenSubFilter === "D.INVEST" ? "bg-amber-500 text-black shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
+          >
+            D.INVEST
+          </button>
+          <button
+            onClick={() => setTokenSubFilter("ETH")}
+            className={`px-3 py-1.0 rounded-full text-sm font-medium transition-all ${
+              tokenSubFilter === "ETH" ? "bg-amber-500 text-black shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
+          >
+            ETH
           </button>
         </div>
       )}
@@ -975,7 +1002,7 @@ export default function HistoryTab() {
                           </div>
                         </div>
                       )}
-                      {gas && filter !== "ETH" && (
+                      {gas && (
                         <div className="flex items-center gap-2 flex-1 min-w-0 rounded-md border border-amber-700/40 bg-amber-900/20 px-2 py-1.5">
                           <img src={gas.tokenIcon} alt="ETH" className="w-6 h-6 rounded-full" />
                           <div className="flex-1 min-w-0">
@@ -1179,9 +1206,9 @@ export default function HistoryTab() {
               filter === "buy" ? "₿" :
               filter === "sell" ? "📉" :
               filter === "shop" ? "🛍️" :
-              filter === "ETH" ? "Ξ" :
-              filter === "D.FAITH" ? "DF" :
-              filter === "D.INVEST" ? "DI" :
+              filter === "claim" ? "🎁" :
+              filter === "send" ? (tokenSubFilter === "ETH" ? "Ξ" : tokenSubFilter === "D.FAITH" ? "DF" : tokenSubFilter === "D.INVEST" ? "DI" : "⬆️") :
+              filter === "receive" ? (tokenSubFilter === "ETH" ? "Ξ" : tokenSubFilter === "D.FAITH" ? "DF" : tokenSubFilter === "D.INVEST" ? "DI" : "⬇️") :
               "🎁"
             }</span>
           </div>
@@ -1190,9 +1217,10 @@ export default function HistoryTab() {
       filter === "buy" ? "Keine Käufe gefunden" :
       filter === "sell" ? "Keine Verkäufe gefunden" :
       filter === "shop" ? "Keine Shop-Käufe gefunden" :
-      filter === "ETH" ? "Keine ETH-Transaktionen gefunden" :
-      filter === "D.FAITH" ? "Keine D.FAITH-Transaktionen gefunden" :
-      filter === "D.INVEST" ? "Keine D.INVEST-Transaktionen gefunden" :
+      (filter === "send" && tokenSubFilter !== "all") ? `Keine gesendeten ${tokenSubFilter}-Transaktionen gefunden` :
+      (filter === "receive" && tokenSubFilter !== "all") ? `Keine empfangenen ${tokenSubFilter}-Transaktionen gefunden` :
+      (filter === "send") ? "Keine gesendeten Transaktionen gefunden" :
+      (filter === "receive") ? "Keine empfangenen Transaktionen gefunden" :
       "Keine Claims gefunden"
     }
           </h3>
@@ -1204,12 +1232,8 @@ export default function HistoryTab() {
         ? "Hier erscheinen D.FAITH-Verkäufe (D.FAITH − an den Pool, Gas −ETH, ETH/WETH + vom Pool)."
         : filter === "shop"
         ? "Hier erscheinen Zahlungen an die Shop-Adresse."
-        : filter === "ETH"
-        ? "Alle ETH-Transaktionen (ohne Gas)."
-        : filter === "D.FAITH"
-        ? "Alle D.FAITH-Transaktionen."
-        : filter === "D.INVEST"
-        ? "Alle D.INVEST-Transaktionen."
+        : (filter === "send" || filter === "receive")
+        ? (tokenSubFilter === "all" ? "Alle Token-Transfers." : tokenSubFilter === "ETH" ? "ETH-Transfers (ohne Gas)." : `Transfers für ${tokenSubFilter}.`)
         : "Hier erscheinen Social Media Claims, sobald ein D.FAITH-Transfer von der Claim-Adresse eingeht."
     }
           </p>
