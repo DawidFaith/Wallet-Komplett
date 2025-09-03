@@ -27,6 +27,8 @@ interface LeaderboardEntry {
   instagram?: string;
   tiktok?: string;
   facebook?: string;
+  name?: string;
+  handle?: string;
   expTotal: number;
   rank: number;
 }
@@ -105,6 +107,23 @@ export default function InstagramTab() {
   const [lbData, setLbData] = useState<LeaderboardResponse | null>(null);
   const [lbLoading, setLbLoading] = useState(false);
   const [lbSearch, setLbSearch] = useState("");
+  const [lbNow, setLbNow] = useState<number>(Date.now());
+
+  // Formatter für Countdown
+  const formatDuration = (ms: number) => {
+    if (!ms || ms <= 0) return '00:00:00';
+    let s = Math.floor(ms / 1000);
+    const d = Math.floor(s / 86400);
+    s = s % 86400;
+    const h = Math.floor(s / 3600);
+    s = s % 3600;
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    const hh = h.toString().padStart(2, '0');
+    const mm = m.toString().padStart(2, '0');
+    const ss = sec.toString().padStart(2, '0');
+    return d > 0 ? `${d}d ${hh}:${mm}:${ss}` : `${hh}:${mm}:${ss}`;
+  };
 
   // Daten laden
   useEffect(() => {
@@ -224,6 +243,13 @@ export default function InstagramTab() {
     load();
     const id = setInterval(load, 30000);
     return () => { mounted = false; clearInterval(id); };
+  }, [showLeaderboardModal]);
+
+  // Countdown-Ticker für Timer im Leaderboard
+  useEffect(() => {
+    if (!showLeaderboardModal) return;
+    const id = setInterval(() => setLbNow(Date.now()), 1000);
+    return () => clearInterval(id);
   }, [showLeaderboardModal]);
 
   // Like/Save Check API
@@ -482,7 +508,7 @@ export default function InstagramTab() {
               </div>
               
               <button 
-                onClick={() => setShowInfoModal(true)}
+                onClick={(e) => { e.stopPropagation(); setShowInfoModal(true); }}
                 className="bg-pink-500 hover:bg-pink-600 text-white w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200"
               >
                 i
@@ -866,81 +892,6 @@ export default function InstagramTab() {
               <div className="flex items-center gap-3 border-l-4 border-purple-500 pl-3 bg-purple-50 py-2 rounded-r-xl">
                 <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
                 <div>
-
-                {/* Floating Leaderboard FAB (fallback trigger) */}
-                {!showLeaderboardModal && !loading && (
-                  <button
-                    type="button"
-                    onClick={() => setShowLeaderboardModal(true)}
-                    className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 transition flex items-center justify-center"
-                    aria-label="Leaderboard öffnen"
-                    title="Leaderboard öffnen"
-                  >
-                    🏆
-                  </button>
-                )}
-
-                {/* Leaderboard Modal */}
-                {showLeaderboardModal && (
-                  <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl shadow-xl overflow-hidden">
-                      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
-                        <div className="flex items-center gap-2">
-                          <span className="text-yellow-300">🏆</span>
-                          <h3 className="text-white font-semibold">Leaderboard</h3>
-                        </div>
-                        <button onClick={() => setShowLeaderboardModal(false)} className="text-zinc-400 hover:text-white">✖</button>
-                      </div>
-                      <div className="px-4 py-3">
-                        <div className="bg-zinc-800/60 border border-zinc-700 rounded-md px-2 py-1 flex items-center gap-2 w-full mb-3">
-                          <span className="text-zinc-400 text-xs">Suche</span>
-                          <input
-                            value={lbSearch}
-                            onChange={(e) => setLbSearch(e.target.value)}
-                            placeholder="@handle oder Name"
-                            className="bg-transparent outline-none text-sm text-white placeholder:text-zinc-500 w-full"
-                          />
-                        </div>
-                        {/* Legende / Kopfzeile */}
-                        <div className="text-[11px] text-zinc-400 px-1 mb-1 flex items-center justify-between">
-                          <div className="flex-1 pl-12">Name</div>
-                          <div className="w-24 text-right pr-2">EXP</div>
-                          <div className="w-28 text-right pr-3">Preis/Symbol</div>
-                        </div>
-                        <div className="bg-zinc-900/60 border border-zinc-700 rounded-lg max-h-[24rem] overflow-y-auto">
-                          {lbLoading && (
-                            <div className="px-4 py-3 text-zinc-400 text-sm">Lade Leaderboard…</div>
-                          )}
-                          {!lbLoading && (lbData?.entries?.length || 0) === 0 && (
-                            <div className="px-4 py-3 text-zinc-400 text-sm">Keine Einträge gefunden</div>
-                          )}
-                          {(lbData?.entries || []).filter(e => {
-                            if (!lbSearch) return true;
-                            const name = e.instagram || e.tiktok || e.facebook || '';
-                            return name.toLowerCase().includes(lbSearch.toLowerCase());
-                          }).map((e) => {
-                            const handle = e.instagram || e.tiktok || e.facebook || '-';
-                            // Preis anhand der Prizes-Liste ermitteln: position == rank
-                            const prize = (lbData?.prizes || []).find(p => p.position === e.rank);
-                            const prizeText = prize ? (prize.value || prize.description || '') : '';
-                            const prizeDisplay = prizeText ? prizeText : '-';
-                            return (
-                              <div key={e.rank} className="px-4 py-2 border-b border-zinc-800/70 last:border-b-0 flex items-center gap-3">
-                                <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
-                                <span className="text-white truncate flex-1">{handle}</span>
-                                <span className="text-amber-300 text-sm font-mono w-24 text-right">{e.expTotal.toLocaleString()}</span>
-                                <span className="text-emerald-300 text-xs font-medium w-28 text-right truncate" title={prizeDisplay}>
-                                  {prizeDisplay}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <div className="text-[10px] text-zinc-500 mt-2 text-right">Letztes Update: {lbData?.lastUpdated ? new Date(lbData.lastUpdated).toLocaleString() : '-'}</div>
-                      </div>
-                    </div>
-                  </div>
-                )}
                   <div className="font-bold text-purple-800">Instagram</div>
                   <div className="text-purple-600 font-semibold">{userData.expInstagram} EXP</div>
                 </div>
@@ -1207,6 +1158,85 @@ export default function InstagramTab() {
             >
               ✅ Verstanden
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Global Leaderboard Modal + optional FAB */}
+      {!showLeaderboardModal && !loading && (
+        <button
+          type="button"
+          onClick={() => setShowLeaderboardModal(true)}
+          className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 transition flex items-center justify-center"
+          aria-label="Leaderboard öffnen"
+          title="Leaderboard öffnen"
+        >
+          🏆
+        </button>
+      )}
+      {showLeaderboardModal && (
+        <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl shadow-xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-300">🏆</span>
+                <h3 className="text-white font-semibold">Leaderboard</h3>
+              </div>
+              <div className="text-xs text-zinc-400 mr-auto ml-3">
+                {lbData?.timer?.isActive && lbData?.timer?.endDate ? (
+                  <span>
+                    Endet in: {formatDuration(new Date(lbData.timer.endDate).getTime() - lbNow)}
+                  </span>
+                ) : null}
+              </div>
+              <button onClick={() => setShowLeaderboardModal(false)} className="text-zinc-400 hover:text-white">✖</button>
+            </div>
+            <div className="px-4 py-3">
+              <div className="bg-zinc-800/60 border border-zinc-700 rounded-md px-2 py-1 flex items-center gap-2 w-full mb-3">
+                <span className="text-zinc-400 text-xs">Suche</span>
+                <input
+                  value={lbSearch}
+                  onChange={(e) => setLbSearch(e.target.value)}
+                  placeholder="@handle oder Name"
+                  className="bg-transparent outline-none text-sm text-white placeholder:text-zinc-500 w-full"
+                />
+              </div>
+              {/* Legende / Kopfzeile */}
+              <div className="text-[11px] text-zinc-400 px-1 mb-1 flex items-center justify-between">
+                <div className="flex-1 pl-12">Name</div>
+                <div className="w-24 text-center">EXP</div>
+                <div className="w-28 text-right pr-3">Preis/Symbol</div>
+              </div>
+              <div className="bg-zinc-900/60 border border-zinc-700 rounded-lg max-h-[24rem] overflow-y-auto">
+                {lbLoading && (
+                  <div className="px-4 py-3 text-zinc-400 text-sm">Lade Leaderboard…</div>
+                )}
+                {(lbData?.entries || []).length === 0 && !lbLoading && (
+                  <div className="px-4 py-3 text-zinc-400 text-sm">Keine Einträge gefunden</div>
+                )}
+                {(lbData?.entries || []).filter(e => {
+                  if (!lbSearch) return true;
+                  const name = e.instagram || e.tiktok || e.facebook || e.name || e.handle || '';
+                  return name.toLowerCase().includes(lbSearch.toLowerCase());
+                }).map((e) => {
+                  const handle = e.instagram || e.tiktok || e.facebook || e.name || e.handle || '-';
+                  const prize = (lbData?.prizes || []).find(p => p.position === e.rank);
+                  const prizeText = prize ? (prize.value || prize.description || '') : '';
+                  const prizeDisplay = prizeText ? prizeText : '-';
+                  return (
+                    <div key={e.rank} className="px-4 py-2 border-b border-zinc-800/70 last:border-b-0 flex items-center gap-3">
+                      <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
+                      <span className="text-white truncate flex-1">{handle}</span>
+                      <span className="text-amber-300 text-sm font-mono w-24 text-center">{e.expTotal.toLocaleString()}</span>
+                      <span className="text-emerald-300 text-xs font-medium w-28 text-right truncate" title={prizeDisplay}>
+                        {prizeDisplay}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="text-[10px] text-zinc-500 mt-2 text-right">Letztes Update: {lbData?.lastUpdated ? new Date(lbData.lastUpdated).toLocaleString() : '-'}</div>
+            </div>
           </div>
         </div>
       )}
