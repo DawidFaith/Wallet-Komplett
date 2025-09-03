@@ -122,17 +122,20 @@ export default function HistoryTab() {
       }
     }
 
-    // SELL-Gruppierung per Hash: D.FAITH(- an Pool) + optional Gas(ETH -) + ETH/WETH(+ vom Pool)
+    // SELL-Gruppierung per Hash: D.FAITH(- an Pool) + optional Gas(ETH -) + ETH/WETH(+)
     for (const [h, txs] of byHash) {
       if (usedHashes.has(h)) continue; // bereits als Buy verwendet
       const dfMinus = txs.find(
         (t) => t.token === "D.FAITH" && t.amount.startsWith("-") && t.address.toLowerCase() === DFAITH_POOL.toLowerCase()
       );
       if (!dfMinus) continue;
-      // ETH+/WETH+ MUSS vom Pool kommen
-      const ethPlus = txs.find(
+      // ETH+/WETH+ bevorzugt vom Pool, sonst beliebig im selben Hash (z.B. via Router/Unwrap)
+      let ethPlus = txs.find(
         (t) => (t.token === "ETH" || t.token === "WETH") && t.amount.startsWith("+") && t.address.toLowerCase() === DFAITH_POOL.toLowerCase()
       );
+      if (!ethPlus) {
+        ethPlus = txs.find((t) => (t.token === "ETH" || t.token === "WETH") && t.amount.startsWith("+"));
+      }
       // Gas-Entry (synthetisch) hat Adresse "Gas Fee" und ETH minus
       const gas = txs.find(
         (t) => t.token === "ETH" && t.amount.startsWith("-") && (t.address === "Gas Fee" || t.address === "Gas" || t.address === "GAS")
@@ -196,13 +199,12 @@ export default function HistoryTab() {
         }
       }
 
-  // 2) Kauf-Gruppierung: D.FAITH vom Pool (eingehend) + nahe ETH an Pool (ausgehend)
+      // 2) Kauf-Gruppierung: D.FAITH vom Pool (eingehend) + nahe ETH an Pool (ausgehend)
       const isBuyAnchor = (
         (tx.type === "buy") ||
         // Fallback: erkenne Kauf auch, wenn Typ falsch eingestuft wurde
         (tx.token === "D.FAITH" && tx.amount.startsWith("+") && tx.address.toLowerCase() === DFAITH_POOL.toLowerCase())
       ) && tx.token === "D.FAITH" && tx.amount.startsWith("+");
-
       if (isBuyAnchor) {
         // Partner suchen: 1) gleicher Tx-Hash, 2) Bevorzugt ETH/WETH an den Pool, 3) größter ETH/WETH-Abfluss im Zeitfenster
         const inWindow = (other: Transaction) => Math.abs(other.timestamp - tx.timestamp) <= 600000;
@@ -210,13 +212,13 @@ export default function HistoryTab() {
         const isEthLike = (tkn: string) => tkn === "ETH" || tkn === "WETH";
 
         // 1) Gleicher Hash (robusteste Methode)
-    let sameHash = allSorted.find(
+        let sameHash = allSorted.find(
           (other) =>
             !processed.has(other.id) &&
             other.id !== tx.id &&
             isEthLike(other.token) &&
             isOutflow(other) &&
-      baseTxHash(other) && baseTxHash(tx) && baseTxHash(other) === baseTxHash(tx)
+            baseTxHash(other) && baseTxHash(tx) && baseTxHash(other) === baseTxHash(tx)
         );
         if (sameHash) {
           const pair: Transaction[] = [tx, sameHash];
@@ -307,13 +309,14 @@ export default function HistoryTab() {
     }
   };  /*
   🔧 SETUP-OPTIONEN FÜR ECHTE BLOCKCHAIN-DATEN:
-  
+          </button>
+          <button
   1. ALCHEMY (Empfohlen):
      - Registrierung: https://alchemy.com
      - API Key ersetzen in: API_OPTIONS.ALCHEMY
      - 300M CU/Monat kostenlos
-  
-  2. INFURA:
+          >
+            <FaBitcoin /> Kaufen
      - Registrierung: https://infura.io  
      - API Key ersetzen in: API_OPTIONS.INFURA
      - 100k Requests/Tag kostenlos
@@ -321,7 +324,7 @@ export default function HistoryTab() {
   3. QUICKNODE (Premium):
      - Registrierung: https://quicknode.com
      - Dedicated Base Chain Endpoint
-     - Höchste Zuverlässigkeit
+            <span>📉</span> Verkaufen
   
   4. THIRDWEB (Aktuell):
      - Bereits integriert
@@ -354,6 +357,7 @@ export default function HistoryTab() {
   const getTransactionsFromAlchemy = async (address: string) => {
     try {
       const alchemyUrl = API_OPTIONS.ALCHEMY;
+      const walletLower = address.toLowerCase();
       
       // Hole ausgehende Transaktionen - ab August 2025 für aktuelle Daten
   const outgoingResponse = await fetch(alchemyUrl, {
@@ -366,7 +370,7 @@ export default function HistoryTab() {
     fromBlock: "0x0", // so früh wie möglich, um alle historischen Transfers zu erfassen
             toBlock: "latest",
             fromAddress: address,
-            category: ["external", "internal", "erc20", "erc721", "erc1155"], // Erweiterte Kategorien inkl. internal (für ETH aus Verträgen)
+            category: ["external", "erc20", "erc721", "erc1155"], // Erweiterte Kategorien
             withMetadata: true,
             excludeZeroValue: false, // Auch 0-Wert Transaktionen anzeigen
   maxCount: "0x1F4" // bis zu 500 Transfers
@@ -386,7 +390,7 @@ export default function HistoryTab() {
     fromBlock: "0x0", // so früh wie möglich, um alle historischen Transfers zu erfassen
             toBlock: "latest",
             toAddress: address,
-            category: ["external", "internal", "erc20", "erc721", "erc1155"], // Erweiterte Kategorien inkl. internal (für ETH aus Verträgen)
+            category: ["external", "erc20", "erc721", "erc1155"], // Erweiterte Kategorien
             withMetadata: true,
             excludeZeroValue: false, // Auch 0-Wert Transaktionen anzeigen
   maxCount: "0x1F4" // bis zu 500 Transfers
@@ -582,7 +586,7 @@ export default function HistoryTab() {
   .filter((tx) => tx.hash && tx.address)
   .sort((a, b) => b.timestamp - a.timestamp);
 
-      // Zusätzliche: Gas-Fee-Einträge für D.FAITH-Verkäufe (synthetische ETH-Transaktionen)
+      // Zusätzliche: Gas-Fee-Einträge & ETH/WETH+ (synthetisch via Receipt-Logs) für D.FAITH-Verkäufe
       const sellHashes = Array.from(new Set(
         mappedTransactions
           .filter(
@@ -596,8 +600,19 @@ export default function HistoryTab() {
       ));
 
       const gasTxs: Transaction[] = [];
+      const syntheticPlusTxs: Transaction[] = [];
       const hexToBigInt = (h: string) => BigInt(h || "0x0");
       const weiToEth = (wei: bigint) => Number(wei) / 1e18;
+      const topicEq = (a?: string, b?: string) => (a || "").toLowerCase() === (b || "").toLowerCase();
+      const pad32 = (addr: string) =>
+        "0x" + addr.toLowerCase().replace(/^0x/, "").padStart(64, "0");
+      const decodeTopicAddress = (topic: string) =>
+        ("0x" + (topic || "").slice(-40)).toLowerCase();
+      const parseUint256 = (hex: string) => Number(BigInt(hex || "0x0")) / 1e18;
+
+      // ERC-20 Transfer topic und WETH9 Withdrawal topic
+      const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+      const WITHDRAWAL_TOPIC = "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98f7ca7df0e4e6f2fa0adf1"; // WETH9 Withdrawal(address indexed src, uint wad)
 
       for (const h of sellHashes) {
         try {
@@ -632,10 +647,79 @@ export default function HistoryTab() {
             blockNumber: r.blockNumber || anchor.blockNumber,
           };
           gasTxs.push(gasTx);
+
+          // Nur dann synthetische ETH/WETH+ hinzufügen, wenn es in den gemappten Transfers noch keinen Plus-Leg gibt
+          const hasPlusLeg = mappedTransactions.some(
+            (t) => t.hash === h && (t.token === "ETH" || t.token === "WETH") && t.amount.startsWith("+")
+          );
+          if (!hasPlusLeg && Array.isArray(r.logs)) {
+            // Suche zuerst nach WETH Withdrawal im selben Tx (bevorzugt ETH+ via Unwrap)
+            let added = false;
+            for (const log of r.logs) {
+              const logAddr = (log.address || "").toLowerCase();
+              if (logAddr !== WETH_TOKEN.toLowerCase()) continue;
+              const t0 = (log.topics?.[0] || "").toLowerCase();
+              if (topicEq(t0, WITHDRAWAL_TOPIC)) {
+                // data: wad (uint256)
+                const wadEth = parseUint256(log.data || "0x0");
+                if (wadEth > 0) {
+                  const plusTx: Transaction = {
+                    id: `plus-${h}-eth`,
+                    type: "other",
+                    token: "ETH",
+                    tokenIcon: getTokenIcon("ETH"),
+                    amount: `+${wadEth.toFixed(6)}`,
+                    amountRaw: wadEth,
+                    address: "Router/Unwrap",
+                    hash: h,
+                    time: anchor.time,
+                    timestamp: anchor.timestamp,
+                    status: "success",
+                    blockNumber: r.blockNumber || anchor.blockNumber,
+                  };
+                  syntheticPlusTxs.push(plusTx);
+                  added = true;
+                  break;
+                }
+              }
+            }
+            if (!added) {
+              // Fallback: WETH Transfer an unsere Wallet im selben Tx
+              const wantTopicTo = pad32(testAddress.toLowerCase());
+              for (const log of r.logs) {
+                const logAddr = (log.address || "").toLowerCase();
+                if (logAddr !== WETH_TOKEN.toLowerCase()) continue;
+                const t0 = (log.topics?.[0] || "").toLowerCase();
+                if (!topicEq(t0, TRANSFER_TOPIC)) continue;
+                const toTopic = (log.topics?.[2] || "").toLowerCase();
+                if (toTopic !== wantTopicTo.toLowerCase()) continue;
+                const amount = parseUint256(log.data || "0x0");
+                if (amount > 0) {
+                  const fromAddr = decodeTopicAddress(log.topics?.[1] || "0x0");
+                  const plusTx: Transaction = {
+                    id: `plus-${h}-weth`,
+                    type: "other",
+                    token: "WETH",
+                    tokenIcon: getTokenIcon("WETH"),
+                    amount: `+${amount.toFixed(6)}`,
+                    amountRaw: amount,
+                    address: fromAddr,
+                    hash: h,
+                    time: anchor.time,
+                    timestamp: anchor.timestamp,
+                    status: "success",
+                    blockNumber: r.blockNumber || anchor.blockNumber,
+                  };
+                  syntheticPlusTxs.push(plusTx);
+                  break;
+                }
+              }
+            }
+          }
         } catch {}
       }
 
-      const merged = [...mappedTransactions, ...gasTxs].sort((a, b) => b.timestamp - a.timestamp);
+      const merged = [...mappedTransactions, ...gasTxs, ...syntheticPlusTxs].sort((a, b) => b.timestamp - a.timestamp);
 
       // WICHTIG: Alle Transaktionen behalten, damit Partner-Matching (ETH/WETH) nicht durch Filter verloren geht
       const claimsCount = merged.filter((t) => t.type === "claim").length;
@@ -716,7 +800,7 @@ export default function HistoryTab() {
               filter === "sell" ? "bg-rose-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
             }`}
           >
-            � Verkaufen
+            <span>📉</span> Verkaufen
           </button>
         </div>
       )}
@@ -774,7 +858,7 @@ export default function HistoryTab() {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-600/20 text-rose-300 text-xs font-semibold">
-                          <span>�</span> Verkaufen
+                          <span>📉</span> Verkaufen
                         </span>
                         <span className="text-zinc-500 text-xs">Gruppiert</span>
                       </div>
@@ -903,7 +987,7 @@ export default function HistoryTab() {
   {!isLoading && !error && filteredAndSortedTransactions.length === 0 && (
         <div className="text-center py-10 px-4">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-800 border border-zinc-700 mb-4">
-            <span className="text-2xl">{filter === "buy" ? "₿" : filter === "sell" ? "�" : "🎁"}</span>
+            <span className="text-2xl">{filter === "buy" ? "₿" : filter === "sell" ? "📉" : "🎁"}</span>
           </div>
           <h3 className="text-lg font-semibold text-amber-400 mb-1">
     {filter === "buy" ? "Keine Käufe gefunden" : filter === "sell" ? "Keine Verkäufe gefunden" : "Keine Claims gefunden"}
