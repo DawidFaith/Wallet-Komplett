@@ -151,9 +151,16 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
       <div className={`bg-zinc-800 p-4 rounded-lg border border-zinc-700 transition-all ${
         isProcessing || paymentCompleted ? 'opacity-50 pointer-events-none' : ''
       }`}>
-        <label className="block text-sm font-medium text-zinc-300 mb-3">
-          Kreditkartendaten
-        </label>
+        <div className="flex items-center justify-between mb-3">
+          <label className="block text-sm font-medium text-zinc-300">
+            Kreditkartendaten
+          </label>
+          <div className="flex items-center gap-1">
+            <div className="bg-white rounded px-1.5 py-0.5 text-[10px] font-bold text-blue-600">VISA</div>
+            <div className="bg-white rounded px-1.5 py-0.5 text-[10px] font-bold text-red-600">MC</div>
+            <div className="bg-white rounded px-1.5 py-0.5 text-[10px] font-bold text-blue-800">AMEX</div>
+          </div>
+        </div>
         <CardElement 
           options={cardElementOptions} 
           className="text-white min-h-[40px]"

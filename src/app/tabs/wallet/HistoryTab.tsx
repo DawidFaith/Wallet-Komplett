@@ -836,10 +836,33 @@ export default function HistoryTab() {
     <div className="flex flex-col gap-4 p-3 sm:p-6">
   {/* Überschrift entfernt – Titel steht im Tab/Modal */}
 
+  {/* Loading State: zentrierter Spinner mit Hinweistext */}
+      {isLoading && !error && (
+        <div className="min-h-[40vh] flex flex-col items-center justify-center text-center" role="status" aria-busy="true">
+          <div className="h-10 w-10 rounded-full border-2 border-zinc-700 border-t-amber-500 animate-spin mb-3" />
+          <div className="text-sm text-zinc-400">Transaktionsdaten werden geladen … Das kann einen Moment dauern.</div>
+        </div>
+      )}
+
   {/* Filter: Typen & Token-Subfilter */}
       {!isLoading && !error && transactions.length > 0 && (
-        <div className="p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/50 mb-4">
-          <div className="text-sm text-zinc-400 mb-2">Filter</div>
+        <div className="p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/50 mb-4 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm text-zinc-400">Filter</div>
+            <div className="flex items-center gap-1 text-xs text-zinc-400">
+              <span className="hidden sm:inline">Sortierung:</span>
+              <button
+                onClick={() => setSortBy("newest")}
+                className={`px-2 py-1 rounded-md ${sortBy === "newest" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "hover:bg-zinc-700 text-zinc-300 border border-transparent"}`}
+                aria-pressed={sortBy === "newest"}
+              >Neueste zuerst</button>
+              <button
+                onClick={() => setSortBy("oldest")}
+                className={`px-2 py-1 rounded-md ${sortBy === "oldest" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "hover:bg-zinc-700 text-zinc-300 border border-transparent"}`}
+                aria-pressed={sortBy === "oldest"}
+              >Älteste zuerst</button>
+            </div>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             <button
               onClick={() => setFilter("claim")}
@@ -896,7 +919,10 @@ export default function HistoryTab() {
       {/* Token-Subfilter nur für Senden/Empfangen */}
       {!isLoading && !error && transactions.length > 0 && (filter === "send" || filter === "receive") && (
         <div className="p-3 bg-zinc-800/20 rounded-lg border border-zinc-700/40 -mt-2">
-          <div className="text-sm text-zinc-400 mb-2">Token</div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm text-zinc-400">Token</div>
+            <div className="text-[11px] text-zinc-500">ETH blendet Gas & sehr kleine Beträge aus</div>
+          </div>
       <div className="grid grid-cols-4 gap-2">
             <button
               onClick={() => setTokenSubFilter("all")}
@@ -909,8 +935,8 @@ export default function HistoryTab() {
             <button
               onClick={() => setTokenSubFilter("D.FAITH")}
         aria-label="D.FAITH"
-        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center ${
-                tokenSubFilter === "D.FAITH" ? "bg-amber-500 text-black shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center ${
+    tokenSubFilter === "D.FAITH" ? "bg-amber-500 text-black shadow ring-1 ring-amber-400/50" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
         <img src={getTokenIcon('D.FAITH')} alt="D.FAITH" className="w-5 h-5 rounded-full" />
@@ -919,8 +945,8 @@ export default function HistoryTab() {
             <button
               onClick={() => setTokenSubFilter("D.INVEST")}
         aria-label="D.INVEST"
-        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center ${
-                tokenSubFilter === "D.INVEST" ? "bg-amber-500 text-black shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center ${
+    tokenSubFilter === "D.INVEST" ? "bg-amber-500 text-black shadow ring-1 ring-amber-400/50" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
         <img src={getTokenIcon('D.INVEST')} alt="D.INVEST" className="w-5 h-5 rounded-full" />
@@ -929,8 +955,8 @@ export default function HistoryTab() {
             <button
               onClick={() => setTokenSubFilter("ETH")}
         aria-label="ETH"
-        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center ${
-                tokenSubFilter === "ETH" ? "bg-amber-500 text-black shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center ${
+    tokenSubFilter === "ETH" ? "bg-amber-500 text-black shadow ring-1 ring-amber-400/50" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
         <img src={getTokenIcon('ETH')} alt="ETH" className="w-5 h-5 rounded-full" />

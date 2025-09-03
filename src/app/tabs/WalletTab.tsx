@@ -988,7 +988,7 @@ export default function WalletTab() {
             {/* Wallet Address mit besserem Styling und Refresh Button */}
             <div className="flex justify-between items-center bg-zinc-800/70 backdrop-blur-sm rounded-xl p-3 mb-6 border border-zinc-700/80">
               <div className="flex flex-col">
-                <span className="text-xs text-zinc-500 mb-0.5">Wallet Adresse</span>
+                <span className="text-xs text-amber-300 mb-0.5">Wallet Adresse</span>
                 <button
                   onClick={copyWalletAddress}
                   className="font-mono text-amber-400 text-sm hover:text-amber-300 transition-colors text-left group flex items-center gap-2"
