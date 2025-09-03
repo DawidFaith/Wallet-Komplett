@@ -106,7 +106,7 @@ function TokenTransferModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 overflow-y-auto p-4 pt-20"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-zinc-900 rounded-xl p-3 sm:p-6 max-w-sm w-full border border-amber-400 max-h-[85vh] overflow-y-auto my-4 relative">
+  <div className="bg-zinc-900 rounded-xl p-3 sm:p-6 max-w-sm w-full border border-zinc-700 ring-1 ring-amber-400/20 shadow-xl shadow-black/20 max-h-[85vh] overflow-y-auto my-4 relative">
         {/* Header - Sticky X Button */}
         <div className="sticky top-0 z-10 bg-zinc-900 flex items-center justify-end mb-2 -mx-3 -mt-3 px-3 pt-3 sm:-mx-6 sm:-mt-6 sm:px-6 sm:pt-6">
           <button 
@@ -120,13 +120,13 @@ function TokenTransferModal({
         
         {/* Modal Header */}
         <div className="text-center pb-3 border-b border-zinc-700 mb-4">
-          <div className="w-32 h-32 mx-auto mb-3 flex items-center justify-center">
+      <div className="w-32 h-32 mx-auto mb-3 flex items-center justify-center">
             {token.key === 'DFAITH' ? (
               <img src="/D.FAITH.png" alt="D.FAITH" className="w-32 h-32 object-contain" />
             ) : token.key === 'DINVEST' ? (
               <img src="/D.INVEST.png" alt="D.INVEST" className="w-32 h-32 object-contain" />
             ) : (
-              <img src="/ETH.png" alt="ETH" className="w-24 h-24 object-contain" />
+        <img src="/ETH.png" alt="ETH" className="w-32 h-32 object-contain" />
             )}
           </div>
           <h3 className="text-xl font-bold text-white mb-1">{token.label} senden</h3>
@@ -151,7 +151,7 @@ function TokenTransferModal({
                   ) : token.key === 'DINVEST' ? (
                     <img src="/D.INVEST.png" alt="D.INVEST" className="w-8 h-8 object-contain" />
                   ) : (
-                    <img src="/ETH.png" alt="ETH" className="w-6 h-6 object-contain" />
+                    <img src="/ETH.png" alt="ETH" className="w-8 h-8 object-contain" />
                   )}
                   <span className={`${
                     token.key === 'DFAITH' ? 'text-amber-300' : 
@@ -293,18 +293,7 @@ function TokenTransferModal({
             )}
           </Button>
 
-          {/* Sicherheitshinweis - Kompakt */}
-          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 text-xs">
-            <div className="flex items-start gap-2">
-              <span className="text-yellow-400">⚠️</span>
-              <div>
-                <p className="text-yellow-200 font-medium mb-1">Sicherheitshinweis</p>
-                <p className="text-yellow-100 leading-relaxed">
-                  Überprüfe die Empfängeradresse sorgfältig. Transaktionen sind irreversibel.
-                </p>
-              </div>
-            </div>
-          </div>
+          {/* Sicherheitshinweis entfernt */}
         </div>
       </div>
 
