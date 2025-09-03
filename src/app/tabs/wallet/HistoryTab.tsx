@@ -716,6 +716,51 @@ export default function HistoryTab() {
               }
             }
           }
+
+          // Letzter Fallback: Balance-Delta über den Block als ETH+ schätzen
+          const alreadyHasPlus = syntheticPlusTxs.some(
+            (t) => t.hash === h && (t.token === "ETH" || t.token === "WETH") && t.amount.startsWith("+")
+          ) || mappedTransactions.some(
+            (t) => t.hash === h && (t.token === "ETH" || t.token === "WETH") && t.amount.startsWith("+")
+          );
+          if (!alreadyHasPlus && r.blockNumber) {
+            try {
+              const blkHex: string = r.blockNumber;
+              const blk = parseInt(blkHex, 16);
+              const prevBlkHex = blk > 0 ? "0x" + (blk - 1).toString(16) : blkHex;
+              const [balPrevRes, balNowRes] = await Promise.all([
+                fetch(API_OPTIONS.ALCHEMY, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 200, method: "eth_getBalance", params: [testAddress, prevBlkHex] }) }),
+                fetch(API_OPTIONS.ALCHEMY, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 201, method: "eth_getBalance", params: [testAddress, blkHex] }) }),
+              ]);
+              const balPrevJson = await balPrevRes.json();
+              const balNowJson = await balNowRes.json();
+              const balPrevWei = hexToBigInt(balPrevJson?.result || "0x0");
+              const balNowWei = hexToBigInt(balNowJson?.result || "0x0");
+              const deltaWei = balNowWei - balPrevWei; // kann negativ sein
+              // externe ETH-Abflüsse in diesem Hash berücksichtigen
+              const extOutEth = mappedTransactions
+                .filter((t) => t.hash === h && t.token === "ETH" && t.amount.startsWith("-"))
+                .reduce((sum, t) => sum + Math.abs(t.amountRaw || 0), 0);
+              const incomingEstEth = Number(deltaWei) / 1e18 + feeEth + extOutEth;
+              if (incomingEstEth > 1e-9) {
+                const plusTx: Transaction = {
+                  id: `plus-${h}-balance`,
+                  type: "other",
+                  token: "ETH",
+                  tokenIcon: getTokenIcon("ETH"),
+                  amount: `+${incomingEstEth.toFixed(6)}`,
+                  amountRaw: incomingEstEth,
+                  address: "Balance Δ",
+                  hash: h,
+                  time: anchor.time,
+                  timestamp: anchor.timestamp,
+                  status: "success",
+                  blockNumber: r.blockNumber || anchor.blockNumber,
+                };
+                syntheticPlusTxs.push(plusTx);
+              }
+            } catch {}
+          }
         } catch {}
       }
 
