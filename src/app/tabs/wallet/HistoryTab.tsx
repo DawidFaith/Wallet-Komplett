@@ -1208,28 +1208,30 @@ export default function HistoryTab() {
       {/* Empty State */}
   {!isLoading && !error && filteredAndSortedTransactions.length === 0 && (
         <div className="text-center py-10 px-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-800 border border-zinc-700 mb-4">
-            {filter === "sell" ? (
-              <SiTether className="text-2xl text-zinc-200" />
-            ) : (filter === "send" || filter === "receive") ? (
-              tokenSubFilter === "D.FAITH" ? (
-                <img src={getTokenIcon('D.FAITH')} alt="D.FAITH" className="w-8 h-8 rounded-full" />
-              ) : tokenSubFilter === "D.INVEST" ? (
-                <img src={getTokenIcon('D.INVEST')} alt="D.INVEST" className="w-8 h-8 rounded-full" />
-              ) : tokenSubFilter === "ETH" ? (
-                <img src={getTokenIcon('ETH')} alt="ETH" className="w-8 h-8 rounded-full" />
+          {(filter === "send" || filter === "receive") && tokenSubFilter !== "all" ? (
+            <div className="mb-4">
+              <img
+                src={getTokenIcon(tokenSubFilter === "ETH" ? "ETH" : tokenSubFilter)}
+                alt={tokenSubFilter}
+                className="w-16 h-16 rounded-full"
+              />
+            </div>
+          ) : (
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-800 border border-zinc-700 mb-4">
+              {filter === "sell" ? (
+                <SiTether className="text-2xl text-zinc-200" />
               ) : (
-                <span className="text-2xl">{filter === "send" ? "⬆️" : "⬇️"}</span>
-              )
-            ) : (
-              <span className="text-2xl">{
-                filter === "buy" ? "₿" :
-                filter === "shop" ? "🛍️" :
-                filter === "claim" ? "🎁" :
-                "🎁"
-              }</span>
-            )}
-          </div>
+                <span className="text-2xl">{
+                  filter === "buy" ? "₿" :
+                  filter === "shop" ? "🛍️" :
+                  filter === "claim" ? "🎁" :
+                  filter === "send" ? "⬆️" :
+                  filter === "receive" ? "⬇️" :
+                  "🎁"
+                }</span>
+              )}
+            </div>
+          )}
           <h3 className="text-lg font-semibold text-amber-400 mb-1">
     {
       filter === "buy" ? "Keine Käufe gefunden" :
