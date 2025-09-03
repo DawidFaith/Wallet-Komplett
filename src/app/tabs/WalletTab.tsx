@@ -1089,7 +1089,7 @@ export default function WalletTab() {
                 <div className="w-7 h-7 flex items-center justify-center bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full mb-1 shadow-inner">
                   <FaHistory className="text-black text-xs" />
                 </div>
-                <span className="text-xs bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent font-medium">Historie</span>
+                <span className="text-xs bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent font-medium">Transaktionshistorie base</span>
               </Button>
             </div>
             
@@ -1109,7 +1109,7 @@ export default function WalletTab() {
               <SendTab />
             </Modal>
 
-            <Modal open={showHistoryModal} onClose={() => setShowHistoryModal(false)} title="Historie">
+            <Modal open={showHistoryModal} onClose={() => setShowHistoryModal(false)} title="Transaktionshistorie base">
               <HistoryTab />
             </Modal>
 

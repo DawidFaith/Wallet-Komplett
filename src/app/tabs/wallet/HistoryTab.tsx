@@ -834,11 +834,7 @@ export default function HistoryTab() {
 
   return (
     <div className="flex flex-col gap-4 p-3 sm:p-6">
-      <div className="mb-2 sm:mb-3">
-        <h2 className="text-xl sm:text-2xl font-bold text-amber-300">
-          Transaktionshistorie Base Chain
-        </h2>
-      </div>
+  {/* Überschrift entfernt – Titel steht im Tab/Modal */}
 
   {/* Filter: Typen & Token-Subfilter */}
       {!isLoading && !error && transactions.length > 0 && (
@@ -852,6 +848,14 @@ export default function HistoryTab() {
               }`}
             >
               🎁 Claim
+            </button>
+            <button
+              onClick={() => setFilter("shop")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
+                filter === "shop" ? "bg-fuchsia-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+              }`}
+            >
+              🛍️ Shop
             </button>
             <button
               onClick={() => setFilter("buy")}
@@ -868,14 +872,6 @@ export default function HistoryTab() {
               }`}
             >
               <SiTether className="inline" /> Verkaufen
-            </button>
-            <button
-              onClick={() => setFilter("shop")}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
-                filter === "shop" ? "bg-fuchsia-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-              }`}
-            >
-              🛍️ Shop
             </button>
             <button
               onClick={() => setFilter("send")}
@@ -901,7 +897,7 @@ export default function HistoryTab() {
       {!isLoading && !error && transactions.length > 0 && (filter === "send" || filter === "receive") && (
         <div className="p-3 bg-zinc-800/20 rounded-lg border border-zinc-700/40 -mt-2">
           <div className="text-sm text-zinc-400 mb-2">Token</div>
-          <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-2">
             <button
               onClick={() => setTokenSubFilter("all")}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
@@ -912,27 +908,33 @@ export default function HistoryTab() {
             </button>
             <button
               onClick={() => setTokenSubFilter("D.FAITH")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+        aria-label="D.FAITH"
+        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center ${
                 tokenSubFilter === "D.FAITH" ? "bg-amber-500 text-black shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              D.FAITH
+        <img src={getTokenIcon('D.FAITH')} alt="D.FAITH" className="w-5 h-5 rounded-full" />
+        <span className="sr-only">D.FAITH</span>
             </button>
             <button
               onClick={() => setTokenSubFilter("D.INVEST")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+        aria-label="D.INVEST"
+        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center ${
                 tokenSubFilter === "D.INVEST" ? "bg-amber-500 text-black shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              D.INVEST
+        <img src={getTokenIcon('D.INVEST')} alt="D.INVEST" className="w-5 h-5 rounded-full" />
+        <span className="sr-only">D.INVEST</span>
             </button>
             <button
               onClick={() => setTokenSubFilter("ETH")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+        aria-label="ETH"
+        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center ${
                 tokenSubFilter === "ETH" ? "bg-amber-500 text-black shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              ETH
+        <img src={getTokenIcon('ETH')} alt="ETH" className="w-5 h-5 rounded-full" />
+        <span className="sr-only">ETH</span>
             </button>
           </div>
         </div>
