@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { Button } from "../../../../components/ui/button";
 import { FaExchangeAlt, FaBitcoin } from "react-icons/fa";
+import { SiTether } from "react-icons/si";
 import { useActiveAccount } from "thirdweb/react";
 
 // Token-Adressen und Konfiguration
@@ -833,109 +834,107 @@ export default function HistoryTab() {
 
   return (
     <div className="flex flex-col gap-4 p-3 sm:p-6">
-      <div className="text-center mb-4 sm:mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent mb-2">
-          Transaktionshistorie
+      <div className="mb-2 sm:mb-3">
+        <h2 className="text-xl sm:text-2xl font-bold text-amber-300">
+          Transaktionshistorie Base Chain
         </h2>
-        <p className="text-zinc-400 text-sm sm:text-base">Live Transaktionsdaten vom Base Network</p>
-        {userAddress && (
-          <p className="text-xs text-zinc-500 mt-1">
-            Wallet: {formatAddress(userAddress)}
-          </p>
-        )}
       </div>
 
   {/* Filter: Typen & Token-Subfilter */}
       {!isLoading && !error && transactions.length > 0 && (
-        <div className="flex flex-wrap gap-2 p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/50 mb-4">
-          <span className="text-sm text-zinc-400 mr-2 flex items-center">Filter:</span>
-          <button
-            onClick={() => setFilter("claim")}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
-              filter === "claim" ? "bg-cyan-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-            }`}
-          >
-            🎁 Claim
-          </button>
-          <button
-            onClick={() => setFilter("buy")}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
-              filter === "buy" ? "bg-emerald-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-            }`}
-          >
-            <FaBitcoin /> Kaufen
-          </button>
-          <button
-            onClick={() => setFilter("receive")}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
-              filter === "receive" ? "bg-sky-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-            }`}
-          >
-            ⬇️ Empfangen
-          </button>
-          <button
-            onClick={() => setFilter("send")}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
-              filter === "send" ? "bg-orange-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-            }`}
-          >
-            ⬆️ Gesendet
-          </button>
-          <button
-            onClick={() => setFilter("shop")}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
-              filter === "shop" ? "bg-fuchsia-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-            }`}
-          >
-            🛍️ Shop
-          </button>
-          <button
-            onClick={() => setFilter("sell")}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
-              filter === "sell" ? "bg-rose-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-            }`}
-          >
-            <span>�</span> Verkaufen
-          </button>
+        <div className="p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/50 mb-4">
+          <div className="text-sm text-zinc-400 mb-2">Filter</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            <button
+              onClick={() => setFilter("claim")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
+                filter === "claim" ? "bg-cyan-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+              }`}
+            >
+              🎁 Claim
+            </button>
+            <button
+              onClick={() => setFilter("buy")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
+                filter === "buy" ? "bg-emerald-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+              }`}
+            >
+              <FaBitcoin /> Kaufen
+            </button>
+            <button
+              onClick={() => setFilter("sell")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
+                filter === "sell" ? "bg-rose-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+              }`}
+            >
+              <SiTether className="inline" /> Verkaufen
+            </button>
+            <button
+              onClick={() => setFilter("shop")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
+                filter === "shop" ? "bg-fuchsia-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+              }`}
+            >
+              🛍️ Shop
+            </button>
+            <button
+              onClick={() => setFilter("send")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
+                filter === "send" ? "bg-orange-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+              }`}
+            >
+              ⬆️ Gesendet
+            </button>
+            <button
+              onClick={() => setFilter("receive")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
+                filter === "receive" ? "bg-sky-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+              }`}
+            >
+              ⬇️ Empfangen
+            </button>
+          </div>
         </div>
       )}
 
       {/* Token-Subfilter nur für Senden/Empfangen */}
       {!isLoading && !error && transactions.length > 0 && (filter === "send" || filter === "receive") && (
-        <div className="flex flex-wrap gap-2 p-3 bg-zinc-800/20 rounded-lg border border-zinc-700/40 -mt-2">
-          <span className="text-sm text-zinc-400 mr-2 flex items-center">Token:</span>
-          <button
-            onClick={() => setTokenSubFilter("all")}
-            className={`px-3 py-1.0 rounded-full text-sm font-medium transition-all ${
-              tokenSubFilter === "all" ? "bg-zinc-500 text-white shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-            }`}
-          >
-            Alle
-          </button>
-          <button
-            onClick={() => setTokenSubFilter("D.FAITH")}
-            className={`px-3 py-1.0 rounded-full text-sm font-medium transition-all ${
-              tokenSubFilter === "D.FAITH" ? "bg-amber-500 text-black shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-            }`}
-          >
-            D.FAITH
-          </button>
-          <button
-            onClick={() => setTokenSubFilter("D.INVEST")}
-            className={`px-3 py-1.0 rounded-full text-sm font-medium transition-all ${
-              tokenSubFilter === "D.INVEST" ? "bg-amber-500 text-black shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-            }`}
-          >
-            D.INVEST
-          </button>
-          <button
-            onClick={() => setTokenSubFilter("ETH")}
-            className={`px-3 py-1.0 rounded-full text-sm font-medium transition-all ${
-              tokenSubFilter === "ETH" ? "bg-amber-500 text-black shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-            }`}
-          >
-            ETH
-          </button>
+        <div className="p-3 bg-zinc-800/20 rounded-lg border border-zinc-700/40 -mt-2">
+          <div className="text-sm text-zinc-400 mb-2">Token</div>
+          <div className="grid grid-cols-4 gap-2">
+            <button
+              onClick={() => setTokenSubFilter("all")}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                tokenSubFilter === "all" ? "bg-zinc-500 text-white shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+              }`}
+            >
+              Alle
+            </button>
+            <button
+              onClick={() => setTokenSubFilter("D.FAITH")}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                tokenSubFilter === "D.FAITH" ? "bg-amber-500 text-black shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+              }`}
+            >
+              D.FAITH
+            </button>
+            <button
+              onClick={() => setTokenSubFilter("D.INVEST")}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                tokenSubFilter === "D.INVEST" ? "bg-amber-500 text-black shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+              }`}
+            >
+              D.INVEST
+            </button>
+            <button
+              onClick={() => setTokenSubFilter("ETH")}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                tokenSubFilter === "ETH" ? "bg-amber-500 text-black shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+              }`}
+            >
+              ETH
+            </button>
+          </div>
         </div>
       )}
 
@@ -992,7 +991,7 @@ export default function HistoryTab() {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-600/20 text-rose-300 text-xs font-semibold">
-                          <span>📉</span> Verkaufen
+                          <SiTether className="inline" /> Verkaufen
                         </span>
                         <span className="text-zinc-500 text-xs">Gruppiert</span>
                       </div>
@@ -1208,15 +1207,18 @@ export default function HistoryTab() {
   {!isLoading && !error && filteredAndSortedTransactions.length === 0 && (
         <div className="text-center py-10 px-4">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-800 border border-zinc-700 mb-4">
-            <span className="text-2xl">{
-              filter === "buy" ? "₿" :
-              filter === "sell" ? "📉" :
-              filter === "shop" ? "🛍️" :
-              filter === "claim" ? "🎁" :
-              filter === "send" ? (tokenSubFilter === "ETH" ? "Ξ" : tokenSubFilter === "D.FAITH" ? "DF" : tokenSubFilter === "D.INVEST" ? "DI" : "⬆️") :
-              filter === "receive" ? (tokenSubFilter === "ETH" ? "Ξ" : tokenSubFilter === "D.FAITH" ? "DF" : tokenSubFilter === "D.INVEST" ? "DI" : "⬇️") :
-              "🎁"
-            }</span>
+            {filter === "sell" ? (
+              <SiTether className="text-2xl text-zinc-200" />
+            ) : (
+              <span className="text-2xl">{
+                filter === "buy" ? "₿" :
+                filter === "shop" ? "🛍️" :
+                filter === "claim" ? "🎁" :
+                filter === "send" ? (tokenSubFilter === "ETH" ? "Ξ" : tokenSubFilter === "D.FAITH" ? "DF" : tokenSubFilter === "D.INVEST" ? "DI" : "⬆️") :
+                filter === "receive" ? (tokenSubFilter === "ETH" ? "Ξ" : tokenSubFilter === "D.FAITH" ? "DF" : tokenSubFilter === "D.INVEST" ? "DI" : "⬇️") :
+                "🎁"
+              }</span>
+            )}
           </div>
           <h3 className="text-lg font-semibold text-amber-400 mb-1">
     {
