@@ -22,6 +22,26 @@ interface UserData {
   wallet?: string;
 }
 
+// Leaderboard types
+interface LeaderboardEntry {
+  instagram?: string;
+  tiktok?: string;
+  facebook?: string;
+  expTotal: number;
+  rank: number;
+}
+interface Prize {
+  position: number;
+  description: string;
+  value: string;
+}
+interface LeaderboardResponse {
+  entries: LeaderboardEntry[];
+  prizes: Prize[];
+  timer?: { endDate: string; title: string; description: string; isActive: boolean };
+  lastUpdated?: string;
+}
+
 // Level Funktionen
 const getLevelAndExpRange = (exp: number) => {
   let level = 1;
@@ -80,6 +100,11 @@ export default function InstagramTab() {
   const [expGained, setExpGained] = useState<{likes: number, saves: number, total: number} | null>(null);
   const [showNoUuidModal, setShowNoUuidModal] = useState(false);
   const [showMiningPowerModal, setShowMiningPowerModal] = useState(false);
+  // Leaderboard modal state
+  const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
+  const [lbData, setLbData] = useState<LeaderboardResponse | null>(null);
+  const [lbLoading, setLbLoading] = useState(false);
+  const [lbSearch, setLbSearch] = useState("");
 
   // Daten laden
   useEffect(() => {
@@ -170,6 +195,34 @@ export default function InstagramTab() {
       setWalletValidation(validation);
     }
   }, [account?.address]);
+
+  // Fetch leaderboard when modal opens (and refresh every 30s while open)
+  useEffect(() => {
+    if (!showLeaderboardModal) return;
+    let mounted = true;
+    const load = async () => {
+      setLbLoading(true);
+      try {
+        const res = await fetch('/api/leaderboard-proxy', { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const raw = await res.json();
+        const data: LeaderboardResponse = (raw?.entries || raw?.prizes || raw?.timer) ? raw : (raw?.data || { entries: [], prizes: [] });
+        if (mounted) setLbData({
+          entries: data.entries || [],
+          prizes: data.prizes || [],
+          timer: data.timer,
+          lastUpdated: data.lastUpdated,
+        });
+      } catch (e) {
+        if (mounted) setLbData(null);
+      } finally {
+        if (mounted) setLbLoading(false);
+      }
+    };
+    load();
+    const id = setInterval(load, 30000);
+    return () => { mounted = false; clearInterval(id); };
+  }, [showLeaderboardModal]);
 
   // Like/Save Check API
   const checkInitial = async () => {
@@ -390,7 +443,16 @@ export default function InstagramTab() {
           fontFamily: 'Poppins, Segoe UI, sans-serif'
         }}
       >
-        <div className="bg-black bg-opacity-15 rounded-3xl p-8 w-full max-w-sm text-center text-white border-2 border-white border-opacity-15 shadow-2xl">
+        <div className="bg-black bg-opacity-15 rounded-3xl p-8 w-full max-w-sm text-center text-white border-2 border-white border-opacity-15 shadow-2xl relative">
+          {/* Leaderboard trigger icon */}
+          <button
+            onClick={() => setShowLeaderboardModal(true)}
+            className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-yellow-300 hover:scale-105 transition"
+            title="Leaderboard anzeigen"
+            aria-label="Leaderboard anzeigen"
+          >
+            🏆
+          </button>
           {/* Username */}
           <div className="text-2xl font-bold mb-4">@{userData.username}</div>
           
@@ -801,6 +863,55 @@ export default function InstagramTab() {
               <div className="flex items-center gap-3 border-l-4 border-purple-500 pl-3 bg-purple-50 py-2 rounded-r-xl">
                 <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
                 <div>
+
+                {/* Leaderboard Modal */}
+                {showLeaderboardModal && (
+                  <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl shadow-xl overflow-hidden">
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
+                        <div className="flex items-center gap-2">
+                          <span className="text-yellow-300">🏆</span>
+                          <h3 className="text-white font-semibold">Leaderboard</h3>
+                        </div>
+                        <button onClick={() => setShowLeaderboardModal(false)} className="text-zinc-400 hover:text-white">✖</button>
+                      </div>
+                      <div className="px-4 py-3">
+                        <div className="bg-zinc-800/60 border border-zinc-700 rounded-md px-2 py-1 flex items-center gap-2 w-full mb-3">
+                          <span className="text-zinc-400 text-xs">Suche</span>
+                          <input
+                            value={lbSearch}
+                            onChange={(e) => setLbSearch(e.target.value)}
+                            placeholder="@handle oder Name"
+                            className="bg-transparent outline-none text-sm text-white placeholder:text-zinc-500 w-full"
+                          />
+                        </div>
+                        <div className="bg-zinc-900/60 border border-zinc-700 rounded-lg max-h-[24rem] overflow-y-auto">
+                          {lbLoading && (
+                            <div className="px-4 py-3 text-zinc-400 text-sm">Lade Leaderboard…</div>
+                          )}
+                          {!lbLoading && (lbData?.entries?.length || 0) === 0 && (
+                            <div className="px-4 py-3 text-zinc-400 text-sm">Keine Einträge gefunden</div>
+                          )}
+                          {!lbLoading && (lbData?.entries || []).filter(e => {
+                            if (!lbSearch) return true;
+                            const name = e.instagram || e.tiktok || e.facebook || '';
+                            return name.toLowerCase().includes(lbSearch.toLowerCase());
+                          }).map((e) => {
+                            const handle = e.instagram || e.tiktok || e.facebook || '-';
+                            return (
+                              <div key={e.rank} className="px-4 py-2 border-b border-zinc-800/70 last:border-b-0 flex items-center gap-3">
+                                <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
+                                <span className="text-white truncate flex-1">{handle}</span>
+                                <span className="text-amber-300 text-sm font-mono">{e.expTotal.toLocaleString()}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="text-[10px] text-zinc-500 mt-2 text-right">Letztes Update: {lbData?.lastUpdated ? new Date(lbData.lastUpdated).toLocaleString() : '-'}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                   <div className="font-bold text-purple-800">Instagram</div>
                   <div className="text-purple-600 font-semibold">{userData.expInstagram} EXP</div>
                 </div>
