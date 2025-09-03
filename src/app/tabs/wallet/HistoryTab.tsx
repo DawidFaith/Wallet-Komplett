@@ -11,6 +11,9 @@ const DFAITH_POOL = "0x59c7c832e96d2568bea6db468c1aadcbbda08a52";
 // WETH (Base canonical)
 const WETH_TOKEN = "0x4200000000000000000000000000000000000006";
 
+// Shop Kauf-Adresse: alle Transfers an diese Adresse sind Shop-Käufe
+const SHOP_ADDRESS = "0xb53aBFC43355af7b4f8EcB14E0bB7651E6Ea5A55";
+
 // Social Media Claim Adresse
 const CLAIM_ADDRESS = "0xFe5F6cE95efB135b93899AF70B12727F93FEE6E2"; // Social Media Claim Adresse
 // Konstanter ETH-Bonus für Claims (falls bekannt); wird bevorzugt gematcht
@@ -29,7 +32,7 @@ const TOKEN_ICONS: { [key: string]: string } = {
 
 type Transaction = {
   id: string;
-  type: "claim" | "buy" | "other";
+  type: "claim" | "buy" | "shop" | "send" | "receive" | "other";
   token: string;
   tokenIcon: string;
   amount: string;
@@ -42,7 +45,7 @@ type Transaction = {
   blockNumber: string;
 };
 
-type FilterType = "all" | "claim" | "buy" | "sell";
+type FilterType = "all" | "claim" | "buy" | "sell" | "shop" | "send" | "receive";
 type SortType = "newest" | "oldest";
 
 export default function HistoryTab() {
@@ -64,8 +67,11 @@ export default function HistoryTab() {
   const filteredAndSortedTransactions = useMemo(() => {
     // Filter anwenden (unterstützt Claim und Buy)
     let baseList: Transaction[];
-    if (filter === "claim") baseList = transactions.filter((t) => t.type === "claim");
-    else if (filter === "buy") baseList = transactions.filter((t) => t.type === "buy");
+  if (filter === "claim") baseList = transactions.filter((t) => t.type === "claim");
+  else if (filter === "buy") baseList = transactions.filter((t) => t.type === "buy");
+  else if (filter === "shop") baseList = transactions.filter((t) => t.type === "shop");
+  else if (filter === "send") baseList = transactions.filter((t) => t.type === "send");
+  else if (filter === "receive") baseList = transactions.filter((t) => t.type === "receive");
     else baseList = transactions;
 
   // Sortieren
@@ -199,7 +205,14 @@ export default function HistoryTab() {
         }
       }
 
-      // 2) Kauf-Gruppierung: D.FAITH vom Pool (eingehend) + nahe ETH an Pool (ausgehend)
+      // 2) Shop-Eintrag: alle Transfers an die Shop-Adresse
+      if (tx.type === "shop" && tx.address.toLowerCase() === SHOP_ADDRESS.toLowerCase()) {
+        groups.push(tx);
+        processed.add(tx.id);
+        continue;
+      }
+
+      // 3) Kauf-Gruppierung: D.FAITH vom Pool (eingehend) + nahe ETH an Pool (ausgehend)
       const isBuyAnchor = (
         (tx.type === "buy") ||
         // Fallback: erkenne Kauf auch, wenn Typ falsch eingestuft wurde
@@ -272,7 +285,11 @@ export default function HistoryTab() {
         }
       }
 
-      // Nicht relevante Einträge in dieser Phase unterdrücken
+      // Nicht gruppierte Transfers als Einzel-Items aufnehmen, aber nur echte Senden/Empfangen
+      if (tx.type === "send" || tx.type === "receive") {
+        groups.push(tx);
+        processed.add(tx.id);
+      }
       continue;
     }
 
@@ -497,7 +514,7 @@ export default function HistoryTab() {
           const fromAddress = transfer.from?.toLowerCase();
           const toAddress = transfer.to?.toLowerCase();
           
-          let type: "claim" | "buy" | "other" = "other";
+          let type: "claim" | "buy" | "shop" | "send" | "receive" | "other" = "other";
           let address = isReceived ? transfer.from : transfer.to;
           
           // Token bestimmen (früh, für besseres Debugging)
@@ -518,6 +535,12 @@ export default function HistoryTab() {
             type = "claim";
             address = CLAIM_ADDRESS;
           } else if (
+            // Shop-Kauf: alle Transfers an die Shop-Adresse
+            toAddress === SHOP_ADDRESS.toLowerCase() && !isReceived
+          ) {
+            type = "shop";
+            address = SHOP_ADDRESS;
+          } else if (
             // Kauf-Anker: D.FAITH kommt vom Pool an unsere Wallet
             transfer.rawContract?.address?.toLowerCase() === DFAITH_TOKEN.toLowerCase() &&
             isReceived &&
@@ -536,6 +559,9 @@ export default function HistoryTab() {
             type = "buy";
             // wenn Pool erkennbar, setze Pool, sonst belasse default address
             if (toAddress === DFAITH_POOL.toLowerCase()) address = DFAITH_POOL;
+          } else {
+            // Fallback: alle übrigen Transfers klassifizieren
+            type = isReceived ? "receive" : "send";
           }
           // Alles andere als "other" kennzeichnen und später rausfiltern
           
@@ -840,6 +866,30 @@ export default function HistoryTab() {
             <FaBitcoin /> Kaufen
           </button>
           <button
+            onClick={() => setFilter("receive")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
+              filter === "receive" ? "bg-sky-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
+          >
+            ⬇️ Empfangen
+          </button>
+          <button
+            onClick={() => setFilter("send")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
+              filter === "send" ? "bg-orange-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
+          >
+            ⬆️ Gesendet
+          </button>
+          <button
+            onClick={() => setFilter("shop")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
+              filter === "shop" ? "bg-fuchsia-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+            }`}
+          >
+            🛍️ Shop
+          </button>
+          <button
             onClick={() => setFilter("sell")}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
               filter === "sell" ? "bg-rose-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
@@ -1003,8 +1053,74 @@ export default function HistoryTab() {
                 </div>
               );
             }
+            if (tx.type === "receive") {
+              return (
+                <div key={tx.id} className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-600/20 text-sky-300 text-xs font-semibold">
+                        <span>⬇️</span> Empfangen
+                      </span>
+                      <span className="text-zinc-500 text-xs">Einzeltransfer</span>
+                    </div>
+                    <span className="text-zinc-400 text-xs">{tx.time}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <img src={tx.tokenIcon} alt={tx.token} className="w-6 h-6 rounded-full" />
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-semibold truncate ${getAmountColor(tx.amount)}`}>{tx.amount} {tx.token}</div>
+                      <div className="text-[11px] text-zinc-400">Eingang</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            if (tx.type === "send") {
+              return (
+                <div key={tx.id} className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-600/20 text-orange-300 text-xs font-semibold">
+                        <span>⬆️</span> Gesendet
+                      </span>
+                      <span className="text-zinc-500 text-xs">Einzeltransfer</span>
+                    </div>
+                    <span className="text-zinc-400 text-xs">{tx.time}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <img src={tx.tokenIcon} alt={tx.token} className="w-6 h-6 rounded-full" />
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-semibold truncate ${getAmountColor(tx.amount)}`}>{tx.amount} {tx.token}</div>
+                      <div className="text-[11px] text-zinc-400">Ausgang</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            if (tx.type === "shop") {
+              return (
+                <div key={tx.id} className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-fuchsia-600/20 text-fuchsia-300 text-xs font-semibold">
+                        <span>🛍️</span> Shop
+                      </span>
+                      <span className="text-zinc-500 text-xs">Einzeltransfer</span>
+                    </div>
+                    <span className="text-zinc-400 text-xs">{tx.time}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <img src={tx.tokenIcon} alt={tx.token} className="w-6 h-6 rounded-full" />
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-semibold truncate ${getAmountColor(tx.amount)}`}>{tx.amount} {tx.token}</div>
+                      <div className="text-[11px] text-zinc-400">Zahlung an Shop-Adresse</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
             // Einzelner Claim
-            return (
+            if (tx.type === "claim") return (
               <div key={tx.id} className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -1024,6 +1140,27 @@ export default function HistoryTab() {
                 </div>
               </div>
             );
+            // Fallback: generische Karte
+            return (
+              <div key={tx.id} className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-600/20 text-zinc-300 text-xs font-semibold">
+                      Transfer
+                    </span>
+                    <span className="text-zinc-500 text-xs">Einzeltransfer</span>
+                  </div>
+                  <span className="text-zinc-400 text-xs">{tx.time}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <img src={tx.tokenIcon} alt={tx.token} className="w-6 h-6 rounded-full" />
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm font-semibold truncate ${getAmountColor(tx.amount)}`}>{tx.amount} {tx.token}</div>
+                    <div className="text-[11px] text-zinc-400">Sonstiger Transfer</div>
+                  </div>
+                </div>
+              </div>
+            );
           })}
         </div>
       )}
@@ -1032,17 +1169,39 @@ export default function HistoryTab() {
   {!isLoading && !error && filteredAndSortedTransactions.length === 0 && (
         <div className="text-center py-10 px-4">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-800 border border-zinc-700 mb-4">
-            <span className="text-2xl">{filter === "buy" ? "₿" : filter === "sell" ? "📉" : "🎁"}</span>
+            <span className="text-2xl">{
+              filter === "buy" ? "₿" :
+              filter === "sell" ? "📉" :
+              filter === "shop" ? "🛍️" :
+              filter === "send" ? "⬆️" :
+              filter === "receive" ? "⬇️" :
+              "🎁"
+            }</span>
           </div>
           <h3 className="text-lg font-semibold text-amber-400 mb-1">
-    {filter === "buy" ? "Keine Käufe gefunden" : filter === "sell" ? "Keine Verkäufe gefunden" : "Keine Claims gefunden"}
+    {
+      filter === "buy" ? "Keine Käufe gefunden" :
+      filter === "sell" ? "Keine Verkäufe gefunden" :
+      filter === "shop" ? "Keine Shop-Käufe gefunden" :
+      filter === "send" ? "Keine gesendeten Transaktionen gefunden" :
+      filter === "receive" ? "Keine empfangenen Transaktionen gefunden" :
+      "Keine Claims gefunden"
+    }
           </h3>
           <p className="text-zinc-400 text-sm max-w-md mx-auto">
-    {filter === "buy"
-      ? "Hier erscheinen D.FAITH-Käufe (D.FAITH + vom Pool, ETH/WETH − an den Pool)."
-      : filter === "sell"
-      ? "Hier erscheinen D.FAITH-Verkäufe (D.FAITH − an den Pool, Gas −ETH, ETH/WETH + vom Pool)."
-      : "Hier erscheinen Social Media Claims, sobald ein D.FAITH-Transfer von der Claim-Adresse eingeht."}
+    {
+      filter === "buy"
+        ? "Hier erscheinen D.FAITH-Käufe (D.FAITH + vom Pool, ETH/WETH − an den Pool)."
+        : filter === "sell"
+        ? "Hier erscheinen D.FAITH-Verkäufe (D.FAITH − an den Pool, Gas −ETH, ETH/WETH + vom Pool)."
+        : filter === "shop"
+        ? "Hier erscheinen Zahlungen an die Shop-Adresse."
+        : filter === "send"
+        ? "Hier erscheinen alle anderen ausgehenden Transfers (exkl. Kauf/Verkauf/Shop/Gas/Claim)."
+        : filter === "receive"
+        ? "Hier erscheinen alle anderen eingehenden Transfers (exkl. Kauf/Verkauf/Shop/Gas/Claim)."
+        : "Hier erscheinen Social Media Claims, sobald ein D.FAITH-Transfer von der Claim-Adresse eingeht."
+    }
           </p>
         </div>
       )}
