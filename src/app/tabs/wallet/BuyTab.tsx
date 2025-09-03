@@ -791,10 +791,10 @@ export default function BuyTab() {
 
       {/* Kauf-Modal zentral - Mobile Optimiert und zentriert */}
       {showBuyModal && selectedToken && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 overflow-y-auto p-4 pt-20">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 overflow-y-auto p-4 pt-20">
           <div
             ref={buyModalRef}
-            className="bg-zinc-900 rounded-xl p-3 sm:p-6 max-w-sm w-full border border-amber-400 max-h-[85vh] overflow-y-auto my-4 relative"
+      className="bg-zinc-900 rounded-xl p-3 sm:p-6 max-w-sm w-full border border-zinc-700 ring-1 ring-amber-400/20 shadow-xl shadow-black/20 max-h-[85vh] overflow-y-auto my-4 relative"
             style={{ boxSizing: 'border-box' }}
           >
             {/* Modal-Header - Sticky X Button */}
@@ -868,7 +868,7 @@ export default function BuyTab() {
                   <div className="bg-zinc-800/50 rounded-xl p-3 border border-zinc-700">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex items-center gap-2 bg-amber-500/20 rounded-lg px-2 py-1 border border-amber-500/30 flex-shrink-0">
-                        <img src="/D.FAITH.png" alt="D.FAITH" className="w-6 h-6 object-contain" />
+                        <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 object-contain" />
                         <span className="text-amber-300 font-semibold text-xs">D.FAITH</span>
                       </div>
                       <input
@@ -918,7 +918,7 @@ export default function BuyTab() {
                   <div className="bg-zinc-800/50 rounded-xl p-3 border border-zinc-700">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex items-center gap-2 bg-purple-500/20 rounded-lg px-2 py-1 border border-purple-500/30 flex-shrink-0">
-                        <img src="/ETH.png" alt="ETH" className="w-6 h-6 object-contain" />
+                        <img src="/ETH.png" alt="ETH" className="w-8 h-8 object-contain" />
                         <span className="text-purple-300 font-semibold text-xs">ETH Kosten</span>
                       </div>
                       <div className="flex-1 text-center">
@@ -1078,7 +1078,7 @@ export default function BuyTab() {
       {/* Purchase Modal - Erscheint nach erfolgreichem Quote */}
       {showPurchaseModal && quoteTxData && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 overflow-y-auto p-4 pt-20">
-          <div className="bg-zinc-900 rounded-xl p-3 sm:p-6 max-w-sm w-full border border-green-400 max-h-[85vh] overflow-y-auto my-4 relative">
+          <div className="bg-zinc-900 rounded-xl p-3 sm:p-6 max-w-sm w-full border border-zinc-700 ring-1 ring-green-400/20 shadow-xl shadow-black/20 max-h-[85vh] overflow-y-auto my-4 relative">
             {/* Modal-Header - Sticky X Button */}
             <div className="sticky top-0 z-10 bg-zinc-900 flex items-center justify-end mb-2 -mx-3 -mt-3 px-3 pt-3 sm:-mx-6 sm:-mt-6 sm:px-6 sm:pt-6">
               <button
@@ -1101,8 +1101,8 @@ export default function BuyTab() {
             <div className="w-full space-y-4">
               {/* Purchase Header */}
               <div className="text-center pb-3 border-b border-zinc-700 mb-4">
-                <div className="w-24 h-24 mx-auto mb-3 flex items-center justify-center">
-                  <img src="/D.FAITH.png" alt="D.FAITH" className="w-24 h-24 object-contain" />
+                <div className="w-32 h-32 mx-auto mb-3 flex items-center justify-center">
+                  <img src="/D.FAITH.png" alt="D.FAITH" className="w-32 h-32 object-contain" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-1">Kauf bestätigen</h3>
                 <p className="text-zinc-400 text-xs">Quote erhalten - bereit für den Kauf</p>
@@ -1272,7 +1272,7 @@ export default function BuyTab() {
       {/* D.INVEST Success Modal */}
       {showDinvestSuccessModal && (
         <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/80 overflow-y-auto p-4 pt-20">
-          <div className="bg-zinc-900 rounded-xl p-3 sm:p-6 max-w-sm w-full border border-green-400 max-h-[85vh] overflow-y-auto my-4 relative">
+          <div className="bg-zinc-900 rounded-xl p-3 sm:p-6 max-w-sm w-full border border-zinc-700 ring-1 ring-green-400/20 shadow-xl shadow-black/20 max-h-[85vh] overflow-y-auto my-4 relative">
             {/* Modal-Header - Sticky X Button */}
             <div className="sticky top-0 z-10 bg-zinc-900 flex items-center justify-end mb-2 -mx-3 -mt-3 px-3 pt-3 sm:-mx-6 sm:-mt-6 sm:px-6 sm:pt-6">
               <button
@@ -1291,8 +1291,8 @@ export default function BuyTab() {
             <div className="w-full space-y-4">
               {/* Success Header */}
               <div className="text-center pb-3 border-b border-zinc-700 mb-4">
-                <div className="w-24 h-24 mx-auto mb-3 flex items-center justify-center">
-                  <img src="/D.INVEST.png" alt="D.INVEST" className="w-24 h-24 object-contain" />
+                <div className="w-32 h-32 mx-auto mb-3 flex items-center justify-center">
+                  <img src="/D.INVEST.png" alt="D.INVEST" className="w-32 h-32 object-contain" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-1">Kauf erfolgreich!</h3>
                 <p className="text-zinc-400 text-xs">D.INVEST Token wurden bestellt</p>
