@@ -217,7 +217,7 @@ export default function TokenomicsTab() {
     const fetchLeaderboard = async () => {
       setLbLoading(true);
       try {
-  const res = await fetch("https://leaderboard-pi-liard.vercel.app/api/leaderboard", { cache: "no-store" });
+  const res = await fetch("/api/leaderboard-proxy", { cache: "no-store" });
         if (!res.ok) throw new Error(`Leaderboard HTTP ${res.status}`);
         const raw = await res.json();
         // Support both direct and nested shapes
