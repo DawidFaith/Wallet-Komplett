@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { createThirdwebClient, getContract, readContract } from "thirdweb";
 import { base } from "thirdweb/chains";
 
@@ -81,8 +81,6 @@ export default function TokenomicsTab() {
   const [lbLoading, setLbLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [now, setNow] = useState<number>(Date.now());
-  const [platform, setPlatform] = useState<"all" | "instagram" | "tiktok" | "facebook">("all");
-  const mobileCarouselRef = useRef<HTMLDivElement | null>(null);
 
   // Daten von APIs abrufen
   useEffect(() => {
@@ -219,10 +217,19 @@ export default function TokenomicsTab() {
     const fetchLeaderboard = async () => {
       setLbLoading(true);
       try {
-        const res = await fetch("https://leaderboard-pi-liard.vercel.app/api/leaderboard", { cache: "no-store" });
+        const res = await fetch("https://leaderboard-pi-liard.vercel.app/api/leaderboard?action=prizes", { cache: "no-store" });
         if (!res.ok) throw new Error(`Leaderboard HTTP ${res.status}`);
-        const data: LeaderboardResponse = await res.json();
-        if (mounted) setLeaderboard(data);
+        const raw = await res.json();
+        // Support both direct and nested shapes
+        const data: LeaderboardResponse = (raw?.entries || raw?.prizes || raw?.timer)
+          ? raw
+          : (raw?.data || {});
+        if (mounted) setLeaderboard({
+          entries: data.entries || [],
+          prizes: data.prizes || [],
+          timer: data.timer,
+          lastUpdated: data.lastUpdated,
+        });
       } catch (e) {
         console.error("❌ Leaderboard fetch failed:", e);
         if (mounted) setLeaderboard(null);
@@ -251,24 +258,12 @@ export default function TokenomicsTab() {
     return { days, hours, minutes, seconds, active: leaderboard?.timer?.isActive && diff > 0 };
   })();
 
-  const filteredEntriesRaw = (leaderboard?.entries || []).filter((e) => {
+  const filteredEntries = (leaderboard?.entries || []).filter((e) => {
     if (!search) return true;
     const q = search.toLowerCase();
     const name = e.instagram || e.tiktok || e.facebook || "";
     return name.toLowerCase().includes(q);
   });
-  const filteredEntries = useMemo(() => {
-    if (platform === "all") return filteredEntriesRaw;
-    return filteredEntriesRaw.filter((e) => {
-      if (platform === "instagram") return !!e.instagram;
-      if (platform === "tiktok") return !!e.tiktok;
-      if (platform === "facebook") return !!e.facebook;
-      return true;
-    });
-  }, [filteredEntriesRaw, platform]);
-  const top3 = filteredEntries.slice(0, 3);
-  const rest = filteredEntries.slice(3);
-  const mobileCarousel = rest.slice(0, 12);
 
   // Berechnungen mit nur echten API-Daten
   const totalSupply = tokenMetrics?.supply?.total || 0;
@@ -598,195 +593,57 @@ export default function TokenomicsTab() {
       </div>
 
       {/* Leaderboard Section */}
-      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
+        <div className="flex items-start justify-between gap-3 mb-4">
           <div>
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
               🏆 Leaderboard
             </h3>
-            <p className="text-zinc-400 text-sm">
-              Die aktivsten Fans nach EXP – automatisch aktualisiert
-            </p>
+            <p className="text-zinc-400 text-xs md:text-sm">Aktivste Fans nach EXP</p>
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
-            <div className="bg-zinc-800/60 border border-zinc-700 rounded-lg px-3 py-2 flex items-center gap-2 w-full sm:w-72">
-              <span className="text-zinc-400 text-xs">Suche</span>
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="@handle oder Name"
-                className="bg-transparent outline-none text-sm text-white placeholder:text-zinc-500 w-full"
-              />
+          {leaderboard?.timer?.isActive && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-md px-2 py-1 text-amber-300 text-xs">
+              {timeLeft.active ? (
+                <span>
+                  ⏳ {timeLeft.days}d {String(timeLeft.hours).padStart(2, "0")}:{String(timeLeft.minutes).padStart(2, "0")}:{String(timeLeft.seconds).padStart(2, "0")}
+                </span>
+              ) : (
+                <span>Beendet</span>
+              )}
             </div>
-            {/* Platform Filter */}
-            <div className="flex rounded-lg overflow-hidden border border-zinc-700 w-full sm:w-auto">
-              {([
-                { k: "all", l: "Alle" },
-                { k: "instagram", l: "IG" },
-                { k: "tiktok", l: "TT" },
-                { k: "facebook", l: "FB" },
-              ] as const).map((opt) => (
-                <button
-                  key={opt.k}
-                  onClick={() => setPlatform(opt.k)}
-                  className={`px-3 py-2 text-xs font-medium transition-colors flex-1 sm:flex-none ${
-                    platform === opt.k ? "bg-zinc-700 text-white" : "bg-zinc-800/40 text-zinc-300 hover:bg-zinc-800"
-                  }`}
-                >
-                  {opt.l}
-                </button>
-              ))}
-            </div>
-            {leaderboard?.timer?.isActive && (
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 text-amber-300 text-sm w-full sm:w-auto">
-                <div className="font-semibold">
-                  {leaderboard?.timer?.title || "Contest endet in:"}
-                </div>
-                <div className="font-mono text-amber-200">
-                  {timeLeft.active ? (
-                    <span>
-                      {timeLeft.days}d : {String(timeLeft.hours).padStart(2, "0")}h : {String(timeLeft.minutes).padStart(2, "0")}m : {String(timeLeft.seconds).padStart(2, "0")}s
-                    </span>
-                  ) : (
-                    <span>Beendet</span>
-                  )}
-                </div>
-              </div>
-            )}
+          )}
+        </div>
+        {/* Compact list */}
+        <div className="flex items-center gap-2 mb-3">
+          <div className="bg-zinc-800/60 border border-zinc-700 rounded-md px-2 py-1 flex items-center gap-2 w-full md:w-80">
+            <span className="text-zinc-400 text-xs">Suche</span>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="@handle oder Name"
+              className="bg-transparent outline-none text-sm text-white placeholder:text-zinc-500 w-full"
+            />
           </div>
         </div>
-
-        {/* Podium Top 3 */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          {[0, 1, 2].map((idx) => {
-            const e = top3[idx];
-            const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉";
-            const color = idx === 0 ? "text-amber-400" : idx === 1 ? "text-zinc-200" : "text-orange-300";
-            // Order for mobile vs desktop: gold first on mobile, centered on md
-            const orderClass = idx === 0 ? "order-1 md:order-2" : idx === 1 ? "order-2 md:order-1" : "order-3 md:order-3";
-            const emphasis = idx === 0 ? "md:bg-zinc-800/70 md:border-amber-500/30 md:scale-105" : "";
+        <div className="bg-zinc-900/60 border border-zinc-700 rounded-lg max-h-[28rem] overflow-y-auto">
+          {lbLoading && (
+            <div className="px-4 py-3 text-zinc-400 text-sm">Lade Leaderboard…</div>
+          )}
+          {!lbLoading && filteredEntries.length === 0 && (
+            <div className="px-4 py-3 text-zinc-400 text-sm">Keine Einträge gefunden</div>
+          )}
+          {!lbLoading && filteredEntries.map((e) => {
+            const prize = leaderboard?.prizes?.find((p) => p.position === e.rank);
             return (
-              <div key={idx} className={`rounded-xl border p-4 text-center bg-zinc-800/40 border-zinc-700 ${orderClass} ${emphasis}`}>
-                <div className={`text-2xl sm:text-3xl ${color}`}>{medal}</div>
-                <div className="mt-2 text-white font-bold truncate">
-                  {e ? (e.instagram || e.tiktok || e.facebook || "- ") : "-"}
-                </div>
-                <div className="text-zinc-400 text-xs">EXP</div>
-                <div className="text-amber-300 font-mono">{e ? e.expTotal.toLocaleString() : "0"}</div>
-                {leaderboard?.prizes?.find((p) => p.position === (e?.rank || 0)) && (
-                  <div className="mt-2 text-xs text-green-300">
-                    {leaderboard.prizes.find((p) => p.position === (e?.rank || 0))!.description} • {leaderboard.prizes.find((p) => p.position === (e?.rank || 0))!.value}
-                  </div>
-                )}
+              <div key={e.rank} className="px-4 py-2 border-b border-zinc-800/70 last:border-b-0 flex items-center gap-3">
+                <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
+                <span className="text-white truncate flex-1">{e.instagram || e.tiktok || e.facebook || "-"}</span>
+                <span className="text-amber-300 text-sm font-mono">{e.expTotal.toLocaleString()}</span>
+                {prize && <span className="text-green-300 text-xs whitespace-nowrap">{prize.value}</span>}
               </div>
             );
           })}
         </div>
-
-        {/* Mobile carousel for ranks > 3 */}
-        <div className="md:hidden">
-          {mobileCarousel.length > 0 && (
-            <div className="mb-3 flex items-center justify-between">
-              <div className="text-zinc-400 text-sm">Weitere Plätze</div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    const el = mobileCarouselRef.current; if (!el) return; el.scrollBy({ left: -el.clientWidth * 0.9, behavior: "smooth" });
-                  }}
-                  className="px-2 py-1 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm"
-                  aria-label="Vorherige Einträge"
-                >
-                  ◀
-                </button>
-                <button
-                  onClick={() => {
-                    const el = mobileCarouselRef.current; if (!el) return; el.scrollBy({ left: el.clientWidth * 0.9, behavior: "smooth" });
-                  }}
-                  className="px-2 py-1 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm"
-                  aria-label="Nächste Einträge"
-                >
-                  ▶
-                </button>
-              </div>
-            </div>
-          )}
-          <div ref={mobileCarouselRef} className="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-1">
-            {mobileCarousel.map((e) => {
-              const prize = leaderboard?.prizes?.find((p) => p.position === e.rank);
-              return (
-                <div key={e.rank} className="min-w-[82%] shrink-0 snap-start bg-zinc-800/50 border border-zinc-700 rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
-                    {prize && <span className="text-green-300 text-xs">{prize.value}</span>}
-                  </div>
-                  <div className="text-white font-semibold truncate mb-1">{e.instagram || e.tiktok || e.facebook || "-"}</div>
-                  <div className="text-amber-300 text-sm font-mono">{e.expTotal.toLocaleString()} EXP</div>
-                  {prize && <div className="text-zinc-400 text-xs mt-1">{prize.description}</div>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Tabelle/Liste der restlichen Plätze */}
-        <div className="bg-zinc-900/60 border border-zinc-700 rounded-xl overflow-hidden">
-          <div className="hidden md:grid grid-cols-6 gap-2 px-4 py-3 text-xs text-zinc-400 border-b border-zinc-700/60">
-            <div>#</div>
-            <div className="col-span-2">Handle</div>
-            <div className="text-right">EXP</div>
-            <div className="col-span-2 text-right">Preis</div>
-          </div>
-          <div className="divide-y divide-zinc-800/80">
-            {lbLoading && (
-              <div className="px-4 py-3 text-zinc-400 text-sm">Lade Leaderboard…</div>
-            )}
-            {!lbLoading && rest.length === 0 && (
-              <div className="px-4 py-3 text-zinc-400 text-sm">Keine Einträge gefunden</div>
-            )}
-            {!lbLoading && rest.map((e) => {
-              const prize = leaderboard?.prizes?.find((p) => p.position === e.rank);
-              return (
-                <div key={e.rank} className="px-4 py-3 hover:bg-zinc-800/40 transition-colors">
-                  {/* Desktop row */}
-                  <div className="hidden md:grid grid-cols-6 gap-2 items-center">
-                    <div className="text-zinc-300 font-mono">{e.rank}</div>
-                    <div className="col-span-2 text-white truncate">{e.instagram || e.tiktok || e.facebook || "-"}</div>
-                    <div className="text-right text-amber-300 font-medium">{e.expTotal.toLocaleString()}</div>
-                    <div className="col-span-2 text-right text-green-300 text-xs">{prize ? `${prize.description} • ${prize.value}` : "—"}</div>
-                  </div>
-                  {/* Mobile card */}
-                  <div className="md:hidden flex flex-col gap-1">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
-                        <span className="text-white truncate">{e.instagram || e.tiktok || e.facebook || "-"}</span>
-                      </div>
-                      <div className="text-amber-300 text-sm font-medium">{e.expTotal.toLocaleString()} EXP</div>
-                    </div>
-                    {prize && (
-                      <div className="text-green-300 text-xs">{prize.description} • {prize.value}</div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Prizes overview */}
-        {leaderboard?.prizes && leaderboard.prizes.length > 0 && (
-          <div className="mt-6">
-            <h4 className="text-white font-semibold mb-3">Preise</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {leaderboard.prizes.map((p) => (
-                <div key={p.position} className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-3 flex items-center justify-between">
-                  <div className="text-zinc-300 text-sm">{p.description}</div>
-                  <div className="text-green-300 text-sm font-semibold">{p.value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* D.INVEST & Staking Dashboard - Minimalistisch */}
