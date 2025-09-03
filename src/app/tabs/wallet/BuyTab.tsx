@@ -1287,7 +1287,7 @@ export default function BuyTab() {
                   <img src="/D.INVEST.png" alt="D.INVEST" className="w-32 h-32 object-contain" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-1">Kauf erfolgreich!</h3>
-                <p className="text-zinc-400 text-xs">D.INVEST Token wurden bestellt</p>
+                <p className="text-zinc-400 text-xs">D.INVEST Token wurden sofort gesendet</p>
               </div>
 
               {/* Success Message */}
@@ -1309,16 +1309,20 @@ export default function BuyTab() {
                   
                   <div className="space-y-2 text-sm text-green-300/90">
                     <p className="flex items-center justify-center gap-2">
-                      <span>📧</span>
-                      <span>Bestätigungs-E-Mail wurde versendet</span>
+                      <span>�</span>
+                      <span>Token wurden sofort an deine Wallet gesendet</span>
                     </p>
                     <p className="flex items-center justify-center gap-2">
-                      <span>🚀</span>
-                      <span>Token werden in 24-48h an deine Wallet gesendet</span>
+                      <span>�</span>
+                      <span>Es gibt keine E-Mail-Bestätigung</span>
                     </p>
                     <p className="flex items-center justify-center gap-2">
                       <span>💰</span>
                       <span>Berechtigt zum D.FAITH Staking</span>
+                    </p>
+                    <p className="flex items-center justify-center gap-2">
+                      <span>❓</span>
+                      <span>Fragen? Schreib mir per DM oder an dawid.faith@gmail.com</span>
                     </p>
                   </div>
                 </div>
