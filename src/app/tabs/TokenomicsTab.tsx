@@ -35,6 +35,35 @@ interface WalletBalance {
   timestamp: string;
 }
 
+// Leaderboard API types
+interface LeaderboardEntry {
+  instagram?: string;
+  tiktok?: string;
+  facebook?: string;
+  expTotal: number;
+  rank: number;
+}
+
+interface Prize {
+  position: number;
+  description: string;
+  value: string;
+}
+
+interface TimerSettings {
+  endDate: string;
+  title: string;
+  description: string;
+  isActive: boolean;
+}
+
+interface LeaderboardResponse {
+  entries: LeaderboardEntry[];
+  prizes: Prize[];
+  timer?: TimerSettings;
+  lastUpdated?: string;
+}
+
 export default function TokenomicsTab() {
   const [contractBalance, setContractBalance] = useState<number | null>(null);
   const [totalStaked, setTotalStaked] = useState<number | null>(null);
@@ -46,6 +75,12 @@ export default function TokenomicsTab() {
   const [tokenMetrics, setTokenMetrics] = useState<TokenMetrics | null>(null);
   const [davidBalance, setDavidBalance] = useState<WalletBalance | null>(null);
   const [dinvestBalance, setDinvestBalance] = useState<any | null>(null);
+
+  // Leaderboard State
+  const [leaderboard, setLeaderboard] = useState<LeaderboardResponse | null>(null);
+  const [lbLoading, setLbLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [now, setNow] = useState<number>(Date.now());
 
   // Daten von APIs abrufen
   useEffect(() => {
@@ -175,6 +210,53 @@ export default function TokenomicsTab() {
     const interval = setInterval(fetchAllData, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Leaderboard fetch + countdown timer
+  useEffect(() => {
+    let mounted = true;
+    const fetchLeaderboard = async () => {
+      setLbLoading(true);
+      try {
+        const res = await fetch("https://leaderboard-pi-liard.vercel.app/api/leaderboard", { cache: "no-store" });
+        if (!res.ok) throw new Error(`Leaderboard HTTP ${res.status}`);
+        const data: LeaderboardResponse = await res.json();
+        if (mounted) setLeaderboard(data);
+      } catch (e) {
+        console.error("❌ Leaderboard fetch failed:", e);
+        if (mounted) setLeaderboard(null);
+      } finally {
+        if (mounted) setLbLoading(false);
+      }
+    };
+    fetchLeaderboard();
+    const id = setInterval(fetchLeaderboard, 30000);
+    const tick = setInterval(() => setNow(Date.now()), 1000);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+      clearInterval(tick);
+    };
+  }, []);
+
+  const timeLeft = (() => {
+    const end = leaderboard?.timer?.endDate ? new Date(leaderboard.timer.endDate).getTime() : 0;
+    const diff = Math.max(0, end - now);
+    const s = Math.floor(diff / 1000);
+    const days = Math.floor(s / 86400);
+    const hours = Math.floor((s % 86400) / 3600);
+    const minutes = Math.floor((s % 3600) / 60);
+    const seconds = s % 60;
+    return { days, hours, minutes, seconds, active: leaderboard?.timer?.isActive && diff > 0 };
+  })();
+
+  const filteredEntries = (leaderboard?.entries || []).filter((e) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    const name = e.instagram || e.tiktok || e.facebook || "";
+    return name.toLowerCase().includes(q);
+  });
+  const top3 = filteredEntries.slice(0, 3);
+  const rest = filteredEntries.slice(3);
 
   // Berechnungen mit nur echten API-Daten
   const totalSupply = tokenMetrics?.supply?.total || 0;
@@ -501,6 +583,115 @@ export default function TokenomicsTab() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Leaderboard Section */}
+      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div>
+            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              🏆 Leaderboard
+            </h3>
+            <p className="text-zinc-400 text-sm">
+              Die aktivsten Fans nach EXP – automatisch aktualisiert
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="bg-zinc-800/60 border border-zinc-700 rounded-lg px-3 py-2 flex items-center gap-2">
+              <span className="text-zinc-400 text-xs">Suche</span>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="@handle oder Name"
+                className="bg-transparent outline-none text-sm text-white placeholder:text-zinc-500"
+              />
+            </div>
+            {leaderboard?.timer?.isActive && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 text-amber-300 text-sm">
+                <div className="font-semibold">
+                  {leaderboard?.timer?.title || "Contest endet in:"}
+                </div>
+                <div className="font-mono text-amber-200">
+                  {timeLeft.active ? (
+                    <span>
+                      {timeLeft.days}d : {String(timeLeft.hours).padStart(2, "0")}h : {String(timeLeft.minutes).padStart(2, "0")}m : {String(timeLeft.seconds).padStart(2, "0")}s
+                    </span>
+                  ) : (
+                    <span>Beendet</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Podium Top 3 */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          {[1, 0, 2].map((idx, i) => {
+            const e = top3[idx];
+            const isCenter = i === 1;
+            const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉";
+            return (
+              <div key={i} className={`rounded-xl border p-4 text-center ${isCenter ? "bg-zinc-800/70 border-amber-500/30" : "bg-zinc-800/40 border-zinc-700"}`}>
+                <div className={`text-3xl ${idx === 0 ? "text-amber-400" : idx === 1 ? "text-zinc-200" : "text-orange-300"}`}>{medal}</div>
+                <div className="mt-2 text-white font-bold">
+                  {e ? (e.instagram || e.tiktok || e.facebook || "- ") : "-"}
+                </div>
+                <div className="text-zinc-400 text-xs">EXP</div>
+                <div className="text-amber-300 font-mono">{e ? e.expTotal.toLocaleString() : "0"}</div>
+                {leaderboard?.prizes?.find((p) => p.position === (e?.rank || 0)) && (
+                  <div className="mt-2 text-xs text-green-300">
+                    {leaderboard.prizes.find((p) => p.position === (e?.rank || 0))!.description} • {leaderboard.prizes.find((p) => p.position === (e?.rank || 0))!.value}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Tabelle/Liste der restlichen Plätze */}
+        <div className="bg-zinc-900/60 border border-zinc-700 rounded-xl overflow-hidden">
+          <div className="grid grid-cols-6 gap-2 px-4 py-3 text-xs text-zinc-400 border-b border-zinc-700/60">
+            <div>#</div>
+            <div className="col-span-2">Handle</div>
+            <div className="text-right">EXP</div>
+            <div className="col-span-2 text-right">Preis</div>
+          </div>
+          <div className="divide-y divide-zinc-800/80">
+            {lbLoading && (
+              <div className="px-4 py-3 text-zinc-400 text-sm">Lade Leaderboard…</div>
+            )}
+            {!lbLoading && rest.length === 0 && (
+              <div className="px-4 py-3 text-zinc-400 text-sm">Keine Einträge gefunden</div>
+            )}
+            {!lbLoading && rest.map((e) => {
+              const prize = leaderboard?.prizes?.find((p) => p.position === e.rank);
+              return (
+                <div key={e.rank} className="grid grid-cols-6 gap-2 px-4 py-3 items-center hover:bg-zinc-800/40 transition-colors">
+                  <div className="text-zinc-300 font-mono">{e.rank}</div>
+                  <div className="col-span-2 text-white truncate">{e.instagram || e.tiktok || e.facebook || "-"}</div>
+                  <div className="text-right text-amber-300 font-medium">{e.expTotal.toLocaleString()}</div>
+                  <div className="col-span-2 text-right text-green-300 text-xs">{prize ? `${prize.description} • ${prize.value}` : "—"}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Prizes overview */}
+        {leaderboard?.prizes && leaderboard.prizes.length > 0 && (
+          <div className="mt-6">
+            <h4 className="text-white font-semibold mb-3">Preise</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {leaderboard.prizes.map((p) => (
+                <div key={p.position} className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-3 flex items-center justify-between">
+                  <div className="text-zinc-300 text-sm">{p.description}</div>
+                  <div className="text-green-300 text-sm font-semibold">{p.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* D.INVEST & Staking Dashboard - Minimalistisch */}
