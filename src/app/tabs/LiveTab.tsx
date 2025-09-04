@@ -9,6 +9,7 @@ export default function LiveTab() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [showCodeModal, setShowCodeModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const account = useActiveAccount();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,11 +51,9 @@ export default function LiveTab() {
       
       if (data.success) {
         setCode(''); // Reset form on success
-        // Modal nach erfolgreichem Code automatisch nach 3 Sekunden schließen
-        setTimeout(() => {
-          setShowCodeModal(false);
-          setResult(null);
-        }, 3000);
+        // Bei Erfolg: Eingabe-Modal schließen und separates Erfolgs-Modal öffnen
+        setShowCodeModal(false);
+        setShowSuccessModal(true);
       }
       
     } catch (error) {
@@ -92,7 +91,7 @@ export default function LiveTab() {
         </Button>
       </div>
 
-      {/* Code-Eingabe Modal */}
+  {/* Code-Eingabe Modal */}
       {showCodeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden" style={{ position: 'fixed' }}>
           <div 
@@ -186,40 +185,58 @@ export default function LiveTab() {
                 </Button>
               </form>
               
-              {/* Ergebnis Anzeige */}
-              {result && (
-                <div className={`mt-6 p-4 rounded-lg border-2 ${
-                  result.success 
-                    ? 'bg-green-900/30 border-green-500 text-green-400' 
-                    : 'bg-red-900/30 border-red-500 text-red-400'
-                }`}>
-                  {result.success ? (
-                    <div className="text-center">
-                      <p className="text-lg font-bold">🎉 Erfolgreich!</p>
-                      <p className="text-xl font-bold text-green-300 mt-2">
-                        +150 Live EXP wurde deinem Konto gutgeschrieben! 🎵
-                      </p>
-                      <div className="mt-4 p-3 bg-blue-900/30 border border-blue-500/50 rounded text-blue-200 text-sm">
-                        <p className="font-semibold">ℹ️ Hinweis:</p>
-                        <p>Die EXP werden erst bei der nächsten Teilnahme auf TikTok, Instagram oder Facebook sichtbar.</p>
-                      </div>
-                      {result.data && (
-                        <p className="text-sm mt-3 opacity-80">
-                          📊 Gesamt Live EXP: {result.data.newValueK}
-                        </p>
-                      )}
-                      <p className="text-xs mt-3 text-green-300/70">
-                        Modal schließt automatisch in 3 Sekunden...
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <p className="text-lg font-bold">❌ Fehler</p>
-                      <p className="text-sm font-medium mt-1">{result.message}</p>
-                    </div>
-                  )}
+              {/* Ergebnis Anzeige (nur Fehler im Eingabe-Modal) */}
+              {result && !result.success && (
+                <div className="mt-6 p-4 rounded-lg border-2 bg-red-900/30 border-red-500 text-red-400">
+                  <div className="text-center">
+                    <p className="text-lg font-bold">❌ Fehler</p>
+                    <p className="text-sm font-medium mt-1">{result.message}</p>
+                  </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Erfolgs-Modal (separat und persistent bis zum Schließen) */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden" style={{ position: 'fixed' }}>
+          <div 
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
+            onClick={() => { setShowSuccessModal(false); setResult(null); }}
+          ></div>
+          <div className="relative bg-zinc-900 border border-zinc-700 w-full max-w-md mx-4 rounded-xl shadow-2xl">
+            <div className="p-6">
+              {/* Modal Header */}
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="text-green-400 text-xl">🎉</span>
+                  <h3 className="text-xl font-bold text-white">Erfolgreich!</h3>
+                </div>
+                <Button
+                  onClick={() => { setShowSuccessModal(false); setResult(null); }}
+                  className="bg-zinc-800 hover:bg-zinc-700 text-red-400 hover:text-red-300 border border-zinc-600 hover:border-red-500 p-2 rounded-lg transition-all duration-200"
+                >
+                  <FaTimes className="text-lg" />
+                </Button>
+              </div>
+              <div className="mt-2 p-4 rounded-lg border-2 bg-green-900/30 border-green-500 text-green-400">
+                <div className="text-center">
+                  <p className="text-xl font-bold text-green-300">
+                    +150 Live EXP wurde deinem Konto gutgeschrieben! 🎵
+                  </p>
+                  <div className="mt-4 p-3 bg-blue-900/30 border border-blue-500/50 rounded text-blue-200 text-sm">
+                    <p className="font-semibold">ℹ️ Hinweis:</p>
+                    <p>Die EXP werden erst bei der nächsten Teilnahme auf TikTok, Instagram oder Facebook sichtbar.</p>
+                  </div>
+                  {result?.data && (
+                    <p className="text-sm mt-3 opacity-80">
+                      📊 Gesamt Live EXP: {result.data.newValueK}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
