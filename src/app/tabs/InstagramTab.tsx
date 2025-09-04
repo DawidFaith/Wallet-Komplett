@@ -1225,8 +1225,8 @@ export default function InstagramTab() {
                     <div key={e.rank} className="border-b border-zinc-800/70 last:border-b-0">
                       <div className="px-3 py-2 grid grid-cols-[auto_1fr_6rem_8rem] gap-4 items-center">
                         <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-white whitespace-normal break-words min-w-0">{primary}</span>
+                        <div className="flex items-center gap-2 w-full">
+                          <span className="text-white whitespace-nowrap overflow-x-auto w-full">{primary}</span>
                           {names.length > 1 && (
                             <button
                               type="button"
