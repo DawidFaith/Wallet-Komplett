@@ -1195,7 +1195,7 @@ export default function InstagramTab() {
                 />
               </div>
               {/* Legende / Kopfzeile */}
-              <div className="text-[11px] text-zinc-400 px-3 mb-1 grid grid-cols-[auto_1fr_6rem_8rem] gap-3">
+              <div className="text-[11px] text-zinc-400 px-3 mb-1 grid grid-cols-[auto_1fr_6rem_8rem] gap-4">
                 <div className="opacity-0 select-none">#</div>
                 <div className="text-left">Name</div>
                 <div className="text-center">EXP</div>
@@ -1221,7 +1221,7 @@ export default function InstagramTab() {
                   const prizeDisplay = prizeText ? prizeText : '-';
                   return (
                     <div key={e.rank} className="border-b border-zinc-800/70 last:border-b-0">
-                      <div className="px-3 py-2 grid grid-cols-[auto_1fr_6rem_8rem] gap-3 items-center">
+                      <div className="px-3 py-2 grid grid-cols-[auto_1fr_6rem_8rem] gap-4 items-center">
                         <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-white whitespace-normal break-words min-w-0">{primary}</span>
@@ -1243,11 +1243,11 @@ export default function InstagramTab() {
                         </span>
                       </div>
                       {lbOpenRow === e.rank && names.length > 1 && (
-                        <div className="px-12 pb-2 flex flex-wrap gap-2">
+                        <div className="pl-12 pr-3 pb-2 flex flex-col gap-1 items-start">
                           {names.map((n, idx) => (
-                            <span key={idx} className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-200 text-[11px] whitespace-normal break-words">
+                            <div key={idx} className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-200 text-[11px] w-full text-left whitespace-normal break-words">
                               {n}
-                            </span>
+                            </div>
                           ))}
                         </div>
                       )}
