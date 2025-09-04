@@ -108,6 +108,7 @@ export default function InstagramTab() {
   const [lbLoading, setLbLoading] = useState(false);
   const [lbSearch, setLbSearch] = useState("");
   const [lbNow, setLbNow] = useState<number>(Date.now());
+  const [lbOpenRow, setLbOpenRow] = useState<number | null>(null);
 
   // Formatter für Countdown
   const formatDuration = (ms: number) => {
@@ -1209,21 +1210,47 @@ export default function InstagramTab() {
                 )}
                 {(lbData?.entries || []).filter(e => {
                   if (!lbSearch) return true;
-                  const name = e.instagram || e.tiktok || e.facebook || e.name || e.handle || '';
-                  return name.toLowerCase().includes(lbSearch.toLowerCase());
+                  const names = [e.instagram, e.tiktok, e.facebook, e.name, e.handle].filter(Boolean) as string[];
+                  const q = lbSearch.toLowerCase();
+                  return names.some(n => n.toLowerCase().includes(q));
                 }).map((e) => {
-                  const handle = e.instagram || e.tiktok || e.facebook || e.name || e.handle || '-';
+                  const names = [e.instagram, e.tiktok, e.facebook, e.name, e.handle].filter(Boolean) as string[];
+                  const primary = e.instagram || e.tiktok || e.facebook || e.name || e.handle || '-';
                   const prize = (lbData?.prizes || []).find(p => p.position === e.rank);
                   const prizeText = prize ? (prize.value || prize.description || '') : '';
                   const prizeDisplay = prizeText ? prizeText : '-';
                   return (
-                    <div key={e.rank} className="px-3 py-2 border-b border-zinc-800/70 last:border-b-0 grid grid-cols-[auto_1fr_6rem_8rem] gap-3 items-center">
-                      <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
-                      <span className="text-white truncate min-w-0">{handle}</span>
-                      <span className="text-amber-300 text-sm font-mono text-center">{e.expTotal.toLocaleString()}</span>
-                      <span className="text-emerald-300 text-xs font-medium text-right truncate" title={prizeDisplay}>
-                        {prizeDisplay}
-                      </span>
+                    <div key={e.rank} className="border-b border-zinc-800/70 last:border-b-0">
+                      <div className="px-3 py-2 grid grid-cols-[auto_1fr_6rem_8rem] gap-3 items-center">
+                        <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-white whitespace-normal break-words min-w-0">{primary}</span>
+                          {names.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => setLbOpenRow(lbOpenRow === e.rank ? null : e.rank)}
+                              className="text-zinc-400 hover:text-white text-xs border border-zinc-700 rounded px-1 py-0.5"
+                              aria-label="Weitere Namen anzeigen"
+                              title="Weitere Namen anzeigen"
+                            >
+                              {lbOpenRow === e.rank ? '▲' : '▼'}
+                            </button>
+                          )}
+                        </div>
+                        <span className="text-amber-300 text-sm font-mono text-center">{e.expTotal.toLocaleString()}</span>
+                        <span className="text-emerald-300 text-xs font-medium text-right truncate" title={prizeDisplay}>
+                          {prizeDisplay}
+                        </span>
+                      </div>
+                      {lbOpenRow === e.rank && names.length > 1 && (
+                        <div className="px-12 pb-2 flex flex-wrap gap-2">
+                          {names.map((n, idx) => (
+                            <span key={idx} className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-200 text-[11px] whitespace-normal break-words">
+                              {n}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
