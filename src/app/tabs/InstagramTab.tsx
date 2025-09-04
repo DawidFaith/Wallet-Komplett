@@ -471,7 +471,19 @@ export default function InstagramTab() {
           fontFamily: 'Poppins, Segoe UI, sans-serif'
         }}
       >
-  <div className="bg-black bg-opacity-15 rounded-3xl p-8 w-full max-w-sm text-center text-white border-2 border-white border-opacity-15 shadow-2xl relative">
+        <div className="bg-black bg-opacity-15 rounded-3xl p-8 w-full max-w-sm text-center text-white border-2 border-white border-opacity-15 shadow-2xl relative">
+          {/* Leaderboard FAB in-card (oben links) */}
+          {!showLeaderboardModal && (
+            <button
+              type="button"
+              onClick={() => setShowLeaderboardModal(true)}
+              className="absolute top-3 left-3 z-20 w-10 h-10 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 transition flex items-center justify-center pointer-events-auto"
+              aria-label="Leaderboard öffnen"
+              title="Leaderboard öffnen"
+            >
+              🏆
+            </button>
+          )}
           {/* Username */}
           <div className="text-2xl font-bold mb-4">@{userData.username}</div>
           
@@ -1153,17 +1165,7 @@ export default function InstagramTab() {
       )}
 
       {/* Global Leaderboard Modal + optional FAB */}
-    {!showLeaderboardModal && !loading && (
-        <button
-          type="button"
-          onClick={() => setShowLeaderboardModal(true)}
-      className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 transition flex items-center justify-center"
-          aria-label="Leaderboard öffnen"
-          title="Leaderboard öffnen"
-        >
-          🏆
-        </button>
-      )}
+  {/* Global FAB entfernt – Button sitzt nun in der Karte */}
       {showLeaderboardModal && (
         <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl shadow-xl overflow-hidden">
