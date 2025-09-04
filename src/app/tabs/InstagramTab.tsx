@@ -473,18 +473,7 @@ export default function InstagramTab() {
         }}
       >
         <div className="bg-black bg-opacity-15 rounded-3xl p-8 w-full max-w-sm text-center text-white border-2 border-white border-opacity-15 shadow-2xl relative">
-          {/* Leaderboard FAB in-card (oben links) */}
-          {!showLeaderboardModal && (
-            <button
-              type="button"
-              onClick={() => setShowLeaderboardModal(true)}
-              className="absolute top-3 left-3 z-20 w-10 h-10 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 transition flex items-center justify-center pointer-events-auto"
-              aria-label="Leaderboard öffnen"
-              title="Leaderboard öffnen"
-            >
-              🏆
-            </button>
-          )}
+          {/* FAB wird rechts beim System Check platziert */}
           {/* Username */}
           <div className="text-2xl font-bold mb-4">@{userData.username}</div>
           
@@ -549,7 +538,20 @@ export default function InstagramTab() {
           
           {/* System Check */}
           <div className="border-2 border-white rounded-2xl p-4 mb-6 bg-black bg-opacity-20">
-            <div className="font-bold text-lg mb-3 text-white">✅ System Check</div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-bold text-lg text-white">✅ System Check</div>
+              {!showLeaderboardModal && (
+                <button
+                  type="button"
+                  onClick={() => setShowLeaderboardModal(true)}
+                  className="w-8 h-8 rounded-full bg-yellow-400 text-black shadow hover:bg-yellow-300 active:scale-95 transition flex items-center justify-center"
+                  aria-label="Leaderboard öffnen"
+                  title="Leaderboard öffnen"
+                >
+                  🏆
+                </button>
+              )}
+            </div>
             
             <div className="space-y-2 text-sm text-white">
               <div className="flex justify-between">
