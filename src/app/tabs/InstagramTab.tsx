@@ -1200,7 +1200,7 @@ export default function InstagramTab() {
                 />
               </div>
               {/* Legende / Kopfzeile */}
-              <div className="text-[11px] text-zinc-400 px-3 mb-1 grid grid-cols-[auto_1fr_4rem_5.5rem] gap-4">
+              <div className="text-[11px] text-zinc-400 px-3 mb-1 grid grid-cols-[2.25rem_minmax(0,1fr)_5rem_6rem] gap-4">
                 <div className="opacity-0 select-none">#</div>
                 <div className="text-left">Name</div>
                 <div className="text-center">EXP</div>
@@ -1234,7 +1234,7 @@ export default function InstagramTab() {
                   const prizeDisplay = prizeText ? prizeText : '-';
                   return (
                     <div key={e.rank} className="border-b border-zinc-800/70 last:border-b-0">
-                      <div className="px-3 py-2 grid grid-cols-[auto_1fr_4rem_5.5rem] gap-4 items-center">
+                      <div className="px-3 py-2 grid grid-cols-[2.25rem_minmax(0,1fr)_5rem_6rem] gap-4 items-center">
                         <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
                         <div className="flex items-center gap-2 w-full">
                           {PlatformIcon && <PlatformIcon className="w-4 h-4 text-zinc-300 shrink-0" aria-hidden="true" />}
@@ -1251,13 +1251,13 @@ export default function InstagramTab() {
                             </button>
                           )}
                         </div>
-                        <span className="text-amber-300 text-sm font-mono text-center">{e.expTotal.toLocaleString()}</span>
-                        <span className="text-emerald-300 text-xs font-medium text-right truncate max-w-full" title={prizeDisplay}>
+                        <span className="text-amber-300 text-sm font-mono tabular-nums text-center">{e.expTotal.toLocaleString()}</span>
+                        <span className="text-emerald-300 text-xs font-medium tabular-nums text-right truncate max-w-full" title={prizeDisplay}>
                           {prizeDisplay}
                         </span>
                       </div>
                       {lbOpenRow === e.rank && namesDetailed.length > 1 && (
-                        <div className="pl-12 pr-3 pb-2 flex flex-col gap-1 items-start">
+                        <div className="pl-[3.25rem] pr-3 pb-2 flex flex-col gap-1 items-start">
                           {namesDetailed.map((n, idx) => {
                             const ChipIcon = n.platform === 'instagram' ? FaInstagram : n.platform === 'tiktok' ? FaTiktok : n.platform === 'facebook' ? FaFacebookF : null;
                             return (
