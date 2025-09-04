@@ -296,6 +296,29 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
   const [confirmationMessage, setConfirmationMessage] = useState<string>('');
   const [expGained, setExpGained] = useState<{likes: number, shares: number, saves: number, total: number} | null>(null);
 
+  // Leaderboard state (UserCard-scope)
+  const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
+  const [lbData, setLbData] = useState<any>(null);
+  const [lbLoading, setLbLoading] = useState(false);
+  const [lbSearch, setLbSearch] = useState("");
+  const [lbNow, setLbNow] = useState<number>(Date.now());
+  const [lbOpenRow, setLbOpenRow] = useState<number | null>(null);
+
+  const formatDuration = (ms: number) => {
+    if (!ms || ms <= 0) return '00:00:00';
+    let s = Math.floor(ms / 1000);
+    const d = Math.floor(s / 86400);
+    s = s % 86400;
+    const h = Math.floor(s / 3600);
+    s = s % 3600;
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    const hh = h.toString().padStart(2, '0');
+    const mm = m.toString().padStart(2, '0');
+    const ss = sec.toString().padStart(2, '0');
+    return d > 0 ? `${d}d ${hh}:${mm}:${ss}` : `${hh}:${mm}:${ss}`;
+  };
+
   // Level Funktionen (gleiche Logik wie Facebook)
   const getLevelAndExpRange = (exp: number) => {
     let level = 1;
@@ -431,6 +454,41 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
       }
     }
   }, []);
+
+  // Leaderboard fetch when modal opens
+  React.useEffect(() => {
+    if (!showLeaderboardModal) return;
+    let mounted = true;
+    const load = async () => {
+      setLbLoading(true);
+      try {
+        const res = await fetch('/api/leaderboard-proxy', { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const raw = await res.json();
+        const data = (raw?.entries || raw?.prizes || raw?.timer) ? raw : (raw?.data || { entries: [], prizes: [] });
+        if (mounted) setLbData({
+          entries: data.entries || [],
+          prizes: data.prizes || [],
+          timer: data.timer,
+          lastUpdated: data.lastUpdated,
+        });
+      } catch (e) {
+        console.error('Leaderboard laden fehlgeschlagen:', e);
+      } finally {
+        if (mounted) setLbLoading(false);
+      }
+    };
+    load();
+    const id = setInterval(load, 30000);
+    return () => { mounted = false; clearInterval(id); };
+  }, [showLeaderboardModal]);
+
+  // Timer tick
+  React.useEffect(() => {
+    if (!showLeaderboardModal) return;
+    const id = setInterval(() => setLbNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [showLeaderboardModal]);
 
   // Claim Funktion mit Webhook
   const handleClaim = async () => {
@@ -568,7 +626,21 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
           
           {/* System Check */}
           <div className="bg-black/50 border border-pink-500/50 rounded-2xl p-4 mb-6">
-            <div className="font-bold text-lg mb-3 bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">🔍 System Check</div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-bold text-lg bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">🔍 System Check</div>
+              {!showLeaderboardModal && (
+                <button
+                  type="button"
+                  onClick={() => setShowLeaderboardModal(true)}
+                  className="relative group w-8 h-8 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 hover:scale-105 transition cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 hover:ring-4 hover:ring-yellow-200/60 hover:shadow-yellow-300/60"
+                  aria-label="Leaderboard öffnen"
+                  title="Leaderboard öffnen"
+                >
+                  <span className="absolute -inset-1 rounded-full bg-yellow-400/20 blur-sm opacity-60 group-hover:opacity-80 transition pointer-events-none"></span>
+                  <span className="inline-block animate-bounce">🏆</span>
+                </button>
+              )}
+            </div>
             
             <div className="space-y-2 text-sm text-white">
               <div className="flex justify-between">
@@ -615,6 +687,105 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
           </div>
         </div>
       </div>
+
+      {/* Leaderboard Modal */}
+      {showLeaderboardModal && (
+        <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl shadow-xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-300">🏆</span>
+                <h3 className="text-white font-semibold">Leaderboard</h3>
+              </div>
+              <div className="text-xs text-zinc-400 mr-auto ml-3">
+                {lbData?.timer?.isActive && lbData?.timer?.endDate ? (
+                  <span>Endet in: {formatDuration(new Date(lbData.timer.endDate).getTime() - lbNow)}</span>
+                ) : null}
+              </div>
+              <button onClick={() => setShowLeaderboardModal(false)} className="text-zinc-400 hover:text-white">✖</button>
+            </div>
+            <div className="px-4 py-3">
+              <div className="bg-zinc-800/60 border border-zinc-700 rounded-md px-2 py-1 flex items-center gap-2 w-full mb-3">
+                <span className="text-zinc-400 text-xs">Suche</span>
+                <input
+                  value={lbSearch}
+                  onChange={(e) => setLbSearch(e.target.value)}
+                  placeholder="@handle oder Name"
+                  className="bg-transparent outline-none text-sm text-white placeholder:text-zinc-500 w-full"
+                />
+              </div>
+              {/* Legende / Kopfzeile */}
+              <div className="text-[11px] text-zinc-400 px-3 mb-1 grid grid-cols-[2.25rem_minmax(0,1fr)_3.75rem_5.25rem] gap-3">
+                <div className="opacity-0 select-none">#</div>
+                <div className="text-left">Name</div>
+                <div className="text-center">EXP</div>
+                <div className="text-right">Preis</div>
+              </div>
+              <div className="bg-zinc-900/60 border border-zinc-700 rounded-lg max-h-[24rem] overflow-y-auto overflow-x-hidden">
+                {lbLoading && (
+                  <div className="px-4 py-3 text-zinc-400 text-sm">Lade Leaderboard…</div>
+                )}
+                {(lbData?.entries || []).length === 0 && !lbLoading && (
+                  <div className="px-4 py-3 text-zinc-400 text-sm">Keine Einträge gefunden</div>
+                )}
+                {(lbData?.entries || []).filter((e: any) => {
+                  if (!lbSearch) return true;
+                  const names = [e.instagram, e.tiktok, e.facebook, e.name, e.handle].filter(Boolean) as string[];
+                  const q = lbSearch.toLowerCase();
+                  return names.some(n => n.toLowerCase().includes(q));
+                }).map((e: any) => {
+                  const namesDetailed = [
+                    e.instagram ? { label: e.instagram as string } : null,
+                    e.tiktok ? { label: e.tiktok as string } : null,
+                    e.facebook ? { label: e.facebook as string } : null,
+                    e.name ? { label: e.name as string } : null,
+                    e.handle ? { label: e.handle as string } : null,
+                  ].filter(Boolean) as { label: string }[];
+                  const primary = (e.instagram || e.tiktok || e.facebook || e.name || e.handle || '-') as string;
+                  const prize = (lbData?.prizes || []).find((p: any) => p.position === e.rank);
+                  const prizeText = prize ? (prize.value || prize.description || '') : '';
+                  const prizeDisplay = prizeText ? prizeText : '-';
+                  return (
+                    <div key={e.rank} className="border-b border-zinc-800/70 last:border-b-0">
+                      <div className="px-3 py-2 grid grid-cols-[2.25rem_minmax(0,1fr)_3.75rem_5.25rem] gap-3 items-center">
+                        <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
+                        <div className="flex items-center gap-2 w-full">
+                          <span className="text-white whitespace-nowrap overflow-x-auto w-full">{primary}</span>
+                          {namesDetailed.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => setLbOpenRow(lbOpenRow === e.rank ? null : e.rank)}
+                              className="text-zinc-400 hover:text-white text-xs border border-zinc-700 rounded px-1 py-0.5"
+                              aria-label="Weitere Namen anzeigen"
+                              title="Weitere Namen anzeigen"
+                            >
+                              {lbOpenRow === e.rank ? '▲' : '▼'}
+                            </button>
+                          )}
+                        </div>
+                        <span className="text-amber-300 text-sm font-mono tabular-nums text-center">{e.expTotal.toLocaleString()}</span>
+                        <span className="text-emerald-300 text-xs font-medium tabular-nums text-right truncate max-w-full" title={prizeDisplay}>
+                          {prizeDisplay}
+                        </span>
+                      </div>
+                      {lbOpenRow === e.rank && namesDetailed.length > 1 && (
+                        <div className="pl-[3.25rem] pr-3 pb-2 flex flex-col gap-1 items-start">
+                          {namesDetailed.map((n, idx) => (
+                            <div key={idx} className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-200 text-[11px] w-full text-left whitespace-normal break-words">
+                              {n.label}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="text-[10px] text-zinc-500 mt-2 text-right">Letztes Update: {lbData?.lastUpdated ? new Date(lbData.lastUpdated).toLocaleString() : '-'}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* UserCard Modals */}
       {/* Sammle EXP (LikeSave) Modal */}
