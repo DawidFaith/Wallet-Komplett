@@ -1200,7 +1200,7 @@ export default function InstagramTab() {
                 />
               </div>
               {/* Legende / Kopfzeile */}
-              <div className="text-[11px] text-zinc-400 px-3 mb-1 grid grid-cols-[2.25rem_minmax(0,1fr)_5rem_6rem] gap-4">
+              <div className="text-[11px] text-zinc-400 px-3 mb-1 grid grid-cols-[2.25rem_minmax(0,1fr)_3.75rem_5.25rem] gap-3">
                 <div className="opacity-0 select-none">#</div>
                 <div className="text-left">Name</div>
                 <div className="text-center">EXP</div>
@@ -1234,7 +1234,7 @@ export default function InstagramTab() {
                   const prizeDisplay = prizeText ? prizeText : '-';
                   return (
                     <div key={e.rank} className="border-b border-zinc-800/70 last:border-b-0">
-                      <div className="px-3 py-2 grid grid-cols-[2.25rem_minmax(0,1fr)_5rem_6rem] gap-4 items-center">
+                      <div className="px-3 py-2 grid grid-cols-[2.25rem_minmax(0,1fr)_3.75rem_5.25rem] gap-3 items-center">
                         <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
                         <div className="flex items-center gap-2 w-full">
                           {PlatformIcon && <PlatformIcon className="w-4 h-4 text-zinc-300 shrink-0" aria-hidden="true" />}
