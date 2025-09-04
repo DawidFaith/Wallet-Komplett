@@ -539,9 +539,9 @@ export default function InstagramTab() {
           </div>
           
           {/* System Check */}
-          <div className="border-2 border-white rounded-2xl p-4 mb-6 bg-black bg-opacity-20">
+          <div className="bg-black/50 border border-pink-500/50 rounded-2xl p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
-              <div className="font-bold text-lg text-white">✅ System Check</div>
+              <div className="font-bold text-lg bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent">🔍 System Check</div>
         {!showLeaderboardModal && (
                 <button
                   type="button"
