@@ -1157,7 +1157,7 @@ export default function InstagramTab() {
         <button
           type="button"
           onClick={() => setShowLeaderboardModal(true)}
-      className="fixed top-4 right-4 z-40 w-10 h-10 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 transition flex items-center justify-center"
+      className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 transition flex items-center justify-center"
           aria-label="Leaderboard öffnen"
           title="Leaderboard öffnen"
         >
@@ -1192,10 +1192,11 @@ export default function InstagramTab() {
                 />
               </div>
               {/* Legende / Kopfzeile */}
-              <div className="text-[11px] text-zinc-400 px-1 mb-1 flex items-center justify-between">
-                <div className="flex-1 pl-12">Name</div>
-                <div className="w-24 text-center">EXP</div>
-                <div className="w-28 text-right pr-3">Preis/Symbol</div>
+              <div className="text-[11px] text-zinc-400 px-3 mb-1 grid grid-cols-[auto_1fr_6rem_8rem] gap-3">
+                <div className="opacity-0 select-none">#</div>
+                <div className="text-left">Name</div>
+                <div className="text-center">EXP</div>
+                <div className="text-right">Preis/Symbol</div>
               </div>
               <div className="bg-zinc-900/60 border border-zinc-700 rounded-lg max-h-[24rem] overflow-y-auto">
                 {lbLoading && (
@@ -1214,11 +1215,11 @@ export default function InstagramTab() {
                   const prizeText = prize ? (prize.value || prize.description || '') : '';
                   const prizeDisplay = prizeText ? prizeText : '-';
                   return (
-                    <div key={e.rank} className="px-4 py-2 border-b border-zinc-800/70 last:border-b-0 flex items-center gap-3">
+                    <div key={e.rank} className="px-3 py-2 border-b border-zinc-800/70 last:border-b-0 grid grid-cols-[auto_1fr_6rem_8rem] gap-3 items-center">
                       <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
-                      <span className="text-white truncate flex-1">{handle}</span>
-                      <span className="text-amber-300 text-sm font-mono w-24 text-center">{e.expTotal.toLocaleString()}</span>
-                      <span className="text-emerald-300 text-xs font-medium w-28 text-right truncate" title={prizeDisplay}>
+                      <span className="text-white truncate min-w-0">{handle}</span>
+                      <span className="text-amber-300 text-sm font-mono text-center">{e.expTotal.toLocaleString()}</span>
+                      <span className="text-emerald-300 text-xs font-medium text-right truncate" title={prizeDisplay}>
                         {prizeDisplay}
                       </span>
                     </div>
