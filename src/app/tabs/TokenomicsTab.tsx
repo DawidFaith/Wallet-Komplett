@@ -279,8 +279,8 @@ export default function TokenomicsTab() {
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto">
-      {/* Hero Section - D.FAITH Tokenomics mit Dawid Faith Holdings */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 border border-amber-500/20 p-8 mb-6">
+  {/* Hero Section – Willkommensbereich */}
+  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 border border-amber-500/20 p-8 mb-6">
         {/* Animated Waveform Background */}
         <div className="absolute inset-0 opacity-5">
           <svg className="w-full h-full" viewBox="0 0 1200 200" preserveAspectRatio="none">
@@ -319,88 +319,44 @@ export default function TokenomicsTab() {
         
         {/* Hero Content */}
         <div className="relative z-10">
-          {/* Header Section */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-4 mb-4">
               <img src="/D.FAITH.png" alt="D.FAITH Token" className="w-16 h-16 object-contain" />
               <div>
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
-                  D.FAITH Tokenomics Dashboard
+                  Willkommen im Musik‑Ökosystem von Dawid Faith
                 </h2>
-                <div className="flex items-center justify-center gap-2 text-sm text-amber-400 mt-2">
-                  <span>🎼</span>
-                  <span>Powered by Dawid Faith</span>
-                  <span>🎼</span>
-                </div>
+                <p className="text-amber-300 text-sm mt-2 max-w-2xl mx-auto">
+                  Fans werden am Erfolg beteiligt: Sammle EXP über Social Media, erhalte Belohnungen, stake Tokens und wachse mit dem Projekt.
+                </p>
               </div>
               <img src="/D.FAITH.png" alt="D.FAITH Token" className="w-16 h-16 object-contain" />
             </div>
-          </div>
-
-          {/* Dawid Faith Holdings Section */}
-          <div className="bg-amber-900/10 rounded-xl border border-amber-500/30 p-6 backdrop-blur-sm">
-            <div className="mb-6">
-              <h3 className="text-xl font-bold text-amber-400 flex items-center gap-3 mb-2">
-                👑 Dawid Faith Holdings
-              </h3>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm">
-                <span className="text-amber-300">Langfristiges Ziel: 75%</span>
-                <span className="text-zinc-400">Quartalsweise Käufe aus Musikeinnahmen</span>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Progress Section */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-amber-400 font-medium text-sm">Aktueller Besitz</span>
-                  <span className="text-white font-bold">{davidPercentage.toFixed(1)}% / 75%</span>
-                </div>
-                
-                {/* Clean Progress Bar */}
-                <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden">
-                  <div
-                    className="bg-gradient-to-r from-amber-400 to-amber-500 h-full transition-all duration-1000 rounded-full"
-                    style={{ width: `${(davidPercentage / targetPercentage) * 100}%` }}
-                  />
-                </div>
-                
-                <div className="flex justify-between text-xs">
-                  <span className="text-amber-300">{davidBalanceNum?.toLocaleString() || "0"} Token</span>
-                  <span className="text-zinc-400">Noch {(targetPercentage - davidPercentage).toFixed(1)}% bis zum Ziel</span>
-                </div>
-              </div>
-              
-              {/* Next Purchase Timer */}
-              <div className="space-y-3">
-                <div className="text-amber-400 font-medium text-sm">Nächster Kauf</div>
-                
-                <div className="bg-amber-500/10 rounded-lg p-4 border border-amber-500/20">
-                  <div className="text-white font-bold text-lg mb-1">
-                    Q{Math.ceil((new Date().getMonth() + 1) / 3)} {new Date().getFullYear()}
-                  </div>
-                  <div className="text-amber-300 text-sm mb-2">
-                    {(() => {
-                      const now = new Date();
-                      const currentQuarter = Math.ceil((now.getMonth() + 1) / 3);
-                      const nextQuarterMonth = currentQuarter * 3;
-                      const nextQuarterDate = new Date(now.getFullYear() + (nextQuarterMonth > 12 ? 1 : 0), (nextQuarterMonth - 1) % 12, 1);
-                      const daysUntil = Math.ceil((nextQuarterDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                      return `${daysUntil} Tage bis zum nächsten Quartal`;
-                    })()}
-                  </div>
-                  <div className="text-xs text-amber-400/80">
-                    Finanziert durch Musik-Royalties
-                  </div>
-                </div>
-              </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
+              <a
+                href="https://example.com/whitepaper"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-200 hover:bg-amber-500/30 transition"
+              >
+                📄 Whitepaper lesen
+              </a>
+              <a href="#live-price" className="px-4 py-2 rounded-lg bg-zinc-800/60 border border-zinc-700 text-white hover:bg-zinc-800 transition">
+                📈 Zum Live‑Preis‑Chart
+              </a>
+              <a href="#token-distribution" className="px-4 py-2 rounded-lg bg-zinc-800/60 border border-zinc-700 text-white hover:bg-zinc-800 transition">
+                🎯 Zur Token‑Verteilung
+              </a>
+              <a href="#leaderboard" className="px-4 py-2 rounded-lg bg-zinc-800/60 border border-zinc-700 text-white hover:bg-zinc-800 transition">
+                🏆 Zum Leaderboard
+              </a>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Token Distribution Visualization - ZUERST */}
-      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+  {/* Token Distribution Visualization */}
+  <div id="token-distribution" className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
         <h3 className="text-xl font-bold text-white mb-6 flex items-center justify-center gap-2">
           🎯 Token-Verteilung Live Dashboard
         </h3>
@@ -551,8 +507,8 @@ export default function TokenomicsTab() {
         </div>
       </div>
 
-      {/* Live-Preis-Chart */}
-      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+  {/* Live-Preis-Chart */}
+  <div id="live-price" className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
         <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
           📈 Live-Preis-Chart
         </h3>
@@ -592,8 +548,8 @@ export default function TokenomicsTab() {
         </div>
       </div>
 
-      {/* Leaderboard Section */}
-      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
+  {/* Leaderboard Section */}
+  <div id="leaderboard" className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
             <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
