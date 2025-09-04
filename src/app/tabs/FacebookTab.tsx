@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FaInstagram, FaFacebookF } from 'react-icons/fa';
+import { FaInstagram, FaFacebookF, FaInfoCircle } from 'react-icons/fa';
 import { FaTiktok } from 'react-icons/fa6';
 import { useRouter } from 'next/navigation';
 import { validateBaseAddress, validateBaseAddressRealTime } from '../utils/walletValidation';
@@ -441,9 +441,11 @@ export default function FacebookTab() {
               
               <button 
                 onClick={() => setShowInfoModal(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200"
+                className="bg-blue-500 hover:bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200"
+                aria-label="Deine EXP-Quellen"
+                title="Deine EXP-Quellen"
               >
-                i
+                <FaInfoCircle className="w-3.5 h-3.5 text-white animate-bounce" />
               </button>
             </div>
             

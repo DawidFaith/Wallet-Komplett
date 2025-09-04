@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { FaInfoCircle } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { useActiveAccount } from 'thirdweb/react';
 
@@ -589,9 +590,11 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
               
               <button 
                 onClick={() => setShowInfoModal(true)}
-                className="bg-pink-500 hover:bg-pink-600 text-white w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200"
+                className="bg-pink-500 hover:bg-pink-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200"
+                aria-label="Deine EXP-Quellen"
+                title="Deine EXP-Quellen"
               >
-                i
+                <FaInfoCircle className="w-3.5 h-3.5 text-white animate-bounce" />
               </button>
             </div>
             

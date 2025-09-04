@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { validateBaseAddress, validateBaseAddressRealTime } from '../utils/walletValidation';
 import { useActiveAccount } from 'thirdweb/react';
-import { FaInstagram, FaFacebookF } from 'react-icons/fa';
+import { FaInstagram, FaFacebookF, FaInfoCircle } from 'react-icons/fa';
 import { FaTiktok } from 'react-icons/fa6';
 
 interface UserData {
@@ -503,9 +503,11 @@ export default function InstagramTab() {
               
               <button 
                 onClick={(e) => { e.stopPropagation(); setShowInfoModal(true); }}
-                className="bg-pink-500 hover:bg-pink-600 text-white w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200"
+                className="bg-pink-500 hover:bg-pink-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200 group"
+                aria-label="Deine EXP-Quellen"
+                title="Deine EXP-Quellen"
               >
-                i
+                <FaInfoCircle className="w-3.5 h-3.5 text-white animate-bounce" />
               </button>
             </div>
             
