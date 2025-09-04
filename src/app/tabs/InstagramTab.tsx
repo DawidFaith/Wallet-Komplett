@@ -542,7 +542,7 @@ export default function InstagramTab() {
           <div className="border-2 border-white rounded-2xl p-4 mb-6 bg-black bg-opacity-20">
             <div className="flex items-center justify-between mb-3">
               <div className="font-bold text-lg text-white">✅ System Check</div>
-              {!showLeaderboardModal && (
+        {!showLeaderboardModal && (
                 <button
                   type="button"
                   onClick={() => setShowLeaderboardModal(true)}
@@ -551,7 +551,7 @@ export default function InstagramTab() {
                   title="Leaderboard öffnen"
                 >
                   <span className="absolute -inset-1 rounded-full bg-yellow-400/20 blur-sm opacity-60 group-hover:opacity-80 transition pointer-events-none"></span>
-                  🏆
+          <span className="inline-block animate-bounce">🏆</span>
                 </button>
               )}
             </div>
@@ -1200,13 +1200,13 @@ export default function InstagramTab() {
                 />
               </div>
               {/* Legende / Kopfzeile */}
-              <div className="text-[11px] text-zinc-400 px-3 mb-1 grid grid-cols-[auto_1fr_6rem_8rem] gap-4">
+              <div className="text-[11px] text-zinc-400 px-3 mb-1 grid grid-cols-[auto_1fr_4rem_5.5rem] gap-4">
                 <div className="opacity-0 select-none">#</div>
                 <div className="text-left">Name</div>
                 <div className="text-center">EXP</div>
-                <div className="text-right">Preis/Symbol</div>
+                <div className="text-right">Preis</div>
               </div>
-              <div className="bg-zinc-900/60 border border-zinc-700 rounded-lg max-h-[24rem] overflow-y-auto">
+              <div className="bg-zinc-900/60 border border-zinc-700 rounded-lg max-h-[24rem] overflow-y-auto overflow-x-hidden">
                 {lbLoading && (
                   <div className="px-4 py-3 text-zinc-400 text-sm">Lade Leaderboard…</div>
                 )}
@@ -1234,7 +1234,7 @@ export default function InstagramTab() {
                   const prizeDisplay = prizeText ? prizeText : '-';
                   return (
                     <div key={e.rank} className="border-b border-zinc-800/70 last:border-b-0">
-                      <div className="px-3 py-2 grid grid-cols-[auto_1fr_6rem_8rem] gap-4 items-center">
+                      <div className="px-3 py-2 grid grid-cols-[auto_1fr_4rem_5.5rem] gap-4 items-center">
                         <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
                         <div className="flex items-center gap-2 w-full">
                           {PlatformIcon && <PlatformIcon className="w-4 h-4 text-zinc-300 shrink-0" aria-hidden="true" />}
@@ -1252,7 +1252,7 @@ export default function InstagramTab() {
                           )}
                         </div>
                         <span className="text-amber-300 text-sm font-mono text-center">{e.expTotal.toLocaleString()}</span>
-                        <span className="text-emerald-300 text-xs font-medium text-right truncate" title={prizeDisplay}>
+                        <span className="text-emerald-300 text-xs font-medium text-right truncate max-w-full" title={prizeDisplay}>
                           {prizeDisplay}
                         </span>
                       </div>
