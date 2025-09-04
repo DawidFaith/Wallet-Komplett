@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { validateBaseAddress, validateBaseAddressRealTime } from '../utils/walletValidation';
 import { useActiveAccount } from 'thirdweb/react';
+import { FaInstagram, FaFacebookF } from 'react-icons/fa';
+import { FaTiktok } from 'react-icons/fa6';
 
 interface UserData {
   username: string;
@@ -1217,8 +1219,16 @@ export default function InstagramTab() {
                   const q = lbSearch.toLowerCase();
                   return names.some(n => n.toLowerCase().includes(q));
                 }).map((e) => {
-                  const names = [e.instagram, e.tiktok, e.facebook, e.name, e.handle].filter(Boolean) as string[];
-                  const primary = e.instagram || e.tiktok || e.facebook || e.name || e.handle || '-';
+                  const namesDetailed = [
+                    e.instagram ? { label: e.instagram as string, platform: 'instagram' } : null,
+                    e.tiktok ? { label: e.tiktok as string, platform: 'tiktok' } : null,
+                    e.facebook ? { label: e.facebook as string, platform: 'facebook' } : null,
+                    e.name ? { label: e.name as string, platform: 'generic' } : null,
+                    e.handle ? { label: e.handle as string, platform: 'generic' } : null,
+                  ].filter(Boolean) as { label: string; platform: 'instagram' | 'tiktok' | 'facebook' | 'generic' }[];
+                  const primary = (e.instagram || e.tiktok || e.facebook || e.name || e.handle || '-') as string;
+                  const primaryPlatform: 'instagram' | 'tiktok' | 'facebook' | 'generic' = e.instagram ? 'instagram' : e.tiktok ? 'tiktok' : e.facebook ? 'facebook' : 'generic';
+                  const PlatformIcon = primaryPlatform === 'instagram' ? FaInstagram : primaryPlatform === 'tiktok' ? FaTiktok : primaryPlatform === 'facebook' ? FaFacebookF : null;
                   const prize = (lbData?.prizes || []).find(p => p.position === e.rank);
                   const prizeText = prize ? (prize.value || prize.description || '') : '';
                   const prizeDisplay = prizeText ? prizeText : '-';
@@ -1227,8 +1237,9 @@ export default function InstagramTab() {
                       <div className="px-3 py-2 grid grid-cols-[auto_1fr_6rem_8rem] gap-4 items-center">
                         <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
                         <div className="flex items-center gap-2 w-full">
+                          {PlatformIcon && <PlatformIcon className="w-4 h-4 text-zinc-300 shrink-0" aria-hidden="true" />}
                           <span className="text-white whitespace-nowrap overflow-x-auto w-full">{primary}</span>
-                          {names.length > 1 && (
+                          {namesDetailed.length > 1 && (
                             <button
                               type="button"
                               onClick={() => setLbOpenRow(lbOpenRow === e.rank ? null : e.rank)}
@@ -1245,13 +1256,17 @@ export default function InstagramTab() {
                           {prizeDisplay}
                         </span>
                       </div>
-                      {lbOpenRow === e.rank && names.length > 1 && (
+                      {lbOpenRow === e.rank && namesDetailed.length > 1 && (
                         <div className="pl-12 pr-3 pb-2 flex flex-col gap-1 items-start">
-                          {names.map((n, idx) => (
-                            <div key={idx} className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-200 text-[11px] w-full text-left whitespace-normal break-words">
-                              {n}
-                            </div>
-                          ))}
+                          {namesDetailed.map((n, idx) => {
+                            const ChipIcon = n.platform === 'instagram' ? FaInstagram : n.platform === 'tiktok' ? FaTiktok : n.platform === 'facebook' ? FaFacebookF : null;
+                            return (
+                              <div key={idx} className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-200 text-[11px] w-full text-left whitespace-normal break-words flex items-center gap-2">
+                                {ChipIcon && <ChipIcon className="w-3.5 h-3.5 text-zinc-300" aria-hidden="true" />}
+                                <span className="break-words">{n.label}</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
