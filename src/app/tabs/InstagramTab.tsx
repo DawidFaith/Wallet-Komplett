@@ -544,10 +544,11 @@ export default function InstagramTab() {
                 <button
                   type="button"
                   onClick={() => setShowLeaderboardModal(true)}
-                  className="w-8 h-8 rounded-full bg-yellow-400 text-black shadow hover:bg-yellow-300 active:scale-95 transition flex items-center justify-center"
+                  className="relative group w-8 h-8 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 hover:scale-105 transition cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 hover:ring-4 hover:ring-yellow-200/60 hover:shadow-yellow-300/60"
                   aria-label="Leaderboard öffnen"
                   title="Leaderboard öffnen"
                 >
+                  <span className="absolute -inset-1 rounded-full bg-yellow-400/20 blur-sm opacity-60 group-hover:opacity-80 transition pointer-events-none"></span>
                   🏆
                 </button>
               )}
