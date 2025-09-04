@@ -165,7 +165,7 @@ export default function LiveTab() {
                   />
                 </div>
                 
-                <Button
+        <Button
                   type="submit"
                   disabled={loading || !account?.address}
                   className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
@@ -181,7 +181,7 @@ export default function LiveTab() {
                       Wallet verbinden erforderlich
                     </div>
                   ) : (
-                    '🎫 Code einlösen (+80 Live EXP)'
+          '🎫 Code einlösen (+150 Live EXP)'
                   )}
                 </Button>
               </form>
@@ -197,7 +197,7 @@ export default function LiveTab() {
                     <div className="text-center">
                       <p className="text-lg font-bold">🎉 Erfolgreich!</p>
                       <p className="text-xl font-bold text-green-300 mt-2">
-                        +80 Live EXP wurde deinem Konto gutgeschrieben! 🎵
+                        +150 Live EXP wurde deinem Konto gutgeschrieben! 🎵
                       </p>
                       <div className="mt-4 p-3 bg-blue-900/30 border border-blue-500/50 rounded text-blue-200 text-sm">
                         <p className="font-semibold">ℹ️ Hinweis:</p>
