@@ -1,6 +1,22 @@
 import { useState, useEffect } from "react";
 import { FaInstagram, FaFacebookF } from "react-icons/fa";
-import { FaTiktok } from "react-icons/fa6";
+im        // D.FAITH Balance API
+        if (davidRes.ok) {
+          const davidData = await davidRes.json();
+          console.log("✅ D.FAITH Balance API Response:", davidData);
+          setDavidBalance(davidData);
+          
+          // Debug: Token Verteilung
+          const davidTokens = parseFloat(davidData?.balanceRaw || "0");
+          console.log("🔍 Token Distribution Debug:", {
+            totalSupply: metricsData?.supply?.total || 0,
+            davidBalance: davidTokens,
+            poolTokens: metricsData?.balances?.tokenInPool || 0,
+            percentage: metricsData?.supply?.total > 0 ? ((davidTokens / metricsData?.supply?.total) * 100).toFixed(2) + "%" : "0%"
+          });
+        } else {
+          console.log("❌ D.FAITH API failed or not ok");
+        }aTiktok } from "react-icons/fa6";
 import { createThirdwebClient, getContract, readContract } from "thirdweb";
 import { base } from "thirdweb/chains";
 import { motion, AnimatePresence } from "framer-motion";
@@ -74,10 +90,11 @@ export default function TokenomicsTab() {
   const [davidBalance, setDavidBalance] = useState<WalletBalance | null>(null);
   const [dinvestBalance, setDinvestBalance] = useState<any | null>(null);
 
-  // Leaderboard Modal State
+  // Leaderboard Modal State und aktive Fans
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [lbData, setLbData] = useState<LeaderboardResponse | null>(null);
   const [lbLoading, setLbLoading] = useState(false);
+  const [activeFansData, setActiveFansData] = useState<LeaderboardResponse | null>(null);
 
   // Daten von APIs abrufen
   useEffect(() => {
@@ -86,20 +103,21 @@ export default function TokenomicsTab() {
       console.log("🔄 Fetching tokenomics data...");
       
       try {
-        // Parallele API-Aufrufe - verwende lokalen Proxy für Metrics
-        const [metricsRes, davidRes, dinvestRes] = await Promise.all([
+        // Parallele API-Aufrufe
+        const [metricsRes, davidRes, dinvestRes, leaderboardRes] = await Promise.all([
           fetch('/api/metrics-proxy', { cache: 'no-store' }),
           fetch('/api/dfaith-balance', { cache: 'no-store' }),
-          fetch('/api/dinvest-balance', { cache: 'no-store' })
+          fetch('/api/dinvest-balance', { cache: 'no-store' }),
+          fetch('/api/leaderboard-proxy', { cache: 'no-store' })
         ]);
 
-        // Metrics API (lokaler Proxy)
+        // Metrics API
         if (metricsRes.ok) {
           const metricsData = await metricsRes.json();
           console.log("✅ Metrics API Response:", metricsData);
           setTokenMetrics(metricsData);
         } else {
-          console.log("❌ Metrics API failed or not ok");
+          console.log("❌ Metrics API failed");
         }
 
         // D.FAITH Balance API
@@ -107,18 +125,8 @@ export default function TokenomicsTab() {
           const davidData = await davidRes.json();
           console.log("✅ D.FAITH Balance API Response:", davidData);
           setDavidBalance(davidData);
-          
-          // Debug: Token Verteilung
-          const davidTokens = parseFloat(davidData?.balanceRaw || "0");
-          const metricsData = await metricsRes.json().catch(() => null);
-          console.log("🔍 Token Distribution Debug:", {
-            totalSupply: metricsData?.supply?.total || 0,
-            davidBalance: davidTokens,
-            poolTokens: metricsData?.balances?.tokenInPool || 0,
-            percentage: metricsData?.supply?.total > 0 ? ((davidTokens / metricsData?.supply?.total) * 100).toFixed(2) + "%" : "0%"
-          });
         } else {
-          console.log("❌ D.FAITH API failed or not ok");
+          console.log("❌ D.FAITH API failed");
         }
 
         // D.INVEST Balance API  
@@ -127,7 +135,19 @@ export default function TokenomicsTab() {
           console.log("✅ D.INVEST Balance API Response:", dinvestData);
           setDinvestBalance(dinvestData);
         } else {
-          console.log("❌ D.INVEST API failed or not ok");
+          console.log("❌ D.INVEST API failed");
+        }
+
+        // Leaderboard für aktive Fans
+        if (leaderboardRes.ok) {
+          const leaderboardData = await leaderboardRes.json();
+          console.log("✅ Leaderboard API Response:", leaderboardData);
+          const data: LeaderboardResponse = (leaderboardData?.entries || leaderboardData?.prizes || leaderboardData?.timer) 
+            ? leaderboardData 
+            : (leaderboardData?.data || { entries: [], prizes: [] });
+          setActiveFansData(data);
+        } else {
+          console.log("❌ Leaderboard API failed");
         }
 
         // Smart Contract Daten abrufen
@@ -193,19 +213,12 @@ export default function TokenomicsTab() {
         } catch (lbError) {
           console.log("❌ Leaderboard loading failed:", lbError);
         }
-
-        console.log("✅ Smart Contract Data:", {
-          totalStaked: Number(totalStakedResult),
-          contractBalance: Number(contractBalanceResult) / Math.pow(10, DFAITH_DECIMALS),
-          currentStage: Number(currentStageResult),
-          totalRewards: Number(totalRewardsResult) / Math.pow(10, DFAITH_DECIMALS)
-        });
+        setTotalRewardsDistributed(Number(totalRewardsResult) / Math.pow(10, DFAITH_DECIMALS));
 
       } catch (error) {
         console.error("❌ Error fetching data:", error);
       } finally {
         setLoading(false);
-        console.log("🏁 Loading complete");
       }
     };
 
@@ -214,7 +227,7 @@ export default function TokenomicsTab() {
     return () => clearInterval(interval);
   }, []);
 
-  // Load leaderboard when modal opens (and refresh every 30s while open)
+  // Load leaderboard when modal opens
   useEffect(() => {
     if (!showLeaderboardModal) return;
     let mounted = true;
@@ -414,7 +427,7 @@ export default function TokenomicsTab() {
         </div>
       </motion.div>
 
-      {/* Live Market Data Grid - Mobile First */}
+      {/* Live Market Data Grid */}
       <motion.div variants={itemVariants}>
         <div className="text-center mb-4 md:mb-8">
           <motion.h2 
@@ -429,12 +442,13 @@ export default function TokenomicsTab() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            Tippe auf die Karten für Details
+            Echte Daten aus APIs - Tippe für Details
           </motion.p>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {/* Market Cap - Interaktiv */}
+        {/* Responsive Grid für Live Market Data */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
+          {/* Market Cap */}
           <motion.div 
             className="bg-gradient-to-br from-green-900/30 to-green-800/20 rounded-xl md:rounded-2xl border border-green-500/40 p-4 md:p-6 backdrop-blur-sm cursor-pointer"
             whileHover={{ scale: 1.03, y: -5 }}
@@ -473,7 +487,7 @@ export default function TokenomicsTab() {
             </div>
           </motion.div>
 
-          {/* Token Preis - Interaktiv */}
+          {/* Token Preis */}
           <motion.div 
             className="bg-gradient-to-br from-amber-900/30 to-amber-800/20 rounded-xl md:rounded-2xl border border-amber-500/40 p-4 md:p-6 backdrop-blur-sm cursor-pointer"
             whileHover={{ scale: 1.03, y: -5 }}
@@ -502,7 +516,7 @@ export default function TokenomicsTab() {
             </div>
           </motion.div>
 
-          {/* Aktive Fans - Aus Leaderboard */}
+          {/* Aktive Fans - Aus Leaderboard API */}
           <motion.div 
             className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 rounded-xl md:rounded-2xl border border-blue-500/40 p-4 md:p-6 backdrop-blur-sm cursor-pointer"
             whileHover={{ scale: 1.03, y: -5 }}
@@ -526,20 +540,21 @@ export default function TokenomicsTab() {
             <div className="text-white">
               <motion.div 
                 className="text-lg md:text-3xl font-bold mb-1 md:mb-2"
+                key={activeFansCount}
                 initial={{ scale: 1.1 }}
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                {activeFansCount}
+                {activeFansCount.toLocaleString()}
               </motion.div>
               <div className="text-blue-300 text-sm md:text-lg font-semibold">Aktive Fans</div>
               <div className="text-blue-400/80 text-xs md:text-sm mt-1 md:mt-2">
-                Im Leaderboard
+                aus Leaderboard API
               </div>
             </div>
           </motion.div>
 
-          {/* Community Supply */}
+          {/* Community Tokens */}
           <motion.div 
             className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 rounded-xl md:rounded-2xl border border-purple-500/40 p-4 md:p-6 backdrop-blur-sm cursor-pointer"
             whileHover={{ scale: 1.03, y: -5 }}
@@ -563,6 +578,7 @@ export default function TokenomicsTab() {
             <div className="text-white">
               <motion.div 
                 className="text-lg md:text-3xl font-bold mb-1 md:mb-2"
+                key={circulatingSupply}
                 initial={{ scale: 1.1 }}
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.3 }}
@@ -587,7 +603,7 @@ export default function TokenomicsTab() {
           className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 text-center"
           whileHover={{ scale: 1.02 }}
         >
-          🎯 Token Verteilung
+          🎯 Token Verteilung (Live API Daten)
         </motion.h3>
         
         <div className="flex flex-col lg:flex-row items-center gap-6 md:gap-8">
@@ -657,7 +673,7 @@ export default function TokenomicsTab() {
                     animate={{ opacity: [0.7, 1, 0.7] }}
                     transition={{ duration: 2, repeat: Infinity, delay: index * 0.2 }}
                   >
-                    {item.percentage.toFixed(0)}%
+                    {item.tokens?.toLocaleString() || 0}
                   </motion.div>
                 </motion.div>
               ))}
@@ -666,7 +682,7 @@ export default function TokenomicsTab() {
         </div>
       </motion.div>
 
-      {/* Top Community Members aus Leaderboard */}
+      {/* Top Community Members - Mit echten Leaderboard-Daten */}
       <motion.div 
         className="bg-gradient-to-br from-zinc-900/50 to-zinc-800/30 rounded-xl md:rounded-2xl border border-amber-500/30 p-4 md:p-8 backdrop-blur-sm"
         variants={itemVariants}
@@ -676,7 +692,7 @@ export default function TokenomicsTab() {
             className="text-xl md:text-2xl font-bold text-white text-center sm:text-left"
             whileHover={{ scale: 1.02 }}
           >
-            🏆 Top Community Members
+            🏆 Top Community Members (Live API)
           </motion.h3>
           <motion.button
             onClick={() => setShowLeaderboardModal(true)}
@@ -717,17 +733,23 @@ export default function TokenomicsTab() {
                 {holder.address}
               </div>
               <div className="text-amber-300 text-xs md:text-sm font-bold">
-                {holder.balance.toLocaleString()} Punkte
+                {holder.balance.toLocaleString()} Points
               </div>
               <div className="text-amber-400/70 text-xs mt-1">
-                Rang #{holder.rank}
+                Rank #{holder.rank}
               </div>
             </motion.div>
           ))}
         </div>
+        
+        {activeFansCount === 0 && (
+          <div className="text-center text-zinc-400 py-4 text-sm">
+            Lade Leaderboard-Daten...
+          </div>
+        )}
       </motion.div>
 
-      {/* Leaderboard Modal */}
+      {/* Leaderboard Modal - Mit echten API-Daten */}
       <AnimatePresence>
         {showLeaderboardModal && (
           <motion.div
@@ -750,8 +772,8 @@ export default function TokenomicsTab() {
                   <div className="flex items-center gap-3">
                     <Trophy className="w-6 h-6 text-amber-500" />
                     <div>
-                      <h3 className="text-xl md:text-2xl font-bold text-white">Community Leaderboard</h3>
-                      <p className="text-zinc-400 text-sm">Top D.FAITH Community Members</p>
+                      <h3 className="text-xl md:text-2xl font-bold text-white">Top Community Members</h3>
+                      <p className="text-zinc-400 text-sm">Live Leaderboard API Daten</p>
                     </div>
                   </div>
                   <button
@@ -763,7 +785,7 @@ export default function TokenomicsTab() {
                 </div>
               </div>
 
-              {/* Modal Content */}
+              {/* Modal Content - Mit echten Leaderboard-Daten */}
               <div className="p-4 md:p-6 max-h-[70vh] overflow-y-auto">
                 {lbLoading ? (
                   <div className="text-center py-8">
@@ -772,23 +794,24 @@ export default function TokenomicsTab() {
                   </div>
                 ) : lbData?.entries && lbData.entries.length > 0 ? (
                   <div className="space-y-4">
-                    {lbData.entries.slice(0, 50).map((entry, index) => (
+                    {lbData.entries.slice(0, 20).map((entry, index) => (
                       <motion.div
                         key={entry.userId || index}
                         className="flex items-center gap-4 p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
+                        whileHover={{ scale: 1.02 }}
                       >
-                        <div className="text-xl font-bold text-amber-400 min-w-12 text-center">
-                          #{entry.rank || index + 1}
+                        <div className="text-2xl">
+                          {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `#${index + 1}`}
                         </div>
                         <div className="flex-1">
-                          <div className="text-white font-bold">{entry.username || "Anonymous User"}</div>
-                          <div className="text-zinc-400 text-sm">{entry.points?.toLocaleString() || 0} Punkte</div>
+                          <div className="text-white font-bold">{entry.username || `Fan ${index + 1}`}</div>
+                          <div className="text-zinc-400 text-sm">{entry.points?.toLocaleString() || 0} Points</div>
                         </div>
-                        <div className="text-2xl">
-                          {index === 0 ? "👑" : index < 3 ? "⭐" : "🎵"}
+                        <div className="text-amber-400 font-bold">
+                          Rank {entry.rank || index + 1}
                         </div>
                       </motion.div>
                     ))}
@@ -796,7 +819,7 @@ export default function TokenomicsTab() {
                 ) : (
                   <div className="text-center py-8">
                     <div className="text-zinc-400">Keine Leaderboard-Daten verfügbar</div>
-                    <p className="text-zinc-500 text-sm mt-2">Werde Teil der Community und sammle Punkte!</p>
+                    <div className="text-zinc-500 text-sm mt-2">API lädt Daten...</div>
                   </div>
                 )}
               </div>
