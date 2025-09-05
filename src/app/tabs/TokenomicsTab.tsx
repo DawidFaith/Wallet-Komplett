@@ -299,100 +299,64 @@ export default function TokenomicsTab() {
     }
   ].filter(item => item.value > 0);
 
-  // Animation Variants
+  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
+        staggerChildren: 0.2
       }
     }
   };
 
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { opacity: 0, y: 20 },
     visible: {
-      y: 0,
       opacity: 1,
-      transition: {
-        duration: 0.5
-      }
+      y: 0,
+      transition: { duration: 0.5 }
     }
   };
 
   return (
     <motion.div 
-      className="flex flex-col gap-6 p-3 md:p-6 max-w-7xl mx-auto"
+      className="space-y-6 md:space-y-8 p-4 md:p-6 max-w-7xl mx-auto"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      {/* Mobile-optimierter Hero Section */}
+      {/* Hero Section mit Live-Daten */}
       <motion.div 
-        className="relative overflow-hidden rounded-xl md:rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 border border-amber-500/20 p-4 md:p-8"
+        className="text-center bg-gradient-to-br from-green-900/20 to-blue-900/20 rounded-xl md:rounded-2xl border border-green-500/30 p-6 md:p-12 backdrop-blur-sm"
         variants={itemVariants}
       >
-        {/* Animated Background */}
-        <div className="absolute inset-0 opacity-10">
-          <svg className="w-full h-full" viewBox="0 0 1200 200" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#f59e0b" />
-                <stop offset="50%" stopColor="#eab308" />
-                <stop offset="100%" stopColor="#f59e0b" />
-              </linearGradient>
-            </defs>
-            <motion.path 
-              d="M0,100 Q150,50 300,100 T600,100 T900,100 T1200,100" 
-              stroke="url(#waveGradient)" 
-              strokeWidth="3" 
-              fill="none"
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 3, repeat: Infinity, repeatType: "reverse" }}
-            />
-          </svg>
-        </div>
+        <motion.h1 
+          className="text-3xl md:text-5xl lg:text-7xl font-bold text-white mb-4 md:mb-6"
+          whileHover={{ scale: 1.02 }}
+        >
+          💎 D.FAITH Tokenomics
+        </motion.h1>
         
-        <div className="relative z-10 text-center">
+        <motion.p 
+          className="text-lg md:text-xl text-zinc-300 mb-6 md:mb-8 max-w-3xl mx-auto"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          Entdecke die Wirtschaft hinter dem Creator-Token und sieh dir Live-Daten zur Token-Verteilung an
+        </motion.p>
+        
+        <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center">
           <motion.div 
-            className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 mb-4 md:mb-6"
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
+            className="flex flex-col sm:flex-row gap-4 md:gap-6 w-full sm:w-auto"
+            variants={itemVariants}
           >
-            <motion.img 
-              src="/D.FAITH.png" 
-              alt="D.FAITH Token" 
-              className="w-16 h-16 md:w-24 md:h-24 object-contain"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            />
-            <div>
-              <h1 className="text-2xl md:text-5xl font-bold bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent mb-2 md:mb-3">
-                D.FAITH Ecosystem
-              </h1>
-              <p className="text-amber-300 text-sm md:text-xl max-w-2xl px-2">
-                Das innovative Musik-Token, das Fans und Künstler zusammenbringt
-              </p>
-            </div>
-          </motion.div>
-          
-          {/* Mobile-optimierte Call-to-Action */}
-          <motion.div 
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4 mt-6 md:mt-8 px-2"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            <motion.a
-              href="https://docs.google.com/document/d/1YourWhitepaperLink"
-              target="_blank"
+            <motion.a 
+              href="/Dawid_Faith_Whitepaper.pdf" 
+              target="_blank" 
               rel="noopener noreferrer"
-              className="group flex items-center gap-2 md:gap-3 px-4 md:px-8 py-3 md:py-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm md:text-lg transition-all duration-300 shadow-xl hover:shadow-amber-500/30 w-full sm:w-auto"
+              className="flex items-center gap-2 md:gap-3 px-4 md:px-8 py-3 md:py-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-sm md:text-lg transition-all duration-300 border border-zinc-600 shadow-xl w-full sm:w-auto"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -530,6 +494,13 @@ export default function TokenomicsTab() {
               >
                 <Target className="w-6 h-6 md:w-10 md:h-10 text-amber-400" />
               </motion.div>
+              <motion.div 
+                className="px-2 py-1 md:px-3 md:py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs md:text-sm font-bold"
+                animate={{ opacity: [1, 0.5, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                LIVE
+              </motion.div>
             </div>
             <div className="text-white">
               <motion.div 
@@ -546,11 +517,12 @@ export default function TokenomicsTab() {
             </div>
           </motion.div>
 
-          {/* Aktive Fans - Aus Leaderboard */}
+          {/* Aktive Fans - Mit Leaderboard verbunden */}
           <motion.div 
             className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 rounded-xl md:rounded-2xl border border-blue-500/40 p-4 md:p-6 backdrop-blur-sm cursor-pointer"
             whileHover={{ scale: 1.03, y: -5 }}
             whileTap={{ scale: 0.98 }}
+            onClick={() => setShowLeaderboardModal(true)}
           >
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <motion.div
@@ -578,7 +550,7 @@ export default function TokenomicsTab() {
               </motion.div>
               <div className="text-blue-300 text-sm md:text-lg font-semibold">Aktive Fans</div>
               <div className="text-blue-400/80 text-xs md:text-sm mt-1 md:mt-2">
-                Im Leaderboard
+                Klick für Leaderboard
               </div>
             </div>
           </motion.div>
@@ -622,7 +594,7 @@ export default function TokenomicsTab() {
         </div>
       </motion.div>
 
-      {/* Mobile-optimierte Token Distribution Chart */}
+      {/* Token Distribution Chart */}
       <motion.div 
         className="bg-gradient-to-br from-zinc-900/50 to-zinc-800/30 rounded-xl md:rounded-2xl border border-amber-500/30 p-4 md:p-8 backdrop-blur-sm"
         variants={itemVariants}
@@ -635,7 +607,7 @@ export default function TokenomicsTab() {
         </motion.h3>
         
         <div className="flex flex-col lg:flex-row items-center gap-6 md:gap-8">
-          {/* Chart - Mobile angepasst */}
+          {/* Chart */}
           <div className="w-full max-w-md md:max-w-lg mx-auto lg:mx-0">
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
@@ -653,65 +625,45 @@ export default function TokenomicsTab() {
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1f2937', 
-                    border: '1px solid #f59e0b',
-                    borderRadius: '0.75rem',
-                    color: '#ffffff',
-                    fontSize: '0.875rem',
-                    padding: '12px'
+                  content={({ active, payload }) => {
+                    if (active && payload && payload[0]) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 shadow-lg">
+                          <p className="text-white font-semibold">{data.name}</p>
+                          <p className="text-zinc-300 text-sm">{data.description}</p>
+                          <p className="text-white">{data.tokens.toLocaleString()} Tokens</p>
+                          <p className="text-zinc-400 text-sm">{data.percentage.toFixed(2)}%</p>
+                        </div>
+                      );
+                    }
+                    return null;
                   }}
-                  formatter={(value: any, name: any, props: any) => {
-                    const entry = props.payload;
-                    return [
-                      <div key="tooltip" className="space-y-1">
-                        <div className="font-semibold">{entry.name}</div>
-                        <div className="text-sm">{entry.tokens.toLocaleString()} Tokens</div>
-                        <div className="text-xs opacity-80">{entry.description}</div>
-                        <div className="font-bold text-amber-400">{entry.percentage.toFixed(2)}%</div>
-                      </div>
-                    ];
-                  }}
-                  labelFormatter={() => "Token Verteilung"}
                 />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          
-          {/* Mobile-optimierte Legend */}
-          <div className="w-full lg:w-auto">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 md:gap-4">
+
+          {/* Legend */}
+          <div className="flex-1 w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               {pieChartData.map((item, index) => (
                 <motion.div 
                   key={index}
-                  className="flex items-center gap-3 p-3 md:p-4 rounded-xl bg-gradient-to-r from-zinc-800/50 to-zinc-700/30 border border-zinc-600/30 cursor-pointer"
-                  whileHover={{ scale: 1.02, x: 5 }}
-                  whileTap={{ scale: 0.98 }}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-zinc-900/50 border border-zinc-700/50"
+                  whileHover={{ scale: 1.02 }}
                 >
-                  <motion.div 
-                    className="w-4 h-4 md:w-5 md:h-5 rounded-full flex-shrink-0"
+                  <div 
+                    className="w-4 h-4 rounded-full flex-shrink-0"
                     style={{ backgroundColor: item.color }}
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 2, repeat: Infinity, delay: index * 0.3 }}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="text-white font-semibold text-sm md:text-base truncate">{item.name}</div>
-                    <div className="text-zinc-400 text-xs md:text-sm">
-                      {item.tokens.toLocaleString()} Tokens ({item.percentage.toFixed(1)}%)
+                    <div className="text-white font-semibold text-sm truncate">{item.name}</div>
+                    <div className="text-zinc-400 text-xs">{item.description}</div>
+                    <div className="text-white text-sm">
+                      {item.tokens.toLocaleString()} ({item.percentage.toFixed(1)}%)
                     </div>
-                    <div className="text-zinc-500 text-xs mt-1">{item.description}</div>
                   </div>
-                  <motion.div 
-                    className="text-lg md:text-xl font-bold"
-                    style={{ color: item.color }}
-                    animate={{ opacity: [0.7, 1, 0.7] }}
-                    transition={{ duration: 2, repeat: Infinity, delay: index * 0.2 }}
-                  >
-                    {item.percentage.toFixed(0)}%
-                  </motion.div>
                 </motion.div>
               ))}
             </div>
@@ -719,177 +671,138 @@ export default function TokenomicsTab() {
         </div>
       </motion.div>
 
-      {/* Top Community Members aus Leaderboard */}
-      <motion.div 
-        className="bg-gradient-to-br from-zinc-900/50 to-zinc-800/30 rounded-xl md:rounded-2xl border border-amber-500/30 p-4 md:p-8 backdrop-blur-sm"
-        variants={itemVariants}
-      >
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4 md:mb-6">
-          <motion.h3 
-            className="text-xl md:text-2xl font-bold text-white text-center sm:text-left"
-            whileHover={{ scale: 1.02 }}
-          >
-            🏆 Top Community Members
-          </motion.h3>
-          <motion.button
-            onClick={() => setShowLeaderboardModal(true)}
-            className="px-4 md:px-6 py-2 md:py-3 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl text-sm md:text-base transition-all duration-300 shadow-lg hover:shadow-amber-500/30 w-full sm:w-auto"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <span className="flex items-center justify-center gap-2">
-              <Trophy className="w-4 h-4 md:w-5 md:h-5" />
-              Vollständige Rangliste
-            </span>
-          </motion.button>
-        </div>
-        
-        {/* Top 3 Preview aus echten Leaderboard-Daten */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-          {topHolders.slice(0, 3).map((holder, index) => (
-            <motion.div 
-              key={index}
-              className="p-3 md:p-4 rounded-xl bg-gradient-to-br from-amber-900/20 to-amber-800/10 border border-amber-500/20 text-center cursor-pointer"
-              whileHover={{ scale: 1.03, y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <motion.div 
-                className="text-2xl md:text-3xl mb-1 md:mb-2"
-                animate={{ 
-                  rotate: index === 0 ? [0, 10, -10, 0] : 0,
-                  scale: index === 0 ? [1, 1.1, 1] : 1
-                }}
-                transition={{ duration: 2, repeat: index === 0 ? Infinity : 0 }}
-              >
-                {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
-              </motion.div>
-              <div className="text-white font-semibold text-sm md:text-base mb-1 truncate">
-                {holder.address}
-              </div>
-              <div className="text-amber-300 text-xs md:text-sm font-bold">
-                {holder.balance.toLocaleString()} Punkte
-              </div>
-              <div className="text-amber-400/70 text-xs mt-1">
-                Rang #{holder.rank}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Debug Section für Token Verteilung */}
-      {process.env.NODE_ENV === 'development' && (
-        <motion.div 
-          className="bg-zinc-900/50 rounded-xl border border-zinc-700/50 p-4 backdrop-blur-sm"
-          variants={itemVariants}
-        >
-          <h4 className="text-white font-bold mb-3">🔍 Token Verteilung Debug</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div className="space-y-2">
-              <div className="text-zinc-300">
-                <span className="text-amber-400 font-semibold">Total Supply:</span> {totalSupply.toLocaleString()}
-              </div>
-              <div className="text-zinc-300">
-                <span className="text-orange-400 font-semibold">Dawid Faith Balance:</span> {davidBalanceNum.toLocaleString()} ({davidPercentage.toFixed(2)}%)
-              </div>
-              <div className="text-zinc-300">
-                <span className="text-green-400 font-semibold">Pool Tokens:</span> {poolTokens.toLocaleString()}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="text-zinc-300">
-                <span className="text-blue-400 font-semibold">Staking Rewards:</span> {stakingTokens.toLocaleString()}
-              </div>
-              <div className="text-zinc-300">
-                <span className="text-purple-400 font-semibold">Community Supply:</span> {circulatingSupply.toLocaleString()}
-              </div>
-              <div className="text-zinc-300">
-                <span className="text-zinc-400 font-semibold">API Status:</span> 
-                <span className={`ml-2 ${tokenMetrics ? 'text-green-400' : 'text-red-400'}`}>
-                  {tokenMetrics ? '✅ Connected' : '❌ Failed'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
       {/* Leaderboard Modal */}
       <AnimatePresence>
         {showLeaderboardModal && (
           <motion.div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setShowLeaderboardModal(false)}
           >
             <motion.div
-              className="bg-zinc-900 rounded-2xl border border-zinc-700 max-w-4xl w-full max-h-[90vh] overflow-hidden"
+              className="bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-2xl border border-zinc-700 p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Modal Header */}
-              <div className="sticky top-0 bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-700 p-4 md:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Trophy className="w-6 h-6 text-amber-500" />
-                    <div>
-                      <h3 className="text-xl md:text-2xl font-bold text-white">Community Leaderboard</h3>
-                      <p className="text-zinc-400 text-sm">Top D.FAITH Community Members</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowLeaderboardModal(false)}
-                    className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
-                  >
-                    <X className="w-5 h-5 text-zinc-400" />
-                  </button>
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <Trophy className="w-8 h-8 text-yellow-400" />
+                  <h2 className="text-2xl font-bold text-white">Fan Leaderboard</h2>
                 </div>
+                <motion.button
+                  onClick={() => setShowLeaderboardModal(false)}
+                  className="p-2 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <X className="w-5 h-5" />
+                </motion.button>
               </div>
 
-              {/* Modal Content */}
-              <div className="p-4 md:p-6 max-h-[70vh] overflow-y-auto">
-                {lbLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <div className="text-zinc-400">Loading leaderboard...</div>
+              {/* Loading */}
+              {lbLoading && (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
+                  <p className="text-zinc-400">Lade Leaderboard...</p>
+                </div>
+              )}
+
+              {/* Content */}
+              {!lbLoading && lbData && (
+                <div className="space-y-6">
+                  {/* Stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-zinc-800/50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-blue-400">{lbData.entries?.length || 0}</div>
+                      <div className="text-zinc-400 text-sm">Aktive Fans</div>
+                    </div>
+                    <div className="bg-zinc-800/50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-yellow-400">{lbData.prizes?.length || 0}</div>
+                      <div className="text-zinc-400 text-sm">Preise</div>
+                    </div>
+                    <div className="bg-zinc-800/50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-green-400">
+                        {lbData.entries?.reduce((sum, entry) => sum + (entry.points || 0), 0) || 0}
+                      </div>
+                      <div className="text-zinc-400 text-sm">Gesamt Punkte</div>
+                    </div>
+                    <div className="bg-zinc-800/50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-purple-400">LIVE</div>
+                      <div className="text-zinc-400 text-sm">Status</div>
+                    </div>
                   </div>
-                ) : lbData?.entries && lbData.entries.length > 0 ? (
-                  <div className="space-y-4">
-                    {lbData.entries.slice(0, 50).map((entry, index) => (
-                      <motion.div
-                        key={entry.userId || index}
-                        className="flex items-center gap-4 p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                      >
-                        <div className="text-xl font-bold text-amber-400 min-w-12 text-center">
-                          #{entry.rank || index + 1}
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-white font-bold">{entry.username || "Anonymous User"}</div>
-                          <div className="text-zinc-400 text-sm">{entry.points?.toLocaleString() || 0} Punkte</div>
-                        </div>
-                        <div className="text-2xl">
-                          {index === 0 ? "👑" : index < 3 ? "⭐" : "🎵"}
-                        </div>
-                      </motion.div>
-                    ))}
+
+                  {/* Top Fans */}
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                      <Crown className="w-6 h-6 text-yellow-400" />
+                      Top Fans
+                    </h3>
+                    <div className="space-y-2">
+                      {lbData.entries?.slice(0, 10).map((fan, index) => (
+                        <motion.div
+                          key={fan.userId || index}
+                          className="flex items-center gap-4 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700/50"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                        >
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold">
+                            {fan.rank || index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-white font-semibold">{fan.username || `Fan ${index + 1}`}</div>
+                            <div className="text-zinc-400 text-sm">{fan.points || 0} Punkte</div>
+                          </div>
+                          {index < 3 && (
+                            <motion.div
+                              animate={{ rotate: [0, 10, -10, 0] }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            >
+                              <Award className="w-6 h-6 text-yellow-400" />
+                            </motion.div>
+                          )}
+                        </motion.div>
+                      ))}
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="text-zinc-400">Keine Leaderboard-Daten verfügbar</div>
-                    <p className="text-zinc-500 text-sm mt-2">Werde Teil der Community und sammle Punkte!</p>
-                  </div>
-                )}
-              </div>
+
+                  {/* Prizes */}
+                  {lbData.prizes && lbData.prizes.length > 0 && (
+                    <div>
+                      <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <Trophy className="w-6 h-6 text-yellow-400" />
+                        Preise
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {lbData.prizes.map((prize, index) => (
+                          <motion.div
+                            key={index}
+                            className="p-4 bg-gradient-to-br from-yellow-900/20 to-yellow-800/20 rounded-lg border border-yellow-500/30"
+                            whileHover={{ scale: 1.02 }}
+                          >
+                            <div className="text-yellow-400 font-bold text-lg">Platz {prize.position}</div>
+                            <div className="text-white font-semibold">{prize.description}</div>
+                            <div className="text-yellow-300 text-sm">{prize.value}</div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Last Updated */}
+                  {lbData.lastUpdated && (
+                    <div className="text-center text-zinc-500 text-sm">
+                      Zuletzt aktualisiert: {new Date(lbData.lastUpdated).toLocaleString('de-DE')}
+                    </div>
+                  )}
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}

@@ -74,13 +74,10 @@ export default function TokenomicsTab() {
   const [davidBalance, setDavidBalance] = useState<WalletBalance | null>(null);
   const [dinvestBalance, setDinvestBalance] = useState<any | null>(null);
 
-  // Leaderboard Modal State (Instagram-style)
+  // Leaderboard Modal State
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [lbData, setLbData] = useState<LeaderboardResponse | null>(null);
   const [lbLoading, setLbLoading] = useState(false);
-  const [lbSearch, setLbSearch] = useState("");
-  const [lbNow, setLbNow] = useState<number>(Date.now());
-  const [lbOpenRow, setLbOpenRow] = useState<number | null>(null);
 
   // Daten von APIs abrufen
   useEffect(() => {
@@ -110,6 +107,16 @@ export default function TokenomicsTab() {
           const davidData = await davidRes.json();
           console.log("✅ D.FAITH Balance API Response:", davidData);
           setDavidBalance(davidData);
+          
+          // Debug: Token Verteilung
+          const davidTokens = parseFloat(davidData?.balanceRaw || "0");
+          const metricsData = await metricsRes.json().catch(() => null);
+          console.log("🔍 Token Distribution Debug:", {
+            totalSupply: metricsData?.supply?.total || 0,
+            davidBalance: davidTokens,
+            poolTokens: metricsData?.balances?.tokenInPool || 0,
+            percentage: metricsData?.supply?.total > 0 ? ((davidTokens / metricsData?.supply?.total) * 100).toFixed(2) + "%" : "0%"
+          });
         } else {
           console.log("❌ D.FAITH API failed or not ok");
         }
@@ -169,6 +176,24 @@ export default function TokenomicsTab() {
         setCurrentStage(Number(currentStageResult));
         setTotalRewardsDistributed(Number(totalRewardsResult) / Math.pow(10, DFAITH_DECIMALS));
 
+        // Leaderboard-Daten auch hier laden für Token-Verteilung
+        try {
+          const lbRes = await fetch('/api/leaderboard-proxy', { cache: 'no-store' });
+          if (lbRes.ok) {
+            const lbRaw = await lbRes.json();
+            const lbData: LeaderboardResponse = (lbRaw?.entries || lbRaw?.prizes || lbRaw?.timer) ? lbRaw : (lbRaw?.data || { entries: [], prizes: [] });
+            setLbData({
+              entries: lbData.entries || [],
+              prizes: lbData.prizes || [],
+              timer: lbData.timer,
+              lastUpdated: lbData.lastUpdated,
+            });
+            console.log("✅ Leaderboard Data loaded:", lbData.entries?.length, "entries");
+          }
+        } catch (lbError) {
+          console.log("❌ Leaderboard loading failed:", lbError);
+        }
+
         console.log("✅ Smart Contract Data:", {
           totalStaked: Number(totalStakedResult),
           contractBalance: Number(contractBalanceResult) / Math.pow(10, DFAITH_DECIMALS),
@@ -194,7 +219,7 @@ export default function TokenomicsTab() {
     if (!showLeaderboardModal) return;
     let mounted = true;
     const load = async () => {
-      setLbLoading(true); // keep stale data visible to avoid flicker
+      setLbLoading(true);
       try {
         const res = await fetch('/api/leaderboard-proxy', { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -217,54 +242,62 @@ export default function TokenomicsTab() {
     return () => { mounted = false; clearInterval(id); };
   }, [showLeaderboardModal]);
 
-  // Countdown ticker while modal open
-  useEffect(() => {
-    if (!showLeaderboardModal) return;
-    const id = setInterval(() => setLbNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [showLeaderboardModal]);
-  // Helper to format remaining time like Instagram tab
-  const formatDuration = (ms: number) => {
-    if (!ms || ms <= 0) return '00:00:00';
-    let s = Math.floor(ms / 1000);
-    const d = Math.floor(s / 86400);
-    s = s % 86400;
-    const h = Math.floor(s / 3600);
-    s = s % 3600;
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    const hh = h.toString().padStart(2, '0');
-    const mm = m.toString().padStart(2, '0');
-    const ss = sec.toString().padStart(2, '0');
-    return d > 0 ? `${d}d ${hh}:${mm}:${ss}` : `${hh}:${mm}:${ss}`;
-  };
-
-  // Berechnungen mit nur echten API-Daten
+  // Berechnungen mit echten API-Daten
   const totalSupply = tokenMetrics?.supply?.total || 0;
   const davidBalanceNum = parseFloat(davidBalance?.balanceRaw || "0");
   const stakingTokens = contractBalance || 0;
   const poolTokens = tokenMetrics?.balances?.tokenInPool || 0;
   
-  // Zirkulierende Supply = Total Supply - Staking Rewards - Dawid Faith Holdings - Pool Tokens
-  const circulatingSupply = Math.max(0, totalSupply - stakingTokens - davidBalanceNum - poolTokens);
-  
+  // Community = Total Supply - Dawid Faith Holdings - Staking Rewards - Pool Tokens
+  const circulatingSupply = Math.max(0, totalSupply - davidBalanceNum - stakingTokens - poolTokens);
   const davidPercentage = totalSupply > 0 ? (davidBalanceNum / totalSupply) * 100 : 0;
-  const targetPercentage = 75;
 
-  // Chart-Daten für Recharts
+  // Aktive Fans aus Leaderboard API (verwende lbData)
+  const activeFansCount = lbData?.entries?.length || 0;
+  const topFans = lbData?.entries?.slice(0, 10) || [];
+
+  // Top Holders aus echten Leaderboard-Daten
+  const topHolders = topFans.map((fan, index) => ({
+    address: fan.username || `Fan ${index + 1}`,
+    balance: fan.points || 0,
+    rank: fan.rank || index + 1
+  }));
+
+  // Chart-Daten für Token Verteilung (mit korrekter Dawid Faith Balance)
   const pieChartData = [
-    { name: 'Dawid Faith', value: davidBalanceNum, color: '#f59e0b', percentage: davidPercentage },
-    { name: 'DEX Pool', value: poolTokens, color: '#10b981', percentage: totalSupply > 0 ? (poolTokens / totalSupply) * 100 : 0 },
-    { name: 'Staking Rewards', value: stakingTokens, color: '#3b82f6', percentage: totalSupply > 0 ? (stakingTokens / totalSupply) * 100 : 0 },
-    { name: 'Community', value: circulatingSupply, color: '#8b5cf6', percentage: totalSupply > 0 ? (circulatingSupply / totalSupply) * 100 : 0 }
-  ];
-
-  // Top Holders für Preview (simuliert basierend auf den Daten)
-  const topHolders = [
-    { address: "Dawid Faith", balance: davidBalanceNum, percentage: davidPercentage },
-    { address: "0x7109...93cd", balance: poolTokens, percentage: totalSupply > 0 ? (poolTokens / totalSupply) * 100 : 0 },
-    { address: "0xe85b...940", balance: stakingTokens, percentage: totalSupply > 0 ? (stakingTokens / totalSupply) * 100 : 0 }
-  ].sort((a, b) => b.balance - a.balance);
+    { 
+      name: 'Dawid Faith', 
+      value: davidBalanceNum, 
+      color: '#f59e0b', 
+      percentage: davidPercentage,
+      tokens: davidBalanceNum,
+      description: 'Creator Holdings'
+    },
+    { 
+      name: 'DEX Pool', 
+      value: poolTokens, 
+      color: '#10b981', 
+      percentage: totalSupply > 0 ? (poolTokens / totalSupply) * 100 : 0,
+      tokens: poolTokens,
+      description: 'Liquidity Pool'
+    },
+    { 
+      name: 'Staking Rewards', 
+      value: stakingTokens, 
+      color: '#3b82f6', 
+      percentage: totalSupply > 0 ? (stakingTokens / totalSupply) * 100 : 0,
+      tokens: stakingTokens,
+      description: 'Contract Balance'
+    },
+    { 
+      name: 'Community', 
+      value: circulatingSupply, 
+      color: '#8b5cf6', 
+      percentage: totalSupply > 0 ? (circulatingSupply / totalSupply) * 100 : 0,
+      tokens: circulatingSupply,
+      description: 'Public Circulation'
+    }
+  ].filter(item => item.value > 0);
 
   // Animation Variants
   const containerVariants = {
@@ -381,7 +414,51 @@ export default function TokenomicsTab() {
         </div>
       </motion.div>
 
-      {/* Interaktive Live Market Overview - Mobile First */}
+      {/* DexScreener Live Price Chart */}
+      <motion.div 
+        className="bg-gradient-to-br from-zinc-900/50 to-zinc-800/30 rounded-xl md:rounded-2xl border border-green-500/30 p-4 md:p-8 backdrop-blur-sm"
+        variants={itemVariants}
+      >
+        <motion.h3 
+          className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 text-center"
+          whileHover={{ scale: 1.02 }}
+        >
+          📈 Live Preis Chart
+        </motion.h3>
+        
+        <div className="relative rounded-xl overflow-hidden bg-zinc-900/50 border border-zinc-700/50">
+          <iframe
+            src="https://dexscreener.com/base/0x69eFD833288605f320d77eB2aB99DDE62919BbC1?embed=1&theme=dark&trades=0&info=0"
+            className="w-full h-[400px] md:h-[500px] border-0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            title="D.FAITH Live Price Chart"
+          />
+          <motion.div 
+            className="absolute top-2 right-2 px-2 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/30"
+            animate={{ opacity: [1, 0.5, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            LIVE
+          </motion.div>
+        </div>
+        
+        <div className="mt-4 text-center">
+          <motion.a
+            href="https://dexscreener.com/base/0x69eFD833288605f320d77eB2aB99DDE62919BbC1"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg transition-all duration-300"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <ExternalLink className="w-4 h-4" />
+            <span>Vollbild-Chart öffnen</span>
+          </motion.a>
+        </div>
+      </motion.div>
+
+      {/* Live Market Data Grid - Mobile First */}
       <motion.div variants={itemVariants}>
         <div className="text-center mb-4 md:mb-8">
           <motion.h2 
@@ -469,7 +546,7 @@ export default function TokenomicsTab() {
             </div>
           </motion.div>
 
-          {/* Aktive Fans - Ersetzt Total Supply */}
+          {/* Aktive Fans - Aus Leaderboard */}
           <motion.div 
             className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 rounded-xl md:rounded-2xl border border-blue-500/40 p-4 md:p-6 backdrop-blur-sm cursor-pointer"
             whileHover={{ scale: 1.03, y: -5 }}
@@ -497,16 +574,16 @@ export default function TokenomicsTab() {
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                {Math.floor(circulatingSupply / 1000).toLocaleString()}K
+                {activeFansCount}
               </motion.div>
               <div className="text-blue-300 text-sm md:text-lg font-semibold">Aktive Fans</div>
               <div className="text-blue-400/80 text-xs md:text-sm mt-1 md:mt-2">
-                {circulatingSupply.toLocaleString()} Tokens
+                Im Leaderboard
               </div>
             </div>
           </motion.div>
 
-          {/* Community Owned - Erweitert */}
+          {/* Community Supply */}
           <motion.div 
             className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 rounded-xl md:rounded-2xl border border-purple-500/40 p-4 md:p-6 backdrop-blur-sm cursor-pointer"
             whileHover={{ scale: 1.03, y: -5 }}
@@ -581,9 +658,21 @@ export default function TokenomicsTab() {
                     border: '1px solid #f59e0b',
                     borderRadius: '0.75rem',
                     color: '#ffffff',
-                    fontSize: '0.875rem'
+                    fontSize: '0.875rem',
+                    padding: '12px'
                   }}
-                  formatter={(value: any) => [`${value}%`, 'Anteil']}
+                  formatter={(value: any, name: any, props: any) => {
+                    const entry = props.payload;
+                    return [
+                      <div key="tooltip" className="space-y-1">
+                        <div className="font-semibold">{entry.name}</div>
+                        <div className="text-sm">{entry.tokens.toLocaleString()} Tokens</div>
+                        <div className="text-xs opacity-80">{entry.description}</div>
+                        <div className="font-bold text-amber-400">{entry.percentage.toFixed(2)}%</div>
+                      </div>
+                    ];
+                  }}
+                  labelFormatter={() => "Token Verteilung"}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -610,7 +699,10 @@ export default function TokenomicsTab() {
                   />
                   <div className="flex-1 min-w-0">
                     <div className="text-white font-semibold text-sm md:text-base truncate">{item.name}</div>
-                    <div className="text-zinc-400 text-xs md:text-sm">{item.percentage.toFixed(1)}%</div>
+                    <div className="text-zinc-400 text-xs md:text-sm">
+                      {item.tokens.toLocaleString()} Tokens ({item.percentage.toFixed(1)}%)
+                    </div>
+                    <div className="text-zinc-500 text-xs mt-1">{item.description}</div>
                   </div>
                   <motion.div 
                     className="text-lg md:text-xl font-bold"
@@ -627,121 +719,7 @@ export default function TokenomicsTab() {
         </div>
       </motion.div>
 
-      {/* Mobile-optimiertes Community Ecosystem */}
-      <motion.div 
-        className="bg-gradient-to-br from-zinc-900/50 to-zinc-800/30 rounded-xl md:rounded-2xl border border-purple-500/30 p-4 md:p-8 backdrop-blur-sm"
-        variants={itemVariants}
-      >
-        <motion.h3 
-          className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 text-center"
-          whileHover={{ scale: 1.02 }}
-        >
-          🌟 Community Features
-        </motion.h3>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Staking Rewards - Interaktiv */}
-          <motion.div 
-            className="group p-4 md:p-6 rounded-xl bg-gradient-to-br from-green-900/30 to-green-800/20 border border-green-500/30 cursor-pointer"
-            whileHover={{ scale: 1.03, rotate: 1 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
-              <motion.div
-                animate={{ 
-                  rotate: [0, 10, -10, 0],
-                  scale: [1, 1.1, 1]
-                }}
-                transition={{ duration: 3, repeat: Infinity }}
-              >
-                <Zap className="w-6 h-6 md:w-8 md:h-8 text-green-400" />
-              </motion.div>
-              <div>
-                <h4 className="text-white font-bold text-sm md:text-lg">Staking Rewards</h4>
-                <p className="text-green-300 text-xs md:text-sm">Bis zu 15% APY</p>
-              </div>
-            </div>
-            <p className="text-zinc-300 text-xs md:text-sm leading-relaxed">
-              Verdiene passive Belohnungen durch das Staken deiner D.FAITH Token
-            </p>
-            <motion.div 
-              className="mt-3 text-green-400 text-xs md:text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
-              initial={{ y: 10 }}
-              whileHover={{ y: 0 }}
-            >
-              → Tippe zum Staken
-            </motion.div>
-          </motion.div>
-
-          {/* Exclusive Content - Interaktiv */}
-          <motion.div 
-            className="group p-4 md:p-6 rounded-xl bg-gradient-to-br from-purple-900/30 to-purple-800/20 border border-purple-500/30 cursor-pointer"
-            whileHover={{ scale: 1.03, rotate: -1 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
-              <motion.div
-                animate={{ 
-                  y: [0, -3, 0],
-                  rotate: [0, 5, 0]
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <Crown className="w-6 h-6 md:w-8 md:h-8 text-purple-400" />
-              </motion.div>
-              <div>
-                <h4 className="text-white font-bold text-sm md:text-lg">Exklusiver Content</h4>
-                <p className="text-purple-300 text-xs md:text-sm">VIP Zugang</p>
-              </div>
-            </div>
-            <p className="text-zinc-300 text-xs md:text-sm leading-relaxed">
-              Früher Zugang zu neuen Tracks und exklusiven Live-Sessions
-            </p>
-            <motion.div 
-              className="mt-3 text-purple-400 text-xs md:text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
-              initial={{ y: 10 }}
-              whileHover={{ y: 0 }}
-            >
-              → Entdecke VIP Bereich
-            </motion.div>
-          </motion.div>
-
-          {/* Voting Rights - Interaktiv */}
-          <motion.div 
-            className="group p-4 md:p-6 rounded-xl bg-gradient-to-br from-blue-900/30 to-blue-800/20 border border-blue-500/30 cursor-pointer sm:col-span-2 lg:col-span-1"
-            whileHover={{ scale: 1.03, rotate: 1 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
-              <motion.div
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                  rotate: [0, 180, 360]
-                }}
-                transition={{ duration: 4, repeat: Infinity }}
-              >
-                <Vote className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
-              </motion.div>
-              <div>
-                <h4 className="text-white font-bold text-sm md:text-lg">Governance</h4>
-                <p className="text-blue-300 text-xs md:text-sm">Mitbestimmung</p>
-              </div>
-            </div>
-            <p className="text-zinc-300 text-xs md:text-sm leading-relaxed">
-              Stimme über zukünftige Projekte und Community-Entscheidungen ab
-            </p>
-            <motion.div 
-              className="mt-3 text-blue-400 text-xs md:text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
-              initial={{ y: 10 }}
-              whileHover={{ y: 0 }}
-            >
-              → Zu den Abstimmungen
-            </motion.div>
-          </motion.div>
-        </div>
-      </motion.div>
-
-      {/* Mobile-optimierte Leaderboard Section */}
+      {/* Top Community Members aus Leaderboard */}
       <motion.div 
         className="bg-gradient-to-br from-zinc-900/50 to-zinc-800/30 rounded-xl md:rounded-2xl border border-amber-500/30 p-4 md:p-8 backdrop-blur-sm"
         variants={itemVariants}
@@ -766,7 +744,7 @@ export default function TokenomicsTab() {
           </motion.button>
         </div>
         
-        {/* Mobile-optimierte Top 3 Preview */}
+        {/* Top 3 Preview aus echten Leaderboard-Daten */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
           {topHolders.slice(0, 3).map((holder, index) => (
             <motion.div 
@@ -792,15 +770,52 @@ export default function TokenomicsTab() {
                 {holder.address}
               </div>
               <div className="text-amber-300 text-xs md:text-sm font-bold">
-                {holder.balance.toLocaleString()} D.FAITH
+                {holder.balance.toLocaleString()} Punkte
               </div>
               <div className="text-amber-400/70 text-xs mt-1">
-                {holder.percentage.toFixed(1)}%
+                Rang #{holder.rank}
               </div>
             </motion.div>
           ))}
         </div>
       </motion.div>
+
+      {/* Debug Section für Token Verteilung */}
+      {process.env.NODE_ENV === 'development' && (
+        <motion.div 
+          className="bg-zinc-900/50 rounded-xl border border-zinc-700/50 p-4 backdrop-blur-sm"
+          variants={itemVariants}
+        >
+          <h4 className="text-white font-bold mb-3">🔍 Token Verteilung Debug</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="space-y-2">
+              <div className="text-zinc-300">
+                <span className="text-amber-400 font-semibold">Total Supply:</span> {totalSupply.toLocaleString()}
+              </div>
+              <div className="text-zinc-300">
+                <span className="text-orange-400 font-semibold">Dawid Faith Balance:</span> {davidBalanceNum.toLocaleString()} ({davidPercentage.toFixed(2)}%)
+              </div>
+              <div className="text-zinc-300">
+                <span className="text-green-400 font-semibold">Pool Tokens:</span> {poolTokens.toLocaleString()}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="text-zinc-300">
+                <span className="text-blue-400 font-semibold">Staking Rewards:</span> {stakingTokens.toLocaleString()}
+              </div>
+              <div className="text-zinc-300">
+                <span className="text-purple-400 font-semibold">Community Supply:</span> {circulatingSupply.toLocaleString()}
+              </div>
+              <div className="text-zinc-300">
+                <span className="text-zinc-400 font-semibold">API Status:</span> 
+                <span className={`ml-2 ${tokenMetrics ? 'text-green-400' : 'text-red-400'}`}>
+                  {tokenMetrics ? '✅ Connected' : '❌ Failed'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Leaderboard Modal */}
       <AnimatePresence>
@@ -825,8 +840,8 @@ export default function TokenomicsTab() {
                   <div className="flex items-center gap-3">
                     <Trophy className="w-6 h-6 text-amber-500" />
                     <div>
-                      <h3 className="text-xl md:text-2xl font-bold text-white">Top Community Members</h3>
-                      <p className="text-zinc-400 text-sm">Vollständige Rangliste der D.FAITH Holder</p>
+                      <h3 className="text-xl md:text-2xl font-bold text-white">Community Leaderboard</h3>
+                      <p className="text-zinc-400 text-sm">Top D.FAITH Community Members</p>
                     </div>
                   </div>
                   <button
@@ -840,9 +855,40 @@ export default function TokenomicsTab() {
 
               {/* Modal Content */}
               <div className="p-4 md:p-6 max-h-[70vh] overflow-y-auto">
-                <div className="text-center text-zinc-400 py-8">
-                  Detaillierte Leaderboard-Daten werden hier angezeigt
-                </div>
+                {lbLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <div className="text-zinc-400">Loading leaderboard...</div>
+                  </div>
+                ) : lbData?.entries && lbData.entries.length > 0 ? (
+                  <div className="space-y-4">
+                    {lbData.entries.slice(0, 50).map((entry, index) => (
+                      <motion.div
+                        key={entry.userId || index}
+                        className="flex items-center gap-4 p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <div className="text-xl font-bold text-amber-400 min-w-12 text-center">
+                          #{entry.rank || index + 1}
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-white font-bold">{entry.username || "Anonymous User"}</div>
+                          <div className="text-zinc-400 text-sm">{entry.points?.toLocaleString() || 0} Punkte</div>
+                        </div>
+                        <div className="text-2xl">
+                          {index === 0 ? "👑" : index < 3 ? "⭐" : "🎵"}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-zinc-400">Keine Leaderboard-Daten verfügbar</div>
+                    <p className="text-zinc-500 text-sm mt-2">Werde Teil der Community und sammle Punkte!</p>
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>
