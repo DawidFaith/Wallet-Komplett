@@ -4,8 +4,8 @@ import { FaTiktok } from "react-icons/fa6";
 import { createThirdwebClient, getContract, readContract } from "thirdweb";
 import { base } from "thirdweb/chains";
 import { motion, AnimatePresence } from "framer-motion";
-import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area } from 'recharts';
-import { TrendingUp, Users, Coins, DollarSign, ExternalLink, FileText, BarChart3, PieChartIcon, Target } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { TrendingUp, Users, Coins, DollarSign, ExternalLink, FileText, Target } from 'lucide-react';
 
 // Smart Contract Setup
 const CONTRACT_ADDRESS = "0xe85b32a44b9eD3ecf8bd331FED46fbdAcDBc9940";
@@ -288,17 +288,6 @@ export default function TokenomicsTab() {
     { name: 'Community', value: circulatingSupply, color: '#8b5cf6', percentage: totalSupply > 0 ? (circulatingSupply / totalSupply) * 100 : 0 }
   ];
 
-  // Dummy-Daten für Preis-Trend (später mit echter API ersetzen)
-  const priceHistoryData = [
-    { time: '00:00', price: tokenMetrics?.priceEUR ? tokenMetrics.priceEUR * 0.95 : 0 },
-    { time: '04:00', price: tokenMetrics?.priceEUR ? tokenMetrics.priceEUR * 0.98 : 0 },
-    { time: '08:00', price: tokenMetrics?.priceEUR ? tokenMetrics.priceEUR * 1.02 : 0 },
-    { time: '12:00', price: tokenMetrics?.priceEUR ? tokenMetrics.priceEUR * 0.99 : 0 },
-    { time: '16:00', price: tokenMetrics?.priceEUR ? tokenMetrics.priceEUR * 1.01 : 0 },
-    { time: '20:00', price: tokenMetrics?.priceEUR ? tokenMetrics.priceEUR * 1.03 : 0 },
-    { time: 'Jetzt', price: tokenMetrics?.priceEUR || 0 }
-  ];
-
   // Animation Variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -323,18 +312,18 @@ export default function TokenomicsTab() {
 
   return (
     <motion.div 
-      className="flex flex-col gap-6 p-6 max-w-7xl mx-auto"
+      className="flex flex-col gap-8 p-6 max-w-7xl mx-auto"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      {/* Professional Hero Section */}
+      {/* Werbefreundlicher Hero Section */}
       <motion.div 
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 border border-amber-500/20 p-8 mb-6"
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 border border-amber-500/20 p-8"
         variants={itemVariants}
       >
-        {/* Animated Background Pattern */}
-        <div className="absolute inset-0 opacity-5">
+        {/* Animated Background */}
+        <div className="absolute inset-0 opacity-10">
           <svg className="w-full h-full" viewBox="0 0 1200 200" preserveAspectRatio="none">
             <defs>
               <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -350,106 +339,85 @@ export default function TokenomicsTab() {
               fill="none"
               initial={{ pathLength: 0 }}
               animate={{ pathLength: 1 }}
-              transition={{ duration: 2, repeat: Infinity, repeatType: "reverse" }}
+              transition={{ duration: 3, repeat: Infinity, repeatType: "reverse" }}
             />
           </svg>
         </div>
         
-        {/* Hero Content */}
-        <div className="relative z-10">
-          <div className="text-center mb-8">
-            <motion.div 
-              className="flex items-center justify-center gap-4 mb-6"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
+        <div className="relative z-10 text-center">
+          <motion.div 
+            className="flex items-center justify-center gap-6 mb-6"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            <motion.img 
+              src="/D.FAITH.png" 
+              alt="D.FAITH Token" 
+              className="w-24 h-24 object-contain"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            />
+            <div>
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent mb-3">
+                D.FAITH Ecosystem
+              </h1>
+              <p className="text-amber-300 text-xl max-w-2xl">
+                Das innovative Musik-Token, das Fans und Künstler zusammenbringt
+              </p>
+            </div>
+          </motion.div>
+          
+          {/* Call-to-Action */}
+          <motion.div 
+            className="flex flex-wrap items-center justify-center gap-4 mt-8"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            <motion.a
+              href="https://docs.google.com/document/d/1YourWhitepaperLink"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-3 px-8 py-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-lg transition-all duration-300 shadow-xl hover:shadow-amber-500/30"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <motion.img 
-                src="/D.FAITH.png" 
-                alt="D.FAITH Token" 
-                className="w-20 h-20 object-contain"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              />
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent mb-2">
-                  D.FAITH Tokenomics
-                </h1>
-                <p className="text-amber-300 text-lg">
-                  Professionelle Übersicht über das Musik-Ökosystem
-                </p>
-              </div>
-              <motion.img 
-                src="/D.FAITH.png" 
-                alt="D.FAITH Token" 
-                className="w-20 h-20 object-contain"
-                animate={{ rotate: -360 }}
-                transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-              />
-            </motion.div>
+              <FileText className="w-6 h-6" />
+              Whitepaper entdecken
+              <ExternalLink className="w-5 h-5 opacity-70" />
+            </motion.a>
             
-            {/* Professional Action Buttons */}
-            <motion.div 
-              className="flex flex-wrap items-center justify-center gap-4 mt-6"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5 }}
+            <motion.a 
+              href="#live-trading" 
+              className="flex items-center gap-3 px-8 py-4 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold text-lg transition-all duration-300 shadow-xl"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <motion.a
-                href="https://docs.google.com/document/d/1YourWhitepaperLink"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-semibold transition-all duration-300 shadow-lg hover:shadow-amber-500/25"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FileText className="w-5 h-5" />
-                Whitepaper lesen
-                <ExternalLink className="w-4 h-4 opacity-70" />
-              </motion.a>
-              
-              <motion.a 
-                href="#analytics-dashboard" 
-                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-600 text-white transition-all duration-300"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <BarChart3 className="w-5 h-5" />
-                Analytics Dashboard
-              </motion.a>
-              
-              <motion.a 
-                href="#token-distribution" 
-                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-600 text-white transition-all duration-300"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <PieChartIcon className="w-5 h-5" />
-                Token Distribution
-              </motion.a>
-            </motion.div>
-          </div>
+              <TrendingUp className="w-6 h-6" />
+              Jetzt handeln
+            </motion.a>
+          </motion.div>
         </div>
       </motion.div>
 
-      {/* Key Metrics Dashboard */}
-      <motion.div variants={itemVariants} id="analytics-dashboard">
-        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-          <TrendingUp className="w-7 h-7 text-green-400" />
-          Live Analytics Dashboard
+      {/* Live Market Overview */}
+      <motion.div variants={itemVariants}>
+        <h2 className="text-3xl font-bold text-white mb-8 text-center">
+          🚀 Live Market Data
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Market Cap */}
           <motion.div 
-            className="bg-gradient-to-br from-green-900/20 to-green-800/10 rounded-xl border border-green-500/30 p-6 backdrop-blur-sm"
-            whileHover={{ scale: 1.02 }}
+            className="bg-gradient-to-br from-green-900/30 to-green-800/20 rounded-2xl border border-green-500/40 p-6 backdrop-blur-sm"
+            whileHover={{ scale: 1.03, y: -5 }}
             transition={{ duration: 0.2 }}
           >
             <div className="flex items-center justify-between mb-4">
-              <DollarSign className="w-8 h-8 text-green-400" />
+              <DollarSign className="w-10 h-10 text-green-400" />
               <motion.div 
-                className="text-green-400 text-sm"
+                className="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-sm font-bold"
                 animate={{ opacity: [1, 0.5, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
@@ -457,82 +425,86 @@ export default function TokenomicsTab() {
               </motion.div>
             </div>
             <div className="text-white">
-              <div className="text-2xl font-bold">
+              <div className="text-3xl font-bold mb-2">
                 €{tokenMetrics?.marketCapEUR?.circulating?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "0"}
               </div>
-              <div className="text-green-300 text-sm">Market Cap</div>
-              <div className="text-green-400/70 text-xs mt-1">
+              <div className="text-green-300 text-lg font-semibold">Market Cap</div>
+              <div className="text-green-400/80 text-sm mt-2">
                 FDV: €{tokenMetrics?.marketCapEUR?.fdv?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "0"}
               </div>
             </div>
           </motion.div>
 
-          {/* Total Supply */}
+          {/* Token Preis */}
           <motion.div 
-            className="bg-gradient-to-br from-blue-900/20 to-blue-800/10 rounded-xl border border-blue-500/30 p-6 backdrop-blur-sm"
-            whileHover={{ scale: 1.02 }}
+            className="bg-gradient-to-br from-amber-900/30 to-amber-800/20 rounded-2xl border border-amber-500/40 p-6 backdrop-blur-sm"
+            whileHover={{ scale: 1.03, y: -5 }}
           >
             <div className="flex items-center justify-between mb-4">
-              <Coins className="w-8 h-8 text-blue-400" />
+              <Target className="w-10 h-10 text-amber-400" />
             </div>
             <div className="text-white">
-              <div className="text-2xl font-bold">{totalSupply.toLocaleString()}</div>
-              <div className="text-blue-300 text-sm">Total Supply</div>
-              <div className="text-blue-400/70 text-xs mt-1">D.FAITH Token</div>
-            </div>
-          </motion.div>
-
-          {/* Circulating Supply */}
-          <motion.div 
-            className="bg-gradient-to-br from-purple-900/20 to-purple-800/10 rounded-xl border border-purple-500/30 p-6 backdrop-blur-sm"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <Users className="w-8 h-8 text-purple-400" />
-            </div>
-            <div className="text-white">
-              <div className="text-2xl font-bold">{circulatingSupply.toLocaleString()}</div>
-              <div className="text-purple-300 text-sm">Circulating</div>
-              <div className="text-purple-400/70 text-xs mt-1">
-                {totalSupply > 0 ? ((circulatingSupply / totalSupply) * 100).toFixed(1) : "0"}% vom Total
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Price */}
-          <motion.div 
-            className="bg-gradient-to-br from-amber-900/20 to-amber-800/10 rounded-xl border border-amber-500/30 p-6 backdrop-blur-sm"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <Target className="w-8 h-8 text-amber-400" />
-            </div>
-            <div className="text-white">
-              <div className="text-2xl font-bold">
+              <div className="text-3xl font-bold mb-2">
                 €{tokenMetrics?.priceEUR?.toFixed(6) || "0.000000"}
               </div>
-              <div className="text-amber-300 text-sm">Aktueller Preis</div>
-              <div className="text-amber-400/70 text-xs mt-1">EUR/D.FAITH</div>
+              <div className="text-amber-300 text-lg font-semibold">Token Preis</div>
+              <div className="text-amber-400/80 text-sm mt-2">EUR/D.FAITH</div>
+            </div>
+          </motion.div>
+
+          {/* Total Supply */}
+          <motion.div 
+            className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 rounded-2xl border border-blue-500/40 p-6 backdrop-blur-sm"
+            whileHover={{ scale: 1.03, y: -5 }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <Coins className="w-10 h-10 text-blue-400" />
+            </div>
+            <div className="text-white">
+              <div className="text-3xl font-bold mb-2">{totalSupply.toLocaleString()}</div>
+              <div className="text-blue-300 text-lg font-semibold">Total Supply</div>
+              <div className="text-blue-400/80 text-sm mt-2">D.FAITH Token</div>
+            </div>
+          </motion.div>
+
+          {/* Community Owned */}
+          <motion.div 
+            className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 rounded-2xl border border-purple-500/40 p-6 backdrop-blur-sm"
+            whileHover={{ scale: 1.03, y: -5 }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <Users className="w-10 h-10 text-purple-400" />
+            </div>
+            <div className="text-white">
+              <div className="text-3xl font-bold mb-2">{circulatingSupply.toLocaleString()}</div>
+              <div className="text-purple-300 text-lg font-semibold">Community</div>
+              <div className="text-purple-400/80 text-sm mt-2">
+                {totalSupply > 0 ? ((circulatingSupply / totalSupply) * 100).toFixed(1) : "0"}% im Umlauf
+              </div>
             </div>
           </motion.div>
         </div>
       </motion.div>
 
-      {/* Advanced Token Distribution with Professional Charts */}
+      {/* Token Distribution Showcase */}
       <motion.div 
         id="token-distribution" 
-        className="bg-zinc-900/50 rounded-xl border border-zinc-700/50 p-8 mb-6 backdrop-blur-sm"
+        className="bg-zinc-900/50 rounded-2xl border border-zinc-700/50 p-8 backdrop-blur-sm"
         variants={itemVariants}
       >
-        <h3 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
-          <PieChartIcon className="w-7 h-7 text-amber-400" />
-          Token Distribution Analytics
-        </h3>
+        <div className="text-center mb-8">
+          <h3 className="text-3xl font-bold text-white mb-4">
+            🎯 Transparente Token-Verteilung
+          </h3>
+          <p className="text-zinc-300 text-lg max-w-3xl mx-auto">
+            Faire und nachvollziehbare Verteilung für nachhaltiges Wachstum des Ecosystems
+          </p>
+        </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Professional Pie Chart */}
-          <div className="bg-zinc-800/30 rounded-xl p-6 border border-zinc-700/50">
-            <h4 className="text-lg font-semibold text-white mb-4">Distribution Breakdown</h4>
+          {/* Professioneller Pie Chart */}
+          <div className="bg-zinc-800/40 rounded-xl p-6 border border-zinc-700/50">
+            <h4 className="text-xl font-semibold text-white mb-6 text-center">Token Allocation</h4>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -542,7 +514,7 @@ export default function TokenomicsTab() {
                     cy="50%"
                     labelLine={false}
                     label={({ name, percentage }) => `${name}: ${percentage.toFixed(1)}%`}
-                    outerRadius={100}
+                    outerRadius={120}
                     fill="#8884d8"
                     dataKey="value"
                   >
@@ -559,440 +531,282 @@ export default function TokenomicsTab() {
             </div>
           </div>
 
-          {/* Price Trend Chart */}
-          <div className="bg-zinc-800/30 rounded-xl p-6 border border-zinc-700/50">
-            <h4 className="text-lg font-semibold text-white mb-4">24h Preis-Trend</h4>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={priceHistoryData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis 
-                    dataKey="time" 
-                    stroke="#9ca3af"
-                    fontSize={12}
+          {/* Token Distribution Details */}
+          <div className="space-y-4">
+            {pieChartData.map((item, index) => (
+              <motion.div
+                key={item.name}
+                className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50"
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-4 h-4 rounded-full" 
+                      style={{ backgroundColor: item.color }}
+                    ></div>
+                    <span className="text-white font-bold text-lg">{item.name}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-white">{item.value.toLocaleString()}</div>
+                    <div className="text-lg font-semibold" style={{ color: item.color }}>
+                      {item.percentage.toFixed(1)}%
+                    </div>
+                  </div>
+                </div>
+                <div className="w-full bg-zinc-700 rounded-full h-2">
+                  <motion.div
+                    className="h-2 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${item.percentage}%` }}
+                    transition={{ delay: index * 0.2, duration: 1 }}
                   />
-                  <YAxis 
-                    stroke="#9ca3af"
-                    fontSize={12}
-                    tickFormatter={(value) => `€${value.toFixed(6)}`}
-                  />
-                  <Tooltip 
-                    formatter={(value: any) => [`€${value.toFixed(6)}`, 'Preis']}
-                    labelStyle={{ color: '#000' }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="price"
-                    stroke="#f59e0b"
-                    fill="url(#priceGradient)"
-                    strokeWidth={2}
-                  />
-                  <defs>
-                    <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                </AreaChart>
-              </ResponsiveContainer>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Live Trading & DexScreener Integration */}
+      <motion.div 
+        id="live-trading" 
+        className="bg-zinc-900/60 rounded-2xl border border-zinc-700/50 p-8 backdrop-blur-sm"
+        variants={itemVariants}
+      >
+        <div className="text-center mb-8">
+          <h3 className="text-3xl font-bold text-white mb-4">
+            📈 Live Trading Hub
+          </h3>
+          <p className="text-zinc-300 text-lg max-w-2xl mx-auto">
+            Handeln Sie D.FAITH direkt auf der Base Chain mit Echtzeit-Marktdaten
+          </p>
+        </div>
+        
+        <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
+          <div className="w-full h-96 rounded-lg overflow-hidden">
+            <iframe
+              src="https://dexscreener.com/base/0x7109214bafde13a6ef8060644656464bccab93cd?embed=1&theme=dark&trades=0&info=0"
+              width="100%"
+              height="100%"
+              frameBorder="0"
+              className="w-full h-full rounded-lg"
+              title="DexScreener Live Trading Chart"
+            />
+          </div>
+          <div className="mt-6 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 border border-blue-500/40 rounded-lg text-blue-300 text-sm">
+              🔗 Base Chain Pool: 0x7109214bafde13a6ef8060644656464bccab93cd
             </div>
           </div>
         </div>
-
-        {/* Token Distribution Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-          {pieChartData.map((item, index) => (
-            <motion.div
-              key={item.name}
-              className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: item.color }}
-                ></div>
-                <span className="text-white font-semibold text-sm">{item.name}</span>
-              </div>
-              <div className="text-xl font-bold text-white">{item.value.toLocaleString()}</div>
-              <div className="text-sm" style={{ color: item.color }}>
-                {item.percentage.toFixed(1)}%
-              </div>
-            </motion.div>
-          ))}
-        </div>
       </motion.div>
 
-      {/* Live-Preis-Chart */}
+      {/* Community & Staking Ecosystem */}
       <motion.div 
-        id="live-price" 
-        className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6"
+        className="bg-zinc-900/60 rounded-2xl border border-zinc-700/50 p-8 backdrop-blur-sm"
         variants={itemVariants}
       >
-        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          📈 Live-Preis-Chart
-        </h3>
-        <div className="w-full h-96 rounded-lg overflow-hidden bg-zinc-800">
-          <iframe
-            src="https://dexscreener.com/base/0x7109214bafde13a6ef8060644656464bccab93cd?embed=1&theme=dark&trades=0&info=0"
-            width="100%"
-            height="100%"
-            frameBorder="0"
-            className="w-full h-full"
-            title="DexScreener Chart"
-          />
+        <div className="text-center mb-8">
+          <h3 className="text-3xl font-bold text-white mb-4">
+            🌟 Community Ecosystem
+          </h3>
+          <p className="text-zinc-300 text-lg max-w-3xl mx-auto">
+            Verdienen Sie D.FAITH durch Social Media Aktivitäten und staken Sie D.INVEST für Belohnungen
+          </p>
         </div>
-        <div className="mt-4 text-xs text-zinc-400 text-center">
-          Live-Daten von der Base Chain • Pool: 0x7109214bafde13a6ef8060644656464bccab93cd
-        </div>
-      </motion.div>
 
-      {/* Enhanced Leaderboard Section */}
-      <motion.div 
-        id="leaderboard" 
-        className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6"
-        variants={itemVariants}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">🏆 Leaderboard</h3>
-            <p className="text-zinc-400 text-xs md:text-sm">Aktivste Fans nach EXP</p>
-          </div>
-          {!showLeaderboardModal && (
-            <motion.button
-              type="button"
-              onClick={() => setShowLeaderboardModal(true)}
-              className="relative group w-9 h-9 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 hover:scale-105 transition cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 hover:ring-4 hover:ring-yellow-200/60 hover:shadow-yellow-300/60"
-              aria-label="Leaderboard öffnen"
-              title="Leaderboard öffnen"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <span className="absolute -inset-1 rounded-full bg-yellow-400/20 blur-sm opacity-60 group-hover:opacity-80 transition pointer-events-none"></span>
-              <motion.span 
-                className="inline-block"
-                animate={{ y: [0, -2, 0] }}
-                transition={{ duration: 1, repeat: Infinity }}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* D.INVEST Staking */}
+          <div className="space-y-6">
+            <h4 className="text-2xl font-bold text-blue-400 mb-6 text-center">
+              🚀 D.INVEST Staking
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <motion.div 
+                className="bg-gradient-to-br from-green-900/30 to-green-800/20 rounded-xl p-4 border border-green-500/30"
+                whileHover={{ scale: 1.02 }}
               >
-                🏆
-              </motion.span>
-            </motion.button>
-          )}
+                <div className="text-green-300 text-sm font-medium mb-2 flex items-center gap-2">
+                  <motion.div 
+                    className="w-2 h-2 bg-green-400 rounded-full"
+                    animate={{ scale: [1, 1.3, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                  Community Owned
+                </div>
+                <div className="text-white font-bold text-2xl">
+                  {dinvestBalance ? (10000 - parseInt(dinvestBalance.balance)).toLocaleString() : "0"}
+                </div>
+                <div className="text-green-400 text-sm">
+                  {dinvestBalance ? (((10000 - parseInt(dinvestBalance.balance)) / 10000) * 100).toFixed(1) : "0"}% verkauft
+                </div>
+              </motion.div>
+              
+              <motion.div 
+                className="bg-gradient-to-br from-amber-900/30 to-amber-800/20 rounded-xl p-4 border border-amber-500/30"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-amber-300 text-sm font-medium mb-2 flex items-center gap-2">
+                  <motion.div 
+                    className="w-2 h-2 bg-amber-400 rounded-full"
+                    animate={{ scale: [1, 1.3, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                  />
+                  Verfügbar
+                </div>
+                <div className="text-white font-bold text-2xl">
+                  {dinvestBalance ? parseInt(dinvestBalance.balance).toLocaleString() : "0"}
+                </div>
+                <div className="text-amber-400 text-sm">5€ pro Token</div>
+              </motion.div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <motion.div 
+                className="bg-zinc-800/50 rounded-xl p-4 border border-blue-500/20"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-blue-300 text-sm font-medium mb-1">Total Gestaked</div>
+                <div className="text-white font-bold text-xl">{totalStaked?.toLocaleString() || "0"}</div>
+                <div className="text-blue-400 text-xs">D.INVEST</div>
+              </motion.div>
+              
+              <motion.div 
+                className="bg-zinc-800/50 rounded-xl p-4 border border-purple-500/20"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-purple-300 text-sm font-medium mb-1">Rewards Pool</div>
+                <div className="text-white font-bold text-xl">{stakingTokens.toFixed(2)}</div>
+                <div className="text-purple-400 text-xs">D.FAITH</div>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Fan Leaderboard Teaser */}
+          <div className="space-y-6">
+            <h4 className="text-2xl font-bold text-yellow-400 mb-6 text-center">
+              🏆 Fan Leaderboard
+            </h4>
+            
+            <div className="bg-zinc-800/50 rounded-xl p-6 border border-yellow-500/20">
+              <div className="text-center mb-4">
+                <div className="text-yellow-300 text-4xl mb-2">🎵</div>
+                <h5 className="text-white font-bold text-lg mb-2">Social Media Belohnungen</h5>
+                <p className="text-zinc-400 text-sm">
+                  Sammle EXP durch Instagram, TikTok & Facebook Posts und gewinne D.FAITH Rewards
+                </p>
+              </div>
+              
+              <motion.button
+                onClick={() => setShowLeaderboardModal(true)}
+                className="w-full bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-400 hover:to-yellow-300 text-black font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-yellow-500/25"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <span>🏆 Leaderboard anzeigen</span>
+                  <motion.span
+                    animate={{ x: [0, 5, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    →
+                  </motion.span>
+                </div>
+              </motion.button>
+            </div>
+          </div>
         </div>
-        <div className="text-xs text-zinc-500">Öffne das Leaderboard, um Namen, EXP und Preise zu sehen.</div>
       </motion.div>
 
+      {/* Leaderboard Modal */}
       <AnimatePresence>
         {showLeaderboardModal && (
           <motion.div 
-            className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div 
-              className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl shadow-xl overflow-hidden"
+              className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl overflow-hidden"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
-                <div className="flex items-center gap-2">
-                  <span className="text-yellow-300">🏆</span>
-                  <h3 className="text-white font-semibold">Leaderboard</h3>
-                </div>
-                <div className="text-xs text-zinc-400 mr-auto ml-3">
-                  {lbData?.timer?.isActive && lbData?.timer?.endDate ? (
-                    <span>
-                      Endet in: {formatDuration(new Date(lbData.timer.endDate).getTime() - lbNow)}
-                    </span>
-                  ) : null}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-700 bg-gradient-to-r from-yellow-500/10 to-yellow-400/10">
+                <div className="flex items-center gap-3">
+                  <span className="text-yellow-300 text-2xl">🏆</span>
+                  <div>
+                    <h3 className="text-white font-bold text-lg">Fan Leaderboard</h3>
+                    <p className="text-zinc-400 text-sm">Top Performer nach EXP</p>
+                  </div>
                 </div>
                 <motion.button 
                   onClick={() => setShowLeaderboardModal(false)} 
-                  className="text-zinc-400 hover:text-white"
+                  className="text-zinc-400 hover:text-white text-xl"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
                   ✖
                 </motion.button>
               </div>
-              <div className="px-4 py-3">
-                <div className="bg-zinc-800/60 border border-zinc-700 rounded-md px-2 py-1 flex items-center gap-2 w-full mb-3">
-                  <span className="text-zinc-400 text-xs">Suche</span>
-                  <input
-                    value={lbSearch}
-                    onChange={(e) => setLbSearch(e.target.value)}
-                    placeholder="@handle oder Name"
-                    className="bg-transparent outline-none text-sm text-white placeholder:text-zinc-500 w-full"
-                  />
-                </div>
-                {/* Legende / Kopfzeile */}
-                <div className="text-[11px] text-zinc-400 px-3 mb-1 grid grid-cols-[2.25rem_minmax(0,1fr)_3.75rem_5.25rem] gap-3">
-                  <div className="opacity-0 select-none">#</div>
-                  <div className="text-left">Name</div>
-                  <div className="text-center">EXP</div>
-                  <div className="text-right">Preis</div>
-                </div>
-                <div className="bg-zinc-900/60 border border-zinc-700 rounded-lg max-h-[24rem] overflow-y-auto overflow-x-hidden">
-                  {lbLoading && (
-                    <div className="px-4 py-3 text-zinc-400 text-sm">Lade Leaderboard…</div>
-                  )}
-                  {(lbData?.entries || []).length === 0 && !lbLoading && (
-                    <div className="px-4 py-3 text-zinc-400 text-sm">Keine Einträge gefunden</div>
-                  )}
-                  {(lbData?.entries || []).filter(e => {
-                    if (!lbSearch) return true;
-                    const names = [e.instagram, e.tiktok, e.facebook, (e as any).name, (e as any).handle].filter(Boolean) as string[];
-                    const q = lbSearch.toLowerCase();
-                    return names.some(n => n.toLowerCase().includes(q));
-                  }).map((e) => {
-                    const namesDetailed = [
-                      e.instagram ? { label: e.instagram as string, platform: 'instagram' } : null,
-                      e.tiktok ? { label: e.tiktok as string, platform: 'tiktok' } : null,
-                      e.facebook ? { label: e.facebook as string, platform: 'facebook' } : null,
-                    ].filter(Boolean) as { label: string; platform: 'instagram' | 'tiktok' | 'facebook' }[];
-                    const primary = (e.instagram || e.tiktok || e.facebook || '-') as string;
-                    const primaryPlatform: 'instagram' | 'tiktok' | 'facebook' = e.instagram ? 'instagram' : e.tiktok ? 'tiktok' : 'facebook';
-                    const PlatformIcon = primaryPlatform === 'instagram' ? FaInstagram : primaryPlatform === 'tiktok' ? FaTiktok : FaFacebookF;
-                    const prize = (lbData?.prizes || []).find(p => p.position === e.rank);
-                    const prizeText = prize ? (prize.value || prize.description || '') : '';
-                    const prizeDisplay = prizeText ? prizeText : '-';
-                    return (
-                      <motion.div 
-                        key={e.rank} 
-                        className="border-b border-zinc-800/70 last:border-b-0"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: (e.rank - 1) * 0.05 }}
-                      >
-                        <div className="px-3 py-2 grid grid-cols-[2.25rem_minmax(0,1fr)_3.75rem_5.25rem] gap-3 items-center">
-                          <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
-                          <div className="flex items-center gap-2 w-full">
-                            {PlatformIcon && <PlatformIcon className="w-4 h-4 text-zinc-300 shrink-0" aria-hidden="true" />}
-                            <span className="text-white whitespace-nowrap overflow-x-auto w-full">{primary}</span>
-                            {namesDetailed.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => setLbOpenRow(lbOpenRow === e.rank ? null : e.rank)}
-                                className="text-zinc-400 hover:text-white text-xs border border-zinc-700 rounded px-1 py-0.5"
-                                aria-label="Weitere Namen anzeigen"
-                                title="Weitere Namen anzeigen"
-                              >
-                                {lbOpenRow === e.rank ? '▲' : '▼'}
-                              </button>
-                            )}
-                          </div>
-                          <span className="text-amber-300 text-sm font-mono tabular-nums text-center">{e.expTotal.toLocaleString()}</span>
-                          <span className="text-emerald-300 text-xs font-medium tabular-nums text-right truncate max-w-full" title={prizeDisplay}>
-                            {prizeDisplay}
-                          </span>
+              
+              <div className="px-6 py-4 max-h-96 overflow-y-auto">
+                {lbLoading && (
+                  <div className="text-center py-8 text-zinc-400">
+                    <div className="animate-spin w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full mx-auto mb-2"></div>
+                    Lade Leaderboard...
+                  </div>
+                )}
+                
+                {(lbData?.entries || []).length === 0 && !lbLoading && (
+                  <div className="text-center py-8 text-zinc-400">
+                    Keine Einträge gefunden
+                  </div>
+                )}
+                
+                {(lbData?.entries || []).slice(0, 10).map((entry, idx) => {
+                  const primary = entry.instagram || entry.tiktok || entry.facebook || '-';
+                  const platformIcon = entry.instagram ? '📸' : entry.tiktok ? '🎵' : entry.facebook ? '👥' : '❓';
+                  
+                  return (
+                    <motion.div
+                      key={entry.rank}
+                      className="flex items-center justify-between py-3 border-b border-zinc-800/50 last:border-b-0"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-zinc-800 rounded-full flex items-center justify-center text-xs font-bold text-zinc-300">
+                          #{entry.rank}
                         </div>
-                        <AnimatePresence>
-                          {lbOpenRow === e.rank && namesDetailed.length > 1 && (
-                            <motion.div 
-                              className="pl-[3.25rem] pr-3 pb-2 flex flex-col gap-1 items-start"
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              {namesDetailed.map((n, idx) => {
-                                const ChipIcon = n.platform === 'instagram' ? FaInstagram : n.platform === 'tiktok' ? FaTiktok : FaFacebookF;
-                                return (
-                                  <div key={idx} className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-200 text-[11px] w-full text-left whitespace-normal break-words flex items-center gap-2">
-                                    {ChipIcon && <ChipIcon className="w-3.5 h-3.5 text-zinc-300" aria-hidden="true" />}
-                                    <span className="break-words">{n.label}</span>
-                                  </div>
-                                );
-                              })}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-                <div className="text-[10px] text-zinc-500 mt-2 text-right">Letztes Update: {lbData?.lastUpdated ? new Date(lbData.lastUpdated).toLocaleString() : '-'}</div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span>{platformIcon}</span>
+                            <span className="text-white font-medium">{primary}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-yellow-400 font-bold">{entry.expTotal.toLocaleString()}</div>
+                        <div className="text-zinc-400 text-xs">EXP</div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Enhanced D.INVEST & Staking Dashboard */}
-      <motion.div 
-        className="bg-zinc-900/50 rounded-xl border border-zinc-700/50 p-6 mb-6 backdrop-blur-sm"
-        variants={itemVariants}
-      >
-        {/* Header Section */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <motion.img 
-              src="/D.INVEST.png" 
-              alt="D.INVEST" 
-              className="w-8 h-8 object-contain"
-              animate={{ rotate: [0, 5, -5, 0] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            />
-            <h3 className="text-xl font-bold text-white">
-              D.INVEST & Staking Dashboard
-            </h3>
-          </div>
-        </div>
-
-        {/* D.INVEST Token Metrics */}
-        <div className="mb-8">
-          <h4 className="text-lg font-semibold text-blue-400 mb-4">
-            D.INVEST Token Distribution
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Community Owned */}
-            <motion.div 
-              className="bg-zinc-800/50 rounded-lg p-3 border border-green-500/20"
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="text-green-300 text-xs font-medium mb-1 flex items-center gap-1">
-                <motion.div 
-                  className="w-1.5 h-1.5 bg-green-400 rounded-full"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                ></motion.div>
-                Community Owned
-              </div>
-              {loading ? (
-                <div className="animate-pulse bg-zinc-600 h-5 w-12 rounded"></div>
-              ) : (
-                <>
-                  <div className="text-white font-bold text-lg">
-                    {dinvestBalance ? (10000 - parseInt(dinvestBalance.balance)).toLocaleString() : "0"}
-                  </div>
-                  <div className="text-green-400 text-xs">
-                    {dinvestBalance ? (((10000 - parseInt(dinvestBalance.balance)) / 10000) * 100).toFixed(1) : "0"}% verkauft
-                  </div>
-                </>
-              )}
-            </motion.div>
-            
-            {/* Verfügbar */}
-            <motion.div 
-              className="bg-zinc-800/50 rounded-lg p-3 border border-amber-500/20"
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="text-amber-300 text-xs font-medium mb-1 flex items-center gap-1">
-                <motion.div 
-                  className="w-1.5 h-1.5 bg-amber-400 rounded-full"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-                ></motion.div>
-                Verfügbar
-              </div>
-              {loading ? (
-                <div className="animate-pulse bg-zinc-600 h-5 w-12 rounded"></div>
-              ) : (
-                <>
-                  <div className="text-white font-bold text-lg">
-                    {dinvestBalance ? parseInt(dinvestBalance.balance).toLocaleString() : "0"}
-                  </div>
-                  <div className="text-amber-400 text-xs">5€ pro Token</div>
-                </>
-              )}
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div className="w-full h-px bg-zinc-700/50 mb-8"></div>
-
-        {/* Staking Statistics */}
-        <div>
-          <h4 className="text-lg font-semibold text-purple-400 mb-4">
-            Live Staking Board
-          </h4>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Rewards Pool */}
-            <motion.div 
-              className="bg-zinc-800/50 rounded-lg p-3 border border-purple-500/20"
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="text-purple-300 text-xs font-medium mb-1 flex items-center gap-1">
-                <motion.div 
-                  className="w-1.5 h-1.5 bg-purple-400 rounded-full"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                ></motion.div>
-                Rewards Pool
-              </div>
-              <div className="text-white font-bold text-lg">
-                {loading ? "..." : stakingTokens.toFixed(2)}
-              </div>
-              <div className="text-purple-400 text-xs">D.FAITH</div>
-            </motion.div>
-            
-            {/* Total Gestaked */}
-            <motion.div 
-              className="bg-zinc-800/50 rounded-lg p-3 border border-blue-500/20"
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="text-blue-300 text-xs font-medium mb-1 flex items-center gap-1">
-                <motion.div 
-                  className="w-1.5 h-1.5 bg-blue-400 rounded-full"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
-                ></motion.div>
-                Total Gestaked
-              </div>
-              <div className="text-white font-bold text-lg">
-                {loading ? "..." : totalStaked?.toLocaleString() || "0"}
-              </div>
-              <div className="text-blue-400 text-xs">D.INVEST</div>
-            </motion.div>
-            
-            {/* Verteilt */}
-            <motion.div 
-              className="bg-zinc-800/50 rounded-lg p-3 border border-green-500/20"
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="text-green-300 text-xs font-medium mb-1 flex items-center gap-1">
-                <motion.div 
-                  className="w-1.5 h-1.5 bg-green-400 rounded-full"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: 0.6 }}
-                ></motion.div>
-                Verteilt
-              </div>
-              <div className="text-white font-bold text-lg">
-                {loading ? "..." : totalRewardsDistributed?.toFixed(2) || "0"}
-              </div>
-              <div className="text-green-400 text-xs">D.FAITH</div>
-            </motion.div>
-            
-            {/* Current Stage */}
-            <motion.div 
-              className="bg-zinc-800/50 rounded-lg p-3 border border-amber-500/20"
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="text-amber-300 text-xs font-medium mb-1 flex items-center gap-1">
-                <motion.div 
-                  className="w-1.5 h-1.5 bg-amber-400 rounded-full"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: 0.9 }}
-                ></motion.div>
-                Current Stage
-              </div>
-              <div className="text-white font-bold text-lg">
-                {loading ? "..." : `${currentStage || 1}/6`}
-              </div>
-              <div className="text-amber-400 text-xs">Reward Stage</div>
-            </motion.div>
-          </div>
-        </div>
-      </motion.div>
     </motion.div>
   );
 }
