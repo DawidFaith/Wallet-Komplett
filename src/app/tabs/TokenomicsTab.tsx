@@ -414,6 +414,50 @@ export default function TokenomicsTab() {
         </div>
       </motion.div>
 
+      {/* DexScreener Live Price Chart */}
+      <motion.div 
+        className="bg-gradient-to-br from-zinc-900/50 to-zinc-800/30 rounded-xl md:rounded-2xl border border-green-500/30 p-4 md:p-8 backdrop-blur-sm"
+        variants={itemVariants}
+      >
+        <motion.h3 
+          className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 text-center"
+          whileHover={{ scale: 1.02 }}
+        >
+          📈 Live Preis Chart
+        </motion.h3>
+        
+        <div className="relative rounded-xl overflow-hidden bg-zinc-900/50 border border-zinc-700/50">
+          <iframe
+            src="https://dexscreener.com/base/0x69eFD833288605f320d77eB2aB99DDE62919BbC1?embed=1&theme=dark&trades=0&info=0"
+            className="w-full h-[400px] md:h-[500px] border-0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            title="D.FAITH Live Price Chart"
+          />
+          <motion.div 
+            className="absolute top-2 right-2 px-2 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/30"
+            animate={{ opacity: [1, 0.5, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            LIVE
+          </motion.div>
+        </div>
+        
+        <div className="mt-4 text-center">
+          <motion.a
+            href="https://dexscreener.com/base/0x69eFD833288605f320d77eB2aB99DDE62919BbC1"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg transition-all duration-300"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <ExternalLink className="w-4 h-4" />
+            <span>Vollbild-Chart öffnen</span>
+          </motion.a>
+        </div>
+      </motion.div>
+
       {/* Live Market Data Grid - Mobile First */}
       <motion.div variants={itemVariants}>
         <div className="text-center mb-4 md:mb-8">
@@ -614,12 +658,21 @@ export default function TokenomicsTab() {
                     border: '1px solid #f59e0b',
                     borderRadius: '0.75rem',
                     color: '#ffffff',
-                    fontSize: '0.875rem'
+                    fontSize: '0.875rem',
+                    padding: '12px'
                   }}
-                  formatter={(value: any, name: any) => [
-                    `${value.toLocaleString()} Tokens`, 
-                    name
-                  ]}
+                  formatter={(value: any, name: any, props: any) => {
+                    const entry = props.payload;
+                    return [
+                      <div key="tooltip" className="space-y-1">
+                        <div className="font-semibold">{entry.name}</div>
+                        <div className="text-sm">{entry.tokens.toLocaleString()} Tokens</div>
+                        <div className="text-xs opacity-80">{entry.description}</div>
+                        <div className="font-bold text-amber-400">{entry.percentage.toFixed(2)}%</div>
+                      </div>
+                    ];
+                  }}
+                  labelFormatter={() => "Token Verteilung"}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -726,6 +779,43 @@ export default function TokenomicsTab() {
           ))}
         </div>
       </motion.div>
+
+      {/* Debug Section für Token Verteilung */}
+      {process.env.NODE_ENV === 'development' && (
+        <motion.div 
+          className="bg-zinc-900/50 rounded-xl border border-zinc-700/50 p-4 backdrop-blur-sm"
+          variants={itemVariants}
+        >
+          <h4 className="text-white font-bold mb-3">🔍 Token Verteilung Debug</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="space-y-2">
+              <div className="text-zinc-300">
+                <span className="text-amber-400 font-semibold">Total Supply:</span> {totalSupply.toLocaleString()}
+              </div>
+              <div className="text-zinc-300">
+                <span className="text-orange-400 font-semibold">Dawid Faith Balance:</span> {davidBalanceNum.toLocaleString()} ({davidPercentage.toFixed(2)}%)
+              </div>
+              <div className="text-zinc-300">
+                <span className="text-green-400 font-semibold">Pool Tokens:</span> {poolTokens.toLocaleString()}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="text-zinc-300">
+                <span className="text-blue-400 font-semibold">Staking Rewards:</span> {stakingTokens.toLocaleString()}
+              </div>
+              <div className="text-zinc-300">
+                <span className="text-purple-400 font-semibold">Community Supply:</span> {circulatingSupply.toLocaleString()}
+              </div>
+              <div className="text-zinc-300">
+                <span className="text-zinc-400 font-semibold">API Status:</span> 
+                <span className={`ml-2 ${tokenMetrics ? 'text-green-400' : 'text-red-400'}`}>
+                  {tokenMetrics ? '✅ Connected' : '❌ Failed'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Leaderboard Modal */}
       <AnimatePresence>
