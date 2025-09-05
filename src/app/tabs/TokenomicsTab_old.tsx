@@ -19,27 +19,34 @@ interface TokenMetrics {
     total: number;
     circulating: number;
   };
-  priceEUR: number;
+  marketCap: {
+    circulating: number;
+    fdv: number;
+  };
   marketCapEUR: {
     circulating: number;
     fdv: number;
   };
+  priceEUR: number;
   balances: {
     tokenInPool: number;
+    quoteInPool: number;
   };
 }
 
 interface WalletBalance {
+  balance: string;
   balanceRaw: string;
-  balanceFormatted: string;
+  timestamp: string;
 }
 
+// Leaderboard API types
 interface LeaderboardEntry {
-  userId: string;
-  username: string;
-  points: number;
+  instagram?: string;
+  tiktok?: string;
+  facebook?: string;
+  expTotal: number;
   rank: number;
-  avatar?: string;
 }
 
 interface Prize {
@@ -91,34 +98,56 @@ export default function TokenomicsTab() {
       try {
         // Parallele API-Aufrufe - verwende lokalen Proxy für Metrics
         const [metricsRes, davidRes, dinvestRes] = await Promise.all([
-          fetch('/api/metrics-proxy', { cache: 'no-store' }),
-          fetch('/api/dfaith-balance', { cache: 'no-store' }),
-          fetch('/api/dinvest-balance', { cache: 'no-store' })
+          fetch('/api/metrics-proxy')
+            .catch(err => {
+              console.error("❌ Metrics Proxy Error:", err);
+              return null;
+            }),
+          fetch('/api/tokenomics/dfaith-balance')
+            .catch(err => {
+              console.error("❌ D.FAITH API Error:", err);
+              return null;
+            }),
+          fetch('/api/tokenomics/dinvest-balance')
+            .catch(err => {
+              console.error("❌ D.INVEST API Error:", err);
+              return null;
+            })
         ]);
 
-        // Metrics API (lokaler Proxy)
-        if (metricsRes.ok) {
-          const metricsData = await metricsRes.json();
-          console.log("✅ Metrics API Response:", metricsData);
-          setTokenMetrics(metricsData);
+        // Token Metrics verarbeiten mit detaillierter Fehlerbehandlung
+        if (metricsRes && metricsRes.ok) {
+          try {
+            const metricsData = await metricsRes.json();
+            console.log("✅ Metrics Data:", metricsData);
+            setTokenMetrics(metricsData);
+          } catch (parseError) {
+            console.error("❌ Metrics JSON Parse Error:", parseError);
+            setTokenMetrics(null);
+          }
         } else {
-          console.log("❌ Metrics API failed or not ok");
+          console.log("❌ Metrics API failed:", metricsRes ? `Status: ${metricsRes.status}` : "No response");
+          setTokenMetrics(null);
         }
 
-        // D.FAITH Balance API
-        if (davidRes.ok) {
+        // Dawid Faith Balance verarbeiten
+        if (davidRes && davidRes.ok) {
           const davidData = await davidRes.json();
-          console.log("✅ D.FAITH Balance API Response:", davidData);
-          setDavidBalance(davidData);
+          console.log("✅ David Balance Data:", davidData);
+          if (davidData.success) {
+            setDavidBalance(davidData.data);
+          }
         } else {
-          console.log("❌ D.FAITH API failed or not ok");
+          console.log("❌ David Balance API failed or not ok");
         }
 
-        // D.INVEST Balance API  
-        if (dinvestRes.ok) {
+        // D.INVEST Balance verarbeiten
+        if (dinvestRes && dinvestRes.ok) {
           const dinvestData = await dinvestRes.json();
-          console.log("✅ D.INVEST Balance API Response:", dinvestData);
-          setDinvestBalance(dinvestData);
+          console.log("✅ D.INVEST Data:", dinvestData);
+          if (dinvestData.success) {
+            setDinvestBalance(dinvestData.data);
+          }
         } else {
           console.log("❌ D.INVEST API failed or not ok");
         }
@@ -801,48 +830,191 @@ export default function TokenomicsTab() {
           ))}
         </div>
       </motion.div>
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* D.INVEST Staking */}
+          <div className="space-y-6">
+            <h4 className="text-2xl font-bold text-blue-400 mb-6 text-center">
+              🚀 D.INVEST Staking
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <motion.div 
+                className="bg-gradient-to-br from-green-900/30 to-green-800/20 rounded-xl p-4 border border-green-500/30"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-green-300 text-sm font-medium mb-2 flex items-center gap-2">
+                  <motion.div 
+                    className="w-2 h-2 bg-green-400 rounded-full"
+                    animate={{ scale: [1, 1.3, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                  Community Owned
+                </div>
+                <div className="text-white font-bold text-2xl">
+                  {dinvestBalance ? (10000 - parseInt(dinvestBalance.balance)).toLocaleString() : "0"}
+                </div>
+                <div className="text-green-400 text-sm">
+                  {dinvestBalance ? (((10000 - parseInt(dinvestBalance.balance)) / 10000) * 100).toFixed(1) : "0"}% verkauft
+                </div>
+              </motion.div>
+              
+              <motion.div 
+                className="bg-gradient-to-br from-amber-900/30 to-amber-800/20 rounded-xl p-4 border border-amber-500/30"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-amber-300 text-sm font-medium mb-2 flex items-center gap-2">
+                  <motion.div 
+                    className="w-2 h-2 bg-amber-400 rounded-full"
+                    animate={{ scale: [1, 1.3, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                  />
+                  Verfügbar
+                </div>
+                <div className="text-white font-bold text-2xl">
+                  {dinvestBalance ? parseInt(dinvestBalance.balance).toLocaleString() : "0"}
+                </div>
+                <div className="text-amber-400 text-sm">5€ pro Token</div>
+              </motion.div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <motion.div 
+                className="bg-zinc-800/50 rounded-xl p-4 border border-blue-500/20"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-blue-300 text-sm font-medium mb-1">Total Gestaked</div>
+                <div className="text-white font-bold text-xl">{totalStaked?.toLocaleString() || "0"}</div>
+                <div className="text-blue-400 text-xs">D.INVEST</div>
+              </motion.div>
+              
+              <motion.div 
+                className="bg-zinc-800/50 rounded-xl p-4 border border-purple-500/20"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-purple-300 text-sm font-medium mb-1">Rewards Pool</div>
+                <div className="text-white font-bold text-xl">{stakingTokens.toFixed(2)}</div>
+                <div className="text-purple-400 text-xs">D.FAITH</div>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Fan Leaderboard Teaser */}
+          <div className="space-y-6">
+            <h4 className="text-2xl font-bold text-yellow-400 mb-6 text-center">
+              🏆 Fan Leaderboard
+            </h4>
+            
+            <div className="bg-zinc-800/50 rounded-xl p-6 border border-yellow-500/20">
+              <div className="text-center mb-4">
+                <div className="text-yellow-300 text-4xl mb-2">🎵</div>
+                <h5 className="text-white font-bold text-lg mb-2">Social Media Belohnungen</h5>
+                <p className="text-zinc-400 text-sm">
+                  Sammle EXP durch Instagram, TikTok & Facebook Posts und gewinne D.FAITH Rewards
+                </p>
+              </div>
+              
+              <motion.button
+                onClick={() => setShowLeaderboardModal(true)}
+                className="w-full bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-400 hover:to-yellow-300 text-black font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-yellow-500/25"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <span>🏆 Leaderboard anzeigen</span>
+                  <motion.span
+                    animate={{ x: [0, 5, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    →
+                  </motion.span>
+                </div>
+              </motion.button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Leaderboard Modal */}
       <AnimatePresence>
         {showLeaderboardModal && (
-          <motion.div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          <motion.div 
+            className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setShowLeaderboardModal(false)}
           >
-            <motion.div
-              className="bg-zinc-900 rounded-2xl border border-zinc-700 max-w-4xl w-full max-h-[90vh] overflow-hidden"
+            <motion.div 
+              className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl overflow-hidden"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
+              transition={{ duration: 0.2 }}
             >
-              {/* Modal Header */}
-              <div className="sticky top-0 bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-700 p-4 md:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Trophy className="w-6 h-6 text-amber-500" />
-                    <div>
-                      <h3 className="text-xl md:text-2xl font-bold text-white">Top Community Members</h3>
-                      <p className="text-zinc-400 text-sm">Vollständige Rangliste der D.FAITH Holder</p>
-                    </div>
+              <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-700 bg-gradient-to-r from-yellow-500/10 to-yellow-400/10">
+                <div className="flex items-center gap-3">
+                  <span className="text-yellow-300 text-2xl">🏆</span>
+                  <div>
+                    <h3 className="text-white font-bold text-lg">Fan Leaderboard</h3>
+                    <p className="text-zinc-400 text-sm">Top Performer nach EXP</p>
                   </div>
-                  <button
-                    onClick={() => setShowLeaderboardModal(false)}
-                    className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
-                  >
-                    <X className="w-5 h-5 text-zinc-400" />
-                  </button>
                 </div>
+                <motion.button 
+                  onClick={() => setShowLeaderboardModal(false)} 
+                  className="text-zinc-400 hover:text-white text-xl"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  ✖
+                </motion.button>
               </div>
-
-              {/* Modal Content */}
-              <div className="p-4 md:p-6 max-h-[70vh] overflow-y-auto">
-                <div className="text-center text-zinc-400 py-8">
-                  Detaillierte Leaderboard-Daten werden hier angezeigt
-                </div>
+              
+              <div className="px-6 py-4 max-h-96 overflow-y-auto">
+                {lbLoading && (
+                  <div className="text-center py-8 text-zinc-400">
+                    <div className="animate-spin w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full mx-auto mb-2"></div>
+                    Lade Leaderboard...
+                  </div>
+                )}
+                
+                {(lbData?.entries || []).length === 0 && !lbLoading && (
+                  <div className="text-center py-8 text-zinc-400">
+                    Keine Einträge gefunden
+                  </div>
+                )}
+                
+                {(lbData?.entries || []).slice(0, 10).map((entry, idx) => {
+                  const primary = entry.instagram || entry.tiktok || entry.facebook || '-';
+                  const platformIcon = entry.instagram ? '📸' : entry.tiktok ? '🎵' : entry.facebook ? '👥' : '❓';
+                  
+                  return (
+                    <motion.div
+                      key={entry.rank}
+                      className="flex items-center justify-between py-3 border-b border-zinc-800/50 last:border-b-0"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-zinc-800 rounded-full flex items-center justify-center text-xs font-bold text-zinc-300">
+                          #{entry.rank}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span>{platformIcon}</span>
+                            <span className="text-white font-medium">{primary}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-yellow-400 font-bold">{entry.expTotal.toLocaleString()}</div>
+                        <div className="text-zinc-400 text-xs">EXP</div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
             </motion.div>
           </motion.div>
