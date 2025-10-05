@@ -5,7 +5,8 @@ import { createThirdwebClient, getContract, readContract } from "thirdweb";
 import { base } from "thirdweb/chains";
 import { motion, AnimatePresence } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { TrendingUp, Users, Coins, DollarSign, ExternalLink, FileText, Target, Zap, Crown, Vote, Trophy, Timer, Award, X } from 'lucide-react';
+import { TrendingUp, Users, Coins, DollarSign, ExternalLink, FileText, Target, Zap, Crown, Vote, Trophy, Timer, Award, X, BarChart3 } from 'lucide-react';
+import { Button } from "../../../components/ui/button";
 
 // Smart Contract Setup
 const CONTRACT_ADDRESS = "0xe85b32a44b9eD3ecf8bd331FED46fbdAcDBc9940";
@@ -78,6 +79,9 @@ export default function TokenomicsTab() {
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [lbData, setLbData] = useState<LeaderboardResponse | null>(null);
   const [lbLoading, setLbLoading] = useState(false);
+
+  // Metriken Modal State
+  const [showMetricsModal, setShowMetricsModal] = useState(false);
 
   // Daten von APIs abrufen
   useEffect(() => {
@@ -803,6 +807,227 @@ export default function TokenomicsTab() {
                   )}
                 </div>
               )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Schwebendes Metriken-Symbol - Unten rechts */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <Button
+          onClick={() => setShowMetricsModal(!showMetricsModal)}
+          className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white relative shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 rounded-full w-16 h-16 p-0 flex items-center justify-center border border-green-400/20"
+        >
+          <BarChart3 className="text-xl" />
+          {/* Pulsierender Effekt für Aufmerksamkeit */}
+          <div className="absolute inset-0 rounded-full bg-green-400/20 animate-ping"></div>
+        </Button>
+      </div>
+
+      {/* Metriken Modal */}
+      <AnimatePresence>
+        {showMetricsModal && (
+          <motion.div
+            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowMetricsModal(false)}
+          >
+            <motion.div
+              className="bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-2xl border border-zinc-700 p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <BarChart3 className="w-8 h-8 text-green-400" />
+                  <h2 className="text-2xl font-bold text-white">Live Metriken</h2>
+                </div>
+                <motion.button
+                  onClick={() => setShowMetricsModal(false)}
+                  className="p-2 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <X className="w-5 h-5" />
+                </motion.button>
+              </div>
+
+              {/* Metriken Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* D.FAITH Token */}
+                <motion.div 
+                  className="bg-gradient-to-br from-amber-900/30 to-amber-800/20 rounded-xl border border-amber-500/40 p-4"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Coins className="w-6 h-6 text-amber-400" />
+                      <span className="text-amber-300 font-semibold">D.FAITH</span>
+                    </div>
+                    <motion.div 
+                      className="px-2 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold"
+                      animate={{ opacity: [1, 0.5, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      LIVE
+                    </motion.div>
+                  </div>
+                  <div className="text-white">
+                    <div className="text-2xl font-bold mb-1">
+                      €{tokenMetrics?.priceEUR?.toFixed(4) || "0.1700"}
+                    </div>
+                    <div className="text-amber-300 text-sm">
+                      0.00% {/* Placeholder für Preisänderung */}
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* D.INVEST Token */}
+                <motion.div 
+                  className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 rounded-xl border border-blue-500/40 p-4"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Target className="w-6 h-6 text-blue-400" />
+                      <span className="text-blue-300 font-semibold">D.INVEST</span>
+                    </div>
+                    <div className="px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-bold">
+                      STABIL
+                    </div>
+                  </div>
+                  <div className="text-white">
+                    <div className="text-2xl font-bold mb-1">
+                      €{dinvestBalance?.priceEUR?.toFixed(2) || "5.00"}
+                    </div>
+                    <div className="text-blue-300 text-sm">
+                      Stabil
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Total Staked */}
+                <motion.div 
+                  className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 rounded-xl border border-purple-500/40 p-4"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-6 h-6 text-purple-400" />
+                      <span className="text-purple-300 font-semibold">Total Staked</span>
+                    </div>
+                  </div>
+                  <div className="text-white">
+                    <div className="text-2xl font-bold mb-1">
+                      {totalStaked?.toLocaleString() || "79.999,99"}
+                    </div>
+                    <div className="text-purple-300 text-sm">
+                      D.FAITH Tokens
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Rewards Verteilt */}
+                <motion.div 
+                  className="bg-gradient-to-br from-green-900/30 to-green-800/20 rounded-xl border border-green-500/40 p-4"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Trophy className="w-6 h-6 text-green-400" />
+                      <span className="text-green-300 font-semibold">Rewards verteilt</span>
+                    </div>
+                  </div>
+                  <div className="text-white">
+                    <div className="text-2xl font-bold mb-1">
+                      {totalRewardsDistributed?.toLocaleString() || "0.0"}
+                    </div>
+                    <div className="text-green-300 text-sm">
+                      D.FAITH Tokens
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Halving Stufe */}
+                <motion.div 
+                  className="bg-gradient-to-br from-red-900/30 to-red-800/20 rounded-xl border border-red-500/40 p-4"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Timer className="w-6 h-6 text-red-400" />
+                      <span className="text-red-300 font-semibold">Halving Stufe</span>
+                    </div>
+                  </div>
+                  <div className="text-white">
+                    <div className="text-2xl font-bold mb-1">
+                      Stufe {currentStage || "1"}
+                    </div>
+                    <div className="text-red-300 text-sm">
+                      Aktuelle Phase
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Bis Halving */}
+                <motion.div 
+                  className="bg-gradient-to-br from-orange-900/30 to-orange-800/20 rounded-xl border border-orange-500/40 p-4"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Award className="w-6 h-6 text-orange-400" />
+                      <span className="text-orange-300 font-semibold">Bis Halving</span>
+                    </div>
+                  </div>
+                  <div className="text-white">
+                    <div className="text-2xl font-bold mb-1">
+                      {((100000 * (currentStage || 1)) - (totalStaked || 0)).toLocaleString() || "9.999,99"}
+                    </div>
+                    <div className="text-orange-300 text-sm">
+                      D.FAITH Tokens verbleibend
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Active Users */}
+                <motion.div 
+                  className="bg-gradient-to-br from-indigo-900/30 to-indigo-800/20 rounded-xl border border-indigo-500/40 p-4 md:col-span-2"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-6 h-6 text-indigo-400" />
+                      <span className="text-indigo-300 font-semibold">Active Users</span>
+                    </div>
+                    <motion.div 
+                      className="px-2 py-1 rounded-full bg-indigo-500/20 text-indigo-400 text-xs font-bold"
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      AKTIV
+                    </motion.div>
+                  </div>
+                  <div className="text-white">
+                    <div className="text-2xl font-bold mb-1">
+                      {activeFansCount || "8"}
+                    </div>
+                    <div className="text-indigo-300 text-sm">
+                      Fans im Leaderboard
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* Last Updated */}
+              <div className="text-center text-zinc-500 text-sm mt-6">
+                Zuletzt aktualisiert: {new Date().toLocaleString('de-DE')}
+              </div>
             </motion.div>
           </motion.div>
         )}
