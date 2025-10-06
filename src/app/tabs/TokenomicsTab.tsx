@@ -401,30 +401,63 @@ export default function TokenomicsTab() {
             }}
           />
           
-          {/* Haupttitel mit Pirata One - Visuell verbessert */}
-          <motion.h1 
-            className="relative text-4xl md:text-6xl lg:text-8xl font-pirata text-transparent bg-clip-text bg-gradient-to-r from-rose-300 via-purple-300 to-indigo-300 mb-4 drop-shadow-2xl"
-            initial={{ opacity: 0, y: 50, rotateX: -15 }}
-            animate={{ opacity: 1, y: 0, rotateX: 0 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            style={{
-              textShadow: "0 0 60px rgba(244, 114, 182, 0.6), 0 0 100px rgba(147, 51, 234, 0.4)"
-            }}
-          >
-            <motion.span
-              animate={{ 
-                filter: [
-                  "drop-shadow(0 0 20px rgba(244, 114, 182, 0.8))",
-                  "drop-shadow(0 0 40px rgba(147, 51, 234, 0.8))", 
-                  "drop-shadow(0 0 60px rgba(99, 102, 241, 0.8))",
-                  "drop-shadow(0 0 40px rgba(244, 114, 182, 0.8))"
-                ]
-              }}
-              transition={{ duration: 3, repeat: Infinity }}
+          {/* Logo und Haupttitel mit Pirata One - Visuell verbessert */}
+          <div className="flex flex-col items-center mb-6">
+            {/* D.FAITH Token Logo */}
+            <motion.div 
+              className="mb-6"
+              initial={{ opacity: 0, scale: 0.5, rotateY: 180 }}
+              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
             >
-              D.FAITH
-            </motion.span>
-          </motion.h1>
+              <motion.img
+                src="/D.FAITH.png"
+                alt="D.FAITH Token"
+                className="w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-full shadow-2xl border-4 border-rose-500/30"
+                whileHover={{ 
+                  scale: 1.1, 
+                  rotate: 5,
+                  boxShadow: "0 0 60px rgba(244, 114, 182, 0.8)"
+                }}
+                animate={{
+                  boxShadow: [
+                    "0 0 20px rgba(244, 114, 182, 0.4)",
+                    "0 0 40px rgba(147, 51, 234, 0.6)",
+                    "0 0 60px rgba(99, 102, 241, 0.4)",
+                    "0 0 40px rgba(244, 114, 182, 0.4)"
+                  ]
+                }}
+                transition={{ 
+                  duration: 3, 
+                  repeat: Infinity
+                }}
+              />
+            </motion.div>
+
+            <motion.h1 
+              className="relative text-4xl md:text-6xl lg:text-8xl font-pirata text-transparent bg-clip-text bg-gradient-to-r from-rose-300 via-purple-300 to-indigo-300 drop-shadow-2xl"
+              initial={{ opacity: 0, y: 50, rotateX: -15 }}
+              animate={{ opacity: 1, y: 0, rotateX: 0 }}
+              transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+              style={{
+                textShadow: "0 0 60px rgba(244, 114, 182, 0.6), 0 0 100px rgba(147, 51, 234, 0.4)"
+              }}
+            >
+              <motion.span
+                animate={{ 
+                  filter: [
+                    "drop-shadow(0 0 20px rgba(244, 114, 182, 0.8))",
+                    "drop-shadow(0 0 40px rgba(147, 51, 234, 0.8))", 
+                    "drop-shadow(0 0 60px rgba(99, 102, 241, 0.8))",
+                    "drop-shadow(0 0 40px rgba(244, 114, 182, 0.8))"
+                  ]
+                }}
+                transition={{ duration: 3, repeat: Infinity }}
+              >
+                D.FAITH
+              </motion.span>
+            </motion.h1>
+          </div>
           
           {/* Untertitel mit Animation */}
           <motion.div 
@@ -488,45 +521,13 @@ export default function TokenomicsTab() {
           </motion.p>
           
           <motion.p 
-            className="text-md md:text-lg text-zinc-400 mb-6"
+            className="text-md md:text-lg text-zinc-400 mb-12"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
             Erfahre alles über die Vision, Technologie und Community von <span className="text-green-400 font-semibold">Dawid Faith</span>
           </motion.p>
-
-          {/* Feature Highlights */}
-          <motion.div 
-            className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 text-sm md:text-base"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, staggerChildren: 0.1 }}
-          >
-            <motion.div 
-              className="flex items-center justify-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20"
-              whileHover={{ scale: 1.05, backgroundColor: "rgba(34, 197, 94, 0.15)" }}
-            >
-              <FileText className="w-5 h-5 text-green-400" />
-              <span className="text-green-300 font-medium">Detailliertes Whitepaper</span>
-            </motion.div>
-            
-            <motion.div 
-              className="flex items-center justify-center gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20"
-              whileHover={{ scale: 1.05, backgroundColor: "rgba(59, 130, 246, 0.15)" }}
-            >
-              <Users className="w-5 h-5 text-blue-400" />
-              <span className="text-blue-300 font-medium">Community Hub</span>
-            </motion.div>
-            
-            <motion.div 
-              className="flex items-center justify-center gap-2 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20"
-              whileHover={{ scale: 1.05, backgroundColor: "rgba(147, 51, 234, 0.15)" }}
-            >
-              <Trophy className="w-5 h-5 text-purple-400" />
-              <span className="text-purple-300 font-medium">Live Metriken</span>
-            </motion.div>
-          </motion.div>
         </motion.div>
         
         {/* Visuell verbesserte Call-to-Action Buttons */}
