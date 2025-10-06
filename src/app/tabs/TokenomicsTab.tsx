@@ -824,28 +824,42 @@ export default function TokenomicsTab() {
                   <div className="text-white">
                     <div className="text-2xl font-bold mb-1">
                       {(() => {
-                        // Berechnung basierend auf echten Staking-Thresholds
-                        // Stufe 1: 0-100.000, Stufe 2: 100.001-500.000, etc.
+                        // Korrigierte Berechnung: Tokens bis zur NÄCHSTEN Stufe
                         const stage = currentStage || 1;
+                        const currentStaked = totalStaked || 0;
                         let nextThreshold = 0;
                         
+                        // Bestimme den Threshold für die nächste Stufe
                         switch(stage) {
-                          case 1: nextThreshold = 100000; break;
-                          case 2: nextThreshold = 500000; break;
-                          case 3: nextThreshold = 1000000; break;
-                          case 4: nextThreshold = 2500000; break;
-                          case 5: nextThreshold = 5000000; break;
-                          default: nextThreshold = 5000000; break;
+                          case 1: nextThreshold = 10000; break;    // Von Stufe 1 zu Stufe 2
+                          case 2: nextThreshold = 20000; break;    // Von Stufe 2 zu Stufe 3  
+                          case 3: nextThreshold = 40000; break;   // Von Stufe 3 zu Stufe 4
+                          case 4: nextThreshold = 60000; break;   // Von Stufe 4 zu Stufe 5
+                          case 5: nextThreshold = 80000; break;   // Von Stufe 5 zu Max
+                          default: 
+                            // Wenn bereits auf höchster Stufe
+                            return "Max erreicht";
                         }
                         
-                        const currentStaked = totalStaked || 0;
-                        const tokensUntilHalving = Math.max(0, nextThreshold - currentStaked);
+                        // Berechne verbleibende Token bis nächste Stufe
+                        const tokensUntilNext = Math.max(0, nextThreshold - currentStaked);
                         
-                        return tokensUntilHalving.toLocaleString();
+                        // Debug Info (wird nur in Console angezeigt)
+                        if (typeof window !== 'undefined') {
+                          console.log(`🔍 Halving Berechnung:`, {
+                            currentStage: stage,
+                            currentStaked,
+                            nextThreshold,
+                            tokensUntilNext,
+                            calculation: `${nextThreshold} - ${currentStaked} = ${tokensUntilNext}`
+                          });
+                        }
+                        
+                        return tokensUntilNext.toLocaleString();
                       })()}
                     </div>
                     <div className="text-orange-300 text-sm">
-                      D.INVEST Tokens bis Halving
+                      D.FAITH Tokens bis Halving
                     </div>
                   </div>
                 </motion.div>
