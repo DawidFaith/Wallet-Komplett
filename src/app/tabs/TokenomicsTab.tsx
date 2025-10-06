@@ -459,30 +459,6 @@ export default function TokenomicsTab() {
             </motion.h1>
           </div>
           
-          {/* Untertitel mit Animation */}
-          <motion.div 
-            className="flex items-center justify-center gap-3 text-lg md:text-2xl font-bold"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-          >
-            <motion.span
-              className="text-green-400"
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              💎
-            </motion.span>
-
-            <motion.span
-              className="text-blue-400"
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-            >
-              �
-            </motion.span>
-          </motion.div>
-          
           {/* Floating Particles */}
           {[...Array(6)].map((_, i) => (
             <motion.div
@@ -515,7 +491,6 @@ export default function TokenomicsTab() {
           transition={{ delay: 0.3 }}
         >
 
-          
           <motion.p 
             className="text-md md:text-lg text-zinc-400 mb-12"
             initial={{ opacity: 0 }}
@@ -604,32 +579,6 @@ export default function TokenomicsTab() {
             </motion.a>
           </motion.div>
 
-
-
-          {/* Social Proof */}
-          <motion.div 
-            className="flex items-center gap-4 md:gap-6 text-zinc-500 text-sm md:text-base"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-          >
-            <div className="flex items-center gap-2">
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-2 h-2 bg-green-400 rounded-full"
-              />
-              <span>Live Updates</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <span>{activeFansCount || "8"}+ Aktive Fans</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4" />
-              <span>Blockchain-basiert</span>
-            </div>
-          </motion.div>
         </div>
       </motion.div>
 
@@ -676,10 +625,6 @@ export default function TokenomicsTab() {
           </motion.a>
         </div>
       </motion.div>
-
-
-
-
 
       {/* Leaderboard Modal */}
       <AnimatePresence>
