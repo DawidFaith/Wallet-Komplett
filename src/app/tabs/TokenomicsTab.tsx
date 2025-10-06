@@ -335,12 +335,93 @@ export default function TokenomicsTab() {
         className="text-center bg-gradient-to-br from-green-900/20 to-blue-900/20 rounded-xl md:rounded-2xl border border-green-500/30 p-6 md:p-12 backdrop-blur-sm"
         variants={itemVariants}
       >
-        <motion.h1 
-          className="text-3xl md:text-5xl lg:text-7xl font-bold text-white mb-4 md:mb-6"
+        <motion.div
+          className="relative mb-4 md:mb-6"
           whileHover={{ scale: 1.02 }}
         >
-          💎 D.FAITH Tokenomics
-        </motion.h1>
+          {/* Hintergrund-Glow-Effekt */}
+          <motion.div 
+            className="absolute inset-0 blur-3xl bg-gradient-to-r from-green-400/20 via-blue-500/20 to-purple-600/20 rounded-full"
+            animate={{ 
+              scale: [1, 1.1, 1],
+              rotate: [0, 180, 360]
+            }}
+            transition={{ 
+              duration: 8, 
+              repeat: Infinity,
+              ease: "linear"
+            }}
+          />
+          
+          {/* Haupttitel mit Gradient */}
+          <motion.h1 
+            className="relative text-3xl md:text-5xl lg:text-7xl font-black bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 bg-clip-text text-transparent mb-2"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          >
+            <motion.span
+              animate={{ 
+                textShadow: [
+                  "0 0 10px rgba(34, 197, 94, 0.5)",
+                  "0 0 20px rgba(59, 130, 246, 0.5)", 
+                  "0 0 30px rgba(147, 51, 234, 0.5)",
+                  "0 0 20px rgba(34, 197, 94, 0.5)"
+                ]
+              }}
+              transition={{ duration: 3, repeat: Infinity }}
+            >
+              D.FAITH
+            </motion.span>
+          </motion.h1>
+          
+          {/* Untertitel mit Animation */}
+          <motion.div 
+            className="flex items-center justify-center gap-3 text-lg md:text-2xl font-bold"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          >
+            <motion.span
+              className="text-green-400"
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              💎
+            </motion.span>
+            <span className="text-white/80 tracking-wider">TOKENOMICS</span>
+            <motion.span
+              className="text-blue-400"
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+            >
+              �
+            </motion.span>
+          </motion.div>
+          
+          {/* Floating Particles */}
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 bg-gradient-to-r from-green-400 to-blue-500 rounded-full opacity-60"
+              animate={{
+                x: [0, 50, -30, 0],
+                y: [0, -30, 20, 0],
+                scale: [0.5, 1, 0.7, 0.5],
+                opacity: [0.3, 0.8, 0.4, 0.3]
+              }}
+              transition={{
+                duration: 4 + i * 0.5,
+                repeat: Infinity,
+                delay: i * 0.3
+              }}
+              style={{
+                left: `${10 + i * 15}%`,
+                top: `${20 + (i % 2) * 60}%`
+              }}
+            />
+          ))}
+        </motion.div>
         
         <motion.p 
           className="text-lg md:text-xl text-zinc-300 mb-6 md:mb-8 max-w-3xl mx-auto"
@@ -682,7 +763,7 @@ export default function TokenomicsTab() {
                       {totalStaked?.toLocaleString() || "79.999,99"}
                     </div>
                     <div className="text-purple-300 text-sm">
-                      D.FAITH Tokens
+                      D.INVEST Tokens
                     </div>
                   </div>
                 </motion.div>
@@ -742,10 +823,29 @@ export default function TokenomicsTab() {
                   </div>
                   <div className="text-white">
                     <div className="text-2xl font-bold mb-1">
-                      {((100000 * (currentStage || 1)) - (totalStaked || 0)).toLocaleString() || "9.999,99"}
+                      {(() => {
+                        // Berechnung basierend auf echten Staking-Thresholds
+                        // Stufe 1: 0-100.000, Stufe 2: 100.001-500.000, etc.
+                        const stage = currentStage || 1;
+                        let nextThreshold = 0;
+                        
+                        switch(stage) {
+                          case 1: nextThreshold = 100000; break;
+                          case 2: nextThreshold = 500000; break;
+                          case 3: nextThreshold = 1000000; break;
+                          case 4: nextThreshold = 2500000; break;
+                          case 5: nextThreshold = 5000000; break;
+                          default: nextThreshold = 5000000; break;
+                        }
+                        
+                        const currentStaked = totalStaked || 0;
+                        const tokensUntilHalving = Math.max(0, nextThreshold - currentStaked);
+                        
+                        return tokensUntilHalving.toLocaleString();
+                      })()}
                     </div>
                     <div className="text-orange-300 text-sm">
-                      D.FAITH Tokens verbleibend
+                      D.INVEST Tokens bis Halving
                     </div>
                   </div>
                 </motion.div>
