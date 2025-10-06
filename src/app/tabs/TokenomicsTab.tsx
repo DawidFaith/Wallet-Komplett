@@ -330,76 +330,336 @@ export default function TokenomicsTab() {
       initial="hidden"
       animate="visible"
     >
-      {/* Künstlerisches Hero Design */}
+      {/* Visuell verbessertes Hero Section */}
       <motion.div 
-        className="relative overflow-hidden bg-gradient-to-br from-rose-950/30 via-purple-950/40 to-indigo-950/30 rounded-3xl border border-rose-500/20 backdrop-blur-md"
+        className="relative overflow-hidden text-center bg-gradient-to-br from-rose-950/40 via-purple-950/50 to-indigo-950/40 rounded-3xl border border-rose-500/30 p-8 md:p-16 backdrop-blur-xl shadow-2xl"
         variants={itemVariants}
       >
-        <motion.div
-          className="relative mb-4 md:mb-6"
-          whileHover={{ scale: 1.02 }}
-        >
-          {/* Hintergrund-Glow-Effekt */}
+        {/* Floating Elements - Visuelle Verbesserung */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Animierte Kreise */}
           <motion.div 
-            className="absolute inset-0 blur-3xl bg-gradient-to-r from-green-400/20 via-blue-500/20 to-purple-600/20 rounded-full"
+            className="absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-rose-500/20 to-transparent rounded-full blur-xl"
             animate={{ 
-              scale: [1, 1.1, 1],
-              rotate: [0, 180, 360]
+              x: [0, 50, 0],
+              y: [0, -30, 0],
+              scale: [1, 1.2, 1]
+            }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div 
+            className="absolute -bottom-20 -right-20 w-60 h-60 bg-gradient-to-br from-purple-500/20 to-transparent rounded-full blur-xl"
+            animate={{ 
+              x: [0, -40, 0],
+              y: [0, 20, 0],
+              scale: [1, 0.8, 1]
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          />
+          
+          {/* Schwebende Partikel */}
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-3 h-3 bg-gradient-to-r from-rose-400 to-purple-400 rounded-full opacity-60"
+              style={{
+                left: `${10 + Math.random() * 80}%`,
+                top: `${10 + Math.random() * 80}%`,
+              }}
+              animate={{
+                y: [-20, 20, -20],
+                x: [-10, 10, -10],
+                opacity: [0.3, 0.8, 0.3],
+                scale: [0.8, 1.2, 0.8],
+              }}
+              transition={{
+                duration: 4 + Math.random() * 3,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+                ease: "easeInOut"
+              }}
+            />
+          ))}
+        </div>
+
+        <motion.div
+          className="relative z-10"
+          whileHover={{ scale: 1.01 }}
+        >
+          {/* Hintergrund-Glow-Effekt - Verbessert */}
+          <motion.div 
+            className="absolute inset-0 blur-3xl bg-gradient-to-r from-rose-400/30 via-purple-500/30 to-indigo-600/30 rounded-full opacity-60"
+            animate={{ 
+              scale: [1, 1.15, 1],
+              rotate: [0, 180, 360],
+              opacity: [0.4, 0.7, 0.4]
             }}
             transition={{ 
-              duration: 8, 
+              duration: 10, 
               repeat: Infinity,
               ease: "linear"
             }}
           />
           
-          {/* Titel mit Pirata One */}
+          {/* Haupttitel mit Pirata One - Visuell verbessert */}
           <motion.h1 
-            className="text-4xl md:text-6xl lg:text-8xl text-white mb-4 font-pirata"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            className="relative text-4xl md:text-6xl lg:text-8xl font-pirata text-transparent bg-clip-text bg-gradient-to-r from-rose-300 via-purple-300 to-indigo-300 mb-4 drop-shadow-2xl"
+            initial={{ opacity: 0, y: 50, rotateX: -15 }}
+            animate={{ opacity: 1, y: 0, rotateX: 0 }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            style={{
+              textShadow: "0 0 60px rgba(244, 114, 182, 0.6), 0 0 100px rgba(147, 51, 234, 0.4)"
+            }}
           >
-            D.FAITH TOKENOMICS
+            <motion.span
+              animate={{ 
+                filter: [
+                  "drop-shadow(0 0 20px rgba(244, 114, 182, 0.8))",
+                  "drop-shadow(0 0 40px rgba(147, 51, 234, 0.8))", 
+                  "drop-shadow(0 0 60px rgba(99, 102, 241, 0.8))",
+                  "drop-shadow(0 0 40px rgba(244, 114, 182, 0.8))"
+                ]
+              }}
+              transition={{ duration: 3, repeat: Infinity }}
+            >
+              D.FAITH
+            </motion.span>
           </motion.h1>
           
-
+          {/* Untertitel mit Animation */}
+          <motion.div 
+            className="flex items-center justify-center gap-3 text-lg md:text-2xl font-bold"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          >
+            <motion.span
+              className="text-green-400"
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              💎
+            </motion.span>
+            <span className="text-white/80 tracking-wider">TOKENOMICS</span>
+            <motion.span
+              className="text-blue-400"
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+            >
+              �
+            </motion.span>
+          </motion.div>
+          
+          {/* Floating Particles */}
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 bg-gradient-to-r from-green-400 to-blue-500 rounded-full opacity-60"
+              animate={{
+                x: [0, 50, -30, 0],
+                y: [0, -30, 20, 0],
+                scale: [0.5, 1, 0.7, 0.5],
+                opacity: [0.3, 0.8, 0.4, 0.3]
+              }}
+              transition={{
+                duration: 4 + i * 0.5,
+                repeat: Infinity,
+                delay: i * 0.3
+              }}
+              style={{
+                left: `${10 + i * 15}%`,
+                top: `${20 + (i % 2) * 60}%`
+              }}
+            />
+          ))}
         </motion.div>
         
-          {/* Kurze Beschreibung */}
+        {/* Motivierende Beschreibung mit Highlights */}
+        <motion.div 
+          className="text-center mb-8 md:mb-12 max-w-4xl mx-auto"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
           <motion.p 
-            className="text-lg text-white/70 mb-8 max-w-xl mx-auto"
+            className="text-lg md:text-2xl text-zinc-200 mb-4 font-medium leading-relaxed"
+          >
+            Entdecke die revolutionäre <span className="text-transparent bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text font-bold">Wirtschaft</span> hinter dem Creator-Token
+          </motion.p>
+          
+          <motion.p 
+            className="text-md md:text-lg text-zinc-400 mb-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            Creator-Token Wirtschaft von Dawid Faith
+            Erfahre alles über die Vision, Technologie und Community von <span className="text-green-400 font-semibold">Dawid Faith</span>
           </motion.p>
-          {/* Einfache Buttons */}
+
+          {/* Feature Highlights */}
           <motion.div 
-            className="flex gap-4 justify-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
+            className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 text-sm md:text-base"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, staggerChildren: 0.1 }}
+          >
+            <motion.div 
+              className="flex items-center justify-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20"
+              whileHover={{ scale: 1.05, backgroundColor: "rgba(34, 197, 94, 0.15)" }}
+            >
+              <FileText className="w-5 h-5 text-green-400" />
+              <span className="text-green-300 font-medium">Detailliertes Whitepaper</span>
+            </motion.div>
+            
+            <motion.div 
+              className="flex items-center justify-center gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20"
+              whileHover={{ scale: 1.05, backgroundColor: "rgba(59, 130, 246, 0.15)" }}
+            >
+              <Users className="w-5 h-5 text-blue-400" />
+              <span className="text-blue-300 font-medium">Community Hub</span>
+            </motion.div>
+            
+            <motion.div 
+              className="flex items-center justify-center gap-2 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20"
+              whileHover={{ scale: 1.05, backgroundColor: "rgba(147, 51, 234, 0.15)" }}
+            >
+              <Trophy className="w-5 h-5 text-purple-400" />
+              <span className="text-purple-300 font-medium">Live Metriken</span>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+        
+        {/* Visuell verbesserte Call-to-Action Buttons */}
+        <div className="flex flex-col items-center gap-6 md:gap-8 relative">
+          {/* Hintergrund-Glow für Buttons */}
+          <motion.div 
+            className="absolute inset-0 blur-2xl bg-gradient-to-r from-rose-500/20 via-purple-500/20 to-indigo-500/20 rounded-full"
+            animate={{ 
+              scale: [1, 1.1, 1],
+              opacity: [0.3, 0.6, 0.3]
+            }}
+            transition={{ duration: 4, repeat: Infinity }}
+          />
+          
+          {/* Primäre Actions */}
+          <motion.div 
+            className="relative flex flex-col sm:flex-row gap-6 md:gap-8 w-full sm:w-auto z-10"
+            variants={itemVariants}
           >
             <motion.a 
               href="/Dawid_Faith_Whitepaper.pdf" 
               target="_blank" 
-              className="px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold transition-colors"
-              whileHover={{ scale: 1.05 }}
+              rel="noopener noreferrer"
+              className="group relative flex items-center gap-3 px-6 md:px-10 py-4 md:py-5 rounded-2xl bg-gradient-to-r from-zinc-800 to-zinc-700 hover:from-zinc-700 hover:to-zinc-600 text-white font-bold text-sm md:text-lg transition-all duration-300 border border-zinc-600 shadow-2xl w-full sm:w-auto overflow-hidden"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
             >
-              Whitepaper
+              {/* Animierter Hintergrund-Gradient */}
+              <motion.div 
+                className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                animate={{ x: [-100, 100] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              />
+              
+              <div className="relative flex items-center gap-3">
+                <motion.div
+                  animate={{ rotate: [0, 5, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <FileText className="w-5 h-5 md:w-7 md:h-7 text-green-400" />
+                </motion.div>
+                <div className="flex flex-col items-start">
+                  <span className="text-white font-bold">Whitepaper studieren</span>
+                  <span className="text-zinc-400 text-xs md:text-sm">Technische Details & Vision</span>
+                </div>
+                <ExternalLink className="w-4 h-4 md:w-5 md:h-5 opacity-70 ml-2" />
+              </div>
             </motion.a>
             
             <motion.a 
               href="https://dawidfaith.com" 
               target="_blank" 
-              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors"
-              whileHover={{ scale: 1.05 }}
+              rel="noopener noreferrer"
+              className="group relative flex items-center gap-3 px-6 md:px-10 py-4 md:py-5 rounded-2xl bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-500 hover:to-blue-500 text-white font-bold text-sm md:text-lg transition-all duration-300 shadow-2xl w-full sm:w-auto overflow-hidden"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
             >
-              Website
+              {/* Animierter Shine-Effekt */}
+              <motion.div 
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                animate={{ x: [-100, 200] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              />
+              
+              <div className="relative flex items-center gap-3">
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Crown className="w-5 h-5 md:w-7 md:h-7 text-yellow-400" />
+                </motion.div>
+                <div className="flex flex-col items-start">
+                  <span className="text-white font-bold">Dawid Faith besuchen</span>
+                  <span className="text-green-100 text-xs md:text-sm">Offizielle Website & Community</span>
+                </div>
+                <ExternalLink className="w-4 h-4 md:w-5 md:h-5 opacity-70 ml-2" />
+              </div>
             </motion.a>
           </motion.div>
+
+          {/* Sekundäre Actions */}
+          <motion.div 
+            className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full sm:w-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+          >
+            <motion.a 
+              href="#live-trading" 
+              className="flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-3 rounded-xl bg-zinc-700/50 hover:bg-zinc-600/50 text-zinc-300 hover:text-white font-medium text-sm md:text-base transition-all duration-300 border border-zinc-600/50 backdrop-blur-sm w-full sm:w-auto"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <TrendingUp className="w-4 h-4 md:w-5 md:h-5" />
+              <span>Token handeln</span>
+            </motion.a>
+            
+            <motion.button
+              onClick={() => setShowMetricsModal(true)}
+              className="flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-3 rounded-xl bg-zinc-700/50 hover:bg-zinc-600/50 text-zinc-300 hover:text-white font-medium text-sm md:text-base transition-all duration-300 border border-zinc-600/50 backdrop-blur-sm w-full sm:w-auto"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <BarChart3 className="w-4 h-4 md:w-5 md:h-5" />
+              <span>Live Metriken</span>
+            </motion.button>
+          </motion.div>
+
+          {/* Social Proof */}
+          <motion.div 
+            className="flex items-center gap-4 md:gap-6 text-zinc-500 text-sm md:text-base"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+          >
+            <div className="flex items-center gap-2">
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-2 h-2 bg-green-400 rounded-full"
+              />
+              <span>Live Updates</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              <span>{activeFansCount || "8"}+ Aktive Fans</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4" />
+              <span>Blockchain-basiert</span>
+            </div>
+          </motion.div>
+        </div>
       </motion.div>
 
       {/* DexScreener Live Price Chart */}
