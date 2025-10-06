@@ -423,16 +423,64 @@ export default function TokenomicsTab() {
           ))}
         </motion.div>
         
-        <motion.p 
-          className="text-lg md:text-xl text-zinc-300 mb-6 md:mb-8 max-w-3xl mx-auto"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+        {/* Motivierende Beschreibung mit Highlights */}
+        <motion.div 
+          className="text-center mb-8 md:mb-12 max-w-4xl mx-auto"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          Entdecke die Wirtschaft hinter dem Creator-Token und sieh dir Live-Daten zur Token-Verteilung an
-        </motion.p>
+          <motion.p 
+            className="text-lg md:text-2xl text-zinc-200 mb-4 font-medium leading-relaxed"
+          >
+            Entdecke die revolutionäre <span className="text-transparent bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text font-bold">Wirtschaft</span> hinter dem Creator-Token
+          </motion.p>
+          
+          <motion.p 
+            className="text-md md:text-lg text-zinc-400 mb-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            Erfahre alles über die Vision, Technologie und Community von <span className="text-green-400 font-semibold">Dawid Faith</span>
+          </motion.p>
+
+          {/* Feature Highlights */}
+          <motion.div 
+            className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 text-sm md:text-base"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, staggerChildren: 0.1 }}
+          >
+            <motion.div 
+              className="flex items-center justify-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20"
+              whileHover={{ scale: 1.05, backgroundColor: "rgba(34, 197, 94, 0.15)" }}
+            >
+              <FileText className="w-5 h-5 text-green-400" />
+              <span className="text-green-300 font-medium">Detailliertes Whitepaper</span>
+            </motion.div>
+            
+            <motion.div 
+              className="flex items-center justify-center gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20"
+              whileHover={{ scale: 1.05, backgroundColor: "rgba(59, 130, 246, 0.15)" }}
+            >
+              <Users className="w-5 h-5 text-blue-400" />
+              <span className="text-blue-300 font-medium">Community Hub</span>
+            </motion.div>
+            
+            <motion.div 
+              className="flex items-center justify-center gap-2 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20"
+              whileHover={{ scale: 1.05, backgroundColor: "rgba(147, 51, 234, 0.15)" }}
+            >
+              <Trophy className="w-5 h-5 text-purple-400" />
+              <span className="text-purple-300 font-medium">Live Metriken</span>
+            </motion.div>
+          </motion.div>
+        </motion.div>
         
-        <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center">
+        {/* Erweiterte Call-to-Action Buttons */}
+        <div className="flex flex-col items-center gap-6 md:gap-8">
+          {/* Primäre Actions */}
           <motion.div 
             className="flex flex-col sm:flex-row gap-4 md:gap-6 w-full sm:w-auto"
             variants={itemVariants}
@@ -441,24 +489,114 @@ export default function TokenomicsTab() {
               href="/Dawid_Faith_Whitepaper.pdf" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex items-center gap-2 md:gap-3 px-4 md:px-8 py-3 md:py-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-sm md:text-lg transition-all duration-300 border border-zinc-600 shadow-xl w-full sm:w-auto"
-              whileHover={{ scale: 1.05 }}
+              className="group relative flex items-center gap-3 px-6 md:px-10 py-4 md:py-5 rounded-2xl bg-gradient-to-r from-zinc-800 to-zinc-700 hover:from-zinc-700 hover:to-zinc-600 text-white font-bold text-sm md:text-lg transition-all duration-300 border border-zinc-600 shadow-2xl w-full sm:w-auto overflow-hidden"
+              whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
             >
-              <FileText className="w-4 h-4 md:w-6 md:h-6" />
-              <span className="truncate">Whitepaper entdecken</span>
-              <ExternalLink className="w-3 h-3 md:w-5 md:h-5 opacity-70" />
+              {/* Animierter Hintergrund-Gradient */}
+              <motion.div 
+                className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                animate={{ x: [-100, 100] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              />
+              
+              <div className="relative flex items-center gap-3">
+                <motion.div
+                  animate={{ rotate: [0, 5, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <FileText className="w-5 h-5 md:w-7 md:h-7 text-green-400" />
+                </motion.div>
+                <div className="flex flex-col items-start">
+                  <span className="text-white font-bold">Whitepaper studieren</span>
+                  <span className="text-zinc-400 text-xs md:text-sm">Technische Details & Vision</span>
+                </div>
+                <ExternalLink className="w-4 h-4 md:w-5 md:h-5 opacity-70 ml-2" />
+              </div>
             </motion.a>
             
             <motion.a 
-              href="#live-trading" 
-              className="flex items-center gap-2 md:gap-3 px-4 md:px-8 py-3 md:py-4 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold text-sm md:text-lg transition-all duration-300 shadow-xl w-full sm:w-auto"
-              whileHover={{ scale: 1.05 }}
+              href="https://dawidfaith.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="group relative flex items-center gap-3 px-6 md:px-10 py-4 md:py-5 rounded-2xl bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-500 hover:to-blue-500 text-white font-bold text-sm md:text-lg transition-all duration-300 shadow-2xl w-full sm:w-auto overflow-hidden"
+              whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
             >
-              <TrendingUp className="w-4 h-4 md:w-6 md:h-6" />
-              <span>Jetzt handeln</span>
+              {/* Animierter Shine-Effekt */}
+              <motion.div 
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                animate={{ x: [-100, 200] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              />
+              
+              <div className="relative flex items-center gap-3">
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Crown className="w-5 h-5 md:w-7 md:h-7 text-yellow-400" />
+                </motion.div>
+                <div className="flex flex-col items-start">
+                  <span className="text-white font-bold">Dawid Faith besuchen</span>
+                  <span className="text-green-100 text-xs md:text-sm">Offizielle Website & Community</span>
+                </div>
+                <ExternalLink className="w-4 h-4 md:w-5 md:h-5 opacity-70 ml-2" />
+              </div>
             </motion.a>
+          </motion.div>
+
+          {/* Sekundäre Actions */}
+          <motion.div 
+            className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full sm:w-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+          >
+            <motion.a 
+              href="#live-trading" 
+              className="flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-3 rounded-xl bg-zinc-700/50 hover:bg-zinc-600/50 text-zinc-300 hover:text-white font-medium text-sm md:text-base transition-all duration-300 border border-zinc-600/50 backdrop-blur-sm w-full sm:w-auto"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <TrendingUp className="w-4 h-4 md:w-5 md:h-5" />
+              <span>Token handeln</span>
+            </motion.a>
+            
+            <motion.button
+              onClick={() => setShowMetricsModal(true)}
+              className="flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-3 rounded-xl bg-zinc-700/50 hover:bg-zinc-600/50 text-zinc-300 hover:text-white font-medium text-sm md:text-base transition-all duration-300 border border-zinc-600/50 backdrop-blur-sm w-full sm:w-auto"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <BarChart3 className="w-4 h-4 md:w-5 md:h-5" />
+              <span>Live Metriken</span>
+            </motion.button>
+          </motion.div>
+
+          {/* Social Proof */}
+          <motion.div 
+            className="flex items-center gap-4 md:gap-6 text-zinc-500 text-sm md:text-base"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+          >
+            <div className="flex items-center gap-2">
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-2 h-2 bg-green-400 rounded-full"
+              />
+              <span>Live Updates</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              <span>{activeFansCount || "8"}+ Aktive Fans</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4" />
+              <span>Blockchain-basiert</span>
+            </div>
           </motion.div>
         </div>
       </motion.div>
@@ -824,12 +962,12 @@ export default function TokenomicsTab() {
                   <div className="text-white">
                     <div className="text-2xl font-bold mb-1">
                       {(() => {
-                        // Korrigierte Berechnung: Tokens bis zur NÄCHSTEN Stufe
+                        // Korrigierte Berechnung: Rewards bis zur NÄCHSTEN Stufe
                         const stage = currentStage || 1;
-                        const currentStaked = totalStaked || 0;
+                        const currentRewardsDistributed = totalRewardsDistributed || 0;
                         let nextThreshold = 0;
                         
-                        // Bestimme den Threshold für die nächste Stufe
+                        // Bestimme den Threshold für die nächste Stufe (basierend auf verteilten Rewards)
                         switch(stage) {
                           case 1: nextThreshold = 10000; break;    // Von Stufe 1 zu Stufe 2
                           case 2: nextThreshold = 20000; break;    // Von Stufe 2 zu Stufe 3  
@@ -841,25 +979,25 @@ export default function TokenomicsTab() {
                             return "Max erreicht";
                         }
                         
-                        // Berechne verbleibende Token bis nächste Stufe
-                        const tokensUntilNext = Math.max(0, nextThreshold - currentStaked);
+                        // Berechne verbleibende Rewards bis nächste Stufe
+                        const rewardsUntilNext = Math.max(0, nextThreshold - currentRewardsDistributed);
                         
                         // Debug Info (wird nur in Console angezeigt)
                         if (typeof window !== 'undefined') {
                           console.log(`🔍 Halving Berechnung:`, {
                             currentStage: stage,
-                            currentStaked,
+                            currentRewardsDistributed,
                             nextThreshold,
-                            tokensUntilNext,
-                            calculation: `${nextThreshold} - ${currentStaked} = ${tokensUntilNext}`
+                            rewardsUntilNext,
+                            calculation: `${nextThreshold} - ${currentRewardsDistributed} = ${rewardsUntilNext}`
                           });
                         }
                         
-                        return tokensUntilNext.toLocaleString();
+                        return rewardsUntilNext.toLocaleString();
                       })()}
                     </div>
                     <div className="text-orange-300 text-sm">
-                      D.FAITH Tokens bis Halving
+                      D.FAITH Rewards bis Halving
                     </div>
                   </div>
                 </motion.div>
