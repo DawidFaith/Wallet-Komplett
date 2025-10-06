@@ -473,7 +473,7 @@ export default function TokenomicsTab() {
             >
               💎
             </motion.span>
-            <span className="text-white/80 tracking-wider">TOKENOMICS</span>
+
             <motion.span
               className="text-blue-400"
               animate={{ scale: [1, 1.2, 1] }}
@@ -514,11 +514,7 @@ export default function TokenomicsTab() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <motion.p 
-            className="text-lg md:text-2xl text-zinc-200 mb-4 font-medium leading-relaxed"
-          >
-            Entdecke die revolutionäre <span className="text-transparent bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text font-bold">Wirtschaft</span> hinter dem Creator-Token
-          </motion.p>
+
           
           <motion.p 
             className="text-md md:text-lg text-zinc-400 mb-12"
@@ -608,33 +604,7 @@ export default function TokenomicsTab() {
             </motion.a>
           </motion.div>
 
-          {/* Sekundäre Actions */}
-          <motion.div 
-            className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full sm:w-auto"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-          >
-            <motion.a 
-              href="#live-trading" 
-              className="flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-3 rounded-xl bg-zinc-700/50 hover:bg-zinc-600/50 text-zinc-300 hover:text-white font-medium text-sm md:text-base transition-all duration-300 border border-zinc-600/50 backdrop-blur-sm w-full sm:w-auto"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <TrendingUp className="w-4 h-4 md:w-5 md:h-5" />
-              <span>Token handeln</span>
-            </motion.a>
-            
-            <motion.button
-              onClick={() => setShowMetricsModal(true)}
-              className="flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-3 rounded-xl bg-zinc-700/50 hover:bg-zinc-600/50 text-zinc-300 hover:text-white font-medium text-sm md:text-base transition-all duration-300 border border-zinc-600/50 backdrop-blur-sm w-full sm:w-auto"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <BarChart3 className="w-4 h-4 md:w-5 md:h-5" />
-              <span>Live Metriken</span>
-            </motion.button>
-          </motion.div>
+
 
           {/* Social Proof */}
           <motion.div 
