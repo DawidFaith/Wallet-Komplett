@@ -353,231 +353,53 @@ export default function TokenomicsTab() {
             }}
           />
           
-          {/* Künstlerischer Titel */}
+          {/* Titel mit Pirata One */}
           <motion.h1 
-            className="relative text-3xl md:text-5xl lg:text-7xl font-black mb-2"
-            style={{
-              background: "linear-gradient(135deg, #f43f5e 0%, #a855f7 25%, #3b82f6 50%, #06b6d4 75%, #10b981 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              filter: "drop-shadow(0 0 30px rgba(244, 63, 94, 0.3))"
-            }}
+            className="text-4xl md:text-6xl lg:text-8xl text-white mb-4 font-pirata"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            transition={{ duration: 0.8 }}
           >
-            <motion.span
-              animate={{ 
-                textShadow: [
-                  "0 0 20px rgba(244, 63, 94, 0.6)",
-                  "0 0 40px rgba(168, 85, 247, 0.6)", 
-                  "0 0 60px rgba(59, 130, 246, 0.6)",
-                  "0 0 40px rgba(244, 63, 94, 0.6)"
-                ]
-              }}
-              transition={{ duration: 4, repeat: Infinity }}
-            >
-              D.FAITH
-            </motion.span>
+            D.FAITH TOKENOMICS
           </motion.h1>
           
-          {/* Künstlerischer Untertitel */}
-          <motion.div 
-            className="flex items-center justify-center gap-4 text-xl md:text-3xl font-bold text-white/90"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-          >
-            <motion.span
-              className="text-rose-400 text-2xl"
-              animate={{ rotate: [0, 15, -15, 0] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            >
-              🎨
-            </motion.span>
-            <span className="tracking-widest font-light">TOKENOMICS</span>
-            <motion.span
-              className="text-purple-400 text-2xl"
-              animate={{ scale: [1, 1.3, 1] }}
-              transition={{ duration: 2, repeat: Infinity, delay: 1 }}
-            >
-              ✨
-            </motion.span>
-          </motion.div>
-          
-          {/* Künstlerische Floating Elements */}
-          {[...Array(8)].map((_, i) => (
-            <motion.div
-              key={i}
-              className={`absolute w-1 h-1 rounded-full opacity-60 ${
-                i % 3 === 0 ? 'bg-rose-400' : 
-                i % 3 === 1 ? 'bg-purple-400' : 'bg-indigo-400'
-              }`}
-              animate={{
-                x: [0, Math.random() * 100 - 50],
-                y: [0, Math.random() * 100 - 50],
-                scale: [0.5, Math.random() * 1.5 + 0.5, 0.5],
-                opacity: [0.3, Math.random() * 0.8 + 0.2, 0.3]
-              }}
-              transition={{
-                duration: Math.random() * 8 + 4,
-                repeat: Infinity,
-                delay: i * 0.5
-              }}
-              style={{
-                left: `${Math.random() * 80 + 10}%`,
-                top: `${Math.random() * 80 + 10}%`
-              }}
-            />
-          ))}
+
         </motion.div>
         
-        {/* Motivierende Beschreibung mit Highlights */}
-        <motion.div 
-          className="text-center mb-8 md:mb-12 max-w-4xl mx-auto"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
+          {/* Kurze Beschreibung */}
           <motion.p 
-            className="text-lg md:text-2xl text-zinc-200 mb-4 font-medium leading-relaxed"
-          >
-            Entdecke die revolutionäre <span className="text-transparent bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text font-bold">Wirtschaft</span> hinter dem Creator-Token
-          </motion.p>
-          
-          <motion.p 
-            className="text-md md:text-lg text-zinc-400 mb-6"
+            className="text-lg text-white/70 mb-8 max-w-xl mx-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            Erfahre alles über die Vision, Technologie und Community von <span className="text-green-400 font-semibold">Dawid Faith</span>
+            Creator-Token Wirtschaft von Dawid Faith
           </motion.p>
-
-          {/* Feature Highlights */}
+          {/* Einfache Buttons */}
           <motion.div 
-            className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 text-sm md:text-base"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, staggerChildren: 0.1 }}
-          >
-            <motion.div 
-              className="flex items-center justify-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20"
-              whileHover={{ scale: 1.05, backgroundColor: "rgba(34, 197, 94, 0.15)" }}
-            >
-              <FileText className="w-5 h-5 text-green-400" />
-              <span className="text-green-300 font-medium">Detailliertes Whitepaper</span>
-            </motion.div>
-            
-            <motion.div 
-              className="flex items-center justify-center gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20"
-              whileHover={{ scale: 1.05, backgroundColor: "rgba(59, 130, 246, 0.15)" }}
-            >
-              <Users className="w-5 h-5 text-blue-400" />
-              <span className="text-blue-300 font-medium">Community Hub</span>
-            </motion.div>
-            
-            <motion.div 
-              className="flex items-center justify-center gap-2 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20"
-              whileHover={{ scale: 1.05, backgroundColor: "rgba(147, 51, 234, 0.15)" }}
-            >
-              <Trophy className="w-5 h-5 text-purple-400" />
-              <span className="text-purple-300 font-medium">Live Metriken</span>
-            </motion.div>
-          </motion.div>
-        </motion.div>
-        
-        {/* Erweiterte Call-to-Action Buttons */}
-        <div className="flex flex-col items-center gap-6 md:gap-8">
-          {/* Primäre Actions */}
-          <motion.div 
-            className="flex flex-col sm:flex-row gap-4 md:gap-6 w-full sm:w-auto"
-            variants={itemVariants}
+            className="flex gap-4 justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
           >
             <motion.a 
               href="/Dawid_Faith_Whitepaper.pdf" 
               target="_blank" 
-              rel="noopener noreferrer"
-              className="px-8 py-4 rounded-2xl bg-gradient-to-r from-rose-600/80 to-purple-600/80 backdrop-blur-md text-white font-bold text-lg transition-all duration-500 border border-rose-400/30 shadow-2xl"
+              className="px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold transition-colors"
               whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
             >
-              <div className="flex items-center gap-3">
-                <FileText className="w-6 h-6 text-rose-200" />
-                <span>Whitepaper studieren</span>
-                <ExternalLink className="w-4 h-4 opacity-70" />
-              </div>
+              Whitepaper
             </motion.a>
             
             <motion.a 
               href="https://dawidfaith.com" 
               target="_blank" 
-              rel="noopener noreferrer"
-              className="px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600/80 to-rose-600/80 backdrop-blur-md text-white font-bold text-lg transition-all duration-500 border border-indigo-400/30 shadow-2xl"
+              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors"
               whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
             >
-              <div className="flex items-center gap-3">
-                <Crown className="w-6 h-6 text-yellow-300" />
-                <span>Dawid Faith besuchen</span>
-                <ExternalLink className="w-4 h-4 opacity-70" />
-              </div>
+              Website
             </motion.a>
           </motion.div>
-
-          {/* Sekundäre Actions */}
-          <motion.div 
-            className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full sm:w-auto"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-          >
-            <motion.a 
-              href="#live-trading" 
-              className="flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-3 rounded-xl bg-zinc-700/50 hover:bg-zinc-600/50 text-zinc-300 hover:text-white font-medium text-sm md:text-base transition-all duration-300 border border-zinc-600/50 backdrop-blur-sm w-full sm:w-auto"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <TrendingUp className="w-4 h-4 md:w-5 md:h-5" />
-              <span>Token handeln</span>
-            </motion.a>
-            
-            <motion.button
-              onClick={() => setShowMetricsModal(true)}
-              className="flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-3 rounded-xl bg-zinc-700/50 hover:bg-zinc-600/50 text-zinc-300 hover:text-white font-medium text-sm md:text-base transition-all duration-300 border border-zinc-600/50 backdrop-blur-sm w-full sm:w-auto"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <BarChart3 className="w-4 h-4 md:w-5 md:h-5" />
-              <span>Live Metriken</span>
-            </motion.button>
-          </motion.div>
-
-          {/* Social Proof */}
-          <motion.div 
-            className="flex items-center gap-4 md:gap-6 text-zinc-500 text-sm md:text-base"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-          >
-            <div className="flex items-center gap-2">
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-2 h-2 bg-green-400 rounded-full"
-              />
-              <span>Live Updates</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <span>{activeFansCount || "8"}+ Aktive Fans</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4" />
-              <span>Blockchain-basiert</span>
-            </div>
-          </motion.div>
-        </div>
       </motion.div>
 
       {/* DexScreener Live Price Chart */}
