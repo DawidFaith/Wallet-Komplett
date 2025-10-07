@@ -10,6 +10,7 @@ import {
   FaTiktok,
   FaFacebook,
   FaMusic,
+  FaGlobe,
 } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 import { SiSpotify } from "react-icons/si";
@@ -18,6 +19,8 @@ import { useState } from "react";
 type NavigationProps = {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  language?: "de" | "en" | "pl";
+  setLanguage?: (language: "de" | "en" | "pl") => void;
 };
 
 const socialIcons = {
@@ -26,8 +29,21 @@ const socialIcons = {
   facebook: <FaFacebook size={22} className="text-blue-600" />,
 };
 
-export default function Navigation({ activeTab, setActiveTab }: NavigationProps) {
+const languageFlags = {
+  de: "🇩🇪",
+  en: "🇺🇸", 
+  pl: "🇵🇱"
+};
+
+const languageNames = {
+  de: "Deutsch",
+  en: "English",
+  pl: "Polski"
+};
+
+export default function Navigation({ activeTab, setActiveTab, language = "de", setLanguage }: NavigationProps) {
   const [open, setOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
   const [activeSocial, setActiveSocial] = useState<"instagram" | "tiktok" | "facebook">("instagram");
   const router = useRouter();
   const pathname = usePathname();
@@ -178,6 +194,64 @@ export default function Navigation({ activeTab, setActiveTab }: NavigationProps)
               } hover:text-green-500`}
             />
           </button>
+        </li>
+        {/* Language Selector */}
+        <li className="relative flex items-center">
+          <button
+            title="Sprache / Language / Język"
+            onClick={() => setLangOpen((v) => !v)}
+            className="flex items-center gap-1"
+            aria-haspopup="true"
+            aria-expanded={langOpen}
+          >
+            <span className="text-lg">{languageFlags[language]}</span>
+            <FiChevronDown
+              size={20}
+              className={`transition-transform duration-300 ${
+                langOpen ? "text-blue-400 rotate-180" : "text-zinc-400"
+              } hover:text-blue-400`}
+            />
+          </button>
+          {langOpen && (
+            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 bg-zinc-800 rounded-lg shadow-xl flex flex-col z-50 min-w-[120px] border border-zinc-700 overflow-hidden">
+              <button
+                onClick={() => {
+                  setLanguage?.("de");
+                  setLangOpen(false);
+                }}
+                className={`flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200 border-b border-zinc-700 ${
+                  language === "de" ? "bg-zinc-700" : ""
+                }`}
+              >
+                <span className="text-lg">🇩🇪</span>
+                <span className="font-medium">Deutsch</span>
+              </button>
+              <button
+                onClick={() => {
+                  setLanguage?.("en");
+                  setLangOpen(false);
+                }}
+                className={`flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200 border-b border-zinc-700 ${
+                  language === "en" ? "bg-zinc-700" : ""
+                }`}
+              >
+                <span className="text-lg">🇺🇸</span>
+                <span className="font-medium">English</span>
+              </button>
+              <button
+                onClick={() => {
+                  setLanguage?.("pl");
+                  setLangOpen(false);
+                }}
+                className={`flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200 ${
+                  language === "pl" ? "bg-zinc-700" : ""
+                }`}
+              >
+                <span className="text-lg">🇵🇱</span>
+                <span className="font-medium">Polski</span>
+              </button>
+            </div>
+          )}
         </li>
       </ul>
     </nav>
