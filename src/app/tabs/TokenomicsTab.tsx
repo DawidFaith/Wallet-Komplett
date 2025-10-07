@@ -362,18 +362,22 @@ export default function TokenomicsTab() {
         {/* Hauptinhalt */}
         <div className="relative">
           <motion.div 
-            className="text-center p-8 md:p-16 lg:p-24 xl:p-32 backdrop-blur-sm"
+            className="text-center p-4 md:p-6 backdrop-blur-sm"
             variants={itemVariants}
           >
-
-
             {/* Haupttitel mit eleganten Linien und Branding - wie im MerchTab Stil */}
             <div className="relative mb-4">
               {/* Elegante horizontale Linie mit Glow-Effekt */}
               <div className="relative mb-4">
                 <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-400/50 to-transparent transform -translate-y-1/2"></div>
                 <div className="text-center">
-                  <div className="inline-block px-8 py-2 bg-black/60 backdrop-blur-sm rounded-full border border-orange-500/30">
+                  <div className="inline-flex items-center gap-3 px-8 py-2 bg-black/60 backdrop-blur-sm rounded-full border border-orange-500/30">
+                    {/* Kleines Logo */}
+                    <img
+                      src="/D.FAITH.png"
+                      alt="D.FAITH Token"
+                      className="w-8 h-8 rounded-full"
+                    />
                     <span className="bg-gradient-to-r from-orange-200 via-amber-300 to-yellow-400 bg-clip-text text-transparent font-bold text-lg md:text-xl">
                       DAWID FAITH TOKENOMICS
                     </span>
@@ -393,19 +397,9 @@ export default function TokenomicsTab() {
                   textShadow: "0 0 60px rgba(249, 115, 22, 0.6), 0 0 100px rgba(245, 158, 11, 0.4)"
                 }}
               >
-                <motion.span
-                  animate={{ 
-                    filter: [
-                      "drop-shadow(0 0 20px rgba(249, 115, 22, 0.8))",
-                      "drop-shadow(0 0 40px rgba(245, 158, 11, 0.8))", 
-                      "drop-shadow(0 0 60px rgba(251, 191, 36, 0.8))",
-                      "drop-shadow(0 0 40px rgba(249, 115, 22, 0.8))"
-                    ]
-                  }}
-                  transition={{ duration: 3, repeat: Infinity }}
-                >
+                <span>
                   D.FAITH
-                </motion.span>
+                </span>
               </motion.h1>
             </div>
 
