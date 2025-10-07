@@ -335,27 +335,7 @@ export default function TokenomicsTab() {
         className="relative overflow-hidden text-center bg-gradient-to-br from-rose-950/40 via-purple-950/50 to-indigo-950/40 rounded-3xl border border-rose-500/30 p-8 md:p-16 backdrop-blur-xl shadow-2xl"
         variants={itemVariants}
       >
-
-
-        <motion.div
-          className="relative z-10"
-          whileHover={{ scale: 1.01 }}
-        >
-          {/* Hintergrund-Glow-Effekt - Verbessert */}
-          <motion.div 
-            className="absolute inset-0 blur-3xl bg-gradient-to-r from-rose-400/30 via-purple-500/30 to-indigo-600/30 rounded-full opacity-60"
-            animate={{ 
-              scale: [1, 1.15, 1],
-              rotate: [0, 180, 360],
-              opacity: [0.4, 0.7, 0.4]
-            }}
-            transition={{ 
-              duration: 10, 
-              repeat: Infinity,
-              ease: "linear"
-            }}
-          />
-          
+        <div className="relative">
           {/* Logo und Haupttitel - Schlicht und Groß */}
           <div className="flex flex-col items-center mb-8">
             {/* Schlichtes, großes Logo */}
@@ -416,23 +396,9 @@ export default function TokenomicsTab() {
           >
             Erfahre alles über die Vision, Technologie und Community von <span className="text-green-400 font-semibold">Dawid Faith</span>
           </motion.p>
-          
-
-        </motion.div>
-        
-
-        
+        </div>
         {/* Visuell verbesserte Call-to-Action Buttons */}
         <div className="flex flex-col items-center gap-6 md:gap-8 relative">
-          {/* Hintergrund-Glow für Buttons */}
-          <motion.div 
-            className="absolute inset-0 blur-2xl bg-gradient-to-r from-rose-500/20 via-purple-500/20 to-indigo-500/20 rounded-full"
-            animate={{ 
-              scale: [1, 1.1, 1],
-              opacity: [0.3, 0.6, 0.3]
-            }}
-            transition={{ duration: 4, repeat: Infinity }}
-          />
           
           {/* Primäre Actions */}
           <motion.div 
