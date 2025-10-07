@@ -401,68 +401,170 @@ export default function TokenomicsTab() {
             }}
           />
           
-          {/* Logo und Haupttitel - Moderne Hexagon-Variante */}
+          {/* Logo und Haupttitel - Organische Musik-Form */}
           <div className="flex flex-col items-center mb-6">
-            {/* Option 1: Hexagon-Design mit mehrschichtigen Rahmen */}
+            {/* Option 6: Komplett neues organisches Design mit Musik-Wellen */}
             <motion.div 
-              className="mb-4 relative"
-              initial={{ opacity: 0, scale: 0.3, rotateY: 180 }}
-              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-              transition={{ duration: 1.4, ease: "easeOut" }}
+              className="mb-4 relative w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64"
+              initial={{ opacity: 0, scale: 0.2, rotate: -45 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              transition={{ duration: 1.6, ease: "easeOut", type: "spring", stiffness: 100 }}
             >
-              {/* Äußerer Hexagon-Rahmen */}
-              <motion.div 
-                className="relative"
+              {/* Äußere Musik-Welle - Großer Bogen */}
+              <motion.div
+                className="absolute inset-0 rounded-full"
                 style={{
-                  clipPath: "polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%)"
+                  background: `conic-gradient(from 0deg, 
+                    #f59e0b 0deg, #f97316 30deg, #ef4444 60deg, 
+                    #ec4899 90deg, #a855f7 120deg, #6366f1 150deg,
+                    #3b82f6 180deg, #06b6d4 210deg, #10b981 240deg,
+                    #84cc16 270deg, #eab308 300deg, #f59e0b 360deg)`,
+                  clipPath: `polygon(
+                    50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 
+                    50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%
+                  )`,
+                  filter: "blur(1px)"
                 }}
-                whileHover={{ rotate: 3, scale: 1.05 }}
-                transition={{ duration: 0.3 }}
+                animate={{
+                  rotate: [0, 360],
+                  scale: [1, 1.05, 1]
+                }}
+                transition={{
+                  rotate: { duration: 20, repeat: Infinity, ease: "linear" },
+                  scale: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+                }}
+              />
+
+              {/* Mittlere Schicht - Schallwellen */}
+              <motion.div
+                className="absolute inset-4 rounded-full bg-gradient-to-br from-zinc-900/90 via-zinc-800/80 to-zinc-900/90"
+                style={{
+                  clipPath: `path('M 50,0 C 80,25 80,75 50,100 C 20,75 20,25 50,0 Z')`
+                }}
+                animate={{
+                  rotate: [0, -180],
+                }}
+                transition={{
+                  duration: 15,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
               >
-                {/* Gradient Hintergrund */}
-                <div className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 bg-gradient-to-br from-rose-500 via-purple-600 to-indigo-700 p-1">
-                  {/* Innerer Rahmen */}
-                  <div 
-                    className="w-full h-full bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-2"
-                    style={{
-                      clipPath: "polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%)"
-                    }}
-                  >
-                    {/* Logo Container */}
-                    <div 
-                      className="w-full h-full bg-gradient-to-br from-rose-950/50 via-purple-950/50 to-indigo-950/50 flex items-center justify-center backdrop-blur-sm"
+                {/* Innere Wellenlinien */}
+                <div className="absolute inset-2">
+                  {[...Array(5)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute border-2 border-gradient-to-r from-rose-400/30 via-purple-400/30 to-indigo-400/30 rounded-full"
                       style={{
-                        clipPath: "polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%)"
+                        top: `${i * 8}%`,
+                        left: `${i * 8}%`,
+                        right: `${i * 8}%`,
+                        bottom: `${i * 8}%`,
+                        borderColor: `hsl(${280 + i * 20}, 70%, ${60 + i * 8}%)`,
+                        borderWidth: "1px"
                       }}
-                    >
-                      <img
-                        src="/D.FAITH.png"
-                        alt="D.FAITH Token"
-                        className="w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 rounded-full object-cover"
-                      />
-                    </div>
-                  </div>
+                      animate={{
+                        opacity: [0.3, 0.8, 0.3],
+                        scale: [0.95, 1.05, 0.95]
+                      }}
+                      transition={{
+                        duration: 3 + i * 0.5,
+                        repeat: Infinity,
+                        delay: i * 0.3,
+                        ease: "easeInOut"
+                      }}
+                    />
+                  ))}
                 </div>
               </motion.div>
-              
-              {/* Glowing Particles um das Logo */}
-              {[...Array(6)].map((_, i) => (
+
+              {/* Logo Container - Zentral */}
+              <motion.div
+                className="absolute inset-12 rounded-full bg-gradient-to-br from-rose-950/60 via-purple-950/70 to-indigo-950/60 backdrop-blur-md border border-purple-500/30 flex items-center justify-center overflow-hidden"
+                whileHover={{ 
+                  scale: 1.1,
+                  boxShadow: "0 0 40px rgba(168, 85, 247, 0.6)",
+                  borderColor: "rgba(168, 85, 247, 0.8)"
+                }}
+                animate={{
+                  boxShadow: [
+                    "0 0 20px rgba(244, 114, 182, 0.4)",
+                    "0 0 30px rgba(147, 51, 234, 0.6)",
+                    "0 0 40px rgba(99, 102, 241, 0.5)",
+                    "0 0 30px rgba(244, 114, 182, 0.4)"
+                  ]
+                }}
+                transition={{
+                  boxShadow: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+                }}
+              >
+                <img
+                  src="/D.FAITH.png"
+                  alt="D.FAITH Token"
+                  className="w-full h-full object-cover rounded-full"
+                />
+                
+                {/* Overlay-Effekt */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-br from-transparent via-purple-500/10 to-transparent rounded-full"
+                  animate={{
+                    background: [
+                      "linear-gradient(45deg, transparent, rgba(168, 85, 247, 0.1), transparent)",
+                      "linear-gradient(135deg, transparent, rgba(244, 114, 182, 0.1), transparent)",
+                      "linear-gradient(225deg, transparent, rgba(99, 102, 241, 0.1), transparent)",
+                      "linear-gradient(315deg, transparent, rgba(168, 85, 247, 0.1), transparent)"
+                    ]
+                  }}
+                  transition={{ duration: 6, repeat: Infinity }}
+                />
+              </motion.div>
+
+              {/* Schwebende Musik-Noten */}
+              {[...Array(8)].map((_, i) => {
+                const angle = (i * 45) * (Math.PI / 180);
+                const radius = 120 + Math.sin(i) * 20;
+                return (
+                  <motion.div
+                    key={i}
+                    className="absolute w-3 h-3 text-purple-400 font-bold flex items-center justify-center"
+                    style={{
+                      left: `calc(50% + ${Math.cos(angle) * radius}px)`,
+                      top: `calc(50% + ${Math.sin(angle) * radius}px)`,
+                      fontSize: "16px"
+                    }}
+                    animate={{
+                      y: [0, -15, 0],
+                      rotate: [0, 180, 360],
+                      opacity: [0.4, 1, 0.4],
+                      scale: [0.8, 1.2, 0.8]
+                    }}
+                    transition={{
+                      duration: 3 + i * 0.2,
+                      repeat: Infinity,
+                      delay: i * 0.4,
+                      ease: "easeInOut"
+                    }}
+                  >
+                    {["♪", "♫", "♬", "♩", "♭", "♯", "𝄞", "𝄢"][i]}
+                  </motion.div>
+                );
+              })}
+
+              {/* Rhythmus-Pulse */}
+              {[...Array(4)].map((_, i) => (
                 <motion.div
                   key={i}
-                  className="absolute w-2 h-2 bg-gradient-to-r from-rose-400 to-purple-500 rounded-full"
-                  style={{
-                    left: `${20 + Math.cos(i * 60 * Math.PI / 180) * 80}px`,
-                    top: `${20 + Math.sin(i * 60 * Math.PI / 180) * 80}px`,
-                  }}
+                  className="absolute inset-0 rounded-full border border-purple-400/20"
                   animate={{
-                    scale: [0.5, 1.2, 0.5],
-                    opacity: [0.4, 1, 0.4],
+                    scale: [1, 1.5, 2],
+                    opacity: [0.6, 0.3, 0]
                   }}
                   transition={{
-                    duration: 2,
+                    duration: 3,
                     repeat: Infinity,
-                    delay: i * 0.3,
-                    ease: "easeInOut"
+                    delay: i * 0.75,
+                    ease: "easeOut"
                   }}
                 />
               ))}
