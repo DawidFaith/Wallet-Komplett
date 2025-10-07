@@ -482,20 +482,6 @@ export default function TokenomicsTab() {
             </motion.a>
           </motion.div>
 
-            {/* Zusätzliche Aktionen - Aus MerchTab übernommen */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <motion.button
-                onClick={() => setShowMetricsModal(true)}
-                className="group relative flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500/0 to-orange-500/0 hover:from-orange-500/15 hover:to-amber-600/15 border border-orange-500/30 hover:border-orange-400/50 text-white transition-all duration-300 backdrop-blur-sm"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 to-orange-500/0 group-hover:from-orange-500/15 group-hover:to-amber-600/15 rounded-xl transition-all duration-300"></div>
-                <BarChart3 className="w-5 h-5 text-orange-400 relative z-10" />
-                <span className="relative z-10 font-medium">Live Metriken</span>
-              </motion.button>
-            </div>
-
             </div>
           </motion.div>
         </div>
