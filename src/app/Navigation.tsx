@@ -13,7 +13,6 @@ import {
   FaGlobe,
 } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
-import { SiSpotify } from "react-icons/si";
 import { useState } from "react";
 
 type NavigationProps = {
@@ -180,21 +179,7 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
             />
           </button>
         </li>
-        {/* Stream */}
-        <li>
-          <button
-            title="Stream"
-            onClick={() => navigateToTab("stream")}
-            className="flex items-center"
-          >
-            <SiSpotify
-              size={22}
-              className={`transition-colors ${
-                activeTab === "stream" ? "text-green-500" : "text-zinc-400"
-              } hover:text-green-500`}
-            />
-          </button>
-        </li>
+
         {/* Language Selector */}
         <li className="relative flex items-center">
           <button
