@@ -9,6 +9,7 @@ import { Card, CardContent } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import { FaRegCopy, FaCoins, FaArrowDown, FaArrowUp, FaPaperPlane, FaLock, FaHistory, FaTimes, FaSync } from "react-icons/fa";
 import { balanceOf } from "thirdweb/extensions/erc20";
+import type { SupportedLanguage } from "../utils/deepLTranslation";
 
 // Import Subtabs
 import BuyTab from "./wallet/BuyTab";
@@ -70,7 +71,11 @@ const wallets = [
   createWallet("com.coinbase.wallet"),
 ];
 
-export default function WalletTab() {
+interface WalletTabProps {
+  language: SupportedLanguage;
+}
+
+export default function WalletTab({ language }: WalletTabProps) {
   const account = useActiveAccount();
   const status = useActiveWalletConnectionStatus();
   const { mutate: sendTransaction, data: transactionResult, isPending: isTransactionPending } = useSendTransaction();

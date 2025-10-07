@@ -4,6 +4,7 @@ import { useActiveAccount, useReadContract, useSendAndConfirmTransaction } from 
 import { getContract, prepareContractCall } from "thirdweb";
 import { base } from "thirdweb/chains";
 import { client } from "../client";
+import type { SupportedLanguage } from "../utils/deepLTranslation";
 import { Card, CardContent } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import { 
@@ -439,7 +440,11 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
   }
 }
 
-export default function MerchTab() {
+interface MerchTabProps {
+  language: SupportedLanguage;
+}
+
+export default function MerchTab({ language }: MerchTabProps) {
   const account = useActiveAccount();
   const { mutateAsync: sendAndConfirmTransaction, isPending: isTransactionPending } = useSendAndConfirmTransaction();
   

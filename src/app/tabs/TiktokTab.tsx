@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { FaInfoCircle } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { useActiveAccount } from 'thirdweb/react';
+import type { SupportedLanguage } from "../utils/deepLTranslation";
 
 // Base Chain Wallet-Adresse Validierung
 const isValidBaseChainAddress = (address: string): boolean => {
@@ -1222,7 +1223,11 @@ function UserCard({ userData, onBack }: { userData: UserData; onBack: () => void
   );
 }
 
-export default function TiktokTab() {
+interface TiktokTabProps {
+  language: SupportedLanguage;
+}
+
+export default function TiktokTab({ language }: TiktokTabProps) {
   const router = useRouter();
   const account = useActiveAccount(); // Thirdweb Hook für eingeloggte Wallet
   const [isCheckModalOpen, setIsCheckModalOpen] = useState(false);

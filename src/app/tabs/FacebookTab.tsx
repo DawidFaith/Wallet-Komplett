@@ -6,6 +6,7 @@ import { FaTiktok } from 'react-icons/fa6';
 import { useRouter } from 'next/navigation';
 import { validateBaseAddress, validateBaseAddressRealTime } from '../utils/walletValidation';
 import { useActiveAccount } from 'thirdweb/react';
+import type { SupportedLanguage } from "../utils/deepLTranslation";
 
 interface UserData {
   username: string;
@@ -23,7 +24,11 @@ interface UserData {
   wallet?: string;
 }
 
-export default function FacebookTab() {
+interface FacebookTabProps {
+  language: SupportedLanguage;
+}
+
+export default function FacebookTab({ language }: FacebookTabProps) {
   const router = useRouter();
   const account = useActiveAccount(); // Thirdweb Hook für eingeloggte Wallet
   const [userData, setUserData] = useState<UserData | null>(null);

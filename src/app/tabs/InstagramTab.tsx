@@ -6,6 +6,7 @@ import { validateBaseAddress, validateBaseAddressRealTime } from '../utils/walle
 import { useActiveAccount } from 'thirdweb/react';
 import { FaInstagram, FaFacebookF, FaInfoCircle } from 'react-icons/fa';
 import { FaTiktok } from 'react-icons/fa6';
+import type { SupportedLanguage } from "../utils/deepLTranslation";
 
 interface UserData {
   username: string;
@@ -78,7 +79,11 @@ const getUUID = () => {
   // return null;
 };
 
-export default function InstagramTab() {
+interface InstagramTabProps {
+  language: SupportedLanguage;
+}
+
+export default function InstagramTab({ language }: InstagramTabProps) {
   const router = useRouter();
   const account = useActiveAccount(); // Thirdweb Hook für eingeloggte Wallet
   const [userData, setUserData] = useState<UserData | null>(null);

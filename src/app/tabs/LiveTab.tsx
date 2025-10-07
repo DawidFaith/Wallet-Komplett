@@ -3,8 +3,13 @@ import { useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { Button } from "../../../components/ui/button";
 import { FaTicketAlt, FaLock, FaTimes } from "react-icons/fa";
+import type { SupportedLanguage } from "../utils/deepLTranslation";
 
-export default function LiveTab() {
+interface LiveTabProps {
+  language: SupportedLanguage;
+}
+
+export default function LiveTab({ language }: LiveTabProps) {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
