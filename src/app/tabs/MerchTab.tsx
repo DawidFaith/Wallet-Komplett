@@ -25,6 +25,9 @@ import {
   FaEuroSign
 } from "react-icons/fa";
 
+// Translation Components
+import { TranslatedText, TranslatedTitle, TranslatedButton } from '../components/TranslatedText';
+
 // Token-Konfiguration (gleich wie im WalletTab)
 const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
 const DFAITH_DECIMALS = 2;
@@ -723,6 +726,12 @@ export default function MerchTab({ language }: MerchTabProps) {
     return names[category.toLowerCase()] || category;
   };
 
+  // Translated Category Display Component
+  const TranslatedCategoryName = ({ category }: { category: string }) => {
+    const displayName = getCategoryDisplayName(category);
+    return <TranslatedText text={displayName} language={language} />;
+  };
+
   // Bereinigt Dateinamen von Dateierweiterungen für bessere Anzeige
   const cleanFileName = (fileName: string): string => {
     if (!fileName) return '';
@@ -1109,7 +1118,9 @@ export default function MerchTab({ language }: MerchTabProps) {
     return (
       <div className="flex items-center justify-center min-h-64">
         <FaSpinner className="animate-spin text-4xl text-amber-400" />
-        <span className="ml-4 text-white text-xl">Lade Produkte...</span>
+        <span className="ml-4 text-white text-xl">
+          <TranslatedText text="Lade Produkte..." language={language} />
+        </span>
       </div>
     );
   }
@@ -1119,12 +1130,12 @@ export default function MerchTab({ language }: MerchTabProps) {
       <div className="text-center p-8">
         <FaTimes className="text-4xl text-red-400 mb-4 mx-auto" />
         <p className="text-red-400 text-xl">{error}</p>
-        <Button 
+        <TranslatedButton 
           onClick={() => window.location.reload()} 
           className="mt-4 bg-amber-600 hover:bg-amber-700"
-        >
-          Neu laden
-        </Button>
+          text="Neu laden"
+          language={language}
+        />
       </div>
     );
   }
@@ -1208,11 +1219,11 @@ export default function MerchTab({ language }: MerchTabProps) {
               <div className="space-y-4 mb-2">
                 <div className="bg-slate-800/40 backdrop-blur-md rounded-xl px-8 py-4 border border-slate-600/30 max-w-2xl mx-auto">
                   <h2 className="text-2xl md:text-3xl font-light text-slate-100 tracking-wide mb-2">
-                    Offizieller Fan Shop
+                    <TranslatedText text="Offizieller Fan Shop" language={language} />
                   </h2>
                   <div className="w-16 h-px bg-amber-400 mx-auto mb-3"></div>
                   <p className="text-slate-300 text-lg font-medium">
-                    Premium Kollektion • Exklusive Veröffentlichungen • Digitale Inhalte
+                    <TranslatedText text="Premium Kollektion • Exklusive Veröffentlichungen • Digitale Inhalte" language={language} />
                   </p>
                 </div>
               </div>
@@ -1225,7 +1236,9 @@ export default function MerchTab({ language }: MerchTabProps) {
               
               {/* Category Title - Kompakter */}
               <div className="text-center mb-4">
-                <h3 className="text-lg font-medium text-slate-200 tracking-wide">Kollektionen durchsuchen</h3>
+                <h3 className="text-lg font-medium text-slate-200 tracking-wide">
+                  <TranslatedText text="Kollektionen durchsuchen" language={language} />
+                </h3>
                 <div className="w-12 h-px bg-amber-400 mx-auto mt-2"></div>
               </div>
               
@@ -1243,7 +1256,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                   >
                     {/* Button Content */}
                     <span className="relative z-10 flex items-center gap-2">
-                      {getCategoryDisplayName(category)}
+                      <TranslatedCategoryName category={category} />
                       {selectedCategory === category && (
                         <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
                       )}
@@ -1260,7 +1273,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                 <div className="inline-flex items-center gap-3 bg-slate-800/40 backdrop-blur-sm rounded-full px-6 py-2 border border-slate-600/30">
                   <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
                   <span className="text-slate-300 text-sm font-medium">
-                    {filteredProducts.length} {filteredProducts.length === 1 ? 'Artikel' : 'Artikel'} verfügbar
+                    {filteredProducts.length} <TranslatedText text={filteredProducts.length === 1 ? 'Artikel' : 'Artikel'} language={language} /> <TranslatedText text="verfügbar" language={language} />
                   </span>
                   {selectedCategory !== "all" && (
                     <>
@@ -1953,7 +1966,9 @@ export default function MerchTab({ language }: MerchTabProps) {
       {filteredProducts.length === 0 && !loading && (
         <div className="text-center py-12">
           <FaShoppingCart className="text-4xl text-gray-600 mb-4 mx-auto" />
-          <p className="text-gray-400 text-xl">Keine Produkte in dieser Kategorie gefunden.</p>
+          <p className="text-gray-400 text-xl">
+            <TranslatedText text="Keine Produkte in dieser Kategorie gefunden." language={language} />
+          </p>
         </div>
       )}
       
@@ -1973,7 +1988,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-bold text-white flex items-center gap-2">
                     <FaShoppingCart />
-                    Warenkorb
+                    <TranslatedText text="Warenkorb" language={language} />
                   </h3>
                   <Button
                     onClick={() => setShowCart(false)}
@@ -1987,7 +2002,9 @@ export default function MerchTab({ language }: MerchTabProps) {
                 <div className="bg-amber-900/80/50 rounded-lg p-4 border border-amber-700/50">
                   <div className="flex items-center gap-2 mb-2">
                     <FaCoins className="text-amber-400 text-sm" />
-                    <span className="text-gray-300 text-sm font-medium">Ihr D.FAITH Guthaben</span>
+                    <span className="text-gray-300 text-sm font-medium">
+                      <TranslatedText text="Ihr D.FAITH Guthaben" language={language} />
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-2xl font-bold text-amber-400">{dfaithBalance}</div>
@@ -2003,7 +2020,9 @@ export default function MerchTab({ language }: MerchTabProps) {
                 {Object.keys(cart).length === 0 ? (
                   <div className="text-center py-12">
                     <FaShoppingCart className="text-4xl text-gray-600 mb-4 mx-auto" />
-                    <p className="text-gray-400">Warenkorb ist leer</p>
+                    <p className="text-gray-400">
+                      <TranslatedText text="Warenkorb ist leer" language={language} />
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -2051,10 +2070,12 @@ export default function MerchTab({ language }: MerchTabProps) {
                     <div className="mb-4 p-4 bg-red-900/30 border border-red-600/50 rounded-lg">
                       <div className="flex items-center gap-2 mb-2">
                         <FaTimes className="text-red-400" />
-                        <span className="text-red-300 font-semibold">Keine Wallet verbunden</span>
+                        <span className="text-red-300 font-semibold">
+                          <TranslatedText text="Keine Wallet verbunden" language={language} />
+                        </span>
                       </div>
                       <p className="text-red-200 text-sm">
-                        Sie müssen eine Wallet verbinden, um Produkte kaufen zu können.
+                        <TranslatedText text="Sie müssen eine Wallet verbinden, um Produkte kaufen zu können." language={language} />
                       </p>
                     </div>
                   )}
@@ -2163,7 +2184,9 @@ export default function MerchTab({ language }: MerchTabProps) {
               <form onSubmit={(e) => { e.preventDefault(); handlePurchase(); }} className="space-y-4">
                 {/* E-Mail */}
                 <div>
-                  <label className="block text-white font-medium mb-2">📧 E-Mail-Adresse *</label>
+                  <label className="block text-white font-medium mb-2">
+                    📧 <TranslatedText text="E-Mail-Adresse" language={language} /> *
+                  </label>
                   <input
                     type="email"
                     required
@@ -2206,7 +2229,9 @@ export default function MerchTab({ language }: MerchTabProps) {
                     </div>
 
                     <div>
-                      <label className="block text-white font-medium mb-2">Straße & Hausnummer *</label>
+                      <label className="block text-white font-medium mb-2">
+                        <TranslatedText text="Straße & Hausnummer" language={language} /> *
+                      </label>
                       <input
                         type="text"
                         required
@@ -2295,11 +2320,11 @@ export default function MerchTab({ language }: MerchTabProps) {
               
               {/* Hauptnachricht */}
               <h2 className="text-3xl font-bold text-white mb-4">
-                🎉 Kauf erfolgreich!
+                🎉 <TranslatedText text="Kauf erfolgreich!" language={language} />
               </h2>
               
               <p className="text-green-100 text-lg mb-6">
-                Ihre Zahlung wurde erfolgreich verarbeitet und Ihre Bestellung wurde automatisch an unser System weitergeleitet.
+                <TranslatedText text="Ihre Zahlung wurde erfolgreich verarbeitet und Ihre Bestellung wurde automatisch an unser System weitergeleitet." language={language} />
               </p>
               
               {/* Details */}
@@ -2326,7 +2351,9 @@ export default function MerchTab({ language }: MerchTabProps) {
               
               {/* Weitere Schritte */}
               <div className="bg-green-800/30 rounded-lg p-4 mb-6">
-                <h3 className="text-white font-bold mb-2">📧 Nächste Schritte:</h3>
+                <h3 className="text-white font-bold mb-2">
+                  📧 <TranslatedText text="Nächste Schritte:" language={language} />
+                </h3>
                 <p className="text-green-100 text-sm">
                   {successDetails.hasPhysical 
                     ? "Sie erhalten eine Versandbestätigung per E-Mail, sobald Ihre Bestellung versendet wird."
@@ -2346,14 +2373,14 @@ export default function MerchTab({ language }: MerchTabProps) {
                   }}
                   className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-bold"
                 >
-                  Weiter einkaufen
+                  <TranslatedText text="Weiter einkaufen" language={language} />
                 </Button>
                 
                 <button
                   onClick={() => window.open(`https://basescan.org/tx/${successDetails.transactionHash}`, '_blank')}
                   className="text-green-300 hover:text-green-200 text-sm underline"
                 >
-                  Transaktion auf BaseScan anzeigen →
+                  <TranslatedText text="Transaktion auf BaseScan anzeigen" language={language} /> →
                 </button>
               </div>
             </div>

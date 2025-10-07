@@ -823,7 +823,7 @@ export default function WalletTab({ language }: WalletTabProps) {
               {/* Willkommens-Text mit musikalischem Flair */}
               <div className="mt-6 text-center">
                 <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent mb-2 animate-pulse">
-                  Willkommen ♪
+                  <TranslatedText text="Willkommen ♪" language={language} />
                 </h1>
                 <div className="w-20 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto rounded-full animate-pulse"></div>
                 
@@ -841,10 +841,10 @@ export default function WalletTab({ language }: WalletTabProps) {
             {/* Beschreibung mit musikalischem Bezug */}
             <div className="text-center mb-8">
               <p className="text-zinc-300 text-lg mb-2">
-                Verbinde dich mit deiner Wallet
+                <TranslatedText text="Verbinde dich mit deiner Wallet" language={language} />
               </p>
               <p className="text-zinc-500 text-sm">
-                und erlebe das D.FAITH Musik-Ökosystem ♫
+                <TranslatedText text="und erlebe das D.FAITH Musik-Ökosystem ♫" language={language} />
               </p>
             </div>
             
@@ -853,15 +853,15 @@ export default function WalletTab({ language }: WalletTabProps) {
               <ConnectButton
                 client={client}
                 connectButton={{ 
-                  label: "🎵 Wallet verbinden",
+                  label: language === 'de' ? "🎵 Wallet verbinden" : language === 'en' ? "🎵 Connect Wallet" : "🎵 Połącz portfel",
                   className: "w-full py-4 px-6 bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-bold rounded-xl hover:from-amber-500 hover:to-yellow-600 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-amber-500/25 text-lg z-50 relative"
                 }}
                 connectModal={{
                   size: "compact",
-                  title: "Wallet verbinden", 
+                  title: language === 'de' ? "Wallet verbinden" : language === 'en' ? "Connect Wallet" : "Połącz portfel", 
                   welcomeScreen: {
                     title: "Dawid Faith Wallet",
-                    subtitle: "Wähle deine bevorzugte Anmeldemethode"
+                    subtitle: language === 'de' ? "Wähle deine bevorzugte Anmeldemethode" : language === 'en' ? "Choose your preferred login method" : "Wybierz preferowaną metodę logowania"
                   },
                 }}
                 wallets={wallets}
@@ -876,13 +876,13 @@ export default function WalletTab({ language }: WalletTabProps) {
             <div className="text-center space-y-4">
               <div className="flex items-center justify-center gap-2 text-zinc-400">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-sm">Base Network</span>
+                <span className="text-sm"><TranslatedText text="Base Network" language={language} /></span>
                 <span className="text-xs">♪</span>
               </div>
               
               <div className="pt-4 border-t border-zinc-800/50">
                 <p className="text-xs text-zinc-600">
-                  🎤 Powered by Dawid Faith ♫
+                  <TranslatedText text="🎤 Powered by Dawid Faith ♫" language={language} />
                 </p>
               </div>
             </div>
@@ -920,7 +920,7 @@ export default function WalletTab({ language }: WalletTabProps) {
             }`}
           >
             <FaLock size={14} />
-            <span className="text-sm font-medium">Staken & Verdienen</span>
+            <span className="text-sm font-medium"><TranslatedText text="Staken & Verdienen" language={language} /></span>
           </button>
           
           {/* Kompakte Status-Zeile */}
@@ -930,12 +930,12 @@ export default function WalletTab({ language }: WalletTabProps) {
               {hasStaked ? (
                 <>
                   <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-green-400 font-medium">{stakedBalance} gestaked</span>
+                  <span className="text-green-400 font-medium">{stakedBalance} <TranslatedText text="gestaked" language={language} /></span>
                 </>
               ) : (
                 <>
                   <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full"></div>
-                  <span className="text-zinc-500">Nichts gestaked</span>
+                  <span className="text-zinc-500"><TranslatedText text="Nichts gestaked" language={language} /></span>
                 </>
               )}
             </div>
@@ -994,11 +994,11 @@ export default function WalletTab({ language }: WalletTabProps) {
             {/* Wallet Address mit besserem Styling und Refresh Button */}
             <div className="flex justify-between items-center bg-zinc-800/70 backdrop-blur-sm rounded-xl p-3 mb-6 border border-zinc-700/80">
               <div className="flex flex-col">
-                <span className="text-xs text-amber-300 mb-0.5">Wallet Adresse</span>
+                <span className="text-xs text-amber-300 mb-0.5"><TranslatedText text="Wallet Adresse" language={language} /></span>
                 <button
                   onClick={copyWalletAddress}
                   className="font-mono text-amber-400 text-sm hover:text-amber-300 transition-colors text-left group flex items-center gap-2"
-                  title="Adresse kopieren"
+                  title={language === 'de' ? "Adresse kopieren" : language === 'en' ? "Copy address" : "Kopiuj adres"}
                 >
                   <span>{formatAddress(account.address)}</span>
                   <FaRegCopy className="text-xs opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -1009,16 +1009,16 @@ export default function WalletTab({ language }: WalletTabProps) {
                   onClick={refreshBalances}
                   disabled={isRefreshing || isLoadingBalances}
                   className={`p-2 rounded-lg ${isRefreshing || isLoadingBalances ? 'bg-amber-600/20' : 'bg-zinc-700 hover:bg-zinc-600'} text-zinc-200 text-sm font-medium transition-all duration-200`}
-                  title="Aktualisieren"
+                  title={language === 'de' ? "Aktualisieren" : language === 'en' ? "Refresh" : "Odśwież"}
                 >
                   <FaSync className={`text-amber-400 ${isRefreshing || isLoadingBalances ? 'animate-spin' : ''}`} />
                 </button>
                 <button
                   onClick={copyWalletAddress}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-yellow-500/20 hover:from-amber-500/30 hover:to-yellow-500/30 text-amber-400 text-sm font-medium transition-all duration-200 border border-amber-500/30"
-                  title="Adresse kopieren"
+                  title={language === 'de' ? "Adresse kopieren" : language === 'en' ? "Copy address" : "Kopiuj adres"}
                 >
-                  <FaRegCopy /> Kopieren
+                  <FaRegCopy /> <TranslatedText text="Kopieren" language={language} />
                 </button>
               </div>
             </div>
@@ -1045,7 +1045,7 @@ export default function WalletTab({ language }: WalletTabProps) {
               {dfaithPriceEur > 0 && (
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-xs text-zinc-400">
-                    €{dfaithPriceEur.toFixed(4)} pro D.FAITH
+                    €{dfaithPriceEur.toFixed(4)} <TranslatedText text="pro D.FAITH" language={language} />
                   </span>
                   {priceChange24h !== null && (
                     <span className={`text-xs font-medium flex items-center gap-1 ${
@@ -1068,7 +1068,7 @@ export default function WalletTab({ language }: WalletTabProps) {
                 <div className="w-7 h-7 flex items-center justify-center bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full mb-1 shadow-inner">
                   <FaArrowDown className="text-black text-xs" />
                 </div>
-                <span className="text-xs bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent font-medium">Kaufen</span>
+                <span className="text-xs bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent font-medium"><TranslatedText text="Kaufen" language={language} /></span>
               </Button>
               <Button
                 className="flex flex-col items-center justify-center gap-1 px-1 py-3 md:py-4 bg-gradient-to-br from-zinc-800/90 to-zinc-900 hover:from-zinc-800 hover:to-zinc-800 shadow-lg shadow-black/20 rounded-xl hover:scale-[1.02] transition-all duration-300 border border-zinc-700/80"
@@ -1077,7 +1077,7 @@ export default function WalletTab({ language }: WalletTabProps) {
                 <div className="w-7 h-7 flex items-center justify-center bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full mb-1 shadow-inner">
                   <FaArrowUp className="text-black text-xs" />
                 </div>
-                <span className="text-xs bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent font-medium">Verkauf</span>
+                <span className="text-xs bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent font-medium"><TranslatedText text="Verkauf" language={language} /></span>
               </Button>
               <Button
                 className="flex flex-col items-center justify-center gap-1 px-1 py-3 md:py-4 bg-gradient-to-br from-zinc-800/90 to-zinc-900 hover:from-zinc-800 hover:to-zinc-800 shadow-lg shadow-black/20 rounded-xl hover:scale-[1.02] transition-all duration-300 border border-zinc-700/80"
@@ -1086,7 +1086,7 @@ export default function WalletTab({ language }: WalletTabProps) {
                 <div className="w-7 h-7 flex items-center justify-center bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full mb-1 shadow-inner">
                   <FaPaperPlane className="text-black text-xs" />
                 </div>
-                <span className="text-xs bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent font-medium">Senden</span>
+                <span className="text-xs bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent font-medium"><TranslatedText text="Senden" language={language} /></span>
               </Button>
               <Button
                 className="flex flex-col items-center justify-center gap-1 px-1 py-3 md:py-4 bg-gradient-to-br from-zinc-800/90 to-zinc-900 hover:from-zinc-800 hover:to-zinc-800 shadow-lg shadow-black/20 rounded-xl hover:scale-[1.02] transition-all duration-300 border border-zinc-700/80"
@@ -1095,7 +1095,7 @@ export default function WalletTab({ language }: WalletTabProps) {
                 <div className="w-7 h-7 flex items-center justify-center bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full mb-1 shadow-inner">
                   <FaHistory className="text-black text-xs" />
                 </div>
-                <span className="text-xs bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent font-medium">Historie</span>
+                <span className="text-xs bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent font-medium"><TranslatedText text="Historie" language={language} /></span>
               </Button>
             </div>
             
@@ -1115,7 +1115,7 @@ export default function WalletTab({ language }: WalletTabProps) {
               <SendTab language={language} />
             </Modal>
 
-            <Modal open={showHistoryModal} onClose={() => setShowHistoryModal(false)} title="Transaktionshistorie">
+            <Modal open={showHistoryModal} onClose={() => setShowHistoryModal(false)} title={language === 'de' ? 'Transaktionshistorie' : language === 'en' ? 'Transaction History' : 'Historia transakcji'}>
               <HistoryTab language={language} />
             </Modal>
 
@@ -1134,7 +1134,7 @@ export default function WalletTab({ language }: WalletTabProps) {
             </Modal>
 
             {/* Copy Success Modal */}
-            <Modal open={showCopyModal} onClose={() => setShowCopyModal(false)} title={copySuccess ? "Erfolgreich kopiert!" : "Fehler beim Kopieren"}>
+            <Modal open={showCopyModal} onClose={() => setShowCopyModal(false)} title={copySuccess ? (language === 'de' ? "Erfolgreich kopiert!" : language === 'en' ? "Successfully copied!" : "Pomyślnie skopiowano!") : (language === 'de' ? "Fehler beim Kopieren" : language === 'en' ? "Copy failed" : "Błąd kopiowania")}>
               <div className="text-center py-8">
                 <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
                   copySuccess 
@@ -1150,17 +1150,17 @@ export default function WalletTab({ language }: WalletTabProps) {
                 <p className={`text-lg font-medium mb-2 ${
                   copySuccess ? 'text-green-400' : 'text-red-400'
                 }`}>
-                  {copySuccess ? 'Wallet-Adresse kopiert!' : 'Kopieren fehlgeschlagen'}
+                  <TranslatedText text={copySuccess ? 'Wallet-Adresse kopiert!' : 'Kopieren fehlgeschlagen'} language={language} />
                 </p>
                 <p className="text-zinc-400 text-sm mb-4">
-                  {copySuccess 
+                  <TranslatedText text={copySuccess 
                     ? 'Die Adresse befindet sich jetzt in deiner Zwischenablage.' 
                     : 'Bitte versuche es erneut oder kopiere die Adresse manuell.'
-                  }
+                  } language={language} />
                 </p>
                 {copySuccess && (
                   <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700">
-                    <p className="text-xs text-zinc-500 mb-1">Kopierte Adresse:</p>
+                    <p className="text-xs text-zinc-500 mb-1"><TranslatedText text="Kopierte Adresse:" language={language} /></p>
                     <p className="text-amber-400 font-mono text-sm break-all">
                       {account?.address}
                     </p>
