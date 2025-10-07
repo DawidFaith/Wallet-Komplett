@@ -368,7 +368,7 @@ export default function TokenomicsTab() {
             {/* Großes, zentrales Logo */}
             <div className="flex justify-center mb-6">
               <motion.div
-                className="w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-full bg-gradient-to-br from-amber-900/20 via-orange-900/30 to-yellow-900/20 backdrop-blur-sm border-2 border-orange-500/20 flex items-center justify-center overflow-hidden shadow-2xl"
+                className="w-32 h-32 md:w-48 md:h-48 lg:w-56 lg:h-56 xl:w-64 xl:h-64 rounded-full bg-gradient-to-br from-amber-900/20 via-orange-900/30 to-yellow-900/20 backdrop-blur-sm border-2 border-orange-500/20 flex items-center justify-center overflow-hidden shadow-2xl"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 1, ease: "easeOut" }}
