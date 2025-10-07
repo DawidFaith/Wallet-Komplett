@@ -810,341 +810,107 @@ export default function TokenomicsTab() {
 
               {/* Künstlerisches Metriken Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* D.FAITH Token - Künstlerisch verbessert */}
+                {/* D.FAITH Token - Vereinfacht */}
                 <motion.div 
                   className="relative bg-gradient-to-br from-amber-900/40 via-yellow-800/30 to-orange-900/40 rounded-2xl border border-amber-500/50 p-6 overflow-hidden"
-                  whileHover={{ scale: 1.03, rotateY: 2 }}
+                  whileHover={{ scale: 1.02 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.1 }}
                 >
-                  {/* Animierter Hintergrund */}
-                  <motion.div 
-                    className="absolute inset-0 bg-gradient-to-r from-amber-400/10 via-yellow-500/15 to-orange-500/10"
-                    animate={{ 
-                      x: [-100, 100],
-                      opacity: [0.3, 0.7, 0.3]
-                    }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  />
-                  
-                  {/* Schwebende Partikel */}
-                  {[...Array(3)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute w-2 h-2 bg-amber-400/60 rounded-full"
-                      animate={{
-                        x: [0, 30, 0],
-                        y: [0, -20, 0],
-                        opacity: [0.4, 1, 0.4],
-                      }}
-                      transition={{
-                        duration: 3 + i,
-                        repeat: Infinity,
-                        delay: i * 0.8,
-                      }}
-                      style={{
-                        left: `${20 + i * 30}%`,
-                        top: `${20 + i * 20}%`,
-                      }}
-                    />
-                  ))}
                   
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <motion.div
-                          animate={{ 
-                            rotate: [0, 360],
-                            scale: [1, 1.1, 1]
-                          }}
-                          transition={{ duration: 3, repeat: Infinity }}
-                        >
-                          <Coins className="w-8 h-8 text-amber-400" />
-                        </motion.div>
+                        <Coins className="w-8 h-8 text-amber-400" />
                         <span className="text-amber-200 font-bold text-lg">D.FAITH</span>
                       </div>
-                      <motion.div 
-                        className="px-3 py-2 rounded-full bg-amber-500/30 text-amber-300 text-xs font-bold border border-amber-400/50"
-                        animate={{ 
-                          opacity: [1, 0.6, 1],
-                          boxShadow: [
-                            "0 0 10px rgba(245, 158, 11, 0.3)",
-                            "0 0 20px rgba(245, 158, 11, 0.6)",
-                            "0 0 10px rgba(245, 158, 11, 0.3)"
-                          ]
-                        }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      >
+                      <div className="px-3 py-2 rounded-full bg-amber-500/30 text-amber-300 text-xs font-bold border border-amber-400/50">
                         LIVE
-                      </motion.div>
+                      </div>
                     </div>
                     <div className="text-white">
-                      <motion.div 
-                        className="text-3xl font-bold mb-2 bg-gradient-to-r from-amber-300 to-yellow-200 bg-clip-text text-transparent"
-                        animate={{ scale: [1, 1.02, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      >
+                      <div className="text-3xl font-bold mb-2 bg-gradient-to-r from-amber-300 to-yellow-200 bg-clip-text text-transparent">
                         €{tokenMetrics?.priceEUR?.toFixed(4) || "0.1700"}
-                      </motion.div>
+                      </div>
                       <div className="text-amber-200 text-sm flex items-center gap-1">
-                        <motion.span
-                          animate={{ opacity: [0.7, 1, 0.7] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
-                        >
-                          🎵
-                        </motion.span>
+                        <span>🎵</span>
                         Musikalischer Wert
                       </div>
                     </div>
                   </div>
                 </motion.div>
 
-                {/* D.INVEST Token - Künstlerisch verbessert */}
+                {/* D.INVEST Token - Vereinfacht */}
                 <motion.div 
                   className="relative bg-gradient-to-br from-blue-900/40 via-cyan-800/30 to-indigo-900/40 rounded-2xl border border-blue-500/50 p-6 overflow-hidden"
-                  whileHover={{ scale: 1.03, rotateY: -2 }}
+                  whileHover={{ scale: 1.02 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.2 }}
                 >
-                  {/* Wellenförmiger Hintergrund */}
-                  <motion.div 
-                    className="absolute inset-0 bg-gradient-to-r from-blue-400/10 via-cyan-500/15 to-indigo-500/10"
-                    animate={{ 
-                      backgroundPosition: ["0% 0%", "100% 100%"],
-                      opacity: [0.3, 0.6, 0.3]
-                    }}
-                    transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                  />
-                  
-                  {/* Rhythmische Kreise */}
-                  {[...Array(4)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute rounded-full border-2 border-blue-400/30"
-                      animate={{
-                        scale: [0, 1.5, 0],
-                        opacity: [0, 0.6, 0],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        delay: i * 0.5,
-                      }}
-                      style={{
-                        width: "20px",
-                        height: "20px",
-                        left: "50%",
-                        top: "30%",
-                      }}
-                    />
-                  ))}
                   
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <motion.div
-                          animate={{ 
-                            rotateX: [0, 360],
-                            scale: [1, 1.15, 1]
-                          }}
-                          transition={{ duration: 4, repeat: Infinity }}
-                        >
-                          <Target className="w-8 h-8 text-blue-400" />
-                        </motion.div>
+                        <Target className="w-8 h-8 text-blue-400" />
                         <span className="text-blue-200 font-bold text-lg">D.INVEST</span>
                       </div>
-                      <motion.div 
-                        className="px-3 py-2 rounded-full bg-blue-500/30 text-blue-300 text-xs font-bold border border-blue-400/50"
-                        animate={{ 
-                          scale: [1, 1.05, 1],
-                          boxShadow: [
-                            "0 0 10px rgba(59, 130, 246, 0.3)",
-                            "0 0 15px rgba(59, 130, 246, 0.5)",
-                            "0 0 10px rgba(59, 130, 246, 0.3)"
-                          ]
-                        }}
-                        transition={{ duration: 3, repeat: Infinity }}
-                      >
+                      <div className="px-3 py-2 rounded-full bg-blue-500/30 text-blue-300 text-xs font-bold border border-blue-400/50">
                         STABIL
-                      </motion.div>
+                      </div>
                     </div>
                     <div className="text-white">
-                      <motion.div 
-                        className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-300 to-cyan-200 bg-clip-text text-transparent"
-                        animate={{ 
-                          textShadow: [
-                            "0 0 10px rgba(59, 130, 246, 0.5)",
-                            "0 0 20px rgba(34, 211, 238, 0.7)",
-                            "0 0 10px rgba(59, 130, 246, 0.5)"
-                          ]
-                        }}
-                        transition={{ duration: 2.5, repeat: Infinity }}
-                      >
+                      <div className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-300 to-cyan-200 bg-clip-text text-transparent">
                         €{dinvestBalance?.priceEUR?.toFixed(2) || "5.00"}
-                      </motion.div>
+                      </div>
                       <div className="text-blue-200 text-sm flex items-center gap-1">
-                        <motion.span
-                          animate={{ 
-                            rotate: [0, 10, -10, 0],
-                            opacity: [0.7, 1, 0.7]
-                          }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          🎶
-                        </motion.span>
+                        <span>🎶</span>
                         Harmonische Balance
                       </div>
                     </div>
                   </div>
                 </motion.div>
 
-                {/* Total Staked - Elektrisch & Musikalisch */}
+                {/* Total Staked - Vereinfacht */}
                 <motion.div 
                   className="relative bg-gradient-to-br from-purple-900/40 via-violet-800/30 to-fuchsia-900/40 rounded-2xl border border-purple-500/50 p-6 overflow-hidden"
-                  whileHover={{ scale: 1.03, rotateZ: 1 }}
+                  whileHover={{ scale: 1.02 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.3 }}
                 >
-                  {/* Elektrische Blitze */}
-                  <motion.div 
-                    className="absolute inset-0"
-                    animate={{ 
-                      background: [
-                        "linear-gradient(45deg, rgba(147, 51, 234, 0.1), rgba(168, 85, 247, 0.15))",
-                        "linear-gradient(45deg, rgba(168, 85, 247, 0.15), rgba(217, 70, 239, 0.2))",
-                        "linear-gradient(45deg, rgba(147, 51, 234, 0.1), rgba(168, 85, 247, 0.15))"
-                      ]
-                    }}
-                    transition={{ duration: 3, repeat: Infinity }}
-                  />
-                  
-                  {/* Energiepulse */}
-                  {[...Array(3)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute w-1 h-full bg-gradient-to-b from-purple-400/60 to-transparent"
-                      animate={{
-                        x: [-10, 100],
-                        opacity: [0, 1, 0],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        delay: i * 0.7,
-                        ease: "easeInOut"
-                      }}
-                      style={{
-                        left: `${10 + i * 30}%`,
-                        transform: "skewX(-20deg)"
-                      }}
-                    />
-                  ))}
                   
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <motion.div
-                          animate={{ 
-                            rotate: [0, 180, 360],
-                            scale: [1, 1.2, 1],
-                            filter: [
-                              "drop-shadow(0 0 5px rgba(147, 51, 234, 0.5))",
-                              "drop-shadow(0 0 15px rgba(168, 85, 247, 0.8))",
-                              "drop-shadow(0 0 5px rgba(147, 51, 234, 0.5))"
-                            ]
-                          }}
-                          transition={{ duration: 3, repeat: Infinity }}
-                        >
-                          <Zap className="w-8 h-8 text-purple-400" />
-                        </motion.div>
+                        <Zap className="w-8 h-8 text-purple-400" />
                         <span className="text-purple-200 font-bold text-lg">Total Staked</span>
                       </div>
-                      <motion.div 
-                        className="px-3 py-2 rounded-full bg-purple-500/30 text-purple-300 text-xs font-bold border border-purple-400/50"
-                        animate={{ 
-                          opacity: [1, 0.7, 1],
-                          scale: [1, 1.1, 1]
-                        }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                      >
+                      <div className="px-3 py-2 rounded-full bg-purple-500/30 text-purple-300 text-xs font-bold border border-purple-400/50">
                         ENERGIE
-                      </motion.div>
+                      </div>
                     </div>
                     <div className="text-white">
-                      <motion.div 
-                        className="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-300 to-fuchsia-200 bg-clip-text text-transparent"
-                        animate={{ 
-                          scale: [1, 1.03, 1],
-                          filter: [
-                            "drop-shadow(0 0 5px rgba(168, 85, 247, 0.6))",
-                            "drop-shadow(0 0 10px rgba(217, 70, 239, 0.8))",
-                            "drop-shadow(0 0 5px rgba(168, 85, 247, 0.6))"
-                          ]
-                        }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      >
+                      <div className="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-300 to-fuchsia-200 bg-clip-text text-transparent">
                         {totalStaked?.toLocaleString() || "79.999,99"}
-                      </motion.div>
+                      </div>
                       <div className="text-purple-200 text-sm flex items-center gap-1">
-                        <motion.span
-                          animate={{ 
-                            scale: [1, 1.3, 1],
-                            opacity: [0.7, 1, 0.7]
-                          }}
-                          transition={{ duration: 1, repeat: Infinity }}
-                        >
-                          🎚️
-                        </motion.span>
+                        <span>🎚️</span>
                         Elektrische Komposition
                       </div>
                     </div>
                   </div>
                 </motion.div>
 
-                {/* Rewards Verteilt - Triumphale Symphonie */}
+                {/* Rewards Verteilt - Vereinfacht */}
                 <motion.div 
                   className="relative bg-gradient-to-br from-green-900/40 via-emerald-800/30 to-teal-900/40 rounded-2xl border border-green-500/50 p-6 overflow-hidden"
-                  whileHover={{ scale: 1.03, rotateX: 2 }}
+                  whileHover={{ scale: 1.02 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.4 }}
                 >
-                  {/* Schimmernde Wellen */}
-                  <motion.div 
-                    className="absolute inset-0 bg-gradient-to-r from-green-400/10 via-emerald-500/15 to-teal-500/10"
-                    animate={{ 
-                      x: ["-100%", "100%"],
-                      opacity: [0.2, 0.6, 0.2]
-                    }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  />
-                  
-                  {/* Sieges-Konfetti */}
-                  {[...Array(5)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute w-3 h-3 bg-green-400/70 rounded-full"
-                      animate={{
-                        y: [-20, 100],
-                        x: [0, Math.sin(i) * 30],
-                        opacity: [1, 0],
-                        scale: [0.5, 1, 0.3],
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        delay: i * 0.4,
-                        ease: "easeOut"
-                      }}
-                      style={{
-                        left: `${20 + i * 15}%`,
-                        top: "10%",
-                      }}
-                    />
-                  ))}
                   
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-4">
@@ -1210,100 +976,30 @@ export default function TokenomicsTab() {
                   </div>
                 </motion.div>
 
-                {/* Halving Stufe - Dramatische Phase */}
+                {/* Halving Stufe - Vereinfacht */}
                 <motion.div 
                   className="relative bg-gradient-to-br from-red-900/40 via-rose-800/30 to-pink-900/40 rounded-2xl border border-red-500/50 p-6 overflow-hidden"
-                  whileHover={{ scale: 1.03, rotateY: 1 }}
+                  whileHover={{ scale: 1.02 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.5 }}
                 >
-                  {/* Pulsierende Ringe */}
-                  {[...Array(3)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute inset-0 border-2 border-red-400/30 rounded-2xl"
-                      animate={{
-                        scale: [1, 1.05, 1],
-                        opacity: [0.3, 0.7, 0.3],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        delay: i * 0.3,
-                      }}
-                    />
-                  ))}
-                  
-                  {/* Dramatische Lichtstrahlen */}
-                  <motion.div 
-                    className="absolute inset-0 bg-gradient-to-r from-red-400/5 via-rose-500/10 to-pink-500/5"
-                    animate={{ 
-                      backgroundPosition: ["0% 50%", "100% 50%"],
-                      opacity: [0.3, 0.8, 0.3]
-                    }}
-                    transition={{ duration: 4, repeat: Infinity }}
-                  />
-                  
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <motion.div
-                          animate={{ 
-                            rotate: [0, -10, 10, 0],
-                            scale: [1, 1.2, 1],
-                            filter: [
-                              "drop-shadow(0 0 5px rgba(239, 68, 68, 0.5))",
-                              "drop-shadow(0 0 15px rgba(251, 113, 133, 0.8))",
-                              "drop-shadow(0 0 5px rgba(239, 68, 68, 0.5))"
-                            ]
-                          }}
-                          transition={{ duration: 3, repeat: Infinity }}
-                        >
-                          <Timer className="w-8 h-8 text-red-400" />
-                        </motion.div>
+                        <Timer className="w-8 h-8 text-red-400" />
                         <span className="text-red-200 font-bold text-lg">Halving Stufe</span>
                       </div>
-                      <motion.div 
-                        className="px-3 py-2 rounded-full bg-red-500/30 text-red-300 text-xs font-bold border border-red-400/50"
-                        animate={{ 
-                          scale: [1, 1.1, 1],
-                          boxShadow: [
-                            "0 0 10px rgba(239, 68, 68, 0.3)",
-                            "0 0 20px rgba(251, 113, 133, 0.6)",
-                            "0 0 10px rgba(239, 68, 68, 0.3)"
-                          ]
-                        }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      >
+                      <div className="px-3 py-2 rounded-full bg-red-500/30 text-red-300 text-xs font-bold border border-red-400/50">
                         DRAMA
-                      </motion.div>
+                      </div>
                     </div>
                     <div className="text-white">
-                      <motion.div 
-                        className="text-3xl font-bold mb-2 bg-gradient-to-r from-red-300 to-rose-200 bg-clip-text text-transparent"
-                        animate={{ 
-                          scale: [1, 1.04, 1],
-                          textShadow: [
-                            "0 0 10px rgba(239, 68, 68, 0.6)",
-                            "0 0 20px rgba(251, 113, 133, 0.8)",
-                            "0 0 10px rgba(239, 68, 68, 0.6)"
-                          ]
-                        }}
-                        transition={{ duration: 2.5, repeat: Infinity }}
-                      >
+                      <div className="text-3xl font-bold mb-2 bg-gradient-to-r from-red-300 to-rose-200 bg-clip-text text-transparent">
                         Stufe {currentStage || "1"}
-                      </motion.div>
+                      </div>
                       <div className="text-red-200 text-sm flex items-center gap-1">
-                        <motion.span
-                          animate={{ 
-                            scale: [1, 1.5, 1],
-                            opacity: [0.7, 1, 0.7]
-                          }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
-                        >
-                          🎪
-                        </motion.span>
+                        <span>🎪</span>
                         Epische Phase
                       </div>
                     </div>
@@ -1364,116 +1060,33 @@ export default function TokenomicsTab() {
                   </div>
                 </motion.div>
 
-                {/* Active Users - Orchestrale Community */}
+                {/* Active Users - Vereinfacht */}
                 <motion.div 
                   className="relative bg-gradient-to-br from-indigo-900/40 via-blue-800/30 to-cyan-900/40 rounded-2xl border border-indigo-500/50 p-6 md:col-span-2 overflow-hidden"
-                  whileHover={{ scale: 1.02, rotateX: 1 }}
+                  whileHover={{ scale: 1.01 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.7 }}
                 >
-                  {/* Wellenförmige Community-Bewegung */}
-                  <motion.div 
-                    className="absolute inset-0 bg-gradient-to-r from-indigo-400/5 via-blue-500/10 to-cyan-500/5"
-                    animate={{ 
-                      backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"],
-                      opacity: [0.3, 0.7, 0.3]
-                    }}
-                    transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                  />
-                  
-                  {/* Community Dots - wie Noten auf einem Notensystem */}
-                  {[...Array(8)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute w-2 h-2 bg-indigo-400/60 rounded-full"
-                      animate={{
-                        y: [0, -20, 0],
-                        scale: [0.8, 1.2, 0.8],
-                        opacity: [0.6, 1, 0.6],
-                      }}
-                      transition={{
-                        duration: 2 + i * 0.2,
-                        repeat: Infinity,
-                        delay: i * 0.3,
-                        ease: "easeInOut"
-                      }}
-                      style={{
-                        left: `${10 + i * 10}%`,
-                        top: `${40 + Math.sin(i) * 20}%`,
-                      }}
-                    />
-                  ))}
                   
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <motion.div
-                          animate={{ 
-                            scale: [1, 1.2, 1],
-                            rotate: [0, 5, -5, 0],
-                            filter: [
-                              "drop-shadow(0 0 5px rgba(99, 102, 241, 0.5))",
-                              "drop-shadow(0 0 15px rgba(59, 130, 246, 0.8))",
-                              "drop-shadow(0 0 5px rgba(99, 102, 241, 0.5))"
-                            ]
-                          }}
-                          transition={{ duration: 3, repeat: Infinity }}
-                        >
-                          <Users className="w-8 h-8 text-indigo-400" />
-                        </motion.div>
+                        <Users className="w-8 h-8 text-indigo-400" />
                         <span className="text-indigo-200 font-bold text-xl">Active Users</span>
                       </div>
-                      <motion.div 
-                        className="px-4 py-2 rounded-full bg-indigo-500/30 text-indigo-300 text-sm font-bold border border-indigo-400/50"
-                        animate={{ 
-                          scale: [1, 1.1, 1],
-                          boxShadow: [
-                            "0 0 10px rgba(99, 102, 241, 0.3)",
-                            "0 0 25px rgba(59, 130, 246, 0.6)",
-                            "0 0 10px rgba(99, 102, 241, 0.3)"
-                          ]
-                        }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      >
+                      <div className="px-4 py-2 rounded-full bg-indigo-500/30 text-indigo-300 text-sm font-bold border border-indigo-400/50">
                         ORCHESTER
-                      </motion.div>
+                      </div>
                     </div>
                     <div className="text-white">
-                      <motion.div 
-                        className="text-4xl font-bold mb-2 bg-gradient-to-r from-indigo-300 to-cyan-200 bg-clip-text text-transparent"
-                        animate={{ 
-                          scale: [1, 1.05, 1],
-                          textShadow: [
-                            "0 0 15px rgba(99, 102, 241, 0.6)",
-                            "0 0 30px rgba(59, 130, 246, 0.8)",
-                            "0 0 15px rgba(99, 102, 241, 0.6)"
-                          ]
-                        }}
-                        transition={{ duration: 3, repeat: Infinity }}
-                      >
+                      <div className="text-4xl font-bold mb-2 bg-gradient-to-r from-indigo-300 to-cyan-200 bg-clip-text text-transparent">
                         {activeFansCount || "8"}
-                      </motion.div>
+                      </div>
                       <div className="text-indigo-200 text-base flex items-center gap-2">
-                        <motion.span
-                          animate={{ 
-                            scale: [1, 1.4, 1],
-                            opacity: [0.7, 1, 0.7]
-                          }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          🎵
-                        </motion.span>
+                        <span>🎵</span>
                         Musikalische Gemeinschaft
-                        <motion.span
-                          animate={{ 
-                            rotate: [0, 10, -10, 0],
-                            opacity: [0.7, 1, 0.7]
-                          }}
-                          transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
-                        >
-                          🎶
-                        </motion.span>
+                        <span>🎶</span>
                       </div>
                     </div>
                   </div>
