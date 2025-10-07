@@ -401,37 +401,71 @@ export default function TokenomicsTab() {
             }}
           />
           
-          {/* Logo und Haupttitel mit Pirata One - Visuell verbessert */}
+          {/* Logo und Haupttitel - Moderne Hexagon-Variante */}
           <div className="flex flex-col items-center mb-6">
-            {/* D.FAITH Token Logo */}
+            {/* Option 1: Hexagon-Design mit mehrschichtigen Rahmen */}
             <motion.div 
-              className="mb-2"
-              initial={{ opacity: 0, scale: 0.5, rotateY: 180 }}
+              className="mb-4 relative"
+              initial={{ opacity: 0, scale: 0.3, rotateY: 180 }}
               animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-              transition={{ duration: 1.2, ease: "easeOut" }}
+              transition={{ duration: 1.4, ease: "easeOut" }}
             >
-              <motion.img
-                src="/D.FAITH.png"
-                alt="D.FAITH Token"
-                className="w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-full shadow-2xl border-4 border-rose-500/30"
-                whileHover={{ 
-                  scale: 1.1, 
-                  rotate: 5,
-                  boxShadow: "0 0 60px rgba(244, 114, 182, 0.8)"
+              {/* Äußerer Hexagon-Rahmen */}
+              <motion.div 
+                className="relative"
+                style={{
+                  clipPath: "polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%)"
                 }}
-                animate={{
-                  boxShadow: [
-                    "0 0 20px rgba(244, 114, 182, 0.4)",
-                    "0 0 40px rgba(147, 51, 234, 0.6)",
-                    "0 0 60px rgba(99, 102, 241, 0.4)",
-                    "0 0 40px rgba(244, 114, 182, 0.4)"
-                  ]
-                }}
-                transition={{ 
-                  duration: 3, 
-                  repeat: Infinity
-                }}
-              />
+                whileHover={{ rotate: 3, scale: 1.05 }}
+                transition={{ duration: 0.3 }}
+              >
+                {/* Gradient Hintergrund */}
+                <div className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 bg-gradient-to-br from-rose-500 via-purple-600 to-indigo-700 p-1">
+                  {/* Innerer Rahmen */}
+                  <div 
+                    className="w-full h-full bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-2"
+                    style={{
+                      clipPath: "polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%)"
+                    }}
+                  >
+                    {/* Logo Container */}
+                    <div 
+                      className="w-full h-full bg-gradient-to-br from-rose-950/50 via-purple-950/50 to-indigo-950/50 flex items-center justify-center backdrop-blur-sm"
+                      style={{
+                        clipPath: "polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%)"
+                      }}
+                    >
+                      <img
+                        src="/D.FAITH.png"
+                        alt="D.FAITH Token"
+                        className="w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 rounded-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+              
+              {/* Glowing Particles um das Logo */}
+              {[...Array(6)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-2 h-2 bg-gradient-to-r from-rose-400 to-purple-500 rounded-full"
+                  style={{
+                    left: `${20 + Math.cos(i * 60 * Math.PI / 180) * 80}px`,
+                    top: `${20 + Math.sin(i * 60 * Math.PI / 180) * 80}px`,
+                  }}
+                  animate={{
+                    scale: [0.5, 1.2, 0.5],
+                    opacity: [0.4, 1, 0.4],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    delay: i * 0.3,
+                    ease: "easeInOut"
+                  }}
+                />
+              ))}
             </motion.div>
 
             <motion.h1 
@@ -572,7 +606,7 @@ export default function TokenomicsTab() {
                 </motion.div>
                 <div className="flex flex-col items-start">
                   <span className="text-white font-bold">Dawid Faith besuchen</span>
-                  <span className="text-green-100 text-xs md:text-sm">Offizielle Website & Community</span>
+                  <span className="text-green-100 text-xs md:text-sm">Offizielle Website</span>
                 </div>
                 <ExternalLink className="w-4 h-4 md:w-5 md:h-5 opacity-70 ml-2" />
               </div>
