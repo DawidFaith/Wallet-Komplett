@@ -324,33 +324,62 @@ export default function TokenomicsTab() {
   };
 
   return (
-    <motion.div 
-      className="space-y-6 md:space-y-8 p-4 md:p-6 max-w-7xl mx-auto"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      {/* Visuell verbessertes Hero Section */}
+    <div className="relative min-h-screen bg-gradient-to-br from-amber-950 via-orange-950 to-yellow-950 text-white">
       <motion.div 
-        className="relative overflow-hidden text-center bg-gradient-to-br from-rose-950/40 via-purple-950/50 to-indigo-950/40 rounded-3xl border border-rose-500/30 p-8 md:p-16 backdrop-blur-xl shadow-2xl"
-        variants={itemVariants}
+        className="space-y-6 md:space-y-8 p-4 md:p-6 max-w-7xl mx-auto"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
       >
+      {/* Dawid Faith Tokenomics - Ultra Professional Header Design */}
+      <div className="relative mb-8 overflow-hidden">
+        {/* Hintergrundbild Container */}
+        <div className="absolute inset-0">
+          {/* Hintergrundbild */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: `url('/Still 2025-03-19 193121_19.7.1.jpg')`
+            }}
+          />
+          {/* Gradient-Overlays für bessere Lesbarkeit */}
+          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/80"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/50"></div>
+          
+          {/* Farb-Overlay für Branding */}
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-950/30 via-amber-900/20 to-yellow-950/25"></div>
+          
+          {/* Subtile Textur-Overlays */}
+          <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-white via-transparent to-white"></div>
+          
+          {/* Animated Elements */}
+          <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-3/4 right-1/4 w-48 h-48 bg-amber-600/5 rounded-full blur-3xl animate-pulse" style={{animationDelay: "1s"}}></div>
+          <div className="absolute bottom-1/3 left-1/3 w-24 h-24 bg-yellow-500/5 rounded-full blur-2xl animate-pulse" style={{animationDelay: "2s"}}></div>
+        </div>
+        
+        {/* Hauptinhalt */}
         <div className="relative">
-          {/* Logo und Haupttitel - Schlicht und Groß */}
-          <div className="flex flex-col items-center mb-8">
-            {/* Schlichtes, großes Logo */}
-            <motion.div 
-              className="mb-6 relative"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1, ease: "easeOut" }}
-            >
+          <motion.div 
+            className="text-center p-8 md:p-16 lg:p-24 xl:p-32 backdrop-blur-sm"
+            variants={itemVariants}
+          >
+            {/* Logo und Haupttitel - Schlicht und Groß */}
+            <div className="flex flex-col items-center mb-8">
+              {/* Schlichtes, großes Logo */}
+              <motion.div 
+                className="mb-6 relative"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1, ease: "easeOut" }}
+              >
               {/* Einfacher, großer Logo-Container */}
               <motion.div
-                className="w-40 h-40 md:w-52 md:h-52 lg:w-64 lg:h-64 rounded-full bg-gradient-to-br from-rose-900/20 via-purple-900/30 to-indigo-900/20 backdrop-blur-sm border-2 border-purple-500/20 flex items-center justify-center overflow-hidden shadow-2xl"
+                className="w-40 h-40 md:w-52 md:h-52 lg:w-64 lg:h-64 rounded-full bg-gradient-to-br from-amber-900/20 via-orange-900/30 to-yellow-900/20 backdrop-blur-sm border-2 border-orange-500/20 flex items-center justify-center overflow-hidden shadow-2xl"
                 whileHover={{ 
                   scale: 1.05,
-                  borderColor: "rgba(168, 85, 247, 0.4)"
+                  borderColor: "rgba(249, 115, 22, 0.4)"
                 }}
                 transition={{ duration: 0.3 }}
               >
@@ -362,41 +391,61 @@ export default function TokenomicsTab() {
               </motion.div>
             </motion.div>
 
-            <motion.h1 
-              className="relative text-4xl md:text-6xl lg:text-8xl font-pirata text-transparent bg-clip-text bg-gradient-to-r from-rose-300 via-purple-300 to-indigo-300 drop-shadow-2xl mb-4"
-              initial={{ opacity: 0, y: 50, rotateX: -15 }}
-              animate={{ opacity: 1, y: 0, rotateX: 0 }}
-              transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
-              style={{
-                textShadow: "0 0 60px rgba(244, 114, 182, 0.6), 0 0 100px rgba(147, 51, 234, 0.4)"
-              }}
-            >
-              <motion.span
-                animate={{ 
-                  filter: [
-                    "drop-shadow(0 0 20px rgba(244, 114, 182, 0.8))",
-                    "drop-shadow(0 0 40px rgba(147, 51, 234, 0.8))", 
-                    "drop-shadow(0 0 60px rgba(99, 102, 241, 0.8))",
-                    "drop-shadow(0 0 40px rgba(244, 114, 182, 0.8))"
-                  ]
+            {/* Haupttitel mit eleganten Linien und Branding - wie im MerchTab Stil */}
+            <div className="relative mb-16">
+              {/* Elegante horizontale Linie mit Glow-Effekt */}
+              <div className="relative mb-8">
+                <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-400/50 to-transparent transform -translate-y-1/2"></div>
+                <div className="text-center">
+                  <div className="inline-block px-8 py-2 bg-black/60 backdrop-blur-sm rounded-full border border-orange-500/30">
+                    <span className="bg-gradient-to-r from-orange-200 via-amber-300 to-yellow-400 bg-clip-text text-transparent font-bold text-lg md:text-xl">
+                      DAWID FAITH TOKENOMICS
+                    </span>
+                  </div>
+                  {/* Unterlinie für zusätzliche Eleganz */}
+                  <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-0.5 bg-gradient-to-r from-transparent via-orange-400 to-transparent"></div>
+                </div>
+              </div>
+              
+              {/* Haupttitel */}
+              <motion.h1 
+                className="relative text-4xl md:text-6xl lg:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-200 via-amber-300 to-yellow-400 drop-shadow-2xl mb-4"
+                initial={{ opacity: 0, y: 50, rotateX: -15 }}
+                animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+                style={{
+                  textShadow: "0 0 60px rgba(249, 115, 22, 0.6), 0 0 100px rgba(245, 158, 11, 0.4)"
                 }}
-                transition={{ duration: 3, repeat: Infinity }}
               >
-                D.FAITH
-              </motion.span>
-            </motion.h1>
+                <motion.span
+                  animate={{ 
+                    filter: [
+                      "drop-shadow(0 0 20px rgba(249, 115, 22, 0.8))",
+                      "drop-shadow(0 0 40px rgba(245, 158, 11, 0.8))", 
+                      "drop-shadow(0 0 60px rgba(251, 191, 36, 0.8))",
+                      "drop-shadow(0 0 40px rgba(249, 115, 22, 0.8))"
+                    ]
+                  }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                >
+                  D.FAITH
+                </motion.span>
+              </motion.h1>
+            </div>
           </div>
 
-          {/* Beschreibungstext direkt unter dem Titel */}
-          <motion.p 
-            className="text-md md:text-lg text-zinc-400 mb-8 max-w-4xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            Erfahre alles über die Vision, Technologie und Community von <span className="text-green-400 font-semibold">Dawid Faith</span>
-          </motion.p>
-        </div>
+            {/* Beschreibungstext */}
+            <motion.p 
+              className="text-lg md:text-xl text-amber-200/90 mb-12 max-w-4xl mx-auto leading-relaxed"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              Entdecke die <span className="text-orange-300 font-semibold">Tokenomics</span>, 
+              <span className="text-amber-300 font-semibold"> Metriken</span> und 
+              <span className="text-yellow-300 font-semibold">Community-Statistiken</span> von 
+              <span className="bg-gradient-to-r from-orange-200 to-yellow-300 bg-clip-text text-transparent font-bold"> Dawid Faith</span>
+            </motion.p>
         {/* Visuell verbesserte Call-to-Action Buttons */}
         <div className="flex flex-col items-center gap-6 md:gap-8 relative">
           
@@ -409,13 +458,13 @@ export default function TokenomicsTab() {
               href="/Dawid_Faith_Whitepaper.pdf" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="group relative flex items-center gap-3 px-6 md:px-10 py-4 md:py-5 rounded-2xl bg-gradient-to-r from-zinc-800 to-zinc-700 hover:from-zinc-700 hover:to-zinc-600 text-white font-bold text-sm md:text-lg transition-all duration-300 border border-zinc-600 shadow-2xl w-full sm:w-auto overflow-hidden"
+              className="group relative flex items-center gap-3 px-6 md:px-10 py-4 md:py-5 rounded-2xl bg-gradient-to-r from-black/60 to-black/80 hover:from-black/50 hover:to-black/70 text-white font-bold text-sm md:text-lg transition-all duration-300 border border-orange-500/30 shadow-2xl w-full sm:w-auto overflow-hidden backdrop-blur-sm"
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
             >
               {/* Animierter Hintergrund-Gradient */}
               <motion.div 
-                className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-amber-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 animate={{ x: [-100, 100] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
               />
@@ -425,7 +474,7 @@ export default function TokenomicsTab() {
                   animate={{ rotate: [0, 5, -5, 0] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <FileText className="w-5 h-5 md:w-7 md:h-7 text-green-400" />
+                  <FileText className="w-5 h-5 md:w-7 md:h-7 text-orange-400" />
                 </motion.div>
                 <div className="flex flex-col items-start">
                   <span className="text-white font-bold">Whitepaper studieren</span>
@@ -439,7 +488,7 @@ export default function TokenomicsTab() {
               href="https://dawidfaith.com" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="group relative flex items-center gap-3 px-6 md:px-10 py-4 md:py-5 rounded-2xl bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-500 hover:to-blue-500 text-white font-bold text-sm md:text-lg transition-all duration-300 shadow-2xl w-full sm:w-auto overflow-hidden"
+              className="group relative flex items-center gap-3 px-6 md:px-10 py-4 md:py-5 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-sm md:text-lg transition-all duration-300 shadow-2xl w-full sm:w-auto overflow-hidden"
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -459,19 +508,35 @@ export default function TokenomicsTab() {
                 </motion.div>
                 <div className="flex flex-col items-start">
                   <span className="text-white font-bold">Dawid Faith besuchen</span>
-                  <span className="text-green-100 text-xs md:text-sm">Offizielle Website</span>
+                  <span className="text-orange-100 text-xs md:text-sm">Offizielle Website</span>
                 </div>
                 <ExternalLink className="w-4 h-4 md:w-5 md:h-5 opacity-70 ml-2" />
               </div>
             </motion.a>
           </motion.div>
 
+            {/* Zusätzliche Aktionen - Aus MerchTab übernommen */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <motion.button
+                onClick={() => setShowMetricsModal(true)}
+                className="group relative flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500/0 to-orange-500/0 hover:from-orange-500/15 hover:to-amber-600/15 border border-orange-500/30 hover:border-orange-400/50 text-white transition-all duration-300 backdrop-blur-sm"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 to-orange-500/0 group-hover:from-orange-500/15 group-hover:to-amber-600/15 rounded-xl transition-all duration-300"></div>
+                <BarChart3 className="w-5 h-5 text-orange-400 relative z-10" />
+                <span className="relative z-10 font-medium">Live Metriken</span>
+              </motion.button>
+            </div>
+
+            </div>
+          </motion.div>
         </div>
-      </motion.div>
+      </div>
 
       {/* DexScreener Live Price Chart */}
       <motion.div 
-        className="bg-gradient-to-br from-zinc-900/50 to-zinc-800/30 rounded-xl md:rounded-2xl border border-green-500/30 p-4 md:p-8 backdrop-blur-sm"
+        className="bg-gradient-to-br from-amber-950/50 to-orange-950/30 rounded-xl md:rounded-2xl border border-orange-500/30 p-4 md:p-8 backdrop-blur-sm"
         variants={itemVariants}
       >
         <motion.h3 
@@ -490,7 +555,7 @@ export default function TokenomicsTab() {
             title="D.FAITH Live Price Chart"
           />
           <motion.div 
-            className="absolute top-2 right-2 px-2 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/30"
+            className="absolute top-2 right-2 px-2 py-1 bg-orange-500/20 text-orange-400 text-xs font-bold rounded-full border border-orange-500/30"
             animate={{ opacity: [1, 0.5, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
@@ -503,7 +568,7 @@ export default function TokenomicsTab() {
             href="https://dexscreener.com/base/0x69eFD833288605f320d77eB2aB99DDE62919BbC1"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg transition-all duration-300"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white font-semibold rounded-lg transition-all duration-300"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -524,7 +589,7 @@ export default function TokenomicsTab() {
             onClick={() => setShowLeaderboardModal(false)}
           >
             <motion.div
-              className="bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-2xl border border-zinc-700 p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto"
+              className="bg-gradient-to-br from-amber-950/90 to-orange-950/90 rounded-2xl border border-amber-700/50 p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto backdrop-blur-sm"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -654,11 +719,11 @@ export default function TokenomicsTab() {
       <div className="fixed bottom-6 right-6 z-40">
         <Button
           onClick={() => setShowMetricsModal(!showMetricsModal)}
-          className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white relative shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 rounded-full w-16 h-16 p-0 flex items-center justify-center border border-green-400/20"
+          className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white relative shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 rounded-full w-16 h-16 p-0 flex items-center justify-center border border-orange-400/20"
         >
           <BarChart3 className="text-xl" />
           {/* Pulsierender Effekt für Aufmerksamkeit */}
-          <div className="absolute inset-0 rounded-full bg-green-400/20 animate-ping"></div>
+          <div className="absolute inset-0 rounded-full bg-orange-400/20 animate-ping"></div>
         </Button>
       </div>
 
@@ -673,7 +738,7 @@ export default function TokenomicsTab() {
             onClick={() => setShowMetricsModal(false)}
           >
             <motion.div
-              className="bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-2xl border border-zinc-700 p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+              className="bg-gradient-to-br from-amber-950/90 to-orange-950/90 rounded-2xl border border-amber-700/50 p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto backdrop-blur-sm"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -682,12 +747,12 @@ export default function TokenomicsTab() {
               {/* Header */}
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <BarChart3 className="w-8 h-8 text-green-400" />
+                  <BarChart3 className="w-8 h-8 text-orange-400" />
                   <h2 className="text-2xl font-bold text-white">Live Metriken</h2>
                 </div>
                 <motion.button
                   onClick={() => setShowMetricsModal(false)}
-                  className="p-2 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white transition-colors"
+                  className="p-2 rounded-lg bg-amber-800/50 hover:bg-amber-700/60 text-white transition-colors border border-amber-600/30"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -988,6 +1053,7 @@ export default function TokenomicsTab() {
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }
