@@ -1203,7 +1203,7 @@ export default function MerchTab() {
               <div className="space-y-4 mb-2">
                 <div className="bg-slate-800/40 backdrop-blur-md rounded-xl px-8 py-4 border border-slate-600/30 max-w-2xl mx-auto">
                   <h2 className="text-2xl md:text-3xl font-light text-slate-100 tracking-wide mb-2">
-                    Offizieller Musik Shop
+                    Offizieller Fan Shop
                   </h2>
                   <div className="w-16 h-px bg-amber-400 mx-auto mb-3"></div>
                   <p className="text-slate-300 text-lg font-medium">
