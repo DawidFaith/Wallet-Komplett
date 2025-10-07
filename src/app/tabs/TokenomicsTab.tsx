@@ -876,7 +876,7 @@ export default function TokenomicsTab() {
                         }}
                         transition={{ duration: 2, repeat: Infinity }}
                       >
-                        ♪ LIVE ♪
+                        LIVE
                       </motion.div>
                     </div>
                     <div className="text-white">
@@ -967,7 +967,7 @@ export default function TokenomicsTab() {
                         }}
                         transition={{ duration: 3, repeat: Infinity }}
                       >
-                        ♫ STABIL ♫
+                        STABIL
                       </motion.div>
                     </div>
                     <div className="text-white">
@@ -1070,7 +1070,7 @@ export default function TokenomicsTab() {
                         }}
                         transition={{ duration: 1.5, repeat: Infinity }}
                       >
-                        ⚡ ENERGIE ⚡
+                        ENERGIE
                       </motion.div>
                     </div>
                     <div className="text-white">
@@ -1176,7 +1176,7 @@ export default function TokenomicsTab() {
                         }}
                         transition={{ duration: 2.5, repeat: Infinity }}
                       >
-                        🏆 TRIUMPH 🏆
+                        TRIUMPH
                       </motion.div>
                     </div>
                     <div className="text-white">
@@ -1276,7 +1276,7 @@ export default function TokenomicsTab() {
                         }}
                         transition={{ duration: 2, repeat: Infinity }}
                       >
-                        🎭 DRAMA 🎭
+                        DRAMA
                       </motion.div>
                     </div>
                     <div className="text-white">
@@ -1436,7 +1436,7 @@ export default function TokenomicsTab() {
                         }}
                         transition={{ duration: 2, repeat: Infinity }}
                       >
-                        🎼 ORCHESTER 🎼
+                        ORCHESTER
                       </motion.div>
                     </div>
                     <div className="text-white">
