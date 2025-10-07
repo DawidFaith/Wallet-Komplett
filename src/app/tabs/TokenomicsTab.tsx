@@ -478,14 +478,14 @@ export default function TokenomicsTab() {
         
         {/* Motivierende Beschreibung mit Highlights */}
         <motion.div 
-          className="text-center mb-8 md:mb-12 max-w-4xl mx-auto"
+          className="text-center mb-8 md:mb-10 max-w-4xl mx-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
 
           <motion.p 
-            className="text-md md:text-lg text-zinc-400 mb-12"
+            className="text-md md:text-lg text-zinc-400 mb-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
