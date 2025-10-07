@@ -365,19 +365,33 @@ export default function TokenomicsTab() {
             className="text-center p-4 md:p-6 backdrop-blur-sm"
             variants={itemVariants}
           >
+            {/* Großes, zentrales Logo */}
+            <div className="flex justify-center mb-6">
+              <motion.div
+                className="w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-full bg-gradient-to-br from-amber-900/20 via-orange-900/30 to-yellow-900/20 backdrop-blur-sm border-2 border-orange-500/20 flex items-center justify-center overflow-hidden shadow-2xl"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                whileHover={{ 
+                  scale: 1.05,
+                  borderColor: "rgba(249, 115, 22, 0.4)"
+                }}
+              >
+                <img
+                  src="/D.FAITH.png"
+                  alt="D.FAITH Token"
+                  className="w-[85%] h-[85%] object-cover rounded-full"
+                />
+              </motion.div>
+            </div>
+
             {/* Haupttitel mit eleganten Linien und Branding - wie im MerchTab Stil */}
             <div className="relative mb-4">
               {/* Elegante horizontale Linie mit Glow-Effekt */}
               <div className="relative mb-4">
                 <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-400/50 to-transparent transform -translate-y-1/2"></div>
                 <div className="text-center">
-                  <div className="inline-flex items-center gap-3 px-8 py-2 bg-black/60 backdrop-blur-sm rounded-full border border-orange-500/30">
-                    {/* Kleines Logo */}
-                    <img
-                      src="/D.FAITH.png"
-                      alt="D.FAITH Token"
-                      className="w-8 h-8 rounded-full"
-                    />
+                  <div className="inline-block px-8 py-2 bg-black/60 backdrop-blur-sm rounded-full border border-orange-500/30">
                     <span className="bg-gradient-to-r from-orange-200 via-amber-300 to-yellow-400 bg-clip-text text-transparent font-bold text-lg md:text-xl">
                       DAWID FAITH TOKENOMICS
                     </span>
