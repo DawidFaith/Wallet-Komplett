@@ -392,7 +392,7 @@ export default function TokenomicsTab() {
             </motion.div>
 
             {/* Haupttitel mit eleganten Linien und Branding - wie im MerchTab Stil */}
-            <div className="relative mb-16">
+            <div className="relative mb-8">
               {/* Elegante horizontale Linie mit Glow-Effekt */}
               <div className="relative mb-8">
                 <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-400/50 to-transparent transform -translate-y-1/2"></div>
@@ -409,7 +409,7 @@ export default function TokenomicsTab() {
               
               {/* Haupttitel */}
               <motion.h1 
-                className="relative text-4xl md:text-6xl lg:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-200 via-amber-300 to-yellow-400 drop-shadow-2xl mb-4"
+                className="relative text-4xl md:text-6xl lg:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-200 via-amber-300 to-yellow-400 drop-shadow-2xl mb-2"
                 initial={{ opacity: 0, y: 50, rotateX: -15 }}
                 animate={{ opacity: 1, y: 0, rotateX: 0 }}
                 transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
@@ -436,7 +436,7 @@ export default function TokenomicsTab() {
 
             {/* Beschreibungstext */}
             <motion.p 
-              className="text-lg md:text-xl text-amber-200/90 mb-12 max-w-4xl mx-auto leading-relaxed"
+              className="text-lg md:text-xl text-amber-200/90 mb-6 max-w-4xl mx-auto leading-relaxed"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
