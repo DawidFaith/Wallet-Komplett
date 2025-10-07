@@ -8,6 +8,9 @@ import { client } from "../../client";
 import { balanceOf, approve } from "thirdweb/extensions/erc20";
 import { StripeCheckout } from "../../components/StripeCheckout";
 
+import { TranslatedText } from "../../components/TranslatedText";
+import type { SupportedLanguage } from "../../utils/deepLTranslation";
+
 // Token Adressen (gleich wie im SendTab, SellTab und WalletTab)
 const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
 const DFAITH_DECIMALS = 2;
@@ -15,7 +18,11 @@ const DINVEST_TOKEN = "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb";
 const DINVEST_DECIMALS = 0;
 const ETH_DECIMALS = 18;
 
-export default function BuyTab() {
+interface BuyTabProps {
+  language: SupportedLanguage;
+}
+
+export default function BuyTab({ language }: BuyTabProps) {
   // Globale Fehlerbehandlung für Thirdweb Analytics
   useEffect(() => {
     const originalFetch = window.fetch;
@@ -739,7 +746,7 @@ export default function BuyTab() {
       color: "from-blue-500 to-blue-700",
       description: "Ethereum Native Token",
       price: ethPriceEur ? `${ethPriceEur.toFixed(2)}€ pro ETH` : "Preis wird geladen...",
-      sub: "mit EUR kaufen",
+      sub: <TranslatedText text="mit EUR kaufen" language={language} />,
       icon: <img src="/ETH.png" alt="ETH" className="w-8 h-8 object-contain" />,
     },
   ];
@@ -900,7 +907,7 @@ export default function BuyTab() {
                             <span>...</span>
                           </div>
                         ) : (
-                          "Kaufen"
+                          <TranslatedText text="Kaufen" language={language} />
                         )}
                       </button>
                     </div>

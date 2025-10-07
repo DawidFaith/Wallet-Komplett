@@ -10,6 +10,7 @@ import { Button } from "../../../components/ui/button";
 import { FaRegCopy, FaCoins, FaArrowDown, FaArrowUp, FaPaperPlane, FaLock, FaHistory, FaTimes, FaSync } from "react-icons/fa";
 import { balanceOf } from "thirdweb/extensions/erc20";
 import type { SupportedLanguage } from "../utils/deepLTranslation";
+import { TranslatedText } from "../components/TranslatedText";
 
 // Import Subtabs
 import BuyTab from "./wallet/BuyTab";
@@ -1102,26 +1103,28 @@ export default function WalletTab({ language }: WalletTabProps) {
             {renderDinvestSection()}
 
             {/* Modale für die verschiedenen Funktionen */}
-            <Modal open={showBuyModal} onClose={() => setShowBuyModal(false)} title="Kaufen">
-              <BuyTab />
+            <Modal open={showBuyModal} onClose={() => setShowBuyModal(false)} title={language === 'de' ? 'Kaufen' : language === 'en' ? 'Buy' : 'Kupować'}>
+              <BuyTab language={language} />
             </Modal>
 
-            <Modal open={showSellModal} onClose={() => setShowSellModal(false)} title="Verkaufen">
-              <SellTab />
+            <Modal open={showSellModal} onClose={() => setShowSellModal(false)} title={language === 'de' ? 'Verkaufen' : language === 'en' ? 'Sell' : 'Sprzedawać'}>
+              <SellTab language={language} />
             </Modal>
 
-            <Modal open={showSendModal} onClose={() => setShowSendModal(false)} title="Senden">
-              <SendTab />
+            <Modal open={showSendModal} onClose={() => setShowSendModal(false)} title={language === 'de' ? 'Senden' : language === 'en' ? 'Send' : 'Wysłać'}>
+              <SendTab language={language} />
             </Modal>
 
             <Modal open={showHistoryModal} onClose={() => setShowHistoryModal(false)} title="Transaktionshistorie">
-              <HistoryTab />
+              <HistoryTab language={language} />
             </Modal>
 
             {/* Staking Modal mit verbesserter Integration */}
-            <Modal open={showStakeModal} onClose={() => setShowStakeModal(false)} title="Staking">
+            <Modal open={showStakeModal} onClose={() => setShowStakeModal(false)} title={language === 'de' ? 'Staking' : language === 'en' ? 'Staking' : 'Staking'}>
               <div className="min-h-[400px]">
-                <StakeTab onStakeChanged={() => {
+                <StakeTab 
+                  language={language}
+                  onStakeChanged={() => {
                   console.log("🔄 Staking-Änderung erkannt, aktualisiere Balances...");
                   fetchStakedBalance();
                   // Die Token-Balances aktualisieren sich automatisch durch thirdweb Hooks

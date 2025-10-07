@@ -457,7 +457,9 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                   <span className="text-white font-bold">
                     <TranslatedText text="Whitepaper studieren" language={language} />
                   </span>
-                  <span className="text-zinc-400 text-xs md:text-sm">Technische Details & Vision</span>
+                  <span className="text-zinc-400 text-xs md:text-sm">
+                    <TranslatedText text="Technische Details & Vision" language={language} />
+                  </span>
                 </div>
                 <ExternalLink className="w-4 h-4 md:w-5 md:h-5 opacity-70 ml-2" />
               </div>
@@ -486,8 +488,12 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                   <Crown className="w-5 h-5 md:w-7 md:h-7 text-yellow-400" />
                 </motion.div>
                 <div className="flex flex-col items-start">
-                  <span className="text-white font-bold">Dawid Faith besuchen</span>
-                  <span className="text-orange-100 text-xs md:text-sm">Offizielle Website</span>
+                  <span className="text-white font-bold">
+                    <TranslatedText text="Dawid Faith besuchen" language={language} />
+                  </span>
+                  <span className="text-orange-100 text-xs md:text-sm">
+                    <TranslatedText text="Offizielle Website" language={language} />
+                  </span>
                 </div>
                 <ExternalLink className="w-4 h-4 md:w-5 md:h-5 opacity-70 ml-2" />
               </div>
@@ -508,7 +514,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
           className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 text-center"
           whileHover={{ scale: 1.02 }}
         >
-          📈 Live Preis Chart
+          📈 <TranslatedText text="Live Preis Chart" language={language} />
         </motion.h3>
         
         <div className="relative rounded-xl overflow-hidden bg-zinc-900/50 border border-zinc-700/50">
@@ -538,7 +544,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
             whileTap={{ scale: 0.95 }}
           >
             <ExternalLink className="w-4 h-4" />
-            <span>Vollbild-Chart öffnen</span>
+            <span><TranslatedText text="Vollbild-Chart öffnen" language={language} /></span>
           </motion.a>
         </div>
       </motion.div>
@@ -564,7 +570,9 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <Trophy className="w-8 h-8 text-yellow-400" />
-                  <h2 className="text-2xl font-bold text-white">Fan Leaderboard</h2>
+                  <h2 className="text-2xl font-bold text-white">
+                    <TranslatedText text="Fan Leaderboard" language={language} />
+                  </h2>
                 </div>
                 <motion.button
                   onClick={() => setShowLeaderboardModal(false)}
@@ -591,21 +599,29 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-zinc-800/50 rounded-lg p-4 text-center">
                       <div className="text-2xl font-bold text-blue-400">{lbData.entries?.length || 0}</div>
-                      <div className="text-zinc-400 text-sm">Aktive Fans</div>
+                      <div className="text-zinc-400 text-sm">
+                        <TranslatedText text="Aktive Fans" language={language} />
+                      </div>
                     </div>
                     <div className="bg-zinc-800/50 rounded-lg p-4 text-center">
                       <div className="text-2xl font-bold text-yellow-400">{lbData.prizes?.length || 0}</div>
-                      <div className="text-zinc-400 text-sm">Preise</div>
+                      <div className="text-zinc-400 text-sm">
+                        <TranslatedText text="Preise" language={language} />
+                      </div>
                     </div>
                     <div className="bg-zinc-800/50 rounded-lg p-4 text-center">
                       <div className="text-2xl font-bold text-green-400">
                         {lbData.entries?.reduce((sum, entry) => sum + (entry.points || 0), 0) || 0}
                       </div>
-                      <div className="text-zinc-400 text-sm">Gesamt Punkte</div>
+                      <div className="text-zinc-400 text-sm">
+                        <TranslatedText text="Gesamt Punkte" language={language} />
+                      </div>
                     </div>
                     <div className="bg-zinc-800/50 rounded-lg p-4 text-center">
                       <div className="text-2xl font-bold text-purple-400">LIVE</div>
-                      <div className="text-zinc-400 text-sm">Status</div>
+                      <div className="text-zinc-400 text-sm">
+                        <TranslatedText text="Status" language={language} />
+                      </div>
                     </div>
                   </div>
 
@@ -613,7 +629,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                   <div>
                     <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                       <Crown className="w-6 h-6 text-yellow-400" />
-                      Top Fans
+                      <TranslatedText text="Top Fans" language={language} />
                     </h3>
                     <div className="space-y-2">
                       {lbData.entries?.slice(0, 10).map((fan, index) => (
@@ -629,7 +645,9 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                           </div>
                           <div className="flex-1">
                             <div className="text-white font-semibold">{fan.username || `Fan ${index + 1}`}</div>
-                            <div className="text-zinc-400 text-sm">{fan.points || 0} Punkte</div>
+                            <div className="text-zinc-400 text-sm">
+                              {fan.points || 0} <TranslatedText text="Punkte" language={language} />
+                            </div>
                           </div>
                           {index < 3 && (
                             <motion.div
@@ -649,7 +667,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                     <div>
                       <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                         <Trophy className="w-6 h-6 text-yellow-400" />
-                        Preise
+                        <TranslatedText text="Preise" language={language} />
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {lbData.prizes.map((prize, index) => (
@@ -658,7 +676,9 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                             className="p-4 bg-gradient-to-br from-yellow-900/20 to-yellow-800/20 rounded-lg border border-yellow-500/30"
                             whileHover={{ scale: 1.02 }}
                           >
-                            <div className="text-yellow-400 font-bold text-lg">Platz {prize.position}</div>
+                            <div className="text-yellow-400 font-bold text-lg">
+                              <TranslatedText text="Platz" language={language} /> {prize.position}
+                            </div>
                             <div className="text-white font-semibold">{prize.description}</div>
                             <div className="text-yellow-300 text-sm">{prize.value}</div>
                           </motion.div>
@@ -670,7 +690,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                   {/* Last Updated */}
                   {lbData.lastUpdated && (
                     <div className="text-center text-zinc-500 text-sm">
-                      Zuletzt aktualisiert: {new Date(lbData.lastUpdated).toLocaleString('de-DE')}
+                      <TranslatedText text="Zuletzt aktualisiert" language={language} />: {new Date(lbData.lastUpdated).toLocaleString('de-DE')}
                     </div>
                   )}
                 </div>
@@ -754,7 +774,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                       </div>
                       <div className="text-amber-200 text-sm flex items-center gap-1">
                         <span>🎵</span>
-                        Musikalischer Wert
+                        <TranslatedText text="Musikalischer Wert" language={language} />
                       </div>
                     </div>
                   </div>
@@ -785,7 +805,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                       </div>
                       <div className="text-blue-200 text-sm flex items-center gap-1">
                         <span>🎶</span>
-                        Harmonische Balance
+                        <TranslatedText text="Harmonische Balance" language={language} />
                       </div>
                     </div>
                   </div>
@@ -804,7 +824,9 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <Zap className="w-8 h-8 text-purple-400" />
-                        <span className="text-purple-200 font-bold text-lg">Total Staked</span>
+                        <span className="text-purple-200 font-bold text-lg">
+                          <TranslatedText text="Total Staked" language={language} />
+                        </span>
                       </div>
                       <div className="px-3 py-2 rounded-full bg-purple-500/30 text-purple-300 text-xs font-bold border border-purple-400/50">
                         ENERGIE
@@ -816,7 +838,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                       </div>
                       <div className="text-purple-200 text-sm flex items-center gap-1">
                         <span>🎚️</span>
-                        Elektrische Komposition
+                        <TranslatedText text="Elektrische Komposition" language={language} />
                       </div>
                     </div>
                   </div>
@@ -848,7 +870,9 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                         >
                           <Trophy className="w-8 h-8 text-green-400" />
                         </motion.div>
-                        <span className="text-green-200 font-bold text-lg">Rewards verteilt</span>
+                        <span className="text-green-200 font-bold text-lg">
+                          <TranslatedText text="Rewards verteilt" language={language} />
+                        </span>
                       </div>
                       <motion.div 
                         className="px-3 py-2 rounded-full bg-green-500/30 text-green-300 text-xs font-bold border border-green-400/50"
@@ -889,7 +913,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                         >
                           🎖️
                         </motion.span>
-                        Sieges-Melodie
+                        <TranslatedText text="Sieges-Melodie" language={language} />
                       </div>
                     </div>
                   </div>
@@ -907,7 +931,9 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <Timer className="w-8 h-8 text-red-400" />
-                        <span className="text-red-200 font-bold text-lg">Halving Stufe</span>
+                        <span className="text-red-200 font-bold text-lg">
+                          <TranslatedText text="Halving Stufe" language={language} />
+                        </span>
                       </div>
                       <div className="px-3 py-2 rounded-full bg-red-500/30 text-red-300 text-xs font-bold border border-red-400/50">
                         DRAMA
@@ -919,7 +945,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                       </div>
                       <div className="text-red-200 text-sm flex items-center gap-1">
                         <span>🎪</span>
-                        Epische Phase
+                        <TranslatedText text="Epische Phase" language={language} />
                       </div>
                     </div>
                   </div>
@@ -933,7 +959,9 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <Award className="w-6 h-6 text-orange-400" />
-                      <span className="text-orange-300 font-semibold">Bis Halving</span>
+                      <span className="text-orange-300 font-semibold">
+                        <TranslatedText text="Bis Halving" language={language} />
+                      </span>
                     </div>
                   </div>
                   <div className="text-white">
@@ -953,6 +981,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                           case 5: nextThreshold = 80000; break;   // Von Stufe 5 zu Max
                           default: 
                             // Wenn bereits auf höchster Stufe
+                            // Für Übersetzung: sollte als statischer Text behandelt werden
                             return "Max erreicht";
                         }
                         
@@ -974,7 +1003,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                       })()}
                     </div>
                     <div className="text-orange-300 text-sm">
-                      D.FAITH Rewards bis Halving
+                      <TranslatedText text="D.FAITH Rewards bis Halving" language={language} />
                     </div>
                   </div>
                 </motion.div>
@@ -992,7 +1021,9 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <Users className="w-8 h-8 text-indigo-400" />
-                        <span className="text-indigo-200 font-bold text-xl">Active Users</span>
+                        <span className="text-indigo-200 font-bold text-xl">
+                          <TranslatedText text="Active Users" language={language} />
+                        </span>
                       </div>
                       <div className="px-4 py-2 rounded-full bg-indigo-500/30 text-indigo-300 text-sm font-bold border border-indigo-400/50">
                         ORCHESTER
@@ -1004,7 +1035,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                       </div>
                       <div className="text-indigo-200 text-base flex items-center gap-2">
                         <span>🎵</span>
-                        Musikalische Gemeinschaft
+                        <TranslatedText text="Musikalische Gemeinschaft" language={language} />
                         <span>🎶</span>
                       </div>
                     </div>
@@ -1014,7 +1045,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
 
               {/* Last Updated */}
               <div className="text-center text-zinc-500 text-sm mt-6">
-                Zuletzt aktualisiert: {new Date().toLocaleString('de-DE')}
+                <TranslatedText text="Zuletzt aktualisiert" language={language} />: {new Date().toLocaleString('de-DE')}
               </div>
             </motion.div>
           </motion.div>

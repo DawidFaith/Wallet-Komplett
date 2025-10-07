@@ -4,6 +4,9 @@ import { FaExchangeAlt, FaBitcoin } from "react-icons/fa";
 import { SiTether } from "react-icons/si";
 import { useActiveAccount } from "thirdweb/react";
 
+import { TranslatedText } from "../../components/TranslatedText";
+import type { SupportedLanguage } from "../../utils/deepLTranslation";
+
 // Token-Adressen und Konfiguration
 const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
 const DINVEST_TOKEN = "0x6F1fFd03106B27781E86b33Df5dBB734ac9DF4bb";
@@ -50,7 +53,11 @@ type FilterType = "claim" | "buy" | "sell" | "shop" | "send" | "receive";
 type TokenSubFilter = "all" | "D.FAITH" | "D.INVEST" | "ETH";
 type SortType = "newest" | "oldest";
 
-export default function HistoryTab() {
+interface HistoryTabProps {
+  language: SupportedLanguage;
+}
+
+export default function HistoryTab({ language }: HistoryTabProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   // Hinweis: gefilterte Liste wird per useMemo berechnet
   const [isLoading, setIsLoading] = useState(false);

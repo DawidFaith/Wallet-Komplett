@@ -7,6 +7,9 @@ import { getContract, prepareContractCall } from "thirdweb";
 import { client } from "../../client";
 import QRScanner from "../../components/QRScanner";
 
+import { TranslatedText } from "../../components/TranslatedText";
+import type { SupportedLanguage } from "../../utils/deepLTranslation";
+
 // Token Adressen
 const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
 const DFAITH_DECIMALS = 2;
@@ -21,14 +24,16 @@ function TokenTransferModal({
   token, 
   onSend, 
   showSuccess, 
-  onSuccessClose 
+  onSuccessClose,
+  language 
 }: { 
   isOpen: boolean, 
   onClose: () => void, 
   token: any | null,
   onSend: (amount: string, address: string) => Promise<boolean>,
   showSuccess: boolean,
-  onSuccessClose: () => void
+  onSuccessClose: () => void,
+  language: SupportedLanguage
 }) {
   const [sendAmount, setSendAmount] = useState("");
   const [sendToAddress, setSendToAddress] = useState("");
@@ -129,8 +134,8 @@ function TokenTransferModal({
         <img src="/ETH.png" alt="ETH" className="w-32 h-32 object-contain" />
             )}
           </div>
-          <h3 className="text-xl font-bold text-white mb-1">{token.label} senden</h3>
-          <p className="text-zinc-400 text-xs">Verfügbar: {token.balance} {token.symbol}</p>
+          <h3 className="text-xl font-bold text-white mb-1">{token.label} <TranslatedText text="senden" language={language} /></h3>
+          <p className="text-zinc-400 text-xs"><TranslatedText text="Verfügbar" language={language} />: {token.balance} {token.symbol}</p>
         </div>
         
         {/* Content */}
@@ -307,7 +312,11 @@ function TokenTransferModal({
   );
 }
 
-export default function SendTab() {
+interface SendTabProps {
+  language: SupportedLanguage;
+}
+
+export default function SendTab({ language }: SendTabProps) {
   const [selectedToken, setSelectedToken] = useState<any | null>(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -454,7 +463,7 @@ export default function SendTab() {
         <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-4 text-center">
           <FaLock className="text-red-400 text-2xl mx-auto mb-2" />
           <p className="text-red-400 font-medium">Wallet nicht verbunden</p>
-          <p className="text-red-300 text-sm">Verbinde deine Wallet um Token zu senden</p>
+          <p className="text-red-300 text-sm"><TranslatedText text="Verbinde deine Wallet um Token zu senden" language={language} /></p>
         </div>
       )}
 
@@ -517,6 +526,7 @@ export default function SendTab() {
           setShowTransferModal(false);
           setSelectedToken(null);
         }}
+        language={language}
       />
     </div>
   );

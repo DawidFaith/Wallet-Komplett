@@ -7,12 +7,19 @@ import { getContract, prepareContractCall } from "thirdweb";
 import { client } from "../../client";
 import { balanceOf } from "thirdweb/extensions/erc20";
 
+import { TranslatedText } from "../../components/TranslatedText";
+import type { SupportedLanguage } from "../../utils/deepLTranslation";
+
 // Token Adressen (gleich wie im SendTab und WalletTab)
 const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1";
 const DFAITH_DECIMALS = 2;
 const ETH_DECIMALS = 18;
 
-export default function SellTab() {
+interface SellTabProps {
+  language: SupportedLanguage;
+}
+
+export default function SellTab({ language }: SellTabProps) {
   const [selectedToken, setSelectedToken] = useState<"DFAITH" | "ETH" | null>(null);
   const [sellAmount, setSellAmount] = useState("");
   const [showSellModal, setShowSellModal] = useState(false);

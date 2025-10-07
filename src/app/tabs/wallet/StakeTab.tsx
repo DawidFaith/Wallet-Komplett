@@ -8,6 +8,9 @@ import { base } from "thirdweb/chains";
 import { useSendTransaction } from "thirdweb/react";
 import { balanceOf, approve } from "thirdweb/extensions/erc20";
 
+import { TranslatedText } from "../../components/TranslatedText";
+import type { SupportedLanguage } from "../../utils/deepLTranslation";
+
 const STAKING_CONTRACT = "0xe85b32a44b9eD3ecf8bd331FED46fbdAcDBc9940"; // Staking Contract - NEU!
 const DFAITH_TOKEN = "0x69eFD833288605f320d77eB2aB99DDE62919BbC1"; // D.FAITH Token NEU
 const DFAITH_DECIMALS = 2;
@@ -17,10 +20,11 @@ const ETH_DECIMALS = 18;
 const client = createThirdwebClient({ clientId: process.env.NEXT_PUBLIC_TEMPLATE_CLIENT_ID! });
 
 interface StakeTabProps {
+  language: SupportedLanguage;
   onStakeChanged?: () => void;
 }
 
-export default function StakeTab({ onStakeChanged }: StakeTabProps) {
+export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
   const account = useActiveAccount();
   const { mutate: sendTransaction, isPending } = useSendTransaction();
 
