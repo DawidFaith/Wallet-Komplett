@@ -129,7 +129,7 @@ function CompactAudioPlayer({ media }: { media: MediaFile }) {
   };
 
   return (
-    <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/50">
+    <div className="bg-amber-900/80/50 rounded-lg p-3 border border-zinc-700/50">
       <audio
         ref={audioRef}
         src={media.url}
@@ -267,7 +267,7 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
       return (
         <div className="w-full bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl p-6 border border-zinc-700 shadow-lg">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg">
+            <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-600 rounded-full flex items-center justify-center shadow-lg">
               <FaMusic className="text-2xl text-white" />
             </div>
             <div className="flex-1 min-w-0">
@@ -296,7 +296,7 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
                 max={duration || 0}
                 value={currentTime}
                 onChange={handleSeek}
-                className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer"
+                className="w-full h-2 bg-amber-800/70 rounded-lg appearance-none cursor-pointer"
                 style={{
                   background: `linear-gradient(to right, #f59e0b 0%, #f59e0b ${(currentTime / duration) * 100}%, #374151 ${(currentTime / duration) * 100}%, #374151 100%)`,
                   WebkitAppearance: 'none',
@@ -349,7 +349,7 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
                   <FaVolumeUp />
                 </button>
                 {showVolumeSlider && (
-                  <div className="absolute right-0 bottom-12 bg-zinc-800 p-3 rounded-lg shadow-xl border border-zinc-600">
+                  <div className="absolute right-0 bottom-12 bg-amber-900/80 p-3 rounded-lg shadow-xl border border-amber-700/50">
                     <input
                       type="range"
                       min="0"
@@ -357,7 +357,7 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
                       step="0.1"
                       value={volume}
                       onChange={handleVolumeChange}
-                      className="w-20 h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer"
+                      className="w-20 h-2 bg-amber-800/70 rounded-lg appearance-none cursor-pointer"
                     />
                   </div>
                 )}
@@ -419,9 +419,9 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
     
     default:
       return (
-        <div className="w-full bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl p-6 border border-zinc-700 shadow-lg">
+        <div className="w-full bg-gradient-to-br from-amber-900/70 to-orange-950/80 rounded-xl p-6 border border-amber-700/50 shadow-lg">
           <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-gray-500 to-gray-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
               <FaDownload className="text-2xl text-white" />
             </div>
             <p className="text-gray-400 text-sm mb-4">{(media.size / 1024 / 1024).toFixed(2)} MB</p>
@@ -1125,33 +1125,49 @@ export default function MerchTab() {
   }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-zinc-900 to-zinc-800 text-white">
+    <div className="relative min-h-screen bg-gradient-to-br from-amber-950 via-orange-950 to-yellow-950 text-white">
       {/* Dawid Faith Shop - Ultra Professional Header Design */}
       <div className="relative mb-8 overflow-hidden">
-        {/* Künstlerischer Gradient-Hintergrund ohne Bild - Erweitert über beide Bereiche */}
+        {/* Dawid Faith Gruppenbild-Hintergrund - Professionell integriert */}
         <div className="absolute inset-0">
-          {/* Hauptgradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-zinc-800 to-black"></div>
+          {/* Gruppenbild als Haupthintergrund */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: `url('/Still 2025-03-19 193121_19.7.1.jpg')`
+            }}
+          />
           
-          {/* Overlay-Gradienten für Tiefe */}
-          <div className="absolute inset-0 bg-gradient-to-r from-amber-950/40 via-transparent to-purple-950/30"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-slate-900/70"></div>
+          {/* Dunkle Overlay-Gradienten für Text-Lesbarkeit */}
+          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/80"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/50"></div>
           
-          {/* Künstlerische Muster */}
-          <div className="absolute inset-0 opacity-20" 
+          {/* Künstlerische Farbakzente über dem Bild */}
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-950/30 via-amber-900/20 to-yellow-950/25"></div>
+          
+          {/* Subtile Textur für Tiefe */}
+          <div className="absolute inset-0 opacity-10" 
                style={{
-                 backgroundImage: `radial-gradient(circle at 20% 80%, rgba(245, 158, 11, 0.3) 0%, transparent 50%),
-                                   radial-gradient(circle at 80% 20%, rgba(139, 69, 19, 0.3) 0%, transparent 50%),
-                                   radial-gradient(circle at 40% 40%, rgba(59, 130, 246, 0.2) 0%, transparent 50%)`,
+                 backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0)`,
+                 backgroundSize: '40px 40px'
                }}>
           </div>
           
-          {/* Subtile Textur */}
-          <div className="absolute inset-0 opacity-5" 
-               style={{
-                 backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)`,
-                 backgroundSize: '60px 60px'
-               }}>
+          {/* Schwebende Partikel für Dynamik */}
+          <div className="absolute inset-0">
+            {[...Array(15)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-1 h-1 bg-orange-400/50 rounded-full animate-pulse"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 3}s`,
+                  animationDuration: `${2 + Math.random() * 2}s`
+                }}
+              />
+            ))}
           </div>
         </div>
         
@@ -1164,18 +1180,18 @@ export default function MerchTab() {
               {/* Logo/Brand Section with Geometric Elements */}
               <div className="relative mb-6">
                 {/* Decorative Lines */}
-                <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent transform -translate-y-1/2"></div>
+                <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-400/50 to-transparent transform -translate-y-1/2"></div>
                 
                 {/* Main Artist Name - Ohne Symbol */}
                 <div className="relative inline-block bg-slate-900/60 backdrop-blur-lg px-12 py-6 rounded-2xl border border-amber-400/20 shadow-2xl">
                   <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold font-pirata tracking-[0.05em] relative">
-                    <span className="bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-orange-200 via-amber-300 to-yellow-400 bg-clip-text text-transparent">
                       DAWID FAITH
                     </span>
                   </h1>
                   
                   {/* Elegant Underline */}
-                  <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
+                  <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-0.5 bg-gradient-to-r from-transparent via-orange-400 to-transparent"></div>
                 </div>
                 
                 {/* Side Decorative Elements */}
@@ -1215,7 +1231,7 @@ export default function MerchTab() {
                     key={category}
                     className={`group relative px-6 py-3 rounded-xl text-sm font-medium tracking-wide transition-all duration-500 transform ${
                       selectedCategory === category
-                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/25 scale-105 translate-y-[-2px]'
+                        ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-lg shadow-orange-500/25 scale-105 translate-y-[-2px]'
                         : 'bg-slate-800/60 text-slate-300 border border-slate-600/40 hover:bg-slate-700/80 hover:text-white hover:border-amber-400/50 hover:scale-105 hover:translate-y-[-1px]'
                     }`}
                     onClick={() => setSelectedCategory(category)}
@@ -1229,7 +1245,7 @@ export default function MerchTab() {
                     </span>
                     
                     {/* Hover Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 to-amber-500/0 group-hover:from-amber-500/10 group-hover:to-amber-600/10 rounded-xl transition-all duration-300"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 to-orange-500/0 group-hover:from-orange-500/15 group-hover:to-amber-600/15 rounded-xl transition-all duration-300"></div>
                   </button>
                 ))}
               </div>
@@ -1298,14 +1314,14 @@ export default function MerchTab() {
                 <h3 className="text-xl font-bold text-white">🛒 Kasse</h3>
                 <Button
                   onClick={() => setShowCheckout(false)}
-                  className="bg-transparent hover:bg-zinc-800 text-amber-400 hover:text-amber-300 border-none p-2"
+                  className="bg-transparent hover:bg-amber-900/80 text-amber-400 hover:text-amber-300 border-none p-2"
                 >
                   <FaTimes />
                 </Button>
               </div>
 
               {/* Bestellübersicht */}
-              <div className="mb-6 p-4 bg-zinc-800 rounded-lg">
+              <div className="mb-6 p-4 bg-amber-900/80 rounded-lg">
                 <h4 className="font-bold text-white mb-3">📋 Ihre Bestellung</h4>
                 <div className="space-y-2">
                   {Object.entries(cart).map(([productId, quantity]) => {
@@ -1348,7 +1364,7 @@ export default function MerchTab() {
                     required
                     value={checkoutForm.email}
                     onChange={(e) => setCheckoutForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full p-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                    className="w-full p-3 bg-amber-900/80 border border-amber-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                     placeholder="ihre@email.de"
                   />
                   <p className="text-xs text-gray-400 mt-1">
@@ -1361,7 +1377,7 @@ export default function MerchTab() {
 
                 {/* Versandadresse (nur bei physischen Produkten) */}
                 {hasPhysicalProducts() && (
-                  <div className="space-y-4 p-4 bg-zinc-800 rounded-lg">
+                  <div className="space-y-4 p-4 bg-amber-900/80 rounded-lg">
                     <h4 className="font-bold text-white mb-3">📦 Versandadresse</h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1372,7 +1388,7 @@ export default function MerchTab() {
                           required
                           value={checkoutForm.firstName}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, firstName: e.target.value }))}
-                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          className="w-full p-3 bg-amber-800/70 border border-amber-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="Max"
                         />
                       </div>
@@ -1384,7 +1400,7 @@ export default function MerchTab() {
                           required
                           value={checkoutForm.lastName}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, lastName: e.target.value }))}
-                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          className="w-full p-3 bg-amber-800/70 border border-amber-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="Mustermann"
                         />
                       </div>
@@ -1397,7 +1413,7 @@ export default function MerchTab() {
                         required
                         value={checkoutForm.street}
                         onChange={(e) => setCheckoutForm(prev => ({ ...prev, street: e.target.value }))}
-                        className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                        className="w-full p-3 bg-amber-800/70 border border-amber-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                         placeholder="Musterstraße 123"
                       />
                     </div>
@@ -1410,7 +1426,7 @@ export default function MerchTab() {
                           required
                           value={checkoutForm.postalCode}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, postalCode: e.target.value }))}
-                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          className="w-full p-3 bg-amber-800/70 border border-amber-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="12345"
                         />
                       </div>
@@ -1422,7 +1438,7 @@ export default function MerchTab() {
                           required
                           value={checkoutForm.city}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, city: e.target.value }))}
-                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          className="w-full p-3 bg-amber-800/70 border border-amber-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="Musterstadt"
                         />
                       </div>
@@ -1437,7 +1453,7 @@ export default function MerchTab() {
                           value={checkoutForm.country}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, country: e.target.value }))}
                           placeholder="Deutschland"
-                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-gray-400 focus:border-amber-400 focus:outline-none"
+                          className="w-full p-3 bg-amber-800/70 border border-amber-700/50 rounded-lg text-white placeholder-gray-400 focus:border-orange-400 focus:outline-none"
                         />
                       </div>
                       
@@ -1447,7 +1463,7 @@ export default function MerchTab() {
                           type="tel"
                           value={checkoutForm.phone}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, phone: e.target.value }))}
-                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          className="w-full p-3 bg-amber-800/70 border border-amber-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="+49 123 456789"
                         />
                       </div>
@@ -1494,11 +1510,11 @@ export default function MerchTab() {
           const dfaithPrice = convertEurToDfaith(product.price);
           
           return (
-            <Card key={product.id} className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-zinc-600 hover:border-amber-500/50 transition-all duration-300 overflow-hidden group shadow-xl hover:shadow-2xl hover:shadow-amber-500/10">
+            <Card key={product.id} className="bg-gradient-to-br from-amber-950/80 to-orange-950/60 border-amber-800/50 hover:border-orange-500/60 transition-all duration-300 overflow-hidden group shadow-xl hover:shadow-2xl hover:shadow-orange-500/15">
               <CardContent className="p-0 relative">
                 {/* Medien-Vorschau */}
                 {product.media.length > 0 && (
-                  <div className="bg-gradient-to-br from-zinc-800 to-zinc-900 relative">
+                  <div className="bg-gradient-to-br from-amber-900/60 to-orange-950/80 relative">
                     {/* Spezielle Darstellung wenn MP3-Dateien vorhanden sind (unabhängig von Kategorie) */}
                     {(() => {
                       // Prüfe auf alle Audio-Dateien (unabhängig von Kategorie)
@@ -1552,7 +1568,7 @@ export default function MerchTab() {
                                 {/* Liste aller Audio-Dateien */}
                                 <div className="space-y-3">
                                   {audioMedias.map((audioMedia, index) => (
-                                    <div key={audioMedia.id || index} className="bg-zinc-800/50 rounded-lg p-2">
+                                    <div key={audioMedia.id || index} className="bg-amber-900/80/50 rounded-lg p-2">
                                       {/* Audio-Datei Name */}
                                       <div className="flex items-center gap-2 mb-2">
                                         <FaPlay className="text-green-400 text-xs" />
@@ -1586,7 +1602,7 @@ export default function MerchTab() {
                             <EnhancedMediaPlayer media={product.media[0]} />
                             
                             {/* Titel und Beschreibung unter dem Video */}
-                            <div className="p-4 bg-zinc-800/80 backdrop-blur-sm">
+                            <div className="p-4 bg-amber-900/80/80 backdrop-blur-sm">
                               <div className="flex items-start justify-between mb-2">
                                 <h3 className="text-white font-bold text-lg leading-tight flex-1 mr-2">{product.name}</h3>
                                 <span className="text-xs bg-gradient-to-r from-amber-600 to-amber-700 text-white px-2 py-1 rounded-full shadow-sm whitespace-nowrap">
@@ -1621,7 +1637,7 @@ export default function MerchTab() {
                             {imageMedias.length > 0 && (
                               <div className="relative">
                                 {/* Haupt-Bildergalerie mit Scroll */}
-                                <div className="w-full h-64 relative overflow-hidden bg-zinc-800 rounded-lg">
+                                <div className="w-full h-64 relative overflow-hidden bg-amber-900/80 rounded-lg">
                                   {imageMedias.map((media, index) => (
                                     <div 
                                       key={index} 
@@ -1956,14 +1972,14 @@ export default function MerchTab() {
                   </h3>
                   <Button
                     onClick={() => setShowCart(false)}
-                    className="bg-zinc-800 hover:bg-zinc-700 text-red-400 hover:text-red-300 border border-zinc-600 hover:border-red-500 p-2 rounded-lg transition-all duration-200"
+                    className="bg-amber-900/80 hover:bg-amber-800/70 text-red-400 hover:text-red-300 border border-amber-700/50 hover:border-red-500 p-2 rounded-lg transition-all duration-200"
                   >
                     <FaTimes className="text-lg" />
                   </Button>
                 </div>
                 
                 {/* D.FAITH Balance - Nur sichtbar wenn Warenkorb offen */}
-                <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-600">
+                <div className="bg-amber-900/80/50 rounded-lg p-4 border border-amber-700/50">
                   <div className="flex items-center gap-2 mb-2">
                     <FaCoins className="text-amber-400 text-sm" />
                     <span className="text-gray-300 text-sm font-medium">Ihr D.FAITH Guthaben</span>
@@ -1993,7 +2009,7 @@ export default function MerchTab() {
                       const dfaithPrice = convertEurToDfaith(product.price);
                       
                       return (
-                        <div key={productId} className="bg-zinc-800 rounded-lg p-4 border border-zinc-700">
+                        <div key={productId} className="bg-amber-900/80 rounded-lg p-4 border border-zinc-700">
                           <div className="flex justify-between items-start mb-3">
                             <div className="flex-1">
                               <h4 className="text-white font-medium text-sm">{product.name}</h4>
@@ -2084,14 +2100,14 @@ export default function MerchTab() {
                 <h3 className="text-xl font-bold text-white">🛒 Kasse</h3>
                 <Button
                   onClick={() => setShowCheckout(false)}
-                  className="bg-zinc-800 hover:bg-zinc-700 text-red-400 hover:text-red-300 border border-zinc-600 hover:border-red-500 p-2 rounded-lg transition-all duration-200"
+                  className="bg-amber-900/80 hover:bg-amber-800/70 text-red-400 hover:text-red-300 border border-amber-700/50 hover:border-red-500 p-2 rounded-lg transition-all duration-200"
                 >
                   <FaTimes className="text-lg" />
                 </Button>
               </div>
 
               {/* Bestellübersicht */}
-              <div className="mb-6 p-4 bg-zinc-800 rounded-lg">
+              <div className="mb-6 p-4 bg-amber-900/80 rounded-lg">
                 <h4 className="font-bold text-white mb-3">📋 Ihre Bestellung</h4>
                 <div className="space-y-2">
                   {Object.entries(cart).map(([productId, quantity]) => {
@@ -2101,7 +2117,7 @@ export default function MerchTab() {
                     const dfaithPrice = convertEurToDfaith(product.price);
                     
                     return (
-                      <div key={productId} className="flex justify-between items-center py-2 border-b border-zinc-600 last:border-b-0">
+                      <div key={productId} className="flex justify-between items-center py-2 border-b border-amber-700/50 last:border-b-0">
                         <div>
                           <p className="text-white font-medium">{product.name}</p>
                           <p className="text-xs text-gray-400">Menge: {quantity}</p>
@@ -2113,7 +2129,7 @@ export default function MerchTab() {
                       </div>
                     );
                   })}
-                  <div className="pt-2 mt-2 border-t border-zinc-600">
+                  <div className="pt-2 mt-2 border-t border-amber-700/50">
                     <div className="flex justify-between items-center">
                       <span className="text-white font-bold">Gesamt:</span>
                       <span className="text-amber-400 font-bold text-lg">{getTotalPriceDfaith().toFixed(2)} D.FAITH</span>
@@ -2148,14 +2164,14 @@ export default function MerchTab() {
                     required
                     value={checkoutForm.email}
                     onChange={(e) => setCheckoutForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full p-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                    className="w-full p-3 bg-amber-900/80 border border-amber-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                     placeholder="ihre@email.de"
                   />
                 </div>
 
                 {/* Versandadresse bei physischen Produkten */}
                 {hasPhysicalProducts() && (
-                  <div className="space-y-4 p-4 bg-zinc-800 rounded-lg">
+                  <div className="space-y-4 p-4 bg-amber-900/80 rounded-lg">
                     <h4 className="font-bold text-white mb-3">📦 Versandadresse</h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2166,7 +2182,7 @@ export default function MerchTab() {
                           required
                           value={checkoutForm.firstName}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, firstName: e.target.value }))}
-                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          className="w-full p-3 bg-amber-800/70 border border-amber-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="Max"
                         />
                       </div>
@@ -2178,7 +2194,7 @@ export default function MerchTab() {
                           required
                           value={checkoutForm.lastName}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, lastName: e.target.value }))}
-                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          className="w-full p-3 bg-amber-800/70 border border-amber-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="Mustermann"
                         />
                       </div>
@@ -2191,7 +2207,7 @@ export default function MerchTab() {
                         required
                         value={checkoutForm.street}
                         onChange={(e) => setCheckoutForm(prev => ({ ...prev, street: e.target.value }))}
-                        className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                        className="w-full p-3 bg-amber-800/70 border border-amber-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                         placeholder="Musterstraße 123"
                       />
                     </div>
@@ -2204,7 +2220,7 @@ export default function MerchTab() {
                           required
                           value={checkoutForm.postalCode}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, postalCode: e.target.value }))}
-                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          className="w-full p-3 bg-amber-800/70 border border-amber-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="12345"
                         />
                       </div>
@@ -2216,7 +2232,7 @@ export default function MerchTab() {
                           required
                           value={checkoutForm.city}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, city: e.target.value }))}
-                          className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                          className="w-full p-3 bg-amber-800/70 border border-amber-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="Berlin"
                         />
                       </div>
@@ -2230,7 +2246,7 @@ export default function MerchTab() {
                         value={checkoutForm.country}
                         onChange={(e) => setCheckoutForm(prev => ({ ...prev, country: e.target.value }))}
                         placeholder="Deutschland"
-                        className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-gray-400 focus:border-amber-400 focus:outline-none"
+                        className="w-full p-3 bg-amber-800/70 border border-amber-700/50 rounded-lg text-white placeholder-gray-400 focus:border-orange-400 focus:outline-none"
                       />
                     </div>
                   </div>
