@@ -365,7 +365,7 @@ export default function TokenomicsTab() {
             className="text-center p-4 md:p-6 backdrop-blur-sm"
             variants={itemVariants}
           >
-            {/* Großes, zentrales Logo */}
+            {/* Großes, zentrales Hero-Bild von Dawid Faith */}
             <div className="flex justify-center mb-6">
               <motion.div
                 className="w-32 h-32 md:w-48 md:h-48 lg:w-56 lg:h-56 xl:w-64 xl:h-64 rounded-full bg-gradient-to-br from-amber-900/20 via-orange-900/30 to-yellow-900/20 backdrop-blur-sm border-2 border-orange-500/20 flex items-center justify-center overflow-hidden shadow-2xl"
@@ -378,8 +378,8 @@ export default function TokenomicsTab() {
                 }}
               >
                 <img
-                  src="/D.FAITH.png"
-                  alt="D.FAITH Token"
+                  src="/Still 2025-03-19 193121_19.7.1.jpg"
+                  alt="Dawid Faith"
                   className="w-[85%] h-[85%] object-cover rounded-full"
                 />
               </motion.div>
