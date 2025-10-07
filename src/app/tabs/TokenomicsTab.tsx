@@ -401,20 +401,7 @@ export default function TokenomicsTab() {
                 </div>
               </div>
               
-              {/* Haupttitel */}
-              <motion.h1 
-                className="relative text-4xl md:text-6xl lg:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-200 via-amber-300 to-yellow-400 drop-shadow-2xl mb-2"
-                initial={{ opacity: 0, y: 50, rotateX: -15 }}
-                animate={{ opacity: 1, y: 0, rotateX: 0 }}
-                transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
-                style={{
-                  textShadow: "0 0 60px rgba(249, 115, 22, 0.6), 0 0 100px rgba(245, 158, 11, 0.4)"
-                }}
-              >
-                <span>
-                  D.FAITH
-                </span>
-              </motion.h1>
+
             </div>
 
             {/* Beschreibungstext */}
@@ -424,10 +411,7 @@ export default function TokenomicsTab() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
-              Entdecke die <span className="text-orange-300 font-semibold">Tokenomics</span>, 
-              <span className="text-amber-300 font-semibold"> Metriken</span> und 
-              <span className="text-yellow-300 font-semibold">Community-Statistiken</span> von 
-              <span className="bg-gradient-to-r from-orange-200 to-yellow-300 bg-clip-text text-transparent font-bold"> Dawid Faith</span>
+              Entdecke die <span className="text-orange-300 font-semibold">Tokenomics</span>, <span className="text-amber-300 font-semibold">Metriken</span> und <span className="text-yellow-300 font-semibold">Community-Statistiken</span> von <span className="bg-gradient-to-r from-orange-200 to-yellow-300 bg-clip-text text-transparent font-bold">Dawid Faith</span>
             </motion.p>
         {/* Visuell verbesserte Call-to-Action Buttons */}
         <div className="flex flex-col items-center gap-6 md:gap-8 relative">
