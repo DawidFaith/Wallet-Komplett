@@ -383,7 +383,7 @@ export default function TokenomicsTab() {
             </motion.div>
 
             <motion.h1 
-              className="relative text-4xl md:text-6xl lg:text-8xl font-pirata text-transparent bg-clip-text bg-gradient-to-r from-rose-300 via-purple-300 to-indigo-300 drop-shadow-2xl"
+              className="relative text-4xl md:text-6xl lg:text-8xl font-pirata text-transparent bg-clip-text bg-gradient-to-r from-rose-300 via-purple-300 to-indigo-300 drop-shadow-2xl mb-4"
               initial={{ opacity: 0, y: 50, rotateX: -15 }}
               animate={{ opacity: 1, y: 0, rotateX: 0 }}
               transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
@@ -406,27 +406,21 @@ export default function TokenomicsTab() {
               </motion.span>
             </motion.h1>
           </div>
-          
 
-        </motion.div>
-        
-        {/* Motivierende Beschreibung mit Highlights */}
-        <motion.div 
-          className="text-center mb-8 md:mb-10 max-w-4xl mx-auto"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-
+          {/* Beschreibungstext direkt unter dem Titel */}
           <motion.p 
-            className="text-md md:text-lg text-zinc-400 mb-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            className="text-md md:text-lg text-zinc-400 mb-8 max-w-4xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
             Erfahre alles über die Vision, Technologie und Community von <span className="text-green-400 font-semibold">Dawid Faith</span>
           </motion.p>
+          
+
         </motion.div>
+        
+
         
         {/* Visuell verbesserte Call-to-Action Buttons */}
         <div className="flex flex-col items-center gap-6 md:gap-8 relative">
