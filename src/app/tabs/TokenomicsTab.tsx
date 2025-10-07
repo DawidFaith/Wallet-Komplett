@@ -365,36 +365,12 @@ export default function TokenomicsTab() {
             className="text-center p-8 md:p-16 lg:p-24 xl:p-32 backdrop-blur-sm"
             variants={itemVariants}
           >
-            {/* Logo und Haupttitel - Schlicht und Groß */}
-            <div className="flex flex-col items-center mb-8">
-              {/* Schlichtes, großes Logo */}
-              <motion.div 
-                className="mb-6 relative"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 1, ease: "easeOut" }}
-              >
-              {/* Einfacher, großer Logo-Container */}
-              <motion.div
-                className="w-40 h-40 md:w-52 md:h-52 lg:w-64 lg:h-64 rounded-full bg-gradient-to-br from-amber-900/20 via-orange-900/30 to-yellow-900/20 backdrop-blur-sm border-2 border-orange-500/20 flex items-center justify-center overflow-hidden shadow-2xl"
-                whileHover={{ 
-                  scale: 1.05,
-                  borderColor: "rgba(249, 115, 22, 0.4)"
-                }}
-                transition={{ duration: 0.3 }}
-              >
-                <img
-                  src="/D.FAITH.png"
-                  alt="D.FAITH Token"
-                  className="w-[85%] h-[85%] object-cover rounded-full"
-                />
-              </motion.div>
-            </motion.div>
+
 
             {/* Haupttitel mit eleganten Linien und Branding - wie im MerchTab Stil */}
-            <div className="relative mb-8">
+            <div className="relative mb-4">
               {/* Elegante horizontale Linie mit Glow-Effekt */}
-              <div className="relative mb-8">
+              <div className="relative mb-4">
                 <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-400/50 to-transparent transform -translate-y-1/2"></div>
                 <div className="text-center">
                   <div className="inline-block px-8 py-2 bg-black/60 backdrop-blur-sm rounded-full border border-orange-500/30">
@@ -432,7 +408,6 @@ export default function TokenomicsTab() {
                 </motion.span>
               </motion.h1>
             </div>
-          </div>
 
             {/* Beschreibungstext */}
             <motion.p 
