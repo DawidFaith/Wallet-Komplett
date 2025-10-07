@@ -11,9 +11,11 @@ import LiveTab from "./tabs/LiveTab";
 import InstagramTab from "./tabs/InstagramTab";
 import TiktokTab from "./tabs/TiktokTab";
 import FacebookTab from "./tabs/FacebookTab";
+import type { SupportedLanguage } from "./utils/deepLTranslation";
 
 function HomeContent() {
   const [activeTab, setActiveTab] = useState("wallet");
+  const [language, setLanguage] = useState<SupportedLanguage>("de");
   const searchParams = useSearchParams();
 
   // URL-Parameter für Tab laden
@@ -26,16 +28,21 @@ function HomeContent() {
 
   return (
     <main className="min-h-screen flex flex-col bg-zinc-950">
-      <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Navigation 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab}
+        language={language}
+        setLanguage={setLanguage}
+      />
       <section className="flex-1 flex flex-col items-center justify-center pt-24 pb-8">
-        {activeTab === "wallet" && <WalletTab />}
-        {activeTab === "tokenomics" && <TokenomicsTab />}
-        {activeTab === "merch" && <MerchTab />}
-        {activeTab === "stream" && <StreamTab />}
-        {activeTab === "live" && <LiveTab />}
-        {activeTab === "instagram" && <InstagramTab />}
-        {activeTab === "tiktok" && <TiktokTab />}
-        {activeTab === "facebook" && <FacebookTab />}
+        {activeTab === "wallet" && <WalletTab language={language} />}
+        {activeTab === "tokenomics" && <TokenomicsTab language={language} />}
+        {activeTab === "merch" && <MerchTab language={language} />}
+        {activeTab === "stream" && <StreamTab language={language} />}
+        {activeTab === "live" && <LiveTab language={language} />}
+        {activeTab === "instagram" && <InstagramTab language={language} />}
+        {activeTab === "tiktok" && <TiktokTab language={language} />}
+        {activeTab === "facebook" && <FacebookTab language={language} />}
       </section>
     </main>
   );

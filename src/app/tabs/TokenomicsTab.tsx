@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { TrendingUp, Users, Coins, DollarSign, ExternalLink, FileText, Target, Zap, Crown, Vote, Trophy, Timer, Award, X, BarChart3 } from 'lucide-react';
 import { Button } from "../../../components/ui/button";
+import { TranslatedText, TranslatedTitle, TranslatedButton } from "../components/TranslatedText";
+import type { SupportedLanguage } from "../utils/deepLTranslation";
 
 // Smart Contract Setup
 const CONTRACT_ADDRESS = "0xe85b32a44b9eD3ecf8bd331FED46fbdAcDBc9940";
@@ -63,7 +65,11 @@ interface LeaderboardResponse {
   lastUpdated?: string;
 }
 
-export default function TokenomicsTab() {
+interface TokenomicsTabProps {
+  language: SupportedLanguage;
+}
+
+export default function TokenomicsTab({ language }: TokenomicsTabProps) {
   const [contractBalance, setContractBalance] = useState<number | null>(null);
   const [totalStaked, setTotalStaked] = useState<number | null>(null);
   const [totalRewardsDistributed, setTotalRewardsDistributed] = useState<number | null>(null);
@@ -393,7 +399,7 @@ export default function TokenomicsTab() {
                 <div className="text-center">
                   <div className="inline-block px-8 py-2 bg-black/60 backdrop-blur-sm rounded-full border border-orange-500/30">
                     <span className="bg-gradient-to-r from-orange-200 via-amber-300 to-yellow-400 bg-clip-text text-transparent font-bold text-lg md:text-xl">
-                      DAWID FAITH TOKENOMICS
+                      <TranslatedText text="DAWID FAITH TOKENOMICS" language={language} />
                     </span>
                   </div>
                   {/* Unterlinie für zusätzliche Eleganz */}
@@ -411,7 +417,11 @@ export default function TokenomicsTab() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
-              Entdecke die <span className="text-orange-300 font-semibold">Tokenomics</span>, <span className="text-amber-300 font-semibold">Metriken</span> und <span className="text-yellow-300 font-semibold">Community-Statistiken</span> von <span className="bg-gradient-to-r from-orange-200 to-yellow-300 bg-clip-text text-transparent font-bold">Dawid Faith</span>
+              <TranslatedText 
+                text="Entdecke die Tokenomics, Metriken und Community-Statistiken von Dawid Faith"
+                language={language}
+                className="text-lg md:text-xl text-amber-200/90 leading-relaxed"
+              />
             </motion.p>
         {/* Visuell verbesserte Call-to-Action Buttons */}
         <div className="flex flex-col items-center gap-6 md:gap-8 relative">
@@ -444,7 +454,9 @@ export default function TokenomicsTab() {
                   <FileText className="w-5 h-5 md:w-7 md:h-7 text-orange-400" />
                 </motion.div>
                 <div className="flex flex-col items-start">
-                  <span className="text-white font-bold">Whitepaper studieren</span>
+                  <span className="text-white font-bold">
+                    <TranslatedText text="Whitepaper studieren" language={language} />
+                  </span>
                   <span className="text-zinc-400 text-xs md:text-sm">Technische Details & Vision</span>
                 </div>
                 <ExternalLink className="w-4 h-4 md:w-5 md:h-5 opacity-70 ml-2" />
@@ -701,7 +713,9 @@ export default function TokenomicsTab() {
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <BarChart3 className="w-8 h-8 text-orange-400" />
-                  <h2 className="text-2xl font-bold text-white">Live Metriken</h2>
+                  <h2 className="text-2xl font-bold text-white">
+                    <TranslatedText text="Live Metriken" language={language} />
+                  </h2>
                 </div>
                 <motion.button
                   onClick={() => setShowMetricsModal(false)}
