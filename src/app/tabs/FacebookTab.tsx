@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { validateBaseAddress, validateBaseAddressRealTime } from '../utils/walletValidation';
 import { useActiveAccount } from 'thirdweb/react';
 import type { SupportedLanguage } from "../utils/deepLTranslation";
+import { TranslatedText } from '../components/TranslatedText';
 
 interface UserData {
   username: string;
@@ -374,8 +375,8 @@ export default function FacebookTab({ language }: FacebookTabProps) {
       >
         <div className="text-white text-center">
           <div className="animate-spin w-20 h-20 border-4 border-white/20 border-t-white rounded-full mx-auto mb-8"></div>
-          <p className="text-2xl font-bold mb-3">Facebook Tab wird geladen...</p>
-          <p className="text-lg opacity-90 mb-2">Bitte warten Sie einen Moment</p>
+          <p className="text-2xl font-bold mb-3"><TranslatedText text="Facebook Tab wird geladen..." language={language} /></p>
+          <p className="text-lg opacity-90 mb-2"><TranslatedText text="Bitte warten Sie einen Moment" language={language} /></p>
           <div className="flex items-center justify-center gap-2 text-sm opacity-70">
             <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
             <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
@@ -404,8 +405,8 @@ export default function FacebookTab({ language }: FacebookTabProps) {
         >
           <div className="text-center text-white">
             <div className="animate-spin w-16 h-16 border-4 border-white/30 border-t-white rounded-full mx-auto mb-6"></div>
-            <p className="text-xl font-bold mb-2">Wird verarbeitet...</p>
-            <p className="text-sm opacity-80">Bitte warten Sie einen Moment</p>
+            <p className="text-xl font-bold mb-2"><TranslatedText text="Wird verarbeitet..." language={language} /></p>
+            <p className="text-sm opacity-80"><TranslatedText text="Bitte warten Sie einen Moment" language={language} /></p>
           </div>
         </div>
       )}
@@ -435,7 +436,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
             {/* Level und EXP Header */}
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-baseline gap-2">
-                <span className="text-xl font-bold text-white">Level</span>
+                <TranslatedText text="Level" language={language} className="text-xl font-bold text-white" />
                 <span className="text-2xl font-black bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">{level}</span>
               </div>
               
@@ -486,7 +487,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
           {/* System Check */}
           <div className="bg-black/50 border border-blue-500/50 rounded-2xl p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
-              <div className="font-bold text-lg bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">🔍 System Check</div>
+              <div className="font-bold text-lg bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">🔍 <TranslatedText text="System Check" language={language} /></div>
               {!showLeaderboardModal && (
                 <button
                   type="button"
@@ -526,7 +527,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               <div className="relative flex items-center justify-center gap-1">
                 <span className="text-xl animate-pulse">✨</span>
-                <span className="tracking-wider">Sammle EXP</span>
+                <TranslatedText text="Sammle EXP" language={language} className="tracking-wider" />
               </div>
             </button>
             <button 
@@ -536,7 +537,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               <div className="relative flex items-center justify-center gap-1">
                 <span className="text-xl animate-bounce">🪙</span>
-                <span className="tracking-wider">Claim</span>
+                <TranslatedText text="Claim" language={language} className="tracking-wider" />
               </div>
             </button>
           </div>
@@ -550,7 +551,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
             <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
               <div className="flex items-center gap-2">
                 <span className="text-yellow-300">🏆</span>
-                <h3 className="text-white font-semibold">Leaderboard</h3>
+                <h3 className="text-white font-semibold"><TranslatedText text="Leaderboard" language={language} /></h3>
               </div>
               <div className="text-xs text-zinc-400 mr-auto ml-3">
                 {lbData?.timer?.isActive && lbData?.timer?.endDate ? (
@@ -578,10 +579,10 @@ export default function FacebookTab({ language }: FacebookTabProps) {
               </div>
               <div className="bg-zinc-900/60 border border-zinc-700 rounded-lg max-h-[24rem] overflow-y-auto overflow-x-hidden">
                 {lbLoading && (
-                  <div className="px-4 py-3 text-zinc-400 text-sm">Lade Leaderboard…</div>
+                  <div className="px-4 py-3 text-zinc-400 text-sm"><TranslatedText text="Lade Leaderboard…" language={language} /></div>
                 )}
                 {(lbData?.entries || []).length === 0 && !lbLoading && (
-                  <div className="px-4 py-3 text-zinc-400 text-sm">Keine Einträge gefunden</div>
+                  <div className="px-4 py-3 text-zinc-400 text-sm"><TranslatedText text="Keine Einträge gefunden" language={language} /></div>
                 )}
                 {(lbData?.entries || []).filter((e: any) => {
                   if (!lbSearch) return true;
@@ -653,7 +654,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
       {showUpgradeModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
-            <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">✨ Sammle mehr EXP!</h2>
+            <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">✨ <TranslatedText text="Sammle mehr EXP!" language={language} /></h2>
             <button 
               onClick={() => {
                 setShowUpgradeModal(false);
@@ -663,13 +664,13 @@ export default function FacebookTab({ language }: FacebookTabProps) {
             >
               <span className="text-xl">❤️</span>
               <span className="text-xl">🔁</span>
-              <span>Like + Share</span>
+              <TranslatedText text="Like + Share" language={language} />
             </button>
             <button 
               onClick={() => setShowUpgradeModal(false)}
               className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-4 rounded-2xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
             >
-              ❌ Schließen
+              ❌ <TranslatedText text="Schließen" language={language} />
             </button>
           </div>
         </div>
@@ -689,23 +690,23 @@ export default function FacebookTab({ language }: FacebookTabProps) {
             </button>
             <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent flex items-center justify-center gap-2">
               <span className="text-xl animate-bounce">🪙</span>
-              <span>D.FAITH Claim</span>
+              <TranslatedText text="D.FAITH Claim" language={language} />
             </h2>
             
             <div className="text-xs text-gray-600 mb-4 text-center">
-              💡 Wallet ändern? Schreib mir eine DM mit &quot;Wallet&quot; auf Facebook
+              💡 <TranslatedText text="Wallet ändern? Schreib mir eine DM mit &quot;Wallet&quot; auf Facebook" language={language} />
             </div>
             
             {/* Hinweis für Wallet-Verbindung in der Überschrift */}
             {!account?.address && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 text-gray-800 text-base flex flex-col items-center animate-pulse">
-                <span className="font-semibold mb-3 text-center">Du hast noch keine Wallet verbunden.<br/>Verbinde deine Wallet, um deine Belohnung zu erhalten!</span>
+                <span className="font-semibold mb-3 text-center"><TranslatedText text="Du hast noch keine Wallet verbunden." language={language} /><br/><TranslatedText text="Verbinde deine Wallet, um deine Belohnung zu erhalten!" language={language} /></span>
                 <span className="text-xs text-gray-500 mt-1">Wenn du deine Wallet wechseln möchtest, schreib mir eine DM mit dem Stichwort &quot;Wallet&quot; auf Facebook.</span>
                 <button
                   className="w-full mt-2 mb-2 py-3 px-4 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400 text-gray-900 shadow-lg hover:from-yellow-500 hover:to-orange-500 active:from-yellow-600 active:to-orange-600 transition text-base border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-center block"
                   onClick={() => router.push("/wallet")}
                 >
-                  🚀 Wallet jetzt verbinden
+                  🚀 <TranslatedText text="Wallet jetzt verbinden" language={language} />
                 </button>
               </div>
             )}
@@ -715,13 +716,13 @@ export default function FacebookTab({ language }: FacebookTabProps) {
               <>
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-center">
                   <p className="text-gray-800 mb-2">
-                    Du kannst <strong className="text-blue-600">+{userData.miningpower} D.FAITH</strong> für deine Facebook Aktivität claimen!
+                    <TranslatedText text="Du kannst " language={language} /><strong className="text-blue-600">+{userData.miningpower} D.FAITH</strong><TranslatedText text=" für deine Facebook Aktivität claimen!" language={language} />
                   </p>
-                  <p className="text-sm text-green-600 mt-2">✅ Verbundene Wallet wird verwendet</p>
+                  <p className="text-sm text-green-600 mt-2">✅ <TranslatedText text="Verbundene Wallet wird verwendet" language={language} /></p>
                 </div>
                 
                 <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
-                  <p className="text-sm text-gray-700 mb-2">Verbundene Wallet:</p>
+                  <p className="text-sm text-gray-700 mb-2"><TranslatedText text="Verbundene Wallet:" language={language} /></p>
                   <p className="font-mono text-sm bg-white border border-green-300 rounded-lg p-2 break-all">
                     {account.address}
                   </p>
@@ -734,7 +735,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
               disabled={!account?.address}
               className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 hover:shadow-lg disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              <span>Claim absenden</span>
+              <TranslatedText text="Claim absenden" language={language} />
             </button>
             {claimStatus && (
               <div className={`mb-4 p-3 rounded-xl ${claimStatus.includes('✅') ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
@@ -749,10 +750,10 @@ export default function FacebookTab({ language }: FacebookTabProps) {
       {showLikeSaveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">✨ Like & Share Verification</h2>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">✨ <TranslatedText text="Like & Share Verification" language={language} /></h2>
             
             <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
-              <p className="font-semibold mb-3 text-blue-800">1️⃣ Entferne alle Likes von meinem Beitrag</p>
+              <p className="font-semibold mb-3 text-blue-800">1️⃣ <TranslatedText text="Entferne alle Likes von meinem Beitrag" language={language} /></p>
               <button 
                 onClick={() => setShowConfirmInitial(true)}
                 disabled={initialValues !== null || loading}
@@ -767,7 +768,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
                     <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-gray-600 rounded-full"></div>
                     <span>Erfasse Daten...</span>
                   </div>
-                ) : initialValues !== null ? '✅ Werte bereits erfasst' : '✅ Check aktuelle Werte'}
+                ) : initialValues !== null ? '✅ Werte bereits erfasst' : <TranslatedText text="✅ Check aktuelle Werte" language={language} />}
               </button>
               {initialValues && (
                 <div className="bg-white border border-blue-300 rounded-xl p-3 mt-3 text-sm">
@@ -784,7 +785,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
             </div>
             
             <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
-              <p className="font-semibold mb-3 text-green-800">2️⃣ Bitte Like und Share den Beitrag!</p>
+              <p className="font-semibold mb-3 text-green-800">2️⃣ <TranslatedText text="Bitte Like und Share den Beitrag!" language={language} /></p>
               <button 
                 onClick={() => setShowConfirmAfter(true)}
                 disabled={loading || !initialValues || !!afterValues}
@@ -902,7 +903,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
             >
               ×
             </button>
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">✨ Deine EXP-Quellen</h2>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">✨ <TranslatedText text="Deine EXP-Quellen" language={language} /></h2>
             <div className="text-left space-y-3 mb-6">
               <div className="flex items-center gap-3 border-l-4 border-blue-600 pl-3 bg-blue-50 py-2 rounded-r-xl">
                 <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" className="w-6 h-6" />
@@ -1089,12 +1090,12 @@ export default function FacebookTab({ language }: FacebookTabProps) {
               <div className="w-20 h-20 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
                 <span className="text-3xl text-white">⛏</span>
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">Mining Power Info</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent"><TranslatedText text="Mining Power Info" language={language} /></h2>
             </div>
             
             <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-800 leading-relaxed mb-4">
-                Deine <strong className="text-blue-600">Mining Power</strong> ist abhängig von verschiedenen Faktoren:
+                <TranslatedText text="Deine " language={language} /><strong className="text-blue-600">Mining Power</strong><TranslatedText text=" ist abhängig von verschiedenen Faktoren:" language={language} />
               </p>
               
               <div className="space-y-3 text-left">
@@ -1134,7 +1135,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
               onClick={() => setShowMiningPowerModal(false)}
               className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
             >
-              ✅ Verstanden
+              ✅ <TranslatedText text="Verstanden" language={language} />
             </button>
           </div>
         </div>
