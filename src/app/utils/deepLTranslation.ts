@@ -1,4 +1,6 @@
-// DeepL API Translation Service
+// DeepL API Translation Service with Vercel Blob Global Cache
+import { vercelBlobCache, isVercelEnvironment } from '../lib/vercelBlobCache';
+
 export interface TranslationCache {
   [key: string]: string;
 }
@@ -11,14 +13,24 @@ export interface DeepLResponse {
 }
 
 class TranslationService {
-  private cache: TranslationCache = {};
+  private localCache: TranslationCache = {}; // Fallback für lokale Entwicklung
   private apiKey: string | null = null;
+  private useGlobalCache: boolean;
 
   constructor() {
     // Lade API Key aus Environment Variables
     if (typeof window === 'undefined') {
       // Server-side
       this.apiKey = process.env.DEEPL_API_KEY || null;
+    }
+    
+    // Verwende globalen Cache nur in Vercel Environment
+    this.useGlobalCache = isVercelEnvironment();
+    
+    if (this.useGlobalCache) {
+      console.log('🌐 Using Vercel Blob global translation cache');
+    } else {
+      console.log('💻 Using local translation cache (development)');
     }
   }
 
@@ -27,22 +39,33 @@ class TranslationService {
     return `${text}_${targetLang}`.toLowerCase();
   }
 
-  // DeepL API Aufruf
+  // DeepL API Aufruf mit globalem Cache
   async translateText(text: string, targetLang: string): Promise<string> {
     // Wenn Zielsprache Deutsch ist, Original zurückgeben
     if (targetLang === 'de' || targetLang === 'DE') {
       return text;
     }
 
-    const cacheKey = this.getCacheKey(text, targetLang);
-    
-    // Cache prüfen
-    if (this.cache[cacheKey]) {
-      return this.cache[cacheKey];
-    }
+    // Normalisiere Sprache
+    const normalizedLang = targetLang.toUpperCase();
 
     try {
-      // DeepL API Call
+      // 1. Prüfe globalen Vercel Blob Cache (falls verfügbar)
+      if (this.useGlobalCache) {
+        const cachedTranslation = await vercelBlobCache.getTranslation(text, normalizedLang);
+        if (cachedTranslation) {
+          return cachedTranslation;
+        }
+      } else {
+        // Fallback: Lokaler Cache für Entwicklung
+        const cacheKey = this.getCacheKey(text, normalizedLang);
+        if (this.localCache[cacheKey]) {
+          console.log(`📝 Local cache HIT: "${text}" -> "${this.localCache[cacheKey]}"`);
+          return this.localCache[cacheKey];
+        }
+      }
+
+      // 2. Cache Miss - DeepL API Call
       const response = await fetch('/api/translate', {
         method: 'POST',
         headers: {
@@ -50,7 +73,7 @@ class TranslationService {
         },
         body: JSON.stringify({
           text,
-          targetLang: targetLang.toUpperCase(),
+          targetLang: normalizedLang,
         }),
       });
 
@@ -62,8 +85,14 @@ class TranslationService {
       const data: DeepLResponse = await response.json();
       const translatedText = data.translations[0]?.text || text;
 
-      // In Cache speichern
-      this.cache[cacheKey] = translatedText;
+      // 3. Speichere in entsprechendem Cache
+      if (this.useGlobalCache) {
+        await vercelBlobCache.setTranslation(text, normalizedLang, translatedText);
+      } else {
+        const cacheKey = this.getCacheKey(text, normalizedLang);
+        this.localCache[cacheKey] = translatedText;
+        console.log(`💾 Local cache SET: "${text}" -> "${translatedText}"`);
+      }
       
       return translatedText;
     } catch (error) {
@@ -90,12 +119,31 @@ class TranslationService {
 
   // Cache leeren (falls nötig)
   clearCache(): void {
-    this.cache = {};
+    this.localCache = {};
+    // Globaler Cache wird nicht geleert - nur für Admin-Interface
   }
 
   // Cache Status
-  getCacheSize(): number {
-    return Object.keys(this.cache).length;
+  async getCacheSize(): Promise<number> {
+    if (this.useGlobalCache) {
+      const stats = await vercelBlobCache.getStats();
+      return stats.totalTranslations;
+    }
+    return Object.keys(this.localCache).length;
+  }
+
+  // Cache-Statistiken (nur für globalen Cache)
+  async getCacheStats() {
+    if (this.useGlobalCache) {
+      return await vercelBlobCache.getStats();
+    }
+    return {
+      totalTranslations: Object.keys(this.localCache).length,
+      totalRequests: 0,
+      totalCacheHits: 0,
+      cacheHitRate: 0,
+      languageDistribution: {},
+    };
   }
 }
 

@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { vercelBlobCache, isVercelEnvironment } from '../../lib/vercelBlobCache';
+
+export interface TranslateResponse {
+  translations: Array<{
+    detected_source_language: string;
+    text: string;
+  }>;
+  cacheHit?: boolean;
+  source?: 'vercel_blob' | 'deepl_api' | 'direct';
+}
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
     const { text, targetLang } = await request.json();
 
@@ -12,6 +24,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const normalizedLang = targetLang.toUpperCase();
+
+    // Wenn Zielsprache Deutsch ist, Original zurückgeben
+    if (normalizedLang === 'DE') {
+      return NextResponse.json({
+        translations: [{ 
+          detected_source_language: 'DE', 
+          text: text 
+        }],
+        cacheHit: true,
+        source: 'direct'
+      } as TranslateResponse);
+    }
+
+    // 1. Prüfe Vercel Blob Cache (falls verfügbar)
+    if (isVercelEnvironment()) {
+      const cachedTranslation = await vercelBlobCache.getTranslation(text, normalizedLang);
+      
+      if (cachedTranslation) {
+        console.log(`🎯 Blob cache HIT for "${text}" -> "${cachedTranslation}" (${Date.now() - startTime}ms)`);
+        
+        return NextResponse.json({
+          translations: [{ 
+            detected_source_language: 'DE', 
+            text: cachedTranslation 
+          }],
+          cacheHit: true,
+          source: 'vercel_blob'
+        } as TranslateResponse);
+      }
+    }
+
+    // 2. Cache Miss - DeepL API Call
     const apiKey = process.env.DEEPL_API_KEY;
     if (!apiKey) {
       console.error('DEEPL_API_KEY not found in environment variables');
@@ -21,7 +66,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // DeepL API Call
+    console.log(`🔄 DeepL API call for "${text}" -> ${normalizedLang}`);
+
     const response = await fetch('https://api-free.deepl.com/v2/translate', {
       method: 'POST',
       headers: {
@@ -30,7 +76,7 @@ export async function POST(request: NextRequest) {
       },
       body: new URLSearchParams({
         text: text,
-        target_lang: targetLang,
+        target_lang: normalizedLang,
         source_lang: 'DE' // Deutsch als Quellsprache
       }),
     });
@@ -45,7 +91,20 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
+    const translatedText = data.translations[0]?.text || text;
+
+    // 3. Speichere im Vercel Blob Cache (falls verfügbar)
+    if (isVercelEnvironment()) {
+      await vercelBlobCache.setTranslation(text, normalizedLang, translatedText);
+    }
+
+    console.log(`✅ DeepL translation completed: "${text}" -> "${translatedText}" (${Date.now() - startTime}ms)`);
+
+    return NextResponse.json({
+      ...data,
+      cacheHit: false,
+      source: 'deepl_api'
+    } as TranslateResponse);
     
   } catch (error) {
     console.error('Translation API error:', error);
