@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { Button } from "../../../components/ui/button";
 import { FaTicketAlt, FaLock, FaTimes } from "react-icons/fa";
+import { TranslatedText } from "../components/TranslatedText";
 import type { SupportedLanguage } from "../utils/deepLTranslation";
 
 interface LiveTabProps {
@@ -109,7 +110,9 @@ export default function LiveTab({ language }: LiveTabProps) {
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-2">
                   <FaTicketAlt className="text-purple-400 text-xl" />
-                  <h3 className="text-xl font-bold text-white">Live Code Einlösen</h3>
+                  <h3 className="text-xl font-bold text-white">
+                    <TranslatedText text="Live Code Einlösen" language={language} />
+                  </h3>
                 </div>
                 <Button
                   onClick={() => setShowCodeModal(false)}
@@ -124,8 +127,12 @@ export default function LiveTab({ language }: LiveTabProps) {
                 <div className="flex items-start gap-3">
                   <span className="text-amber-400 text-lg mt-0.5">⚠️</span>
                   <div className="text-amber-200 text-sm">
-                    <p className="font-semibold mb-2">Wichtiger Hinweis:</p>
-                    <p>Mindestens 1 Teilnahme bei TikTok, Instagram oder Facebook ist erforderlich, um Live Codes einzulösen.</p>
+                    <p className="font-semibold mb-2">
+                      <TranslatedText text="Wichtiger Hinweis:" language={language} />
+                    </p>
+                    <p>
+                      <TranslatedText text="Mindestens 1 Teilnahme bei TikTok, Instagram oder Facebook ist erforderlich, um Live Codes einzulösen." language={language} />
+                    </p>
                   </div>
                 </div>
               </div>
@@ -135,8 +142,12 @@ export default function LiveTab({ language }: LiveTabProps) {
                 <div className="flex items-start gap-3">
                   <span className="text-purple-400 text-lg mt-0.5">🎤</span>
                   <div className="text-purple-200 text-sm">
-                    <p className="font-semibold mb-2">Live Codes Info:</p>
-                    <p>Live Codes werden exklusiv bei Live Konzerten und Auftritten von Dawid Faith vergeben. Sei dabei um deine Codes zu erhalten!</p>
+                    <p className="font-semibold mb-2">
+                      <TranslatedText text="Live Codes Info:" language={language} />
+                    </p>
+                    <p>
+                      <TranslatedText text="Live Codes werden exklusiv bei Live Konzerten und Auftritten von Dawid Faith vergeben. Sei dabei um deine Codes zu erhalten!" language={language} />
+                    </p>
                   </div>
                 </div>
               </div>
@@ -147,8 +158,12 @@ export default function LiveTab({ language }: LiveTabProps) {
                   <div className="flex items-center gap-3">
                     <FaLock className="text-red-400 text-lg" />
                     <div className="text-red-200 text-sm">
-                      <p className="font-semibold">Keine Wallet verbunden</p>
-                      <p>Bitte verbinde deine Wallet, um Codes einzulösen.</p>
+                      <p className="font-semibold">
+                        <TranslatedText text="Keine Wallet verbunden" language={language} />
+                      </p>
+                      <p>
+                        <TranslatedText text="Bitte verbinde deine Wallet, um Codes einzulösen." language={language} />
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -157,7 +172,9 @@ export default function LiveTab({ language }: LiveTabProps) {
               {/* Code-Eingabe Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-white font-medium mb-2">🎫 Live Code</label>
+                  <label className="block text-white font-medium mb-2">
+                    🎫 <TranslatedText text="Live Code" language={language} />
+                  </label>
                   <input
                     type="text"
                     placeholder="Code eingeben (DF12345678)"
@@ -177,15 +194,15 @@ export default function LiveTab({ language }: LiveTabProps) {
                   {loading ? (
                     <div className="flex items-center gap-2 justify-center">
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Verarbeite...
+                      <TranslatedText text="Verarbeite..." language={language} />
                     </div>
                   ) : !account?.address ? (
                     <div className="flex items-center gap-2 justify-center">
                       <FaLock className="text-lg" />
-                      Wallet verbinden erforderlich
+                      <TranslatedText text="Wallet verbinden erforderlich" language={language} />
                     </div>
                   ) : (
-          '🎫 Code einlösen (+150 Live EXP)'
+                    <TranslatedText text="🎫 Code einlösen (+150 Live EXP)" language={language} />
                   )}
                 </Button>
               </form>
@@ -194,8 +211,12 @@ export default function LiveTab({ language }: LiveTabProps) {
               {result && !result.success && (
                 <div className="mt-6 p-4 rounded-lg border-2 bg-red-900/30 border-red-500 text-red-400">
                   <div className="text-center">
-                    <p className="text-lg font-bold">❌ Fehler</p>
-                    <p className="text-sm font-medium mt-1">{result.message}</p>
+                    <p className="text-lg font-bold">
+                      ❌ <TranslatedText text="Fehler" language={language} />
+                    </p>
+                    <p className="text-sm font-medium mt-1">
+                      <TranslatedText text={result.message} language={language} />
+                    </p>
                   </div>
                 </div>
               )}
@@ -217,7 +238,9 @@ export default function LiveTab({ language }: LiveTabProps) {
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-2">
                   <span className="text-green-400 text-xl">🎉</span>
-                  <h3 className="text-xl font-bold text-white">Erfolgreich!</h3>
+                  <h3 className="text-xl font-bold text-white">
+                    <TranslatedText text="Erfolgreich!" language={language} />
+                  </h3>
                 </div>
                 <Button
                   onClick={() => { setShowSuccessModal(false); setResult(null); }}
@@ -229,15 +252,19 @@ export default function LiveTab({ language }: LiveTabProps) {
               <div className="mt-2 p-4 rounded-lg border-2 bg-green-900/30 border-green-500 text-green-400">
                 <div className="text-center">
                   <p className="text-xl font-bold text-green-300">
-                    +150 Live EXP wurde deinem Konto gutgeschrieben! 🎵
+                    <TranslatedText text="+150 Live EXP wurde deinem Konto gutgeschrieben! 🎵" language={language} />
                   </p>
                   <div className="mt-4 p-3 bg-blue-900/30 border border-blue-500/50 rounded text-blue-200 text-sm">
-                    <p className="font-semibold">ℹ️ Hinweis:</p>
-                    <p>Die EXP werden erst bei der nächsten Teilnahme auf TikTok, Instagram oder Facebook sichtbar.</p>
+                    <p className="font-semibold">
+                      ℹ️ <TranslatedText text="Hinweis:" language={language} />
+                    </p>
+                    <p>
+                      <TranslatedText text="Die EXP werden erst bei der nächsten Teilnahme auf TikTok, Instagram oder Facebook sichtbar." language={language} />
+                    </p>
                   </div>
                   {result?.data && (
                     <p className="text-sm mt-3 opacity-80">
-                      📊 Gesamt Live EXP: {result.data.newValueK}
+                      📊 <TranslatedText text="Gesamt Live EXP:" language={language} /> {result.data.newValueK}
                     </p>
                   )}
                 </div>
