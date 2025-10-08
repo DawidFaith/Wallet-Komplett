@@ -506,7 +506,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             {/* Level und EXP Header */}
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-baseline gap-2">
-                <span className="text-xl font-bold text-white">Level</span>
+                <span className="text-xl font-bold text-white"><TranslatedText text="Level" language={language} /></span>
                 <span className="text-2xl font-black bg-gradient-to-r from-pink-200 to-rose-300 bg-clip-text text-transparent">{level}</span>
               </div>
               
@@ -547,7 +547,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
               <div className="flex items-center justify-center gap-2">
                 <span className="text-2xl animate-bounce">⛏</span>
                 <div className="text-center">
-                  <div className="text-pink-300 text-sm font-medium">Mining Power</div>
+                  <div className="text-pink-300 text-sm font-medium"><TranslatedText text="Mining Power" language={language} /></div>
                   <div className="text-pink-200 text-lg font-bold">+{userData.miningpower} D.Faith</div>
                 </div>
               </div>
