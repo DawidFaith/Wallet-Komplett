@@ -164,11 +164,11 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
             /* Verbundene Wallet anzeigen */
             <div>
               <label className="block text-sm font-medium text-pink-300 mb-3">
-                Verbundene Wallet
+                <TranslatedText text="Verbundene Wallet" language={language} />
               </label>
               <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
                 <div className="flex items-center justify-center mb-2">
-                  <span className="text-green-400 text-sm">✅ Wallet verbunden</span>
+                  <span className="text-green-400 text-sm">✅ <TranslatedText text="Wallet verbunden" language={language} /></span>
                 </div>
                 <p className="font-mono text-sm bg-black/30 border border-green-500/20 rounded-lg p-2 break-all text-green-200 text-center">
                   {account.address}
@@ -180,17 +180,17 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
             <div>
               <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-4">
                 <p className="text-yellow-200 text-sm font-medium mb-3 text-center">
-                  Du hast noch keine Wallet verbunden.<br/>Verbinde deine Wallet, um fortzufahren!
+                  <TranslatedText text="Du hast noch keine Wallet verbunden." language={language} /><br/><TranslatedText text="Verbinde deine Wallet, um fortzufahren!" language={language} />
                 </p>
                 <button
                   type="button"
                   onClick={() => router?.push("/wallet")}
                   className="w-full py-2 px-4 rounded-lg font-semibold bg-gradient-to-r from-yellow-400 to-orange-400 text-black shadow-lg hover:from-yellow-500 hover:to-orange-500 transition-all duration-200 text-sm"
                 >
-                  🚀 Wallet jetzt verbinden
+                  🚀 <TranslatedText text="Wallet jetzt verbinden" language={language} />
                 </button>
                 <p className="text-xs text-yellow-300 mt-2 text-center">
-                  Du findest den Wallet Tab auch oben im Menü.
+                  <TranslatedText text="Du findest den Wallet Tab auch oben im Menü." language={language} />
                 </p>
               </div>
             </div>
@@ -1006,7 +1006,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 onClick={() => setShowClaimModal(false)}
                 className="flex-1 bg-gray-700 hover:bg-gray-600 text-white rounded-xl py-3 font-bold transition-all"
               >
-                Abbrechen
+                <TranslatedText text="Abbrechen" language={language} />
               </button>
               <button 
                 disabled={!userData.walletAddress && !walletInput}
@@ -1203,7 +1203,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 onClick={() => setShowConfirmInitial(false)}
                 className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
               >
-                ❌ Abbrechen
+                ❌ <TranslatedText text="Abbrechen" language={language} />
               </button>
             </div>
           </div>
@@ -1237,7 +1237,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 onClick={() => setShowConfirmAfter(false)}
                 className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
               >
-                ❌ Abbrechen
+                ❌ <TranslatedText text="Abbrechen" language={language} />
               </button>
             </div>
           </div>
@@ -1634,7 +1634,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
           setIsCheckModalOpen(false);
           setConfirmationMessage('');
         }}
-        title="Bestätige deine Teilnahme"
+        title={language === 'de' ? "Bestätige deine Teilnahme" : "Confirm your participation"}
         onSubmit={handleCheck}
         isLoading={isLoading}
         router={router}
@@ -1649,7 +1649,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
           setIsLoginModalOpen(false);
           setMessage(''); // Message zurücksetzen beim Schließen
         }}
-        title="Dashboard Login"
+        title={language === 'de' ? "Dashboard Login" : "Dashboard Login"}
         onSubmit={handleLogin}
         isLoading={isLoading}
         router={router}
