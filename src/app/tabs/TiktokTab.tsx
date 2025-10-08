@@ -253,7 +253,7 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
               <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-4">
                 <h4 className="text-yellow-300 font-bold mb-2">🔒 Wichtiger Hinweis</h4>
                 <p className="text-yellow-200 text-sm leading-relaxed mb-3">
-                  Deine Wallet-Adresse wird <strong>dauerhaft</strong> mit deinem Account verbunden und kann nicht mehr geändert werden.
+                  <TranslatedText text="Deine Wallet-Adresse wird " language={language} /><strong><TranslatedText text="dauerhaft" language={language} /></strong><TranslatedText text=" mit deinem Account verbunden und kann nicht mehr geändert werden." language={language} />
                 </p>
                 <div className="bg-yellow-600/20 border border-yellow-600/40 rounded-lg p-3">
                   <p className="text-yellow-100 text-xs">
@@ -265,7 +265,7 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
 
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
                 <p className="text-red-300 text-sm">
-                  ⚠️ Bitte überprüfe deine Wallet-Adresse sorgfältig vor der Bestätigung!
+                  ⚠️ <TranslatedText text="Bitte überprüfe deine Wallet-Adresse sorgfältig vor der Bestätigung!" language={language} />
                 </p>
               </div>
               
@@ -273,7 +273,7 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
                 onClick={() => setShowWalletInfoModal(false)}
                 className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-bold py-3 rounded-xl transition-all duration-300"
               >
-                Verstanden
+                <TranslatedText text="Verstanden" language={language} />
               </button>
             </div>
           </div>
@@ -733,16 +733,16 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               {/* Legende / Kopfzeile */}
               <div className="text-[11px] text-zinc-400 px-3 mb-1 grid grid-cols-[2.25rem_minmax(0,1fr)_3.75rem_5.25rem] gap-3">
                 <div className="opacity-0 select-none">#</div>
-                <div className="text-left">Name</div>
+                <div className="text-left"><TranslatedText text="Name" language={language} /></div>
                 <div className="text-center">EXP</div>
-                <div className="text-right">Preis</div>
+                <div className="text-right"><TranslatedText text="Preis" language={language} /></div>
               </div>
               <div className="bg-zinc-900/60 border border-zinc-700 rounded-lg max-h-[24rem] overflow-y-auto overflow-x-hidden">
                 {lbLoading && (
-                  <div className="px-4 py-3 text-zinc-400 text-sm">Lade Leaderboard…</div>
+                  <div className="px-4 py-3 text-zinc-400 text-sm"><TranslatedText text="Lade Leaderboard…" language={language} /></div>
                 )}
                 {(lbData?.entries || []).length === 0 && !lbLoading && (
-                  <div className="px-4 py-3 text-zinc-400 text-sm">Keine Einträge gefunden</div>
+                  <div className="px-4 py-3 text-zinc-400 text-sm"><TranslatedText text="Keine Einträge gefunden" language={language} /></div>
                 )}
                 {(lbData?.entries || []).filter((e: any) => {
                   if (!lbSearch) return true;
@@ -797,7 +797,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                   );
                 })}
               </div>
-              <div className="text-[10px] text-zinc-500 mt-2 text-right">Letztes Update: {lbData?.lastUpdated ? new Date(lbData.lastUpdated).toLocaleString() : '-'}</div>
+              <div className="text-[10px] text-zinc-500 mt-2 text-right"><TranslatedText text="Letztes Update:" language={language} /> {lbData?.lastUpdated ? new Date(lbData.lastUpdated).toLocaleString() : '-'}</div>
             </div>
           </div>
         </div>
@@ -900,7 +900,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-4">
                 <div className="text-center mb-3">
                   <p className="text-green-300 font-bold text-lg">🎉 Glückwunsch!</p>
-                  <p className="text-green-200 text-sm">Du hast erfolgreich EXP gesammelt:</p>
+                  <p className="text-green-200 text-sm"><TranslatedText text="Du hast erfolgreich EXP gesammelt:" language={language} /></p>
                 </div>
                 
                 <div className="space-y-2 mb-4">
@@ -1039,7 +1039,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-purple-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                � EXP Information
+                � <TranslatedText text="EXP Information" language={language} />
               </h2>
               <button
                 onClick={() => setShowInfoModal(false)}
@@ -1090,7 +1090,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                   </div>
                   <div className="border-t border-gray-600 pt-3 mt-4">
                     <div className="flex justify-between">
-                      <span className="text-white font-bold">Gesamt EXP</span>
+                      <span className="text-white font-bold"><TranslatedText text="Gesamt EXP" language={language} /></span>
                       <span className="text-white font-bold">{userData.expTotal}</span>
                     </div>
                   </div>
@@ -1098,7 +1098,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               </div>
               
               <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-300/30 rounded-2xl p-4 mb-6">
-                <p className="text-sm text-purple-200 font-medium">💡 Mehr EXP = schnelleres Level-Up. Nutze alle Plattformen! 🚀</p>
+                <p className="text-sm text-purple-200 font-medium">💡 <TranslatedText text="Mehr EXP = schnelleres Level-Up. Nutze alle Plattformen!" language={language} /> 🚀</p>
               </div>
             </div>
             
@@ -1137,15 +1137,15 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
                   <span className="text-xl">💰</span>
                   <div>
-                    <div className="font-bold text-cyan-300">Marketing Budget</div>
-                    <div className="text-sm text-cyan-400">Budget pro User für TikTok</div>
+                    <div className="font-bold text-cyan-300"><TranslatedText text="Marketing Budget" language={language} /></div>
+                    <div className="text-sm text-cyan-400"><TranslatedText text="Budget pro User für TikTok" language={language} /></div>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
                   <span className="text-xl">📊</span>
                   <div>
-                    <div className="font-bold text-pink-300">Dein Level</div>
+                    <div className="font-bold text-pink-300"><TranslatedText text="Dein Level" language={language} /></div>
                     <div className="text-sm text-pink-400">Level {getLevelAndExpRange(userData.expTotal).level}</div>
                   </div>
                 </div>
@@ -1153,8 +1153,8 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
                   <span className="text-xl">💎</span>
                   <div>
-                    <div className="font-bold text-purple-300">D.FAITH Kurs</div>
-                    <div className="text-sm text-purple-400">Aktueller Marktpreis</div>
+                    <div className="font-bold text-purple-300"><TranslatedText text="D.FAITH Kurs" language={language} /></div>
+                    <div className="text-sm text-purple-400"><TranslatedText text="Aktueller Marktpreis" language={language} /></div>
                   </div>
                 </div>
               </div>
@@ -1162,7 +1162,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             
             <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-3 mb-6">
               <p className="text-pink-200 font-medium text-center">
-                ⚡ <strong>Aktuell:</strong> +{userData.miningpower} D.FAITH pro Claim
+                ⚡ <strong><TranslatedText text="Aktuell:" language={language} /></strong> +{userData.miningpower} D.FAITH <TranslatedText text="pro Claim" language={language} />
               </p>
             </div>
             
@@ -1170,7 +1170,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               onClick={() => setShowMiningPowerModal(false)}
               className="w-full bg-gradient-to-r from-cyan-500 to-pink-500 text-white rounded-xl py-3 font-bold transition-all hover:from-cyan-600 hover:to-pink-600"
             >
-              ✅ Verstanden
+              ✅ <TranslatedText text="Verstanden" language={language} />
             </button>
           </div>
         </div>
@@ -1231,7 +1231,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 }}
                 className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
               >
-                ✅ Ja, fortfahren
+                ✅ <TranslatedText text="Ja, fortfahren" language={language} />
               </button>
               <button 
                 onClick={() => setShowConfirmAfter(false)}
@@ -1675,16 +1675,16 @@ export default function TiktokTab({ language }: TiktokTabProps) {
               <div className="w-20 h-20 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full flex items-center justify-center">
                 <span className="text-3xl text-white">⭐</span>
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">Level Upgrade!</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent"><TranslatedText text="Level Upgrade!" language={language} /></h2>
             </div>
             
             <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-800 leading-relaxed mb-4">
-                <strong className="text-pink-600">Herzlichen Glückwunsch!</strong> Du hast ein neues Level erreicht!
+                <strong className="text-pink-600"><TranslatedText text="Herzlichen Glückwunsch!" language={language} /></strong> <TranslatedText text="Du hast ein neues Level erreicht!" language={language} />
               </p>
               <div className="text-2xl font-bold text-purple-600 mb-2">Level {userData && getLevelAndExpRange(userData.expTotal || 0).level}</div>
               <p className="text-gray-600 text-sm">
-                Deine Mining Power wurde erhöht! 🚀
+                <TranslatedText text="Deine Mining Power wurde erhöht!" language={language} /> 🚀
               </p>
             </div>
             
@@ -1692,7 +1692,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
               onClick={() => setShowUpgradeModal(false)}
               className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
             >
-              ✨ Awesome!
+              ✨ <TranslatedText text="Awesome!" language={language} />
             </button>
           </div>
         </div>
@@ -1714,12 +1714,12 @@ export default function TiktokTab({ language }: TiktokTabProps) {
               <div className="w-20 h-20 bg-gradient-to-r from-cyan-400 to-pink-500 rounded-full flex items-center justify-center">
                 <span className="text-3xl text-white">💰</span>
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-600 to-pink-600 bg-clip-text text-transparent">Claim erfolgreich!</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-600 to-pink-600 bg-clip-text text-transparent"><TranslatedText text="Claim erfolgreich!" language={language} /></h2>
             </div>
             
             <div className="bg-cyan-50 border border-cyan-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-800 leading-relaxed mb-4">
-                Du hast erfolgreich <strong className="text-pink-600">+{userData?.miningpower || 0} D.FAITH</strong> für deine TikTok Aktivität erhalten!
+                <TranslatedText text="Du hast erfolgreich " language={language} /><strong className="text-pink-600">+{userData?.miningpower || 0} D.FAITH</strong><TranslatedText text=" für deine TikTok Aktivität erhalten!" language={language} />
               </p>
               <div className="text-sm text-gray-600">
                 <TranslatedText text="💎 Weiter so und sammle mehr Token!" language={language} />
@@ -1730,7 +1730,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
               onClick={() => setShowClaimModal(false)}
               className="w-full bg-gradient-to-r from-cyan-400 to-pink-500 hover:from-cyan-500 hover:to-pink-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
             >
-              🚀 Weiter claimen!
+              🚀 <TranslatedText text="Weiter claimen!" language={language} />
             </button>
           </div>
         </div>
@@ -1752,29 +1752,29 @@ export default function TiktokTab({ language }: TiktokTabProps) {
               <div className="w-20 h-20 bg-gradient-to-r from-pink-500 to-cyan-400 rounded-full flex items-center justify-center">
                 <span className="text-3xl text-white">❤️</span>
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-cyan-600 bg-clip-text text-transparent">✨ TikTok Engagement</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-cyan-600 bg-clip-text text-transparent">✨ <TranslatedText text="TikTok Engagement" language={language} /></h2>
             </div>
             
             <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-800 leading-relaxed mb-4">
-                Bitte führe die folgenden Aktionen auf dem TikTok Video durch:
+                <TranslatedText text="Bitte führe die folgenden Aktionen auf dem TikTok Video durch:" language={language} />
               </p>
               <div className="space-y-2 text-left">
                 <div className="flex items-center gap-2">
                   <span className="text-pink-500">❤️</span>
-                  <span className="text-gray-700">Like das Video</span>
+                  <span className="text-gray-700"><TranslatedText text="Like das Video" language={language} /></span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-purple-500">💬</span>
-                  <span className="text-gray-700">Kommentiere</span>
+                  <span className="text-gray-700"><TranslatedText text="Kommentiere" language={language} /></span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-cyan-500">🔄</span>
-                  <span className="text-gray-700">Teile das Video</span>
+                  <span className="text-gray-700"><TranslatedText text="Teile das Video" language={language} /></span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-pink-500">🔖</span>
-                  <span className="text-gray-700">Speichere ihn</span>
+                  <span className="text-gray-700"><TranslatedText text="Speichere ihn" language={language} /></span>
                 </div>
               </div>
             </div>
@@ -1789,7 +1789,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
               onClick={() => setShowLikeSaveModal(false)}
               className="w-full bg-gradient-to-r from-pink-500 to-cyan-400 hover:from-pink-600 hover:to-cyan-500 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
             >
-              ✅ Verstanden
+              ✅ <TranslatedText text="Verstanden" language={language} />
             </button>
           </div>
         </div>
@@ -1824,15 +1824,15 @@ export default function TiktokTab({ language }: TiktokTabProps) {
                   <span className="text-xl">⛏️</span>
                   <div>
                     <div className="font-bold text-gray-800">Mining Power</div>
-                    <div className="text-sm text-gray-600">Mehr D.FAITH pro Claim</div>
+                    <div className="text-sm text-gray-600"><TranslatedText text="Mehr D.FAITH pro Claim" language={language} /></div>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-purple-300">
                   <span className="text-xl">🎯</span>
                   <div>
-                    <div className="font-bold text-gray-800">Daily Claims</div>
-                    <div className="text-sm text-gray-600">Täglich neue Möglichkeiten</div>
+                    <div className="font-bold text-gray-800"><TranslatedText text="Daily Claims" language={language} /></div>
+                    <div className="text-sm text-gray-600"><TranslatedText text="Täglich neue Möglichkeiten" language={language} /></div>
                   </div>
                 </div>
               </div>
@@ -1842,7 +1842,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
               onClick={() => setShowInfoModal(false)}
               className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
             >
-              ✅ Verstanden
+              ✅ <TranslatedText text="Verstanden" language={language} />
             </button>
           </div>
         </div>
@@ -1910,12 +1910,12 @@ export default function TiktokTab({ language }: TiktokTabProps) {
               <div className="w-20 h-20 bg-gradient-to-r from-pink-400 to-cyan-500 rounded-full flex items-center justify-center">
                 <span className="text-3xl text-white">⛏</span>
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-cyan-600 bg-clip-text text-transparent">Mining Power Info</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-cyan-600 bg-clip-text text-transparent"><TranslatedText text="Mining Power Info" language={language} /></h2>
             </div>
             
             <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-800 leading-relaxed mb-4">
-                Deine <strong className="text-cyan-600">Mining Power</strong> ist abhängig von verschiedenen Faktoren:
+                <TranslatedText text="Deine " language={language} /><strong className="text-cyan-600">Mining Power</strong><TranslatedText text=" ist abhängig von verschiedenen Faktoren:" language={language} />
               </p>
               
               <div className="space-y-3 text-left">
@@ -1923,7 +1923,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
                   <span className="text-xl">💰</span>
                   <div>
                     <div className="font-bold text-gray-800">Marketing Budget</div>
-                    <div className="text-sm text-gray-600">Pro User für TikTok Engagement</div>
+                    <div className="text-sm text-gray-600"><TranslatedText text="Pro User für TikTok Engagement" language={language} /></div>
                   </div>
                 </div>
                 
@@ -1931,15 +1931,15 @@ export default function TiktokTab({ language }: TiktokTabProps) {
                   <span className="text-xl">📊</span>
                   <div>
                     <div className="font-bold text-gray-800">Dein Level</div>
-                    <div className="text-sm text-gray-600">Aktuell: Level {userData && getLevelAndExpRange(userData.expTotal || 0).level}</div>
+                    <div className="text-sm text-gray-600"><TranslatedText text="Aktuell: Level" language={language} /> {userData && getLevelAndExpRange(userData.expTotal || 0).level}</div>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
                   <span className="text-xl">💎</span>
                   <div>
-                    <div className="font-bold text-gray-800">D.FAITH Preis</div>
-                    <div className="text-sm text-gray-600">Aktueller Marktpreis</div>
+                    <div className="font-bold text-gray-800"><TranslatedText text="D.FAITH Preis" language={language} /></div>
+                    <div className="text-sm text-gray-600"><TranslatedText text="Aktueller Marktpreis" language={language} /></div>
                   </div>
                 </div>
               </div>
@@ -1947,7 +1947,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
             
             <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-3 mb-4">
               <p className="text-cyan-800 font-medium text-sm">
-                ⚡ <strong>Aktuell:</strong> +{userData?.miningpower || 0} D.Faith pro TikTok
+                ⚡ <strong><TranslatedText text="Aktuell:" language={language} /></strong> +{userData?.miningpower || 0} D.Faith <TranslatedText text="pro TikTok" language={language} />
               </p>
             </div>
             
@@ -1955,7 +1955,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
               onClick={() => setShowMiningPowerModal(false)}
               className="w-full bg-gradient-to-r from-pink-400 to-cyan-500 hover:from-pink-500 hover:to-cyan-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
             >
-              ✅ Verstanden
+              ✅ <TranslatedText text="Verstanden" language={language} />
             </button>
           </div>
         </div>
