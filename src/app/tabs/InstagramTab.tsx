@@ -6,6 +6,7 @@ import { validateBaseAddress, validateBaseAddressRealTime } from '../utils/walle
 import { useActiveAccount } from 'thirdweb/react';
 import { FaInstagram, FaFacebookF, FaInfoCircle } from 'react-icons/fa';
 import { FaTiktok } from 'react-icons/fa6';
+import { TranslatedText } from '../components/TranslatedText';
 import type { SupportedLanguage } from "../utils/deepLTranslation";
 
 interface UserData {
@@ -435,8 +436,12 @@ export default function InstagramTab({ language }: InstagramTabProps) {
       >
         <div className="text-white text-center">
           <div className="animate-spin w-20 h-20 border-4 border-white/20 border-t-white rounded-full mx-auto mb-8"></div>
-          <p className="text-2xl font-bold mb-3">Instagram Tab wird geladen...</p>
-          <p className="text-lg opacity-90 mb-2">Bitte warten Sie einen Moment</p>
+          <p className="text-2xl font-bold mb-3">
+            <TranslatedText text="Instagram Tab wird geladen..." language={language} />
+          </p>
+          <p className="text-lg opacity-90 mb-2">
+            <TranslatedText text="Bitte warten Sie einen Moment" language={language} />
+          </p>
           <div className="flex items-center justify-center gap-2 text-sm opacity-70">
             <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
             <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
@@ -465,8 +470,12 @@ export default function InstagramTab({ language }: InstagramTabProps) {
         >
           <div className="text-center text-white">
             <div className="animate-spin w-16 h-16 border-4 border-white/30 border-t-white rounded-full mx-auto mb-6"></div>
-            <p className="text-xl font-bold mb-2">Wird verarbeitet...</p>
-            <p className="text-sm opacity-80">Bitte warten Sie einen Moment</p>
+            <p className="text-xl font-bold mb-2">
+              <TranslatedText text="Wird verarbeitet..." language={language} />
+            </p>
+            <p className="text-sm opacity-80">
+              <TranslatedText text="Bitte warten Sie einen Moment" language={language} />
+            </p>
           </div>
         </div>
       )}
@@ -548,7 +557,9 @@ export default function InstagramTab({ language }: InstagramTabProps) {
           {/* System Check */}
           <div className="bg-black/50 border border-pink-500/50 rounded-2xl p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
-              <div className="font-bold text-lg bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent">🔍 System Check</div>
+              <div className="font-bold text-lg bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent">
+                🔍 <TranslatedText text="System Check" language={language} />
+              </div>
         {!showLeaderboardModal && (
                 <button
                   type="button"
@@ -565,19 +576,19 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             
             <div className="space-y-2 text-sm text-white">
               <div className="flex justify-between">
-                <span>❤️ Like</span>
+                <span>❤️ <TranslatedText text="Like" language={language} /></span>
                 <span>{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
               <div className="flex justify-between">
-                <span>💬 Kommentar</span>
+                <span>💬 <TranslatedText text="Kommentar" language={language} /></span>
                 <span>{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
               <div className="flex justify-between">
-                <span>📣 Story</span>
+                <span>📣 <TranslatedText text="Story" language={language} /></span>
                 <span>{userData.story === 'true' ? '✅' : '❌'} +20 EXP</span>
               </div>
               <div className="flex justify-between">
-                <span>💾 Save</span>
+                <span>💾 <TranslatedText text="Save" language={language} /></span>
                 <span>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
             </div>
@@ -592,7 +603,9 @@ export default function InstagramTab({ language }: InstagramTabProps) {
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               <div className="relative flex items-center justify-center gap-1">
                 <span className="text-xl animate-pulse">✨</span>
-                <span className="tracking-wider">Sammle EXP</span>
+                <span className="tracking-wider">
+                  <TranslatedText text="Sammle EXP" language={language} />
+                </span>
               </div>
             </button>
             <button 
@@ -602,7 +615,9 @@ export default function InstagramTab({ language }: InstagramTabProps) {
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               <div className="relative flex items-center justify-center gap-1">
                 <span className="text-xl animate-bounce">🪙</span>
-                <span className="tracking-wider">Claim</span>
+                <span className="tracking-wider">
+                  <TranslatedText text="Claim" language={language} />
+                </span>
               </div>
             </button>
           </div>
@@ -621,7 +636,9 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             >
               ×
             </button>
-            <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">✨ Sammle mehr EXP!</h2>
+            <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
+              ✨ <TranslatedText text="Sammle mehr EXP!" language={language} />
+            </h2>
             <button 
               onClick={() => {
                 setShowUpgradeModal(false);
@@ -631,7 +648,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             >
               <span className="text-xl">❤️</span>
               <span className="text-xl">💾</span>
-              <span>Like + Save</span>
+              <span><TranslatedText text="Like + Save" language={language} /></span>
             </button>
             <button 
               onClick={() => {
@@ -641,7 +658,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
               className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-rose-600 text-white p-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3"
             >
               <span className="text-xl">📣</span>
-              <span>Story teilen</span>
+              <span><TranslatedText text="Story teilen" language={language} /></span>
             </button>
           </div>
         </div>
@@ -661,20 +678,20 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             </button>
             <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
               <span className="text-xl animate-bounce">🪙</span>
-              <span>D.FAITH Claim</span>
+              <span><TranslatedText text="D.FAITH Claim" language={language} /></span>
             </h2>
             <div className="text-xs text-gray-600 mb-4 text-center">
-              💡 Wallet ändern? Schreib mir eine DM mit &quot;Wallet&quot; auf Instagram
+              💡 <TranslatedText text="Wallet ändern? Schreib mir eine DM mit &quot;Wallet&quot; auf Instagram" language={language} />
             </div>
             
             {/* Automatische Wallet-Erkennung */}
             {account?.address ? (
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4 text-center">
                 <p className="text-green-800 mb-2 font-semibold">
-                  ✅ Eingeloggte Wallet erkannt!
+                  ✅ <TranslatedText text="Eingeloggte Wallet erkannt!" language={language} />
                 </p>
                 <p className="text-gray-700 text-sm mb-3">
-                  Deine verbundene Wallet-Adresse wird automatisch für den Claim verwendet:
+                  <TranslatedText text="Deine verbundene Wallet-Adresse wird automatisch für den Claim verwendet:" language={language} />
                 </p>
                 <div className="bg-white border border-green-300 rounded-lg p-3 mb-3">
                   <p className="font-mono text-sm text-green-700 break-all">
@@ -682,19 +699,25 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                   </p>
                 </div>
                 <p className="text-gray-800 mb-2">
-                  Du kannst <strong className="text-green-600">+{userData.miningpower} D.FAITH</strong> für deine Instagram Aktivität claimen!
+                  <TranslatedText text="Du kannst" language={language} /> <strong className="text-green-600">+{userData.miningpower} D.FAITH</strong> <TranslatedText text="für deine Instagram Aktivität claimen!" language={language} />
                 </p>
               </div>
             ) : (
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 text-gray-800 text-base flex flex-col items-center animate-pulse">
-                <span className="font-semibold mb-3 text-center">Du hast noch keine gültige Base Chain Wallet hinterlegt.<br/>Erstelle jetzt deine Wallet, um deine Belohnung zu erhalten!</span>
+                <span className="font-semibold mb-3 text-center">
+                  <TranslatedText text="Du hast noch keine gültige Base Chain Wallet hinterlegt." language={language} />
+                  <br/>
+                  <TranslatedText text="Erstelle jetzt deine Wallet, um deine Belohnung zu erhalten!" language={language} />
+                </span>
                 <button
                   className="w-full mt-2 mb-2 py-3 px-4 rounded-xl font-semibold bg-gradient-to-r from-pink-400 via-pink-500 to-rose-500 text-white shadow-lg hover:from-pink-500 hover:to-rose-600 active:from-pink-600 active:to-rose-700 transition text-base border border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-400 text-center block"
                   onClick={() => router.push("/wallet")}
                 >
-                  🚀 Wallet jetzt anlegen
+                  🚀 <TranslatedText text="Wallet jetzt anlegen" language={language} />
                 </button>
-                <span className="text-xs text-gray-500 mt-1">Du findest den Wallet Tab auch oben im Menü.</span>
+                <span className="text-xs text-gray-500 mt-1">
+                  <TranslatedText text="Du findest den Wallet Tab auch oben im Menü." language={language} />
+                </span>
               </div>
             )}
             <button 
@@ -703,7 +726,12 @@ export default function InstagramTab({ language }: InstagramTabProps) {
               className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 hover:shadow-lg disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <span className="text-xl">✅</span>
-              <span>{account?.address ? 'Mit verbundener Wallet claimen' : 'Wallet verbinden um zu claimen'}</span>
+              <span>
+                {account?.address ? 
+                  <TranslatedText text="Mit verbundener Wallet claimen" language={language} /> : 
+                  <TranslatedText text="Wallet verbinden um zu claimen" language={language} />
+                }
+              </span>
             </button>
             {claimStatus && (
               <div className={`mb-4 p-3 rounded-xl ${
@@ -726,10 +754,14 @@ export default function InstagramTab({ language }: InstagramTabProps) {
       {showLikeSaveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">✨ Like & Save Verification</h2>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
+              ✨ <TranslatedText text="Like & Save Verification" language={language} />
+            </h2>
             
             <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-4">
-              <p className="font-semibold mb-3 text-pink-800">1️⃣ Entferne alle Likes und Saves von meinem Beitrag</p>
+              <p className="font-semibold mb-3 text-pink-800">
+                1️⃣ <TranslatedText text="Entferne alle Likes und Saves von meinem Beitrag" language={language} />
+              </p>
               <button 
                 onClick={() => setShowConfirmInitial(true)}
                 disabled={initialValues !== null || loading}
@@ -742,18 +774,20 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-gray-600 rounded-full"></div>
-                    <span>Erfasse Daten...</span>
+                    <span><TranslatedText text="Erfasse Daten..." language={language} /></span>
                   </div>
-                ) : initialValues !== null ? '✅ Werte bereits erfasst' : '✅ Check aktuelle Werte'}
+                ) : initialValues !== null ? 
+                  <TranslatedText text="✅ Werte bereits erfasst" language={language} /> : 
+                  <TranslatedText text="✅ Check aktuelle Werte" language={language} />}
               </button>
               {initialValues && (
                 <div className="bg-white border border-purple-300 rounded-xl p-3 mt-3 text-sm">
                   <div className="flex justify-between">
-                    <span>Likes:</span>
+                    <span><TranslatedText text="Likes:" language={language} /></span>
                     <span className="font-bold text-emerald-600">{initialValues.likes}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Saves:</span>
+                    <span><TranslatedText text="Saves:" language={language} /></span>
                     <span className="font-bold text-emerald-600">{initialValues.saves}</span>
                   </div>
                 </div>
@@ -761,7 +795,9 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             </div>
             
             <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
-              <p className="font-semibold mb-3 text-green-800">2️⃣ Like und speichere den Beitrag erneut!</p>
+              <p className="font-semibold mb-3 text-green-800">
+                2️⃣ <TranslatedText text="Like und speichere den Beitrag erneut!" language={language} />
+              </p>
               <button 
                 onClick={() => setShowConfirmAfter(true)}
                 disabled={loading || !initialValues || !!afterValues}
@@ -774,18 +810,22 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-gray-600 rounded-full"></div>
-                    <span>Prüfe Änderungen...</span>
+                    <span><TranslatedText text="Prüfe Änderungen..." language={language} /></span>
                   </div>
-                ) : !initialValues ? '⚠️ Zuerst Schritt 1 ausführen' : afterValues ? '✅ Neue Werte erfasst' : '✅ Check neue Werte'}
+                ) : !initialValues ? 
+                  <TranslatedText text="⚠️ Zuerst Schritt 1 ausführen" language={language} /> : 
+                  afterValues ? 
+                    <TranslatedText text="✅ Neue Werte erfasst" language={language} /> : 
+                    <TranslatedText text="✅ Check neue Werte" language={language} />}
               </button>
               {afterValues && (
                 <div className="bg-white border border-green-300 rounded-xl p-3 mt-3 text-sm">
                   <div className="flex justify-between">
-                    <span>Likes:</span>
+                    <span><TranslatedText text="Likes:" language={language} /></span>
                     <span className="font-bold text-green-600">{afterValues.likes}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Saves:</span>
+                    <span><TranslatedText text="Saves:" language={language} /></span>
                     <span className="font-bold text-green-600">{afterValues.saves}</span>
                   </div>
                 </div>
@@ -797,8 +837,12 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                 {expGained && expGained.total > 0 ? (
                   <>
                     <div className="text-center mb-3">
-                      <p className="text-green-700 font-bold text-lg">🎉 Glückwunsch!</p>
-                      <p className="text-green-600 text-sm">Du hast erfolgreich EXP gesammelt:</p>
+                      <p className="text-green-700 font-bold text-lg">
+                        🎉 <TranslatedText text="Glückwunsch!" language={language} />
+                      </p>
+                      <p className="text-green-600 text-sm">
+                        <TranslatedText text="Du hast erfolgreich EXP gesammelt:" language={language} />
+                      </p>
                     </div>
                     
                     <div className="space-y-2 mb-4">
@@ -816,20 +860,28 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                       )}
                       <div className="border-t border-green-300 pt-2 mt-2">
                         <div className="flex justify-between font-bold">
-                          <span className="text-green-700">Gesamt EXP:</span>
+                          <span className="text-green-700">
+                            <TranslatedText text="Gesamt EXP:" language={language} />
+                          </span>
                           <span className="text-green-600 text-lg">+{expGained.total} EXP</span>
                         </div>
                       </div>
                     </div>
                     
                     <div className="text-center mb-4">
-                      <p className="text-green-600 text-xs mb-3">Lade die Seite neu, um deine neuen EXP zu sehen!</p>
+                      <p className="text-green-600 text-xs mb-3">
+                        <TranslatedText text="Lade die Seite neu, um deine neuen EXP zu sehen!" language={language} />
+                      </p>
                     </div>
                   </>
                 ) : (
                   <div className="text-center mb-4">
-                    <p className="text-orange-700 font-bold text-lg">😔 Keine neuen Interaktionen</p>
-                    <p className="text-orange-600 text-sm mb-3">Es wurden keine neuen Likes oder Saves erkannt. Du kannst die Werte zurücksetzen und es erneut versuchen.</p>
+                    <p className="text-orange-700 font-bold text-lg">
+                      😔 <TranslatedText text="Keine neuen Interaktionen" language={language} />
+                    </p>
+                    <p className="text-orange-600 text-sm mb-3">
+                      <TranslatedText text="Es wurden keine neuen Likes oder Saves erkannt. Du kannst die Werte zurücksetzen und es erneut versuchen." language={language} />
+                    </p>
                   </div>
                 )}
                 
@@ -850,7 +902,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                       : 'bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 text-white'
                   }`}
                 >
-                  🔄 Seite neu laden
+                  🔄 <TranslatedText text="Seite neu laden" language={language} />
                 </button>
               </div>
             )}
@@ -860,7 +912,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                 onClick={() => setShowLikeSaveModal(false)}
                 className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
               >
-                ❌ Schließen
+                ❌ <TranslatedText text="Schließen" language={language} />
               </button>
             </div>
           </div>
@@ -880,10 +932,13 @@ export default function InstagramTab({ language }: InstagramTabProps) {
               ×
             </button>
             <div className="text-6xl mb-4">📣</div>
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">Story teilen</h2>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
+              <TranslatedText text="Story teilen" language={language} />
+            </h2>
             <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-700 leading-relaxed">
-                Bitte teile meinen Beitrag in deiner Instagram-Story<br/><strong className="text-pink-600">@dawidfaith</strong>, damit du dein Upgrade erhältst.
+                <TranslatedText text="Bitte teile meinen Beitrag in deiner Instagram-Story" language={language} />
+                <br/><strong className="text-pink-600">@dawidfaith</strong>, <TranslatedText text="damit du dein Upgrade erhältst." language={language} />
               </p>
             </div>
           </div>
@@ -902,7 +957,9 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             >
               ×
             </button>
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">✨ Deine EXP-Quellen</h2>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
+              ✨ <TranslatedText text="Deine EXP-Quellen" language={language} />
+            </h2>
             <div className="text-left space-y-3 mb-6">
               <div className="flex items-center gap-3 border-l-4 border-purple-500 pl-3 bg-purple-50 py-2 rounded-r-xl">
                 <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
@@ -941,7 +998,9 @@ export default function InstagramTab({ language }: InstagramTabProps) {
               </div>
             </div>
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-4 mb-6">
-              <p className="text-sm text-gray-700 font-medium">💡 Mehr EXP = schnelleres Level-Up. Nutze alle Plattformen! 🚀</p>
+              <p className="text-sm text-gray-700 font-medium">
+                💡 <TranslatedText text="Mehr EXP = schnelleres Level-Up. Nutze alle Plattformen! 🚀" language={language} />
+              </p>
             </div>
           </div>
         </div>
@@ -952,9 +1011,13 @@ export default function InstagramTab({ language }: InstagramTabProps) {
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
             <div className="text-5xl mb-4">⚠️</div>
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Bestätigung erforderlich</h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-800">
+              <TranslatedText text="Bestätigung erforderlich" language={language} />
+            </h2>
             <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 mb-4">
-              <p className="text-purple-800 leading-relaxed">Bitte entferne alle Likes und Saves von meinem Beitrag – danach werden alle aktuellen Zahlen gespeichert.</p>
+              <p className="text-purple-800 leading-relaxed">
+                <TranslatedText text="Bitte entferne alle Likes und Saves von meinem Beitrag – danach werden alle aktuellen Zahlen gespeichert." language={language} />
+              </p>
             </div>
             <div className="flex gap-3">
               <button 
@@ -965,13 +1028,13 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                 }}
                 className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
               >
-                ✅ Ja, fortfahren
+                ✅ <TranslatedText text="Ja, fortfahren" language={language} />
               </button>
               <button 
                 onClick={() => setShowConfirmInitial(false)}
                 className="flex-1 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
               >
-                ❌ Abbrechen
+                ❌ <TranslatedText text="Abbrechen" language={language} />
               </button>
             </div>
           </div>
@@ -983,9 +1046,13 @@ export default function InstagramTab({ language }: InstagramTabProps) {
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
             <div className="text-5xl mb-4">🎯</div>
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Finale Bestätigung</h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-800">
+              <TranslatedText text="Finale Bestätigung" language={language} />
+            </h2>
             <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
-              <p className="text-green-800 leading-relaxed">Bitte Like und speichere den Beitrag erneut, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert.</p>
+              <p className="text-green-800 leading-relaxed">
+                <TranslatedText text="Bitte Like und speichere den Beitrag erneut, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert." language={language} />
+              </p>
             </div>
             <div className="flex gap-3">
               <button 
@@ -996,13 +1063,13 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                 }}
                 className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
               >
-                ✅ Ja, fortfahren
+                ✅ <TranslatedText text="Ja, fortfahren" language={language} />
               </button>
               <button 
                 onClick={() => setShowConfirmAfter(false)}
                 className="flex-1 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
               >
-                ❌ Abbrechen
+                ❌ <TranslatedText text="Abbrechen" language={language} />
               </button>
             </div>
           </div>
@@ -1025,27 +1092,29 @@ export default function InstagramTab({ language }: InstagramTabProps) {
               <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
                 <span className="text-2xl">⚠️</span>
               </div>
-              <p className="text-lg font-bold text-gray-900">Versuch bereits unternommen</p>
+              <p className="text-lg font-bold text-gray-900">
+                <TranslatedText text="Versuch bereits unternommen" language={language} />
+              </p>
             </div>
             <div className="text-center space-y-3">
               <p className="text-gray-700">
-                Es scheint, als hättest du bereits einen Versuch für diesen Beitrag unternommen.
+                <TranslatedText text="Es scheint, als hättest du bereits einen Versuch für diesen Beitrag unternommen." language={language} />
               </p>
               <div className="bg-purple-50 border border-purple-200 rounded-xl p-3">
                 <p className="text-purple-800 font-medium text-sm">
-                  💡 <strong>Nächste Möglichkeit:</strong><br/>
-                  Warte auf meinen nächsten Instagram-Beitrag für eine neue Chance!
+                  💡 <strong><TranslatedText text="Nächste Möglichkeit:" language={language} /></strong><br/>
+                  <TranslatedText text="Warte auf meinen nächsten Instagram-Beitrag für eine neue Chance!" language={language} />
                 </p>
               </div>
               <p className="text-xs text-gray-500">
-                Jeder Beitrag bietet neue Möglichkeiten für EXP-Belohnungen.
+                <TranslatedText text="Jeder Beitrag bietet neue Möglichkeiten für EXP-Belohnungen." language={language} />
               </p>
             </div>
             <button 
               className="w-full mt-4 py-2 rounded-xl font-semibold bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow transition-all duration-300 transform hover:scale-105"
               onClick={() => setShowNoValuesFoundModal(false)}
             >
-              Verstanden
+              <TranslatedText text="Verstanden" language={language} />
             </button>
           </div>
         </div>
@@ -1066,20 +1135,24 @@ export default function InstagramTab({ language }: InstagramTabProps) {
               <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                 <span className="text-3xl text-white">🔒</span>
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Profil nicht gefunden</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                <TranslatedText text="Profil nicht gefunden" language={language} />
+              </h2>
             </div>
             
             <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-800 leading-relaxed mb-4">
-                Dein Profil ist nur durch die <strong className="text-purple-600">Teilnahme an den Beiträgen</strong> von <strong className="text-purple-600">Dawid Faith</strong> erreichbar.
+                <TranslatedText text="Dein Profil ist nur durch die" language={language} /> <strong className="text-purple-600"><TranslatedText text="Teilnahme an den Beiträgen" language={language} /></strong> <TranslatedText text="von" language={language} /> <strong className="text-purple-600">Dawid Faith</strong> <TranslatedText text="erreichbar." language={language} />
               </p>
               <p className="text-gray-600 text-sm">
-                💡 Like, kommentiere und teile seine Beiträge, um Zugang zu erhalten!
+                💡 <TranslatedText text="Like, kommentiere und teile seine Beiträge, um Zugang zu erhalten!" language={language} />
               </p>
             </div>
             
             <div className="space-y-3 mb-6">
-              <p className="text-gray-700 font-medium">📱 Folge Dawid Faith auf Instagram:</p>
+              <p className="text-gray-700 font-medium">
+                📱 <TranslatedText text="Folge Dawid Faith auf Instagram:" language={language} />
+              </p>
               
               <a 
                 href="https://www.instagram.com/dawidfaith?igsh=aTF5dXBoYWxkb2Js"
@@ -1096,7 +1169,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4">
               <p className="text-yellow-800 font-medium text-sm">
-                ⚡ <strong>Tipp:</strong> Nach der Teilnahme kannst du über den speziellen Link auf dein Profil zugreifen!
+                ⚡ <strong><TranslatedText text="Tipp:" language={language} /></strong> <TranslatedText text="Nach der Teilnahme kannst du über den speziellen Link auf dein Profil zugreifen!" language={language} />
               </p>
             </div>
             
@@ -1104,7 +1177,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
               onClick={() => setShowNoUuidModal(false)}
               className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
             >
-              ❌ Verstanden
+              ❌ <TranslatedText text="Verstanden" language={language} />
             </button>
           </div>
         </div>
@@ -1126,36 +1199,50 @@ export default function InstagramTab({ language }: InstagramTabProps) {
               <div className="w-20 h-20 bg-gradient-to-r from-pink-400 to-rose-500 rounded-full flex items-center justify-center">
                 <span className="text-3xl text-white">⛏</span>
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">Mining Power Info</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
+                <TranslatedText text="Mining Power Info" language={language} />
+              </h2>
             </div>
             
             <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-800 leading-relaxed mb-4">
-                Deine <strong className="text-pink-600">Mining Power</strong> ist abhängig von verschiedenen Faktoren:
+                <TranslatedText text="Deine" language={language} /> <strong className="text-pink-600">Mining Power</strong> <TranslatedText text="ist abhängig von verschiedenen Faktoren:" language={language} />
               </p>
               
               <div className="space-y-3 text-left">
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
                   <span className="text-xl">💰</span>
                   <div>
-                    <div className="font-bold text-gray-800">Marketing Budget</div>
-                    <div className="text-sm text-gray-600">Pro User für den aktuellen Beitrag</div>
+                    <div className="font-bold text-gray-800">
+                      <TranslatedText text="Marketing Budget" language={language} />
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <TranslatedText text="Pro User für den aktuellen Beitrag" language={language} />
+                    </div>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
                   <span className="text-xl">📊</span>
                   <div>
-                    <div className="font-bold text-gray-800">Dein Level</div>
-                    <div className="text-sm text-gray-600">Aktuell: Level {level}</div>
+                    <div className="font-bold text-gray-800">
+                      <TranslatedText text="Dein Level" language={language} />
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <TranslatedText text="Aktuell:" language={language} /> Level {level}
+                    </div>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
                   <span className="text-xl">💎</span>
                   <div>
-                    <div className="font-bold text-gray-800">D.FAITH Preis</div>
-                    <div className="text-sm text-gray-600">Aktueller Marktpreis</div>
+                    <div className="font-bold text-gray-800">
+                      <TranslatedText text="D.FAITH Preis" language={language} />
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <TranslatedText text="Aktueller Marktpreis" language={language} />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1163,7 +1250,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             
             <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 mb-4">
               <p className="text-rose-800 font-medium text-sm">
-                ⚡ <strong>Aktuell:</strong> +{userData.miningpower} D.Faith pro Beitrag
+                ⚡ <strong><TranslatedText text="Aktuell:" language={language} /></strong> +{userData.miningpower} D.Faith <TranslatedText text="pro Beitrag" language={language} />
               </p>
             </div>
             
@@ -1171,7 +1258,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
               onClick={() => setShowMiningPowerModal(false)}
               className="w-full bg-gradient-to-r from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
             >
-              ✅ Verstanden
+              ✅ <TranslatedText text="Verstanden" language={language} />
             </button>
           </div>
         </div>
@@ -1185,12 +1272,14 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
               <div className="flex items-center gap-2">
                 <span className="text-yellow-300">🏆</span>
-                <h3 className="text-white font-semibold">Leaderboard</h3>
+                <h3 className="text-white font-semibold">
+                  <TranslatedText text="Leaderboard" language={language} />
+                </h3>
               </div>
               <div className="text-xs text-zinc-400 mr-auto ml-3">
                 {lbData?.timer?.isActive && lbData?.timer?.endDate ? (
                   <span>
-                    Endet in: {formatDuration(new Date(lbData.timer.endDate).getTime() - lbNow)}
+                    <TranslatedText text="Endet in:" language={language} /> {formatDuration(new Date(lbData.timer.endDate).getTime() - lbNow)}
                   </span>
                 ) : null}
               </div>
@@ -1198,7 +1287,9 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             </div>
             <div className="px-4 py-3">
               <div className="bg-zinc-800/60 border border-zinc-700 rounded-md px-2 py-1 flex items-center gap-2 w-full mb-3">
-                <span className="text-zinc-400 text-xs">Suche</span>
+                <span className="text-zinc-400 text-xs">
+                  <TranslatedText text="Suche" language={language} />
+                </span>
                 <input
                   value={lbSearch}
                   onChange={(e) => setLbSearch(e.target.value)}
@@ -1209,16 +1300,24 @@ export default function InstagramTab({ language }: InstagramTabProps) {
               {/* Legende / Kopfzeile */}
               <div className="text-[11px] text-zinc-400 px-3 mb-1 grid grid-cols-[2.25rem_minmax(0,1fr)_3.75rem_5.25rem] gap-3">
                 <div className="opacity-0 select-none">#</div>
-                <div className="text-left">Name</div>
+                <div className="text-left">
+                  <TranslatedText text="Name" language={language} />
+                </div>
                 <div className="text-center">EXP</div>
-                <div className="text-right">Preis</div>
+                <div className="text-right">
+                  <TranslatedText text="Preis" language={language} />
+                </div>
               </div>
               <div className="bg-zinc-900/60 border border-zinc-700 rounded-lg max-h-[24rem] overflow-y-auto overflow-x-hidden">
                 {lbLoading && (
-                  <div className="px-4 py-3 text-zinc-400 text-sm">Lade Leaderboard…</div>
+                  <div className="px-4 py-3 text-zinc-400 text-sm">
+                    <TranslatedText text="Lade Leaderboard…" language={language} />
+                  </div>
                 )}
                 {(lbData?.entries || []).length === 0 && !lbLoading && (
-                  <div className="px-4 py-3 text-zinc-400 text-sm">Keine Einträge gefunden</div>
+                  <div className="px-4 py-3 text-zinc-400 text-sm">
+                    <TranslatedText text="Keine Einträge gefunden" language={language} />
+                  </div>
                 )}
                 {(lbData?.entries || []).filter(e => {
                   if (!lbSearch) return true;
@@ -1280,7 +1379,9 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                   );
                 })}
               </div>
-              <div className="text-[10px] text-zinc-500 mt-2 text-right">Letztes Update: {lbData?.lastUpdated ? new Date(lbData.lastUpdated).toLocaleString() : '-'}</div>
+              <div className="text-[10px] text-zinc-500 mt-2 text-right">
+                <TranslatedText text="Letztes Update:" language={language} /> {lbData?.lastUpdated ? new Date(lbData.lastUpdated).toLocaleString() : '-'}
+              </div>
             </div>
           </div>
         </div>
