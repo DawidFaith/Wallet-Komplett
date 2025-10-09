@@ -565,8 +565,8 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                   type="button"
                   onClick={() => setShowLeaderboardModal(true)}
                   className="relative group w-8 h-8 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 hover:scale-105 transition cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 hover:ring-4 hover:ring-yellow-200/60 hover:shadow-yellow-300/60"
-                  aria-label="Leaderboard öffnen"
-                  title="Leaderboard öffnen"
+                  aria-label={language === 'de' ? "Leaderboard öffnen" : language === 'en' ? "Open Leaderboard" : "Otwórz ranking"}
+                  title={language === 'de' ? "Leaderboard öffnen" : language === 'en' ? "Open Leaderboard" : "Otwórz ranking"}
                 >
                   <span className="absolute -inset-1 rounded-full bg-yellow-400/20 blur-sm opacity-60 group-hover:opacity-80 transition pointer-events-none"></span>
           <span className="inline-block animate-bounce">🏆</span>
@@ -631,7 +631,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
               onClick={() => setShowUpgradeModal(false)}
-              aria-label="Schließen"
+              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
               style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
             >
               ×
@@ -671,7 +671,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
               onClick={() => setShowClaimModal(false)}
-              aria-label="Schließen"
+              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
               style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
             >
               ×
@@ -926,7 +926,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
               onClick={() => setShowStoryHelpModal(false)}
-              aria-label="Schließen"
+              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
               style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
             >
               ×
@@ -952,7 +952,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
               onClick={() => setShowInfoModal(false)}
-              aria-label="Schließen"
+              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
               style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
             >
               ×
@@ -1083,7 +1083,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
               onClick={() => setShowNoValuesFoundModal(false)}
-              aria-label="Schließen"
+              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
               style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
             >
               ×
@@ -1126,7 +1126,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
               onClick={() => setShowNoUuidModal(false)}
-              aria-label="Schließen"
+              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
               style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
             >
               ×
@@ -1190,7 +1190,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
               onClick={() => setShowMiningPowerModal(false)}
-              aria-label="Schließen"
+              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
               style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
             >
               ×
@@ -1293,7 +1293,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                 <input
                   value={lbSearch}
                   onChange={(e) => setLbSearch(e.target.value)}
-                  placeholder="@handle oder Name"
+                  placeholder={language === 'de' ? "@handle oder Name" : language === 'en' ? "@handle or name" : "@handle lub nazwa"}
                   className="bg-transparent outline-none text-sm text-white placeholder:text-zinc-500 w-full"
                 />
               </div>

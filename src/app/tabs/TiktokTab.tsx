@@ -94,7 +94,7 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
     if (username.trim() && claimWalletAddress) {
       // Wallet-Adresse validieren
       if (!isValidBaseChainAddress(claimWalletAddress)) {
-        setWalletError('Ungültige Base Chain Wallet-Adresse');
+        setWalletError(language === 'de' ? 'Ungültige Base Chain Wallet-Adresse' : language === 'en' ? 'Invalid Base Chain wallet address' : 'Nieprawidłowy adres portfela Base Chain');
         return;
       }
       
@@ -227,7 +227,7 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
                   Lädt...
                 </div>
               ) : (
-                'Bestätigen'
+                language === 'de' ? 'Bestätigen' : language === 'en' ? 'Confirm' : 'Potwierdź'
               )}
             </button>
           </div>
@@ -432,7 +432,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             saves: savesGained,
             total: totalExp
           });
-          setConfirmationMessage('🎉 Glückwunsch! Du hast erfolgreich EXP gesammelt!');
+          setConfirmationMessage(language === 'de' ? '🎉 Glückwunsch! Du hast erfolgreich EXP gesammelt!' : language === 'en' ? '🎉 Congratulations! You have successfully collected EXP!' : '🎉 Gratulacje! Pomyślnie zebrałeś EXP!');
         }
       }
     } catch (error) {
@@ -519,7 +519,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
         
         // Prüfe den Response-Typ
         if (responseData.status === 'success') {
-          setClaimStatus('✅ Claim erfolgreich gesendet!');
+          setClaimStatus(language === 'de' ? '✅ Claim erfolgreich gesendet!' : language === 'en' ? '✅ Claim sent successfully!' : '✅ Claim wysłany pomyślnie!');
           setTimeout(() => {
             setShowClaimModal(false);
             setClaimStatus('');
@@ -527,28 +527,28 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           }, 2000);
         } else if (responseData.status === 'Info') {
           // Info Response - bereits geclaimed
-          setClaimStatus('ℹ️ Du hast bereits geclaimed! Warte bis zum nächsten Claim-Zeitraum.');
+          setClaimStatus(language === 'de' ? 'ℹ️ Du hast bereits geclaimed! Warte bis zum nächsten Claim-Zeitraum.' : language === 'en' ? 'ℹ️ You have already claimed! Wait for the next claim period.' : 'ℹ️ Już odebrałeś nagrodę! Poczekaj do następnego okresu.');
           setTimeout(() => {
             setClaimStatus('');
           }, 4000);
           // KEINE Weiterleitung bei Info!
         } else {
           // Fallback für andere Success-Responses
-          setClaimStatus('✅ Claim erfolgreich gesendet!');
+          setClaimStatus(language === 'de' ? '✅ Claim erfolgreich gesendet!' : language === 'en' ? '✅ Claim sent successfully!' : '✅ Claim wysłany pomyślnie!');
           setTimeout(() => {
             setShowClaimModal(false);
             setClaimStatus('');
           }, 2000);
         }
       } else {
-        setClaimStatus('❌ Fehler beim Claim. Bitte versuche es erneut.');
+        setClaimStatus(language === 'de' ? '❌ Fehler beim Claim. Bitte versuche es erneut.' : language === 'en' ? '❌ Claim error. Please try again.' : '❌ Błąd podczas odbioru. Spróbuj ponownie.');
         setTimeout(() => {
           setClaimStatus('');
         }, 3000);
       }
     } catch (error) {
       console.error('Fehler beim Claim:', error);
-      setClaimStatus('❌ Netzwerkfehler. Bitte überprüfe deine Verbindung.');
+      setClaimStatus(language === 'de' ? '❌ Netzwerkfehler. Bitte überprüfe deine Verbindung.' : language === 'en' ? '❌ Network error. Please check your connection.' : '❌ Błąd sieci. Sprawdź połączenie.');
       setTimeout(() => {
         setClaimStatus('');
       }, 3000);
@@ -643,8 +643,8 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                   type="button"
                   onClick={() => setShowLeaderboardModal(true)}
                   className="relative group w-8 h-8 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 hover:scale-105 transition cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 hover:ring-4 hover:ring-yellow-200/60 hover:shadow-yellow-300/60"
-                  aria-label="Leaderboard öffnen"
-                  title="Leaderboard öffnen"
+                  aria-label={language === 'de' ? "Leaderboard öffnen" : language === 'en' ? "Open Leaderboard" : "Otwórz ranking"}
+                  title={language === 'de' ? "Leaderboard öffnen" : language === 'en' ? "Open Leaderboard" : "Otwórz ranking"}
                 >
                   <span className="absolute -inset-1 rounded-full bg-yellow-400/20 blur-sm opacity-60 group-hover:opacity-80 transition pointer-events-none"></span>
                   <span className="inline-block animate-bounce">🏆</span>
@@ -726,7 +726,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 <input
                   value={lbSearch}
                   onChange={(e) => setLbSearch(e.target.value)}
-                  placeholder="@handle oder Name"
+                  placeholder={language === 'de' ? "@handle oder Name" : language === 'en' ? "@handle or name" : "@handle lub nazwa"}
                   className="bg-transparent outline-none text-sm text-white placeholder:text-zinc-500 w-full"
                 />
               </div>
@@ -876,7 +876,11 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                     <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-white rounded-full"></div>
                     <span>Prüfe Änderungen...</span>
                   </div>
-                ) : !initialValues ? '⚠️ Zuerst Schritt 1 ausführen' : afterValues ? '✅ Neue Werte erfasst' : '✅ Check neue Werte'}
+                ) : !initialValues ? 
+                  (language === 'de' ? '⚠️ Zuerst Schritt 1 ausführen' : language === 'en' ? '⚠️ Complete step 1 first' : '⚠️ Najpierw wykonaj krok 1') : 
+                  afterValues ? 
+                    (language === 'de' ? '✅ Neue Werte erfasst' : language === 'en' ? '✅ New values recorded' : '✅ Nowe wartości zarejestrowane') : 
+                    (language === 'de' ? '✅ Check neue Werte' : language === 'en' ? '✅ Check new values' : '✅ Sprawdź nowe wartości')}
               </button>
               {afterValues && (
                 <div className="bg-black/30 border border-cyan-500/30 rounded-xl p-3 mt-3 text-sm">
@@ -988,7 +992,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               <div className="bg-black/30 border border-cyan-500/20 rounded-lg p-3 mb-4">
                 <div className="text-xs text-cyan-300 mb-1"><TranslatedText text="Wallet Adresse:" language={language} /></div>
                 <div className="font-mono text-sm text-cyan-100 break-all">
-                  {userData.walletAddress || walletInput || 'Nicht verfügbar'}
+                  {userData.walletAddress || walletInput || (language === 'de' ? 'Nicht verfügbar' : language === 'en' ? 'Not available' : 'Niedostępne')}
                 </div>
               </div>
             </div>
@@ -1318,13 +1322,13 @@ export default function TiktokTab({ language }: TiktokTabProps) {
       });
 
       if (response.ok) {
-        setMessage('Anfrage erfolgreich gesendet!');
+        setMessage(language === 'de' ? 'Anfrage erfolgreich gesendet!' : language === 'en' ? 'Request sent successfully!' : 'Żądanie wysłane pomyślnie!');
       } else {
-        setMessage('Fehler beim Senden der Anfrage. Bitte versuchen Sie es erneut.');
+        setMessage(language === 'de' ? 'Fehler beim Senden der Anfrage. Bitte versuchen Sie es erneut.' : language === 'en' ? 'Error sending request. Please try again.' : 'Błąd wysyłania żądania. Spróbuj ponownie.');
       }
     } catch (error) {
       console.error('Webhook error:', error);
-      setMessage('Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.');
+      setMessage(language === 'de' ? 'Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.' : language === 'en' ? 'Network error. Please check your connection.' : 'Błąd sieci. Sprawdź połączenie.');
     } finally {
       setIsLoading(false);
     }
@@ -1356,20 +1360,20 @@ export default function TiktokTab({ language }: TiktokTabProps) {
         
         // Verschiedene Status-Responses behandeln
         if (normalizedStatus === 'success') {
-          setConfirmationMessage('✅ Teilnahme erfolgreich bestätigt!');
+          setConfirmationMessage(language === 'de' ? '✅ Teilnahme erfolgreich bestätigt!' : language === 'en' ? '✅ Participation successfully confirmed!' : '✅ Uczestnictwo potwierdzone pomyślnie!');
           // Modal wird nach 4 Sekunden geschlossen bei Erfolg
           setTimeout(() => {
             setConfirmationMessage('');
             setIsCheckModalOpen(false);
           }, 4000);
         } else if (normalizedStatus === 'wallet account') {
-          setConfirmationMessage('⚠️ Die angegebene Wallet stimmt nicht mit deinem Account überein. Falls du die Adresse ändern möchtest, schreibe eine DM an @dawidfaith mit dem Stichwort "Wallet".');
+          setConfirmationMessage(language === 'de' ? '⚠️ Die angegebene Wallet stimmt nicht mit deinem Account überein. Falls du die Adresse ändern möchtest, schreibe eine DM an @dawidfaith mit dem Stichwort "Wallet".' : language === 'en' ? '⚠️ The provided wallet does not match your account. If you want to change the address, send a DM to @dawidfaith with the keyword "Wallet".' : '⚠️ Podany portfel nie pasuje do Twojego konta. Jeśli chcesz zmienić adres, wyślij wiadomość do @dawidfaith ze słowem "Wallet".');
         } else if (normalizedStatus === 'wallet in use') {
           setConfirmationMessage('❌ Diese Wallet wird bereits verwendet. Bitte verwende eine andere Wallet-Adresse.');
         } else if (normalizedStatus === 'comment') {
           setConfirmationMessage('💬 Es wurde noch kein Kommentar von dir gefunden. Bitte kommentiere den Beitrag und versuche es erneut.');
         } else if (normalizedStatus === 'evalued') {
-          setConfirmationMessage('ℹ️ Du hast deine Teilnahme bereits bestätigt.');
+          setConfirmationMessage(language === 'de' ? 'ℹ️ Du hast deine Teilnahme bereits bestätigt.' : language === 'en' ? 'ℹ️ You have already confirmed your participation.' : 'ℹ️ Już potwierdziłeś swój udział.');
         } else {
           setConfirmationMessage('❌ Teilnahme fehlgeschlagen. Bitte versuche es erneut.');
         }
@@ -1378,7 +1382,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
       }
     } catch (error) {
       console.error('Webhook error:', error);
-      setConfirmationMessage('❌ Netzwerkfehler. Bitte überprüfe deine Verbindung.');
+      setConfirmationMessage(language === 'de' ? '❌ Netzwerkfehler. Bitte überprüfe deine Verbindung.' : language === 'en' ? '❌ Network error. Please check your connection.' : '❌ Błąd sieci. Sprawdź połączenie.');
     } finally {
       setIsLoading(false);
     }
@@ -1406,7 +1410,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
         
         // Prüfe auf Fehlermeldung "Benutzer nicht gefunden"
         if (responseData.error === 'Benutzer nicht gefunden') {
-          setMessage('❌ Falsche Kombination: Benutzer nicht gefunden');
+          setMessage(language === 'de' ? '❌ Falsche Kombination: Benutzer nicht gefunden' : language === 'en' ? '❌ Wrong combination: User not found' : '❌ Błędna kombinacja: Użytkownik nie znaleziony');
           return; // Userboard nicht laden bei Fehler
         }
         
@@ -1444,7 +1448,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
             walletAddress: responseData.walletAddress || walletAddress
           });
           setIsLoggedIn(true);
-          setMessage('Login erfolgreich!');
+          setMessage(language === 'de' ? 'Login erfolgreich!' : language === 'en' ? 'Login successful!' : 'Logowanie udane!');
           setIsLoginModalOpen(false); // Modal nur bei erfolgreichem Login schließen
         } else {
           // Fallback für unbekannte User - zeige Demo-Daten
@@ -1466,16 +1470,16 @@ export default function TiktokTab({ language }: TiktokTabProps) {
             walletAddress: walletAddress
           });
           setIsLoggedIn(true);
-          setMessage('Login erfolgreich!');
+          setMessage(language === 'de' ? 'Login erfolgreich!' : language === 'en' ? 'Login successful!' : 'Logowanie udane!');
           setIsLoginModalOpen(false); // Modal nur bei erfolgreichem Login schließen
         }
       } else {
         // API Antwort war nicht erfolgreich
         const errorData = await response.json().catch(() => ({}));
         if (errorData.error === 'Benutzer nicht gefunden') {
-          setMessage('❌ Falsche Kombination: Benutzer nicht gefunden');
+          setMessage(language === 'de' ? '❌ Falsche Kombination: Benutzer nicht gefunden' : language === 'en' ? '❌ Wrong combination: User not found' : '❌ Błędna kombinacja: Użytkownik nie znaleziony');
         } else {
-          setMessage('❌ Fehler beim Login. Bitte versuche es erneut.');
+          setMessage(language === 'de' ? '❌ Fehler beim Login. Bitte versuche es erneut.' : language === 'en' ? '❌ Login error. Please try again.' : '❌ Błąd logowania. Spróbuj ponownie.');
         }
       }
     } catch (error) {
@@ -1634,7 +1638,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
           setIsCheckModalOpen(false);
           setConfirmationMessage('');
         }}
-        title={language === 'de' ? "Bestätige deine Teilnahme" : "Confirm your participation"}
+        title={language === 'de' ? "Bestätige deine Teilnahme" : language === 'en' ? "Confirm your participation" : "Potwierdź swój udział"}
         onSubmit={handleCheck}
         isLoading={isLoading}
         router={router}
@@ -1666,7 +1670,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
               onClick={() => setShowUpgradeModal(false)}
-              aria-label="Schließen"
+              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
               style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
             >
               ×
@@ -1705,7 +1709,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
               onClick={() => setShowClaimModal(false)}
-              aria-label="Schließen"
+              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
               style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
             >
               ×
@@ -1743,7 +1747,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
               onClick={() => setShowLikeSaveModal(false)}
-              aria-label="Schließen"
+              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
               style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
             >
               ×
@@ -1802,7 +1806,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
               onClick={() => setShowInfoModal(false)}
-              aria-label="Schließen"
+              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
               style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
             >
               ×
@@ -1855,7 +1859,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
               onClick={() => setShowWalletInfoModal(false)}
-              aria-label="Schließen"
+              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
               style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
             >
               ×
@@ -1875,7 +1879,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
               <div className="bg-white border border-cyan-300 rounded-lg p-3 mb-4">
                 <div className="text-xs text-gray-500 mb-1"><TranslatedText text="Wallet Adresse:" language={language} /></div>
                 <div className="font-mono text-sm text-gray-800 break-all">
-                  {userData?.walletAddress || 'Nicht verfügbar'}
+                  {userData?.walletAddress || (language === 'de' ? 'Nicht verfügbar' : language === 'en' ? 'Not available' : 'Niedostępne')}
                 </div>
               </div>
               
@@ -1901,7 +1905,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
               onClick={() => setShowMiningPowerModal(false)}
-              aria-label="Schließen"
+              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
               style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
             >
               ×
@@ -1968,7 +1972,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
               onClick={() => setShowConfirmBefore(false)}
-              aria-label="Schließen"
+              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
               style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
             >
               ×
@@ -2009,7 +2013,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
               onClick={() => setShowConfirmAfter(false)}
-              aria-label="Schließen"
+              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
               style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
             >
               ×
@@ -2050,7 +2054,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
               onClick={() => setShowNoUuidModal(false)}
-              aria-label="Schließen"
+              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
               style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
             >
               ×

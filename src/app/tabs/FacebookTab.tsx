@@ -449,8 +449,8 @@ export default function FacebookTab({ language }: FacebookTabProps) {
               <button 
                 onClick={() => setShowInfoModal(true)}
                 className="bg-blue-500 hover:bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200"
-                aria-label="Deine EXP-Quellen"
-                title="Deine EXP-Quellen"
+                aria-label={language === 'en' ? 'Your EXP Sources' : language === 'pl' ? 'Twoje źródła EXP' : 'Deine EXP-Quellen'}
+                title={language === 'en' ? 'Your EXP Sources' : language === 'pl' ? 'Twoje źródła EXP' : 'Deine EXP-Quellen'}
               >
                 <FaInfoCircle className="w-3.5 h-3.5 text-white animate-bounce" />
               </button>
@@ -494,8 +494,8 @@ export default function FacebookTab({ language }: FacebookTabProps) {
                   type="button"
                   onClick={() => setShowLeaderboardModal(true)}
                   className="relative group w-8 h-8 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 hover:scale-105 transition cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 hover:ring-4 hover:ring-yellow-200/60 hover:shadow-yellow-300/60"
-                  aria-label="Leaderboard öffnen"
-                  title="Leaderboard öffnen"
+                  aria-label={language === 'en' ? 'Open Leaderboard' : language === 'pl' ? 'Otwórz ranking' : 'Leaderboard öffnen'}
+                  title={language === 'en' ? 'Open Leaderboard' : language === 'pl' ? 'Otwórz ranking' : 'Leaderboard öffnen'}
                 >
                   <span className="absolute -inset-1 rounded-full bg-yellow-400/20 blur-sm opacity-60 group-hover:opacity-80 transition pointer-events-none"></span>
                   <span className="inline-block animate-bounce">🏆</span>
@@ -567,7 +567,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
                 <input
                   value={lbSearch}
                   onChange={(e) => setLbSearch(e.target.value)}
-                  placeholder="@handle oder Name"
+                  placeholder={language === 'en' ? '@handle or name' : language === 'pl' ? '@nazwa lub imię' : '@handle oder Name'}
                   className="bg-transparent outline-none text-sm text-white placeholder:text-zinc-500 w-full"
                 />
               </div>
@@ -616,8 +616,8 @@ export default function FacebookTab({ language }: FacebookTabProps) {
                               type="button"
                               onClick={() => setLbOpenRow(lbOpenRow === e.rank ? null : e.rank)}
                               className="text-zinc-400 hover:text-white text-xs border border-zinc-700 rounded px-1 py-0.5"
-                              aria-label="Weitere Namen anzeigen"
-                              title="Weitere Namen anzeigen"
+                              aria-label={language === 'en' ? 'Show more names' : language === 'pl' ? 'Pokaż więcej nazw' : 'Weitere Namen anzeigen'}
+                              title={language === 'en' ? 'Show more names' : language === 'pl' ? 'Pokaż więcej nazw' : 'Weitere Namen anzeigen'}
                             >
                               {lbOpenRow === e.rank ? '▲' : '▼'}
                             </button>
@@ -885,7 +885,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
                 onClick={() => setShowLikeSaveModal(false)}
                 className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
               >
-                ❌ Schließen
+                ❌ <TranslatedText text="Schließen" language={language} />
               </button>
             </div>
           </div>
@@ -969,13 +969,13 @@ export default function FacebookTab({ language }: FacebookTabProps) {
                 }}
                 className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
               >
-                ✅ Ja, fortfahren
+                ✅ <TranslatedText text="Ja, fortfahren" language={language} />
               </button>
               <button 
                 onClick={() => setShowConfirmInitial(false)}
                 className="flex-1 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
               >
-                ❌ Abbrechen
+                ❌ <TranslatedText text="Abbrechen" language={language} />
               </button>
             </div>
           </div>
@@ -1002,13 +1002,13 @@ export default function FacebookTab({ language }: FacebookTabProps) {
                 }}
                 className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
               >
-                ✅ Ja, fortfahren
+                ✅ <TranslatedText text="Ja, fortfahren" language={language} />
               </button>
               <button 
                 onClick={() => setShowConfirmAfter(false)}
                 className="flex-1 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
               >
-                ❌ Abbrechen
+                ❌ <TranslatedText text="Abbrechen" language={language} />
               </button>
             </div>
           </div>
@@ -1031,7 +1031,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
               <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
                 <span className="text-3xl text-white">🔒</span>
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">Profil nicht gefunden</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent"><TranslatedText text="Profil nicht gefunden" language={language} /></h2>
             </div>
             
             <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6">
@@ -1055,7 +1055,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                 </svg>
-                <span>Facebook Profil</span>
+                <span><TranslatedText text="Facebook Profil" language={language} /></span>
               </a>
             </div>
             
@@ -1069,7 +1069,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
               onClick={() => setShowNoUuidModal(false)}
               className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
             >
-              ❌ Verstanden
+              ❌ <TranslatedText text="Verstanden" language={language} />
             </button>
           </div>
         </div>
