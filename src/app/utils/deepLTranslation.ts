@@ -1,5 +1,4 @@
-// DeepL API Translation Service with Vercel Blob Global Cache
-import { vercelBlobCache, isVercelEnvironment } from '../lib/vercelBlobCache';
+// DeepL API Translation Service - Client-Side Only (No Direct Blob Access)
 
 export interface TranslationCache {
   [key: string]: string;
@@ -10,28 +9,15 @@ export interface DeepLResponse {
     detected_source_language: string;
     text: string;
   }>;
+  cacheHit?: boolean;
+  source?: string;
 }
 
 class TranslationService {
-  private localCache: TranslationCache = {}; // Fallback für lokale Entwicklung
-  private apiKey: string | null = null;
-  private useGlobalCache: boolean;
+  private localCache: TranslationCache = {}; // Client-side cache
 
   constructor() {
-    // Lade API Key aus Environment Variables
-    if (typeof window === 'undefined') {
-      // Server-side
-      this.apiKey = process.env.DEEPL_API_KEY || null;
-    }
-    
-    // Verwende globalen Cache nur wenn Vercel Blob verfügbar ist
-    this.useGlobalCache = isVercelEnvironment();
-    
-    if (this.useGlobalCache) {
-      console.log('🌐 Attempting to use Vercel Blob global translation cache');
-    } else {
-      console.log('💻 Using local translation cache (development/fallback)');
-    }
+    console.log('💻 Client-side: Translation service using API routes with server-side blob cache');
   }
 
   // Cache Key generieren
@@ -39,7 +25,7 @@ class TranslationService {
     return `${text}_${targetLang}`.toLowerCase();
   }
 
-  // DeepL API Aufruf mit globalem Cache
+  // DeepL API Aufruf über API Route (Server macht Blob Cache Check)
   async translateText(text: string, targetLang: string): Promise<string> {
     // Wenn Zielsprache Deutsch ist, Original zurückgeben
     if (targetLang === 'de' || targetLang === 'DE') {
@@ -50,27 +36,16 @@ class TranslationService {
     const normalizedLang = targetLang.toUpperCase();
 
     try {
-      // 1. Prüfe globalen Vercel Blob Cache (falls verfügbar)
-      if (this.useGlobalCache) {
-        try {
-          const cachedTranslation = await vercelBlobCache.getTranslation(text, normalizedLang);
-          if (cachedTranslation) {
-            return cachedTranslation;
-          }
-        } catch (blobError) {
-          console.log(`📝 Blob cache unavailable, using local cache: ${blobError instanceof Error ? blobError.message : 'Unknown error'}`);
-          this.useGlobalCache = false; // Umschalten auf lokalen Cache
-        }
-      }
-      
-      // 2. Fallback: Lokaler Cache
+      // 1. Prüfe lokalen Client-Cache
       const cacheKey = this.getCacheKey(text, normalizedLang);
       if (this.localCache[cacheKey]) {
-        console.log(`🎯 Local cache HIT: "${text}" -> "${this.localCache[cacheKey]}"`);
+        console.log(`🎯 Client cache HIT: "${text}" -> "${this.localCache[cacheKey]}"`);
         return this.localCache[cacheKey];
       }
 
-      // 2. Cache Miss - DeepL API Call
+      // 2. API Call (Server-side macht Blob Cache Check + DeepL API)
+      console.log(`🔄 API call for: "${text}" -> ${normalizedLang}`);
+      
       const response = await fetch('/api/translate', {
         method: 'POST',
         headers: {
@@ -90,22 +65,17 @@ class TranslationService {
       const data: DeepLResponse = await response.json();
       const translatedText = data.translations[0]?.text || text;
 
-      // 3. Speichere in entsprechendem Cache
-      if (this.useGlobalCache) {
-        try {
-          await vercelBlobCache.setTranslation(text, normalizedLang, translatedText);
-        } catch (blobError) {
-          console.log(`📝 Blob save failed, using local cache: ${blobError instanceof Error ? blobError.message : 'Unknown error'}`);
-          this.useGlobalCache = false;
-          // Fallback: Lokaler Cache
-          const cacheKey = this.getCacheKey(text, normalizedLang);
-          this.localCache[cacheKey] = translatedText;
-          console.log(`💾 Local cache SET: "${text}" -> "${translatedText}"`);
-        }
+      // 3. Speichere im lokalen Client-Cache
+      this.localCache[cacheKey] = translatedText;
+      
+      // Log mit Cache-Info von Server (falls verfügbar)
+      if (data.cacheHit !== undefined) {
+        const cacheInfo = data.cacheHit ? 
+          `🎯 Server cache HIT (${data.source || 'unknown'})` : 
+          `🔄 Server cache MISS -> DeepL API`;
+        console.log(`📊 ${cacheInfo} + Client cache SET: "${text}" -> "${translatedText}"`);
       } else {
-        const cacheKey = this.getCacheKey(text, normalizedLang);
-        this.localCache[cacheKey] = translatedText;
-        console.log(`💾 Local cache SET: "${text}" -> "${translatedText}"`);
+        console.log(`💾 Client cache SET: "${text}" -> "${translatedText}"`);
       }
       
       return translatedText;
@@ -140,32 +110,22 @@ class TranslationService {
     return results;
   }
 
-  // Cache leeren (falls nötig)
+  // Cache leeren
   clearCache(): void {
     this.localCache = {};
-    // Globaler Cache wird nicht geleert - nur für Admin-Interface
   }
 
-  // Cache Status
-  async getCacheSize(): Promise<number> {
-    if (this.useGlobalCache) {
-      const stats = await vercelBlobCache.getStats();
-      return stats.totalTranslations;
-    }
+  // Cache Status (nur lokaler Cache)
+  getCacheSize(): number {
     return Object.keys(this.localCache).length;
   }
 
-  // Cache-Statistiken (nur für globalen Cache)
-  async getCacheStats() {
-    if (this.useGlobalCache) {
-      return await vercelBlobCache.getStats();
-    }
+  // Client-Cache-Statistiken
+  getCacheStats() {
     return {
       totalTranslations: Object.keys(this.localCache).length,
-      totalRequests: 0,
-      totalCacheHits: 0,
-      cacheHitRate: 0,
-      languageDistribution: {},
+      clientSideOnly: true,
+      serverSideCacheViaAPI: true
     };
   }
 }
