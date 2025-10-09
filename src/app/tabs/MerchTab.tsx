@@ -1532,7 +1532,7 @@ export default function MerchTab({ language }: MerchTabProps) {
               <CardContent className="p-0 relative">
                 {/* Medien-Vorschau */}
                 {product.media.length > 0 && (
-                  <div className="bg-gradient-to-br from-amber-900/60 to-orange-950/80 relative">
+                  <div className="bg-gradient-to-br from-slate-900 via-blue-950/50 to-slate-950 relative">
                     {/* Spezielle Darstellung wenn MP3-Dateien vorhanden sind (unabhängig von Kategorie) */}
                     {(() => {
                       // Prüfe auf alle Audio-Dateien (unabhängig von Kategorie)
@@ -1825,8 +1825,8 @@ export default function MerchTab({ language }: MerchTabProps) {
                             <FaCoins className="text-amber-500" />
                             {dfaithPrice.toFixed(2)} D.FAITH
                           </div>
-                          <div className="text-gray-400 text-sm flex items-center gap-1.5">
-                            <FaEuroSign className="text-xs" />
+                          <div className="text-white font-semibold text-base flex items-center gap-1.5 bg-blue-950/40 px-3 py-1 rounded-lg border border-blue-400/30">
+                            <FaEuroSign className="text-sm text-blue-300" />
                             {product.price.toFixed(2)} EUR
                           </div>
                           
@@ -1874,8 +1874,8 @@ export default function MerchTab({ language }: MerchTabProps) {
                           <FaCoins className="text-amber-500" />
                           {dfaithPrice.toFixed(2)} D.FAITH
                         </div>
-                        <div className="text-gray-400 text-sm flex items-center gap-1.5">
-                          <FaEuroSign className="text-xs" />
+                        <div className="text-white font-semibold text-base flex items-center gap-1.5 bg-blue-950/40 px-3 py-1 rounded-lg border border-blue-400/30">
+                          <FaEuroSign className="text-sm text-blue-300" />
                           {product.price.toFixed(2)} EUR
                         </div>
                         
@@ -1914,8 +1914,8 @@ export default function MerchTab({ language }: MerchTabProps) {
                           <FaCoins className="text-amber-500" />
                           {dfaithPrice.toFixed(2)} D.FAITH
                         </div>
-                        <div className="text-gray-400 text-sm flex items-center gap-1.5">
-                          <FaEuroSign className="text-xs" />
+                        <div className="text-white font-semibold text-base flex items-center gap-1.5 bg-blue-950/40 px-3 py-1 rounded-lg border border-blue-400/30">
+                          <FaEuroSign className="text-sm text-blue-300" />
                           {product.price.toFixed(2)} EUR
                         </div>
                         
