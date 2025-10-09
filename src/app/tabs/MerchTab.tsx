@@ -133,7 +133,7 @@ function CompactAudioPlayer({ media }: { media: MediaFile }) {
   };
 
   return (
-    <div className="bg-neutral-900/70 rounded-lg p-3 border border-slate-700/50">
+    <div className="bg-blue-950/30 rounded-lg p-3 border border-slate-700/50">
       <audio
         ref={audioRef}
         src={media.url}
@@ -300,7 +300,7 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
                 max={duration || 0}
                 value={currentTime}
                 onChange={handleSeek}
-                className="w-full h-2 bg-neutral-900/60 rounded-lg appearance-none cursor-pointer"
+                className="w-full h-2 bg-blue-950/25 rounded-lg appearance-none cursor-pointer"
                 style={{
                   background: `linear-gradient(to right, #f59e0b 0%, #f59e0b ${(currentTime / duration) * 100}%, #374151 ${(currentTime / duration) * 100}%, #374151 100%)`,
                   WebkitAppearance: 'none',
@@ -353,7 +353,7 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
                   <FaVolumeUp />
                 </button>
                 {showVolumeSlider && (
-                  <div className="absolute right-0 bottom-12 bg-neutral-900/80 p-3 rounded-lg shadow-xl border border-slate-700/50">
+                  <div className="absolute right-0 bottom-12 bg-blue-950/40 p-3 rounded-lg shadow-xl border border-slate-700/50">
                     <input
                       type="range"
                       min="0"
@@ -361,7 +361,7 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
                       step="0.1"
                       value={volume}
                       onChange={handleVolumeChange}
-                      className="w-20 h-2 bg-neutral-900/60 rounded-lg appearance-none cursor-pointer"
+                      className="w-20 h-2 bg-blue-950/25 rounded-lg appearance-none cursor-pointer"
                     />
                   </div>
                 )}
@@ -1217,7 +1217,7 @@ export default function MerchTab({ language }: MerchTabProps) {
               
               {/* Professional Subtitle Section - Direkter Anschluss */}
               <div className="space-y-4 mb-2">
-                <div className="bg-neutral-900/60 backdrop-blur-md rounded-xl px-8 py-4 border border-slate-600/30 max-w-2xl mx-auto">
+                <div className="bg-blue-950/25 backdrop-blur-md rounded-xl px-8 py-4 border border-slate-600/30 max-w-2xl mx-auto">
                   <h2 className="text-2xl md:text-3xl font-light text-slate-100 tracking-wide mb-2">
                     <TranslatedText text="Offizieller Fan Shop" language={language} />
                   </h2>
@@ -1270,7 +1270,7 @@ export default function MerchTab({ language }: MerchTabProps) {
               
               {/* Elegant Results Counter - Kompakter */}
               <div className="text-center mt-5">
-                <div className="inline-flex items-center gap-3 bg-neutral-900/60 backdrop-blur-sm rounded-full px-6 py-2 border border-slate-600/30">
+                <div className="inline-flex items-center gap-3 bg-blue-950/25 backdrop-blur-sm rounded-full px-6 py-2 border border-slate-600/30">
                   <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
                   <span className="text-slate-300 text-sm font-medium">
                     {filteredProducts.length} <TranslatedText text={filteredProducts.length === 1 ? 'Artikel' : 'Artikel'} language={language} /> <TranslatedText text="verfügbar" language={language} />
@@ -1332,14 +1332,14 @@ export default function MerchTab({ language }: MerchTabProps) {
                 <h3 className="text-xl font-bold text-white">🛒 Kasse</h3>
                 <Button
                   onClick={() => setShowCheckout(false)}
-                  className="bg-transparent hover:bg-neutral-900/80 text-amber-400 hover:text-amber-300 border-none p-2"
+                  className="bg-transparent hover:bg-blue-950/40 text-amber-400 hover:text-amber-300 border-none p-2"
                 >
                   <FaTimes />
                 </Button>
               </div>
 
               {/* Bestellübersicht */}
-              <div className="mb-6 p-4 bg-neutral-900/80 rounded-lg">
+              <div className="mb-6 p-4 bg-blue-950/40 rounded-lg">
                 <h4 className="font-bold text-white mb-3">📋 Ihre Bestellung</h4>
                 <div className="space-y-2">
                   {Object.entries(cart).map(([productId, quantity]) => {
@@ -1382,7 +1382,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                     required
                     value={checkoutForm.email}
                     onChange={(e) => setCheckoutForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full p-3 bg-neutral-900/80 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
+                    className="w-full p-3 bg-blue-950/40 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                     placeholder="ihre@email.de"
                   />
                   <p className="text-xs text-gray-400 mt-1">
@@ -1395,7 +1395,7 @@ export default function MerchTab({ language }: MerchTabProps) {
 
                 {/* Versandadresse (nur bei physischen Produkten) */}
                 {hasPhysicalProducts() && (
-                  <div className="space-y-4 p-4 bg-neutral-900/80 rounded-lg">
+                  <div className="space-y-4 p-4 bg-blue-950/40 rounded-lg">
                     <h4 className="font-bold text-white mb-3">📦 Versandadresse</h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1406,7 +1406,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                           required
                           value={checkoutForm.firstName}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, firstName: e.target.value }))}
-                          className="w-full p-3 bg-neutral-900/60 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
+                          className="w-full p-3 bg-blue-950/25 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="Max"
                         />
                       </div>
@@ -1418,7 +1418,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                           required
                           value={checkoutForm.lastName}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, lastName: e.target.value }))}
-                          className="w-full p-3 bg-neutral-900/60 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
+                          className="w-full p-3 bg-blue-950/25 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="Mustermann"
                         />
                       </div>
@@ -1431,7 +1431,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                         required
                         value={checkoutForm.street}
                         onChange={(e) => setCheckoutForm(prev => ({ ...prev, street: e.target.value }))}
-                        className="w-full p-3 bg-neutral-900/60 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
+                        className="w-full p-3 bg-blue-950/25 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                         placeholder="Musterstraße 123"
                       />
                     </div>
@@ -1444,7 +1444,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                           required
                           value={checkoutForm.postalCode}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, postalCode: e.target.value }))}
-                          className="w-full p-3 bg-neutral-900/60 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
+                          className="w-full p-3 bg-blue-950/25 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="12345"
                         />
                       </div>
@@ -1456,7 +1456,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                           required
                           value={checkoutForm.city}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, city: e.target.value }))}
-                          className="w-full p-3 bg-neutral-900/60 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
+                          className="w-full p-3 bg-blue-950/25 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="Musterstadt"
                         />
                       </div>
@@ -1471,7 +1471,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                           value={checkoutForm.country}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, country: e.target.value }))}
                           placeholder="Deutschland"
-                          className="w-full p-3 bg-neutral-900/60 border border-slate-700/50 rounded-lg text-white placeholder-gray-400 focus:border-orange-400 focus:outline-none"
+                          className="w-full p-3 bg-blue-950/25 border border-slate-700/50 rounded-lg text-white placeholder-gray-400 focus:border-orange-400 focus:outline-none"
                         />
                       </div>
                       
@@ -1481,7 +1481,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                           type="tel"
                           value={checkoutForm.phone}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, phone: e.target.value }))}
-                          className="w-full p-3 bg-neutral-900/60 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
+                          className="w-full p-3 bg-blue-950/25 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="+49 123 456789"
                         />
                       </div>
@@ -1582,11 +1582,11 @@ export default function MerchTab({ language }: MerchTabProps) {
                             
                             {/* Alle Audio-Dateien anzeigen */}
                             <div className="space-y-2">
-                              <div className="bg-neutral-900/40 border border-slate-600/30 rounded-lg p-3">
+                              <div className="bg-blue-950/20 border border-slate-600/30 rounded-lg p-3">
                                 {/* Liste aller Audio-Dateien */}
                                 <div className="space-y-3">
                                   {audioMedias.map((audioMedia, index) => (
-                                    <div key={audioMedia.id || index} className="bg-neutral-900/80/50 rounded-lg p-2">
+                                    <div key={audioMedia.id || index} className="bg-blue-950/40/50 rounded-lg p-2">
                                       {/* Audio-Datei Name */}
                                       <div className="flex items-center gap-2 mb-2">
                                         <FaPlay className="text-green-400 text-xs" />
@@ -1620,7 +1620,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                             <EnhancedMediaPlayer media={product.media[0]} />
                             
                             {/* Titel und Beschreibung unter dem Video */}
-                            <div className="p-4 bg-neutral-900/80/80 backdrop-blur-sm">
+                            <div className="p-4 bg-blue-950/40/80 backdrop-blur-sm">
                               <div className="flex items-start justify-between mb-2">
                                 <h3 className="text-white font-bold text-lg leading-tight flex-1 mr-2">{product.name}</h3>
                                 <span className="text-xs bg-gradient-to-r from-amber-600 to-amber-700 text-white px-2 py-1 rounded-full shadow-sm whitespace-nowrap">
@@ -1655,7 +1655,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                             {imageMedias.length > 0 && (
                               <div className="relative">
                                 {/* Haupt-Bildergalerie mit Scroll */}
-                                <div className="w-full h-64 relative overflow-hidden bg-neutral-900/80 rounded-lg">
+                                <div className="w-full h-64 relative overflow-hidden bg-blue-950/40 rounded-lg">
                                   {imageMedias.map((media, index) => (
                                     <div 
                                       key={index} 
@@ -1992,14 +1992,14 @@ export default function MerchTab({ language }: MerchTabProps) {
                   </h3>
                   <Button
                     onClick={() => setShowCart(false)}
-                    className="bg-neutral-900/80 hover:bg-neutral-900/60 text-red-400 hover:text-red-300 border border-slate-700/50 hover:border-red-500 p-2 rounded-lg transition-all duration-200"
+                    className="bg-blue-950/40 hover:bg-blue-950/25 text-red-400 hover:text-red-300 border border-slate-700/50 hover:border-red-500 p-2 rounded-lg transition-all duration-200"
                   >
                     <FaTimes className="text-lg" />
                   </Button>
                 </div>
                 
                 {/* D.FAITH Balance - Nur sichtbar wenn Warenkorb offen */}
-                <div className="bg-neutral-900/80/50 rounded-lg p-4 border border-slate-700/50">
+                <div className="bg-blue-950/40/50 rounded-lg p-4 border border-slate-700/50">
                   <div className="flex items-center gap-2 mb-2">
                     <FaCoins className="text-amber-400 text-sm" />
                     <span className="text-gray-300 text-sm font-medium">
@@ -2033,7 +2033,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                       const dfaithPrice = convertEurToDfaith(product.price);
                       
                       return (
-                        <div key={productId} className="bg-neutral-900/80 rounded-lg p-4 border border-zinc-700">
+                        <div key={productId} className="bg-blue-950/40 rounded-lg p-4 border border-zinc-700">
                           <div className="flex justify-between items-start mb-3">
                             <div className="flex-1">
                               <h4 className="text-white font-medium text-sm">{product.name}</h4>
@@ -2126,14 +2126,14 @@ export default function MerchTab({ language }: MerchTabProps) {
                 <h3 className="text-xl font-bold text-white">🛒 Kasse</h3>
                 <Button
                   onClick={() => setShowCheckout(false)}
-                  className="bg-neutral-900/80 hover:bg-neutral-900/60 text-red-400 hover:text-red-300 border border-slate-700/50 hover:border-red-500 p-2 rounded-lg transition-all duration-200"
+                  className="bg-blue-950/40 hover:bg-blue-950/25 text-red-400 hover:text-red-300 border border-slate-700/50 hover:border-red-500 p-2 rounded-lg transition-all duration-200"
                 >
                   <FaTimes className="text-lg" />
                 </Button>
               </div>
 
               {/* Bestellübersicht */}
-              <div className="mb-6 p-4 bg-neutral-900/80 rounded-lg">
+              <div className="mb-6 p-4 bg-blue-950/40 rounded-lg">
                 <h4 className="font-bold text-white mb-3">📋 Ihre Bestellung</h4>
                 <div className="space-y-2">
                   {Object.entries(cart).map(([productId, quantity]) => {
@@ -2192,14 +2192,14 @@ export default function MerchTab({ language }: MerchTabProps) {
                     required
                     value={checkoutForm.email}
                     onChange={(e) => setCheckoutForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full p-3 bg-neutral-900/80 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
+                    className="w-full p-3 bg-blue-950/40 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                     placeholder="ihre@email.de"
                   />
                 </div>
 
                 {/* Versandadresse bei physischen Produkten */}
                 {hasPhysicalProducts() && (
-                  <div className="space-y-4 p-4 bg-neutral-900/80 rounded-lg">
+                  <div className="space-y-4 p-4 bg-blue-950/40 rounded-lg">
                     <h4 className="font-bold text-white mb-3">📦 Versandadresse</h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2210,7 +2210,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                           required
                           value={checkoutForm.firstName}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, firstName: e.target.value }))}
-                          className="w-full p-3 bg-neutral-900/60 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
+                          className="w-full p-3 bg-blue-950/25 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="Max"
                         />
                       </div>
@@ -2222,7 +2222,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                           required
                           value={checkoutForm.lastName}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, lastName: e.target.value }))}
-                          className="w-full p-3 bg-neutral-900/60 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
+                          className="w-full p-3 bg-blue-950/25 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="Mustermann"
                         />
                       </div>
@@ -2237,7 +2237,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                         required
                         value={checkoutForm.street}
                         onChange={(e) => setCheckoutForm(prev => ({ ...prev, street: e.target.value }))}
-                        className="w-full p-3 bg-neutral-900/60 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
+                        className="w-full p-3 bg-blue-950/25 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                         placeholder="Musterstraße 123"
                       />
                     </div>
@@ -2250,7 +2250,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                           required
                           value={checkoutForm.postalCode}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, postalCode: e.target.value }))}
-                          className="w-full p-3 bg-neutral-900/60 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
+                          className="w-full p-3 bg-blue-950/25 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="12345"
                         />
                       </div>
@@ -2262,7 +2262,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                           required
                           value={checkoutForm.city}
                           onChange={(e) => setCheckoutForm(prev => ({ ...prev, city: e.target.value }))}
-                          className="w-full p-3 bg-neutral-900/60 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
+                          className="w-full p-3 bg-blue-950/25 border border-slate-700/50 rounded-lg text-white focus:border-orange-400 focus:outline-none"
                           placeholder="Berlin"
                         />
                       </div>
@@ -2276,7 +2276,7 @@ export default function MerchTab({ language }: MerchTabProps) {
                         value={checkoutForm.country}
                         onChange={(e) => setCheckoutForm(prev => ({ ...prev, country: e.target.value }))}
                         placeholder="Deutschland"
-                        className="w-full p-3 bg-neutral-900/60 border border-slate-700/50 rounded-lg text-white placeholder-gray-400 focus:border-orange-400 focus:outline-none"
+                        className="w-full p-3 bg-blue-950/25 border border-slate-700/50 rounded-lg text-white placeholder-gray-400 focus:border-orange-400 focus:outline-none"
                       />
                     </div>
                   </div>
