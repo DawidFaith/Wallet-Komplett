@@ -134,6 +134,7 @@ class VercelBlobTranslationCache {
       const blob = await put(this.CACHE_BLOB_NAME, JSON.stringify(this.localCache, null, 2), {
         access: 'public',
         contentType: 'application/json',
+        allowOverwrite: true,
       });
 
       console.log(`💾 Translation cache saved to blob: ${blob.url}`);
