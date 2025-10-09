@@ -92,13 +92,17 @@ function TokenTransferModal({
         <div className="bg-zinc-900 rounded-xl p-6 max-w-sm w-full border border-green-500 my-4">
           <div className="text-center">
             <div className="text-4xl mb-3">✅</div>
-            <div className="text-green-400 text-xl font-bold mb-2">Token gesendet!</div>
-            <div className="text-zinc-300 text-sm mb-4">Deine Transaktion wurde erfolgreich abgeschickt.</div>
+            <div className="text-green-400 text-xl font-bold mb-2">
+              <TranslatedText text="Token gesendet!" language={language} />
+            </div>
+            <div className="text-zinc-300 text-sm mb-4">
+              <TranslatedText text="Deine Transaktion wurde erfolgreich abgeschickt." language={language} />
+            </div>
             <Button 
               className="w-full bg-gradient-to-r from-green-400 to-green-600 text-black font-bold py-3 rounded-xl" 
               onClick={onSuccessClose}
             >
-              Schließen
+              <TranslatedText text="Schließen" language={language} />
             </Button>
           </div>
         </div>
@@ -142,7 +146,9 @@ function TokenTransferModal({
         <div className="space-y-4">
           {/* Betrag Eingabe */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">Betrag</label>
+            <label className="text-sm font-medium text-zinc-300">
+              <TranslatedText text="Betrag" language={language} />
+            </label>
             
             <div className="bg-zinc-800/50 rounded-xl border border-zinc-700 p-3">
               <div className="flex items-center gap-2 mb-2">
@@ -201,7 +207,9 @@ function TokenTransferModal({
               {sendAmount && parseFloat(sendAmount) > parseFloat(token.balance.replace(",", ".")) && (
                 <div className="mt-2 text-xs text-red-400 bg-red-500/20 border border-red-500/30 rounded-lg p-2 flex items-center gap-2">
                   <span>⚠️</span>
-                  <span>Nicht genügend {token.symbol} verfügbar</span>
+                  <span>
+                    <TranslatedText text="Nicht genügend" language={language} /> {token.symbol} <TranslatedText text="verfügbar" language={language} />
+                  </span>
                 </div>
               )}
             </div>
@@ -209,7 +217,9 @@ function TokenTransferModal({
 
           {/* Empfänger Eingabe */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">Empfänger</label>
+            <label className="text-sm font-medium text-zinc-300">
+              <TranslatedText text="Empfänger" language={language} />
+            </label>
             <div className="bg-zinc-800/50 rounded-xl border border-zinc-700 p-3">
               <div className="flex items-center gap-2">
                 <input
@@ -230,7 +240,7 @@ function TokenTransferModal({
                 </button>
               </div>
               <div className="text-xs text-zinc-500 mt-1">
-                Base Network Adresse
+                <TranslatedText text="Base Network Adresse" language={language} />
               </div>
             </div>
           </div>
@@ -238,14 +248,20 @@ function TokenTransferModal({
           {/* Transaktionsübersicht - Kompakt */}
           {sendAmount && sendToAddress && isAmountValid && (
             <div className="bg-zinc-800/30 rounded-xl p-3 border border-zinc-700">
-              <h4 className="font-medium text-white mb-2 text-sm">Übersicht</h4>
+              <h4 className="font-medium text-white mb-2 text-sm">
+                <TranslatedText text="Übersicht" language={language} />
+              </h4>
               <div className="space-y-1 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-zinc-400">Betrag:</span>
+                  <span className="text-zinc-400">
+                    <TranslatedText text="Betrag:" language={language} />
+                  </span>
                   <span className="text-white font-medium">{sendAmount} {token.symbol}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-400">An:</span>
+                  <span className="text-zinc-400">
+                    <TranslatedText text="An:" language={language} />
+                  </span>
                   <span className={`${
                     token.key === 'DFAITH' ? 'text-amber-400' : 
                     token.key === 'DINVEST' ? 'text-blue-400' : 
@@ -255,7 +271,9 @@ function TokenTransferModal({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-400">Gebühr:</span>
+                  <span className="text-zinc-400">
+                    <TranslatedText text="Gebühr:" language={language} />
+                  </span>
                   <span className="text-zinc-300">~0.001 ETH</span>
                 </div>
               </div>
@@ -267,7 +285,9 @@ function TokenTransferModal({
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm">
               <div className="flex items-center gap-2">
                 <span>❌</span>
-                <span>{txError}</span>
+                <span>
+                  <TranslatedText text={txError || ""} language={language} />
+                </span>
               </div>
             </div>
           )}
@@ -289,11 +309,13 @@ function TokenTransferModal({
             {isSending ? (
               <div className="flex items-center justify-center gap-2">
                 <span className="animate-spin">↻</span>
-                <span>Wird gesendet...</span>
+                <span>
+                  <TranslatedText text="Wird gesendet..." language={language} />
+                </span>
               </div>
             ) : (
               <span>
-                {sendAmount || "0"} {token.symbol} senden
+                {sendAmount || "0"} {token.symbol} <TranslatedText text="senden" language={language} />
               </span>
             )}
           </Button>
@@ -462,7 +484,9 @@ export default function SendTab({ language }: SendTabProps) {
       {!account?.address && (
         <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-4 text-center">
           <FaLock className="text-red-400 text-2xl mx-auto mb-2" />
-          <p className="text-red-400 font-medium">Wallet nicht verbunden</p>
+          <p className="text-red-400 font-medium">
+            <TranslatedText text="Wallet nicht verbunden" language={language} />
+          </p>
           <p className="text-red-300 text-sm"><TranslatedText text="Verbinde deine Wallet um Token zu senden" language={language} /></p>
         </div>
       )}
@@ -473,7 +497,7 @@ export default function SendTab({ language }: SendTabProps) {
           <div className="space-y-3">
             <label className="text-sm font-semibold text-zinc-300 flex items-center gap-2">
               <FaCoins className="text-amber-400" />
-              Token auswählen:
+              <TranslatedText text="Token auswählen:" language={language} />
             </label>
             <div className="grid gap-3">
               {tokenOptions.map((token) => (
@@ -497,7 +521,9 @@ export default function SendTab({ language }: SendTabProps) {
                       </div>
                       <div>
                         <h3 className="font-bold text-white text-lg">{token.label}</h3>
-                        <p className="text-zinc-400 text-xs">{token.description}</p>
+                        <p className="text-zinc-400 text-xs">
+                          <TranslatedText text={token.description} language={language} />
+                        </p>
                         <p className="text-zinc-300 text-sm font-medium mt-1">
                           {token.balance} {token.symbol}
                         </p>
