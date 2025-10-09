@@ -263,7 +263,7 @@ export default function SellTab({ language }: SellTabProps) {
       } catch (error) {
         console.error('Fehler beim Öffnen von Transak:', error);
         // Methode 3: Fallback - Zeige Alert mit URL
-        alert('Bitte besuchen Sie manuell: https://global.transak.com/ um ETH zu verkaufen');
+        alert(language === 'en' ? 'Please visit manually: https://global.transak.com/ to sell ETH' : language === 'pl' ? 'Odwiedź ręcznie: https://global.transak.com/ aby sprzedać ETH' : 'Bitte besuchen Sie manuell: https://global.transak.com/ um ETH zu verkaufen');
         // Methode 4: Kopiere URL in Zwischenablage (falls verfügbar)
         try {
           navigator.clipboard.writeText('https://global.transak.com/');
@@ -738,8 +738,8 @@ const tokenOptions = [
     balance: dfaithBalance,
     color: "from-transparent to-transparent", // Kein Hintergrund für D.FAITH
     description: "Dawid Faith Token",
-    price: dfaithPriceEur ? `${dfaithPriceEur.toFixed(2)}€ pro D.FAITH` : (isLoadingPrice ? "Laden..." : (priceError || "Preis nicht verfügbar")),
-    sub: dfaithPrice ? `1 D.FAITH = ${dfaithPrice.toFixed(6)} ETH` : "Wird geladen...",
+    price: dfaithPriceEur ? `${dfaithPriceEur.toFixed(2)}€ ${language === 'en' ? 'per' : language === 'pl' ? 'za' : 'pro'} D.FAITH` : (isLoadingPrice ? <TranslatedText text="Laden..." language={language} /> : (priceError || <TranslatedText text="Preis nicht verfügbar" language={language} />)),
+    sub: dfaithPrice ? `1 D.FAITH = ${dfaithPrice.toFixed(6)} ETH` : <TranslatedText text="Wird geladen..." language={language} />,
     icon: <img src="/D.FAITH.png" alt="D.FAITH" className="w-12 h-12 object-contain" />,
   },
   {
@@ -749,8 +749,8 @@ const tokenOptions = [
     balance: "–",
     color: "from-blue-500 to-blue-700",
     description: "Ethereum Native Token",
-    price: ethPriceEur ? `${ethPriceEur.toFixed(2)}€ pro ETH` : "Preis wird geladen...",
-    sub: "via Transak verkaufen",
+    price: ethPriceEur ? `${ethPriceEur.toFixed(2)}€ ${language === 'en' ? 'per' : language === 'pl' ? 'za' : 'pro'} ETH` : <TranslatedText text="Preis wird geladen..." language={language} />,
+    sub: <TranslatedText text="via Transak verkaufen" language={language} />,
     icon: <img src="/ETH.png" alt="ETH" className="w-8 h-8 object-contain" />,
   },
 ];
@@ -767,7 +767,7 @@ const tokenOptions = [
                 if (account?.address) {
                   handleTokenSelect(token.key as "DFAITH" | "ETH");
                 } else {
-                  alert('Bitte Wallet verbinden!');
+                  alert(language === 'en' ? 'Please connect wallet!' : language === 'pl' ? 'Proszę połączyć portfel!' : 'Bitte Wallet verbinden!');
                 }
               }}
               className="relative cursor-pointer rounded-xl p-4 border-2 transition-all duration-200 bg-zinc-800/50 border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800/70 hover:scale-[1.02]"
@@ -837,7 +837,7 @@ const tokenOptions = [
                 <div className="w-32 h-32 mx-auto mb-3 flex items-center justify-center">
                   <img src="/D.FAITH.png" alt="D.FAITH" className="w-32 h-32 object-contain" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-1">D.FAITH verkaufen</h3>
+                <h3 className="text-xl font-bold text-white mb-1"><TranslatedText text="D.FAITH verkaufen" language={language} /></h3>
                 {dfaithPriceEur && (
                   <div className="mt-2 px-2 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full inline-block">
                     <span className="text-amber-400 text-xs font-semibold">
@@ -886,16 +886,16 @@ const tokenOptions = [
                           <span>...</span>
                         </div>
                       ) : (
-                        "Verkaufen"
+                        <TranslatedText text="Verkaufen" language={language} />
                       )}
                     </button>
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-zinc-500">
-                      Balance: {dfaithBalance ? `${Number(dfaithBalance).toFixed(2)} D.FAITH` : 'Loading...'}
+                      <TranslatedText text="Balance" language={language} />: {dfaithBalance ? `${Number(dfaithBalance).toFixed(2)} D.FAITH` : <TranslatedText text="Loading..." language={language} />}
                     </span>
                     <span className="text-zinc-500">
-                      {dfaithPrice ? `1 D.FAITH = ${dfaithPrice.toFixed(6)} ETH` : "Loading..."}
+                      {dfaithPrice ? `1 D.FAITH = ${dfaithPrice.toFixed(6)} ETH` : <TranslatedText text="Loading..." language={language} />}
                     </span>
                   </div>
                 </div>
@@ -905,7 +905,7 @@ const tokenOptions = [
                   <div className="flex items-center gap-3 mb-2">
                     <div className="flex items-center gap-2 bg-purple-500/20 rounded-lg px-2 py-1 border border-purple-500/30 flex-shrink-0">
                       <img src="/ETH.png" alt="ETH" className="w-8 h-8 object-contain" />
-                      <span className="text-purple-300 font-semibold text-xs">ETH erhalten</span>
+                      <span className="text-purple-300 font-semibold text-xs"><TranslatedText text="ETH erhalten" language={language} /></span>
                     </div>
                     <div className="flex-1 text-center">
                       <div className="text-lg sm:text-xl font-bold text-purple-300">
@@ -918,7 +918,7 @@ const tokenOptions = [
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-zinc-500">
-                      Balance: {ethBalance ? `${Number(ethBalance).toFixed(4)} ETH` : 'Loading...'}
+                      <TranslatedText text="Balance" language={language} />: {ethBalance ? `${Number(ethBalance).toFixed(4)} ETH` : <TranslatedText text="Loading..." language={language} />}
                     </span>
                     <span className="text-zinc-500">
                       {sellAmount && parseFloat(sellAmount) > 0 && dfaithPrice && ethPriceEur
@@ -935,7 +935,7 @@ const tokenOptions = [
                 <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-2 text-red-400 text-sm">
                   <div className="flex items-center gap-2">
                     <span>⚠️</span>
-                    <span>Insufficient D.FAITH balance</span>
+                    <span><TranslatedText text="Insufficient D.FAITH balance" language={language} /></span>
                   </div>
                 </div>
               )}
@@ -944,7 +944,7 @@ const tokenOptions = [
                 <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-2 text-yellow-400 text-sm">
                   <div className="flex items-center gap-2">
                     <span>💡</span>
-                    <span>Minimum sale: 0.01 D.FAITH</span>
+                    <span><TranslatedText text="Minimum sale: 0.01 D.FAITH" language={language} /></span>
                   </div>
                 </div>
               )}
@@ -954,7 +954,7 @@ const tokenOptions = [
                 <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400 text-center">
                   <div className="flex items-center justify-center gap-2 mb-1">
                     <span className="text-xl">❌</span>
-                    <span className="font-semibold">Quote Failed</span>
+                    <span className="font-semibold"><TranslatedText text="Quote Failed" language={language} /></span>
                   </div>
                   <p className="text-sm opacity-80">{quoteError}</p>
                 </div>
@@ -993,18 +993,18 @@ const tokenOptions = [
                 <div className="w-32 h-32 mx-auto mb-3 flex items-center justify-center">
                   <img src="/D.FAITH.png" alt="D.FAITH" className="w-32 h-32 object-contain" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-1">Verkauf bestätigen</h3>
-                <p className="text-zinc-400 text-xs">Quote erhalten - bereit für den Verkauf</p>
+                <h3 className="text-xl font-bold text-white mb-1"><TranslatedText text="Verkauf bestätigen" language={language} /></h3>
+                <p className="text-zinc-400 text-xs"><TranslatedText text="Quote erhalten - bereit für den Verkauf" language={language} /></p>
               </div>
 
               {/* Sell Summary */}
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3">
                 <div className="text-center space-y-2">
                   <div className="text-lg font-semibold text-red-400">
-                    {sellAmount} D.FAITH verkaufen
+                    {sellAmount} D.FAITH <TranslatedText text="verkaufen" language={language} />
                   </div>
                   <div className="text-sm text-zinc-300">
-                    für {sellAmount && dfaithPrice ? (parseFloat(sellAmount) * dfaithPrice).toFixed(6) : "0.000000"} ETH
+                    <TranslatedText text="für" language={language} /> {sellAmount && dfaithPrice ? (parseFloat(sellAmount) * dfaithPrice).toFixed(6) : "0.000000"} ETH
                   </div>
                   <div className="text-lg font-bold text-amber-400">
                     {sellAmount && dfaithPrice && ethPriceEur 
@@ -1021,21 +1021,21 @@ const tokenOptions = [
                   <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-green-500 text-white">
                     ✓
                   </div>
-                  <span className="text-xs font-medium">Quote</span>
+                  <span className="text-xs font-medium"><TranslatedText text="Quote" language={language} /></span>
                 </div>
                 <div className={`w-8 h-0.5 ${sellStep === 'approved' || sellStep === 'completed' ? 'bg-green-500' : 'bg-zinc-700'}`}></div>
                 <div className={`flex items-center space-x-1 ${sellStep === 'approved' || sellStep === 'completed' ? 'text-green-400' : 'text-zinc-500'}`}>
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${sellStep === 'approved' || sellStep === 'completed' ? 'bg-green-500 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
                     {sellStep === 'approved' || sellStep === 'completed' ? '✓' : '2'}
                   </div>
-                  <span className="text-xs font-medium">Approve</span>
+                  <span className="text-xs font-medium"><TranslatedText text="Approve" language={language} /></span>
                 </div>
                 <div className={`w-8 h-0.5 ${sellStep === 'completed' ? 'bg-green-500' : 'bg-zinc-700'}`}></div>
                 <div className={`flex items-center space-x-1 ${sellStep === 'completed' ? 'text-green-400' : 'text-zinc-500'}`}>
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${sellStep === 'completed' ? 'bg-green-500 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
                     {sellStep === 'completed' ? '✓' : '3'}
                   </div>
-                  <span className="text-xs font-medium">Sell</span>
+                  <span className="text-xs font-medium"><TranslatedText text="Sell" language={language} /></span>
                 </div>
               </div>
 
@@ -1053,25 +1053,25 @@ const tokenOptions = [
                       <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                     )}
                     <span className="font-bold text-lg">
-                      {swapTxStatus === "success" && "Verkauf erfolgreich abgeschlossen!"}
-                      {swapTxStatus === "error" && "Verkauf fehlgeschlagen"}
-                      {swapTxStatus === "confirming" && "Bestätige Transaktion..."}
-                      {swapTxStatus === "verifying" && "Verifiziere Verkauf..."}
-                      {swapTxStatus === "swapping" && "Führe Verkauf durch..."}
-                      {swapTxStatus === "approving" && "Freigabe der Token..."}
-                      {swapTxStatus === "waiting_approval" && "Warte auf Freigabe..."}
+                      {swapTxStatus === "success" && <TranslatedText text="Verkauf erfolgreich abgeschlossen!" language={language} />}
+                      {swapTxStatus === "error" && <TranslatedText text="Verkauf fehlgeschlagen" language={language} />}
+                      {swapTxStatus === "confirming" && <TranslatedText text="Bestätige Transaktion..." language={language} />}
+                      {swapTxStatus === "verifying" && <TranslatedText text="Verifiziere Verkauf..." language={language} />}
+                      {swapTxStatus === "swapping" && <TranslatedText text="Führe Verkauf durch..." language={language} />}
+                      {swapTxStatus === "approving" && <TranslatedText text="Freigabe der Token..." language={language} />}
+                      {swapTxStatus === "waiting_approval" && <TranslatedText text="Warte auf Freigabe..." language={language} />}
                     </span>
                   </div>
                   {swapTxStatus === "success" && (
                     <div className="space-y-2">
                       <p className="text-base font-semibold text-green-200">
-                        🚀 {sellAmount} D.FAITH wurden erfolgreich verkauft!
+                        🚀 {sellAmount} D.FAITH <TranslatedText text="wurden erfolgreich verkauft!" language={language} />
                       </p>
                       <p className="text-sm text-green-300/80">
-                        💰 Für {sellAmount && dfaithPrice ? (parseFloat(sellAmount) * dfaithPrice).toFixed(6) : "0.000000"} ETH ({sellAmount && dfaithPrice && ethPriceEur ? `≈ €${(parseFloat(sellAmount) * dfaithPrice * ethPriceEur).toFixed(2)}` : '€0.00'})
+                        💰 <TranslatedText text="Für" language={language} /> {sellAmount && dfaithPrice ? (parseFloat(sellAmount) * dfaithPrice).toFixed(6) : "0.000000"} ETH ({sellAmount && dfaithPrice && ethPriceEur ? `≈ €${(parseFloat(sellAmount) * dfaithPrice * ethPriceEur).toFixed(2)}` : '€0.00'})
                       </p>
                       <p className="text-xs text-green-400/70 mt-2">
-                        ✨ Die ETH sind bereits in deiner Wallet verfügbar!
+                        ✨ <TranslatedText text="Die ETH sind bereits in deiner Wallet verfügbar!" language={language} />
                       </p>
                     </div>
                   )}
@@ -1080,7 +1080,7 @@ const tokenOptions = [
                   )}
                   {swapTxStatus === "verifying" && (
                     <p className="text-sm opacity-80 mt-1">
-                      Prüfe Balance-Änderungen... Das kann einen Moment dauern.
+                      <TranslatedText text="Prüfe Balance-Änderungen... Das kann einen Moment dauern." language={language} />
                     </p>
                   )}
                 </div>
@@ -1094,7 +1094,7 @@ const tokenOptions = [
                     onClick={handleApprove}
                     disabled={isSwapping}
                   >
-                    {isSwapping ? "Approving..." : "Approve D.FAITH"}
+                    {isSwapping ? <TranslatedText text="Approving..." language={language} /> : <TranslatedText text="Approve D.FAITH" language={language} />}
                   </Button>
                 )}
 
@@ -1107,10 +1107,10 @@ const tokenOptions = [
                     {isSwapping ? (
                       <div className="flex items-center justify-center gap-2">
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Verkaufe...</span>
+                        <span><TranslatedText text="Verkaufe..." language={language} /></span>
                       </div>
                     ) : (
-                      `Verkaufe ${sellAmount} D.FAITH für €${sellAmount && dfaithPrice && ethPriceEur ? (parseFloat(sellAmount) * dfaithPrice * ethPriceEur).toFixed(2) : '0.00'}`
+                      `${language === 'en' ? 'Sell' : language === 'pl' ? 'Sprzedaj' : 'Verkaufe'} ${sellAmount} D.FAITH ${language === 'en' ? 'for' : language === 'pl' ? 'za' : 'für'} €${sellAmount && dfaithPrice && ethPriceEur ? (parseFloat(sellAmount) * dfaithPrice * ethPriceEur).toFixed(2) : '0.00'}`
                     )}
                   </Button>
                 )}
@@ -1130,7 +1130,7 @@ const tokenOptions = [
                     }}
                     disabled={isSwapping}
                   >
-                    Weiteren Verkauf tätigen
+                    <TranslatedText text="Weiteren Verkauf tätigen" language={language} />
                   </Button>
                 )}
               </div>

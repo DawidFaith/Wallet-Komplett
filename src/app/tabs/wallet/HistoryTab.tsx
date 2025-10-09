@@ -847,7 +847,9 @@ export default function HistoryTab({ language }: HistoryTabProps) {
       {isLoading && !error && (
         <div className="min-h-[40vh] flex flex-col items-center justify-center text-center" role="status" aria-busy="true">
           <div className="h-10 w-10 rounded-full border-2 border-zinc-700 border-t-amber-500 animate-spin mb-3" />
-          <div className="text-sm text-zinc-400">Transaktionsdaten werden geladen … Das kann einen Moment dauern.</div>
+          <div className="text-sm text-zinc-400">
+            <TranslatedText text="Transaktionsdaten werden geladen … Das kann einen Moment dauern." language={language} />
+          </div>
         </div>
       )}
 
@@ -855,19 +857,27 @@ export default function HistoryTab({ language }: HistoryTabProps) {
       {!isLoading && !error && transactions.length > 0 && (
         <div className="p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/50 mb-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm text-zinc-400">Filter</div>
+            <div className="text-sm text-zinc-400">
+              <TranslatedText text="Filter" language={language} />
+            </div>
             <div className="flex items-center gap-1 text-xs text-zinc-400">
-              <span className="hidden sm:inline">Sortierung:</span>
+              <span className="hidden sm:inline">
+                <TranslatedText text="Sortierung:" language={language} />
+              </span>
               <button
                 onClick={() => setSortBy("newest")}
                 className={`px-2 py-1 rounded-md ${sortBy === "newest" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "hover:bg-zinc-700 text-zinc-300 border border-transparent"}`}
                 aria-pressed={sortBy === "newest"}
-              >Neueste zuerst</button>
+              >
+                <TranslatedText text="Neueste zuerst" language={language} />
+              </button>
               <button
                 onClick={() => setSortBy("oldest")}
                 className={`px-2 py-1 rounded-md ${sortBy === "oldest" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "hover:bg-zinc-700 text-zinc-300 border border-transparent"}`}
                 aria-pressed={sortBy === "oldest"}
-              >Älteste zuerst</button>
+              >
+                <TranslatedText text="Älteste zuerst" language={language} />
+              </button>
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
@@ -877,7 +887,7 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                 filter === "claim" ? "bg-cyan-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              Claim
+              <TranslatedText text="Claim" language={language} />
             </button>
             <button
               onClick={() => setFilter("shop")}
@@ -885,7 +895,7 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                 filter === "shop" ? "bg-fuchsia-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              Shop
+              <TranslatedText text="Shop" language={language} />
             </button>
             <button
               onClick={() => setFilter("buy")}
@@ -893,7 +903,7 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                 filter === "buy" ? "bg-emerald-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              Kaufen
+              <TranslatedText text="Kaufen" language={language} />
             </button>
             <button
               onClick={() => setFilter("sell")}
@@ -901,7 +911,7 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                 filter === "sell" ? "bg-rose-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              Verkaufen
+              <TranslatedText text="Verkaufen" language={language} />
             </button>
             <button
               onClick={() => setFilter("send")}
@@ -909,7 +919,7 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                 filter === "send" ? "bg-orange-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              Gesendet
+              <TranslatedText text="Gesendet" language={language} />
             </button>
             <button
               onClick={() => setFilter("receive")}
@@ -917,7 +927,7 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                 filter === "receive" ? "bg-sky-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              Empfangen
+              <TranslatedText text="Empfangen" language={language} />
             </button>
           </div>
         </div>
@@ -927,8 +937,12 @@ export default function HistoryTab({ language }: HistoryTabProps) {
       {!isLoading && !error && transactions.length > 0 && (filter === "send" || filter === "receive") && (
         <div className="p-3 bg-zinc-800/20 rounded-lg border border-zinc-700/40 -mt-2">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm text-zinc-400">Token</div>
-            <div className="text-[11px] text-zinc-500">ETH blendet Gas & sehr kleine Beträge aus</div>
+            <div className="text-sm text-zinc-400">
+              <TranslatedText text="Token" language={language} />
+            </div>
+            <div className="text-[11px] text-zinc-500">
+              <TranslatedText text="ETH blendet Gas & sehr kleine Beträge aus" language={language} />
+            </div>
           </div>
       <div className="grid grid-cols-4 gap-2">
             <button
@@ -937,7 +951,7 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                 tokenSubFilter === "all" ? "bg-zinc-500 text-white shadow" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              Alle
+              <TranslatedText text="Alle" language={language} />
             </button>
             <button
               onClick={() => setTokenSubFilter("D.FAITH")}
@@ -988,7 +1002,7 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-600/20 text-emerald-300 text-xs font-semibold">
-                          <FaBitcoin className="inline" /> Kaufen
+                          <FaBitcoin className="inline" /> <TranslatedText text="Kaufen" language={language} />
                         </span>
             <span className="text-zinc-500 text-xs">Gruppiert</span>
                       </div>
@@ -1000,7 +1014,9 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                           <img src={tokenTx.tokenIcon} alt={tokenTx.token} className="w-6 h-6 rounded-full" />
                           <div className="flex-1 min-w-0">
                             <div className="text-emerald-300 text-sm font-semibold truncate">{tokenTx.amount} {tokenTx.token}</div>
-                            <div className="text-emerald-400/80 text-[11px]">Erhalten</div>
+                            <div className="text-emerald-400/80 text-[11px]">
+                              <TranslatedText text="Erhalten" language={language} />
+                            </div>
                           </div>
                         </div>
                       )}
@@ -1009,7 +1025,9 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                           <img src={ethTx.tokenIcon} alt="ETH" className="w-6 h-6 rounded-full" />
                           <div className="flex-1 min-w-0">
               <div className="text-red-300 text-sm font-semibold truncate">{ethTx.amount} {(ethTx.token === 'WETH' ? 'WETH' : 'ETH')}</div>
-                            <div className="text-red-400/80 text-[11px]">Bezahlt</div>
+                            <div className="text-red-400/80 text-[11px]">
+                              <TranslatedText text="Bezahlt" language={language} />
+                            </div>
                           </div>
                         </div>
                       )}
@@ -1026,9 +1044,11 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-600/20 text-rose-300 text-xs font-semibold">
-                          <SiTether className="inline" /> Verkaufen
+                          <SiTether className="inline" /> <TranslatedText text="Verkaufen" language={language} />
                         </span>
-                        <span className="text-zinc-500 text-xs">Gruppiert</span>
+                        <span className="text-zinc-500 text-xs">
+                          <TranslatedText text="Gruppiert" language={language} />
+                        </span>
                       </div>
                       <span className="text-zinc-400 text-xs">{group[0].time}</span>
                     </div>
@@ -1038,7 +1058,9 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                           <img src={dfMinus.tokenIcon} alt={dfMinus.token} className="w-6 h-6 rounded-full" />
                           <div className="flex-1 min-w-0">
                             <div className="text-red-300 text-sm font-semibold truncate">{dfMinus.amount} {dfMinus.token}</div>
-                            <div className="text-red-400/80 text-[11px]">Abgegeben</div>
+                            <div className="text-red-400/80 text-[11px]">
+                              <TranslatedText text="Abgegeben" language={language} />
+                            </div>
                           </div>
                         </div>
                       )}
@@ -1047,7 +1069,9 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                           <img src={gas.tokenIcon} alt="ETH" className="w-6 h-6 rounded-full" />
                           <div className="flex-1 min-w-0">
                             <div className="text-amber-300 text-sm font-semibold truncate">{gas.amount} ETH</div>
-                            <div className="text-amber-400/80 text-[11px]">Gas</div>
+                            <div className="text-amber-400/80 text-[11px]">
+                              <TranslatedText text="Gas" language={language} />
+                            </div>
                           </div>
                         </div>
                       )}
@@ -1056,7 +1080,9 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                           <img src={ethPlus.tokenIcon} alt="ETH" className="w-6 h-6 rounded-full" />
                           <div className="flex-1 min-w-0">
                             <div className="text-emerald-300 text-sm font-semibold truncate">{ethPlus.amount} {(ethPlus.token === 'WETH' ? 'WETH' : 'ETH')}</div>
-                            <div className="text-emerald-400/80 text-[11px]">Erhalten</div>
+                            <div className="text-emerald-400/80 text-[11px]">
+                              <TranslatedText text="Erhalten" language={language} />
+                            </div>
                           </div>
                         </div>
                       )}
@@ -1070,7 +1096,7 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-600/20 text-cyan-300 text-xs font-semibold">
-                        <span>🎁</span> Claim
+                        <span>🎁</span> <TranslatedText text="Claim" language={language} />
                       </span>
                       <span className="text-zinc-500 text-xs">Gruppiert</span>
                     </div>
@@ -1083,7 +1109,9 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                         <img src={tokenTx.tokenIcon} alt={tokenTx.token} className="w-6 h-6 rounded-full" />
                         <div className="flex-1 min-w-0">
                           <div className="text-green-300 text-sm font-semibold truncate">{tokenTx.amount} {tokenTx.token}</div>
-                          <div className="text-green-400/80 text-[11px]">Belohnung</div>
+                          <div className="text-green-400/80 text-[11px]">
+                            <TranslatedText text="Belohnung" language={language} />
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1092,7 +1120,9 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                         <img src={ethTx.tokenIcon} alt="ETH" className="w-6 h-6 rounded-full" />
                         <div className="flex-1 min-w-0">
                           <div className="text-blue-300 text-sm font-semibold truncate">{ethTx.amount} ETH</div>
-                          <div className="text-blue-400/80 text-[11px]">Bonus</div>
+                          <div className="text-blue-400/80 text-[11px]">
+                            <TranslatedText text="Bonus" language={language} />
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1110,7 +1140,7 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-600/20 text-emerald-300 text-xs font-semibold">
-                        <FaBitcoin className="inline" /> Kaufen
+                        <FaBitcoin className="inline" /> <TranslatedText text="Kaufen" language={language} />
                       </span>
                       <span className="text-zinc-500 text-xs">Einzeltransfer</span>
                     </div>
@@ -1120,7 +1150,9 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                     <img src={tx.tokenIcon} alt={tx.token} className="w-6 h-6 rounded-full" />
                     <div className="flex-1 min-w-0">
                       <div className={`text-sm font-semibold truncate ${getAmountColor(tx.amount)}`}>{tx.amount} {tx.token}</div>
-                      <div className="text-[11px] text-zinc-400">ETH-Zahlung wird separat verbucht</div>
+                      <div className="text-[11px] text-zinc-400">
+                        <TranslatedText text="ETH-Zahlung wird separat verbucht" language={language} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1132,7 +1164,7 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-600/20 text-sky-300 text-xs font-semibold">
-                        <span>⬇️</span> Empfangen
+                        <span>⬇️</span> <TranslatedText text="Empfangen" language={language} />
                       </span>
                       <span className="text-zinc-500 text-xs">Einzeltransfer</span>
                     </div>
@@ -1142,7 +1174,9 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                     <img src={tx.tokenIcon} alt={tx.token} className="w-6 h-6 rounded-full" />
                     <div className="flex-1 min-w-0">
                       <div className={`text-sm font-semibold truncate ${getAmountColor(tx.amount)}`}>{tx.amount} {tx.token}</div>
-                      <div className="text-[11px] text-zinc-400">Eingang</div>
+                      <div className="text-[11px] text-zinc-400">
+                        <TranslatedText text="Eingang" language={language} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1154,7 +1188,7 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-600/20 text-orange-300 text-xs font-semibold">
-                        <span>⬆️</span> Gesendet
+                        <span>⬆️</span> <TranslatedText text="Gesendet" language={language} />
                       </span>
                       <span className="text-zinc-500 text-xs">Einzeltransfer</span>
                     </div>
@@ -1164,7 +1198,9 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                     <img src={tx.tokenIcon} alt={tx.token} className="w-6 h-6 rounded-full" />
                     <div className="flex-1 min-w-0">
                       <div className={`text-sm font-semibold truncate ${getAmountColor(tx.amount)}`}>{tx.amount} {tx.token}</div>
-                      <div className="text-[11px] text-zinc-400">Ausgang</div>
+                      <div className="text-[11px] text-zinc-400">
+                        <TranslatedText text="Ausgang" language={language} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1176,7 +1212,7 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-fuchsia-600/20 text-fuchsia-300 text-xs font-semibold">
-                        <span>🛍️</span> Shop
+                        <span>🛍️</span> <TranslatedText text="Shop" language={language} />
                       </span>
                       <span className="text-zinc-500 text-xs">Einzeltransfer</span>
                     </div>
@@ -1186,7 +1222,9 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                     <img src={tx.tokenIcon} alt={tx.token} className="w-6 h-6 rounded-full" />
                     <div className="flex-1 min-w-0">
                       <div className={`text-sm font-semibold truncate ${getAmountColor(tx.amount)}`}>{tx.amount} {tx.token}</div>
-                      <div className="text-[11px] text-zinc-400">Zahlung an Shop-Adresse</div>
+                      <div className="text-[11px] text-zinc-400">
+                        <TranslatedText text="Zahlung an Shop-Adresse" language={language} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1219,7 +1257,7 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-600/20 text-zinc-300 text-xs font-semibold">
-                      Transfer
+                      <TranslatedText text="Transfer" language={language} />
                     </span>
                     <span className="text-zinc-500 text-xs">Einzeltransfer</span>
                   </div>
@@ -1229,7 +1267,9 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                   <img src={tx.tokenIcon} alt={tx.token} className="w-6 h-6 rounded-full" />
                   <div className="flex-1 min-w-0">
                     <div className={`text-sm font-semibold truncate ${getAmountColor(tx.amount)}`}>{tx.amount} {tx.token}</div>
-                    <div className="text-[11px] text-zinc-400">Sonstiger Transfer</div>
+                    <div className="text-[11px] text-zinc-400">
+                      <TranslatedText text="Sonstiger Transfer" language={language} />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1266,29 +1306,35 @@ export default function HistoryTab({ language }: HistoryTabProps) {
             </div>
           )}
           <h3 className="text-lg font-semibold text-amber-400 mb-1">
-    {
-      filter === "buy" ? "Keine Käufe gefunden" :
-      filter === "sell" ? "Keine Verkäufe gefunden" :
-      filter === "shop" ? "Keine Shop-Käufe gefunden" :
-      (filter === "send" && tokenSubFilter !== "all") ? `Keine gesendeten ${tokenSubFilter}-Transaktionen gefunden` :
-      (filter === "receive" && tokenSubFilter !== "all") ? `Keine empfangenen ${tokenSubFilter}-Transaktionen gefunden` :
-      (filter === "send") ? "Keine gesendeten Transaktionen gefunden" :
-      (filter === "receive") ? "Keine empfangenen Transaktionen gefunden" :
-      "Keine Claims gefunden"
-    }
+            <TranslatedText 
+              text={
+                filter === "buy" ? "Keine Käufe gefunden" :
+                filter === "sell" ? "Keine Verkäufe gefunden" :
+                filter === "shop" ? "Keine Shop-Käufe gefunden" :
+                (filter === "send" && tokenSubFilter !== "all") ? `Keine gesendeten ${tokenSubFilter}-Transaktionen gefunden` :
+                (filter === "receive" && tokenSubFilter !== "all") ? `Keine empfangenen ${tokenSubFilter}-Transaktionen gefunden` :
+                (filter === "send") ? "Keine gesendeten Transaktionen gefunden" :
+                (filter === "receive") ? "Keine empfangenen Transaktionen gefunden" :
+                "Keine Claims gefunden"
+              }
+              language={language}
+            />
           </h3>
           <p className="text-zinc-400 text-sm max-w-md mx-auto">
-    {
-      filter === "buy"
-        ? "Hier erscheinen D.FAITH-Käufe (D.FAITH + vom Pool, ETH/WETH − an den Pool)."
-        : filter === "sell"
-        ? "Hier erscheinen D.FAITH-Verkäufe (D.FAITH − an den Pool, Gas −ETH, ETH/WETH + vom Pool)."
-        : filter === "shop"
-        ? "Hier erscheinen Zahlungen an die Shop-Adresse."
-        : (filter === "send" || filter === "receive")
-        ? (tokenSubFilter === "all" ? "Alle Token-Transfers." : tokenSubFilter === "ETH" ? "ETH-Transfers (ohne Gas)." : `Transfers für ${tokenSubFilter}.`)
-        : "Hier erscheinen Social Media Claims, sobald ein D.FAITH-Transfer von der Claim-Adresse eingeht."
-    }
+            <TranslatedText 
+              text={
+                filter === "buy"
+                  ? "Hier erscheinen D.FAITH-Käufe (D.FAITH + vom Pool, ETH/WETH − an den Pool)."
+                  : filter === "sell"
+                  ? "Hier erscheinen D.FAITH-Verkäufe (D.FAITH − an den Pool, Gas −ETH, ETH/WETH + vom Pool)."
+                  : filter === "shop"
+                  ? "Hier erscheinen Zahlungen an die Shop-Adresse."
+                  : (filter === "send" || filter === "receive")
+                  ? (tokenSubFilter === "all" ? "Alle Token-Transfers." : tokenSubFilter === "ETH" ? "ETH-Transfers (ohne Gas)." : `Transfers für ${tokenSubFilter}.`)
+                  : "Hier erscheinen Social Media Claims, sobald ein D.FAITH-Transfer von der Claim-Adresse eingeht."
+              }
+              language={language}
+            />
           </p>
         </div>
       )}
@@ -1297,7 +1343,9 @@ export default function HistoryTab({ language }: HistoryTabProps) {
       {error && (
         <div className="text-center py-6">
           <div className="bg-red-500/20 text-red-400 rounded-lg p-4 border border-red-500/30">
-            <p className="font-semibold mb-1">Blockchain-Verbindung fehlgeschlagen</p>
+            <p className="font-semibold mb-1">
+              <TranslatedText text="Blockchain-Verbindung fehlgeschlagen" language={language} />
+            </p>
             <p className="text-sm mb-2">{error}</p>
           </div>
         </div>
@@ -1313,14 +1361,20 @@ export default function HistoryTab({ language }: HistoryTabProps) {
           {isLoading ? (
             <div className="flex items-center gap-2">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
-              <span className="hidden sm:inline">Lädt...</span>
+              <span className="hidden sm:inline">
+                <TranslatedText text="Lädt..." language={language} />
+              </span>
               <span className="sm:hidden">...</span>
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <FaExchangeAlt className="text-black" />
-              <span className="hidden sm:inline">Transaktionen neu laden</span>
-              <span className="sm:hidden">Neu laden</span>
+              <span className="hidden sm:inline">
+                <TranslatedText text="Transaktionen neu laden" language={language} />
+              </span>
+              <span className="sm:hidden">
+                <TranslatedText text="Neu laden" language={language} />
+              </span>
             </div>
           )}
         </Button>

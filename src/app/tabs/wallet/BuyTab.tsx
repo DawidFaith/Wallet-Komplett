@@ -723,8 +723,8 @@ export default function BuyTab({ language }: BuyTabProps) {
       balance: dfaithBalance,
       color: "from-transparent to-transparent", // Kein Hintergrund für D.FAITH
       description: "Dawid Faith Token",
-      price: dfaithPriceEur ? `${dfaithPriceEur.toFixed(2)}€ pro D.FAITH` : (isLoadingPrice ? "Laden..." : (priceError || "Preis nicht verfügbar")),
-      sub: dfaithPrice ? `1 ETH = ${(1 / dfaithPrice).toFixed(2)} D.FAITH` : "Wird geladen...",
+      price: dfaithPriceEur ? `${dfaithPriceEur.toFixed(2)}€ ${language === 'en' ? 'per' : language === 'pl' ? 'za' : 'pro'} D.FAITH` : (isLoadingPrice ? <TranslatedText text="Laden..." language={language} /> : (priceError || <TranslatedText text="Preis nicht verfügbar" language={language} />)),
+      sub: dfaithPrice ? `1 ETH = ${(1 / dfaithPrice).toFixed(2)} D.FAITH` : <TranslatedText text="Wird geladen..." language={language} />,
       icon: <img src="/D.FAITH.png" alt="D.FAITH" className="w-10 h-10 object-contain" />,
     },
     {
@@ -734,8 +734,8 @@ export default function BuyTab({ language }: BuyTabProps) {
       balance: dinvestBalance,
       color: "from-blue-400 to-blue-600",
       description: "Investment & Staking Token",
-      price: "5€ pro D.INVEST",
-      sub: "Minimum: 5 EUR",
+      price: `5€ ${language === 'en' ? 'per' : language === 'pl' ? 'za' : 'pro'} D.INVEST`,
+      sub: <TranslatedText text="Minimum: 5 EUR" language={language} />,
       icon: <img src="/D.INVEST.png" alt="D.INVEST" className="w-10 h-10 object-contain" />,
     },
     {
@@ -745,7 +745,7 @@ export default function BuyTab({ language }: BuyTabProps) {
       balance: ethBalance,
       color: "from-blue-500 to-blue-700",
       description: "Ethereum Native Token",
-      price: ethPriceEur ? `${ethPriceEur.toFixed(2)}€ pro ETH` : "Preis wird geladen...",
+      price: ethPriceEur ? `${ethPriceEur.toFixed(2)}€ ${language === 'en' ? 'per' : language === 'pl' ? 'za' : 'pro'} ETH` : <TranslatedText text="Preis wird geladen..." language={language} />,
       sub: <TranslatedText text="mit EUR kaufen" language={language} />,
       icon: <img src="/ETH.png" alt="ETH" className="w-8 h-8 object-contain" />,
     },
@@ -765,7 +765,7 @@ export default function BuyTab({ language }: BuyTabProps) {
                   setShowBuyModal(true);
                   setCopied(false);
                 } else {
-                  alert('Bitte Wallet verbinden!');
+                  alert(language === 'en' ? 'Please connect wallet!' : language === 'pl' ? 'Proszę połączyć portfel!' : 'Bitte Wallet verbinden!');
                 }
               }}
               className="relative cursor-pointer rounded-xl p-4 border-2 transition-all duration-200 bg-zinc-800/50 border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800/70 hover:scale-[1.02]"
@@ -835,7 +835,7 @@ export default function BuyTab({ language }: BuyTabProps) {
                   <div className="w-32 h-32 mx-auto mb-3 flex items-center justify-center">
                     <img src="/D.FAITH.png" alt="D.FAITH" className="w-32 h-32 object-contain" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-1">D.FAITH kaufen</h3>
+                  <h3 className="text-xl font-bold text-white mb-1"><TranslatedText text="D.FAITH kaufen" language={language} /></h3>
                   {dfaithPriceEur && (
                     <div className="mt-2 px-2 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full inline-block">
                       <span className="text-amber-400 text-xs font-semibold">
@@ -851,21 +851,21 @@ export default function BuyTab({ language }: BuyTabProps) {
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${buyStep !== 'initial' ? 'bg-green-500 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
                       {buyStep !== 'initial' ? '✓' : '1'}
                     </div>
-                    <span className="text-xs font-medium">Quote</span>
+                    <span className="text-xs font-medium"><TranslatedText text="Quote" language={language} /></span>
                   </div>
                   <div className={`w-8 h-0.5 ${buyStep === 'approved' || buyStep === 'completed' ? 'bg-green-500' : 'bg-zinc-700'}`}></div>
                   <div className={`flex items-center space-x-1 ${buyStep === 'approved' || buyStep === 'completed' ? 'text-green-400' : 'text-zinc-500'}`}>
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${buyStep === 'approved' || buyStep === 'completed' ? 'bg-green-500 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
                       {buyStep === 'approved' || buyStep === 'completed' ? '✓' : '2'}
                     </div>
-                    <span className="text-xs font-medium">Approve</span>
+                    <span className="text-xs font-medium"><TranslatedText text="Approve" language={language} /></span>
                   </div>
                   <div className={`w-8 h-0.5 ${buyStep === 'completed' ? 'bg-green-500' : 'bg-zinc-700'}`}></div>
                   <div className={`flex items-center space-x-1 ${buyStep === 'completed' ? 'text-green-400' : 'text-zinc-500'}`}>
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${buyStep === 'completed' ? 'bg-green-500 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
                       {buyStep === 'completed' ? '✓' : '3'}
                     </div>
-                    <span className="text-xs font-medium">Purchase</span>
+                    <span className="text-xs font-medium"><TranslatedText text="Purchase" language={language} /></span>
                   </div>
                 </div>
 
@@ -913,10 +913,10 @@ export default function BuyTab({ language }: BuyTabProps) {
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-zinc-500">
-                        Balance: {dfaithBalance ? `${Number(dfaithBalance).toFixed(2)} D.FAITH` : 'Loading...'}
+                        <TranslatedText text="Balance" language={language} />: {dfaithBalance ? `${Number(dfaithBalance).toFixed(2)} D.FAITH` : <TranslatedText text="Loading..." language={language} />}
                       </span>
                       <span className="text-zinc-500">
-                        {dfaithPrice ? `1 D.FAITH = ${dfaithPrice.toFixed(6)} ETH` : "Loading..."}
+                        {dfaithPrice ? `1 D.FAITH = ${dfaithPrice.toFixed(6)} ETH` : <TranslatedText text="Loading..." language={language} />}
                       </span>
                     </div>
                   </div>
@@ -926,7 +926,7 @@ export default function BuyTab({ language }: BuyTabProps) {
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex items-center gap-2 bg-purple-500/20 rounded-lg px-2 py-1 border border-purple-500/30 flex-shrink-0">
                         <img src="/ETH.png" alt="ETH" className="w-8 h-8 object-contain" />
-                        <span className="text-purple-300 font-semibold text-xs">ETH Kosten</span>
+                        <span className="text-purple-300 font-semibold text-xs"><TranslatedText text="ETH Kosten" language={language} /></span>
                       </div>
                       <div className="flex-1 text-center">
                         <div className="text-lg sm:text-xl font-bold text-purple-300">
@@ -936,7 +936,7 @@ export default function BuyTab({ language }: BuyTabProps) {
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-zinc-500">
-                        Balance: {ethBalance ? `${Number(ethBalance).toFixed(4)} ETH` : 'Loading...'}
+                        <TranslatedText text="Balance" language={language} />: {ethBalance ? `${Number(ethBalance).toFixed(4)} ETH` : <TranslatedText text="Loading..." language={language} />}
                       </span>
                       <span className="text-zinc-500">
                         {swapAmountEth && parseFloat(swapAmountEth) > 0 && ethPriceEur
@@ -953,7 +953,7 @@ export default function BuyTab({ language }: BuyTabProps) {
                   <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-2 text-red-400 text-sm">
                     <div className="flex items-center gap-2">
                       <span>⚠️</span>
-                      <span>Insufficient ETH balance</span>
+                      <span><TranslatedText text="Insufficient ETH balance" language={language} /></span>
                     </div>
                   </div>
                 )}
@@ -962,7 +962,7 @@ export default function BuyTab({ language }: BuyTabProps) {
                   <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-2 text-yellow-400 text-sm">
                     <div className="flex items-center gap-2">
                       <span>💡</span>
-                      <span>Minimum purchase: 0.01 D.FAITH</span>
+                      <span><TranslatedText text="Minimum purchase: 0.01 D.FAITH" language={language} /></span>
                     </div>
                   </div>
                 )}
@@ -972,7 +972,7 @@ export default function BuyTab({ language }: BuyTabProps) {
                   <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400 text-center">
                     <div className="flex items-center justify-center gap-2 mb-1">
                       <span className="text-xl">❌</span>
-                      <span className="font-semibold">Quote Failed</span>
+                      <span className="font-semibold"><TranslatedText text="Quote Failed" language={language} /></span>
                     </div>
                     <p className="text-sm opacity-80">{quoteError}</p>
                   </div>
@@ -986,28 +986,28 @@ export default function BuyTab({ language }: BuyTabProps) {
                   <div className="w-32 h-32 mx-auto mb-3 flex items-center justify-center">
                     <img src="/D.INVEST.png" alt="D.INVEST" className="w-32 h-32 object-contain" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-1">D.INVEST kaufen</h3>
-                  <p className="text-zinc-400 text-xs">Investment & Staking Token</p>
+                  <h3 className="text-xl font-bold text-white mb-1"><TranslatedText text="D.INVEST kaufen" language={language} /></h3>
+                  <p className="text-zinc-400 text-xs"><TranslatedText text="Investment & Staking Token" language={language} /></p>
                 </div>
                 
                 <div className="mb-4 text-zinc-300 text-sm space-y-2">
                   <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
-                    <p className="text-blue-400 font-medium mb-2">💡 Was ist D.INVEST?</p>
+                    <p className="text-blue-400 font-medium mb-2">💡 <TranslatedText text="Was ist D.INVEST?" language={language} /></p>
                     <p className="text-zinc-300 text-xs leading-relaxed">
-                      D.INVEST ist das Investment-Token für das Dawid Faith Projekt. Mit diesem Token können Sie 80% des gesamten D.FAITH Supplys aus dem Smart Contract durch Staking erhalten. Es dient als langfristiges Investment in die Entwicklung und den Erfolg des Projekts.
+                      <TranslatedText text="D.INVEST ist das Investment-Token für das Dawid Faith Projekt. Mit diesem Token können Sie 80% des gesamten D.FAITH Supplys aus dem Smart Contract durch Staking erhalten. Es dient als langfristiges Investment in die Entwicklung und den Erfolg des Projekts." language={language} />
                     </p>
                   </div>
                   
                   <div className="flex justify-between items-center text-xs">
-                    <span><strong>Preis:</strong> 5€ pro D.INVEST</span>
-                    <span><strong>Minimum:</strong> 5 EUR</span>
+                    <span><strong><TranslatedText text="Preis" language={language} />:</strong> 5€ {language === 'en' ? 'per' : language === 'pl' ? 'za' : 'pro'} D.INVEST</span>
+                    <span><strong><TranslatedText text="Minimum" language={language} />:</strong> 5 EUR</span>
                   </div>
                 </div>
 
                 {/* Amount Selection */}
                 <div className="space-y-3">
                   <div className="bg-zinc-800/50 rounded-xl p-3 border border-zinc-700">
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">Anzahl D.INVEST Token</label>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2"><TranslatedText text="Anzahl D.INVEST Token" language={language} /></label>
                     <div className="flex items-center justify-center gap-3">
                       <input
                         type="number"
@@ -1036,7 +1036,7 @@ export default function BuyTab({ language }: BuyTabProps) {
                   <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400 text-center">
                     <div className="flex items-center justify-center gap-2 mb-1">
                       <span className="text-xl">❌</span>
-                      <span className="font-semibold">Zahlung fehlgeschlagen</span>
+                      <span className="font-semibold"><TranslatedText text="Zahlung fehlgeschlagen" language={language} /></span>
                     </div>
                     <p className="text-sm opacity-80">{stripeError}</p>
                   </div>
@@ -1049,12 +1049,12 @@ export default function BuyTab({ language }: BuyTabProps) {
                       setShowStripeCheckout(true);
                       setStripeError(null);
                     } else {
-                      alert('Bitte Wallet verbinden!');
+                      alert(language === 'en' ? 'Please connect wallet!' : language === 'pl' ? 'Proszę połączyć portfel!' : 'Bitte Wallet verbinden!');
                     }
                   }}
                   disabled={dinvestAmount < 1 || eurAmount < 5}
                 >
-                  <span>{eurAmount.toFixed(2)}€ bezahlen</span>
+                  <span>{eurAmount.toFixed(2)}€ <TranslatedText text="bezahlen" language={language} /></span>
                 </Button>
               </div>
             )}
@@ -1103,8 +1103,8 @@ export default function BuyTab({ language }: BuyTabProps) {
                 <div className="w-32 h-32 mx-auto mb-3 flex items-center justify-center">
                   <img src="/D.FAITH.png" alt="D.FAITH" className="w-32 h-32 object-contain" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-1">Kauf bestätigen</h3>
-                <p className="text-zinc-400 text-xs">Quote erhalten - bereit für den Kauf</p>
+                <h3 className="text-xl font-bold text-white mb-1"><TranslatedText text="Kauf bestätigen" language={language} /></h3>
+                <p className="text-zinc-400 text-xs"><TranslatedText text="Quote erhalten - bereit für den Kauf" language={language} /></p>
               </div>
 
               {/* Purchase Summary */}
@@ -1114,7 +1114,7 @@ export default function BuyTab({ language }: BuyTabProps) {
                     {swapAmountDfaith} D.FAITH
                   </div>
                   <div className="text-sm text-zinc-300">
-                    für {swapAmountEth} ETH
+                    <TranslatedText text="für" language={language} /> {swapAmountEth} ETH
                   </div>
                   <div className="text-lg font-bold text-amber-400">
                     {swapAmountEth && ethPriceEur 
@@ -1131,21 +1131,21 @@ export default function BuyTab({ language }: BuyTabProps) {
                   <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-green-500 text-white">
                     ✓
                   </div>
-                  <span className="text-xs font-medium">Quote</span>
+                  <span className="text-xs font-medium"><TranslatedText text="Quote" language={language} /></span>
                 </div>
                 <div className={`w-8 h-0.5 ${buyStep === 'approved' || buyStep === 'completed' ? 'bg-green-500' : 'bg-zinc-700'}`}></div>
                 <div className={`flex items-center space-x-1 ${buyStep === 'approved' || buyStep === 'completed' ? 'text-green-400' : 'text-zinc-500'}`}>
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${buyStep === 'approved' || buyStep === 'completed' ? 'bg-green-500 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
                     {buyStep === 'approved' || buyStep === 'completed' ? '✓' : '2'}
                   </div>
-                  <span className="text-xs font-medium">Approve</span>
+                  <span className="text-xs font-medium"><TranslatedText text="Approve" language={language} /></span>
                 </div>
                 <div className={`w-8 h-0.5 ${buyStep === 'completed' ? 'bg-green-500' : 'bg-zinc-700'}`}></div>
                 <div className={`flex items-center space-x-1 ${buyStep === 'completed' ? 'text-green-400' : 'text-zinc-500'}`}>
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${buyStep === 'completed' ? 'bg-green-500 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
                     {buyStep === 'completed' ? '✓' : '3'}
                   </div>
-                  <span className="text-xs font-medium">Purchase</span>
+                  <span className="text-xs font-medium"><TranslatedText text="Purchase" language={language} /></span>
                 </div>
               </div>
 
@@ -1163,23 +1163,23 @@ export default function BuyTab({ language }: BuyTabProps) {
                       <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                     )}
                     <span className="font-bold text-lg">
-                      {swapTxStatus === "success" && "Kauf erfolgreich abgeschlossen!"}
-                      {swapTxStatus === "error" && "Kauf fehlgeschlagen"}
-                      {swapTxStatus === "confirming" && "Bestätige Transaktion..."}
-                      {swapTxStatus === "verifying" && "Verifiziere Kauf..."}
-                      {swapTxStatus === "swapping" && "Führe Kauf durch..."}
+                      {swapTxStatus === "success" && <TranslatedText text="Kauf erfolgreich abgeschlossen!" language={language} />}
+                      {swapTxStatus === "error" && <TranslatedText text="Kauf fehlgeschlagen" language={language} />}
+                      {swapTxStatus === "confirming" && <TranslatedText text="Bestätige Transaktion..." language={language} />}
+                      {swapTxStatus === "verifying" && <TranslatedText text="Verifiziere Kauf..." language={language} />}
+                      {swapTxStatus === "swapping" && <TranslatedText text="Führe Kauf durch..." language={language} />}
                     </span>
                   </div>
                   {swapTxStatus === "success" && (
                     <div className="space-y-2">
                       <p className="text-base font-semibold text-green-200">
-                        🚀 {swapAmountDfaith} D.FAITH wurden erfolgreich gekauft!
+                        🚀 {swapAmountDfaith} D.FAITH <TranslatedText text="wurden erfolgreich gekauft!" language={language} />
                       </p>
                       <p className="text-sm text-green-300/80">
-                        💰 Für {swapAmountEth} ETH ({swapAmountEth && ethPriceEur ? `≈ €${(parseFloat(swapAmountEth) * ethPriceEur).toFixed(2)}` : '€0.00'})
+                        💰 <TranslatedText text="Für" language={language} /> {swapAmountEth} ETH ({swapAmountEth && ethPriceEur ? `≈ €${(parseFloat(swapAmountEth) * ethPriceEur).toFixed(2)}` : '€0.00'})
                       </p>
                       <p className="text-xs text-green-400/70 mt-2">
-                        ✨ Deine neuen Token sind bereits in deiner Wallet verfügbar!
+                        ✨ <TranslatedText text="Deine neuen Token sind bereits in deiner Wallet verfügbar!" language={language} />
                       </p>
                     </div>
                   )}
@@ -1188,7 +1188,7 @@ export default function BuyTab({ language }: BuyTabProps) {
                   )}
                   {swapTxStatus === "verifying" && (
                     <p className="text-sm opacity-80 mt-1">
-                      Prüfe Balance-Änderungen... Das kann einen Moment dauern.
+                      <TranslatedText text="Prüfe Balance-Änderungen... Das kann einen Moment dauern." language={language} />
                     </p>
                   )}
                 </div>
@@ -1202,7 +1202,7 @@ export default function BuyTab({ language }: BuyTabProps) {
                     onClick={handleApprove}
                     disabled={isSwapping}
                   >
-                    {isSwapping ? "Approving..." : "Approve ETH"}
+                    {isSwapping ? <TranslatedText text="Approving..." language={language} /> : <TranslatedText text="Approve ETH" language={language} />}
                   </Button>
                 )}
 
@@ -1215,10 +1215,10 @@ export default function BuyTab({ language }: BuyTabProps) {
                     {isSwapping ? (
                       <div className="flex items-center justify-center gap-2">
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Kaufe...</span>
+                        <span><TranslatedText text="Kaufe..." language={language} /></span>
                       </div>
                     ) : (
-                      `Kaufe ${swapAmountDfaith} D.FAITH für ${swapAmountEth && ethPriceEur ? `€${(parseFloat(swapAmountEth) * ethPriceEur).toFixed(2)}` : '€0.00'}`
+                      `${language === 'en' ? 'Buy' : language === 'pl' ? 'Kup' : 'Kaufe'} ${swapAmountDfaith} D.FAITH ${language === 'en' ? 'for' : language === 'pl' ? 'za' : 'für'} ${swapAmountEth && ethPriceEur ? `€${(parseFloat(swapAmountEth) * ethPriceEur).toFixed(2)}` : '€0.00'}`
                     )}
                   </Button>
                 )}
@@ -1238,7 +1238,7 @@ export default function BuyTab({ language }: BuyTabProps) {
                     }}
                     disabled={isSwapping}
                   >
-                    Weiteren Kauf tätigen
+                    <TranslatedText text="Weiteren Kauf tätigen" language={language} />
                   </Button>
                 )}
               </div>
@@ -1293,15 +1293,15 @@ export default function BuyTab({ language }: BuyTabProps) {
                 <div className="w-32 h-32 mx-auto mb-3 flex items-center justify-center">
                   <img src="/D.INVEST.png" alt="D.INVEST" className="w-32 h-32 object-contain" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-1">Kauf erfolgreich!</h3>
-                <p className="text-zinc-400 text-xs">D.INVEST Token wurden sofort gesendet</p>
+                <h3 className="text-xl font-bold text-white mb-1"><TranslatedText text="Kauf erfolgreich!" language={language} /></h3>
+                <p className="text-zinc-400 text-xs"><TranslatedText text="D.INVEST Token wurden sofort gesendet" language={language} /></p>
               </div>
 
               {/* Success Message */}
               <div className="bg-green-500/20 border border-green-500/50 rounded-xl p-4 text-center">
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <span className="text-4xl">🎉</span>
-                  <span className="font-bold text-xl text-green-300">Zahlung erfolgreich!</span>
+                  <span className="font-bold text-xl text-green-300"><TranslatedText text="Zahlung erfolgreich!" language={language} /></span>
                 </div>
                 
                 <div className="space-y-3">
@@ -1310,22 +1310,22 @@ export default function BuyTab({ language }: BuyTabProps) {
                       {dinvestAmount} D.INVEST Token
                     </p>
                     <p className="text-green-300/80 text-sm">
-                      für €{eurAmount.toFixed(2)} gekauft
+                      <TranslatedText text="für" language={language} /> €{eurAmount.toFixed(2)} <TranslatedText text="gekauft" language={language} />
                     </p>
                   </div>
                   
                   <div className="space-y-2 text-sm text-green-300/90">
                     <p className="flex items-center justify-center gap-2">
                       <span>⚡</span>
-                      <span>Token wurden sofort an deine Wallet gesendet</span>
+                      <span><TranslatedText text="Token wurden sofort an deine Wallet gesendet" language={language} /></span>
                     </p>
                     <p className="flex items-center justify-center gap-2">
                       <span>💰</span>
-                      <span>Berechtigt zum D.FAITH Staking</span>
+                      <span><TranslatedText text="Berechtigt zum D.FAITH Staking" language={language} /></span>
                     </p>
                     <p className="flex items-center justify-center gap-2">
                       <span>❓</span>
-                      <span>Fragen? Schreib mir per DM oder an dawid.faith@gmail.com</span>
+                      <span><TranslatedText text="Fragen? Schreib mir per DM oder an dawid.faith@gmail.com" language={language} /></span>
                     </p>
                   </div>
                 </div>
@@ -1345,7 +1345,7 @@ export default function BuyTab({ language }: BuyTabProps) {
                     setShowBuyModal(true);
                   }}
                 >
-                  Weitere D.INVEST Token kaufen
+                  <TranslatedText text="Weitere D.INVEST Token kaufen" language={language} />
                 </Button>
                 
                 <Button
@@ -1358,7 +1358,7 @@ export default function BuyTab({ language }: BuyTabProps) {
                     setSelectedToken(null);
                   }}
                 >
-                  Fertig
+                  <TranslatedText text="Fertig" language={language} />
                 </Button>
               </div>
             </div>
