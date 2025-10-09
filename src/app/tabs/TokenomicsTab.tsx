@@ -432,7 +432,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
             variants={itemVariants}
           >
             <motion.a 
-              href="/Dawid_Faith_Whitepaper.pdf" 
+              href="https://dfaith.dawidfaith.de" 
               target="_blank" 
               rel="noopener noreferrer"
               className="group relative flex items-center gap-3 px-6 md:px-10 py-4 md:py-5 rounded-2xl bg-gradient-to-r from-black/60 to-black/80 hover:from-black/50 hover:to-black/70 text-white font-bold text-sm md:text-lg transition-all duration-300 border border-orange-500/30 shadow-2xl w-full sm:w-auto overflow-hidden backdrop-blur-sm"
@@ -466,7 +466,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
             </motion.a>
             
             <motion.a 
-              href="https://dawidfaith.com" 
+              href="https://dawidfaith.de" 
               target="_blank" 
               rel="noopener noreferrer"
               className="group relative flex items-center gap-3 px-6 md:px-10 py-4 md:py-5 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-sm md:text-lg transition-all duration-300 shadow-2xl w-full sm:w-auto overflow-hidden"
