@@ -1528,7 +1528,7 @@ export default function MerchTab({ language }: MerchTabProps) {
           const dfaithPrice = convertEurToDfaith(product.price);
           
           return (
-            <Card key={product.id} className="bg-gradient-to-br from-zinc-900 via-slate-900 to-zinc-950 border border-amber-500/20 hover:border-amber-400/50 transition-all duration-300 overflow-hidden group shadow-2xl hover:shadow-3xl hover:shadow-amber-500/20 backdrop-blur-sm">
+            <Card key={product.id} className="bg-gradient-to-br from-slate-950 via-blue-950/40 to-slate-900 border border-amber-400/30 hover:border-amber-400/70 transition-all duration-300 overflow-hidden group shadow-2xl hover:shadow-3xl hover:shadow-amber-400/25 backdrop-blur-md">
               <CardContent className="p-0 relative">
                 {/* Medien-Vorschau */}
                 {product.media.length > 0 && (
