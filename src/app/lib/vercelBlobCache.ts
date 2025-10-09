@@ -216,10 +216,8 @@ class VercelBlobTranslationCache {
       entry.lastUsed = new Date().toISOString();
       cache.stats.totalCacheHits++;
       
-      // Gelegentlich speichern (10% Chance für Performance)
-      if (Math.random() < 0.1) {
-        await this.saveCache();
-      }
+      // Immer speichern für maximale Cache-Persistenz
+      await this.saveCache();
       
       console.log(`🎯 Cache HIT: "${text}" -> "${entry.translatedText}" (${targetLang})`);
       return entry.translatedText;
