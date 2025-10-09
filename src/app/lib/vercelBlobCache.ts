@@ -157,7 +157,17 @@ class VercelBlobTranslationCache {
       process.env.NEXT_PUBLIC_VERCEL_ENV
     );
 
-    return hasToken && isVercel;
+    // Debug logging
+    console.log(`🔍 Blob availability check:`, {
+      hasToken: !!hasToken,
+      tokenLength: hasToken ? (process.env.BLOB_READ_WRITE_TOKEN?.length || process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN?.length || 0) : 0,
+      isVercel,
+      vercelEnv: process.env.VERCEL_ENV,
+      canUse: hasToken // Verwende nur Token als Kriterium
+    });
+
+    // Wenn Token vorhanden ist, versuche Blob zu verwenden (auch in Development)
+    return hasToken;
   }
 
   // Hole Übersetzung aus Cache
@@ -283,13 +293,18 @@ export const hasBlobAccess = (): boolean => {
 };
 
 export const getBlobEnvironmentInfo = () => {
+  const hasToken = hasBlobAccess();
+  const tokenLength = hasToken ? (process.env.BLOB_READ_WRITE_TOKEN?.length || process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN?.length || 0) : 0;
+  
   return {
     isVercel: isVercelEnvironment(),
     vercelEnv: process.env.VERCEL_ENV || 'development',
-    hasBlobAccess: hasBlobAccess(),
-    canUseBlob: isVercelEnvironment() && hasBlobAccess(),
+    hasBlobAccess: hasToken,
+    tokenLength,
+    canUseBlob: hasToken, // Vereinfacht: nur Token-Check
     tokenSource: process.env.BLOB_READ_WRITE_TOKEN ? 'BLOB_READ_WRITE_TOKEN' : 
                  process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN ? 'NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN' : 
-                 'none'
+                 'none',
+    environment: process.env.NODE_ENV || 'development'
   };
 };
