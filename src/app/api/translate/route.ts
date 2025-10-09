@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // 1. Prüfe Vercel Blob Cache (immer versuchen - Token ist verfügbar)
     try {
-      console.log(`🔍 Checking blob cache for: "${text}" -> ${normalizedLang}`);
+      console.log(`🔍 Checking blob cache for: "${text}" -> ${normalizedLang} [Length: ${text.length}, CharCodes: ${text.split('').map((c: string) => c.charCodeAt(0)).join(',')}]`);
       const cachedTranslation = await vercelBlobCache.getTranslation(text, normalizedLang);
       
       if (cachedTranslation) {
