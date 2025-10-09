@@ -18,11 +18,13 @@ export function useTranslation(
   useEffect(() => {
     // Nicht übersetzen wenn:
     // - Text leer und skipEmpty aktiv
-    // - Sprache Deutsch
-    // - Text bereits übersetzt
-    if ((options.skipEmpty && !text.trim()) || 
-        language === 'de' || 
-        translatedText !== text) {
+    if (options.skipEmpty && !text.trim()) {
+      return;
+    }
+
+    // Wenn Sprache Deutsch ist, setze Original-Text zurück
+    if (language === 'de') {
+      setTranslatedText(text);
       return;
     }
 
