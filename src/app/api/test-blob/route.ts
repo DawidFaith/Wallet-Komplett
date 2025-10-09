@@ -29,7 +29,8 @@ export async function GET() {
       
       const blob = await put('test-connection.json', JSON.stringify(testData), {
         access: 'public',
-        contentType: 'application/json'
+        contentType: 'application/json',
+        allowOverwrite: true
       });
 
       testResults.blobTest = {
