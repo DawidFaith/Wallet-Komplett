@@ -1,6 +1,6 @@
 // Translation Cache Statistics API
 import { NextResponse } from 'next/server';
-import { vercelBlobCache, isVercelEnvironment } from '../../lib/vercelBlobCache';
+import { vercelBlobCache, isVercelEnvironment, getBlobEnvironmentInfo } from '../../lib/vercelBlobCache';
 
 export interface TranslationStatsResponse {
   success: boolean;
@@ -13,13 +13,21 @@ export interface TranslationStatsResponse {
     estimatedCostSavings: number;
     environment: 'vercel' | 'local';
     lastUpdated?: string;
+    debug?: {
+      isVercel: boolean;
+      hasBlobAccess: boolean;
+      tokenSource: string;
+      vercelEnv: string;
+    };
   };
   error?: string;
 }
 
 export async function GET() {
   try {
-    if (!isVercelEnvironment()) {
+    const envInfo = getBlobEnvironmentInfo();
+    
+    if (!envInfo.canUseBlob) {
       return NextResponse.json({
         success: true,
         data: {
@@ -29,7 +37,13 @@ export async function GET() {
           cacheHitRate: 0,
           languageDistribution: {},
           estimatedCostSavings: 0,
-          environment: 'local'
+          environment: 'local',
+          debug: {
+            isVercel: envInfo.isVercel,
+            hasBlobAccess: envInfo.hasBlobAccess,
+            tokenSource: envInfo.tokenSource,
+            vercelEnv: envInfo.vercelEnv
+          }
         }
       } as TranslationStatsResponse);
     }

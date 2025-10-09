@@ -39,21 +39,26 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. Prüfe Vercel Blob Cache (falls verfügbar)
-    if (isVercelEnvironment()) {
-      const cachedTranslation = await vercelBlobCache.getTranslation(text, normalizedLang);
-      
-      if (cachedTranslation) {
-        console.log(`🎯 Blob cache HIT for "${text}" -> "${cachedTranslation}" (${Date.now() - startTime}ms)`);
+    try {
+      if (isVercelEnvironment()) {
+        const cachedTranslation = await vercelBlobCache.getTranslation(text, normalizedLang);
         
-        return NextResponse.json({
-          translations: [{ 
-            detected_source_language: 'DE', 
-            text: cachedTranslation 
-          }],
-          cacheHit: true,
-          source: 'vercel_blob'
-        } as TranslateResponse);
+        if (cachedTranslation) {
+          console.log(`🎯 Blob cache HIT for "${text}" -> "${cachedTranslation}" (${Date.now() - startTime}ms)`);
+          
+          return NextResponse.json({
+            translations: [{ 
+              detected_source_language: 'DE', 
+              text: cachedTranslation 
+            }],
+            cacheHit: true,
+            source: 'vercel_blob'
+          } as TranslateResponse);
+        }
       }
+    } catch (cacheError) {
+      console.warn('⚠️ Cache access failed, continuing with DeepL API:', cacheError);
+      // Weitermachen mit DeepL API
     }
 
     // 2. Cache Miss - DeepL API Call
@@ -94,8 +99,13 @@ export async function POST(request: NextRequest) {
     const translatedText = data.translations[0]?.text || text;
 
     // 3. Speichere im Vercel Blob Cache (falls verfügbar)
-    if (isVercelEnvironment()) {
-      await vercelBlobCache.setTranslation(text, normalizedLang, translatedText);
+    try {
+      if (isVercelEnvironment()) {
+        await vercelBlobCache.setTranslation(text, normalizedLang, translatedText);
+      }
+    } catch (cacheError) {
+      console.warn('⚠️ Failed to save to cache, but translation was successful:', cacheError);
+      // Cache-Fehler ist nicht kritisch, Übersetzung war erfolgreich
     }
 
     console.log(`✅ DeepL translation completed: "${text}" -> "${translatedText}" (${Date.now() - startTime}ms)`);

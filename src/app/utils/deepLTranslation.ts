@@ -24,13 +24,13 @@ class TranslationService {
       this.apiKey = process.env.DEEPL_API_KEY || null;
     }
     
-    // Verwende globalen Cache nur in Vercel Environment
+    // Verwende globalen Cache nur wenn Vercel Blob verfügbar ist
     this.useGlobalCache = isVercelEnvironment();
     
     if (this.useGlobalCache) {
-      console.log('🌐 Using Vercel Blob global translation cache');
+      console.log('🌐 Attempting to use Vercel Blob global translation cache');
     } else {
-      console.log('💻 Using local translation cache (development)');
+      console.log('💻 Using local translation cache (development/fallback)');
     }
   }
 

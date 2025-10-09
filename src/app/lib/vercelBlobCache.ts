@@ -60,6 +60,13 @@ class VercelBlobTranslationCache {
     this.isLoading = true;
 
     try {
+      // Prüfe ob Vercel Blob verfügbar ist
+      if (!this.canUseVercelBlob()) {
+        console.log('📝 Using local cache - Vercel Blob not available');
+        this.localCache = this.createEmptyCache();
+        return this.localCache;
+      }
+
       // Prüfe ob Blob existiert
       const blobs = await list({ prefix: this.CACHE_BLOB_NAME });
       
@@ -88,6 +95,7 @@ class VercelBlobTranslationCache {
 
     } catch (error) {
       console.error('❌ Error loading translation cache:', error);
+      console.log('📝 Falling back to local cache');
       this.localCache = this.createEmptyCache();
       return this.localCache;
     } finally {
@@ -114,6 +122,12 @@ class VercelBlobTranslationCache {
   async saveCache(): Promise<void> {
     if (!this.localCache) return;
 
+    // Prüfe ob wir wirklich in der Vercel-Umgebung sind
+    if (!this.canUseVercelBlob()) {
+      console.log('🔄 Skipping blob save - not in Vercel environment or token missing');
+      return;
+    }
+
     try {
       this.localCache.lastUpdated = new Date().toISOString();
       
@@ -125,7 +139,25 @@ class VercelBlobTranslationCache {
       console.log(`💾 Translation cache saved to blob: ${blob.url}`);
     } catch (error) {
       console.error('❌ Error saving translation cache:', error);
+      // Fallback: Nutze lokalen Cache weiter
+      console.log('📝 Continuing with local cache as fallback');
     }
+  }
+
+  // Prüfe ob Vercel Blob verfügbar ist
+  private canUseVercelBlob(): boolean {
+    const hasToken = !!(
+      process.env.BLOB_READ_WRITE_TOKEN || 
+      process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN
+    );
+    
+    const isVercel = !!(
+      process.env.VERCEL ||
+      process.env.VERCEL_ENV ||
+      process.env.NEXT_PUBLIC_VERCEL_ENV
+    );
+
+    return hasToken && isVercel;
   }
 
   // Hole Übersetzung aus Cache
@@ -175,8 +207,12 @@ class VercelBlobTranslationCache {
     cache.stats.languageDistribution[targetLang] = 
       (cache.stats.languageDistribution[targetLang] || 0) + 1;
     
-    // Sofort speichern für neue Übersetzungen
-    await this.saveCache();
+    // Versuche zu speichern (Fallback bei Fehlern)
+    if (this.canUseVercelBlob()) {
+      await this.saveCache();
+    } else {
+      console.log(`📝 Local cache SET: "${text}" -> "${translatedText}" (${targetLang})`);
+    }
     
     console.log(`💾 New translation cached: "${text}" -> "${translatedText}" (${targetLang})`);
   }
@@ -239,10 +275,21 @@ export const isVercelEnvironment = (): boolean => {
   );
 };
 
+export const hasBlobAccess = (): boolean => {
+  return !!(
+    process.env.BLOB_READ_WRITE_TOKEN ||
+    process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN
+  );
+};
+
 export const getBlobEnvironmentInfo = () => {
   return {
     isVercel: isVercelEnvironment(),
     vercelEnv: process.env.VERCEL_ENV || 'development',
-    hasBlobAccess: !!process.env.BLOB_READ_WRITE_TOKEN,
+    hasBlobAccess: hasBlobAccess(),
+    canUseBlob: isVercelEnvironment() && hasBlobAccess(),
+    tokenSource: process.env.BLOB_READ_WRITE_TOKEN ? 'BLOB_READ_WRITE_TOKEN' : 
+                 process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN ? 'NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN' : 
+                 'none'
   };
 };
