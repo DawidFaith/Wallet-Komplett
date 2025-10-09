@@ -330,7 +330,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
   };
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-amber-950 via-orange-950 to-yellow-950 text-white">
+    <div className="relative min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-zinc-950 text-white">
       <motion.div 
         className="space-y-6 md:space-y-8 p-4 md:p-6 max-w-7xl mx-auto"
         variants={containerVariants}
@@ -349,20 +349,20 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
             }}
           />
           {/* Gradient-Overlays für bessere Lesbarkeit */}
-          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/80"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/50"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-950/80 via-slate-900/70 to-zinc-950/85"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/70 via-transparent to-slate-950/70"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-slate-950/60"></div>
           
-          {/* Farb-Overlay für Branding */}
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-950/30 via-amber-900/20 to-yellow-950/25"></div>
+          {/* Farb-Overlay für subtile Branding-Akzente */}
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-950/10 via-amber-900/5 to-orange-950/10"></div>
           
           {/* Subtile Textur-Overlays */}
-          <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-white via-transparent to-white"></div>
+          <div className="absolute inset-0 opacity-5 bg-gradient-to-br from-white via-transparent to-white"></div>
           
-          {/* Animated Elements */}
-          <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute top-3/4 right-1/4 w-48 h-48 bg-amber-600/5 rounded-full blur-3xl animate-pulse" style={{animationDelay: "1s"}}></div>
-          <div className="absolute bottom-1/3 left-1/3 w-24 h-24 bg-yellow-500/5 rounded-full blur-2xl animate-pulse" style={{animationDelay: "2s"}}></div>
+          {/* Animated Elements - Dezenter */}
+          <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-orange-500/3 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-3/4 right-1/4 w-48 h-48 bg-amber-600/3 rounded-full blur-3xl animate-pulse" style={{animationDelay: "1s"}}></div>
+          <div className="absolute bottom-1/3 left-1/3 w-24 h-24 bg-orange-500/2 rounded-full blur-2xl animate-pulse" style={{animationDelay: "2s"}}></div>
         </div>
         
         {/* Hauptinhalt */}
@@ -374,13 +374,13 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
             {/* Großes, zentrales Hero-Bild von Dawid Faith */}
             <div className="flex justify-center mb-6">
               <motion.div
-                className="w-32 h-32 md:w-48 md:h-48 lg:w-56 lg:h-56 xl:w-64 xl:h-64 rounded-full bg-gradient-to-br from-amber-900/20 via-orange-900/30 to-yellow-900/20 backdrop-blur-sm border-2 border-orange-500/20 flex items-center justify-center overflow-hidden shadow-2xl"
+                className="w-32 h-32 md:w-48 md:h-48 lg:w-56 lg:h-56 xl:w-64 xl:h-64 rounded-full bg-gradient-to-br from-slate-800/20 via-slate-700/30 to-slate-800/20 backdrop-blur-sm border-2 border-orange-400/20 flex items-center justify-center overflow-hidden shadow-2xl"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 1, ease: "easeOut" }}
                 whileHover={{ 
                   scale: 1.05,
-                  borderColor: "rgba(249, 115, 22, 0.4)"
+                  borderColor: "rgba(251, 146, 60, 0.3)"
                 }}
               >
                 <img
@@ -397,8 +397,8 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
               <div className="relative mb-4">
                 <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-400/50 to-transparent transform -translate-y-1/2"></div>
                 <div className="text-center">
-                  <div className="inline-block px-8 py-2 bg-black/60 backdrop-blur-sm rounded-full border border-orange-500/30">
-                    <span className="bg-gradient-to-r from-orange-200 via-amber-300 to-yellow-400 bg-clip-text text-transparent font-bold text-lg md:text-xl">
+                  <div className="inline-block px-8 py-2 bg-slate-900/60 backdrop-blur-sm rounded-full border border-orange-400/20">
+                    <span className="bg-gradient-to-r from-orange-200 via-amber-300 to-orange-400 bg-clip-text text-transparent font-bold text-lg md:text-xl">
                       <TranslatedText text="DAWID FAITH TOKENOMICS" language={language} />
                     </span>
                   </div>
@@ -412,7 +412,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
 
             {/* Beschreibungstext */}
             <motion.p 
-              className="text-lg md:text-xl text-amber-200/90 mb-6 max-w-4xl mx-auto leading-relaxed"
+              className="text-lg md:text-xl text-slate-300 mb-6 max-w-4xl mx-auto leading-relaxed"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
@@ -420,7 +420,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
               <TranslatedText 
                 text="Entdecke die Tokenomics, Metriken und Community-Statistiken von Dawid Faith"
                 language={language}
-                className="text-lg md:text-xl text-amber-200/90 leading-relaxed"
+                className="text-lg md:text-xl text-slate-300 leading-relaxed"
               />
             </motion.p>
         {/* Visuell verbesserte Call-to-Action Buttons */}
@@ -435,13 +435,13 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
               href="https://dfaith.dawidfaith.de" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="group relative flex items-center gap-3 px-6 md:px-10 py-4 md:py-5 rounded-2xl bg-gradient-to-r from-black/60 to-black/80 hover:from-black/50 hover:to-black/70 text-white font-bold text-sm md:text-lg transition-all duration-300 border border-orange-500/30 shadow-2xl w-full sm:w-auto overflow-hidden backdrop-blur-sm"
+              className="group relative flex items-center gap-3 px-6 md:px-10 py-4 md:py-5 rounded-2xl bg-gradient-to-r from-slate-800/60 to-slate-900/80 hover:from-slate-700/70 hover:to-slate-800/90 text-white font-bold text-sm md:text-lg transition-all duration-300 border border-orange-400/20 shadow-2xl w-full sm:w-auto overflow-hidden backdrop-blur-sm"
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
             >
               {/* Animierter Hintergrund-Gradient */}
               <motion.div 
-                className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-amber-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-amber-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 animate={{ x: [-100, 100] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
               />
@@ -507,7 +507,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
 
       {/* DexScreener Live Price Chart */}
       <motion.div 
-        className="bg-gradient-to-br from-amber-950/50 to-orange-950/30 rounded-xl md:rounded-2xl border border-orange-500/30 p-4 md:p-8 backdrop-blur-sm"
+        className="bg-gradient-to-br from-slate-900/50 to-slate-800/30 rounded-xl md:rounded-2xl border border-orange-400/20 p-4 md:p-8 backdrop-blur-sm"
         variants={itemVariants}
       >
         <motion.h3 
@@ -560,7 +560,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
             onClick={() => setShowLeaderboardModal(false)}
           >
             <motion.div
-              className="bg-gradient-to-br from-amber-950/90 to-orange-950/90 rounded-2xl border border-amber-700/50 p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto backdrop-blur-sm"
+              className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 rounded-2xl border border-orange-400/20 p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto backdrop-blur-sm"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -576,7 +576,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                 </div>
                 <motion.button
                   onClick={() => setShowLeaderboardModal(false)}
-                  className="p-2 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white transition-colors"
+                  className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -723,7 +723,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
             onClick={() => setShowMetricsModal(false)}
           >
             <motion.div
-              className="bg-gradient-to-br from-amber-950/90 to-orange-950/90 rounded-2xl border border-amber-700/50 p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto backdrop-blur-sm"
+              className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 rounded-2xl border border-orange-400/20 p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto backdrop-blur-sm"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -739,7 +739,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                 </div>
                 <motion.button
                   onClick={() => setShowMetricsModal(false)}
-                  className="p-2 rounded-lg bg-amber-800/50 hover:bg-amber-700/60 text-white transition-colors border border-amber-600/30"
+                  className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors border border-orange-400/20"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -751,7 +751,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* D.FAITH Token - Vereinfacht */}
                 <motion.div 
-                  className="relative bg-gradient-to-br from-amber-900/40 via-yellow-800/30 to-orange-900/40 rounded-2xl border border-amber-500/50 p-6 overflow-hidden"
+                  className="relative bg-gradient-to-br from-slate-800/40 via-slate-700/30 to-slate-800/40 rounded-2xl border border-orange-400/30 p-6 overflow-hidden"
                   whileHover={{ scale: 1.02 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -761,18 +761,18 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <Coins className="w-8 h-8 text-amber-400" />
-                        <span className="text-amber-200 font-bold text-lg">D.FAITH</span>
+                        <Coins className="w-8 h-8 text-orange-400" />
+                        <span className="text-orange-200 font-bold text-lg">D.FAITH</span>
                       </div>
-                      <div className="px-3 py-2 rounded-full bg-amber-500/30 text-amber-300 text-xs font-bold border border-amber-400/50">
+                      <div className="px-3 py-2 rounded-full bg-orange-500/20 text-orange-300 text-xs font-bold border border-orange-400/30">
                         LIVE
                       </div>
                     </div>
                     <div className="text-white">
-                      <div className="text-3xl font-bold mb-2 bg-gradient-to-r from-amber-300 to-yellow-200 bg-clip-text text-transparent">
+                      <div className="text-3xl font-bold mb-2 bg-gradient-to-r from-orange-300 to-amber-200 bg-clip-text text-transparent">
                         €{tokenMetrics?.priceEUR?.toFixed(4) || "0.1700"}
                       </div>
-                      <div className="text-amber-200 text-sm flex items-center gap-1">
+                      <div className="text-slate-300 text-sm flex items-center gap-1">
                         <span>🎵</span>
                         <TranslatedText text="Musikalischer Wert" language={language} />
                       </div>
@@ -782,7 +782,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
 
                 {/* D.INVEST Token - Vereinfacht */}
                 <motion.div 
-                  className="relative bg-gradient-to-br from-blue-900/40 via-cyan-800/30 to-indigo-900/40 rounded-2xl border border-blue-500/50 p-6 overflow-hidden"
+                  className="relative bg-gradient-to-br from-slate-800/40 via-slate-700/30 to-slate-800/40 rounded-2xl border border-blue-400/30 p-6 overflow-hidden"
                   whileHover={{ scale: 1.02 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -813,7 +813,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
 
                 {/* Total Staked - Vereinfacht */}
                 <motion.div 
-                  className="relative bg-gradient-to-br from-purple-900/40 via-violet-800/30 to-fuchsia-900/40 rounded-2xl border border-purple-500/50 p-6 overflow-hidden"
+                  className="relative bg-gradient-to-br from-slate-800/40 via-slate-700/30 to-slate-800/40 rounded-2xl border border-purple-400/30 p-6 overflow-hidden"
                   whileHover={{ scale: 1.02 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -846,7 +846,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
 
                 {/* Rewards Verteilt - Vereinfacht */}
                 <motion.div 
-                  className="relative bg-gradient-to-br from-green-900/40 via-emerald-800/30 to-teal-900/40 rounded-2xl border border-green-500/50 p-6 overflow-hidden"
+                  className="relative bg-gradient-to-br from-slate-800/40 via-slate-700/30 to-slate-800/40 rounded-2xl border border-green-400/30 p-6 overflow-hidden"
                   whileHover={{ scale: 1.02 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -921,7 +921,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
 
                 {/* Halving Stufe - Vereinfacht */}
                 <motion.div 
-                  className="relative bg-gradient-to-br from-red-900/40 via-rose-800/30 to-pink-900/40 rounded-2xl border border-red-500/50 p-6 overflow-hidden"
+                  className="relative bg-gradient-to-br from-slate-800/40 via-slate-700/30 to-slate-800/40 rounded-2xl border border-red-400/30 p-6 overflow-hidden"
                   whileHover={{ scale: 1.02 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -953,7 +953,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
 
                 {/* Bis Halving */}
                 <motion.div 
-                  className="bg-gradient-to-br from-orange-900/30 to-orange-800/20 rounded-xl border border-orange-500/40 p-4"
+                  className="bg-gradient-to-br from-slate-800/30 to-slate-700/20 rounded-xl border border-orange-400/30 p-4"
                   whileHover={{ scale: 1.02 }}
                 >
                   <div className="flex items-center justify-between mb-3">
@@ -1010,7 +1010,7 @@ export default function TokenomicsTab({ language }: TokenomicsTabProps) {
 
                 {/* Active Users - Vereinfacht */}
                 <motion.div 
-                  className="relative bg-gradient-to-br from-indigo-900/40 via-blue-800/30 to-cyan-900/40 rounded-2xl border border-indigo-500/50 p-6 md:col-span-2 overflow-hidden"
+                  className="relative bg-gradient-to-br from-slate-800/40 via-slate-700/30 to-slate-800/40 rounded-2xl border border-indigo-400/30 p-6 md:col-span-2 overflow-hidden"
                   whileHover={{ scale: 1.01 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
