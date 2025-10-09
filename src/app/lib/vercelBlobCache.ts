@@ -146,27 +146,57 @@ class VercelBlobTranslationCache {
 
   // Prüfe ob Vercel Blob verfügbar ist
   private canUseVercelBlob(): boolean {
-    const hasToken = !!(
-      process.env.BLOB_READ_WRITE_TOKEN || 
-      process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN
-    );
+    // Prüfe verschiedene mögliche Token-Namen basierend auf Custom Prefix
+    const tokenSources = [
+      'BLOB_READ_WRITE_TOKEN',
+      'NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN',
+      'VERCEL_BLOB_READ_WRITE_TOKEN',
+      // Custom prefix variations (wallet-komplett-qswd)
+      'WALLET_KOMPLETT_QSWD_BLOB_READ_WRITE_TOKEN',
+      'WALLETKOMPLETT_QSWD_BLOB_READ_WRITE_TOKEN',
+      'WALLET_KOMPLETT_QSWD_BLOB_READ_WRITE_TOKEN',
+    ];
     
+    let foundToken = '';
+    let tokenSource = '';
+    
+    for (const source of tokenSources) {
+      const token = process.env[source];
+      if (token && token.length > 10) { // Mindestlänge für gültiges Token
+        foundToken = token;
+        tokenSource = source;
+        break;
+      }
+    }
+    
+    const hasToken = !!foundToken;
     const isVercel = !!(
       process.env.VERCEL ||
       process.env.VERCEL_ENV ||
       process.env.NEXT_PUBLIC_VERCEL_ENV
     );
 
-    // Debug logging
+    // Debug logging mit allen verfügbaren Blob-Environment Variables
+    const allBlobEnvs = Object.keys(process.env)
+      .filter(key => key.toLowerCase().includes('blob'))
+      .map(key => ({
+        name: key,
+        length: process.env[key]?.length || 0,
+        prefix: process.env[key]?.substring(0, 20)
+      }));
+
     console.log(`🔍 Blob availability check:`, {
-      hasToken: !!hasToken,
-      tokenLength: hasToken ? (process.env.BLOB_READ_WRITE_TOKEN?.length || process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN?.length || 0) : 0,
+      hasToken,
+      tokenSource,
+      tokenLength: foundToken.length,
+      tokenPrefix: foundToken ? foundToken.substring(0, 20) + '...' : 'none',
+      allBlobEnvs,
       isVercel,
       vercelEnv: process.env.VERCEL_ENV,
-      canUse: hasToken // Verwende nur Token als Kriterium
+      canUse: hasToken
     });
 
-    // Wenn Token vorhanden ist, versuche Blob zu verwenden (auch in Development)
+    // Wenn Token vorhanden ist, versuche Blob zu verwenden
     return hasToken;
   }
 
