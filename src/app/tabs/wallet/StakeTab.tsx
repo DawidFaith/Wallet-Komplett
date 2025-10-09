@@ -874,7 +874,7 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
       <div className="text-center mb-3">
         <div className="flex items-center justify-center gap-3 mb-2">
           <h2 className="text-2xl font-bold bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
-            D.INVEST Staking
+            <TranslatedText text="D.INVEST Staking" language={language} />
           </h2>
           <button
             onClick={() => setShowInfoModal(true)}
@@ -884,7 +884,9 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
             <FaInfoCircle className="text-amber-400 text-lg" />
           </button>
         </div>
-        <p className="text-zinc-400">Verdienen Sie kontinuierlich D.FAITH Token durch Staking</p>
+        <p className="text-zinc-400">
+          <TranslatedText text="Verdienen Sie kontinuierlich D.FAITH Token durch Staking" language={language} />
+        </p>
       </div>
 
       {/* Info Modal */}
@@ -892,7 +894,9 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-gradient-to-br from-zinc-900 to-black rounded-2xl border border-zinc-700 p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-amber-400">Smart Contract Informationen</h3>
+              <h3 className="text-xl font-bold text-amber-400">
+                <TranslatedText text="Smart Contract Informationen" language={language} />
+              </h3>
               <button
                 onClick={() => setShowInfoModal(false)}
                 className="p-2 bg-zinc-800/60 hover:bg-zinc-700/60 rounded-full transition-colors"
@@ -909,18 +913,30 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
                     <FaCoins className="text-amber-400 text-lg" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-amber-400">D.INVEST Staking</h4>
-                    <p className="text-xs text-zinc-400">Verdienen Sie D.FAITH Token durch Staking</p>
+                    <h4 className="font-bold text-amber-400">
+                      <TranslatedText text="D.INVEST Staking" language={language} />
+                    </h4>
+                    <p className="text-xs text-zinc-400">
+                      <TranslatedText text="Verdienen Sie D.FAITH Token durch Staking" language={language} />
+                    </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <span className="text-zinc-500">Aktuelle Stufe:</span>
-                    <div className="text-amber-400 font-semibold">Stufe {currentStage}</div>
+                    <span className="text-zinc-500">
+                      <TranslatedText text="Aktuelle Stufe:" language={language} />
+                    </span>
+                    <div className="text-amber-400 font-semibold">
+                      <TranslatedText text="Stufe" language={language} /> {currentStage}
+                    </div>
                   </div>
                   <div>
-                    <span className="text-zinc-500">Wöchentliche Rate:</span>
-                    <div className="text-amber-400 font-semibold">{(currentRewardRate / 10000).toFixed(2)} D.FAITH pro Token</div>
+                    <span className="text-zinc-500">
+                      <TranslatedText text="Wöchentliche Rate:" language={language} />
+                    </span>
+                    <div className="text-amber-400 font-semibold">
+                      {(currentRewardRate / 10000).toFixed(2)} D.FAITH <TranslatedText text="pro Token" language={language} />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -928,24 +944,34 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
               {/* Ihr Staking Status */}
               {staked !== "0" && (
                 <div className="bg-blue-800/20 rounded-xl p-4 border border-blue-700/50">
-                  <h4 className="font-semibold text-blue-400 mb-3">Ihr Staking Status</h4>
+                  <h4 className="font-semibold text-blue-400 mb-3">
+                    <TranslatedText text="Ihr Staking Status" language={language} />
+                  </h4>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <span className="text-zinc-500">Gestakte Token:</span>
+                      <span className="text-zinc-500">
+                        <TranslatedText text="Gestakte Token:" language={language} />
+                      </span>
                       <div className="text-blue-400 font-semibold">{staked} D.INVEST</div>
                     </div>
                     <div>
-                      <span className="text-zinc-500">Wöchentlicher Reward:</span>
+                      <span className="text-zinc-500">
+                        <TranslatedText text="Wöchentlicher Reward:" language={language} />
+                      </span>
                       <div className="text-blue-400 font-semibold">{getUserWeeklyReward()} D.FAITH</div>
                     </div>
                     {secondsPerClaim > 0 && (
                       <>
                         <div>
-                          <span className="text-zinc-500">Claim-Intervall:</span>
+                          <span className="text-zinc-500">
+                            <TranslatedText text="Claim-Intervall:" language={language} />
+                          </span>
                           <div className="text-blue-400 font-semibold">{formatTime(secondsPerClaim)}</div>
                         </div>
                         <div>
-                          <span className="text-zinc-500">Verfügbare Rewards:</span>
+                          <span className="text-zinc-500">
+                            <TranslatedText text="Verfügbare Rewards:" language={language} />
+                          </span>
                           <div className="text-blue-400 font-semibold">{claimableRewards} D.FAITH</div>
                         </div>
                       </>
@@ -956,46 +982,62 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
 
               {/* Reward Stufen - Übersichtlicher gestaltet */}
               <div className="bg-green-800/20 rounded-xl p-4 border border-green-700/50">
-                <h4 className="font-semibold text-green-400 mb-3">Reward Stufen (Halving System)</h4>
+                <h4 className="font-semibold text-green-400 mb-3">
+                  <TranslatedText text="Reward Stufen (Halving System)" language={language} />
+                </h4>
                 <div className="space-y-3">
                   {/* Header */}
                   <div className="grid grid-cols-3 gap-4 text-xs font-semibold text-zinc-400 border-b border-green-700/30 pb-2">
-                    <span>Stufe</span>
-                    <span className="text-center">Rate/Woche</span>
-                    <span className="text-right">Bereich</span>
+                    <span><TranslatedText text="Stufe" language={language} /></span>
+                    <span className="text-center"><TranslatedText text="Rate/Woche" language={language} /></span>
+                    <span className="text-right"><TranslatedText text="Bereich" language={language} /></span>
                   </div>
                   
                   {/* Reward Stufen */}
                   <div className="space-y-2 text-sm">
                     <div className="grid grid-cols-3 gap-4 items-center">
-                      <span className="text-zinc-300">Stufe 1</span>
+                      <span className="text-zinc-300">
+                        <TranslatedText text="Stufe" language={language} /> 1
+                      </span>
                       <span className="text-green-400 text-center font-semibold">10.00%</span>
                       <span className="text-zinc-400 text-right">0 - 10k</span>
                     </div>
                     <div className="grid grid-cols-3 gap-4 items-center">
-                      <span className="text-zinc-300">Stufe 2</span>
+                      <span className="text-zinc-300">
+                        <TranslatedText text="Stufe" language={language} /> 2
+                      </span>
                       <span className="text-green-400 text-center font-semibold">5.00%</span>
                       <span className="text-zinc-400 text-right">10k - 20k</span>
                     </div>
                     <div className="grid grid-cols-3 gap-4 items-center">
-                      <span className="text-zinc-300">Stufe 3</span>
+                      <span className="text-zinc-300">
+                        <TranslatedText text="Stufe" language={language} /> 3
+                      </span>
                       <span className="text-green-400 text-center font-semibold">2.50%</span>
                       <span className="text-zinc-400 text-right">20k - 40k</span>
                     </div>
                     <div className="grid grid-cols-3 gap-4 items-center">
-                      <span className="text-zinc-300">Stufe 4</span>
+                      <span className="text-zinc-300">
+                        <TranslatedText text="Stufe" language={language} /> 4
+                      </span>
                       <span className="text-green-400 text-center font-semibold">1.25%</span>
                       <span className="text-zinc-400 text-right">40k - 60k</span>
                     </div>
                     <div className="grid grid-cols-3 gap-4 items-center">
-                      <span className="text-zinc-300">Stufe 5</span>
+                      <span className="text-zinc-300">
+                        <TranslatedText text="Stufe" language={language} /> 5
+                      </span>
                       <span className="text-green-400 text-center font-semibold">0.63%</span>
                       <span className="text-zinc-400 text-right">60k - 80k</span>
                     </div>
                     <div className="grid grid-cols-3 gap-4 items-center">
-                      <span className="text-zinc-300">Stufe 6+</span>
+                      <span className="text-zinc-300">
+                        <TranslatedText text="Stufe" language={language} /> 6+
+                      </span>
                       <span className="text-green-400 text-center font-semibold">0.31%</span>
-                      <span className="text-zinc-400 text-right">ab 80k</span>
+                      <span className="text-zinc-400 text-right">
+                        <TranslatedText text="ab" language={language} /> 80k
+                      </span>
                     </div>
                   </div>
                   
@@ -1003,10 +1045,10 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
                   <div className="border-t border-green-700/30 pt-3 mt-3">
                     <div className="text-center">
                       <div className="text-xs text-zinc-500 mb-1">
-                        Aktuell verteilt: <span className="text-green-400 font-semibold">{totalRewardsDistributed}</span> D.FAITH
+                        <TranslatedText text="Aktuell verteilt:" language={language} /> <span className="text-green-400 font-semibold">{totalRewardsDistributed}</span> D.FAITH
                       </div>
                       <div className="text-xs text-zinc-400">
-                        Alle Bereiche in D.FAITH • Bei jeder Stufe halbiert sich die Rate
+                        <TranslatedText text="Alle Bereiche in D.FAITH • Bei jeder Stufe halbiert sich die Rate" language={language} />
                       </div>
                     </div>
                   </div>
@@ -1015,34 +1057,46 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
 
               {/* Wichtige Regeln */}
               <div className="bg-orange-800/20 rounded-xl p-4 border border-orange-700/50">
-                <h4 className="font-semibold text-orange-400 mb-3">Wichtige Regeln</h4>
+                <h4 className="font-semibold text-orange-400 mb-3">
+                  <TranslatedText text="Wichtige Regeln" language={language} />
+                </h4>
                 <div className="space-y-2 text-sm text-zinc-300">
-                  <div>• <strong>Staking:</strong> Jederzeit möglich, mindestens 1 D.INVEST</div>
-                  <div>• <strong>Unstaking:</strong> Jederzeit möglich (ganz oder teilweise)</div>
-                  <div>• <strong>Rewards:</strong> Kontinuierliche Berechnung, Claim ab {minClaimAmount} D.FAITH</div>
-                  <div>• <strong>Automatik:</strong> Beim Unstaking werden Rewards automatisch ausgezahlt</div>
-                  <div>• <strong>Sicherheit:</strong> D.FAITH Token können nur durch D.INVEST herausgeholt werden, nicht durch Owner</div>
+                  <div>• <strong><TranslatedText text="Staking:" language={language} /></strong> <TranslatedText text="Jederzeit möglich, mindestens 1 D.INVEST" language={language} /></div>
+                  <div>• <strong><TranslatedText text="Unstaking:" language={language} /></strong> <TranslatedText text="Jederzeit möglich (ganz oder teilweise)" language={language} /></div>
+                  <div>• <strong><TranslatedText text="Rewards:" language={language} /></strong> <TranslatedText text="Kontinuierliche Berechnung, Claim ab" language={language} /> {minClaimAmount} D.FAITH</div>
+                  <div>• <strong><TranslatedText text="Automatik:" language={language} /></strong> <TranslatedText text="Beim Unstaking werden Rewards automatisch ausgezahlt" language={language} /></div>
+                  <div>• <strong><TranslatedText text="Sicherheit:" language={language} /></strong> <TranslatedText text="D.FAITH Token können nur durch D.INVEST herausgeholt werden, nicht durch Owner" language={language} /></div>
                 </div>
               </div>
 
               {/* Network Info - Kompakt */}
               <div className="bg-zinc-800/30 rounded-xl p-4 border border-zinc-700">
-                <h4 className="font-semibold text-zinc-400 mb-3">Netzwerk & Statistiken</h4>
+                <h4 className="font-semibold text-zinc-400 mb-3">
+                  <TranslatedText text="Netzwerk & Statistiken" language={language} />
+                </h4>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <span className="text-zinc-500">Netzwerk:</span>
+                    <span className="text-zinc-500">
+                      <TranslatedText text="Netzwerk:" language={language} />
+                    </span>
                     <div className="text-zinc-300">Base Chain</div>
                   </div>
                   <div>
-                    <span className="text-zinc-500">Total Staked:</span>
+                    <span className="text-zinc-500">
+                      <TranslatedText text="Total Staked:" language={language} />
+                    </span>
                     <div className="text-zinc-300">{totalStakedTokens} D.INVEST</div>
                   </div>
                   <div>
-                    <span className="text-zinc-500">Total Rewards verteilt:</span>
+                    <span className="text-zinc-500">
+                      <TranslatedText text="Total Rewards verteilt:" language={language} />
+                    </span>
                     <div className="text-zinc-300">{totalRewardsDistributed} D.FAITH</div>
                   </div>
                   <div>
-                    <span className="text-zinc-500">Verfügbare Rewards:</span>
+                    <span className="text-zinc-500">
+                      <TranslatedText text="Verfügbare Rewards:" language={language} />
+                    </span>
                     <div className="text-amber-400 font-semibold">{availableRewards} D.FAITH</div>
                   </div>
                 </div>
@@ -1056,14 +1110,20 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
       <div className="bg-gradient-to-br from-blue-800/30 to-blue-900/30 rounded-xl p-4 border border-blue-700/50">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm font-medium text-blue-400">Aktuelle Reward-Stufe</div>
+            <div className="text-sm font-medium text-blue-400">
+              <TranslatedText text="Aktuelle Reward-Stufe" language={language} />
+            </div>
             <div className="text-xs text-zinc-500">
-              {(currentRewardRate / 10000).toFixed(2)} D.FAITH pro D.INVEST pro Woche
+              {(currentRewardRate / 10000).toFixed(2)} D.FAITH <TranslatedText text="pro D.INVEST pro Woche" language={language} />
             </div>
           </div>
           <div className="text-right">
-            <div className="text-lg font-bold text-blue-400">Stufe {currentStage}</div>
-            <div className="text-xs text-zinc-500">Total verteilt: {totalRewardsDistributed} D.FAITH</div>
+            <div className="text-lg font-bold text-blue-400">
+              <TranslatedText text="Stufe" language={language} /> {currentStage}
+            </div>
+            <div className="text-xs text-zinc-500">
+              <TranslatedText text="Total verteilt:" language={language} /> {totalRewardsDistributed} D.FAITH
+            </div>
           </div>
         </div>
       </div>
@@ -1071,21 +1131,27 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
       {/* Staking Overview: Verfügbar, Gestaked, Reward */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-4 border border-zinc-700 text-center">
-          <div className="text-sm text-zinc-500 mb-1">Verfügbar</div>
+          <div className="text-sm text-zinc-500 mb-1">
+            <TranslatedText text="Verfügbar" language={language} />
+          </div>
           <div className="text-xl font-bold text-amber-400">
             {loading ? "Laden..." : available}
           </div>
           <div className="text-xs text-zinc-500">D.INVEST</div>
         </div>
         <div className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-4 border border-zinc-700 text-center">
-          <div className="text-sm text-zinc-500 mb-1">Gestaked</div>
+          <div className="text-sm text-zinc-500 mb-1">
+            <TranslatedText text="Gestaked" language={language} />
+          </div>
           <div className="text-xl font-bold text-purple-400">
             {loading ? "Laden..." : staked}
           </div>
           <div className="text-xs text-zinc-500">D.INVEST</div>
         </div>
         <div className="bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl p-4 border border-zinc-700 text-center flex flex-col items-center justify-center">
-          <div className="text-sm text-zinc-500 mb-1">Rate</div>
+          <div className="text-sm text-zinc-500 mb-1">
+            <TranslatedText text="Rate" language={language} />
+          </div>
           <div className="text-xl font-bold text-green-400 break-words max-w-full" style={{wordBreak:'break-word'}}>
             {getUserWeeklyReward()}
           </div>
@@ -1101,11 +1167,17 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
               <FaCoins className="text-black text-lg" />
             </div>
             <div>
-              <h3 className="font-bold text-amber-400">Verfügbare Belohnungen</h3>
+              <h3 className="font-bold text-amber-400">
+                <TranslatedText text="Verfügbare Belohnungen" language={language} />
+              </h3>
               <p className="text-xs text-zinc-500">
                 {secondsPerClaim > 0 && staked !== "0"
-                  ? `Kontinuierliche Belohnung alle ${formatTime(secondsPerClaim)} → ${minClaimAmount} D.FAITH`
-                  : `Kontinuierliche D.FAITH Belohnungen (min. ${minClaimAmount})`
+                  ? <>
+                      <TranslatedText text="Kontinuierliche Belohnung alle" language={language} /> {formatTime(secondsPerClaim)} → {minClaimAmount} D.FAITH
+                    </>
+                  : <>
+                      <TranslatedText text="Kontinuierliche D.FAITH Belohnungen (min." language={language} /> {minClaimAmount})
+                    </>
                 }
               </p>
             </div>
@@ -1122,9 +1194,12 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
           onClick={handleClaim}
         >
           <FaCoins className="inline mr-2" />
-          {txStatus === "pending" ? "Wird verarbeitet..." : 
-           !canClaim ? "Warten" : 
-           "Belohnungen einfordern"}
+          {txStatus === "pending" ? 
+            <TranslatedText text="Wird verarbeitet..." language={language} /> : 
+           !canClaim ? 
+            <TranslatedText text="Warten" language={language} /> : 
+            <TranslatedText text="Belohnungen einfordern" language={language} />
+          }
         </Button>
       </div>
 
@@ -1143,20 +1218,34 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
             )}
             <span>
-              {txStatus === "success" && lastOperation === "stake" && "✅ Staking erfolgreich abgeschlossen!"}
-              {txStatus === "success" && lastOperation === "unstake" && "✅ Unstaking erfolgreich abgeschlossen!"}
-              {txStatus === "success" && lastOperation === "claim" && "✅ Belohnungen erfolgreich eingefordert!"}
-              {txStatus === "success" && !lastOperation && "✅ Operation erfolgreich abgeschlossen!"}
-              {txStatus === "error" && lastOperation === "stake" && "❌ Staking fehlgeschlagen! Bitte versuchen Sie es erneut."}
-              {txStatus === "error" && lastOperation === "unstake" && "❌ Unstaking fehlgeschlagen! Bitte versuchen Sie es erneut."}
-              {txStatus === "error" && lastOperation === "claim" && "❌ Claim fehlgeschlagen! Bitte versuchen Sie es erneut."}
-              {txStatus === "error" && !lastOperation && "❌ Transaktion fehlgeschlagen! Bitte versuchen Sie es erneut."}
-              {txStatus === "pending" && lastOperation === "stake" && "⏳ Staking wird verarbeitet..."}
-              {txStatus === "pending" && lastOperation === "unstake" && "⏳ Unstaking wird verarbeitet..."}
-              {txStatus === "pending" && lastOperation === "claim" && "⏳ Belohnungen werden eingefordert..."}
-              {txStatus === "pending" && !lastOperation && "⏳ Transaktion wird verarbeitet..."}
-              {txStatus === "approving" && "🔐 Token-Genehmigung wird erteilt..."}
-              {txStatus === "staking" && "🔒 Staking-Vorgang läuft..."}
+              {txStatus === "success" && lastOperation === "stake" && 
+                <>✅ <TranslatedText text="Staking erfolgreich abgeschlossen!" language={language} /></>}
+              {txStatus === "success" && lastOperation === "unstake" && 
+                <>✅ <TranslatedText text="Unstaking erfolgreich abgeschlossen!" language={language} /></>}
+              {txStatus === "success" && lastOperation === "claim" && 
+                <>✅ <TranslatedText text="Belohnungen erfolgreich eingefordert!" language={language} /></>}
+              {txStatus === "success" && !lastOperation && 
+                <>✅ <TranslatedText text="Operation erfolgreich abgeschlossen!" language={language} /></>}
+              {txStatus === "error" && lastOperation === "stake" && 
+                <>❌ <TranslatedText text="Staking fehlgeschlagen! Bitte versuchen Sie es erneut." language={language} /></>}
+              {txStatus === "error" && lastOperation === "unstake" && 
+                <>❌ <TranslatedText text="Unstaking fehlgeschlagen! Bitte versuchen Sie es erneut." language={language} /></>}
+              {txStatus === "error" && lastOperation === "claim" && 
+                <>❌ <TranslatedText text="Claim fehlgeschlagen! Bitte versuchen Sie es erneut." language={language} /></>}
+              {txStatus === "error" && !lastOperation && 
+                <>❌ <TranslatedText text="Transaktion fehlgeschlagen! Bitte versuchen Sie es erneut." language={language} /></>}
+              {txStatus === "pending" && lastOperation === "stake" && 
+                <>⏳ <TranslatedText text="Staking wird verarbeitet..." language={language} /></>}
+              {txStatus === "pending" && lastOperation === "unstake" && 
+                <>⏳ <TranslatedText text="Unstaking wird verarbeitet..." language={language} /></>}
+              {txStatus === "pending" && lastOperation === "claim" && 
+                <>⏳ <TranslatedText text="Belohnungen werden eingefordert..." language={language} /></>}
+              {txStatus === "pending" && !lastOperation && 
+                <>⏳ <TranslatedText text="Transaktion wird verarbeitet..." language={language} /></>}
+              {txStatus === "approving" && 
+                <>🔐 <TranslatedText text="Token-Genehmigung wird erteilt..." language={language} /></>}
+              {txStatus === "staking" && 
+                <>🔒 <TranslatedText text="Staking-Vorgang läuft..." language={language} /></>}
             </span>
           </div>
         </div>
@@ -1173,7 +1262,7 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
           onClick={() => setActiveTab("stake")}
         >
           <FaLock className="inline mr-2" />
-          Staken
+          <TranslatedText text="Staken" language={language} />
         </button>
         <button 
           className={`flex-1 py-3 px-4 rounded-lg font-medium transition ${
@@ -1184,7 +1273,7 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
           onClick={() => setActiveTab("unstake")}
         >
           <FaUnlock className="inline mr-2" />
-          Unstaken
+          <TranslatedText text="Unstaken" language={language} />
         </button>
       </div>
 
@@ -1194,9 +1283,13 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
           {/* Eingabe und verfügbare Balance in einer Zeile */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between mb-1">
-              <label className="text-sm font-medium text-zinc-300">D.INVEST Betrag</label>
+              <label className="text-sm font-medium text-zinc-300">
+                <TranslatedText text="D.INVEST Betrag" language={language} />
+              </label>
               <div className="flex items-center gap-2 bg-zinc-800/60 px-2 py-1 rounded-lg">
-                <span className="text-xs text-zinc-500">Verfügbar:</span>
+                <span className="text-xs text-zinc-500">
+                  <TranslatedText text="Verfügbar:" language={language} />
+                </span>
                 <span className="text-xs font-bold text-amber-400">{loading ? "Laden..." : available}</span>
                 <button 
                   className="text-xs px-2 py-1 bg-amber-500/20 text-amber-400 rounded hover:bg-amber-500/30 transition ml-2"
@@ -1227,7 +1320,9 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
           {/* Reward Vorschau für Eingabe */}
           {stakeAmount && parseInt(stakeAmount) > 0 && (
             <div className="bg-zinc-800/60 rounded-xl p-4 border border-zinc-700 flex flex-col items-center mt-2">
-              <div className="text-xs text-zinc-400 mb-1">Ihr wöchentlicher Reward (Stufe {currentStage}):</div>
+              <div className="text-xs text-zinc-400 mb-1">
+                <TranslatedText text="Ihr wöchentlicher Reward (Stufe" language={language} /> {currentStage}):
+              </div>
               <div className="text-2xl font-bold text-amber-400">
                 {/* Smart Contract konforme Berechnung: (amount * rate) / 10000 */}
                 {/* Basis-Punkte: 1000 = 10.00% = 0.10 D.FAITH pro D.INVEST/Woche */}
@@ -1274,15 +1369,19 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
             onClick={handleStake}
           >
             <FaLock className="inline mr-2" />
-            {txStatus === "approving" && "Approval läuft..."}
-            {txStatus === "staking" && (parseInt(staked) > 0 ? "Token hinzufügen..." : "Staking läuft...")}
-            {txStatus === "pending" && "Wird verarbeitet..."}
-            {!txStatus && (!stakeAmount || parseInt(stakeAmount) <= 0) && "Betrag eingeben (min. 1)"}
-            {!txStatus && stakeAmount && parseInt(stakeAmount) > parseInt(available) && "Nicht genügend Token"}
+            {txStatus === "approving" && <TranslatedText text="Approval läuft..." language={language} />}
+            {txStatus === "staking" && (parseInt(staked) > 0 ? 
+              <TranslatedText text="Token hinzufügen..." language={language} /> : 
+              <TranslatedText text="Staking läuft..." language={language} />)}
+            {txStatus === "pending" && <TranslatedText text="Wird verarbeitet..." language={language} />}
+            {!txStatus && (!stakeAmount || parseInt(stakeAmount) <= 0) && 
+              <TranslatedText text="Betrag eingeben (min. 1)" language={language} />}
+            {!txStatus && stakeAmount && parseInt(stakeAmount) > parseInt(available) && 
+              <TranslatedText text="Nicht genügend Token" language={language} />}
             {!txStatus && stakeAmount && parseInt(stakeAmount) > 0 && parseInt(stakeAmount) <= parseInt(available) && (
               parseInt(staked) > 0 
-                ? `${stakeAmount} D.INVEST hinzufügen` 
-                : `${stakeAmount} D.INVEST staken`
+                ? <>{stakeAmount} D.INVEST <TranslatedText text="hinzufügen" language={language} /></>
+                : <>{stakeAmount} D.INVEST <TranslatedText text="staken" language={language} /></>
             )}
           </Button>
 
@@ -1299,7 +1398,7 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
                   <span className="text-blue-400 text-xs">ℹ</span>
                 </div>
                 <div className="text-sm text-zinc-400">
-                  Sie haben derzeit keine D.INVEST Token gestaked.
+                  <TranslatedText text="Sie haben derzeit keine D.INVEST Token gestaked." language={language} />
                 </div>
               </div>
             </div>
@@ -1310,7 +1409,9 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-sm font-medium text-zinc-300">D.INVEST Betrag</label>
                   <div className="flex items-center gap-2 bg-zinc-800/60 px-2 py-1 rounded-lg">
-                    <span className="text-xs text-zinc-500">Gestaked:</span>
+                    <span className="text-xs text-zinc-500">
+                  <TranslatedText text="Gestaked:" language={language} />
+                </span>
                     <span className="text-xs font-bold text-purple-400">{loading ? "Laden..." : staked}</span>
                     <button 
                       className="text-xs px-2 py-1 bg-purple-500/20 text-purple-400 rounded hover:bg-purple-500/30 transition ml-2"
@@ -1347,10 +1448,13 @@ export default function StakeTab({ language, onStakeChanged }: StakeTabProps) {
                 }}
               >
                 <FaUnlock className="inline mr-2" />
-                {txStatus === "pending" && "Wird verarbeitet..."}
-                {!txStatus && (!unstakeAmount || parseInt(unstakeAmount) <= 0) && "Betrag eingeben (min. 1)"}
-                {!txStatus && unstakeAmount && parseInt(unstakeAmount) > parseInt(staked) && "Nicht genügend Token gestaked"}
-                {!txStatus && unstakeAmount && parseInt(unstakeAmount) > 0 && parseInt(unstakeAmount) <= parseInt(staked) && `${unstakeAmount} D.INVEST unstaken`}
+                {txStatus === "pending" && <TranslatedText text="Wird verarbeitet..." language={language} />}
+                {!txStatus && (!unstakeAmount || parseInt(unstakeAmount) <= 0) && 
+                  <TranslatedText text="Betrag eingeben (min. 1)" language={language} />}
+                {!txStatus && unstakeAmount && parseInt(unstakeAmount) > parseInt(staked) && 
+                  <TranslatedText text="Nicht genügend Token gestaked" language={language} />}
+                {!txStatus && unstakeAmount && parseInt(unstakeAmount) > 0 && parseInt(unstakeAmount) <= parseInt(staked) && 
+                  <>{unstakeAmount} D.INVEST <TranslatedText text="unstaken" language={language} /></>}
               </Button>
 
             </>
