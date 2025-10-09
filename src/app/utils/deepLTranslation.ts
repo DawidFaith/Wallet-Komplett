@@ -52,17 +52,22 @@ class TranslationService {
     try {
       // 1. Prüfe globalen Vercel Blob Cache (falls verfügbar)
       if (this.useGlobalCache) {
-        const cachedTranslation = await vercelBlobCache.getTranslation(text, normalizedLang);
-        if (cachedTranslation) {
-          return cachedTranslation;
+        try {
+          const cachedTranslation = await vercelBlobCache.getTranslation(text, normalizedLang);
+          if (cachedTranslation) {
+            return cachedTranslation;
+          }
+        } catch (blobError) {
+          console.log(`📝 Blob cache unavailable, using local cache: ${blobError instanceof Error ? blobError.message : 'Unknown error'}`);
+          this.useGlobalCache = false; // Umschalten auf lokalen Cache
         }
-      } else {
-        // Fallback: Lokaler Cache für Entwicklung
-        const cacheKey = this.getCacheKey(text, normalizedLang);
-        if (this.localCache[cacheKey]) {
-          console.log(`📝 Local cache HIT: "${text}" -> "${this.localCache[cacheKey]}"`);
-          return this.localCache[cacheKey];
-        }
+      }
+      
+      // 2. Fallback: Lokaler Cache
+      const cacheKey = this.getCacheKey(text, normalizedLang);
+      if (this.localCache[cacheKey]) {
+        console.log(`🎯 Local cache HIT: "${text}" -> "${this.localCache[cacheKey]}"`);
+        return this.localCache[cacheKey];
       }
 
       // 2. Cache Miss - DeepL API Call
@@ -87,7 +92,16 @@ class TranslationService {
 
       // 3. Speichere in entsprechendem Cache
       if (this.useGlobalCache) {
-        await vercelBlobCache.setTranslation(text, normalizedLang, translatedText);
+        try {
+          await vercelBlobCache.setTranslation(text, normalizedLang, translatedText);
+        } catch (blobError) {
+          console.log(`📝 Blob save failed, using local cache: ${blobError instanceof Error ? blobError.message : 'Unknown error'}`);
+          this.useGlobalCache = false;
+          // Fallback: Lokaler Cache
+          const cacheKey = this.getCacheKey(text, normalizedLang);
+          this.localCache[cacheKey] = translatedText;
+          console.log(`💾 Local cache SET: "${text}" -> "${translatedText}"`);
+        }
       } else {
         const cacheKey = this.getCacheKey(text, normalizedLang);
         this.localCache[cacheKey] = translatedText;
@@ -107,11 +121,20 @@ class TranslationService {
       return texts;
     }
 
+    // Batch-Verarbeitung für bessere Performance
+    const batchSize = 5; // Reduziere gleichzeitige API-Calls
     const results: string[] = [];
     
-    for (const text of texts) {
-      const translated = await this.translateText(text, targetLang);
-      results.push(translated);
+    for (let i = 0; i < texts.length; i += batchSize) {
+      const batch = texts.slice(i, i + batchSize);
+      const batchPromises = batch.map(text => this.translateText(text, targetLang));
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults);
+      
+      // Kleine Pause zwischen Batches um Performance-Warnings zu vermeiden
+      if (i + batchSize < texts.length) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
     }
     
     return results;
