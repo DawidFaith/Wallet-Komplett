@@ -67,17 +67,13 @@ const getLevelAndExpRange = (exp: number) => {
   return { level, minExp, maxExp };
 };
 
-// UUID aus URL Parameter holen (temporär auf dfaith3781123 gesetzt)
+// UUID aus URL Parameter holen
 const getUUID = () => {
-  // Temporär für Tests: dfaith3781123
-  return 'dfaith3781123';
-  
-  // Original Code:
-  // if (typeof window !== 'undefined') {
-  //   const urlParams = new URLSearchParams(window.location.search);
-  //   return urlParams.get('uuid');
-  // }
-  // return null;
+  if (typeof window !== 'undefined') {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('uuid');
+  }
+  return null;
 };
 
 interface InstagramTabProps {
@@ -142,10 +138,8 @@ export default function InstagramTab({ language }: InstagramTabProps) {
         const uuid = getUUID();
         console.log('Lade Daten für UUID:', uuid);
         
-        // UUID Überprüfung - temporär deaktiviert für dfaith3781123
-        // Aktuell ist diese Prüfung deaktiviert für Tests
-        const showNoUuidModal = false; // Auf false gesetzt für temporäre UUID dfaith3781123
-        if (showNoUuidModal && (!uuid || uuid === null)) {
+        // UUID Überprüfung
+        if (!uuid || uuid === null) {
           setLoading(false);
           setShowNoUuidModal(true);
           // Dummy Daten setzen damit die UI angezeigt wird

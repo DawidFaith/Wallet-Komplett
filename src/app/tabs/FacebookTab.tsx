@@ -96,13 +96,13 @@ export default function FacebookTab({ language }: FacebookTabProps) {
     return { level, minExp, maxExp };
   };
 
-  // UUID aus URL Parameter holen (Simulation)
+  // UUID aus URL Parameter holen
   const getUUID = () => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('uuid') || 'Dawidfaithtest3736FB';
+      return urlParams.get('uuid');
     }
-    return 'Dawidfaithtest3736FB';
+    return undefined;
   };
 
   // Daten laden
@@ -111,34 +111,16 @@ export default function FacebookTab({ language }: FacebookTabProps) {
       setLoading(true);
       try {
         const uuid = getUUID();
-        
-        // UUID Überprüfung - Test-UUID ist jetzt erlaubt
-        if (uuid === 'Dawidfaithtest3736FB_DISABLED') {  // Disabled für Test
+        // Wenn keine UUID vorhanden, Modal anzeigen und nicht laden
+        if (!uuid) {
+          setShowNoUuidModal(true);
           setLoading(false);
-          // Dummy Daten setzen damit die UI angezeigt wird
-          setUserData({
-            username: "Gast",
-            image: "https://via.placeholder.com/100",
-            expTotal: 0,
-            expTiktok: 0,
-            expInstagram: 0,
-            expFacebook: 0,
-            expStream: 0,
-            liveNFTBonus: 0,
-            miningpower: 0,
-            liked: "false",
-            commented: "false",
-            saved: "false",
-            wallet: undefined
-          });
+          setUserData(null);
           return;
         }
-        
         const url = `https://uuid-check-fb.vercel.app/api/uuid-check?uuid=${uuid}`;
-        
         const response = await fetch(url);
         const data = await response.json();
-        
         // Wallet setzen falls vorhanden
         if (data.wallet && data.wallet.startsWith("0x")) {
           setWalletInput(data.wallet);
@@ -146,7 +128,6 @@ export default function FacebookTab({ language }: FacebookTabProps) {
           const validation = validateBaseAddressRealTime(data.wallet);
           setWalletValidation(validation);
         }
-        
         setUserData({
           username: data.username,
           image: data.image?.startsWith("http://") ? data.image.replace("http://", "https://") : data.image || "https://via.placeholder.com/100",
@@ -162,14 +143,12 @@ export default function FacebookTab({ language }: FacebookTabProps) {
           saved: data.saved,
           wallet: data.wallet
         });
-        
       } catch (error) {
         console.error('Fehler beim Laden der Daten:', error);
       } finally {
         setLoading(false);
       }
     };
-
     loadUserData();
   }, []);
 
@@ -366,25 +345,63 @@ export default function FacebookTab({ language }: FacebookTabProps) {
   }, []);
 
   if (!userData) {
+    // Zeige nur das Modal, wenn keine UUID vorhanden ist
     return (
-      <div 
-        className="min-h-screen w-full flex items-center justify-center"
-        style={{
-          background: 'linear-gradient(135deg, #1877f2, #3b5998, #1d2e70)',
-          fontFamily: 'Poppins, Segoe UI, sans-serif'
-        }}
-      >
-        <div className="text-white text-center">
-          <div className="animate-spin w-20 h-20 border-4 border-white/20 border-t-white rounded-full mx-auto mb-8"></div>
-          <p className="text-2xl font-bold mb-3"><TranslatedText text="Facebook Tab wird geladen..." language={language} /></p>
-          <p className="text-lg opacity-90 mb-2"><TranslatedText text="Bitte warten Sie einen Moment" language={language} /></p>
-          <div className="flex items-center justify-center gap-2 text-sm opacity-70">
-            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-            <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
-            <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+      <>
+        {showNoUuidModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-40 flex items-center justify-center p-4">
+            <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
+              <button
+                className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
+                onClick={() => setShowNoUuidModal(false)}
+                aria-label="Schließen"
+                style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+              >
+                ×
+              </button>
+              <div className="flex flex-col items-center gap-4 mb-6">
+                <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-3xl text-white">🔒</span>
+                </div>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent"><TranslatedText text="Profil nicht gefunden" language={language} /></h2>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6">
+                <p className="text-gray-800 leading-relaxed mb-4">
+                  <TranslatedText text="Dein Profil ist nur durch die " language={language} /><strong className="text-blue-600"><TranslatedText text="Teilnahme an den Beiträgen" language={language} /></strong><TranslatedText text=" von " language={language} /><strong className="text-blue-600">Dawid Faith</strong><TranslatedText text=" erreichbar." language={language} />
+                </p>
+                <p className="text-gray-600 text-sm">
+                  💡 Like, kommentiere und teile seine Beiträge, um Zugang zu erhalten!
+                </p>
+              </div>
+              <div className="space-y-3 mb-6">
+                <p className="text-gray-700 font-medium">📱 Folge Dawid Faith auf Facebook:</p>
+                <a 
+                  href="https://www.facebook.com/share/1Auve8u2CG"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3 block"
+                >
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  </svg>
+                  <span><TranslatedText text="Facebook Profil" language={language} /></span>
+                </a>
+              </div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4">
+                <p className="text-yellow-800 font-medium text-sm">
+                  ⚡ <strong>Tipp:</strong> Nach der Teilnahme kannst du über den speziellen Link auf dein Profil zugreifen!
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowNoUuidModal(false)}
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
+              >
+                ❌ <TranslatedText text="Verstanden" language={language} />
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
+        )}
+      </>
     );
   }
 
