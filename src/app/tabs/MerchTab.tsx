@@ -1821,12 +1821,12 @@ export default function MerchTab({ language }: MerchTabProps) {
                       {/* Preis und Button */}
                       <div className="flex justify-between items-end">
                         <div className="space-y-1">
-                          <div className="text-amber-400 font-bold text-lg flex items-center gap-2">
-                            <FaCoins className="text-amber-500" />
+                          <div className="text-yellow-300 font-bold text-xl flex items-center gap-2">
+                            <FaCoins className="text-yellow-400" />
                             {dfaithPrice.toFixed(2)} D.FAITH
                           </div>
-                          <div className="text-white font-semibold text-base flex items-center gap-1.5 bg-blue-950/40 px-3 py-1 rounded-lg border border-blue-400/30">
-                            <FaEuroSign className="text-sm text-blue-300" />
+                          <div className="text-gray-300 font-medium text-sm flex items-center gap-1.5">
+                            <FaEuroSign className="text-xs text-gray-400" />
                             {product.price.toFixed(2)} EUR
                           </div>
                           
@@ -1870,12 +1870,12 @@ export default function MerchTab({ language }: MerchTabProps) {
                     /* Nur Preis und Button für Videos */
                     <div className="flex justify-between items-end">
                       <div className="space-y-1">
-                        <div className="text-amber-400 font-bold text-lg flex items-center gap-2">
-                          <FaCoins className="text-amber-500" />
+                        <div className="text-yellow-300 font-bold text-xl flex items-center gap-2">
+                          <FaCoins className="text-yellow-400" />
                           {dfaithPrice.toFixed(2)} D.FAITH
                         </div>
-                        <div className="text-white font-semibold text-base flex items-center gap-1.5 bg-blue-950/40 px-3 py-1 rounded-lg border border-blue-400/30">
-                          <FaEuroSign className="text-sm text-blue-300" />
+                        <div className="text-gray-300 font-medium text-sm flex items-center gap-1.5">
+                          <FaEuroSign className="text-xs text-gray-400" />
                           {product.price.toFixed(2)} EUR
                         </div>
                         
@@ -1910,12 +1910,12 @@ export default function MerchTab({ language }: MerchTabProps) {
                     /* Standard Layout - nur Preis und Button, da Titel/Beschreibung bereits im Overlay sind */
                     <div className="flex justify-between items-end">
                       <div className="space-y-1">
-                        <div className="text-amber-400 font-bold text-lg flex items-center gap-2">
-                          <FaCoins className="text-amber-500" />
+                        <div className="text-yellow-300 font-bold text-xl flex items-center gap-2">
+                          <FaCoins className="text-yellow-400" />
                           {dfaithPrice.toFixed(2)} D.FAITH
                         </div>
-                        <div className="text-white font-semibold text-base flex items-center gap-1.5 bg-blue-950/40 px-3 py-1 rounded-lg border border-blue-400/30">
-                          <FaEuroSign className="text-sm text-blue-300" />
+                        <div className="text-gray-300 font-medium text-sm flex items-center gap-1.5">
+                          <FaEuroSign className="text-xs text-gray-400" />
                           {product.price.toFixed(2)} EUR
                         </div>
                         
