@@ -277,13 +277,12 @@ export default function FacebookTab({ language }: FacebookTabProps) {
     setLoading(true);
     try {
       const uuid = getUUID();
-      const response = await fetch(`https://hook.eu2.make.com/q75ocak1iqjwhafs7t99xpxp1xzeymqt?uuid=${encodeURIComponent(uuid)}`);
+      const safeUuid = uuid ?? '';
+      const response = await fetch(`https://hook.eu2.make.com/q75ocak1iqjwhafs7t99xpxp1xzeymqt?uuid=${encodeURIComponent(safeUuid)}`);
       const data = await response.json();
-      
       const likes = parseInt(data.likes);
       const shares = parseInt(data.shares);
       setInitialValues({ likes, shares });
-      
       // LocalStorage setzen wie im Original
       if (typeof window !== 'undefined') {
         localStorage.setItem("dfaith_likeStart", likes.toString());
@@ -300,19 +299,17 @@ export default function FacebookTab({ language }: FacebookTabProps) {
     setLoading(true);
     try {
       const uuid = getUUID();
-      const response = await fetch(`https://hook.eu2.make.com/q75ocak1iqjwhafs7t99xpxp1xzeymqt?uuid=${encodeURIComponent(uuid)}`);
+      const safeUuid = uuid ?? '';
+      const response = await fetch(`https://hook.eu2.make.com/q75ocak1iqjwhafs7t99xpxp1xzeymqt?uuid=${encodeURIComponent(safeUuid)}`);
       const data = await response.json();
-      
       const newLikes = parseInt(data.likes);
       const newShares = parseInt(data.shares);
       setAfterValues({ likes: newLikes, shares: newShares });
-      
       // Automatischer Vergleich und EXP Berechnung
       if (initialValues) {
         const likesGained = Math.max(0, newLikes - initialValues.likes);
         const sharesGained = Math.max(0, newShares - initialValues.shares);
         const totalExp = (likesGained * 10) + (sharesGained * 10);
-        
         if (totalExp > 0) {
           setExpGained({
             likes: likesGained,
