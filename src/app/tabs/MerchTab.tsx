@@ -2311,8 +2311,8 @@ export default function MerchTab({ language }: MerchTabProps) {
       {showSuccessModal && successDetails && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden" style={{ position: 'fixed' }}>
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
-          <div className="relative bg-gradient-to-br from-green-900 to-emerald-800 border border-green-500/50 w-full max-w-lg mx-4 rounded-2xl shadow-2xl">
-            <div className="p-8 text-center">
+          <div className="relative bg-gradient-to-br from-green-900 to-emerald-800 border border-green-500/50 w-full max-w-md mx-4 rounded-2xl shadow-2xl">
+            <div className="p-6 text-center">
               {/* X-Button zum Schließen */}
               <Button
                 onClick={() => {
@@ -2321,70 +2321,72 @@ export default function MerchTab({ language }: MerchTabProps) {
                   setPurchaseStatus("idle");
                   setSuccessDetails(null);
                 }}
-                className="absolute top-4 right-4 bg-green-800/50 hover:bg-green-700/70 text-white border border-green-500/30 hover:border-green-400 p-2 rounded-lg transition-all duration-200"
+                className="absolute top-3 right-3 bg-green-800/50 hover:bg-green-700/70 text-white border border-green-500/30 hover:border-green-400 p-1.5 rounded-lg transition-all duration-200"
               >
-                <FaTimes className="text-lg" />
+                <FaTimes className="text-base" />
               </Button>
               
               {/* Erfolgs-Icon */}
-              <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <FaCheck className="text-3xl text-white" />
+              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <FaCheck className="text-2xl text-white" />
               </div>
               
               {/* Hauptnachricht */}
-              <h2 className="text-3xl font-bold text-white mb-4">
+              <h2 className="text-2xl font-bold text-white mb-3">
                 🎉 <TranslatedText text="Kauf erfolgreich!" language={language} />
               </h2>
               
-              <p className="text-green-100 text-lg mb-6">
-                <TranslatedText text="Ihre Zahlung wurde erfolgreich verarbeitet und Ihre Bestellung wurde automatisch an unser System weitergeleitet." language={language} />
+              <p className="text-green-100 text-sm mb-4">
+                <TranslatedText text="Ihre Zahlung wurde verarbeitet!" language={language} />
               </p>
               
-              {/* Details */}
-              <div className="bg-black/20 rounded-lg p-4 mb-6 text-left">
-                <div className="space-y-2 text-sm">
+              {/* Details - Kompakter */}
+              <div className="bg-black/20 rounded-lg p-3 mb-4 text-left">
+                <div className="space-y-1.5 text-xs">
                   <div className="flex justify-between">
                     <span className="text-green-200">Order-ID:</span>
-                    <span className="text-white font-mono">{successDetails.orderId}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-green-200">Transaktion:</span>
-                    <span className="text-white font-mono">{successDetails.transactionHash.substring(0, 16)}...</span>
+                    <span className="text-white font-mono">{successDetails.orderId.slice(-12)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-green-200">Artikel:</span>
-                    <span className="text-white">{successDetails.itemCount} Stück</span>
+                    <span className="text-white font-bold">{successDetails.itemCount}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-green-200">Bezahlt:</span>
-                    <span className="text-amber-400 font-bold">{successDetails.totalPrice.toFixed(2)} D.FAITH</span>
+                    <span className="text-green-200">Gesamt:</span>
+                    <span className="text-white font-bold">{successDetails.totalPrice.toFixed(2)} D.FAITH</span>
                   </div>
                 </div>
               </div>
               
-              {/* Weitere Schritte */}
-              <div className="bg-green-800/30 rounded-lg p-4 mb-6">
-                <h3 className="text-white font-bold mb-2">
-                  📧 <TranslatedText text="Nächste Schritte:" language={language} />
-                </h3>
-                <p className="text-green-100 text-sm mb-3">
-                  {successDetails.hasPhysical 
-                    ? "Sie erhalten eine Versandbestätigung per E-Mail, sobald Ihre Bestellung versendet wird."
-                    : "Ihre Download-Links wurden bereits an Ihre E-Mail-Adresse gesendet."
-                  }
-                </p>
-                <div className="bg-yellow-800/30 border border-yellow-600/40 rounded-lg p-3 mt-3">
-                  <div className="flex items-start gap-2">
-                    <span className="text-yellow-400 text-lg flex-shrink-0">⚠️</span>
-                    <p className="text-yellow-100 text-xs">
-                      <strong><TranslatedText text="Wichtig:" language={language} /></strong> <TranslatedText text="Falls Sie keine E-Mail erhalten, überprüfen Sie bitte auch Ihren Spam-Ordner!" language={language} />
+              {/* SPAM-Warnung - MARKANTER */}
+              <div className="bg-yellow-500/20 border-2 border-yellow-400 rounded-xl p-4 mb-4 shadow-lg animate-pulse">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center">
+                      <span className="text-2xl">📧</span>
+                    </div>
+                  </div>
+                  <div className="text-left flex-1">
+                    <p className="text-yellow-100 font-bold text-sm mb-1">
+                      <TranslatedText text="E-Mail unterwegs!" language={language} />
                     </p>
+                    <p className="text-yellow-50 text-xs leading-relaxed">
+                      {successDetails.hasPhysical 
+                        ? "Versandbestätigung folgt per E-Mail."
+                        : "Download-Links wurden versendet."
+                      }
+                    </p>
+                    <div className="mt-2 pt-2 border-t border-yellow-400/30">
+                      <p className="text-yellow-200 font-bold text-xs flex items-center gap-1">
+                        ⚠️ <TranslatedText text="Bitte SPAM-Ordner prüfen!" language={language} />
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
               
-              {/* Schließen Button */}
-              <div className="space-y-3">
+              {/* Schließen Button - Kompakter */}
+              <div className="space-y-2">
                 <Button
                   onClick={() => {
                     setShowSuccessModal(false);
@@ -2392,16 +2394,16 @@ export default function MerchTab({ language }: MerchTabProps) {
                     setPurchaseStatus("idle");
                     setSuccessDetails(null);
                   }}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-bold"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 text-base font-bold"
                 >
                   <TranslatedText text="Weiter einkaufen" language={language} />
                 </Button>
                 
                 <button
                   onClick={() => window.open(`https://basescan.org/tx/${successDetails.transactionHash}`, '_blank')}
-                  className="text-green-300 hover:text-green-200 text-sm underline"
+                  className="text-green-300 hover:text-green-200 text-xs underline"
                 >
-                  <TranslatedText text="Transaktion auf BaseScan anzeigen" language={language} /> →
+                  <TranslatedText text="Transaktion anzeigen" language={language} /> →
                 </button>
               </div>
             </div>
