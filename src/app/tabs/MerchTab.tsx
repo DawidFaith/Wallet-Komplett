@@ -2313,6 +2313,19 @@ export default function MerchTab({ language }: MerchTabProps) {
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
           <div className="relative bg-gradient-to-br from-green-900 to-emerald-800 border border-green-500/50 w-full max-w-lg mx-4 rounded-2xl shadow-2xl">
             <div className="p-8 text-center">
+              {/* X-Button zum Schließen */}
+              <Button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  clearCart();
+                  setPurchaseStatus("idle");
+                  setSuccessDetails(null);
+                }}
+                className="absolute top-4 right-4 bg-green-800/50 hover:bg-green-700/70 text-white border border-green-500/30 hover:border-green-400 p-2 rounded-lg transition-all duration-200"
+              >
+                <FaTimes className="text-lg" />
+              </Button>
+              
               {/* Erfolgs-Icon */}
               <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
                 <FaCheck className="text-3xl text-white" />
@@ -2354,12 +2367,20 @@ export default function MerchTab({ language }: MerchTabProps) {
                 <h3 className="text-white font-bold mb-2">
                   📧 <TranslatedText text="Nächste Schritte:" language={language} />
                 </h3>
-                <p className="text-green-100 text-sm">
+                <p className="text-green-100 text-sm mb-3">
                   {successDetails.hasPhysical 
                     ? "Sie erhalten eine Versandbestätigung per E-Mail, sobald Ihre Bestellung versendet wird."
                     : "Ihre Download-Links wurden bereits an Ihre E-Mail-Adresse gesendet."
                   }
                 </p>
+                <div className="bg-yellow-800/30 border border-yellow-600/40 rounded-lg p-3 mt-3">
+                  <div className="flex items-start gap-2">
+                    <span className="text-yellow-400 text-lg flex-shrink-0">⚠️</span>
+                    <p className="text-yellow-100 text-xs">
+                      <strong><TranslatedText text="Wichtig:" language={language} /></strong> <TranslatedText text="Falls Sie keine E-Mail erhalten, überprüfen Sie bitte auch Ihren Spam-Ordner!" language={language} />
+                    </p>
+                  </div>
+                </div>
               </div>
               
               {/* Schließen Button */}
