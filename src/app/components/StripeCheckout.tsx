@@ -7,8 +7,16 @@ import {
   useElements
 } from '@stripe/react-stripe-js';
 
-// Lade Stripe mit Live/Test Key automatisch basierend auf Environment
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+// Lade Stripe mit LIVE Key - nur Live-Modus erlaubt
+const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+
+// Validierung: Nur Live-Keys akzeptiert
+if (stripeKey && !stripeKey.startsWith('pk_live_')) {
+  console.error('❌ LIVE Stripe Key erforderlich! Test-Key erkannt:', stripeKey.substring(0, 8) + '...');
+  throw new Error('Nur Live-Keys erlaubt. Test-Keys werden abgelehnt.');
+}
+
+const stripePromise = loadStripe(stripeKey!);
 
 interface StripeCheckoutProps {
   walletAddress: string;
@@ -51,6 +59,12 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
   useEffect(() => {
     const createPaymentIntent = async () => {
       try {
+        console.log('🚀 Creating LIVE Payment Intent:', {
+          amount,
+          walletAddress: walletAddress.slice(0, 8) + '...',
+          dinvestAmount
+        });
+
         const response = await fetch('/api/create-payment-intent', {
           method: 'POST',
           headers: {
@@ -67,12 +81,27 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
         const data = await response.json();
         
+        console.log('💰 Payment Intent Response:', {
+          status: response.status,
+          mode: data.mode,
+          available: data.available
+        });
+        
         if (response.ok) {
-          setClientSecret(data.clientSecret);
+          // Zusätzliche Validierung der Response
+          if (data.clientSecret && data.clientSecret.startsWith('pi_')) {
+            console.log('✅ Valid Payment Intent created');
+            setClientSecret(data.clientSecret);
+          } else {
+            console.error('❌ Invalid Payment Intent format:', data);
+            onError('Invalid payment intent format');
+          }
         } else {
-          onError(data.error || 'Failed to create payment intent');
+          console.error('❌ Payment Intent creation failed:', data);
+          onError(data.error || data.message || 'Failed to create payment intent');
         }
       } catch (error) {
+        console.error('💥 Payment Intent network error:', error);
         onError('Network error occurred');
       }
     };

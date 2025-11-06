@@ -33,13 +33,29 @@ export async function POST(req: NextRequest) {
   try {
     // Prüfe ob Stripe verfügbar ist
     if (!STRIPE_AVAILABLE || !stripe) {
-      console.log('Stripe nicht verfügbar - Feature deaktiviert');
+      console.error('❌ Stripe nicht verfügbar - Nur Live-Keys erlaubt');
       return NextResponse.json(
         { 
           error: 'Payment Service nicht verfügbar',
-          message: 'Zahlungsfunktion ist momentan nicht verfügbar.'
+          message: 'Nur Live-Keys werden akzeptiert. Test-Keys sind deaktiviert.',
+          mode: 'ERROR',
+          available: false
         },
         { status: 503 }
+      );
+    }
+
+    // Zusätzliche Live-Key Validierung
+    if (!process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')) {
+      console.error('❌ Test-Key erkannt in Payment Intent:', process.env.STRIPE_SECRET_KEY?.substring(0, 8) + '...');
+      return NextResponse.json(
+        { 
+          error: 'Live-Key erforderlich',
+          message: 'Test-Keys werden nicht akzeptiert. Bitte Live-Keys konfigurieren.',
+          mode: 'TEST_REJECTED',
+          available: false
+        },
+        { status: 400 }
       );
     }
 
