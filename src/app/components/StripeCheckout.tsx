@@ -317,13 +317,7 @@ export const StripeCheckout: React.FC<StripeCheckoutProps> = ({
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 overflow-y-auto p-4">
       <div className="bg-zinc-900 rounded-xl p-6 max-w-md w-full border border-amber-400 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <h3 className="text-xl font-bold text-white">D.INVEST kaufen</h3>
-            {/* LIVE Mode Indicator */}
-            <div className="px-2 py-1 rounded-full text-xs font-bold bg-green-500/20 text-green-400 border border-green-500/30">
-              🚀 LIVE
-            </div>
-          </div>
+          <h3 className="text-xl font-bold text-white">D.INVEST kaufen</h3>
           <button
             onClick={onClose}
             disabled={isProcessingPayment}
