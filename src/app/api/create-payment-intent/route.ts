@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Überprüfe ob Stripe verfügbar ist
-const STRIPE_AVAILABLE = process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.startsWith('sk_');
+// Überprüfe ob Stripe Live Keys verfügbar sind
+const STRIPE_AVAILABLE = process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.startsWith('sk_live_');
+
+if (!STRIPE_AVAILABLE) {
+  console.error('❌ LIVE Stripe Keys erforderlich! Nur sk_live_ Keys werden akzeptiert.');
+}
+
+console.log('� Stripe LIVE Configuration:', {
+  available: STRIPE_AVAILABLE,
+  keyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 12) + '...'
+});
 
 // Dynamischer Import von Stripe nur wenn verfügbar
 let Stripe: typeof import('stripe').default | null = null;
@@ -58,7 +67,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Erstelle Payment Intent mit vollständigen Metadaten
+    // 🚀 Erstelle LIVE Payment Intent
+    console.log('💰 Creating LIVE Payment Intent:', {
+      amount: amount,
+      currency: currency,
+      walletAddress: walletAddress.slice(0, 8) + '...',
+      dinvestAmount: dinvestAmount
+    });
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Stripe erwartet Cent-Beträge
       currency: currency,
@@ -74,9 +90,16 @@ export async function POST(req: NextRequest) {
         pricePerToken: '5.00',
         totalTokens: dinvestAmount.toString(),
         paymentMethod: 'stripe_card',
+        paymentMode: 'LIVE',
         timestamp: new Date().toISOString(),
       },
-      description: `D.INVEST Token Purchase - ${dinvestAmount} tokens for wallet ${walletAddress.slice(0, 8)}...`,
+      description: `[LIVE] D.INVEST Token Purchase - ${dinvestAmount} tokens for wallet ${walletAddress.slice(0, 8)}...`,
+    });
+
+    console.log('✅ LIVE Payment Intent created successfully:', {
+      id: paymentIntent.id,
+      amount: paymentIntent.amount / 100,
+      currency: paymentIntent.currency
     });
 
     return NextResponse.json({
@@ -96,6 +119,10 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     available: STRIPE_AVAILABLE,
-    message: STRIPE_AVAILABLE ? 'Stripe Payment verfügbar' : 'Stripe nicht konfiguriert'
+    mode: 'LIVE',
+    message: STRIPE_AVAILABLE 
+      ? '🚀 Stripe LIVE Payment verfügbar' 
+      : '❌ Stripe LIVE Keys erforderlich (nur sk_live_ Keys akzeptiert)',
+    keyType: STRIPE_AVAILABLE ? 'Live Key' : 'Missing Live Key'
   });
 }

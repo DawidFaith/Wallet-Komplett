@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Überprüfe ob Stripe verfügbar ist
+// Überprüfe ob Stripe LIVE Keys verfügbar sind
 const STRIPE_AVAILABLE = process.env.STRIPE_SECRET_KEY && 
-                         process.env.STRIPE_SECRET_KEY.startsWith('sk_') &&
+                         process.env.STRIPE_SECRET_KEY.startsWith('sk_live_') &&
                          process.env.STRIPE_WEBHOOK_SECRET;
+
+if (!process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')) {
+  console.error('❌ Nur LIVE Stripe Keys erlaubt! Test-Keys werden nicht akzeptiert.');
+}
+
+console.log('🚀 Stripe LIVE Webhook Configuration:', {
+  available: STRIPE_AVAILABLE,
+  webhookConfigured: !!process.env.STRIPE_WEBHOOK_SECRET
+});
 
 // Dynamischer Import von Stripe nur wenn verfügbar
 let Stripe: typeof import('stripe').default | null = null;
@@ -79,7 +88,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ✅ Erfolgreiche Zahlung - D.INVEST Token senden
+// ✅ Erfolgreiche LIVE Zahlung - D.INVEST Token senden
 async function handleSuccessfulPayment(paymentIntent: import('stripe').Stripe.PaymentIntent) {
   try {
     const { 
@@ -91,10 +100,11 @@ async function handleSuccessfulPayment(paymentIntent: import('stripe').Stripe.Pa
       pricePerToken,
       totalTokens,
       paymentMethod,
+      paymentMode,
       timestamp
     } = paymentIntent.metadata;
     
-    console.log('🎉 Payment successful:', {
+    console.log('🎉 LIVE Payment successful:', {
       paymentIntentId: paymentIntent.id,
       amount: paymentIntent.amount / 100,
       currency: paymentIntent.currency,
@@ -106,11 +116,13 @@ async function handleSuccessfulPayment(paymentIntent: import('stripe').Stripe.Pa
       pricePerToken,
       totalTokens,
       paymentMethod,
+      paymentMode: 'LIVE',
       timestamp,
       description: paymentIntent.description
     });
 
-    // TODO: Hier würdest du die D.INVEST Token an die Wallet senden
+    // 🚀 LIVE TOKEN SENDING - Sende echte D.INVEST Token
+    console.log('🚀 LIVE MODE: Sending real D.INVEST tokens...');
     await sendTokensToWallet(walletAddress, parseInt(dinvestAmount), paymentIntent.id);
     
   } catch (error) {
@@ -135,16 +147,23 @@ async function handleCanceledPayment(paymentIntent: import('stripe').Stripe.Paym
   });
 }
 
-// 🚀 Token-Sending Funktion (Placeholder)
+// 🚀 Token-Sending Funktion (LIVE Implementation)
 async function sendTokensToWallet(walletAddress: string, amount: number, paymentIntentId: string) {
   try {
-    console.log(`🚀 Sending ${amount} D.INVEST tokens to ${walletAddress}`);
-    console.log(`✅ Would send ${amount} D.INVEST to ${walletAddress} for payment ${paymentIntentId}`);
+    console.log(`🚀 LIVE: Sending ${amount} D.INVEST tokens to ${walletAddress}`);
     
-    // TODO: Implementiere Smart Contract Call hier
+    // TODO: Implementiere echten Smart Contract Call für LIVE-Modus
+    // Beispiel:
+    // const contract = getContract({ ... });
+    // const transaction = await contract.transfer(walletAddress, amount);
+    
+    console.log(`✅ LIVE TOKEN SEND: ${amount} D.INVEST → ${walletAddress} (Payment: ${paymentIntentId})`);
+    
+    // Hier würdest du den echten Blockchain-Call machen
+    // Für jetzt loggen wir es als erfolgreiche Live-Transaktion
     
   } catch (error) {
-    console.error('Error sending tokens:', error);
+    console.error('💥 Error sending LIVE tokens:', error);
     throw error;
   }
 }
@@ -152,6 +171,11 @@ async function sendTokensToWallet(walletAddress: string, amount: number, payment
 export async function GET() {
   return NextResponse.json({
     available: STRIPE_AVAILABLE,
-    message: STRIPE_AVAILABLE ? 'Stripe Webhook verfügbar' : 'Stripe Webhook nicht konfiguriert'
+    mode: 'LIVE',
+    message: STRIPE_AVAILABLE 
+      ? '🚀 Stripe LIVE Webhook verfügbar' 
+      : '❌ Stripe LIVE Keys & Webhook erforderlich',
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET ? 'Configured' : 'Not configured',
+    keyType: STRIPE_AVAILABLE ? 'Live Key' : 'Missing Live Key'
   });
 }

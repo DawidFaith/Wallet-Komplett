@@ -7,7 +7,7 @@ import {
   useElements
 } from '@stripe/react-stripe-js';
 
-// Lade Stripe mit deinem Publishable Key
+// Lade Stripe mit Live/Test Key automatisch basierend auf Environment
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 interface StripeCheckoutProps {
@@ -98,6 +98,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
     }
 
     try {
+      // 🚀 LIVE PAYMENT - Nur Live-Modus aktiv
       const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: cardElement,
@@ -108,14 +109,17 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
       });
 
       if (error) {
+        console.error('🚫 Payment Error:', error);
         onError(error.message || 'Payment failed');
         setIsProcessing(false);
       } else if (paymentIntent?.status === 'succeeded') {
+        console.log('🚀 LIVE Payment Successful:', paymentIntent.id);
         setPaymentCompleted(true);
         setIsProcessing(false);
         onSuccess();
       }
     } catch (error: any) {
+      console.error('💥 Payment Processing Error:', error);
       onError(error.message || 'Payment processing failed');
       setIsProcessing(false);
     }
@@ -267,7 +271,13 @@ export const StripeCheckout: React.FC<StripeCheckoutProps> = ({
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 overflow-y-auto p-4">
       <div className="bg-zinc-900 rounded-xl p-6 max-w-md w-full border border-amber-400 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-white">D.INVEST kaufen</h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-bold text-white">D.INVEST kaufen</h3>
+            {/* LIVE Mode Indicator */}
+            <div className="px-2 py-1 rounded-full text-xs font-bold bg-green-500/20 text-green-400 border border-green-500/30">
+              🚀 LIVE
+            </div>
+          </div>
           <button
             onClick={onClose}
             disabled={isProcessingPayment}
