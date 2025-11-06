@@ -7,16 +7,16 @@ import {
   useElements
 } from '@stripe/react-stripe-js';
 
-// Lade Stripe mit LIVE Key - nur Live-Modus erlaubt
-const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-
-// Validierung: Nur Live-Keys akzeptiert
-if (stripeKey && !stripeKey.startsWith('pk_live_')) {
-  console.error('❌ LIVE Stripe Key erforderlich! Test-Key erkannt:', stripeKey.substring(0, 8) + '...');
-  throw new Error('Nur Live-Keys erlaubt. Test-Keys werden abgelehnt.');
-}
-
-const stripePromise = loadStripe(stripeKey!);
+// Validierung: Nur Live-Keys akzeptiert (nur zur Laufzeit, nicht zur Build-Zeit)
+const validateStripeKey = () => {
+  if (typeof window !== 'undefined') {
+    const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    if (stripeKey && !stripeKey.startsWith('pk_live_')) {
+      console.error('❌ LIVE Stripe Key erforderlich! Test-Key erkannt:', stripeKey.substring(0, 8) + '...');
+      throw new Error('Nur Live-Keys erlaubt. Test-Keys werden abgelehnt.');
+    }
+  }
+};
 
 interface StripeCheckoutProps {
   walletAddress: string;
@@ -257,6 +257,23 @@ export const StripeCheckout: React.FC<StripeCheckoutProps> = ({
   onClose,
 }) => {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [stripeLoaded, setStripeLoaded] = useState(false);
+  const [stripePromiseState, setStripePromiseState] = useState<Promise<any> | null>(null);
+
+  // Initialisiere Stripe nur im Browser
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        validateStripeKey();
+        const promise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+        setStripePromiseState(promise);
+        setStripeLoaded(true);
+      } catch (error) {
+        console.error('Stripe Initialization Error:', error);
+        onError('Stripe-Konfigurationsfehler: ' + (error as Error).message);
+      }
+    }
+  }, [onError]);
 
   const elementsOptions: StripeElementsOptions = {
     appearance: {
@@ -327,16 +344,25 @@ export const StripeCheckout: React.FC<StripeCheckoutProps> = ({
           </div>
         </div>
 
-        <Elements stripe={stripePromise} options={elementsOptions}>
-          <CheckoutForm
-            walletAddress={walletAddress}
-            amount={amount}
-            dinvestAmount={dinvestAmount}
-            onSuccess={onSuccess}
-            onError={onError}
-            onProcessingChange={setIsProcessingPayment}
-          />
-        </Elements>
+        {stripeLoaded && stripePromiseState ? (
+          <Elements stripe={stripePromiseState} options={elementsOptions}>
+            <CheckoutForm
+              walletAddress={walletAddress}
+              amount={amount}
+              dinvestAmount={dinvestAmount}
+              onSuccess={onSuccess}
+              onError={onError}
+              onProcessingChange={setIsProcessingPayment}
+            />
+          </Elements>
+        ) : (
+          <div className="flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+              <p className="text-zinc-300">Stripe wird geladen...</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
