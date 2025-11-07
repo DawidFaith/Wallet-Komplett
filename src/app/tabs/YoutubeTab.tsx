@@ -397,7 +397,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 <h3 className="text-lg font-bold text-white truncate">
                   {userData.username || 'YouTube User'}
                 </h3>
-                <p className="text-zinc-400 text-sm">@{userData.youtube || 'youtube'}</p>
+                <p className="text-zinc-400 text-sm">@{userData.username || 'youtube'}</p>
               </div>
             </div>
             
