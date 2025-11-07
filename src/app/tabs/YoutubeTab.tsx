@@ -360,12 +360,17 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-black to-zinc-900 text-white">
-      <div className="container mx-auto px-4 py-6">
+    <>
+      <div 
+        className="min-h-screen flex items-center justify-center p-8 bg-black"
+        style={{ 
+          fontFamily: 'Poppins, Segoe UI, sans-serif'
+        }}
+      >
         {/* Zurück Button */}
         <button
           onClick={onBack}
-          className="mb-4 px-4 py-2 bg-zinc-800/60 border border-zinc-700 rounded-xl text-white hover:bg-zinc-700/60 transition-all duration-200 flex items-center gap-2"
+          className="absolute top-6 left-6 px-4 py-2 bg-red-600/20 border border-red-500/50 rounded-xl text-white hover:bg-red-600/30 transition-all duration-200 flex items-center gap-2 z-10"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -373,187 +378,143 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           <TranslatedText text="Zurück" language={language} />
         </button>
 
-        {/* User Card */}
-        <div className="bg-zinc-900/80 backdrop-blur border border-zinc-700/50 rounded-2xl overflow-hidden shadow-2xl">
-          {/* Header Section */}
-          <div className="relative px-6 pt-6 pb-4">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-red-600/5 pointer-events-none" />
-            
-            {/* Profile Section */}
-            <div className="relative flex items-center gap-4 mb-4">
-              <div className="relative">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-lg">
-                  <span className="text-white text-xl font-bold">
-                    {userData.username?.charAt(0)?.toUpperCase() || 'Y'}
-                  </span>
-                </div>
-                {/* Online Status */}
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-zinc-900 rounded-full flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-bold text-white truncate">
-                  {userData.username || 'YouTube User'}
-                </h3>
-                <p className="text-zinc-400 text-sm">@{userData.username || 'youtube'}</p>
-              </div>
-            </div>
-            
-            {/* Level Section */}
-            <div className="relative">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="bg-gradient-to-r from-red-500 to-red-600 px-3 py-1 rounded-full">
-                    <span className="text-white text-xs font-bold">Level {level}</span>
-                  </div>
-                  <span className="text-zinc-400 text-xs">{totalExp.toLocaleString()} EXP</span>
-                </div>
-                <span className="text-zinc-400 text-xs">{progressPercent.toFixed(1)}%</span>
-              </div>
-              
-              {/* Progress Bar */}
-              <div className="relative w-full bg-zinc-800 rounded-full h-2 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-zinc-700 to-zinc-800 rounded-full" />
-                <div 
-                  className="relative h-full bg-gradient-to-r from-red-500 via-red-600 to-red-500 rounded-full transition-all duration-700 ease-out shadow-sm"
-                  style={{ 
-                    width: `${progressPercent}%`,
-                    boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)'
-                  }}
-                />
-              </div>
-              
-              <div className="flex justify-between text-[10px] text-zinc-500 mt-1">
-                <span>Level {level}</span>
-                <span>{maxExp - totalExp} bis Level {level + 1}</span>
-              </div>
-            </div>
-          </div>
+        <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-red-500/30 rounded-3xl p-8 w-full max-w-sm text-center text-white shadow-2xl">
+          {/* Username */}
+          <div className="text-2xl font-bold mb-4 bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">@{userData.username}</div>
           
-          {/* Stats Section */}
-          <div className="px-6 pb-4">
-            <div className="grid grid-cols-2 gap-3">
-              {/* Mining Power */}
-              <div className="bg-zinc-800/60 border border-zinc-700/50 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
-                    <span className="text-white text-sm">⚡</span>
-                  </div>
-                  <div>
-                    <div className="text-white text-lg font-bold">{userData.miningpower}</div>
-                    <div className="text-red-400 text-xs font-medium">Mining Power</div>
-                  </div>
-                </div>
+          {/* Profile Image */}
+          <img 
+            src={userData.image || 'https://via.placeholder.com/100'} 
+            alt="Profilbild"
+            className="w-24 h-24 rounded-full object-cover mx-auto mb-4"
+            loading="lazy"
+          />
+          
+          {/* Level Box */}
+          <div className="bg-black/50 border border-red-500/50 rounded-2xl p-4 mb-4">
+            {/* Level und EXP Header */}
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-baseline gap-2">
+                <TranslatedText text="Level" language={language} className="text-xl font-bold text-white" />
+                <span className="text-2xl font-black bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">{level}</span>
               </div>
               
-              {/* System Check */}
-              <div className="bg-zinc-800/60 border border-zinc-700/50 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-white text-xs font-medium">System Check</span>
-                </div>
-                <div className="text-green-400 text-xs">Alle Systeme aktiv</div>
-                <div className="text-zinc-500 text-[10px] mt-1">
-                  Letzte Aktivität: {new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-                </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-bold text-white">{totalExp.toLocaleString()}</span>
+                <span className="text-sm text-gray-400">/ {maxExp.toLocaleString()}</span>
               </div>
-            </div>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="px-6 pb-6">
-            <div className="grid grid-cols-2 gap-3">
-              <button 
-                onClick={() => setShowSubscribeModal(true)}
-                className="relative overflow-hidden bg-gradient-to-r from-red-500 to-red-600 text-white py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200 hover:from-red-600 hover:to-red-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg"
-              >
-                <div className="absolute inset-0 bg-white/20 opacity-0 hover:opacity-100 transition-opacity duration-200" />
-                <span className="relative flex items-center justify-center gap-2">
-                  ⚡ Sammle EXP
-                </span>
-              </button>
               
               <button 
-                onClick={() => setShowClaimModal(true)}
-                className="relative overflow-hidden bg-zinc-700 text-white py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200 hover:bg-zinc-600 hover:scale-[1.02] active:scale-[0.98] shadow-lg border border-zinc-600"
+                onClick={() => setShowInfoModal(true)}
+                className="bg-red-500 hover:bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-all duration-200"
+                aria-label="Deine EXP-Quellen"
+                title="Deine EXP-Quellen"
               >
-                <div className="absolute inset-0 bg-white/5 opacity-0 hover:opacity-100 transition-opacity duration-200" />
-                <span className="relative flex items-center justify-center gap-2">
-                  🎁 Claim
-                </span>
+                <FaInfoCircle className="w-3.5 h-3.5 text-white animate-bounce" />
               </button>
             </div>
+            
+            {/* Progress Bar mit Animation */}
+            <div className="relative bg-black/60 border border-red-500/30 rounded-full h-4 overflow-hidden mb-4 shadow-inner">
+              <div 
+                className="h-full bg-gradient-to-r from-red-500 via-orange-500 to-red-600 transition-all duration-1000 ease-out relative shadow-lg"
+                style={{ width: `${progressPercent}%` }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white drop-shadow-lg">
+                {progressPercent}%
+              </div>
+            </div>
+            
+            {/* Mining Power mit YouTube Design */}
+            <button 
+              onClick={() => setShowMiningPowerModal(true)}
+              className="w-full bg-black/50 border border-red-500/50 rounded-xl p-3 hover:bg-black/70 hover:border-red-500/70 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-2xl animate-bounce">⛏</span>
+                <div className="text-center">
+                  <div className="text-red-300 text-sm font-medium">
+                    <TranslatedText text="Mining Power" language={language} />
+                  </div>
+                  <div className="text-red-200 text-lg font-bold">+{userData.miningpower} D.Faith</div>
+                </div>
+              </div>
+            </button>
           </div>
-        </div>
-
-        {/* YouTube Stats */}
-        <div className="mt-6 bg-zinc-900/80 backdrop-blur border border-zinc-700/50 rounded-2xl p-6">
-          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5 text-red-500" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-            </svg>
-            YouTube Aktivitäten
-          </h3>
           
-          <div className="grid grid-cols-2 gap-3">
-            {/* Liked */}
-            <div className={`p-3 rounded-lg border ${userData.liked === 'true' ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">{userData.liked === 'true' ? '👍' : '❌'}</span>
-                <span className={`text-sm font-medium ${userData.liked === 'true' ? 'text-green-400' : 'text-red-400'}`}>
-                  Liked
-                </span>
+          {/* System Check */}
+          <div className="bg-black/50 border border-red-500/50 rounded-2xl p-4 mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-bold text-lg bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
+                🔍 <TranslatedText text="System Check" language={language} />
               </div>
-              <div className={`text-xs ${userData.liked === 'true' ? 'text-green-300' : 'text-red-300'}`}>
-                {userData.liked === 'true' ? 'Erledigt ✓' : 'Ausstehend'}
+              {!showLeaderboardModal && (
+                <button
+                  type="button"
+                  onClick={() => setShowLeaderboardModal(true)}
+                  className="relative group w-8 h-8 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 hover:scale-105 transition cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 hover:ring-4 hover:ring-yellow-200/60 hover:shadow-yellow-300/60"
+                  aria-label={language === 'de' ? "Leaderboard öffnen" : language === 'en' ? "Open Leaderboard" : "Otwórz ranking"}
+                  title={language === 'de' ? "Leaderboard öffnen" : language === 'en' ? "Open Leaderboard" : "Otwórz ranking"}
+                >
+                  <span className="absolute -inset-1 rounded-full bg-yellow-400/20 blur-sm opacity-60 group-hover:opacity-80 transition pointer-events-none"></span>
+                  <span className="inline-block animate-bounce">🏆</span>
+                </button>
+              )}
+            </div>
+            
+            <div className="space-y-2 text-sm text-white">
+              <div className="flex justify-between">
+                <span>👍 <TranslatedText text="Like" language={language} /></span>
+                <span>{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
+              </div>
+              <div className="flex justify-between">
+                <span>💬 <TranslatedText text="Kommentar" language={language} /></span>
+                <span>{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
+              </div>
+              <div className="flex justify-between">
+                <span>🔁 <TranslatedText text="Share" language={language} /></span>
+                <span>{userData.shared === 'true' ? '✅' : '❌'} +10 EXP</span>
+              </div>
+              <div className="flex justify-between">
+                <span>🔔 <TranslatedText text="Abonnieren" language={language} /></span>
+                <span>{userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
             </div>
-
-            {/* Commented */}
-            <div className={`p-3 rounded-lg border ${userData.commented === 'true' ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">{userData.commented === 'true' ? '💬' : '❌'}</span>
-                <span className={`text-sm font-medium ${userData.commented === 'true' ? 'text-green-400' : 'text-red-400'}`}>
-                  Kommentiert
+          </div>
+          
+          {/* Buttons */}
+          <div className="flex gap-3">
+            <button 
+              onClick={() => setShowSubscribeModal(true)}
+              className="relative flex-1 bg-gradient-to-r from-red-500 via-red-600 to-orange-600 px-4 py-4 rounded-2xl font-bold text-sm text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/25 border border-red-400/30"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+              <div className="relative flex items-center justify-center gap-1">
+                <span className="text-xl animate-pulse">✨</span>
+                <span className="tracking-wider">
+                  <TranslatedText text="Sammle EXP" language={language} />
                 </span>
               </div>
-              <div className={`text-xs ${userData.commented === 'true' ? 'text-green-300' : 'text-red-300'}`}>
-                {userData.commented === 'true' ? 'Erledigt ✓' : 'Ausstehend'}
-              </div>
-            </div>
-
-            {/* Shared */}
-            <div className={`p-3 rounded-lg border ${userData.shared === 'true' ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">{userData.shared === 'true' ? '🔄' : '❌'}</span>
-                <span className={`text-sm font-medium ${userData.shared === 'true' ? 'text-green-400' : 'text-red-400'}`}>
-                  Geteilt
+            </button>
+            <button 
+              onClick={() => setShowClaimModal(true)}
+              className="relative flex-1 bg-gradient-to-r from-cyan-400 via-cyan-500 to-teal-500 px-4 py-4 rounded-2xl font-bold text-sm text-gray-900 overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/25 border border-cyan-300/50"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+              <div className="relative flex items-center justify-center gap-1">
+                <span className="text-xl animate-bounce">🪙</span>
+                <span className="tracking-wider">
+                  <TranslatedText text="Claim" language={language} />
                 </span>
               </div>
-              <div className={`text-xs ${userData.shared === 'true' ? 'text-green-300' : 'text-red-300'}`}>
-                {userData.shared === 'true' ? 'Erledigt ✓' : 'Ausstehend'}
-              </div>
-            </div>
-
-            {/* Subscribed */}
-            <div className={`p-3 rounded-lg border ${userData.saved === 'true' ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">{userData.saved === 'true' ? '🔔' : '❌'}</span>
-                <span className={`text-sm font-medium ${userData.saved === 'true' ? 'text-green-400' : 'text-red-400'}`}>
-                  Abonniert
-                </span>
-              </div>
-              <div className={`text-xs ${userData.saved === 'true' ? 'text-green-300' : 'text-red-300'}`}>
-                {userData.saved === 'true' ? 'Erledigt ✓' : 'Ausstehend'}
-              </div>
-            </div>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Modals bleiben gleich... */}
       {/* Subscribe Modal */}
       {showSubscribeModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -615,7 +576,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
