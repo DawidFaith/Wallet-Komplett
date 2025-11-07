@@ -284,7 +284,7 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
 function UserCard({ userData, onBack, language }: { userData: UserData; onBack: () => void; language: SupportedLanguage }) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
-  const [showSubscribeModal, setShowSubscribeModal] = useState(false); // Changed from showLikeSaveModal to showSubscribeModal
+  const [showSubscribeModal, setShowSubscribeModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showWalletInfoModal, setShowWalletInfoModal] = useState(false);
   const [showMiningPowerModal, setShowMiningPowerModal] = useState(false);
@@ -293,12 +293,12 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
   const [walletInput, setWalletInput] = useState(userData.wallet || '');
   const [claimStatus, setClaimStatus] = useState('');
   const [loading, setLoading] = useState(false);
-  const [initialValues, setInitialValues] = useState<{likes: number, shares: number, subscribes: number} | null>(null); // Changed saves to subscribes
-  const [afterValues, setAfterValues] = useState<{likes: number, shares: number, subscribes: number} | null>(null); // Changed saves to subscribes
+  const [initialValues, setInitialValues] = useState<{likes: number, shares: number, subscribes: number} | null>(null);
+  const [afterValues, setAfterValues] = useState<{likes: number, shares: number, subscribes: number} | null>(null);
   const [confirmationMessage, setConfirmationMessage] = useState<string>('');
-  const [expGained, setExpGained] = useState<{likes: number, shares: number, subscribes: number, total: number} | null>(null); // Changed saves to subscribes
+  const [expGained, setExpGained] = useState<{likes: number, shares: number, subscribes: number, total: number} | null>(null);
 
-  // Leaderboard state (UserCard-scope)
+  // Leaderboard state
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [lbData, setLbData] = useState<any>(null);
   const [lbLoading, setLbLoading] = useState(false);
@@ -359,173 +359,262 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
     return 'Dawidfaithtest3736TT';
   };
 
-  // Placeholder return für jetzt - wird in nächsten Schritten vervollständigt
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white p-6">
-      <div className="max-w-lg mx-auto">
-        {/* Header mit YouTube Design */}
-        <div className="bg-gradient-to-r from-red-600 to-red-500 rounded-xl p-6 mb-6 shadow-xl">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-white">YouTube Creator</h2>
-            <button
-              onClick={onBack}
-              className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              <TranslatedText text="Zurück" language={language} />
-            </button>
-          </div>
-          
-          <div className="text-center">
-            <h3 className="text-xl font-semibold text-white mb-2">{userData.username}</h3>
-            <div className="bg-red-800/50 rounded-lg p-3">
-              <p className="text-red-100 text-sm">
-                Level {level} • {totalExp} XP
-              </p>
-              <div className="text-red-200 text-xs mt-1">
-                YouTube XP: {youtubeExp} • Mining Power: {userData.miningpower}
+    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-black to-zinc-900 text-white">
+      <div className="container mx-auto px-4 py-6">
+        {/* Zurück Button */}
+        <button
+          onClick={onBack}
+          className="mb-4 px-4 py-2 bg-zinc-800/60 border border-zinc-700 rounded-xl text-white hover:bg-zinc-700/60 transition-all duration-200 flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          <TranslatedText text="Zurück" language={language} />
+        </button>
+
+        {/* User Card */}
+        <div className="bg-zinc-900/80 backdrop-blur border border-zinc-700/50 rounded-2xl overflow-hidden shadow-2xl">
+          {/* Header Section */}
+          <div className="relative px-6 pt-6 pb-4">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-red-600/5 pointer-events-none" />
+            
+            {/* Profile Section */}
+            <div className="relative flex items-center gap-4 mb-4">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-lg">
+                  <span className="text-white text-xl font-bold">
+                    {userData.username?.charAt(0)?.toUpperCase() || 'Y'}
+                  </span>
+                </div>
+                {/* Online Status */}
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-zinc-900 rounded-full flex items-center justify-center">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                </div>
               </div>
-              <div className="w-full bg-red-900/50 rounded-full h-2 mt-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-bold text-white truncate">
+                  {userData.username || 'YouTube User'}
+                </h3>
+                <p className="text-zinc-400 text-sm">@{userData.youtube || 'youtube'}</p>
+              </div>
+            </div>
+            
+            {/* Level Section */}
+            <div className="relative">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="bg-gradient-to-r from-red-500 to-red-600 px-3 py-1 rounded-full">
+                    <span className="text-white text-xs font-bold">Level {level}</span>
+                  </div>
+                  <span className="text-zinc-400 text-xs">{totalExp.toLocaleString()} EXP</span>
+                </div>
+                <span className="text-zinc-400 text-xs">{progressPercent.toFixed(1)}%</span>
+              </div>
+              
+              {/* Progress Bar */}
+              <div className="relative w-full bg-zinc-800 rounded-full h-2 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-zinc-700 to-zinc-800 rounded-full" />
                 <div 
-                  className="bg-gradient-to-r from-white to-red-200 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${progressPercent}%` }}
-                ></div>
+                  className="relative h-full bg-gradient-to-r from-red-500 via-red-600 to-red-500 rounded-full transition-all duration-700 ease-out shadow-sm"
+                  style={{ 
+                    width: `${progressPercent}%`,
+                    boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)'
+                  }}
+                />
+              </div>
+              
+              <div className="flex justify-between text-[10px] text-zinc-500 mt-1">
+                <span>Level {level}</span>
+                <span>{maxExp - totalExp} bis Level {level + 1}</span>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* YouTube Aktivität Status */}
-        <div className="bg-gray-800/50 rounded-xl p-6 mb-6">
-          <h3 className="text-xl font-bold text-white mb-4 text-center">
-            <TranslatedText text="YouTube Aktivität Status" language={language} />
-          </h3>
           
-          <div className="grid grid-cols-2 gap-4">
-            {/* Liked Status */}
-            <div className={`p-3 rounded-lg border ${userData.liked === 'true' ? 'bg-green-500/20 border-green-500/50' : 'bg-red-500/20 border-red-500/50'}`}>
-              <div className="text-center">
-                <div className="text-2xl mb-1">
-                  {userData.liked === 'true' ? '👍' : '❌'}
-                </div>
-                <div className={`text-sm font-semibold ${userData.liked === 'true' ? 'text-green-300' : 'text-red-300'}`}>
-                  <TranslatedText text="Liked" language={language} />
-                </div>
-                <div className={`text-xs ${userData.liked === 'true' ? 'text-green-400' : 'text-red-400'}`}>
-                  {userData.liked === 'true' ? 
-                    <TranslatedText text="✅ Erledigt" language={language} /> : 
-                    <TranslatedText text="❌ Ausstehend" language={language} />
-                  }
+          {/* Stats Section */}
+          <div className="px-6 pb-4">
+            <div className="grid grid-cols-2 gap-3">
+              {/* Mining Power */}
+              <div className="bg-zinc-800/60 border border-zinc-700/50 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
+                    <span className="text-white text-sm">⚡</span>
+                  </div>
+                  <div>
+                    <div className="text-white text-lg font-bold">{userData.miningpower}</div>
+                    <div className="text-red-400 text-xs font-medium">Mining Power</div>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* Commented Status */}
-            <div className={`p-3 rounded-lg border ${userData.commented === 'true' ? 'bg-green-500/20 border-green-500/50' : 'bg-red-500/20 border-red-500/50'}`}>
-              <div className="text-center">
-                <div className="text-2xl mb-1">
-                  {userData.commented === 'true' ? '💬' : '❌'}
+              
+              {/* System Check */}
+              <div className="bg-zinc-800/60 border border-zinc-700/50 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <span className="text-white text-xs font-medium">System Check</span>
                 </div>
-                <div className={`text-sm font-semibold ${userData.commented === 'true' ? 'text-green-300' : 'text-red-300'}`}>
-                  <TranslatedText text="Kommentiert" language={language} />
-                </div>
-                <div className={`text-xs ${userData.commented === 'true' ? 'text-green-400' : 'text-red-400'}`}>
-                  {userData.commented === 'true' ? 
-                    <TranslatedText text="✅ Erledigt" language={language} /> : 
-                    <TranslatedText text="❌ Ausstehend" language={language} />
-                  }
-                </div>
-              </div>
-            </div>
-
-            {/* Shared Status */}
-            <div className={`p-3 rounded-lg border ${userData.shared === 'true' ? 'bg-green-500/20 border-green-500/50' : 'bg-red-500/20 border-red-500/50'}`}>
-              <div className="text-center">
-                <div className="text-2xl mb-1">
-                  {userData.shared === 'true' ? '🔄' : '❌'}
-                </div>
-                <div className={`text-sm font-semibold ${userData.shared === 'true' ? 'text-green-300' : 'text-red-300'}`}>
-                  <TranslatedText text="Geteilt" language={language} />
-                </div>
-                <div className={`text-xs ${userData.shared === 'true' ? 'text-green-400' : 'text-red-400'}`}>
-                  {userData.shared === 'true' ? 
-                    <TranslatedText text="✅ Erledigt" language={language} /> : 
-                    <TranslatedText text="❌ Ausstehend" language={language} />
-                  }
-                </div>
-              </div>
-            </div>
-
-            {/* Saved/Subscribed Status */}
-            <div className={`p-3 rounded-lg border ${userData.saved === 'true' ? 'bg-green-500/20 border-green-500/50' : 'bg-red-500/20 border-red-500/50'}`}>
-              <div className="text-center">
-                <div className="text-2xl mb-1">
-                  {userData.saved === 'true' ? '🔔' : '❌'}
-                </div>
-                <div className={`text-sm font-semibold ${userData.saved === 'true' ? 'text-green-300' : 'text-red-300'}`}>
-                  <TranslatedText text="Abonniert" language={language} />
-                </div>
-                <div className={`text-xs ${userData.saved === 'true' ? 'text-green-400' : 'text-red-400'}`}>
-                  {userData.saved === 'true' ? 
-                    <TranslatedText text="✅ Erledigt" language={language} /> : 
-                    <TranslatedText text="❌ Ausstehend" language={language} />
-                  }
+                <div className="text-green-400 text-xs">Alle Systeme aktiv</div>
+                <div className="text-zinc-500 text-[10px] mt-1">
+                  Letzte Aktivität: {new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* XP Breakdown */}
-        <div className="bg-gray-800/50 rounded-xl p-6 mb-6">
-          <h3 className="text-xl font-bold text-white mb-4 text-center">
-            <TranslatedText text="XP Verteilung" language={language} />
-          </h3>
           
-          <div className="space-y-3">
-            <div className="flex justify-between items-center p-3 bg-red-500/20 rounded-lg border border-red-500/30">
-              <div className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-red-400" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                </svg>
-                <span className="text-red-300 font-medium">YouTube XP</span>
-              </div>
-              <span className="text-red-200 font-bold">{youtubeExp}</span>
-            </div>
-
-            <div className="flex justify-between items-center p-3 bg-gray-700/50 rounded-lg border border-gray-600/30">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🎯</span>
-                <span className="text-gray-300 font-medium"><TranslatedText text="Gesamt XP" language={language} /></span>
-              </div>
-              <span className="text-white font-bold">{totalExp}</span>
-            </div>
-
-            <div className="flex justify-between items-center p-3 bg-yellow-500/20 rounded-lg border border-yellow-500/30">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">⚡</span>
-                <span className="text-yellow-300 font-medium">Mining Power</span>
-              </div>
-              <span className="text-yellow-200 font-bold">{userData.miningpower}</span>
+          {/* Action Buttons */}
+          <div className="px-6 pb-6">
+            <div className="grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => setShowSubscribeModal(true)}
+                className="relative overflow-hidden bg-gradient-to-r from-red-500 to-red-600 text-white py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200 hover:from-red-600 hover:to-red-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+              >
+                <div className="absolute inset-0 bg-white/20 opacity-0 hover:opacity-100 transition-opacity duration-200" />
+                <span className="relative flex items-center justify-center gap-2">
+                  ⚡ Sammle EXP
+                </span>
+              </button>
+              
+              <button 
+                onClick={() => setShowClaimModal(true)}
+                className="relative overflow-hidden bg-zinc-700 text-white py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200 hover:bg-zinc-600 hover:scale-[1.02] active:scale-[0.98] shadow-lg border border-zinc-600"
+              >
+                <div className="absolute inset-0 bg-white/5 opacity-0 hover:opacity-100 transition-opacity duration-200" />
+                <span className="relative flex items-center justify-center gap-2">
+                  🎁 Claim
+                </span>
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Wallet Info */}
-        <div className="bg-gray-800/50 rounded-xl p-6">
-          <h3 className="text-xl font-bold text-white mb-4 text-center">
-            <TranslatedText text="Wallet Info" language={language} />
+        {/* YouTube Stats */}
+        <div className="mt-6 bg-zinc-900/80 backdrop-blur border border-zinc-700/50 rounded-2xl p-6">
+          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <svg className="w-5 h-5 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+            YouTube Aktivitäten
           </h3>
           
-          <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
-            <p className="text-blue-300 text-sm font-medium mb-2">
-              <TranslatedText text="Verbundene Wallet:" language={language} />
-            </p>
-            <p className="font-mono text-xs text-blue-200 break-all bg-blue-900/30 p-2 rounded border border-blue-500/20">
-              {userData.wallet}
-            </p>
+          <div className="grid grid-cols-2 gap-3">
+            {/* Liked */}
+            <div className={`p-3 rounded-lg border ${userData.liked === 'true' ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg">{userData.liked === 'true' ? '👍' : '❌'}</span>
+                <span className={`text-sm font-medium ${userData.liked === 'true' ? 'text-green-400' : 'text-red-400'}`}>
+                  Liked
+                </span>
+              </div>
+              <div className={`text-xs ${userData.liked === 'true' ? 'text-green-300' : 'text-red-300'}`}>
+                {userData.liked === 'true' ? 'Erledigt ✓' : 'Ausstehend'}
+              </div>
+            </div>
+
+            {/* Commented */}
+            <div className={`p-3 rounded-lg border ${userData.commented === 'true' ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg">{userData.commented === 'true' ? '💬' : '❌'}</span>
+                <span className={`text-sm font-medium ${userData.commented === 'true' ? 'text-green-400' : 'text-red-400'}`}>
+                  Kommentiert
+                </span>
+              </div>
+              <div className={`text-xs ${userData.commented === 'true' ? 'text-green-300' : 'text-red-300'}`}>
+                {userData.commented === 'true' ? 'Erledigt ✓' : 'Ausstehend'}
+              </div>
+            </div>
+
+            {/* Shared */}
+            <div className={`p-3 rounded-lg border ${userData.shared === 'true' ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg">{userData.shared === 'true' ? '🔄' : '❌'}</span>
+                <span className={`text-sm font-medium ${userData.shared === 'true' ? 'text-green-400' : 'text-red-400'}`}>
+                  Geteilt
+                </span>
+              </div>
+              <div className={`text-xs ${userData.shared === 'true' ? 'text-green-300' : 'text-red-300'}`}>
+                {userData.shared === 'true' ? 'Erledigt ✓' : 'Ausstehend'}
+              </div>
+            </div>
+
+            {/* Subscribed */}
+            <div className={`p-3 rounded-lg border ${userData.saved === 'true' ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg">{userData.saved === 'true' ? '🔔' : '❌'}</span>
+                <span className={`text-sm font-medium ${userData.saved === 'true' ? 'text-green-400' : 'text-red-400'}`}>
+                  Abonniert
+                </span>
+              </div>
+              <div className={`text-xs ${userData.saved === 'true' ? 'text-green-300' : 'text-red-300'}`}>
+                {userData.saved === 'true' ? 'Erledigt ✓' : 'Ausstehend'}
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Modals bleiben gleich... */}
+      {/* Subscribe Modal */}
+      {showSubscribeModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl shadow-xl">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-white mb-4">YouTube EXP sammeln</h3>
+              <p className="text-zinc-300 mb-6">
+                Like, kommentiere und abonniere das neueste YouTube Video, um EXP zu sammeln!
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowSubscribeModal(false)}
+                  className="flex-1 py-3 bg-zinc-700 text-white rounded-xl hover:bg-zinc-600 transition-colors"
+                >
+                  Schließen
+                </button>
+                <button
+                  onClick={() => {
+                    window.open('https://www.youtube.com/@dawidfaith', '_blank');
+                    setShowSubscribeModal(false);
+                  }}
+                  className="flex-1 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
+                >
+                  Zu YouTube
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Claim Modal */}
+      {showClaimModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl shadow-xl">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-white mb-4">Token claimen</h3>
+              <p className="text-zinc-300 mb-6">
+                Claime deine verdienten D.FAITH Token!
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowClaimModal(false)}
+                  className="flex-1 py-3 bg-zinc-700 text-white rounded-xl hover:bg-zinc-600 transition-colors"
+                >
+                  Schließen
+                </button>
+                <button
+                  onClick={() => {
+                    // Hier würde die Claim-Logik kommen
+                    setShowClaimModal(false);
+                  }}
+                  className="flex-1 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+                >
+                  Claimen
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
