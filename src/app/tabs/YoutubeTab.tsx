@@ -28,20 +28,19 @@ interface ModalProps {
 
 interface UserData {
   username: string;
+  wallet: string;
   image: string;
-  expTotal: number;
-  expYoutube: number; // Changed from expTiktok
-  expFacebook: number;
-  expInstagram: number;
-  expStream: number;
-  liveNFTBonus: number;
+  expTotal: string;
+  liveExp: string;
   miningpower: number;
-  liked: string;
+  expYoutube: string; // YouTube-spezifische XP
+  expTiktok: string;
+  expInstagram: string;
+  expFacebook: string;
   commented: string;
-  subscribed: boolean | string; // Changed from saved to subscribed for YouTube
-  shared?: string;
-  wallet?: string;
-  walletAddress?: string;
+  liked: string;
+  shared: string;
+  saved: string; // YouTube verwendet "saved" nicht "subscribed"
 }
 
 function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmationMessage, account, language }: ModalProps) {
@@ -342,8 +341,12 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
     return { level, minExp, maxExp };
   };
 
-  const { level, minExp, maxExp } = getLevelAndExpRange(userData.expTotal);
-  const currentLevelExp = userData.expTotal - minExp;
+  // Konvertiere String-Werte zu Zahlen für Berechnungen
+  const totalExp = parseInt(userData.expTotal) || 0;
+  const youtubeExp = parseInt(userData.expYoutube) || 0;
+  
+  const { level, minExp, maxExp } = getLevelAndExpRange(totalExp);
+  const currentLevelExp = totalExp - minExp;
   const levelRange = maxExp - minExp;
   const progressPercent = Math.round((currentLevelExp / levelRange) * 100);
 
@@ -376,8 +379,11 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             <h3 className="text-xl font-semibold text-white mb-2">{userData.username}</h3>
             <div className="bg-red-800/50 rounded-lg p-3">
               <p className="text-red-100 text-sm">
-                Level {level} • {userData.expTotal} XP
+                Level {level} • {totalExp} XP
               </p>
+              <div className="text-red-200 text-xs mt-1">
+                YouTube XP: {youtubeExp} • Mining Power: {userData.miningpower}
+              </div>
               <div className="w-full bg-red-900/50 rounded-full h-2 mt-2">
                 <div 
                   className="bg-gradient-to-r from-white to-red-200 h-2 rounded-full transition-all duration-500"
@@ -388,11 +394,136 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           </div>
         </div>
 
-        {/* Placeholder Content */}
-        <div className="bg-gray-800/50 rounded-xl p-6 text-center">
-          <p className="text-gray-300">
-            <TranslatedText text="YouTube Funktionen werden in den nächsten Schritten hinzugefügt..." language={language} />
-          </p>
+        {/* YouTube Aktivität Status */}
+        <div className="bg-gray-800/50 rounded-xl p-6 mb-6">
+          <h3 className="text-xl font-bold text-white mb-4 text-center">
+            <TranslatedText text="YouTube Aktivität Status" language={language} />
+          </h3>
+          
+          <div className="grid grid-cols-2 gap-4">
+            {/* Liked Status */}
+            <div className={`p-3 rounded-lg border ${userData.liked === 'true' ? 'bg-green-500/20 border-green-500/50' : 'bg-red-500/20 border-red-500/50'}`}>
+              <div className="text-center">
+                <div className="text-2xl mb-1">
+                  {userData.liked === 'true' ? '👍' : '❌'}
+                </div>
+                <div className={`text-sm font-semibold ${userData.liked === 'true' ? 'text-green-300' : 'text-red-300'}`}>
+                  <TranslatedText text="Liked" language={language} />
+                </div>
+                <div className={`text-xs ${userData.liked === 'true' ? 'text-green-400' : 'text-red-400'}`}>
+                  {userData.liked === 'true' ? 
+                    <TranslatedText text="✅ Erledigt" language={language} /> : 
+                    <TranslatedText text="❌ Ausstehend" language={language} />
+                  }
+                </div>
+              </div>
+            </div>
+
+            {/* Commented Status */}
+            <div className={`p-3 rounded-lg border ${userData.commented === 'true' ? 'bg-green-500/20 border-green-500/50' : 'bg-red-500/20 border-red-500/50'}`}>
+              <div className="text-center">
+                <div className="text-2xl mb-1">
+                  {userData.commented === 'true' ? '💬' : '❌'}
+                </div>
+                <div className={`text-sm font-semibold ${userData.commented === 'true' ? 'text-green-300' : 'text-red-300'}`}>
+                  <TranslatedText text="Kommentiert" language={language} />
+                </div>
+                <div className={`text-xs ${userData.commented === 'true' ? 'text-green-400' : 'text-red-400'}`}>
+                  {userData.commented === 'true' ? 
+                    <TranslatedText text="✅ Erledigt" language={language} /> : 
+                    <TranslatedText text="❌ Ausstehend" language={language} />
+                  }
+                </div>
+              </div>
+            </div>
+
+            {/* Shared Status */}
+            <div className={`p-3 rounded-lg border ${userData.shared === 'true' ? 'bg-green-500/20 border-green-500/50' : 'bg-red-500/20 border-red-500/50'}`}>
+              <div className="text-center">
+                <div className="text-2xl mb-1">
+                  {userData.shared === 'true' ? '🔄' : '❌'}
+                </div>
+                <div className={`text-sm font-semibold ${userData.shared === 'true' ? 'text-green-300' : 'text-red-300'}`}>
+                  <TranslatedText text="Geteilt" language={language} />
+                </div>
+                <div className={`text-xs ${userData.shared === 'true' ? 'text-green-400' : 'text-red-400'}`}>
+                  {userData.shared === 'true' ? 
+                    <TranslatedText text="✅ Erledigt" language={language} /> : 
+                    <TranslatedText text="❌ Ausstehend" language={language} />
+                  }
+                </div>
+              </div>
+            </div>
+
+            {/* Saved/Subscribed Status */}
+            <div className={`p-3 rounded-lg border ${userData.saved === 'true' ? 'bg-green-500/20 border-green-500/50' : 'bg-red-500/20 border-red-500/50'}`}>
+              <div className="text-center">
+                <div className="text-2xl mb-1">
+                  {userData.saved === 'true' ? '🔔' : '❌'}
+                </div>
+                <div className={`text-sm font-semibold ${userData.saved === 'true' ? 'text-green-300' : 'text-red-300'}`}>
+                  <TranslatedText text="Abonniert" language={language} />
+                </div>
+                <div className={`text-xs ${userData.saved === 'true' ? 'text-green-400' : 'text-red-400'}`}>
+                  {userData.saved === 'true' ? 
+                    <TranslatedText text="✅ Erledigt" language={language} /> : 
+                    <TranslatedText text="❌ Ausstehend" language={language} />
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* XP Breakdown */}
+        <div className="bg-gray-800/50 rounded-xl p-6 mb-6">
+          <h3 className="text-xl font-bold text-white mb-4 text-center">
+            <TranslatedText text="XP Verteilung" language={language} />
+          </h3>
+          
+          <div className="space-y-3">
+            <div className="flex justify-between items-center p-3 bg-red-500/20 rounded-lg border border-red-500/30">
+              <div className="flex items-center gap-3">
+                <svg className="w-6 h-6 text-red-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+                <span className="text-red-300 font-medium">YouTube XP</span>
+              </div>
+              <span className="text-red-200 font-bold">{youtubeExp}</span>
+            </div>
+
+            <div className="flex justify-between items-center p-3 bg-gray-700/50 rounded-lg border border-gray-600/30">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🎯</span>
+                <span className="text-gray-300 font-medium"><TranslatedText text="Gesamt XP" language={language} /></span>
+              </div>
+              <span className="text-white font-bold">{totalExp}</span>
+            </div>
+
+            <div className="flex justify-between items-center p-3 bg-yellow-500/20 rounded-lg border border-yellow-500/30">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">⚡</span>
+                <span className="text-yellow-300 font-medium">Mining Power</span>
+              </div>
+              <span className="text-yellow-200 font-bold">{userData.miningpower}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Wallet Info */}
+        <div className="bg-gray-800/50 rounded-xl p-6">
+          <h3 className="text-xl font-bold text-white mb-4 text-center">
+            <TranslatedText text="Wallet Info" language={language} />
+          </h3>
+          
+          <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
+            <p className="text-blue-300 text-sm font-medium mb-2">
+              <TranslatedText text="Verbundene Wallet:" language={language} />
+            </p>
+            <p className="font-mono text-xs text-blue-200 break-all bg-blue-900/30 p-2 rounded border border-blue-500/20">
+              {userData.wallet}
+            </p>
+          </div>
         </div>
       </div>
     </div>
