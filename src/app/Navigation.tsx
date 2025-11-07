@@ -9,6 +9,7 @@ import {
   FaInstagram,
   FaTiktok,
   FaFacebook,
+  FaYoutube,
   FaMusic,
   FaGlobe,
 } from "react-icons/fa";
@@ -26,6 +27,7 @@ const socialIcons = {
   instagram: <FaInstagram size={22} className="text-pink-500" />,
   tiktok: <FaTiktok size={22} className="text-black dark:text-white" />,
   facebook: <FaFacebook size={22} className="text-blue-600" />,
+  youtube: <FaYoutube size={22} className="text-red-500" />,
 };
 
 const languageFlags = {
@@ -43,7 +45,7 @@ const languageNames = {
 export default function Navigation({ activeTab, setActiveTab, language = "de", setLanguage }: NavigationProps) {
   const [open, setOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
-  const [activeSocial, setActiveSocial] = useState<"instagram" | "tiktok" | "facebook">("instagram");
+  const [activeSocial, setActiveSocial] = useState<"instagram" | "tiktok" | "facebook" | "youtube">("instagram");
   const router = useRouter();
   const pathname = usePathname();
 
@@ -141,10 +143,21 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
                   navigateToTab("facebook");
                   setOpen(false);
                 }}
-                className="flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200"
+                className="flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200 border-b border-zinc-700"
               >
                 <FaFacebook className="text-blue-600" /> 
                 <span className="font-medium">Facebook</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveSocial("youtube");
+                  navigateToTab("youtube");
+                  setOpen(false);
+                }}
+                className="flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200"
+              >
+                <FaYoutube className="text-red-500" /> 
+                <span className="font-medium">YouTube</span>
               </button>
             </div>
           )}

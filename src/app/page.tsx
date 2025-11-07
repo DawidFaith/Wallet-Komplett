@@ -11,6 +11,7 @@ import LiveTab from "./tabs/LiveTab";
 import InstagramTab from "./tabs/InstagramTab";
 import TiktokTab from "./tabs/TiktokTab";
 import FacebookTab from "./tabs/FacebookTab";
+import YoutubeTab from "./tabs/YoutubeTab";
 import type { SupportedLanguage } from "./utils/deepLTranslation";
 
 function HomeContent() {
@@ -43,6 +44,7 @@ function HomeContent() {
         {activeTab === "instagram" && <InstagramTab language={language} />}
         {activeTab === "tiktok" && <TiktokTab language={language} />}
         {activeTab === "facebook" && <FacebookTab language={language} />}
+        {activeTab === "youtube" && <YoutubeTab language={language} />}
       </section>
     </main>
   );
