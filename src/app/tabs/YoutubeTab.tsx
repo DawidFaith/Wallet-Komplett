@@ -394,11 +394,39 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
     return () => clearInterval(id);
   }, [showLeaderboardModal]);
 
+  // LocalStorage laden beim Start
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const likeStored = localStorage.getItem("dfaith_youtube_likeStart");
+
+      if (likeStored) {
+        setInitialValues({
+          likes: parseInt(likeStored),
+          shares: 0,
+          subscribes: 0
+        });
+        console.log('YouTube - LocalStorage Initial Values loaded:', {
+          likes: parseInt(likeStored),
+          shares: 0,
+          subscribes: 0
+        });
+      }
+    }
+  }, []);
+
   // YouTube Like Check Functions (vereinfacht, nur Likes)
   const checkInitial = async () => {
     setLoading(true);
     try {
       const uuid = getUUID();
+      console.log('YouTube Initial Check - Request Data:', {
+        uuid: uuid,
+        username: userData.username,
+        walletAddress: userData.wallet,
+        action: 'initial_check',
+        timestamp: new Date().toISOString(),
+      });
+      
       const response = await fetch('https://hook.eu2.make.com/fbjgkp7gpk51953fltejow1s47gq56cj', {
         method: 'POST',
         headers: {
@@ -414,7 +442,16 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
       });
       const data = await response.json();
       
+      console.log('YouTube Initial Check - Response Data:', data);
+      console.log('Response Status:', response.status);
+      console.log('Response Headers:', response.headers);
+      
       const likes = parseInt(data.likes) || 0;
+      console.log('YouTube Initial Check - Processed Data:', {
+        rawLikes: data.likes,
+        likes: likes
+      });
+      
       setInitialValues({ likes, shares: 0, subscribes: 0 }); // Nur Likes relevant
       
       // LocalStorage setzen
@@ -432,6 +469,14 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
     setLoading(true);
     try {
       const uuid = getUUID();
+      console.log('YouTube After Check - Request Data:', {
+        uuid: uuid,
+        username: userData.username,
+        walletAddress: userData.wallet,
+        action: 'after_check',
+        timestamp: new Date().toISOString(),
+      });
+      
       const response = await fetch('https://hook.eu2.make.com/fbjgkp7gpk51953fltejow1s47gq56cj', {
         method: 'POST',
         headers: {
@@ -447,7 +492,18 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
       });
       const data = await response.json();
       
+      console.log('YouTube After Check - Response Data:', data);
+      console.log('Response Status:', response.status);
+      console.log('Response Headers:', response.headers);
+      
       const newLikes = parseInt(data.likes) || 0;
+      console.log('YouTube After Check - Processed Data:', {
+        rawLikes: data.likes,
+        newLikes: newLikes,
+        initialLikes: initialValues?.likes || 0,
+        likeDiff: Math.max(0, newLikes - (initialValues?.likes || 0))
+      });
+      
       setAfterValues({ likes: newLikes, shares: 0, subscribes: 0 }); // Nur Likes relevant
       
       // EXP Berechnung (nur für Likes)
@@ -457,12 +513,25 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
       const likeExp = likeDiff * 10; // 10 EXP pro Like
       const totalExp = likeExp;
       
+      console.log('YouTube EXP Calculation:', {
+        initialLikes,
+        newLikes,
+        likeDiff,
+        likeExp,
+        totalExp
+      });
+      
       setExpGained({
         likes: likeExp,
         shares: 0,
         subscribes: 0,
         total: totalExp
       });
+      
+      // Bestätigungsmeldung wenn EXP gesammelt wurde
+      if (totalExp > 0) {
+        setConfirmationMessage(language === 'de' ? '🎉 Glückwunsch! Du hast erfolgreich EXP gesammelt!' : language === 'en' ? '🎉 Congratulations! You have successfully collected EXP!' : '🎉 Gratulacje! Pomyślnie zebrałeś EXP!');
+      }
       
       // LocalStorage aktualisieren
       if (typeof window !== 'undefined') {
@@ -595,7 +664,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 <span>{userData.shared === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
               <div className="flex justify-between">
-                <span>🔔 <TranslatedText text="Abonnieren" language={language} /></span>
+                <span>🔔 <TranslatedText text="Secret" language={language} /></span>
                 <span>{userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
             </div>
@@ -788,7 +857,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-red-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-                📊 <TranslatedText text="EXP Information" language={language} />
+                <TranslatedText text="EXP Information" language={language} />
               </h2>
               <button
                 onClick={() => setShowInfoModal(false)}
