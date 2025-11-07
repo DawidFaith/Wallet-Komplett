@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaInfoCircle } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { useActiveAccount } from 'thirdweb/react';
@@ -359,6 +359,122 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
     return 'Dawidfaithtest3736TT';
   };
 
+  // Leaderboard fetch when modal opens
+  React.useEffect(() => {
+    if (!showLeaderboardModal) return;
+    let mounted = true;
+    const load = async () => {
+      setLbLoading(true);
+      try {
+        const res = await fetch('/api/leaderboard-proxy', { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const raw = await res.json();
+        const data = (raw?.entries || raw?.prizes || raw?.timer) ? raw : (raw?.data || { entries: [], prizes: [] });
+        if (mounted) setLbData({
+          entries: data.entries || [],
+          prizes: data.prizes || [],
+          timer: data.timer,
+          lastUpdated: data.lastUpdated,
+        });
+      } catch (e) {
+        console.error('Leaderboard laden fehlgeschlagen:', e);
+      } finally {
+        if (mounted) setLbLoading(false);
+      }
+    };
+    load();
+    const id = setInterval(load, 30000);
+    return () => { mounted = false; clearInterval(id); };
+  }, [showLeaderboardModal]);
+
+  // Timer tick
+  React.useEffect(() => {
+    if (!showLeaderboardModal) return;
+    const id = setInterval(() => setLbNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [showLeaderboardModal]);
+
+  // YouTube Like Check Functions (vereinfacht, nur Likes)
+  const checkInitial = async () => {
+    setLoading(true);
+    try {
+      const uuid = getUUID();
+      const response = await fetch('https://hook.eu2.make.com/fbjgkp7gpk51953fltejow1s47gq56cj', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uuid: uuid,
+          username: userData.username,
+          walletAddress: userData.wallet,
+          action: 'initial_check',
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      const data = await response.json();
+      
+      const likes = parseInt(data.likes) || 0;
+      setInitialValues({ likes, shares: 0, subscribes: 0 }); // Nur Likes relevant
+      
+      // LocalStorage setzen
+      if (typeof window !== 'undefined') {
+        localStorage.setItem("dfaith_youtube_likeStart", likes.toString());
+      }
+    } catch (error) {
+      console.error('Fehler beim YouTube Check:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkAfter = async () => {
+    setLoading(true);
+    try {
+      const uuid = getUUID();
+      const response = await fetch('https://hook.eu2.make.com/fbjgkp7gpk51953fltejow1s47gq56cj', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uuid: uuid,
+          username: userData.username,
+          walletAddress: userData.wallet,
+          action: 'after_check',
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      const data = await response.json();
+      
+      const newLikes = parseInt(data.likes) || 0;
+      setAfterValues({ likes: newLikes, shares: 0, subscribes: 0 }); // Nur Likes relevant
+      
+      // EXP Berechnung (nur für Likes)
+      const initialLikes = initialValues?.likes || 0;
+      const likeDiff = Math.max(0, newLikes - initialLikes);
+      
+      const likeExp = likeDiff * 10; // 10 EXP pro Like
+      const totalExp = likeExp;
+      
+      setExpGained({
+        likes: likeExp,
+        shares: 0,
+        subscribes: 0,
+        total: totalExp
+      });
+      
+      // LocalStorage aktualisieren
+      if (typeof window !== 'undefined') {
+        localStorage.setItem("dfaith_youtube_likeEnd", newLikes.toString());
+      }
+    } catch (error) {
+      console.error('Fehler beim YouTube After Check:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <div 
@@ -380,7 +496,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
 
         <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-red-500/30 rounded-3xl p-8 w-full max-w-sm text-center text-white shadow-2xl">
           {/* Username */}
-          <div className="text-2xl font-bold mb-4 bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">@{userData.username}</div>
+          <div className="text-2xl font-bold mb-4 bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">{userData.username}</div>
           
           {/* Profile Image */}
           <img 
@@ -515,33 +631,122 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
         </div>
       </div>
 
-      {/* Subscribe Modal */}
+      {/* Sammle EXP (Like Check) Modal */}
       {showSubscribeModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl shadow-xl">
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-white mb-4">YouTube EXP sammeln</h3>
-              <p className="text-zinc-300 mb-6">
-                Like, kommentiere und abonniere das neueste YouTube Video, um EXP zu sammeln!
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowSubscribeModal(false)}
-                  className="flex-1 py-3 bg-zinc-700 text-white rounded-xl hover:bg-zinc-600 transition-colors"
-                >
-                  Schließen
-                </button>
-                <button
-                  onClick={() => {
-                    window.open('https://www.youtube.com/@dawidfaith', '_blank');
-                    setShowSubscribeModal(false);
-                  }}
-                  className="flex-1 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
-                >
-                  Zu YouTube
-                </button>
-              </div>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-red-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
+                ✨ <TranslatedText text="YouTube Verification" language={language} />
+              </h2>
+              <button
+                onClick={() => setShowSubscribeModal(false)}
+                className="text-gray-400 hover:text-red-400 text-2xl transition-colors"
+              >
+                ×
+              </button>
             </div>
+            
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
+              <p className="font-semibold mb-3 text-red-200">
+                1️⃣ <TranslatedText text="Entferne alle Likes von meinem YouTube Video" language={language} />
+              </p>
+              <button 
+                onClick={() => setShowConfirmInitial(true)}
+                disabled={initialValues !== null || loading}
+                className={`w-full p-3 rounded-xl font-bold transition-all duration-300 ${
+                  initialValues !== null || loading
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white transform hover:scale-105'
+                }`}
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-white rounded-full"></div>
+                    <span>Erfasse Daten...</span>
+                  </div>
+                ) : initialValues !== null ? '✅ Werte bereits erfasst' : <TranslatedText text="✅ Check aktuelle Likes" language={language} />}
+              </button>
+              {initialValues && (
+                <div className="bg-black/30 border border-red-500/30 rounded-xl p-3 mt-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-red-300">👍 Likes:</span>
+                    <span className="font-bold text-red-200">{initialValues.likes}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 mb-4">
+              <p className="font-semibold mb-3 text-orange-200">
+                2️⃣ <TranslatedText text="Like das YouTube Video!" language={language} />
+              </p>
+              <button 
+                onClick={() => setShowConfirmAfter(true)}
+                disabled={loading || !initialValues || !!afterValues}
+                className={`w-full p-3 rounded-xl font-bold transition-all duration-300 ${
+                  loading || !initialValues
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    : afterValues ? 'bg-green-600 text-white' : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white transform hover:scale-105'
+                }`}
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-white rounded-full"></div>
+                    <span>Prüfe Änderungen...</span>
+                  </div>
+                ) : !initialValues ? 
+                  (language === 'de' ? '⚠️ Zuerst Schritt 1 ausführen' : language === 'en' ? '⚠️ Complete step 1 first' : '⚠️ Najpierw wykonaj krok 1') : 
+                  afterValues ? 
+                    (language === 'de' ? '✅ Neue Likes erfasst' : language === 'en' ? '✅ New likes recorded' : '✅ Nowe lajki zarejestrowane') : 
+                    (language === 'de' ? '✅ Check neue Likes' : language === 'en' ? '✅ Check new likes' : '✅ Sprawdź nowe lajki')}
+              </button>
+              {afterValues && (
+                <div className="bg-black/30 border border-orange-500/30 rounded-xl p-3 mt-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-red-300">👍 Likes:</span>
+                    <span className="font-bold text-red-200">{afterValues.likes}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {expGained && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-4">
+                <h3 className="text-green-300 font-bold mb-2">🎉 <TranslatedText text="EXP erhalten!" language={language} /></h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-red-300">👍 Like Bonus:</span>
+                    <span className="font-bold text-green-200">+{expGained.likes} EXP</span>
+                  </div>
+                  <div className="border-t border-gray-600 pt-2 flex justify-between">
+                    <span className="text-green-300 font-bold">Gesamt:</span>
+                    <span className="text-green-200 font-bold">+{expGained.total} EXP</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-300/30 rounded-2xl p-4 mb-6">
+              <p className="text-sm text-red-200 font-medium">
+                💡 <TranslatedText text="Like das neueste Video auf" language={language} /> <strong>@dawidfaith</strong>!
+              </p>
+              <a 
+                href="https://www.youtube.com/@dawidfaith"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 mt-2 text-red-300 hover:text-red-200 transition-colors"
+              >
+                📺 YouTube besuchen
+              </a>
+            </div>
+            
+            <button 
+              onClick={() => setShowSubscribeModal(false)}
+              className="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl py-3 font-bold transition-all hover:from-red-600 hover:to-orange-600"
+            >
+              ✅ <TranslatedText text="Schließen" language={language} />
+            </button>
           </div>
         </div>
       )}
@@ -572,6 +777,313 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                   Claimen
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Info Modal (EXP Info) */}
+      {showInfoModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-red-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
+                📊 <TranslatedText text="EXP Information" language={language} />
+              </h2>
+              <button
+                onClick={() => setShowInfoModal(false)}
+                className="text-gray-400 hover:text-red-400 text-2xl transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="space-y-4 mb-6">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                <h3 className="text-red-300 font-bold mb-4"><TranslatedText text="✨ Deine EXP-Quellen" language={language} /></h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 border-l-4 border-red-600 pl-3 bg-red-500/10 py-2 rounded-r-xl">
+                    <svg className="w-6 h-6 text-red-400" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                    <div>
+                      <div className="font-bold text-red-300">YouTube</div>
+                      <div className="text-red-200 font-semibold">{youtubeExp} EXP</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 border-l-4 border-blue-600 pl-3 bg-blue-500/10 py-2 rounded-r-xl">
+                    <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" className="w-6 h-6" />
+                    <div>
+                      <div className="font-bold text-blue-300">Facebook</div>
+                      <div className="text-blue-200 font-semibold">{userData.expFacebook} EXP</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 border-l-4 border-pink-600 pl-3 bg-pink-500/10 py-2 rounded-r-xl">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" alt="TikTok" className="w-6 h-6 rounded-full" />
+                    <div>
+                      <div className="font-bold text-pink-300">TikTok</div>
+                      <div className="text-pink-200 font-semibold">{userData.expTiktok} EXP</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 border-l-4 border-purple-600 pl-3 bg-purple-500/10 py-2 rounded-r-xl">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
+                    <div>
+                      <div className="font-bold text-purple-300">Instagram</div>
+                      <div className="text-purple-200 font-semibold">{userData.expInstagram} EXP</div>
+                    </div>
+                  </div>
+                  <div className="border-t border-gray-600 pt-3 mt-4">
+                    <div className="flex justify-between">
+                      <span className="text-white font-bold"><TranslatedText text="Gesamt EXP" language={language} /></span>
+                      <span className="text-white font-bold">{totalExp}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-300/30 rounded-2xl p-4 mb-6">
+                <p className="text-sm text-red-200 font-medium">💡 <TranslatedText text="Mehr EXP = schnelleres Level-Up. Nutze alle Plattformen!" language={language} /> 🚀</p>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setShowInfoModal(false)}
+              className="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl py-3 font-bold transition-all hover:from-red-600 hover:to-orange-600"
+            >
+              ✅ <TranslatedText text="Verstanden" language={language} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mining Power Modal */}
+      {showMiningPowerModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-red-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
+                ⛏️ <TranslatedText text="Mining Power" language={language} />
+              </h2>
+              <button
+                onClick={() => setShowMiningPowerModal(false)}
+                className="text-gray-400 hover:text-red-400 text-2xl transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
+              <p className="text-red-200 leading-relaxed mb-4">
+                <TranslatedText text="Deine" language={language} /> <strong className="text-red-400">Mining Power</strong> <TranslatedText text="bestimmt, wie viele D.FAITH Token du pro YouTube Claim erhältst." language={language} />
+              </p>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
+                  <span className="text-xl">💰</span>
+                  <div>
+                    <div className="font-bold text-red-300"><TranslatedText text="Marketing Budget" language={language} /></div>
+                    <div className="text-sm text-red-400"><TranslatedText text="Budget pro User für YouTube" language={language} /></div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
+                  <span className="text-xl">📊</span>
+                  <div>
+                    <div className="font-bold text-orange-300"><TranslatedText text="Dein Level" language={language} /></div>
+                    <div className="text-sm text-orange-400">Level {level}</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
+                  <span className="text-xl">💎</span>
+                  <div>
+                    <div className="font-bold text-yellow-300"><TranslatedText text="D.FAITH Kurs" language={language} /></div>
+                    <div className="text-sm text-yellow-400"><TranslatedText text="Aktueller Marktpreis" language={language} /></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 mb-6">
+              <p className="text-orange-200 font-medium text-center">
+                ⚡ <strong><TranslatedText text="Aktuell:" language={language} /></strong> +{userData.miningpower} D.FAITH <TranslatedText text="pro Claim" language={language} />
+              </p>
+            </div>
+            
+            <button 
+              onClick={() => setShowMiningPowerModal(false)}
+              className="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl py-3 font-bold transition-all hover:from-red-600 hover:to-orange-600"
+            >
+              ✅ <TranslatedText text="Verstanden" language={language} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Leaderboard Modal */}
+      {showLeaderboardModal && (
+        <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl shadow-xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-300">🏆</span>
+                <h3 className="text-white font-semibold">
+                  <TranslatedText text="Leaderboard" language={language} />
+                </h3>
+              </div>
+              <div className="text-xs text-zinc-400 mr-auto ml-3">
+                {lbData?.timer?.isActive && lbData?.timer?.endDate ? (
+                  <span>Endet in: {formatDuration(new Date(lbData.timer.endDate).getTime() - lbNow)}</span>
+                ) : null}
+              </div>
+              <button onClick={() => setShowLeaderboardModal(false)} className="text-zinc-400 hover:text-white">✖</button>
+            </div>
+            <div className="px-4 py-3">
+              <div className="bg-zinc-800/60 border border-zinc-700 rounded-md px-2 py-1 flex items-center gap-2 w-full mb-3">
+                <span className="text-zinc-400 text-xs">Suche</span>
+                <input
+                  value={lbSearch}
+                  onChange={(e) => setLbSearch(e.target.value)}
+                  placeholder={language === 'de' ? "@handle oder Name" : language === 'en' ? "@handle or name" : "@handle lub nazwa"}
+                  className="bg-transparent outline-none text-sm text-white placeholder:text-zinc-500 w-full"
+                />
+              </div>
+              {/* Legende / Kopfzeile */}
+              <div className="text-[11px] text-zinc-400 px-3 mb-1 grid grid-cols-[2.25rem_minmax(0,1fr)_3.75rem_5.25rem] gap-3">
+                <div className="opacity-0 select-none">#</div>
+                <div className="text-left"><TranslatedText text="Name" language={language} /></div>
+                <div className="text-center">EXP</div>
+                <div className="text-right"><TranslatedText text="Preis" language={language} /></div>
+              </div>
+              <div className="bg-zinc-900/60 border border-zinc-700 rounded-lg max-h-[24rem] overflow-y-auto overflow-x-hidden">
+                {lbLoading && (
+                  <div className="px-4 py-3 text-zinc-400 text-sm"><TranslatedText text="Lade Leaderboard…" language={language} /></div>
+                )}
+                {(lbData?.entries || []).length === 0 && !lbLoading && (
+                  <div className="px-4 py-3 text-zinc-400 text-sm"><TranslatedText text="Keine Einträge gefunden" language={language} /></div>
+                )}
+                {(lbData?.entries || []).filter((e: any) => {
+                  if (!lbSearch) return true;
+                  const names = [e.instagram, e.tiktok, e.facebook, e.name, e.handle].filter(Boolean) as string[];
+                  const q = lbSearch.toLowerCase();
+                  return names.some(n => n.toLowerCase().includes(q));
+                }).map((e: any) => {
+                  const namesDetailed = [
+                    e.instagram ? { label: e.instagram as string } : null,
+                    e.tiktok ? { label: e.tiktok as string } : null,
+                    e.facebook ? { label: e.facebook as string } : null,
+                    e.name ? { label: e.name as string } : null,
+                    e.handle ? { label: e.handle as string } : null,
+                  ].filter(Boolean) as { label: string }[];
+                  const primary = (e.instagram || e.tiktok || e.facebook || e.name || e.handle || '-') as string;
+                  const prize = (lbData?.prizes || []).find((p: any) => p.position === e.rank);
+                  const prizeText = prize ? (prize.value || prize.description || '') : '';
+                  const prizeDisplay = prizeText ? prizeText : '-';
+                  return (
+                    <div key={e.rank} className="border-b border-zinc-800/70 last:border-b-0">
+                      <div className="px-3 py-2 grid grid-cols-[2.25rem_minmax(0,1fr)_3.75rem_5.25rem] gap-3 items-center">
+                        <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
+                        <div className="flex items-center gap-2 w-full">
+                          <span className="text-white whitespace-nowrap overflow-x-auto w-full">{primary}</span>
+                          {namesDetailed.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => setLbOpenRow(lbOpenRow === e.rank ? null : e.rank)}
+                              className="text-zinc-400 hover:text-white text-xs border border-zinc-700 rounded px-1 py-0.5"
+                              aria-label="Weitere Namen anzeigen"
+                              title="Weitere Namen anzeigen"
+                            >
+                              {lbOpenRow === e.rank ? '▲' : '▼'}
+                            </button>
+                          )}
+                        </div>
+                        <span className="text-amber-300 text-sm font-mono tabular-nums text-center">{e.expTotal.toLocaleString()}</span>
+                        <span className="text-emerald-300 text-xs font-medium tabular-nums text-right truncate max-w-full" title={prizeDisplay}>
+                          {prizeDisplay}
+                        </span>
+                      </div>
+                      {lbOpenRow === e.rank && namesDetailed.length > 1 && (
+                        <div className="pl-[3.25rem] pr-3 pb-2 flex flex-col gap-1 items-start">
+                          {namesDetailed.map((n, idx) => (
+                            <div key={idx} className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-200 text-[11px] w-full text-left whitespace-normal break-words">
+                              {n.label}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="text-[10px] text-zinc-500 mt-2 text-right"><TranslatedText text="Letztes Update:" language={language} /> {lbData?.lastUpdated ? new Date(lbData.lastUpdated).toLocaleString() : '-'}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Initial Modal */}
+      {showConfirmInitial && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-red-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="text-5xl mb-4 text-center">⚠️</div>
+            <h2 className="text-xl font-bold mb-4 text-white text-center">
+              <TranslatedText text="Bestätigung erforderlich" language={language} />
+            </h2>
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
+              <p className="text-red-200 leading-relaxed">
+                <TranslatedText text="Bitte entferne alle Likes vom YouTube Video – danach werden die aktuellen Zahlen gespeichert." language={language} />
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  setShowConfirmInitial(false);
+                  checkInitial();
+                }}
+                className="flex-1 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+              >
+                ✅ <TranslatedText text="Ja, fortfahren" language={language} />
+              </button>
+              <button 
+                onClick={() => setShowConfirmInitial(false)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
+              >
+                ❌ <TranslatedText text="Abbrechen" language={language} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm After Modal */}
+      {showConfirmAfter && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-orange-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="text-5xl mb-4 text-center">🎯</div>
+            <h2 className="text-xl font-bold mb-4 text-white text-center">
+              <TranslatedText text="Finale Bestätigung" language={language} />
+            </h2>
+            <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 mb-4">
+              <p className="text-orange-200 leading-relaxed">
+                <TranslatedText text="Bitte like das YouTube Video, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert." language={language} />
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  setShowConfirmAfter(false);
+                  checkAfter();
+                }}
+                className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+              >
+                ✅ <TranslatedText text="Ja, check Likes" language={language} />
+              </button>
+              <button 
+                onClick={() => setShowConfirmAfter(false)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
+              >
+                ❌ <TranslatedText text="Abbrechen" language={language} />
+              </button>
             </div>
           </div>
         </div>
