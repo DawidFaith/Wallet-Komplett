@@ -556,23 +556,21 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
   return (
     <>
       <div 
-        className="min-h-screen flex items-center justify-center p-8 bg-black"
+        className="min-h-screen flex items-center justify-center p-4 bg-black"
         style={{ 
           fontFamily: 'Poppins, Segoe UI, sans-serif'
         }}
       >
-        {/* Zurück Button */}
-        <button
-          onClick={onBack}
-          className="absolute top-6 left-6 px-4 py-2 bg-red-600/20 border border-red-500/50 rounded-xl text-white hover:bg-red-600/30 transition-all duration-200 flex items-center gap-2 z-10"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          <TranslatedText text="Zurück" language={language} />
-        </button>
-
-        <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-red-500/30 rounded-3xl p-8 w-full max-w-sm text-center text-white shadow-2xl">
+        <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-red-500/30 rounded-3xl p-6 w-full max-w-sm text-center text-white shadow-2xl relative">
+          {/* Zurück Button auf der Karte */}
+          <button
+            onClick={onBack}
+            className="absolute top-4 left-4 w-10 h-10 bg-red-600/20 border border-red-500/50 rounded-full text-white hover:bg-red-600/40 transition-all duration-200 flex items-center justify-center z-10 backdrop-blur-sm"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
           {/* Username */}
           <div className="text-2xl font-bold mb-4 bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">{userData.username}</div>
           
@@ -802,6 +800,25 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                     <span className="text-green-200 font-bold">+{expGained.total} EXP</span>
                   </div>
                 </div>
+                
+                <div className="text-center mt-4">
+                  <p className="text-green-200 text-xs mb-3">Lade die Seite neu, um deine neuen EXP zu sehen!</p>
+                  <button 
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        // Nur EXP-Verification Daten löschen, Login-Daten behalten
+                        localStorage.removeItem("dfaith_youtube_likeStart");
+                        localStorage.removeItem("dfaith_youtube_likeEnd");
+                        
+                        // Seite neu laden
+                        window.location.href = window.location.pathname + '?tab=youtube' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
+                      }
+                    }}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  >
+                    🔄 Seite neu laden
+                  </button>
+                </div>
               </div>
             )}
 
@@ -908,6 +925,13 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                     <div>
                       <div className="font-bold text-purple-300">Instagram</div>
                       <div className="text-purple-200 font-semibold">{userData.expInstagram} EXP</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 border-l-4 border-yellow-600 pl-3 bg-yellow-500/10 py-2 rounded-r-xl">
+                    <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Live" className="w-6 h-6 rounded-full" />
+                    <div>
+                      <div className="font-bold text-yellow-300">Live EXP Bonus</div>
+                      <div className="text-yellow-200 font-semibold">{userData.liveExp} EXP</div>
                     </div>
                   </div>
                   <div className="border-t border-gray-600 pt-3 mt-4">
