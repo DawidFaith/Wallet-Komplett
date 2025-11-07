@@ -440,11 +440,18 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           timestamp: new Date().toISOString(),
         }),
       });
+      
+      console.log('YouTube Initial Check - Response Status:', response.status);
+      console.log('YouTube Initial Check - Response OK:', response.ok);
+      
+      // Jetzt sollte die API korrektes JSON zurückgeben
       const data = await response.json();
       
       console.log('YouTube Initial Check - Response Data:', data);
       console.log('Response Status:', response.status);
-      console.log('Response Headers:', response.headers);
+      console.log('Response OK:', response.ok);
+      
+      console.log('YouTube Initial Check - Parsed Data:', data);
       
       const likes = parseInt(data.likes) || 0;
       console.log('YouTube Initial Check - Processed Data:', {
@@ -490,11 +497,13 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           timestamp: new Date().toISOString(),
         }),
       });
+      
+      // Jetzt sollte die API korrektes JSON zurückgeben
       const data = await response.json();
       
       console.log('YouTube After Check - Response Data:', data);
       console.log('Response Status:', response.status);
-      console.log('Response Headers:', response.headers);
+      console.log('Response OK:', response.ok);
       
       const newLikes = parseInt(data.likes) || 0;
       console.log('YouTube After Check - Processed Data:', {
