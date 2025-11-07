@@ -402,23 +402,23 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
 export default function YouTubeTab({ language }: { language: SupportedLanguage }) {
   const router = useRouter();
   const account = useActiveAccount();
-  const [showModal, setShowModal] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [showUserCard, setShowUserCard] = useState(false);
-  const [modalTitle, setModalTitle] = useState('');
-  const [loading, setLoading] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState('');
   const [showNoUuidModal, setShowNoUuidModal] = useState(false);
 
-  const handleJoinClick = () => {
-    setModalTitle(language === 'de' ? 'YouTube Teilnahme' : language === 'en' ? 'Join YouTube' : 'Dołącz do YouTube');
-    setShowModal(true);
-  };
+  // Separate States für Check und Login Modals (wie TikTok)
+  const [isCheckModalOpen, setIsCheckModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState('');
 
-  const handleModalSubmit = async (username: string, walletAddress: string) => {
-    setLoading(true);
+  // Handle Check (Teilnahme bestätigen) - entspricht TikTok handleCheck
+  const handleCheck = async (username: string, walletAddress: string) => {
     try {
-      // YouTube Teilnahme bestätigen
+      setIsLoading(true);
+      setMessage('');
+
       const response = await fetch('https://hook.eu2.make.com/bw3y9tmjibj1f3mdm0tca0p1nh98xgw4', {
         method: 'POST',
         headers: {
@@ -434,56 +434,70 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
 
       if (response.ok) {
         const responseData = await response.json();
-        console.log('YouTube Response Data:', responseData);
+        console.log('YouTube Check Response Data:', responseData);
         
-        // Lade Dashboard Daten nach erfolgreicher Registrierung
-        const dashboardResponse = await fetch('https://youtube-userboard.vercel.app/api/userboard', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username: username,
-            walletAddress: walletAddress,
-          }),
-        });
-
-        if (dashboardResponse.ok) {
-          const dashboardData = await dashboardResponse.json();
-          setUserData(dashboardData);
-          setShowUserCard(true);
-          setConfirmationMessage('YouTube Account erfolgreich verbunden!');
+        // Status normalisieren (Leerzeichen entfernen, lowercase)
+        const normalizedStatus = responseData.status?.toString().trim().toLowerCase();
+        
+        if (normalizedStatus === 'success' || normalizedStatus === 'ok' || response.status === 200) {
+          setMessage(language === 'de' ? '✅ Teilnahme bestätigt! Du kannst jetzt dein Dashboard aufrufen.' : language === 'en' ? '✅ Participation confirmed! You can now access your dashboard.' : '✅ Udział potwierdzony! Możesz teraz uzyskać dostęp do swojego dashboard.');
+          setTimeout(() => {
+            setIsCheckModalOpen(false);
+            setMessage('');
+          }, 3000);
         } else {
-          // Fallback bei Dashboard-Fehler
-          const mockUserData: UserData = {
-            username: username,
-            image: 'https://via.placeholder.com/150',
-            expTotal: 150,
-            expYoutube: 100,
-            expFacebook: 25,
-            expInstagram: 25,
-            expStream: 0,
-            liveNFTBonus: 0,
-            miningpower: 5,
-            liked: 'false',
-            commented: 'false',
-            subscribed: false,
-            shared: 'false',
-            walletAddress: walletAddress
-          };
-          setUserData(mockUserData);
-          setShowUserCard(true);
-          setConfirmationMessage('YouTube Account registriert! Dashboard wird geladen...');
+          setMessage(language === 'de' ? '❌ Teilnahme noch nicht erkannt. Bitte like, kommentiere und abonniere das neueste YouTube Video.' : language === 'en' ? '❌ Participation not detected yet. Please like, comment and subscribe to the latest YouTube video.' : '❌ Udział nie został jeszcze wykryty. Polub, skomentuj i zasubskrybuj najnowszy film YouTube.');
         }
       } else {
-        setConfirmationMessage('Fehler bei der YouTube Registrierung');
+        setMessage(language === 'de' ? '❌ Fehler bei der Überprüfung. Bitte versuche es erneut.' : language === 'en' ? '❌ Check failed. Please try again.' : '❌ Sprawdzenie nie powiodło się. Spróbuj ponownie.');
       }
     } catch (error) {
-      console.error('YouTube submission error:', error);
-      setConfirmationMessage('Fehler bei der YouTube Verbindung');
+      console.error('YouTube check error:', error);
+      setMessage(language === 'de' ? 'Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.' : language === 'en' ? 'Network error. Please check your connection.' : 'Błąd sieci. Sprawdź połączenie.');
     } finally {
-      setLoading(false);
-      setShowModal(false);
+      setIsLoading(false);
+    }
+  };
+
+  // Handle Login (Dashboard Login) - entspricht TikTok handleLogin  
+  const handleLogin = async (username: string, walletAddress: string) => {
+    try {
+      setIsLoading(true);
+      setMessage('');
+
+      const response = await fetch('https://youtube-userboard.vercel.app/api/userboard', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username,
+          walletAddress: walletAddress,
+        }),
+      });
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('YouTube Login Response Data:', responseData);
+        
+        // Prüfe auf Fehlermeldung "Benutzer nicht gefunden"
+        if (responseData.error === 'Benutzer nicht gefunden') {
+          setMessage(language === 'de' ? '❌ Falsche Kombination: Benutzer nicht gefunden' : language === 'en' ? '❌ Wrong combination: User not found' : '❌ Błędna kombinacja: Użytkownik nie znaleziony');
+          return;
+        }
+        
+        setUserData(responseData);
+        setShowUserCard(true);
+        setIsLoginModalOpen(false);
+        setMessage('');
+      } else {
+        setMessage(language === 'de' ? '❌ Login fehlgeschlagen. Bitte überprüfe deine Daten.' : language === 'en' ? '❌ Login failed. Please check your credentials.' : '❌ Logowanie nie powiodło się. Sprawdź swoje dane.');
+      }
+    } catch (error) {
+      console.error('YouTube login error:', error);
+      setMessage(language === 'de' ? 'Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.' : language === 'en' ? 'Network error. Please check your connection.' : 'Błąd sieci. Sprawdź połączenie.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -517,38 +531,64 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
           </p>
         </div>
 
-        {/* Action Card */}
-        <div className="max-w-md mx-auto">
-          <div className="bg-gradient-to-br from-red-600/20 via-black/50 to-red-800/20 backdrop-blur-sm border border-red-500/30 rounded-2xl p-8 shadow-2xl">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-red-700 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
+        {/* Main Content Card */}
+        <div className="bg-black/80 border border-gray-800 rounded-2xl p-6 backdrop-blur-sm">
+          {/* Action Buttons */}
+          <div className="grid md:grid-cols-2 gap-4 mb-6">
+            <button
+              onClick={() => setIsCheckModalOpen(true)}
+              className="flex items-center justify-center p-4 bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/30 rounded-xl hover:border-red-500/50 transition-all group"
+            >
+              <div className="text-center">
+                <h3 className="text-white font-bold">
+                  1. <TranslatedText text="Teilnahme Bestätigen" language={language} />
+                </h3>
+                <p className="text-gray-400 text-sm">
+                  <TranslatedText text="Hast du schon kommentiert? Dann bestätige jetzt deine Teilnahme!" language={language} />
+                </p>
               </div>
-              
-              <h2 className="text-2xl font-bold text-white mb-4">
-                <TranslatedText text="YouTube Creator werden" language={language} />
-              </h2>
-              
-              <p className="text-gray-300 mb-8 leading-relaxed">
-                <TranslatedText text="Tritt der YouTube Creator Community bei und verdiene Belohnungen für deine Aktivitäten auf Dawid Faith's YouTube Kanal!" language={language} />
-              </p>
+            </button>
 
-              <button
-                onClick={handleJoinClick}
-                className="w-full bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-3"
+            <button
+              onClick={() => setIsLoginModalOpen(true)}
+              className="flex items-center justify-center p-4 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-cyan-500/30 rounded-xl hover:border-cyan-500/50 transition-all group"
+            >
+              <div className="text-center">
+                <h3 className="text-white font-bold">
+                  2. <TranslatedText text="Dashboard Login" language={language} />
+                </h3>
+                <p className="text-gray-400 text-sm">
+                  <TranslatedText text="Tokens claimen - nur nach Teilnahme-Bestätigung möglich" language={language} />
+                </p>
+              </div>
+            </button>
+          </div>
+
+          {/* YouTube Profil Link */}
+          <div className="mb-6 p-4 bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/30 rounded-xl">
+            <div className="text-center">
+              <p className="text-red-300 font-medium mb-3">
+                📱 Besuche mein YouTube-Kanal für das neueste Video:
+              </p>
+              <a 
+                href="https://www.youtube.com/@dawidfaith"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
               >
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                 </svg>
-                <TranslatedText text="Jetzt beitreten" language={language} />
-              </button>
+                <span>@dawidfaith auf YouTube</span>
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M7 7h8.586L5.293 17.293l1.414 1.414L17 8.414V17h2V5H7v2z"/>
+                </svg>
+              </a>
             </div>
           </div>
 
-          {/* Info Card */}
-          <div className="mt-6 bg-gradient-to-r from-red-600/10 to-red-800/10 border border-red-500/20 rounded-xl p-6">
+          {/* Wie funktioniert es? */}
+          <div className="bg-gradient-to-r from-red-600/10 to-red-800/10 border border-red-500/20 rounded-xl p-6">
             <h3 className="text-lg font-semibold text-red-300 mb-3 flex items-center gap-2">
               <FaInfoCircle />
               <TranslatedText text="Wie es funktioniert" language={language} />
@@ -556,30 +596,49 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
             <ul className="space-y-2 text-gray-300 text-sm">
               <li className="flex items-start gap-2">
                 <span className="text-red-400 mt-1">•</span>
-                <TranslatedText text="Verbinde deinen YouTube Account" language={language} />
+                <TranslatedText text="Like, kommentiere und abonniere das neueste YouTube Video" language={language} />
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-red-400 mt-1">•</span>
-                <TranslatedText text="Like, kommentiere und abonniere Videos" language={language} />
+                <TranslatedText text="Bestätige deine Teilnahme über Button 1" language={language} />
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-red-400 mt-1">•</span>
-                <TranslatedText text="Verdiene D.FAITH Token für deine Aktivitäten" language={language} />
+                <TranslatedText text="Logge dich ins Dashboard ein und claime deine Tokens" language={language} />
               </li>
             </ul>
           </div>
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Check Modal (Teilnahme bestätigen) */}
       <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title={modalTitle}
-        onSubmit={handleModalSubmit}
-        isLoading={loading}
+        isOpen={isCheckModalOpen}
+        onClose={() => {
+          setIsCheckModalOpen(false);
+          setMessage('');
+        }}
+        title={language === 'de' ? "Teilnahme Bestätigen" : language === 'en' ? "Confirm Participation" : "Potwierdź Udział"}
+        onSubmit={handleCheck}
+        isLoading={isLoading}
         router={router}
-        confirmationMessage={confirmationMessage}
+        confirmationMessage={message}
+        account={account}
+        language={language}
+      />
+
+      {/* Login Modal (Dashboard Login) */}
+      <Modal
+        isOpen={isLoginModalOpen}
+        onClose={() => {
+          setIsLoginModalOpen(false);
+          setMessage('');
+        }}
+        title={language === 'de' ? "Dashboard Login" : "Dashboard Login"}
+        onSubmit={handleLogin}
+        isLoading={isLoading}
+        router={router}
+        confirmationMessage={message}
         account={account}
         language={language}
       />
