@@ -291,6 +291,11 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
   const [showConfirmInitial, setShowConfirmInitial] = useState(false);
   const [showConfirmAfter, setShowConfirmAfter] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
+  const [showLikesVerificationModal, setShowLikesVerificationModal] = useState(false);
+  const [showSecretModal, setShowSecretModal] = useState(false);
+  const [secretCode, setSecretCode] = useState('');
+  const [secretLoading, setSecretLoading] = useState(false);
+  const [secretMessage, setSecretMessage] = useState('');
   const [walletInput, setWalletInput] = useState(userData.wallet || '');
   const [claimStatus, setClaimStatus] = useState('');
   const [loading, setLoading] = useState(false);
@@ -559,6 +564,45 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
     }
   };
 
+  // Secret Code Handler
+  const handleSecretCheck = async () => {
+    if (!secretCode.trim()) {
+      setSecretMessage(language === 'de' ? '❌ Bitte gib einen Secret-Code ein!' : language === 'en' ? '❌ Please enter a secret code!' : '❌ Wprowadź kod secret!');
+      return;
+    }
+
+    setSecretLoading(true);
+    setSecretMessage('');
+
+    try {
+      // Hier wird später die API-Integration ergänzt
+      const response = await fetch('/api/verify-secret', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: secretCode.trim(),
+          platform: 'youtube'
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        setSecretMessage(language === 'de' ? '✅ Secret-Code erfolgreich bestätigt!' : language === 'en' ? '✅ Secret code successfully verified!' : '✅ Kod secret pomyślnie zweryfikowany!');
+        // Hier könnte weitere Logik für erfolgreiche Verification ergänzt werden
+      } else {
+        setSecretMessage(language === 'de' ? '❌ Ungültiger Secret-Code!' : language === 'en' ? '❌ Invalid secret code!' : '❌ Nieprawidłowy kod secret!');
+      }
+    } catch (error) {
+      console.error('Secret verification error:', error);
+      setSecretMessage(language === 'de' ? '❌ Fehler bei der Überprüfung. Versuche es erneut.' : language === 'en' ? '❌ Verification failed. Try again.' : '❌ Weryfikacja nie powiodła się. Spróbuj ponownie.');
+    } finally {
+      setSecretLoading(false);
+    }
+  };
+
   return (
     <>
       <div 
@@ -682,7 +726,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           {/* Buttons */}
           <div className="flex gap-3">
             <button 
-              onClick={() => setShowSubscribeModal(true)}
+              onClick={() => setShowLikesVerificationModal(true)}
               className="relative flex-1 bg-gradient-to-r from-red-500 via-red-600 to-orange-600 px-4 py-4 rounded-2xl font-bold text-sm text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/25 border border-red-400/30"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
@@ -1220,6 +1264,101 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                   setShowResultModal(false);
                   setExpGained(null);
                   setConfirmationMessage('');
+                }}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
+              >
+                ❌ <TranslatedText text="Schließen" language={language} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Likes Verification Modal */}
+      {showLikesVerificationModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-red-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="text-5xl mb-4 text-center">👍</div>
+            <h2 className="text-xl font-bold mb-4 text-white text-center">
+              <TranslatedText text="Likes Verification" language={language} />
+            </h2>
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
+              <p className="text-red-200 leading-relaxed text-center mb-4">
+                <TranslatedText text="Überprüfe deine YouTube Likes und sammle EXP!" language={language} />
+              </p>
+              <div className="space-y-3">
+                <button 
+                  onClick={() => {
+                    setShowLikesVerificationModal(false);
+                    setShowConfirmInitial(true);
+                  }}
+                  className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+                >
+                  🔍 <TranslatedText text="Likes Check starten" language={language} />
+                </button>
+                <button 
+                  onClick={() => setShowSecretModal(true)}
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+                >
+                  🔐 <TranslatedText text="Secret Code eingeben" language={language} />
+                </button>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowLikesVerificationModal(false)}
+                className="w-full bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
+              >
+                ❌ <TranslatedText text="Schließen" language={language} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Secret Modal */}
+      {showSecretModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-purple-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="text-5xl mb-4 text-center">🔐</div>
+            <h2 className="text-xl font-bold mb-4 text-white text-center">
+              <TranslatedText text="Secret Code eingeben" language={language} />
+            </h2>
+            <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 mb-4">
+              <p className="text-purple-200 leading-relaxed text-center mb-4">
+                <TranslatedText text="Gib deinen Secret Code ein, um zusätzliche EXP zu erhalten!" language={language} />
+              </p>
+              <input
+                type="text"
+                value={secretCode}
+                onChange={(e) => setSecretCode(e.target.value)}
+                placeholder={language === 'de' ? 'Secret Code eingeben...' : language === 'en' ? 'Enter secret code...' : 'Wprowadź kod secret...'}
+                className="w-full p-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors"
+                disabled={secretLoading}
+              />
+              {secretMessage && (
+                <div className={`mt-3 p-2 rounded-xl text-sm text-center ${secretMessage.includes('✅') ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'}`}>
+                  {secretMessage}
+                </div>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={handleSecretCheck}
+                disabled={secretLoading || !secretCode.trim()}
+                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100"
+              >
+                {secretLoading ? (
+                  <>🔄 <TranslatedText text="Überprüfe..." language={language} /></>
+                ) : (
+                  <>✅ <TranslatedText text="Code prüfen" language={language} /></>
+                )}
+              </button>
+              <button 
+                onClick={() => {
+                  setShowSecretModal(false);
+                  setSecretCode('');
+                  setSecretMessage('');
                 }}
                 className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
               >
