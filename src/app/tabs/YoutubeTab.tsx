@@ -1543,7 +1543,14 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
         // Status normalisieren (Leerzeichen entfernen, lowercase)
         const normalizedStatus = responseData.status?.toString().trim().toLowerCase();
 
-        if (normalizedStatus === 'success' || normalizedStatus === 'ok' || response.status === 200) {
+        if (normalizedStatus === 'success') {
+          setMessage(language === 'de'
+            ? '✅ Teilnahme bestätigt! Du kannst dich jetzt einloggen.'
+            : language === 'en'
+              ? '✅ Participation confirmed! You can now log in.'
+              : '✅ Udział potwierdzony! Możesz się teraz zalogować.');
+          // Modal bleibt offen, kein automatisches Schließen mehr
+        } else if (normalizedStatus === 'ok' || response.status === 200) {
           setMessage(language === 'de' ? '✅ Teilnahme bestätigt! Du kannst jetzt dein Dashboard aufrufen.' : language === 'en' ? '✅ Participation confirmed! You can now access your dashboard.' : '✅ Udział potwierdzony! Możesz teraz uzyskać dostęp do swojego dashboard.');
           // Modal bleibt offen, kein automatisches Schließen mehr
         } else if (normalizedStatus === 'comment') {
@@ -1564,6 +1571,12 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
             : language === 'en'
               ? 'This wallet is already in use.'
               : 'Ten portfel jest już używany.');
+        } else if (normalizedStatus === 'evalued') {
+          setMessage(language === 'de'
+            ? 'Die Teilnahme wurde bereits bestätigt! Du kannst dich im Dashboard anmelden.'
+            : language === 'en'
+              ? 'Participation has already been confirmed! You can log in to the dashboard.'
+              : 'Udział został już potwierdzony! Możesz zalogować się do dashboardu.');
         } else {
           setMessage(language === 'de' ? '❌ Teilnahme noch nicht erkannt. Bitte like, kommentiere und abonniere das neueste YouTube Short.' : language === 'en' ? '❌ Participation not detected yet. Please like, comment and subscribe to the latest YouTube Short.' : '❌ Udział nie został jeszcze wykryty. Polub, skomentuj i zasubskrybuj najnowszy YouTube Short.');
         }
