@@ -1537,12 +1537,31 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
       });
 
       if (response.ok) {
-        const responseData = await response.json();
-        console.log('YouTube Check Response Data:', responseData);
-
-        // Prüfe sowohl String-Status als auch numerische Status-Codes
-        const statusCode = responseData.status;
-        const normalizedStatus = statusCode?.toString().trim().toLowerCase();
+        let responseData;
+        let statusCode;
+        let normalizedStatus;
+        
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+          // JSON Response
+          responseData = await response.json();
+          console.log('YouTube Check Response Data (JSON):', responseData);
+          statusCode = responseData.status;
+          normalizedStatus = statusCode?.toString().trim().toLowerCase();
+        } else {
+          // Text Response (z.B. "Accepted" von Make)
+          const textResponse = await response.text();
+          console.log('YouTube Check Response Data (Text):', textResponse);
+          
+          // Da Make nur "Accepted" zurückgibt, behandeln wir das als Erfolg
+          if (textResponse.toLowerCase().trim() === 'accepted') {
+            statusCode = 200;
+            normalizedStatus = 'success';
+          } else {
+            normalizedStatus = textResponse.toLowerCase().trim();
+          }
+        }
 
         if (statusCode === 100) {
           setMessage(language === 'de'
