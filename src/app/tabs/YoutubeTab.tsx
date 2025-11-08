@@ -290,6 +290,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
   const [showMiningPowerModal, setShowMiningPowerModal] = useState(false);
   const [showConfirmInitial, setShowConfirmInitial] = useState(false);
   const [showConfirmAfter, setShowConfirmAfter] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
   const [walletInput, setWalletInput] = useState(userData.wallet || '');
   const [claimStatus, setClaimStatus] = useState('');
   const [loading, setLoading] = useState(false);
@@ -530,17 +531,22 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
         totalExp
       });
       
-      setExpGained({
-        likes: likeExp,
-        shares: 0,
-        subscribes: 0,
-        total: totalExp
-      });
-      
-      // Bestätigungsmeldung wenn EXP gesammelt wurde
+      // Nur EXP anzeigen wenn auch welche erhalten wurden
       if (totalExp > 0) {
+        setExpGained({
+          likes: likeExp,
+          shares: 0,
+          subscribes: 0,
+          total: totalExp
+        });
         setConfirmationMessage(language === 'de' ? '🎉 Glückwunsch! Du hast erfolgreich EXP gesammelt!' : language === 'en' ? '🎉 Congratulations! You have successfully collected EXP!' : '🎉 Gratulacje! Pomyślnie zebrałeś EXP!');
+      } else {
+        // Bei 0 EXP keine expGained setzen, sondern Fehlermeldung
+        setConfirmationMessage(language === 'de' ? '❌ Keine neuen Likes gefunden! Bitte like das Video und versuche es erneut.' : language === 'en' ? '❌ No new likes found! Please like the video and try again.' : '❌ Nie znaleziono nowych polubień! Polub film i spróbuj ponownie.');
       }
+      
+      // Ergebnis-Modal öffnen
+      setShowResultModal(true);
       
       // LocalStorage aktualisieren
       if (typeof window !== 'undefined') {
@@ -783,40 +789,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               )}
             </div>
 
-            {expGained && (
-              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-4">
-                <h3 className="text-green-300 font-bold mb-2">🎉 <TranslatedText text="EXP erhalten!" language={language} /></h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-red-300">👍 Like Bonus:</span>
-                    <span className="font-bold text-green-200">+{expGained.likes} EXP</span>
-                  </div>
-                  <div className="border-t border-gray-600 pt-2 flex justify-between">
-                    <span className="text-green-300 font-bold">Gesamt:</span>
-                    <span className="text-green-200 font-bold">+{expGained.total} EXP</span>
-                  </div>
-                </div>
-                
-                <div className="text-center mt-4">
-                  <p className="text-green-200 text-xs mb-3">Lade die Seite neu, um deine neuen EXP zu sehen!</p>
-                  <button 
-                    onClick={() => {
-                      if (typeof window !== 'undefined') {
-                        // Nur EXP-Verification Daten löschen, Login-Daten behalten
-                        localStorage.removeItem("dfaith_youtube_likeStart");
-                        localStorage.removeItem("dfaith_youtube_likeEnd");
-                        
-                        // Seite neu laden
-                        window.location.href = window.location.pathname + '?tab=youtube' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
-                      }
-                    }}
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg"
-                  >
-                    🔄 Seite neu laden
-                  </button>
-                </div>
-              </div>
-            )}
+
 
             <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-300/30 rounded-2xl p-4 mb-6">
               <p className="text-sm text-red-200 font-medium">
@@ -1181,6 +1154,76 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
               >
                 ❌ <TranslatedText text="Abbrechen" language={language} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Result Modal (Erfolg/Misserfolg) */}
+      {showResultModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className={`bg-gradient-to-br from-black via-gray-900 to-black border ${expGained ? 'border-green-500/30' : 'border-red-500/30'} rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl`}>
+            <div className="text-5xl mb-4 text-center">
+              {expGained ? '🎉' : '❌'}
+            </div>
+            <h2 className={`text-xl font-bold mb-4 text-white text-center`}>
+              {expGained ? (
+                <TranslatedText text="EXP Erfolgreich Erhalten!" language={language} />
+              ) : (
+                <TranslatedText text="Keine Neuen Likes Gefunden" language={language} />
+              )}
+            </h2>
+            
+            {expGained ? (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-4">
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between">
+                    <span className="text-green-300">👍 Like Bonus:</span>
+                    <span className="font-bold text-green-200">+{expGained.likes} EXP</span>
+                  </div>
+                  <div className="border-t border-gray-600 pt-2 flex justify-between">
+                    <span className="text-green-300 font-bold">Gesamt:</span>
+                    <span className="text-green-200 font-bold">+{expGained.total} EXP</span>
+                  </div>
+                </div>
+                <p className="text-green-200 text-sm text-center">
+                  <TranslatedText text="Glückwunsch! Du hast erfolgreich EXP gesammelt!" language={language} />
+                </p>
+              </div>
+            ) : (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
+                <p className="text-red-200 leading-relaxed text-center">
+                  {confirmationMessage}
+                </p>
+              </div>
+            )}
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    // Nur EXP-Verification Daten löschen, Login-Daten behalten
+                    localStorage.removeItem("dfaith_youtube_likeStart");
+                    localStorage.removeItem("dfaith_youtube_likeEnd");
+                    
+                    // Seite neu laden
+                    window.location.href = window.location.pathname + '?tab=youtube' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
+                  }
+                }}
+                className={`flex-1 bg-gradient-to-r ${expGained ? 'from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600' : 'from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'} text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105`}
+              >
+                🔄 <TranslatedText text="Neu laden" language={language} />
+              </button>
+              <button 
+                onClick={() => {
+                  setShowResultModal(false);
+                  setExpGained(null);
+                  setConfirmationMessage('');
+                }}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
+              >
+                ❌ <TranslatedText text="Schließen" language={language} />
               </button>
             </div>
           </div>
