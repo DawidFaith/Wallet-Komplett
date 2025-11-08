@@ -133,10 +133,6 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
           </button>
         </div>
 
-        <div className="text-xs text-gray-400 mb-4 text-center">
-          💡 <TranslatedText text="Wallet ändern? Schreib mir eine DM mit &quot;Wallet&quot; auf YouTube" language={language} />
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-red-300 mb-3">

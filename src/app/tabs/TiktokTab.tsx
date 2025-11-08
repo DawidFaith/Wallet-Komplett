@@ -1370,11 +1370,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
         // Verschiedene Status-Responses behandeln
         if (normalizedStatus === 'success') {
           setConfirmationMessage(language === 'de' ? '✅ Teilnahme erfolgreich bestätigt!' : language === 'en' ? '✅ Participation successfully confirmed!' : '✅ Uczestnictwo potwierdzone pomyślnie!');
-          // Modal wird nach 4 Sekunden geschlossen bei Erfolg
-          setTimeout(() => {
-            setConfirmationMessage('');
-            setIsCheckModalOpen(false);
-          }, 4000);
+          // Modal bleibt geöffnet - User kann manuell schließen
         } else if (normalizedStatus === 'wallet account') {
           setConfirmationMessage(language === 'de' ? '⚠️ Die angegebene Wallet stimmt nicht mit deinem Account überein. Falls du die Adresse ändern möchtest, schreibe eine DM an @dawidfaith mit dem Stichwort "Wallet".' : language === 'en' ? '⚠️ The provided wallet does not match your account. If you want to change the address, send a DM to @dawidfaith with the keyword "Wallet".' : '⚠️ Podany portfel nie pasuje do Twojego konta. Jeśli chcesz zmienić adres, wyślij wiadomość do @dawidfaith ze słowem "Wallet".');
         } else if (normalizedStatus === 'wallet in use') {
