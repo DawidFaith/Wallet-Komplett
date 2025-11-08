@@ -1506,138 +1506,129 @@ export default function TiktokTab({ language }: TiktokTabProps) {
 
   // Standard Dashboard
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden p-4">
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255, 0, 80, 0.95), rgba(254, 45, 146, 0.95), rgba(37, 244, 238, 0.95))',
-            backdropFilter: 'blur(8px)'
-          }}
-        >
-          <div className="text-center text-white">
-            <div className="animate-spin w-16 h-16 border-4 border-white/30 border-t-white rounded-full mx-auto mb-6"></div>
-            <p className="text-xl font-bold mb-2">
-              <TranslatedText text="Wird verarbeitet..." language={language} />
-            </p>
-            <p className="text-sm opacity-80">
-              <TranslatedText text="Bitte warten Sie einen Moment" language={language} />
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-purple-900 text-white p-4">
+      <div className="max-w-md mx-auto">
+        {/* Kompakter Header */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-pink-500 to-purple-700 rounded-full mb-4 shadow-xl">
+            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+            </svg>
           </div>
+          
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-400 to-purple-600 bg-clip-text text-transparent mb-2">
+            TikTok Creator Hub
+          </h1>
+          
+          <p className="text-sm text-gray-300 leading-relaxed">
+            <TranslatedText text="Interagiere mit TikTok Videos und verdiene D.FAITH Token!" language={language} />
+          </p>
         </div>
-      )}
 
-      {/* Compact Background */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-10 left-10 w-48 h-48 bg-gradient-to-r from-pink-500/15 to-purple-500/15 rounded-full blur-2xl animate-pulse"></div>
-        <div className="absolute bottom-10 right-10 w-48 h-48 bg-gradient-to-r from-blue-500/15 to-cyan-500/15 rounded-full blur-2xl animate-pulse delay-1000"></div>
-      </div>
-
-      <div className="relative z-10 max-w-4xl mx-auto">
-        {/* Enhanced Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-4 p-6 bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/30 rounded-2xl backdrop-blur-sm">
-            <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
-              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+        {/* Kompakte Action Cards */}
+        <div className="space-y-4 mb-6">
+          {/* Schritt 1 - Teilnahme bestätigen */}
+          <button
+            onClick={() => setIsCheckModalOpen(true)}
+            className="w-full bg-gradient-to-r from-pink-500/20 to-purple-600/20 border border-pink-500/30 rounded-xl p-4 hover:border-pink-500/50 transition-all duration-300 transform hover:scale-105"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-pink-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-lg">1</span>
+              </div>
+              <div className="text-left flex-1">
+                <h3 className="text-white font-bold text-base mb-1">
+                  <TranslatedText text="Teilnahme Bestätigen" language={language} />
+                </h3>
+                <p className="text-gray-400 text-xs leading-tight">
+                  <TranslatedText text="TikTok Video kommentiert? Bestätige deine Teilnahme!" language={language} />
+                </p>
+              </div>
+              <svg className="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </div>
-            <div className="text-left">
-              <h1 className="text-4xl font-black bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                D.FAITH
-              </h1>
-              <p className="text-xl font-bold text-white">
-                <TranslatedText text="TikTok Claim Portal" language={language} />
-              </p>
-              <p className="text-sm text-gray-400 mt-1">
-                🚀 <TranslatedText text="Verdiene Tokens durch TikTok Aktivität" language={language} />
-              </p>
+          </button>
+
+          {/* Schritt 2 - Dashboard Login */}
+          <button
+            onClick={() => setIsLoginModalOpen(true)}
+            className="w-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-cyan-500/30 rounded-xl p-4 hover:border-cyan-500/50 transition-all duration-300 transform hover:scale-105"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-lg">2</span>
+              </div>
+              <div className="text-left flex-1">
+                <h3 className="text-white font-bold text-base mb-1">
+                  <TranslatedText text="Dashboard Login" language={language} />
+                </h3>
+                <p className="text-gray-400 text-xs leading-tight">
+                  <TranslatedText text="Tokens claimen nach Bestätigung" language={language} />
+                </p>
+              </div>
+              <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </button>
+        </div>
+
+        {/* TikTok Link - Kompakt */}
+        <div className="bg-gradient-to-r from-pink-500/10 to-purple-600/10 border border-pink-500/30 rounded-xl p-4 mb-4">
+          <div className="text-center">
+            <p className="text-pink-300 text-sm font-medium mb-3">
+              <TranslatedText text="Neueste TikTok Videos ansehen:" language={language} />
+            </p>
+            <a 
+              href="https://www.tiktok.com/@dawidfaith"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+              </svg>
+              <span>@dawidfaith</span>
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M7 7h8.586L5.293 17.293l1.414 1.414L17 8.414V17h2V5H7v2z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        {/* Anleitung - Kompakt */}
+        <div className="bg-gradient-to-r from-pink-600/10 to-purple-800/10 border border-pink-500/20 rounded-xl p-4">
+          <h3 className="text-base font-semibold text-pink-300 mb-3 flex items-center gap-2">
+            <FaInfoCircle />
+            <TranslatedText text="So funktioniert's:" language={language} />
+          </h3>
+          <div className="space-y-2 text-gray-300 text-xs">
+            <div className="flex items-start gap-2">
+              <span className="text-pink-400 font-bold">1.</span>
+              <TranslatedText text="TikTok Video liken & kommentieren" language={language} />
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-pink-400 font-bold">2.</span>
+              <TranslatedText text="Teilnahme bestätigen" language={language} />
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-pink-400 font-bold">3.</span>
+              <TranslatedText text="Dashboard login & Token claimen" language={language} />
             </div>
           </div>
         </div>
 
-        {/* Main Content Card */}
-        <div className="bg-black/80 border border-gray-800 rounded-2xl p-6 backdrop-blur-sm">
-          {/* Action Buttons */}
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
-            <button
-              onClick={() => setIsCheckModalOpen(true)}
-              className="flex items-center justify-center p-4 bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/30 rounded-xl hover:border-pink-500/50 transition-all group"
-            >
-              <div className="text-center">
-                <h3 className="text-white font-bold">
-                  1. <TranslatedText text="Teilnahme Bestätigen" language={language} />
-                </h3>
-                <p className="text-gray-400 text-sm">
-                  <TranslatedText text="Hast du schon kommentiert? Dann bestätige jetzt deine Teilnahme!" language={language} />
-                </p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setIsLoginModalOpen(true)}
-              className="flex items-center justify-center p-4 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-cyan-500/30 rounded-xl hover:border-cyan-500/50 transition-all group"
-            >
-              <div className="text-center">
-                <h3 className="text-white font-bold">
-                  2. <TranslatedText text="Dashboard Login" language={language} />
-                </h3>
-                <p className="text-gray-400 text-sm">
-                  <TranslatedText text="Tokens claimen - nur nach Teilnahme-Bestätigung möglich" language={language} />
-                </p>
-              </div>
-            </button>
+        {/* Status Message */}
+        {message && (
+          <div className={`mt-4 p-3 rounded-xl text-center text-sm ${
+            message.includes('erfolgreich') 
+              ? 'bg-green-500/10 border border-green-500/30 text-green-300' 
+              : 'bg-red-500/10 border border-red-500/30 text-red-300'
+          }`}>
+            {message}
           </div>
-
-          {/* TikTok Profil Link */}
-          <div className="mb-6 p-4 bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/30 rounded-xl">
-            <div className="text-center">
-              <p className="text-pink-300 font-medium mb-3">
-                📱 Besuche mein TikTok-Profil für das neueste Video:
-              </p>
-              <a 
-                href="https://www.tiktok.com/@dawidfaith"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43V7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.43z"/>
-                </svg>
-                <span>@dawidfaith auf TikTok</span>
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-                </svg>
-              </a>
-              <p className="text-pink-200 text-xs mt-2">
-                💬 Kommentiere &quot;D.FAITH&quot; unter meinem neuesten Video um teilzunehmen!
-              </p>
-            </div>
-          </div>
-
-          {/* Status Message */}
-          {message && (
-            <div className={`mb-6 p-4 rounded-xl text-center border ${
-              message.includes('erfolgreich') 
-                ? 'bg-green-500/10 border-green-500/30 text-green-300' 
-                : 'bg-red-500/10 border-red-500/30 text-red-300'
-            }`}>
-              <div className="flex items-center justify-center space-x-2">
-                {message.includes('erfolgreich') ? (
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                  </svg>
-                )}
-                <span className="font-medium">{message}</span>
-              </div>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Modals */}
