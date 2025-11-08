@@ -1552,6 +1552,12 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
             : language === 'en'
               ? 'Please comment "Dfaith" under the latest YouTube Short video to participate.'
               : 'Skomentuj "Dfaith" pod najnowszym filmem YouTube Short, aby wziąć udział.');
+        } else if (normalizedStatus === 'wallet account') {
+          setMessage(language === 'de'
+            ? 'Die Wallet stimmt nicht überein, welche bei der Bestätigung benutzt wurde.'
+            : language === 'en'
+              ? 'The wallet does not match the one used for confirmation.'
+              : 'Portfel nie zgadza się z tym użytym przy potwierdzeniu.');
         } else {
           setMessage(language === 'de' ? '❌ Teilnahme noch nicht erkannt. Bitte like, kommentiere und abonniere das neueste YouTube Short.' : language === 'en' ? '❌ Participation not detected yet. Please like, comment and subscribe to the latest YouTube Short.' : '❌ Udział nie został jeszcze wykryty. Polub, skomentuj i zasubskrybuj najnowszy YouTube Short.');
         }
