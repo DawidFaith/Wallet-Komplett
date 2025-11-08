@@ -1563,66 +1563,40 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
           }
         }
 
-        if (statusCode === 100) {
+        // Prüfe nach Message-Inhalt statt Status-Code
+        const message = responseData.message || responseData.status || '';
+        const normalizedMessage = message.toString().trim().toLowerCase();
+        
+        if (normalizedMessage.includes('comment') || normalizedMessage.includes('kommentiere')) {
           setMessage(language === 'de'
             ? 'Bitte kommentiere unter dem neuesten YouTube Short Video "Dfaith" um teilzunehmen.'
             : language === 'en'
               ? 'Please comment "Dfaith" under the latest YouTube Short video to participate.'
               : 'Skomentuj "Dfaith" pod najnowszym filmem YouTube Short, aby wziąć udział.');
-        } else if (statusCode === 200) {
+        } else if (normalizedMessage.includes('success') || normalizedMessage.includes('erfolgreich') || normalizedMessage === 'accepted') {
           setMessage(language === 'de'
             ? '✅ Teilnahme erfolgreich bestätigt!'
             : language === 'en'
               ? '✅ Participation successfully confirmed!'
               : '✅ Udział pomyślnie potwierdzony!');
-        } else if (statusCode === 300) {
+        } else if (normalizedMessage.includes('wallet') && (normalizedMessage.includes('not match') || normalizedMessage.includes('stimmt nicht'))) {
           setMessage(language === 'de'
             ? 'Wallet stimmt nicht mit der bei Erstellung angegebenen überein.'
             : language === 'en'
               ? 'Wallet does not match the one specified during creation.'
               : 'Portfel nie zgadza się z tym podanym podczas tworzenia.');
-        } else if (statusCode === 400) {
+        } else if (normalizedMessage.includes('wallet') && (normalizedMessage.includes('in use') || normalizedMessage.includes('verwendet'))) {
           setMessage(language === 'de'
             ? 'Wallet wird bereits verwendet.'
             : language === 'en'
               ? 'Wallet is already in use.'
               : 'Portfel jest już używany.');
-        } else if (statusCode === 500) {
+        } else if (normalizedMessage.includes('already') || normalizedMessage.includes('bereits') || normalizedMessage.includes('evalued')) {
           setMessage(language === 'de'
             ? 'Du hast bereits deine Teilnahme bestätigt. Du kannst dich jetzt einloggen.'
             : language === 'en'
               ? 'You have already confirmed your participation. You can now log in.'
               : 'Już potwierdziłeś swój udział. Możesz się teraz zalogować.');
-        } else if (normalizedStatus === 'success') {
-          setMessage(language === 'de'
-            ? '✅ Teilnahme bestätigt! Du kannst dich jetzt einloggen.'
-            : language === 'en'
-              ? '✅ Participation confirmed! You can now log in.'
-              : '✅ Udział potwierdzony! Możesz się teraz zalogować.');
-        } else if (normalizedStatus === 'comment') {
-          setMessage(language === 'de'
-            ? 'Bitte kommentiere unter dem neuesten YouTube Short Video "Dfaith" um teilzunehmen.'
-            : language === 'en'
-              ? 'Please comment "Dfaith" under the latest YouTube Short video to participate.'
-              : 'Skomentuj "Dfaith" pod najnowszym filmem YouTube Short, aby wziąć udział.');
-        } else if (normalizedStatus === 'wallet account') {
-          setMessage(language === 'de'
-            ? 'Die Wallet stimmt nicht überein, welche bei der Bestätigung benutzt wurde.'
-            : language === 'en'
-              ? 'The wallet does not match the one used for confirmation.'
-              : 'Portfel nie zgadza się z tym użytym przy potwierdzeniu.');
-        } else if (normalizedStatus === 'wallet in use') {
-          setMessage(language === 'de'
-            ? 'Diese Wallet wird bereits benutzt.'
-            : language === 'en'
-              ? 'This wallet is already in use.'
-              : 'Ten portfel jest już używany.');
-        } else if (statusCode === 'Evalued' || normalizedStatus === 'evalued') {
-          setMessage(language === 'de'
-            ? 'Du hast bereits deine Teilnahme bestätigt. Du kannst dich jetzt im Dashboard einloggen.'
-            : language === 'en'
-              ? 'You have already confirmed your participation. You can now log in to the dashboard.'
-              : 'Już potwierdziłeś swój udział. Możesz się teraz zalogować do dashboardu.');
         } else {
           setMessage(language === 'de'
             ? 'Bitte kommentiere "DFAITH" unter dem neuesten YouTube Short Video, um teilzunehmen.'
