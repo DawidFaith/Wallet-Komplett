@@ -1546,6 +1546,12 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
         if (normalizedStatus === 'success' || normalizedStatus === 'ok' || response.status === 200) {
           setMessage(language === 'de' ? '✅ Teilnahme bestätigt! Du kannst jetzt dein Dashboard aufrufen.' : language === 'en' ? '✅ Participation confirmed! You can now access your dashboard.' : '✅ Udział potwierdzony! Możesz teraz uzyskać dostęp do swojego dashboard.');
           // Modal bleibt offen, kein automatisches Schließen mehr
+        } else if (normalizedStatus === 'comment') {
+          setMessage(language === 'de'
+            ? 'Bitte kommentiere unter dem neuesten YouTube Short Video "Dfaith" um teilzunehmen.'
+            : language === 'en'
+              ? 'Please comment "Dfaith" under the latest YouTube Short video to participate.'
+              : 'Skomentuj "Dfaith" pod najnowszym filmem YouTube Short, aby wziąć udział.');
         } else {
           setMessage(language === 'de' ? '❌ Teilnahme noch nicht erkannt. Bitte like, kommentiere und abonniere das neueste YouTube Short.' : language === 'en' ? '❌ Participation not detected yet. Please like, comment and subscribe to the latest YouTube Short.' : '❌ Udział nie został jeszcze wykryty. Polub, skomentuj i zasubskrybuj najnowszy YouTube Short.');
         }
