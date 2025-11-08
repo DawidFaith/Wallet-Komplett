@@ -356,7 +356,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
   const levelRange = maxExp - minExp;
   const progressPercent = Math.round((currentLevelExp / levelRange) * 100);
 
-  // System Check Funktionen
+  // YouTube Check Funktionen
   const getUUID = () => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
@@ -687,11 +687,14 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             </button>
           </div>
           
-          {/* System Check */}
+          {/* YouTube Check */}
           <div className="bg-black/50 border border-red-500/50 rounded-2xl p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
               <div className="font-bold text-lg bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-                🔍 <TranslatedText text="System Check" language={language} />
+                <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+                <TranslatedText text="YouTube Check" language={language} />
               </div>
               {!showLeaderboardModal && (
                 <button
@@ -992,7 +995,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               
               <div className="space-y-3">
                 <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
-                  <span className="text-xl">💰</span>
+                  <span className="text-xl">�</span>
                   <div>
                     <div className="font-bold text-red-300"><TranslatedText text="Marketing Budget" language={language} /></div>
                     <div className="text-sm text-red-400"><TranslatedText text="Budget pro User für YouTube" language={language} /></div>
@@ -1000,7 +1003,11 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 </div>
                 
                 <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
-                  <span className="text-xl">📊</span>
+                  <img 
+                    src={userData.image} 
+                    alt="Profile" 
+                    className="w-5 h-5 rounded-full object-cover"
+                  />
                   <div>
                     <div className="font-bold text-orange-300"><TranslatedText text="Dein Level" language={language} /></div>
                     <div className="text-sm text-orange-400">Level {level}</div>
@@ -1008,7 +1015,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 </div>
                 
                 <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
-                  <span className="text-xl">💎</span>
+                  <img src="/D.FAITH.png" alt="D.FAITH" className="w-5 h-5 object-contain" />
                   <div>
                     <div className="font-bold text-yellow-300"><TranslatedText text="D.FAITH Kurs" language={language} /></div>
                     <div className="text-sm text-yellow-400"><TranslatedText text="Aktueller Marktpreis" language={language} /></div>
