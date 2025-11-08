@@ -952,9 +952,15 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 <img
                   src="/D.FAITH.png"
                   alt="D.FAITH Logo"
-                  className="w-20 h-20 animate-spin-slow"
-                  style={{ animation: 'spin 2s linear infinite' }}
+                  className="w-20 h-20 coin-flip"
+                  style={{ animation: 'coin-flip 2s linear infinite' }}
                 />
+                <style>{`
+                  @keyframes coin-flip {
+                    0% { transform: rotateY(0deg); }
+                    100% { transform: rotateY(360deg); }
+                  }
+                `}</style>
               </div>
               <p className="text-gray-300 mb-4">
                 <TranslatedText text="Claime deine verdienten D.FAITH Token für YouTube Aktivitäten!" language={language} />
