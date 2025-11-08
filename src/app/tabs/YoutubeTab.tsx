@@ -833,8 +833,6 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               )}
             </div>
 
-
-
             <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-300/30 rounded-2xl p-4 mb-6">
               <p className="text-sm text-red-200 font-medium">
                 💡 <TranslatedText text="Like das neueste Video auf" language={language} /> <strong>@dawidfaith</strong>!
@@ -1274,30 +1272,33 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
         </div>
       )}
 
-      {/* Likes Verification Modal */}
+      {/* Likes Verification Modal - Auswahl */}
       {showLikesVerificationModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-red-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
-            <div className="text-5xl mb-4 text-center">👍</div>
+            <div className="text-5xl mb-4 text-center">✨</div>
             <h2 className="text-xl font-bold mb-4 text-white text-center">
-              <TranslatedText text="Likes Verification" language={language} />
+              <TranslatedText text="Sammle EXP" language={language} />
             </h2>
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
               <p className="text-red-200 leading-relaxed text-center mb-4">
-                <TranslatedText text="Überprüfe deine YouTube Likes und sammle EXP!" language={language} />
+                <TranslatedText text="Wähle eine Option zum EXP sammeln:" language={language} />
               </p>
               <div className="space-y-3">
                 <button 
                   onClick={() => {
                     setShowLikesVerificationModal(false);
-                    setShowConfirmInitial(true);
+                    setShowSubscribeModal(true);
                   }}
-                  className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+                  className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
                 >
-                  🔍 <TranslatedText text="Likes Check starten" language={language} />
+                  👍 <TranslatedText text="Likes Verification" language={language} />
                 </button>
                 <button 
-                  onClick={() => setShowSecretModal(true)}
+                  onClick={() => {
+                    setShowLikesVerificationModal(false);
+                    setShowSecretModal(true);
+                  }}
                   className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
                 >
                   🔐 <TranslatedText text="Secret Code eingeben" language={language} />
