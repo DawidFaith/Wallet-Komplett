@@ -953,7 +953,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                   src="/D.FAITH.png"
                   alt="D.FAITH Logo"
                   className="w-20 h-20 coin-flip"
-                  style={{ animation: 'coin-flip 2s linear infinite' }}
+                  style={{ animation: 'coin-flip 5s linear infinite' }}
                 />
                 <style>{`
                   @keyframes coin-flip {
