@@ -957,7 +957,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
                 <p className="text-red-200 text-sm">
-                  💎 <strong><TranslatedText text="Mining Power:" language={language} /></strong> +{userData.miningpower} D.FAITH <TranslatedText text="pro Claim" language={language} />
+                  ⛏️ <strong><TranslatedText text="Mining Power:" language={language} /></strong> +{userData.miningpower} D.FAITH <TranslatedText text="pro Claim" language={language} />
                 </p>
               </div>
               
