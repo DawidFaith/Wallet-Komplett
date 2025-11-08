@@ -165,7 +165,7 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
               <label className="block text-sm font-medium text-red-300 mb-3">
                 <TranslatedText text="Verbundene Wallet" language={language} />
               </label>
-              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
                 <div className="flex items-center justify-center mb-2">
                   <span className="text-green-400 text-sm">✅ <TranslatedText text="Wallet verbunden" language={language} /></span>
                 </div>
@@ -177,8 +177,8 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
           ) : (
             /* Wallet-Verbindungshinweis wenn keine Wallet verbunden */
             <div>
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-4">
-                <p className="text-yellow-200 text-sm font-medium mb-3 text-center">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-4">
+                <p className="text-red-200 text-sm font-medium mb-3 text-center">
                   <TranslatedText text="Du hast noch keine Wallet verbunden." language={language} /><br/><TranslatedText text="Verbinde deine Wallet, um fortzufahren!" language={language} />
                 </p>
                 <button
@@ -197,9 +197,9 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
           
           {/* Bestätigungsmeldung */}
           {confirmationMessage && (
-            <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-4">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
               <div className="flex items-center justify-center">
-                <span className="text-green-300 font-medium text-center">
+                <span className="text-red-300 font-medium text-center">
                   {confirmationMessage}
                 </span>
               </div>
@@ -248,13 +248,13 @@ function Modal({ isOpen, onClose, title, onSubmit, isLoading, router, confirmati
                 </button>
               </div>
               
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-4">
-                <h4 className="text-yellow-300 font-bold mb-2">🔒 Wichtiger Hinweis</h4>
-                <p className="text-yellow-200 text-sm leading-relaxed mb-3">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
+                <h4 className="text-red-300 font-bold mb-2">🔒 Wichtiger Hinweis</h4>
+                <p className="text-red-200 text-sm leading-relaxed mb-3">
                   <TranslatedText text="Deine Wallet-Adresse wird " language={language} /><strong><TranslatedText text="dauerhaft" language={language} /></strong><TranslatedText text=" mit deinem Account verbunden und kann nicht mehr geändert werden." language={language} />
                 </p>
-                <div className="bg-yellow-600/20 border border-yellow-600/40 rounded-lg p-3">
-                  <p className="text-yellow-100 text-xs">
+                <div className="bg-red-600/20 border border-red-600/40 rounded-lg p-3">
+                  <p className="text-red-100 text-xs">
                     <strong>Änderungen nur möglich durch:</strong><br/>
                     DM an @dawidfaith mit Begründung
                   </p>
@@ -478,6 +478,76 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
     }
   };
 
+  // YouTube Claim Funktion (wie TikTok)
+  const handleClaim = async () => {
+    if (!userData.wallet && !walletInput) {
+      setClaimStatus(language === 'de' ? '⚠️ Bitte hinterlege zuerst eine Wallet-Adresse.' : language === 'en' ? '⚠️ Please add a wallet address first.' : '⚠️ Najpierw dodaj adres portfela.');
+      setTimeout(() => setClaimStatus(''), 3000);
+      return;
+    }
+
+    setLoading(true);
+    setClaimStatus(language === 'de' ? '🔄 Claim wird verarbeitet...' : language === 'en' ? '🔄 Processing claim...' : '🔄 Przetwarzanie nagrody...');
+    
+    try {
+      const response = await fetch('https://hook.eu2.make.com/asb2kdhvudeqq4g56qeoxmbbqjyfwgwf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: userData.username,
+          walletAddress: userData.wallet || walletInput,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('YouTube Claim Response Data:', responseData);
+        
+        // Status normalisieren
+        const normalizedStatus = responseData.status?.toString().trim().toLowerCase();
+        
+        if (normalizedStatus === 'success') {
+          setClaimStatus(language === 'de' ? '✅ Claim erfolgreich gesendet!' : language === 'en' ? '✅ Claim sent successfully!' : '✅ Claim wysłany pomyślnie!');
+          setTimeout(() => {
+            setShowClaimModal(false);
+            setClaimStatus('');
+            // KEINE Weiterleitung - User bleibt in der UserCard
+          }, 2000);
+        } else if (responseData.status === 'Info') {
+          // Info Response - bereits geclaimed
+          setClaimStatus(language === 'de' ? 'ℹ️ Du hast bereits geclaimed! Warte bis zum nächsten Claim-Zeitraum.' : language === 'en' ? 'ℹ️ You have already claimed! Wait for the next claim period.' : 'ℹ️ Już odebrałeś nagrodę! Poczekaj do następnego okresu.');
+          setTimeout(() => {
+            setClaimStatus('');
+          }, 4000);
+          // KEINE Weiterleitung bei Info!
+        } else {
+          // Fallback für andere Success-Responses
+          setClaimStatus(language === 'de' ? '✅ Claim erfolgreich gesendet!' : language === 'en' ? '✅ Claim sent successfully!' : '✅ Claim wysłany pomyślnie!');
+          setTimeout(() => {
+            setShowClaimModal(false);
+            setClaimStatus('');
+          }, 2000);
+        }
+      } else {
+        setClaimStatus(language === 'de' ? '❌ Fehler beim Claim. Bitte versuche es erneut.' : language === 'en' ? '❌ Claim error. Please try again.' : '❌ Błąd podczas odbioru. Spróbuj ponownie.');
+        setTimeout(() => {
+          setClaimStatus('');
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Fehler beim Claim:', error);
+      setClaimStatus(language === 'de' ? '❌ Netzwerkfehler. Bitte überprüfe deine Verbindung.' : language === 'en' ? '❌ Network error. Please check your connection.' : '❌ Błäd sieci. Sprawdź połączenie.');
+      setTimeout(() => {
+        setClaimStatus('');
+      }, 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const checkAfter = async () => {
     setLoading(true);
     try {
@@ -690,8 +760,8 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           {/* YouTube Check */}
           <div className="bg-black/50 border border-red-500/50 rounded-2xl p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
-              <div className="font-bold text-lg bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-                <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="currentColor">
+              <div className="flex items-center font-bold text-lg bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
+                <svg className="w-6 h-6 mr-2 text-red-500" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                 </svg>
                 <TranslatedText text="YouTube Check" language={language} />
@@ -700,11 +770,11 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 <button
                   type="button"
                   onClick={() => setShowLeaderboardModal(true)}
-                  className="relative group w-8 h-8 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-300 active:scale-95 hover:scale-105 transition cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 hover:ring-4 hover:ring-yellow-200/60 hover:shadow-yellow-300/60"
+                  className="relative group w-8 h-8 rounded-full bg-white text-red-600 shadow-lg hover:bg-red-50 active:scale-95 hover:scale-105 transition cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 hover:ring-4 hover:ring-red-200/60 hover:shadow-red-300/60"
                   aria-label={language === 'de' ? "Leaderboard öffnen" : language === 'en' ? "Open Leaderboard" : "Otwórz ranking"}
                   title={language === 'de' ? "Leaderboard öffnen" : language === 'en' ? "Open Leaderboard" : "Otwórz ranking"}
                 >
-                  <span className="absolute -inset-1 rounded-full bg-yellow-400/20 blur-sm opacity-60 group-hover:opacity-80 transition pointer-events-none"></span>
+                  <span className="absolute -inset-1 rounded-full bg-red-400/20 blur-sm opacity-60 group-hover:opacity-80 transition pointer-events-none"></span>
                   <span className="inline-block animate-bounce">🏆</span>
                 </button>
               )}
@@ -802,8 +872,8 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               )}
             </div>
             
-            <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 mb-4">
-              <p className="font-semibold mb-3 text-orange-200">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
+              <p className="font-semibold mb-3 text-red-200">
                 2️⃣ <TranslatedText text="Like das YouTube Short!" language={language} />
               </p>
               <button 
@@ -860,32 +930,73 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
         </div>
       )}
 
-      {/* Claim Modal */}
+      {/* Claim Modal (TikTok Style) */}
       {showClaimModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl shadow-xl">
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-white mb-4">Token claimen</h3>
-              <p className="text-zinc-300 mb-6">
-                Claime deine verdienten D.FAITH Token!
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowClaimModal(false)}
-                  className="flex-1 py-3 bg-zinc-700 text-white rounded-xl hover:bg-zinc-600 transition-colors"
-                >
-                  Schließen
-                </button>
-                <button
-                  onClick={() => {
-                    // Hier würde die Claim-Logik kommen
-                    setShowClaimModal(false);
-                  }}
-                  className="flex-1 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
-                >
-                  Claimen
-                </button>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-red-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
+                <TranslatedText text="D.FAITH Claimen" language={language} />
+              </h2>
+              <button
+                onClick={() => setShowClaimModal(false)}
+                className="text-gray-400 hover:text-red-400 text-2xl transition-colors"
+                disabled={loading}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">🪙</span>
               </div>
+              <p className="text-gray-300 mb-4">
+                <TranslatedText text="Claime deine verdienten D.FAITH Token für YouTube Aktivitäten!" language={language} />
+              </p>
+              
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
+                <p className="text-red-200 text-sm">
+                  💎 <strong><TranslatedText text="Mining Power:" language={language} /></strong> +{userData.miningpower} D.FAITH <TranslatedText text="pro Claim" language={language} />
+                </p>
+              </div>
+              
+              {/* Status Message */}
+              {claimStatus && (
+                <div className="mb-6 p-3 bg-black/40 border border-gray-600 rounded-lg">
+                  <p className="text-white text-sm font-medium">{claimStatus}</p>
+                </div>
+              )}
+              
+              {/* Wallet Warning */}
+              {!userData.wallet && !walletInput && (
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-4">
+                  <p className="text-yellow-200 text-sm">
+                    ⚠️ <TranslatedText text="Bitte hinterlege zuerst eine Wallet-Adresse im Wallet Tab" language={language} />
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowClaimModal(false)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white rounded-xl py-3 font-bold transition-all"
+                disabled={loading}
+              >
+                <TranslatedText text="Abbrechen" language={language} />
+              </button>
+              <button 
+                disabled={(!userData.wallet && !walletInput) || loading}
+                onClick={handleClaim}
+                className={`flex-1 rounded-xl py-3 font-bold transition-all ${
+                  (!userData.wallet && !walletInput) || loading
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white'
+                }`}
+              >
+                {loading ? '🔄' : '🪙'} <TranslatedText text="Claimen" language={language} />
+              </button>
             </div>
           </div>
         </div>
@@ -920,32 +1031,32 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                       <div className="text-red-200 font-semibold">{youtubeExp} EXP</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 border-l-4 border-blue-600 pl-3 bg-blue-500/10 py-2 rounded-r-xl">
+                  <div className="flex items-center gap-3 border-l-4 border-red-600 pl-3 bg-red-500/10 py-2 rounded-r-xl">
                     <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" className="w-6 h-6" />
                     <div>
-                      <div className="font-bold text-blue-300">Facebook</div>
-                      <div className="text-blue-200 font-semibold">{userData.expFacebook} EXP</div>
+                      <div className="font-bold text-red-300">Facebook</div>
+                      <div className="text-red-200 font-semibold">{userData.expFacebook} EXP</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 border-l-4 border-pink-600 pl-3 bg-pink-500/10 py-2 rounded-r-xl">
+                  <div className="flex items-center gap-3 border-l-4 border-red-600 pl-3 bg-red-500/10 py-2 rounded-r-xl">
                     <img src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" alt="TikTok" className="w-6 h-6 rounded-full" />
                     <div>
-                      <div className="font-bold text-pink-300">TikTok</div>
-                      <div className="text-pink-200 font-semibold">{userData.expTiktok} EXP</div>
+                      <div className="font-bold text-red-300">TikTok</div>
+                      <div className="text-red-200 font-semibold">{userData.expTiktok} EXP</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 border-l-4 border-purple-600 pl-3 bg-purple-500/10 py-2 rounded-r-xl">
+                  <div className="flex items-center gap-3 border-l-4 border-red-600 pl-3 bg-red-500/10 py-2 rounded-r-xl">
                     <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
                     <div>
-                      <div className="font-bold text-purple-300">Instagram</div>
-                      <div className="text-purple-200 font-semibold">{userData.expInstagram} EXP</div>
+                      <div className="font-bold text-red-300">Instagram</div>
+                      <div className="text-red-200 font-semibold">{userData.expInstagram} EXP</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 border-l-4 border-yellow-600 pl-3 bg-yellow-500/10 py-2 rounded-r-xl">
+                  <div className="flex items-center gap-3 border-l-4 border-red-600 pl-3 bg-red-500/10 py-2 rounded-r-xl">
                     <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Live" className="w-6 h-6 rounded-full" />
                     <div>
-                      <div className="font-bold text-yellow-300">Live</div>
-                      <div className="text-yellow-200 font-semibold">{userData.liveExp} EXP</div>
+                      <div className="font-bold text-red-300">Live</div>
+                      <div className="text-red-200 font-semibold">{userData.liveExp} EXP</div>
                     </div>
                   </div>
                   <div className="border-t border-gray-600 pt-3 mt-4">
@@ -995,7 +1106,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               
               <div className="space-y-3">
                 <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
-                  <span className="text-xl">�</span>
+                  <span className="text-xl text-green-400">$</span>
                   <div>
                     <div className="font-bold text-red-300"><TranslatedText text="Marketing Budget" language={language} /></div>
                     <div className="text-sm text-red-400"><TranslatedText text="Budget pro User für YouTube" language={language} /></div>
@@ -1024,8 +1135,8 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               </div>
             </div>
             
-            <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 mb-6">
-              <p className="text-orange-200 font-medium text-center">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 mb-6">
+              <p className="text-red-200 font-medium text-center">
                 ⚡ <strong><TranslatedText text="Aktuell:" language={language} /></strong> +{userData.miningpower} D.FAITH <TranslatedText text="pro Claim" language={language} />
               </p>
             </div>
@@ -1308,7 +1419,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                   }}
                   className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
                 >
-                  � <TranslatedText text="Secret finden" language={language} />
+                  $ <TranslatedText text="Secret finden" language={language} />
                 </button>
               </div>
             </div>
@@ -1570,7 +1681,7 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
         <div className="bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/30 rounded-xl p-4 mb-4">
           <div className="text-center">
             <p className="text-red-300 text-sm font-medium mb-3">
-              � <TranslatedText text="Neueste YouTube Shorts ansehen:" language={language} />
+              $ <TranslatedText text="Neueste YouTube Shorts ansehen:" language={language} />
             </p>
             <a 
               href="https://www.youtube.com/@dawidfaith"
