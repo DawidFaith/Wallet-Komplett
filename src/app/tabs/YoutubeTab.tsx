@@ -1539,16 +1539,13 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
       if (response.ok) {
         const responseData = await response.json();
         console.log('YouTube Check Response Data:', responseData);
-        
+
         // Status normalisieren (Leerzeichen entfernen, lowercase)
         const normalizedStatus = responseData.status?.toString().trim().toLowerCase();
-        
+
         if (normalizedStatus === 'success' || normalizedStatus === 'ok' || response.status === 200) {
           setMessage(language === 'de' ? '✅ Teilnahme bestätigt! Du kannst jetzt dein Dashboard aufrufen.' : language === 'en' ? '✅ Participation confirmed! You can now access your dashboard.' : '✅ Udział potwierdzony! Możesz teraz uzyskać dostęp do swojego dashboard.');
-          setTimeout(() => {
-            setIsCheckModalOpen(false);
-            setMessage('');
-          }, 3000);
+          // Modal bleibt offen, kein automatisches Schließen mehr
         } else {
           setMessage(language === 'de' ? '❌ Teilnahme noch nicht erkannt. Bitte like, kommentiere und abonniere das neueste YouTube Short.' : language === 'en' ? '❌ Participation not detected yet. Please like, comment and subscribe to the latest YouTube Short.' : '❌ Udział nie został jeszcze wykryty. Polub, skomentuj i zasubskrybuj najnowszy YouTube Short.');
         }
