@@ -1547,33 +1547,26 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
           // JSON Response
           responseData = await response.json();
           console.log('YouTube Check Response Data (JSON):', responseData);
-          statusCode = responseData.status;
-          normalizedStatus = statusCode?.toString().trim().toLowerCase();
         } else {
           // Text Response (z.B. "Accepted" von Make)
           const textResponse = await response.text();
           console.log('YouTube Check Response Data (Text):', textResponse);
-          
-          // Da Make nur "Accepted" zurückgibt, behandeln wir das als Erfolg
-          if (textResponse.toLowerCase().trim() === 'accepted') {
-            statusCode = 200;
-            normalizedStatus = 'success';
-          } else {
-            normalizedStatus = textResponse.toLowerCase().trim();
-          }
+          responseData = { status: textResponse };
         }
 
         // Prüfe nach Message-Inhalt statt Status-Code
         const message = responseData.message || responseData.status || '';
         const normalizedMessage = message.toString().trim().toLowerCase();
         
-        if (normalizedMessage.includes('comment') || normalizedMessage.includes('kommentiere')) {
+        console.log('YouTube Check - Message:', message, 'Normalized:', normalizedMessage);
+        
+        if (normalizedMessage === 'comment' || normalizedMessage.includes('kommentiere')) {
           setMessage(language === 'de'
             ? 'Bitte kommentiere unter dem neuesten YouTube Short Video "Dfaith" um teilzunehmen.'
             : language === 'en'
               ? 'Please comment "Dfaith" under the latest YouTube Short video to participate.'
               : 'Skomentuj "Dfaith" pod najnowszym filmem YouTube Short, aby wziąć udział.');
-        } else if (normalizedMessage.includes('success') || normalizedMessage.includes('erfolgreich') || normalizedMessage === 'accepted') {
+        } else if (normalizedMessage === 'success' || normalizedMessage.includes('erfolgreich') || normalizedMessage === 'accepted') {
           setMessage(language === 'de'
             ? '✅ Teilnahme erfolgreich bestätigt!'
             : language === 'en'
