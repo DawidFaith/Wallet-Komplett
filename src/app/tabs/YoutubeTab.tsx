@@ -1540,19 +1540,46 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
         const responseData = await response.json();
         console.log('YouTube Check Response Data:', responseData);
 
-        // Status normalisieren (Leerzeichen entfernen, lowercase)
-        const normalizedStatus = responseData.status?.toString().trim().toLowerCase();
+        // Prüfe sowohl String-Status als auch numerische Status-Codes
+        const statusCode = responseData.status;
+        const normalizedStatus = statusCode?.toString().trim().toLowerCase();
 
-        if (normalizedStatus === 'success') {
+        if (statusCode === 100) {
+          setMessage(language === 'de'
+            ? 'Bitte kommentiere unter dem neuesten YouTube Short Video "Dfaith" um teilzunehmen.'
+            : language === 'en'
+              ? 'Please comment "Dfaith" under the latest YouTube Short video to participate.'
+              : 'Skomentuj "Dfaith" pod najnowszym filmem YouTube Short, aby wziąć udział.');
+        } else if (statusCode === 200) {
+          setMessage(language === 'de'
+            ? '✅ Teilnahme erfolgreich bestätigt!'
+            : language === 'en'
+              ? '✅ Participation successfully confirmed!'
+              : '✅ Udział pomyślnie potwierdzony!');
+        } else if (statusCode === 300) {
+          setMessage(language === 'de'
+            ? 'Wallet stimmt nicht mit der bei Erstellung angegebenen überein.'
+            : language === 'en'
+              ? 'Wallet does not match the one specified during creation.'
+              : 'Portfel nie zgadza się z tym podanym podczas tworzenia.');
+        } else if (statusCode === 400) {
+          setMessage(language === 'de'
+            ? 'Wallet wird bereits verwendet.'
+            : language === 'en'
+              ? 'Wallet is already in use.'
+              : 'Portfel jest już używany.');
+        } else if (statusCode === 500) {
+          setMessage(language === 'de'
+            ? 'Du hast bereits deine Teilnahme bestätigt. Du kannst dich jetzt einloggen.'
+            : language === 'en'
+              ? 'You have already confirmed your participation. You can now log in.'
+              : 'Już potwierdziłeś swój udział. Możesz się teraz zalogować.');
+        } else if (normalizedStatus === 'success') {
           setMessage(language === 'de'
             ? '✅ Teilnahme bestätigt! Du kannst dich jetzt einloggen.'
             : language === 'en'
               ? '✅ Participation confirmed! You can now log in.'
               : '✅ Udział potwierdzony! Możesz się teraz zalogować.');
-          // Modal bleibt offen, kein automatisches Schließen mehr
-        } else if (normalizedStatus === 'ok' || response.status === 200) {
-          setMessage(language === 'de' ? '✅ Teilnahme bestätigt! Du kannst jetzt dein Dashboard aufrufen.' : language === 'en' ? '✅ Participation confirmed! You can now access your dashboard.' : '✅ Udział potwierdzony! Możesz teraz uzyskać dostęp do swojego dashboard.');
-          // Modal bleibt offen, kein automatisches Schließen mehr
         } else if (normalizedStatus === 'comment') {
           setMessage(language === 'de'
             ? 'Bitte kommentiere unter dem neuesten YouTube Short Video "Dfaith" um teilzunehmen.'
