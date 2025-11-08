@@ -1301,7 +1301,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                   }}
                   className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
                 >
-                  🔐 <TranslatedText text="Secret Code eingeben" language={language} />
+                  � <TranslatedText text="Versteckte Buchstaben finden" language={language} />
                 </button>
               </div>
             </div>
@@ -1326,14 +1326,19 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               <TranslatedText text="Secret Code eingeben" language={language} />
             </h2>
             <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 mb-4">
-              <p className="text-purple-200 leading-relaxed text-center mb-4">
-                <TranslatedText text="Gib deinen Secret Code ein, um zusätzliche EXP zu erhalten!" language={language} />
-              </p>
+              <div className="text-center mb-4">
+                <p className="text-purple-200 font-semibold mb-2">
+                  🔍 <TranslatedText text="Suche die versteckten Buchstaben im Video!" language={language} />
+                </p>
+                <p className="text-purple-300 text-sm leading-relaxed">
+                  <TranslatedText text="Füge die gefundenen Buchstaben zusammen und gib den Code hier ein, um zusätzliche EXP zu erhalten!" language={language} />
+                </p>
+              </div>
               <input
                 type="text"
                 value={secretCode}
                 onChange={(e) => setSecretCode(e.target.value)}
-                placeholder={language === 'de' ? 'Secret Code eingeben...' : language === 'en' ? 'Enter secret code...' : 'Wprowadź kod secret...'}
+                placeholder={language === 'de' ? 'Gefundenen Code hier eingeben...' : language === 'en' ? 'Enter found code here...' : 'Wprowadź znaleziony kod...'}
                 className="w-full p-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors"
                 disabled={secretLoading}
               />
