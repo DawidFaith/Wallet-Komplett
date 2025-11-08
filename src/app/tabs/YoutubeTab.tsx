@@ -1617,14 +1617,18 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
             : language === 'en'
               ? 'This wallet is already in use.'
               : 'Ten portfel jest już używany.');
-        } else if (normalizedStatus === 'evalued') {
+        } else if (statusCode === 'Evalued' || normalizedStatus === 'evalued') {
           setMessage(language === 'de'
-            ? 'Die Teilnahme wurde bereits bestätigt! Du kannst dich im Dashboard anmelden.'
+            ? 'Du hast bereits deine Teilnahme bestätigt. Du kannst dich jetzt im Dashboard einloggen.'
             : language === 'en'
-              ? 'Participation has already been confirmed! You can log in to the dashboard.'
-              : 'Udział został już potwierdzony! Możesz zalogować się do dashboardu.');
+              ? 'You have already confirmed your participation. You can now log in to the dashboard.'
+              : 'Już potwierdziłeś swój udział. Możesz się teraz zalogować do dashboardu.');
         } else {
-          setMessage(language === 'de' ? '❌ Teilnahme noch nicht erkannt. Bitte like, kommentiere und abonniere das neueste YouTube Short.' : language === 'en' ? '❌ Participation not detected yet. Please like, comment and subscribe to the latest YouTube Short.' : '❌ Udział nie został jeszcze wykryty. Polub, skomentuj i zasubskrybuj najnowszy YouTube Short.');
+          setMessage(language === 'de'
+            ? 'Bitte kommentiere "DFAITH" unter dem neuesten YouTube Short Video, um teilzunehmen.'
+            : language === 'en'
+              ? 'Please comment "DFAITH" under the latest YouTube Short video to participate.'
+              : 'Skomentuj "DFAITH" pod najnowszym filmem YouTube Short, aby wziąć udział.');
         }
       } else {
         setMessage(language === 'de' ? '❌ Fehler bei der Überprüfung. Bitte versuche es erneut.' : language === 'en' ? '❌ Check failed. Please try again.' : '❌ Sprawdzenie nie powiodło się. Spróbuj ponownie.');
