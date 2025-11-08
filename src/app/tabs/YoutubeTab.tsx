@@ -1558,6 +1558,12 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
             : language === 'en'
               ? 'The wallet does not match the one used for confirmation.'
               : 'Portfel nie zgadza się z tym użytym przy potwierdzeniu.');
+        } else if (normalizedStatus === 'wallet in use') {
+          setMessage(language === 'de'
+            ? 'Diese Wallet wird bereits benutzt.'
+            : language === 'en'
+              ? 'This wallet is already in use.'
+              : 'Ten portfel jest już używany.');
         } else {
           setMessage(language === 'de' ? '❌ Teilnahme noch nicht erkannt. Bitte like, kommentiere und abonniere das neueste YouTube Short.' : language === 'en' ? '❌ Participation not detected yet. Please like, comment and subscribe to the latest YouTube Short.' : '❌ Udział nie został jeszcze wykryty. Polub, skomentuj i zasubskrybuj najnowszy YouTube Short.');
         }
