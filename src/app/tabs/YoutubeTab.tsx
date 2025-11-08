@@ -759,7 +759,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-red-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-                ✨ <TranslatedText text="YouTube Verification" language={language} />
+                ✨ <TranslatedText text="YouTube Shorts Verification" language={language} />
               </h2>
               <button
                 onClick={() => setShowSubscribeModal(false)}
@@ -801,7 +801,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             
             <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 mb-4">
               <p className="font-semibold mb-3 text-orange-200">
-                2️⃣ <TranslatedText text="Like das YouTube Video!" language={language} />
+                2️⃣ <TranslatedText text="Like das YouTube Short!" language={language} />
               </p>
               <button 
                 onClick={() => setShowConfirmAfter(true)}
@@ -835,7 +835,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
 
             <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-300/30 rounded-2xl p-4 mb-6">
               <p className="text-sm text-red-200 font-medium">
-                💡 <TranslatedText text="Like das neueste Video auf" language={language} /> <strong>@dawidfaith</strong>!
+                💡 <TranslatedText text="Like das neueste YouTube Short auf" language={language} /> <strong>@dawidfaith</strong>!
               </p>
               <a 
                 href="https://www.youtube.com/@dawidfaith"
@@ -1301,7 +1301,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                   }}
                   className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
                 >
-                  � <TranslatedText text="Versteckte Buchstaben finden" language={language} />
+                  � <TranslatedText text="Secret finden" language={language} />
                 </button>
               </div>
             </div>
@@ -1328,7 +1328,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 mb-4">
               <div className="text-center mb-4">
                 <p className="text-purple-200 font-semibold mb-2">
-                  🔍 <TranslatedText text="Suche die versteckten Buchstaben im Video!" language={language} />
+                  🔍 <TranslatedText text="Suche die versteckten Buchstaben im YouTube Short!" language={language} />
                 </p>
                 <p className="text-purple-300 text-sm leading-relaxed">
                   <TranslatedText text="Füge die gefundenen Buchstaben zusammen und gib den Code hier ein, um zusätzliche EXP zu erhalten!" language={language} />
@@ -1425,7 +1425,7 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
             setMessage('');
           }, 3000);
         } else {
-          setMessage(language === 'de' ? '❌ Teilnahme noch nicht erkannt. Bitte like, kommentiere und abonniere das neueste YouTube Video.' : language === 'en' ? '❌ Participation not detected yet. Please like, comment and subscribe to the latest YouTube video.' : '❌ Udział nie został jeszcze wykryty. Polub, skomentuj i zasubskrybuj najnowszy film YouTube.');
+          setMessage(language === 'de' ? '❌ Teilnahme noch nicht erkannt. Bitte like, kommentiere und abonniere das neueste YouTube Short.' : language === 'en' ? '❌ Participation not detected yet. Please like, comment and subscribe to the latest YouTube Short.' : '❌ Udział nie został jeszcze wykryty. Polub, skomentuj i zasubskrybuj najnowszy YouTube Short.');
         }
       } else {
         setMessage(language === 'de' ? '❌ Fehler bei der Überprüfung. Bitte versuche es erneut.' : language === 'en' ? '❌ Check failed. Please try again.' : '❌ Sprawdzenie nie powiodło się. Spróbuj ponownie.');
@@ -1491,101 +1491,116 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-red-900 text-white">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header mit YouTube Branding */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-red-500 to-red-700 rounded-full mb-6 shadow-2xl">
-            <svg className="w-12 h-12 text-white" viewBox="0 0 24 24" fill="currentColor">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-red-900 text-white p-4">
+      <div className="max-w-md mx-auto">
+        {/* Kompakter Header */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-full mb-4 shadow-xl">
+            <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="currentColor">
               <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
             </svg>
           </div>
           
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent mb-4">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent mb-2">
             YouTube Creator Hub
           </h1>
           
-          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            <TranslatedText text="Verbinde deinen YouTube Account und verdiene D.FAITH Token durch deine Aktivitäten!" language={language} />
+          <p className="text-sm text-gray-300 leading-relaxed">
+            <TranslatedText text="Interagiere mit YouTube Shorts und verdiene D.FAITH Token!" language={language} />
           </p>
         </div>
 
-        {/* Main Content Card */}
-        <div className="bg-black/80 border border-gray-800 rounded-2xl p-6 backdrop-blur-sm">
-          {/* Action Buttons */}
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
-            <button
-              onClick={() => setIsCheckModalOpen(true)}
-              className="flex items-center justify-center p-4 bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/30 rounded-xl hover:border-red-500/50 transition-all group"
-            >
-              <div className="text-center">
-                <h3 className="text-white font-bold">
-                  1. <TranslatedText text="Teilnahme Bestätigen" language={language} />
+        {/* Kompakte Action Cards */}
+        <div className="space-y-4 mb-6">
+          {/* Schritt 1 - Teilnahme bestätigen */}
+          <button
+            onClick={() => setIsCheckModalOpen(true)}
+            className="w-full bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/30 rounded-xl p-4 hover:border-red-500/50 transition-all duration-300 transform hover:scale-105"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-lg">1</span>
+              </div>
+              <div className="text-left flex-1">
+                <h3 className="text-white font-bold text-base mb-1">
+                  <TranslatedText text="Teilnahme Bestätigen" language={language} />
                 </h3>
-                <p className="text-gray-400 text-sm">
-                  <TranslatedText text="Hast du schon kommentiert? Dann bestätige jetzt deine Teilnahme!" language={language} />
+                <p className="text-gray-400 text-xs leading-tight">
+                  <TranslatedText text="YouTube Short kommentiert? Bestätige deine Teilnahme!" language={language} />
                 </p>
               </div>
-            </button>
-
-            <button
-              onClick={() => setIsLoginModalOpen(true)}
-              className="flex items-center justify-center p-4 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-cyan-500/30 rounded-xl hover:border-cyan-500/50 transition-all group"
-            >
-              <div className="text-center">
-                <h3 className="text-white font-bold">
-                  2. <TranslatedText text="Dashboard Login" language={language} />
-                </h3>
-                <p className="text-gray-400 text-sm">
-                  <TranslatedText text="Tokens claimen - nur nach Teilnahme-Bestätigung möglich" language={language} />
-                </p>
-              </div>
-            </button>
-          </div>
-
-          {/* YouTube Profil Link */}
-          <div className="mb-6 p-4 bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/30 rounded-xl">
-            <div className="text-center">
-              <p className="text-red-300 font-medium mb-3">
-                📱 Besuche mein YouTube-Kanal für das neueste Video:
-              </p>
-              <a 
-                href="https://www.youtube.com/@dawidfaith"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                </svg>
-                <span>@dawidfaith auf YouTube</span>
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M7 7h8.586L5.293 17.293l1.414 1.414L17 8.414V17h2V5H7v2z"/>
-                </svg>
-              </a>
+              <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </div>
-          </div>
+          </button>
 
-          {/* Wie funktioniert es? */}
-          <div className="bg-gradient-to-r from-red-600/10 to-red-800/10 border border-red-500/20 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-red-300 mb-3 flex items-center gap-2">
-              <FaInfoCircle />
-              <TranslatedText text="Wie es funktioniert" language={language} />
-            </h3>
-            <ul className="space-y-2 text-gray-300 text-sm">
-              <li className="flex items-start gap-2">
-                <span className="text-red-400 mt-1">•</span>
-                <TranslatedText text="Like, kommentiere und abonniere das neueste YouTube Video" language={language} />
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-red-400 mt-1">•</span>
-                <TranslatedText text="Bestätige deine Teilnahme über Button 1" language={language} />
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-red-400 mt-1">•</span>
-                <TranslatedText text="Logge dich ins Dashboard ein und claime deine Tokens" language={language} />
-              </li>
-            </ul>
+          {/* Schritt 2 - Dashboard Login */}
+          <button
+            onClick={() => setIsLoginModalOpen(true)}
+            className="w-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-cyan-500/30 rounded-xl p-4 hover:border-cyan-500/50 transition-all duration-300 transform hover:scale-105"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-lg">2</span>
+              </div>
+              <div className="text-left flex-1">
+                <h3 className="text-white font-bold text-base mb-1">
+                  <TranslatedText text="Dashboard Login" language={language} />
+                </h3>
+                <p className="text-gray-400 text-xs leading-tight">
+                  <TranslatedText text="Tokens claimen nach Bestätigung" language={language} />
+                </p>
+              </div>
+              <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </button>
+        </div>
+
+        {/* YouTube Link - Kompakt */}
+        <div className="bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/30 rounded-xl p-4 mb-4">
+          <div className="text-center">
+            <p className="text-red-300 text-sm font-medium mb-3">
+              � <TranslatedText text="Neueste YouTube Shorts ansehen:" language={language} />
+            </p>
+            <a 
+              href="https://www.youtube.com/@dawidfaith"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+              </svg>
+              <span>@dawidfaith</span>
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M7 7h8.586L5.293 17.293l1.414 1.414L17 8.414V17h2V5H7v2z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        {/* Anleitung - Kompakt */}
+        <div className="bg-gradient-to-r from-red-600/10 to-red-800/10 border border-red-500/20 rounded-xl p-4">
+          <h3 className="text-base font-semibold text-red-300 mb-3 flex items-center gap-2">
+            <FaInfoCircle />
+            <TranslatedText text="So funktioniert's:" language={language} />
+          </h3>
+          <div className="space-y-2 text-gray-300 text-xs">
+            <div className="flex items-start gap-2">
+              <span className="text-red-400 font-bold">1.</span>
+              <TranslatedText text="YouTube Short liken & kommentieren" language={language} />
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-red-400 font-bold">2.</span>
+              <TranslatedText text="Teilnahme bestätigen" language={language} />
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-red-400 font-bold">3.</span>
+              <TranslatedText text="Dashboard login & Token claimen" language={language} />
+            </div>
           </div>
         </div>
       </div>
