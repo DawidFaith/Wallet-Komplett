@@ -560,12 +560,21 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
   return (
     <>
       <div 
-        className="min-h-screen flex items-center justify-center p-8 bg-black"
+        className="min-h-screen flex items-center justify-center p-4 bg-black"
         style={{ 
           fontFamily: 'Poppins, Segoe UI, sans-serif'
         }}
       >
-        <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-pink-500/30 rounded-3xl p-8 w-full max-w-sm text-center text-white shadow-2xl">
+        <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-pink-500/30 rounded-3xl p-6 w-full max-w-sm text-center text-white shadow-2xl relative">
+          {/* Zurück Button auf der Karte */}
+          <button
+            onClick={onBack}
+            className="absolute top-4 left-4 w-10 h-10 bg-pink-600/20 border border-pink-500/50 rounded-full text-white hover:bg-pink-600/40 transition-all duration-200 flex items-center justify-center z-10 backdrop-blur-sm"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
           {/* Username */}
           <div className="text-2xl font-bold mb-4 bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">@{userData.username}</div>
           
@@ -1078,17 +1087,17 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                       <div className="text-purple-200 font-semibold">{userData.expInstagram} EXP</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 border-l-4 border-cyan-600 pl-3 bg-cyan-500/10 py-2 rounded-r-xl">
-                    <img src="https://cdn-icons-png.flaticon.com/512/727/727245.png" alt="Stream" className="w-6 h-6 rounded-full" />
+                  <div className="flex items-center gap-3 border-l-4 border-red-600 pl-3 bg-red-500/10 py-2 rounded-r-xl">
+                    <img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" alt="YouTube" className="w-6 h-6 rounded-full" />
                     <div>
-                      <div className="font-bold text-cyan-300">Stream</div>
-                      <div className="text-cyan-200 font-semibold">{userData.expStream} EXP</div>
+                      <div className="font-bold text-red-300">YouTube</div>
+                      <div className="text-red-200 font-semibold">{userData.expStream} EXP</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 border-l-4 border-yellow-600 pl-3 bg-yellow-500/10 py-2 rounded-r-xl">
                     <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Live" className="w-6 h-6 rounded-full" />
                     <div>
-                      <div className="font-bold text-yellow-300">Live EXP Bonus</div>
+                      <div className="font-bold text-yellow-300">Live</div>
                       <div className="text-yellow-200 font-semibold">{userData.liveNFTBonus} EXP</div>
                     </div>
                   </div>

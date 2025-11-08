@@ -667,11 +667,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 <span>{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
               <div className="flex justify-between">
-                <span>🔁 <TranslatedText text="Share" language={language} /></span>
-                <span>{userData.shared === 'true' ? '✅' : '❌'} +10 EXP</span>
-              </div>
-              <div className="flex justify-between">
-                <span>🔔 <TranslatedText text="Secret" language={language} /></span>
+                <span> <TranslatedText text="Secret" language={language} /></span>
                 <span>{userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
             </div>
@@ -725,7 +721,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
               <p className="font-semibold mb-3 text-red-200">
-                1️⃣ <TranslatedText text="Entferne alle Likes von meinem YouTube Video" language={language} />
+                1️⃣ <TranslatedText text="Bestätige zuerst deine aktuellen Like-Anzahl" language={language} />
               </p>
               <button 
                 onClick={() => setShowConfirmInitial(true)}
@@ -930,7 +926,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                   <div className="flex items-center gap-3 border-l-4 border-yellow-600 pl-3 bg-yellow-500/10 py-2 rounded-r-xl">
                     <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Live" className="w-6 h-6 rounded-full" />
                     <div>
-                      <div className="font-bold text-yellow-300">Live EXP Bonus</div>
+                      <div className="font-bold text-yellow-300">Live</div>
                       <div className="text-yellow-200 font-semibold">{userData.liveExp} EXP</div>
                     </div>
                   </div>
@@ -1133,7 +1129,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             </h2>
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
               <p className="text-red-200 leading-relaxed">
-                <TranslatedText text="Bitte entferne alle Likes vom YouTube Video – danach werden die aktuellen Zahlen gespeichert." language={language} />
+                <TranslatedText text="Deine aktuellen Like-Zahlen werden jetzt gespeichert. Danach kannst du das Video liken." language={language} />
               </p>
             </div>
             <div className="flex gap-3">
@@ -1167,7 +1163,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             </h2>
             <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 mb-4">
               <p className="text-orange-200 leading-relaxed">
-                <TranslatedText text="Bitte like das YouTube Video, bevor du fortfährst – gleich werden die neuen Zahlen gespeichert." language={language} />
+                <TranslatedText text="Jetzt werden die neuen Like-Zahlen überprüft. Stelle sicher, dass du das Video geliked hast!" language={language} />
               </p>
             </div>
             <div className="flex gap-3">
