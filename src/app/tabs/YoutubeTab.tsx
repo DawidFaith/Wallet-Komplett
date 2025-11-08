@@ -948,8 +948,13 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             </div>
             
             <div className="text-center mb-6">
-              <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">🪙</span>
+              <div className="w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                <img
+                  src="/D.FAITH.png"
+                  alt="D.FAITH Logo"
+                  className="w-20 h-20 animate-spin-slow"
+                  style={{ animation: 'spin 2s linear infinite' }}
+                />
               </div>
               <p className="text-gray-300 mb-4">
                 <TranslatedText text="Claime deine verdienten D.FAITH Token für YouTube Aktivitäten!" language={language} />
@@ -1419,7 +1424,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                   }}
                   className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
                 >
-                  $ <TranslatedText text="Secret finden" language={language} />
+                    <TranslatedText text="Secret finden" language={language} />
                 </button>
               </div>
             </div>
@@ -1681,7 +1686,7 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
         <div className="bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/30 rounded-xl p-4 mb-4">
           <div className="text-center">
             <p className="text-red-300 text-sm font-medium mb-3">
-              $ <TranslatedText text="Neueste YouTube Shorts ansehen:" language={language} />
+            <TranslatedText text="Neueste YouTube Shorts ansehen:" language={language} />
             </p>
             <a 
               href="https://www.youtube.com/@dawidfaith"
