@@ -1558,33 +1558,35 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
         const message = responseData.message || responseData.status || '';
         const normalizedMessage = message.toString().trim().toLowerCase();
         
+        console.log('YouTube Check - Response:', responseData);
         console.log('YouTube Check - Message:', message, 'Normalized:', normalizedMessage);
         
-        if (normalizedMessage === 'comment') {
+        // Robuste String-Vergleiche mit includes für bessere Kompatibilität
+        if (normalizedMessage.includes('comment')) {
           setMessage(language === 'de'
             ? 'Bitte kommentiere unter dem neuesten YouTube Short Video "Dfaith" um teilzunehmen.'
             : language === 'en'
               ? 'Please comment "Dfaith" under the latest YouTube Short video to participate.'
               : 'Skomentuj "Dfaith" pod najnowszym filmem YouTube Short, aby wziąć udział.');
-        } else if (normalizedMessage === 'success' || normalizedMessage === 'accepted') {
+        } else if (normalizedMessage.includes('success') || normalizedMessage.includes('accepted')) {
           setMessage(language === 'de'
             ? '✅ Teilnahme erfolgreich bestätigt!'
             : language === 'en'
               ? '✅ Participation successfully confirmed!'
               : '✅ Udział pomyślnie potwierdzony!');
-        } else if (normalizedMessage === 'evalued') {
+        } else if (normalizedMessage.includes('evalued')) {
           setMessage(language === 'de'
             ? 'Du hast bereits deine Teilnahme bestätigt. Du kannst dich jetzt einloggen.'
             : language === 'en'
               ? 'You have already confirmed your participation. You can now log in.'
               : 'Już potwierdziłeś swój udział. Możesz się teraz zalogować.');
-        } else if (normalizedMessage === 'wallet account') {
+        } else if (normalizedMessage.includes('wallet account')) {
           setMessage(language === 'de'
             ? 'Wallet stimmt nicht mit der bei Erstellung angegebenen überein.'
             : language === 'en'
               ? 'Wallet does not match the one specified during creation.'
               : 'Portfel nie zgadza się z tym podanym podczas tworzenia.');
-        } else if (normalizedMessage === 'wallet in use') {
+        } else if (normalizedMessage.includes('wallet') && normalizedMessage.includes('use')) {
           setMessage(language === 'de'
             ? 'Wallet wird bereits verwendet.'
             : language === 'en'
@@ -1592,10 +1594,10 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
               : 'Portfel jest już używany.');
         } else {
           setMessage(language === 'de'
-            ? 'Unbekannte Antwort vom Server. Bitte versuche es erneut.'
+            ? `Unbekannte Antwort vom Server: "${message}". Bitte versuche es erneut.`
             : language === 'en'
-              ? 'Unknown server response. Please try again.'
-              : 'Nieznana odpowiedź serwera. Spróbuj ponownie.');
+              ? `Unknown server response: "${message}". Please try again.`
+              : `Nieznana odpowiedź serwera: "${message}". Spróbuj ponownie.`);
         }
       } else {
         setMessage(language === 'de' ? '❌ Fehler bei der Überprüfung. Bitte versuche es erneut.' : language === 'en' ? '❌ Check failed. Please try again.' : '❌ Sprawdzenie nie powiodło się. Spróbuj ponownie.');
