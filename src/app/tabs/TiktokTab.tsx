@@ -1927,26 +1927,28 @@ export default function TiktokTab({ language }: TiktokTabProps) {
               
               <div className="space-y-3 text-left">
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
-                  <span className="text-xl">💰</span>
+                  <span className="text-xl text-green-400">$</span>
                   <div>
-                    <div className="font-bold text-gray-800">Marketing Budget</div>
-                    <div className="text-sm text-gray-600"><TranslatedText text="Pro User für TikTok Engagement" language={language} /></div>
+                    <div className="font-bold text-red-300"><TranslatedText text="Marketing Budget" language={language} /></div>
+                    <div className="text-sm text-red-400"><TranslatedText text="Budget pro User für TikTok" language={language} /></div>
                   </div>
                 </div>
-                
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
-                  <span className="text-xl">📊</span>
+                  <img 
+                    src={userData?.image} 
+                    alt="Profile" 
+                    className="w-5 h-5 rounded-full object-cover"
+                  />
                   <div>
-                    <div className="font-bold text-gray-800">Dein Level</div>
-                    <div className="text-sm text-gray-600"><TranslatedText text="Aktuell: Level" language={language} /> {userData && getLevelAndExpRange(userData.expTotal || 0).level}</div>
+                    <div className="font-bold text-orange-300"><TranslatedText text="Dein Level" language={language} /></div>
+                    <div className="text-sm text-orange-400">Level {userData && getLevelAndExpRange(userData.expTotal || 0).level}</div>
                   </div>
                 </div>
-                
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
-                  <span className="text-xl">💎</span>
+                  <img src="/D.FAITH.png" alt="D.FAITH" className="w-5 h-5 object-contain" />
                   <div>
-                    <div className="font-bold text-gray-800"><TranslatedText text="D.FAITH Preis" language={language} /></div>
-                    <div className="text-sm text-gray-600"><TranslatedText text="Aktueller Marktpreis" language={language} /></div>
+                    <div className="font-bold text-yellow-300"><TranslatedText text="D.FAITH Kurs" language={language} /></div>
+                    <div className="text-sm text-yellow-400"><TranslatedText text="Aktueller Marktpreis" language={language} /></div>
                   </div>
                 </div>
               </div>
