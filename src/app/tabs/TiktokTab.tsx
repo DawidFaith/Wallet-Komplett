@@ -1168,26 +1168,34 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               
               <div className="space-y-3">
                 <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
-                  <span className="text-xl">💰</span>
+                  <span className="text-xl text-green-500">$</span>
                   <div>
                     <div className="font-bold text-cyan-300"><TranslatedText text="Marketing Budget" language={language} /></div>
                     <div className="text-sm text-cyan-400"><TranslatedText text="Budget pro User für TikTok" language={language} /></div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
-                  <span className="text-xl">📊</span>
+                  {userData?.image ? (
+                    <img 
+                      src={userData.image} 
+                      alt="Profilbild" 
+                      className="w-7 h-7 rounded-full object-cover border-2 border-orange-300" 
+                    />
+                  ) : (
+                    <span className="text-xl">👤</span>
+                  )}
                   <div>
-                    <div className="font-bold text-pink-300"><TranslatedText text="Dein Level" language={language} /></div>
-                    <div className="text-sm text-pink-400">Level {getLevelAndExpRange(userData.expTotal).level}</div>
+                    <div className="font-bold text-orange-300"><TranslatedText text="Dein Level" language={language} /></div>
+                    <div className="text-sm text-orange-400">Level {getLevelAndExpRange(userData.expTotal).level}</div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
-                  <span className="text-xl">💎</span>
+                  <img src="/D.FAITH.png" alt="D.FAITH Logo" className="w-7 h-7 object-contain border-2 border-yellow-300 rounded-full bg-white" />
                   <div>
-                    <div className="font-bold text-purple-300"><TranslatedText text="D.FAITH Kurs" language={language} /></div>
-                    <div className="text-sm text-purple-400"><TranslatedText text="Aktueller Marktpreis" language={language} /></div>
+                    <div className="font-bold text-yellow-300"><TranslatedText text="D.FAITH Kurs" language={language} /></div>
+                    <div className="text-sm text-yellow-400"><TranslatedText text="Aktueller Marktpreis" language={language} /></div>
                   </div>
                 </div>
               </div>
@@ -1915,77 +1923,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
       )}
 
       {/* Mining Power Modal */}
-      {showMiningPowerModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
-            <button
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
-              onClick={() => setShowMiningPowerModal(false)}
-              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
-              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
-            >
-              ×
-            </button>
-            <div className="flex flex-col items-center gap-4 mb-6">
-              <div className="w-20 h-20 bg-gradient-to-r from-pink-400 to-cyan-500 rounded-full flex items-center justify-center">
-                <span className="text-3xl text-white">⛏</span>
-              </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-cyan-600 bg-clip-text text-transparent"><TranslatedText text="Mining Power Info" language={language} /></h2>
-            </div>
-            
-            <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-6">
-              <p className="text-gray-800 leading-relaxed mb-4">
-                <TranslatedText text="Deine " language={language} /><strong className="text-cyan-600">Mining Power</strong><TranslatedText text=" ist abhängig von verschiedenen Faktoren:" language={language} />
-              </p>
-              
-              <div className="space-y-3 text-left">
-                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
-                  <span className="text-xl text-green-500">$</span>
-                  <div>
-                    <div className="font-bold text-red-300"><TranslatedText text="Marketing Budget" language={language} /></div>
-                    <div className="text-sm text-red-400"><TranslatedText text="Budget pro User für TikTok" language={language} /></div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
-                  {userData?.image ? (
-                    <img 
-                      src={userData.image} 
-                      alt="Profile" 
-                      className="w-7 h-7 rounded-full object-cover border-2 border-orange-300"
-                    />
-                  ) : (
-                    <span className="text-xl">👤</span>
-                  )}
-                  <div>
-                    <div className="font-bold text-orange-300"><TranslatedText text="Dein Level" language={language} /></div>
-                    <div className="text-sm text-orange-400">Level {userData && getLevelAndExpRange(userData.expTotal || 0).level}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
-                  <img src="/D.FAITH.png" alt="D.FAITH" className="w-7 h-7 object-contain border-2 border-yellow-300 rounded-full bg-white" />
-                  <div>
-                    <div className="font-bold text-yellow-300"><TranslatedText text="D.FAITH Kurs" language={language} /></div>
-                    <div className="text-sm text-yellow-400"><TranslatedText text="Aktueller Marktpreis" language={language} /></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-3 mb-4">
-              <p className="text-cyan-800 font-medium text-sm">
-                ⚡ <strong><TranslatedText text="Aktuell:" language={language} /></strong> +{userData?.miningpower || 0} D.Faith <TranslatedText text="pro TikTok" language={language} />
-              </p>
-            </div>
-            
-            <button 
-              onClick={() => setShowMiningPowerModal(false)}
-              className="w-full bg-gradient-to-r from-pink-400 to-cyan-500 hover:from-pink-500 hover:to-cyan-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
-            >
-              ✅ <TranslatedText text="Verstanden" language={language} />
-            </button>
-          </div>
-        </div>
-      )}
+      // ...existing code...
 
       {/* Confirm Before Modal */}
       {showConfirmBefore && (
