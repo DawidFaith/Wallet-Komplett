@@ -645,7 +645,12 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           <div className="bg-black/50 border border-pink-500/50 rounded-2xl p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
               <div className="font-bold text-lg bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
-                <span className="text-2xl align-middle">🎵</span> <TranslatedText text="TikTok Check" language={language} />
+                <span className="inline-block align-middle mr-1" style={{width:'1.5em',height:'1.5em',verticalAlign:'middle'}}>
+                  <svg viewBox="0 0 32 32" width="1.5em" height="1.5em" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21.5 4c.2 3.2 2.5 5.7 5.5 6.1v4.1c-2.1-.2-4.1-.8-5.9-1.8v9.2c0 4.1-3.3 7.4-7.4 7.4S6.3 25.7 6.3 21.6c0-4.1 3.3-7.4 7.4-7.4.3 0 .7 0 1 .1v4.2c-.3-.1-.7-.2-1-.2-1.8 0-3.2 1.4-3.2 3.2s1.4 3.2 3.2 3.2 3.2-1.4 3.2-3.2V4h4.6z"/>
+                  </svg>
+                </span>
+                <TranslatedText text="TikTok Check" language={language} />
               </div>
               {!showLeaderboardModal && (
                 <button
@@ -1001,6 +1006,12 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                   className="w-20 h-20 coin-flip"
                   style={{ animation: 'coin-flip 5s linear infinite' }}
                 />
+                <style>{`
+                  @keyframes coin-flip {
+                    0% { transform: rotateY(0deg); }
+                    100% { transform: rotateY(360deg); }
+                  }
+                `}</style>
               </div>
               <p className="text-cyan-200 leading-relaxed mb-4">
                 <TranslatedText text="Du kannst" language={language} /> <strong className="text-cyan-400">+{userData.miningpower} D.FAITH</strong> <TranslatedText text="für deine TikTok Aktivität claimen!" language={language} />
@@ -1934,11 +1945,15 @@ export default function TiktokTab({ language }: TiktokTabProps) {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
-                  <img 
-                    src={userData?.image} 
-                    alt="Profile" 
-                    className="w-5 h-5 rounded-full object-cover"
-                  />
+                  {userData?.image ? (
+                    <img 
+                      src={userData.image} 
+                      alt="Profile" 
+                      className="w-5 h-5 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xl">👤</span>
+                  )}
                   <div>
                     <div className="font-bold text-orange-300"><TranslatedText text="Dein Level" language={language} /></div>
                     <div className="text-sm text-orange-400">Level {userData && getLevelAndExpRange(userData.expTotal || 0).level}</div>
