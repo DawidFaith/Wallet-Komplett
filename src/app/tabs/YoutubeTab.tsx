@@ -764,20 +764,20 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               )}
             </div>
             
-            <div className="space-y-2 text-sm text-white">
-              <div className="flex justify-between">
-                <span>👍 <TranslatedText text="Like" language={language} /></span>
-                <span>{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="flex items-center gap-1 text-green-400 font-bold">👍 <TranslatedText text="Like" language={language} /></span>
+                  <span className="text-green-300 font-semibold">{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="flex items-center gap-1 text-blue-400 font-bold">💬 <TranslatedText text="Kommentar" language={language} /></span>
+                  <span className="text-blue-300 font-semibold">{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="flex items-center gap-1 text-purple-400 font-bold">🔐 <TranslatedText text="Secret" language={language} /></span>
+                  <span className="text-purple-300 font-semibold">{userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span>💬 <TranslatedText text="Kommentar" language={language} /></span>
-                <span>{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
-              </div>
-              <div className="flex justify-between">
-                <span>🔐 <TranslatedText text="Secret" language={language} /></span>
-                <span>{userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
-              </div>
-            </div>
           </div>
           
           {/* Buttons */}
