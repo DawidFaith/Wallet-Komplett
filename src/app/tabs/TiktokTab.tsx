@@ -645,12 +645,14 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           <div className="bg-black/50 border border-pink-500/50 rounded-2xl p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
               <div className="font-bold text-lg bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
-                <span className="inline-block align-middle mr-1" style={{width:'1.5em',height:'1.5em',verticalAlign:'middle'}}>
-                  <svg viewBox="0 0 32 32" width="1.5em" height="1.5em" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <span className="inline-block align-middle mr-2" style={{width:'1.5em',height:'1.5em',verticalAlign:'middle'}}>
+                  <svg viewBox="0 0 32 32" width="1.5em" height="1.5em" fill="#fff" xmlns="http://www.w3.org/2000/svg" style={{display:'block'}}>
                     <path d="M21.5 4c.2 3.2 2.5 5.7 5.5 6.1v4.1c-2.1-.2-4.1-.8-5.9-1.8v9.2c0 4.1-3.3 7.4-7.4 7.4S6.3 25.7 6.3 21.6c0-4.1 3.3-7.4 7.4-7.4.3 0 .7 0 1 .1v4.2c-.3-.1-.7-.2-1-.2-1.8 0-3.2 1.4-3.2 3.2s1.4 3.2 3.2 3.2 3.2-1.4 3.2-3.2V4h4.6z"/>
                   </svg>
                 </span>
-                <TranslatedText text="TikTok Check" language={language} />
+                <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+                  <TranslatedText text="TikTok Check" language={language} />
+                </span>
               </div>
               {!showLeaderboardModal && (
                 <button
@@ -668,19 +670,19 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             
             <div className="space-y-2 text-sm text-white">
               <div className="flex justify-between">
-                <span>❤️ <TranslatedText text="Like" language={language} /></span>
+                <span className="text-red-400 font-bold">❤️ <TranslatedText text="Like" language={language} /></span>
                 <span>{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
               <div className="flex justify-between">
-                <span>💬 <TranslatedText text="Kommentar" language={language} /></span>
+                <span className="text-blue-400 font-bold">💬 <TranslatedText text="Kommentar" language={language} /></span>
                 <span>{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
               <div className="flex justify-between">
-                <span>🔁 <TranslatedText text="Share" language={language} /></span>
+                <span className="text-green-400 font-bold">🔗 <TranslatedText text="Share" language={language} /></span>
                 <span>{userData.shared === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
               <div className="flex justify-between">
-                <span>💾 <TranslatedText text="Save" language={language} /></span>
+                <span className="text-yellow-400 font-bold">💾 <TranslatedText text="Save" language={language} /></span>
                 <span>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
             </div>
@@ -1938,7 +1940,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
               
               <div className="space-y-3 text-left">
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
-                  <span className="text-xl text-green-400">$</span>
+                  <span className="text-xl text-green-500">$</span>
                   <div>
                     <div className="font-bold text-red-300"><TranslatedText text="Marketing Budget" language={language} /></div>
                     <div className="text-sm text-red-400"><TranslatedText text="Budget pro User für TikTok" language={language} /></div>
@@ -1949,7 +1951,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
                     <img 
                       src={userData.image} 
                       alt="Profile" 
-                      className="w-5 h-5 rounded-full object-cover"
+                      className="w-7 h-7 rounded-full object-cover border-2 border-orange-300"
                     />
                   ) : (
                     <span className="text-xl">👤</span>
@@ -1960,7 +1962,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
-                  <img src="/D.FAITH.png" alt="D.FAITH" className="w-5 h-5 object-contain" />
+                  <img src="/D.FAITH.png" alt="D.FAITH" className="w-7 h-7 object-contain border-2 border-yellow-300 rounded-full bg-white" />
                   <div>
                     <div className="font-bold text-yellow-300"><TranslatedText text="D.FAITH Kurs" language={language} /></div>
                     <div className="text-sm text-yellow-400"><TranslatedText text="Aktueller Marktpreis" language={language} /></div>
