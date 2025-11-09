@@ -1558,6 +1558,12 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
               throw new Error('Make scenario appears to be inactive or returning HTML');
             }
             
+            // KRITISCH: "Accepted" ist NICHT eine gültige Antwort vom YouTube-Szenario!
+            // Das bedeutet das Szenario läuft nicht oder ist falsch konfiguriert
+            if (textResponse.trim().toLowerCase() === 'accepted') {
+              throw new Error('Make scenario returned "Accepted" - scenario may be inactive or misconfigured');
+            }
+            
             responseData = { status: textResponse };
           }
 
@@ -1580,7 +1586,7 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
               : language === 'en'
                 ? 'Please comment "Dfaith" under the latest YouTube Short video to participate.'
                 : 'Skomentuj "Dfaith" pod najnowszym filmem YouTube Short, aby wziąć udział.');
-          } else if (normalizedMessage.includes('success') || normalizedMessage.includes('accepted')) {
+          } else if (normalizedMessage.includes('success')) {
             setMessage(language === 'de'
               ? '✅ Teilnahme erfolgreich bestätigt!'
               : language === 'en'
