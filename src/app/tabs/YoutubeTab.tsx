@@ -502,44 +502,37 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
       if (response.ok) {
         const responseData = await response.json();
         console.log('YouTube Claim Response Data:', responseData);
-        
+
         // Status normalisieren
         const normalizedStatus = responseData.status?.toString().trim().toLowerCase();
-        
+
         if (normalizedStatus === 'success') {
+          // Erfolg: Modal schließen, Nachricht persistent anzeigen
           setClaimStatus(language === 'de' ? '✅ Claim erfolgreich gesendet!' : language === 'en' ? '✅ Claim sent successfully!' : '✅ Claim wysłany pomyślnie!');
           setTimeout(() => {
             setShowClaimModal(false);
-            setClaimStatus('');
+            // Hinweis: claimStatus bleibt stehen (nicht automatisch leeren)
             // KEINE Weiterleitung - User bleibt in der UserCard
           }, 2000);
         } else if (responseData.status === 'Info') {
-          // Info Response - bereits geclaimed
+          // Info Response - bereits geclaimed (Nachricht persistent)
           setClaimStatus(language === 'de' ? 'ℹ️ Du hast bereits geclaimed! Warte bis zum nächsten Claim-Zeitraum.' : language === 'en' ? 'ℹ️ You have already claimed! Wait for the next claim period.' : 'ℹ️ Już odebrałeś nagrodę! Poczekaj do następnego okresu.');
-          setTimeout(() => {
-            setClaimStatus('');
-          }, 4000);
           // KEINE Weiterleitung bei Info!
         } else {
-          // Fallback für andere Success-Responses
+          // Fallback für andere Success-Responses (Nachricht persistent)
           setClaimStatus(language === 'de' ? '✅ Claim erfolgreich gesendet!' : language === 'en' ? '✅ Claim sent successfully!' : '✅ Claim wysłany pomyślnie!');
           setTimeout(() => {
             setShowClaimModal(false);
-            setClaimStatus('');
           }, 2000);
         }
       } else {
+        // Fehler: Nachricht persistent anzeigen
         setClaimStatus(language === 'de' ? '❌ Fehler beim Claim. Bitte versuche es erneut.' : language === 'en' ? '❌ Claim error. Please try again.' : '❌ Błąd podczas odbioru. Spróbuj ponownie.');
-        setTimeout(() => {
-          setClaimStatus('');
-        }, 3000);
       }
     } catch (error) {
       console.error('Fehler beim Claim:', error);
+      // Netzwerkfehler: persistent anzeigen
       setClaimStatus(language === 'de' ? '❌ Netzwerkfehler. Bitte überprüfe deine Verbindung.' : language === 'en' ? '❌ Network error. Please check your connection.' : '❌ Błäd sieci. Sprawdź połączenie.');
-      setTimeout(() => {
-        setClaimStatus('');
-      }, 3000);
     } finally {
       setLoading(false);
     }
