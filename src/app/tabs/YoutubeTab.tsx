@@ -1536,68 +1536,88 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
         }),
       });
 
+      console.log('YouTube Check - Response Status:', response.status, 'OK:', response.ok);
+      
       if (response.ok) {
         let responseData;
-        let statusCode;
-        let normalizedStatus;
         
-        const contentType = response.headers.get('content-type');
-        
-        if (contentType && contentType.includes('application/json')) {
-          // JSON Response
-          responseData = await response.json();
-          console.log('YouTube Check Response Data (JSON):', responseData);
-        } else {
-          // Text Response (z.B. "Accepted" von Make)
-          const textResponse = await response.text();
-          console.log('YouTube Check Response Data (Text):', textResponse);
-          responseData = { status: textResponse };
-        }
+        try {
+          const contentType = response.headers.get('content-type');
+          
+          if (contentType && contentType.includes('application/json')) {
+            // JSON Response
+            responseData = await response.json();
+            console.log('YouTube Check Response Data (JSON):', responseData);
+          } else {
+            // Text Response (z.B. "Accepted" von Make)
+            const textResponse = await response.text();
+            console.log('YouTube Check Response Data (Text):', textResponse);
+            
+            // Prüfe ob es eine Make-Fehlerseite ist (wenn Szenario inaktiv)
+            if (textResponse.includes('<html>') || textResponse.includes('<!DOCTYPE') || textResponse.includes('scenario') || textResponse.includes('inactive')) {
+              throw new Error('Make scenario appears to be inactive or returning HTML');
+            }
+            
+            responseData = { status: textResponse };
+          }
 
-        // Prüfe nach Message-Inhalt statt Status-Code
-        const message = responseData.message || responseData.status || '';
-        const normalizedMessage = message.toString().trim().toLowerCase();
-        
-        console.log('YouTube Check - Response:', responseData);
-        console.log('YouTube Check - Message:', message, 'Normalized:', normalizedMessage);
-        
-        // Robuste String-Vergleiche mit includes für bessere Kompatibilität
-        if (normalizedMessage.includes('comment')) {
-          setMessage(language === 'de'
-            ? 'Bitte kommentiere unter dem neuesten YouTube Short Video "Dfaith" um teilzunehmen.'
-            : language === 'en'
-              ? 'Please comment "Dfaith" under the latest YouTube Short video to participate.'
-              : 'Skomentuj "Dfaith" pod najnowszym filmem YouTube Short, aby wziąć udział.');
-        } else if (normalizedMessage.includes('success') || normalizedMessage.includes('accepted')) {
-          setMessage(language === 'de'
-            ? '✅ Teilnahme erfolgreich bestätigt!'
-            : language === 'en'
-              ? '✅ Participation successfully confirmed!'
-              : '✅ Udział pomyślnie potwierdzony!');
-        } else if (normalizedMessage.includes('evalued')) {
-          setMessage(language === 'de'
-            ? 'Du hast bereits deine Teilnahme bestätigt. Du kannst dich jetzt einloggen.'
-            : language === 'en'
-              ? 'You have already confirmed your participation. You can now log in.'
-              : 'Już potwierdziłeś swój udział. Możesz się teraz zalogować.');
-        } else if (normalizedMessage.includes('wallet account')) {
-          setMessage(language === 'de'
-            ? 'Wallet stimmt nicht mit der bei Erstellung angegebenen überein.'
-            : language === 'en'
-              ? 'Wallet does not match the one specified during creation.'
-              : 'Portfel nie zgadza się z tym podanym podczas tworzenia.');
-        } else if (normalizedMessage.includes('wallet') && normalizedMessage.includes('use')) {
-          setMessage(language === 'de'
-            ? 'Wallet wird bereits verwendet.'
-            : language === 'en'
-              ? 'Wallet is already in use.'
-              : 'Portfel jest już używany.');
-        } else {
-          setMessage(language === 'de'
-            ? `Unbekannte Antwort vom Server: "${message}". Bitte versuche es erneut.`
-            : language === 'en'
-              ? `Unknown server response: "${message}". Please try again.`
-              : `Nieznana odpowiedź serwera: "${message}". Spróbuj ponownie.`);
+          // Validiere dass wir eine gültige Response haben
+          if (!responseData || (!responseData.status && !responseData.message)) {
+            throw new Error('Invalid response structure');
+          }
+
+          // Prüfe nach Message-Inhalt statt Status-Code
+          const message = responseData.message || responseData.status || '';
+          const normalizedMessage = message.toString().trim().toLowerCase();
+          
+          console.log('YouTube Check - Response:', responseData);
+          console.log('YouTube Check - Message:', message, 'Normalized:', normalizedMessage);
+          
+          // Robuste String-Vergleiche mit includes für bessere Kompatibilität
+          if (normalizedMessage.includes('comment')) {
+            setMessage(language === 'de'
+              ? 'Bitte kommentiere unter dem neuesten YouTube Short Video "Dfaith" um teilzunehmen.'
+              : language === 'en'
+                ? 'Please comment "Dfaith" under the latest YouTube Short video to participate.'
+                : 'Skomentuj "Dfaith" pod najnowszym filmem YouTube Short, aby wziąć udział.');
+          } else if (normalizedMessage.includes('success') || normalizedMessage.includes('accepted')) {
+            setMessage(language === 'de'
+              ? '✅ Teilnahme erfolgreich bestätigt!'
+              : language === 'en'
+                ? '✅ Participation successfully confirmed!'
+                : '✅ Udział pomyślnie potwierdzony!');
+          } else if (normalizedMessage.includes('evalued')) {
+            setMessage(language === 'de'
+              ? 'Du hast bereits deine Teilnahme bestätigt. Du kannst dich jetzt einloggen.'
+              : language === 'en'
+                ? 'You have already confirmed your participation. You can now log in.'
+                : 'Już potwierdziłeś swój udział. Możesz się teraz zalogować.');
+          } else if (normalizedMessage.includes('wallet account')) {
+            setMessage(language === 'de'
+              ? 'Wallet stimmt nicht mit der bei Erstellung angegebenen überein.'
+              : language === 'en'
+                ? 'Wallet does not match the one specified during creation.'
+                : 'Portfel nie zgadza się z tym podanym podczas tworzenia.');
+          } else if (normalizedMessage.includes('wallet') && normalizedMessage.includes('use')) {
+            setMessage(language === 'de'
+              ? 'Wallet wird bereits verwendet.'
+              : language === 'en'
+                ? 'Wallet is already in use.'
+                : 'Portfel jest już używany.');
+          } else {
+            setMessage(language === 'de'
+              ? `Unbekannte Antwort vom Server: "${message}". Bitte versuche es erneut.`
+              : language === 'en'
+                ? `Unknown server response: "${message}". Please try again.`
+                : `Nieznana odpowiedź serwera: "${message}". Spróbuj ponownie.`);
+          }
+        } catch (parseError) {
+          console.error('YouTube Check - Parse Error:', parseError);
+          setMessage(language === 'de' 
+            ? '❌ Serverfehler: Make-Szenario ist möglicherweise inaktiv oder nicht erreichbar.' 
+            : language === 'en' 
+              ? '❌ Server error: Make scenario may be inactive or unreachable.' 
+              : '❌ Błąd serwera: Scenariusz Make może być nieaktywny lub niedostępny.');
         }
       } else {
         setMessage(language === 'de' ? '❌ Fehler bei der Überprüfung. Bitte versuche es erneut.' : language === 'en' ? '❌ Check failed. Please try again.' : '❌ Sprawdzenie nie powiodło się. Spróbuj ponownie.');
