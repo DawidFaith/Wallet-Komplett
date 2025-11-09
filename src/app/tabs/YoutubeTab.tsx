@@ -1029,29 +1029,29 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                   <div className="flex items-center gap-3 border-l-4 border-red-600 pl-3 bg-red-500/10 py-2 rounded-r-xl">
                     <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" className="w-6 h-6" />
                     <div>
-                      <div className="font-bold text-red-300">Facebook</div>
-                      <div className="text-red-200 font-semibold">{userData.expFacebook} EXP</div>
+                      <div className="font-bold text-blue-400">Facebook</div>
+                      <div className="text-blue-300 font-semibold">{userData.expFacebook} EXP</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 border-l-4 border-red-600 pl-3 bg-red-500/10 py-2 rounded-r-xl">
+                  <div className="flex items-center gap-3 border-l-4 border-purple-600 pl-3 bg-purple-500/10 py-2 rounded-r-xl">
                     <img src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" alt="TikTok" className="w-6 h-6 rounded-full" />
                     <div>
-                      <div className="font-bold text-red-300">TikTok</div>
-                      <div className="text-red-200 font-semibold">{userData.expTiktok} EXP</div>
+                      <div className="font-bold text-purple-400">TikTok</div>
+                      <div className="text-purple-300 font-semibold">{userData.expTiktok} EXP</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 border-l-4 border-red-600 pl-3 bg-red-500/10 py-2 rounded-r-xl">
+                  <div className="flex items-center gap-3 border-l-4 border-pink-600 pl-3 bg-pink-500/10 py-2 rounded-r-xl">
                     <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
                     <div>
-                      <div className="font-bold text-red-300">Instagram</div>
-                      <div className="text-red-200 font-semibold">{userData.expInstagram} EXP</div>
+                      <div className="font-bold text-pink-400">Instagram</div>
+                      <div className="text-pink-300 font-semibold">{userData.expInstagram} EXP</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 border-l-4 border-red-600 pl-3 bg-red-500/10 py-2 rounded-r-xl">
+                  <div className="flex items-center gap-3 border-l-4 border-green-600 pl-3 bg-green-500/10 py-2 rounded-r-xl">
                     <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Live" className="w-6 h-6 rounded-full" />
                     <div>
-                      <div className="font-bold text-red-300">Live</div>
-                      <div className="text-red-200 font-semibold">{userData.liveExp} EXP</div>
+                      <div className="font-bold text-green-400">Live</div>
+                      <div className="text-green-300 font-semibold">{userData.liveExp} EXP</div>
                     </div>
                   </div>
                   <div className="border-t border-gray-600 pt-3 mt-4">
