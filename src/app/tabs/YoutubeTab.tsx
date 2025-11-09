@@ -507,13 +507,9 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
         const normalizedStatus = responseData.status?.toString().trim().toLowerCase();
 
         if (normalizedStatus === 'success') {
-          // Erfolg: Modal schließen, Nachricht persistent anzeigen
+          // Erfolg: Modal bleibt offen, Nachricht persistent anzeigen
           setClaimStatus(language === 'de' ? '✅ Claim erfolgreich gesendet!' : language === 'en' ? '✅ Claim sent successfully!' : '✅ Claim wysłany pomyślnie!');
-          setTimeout(() => {
-            setShowClaimModal(false);
-            // Hinweis: claimStatus bleibt stehen (nicht automatisch leeren)
-            // KEINE Weiterleitung - User bleibt in der UserCard
-          }, 2000);
+          // Modal bleibt offen, Nutzer schließt selbst
         } else if (responseData.status === 'Info') {
           // Info Response - bereits geclaimed (Nachricht persistent)
           setClaimStatus(language === 'de' ? 'ℹ️ Du hast bereits geclaimed! Warte bis zum nächsten Claim-Zeitraum.' : language === 'en' ? 'ℹ️ You have already claimed! Wait for the next claim period.' : 'ℹ️ Już odebrałeś nagrodę! Poczekaj do następnego okresu.');
@@ -521,9 +517,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
         } else {
           // Fallback für andere Success-Responses (Nachricht persistent)
           setClaimStatus(language === 'de' ? '✅ Claim erfolgreich gesendet!' : language === 'en' ? '✅ Claim sent successfully!' : '✅ Claim wysłany pomyślnie!');
-          setTimeout(() => {
-            setShowClaimModal(false);
-          }, 2000);
+          // Modal bleibt offen, Nutzer schließt selbst
         }
       } else {
         // Fehler: Nachricht persistent anzeigen
