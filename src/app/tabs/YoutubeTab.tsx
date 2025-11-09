@@ -494,6 +494,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
         body: JSON.stringify({
           username: userData.username,
           walletAddress: userData.wallet || walletInput,
+          miningpower: userData.miningpower,
           timestamp: new Date().toISOString(),
         }),
       });
