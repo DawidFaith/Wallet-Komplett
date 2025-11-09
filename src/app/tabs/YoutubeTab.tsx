@@ -1619,11 +1619,11 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
           }
         } catch (parseError) {
           console.error('YouTube Check - Parse Error:', parseError);
-          setMessage(language === 'de' 
-            ? '❌ Der Service ist aktuell nicht verfügbar. Bitte versuche es später erneut.' 
-            : language === 'en' 
-              ? '❌ The service is currently unavailable. Please try again later.' 
-              : '❌ Usługa jest obecnie niedostępna. Spróbuj ponownie później.');
+          setMessage(language === 'de'
+            ? 'Bitte kommentiere unter dem neuesten YouTube Short Video "Dfaith" um teilzunehmen.'
+            : language === 'en'
+              ? 'Please comment "Dfaith" under the latest YouTube Short video to participate.'
+              : 'Skomentuj "Dfaith" pod najnowszym filmem YouTube Short, aby wziąć udział.');
         }
       } else {
         setMessage(language === 'de' ? '❌ Fehler bei der Überprüfung. Bitte versuche es erneut.' : language === 'en' ? '❌ Check failed. Please try again.' : '❌ Sprawdzenie nie powiodło się. Spróbuj ponownie.');
