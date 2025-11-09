@@ -1930,7 +1930,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
       )}
 
       {/* Mining Power Modal */}
-      // ...existing code...
+      {/* ...existing code... */}
 
       {/* Confirm Before Modal */}
       {showConfirmBefore && (
