@@ -774,7 +774,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 <span>{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
               <div className="flex justify-between">
-                <span> <TranslatedText text="Secret" language={language} /></span>
+                <span>🔐 <TranslatedText text="Secret" language={language} /></span>
                 <span>{userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
             </div>
@@ -1456,8 +1456,8 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 disabled={secretLoading}
               />
               {secretMessage && (
-                <div className={`mt-3 p-2 rounded-xl text-sm text-center flex items-center justify-center gap-2 border-2 ${secretMessage.includes('✅') ? 'bg-green-500/20 text-green-300 border-green-500' : 'bg-red-500/20 text-red-300 border-red-500'}`}>
-                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-black/40 border border-gray-700 mr-2 text-lg">
+                <div className={`mt-3 p-3 rounded-xl text-sm text-center flex items-center justify-center gap-3 border-2 ${secretMessage.includes('✅') ? 'bg-green-500/20 text-green-300 border-green-500' : 'bg-red-500/20 text-red-300 border-red-500'}`}>
+                  <span className="text-2xl flex-shrink-0">
                     {secretMessage.includes('✅') ? '🔓' : '🔒'}
                   </span>
                   <span className="font-semibold">{secretMessage}</span>
