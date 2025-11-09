@@ -1620,10 +1620,10 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
         } catch (parseError) {
           console.error('YouTube Check - Parse Error:', parseError);
           setMessage(language === 'de' 
-            ? '❌ Serverfehler: Make-Szenario ist möglicherweise inaktiv oder nicht erreichbar.' 
+            ? '❌ Der Service ist aktuell nicht verfügbar. Bitte versuche es später erneut.' 
             : language === 'en' 
-              ? '❌ Server error: Make scenario may be inactive or unreachable.' 
-              : '❌ Błąd serwera: Scenariusz Make może być nieaktywny lub niedostępny.');
+              ? '❌ The service is currently unavailable. Please try again later.' 
+              : '❌ Usługa jest obecnie niedostępna. Spróbuj ponownie później.');
         }
       } else {
         setMessage(language === 'de' ? '❌ Fehler bei der Überprüfung. Bitte versuche es erneut.' : language === 'en' ? '❌ Check failed. Please try again.' : '❌ Sprawdzenie nie powiodło się. Spróbuj ponownie.');
