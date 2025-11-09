@@ -645,7 +645,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           <div className="bg-black/50 border border-pink-500/50 rounded-2xl p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
               <div className="font-bold text-lg bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
-                🔍 <TranslatedText text="System Check" language={language} />
+                <span className="text-2xl align-middle">🎵</span> <TranslatedText text="TikTok Check" language={language} />
               </div>
               {!showLeaderboardModal && (
                 <button
@@ -994,10 +994,17 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             </div>
             
             <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4 mb-6">
+              <div className="w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                <img
+                  src="/D.FAITH.png"
+                  alt="D.FAITH Logo"
+                  className="w-20 h-20 coin-flip"
+                  style={{ animation: 'coin-flip 5s linear infinite' }}
+                />
+              </div>
               <p className="text-cyan-200 leading-relaxed mb-4">
                 <TranslatedText text="Du kannst" language={language} /> <strong className="text-cyan-400">+{userData.miningpower} D.FAITH</strong> <TranslatedText text="für deine TikTok Aktivität claimen!" language={language} />
               </p>
-              
               <div className="bg-black/30 border border-cyan-500/20 rounded-lg p-3 mb-4">
                 <div className="text-xs text-cyan-300 mb-1"><TranslatedText text="Wallet Adresse:" language={language} /></div>
                 <div className="font-mono text-sm text-cyan-100 break-all">
