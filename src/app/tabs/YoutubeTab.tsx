@@ -1462,8 +1462,9 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 disabled={secretLoading}
               />
               {secretMessage && (
-                <div className={`mt-3 p-2 rounded-xl text-sm text-center ${secretMessage.includes('✅') ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'}`}>
-                  {secretMessage}
+                <div className={`mt-3 p-2 rounded-xl text-sm text-center flex items-center justify-center gap-2 ${secretMessage.includes('✅') ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'}`}>
+                  <span>{secretMessage.includes('✅') ? '🔓' : '🔒'}</span>
+                  <span>{secretMessage}</span>
                 </div>
               )}
             </div>
