@@ -1092,35 +1092,35 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 <h3 className="text-purple-300 font-bold mb-4"><TranslatedText text="✨ Deine EXP-Quellen" language={language} /></h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 border-l-4 border-blue-600 pl-3 bg-blue-500/10 py-2 rounded-r-xl">
-                    <Image src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" width={24} height={24} className="w-6 h-6" />
+                    <Image src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" width={24} height={24} className="w-6 h-6" unoptimized />
                     <div>
                       <div className="font-bold text-blue-300">Facebook</div>
                       <div className="text-blue-200 font-semibold">{userData.expFacebook} EXP</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 border-l-4 border-pink-600 pl-3 bg-pink-500/10 py-2 rounded-r-xl">
-                    <Image src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" alt="TikTok" width={24} height={24} className="w-6 h-6 rounded-full" />
+                    <Image src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" alt="TikTok" width={24} height={24} className="w-6 h-6 rounded-full" unoptimized />
                     <div>
                       <div className="font-bold text-pink-300">TikTok</div>
                       <div className="text-pink-200 font-semibold">{userData.expTiktok} EXP</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 border-l-4 border-purple-600 pl-3 bg-purple-500/10 py-2 rounded-r-xl">
-                    <Image src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" width={24} height={24} className="w-6 h-6 rounded-full" />
+                    <Image src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" width={24} height={24} className="w-6 h-6 rounded-full" unoptimized />
                     <div>
                       <div className="font-bold text-purple-300">Instagram</div>
                       <div className="text-purple-200 font-semibold">{userData.expInstagram} EXP</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 border-l-4 border-red-600 pl-3 bg-red-500/10 py-2 rounded-r-xl">
-                    <Image src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" alt="YouTube" width={24} height={24} className="w-6 h-6 rounded-full" />
+                    <Image src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" alt="YouTube" width={24} height={24} className="w-6 h-6 rounded-full" unoptimized />
                     <div>
                       <div className="font-bold text-red-300">YouTube</div>
                       <div className="text-red-200 font-semibold">{userData.expStream} EXP</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 border-l-4 border-yellow-600 pl-3 bg-yellow-500/10 py-2 rounded-r-xl">
-                    <Image src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Live" width={24} height={24} className="w-6 h-6 rounded-full" />
+                    <Image src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Live" width={24} height={24} className="w-6 h-6 rounded-full" unoptimized />
                     <div>
                       <div className="font-bold text-yellow-300">Live</div>
                       <div className="text-yellow-200 font-semibold">{userData.liveNFTBonus} EXP</div>
@@ -1182,13 +1182,13 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
 
                 <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
                   {userData?.image ? (
-                    <Image
-                      src={userData.image}
-                      alt="Profilbild"
-                      width={28}
-                      height={28}
-                      className="rounded-full object-cover border-2 border-orange-300"
-                    />
+                      <Image
+                        src={userData.image}
+                        alt="Profilbild"
+                        width={32}
+                        height={32}
+                        className="object-cover"
+                      />
                   ) : (
                     <span className="text-xl">👤</span>
                   )}
@@ -1199,7 +1199,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 </div>
 
                 <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg">
-                  <Image src="/D.FAITH.png" alt="D.FAITH Logo" width={28} height={28} className="object-contain border-2 border-yellow-300 rounded-full bg-white" />
+                  <Image src="/D.FAITH.png" alt="D.FAITH Logo" width={28} height={28} className="object-contain bg-transparent" />
                   <div>
                     <div className="font-bold text-yellow-300"><TranslatedText text="D.FAITH Kurs" language={language} /></div>
                     <div className="text-sm text-yellow-400"><TranslatedText text="Aktueller Marktpreis" language={language} /></div>
