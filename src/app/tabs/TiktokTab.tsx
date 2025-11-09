@@ -580,7 +580,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           <div className="text-2xl font-bold mb-4 bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">@{userData.username}</div>
           
           {/* Profile Image */}
-          <img 
+          <Image
             src={userData.image || 'https://via.placeholder.com/100'}
             alt="Profilbild"
             width={96}
