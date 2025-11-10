@@ -1190,18 +1190,20 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 )}
                 {(lbData?.entries || []).filter((e: any) => {
                   if (!lbSearch) return true;
-                  const names = [e.instagram, e.tiktok, e.facebook, e.name, e.handle].filter(Boolean) as string[];
+                  const names = [e.youtube, e.instagram, e.tiktok, e.facebook, e.name, e.handle].filter(Boolean) as string[];
                   const q = lbSearch.toLowerCase();
                   return names.some(n => n.toLowerCase().includes(q));
                 }).map((e: any) => {
                   const namesDetailed = [
-                    e.instagram ? { label: e.instagram as string } : null,
-                    e.tiktok ? { label: e.tiktok as string } : null,
-                    e.facebook ? { label: e.facebook as string } : null,
-                    e.name ? { label: e.name as string } : null,
-                    e.handle ? { label: e.handle as string } : null,
+                    e.youtube ? { label: e.youtube as string } : null,
+                    e.instagram ? { label: `Instagram: ${e.instagram}` } : null,
+                    e.tiktok ? { label: `TikTok: ${e.tiktok}` } : null,
+                    e.facebook ? { label: `Facebook: ${e.facebook}` } : null,
+                    e.name ? { label: `Name: ${e.name}` } : null,
+                    e.handle ? { label: `Handle: ${e.handle}` } : null,
                   ].filter(Boolean) as { label: string }[];
-                  const primary = (e.instagram || e.tiktok || e.facebook || e.name || e.handle || '-') as string;
+                  // YouTube als primary, falls vorhanden
+                  const primary = (e.youtube || e.instagram || e.tiktok || e.facebook || e.name || e.handle || '-') as string;
                   const prize = (lbData?.prizes || []).find((p: any) => p.position === e.rank);
                   const prizeText = prize ? (prize.value || prize.description || '') : '';
                   const prizeDisplay = prizeText ? prizeText : '-';

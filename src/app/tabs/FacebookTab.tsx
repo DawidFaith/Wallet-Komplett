@@ -601,18 +601,19 @@ export default function FacebookTab({ language }: FacebookTabProps) {
                 )}
                 {(lbData?.entries || []).filter((e: any) => {
                   if (!lbSearch) return true;
-                  const names = [e.instagram, e.tiktok, e.facebook, e.name, e.handle].filter(Boolean) as string[];
+                  const names = [e.youtube, e.instagram, e.tiktok, e.facebook, e.name, e.handle].filter(Boolean) as string[];
                   const q = lbSearch.toLowerCase();
                   return names.some(n => n.toLowerCase().includes(q));
                 }).map((e: any) => {
                   const namesDetailed = [
+                    e.youtube ? { label: e.youtube as string, platform: 'youtube' } : null,
                     e.instagram ? { label: e.instagram as string, platform: 'instagram' } : null,
                     e.tiktok ? { label: e.tiktok as string, platform: 'tiktok' } : null,
                     e.facebook ? { label: e.facebook as string, platform: 'facebook' } : null,
                     e.name ? { label: e.name as string, platform: 'generic' } : null,
                     e.handle ? { label: e.handle as string, platform: 'generic' } : null,
                   ].filter(Boolean) as { label: string; platform: 'instagram' | 'tiktok' | 'facebook' | 'generic' }[];
-                  const primary = (e.instagram || e.tiktok || e.facebook || e.name || e.handle || '-') as string;
+                  const primary = (e.youtube || e.instagram || e.tiktok || e.facebook || e.name || e.handle || '-') as string;
                   const primaryPlatform: 'instagram' | 'tiktok' | 'facebook' | 'generic' = e.instagram ? 'instagram' : e.tiktok ? 'tiktok' : e.facebook ? 'facebook' : 'generic';
                   const PlatformIcon = primaryPlatform === 'instagram' ? FaInstagram : primaryPlatform === 'tiktok' ? FaTiktok : primaryPlatform === 'facebook' ? FaFacebookF : null;
                   const prize = (lbData?.prizes || []).find((p: any) => p.position === e.rank);
