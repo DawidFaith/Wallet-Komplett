@@ -765,21 +765,26 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 )}
                 {(lbData?.entries || []).filter((e: any) => {
                   if (!lbSearch) return true;
-                  const names = [e.instagram, e.tiktok, e.facebook, e.name, e.handle].filter(Boolean) as string[];
+                  const names = [e.instagram, e.tiktok, e.facebook, e.youtube, e.name, e.handle].filter(Boolean) as string[];
                   const q = lbSearch.toLowerCase();
                   return names.some(n => n.toLowerCase().includes(q));
                 }).map((e: any) => {
+                  // YouTube-Namen ergänzen
                   const namesDetailed = [
                     e.instagram ? { label: e.instagram as string } : null,
                     e.tiktok ? { label: e.tiktok as string } : null,
                     e.facebook ? { label: e.facebook as string } : null,
+                    e.youtube ? { label: e.youtube as string } : null,
                     e.name ? { label: e.name as string } : null,
                     e.handle ? { label: e.handle as string } : null,
                   ].filter(Boolean) as { label: string }[];
-                  const primary = (e.instagram || e.tiktok || e.facebook || e.name || e.handle || '-') as string;
+                  // Primärer Name inkl. YouTube
+                  const primary = (e.instagram || e.tiktok || e.facebook || e.youtube || e.name || e.handle || '-') as string;
                   const prize = (lbData?.prizes || []).find((p: any) => p.position === e.rank);
                   const prizeText = prize ? (prize.value || prize.description || '') : '';
                   const prizeDisplay = prizeText ? prizeText : '-';
+                  // EXP-Wert: Zeige expTotal aus dem Eintrag, wo expTotal==0 ist
+                  const expValue = e.expTotal === 0 ? 0 : e.expTotal;
                   return (
                     <div key={e.rank} className="border-b border-zinc-800/70 last:border-b-0">
                       <div className="px-3 py-2 grid grid-cols-[2.25rem_minmax(0,1fr)_3.75rem_5.25rem] gap-3 items-center">
@@ -798,7 +803,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                             </button>
                           )}
                         </div>
-                        <span className="text-amber-300 text-sm font-mono tabular-nums text-center">{e.expTotal.toLocaleString()}</span>
+                        <span className="text-amber-300 text-sm font-mono tabular-nums text-center">{expValue.toLocaleString()}</span>
                         <span className="text-emerald-300 text-xs font-medium tabular-nums text-right truncate max-w-full" title={prizeDisplay}>
                           {prizeDisplay}
                         </span>
