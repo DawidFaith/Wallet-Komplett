@@ -17,6 +17,7 @@ interface UserData {
   expTiktok: number;
   expInstagram: number;
   expFacebook: number;
+  expYoutube: number;
   expStream: number;
   liveNFTBonus: number;
   miningpower: number;
@@ -100,9 +101,9 @@ export default function FacebookTab({ language }: FacebookTabProps) {
   const getUUID = () => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('uuid') || 'Dawidfaithtest3736FB';
+      return urlParams.get('uuid');
     }
-    return 'Dawidfaithtest3736FB';
+    return undefined;
   };
 
   // Daten laden
@@ -135,6 +136,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
           expTiktok: data.expTiktok,
           expInstagram: data.expInstagram,
           expFacebook: data.expFacebook,
+          expYoutube: data.expYoutube || 0,
           expStream: data.expStream,
           liveNFTBonus: data.liveNFTBonus,
           miningpower: data.miningpower,
@@ -502,7 +504,14 @@ export default function FacebookTab({ language }: FacebookTabProps) {
           {/* System Check */}
           <div className="bg-black/50 border border-blue-500/50 rounded-2xl p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
-              <div className="font-bold text-lg bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">🔍 <TranslatedText text="System Check" language={language} /></div>
+              <div className="font-bold text-lg bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                <span className="inline-block align-middle mr-2" style={{width:'1.5em',height:'1.5em',verticalAlign:'middle'}}>
+                  <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" style={{width:'1.5em',height:'1.5em',display:'block'}} />
+                </span>
+                <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                  <TranslatedText text="Facebook Check" language={language} />
+                </span>
+              </div>
               {!showLeaderboardModal && (
                 <button
                   type="button"
@@ -519,15 +528,15 @@ export default function FacebookTab({ language }: FacebookTabProps) {
             
             <div className="space-y-2 text-sm text-white">
               <div className="flex justify-between">
-                <span>❤️ Like</span>
+                <span className="text-red-400 font-bold">❤️ Like</span>
                 <span>{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
               <div className="flex justify-between">
-                <span>💬 <TranslatedText text="Kommentar" language={language} /></span>
+                <span className="text-blue-400 font-bold">💬 <TranslatedText text="Kommentar" language={language} /></span>
                 <span>{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
               <div className="flex justify-between">
-                <span>🔁 Share</span>
+                <span className="text-green-400 font-bold">🔁 Share</span>
                 <span>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
             </div>
@@ -921,24 +930,27 @@ export default function FacebookTab({ language }: FacebookTabProps) {
             </button>
             <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">✨ <TranslatedText text="Deine EXP-Quellen" language={language} /></h2>
             <div className="text-left space-y-3 mb-6">
+              <div className="flex items-center gap-3 border-l-4 border-red-600 pl-3 bg-red-50 py-2 rounded-r-xl">
+                <img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" alt="YouTube" className="w-6 h-6 rounded-full" />
+                <div>
+                  <div className="text-red-600 font-semibold">{userData.expYoutube} EXP</div>
+                </div>
+              </div>
               <div className="flex items-center gap-3 border-l-4 border-blue-600 pl-3 bg-blue-50 py-2 rounded-r-xl">
                 <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" className="w-6 h-6" />
                 <div>
-                  <div className="font-bold text-blue-800">Facebook</div>
                   <div className="text-blue-600 font-semibold">{userData.expFacebook} EXP</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 border-l-4 border-black pl-3 bg-gray-50 py-2 rounded-r-xl">
                 <img src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" alt="TikTok" className="w-6 h-6 rounded-full" />
                 <div>
-                  <div className="font-bold text-gray-800">TikTok</div>
                   <div className="text-gray-600 font-semibold">{userData.expTiktok} EXP</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 border-l-4 border-pink-500 pl-3 bg-pink-50 py-2 rounded-r-xl">
                 <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
                 <div>
-                  <div className="font-bold text-pink-800">Instagram</div>
                   <div className="text-pink-600 font-semibold">{userData.expInstagram} EXP</div>
                 </div>
               </div>
