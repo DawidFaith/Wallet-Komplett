@@ -72,9 +72,9 @@ const getLevelAndExpRange = (exp: number) => {
 const getUUID = () => {
   if (typeof window !== 'undefined') {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('uuid');
+    return urlParams.get('uuid') || 'dfaith3781123';
   }
-  return null;
+  return 'dfaith3781123';
 };
 
 interface InstagramTabProps {
