@@ -101,9 +101,10 @@ export default function FacebookTab({ language }: FacebookTabProps) {
   const getUUID = () => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('uuid');
+      const uuid = urlParams.get('uuid');
+      return uuid || 'Dawidfaithtest3736FB';
     }
-    return undefined;
+    return 'Dawidfaithtest3736FB';
   };
 
   // Daten laden
