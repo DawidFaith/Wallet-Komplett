@@ -1195,7 +1195,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                   return names.some(n => n.toLowerCase().includes(q));
                 }).map((e: any) => {
                   const namesDetailed = [
-                    e.youtube ? { label: e.youtube as string } : null,
+                    e.youtube ? { label: `YouTube: ${e.youtube}` } : null,
                     e.instagram ? { label: `Instagram: ${e.instagram}` } : null,
                     e.tiktok ? { label: `TikTok: ${e.tiktok}` } : null,
                     e.facebook ? { label: `Facebook: ${e.facebook}` } : null,

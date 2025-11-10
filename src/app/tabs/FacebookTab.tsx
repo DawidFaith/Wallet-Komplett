@@ -606,12 +606,12 @@ export default function FacebookTab({ language }: FacebookTabProps) {
                   return names.some(n => n.toLowerCase().includes(q));
                 }).map((e: any) => {
                   const namesDetailed = [
-                    e.youtube ? { label: e.youtube as string, platform: 'youtube' } : null,
-                    e.instagram ? { label: e.instagram as string, platform: 'instagram' } : null,
-                    e.tiktok ? { label: e.tiktok as string, platform: 'tiktok' } : null,
-                    e.facebook ? { label: e.facebook as string, platform: 'facebook' } : null,
-                    e.name ? { label: e.name as string, platform: 'generic' } : null,
-                    e.handle ? { label: e.handle as string, platform: 'generic' } : null,
+                    e.youtube ? { label: `YouTube: ${e.youtube}`, platform: 'youtube' } : null,
+                    e.instagram ? { label: `Instagram: ${e.instagram}`, platform: 'instagram' } : null,
+                    e.tiktok ? { label: `TikTok: ${e.tiktok}`, platform: 'tiktok' } : null,
+                    e.facebook ? { label: `Facebook: ${e.facebook}`, platform: 'facebook' } : null,
+                    e.name ? { label: `Name: ${e.name}`, platform: 'generic' } : null,
+                    e.handle ? { label: `Handle: ${e.handle}`, platform: 'generic' } : null,
                   ].filter(Boolean) as { label: string; platform: 'instagram' | 'tiktok' | 'facebook' | 'generic' }[];
                   const primary = (e.youtube || e.instagram || e.tiktok || e.facebook || e.name || e.handle || '-') as string;
                   const primaryPlatform: 'instagram' | 'tiktok' | 'facebook' | 'generic' = e.instagram ? 'instagram' : e.tiktok ? 'tiktok' : e.facebook ? 'facebook' : 'generic';

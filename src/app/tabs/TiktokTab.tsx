@@ -771,12 +771,12 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 }).map((e: any) => {
                   // YouTube-Namen ergänzen
                   const namesDetailed = [
-                    e.instagram ? { label: e.instagram as string } : null,
-                    e.tiktok ? { label: e.tiktok as string } : null,
-                    e.facebook ? { label: e.facebook as string } : null,
-                    e.youtube ? { label: e.youtube as string } : null,
-                    e.name ? { label: e.name as string } : null,
-                    e.handle ? { label: e.handle as string } : null,
+                    e.youtube ? { label: `YouTube: ${e.youtube}` } : null,
+                    e.instagram ? { label: `Instagram: ${e.instagram}` } : null,
+                    e.tiktok ? { label: `TikTok: ${e.tiktok}` } : null,
+                    e.facebook ? { label: `Facebook: ${e.facebook}` } : null,
+                    e.name ? { label: `Name: ${e.name}` } : null,
+                    e.handle ? { label: `Handle: ${e.handle}` } : null,
                   ].filter(Boolean) as { label: string }[];
                   // Primärer Name inkl. YouTube
                   const primary = (e.instagram || e.tiktok || e.facebook || e.youtube || e.name || e.handle || '-') as string;
