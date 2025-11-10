@@ -501,7 +501,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
             </button>
           </div>
           
-          {/* System Check */}
+          {/* Facebook Check */}
           <div className="bg-black/50 border border-blue-500/50 rounded-2xl p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
               <div className="font-bold text-lg bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
@@ -526,18 +526,18 @@ export default function FacebookTab({ language }: FacebookTabProps) {
               )}
             </div>
             
-            <div className="space-y-2 text-sm text-white">
-              <div className="flex justify-between">
-                <span className="text-red-400 font-bold">❤️ Like</span>
-                <span>{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between items-center bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                <span className="text-red-600 font-bold flex items-center gap-1">❤️ Like</span>
+                <span className={`font-bold ${userData.liked === 'true' ? 'text-green-600' : 'text-gray-400'}`}>{userData.liked === 'true' ? '✅' : '❌'} <span className="text-red-500">+10 EXP</span></span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-blue-400 font-bold">💬 <TranslatedText text="Kommentar" language={language} /></span>
-                <span>{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
+              <div className="flex justify-between items-center bg-blue-50 border border-blue-200 rounded-xl px-3 py-2">
+                <span className="text-blue-600 font-bold flex items-center gap-1">💬 <TranslatedText text="Kommentar" language={language} /></span>
+                <span className={`font-bold ${userData.commented === 'true' ? 'text-green-600' : 'text-gray-400'}`}>{userData.commented === 'true' ? '✅' : '❌'} <span className="text-blue-500">+10 EXP</span></span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-green-400 font-bold">🔁 Share</span>
-                <span>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
+              <div className="flex justify-between items-center bg-green-50 border border-green-200 rounded-xl px-3 py-2">
+                <span className="text-green-600 font-bold flex items-center gap-1">🔁 Share</span>
+                <span className={`font-bold ${userData.saved === true || userData.saved === 'true' ? 'text-green-600' : 'text-gray-400'}`}>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} <span className="text-green-500">+10 EXP</span></span>
               </div>
             </div>
           </div>
@@ -586,7 +586,9 @@ export default function FacebookTab({ language }: FacebookTabProps) {
             </div>
             <div className="px-4 py-3">
               <div className="bg-zinc-800/60 border border-zinc-700 rounded-md px-2 py-1 flex items-center gap-2 w-full mb-3">
-                <span className="text-zinc-400 text-xs"><TranslatedText text="Suche" language={language} /></span>
+                <span className="text-blue-500">
+                  <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" style={{width:'1em',height:'1em',display:'inline-block',verticalAlign:'middle'}} />
+                </span>
                 <input
                   value={lbSearch}
                   onChange={(e) => setLbSearch(e.target.value)}
