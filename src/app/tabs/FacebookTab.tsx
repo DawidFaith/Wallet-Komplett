@@ -680,25 +680,48 @@ export default function FacebookTab({ language }: FacebookTabProps) {
 
       {/* Upgrade Modal */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200">
-            <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">✨ <TranslatedText text="Sammle mehr EXP!" language={language} /></h2>
-            <button 
-              onClick={() => {
-                setShowUpgradeModal(false);
-                setShowLikeSaveModal(true);
-              }}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3"
-            >
-              <span className="text-xl">❤️</span>
-              <span className="text-xl">🔁</span>
-              <TranslatedText text="Like + Share" language={language} />
-            </button>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-blue-500/30 rounded-2xl p-6 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-blue-500 bg-clip-text text-transparent">
+                ✨ <TranslatedText text="Sammle EXP" language={language} />
+              </h2>
+              <button
+                onClick={() => setShowUpgradeModal(false)}
+                className="text-gray-400 hover:text-blue-400 text-2xl transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-4">
+              <div className="w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                <span className="text-5xl animate-pulse">✨</span>
+              </div>
+              <p className="text-blue-200 leading-relaxed mb-4 text-center">
+                <TranslatedText text="Sammle mehr EXP für deine Facebook-Aktivitäten!" language={language} />
+              </p>
+            </div>
+            
+            <div className="space-y-3 mb-4">
+              <button 
+                onClick={() => {
+                  setShowUpgradeModal(false);
+                  setShowLikeSaveModal(true);
+                }}
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl py-3 font-bold transition-all flex items-center justify-center gap-3"
+              >
+                <span className="text-lg">❤️</span>
+                <span className="text-lg">🔁</span>
+                <span><TranslatedText text="Like + Share" language={language} /></span>
+              </button>
+            </div>
+            
             <button 
               onClick={() => setShowUpgradeModal(false)}
-              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-4 rounded-2xl font-bold transition-all duration-300 border border-gray-300 hover:border-gray-400"
+              className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-xl py-2 font-bold transition-all"
             >
-              ❌ <TranslatedText text="Schließen" language={language} />
+              <TranslatedText text="Schließen" language={language} />
             </button>
           </div>
         </div>

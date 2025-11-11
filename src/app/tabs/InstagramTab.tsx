@@ -621,39 +621,59 @@ export default function InstagramTab({ language }: InstagramTabProps) {
 
       {/* Upgrade Modal */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
-            <button
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-pink-500/30 rounded-2xl p-6 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent">
+                ✨ <TranslatedText text="Sammle EXP" language={language} />
+              </h2>
+              <button
+                onClick={() => setShowUpgradeModal(false)}
+                className="text-gray-400 hover:text-pink-400 text-2xl transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 mb-4">
+              <div className="w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                <span className="text-5xl animate-pulse">✨</span>
+              </div>
+              <p className="text-pink-200 leading-relaxed mb-4 text-center">
+                <TranslatedText text="Sammle mehr EXP für deine Instagram-Aktivitäten!" language={language} />
+              </p>
+            </div>
+            
+            <div className="space-y-3 mb-4">
+              <button 
+                onClick={() => {
+                  setShowUpgradeModal(false);
+                  setShowLikeSaveModal(true);
+                }}
+                className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white rounded-xl py-3 font-bold transition-all flex items-center justify-center gap-3"
+              >
+                <span className="text-lg">❤️</span>
+                <span className="text-lg">💾</span>
+                <span><TranslatedText text="Like + Save" language={language} /></span>
+              </button>
+              
+              <button 
+                onClick={() => {
+                  setShowUpgradeModal(false);
+                  setShowStoryHelpModal(true);
+                }}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl py-3 font-bold transition-all flex items-center justify-center gap-3"
+              >
+                <span className="text-lg">📣</span>
+                <span><TranslatedText text="Story teilen" language={language} /></span>
+              </button>
+            </div>
+            
+            <button 
               onClick={() => setShowUpgradeModal(false)}
-              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
-              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+              className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-xl py-2 font-bold transition-all"
             >
-              ×
-            </button>
-            <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
-              ✨ <TranslatedText text="Sammle mehr EXP!" language={language} />
-            </h2>
-            <button 
-              onClick={() => {
-                setShowUpgradeModal(false);
-                setShowLikeSaveModal(true);
-              }}
-              className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-rose-600 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3"
-            >
-              <span className="text-xl">❤️</span>
-              <span className="text-xl">💾</span>
-              <span><TranslatedText text="Like + Save" language={language} /></span>
-            </button>
-            <button 
-              onClick={() => {
-                setShowUpgradeModal(false);
-                setShowStoryHelpModal(true);
-              }}
-              className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-rose-600 text-white p-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3"
-            >
-              <span className="text-xl">📣</span>
-              <span><TranslatedText text="Story teilen" language={language} /></span>
+              <TranslatedText text="Schließen" language={language} />
             </button>
           </div>
         </div>
