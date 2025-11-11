@@ -1146,38 +1146,35 @@ export default function FacebookTab({ language }: FacebookTabProps) {
 
       {/* Mining Power Modal */}
       {showMiningPowerModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
-            <button
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
-              onClick={() => setShowMiningPowerModal(false)}
-              aria-label="Schließen"
-              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
-            >
-              ×
-            </button>
-            <div className="flex flex-col items-center gap-4 mb-6">
-              <div className="w-20 h-20 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-3xl text-white">⛏</span>
-              </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent"><TranslatedText text="Mining Power Info" language={language} /></h2>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-blue-500/30 rounded-2xl p-6 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-blue-500 bg-clip-text text-transparent">
+                ⛏ <TranslatedText text="Mining Power" language={language} />
+              </h2>
+              <button
+                onClick={() => setShowMiningPowerModal(false)}
+                className="text-gray-400 hover:text-blue-400 text-2xl transition-colors"
+              >
+                ×
+              </button>
             </div>
             
-            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6">
-              <p className="text-gray-800 leading-relaxed mb-4">
-                <TranslatedText text="Deine " language={language} /><strong className="text-blue-600">Mining Power</strong><TranslatedText text=" ist abhängig von verschiedenen Faktoren:" language={language} />
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-4">
+              <p className="text-blue-200 leading-relaxed mb-4 text-center">
+                <TranslatedText text="Deine " language={language} /><strong className="text-blue-400">Mining Power</strong><TranslatedText text=" ist abhängig von verschiedenen Faktoren:" language={language} />
               </p>
               
-              <div className="space-y-3 text-left">
-                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-300">
-                  <span className="text-xl text-green-500">$</span>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-black/30 rounded-lg border border-blue-500/20">
+                  <span className="text-xl text-green-400">$</span>
                   <div>
-                    <div className="font-bold text-gray-800">Marketing Budget</div>
-                    <div className="text-sm text-gray-600"><TranslatedText text="Pro User für den aktuellen Beitrag" language={language} /></div>
+                    <div className="font-bold text-blue-300">Marketing Budget</div>
+                    <div className="text-sm text-blue-400/80"><TranslatedText text="Pro User für den aktuellen Beitrag" language={language} /></div>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-300">
+                <div className="flex items-center gap-3 p-3 bg-black/30 rounded-lg border border-blue-500/20">
                   {userData?.image ? (
                     <img 
                       src={userData.image} 
@@ -1188,30 +1185,30 @@ export default function FacebookTab({ language }: FacebookTabProps) {
                     <span className="text-xl">�</span>
                   )}
                   <div>
-                    <div className="font-bold text-gray-800">Dein Level</div>
-                    <div className="text-sm text-gray-600">Aktuell: Level {getLevelAndExpRange(userData?.expTotal || 0).level}</div>
+                    <div className="font-bold text-blue-300">Dein Level</div>
+                    <div className="text-sm text-blue-400/80">Aktuell: Level {getLevelAndExpRange(userData?.expTotal || 0).level}</div>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-300">
+                <div className="flex items-center gap-3 p-3 bg-black/30 rounded-lg border border-blue-500/20">
                   <img src="/D.FAITH.png" alt="D.FAITH Logo" className="w-7 h-7 object-contain" />
                   <div>
-                    <div className="font-bold text-gray-800">D.FAITH Preis</div>
-                    <div className="text-sm text-gray-600">Aktueller Marktpreis</div>
+                    <div className="font-bold text-blue-300">D.FAITH Preis</div>
+                    <div className="text-sm text-blue-400/80">Aktueller Marktpreis</div>
                   </div>
                 </div>
               </div>
             </div>
             
-            <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 mb-4">
-              <p className="text-indigo-800 font-medium text-sm">
+            <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-3 mb-4">
+              <p className="text-indigo-300 font-medium text-sm text-center">
                 ⚡ <strong>Aktuell:</strong> +{userData?.miningpower || 0} D.Faith pro Beitrag
               </p>
             </div>
             
             <button 
               onClick={() => setShowMiningPowerModal(false)}
-              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl py-3 font-bold transition-all"
             >
               ✅ <TranslatedText text="Verstanden" language={language} />
             </button>
