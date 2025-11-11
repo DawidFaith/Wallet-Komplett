@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FaInfoCircle } from 'react-icons/fa';
+import { FaInfoCircle, FaInstagram, FaFacebookF, FaYoutube } from 'react-icons/fa';
+import { FaTiktok } from 'react-icons/fa6';
 import { useRouter } from 'next/navigation';
 import { useActiveAccount } from 'thirdweb/react';
 import { TranslatedText } from '../components/TranslatedText';
@@ -1195,15 +1196,16 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                   return names.some(n => n.toLowerCase().includes(q));
                 }).map((e: any) => {
                   const namesDetailed = [
-                    e.youtube ? { label: `YouTube: ${e.youtube}` } : null,
-                    e.instagram ? { label: `Instagram: ${e.instagram}` } : null,
-                    e.tiktok ? { label: `TikTok: ${e.tiktok}` } : null,
-                    e.facebook ? { label: `Facebook: ${e.facebook}` } : null,
-                    e.name ? { label: `Name: ${e.name}` } : null,
-                    e.handle ? { label: `Handle: ${e.handle}` } : null,
-                  ].filter(Boolean) as { label: string }[];
-                  // YouTube als primary, falls vorhanden
+                    e.youtube ? { label: e.youtube, platform: 'youtube' } : null,
+                    e.instagram ? { label: e.instagram, platform: 'instagram' } : null,
+                    e.tiktok ? { label: e.tiktok, platform: 'tiktok' } : null,
+                    e.facebook ? { label: e.facebook, platform: 'facebook' } : null,
+                    e.name ? { label: e.name, platform: 'generic' } : null,
+                    e.handle ? { label: e.handle, platform: 'generic' } : null,
+                  ].filter(Boolean) as { label: string; platform: 'youtube' | 'instagram' | 'tiktok' | 'facebook' | 'generic' }[];
                   const primary = (e.youtube || e.instagram || e.tiktok || e.facebook || e.name || e.handle || '-') as string;
+                  const primaryPlatform: 'youtube' | 'instagram' | 'tiktok' | 'facebook' | 'generic' = e.youtube ? 'youtube' : e.instagram ? 'instagram' : e.tiktok ? 'tiktok' : e.facebook ? 'facebook' : 'generic';
+                  const PlatformIcon = primaryPlatform === 'youtube' ? FaYoutube : primaryPlatform === 'instagram' ? FaInstagram : primaryPlatform === 'tiktok' ? FaTiktok : primaryPlatform === 'facebook' ? FaFacebookF : null;
                   const prize = (lbData?.prizes || []).find((p: any) => p.position === e.rank);
                   const prizeText = prize ? (prize.value || prize.description || '') : '';
                   const prizeDisplay = prizeText ? prizeText : '-';
@@ -1212,6 +1214,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                       <div className="px-3 py-2 grid grid-cols-[2.25rem_minmax(0,1fr)_3.75rem_5.25rem] gap-3 items-center">
                         <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">#{e.rank}</span>
                         <div className="flex items-center gap-2 w-full">
+                          {PlatformIcon && <PlatformIcon className="w-4 h-4 text-zinc-300 shrink-0" aria-hidden="true" />}
                           <span className="text-white whitespace-nowrap overflow-x-auto w-full">{primary}</span>
                           {namesDetailed.length > 1 && (
                             <button
@@ -1232,11 +1235,15 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                       </div>
                       {lbOpenRow === e.rank && namesDetailed.length > 1 && (
                         <div className="pl-[3.25rem] pr-3 pb-2 flex flex-col gap-1 items-start">
-                          {namesDetailed.map((n, idx) => (
-                            <div key={idx} className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-200 text-[11px] w-full text-left whitespace-normal break-words">
-                              {n.label}
-                            </div>
-                          ))}
+                          {namesDetailed.map((n, idx) => {
+                            const ChipIcon = n.platform === 'youtube' ? FaYoutube : n.platform === 'instagram' ? FaInstagram : n.platform === 'tiktok' ? FaTiktok : n.platform === 'facebook' ? FaFacebookF : null;
+                            return (
+                              <div key={idx} className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-200 text-[11px] w-full text-left whitespace-normal break-words flex items-center gap-2">
+                                {ChipIcon && <ChipIcon className="w-3.5 h-3.5 text-zinc-300" aria-hidden="true" />}
+                                <span className="break-words">{n.label}</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

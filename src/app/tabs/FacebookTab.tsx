@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FaInstagram, FaFacebookF, FaInfoCircle } from 'react-icons/fa';
+import { FaInstagram, FaFacebookF, FaInfoCircle, FaYoutube } from 'react-icons/fa';
 import { FaTiktok } from 'react-icons/fa6';
 import { useRouter } from 'next/navigation';
 import { validateBaseAddress, validateBaseAddressRealTime } from '../utils/walletValidation';
@@ -618,16 +618,16 @@ export default function FacebookTab({ language }: FacebookTabProps) {
                   return names.some(n => n.toLowerCase().includes(q));
                 }).map((e: any) => {
                   const namesDetailed = [
-                    e.youtube ? { label: `YouTube: ${e.youtube}`, platform: 'youtube' } : null,
-                    e.instagram ? { label: `Instagram: ${e.instagram}`, platform: 'instagram' } : null,
-                    e.tiktok ? { label: `TikTok: ${e.tiktok}`, platform: 'tiktok' } : null,
-                    e.facebook ? { label: `Facebook: ${e.facebook}`, platform: 'facebook' } : null,
+                    e.youtube ? { label: e.youtube, platform: 'youtube' } : null,
+                    e.instagram ? { label: e.instagram, platform: 'instagram' } : null,
+                    e.tiktok ? { label: e.tiktok, platform: 'tiktok' } : null,
+                    e.facebook ? { label: e.facebook, platform: 'facebook' } : null,
                     e.name ? { label: `Name: ${e.name}`, platform: 'generic' } : null,
                     e.handle ? { label: `Handle: ${e.handle}`, platform: 'generic' } : null,
-                  ].filter(Boolean) as { label: string; platform: 'instagram' | 'tiktok' | 'facebook' | 'generic' }[];
+                  ].filter(Boolean) as { label: string; platform: 'youtube' | 'instagram' | 'tiktok' | 'facebook' | 'generic' }[];
                   const primary = (e.youtube || e.instagram || e.tiktok || e.facebook || e.name || e.handle || '-') as string;
-                  const primaryPlatform: 'instagram' | 'tiktok' | 'facebook' | 'generic' = e.instagram ? 'instagram' : e.tiktok ? 'tiktok' : e.facebook ? 'facebook' : 'generic';
-                  const PlatformIcon = primaryPlatform === 'instagram' ? FaInstagram : primaryPlatform === 'tiktok' ? FaTiktok : primaryPlatform === 'facebook' ? FaFacebookF : null;
+                  const primaryPlatform: 'youtube' | 'instagram' | 'tiktok' | 'facebook' | 'generic' = e.youtube ? 'youtube' : e.instagram ? 'instagram' : e.tiktok ? 'tiktok' : e.facebook ? 'facebook' : 'generic';
+                  const PlatformIcon = primaryPlatform === 'youtube' ? FaYoutube : primaryPlatform === 'instagram' ? FaInstagram : primaryPlatform === 'tiktok' ? FaTiktok : primaryPlatform === 'facebook' ? FaFacebookF : null;
                   const prize = (lbData?.prizes || []).find((p: any) => p.position === e.rank);
                   const prizeText = prize ? (prize.value || prize.description || '') : '';
                   const prizeDisplay = prizeText ? prizeText : '-';
@@ -658,7 +658,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
                       {lbOpenRow === e.rank && namesDetailed.length > 1 && (
                         <div className="pl-[3.25rem] pr-3 pb-2 flex flex-col gap-1 items-start">
                           {namesDetailed.map((n, idx) => {
-                            const ChipIcon = n.platform === 'instagram' ? FaInstagram : n.platform === 'tiktok' ? FaTiktok : n.platform === 'facebook' ? FaFacebookF : null;
+                            const ChipIcon = n.platform === 'youtube' ? FaYoutube : n.platform === 'instagram' ? FaInstagram : n.platform === 'tiktok' ? FaTiktok : n.platform === 'facebook' ? FaFacebookF : null;
                             return (
                               <div key={idx} className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-200 text-[11px] w-full text-left whitespace-normal break-words flex items-center gap-2">
                                 {ChipIcon && <ChipIcon className="w-3.5 h-3.5 text-zinc-300" aria-hidden="true" />}
