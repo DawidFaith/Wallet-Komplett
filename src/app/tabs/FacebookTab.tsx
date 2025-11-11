@@ -527,18 +527,18 @@ export default function FacebookTab({ language }: FacebookTabProps) {
               )}
             </div>
             
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between items-center bg-red-50 border border-red-200 rounded-xl px-3 py-2">
-                <span className="text-red-600 font-bold flex items-center gap-1">❤️ Like</span>
-                <span className={`font-bold ${userData.liked === 'true' ? 'text-green-600' : 'text-gray-400'}`}>{userData.liked === 'true' ? '✅' : '❌'} <span className="text-red-500">+10 EXP</span></span>
+            <div className="space-y-2 text-sm text-white">
+              <div className="flex justify-between">
+                <span className="text-red-400 font-bold">❤️ <TranslatedText text="Like" language={language} /></span>
+                <span>{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
-              <div className="flex justify-between items-center bg-blue-50 border border-blue-200 rounded-xl px-3 py-2">
-                <span className="text-blue-600 font-bold flex items-center gap-1">💬 <TranslatedText text="Kommentar" language={language} /></span>
-                <span className={`font-bold ${userData.commented === 'true' ? 'text-green-600' : 'text-gray-400'}`}>{userData.commented === 'true' ? '✅' : '❌'} <span className="text-blue-500">+10 EXP</span></span>
+              <div className="flex justify-between">
+                <span className="text-blue-400 font-bold">💬 <TranslatedText text="Kommentar" language={language} /></span>
+                <span>{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
-              <div className="flex justify-between items-center bg-green-50 border border-green-200 rounded-xl px-3 py-2">
-                <span className="text-green-600 font-bold flex items-center gap-1">🔁 Share</span>
-                <span className={`font-bold ${userData.saved === true || userData.saved === 'true' ? 'text-green-600' : 'text-gray-400'}`}>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} <span className="text-green-500">+10 EXP</span></span>
+              <div className="flex justify-between">
+                <span className="text-green-400 font-bold">🔁 <TranslatedText text="Share" language={language} /></span>
+                <span>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
             </div>
           </div>
