@@ -1321,12 +1321,12 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                   return names.some(n => n.toLowerCase().includes(q));
                 }).map((e) => {
                   const namesDetailed = [
-                    e.youtube ? { label: `YouTube: ${e.youtube}`, platform: 'youtube' } : null,
-                    e.instagram ? { label: `Instagram: ${e.instagram}`, platform: 'instagram' } : null,
-                    e.tiktok ? { label: `TikTok: ${e.tiktok}`, platform: 'tiktok' } : null,
-                    e.facebook ? { label: `Facebook: ${e.facebook}`, platform: 'facebook' } : null,
-                    e.name ? { label: `Name: ${e.name}`, platform: 'generic' } : null,
-                    e.handle ? { label: `Handle: ${e.handle}`, platform: 'generic' } : null,
+                    e.youtube ? { label: e.youtube, platform: 'youtube' } : null,
+                    e.instagram ? { label: e.instagram, platform: 'instagram' } : null,
+                    e.tiktok ? { label: e.tiktok, platform: 'tiktok' } : null,
+                    e.facebook ? { label: e.facebook, platform: 'facebook' } : null,
+                    e.name ? { label: e.name, platform: 'generic' } : null,
+                    e.handle ? { label: e.handle, platform: 'generic' } : null,
                   ].filter(Boolean) as { label: string; platform: 'instagram' | 'tiktok' | 'facebook' | 'generic' }[];
                   const primary = (e.youtube || e.instagram || e.tiktok || e.facebook || e.name || e.handle || '-') as string;
                   const primaryPlatform: 'instagram' | 'tiktok' | 'facebook' | 'generic' = e.instagram ? 'instagram' : e.tiktok ? 'tiktok' : e.facebook ? 'facebook' : 'generic';
