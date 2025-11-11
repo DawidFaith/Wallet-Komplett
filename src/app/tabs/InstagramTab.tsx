@@ -962,58 +962,60 @@ export default function InstagramTab({ language }: InstagramTabProps) {
 
       {/* Info Modal */}
       {showInfoModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
-            <button
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
-              onClick={() => setShowInfoModal(false)}
-              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
-              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
-            >
-              ×
-            </button>
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
-              ✨ <TranslatedText text="Deine EXP-Quellen" language={language} />
-            </h2>
-            <div className="text-left space-y-3 mb-6">
-              <div className="flex items-center gap-3 border-l-4 border-purple-500 pl-3 bg-purple-50 py-2 rounded-r-xl">
-                <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
-                <div>
-                  <div className="font-bold text-purple-800">Instagram</div>
-                  <div className="text-purple-600 font-semibold">{userData.expInstagram} EXP</div>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-pink-500/30 rounded-2xl p-6 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent">
+                ✨ <TranslatedText text="EXP-Quellen" language={language} />
+              </h2>
+              <button
+                onClick={() => setShowInfoModal(false)}
+                className="text-gray-400 hover:text-pink-400 text-2xl transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 mb-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 border-l-4 border-pink-500 pl-3 bg-pink-500/10 py-3 rounded-r-xl">
+                  <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" className="w-6 h-6 rounded-full" />
+                  <div>
+                    <div className="font-bold text-pink-300">Instagram</div>
+                    <div className="text-pink-200 font-semibold">{userData.expInstagram} EXP</div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 border-l-4 border-black pl-3 bg-gray-50 py-2 rounded-r-xl">
-                <img src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" alt="TikTok" className="w-6 h-6 rounded-full" />
-                <div>
-                  <div className="font-bold text-gray-800">TikTok</div>
-                  <div className="text-gray-600 font-semibold">{userData.expTiktok} EXP</div>
+                <div className="flex items-center gap-3 border-l-4 border-cyan-400 pl-3 bg-cyan-500/10 py-3 rounded-r-xl">
+                  <img src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" alt="TikTok" className="w-6 h-6 rounded-full" />
+                  <div>
+                    <div className="font-bold text-cyan-300">TikTok</div>
+                    <div className="text-cyan-200 font-semibold">{userData.expTiktok} EXP</div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 border-l-4 border-blue-600 pl-3 bg-blue-50 py-2 rounded-r-xl">
-                <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" className="w-6 h-6" />
-                <div>
-                  <div className="font-bold text-blue-800">Facebook</div>
-                  <div className="text-blue-600 font-semibold">{userData.expFacebook} EXP</div>
+                <div className="flex items-center gap-3 border-l-4 border-blue-500 pl-3 bg-blue-500/10 py-3 rounded-r-xl">
+                  <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" className="w-6 h-6" />
+                  <div>
+                    <div className="font-bold text-blue-300">Facebook</div>
+                    <div className="text-blue-200 font-semibold">{userData.expFacebook} EXP</div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 border-l-4 border-purple-700 pl-3 bg-purple-50 py-2 rounded-r-xl">
-                <img src="https://cdn-icons-png.flaticon.com/512/727/727245.png" alt="Stream" className="w-6 h-6 rounded-full" />
-                <div>
-                  <div className="font-bold text-purple-800">Stream</div>
-                  <div className="text-purple-600 font-semibold">{userData.expStream} EXP</div>
+                <div className="flex items-center gap-3 border-l-4 border-red-500 pl-3 bg-red-500/10 py-3 rounded-r-xl">
+                  <img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" alt="YouTube" className="w-6 h-6 rounded-full" />
+                  <div>
+                    <div className="font-bold text-red-300">YouTube</div>
+                    <div className="text-red-200 font-semibold">{userData.expStream} EXP</div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 border-l-4 border-yellow-400 pl-3 bg-yellow-50 py-2 rounded-r-xl">
-                <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Live" className="w-6 h-6 rounded-full" />
-                <div>
-                  <div className="font-bold text-yellow-800">Live EXP Bonus</div>
-                  <div className="text-yellow-600 font-semibold">{userData.liveNFTBonus} EXP</div>
+                <div className="flex items-center gap-3 border-l-4 border-yellow-500 pl-3 bg-yellow-500/10 py-3 rounded-r-xl">
+                  <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Live" className="w-6 h-6 rounded-full" />
+                  <div>
+                    <div className="font-bold text-yellow-300">Live</div>
+                    <div className="text-yellow-200 font-semibold">{userData.liveNFTBonus} EXP</div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-4 mb-6">
-              <p className="text-sm text-gray-700 font-medium">
+            <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-3">
+              <p className="text-sm text-pink-200 font-medium text-center">
                 💡 <TranslatedText text="Mehr EXP = schnelleres Level-Up. Nutze alle Plattformen! 🚀" language={language} />
               </p>
             </div>
