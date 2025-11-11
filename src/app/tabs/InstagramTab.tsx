@@ -661,82 +661,82 @@ export default function InstagramTab({ language }: InstagramTabProps) {
 
       {/* Claim Modal */}
       {showClaimModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
-            <button
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
-              onClick={() => setShowClaimModal(false)}
-              aria-label={language === 'de' ? "Schließen" : language === 'en' ? "Close" : "Zamknij"}
-              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
-            >
-              ×
-            </button>
-            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
-              <span className="text-xl animate-bounce">🪙</span>
-              <span><TranslatedText text="D.FAITH Claim" language={language} /></span>
-            </h2>
-            <div className="text-xs text-gray-600 mb-4 text-center">
-              💡 <TranslatedText text="Wallet ändern? Schreib mir eine DM mit &quot;Wallet&quot; auf Instagram" language={language} />
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-pink-500/30 rounded-2xl p-6 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent">
+                <TranslatedText text="D.FAITH Claim" language={language} />
+              </h2>
+              <button
+                onClick={() => setShowClaimModal(false)}
+                className="text-gray-400 hover:text-pink-400 text-2xl transition-colors"
+              >
+                ×
+              </button>
             </div>
             
-            {/* Automatische Wallet-Erkennung */}
-            {account?.address ? (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4 text-center">
-                <p className="text-green-800 mb-2 font-semibold">
-                  ✅ <TranslatedText text="Eingeloggte Wallet erkannt!" language={language} />
-                </p>
-                <p className="text-gray-700 text-sm mb-3">
-                  <TranslatedText text="Deine verbundene Wallet-Adresse wird automatisch für den Claim verwendet:" language={language} />
-                </p>
-                <div className="bg-white border border-green-300 rounded-lg p-3 mb-3">
-                  <p className="font-mono text-sm text-green-700 break-all">
-                    {account.address}
-                  </p>
-                </div>
-                <p className="text-gray-800 mb-2">
-                  <TranslatedText text="Du kannst" language={language} /> <strong className="text-green-600">+{userData.miningpower} D.FAITH</strong> <TranslatedText text="für deine Instagram Aktivität claimen!" language={language} />
-                </p>
+            <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 mb-4">
+              <div className="w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                <img
+                  src="/D.FAITH.png"
+                  alt="D.FAITH Logo"
+                  className="w-16 h-16 coin-flip"
+                  style={{ animation: 'coin-flip 5s linear infinite' }}
+                />
+                <style>{`
+                  @keyframes coin-flip {
+                    0% { transform: rotateY(0deg); }
+                    100% { transform: rotateY(360deg); }
+                  }
+                `}</style>
               </div>
-            ) : (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 text-gray-800 text-base flex flex-col items-center animate-pulse">
-                <span className="font-semibold mb-3 text-center">
-                  <TranslatedText text="Du hast noch keine gültige Base Chain Wallet hinterlegt." language={language} />
-                  <br/>
-                  <TranslatedText text="Erstelle jetzt deine Wallet, um deine Belohnung zu erhalten!" language={language} />
-                </span>
-                <button
-                  className="w-full mt-2 mb-2 py-3 px-4 rounded-xl font-semibold bg-gradient-to-r from-pink-400 via-pink-500 to-rose-500 text-white shadow-lg hover:from-pink-500 hover:to-rose-600 active:from-pink-600 active:to-rose-700 transition text-base border border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-400 text-center block"
-                  onClick={() => router.push("/wallet")}
-                >
-                  🚀 <TranslatedText text="Wallet jetzt anlegen" language={language} />
-                </button>
-                <span className="text-xs text-gray-500 mt-1">
-                  <TranslatedText text="Du findest den Wallet Tab auch oben im Menü." language={language} />
-                </span>
+              <p className="text-pink-200 leading-relaxed mb-3 text-center">
+                <TranslatedText text="Du kannst" language={language} /> <strong className="text-pink-400">+{userData.miningpower} D.FAITH</strong> <TranslatedText text="für deine Instagram Aktivität claimen!" language={language} />
+              </p>
+              
+              {account?.address && (
+                <div className="bg-black/30 border border-pink-500/20 rounded-lg p-3 mb-3">
+                  <div className="text-xs text-pink-300 mb-1"><TranslatedText text="Wallet Adresse:" language={language} /></div>
+                  <div className="font-mono text-sm text-pink-100 break-all">
+                    {account.address}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {!account?.address && (
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-4">
+                <p className="text-yellow-200 text-sm text-center">
+                  ⚠️ <TranslatedText text="Bitte hinterlege zuerst eine Wallet-Adresse im Wallet Tab" language={language} />
+                </p>
               </div>
             )}
-            <button 
-              onClick={submitClaim}
-              disabled={!account?.address}
-              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 hover:shadow-lg disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              <span className="text-xl">✅</span>
-              <span>
-                {account?.address ? 
-                  <TranslatedText text="Mit verbundener Wallet claimen" language={language} /> : 
-                  <TranslatedText text="Wallet verbinden um zu claimen" language={language} />
-                }
-              </span>
-            </button>
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowClaimModal(false)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white rounded-xl py-3 font-bold transition-all"
+              >
+                <TranslatedText text="Abbrechen" language={language} />
+              </button>
+              <button 
+                onClick={submitClaim}
+                disabled={!account?.address}
+                className="flex-1 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 disabled:from-gray-500 disabled:to-gray-600 text-white rounded-xl py-3 font-bold transition-all disabled:cursor-not-allowed"
+              >
+                <TranslatedText text="Claimen" language={language} />
+              </button>
+            </div>
+            
             {claimStatus && (
-              <div className={`mb-4 p-3 rounded-xl ${
+              <div className={`mt-4 p-3 rounded-xl text-sm ${
                 claimStatus.includes('✅') 
-                  ? 'bg-green-100 text-green-700 border border-green-200' 
+                  ? 'bg-green-500/10 text-green-300 border border-green-500/30' 
                   : claimStatus.includes('⚠️') 
-                  ? 'bg-yellow-100 text-yellow-700 border border-yellow-200'
+                  ? 'bg-yellow-500/10 text-yellow-300 border border-yellow-500/30'
                   : claimStatus.includes('ℹ️')
-                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                  : 'bg-pink-100 text-pink-700 border border-pink-200'
+                  ? 'bg-blue-500/10 text-blue-300 border border-blue-500/30'
+                  : 'bg-red-500/10 text-red-300 border border-red-500/30'
               }`}>
                 {claimStatus}
               </div>
@@ -1206,7 +1206,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
               
               <div className="space-y-3 text-left">
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
-                  <span className="text-xl">💰</span>
+                  <span className="text-xl text-green-500">$</span>
                   <div>
                     <div className="font-bold text-gray-800">
                       <TranslatedText text="Marketing Budget" language={language} />
@@ -1218,7 +1218,15 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                 </div>
                 
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
-                  <span className="text-xl">📊</span>
+                  {userData?.image ? (
+                    <img 
+                      src={userData.image} 
+                      alt="Profilbild"
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xl">�</span>
+                  )}
                   <div>
                     <div className="font-bold text-gray-800">
                       <TranslatedText text="Dein Level" language={language} />
@@ -1230,7 +1238,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                 </div>
                 
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-300">
-                  <span className="text-xl">💎</span>
+                  <img src="/D.FAITH.png" alt="D.FAITH Logo" className="w-7 h-7 object-contain" />
                   <div>
                     <div className="font-bold text-gray-800">
                       <TranslatedText text="D.FAITH Preis" language={language} />

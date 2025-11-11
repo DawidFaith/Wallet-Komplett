@@ -706,67 +706,83 @@ export default function FacebookTab({ language }: FacebookTabProps) {
 
       {/* Claim Modal */}
       {showClaimModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-200 relative">
-            <button
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 text-xl font-bold focus:outline-none"
-              onClick={() => setShowClaimModal(false)}
-              aria-label="Schließen"
-              style={{ background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
-            >
-              ×
-            </button>
-            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent flex items-center justify-center gap-2">
-              <span className="text-xl animate-bounce">🪙</span>
-              <TranslatedText text="D.FAITH Claim" language={language} />
-            </h2>
-            
-            <div className="text-xs text-gray-600 mb-4 text-center">
-              💡 <TranslatedText text="Wallet ändern? Schreib mir eine DM mit &quot;Wallet&quot; auf Facebook" language={language} />
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-blue-500/30 rounded-2xl p-6 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-blue-500 bg-clip-text text-transparent">
+                <TranslatedText text="D.FAITH Claim" language={language} />
+              </h2>
+              <button
+                onClick={() => setShowClaimModal(false)}
+                className="text-gray-400 hover:text-blue-400 text-2xl transition-colors"
+              >
+                ×
+              </button>
             </div>
             
-            {/* Hinweis für Wallet-Verbindung in der Überschrift */}
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-4">
+              <div className="w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                <img
+                  src="/D.FAITH.png"
+                  alt="D.FAITH Logo"
+                  className="w-16 h-16 coin-flip"
+                  style={{ animation: 'coin-flip 5s linear infinite' }}
+                />
+                <style>{`
+                  @keyframes coin-flip {
+                    0% { transform: rotateY(0deg); }
+                    100% { transform: rotateY(360deg); }
+                  }
+                `}</style>
+              </div>
+              <p className="text-blue-200 leading-relaxed mb-3 text-center">
+                <TranslatedText text="Du kannst" language={language} /> <strong className="text-blue-400">+{userData?.miningpower || 0} D.FAITH</strong> <TranslatedText text="für deine Facebook Aktivität claimen!" language={language} />
+              </p>
+              
+              {account?.address && (
+                <div className="bg-black/30 border border-blue-500/20 rounded-lg p-3 mb-3">
+                  <div className="text-xs text-blue-300 mb-1"><TranslatedText text="Wallet Adresse:" language={language} /></div>
+                  <div className="font-mono text-sm text-blue-100 break-all">
+                    {account.address}
+                  </div>
+                </div>
+              )}
+            </div>
+            
             {!account?.address && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 text-gray-800 text-base flex flex-col items-center animate-pulse">
-                <span className="font-semibold mb-3 text-center"><TranslatedText text="Du hast noch keine Wallet verbunden." language={language} /><br/><TranslatedText text="Verbinde deine Wallet, um deine Belohnung zu erhalten!" language={language} /></span>
-                <span className="text-xs text-gray-500 mt-1"><TranslatedText text='Wenn du deine Wallet wechseln möchtest, schreib mir eine DM mit dem Stichwort "Wallet" auf Facebook.' language={language} /></span>
-                <button
-                  className="w-full mt-2 mb-2 py-3 px-4 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400 text-gray-900 shadow-lg hover:from-yellow-500 hover:to-orange-500 active:from-yellow-600 active:to-orange-600 transition text-base border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-center block"
-                  onClick={() => router.push("/wallet")}
-                >
-                  🚀 <TranslatedText text="Wallet jetzt verbinden" language={language} />
-                </button>
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-4">
+                <p className="text-yellow-200 text-sm text-center">
+                  ⚠️ <TranslatedText text="Bitte hinterlege zuerst eine Wallet-Adresse im Wallet Tab" language={language} />
+                </p>
               </div>
             )}
             
-            {/* Wallet Adresse anzeigen und Claim Info wenn Wallet verbunden ist */}
-            {account?.address && (
-              <>
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-center">
-                  <p className="text-gray-800 mb-2">
-                    <TranslatedText text="Du kannst " language={language} /><strong className="text-blue-600">+{userData.miningpower} D.FAITH</strong><TranslatedText text=" für deine Facebook Aktivität claimen!" language={language} />
-                  </p>
-                  <p className="text-sm text-green-600 mt-2">✅ <TranslatedText text="Verbundene Wallet wird verwendet" language={language} /></p>
-                </div>
-                
-                <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
-                  <p className="text-sm text-gray-700 mb-2"><TranslatedText text="Verbundene Wallet:" language={language} /></p>
-                  <p className="font-mono text-sm bg-white border border-green-300 rounded-lg p-2 break-all">
-                    {account.address}
-                  </p>
-                </div>
-              </>
-            )}
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowClaimModal(false)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white rounded-xl py-3 font-bold transition-all"
+              >
+                <TranslatedText text="Abbrechen" language={language} />
+              </button>
+              <button 
+                onClick={submitClaim}
+                disabled={!account?.address}
+                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:from-gray-500 disabled:to-gray-600 text-white rounded-xl py-3 font-bold transition-all disabled:cursor-not-allowed"
+              >
+                <TranslatedText text="Claimen" language={language} />
+              </button>
+            </div>
             
-            <button 
-              onClick={submitClaim}
-              disabled={!account?.address}
-              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white p-4 rounded-2xl font-bold mb-4 transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 hover:shadow-lg disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              <TranslatedText text="Claim absenden" language={language} />
-            </button>
             {claimStatus && (
-              <div className={`mb-4 p-3 rounded-xl ${claimStatus.includes('✅') ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+              <div className={`mt-4 p-3 rounded-xl text-sm ${
+                claimStatus.includes('✅') 
+                  ? 'bg-green-500/10 text-green-300 border border-green-500/30' 
+                  : claimStatus.includes('⚠️') 
+                  ? 'bg-yellow-500/10 text-yellow-300 border border-yellow-500/30'
+                  : claimStatus.includes('ℹ️')
+                  ? 'bg-blue-500/10 text-blue-300 border border-blue-500/30'
+                  : 'bg-red-500/10 text-red-300 border border-red-500/30'
+              }`}>
                 {claimStatus}
               </div>
             )}
@@ -1131,7 +1147,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
               
               <div className="space-y-3 text-left">
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-300">
-                  <span className="text-xl">💰</span>
+                  <span className="text-xl text-green-500">$</span>
                   <div>
                     <div className="font-bold text-gray-800">Marketing Budget</div>
                     <div className="text-sm text-gray-600"><TranslatedText text="Pro User für den aktuellen Beitrag" language={language} /></div>
@@ -1139,7 +1155,15 @@ export default function FacebookTab({ language }: FacebookTabProps) {
                 </div>
                 
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-300">
-                  <span className="text-xl">📊</span>
+                  {userData?.image ? (
+                    <img 
+                      src={userData.image} 
+                      alt="Profilbild"
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xl">�</span>
+                  )}
                   <div>
                     <div className="font-bold text-gray-800">Dein Level</div>
                     <div className="text-sm text-gray-600">Aktuell: Level {getLevelAndExpRange(userData?.expTotal || 0).level}</div>
@@ -1147,7 +1171,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
                 </div>
                 
                 <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-300">
-                  <span className="text-xl">💎</span>
+                  <img src="/D.FAITH.png" alt="D.FAITH Logo" className="w-7 h-7 object-contain" />
                   <div>
                     <div className="font-bold text-gray-800">D.FAITH Preis</div>
                     <div className="text-sm text-gray-600">Aktueller Marktpreis</div>
