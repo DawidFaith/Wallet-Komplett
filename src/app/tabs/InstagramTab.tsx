@@ -725,9 +725,19 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             </div>
             
             {!account?.address && (
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-4">
-                <p className="text-yellow-200 text-sm text-center">
-                  ⚠️ <TranslatedText text="Bitte hinterlege zuerst eine Wallet-Adresse im Wallet Tab" language={language} />
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-4">
+                <p className="text-yellow-200 text-sm font-medium mb-3 text-center">
+                  <TranslatedText text="Du hast noch keine Wallet verbunden." language={language} /><br/><TranslatedText text="Verbinde deine Wallet, um fortzufahren!" language={language} />
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router?.push("/wallet")}
+                  className="w-full py-2 px-4 rounded-lg font-semibold bg-gradient-to-r from-yellow-400 to-orange-400 text-black shadow-lg hover:from-yellow-500 hover:to-orange-500 transition-all duration-200 text-sm"
+                >
+                  🚀 <TranslatedText text="Wallet jetzt verbinden" language={language} />
+                </button>
+                <p className="text-xs text-yellow-300 mt-2 text-center">
+                  <TranslatedText text="Du findest den Wallet Tab auch oben im Menü." language={language} />
                 </p>
               </div>
             )}
