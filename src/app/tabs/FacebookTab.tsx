@@ -17,7 +17,7 @@ interface UserData {
   expTiktok: number;
   expInstagram: number;
   expFacebook: number;
-  expYoutube: number;
+  // expYoutube entfernt, YouTube EXP kommt jetzt aus expStream
   expStream: number;
   liveNFTBonus: number;
   miningpower: number;
@@ -137,8 +137,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
           expTiktok: data.expTiktok,
           expInstagram: data.expInstagram,
           expFacebook: data.expFacebook,
-          expYoutube: data.expYoutube || 0,
-          expStream: data.expStream,
+          expStream: data.expStream, // YouTube EXP
           liveNFTBonus: data.liveNFTBonus,
           miningpower: data.miningpower,
           liked: data.liked,
@@ -989,7 +988,7 @@ export default function FacebookTab({ language }: FacebookTabProps) {
                   <img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" alt="YouTube" className="w-6 h-6 rounded-full" />
                   <div>
                     <div className="font-bold text-red-300">YouTube</div>
-                    <div className="text-red-200 font-semibold">{userData.expYoutube} EXP</div>
+                    <div className="text-red-200 font-semibold">{userData.expStream} EXP</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 border-l-4 border-blue-500 pl-3 bg-blue-500/10 py-3 rounded-r-xl">
