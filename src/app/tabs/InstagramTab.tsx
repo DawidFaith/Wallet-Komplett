@@ -549,11 +549,11 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             </button>
           </div>
           
-          {/* System Check */}
+          {/* Instagram Check */}
           <div className="bg-black/50 border border-pink-500/50 rounded-2xl p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
-              <div className="font-bold text-lg bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent">
-                🔍 <TranslatedText text="System Check" language={language} />
+              <div className="font-bold text-lg bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent flex items-center gap-2">
+                <FaInstagram className="w-6 h-6 text-pink-400" /> <TranslatedText text="Instagram Check" language={language} />
               </div>
         {!showLeaderboardModal && (
                 <button
@@ -570,22 +570,22 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             </div>
             
             <div className="space-y-2 text-sm text-white">
-              <div className="flex justify-between">
-                <span>❤️ <TranslatedText text="Like" language={language} /></span>
-                <span>{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
-              </div>
-              <div className="flex justify-between">
-                <span>💬 <TranslatedText text="Kommentar" language={language} /></span>
-                <span>{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
-              </div>
-              <div className="flex justify-between">
-                <span>📣 <TranslatedText text="Story" language={language} /></span>
-                <span>{userData.story === 'true' ? '✅' : '❌'} +20 EXP</span>
-              </div>
-              <div className="flex justify-between">
-                <span>💾 <TranslatedText text="Save" language={language} /></span>
-                <span>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
-              </div>
+                <div className="flex justify-between">
+                  <span className="text-pink-400 font-bold">❤️ <TranslatedText text="Like" language={language} /></span>
+                  <span>{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-blue-400 font-bold">💬 <TranslatedText text="Kommentar" language={language} /></span>
+                  <span>{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-yellow-400 font-bold">📣 <TranslatedText text="Story" language={language} /></span>
+                  <span>{userData.story === 'true' ? '✅' : '❌'} +20 EXP</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-purple-400 font-bold">💾 <TranslatedText text="Save" language={language} /></span>
+                  <span>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
+                </div>
             </div>
           </div>
           
