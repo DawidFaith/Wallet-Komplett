@@ -789,7 +789,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="flex items-center gap-1 text-purple-400 font-bold">🔐 <TranslatedText text="Secret" language={language} /></span>
-                  <span className="text-purple-300 font-semibold">{userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
+                  <span className="text-purple-300 font-semibold">{userData.saved === 'true' ? '✅' : '❌'} +30 EXP</span>
                 </div>
               </div>
           </div>
