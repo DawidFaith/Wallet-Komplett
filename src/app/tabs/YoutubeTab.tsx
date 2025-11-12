@@ -630,25 +630,38 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
     setSecretMessage('');
 
     try {
-      // Hier wird später die API-Integration ergänzt
-      const response = await fetch('/api/verify-secret', {
+      // API-Aufruf an die neue Secret-API
+      const response = await fetch('https://secret-dawid-faiths-projects.vercel.app/api/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           code: secretCode.trim(),
-          platform: 'youtube'
+          walletAddress: userData.wallet || walletInput
         }),
       });
 
       const data = await response.json();
       
-      if (response.ok && data.success) {
+      if (data.success) {
+        // Erfolgsfall: "Werte erfolgreich aktualisiert"
         setSecretMessage(language === 'de' ? '✅ Secret-Code erfolgreich bestätigt!' : language === 'en' ? '✅ Secret code successfully verified!' : '✅ Kod secret pomyślnie zweryfikowany!');
         // Hier könnte weitere Logik für erfolgreiche Verification ergänzt werden
       } else {
-        setSecretMessage(language === 'de' ? '❌ Ungültiger Secret-Code!' : language === 'en' ? '❌ Invalid secret code!' : '❌ Nieprawidłowy kod secret!');
+        // Fehlerfall: Spezifische Fehlermeldung von der API anzeigen
+        const errorMessage = data.error || data.message || 'Unbekannter Fehler';
+        
+        if (errorMessage.includes('bereits') || errorMessage.includes('used')) {
+          // "Dieser Code wurde bereits für diese Wallet verwendet"
+          setSecretMessage(language === 'de' ? '⚠️ Dieser Code wurde bereits für diese Wallet verwendet!' : language === 'en' ? '⚠️ This code has already been used for this wallet!' : '⚠️ Ten kod został już użyty dla tego portfela!');
+        } else if (errorMessage.includes('ungültig') || errorMessage.includes('invalid')) {
+          // Ungültiger Code
+          setSecretMessage(language === 'de' ? '❌ Ungültiger Secret-Code!' : language === 'en' ? '❌ Invalid secret code!' : '❌ Nieprawidłowy kod secret!');
+        } else {
+          // Fallback: Original-Fehlermeldung anzeigen
+          setSecretMessage(`❌ ${errorMessage}`);
+        }
       }
     } catch (error) {
       console.error('Secret verification error:', error);
