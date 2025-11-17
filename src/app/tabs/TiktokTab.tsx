@@ -1347,54 +1347,53 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
 
       {/* EXP Selection Modal */}
       {showExpSelectionModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-pink-500/30 rounded-2xl p-6 w-full max-w-md animate-in slide-in-from-bottom-5 duration-300 shadow-2xl">
-            <div className="flex items-center justify-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-2xl text-white">⚡</span>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-pink-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="text-5xl mb-4 text-center">⚡</div>
+            <h2 className="text-xl font-bold mb-6 text-white text-center">
+              <TranslatedText text="EXP sammeln" language={language} />
+            </h2>
+            
+            <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 mb-4">
+              <div className="text-center mb-4">
+                <p className="text-pink-200 font-semibold mb-2">
+                  🎯 <TranslatedText text="Wähle deine bevorzugte Methode zum EXP sammeln!" language={language} />
+                </p>
+                <p className="text-pink-300 text-sm leading-relaxed">
+                  <TranslatedText text="Beide Optionen geben dir wertvolle EXP für deinen Fortschritt!" language={language} />
+                </p>
+              </div>
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    setShowExpSelectionModal(false);
+                    setShowSecretModal(true);
+                  }}
+                  className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white p-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center justify-between"
+                >
+                  <span className="flex items-center gap-2">🔐 <TranslatedText text="Secret Code" language={language} /></span>
+                  <span className="text-yellow-300 font-bold">+30 EXP</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowExpSelectionModal(false);
+                    setShowLikeSaveModal(true);
+                  }}
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center justify-between"
+                >
+                  <span className="flex items-center gap-2">❤️ <TranslatedText text="Like, Share & Save" language={language} /></span>
+                  <span className="text-yellow-300 font-bold">+30 EXP</span>
+                </button>
               </div>
             </div>
             
-            <h2 className="text-xl font-bold text-center bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent mb-6">
-              <TranslatedText text="EXP Sammeln" language={language} />
-            </h2>
-            
-            <div className="space-y-4">
-              <button
-                onClick={() => {
-                  setShowExpSelectionModal(false);
-                  setShowSecretModal(true);
-                }}
-                className="relative w-full bg-gradient-to-r from-purple-500 via-purple-600 to-pink-600 hover:from-purple-600 hover:via-purple-700 hover:to-pink-700 text-white p-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/25 border border-purple-400/30 overflow-hidden group"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                <div className="flex items-center justify-between relative z-10">
-                  <span className="flex items-center gap-2">🔐 <TranslatedText text="Secret Code" language={language} /></span>
-                  <span className="text-yellow-300 font-bold">+30 EXP</span>
-                </div>
-              </button>
-              
-              <button
-                onClick={() => {
-                  setShowExpSelectionModal(false);
-                  setShowLikeSaveModal(true);
-                }}
-                className="relative w-full bg-gradient-to-r from-pink-500 via-pink-600 to-purple-600 hover:from-pink-600 hover:via-pink-700 hover:to-purple-700 text-white p-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-pink-500/25 border border-pink-400/30 overflow-hidden group"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                <div className="flex items-center justify-between relative z-10">
-                  <span className="flex items-center gap-2">❤️ <TranslatedText text="Like, Share & Save" language={language} /></span>
-                  <span className="text-yellow-300 font-bold">+30 EXP</span>
-                </div>
-              </button>
-            </div>
-            
-            <div className="mt-6">
+            <div className="flex gap-3">
               <button
                 onClick={() => setShowExpSelectionModal(false)}
-                className="w-full bg-black/50 border border-gray-600/50 hover:bg-gray-800 hover:border-gray-500 text-gray-300 hover:text-white p-3 rounded-xl font-bold transition-all duration-300"
+                className="w-full bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
               >
-                ❌ <TranslatedText text="Abbrechen" language={language} />
+                ❌ <TranslatedText text="Schließen" language={language} />
               </button>
             </div>
           </div>
@@ -1403,72 +1402,92 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
 
       {/* TikTok Secret Modal */}
       {showSecretModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-pink-500/30 rounded-2xl p-6 w-full max-w-md animate-in slide-in-from-bottom-5 duration-300 shadow-2xl">
-            <div className="flex items-center justify-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-2xl text-white">🔐</span>
-              </div>
-            </div>
-            
-            <h2 className="text-xl font-bold text-center bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent mb-6">
-              <TranslatedText text="TikTok Secret Code" language={language} />
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-pink-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
+            <div className="text-5xl mb-4 text-center">🔐</div>
+            <h2 className="text-xl font-bold mb-4 text-white text-center">
+              <TranslatedText text="Secret Code eingeben" language={language} />
             </h2>
             
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-pink-300 mb-2">
-                  <TranslatedText text="Secret Code eingeben:" language={language} />
-                </label>
-                <input
-                  type="text"
-                  value={secretCode}
-                  onChange={(e) => setSecretCode(e.target.value.toUpperCase())}
-                  className="w-full px-4 py-3 bg-black/50 border border-pink-500/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-300 uppercase"
-                  placeholder="GEHEIMCODE"
-                  disabled={secretLoading}
-                />
+            <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 mb-4">
+              <div className="text-center mb-4">
+                <p className="text-pink-200 font-semibold mb-2">
+                  🔍 <TranslatedText text="Suche die versteckten Buchstaben im TikTok Video!" language={language} />
+                </p>
+                <p className="text-pink-300 text-sm leading-relaxed">
+                  <TranslatedText text="Füge die gefundenen Buchstaben zusammen und gib den Code hier ein, um zusätzliche EXP zu erhalten!" language={language} />
+                </p>
               </div>
-              
+              <input
+                type="text"
+                value={secretCode}
+                onChange={(e) => setSecretCode(e.target.value.toUpperCase())}
+                placeholder={language === 'de' ? 'Nur Großbuchstaben erlaubt...' : language === 'en' ? 'Only uppercase letters allowed...' : 'Tylko wielkie litery...'}
+                className="w-full p-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-pink-500 transition-colors"
+                disabled={secretLoading}
+              />
               {secretMessage && (
-                <div className={`p-3 rounded-xl border ${secretMessage.includes('erfolgreich') ? 'bg-green-900/50 border-green-500/50 text-green-300' : 'bg-red-900/50 border-red-500/50 text-red-300'}`}>
-                  {secretMessage}
-                  {secretMessage.includes('erfolgreich') && (
-                    <div className="mt-3">
-                      <button
-                        onClick={() => window.location.reload()}
-                        className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 py-2 rounded-lg font-bold transition-all duration-300"
-                      >
-                        🔄 <TranslatedText text="Seite neu laden" language={language} />
-                      </button>
-                    </div>
-                  )}
+                <div className={`mt-3 p-3 rounded-xl text-sm text-center flex items-center justify-center gap-3 border-2 ${secretMessage.includes('✅') ? 'bg-green-500/20 text-green-300 border-green-500' : 'bg-red-500/20 text-red-300 border-red-500'}`}>
+                  <span className="text-2xl flex-shrink-0">
+                    {secretMessage.includes('✅') ? '🔓' : '🔒'}
+                  </span>
+                  <span className="font-semibold">{secretMessage}</span>
                 </div>
               )}
             </div>
             
             <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowSecretModal(false);
-                  setSecretCode('');
-                  setSecretMessage('');
-                }}
-                className="flex-1 bg-black/50 border border-gray-600/50 hover:bg-gray-800 hover:border-gray-500 text-gray-300 hover:text-white p-3 rounded-xl font-bold transition-all duration-300"
-                disabled={secretLoading}
-              >
-                ❌ <TranslatedText text="Abbrechen" language={language} />
-              </button>
-              <button
-                onClick={handleSecretCheck}
-                className="relative flex-1 bg-gradient-to-r from-purple-500 via-purple-600 to-pink-600 hover:from-purple-600 hover:via-purple-700 hover:to-pink-700 text-white p-3 rounded-xl font-bold transition-all duration-300 disabled:opacity-50 overflow-hidden group"
-                disabled={secretLoading || !secretCode.trim()}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                <span className="relative z-10">
-                  {secretLoading ? '🔄' : '🔐'} <TranslatedText text="Prüfen" language={language} />
-                </span>
-              </button>
+              {secretMessage.includes('✅') ? (
+                // Erfolgreich - Neu laden Button anzeigen
+                <>
+                  <button 
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        // Seite neu laden um Änderungen zu sehen
+                        window.location.href = window.location.pathname + '?tab=tiktok' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
+                      }
+                    }}
+                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+                  >
+                    🔄 <TranslatedText text="Neu laden" language={language} />
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setShowSecretModal(false);
+                      setSecretCode('');
+                      setSecretMessage('');
+                    }}
+                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
+                  >
+                    ❌ <TranslatedText text="Schließen" language={language} />
+                  </button>
+                </>
+              ) : (
+                // Normal - Code prüfen Button anzeigen
+                <>
+                  <button 
+                    onClick={handleSecretCheck}
+                    disabled={secretLoading || !secretCode.trim()}
+                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 disabled:from-gray-600 disabled:to-gray-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100"
+                  >
+                    {secretLoading ? (
+                      <>🔄 <TranslatedText text="Überprüfe..." language={language} /></>
+                    ) : (
+                      <>✅ <TranslatedText text="Code prüfen" language={language} /></>
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setShowSecretModal(false);
+                      setSecretCode('');
+                      setSecretMessage('');
+                    }}
+                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
+                  >
+                    ❌ <TranslatedText text="Schließen" language={language} />
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
