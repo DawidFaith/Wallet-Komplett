@@ -1499,7 +1499,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 <>
                   <div className="mb-3 p-3 bg-green-500/10 border border-green-500/30 rounded-xl">
                     <p className="text-green-200 text-sm text-center">
-                      <TranslatedText text="Lade die Seite neu, um deine aktualisierten EXP und Achievements zu sehen!" language={language} />
+                      <TranslatedText text="Lade neu, um EXP Werte zu aktualisieren" language={language} />
                     </p>
                   </div>
                   <button 
