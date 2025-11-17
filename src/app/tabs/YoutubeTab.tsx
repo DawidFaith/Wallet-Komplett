@@ -653,7 +653,13 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
       
       if (data.success) {
         // Erfolgsfall: "Werte erfolgreich aktualisiert"
-        setSecretMessage(language === 'de' ? '✅ Secret-Code erfolgreich bestätigt!' : language === 'en' ? '✅ Secret code successfully verified!' : '✅ Kod secret pomyślnie zweryfikowany!');
+        setSecretMessage(
+          language === 'de'
+            ? '✅ Secret-Code erfolgreich bestätigt! Lade neu, um EXP Werte zu aktualisieren.'
+            : language === 'en'
+            ? '✅ Secret code successfully verified! Reload to update EXP values.'
+            : '✅ Kod secret pomyślnie zweryfikowany! Odśwież, aby zaktualizować EXP.'
+        );
         // Hier könnte weitere Logik für erfolgreiche Verification ergänzt werden
       } else {
         // Fehlerfall: Spezifische Fehlermeldung von der API anzeigen
@@ -1497,11 +1503,6 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               {secretMessage.includes('✅') ? (
                 // Erfolgreich - Neu laden Button anzeigen
                 <>
-                  <div className="mb-3 p-3 bg-green-500/10 border border-green-500/30 rounded-xl">
-                    <p className="text-green-200 text-sm text-center">
-                      <TranslatedText text="Lade neu, um EXP Werte zu aktualisieren" language={language} />
-                    </p>
-                  </div>
                   <button 
                     onClick={() => {
                       if (typeof window !== 'undefined') {
