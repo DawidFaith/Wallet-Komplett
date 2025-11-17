@@ -626,6 +626,13 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
       return;
     }
 
+    // Nur Großbuchstaben zulassen
+    const codeUpper = secretCode.trim().toUpperCase();
+    if (!/^[A-Z]+$/.test(codeUpper)) {
+      setSecretMessage(language === 'de' ? '❌ Nur Großbuchstaben erlaubt!' : language === 'en' ? '❌ Only uppercase letters allowed!' : '❌ Dozwolone tylko wielkie litery!');
+      return;
+    }
+
     setSecretLoading(true);
     setSecretMessage('');
 
@@ -637,7 +644,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          code: secretCode.trim(),
+          code: codeUpper,
           walletAddress: userData.wallet || walletInput
         }),
       });
