@@ -1494,27 +1494,57 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               )}
             </div>
             <div className="flex gap-3">
-              <button 
-                onClick={handleSecretCheck}
-                disabled={secretLoading || !secretCode.trim()}
-                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100"
-              >
-                {secretLoading ? (
-                  <>🔄 <TranslatedText text="Überprüfe..." language={language} /></>
-                ) : (
-                  <>✅ <TranslatedText text="Code prüfen" language={language} /></>
-                )}
-              </button>
-              <button 
-                onClick={() => {
-                  setShowSecretModal(false);
-                  setSecretCode('');
-                  setSecretMessage('');
-                }}
-                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
-              >
-                ❌ <TranslatedText text="Schließen" language={language} />
-              </button>
+              {secretMessage.includes('✅') ? (
+                // Erfolgreich - Neu laden Button anzeigen
+                <>
+                  <button 
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        // Seite neu laden um Änderungen zu sehen
+                        window.location.href = window.location.pathname + '?tab=youtube' + (window.location.search.includes('uuid=') ? '&' + window.location.search.split('?')[1] : '');
+                      }
+                    }}
+                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+                  >
+                    🔄 <TranslatedText text="Neu laden" language={language} />
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setShowSecretModal(false);
+                      setSecretCode('');
+                      setSecretMessage('');
+                    }}
+                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
+                  >
+                    ❌ <TranslatedText text="Schließen" language={language} />
+                  </button>
+                </>
+              ) : (
+                // Normal - Code prüfen Button anzeigen
+                <>
+                  <button 
+                    onClick={handleSecretCheck}
+                    disabled={secretLoading || !secretCode.trim()}
+                    className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-700 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100"
+                  >
+                    {secretLoading ? (
+                      <>🔄 <TranslatedText text="Überprüfe..." language={language} /></>
+                    ) : (
+                      <>✅ <TranslatedText text="Code prüfen" language={language} /></>
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setShowSecretModal(false);
+                      setSecretCode('');
+                      setSecretMessage('');
+                    }}
+                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
+                  >
+                    ❌ <TranslatedText text="Schließen" language={language} />
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
