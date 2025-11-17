@@ -289,6 +289,11 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
   const [showLikeSaveModal, setShowLikeSaveModal] = useState(false);
+  const [showExpSelectionModal, setShowExpSelectionModal] = useState(false);
+  const [showSecretModal, setShowSecretModal] = useState(false);
+  const [secretCode, setSecretCode] = useState('');
+  const [secretLoading, setSecretLoading] = useState(false);
+  const [secretMessage, setSecretMessage] = useState('');
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showWalletInfoModal, setShowWalletInfoModal] = useState(false);
   const [showMiningPowerModal, setShowMiningPowerModal] = useState(false);
@@ -357,6 +362,40 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
       return urlParams.get('uuid') || 'Dawidfaithtest3736TT';
     }
     return 'Dawidfaithtest3736TT';
+  };
+
+  const handleSecretCheck = async () => {
+    if (!secretCode.trim()) return;
+    
+    setSecretLoading(true);
+    setSecretMessage('');
+    
+    try {
+      const response = await fetch('https://secret-tiktok-dawid-faiths-projects.vercel.app/api/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: userData.username,
+          walletAddress: userData.wallet,
+          secretCode: secretCode.toUpperCase()
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSecretMessage('✅ Secret Code erfolgreich eingegeben! +30 EXP erhalten.');
+      } else {
+        setSecretMessage(data.error || 'Fehler beim Überprüfen des Secret Codes.');
+      }
+    } catch (error) {
+      console.error('Secret check error:', error);
+      setSecretMessage('Fehler beim Überprüfen des Secret Codes. Bitte versuche es erneut.');
+    } finally {
+      setSecretLoading(false);
+    }
   };
 
   const checkInitial = async () => {
@@ -689,13 +728,17 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 <span className="text-yellow-400 font-bold">💾 <TranslatedText text="Save" language={language} /></span>
                 <span>{userData.saved === true || userData.saved === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-purple-400 font-bold">🔐 <TranslatedText text="Secret" language={language} /></span>
+                <span>❓ +30 EXP</span>
+              </div>
             </div>
           </div>
           
           {/* Buttons */}
           <div className="flex gap-3">
             <button 
-              onClick={() => setShowLikeSaveModal(true)}
+              onClick={() => setShowExpSelectionModal(true)}
               className="relative flex-1 bg-gradient-to-r from-pink-500 via-pink-600 to-purple-600 px-4 py-4 rounded-2xl font-bold text-sm text-white overflow-hidden group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-pink-500/25 border border-pink-400/30"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
@@ -1297,6 +1340,126 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
               >
                 ❌ <TranslatedText text="Abbrechen" language={language} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EXP Selection Modal */}
+      {showExpSelectionModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md animate-in slide-in-from-bottom-5 duration-300">
+            <div className="flex items-center justify-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-2xl text-white">⚡</span>
+              </div>
+            </div>
+            
+            <h2 className="text-xl font-bold text-center bg-gradient-to-r from-pink-600 to-purple-700 bg-clip-text text-transparent mb-6">
+              <TranslatedText text="EXP Sammeln" language={language} />
+            </h2>
+            
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setShowExpSelectionModal(false);
+                  setShowSecretModal(true);
+                }}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white p-4 rounded-xl font-bold transition-all duration-300 flex items-center justify-between"
+              >
+                <span>🔐 <TranslatedText text="Secret Code" language={language} /></span>
+                <span className="text-yellow-300">+30 EXP</span>
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowExpSelectionModal(false);
+                  setShowLikeSaveModal(true);
+                }}
+                className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white p-4 rounded-xl font-bold transition-all duration-300 flex items-center justify-between"
+              >
+                <span>❤️ <TranslatedText text="Like, Share & Save" language={language} /></span>
+                <span className="text-yellow-300">+30 EXP</span>
+              </button>
+            </div>
+            
+            <div className="mt-6">
+              <button
+                onClick={() => setShowExpSelectionModal(false)}
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300"
+              >
+                ❌ <TranslatedText text="Abbrechen" language={language} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TikTok Secret Modal */}
+      {showSecretModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md animate-in slide-in-from-bottom-5 duration-300">
+            <div className="flex items-center justify-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
+                <span className="text-2xl text-white">🔐</span>
+              </div>
+            </div>
+            
+            <h2 className="text-xl font-bold text-center bg-gradient-to-r from-purple-600 to-pink-700 bg-clip-text text-transparent mb-6">
+              <TranslatedText text="TikTok Secret Code" language={language} />
+            </h2>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <TranslatedText text="Secret Code eingeben:" language={language} />
+                </label>
+                <input
+                  type="text"
+                  value={secretCode}
+                  onChange={(e) => setSecretCode(e.target.value.toUpperCase())}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 uppercase"
+                  placeholder="GEHEIMCODE"
+                  disabled={secretLoading}
+                />
+              </div>
+              
+              {secretMessage && (
+                <div className={`p-3 rounded-xl ${secretMessage.includes('erfolgreich') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  {secretMessage}
+                  {secretMessage.includes('erfolgreich') && (
+                    <div className="mt-3">
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold transition-all duration-300"
+                      >
+                        🔄 <TranslatedText text="Seite neu laden" language={language} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowSecretModal(false);
+                  setSecretCode('');
+                  setSecretMessage('');
+                }}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-bold transition-all duration-300"
+                disabled={secretLoading}
+              >
+                ❌ <TranslatedText text="Abbrechen" language={language} />
+              </button>
+              <button
+                onClick={handleSecretCheck}
+                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white p-3 rounded-xl font-bold transition-all duration-300 disabled:opacity-50"
+                disabled={secretLoading || !secretCode.trim()}
+              >
+                {secretLoading ? '🔄' : '🔐'} <TranslatedText text="Prüfen" language={language} />
               </button>
             </div>
           </div>
@@ -2084,6 +2247,8 @@ export default function TiktokTab({ language }: TiktokTabProps) {
           </div>
         </div>
       )}
+
+
     </div>
   );
 }
