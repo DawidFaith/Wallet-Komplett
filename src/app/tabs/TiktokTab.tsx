@@ -1349,47 +1349,37 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
       {showExpSelectionModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-pink-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
-            <div className="text-5xl mb-4 text-center">⚡</div>
-            <h2 className="text-xl font-bold mb-6 text-white text-center">
-              <TranslatedText text="EXP sammeln" language={language} />
+            <div className="text-5xl mb-4 text-center">✨</div>
+            <h2 className="text-xl font-bold mb-4 text-white text-center">
+              <TranslatedText text="Sammle EXP" language={language} />
             </h2>
-            
             <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 mb-4">
-              <div className="text-center mb-4">
-                <p className="text-pink-200 font-semibold mb-2">
-                  🎯 <TranslatedText text="Wähle deine bevorzugte Methode zum EXP sammeln!" language={language} />
-                </p>
-                <p className="text-pink-300 text-sm leading-relaxed">
-                  <TranslatedText text="Beide Optionen geben dir wertvolle EXP für deinen Fortschritt!" language={language} />
-                </p>
-              </div>
+              <p className="text-pink-200 leading-relaxed text-center mb-4">
+                <TranslatedText text="Wähle eine Option zum EXP sammeln:" language={language} />
+              </p>
               <div className="space-y-3">
-                <button
-                  onClick={() => {
-                    setShowExpSelectionModal(false);
-                    setShowSecretModal(true);
-                  }}
-                  className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white p-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center justify-between"
-                >
-                  <span className="flex items-center gap-2">🔐 <TranslatedText text="Secret Code" language={language} /></span>
-                  <span className="text-yellow-300 font-bold">+30 EXP</span>
-                </button>
-                
-                <button
+                <button 
                   onClick={() => {
                     setShowExpSelectionModal(false);
                     setShowLikeSaveModal(true);
                   }}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center justify-between"
+                  className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
                 >
-                  <span className="flex items-center gap-2">❤️ <TranslatedText text="Like, Share & Save" language={language} /></span>
-                  <span className="text-yellow-300 font-bold">+30 EXP</span>
+                  ❤️ <TranslatedText text="Like, Share & Save" language={language} />
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowExpSelectionModal(false);
+                    setShowSecretModal(true);
+                  }}
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
+                >
+                  🔐 <TranslatedText text="Secret finden" language={language} />
                 </button>
               </div>
             </div>
-            
             <div className="flex gap-3">
-              <button
+              <button 
                 onClick={() => setShowExpSelectionModal(false)}
                 className="w-full bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl font-bold transition-all duration-300"
               >
