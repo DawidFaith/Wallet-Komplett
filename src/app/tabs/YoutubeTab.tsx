@@ -1479,8 +1479,8 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               <input
                 type="text"
                 value={secretCode}
-                onChange={(e) => setSecretCode(e.target.value)}
-                placeholder={language === 'de' ? 'Gefundenen Code hier eingeben...' : language === 'en' ? 'Enter found code here...' : 'Wprowadź znaleziony kod...'}
+                onChange={(e) => setSecretCode(e.target.value.toUpperCase())}
+                placeholder={language === 'de' ? 'Nur Großbuchstaben erlaubt...' : language === 'en' ? 'Only uppercase letters allowed...' : 'Tylko wielkie litery...'}
                 className="w-full p-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors"
                 disabled={secretLoading}
               />
