@@ -484,7 +484,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
     }
 
     setLoading(true);
-    setClaimStatus(language === 'de' ? '🔄 Claim wird verarbeitet...' : language === 'en' ? '🔄 Processing claim...' : '🔄 Przetwarzanie nagrody...');
+    setClaimStatus(language === 'de' ? '🔄 Abholen wird verarbeitet...' : language === 'en' ? '🔄 Processing claim...' : '🔄 Przetwarzanie odbioru...');
     
     try {
       const response = await fetch('https://hook.eu2.make.com/asb2kdhvudeqq4g56qeoxmbbqjyfwgwf', {
@@ -512,7 +512,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           setClaimStatus(language === 'de' ? '✅ Claim erfolgreich gesendet!' : language === 'en' ? '✅ Claim sent successfully!' : '✅ Claim wysłany pomyślnie!');
           // Modal bleibt offen, Nutzer schließt selbst
         } else if (responseData.status === 'Info') {
-          // Info Response - bereits geclaimed (Nachricht persistent)
+          // Info Response - bereits abgeholt (Nachricht persistent)
           setClaimStatus(language === 'de' ? 'ℹ️ Du hast bereits geclaimed! Warte bis zum nächsten Claim-Zeitraum.' : language === 'en' ? 'ℹ️ You have already claimed! Wait for the next claim period.' : 'ℹ️ Już odebrałeś nagrodę! Poczekaj do następnego okresu.');
           // KEINE Weiterleitung bei Info!
         } else {
@@ -522,7 +522,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
         }
       } else {
         // Fehler: Nachricht persistent anzeigen
-        setClaimStatus(language === 'de' ? '❌ Fehler beim Claim. Bitte versuche es erneut.' : language === 'en' ? '❌ Claim error. Please try again.' : '❌ Błąd podczas odbioru. Spróbuj ponownie.');
+        setClaimStatus(language === 'de' ? '❌ Fehler beim Abholen. Bitte versuche es erneut.' : language === 'en' ? '❌ Claim error. Please try again.' : '❌ Błąd podczas odbioru. Spróbuj ponownie.');
       }
     } catch (error) {
       console.error('Fehler beim Claim:', error);
@@ -793,7 +793,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between items-center">
-                  <span className="flex items-center gap-1 text-green-400 font-bold">👍 <TranslatedText text="Like" language={language} /></span>
+                  <span className="flex items-center gap-1 text-green-400 font-bold">👍 Like</span>
                   <span className="text-green-300 font-semibold">{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -829,7 +829,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               <div className="relative flex items-center justify-center gap-1">
                 <span className="text-xl animate-bounce">🪙</span>
                 <span className="tracking-wider">
-                  <TranslatedText text="Claim" language={language} />
+                  <TranslatedText text="Abholen" language={language} />
                 </span>
               </div>
             </button>
@@ -947,7 +947,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-red-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-                <TranslatedText text="D.FAITH Claimen" language={language} />
+                <TranslatedText text="D.FAITH Abholen" language={language} />
               </h2>
               <button
                 onClick={() => setShowClaimModal(false)}
@@ -1017,7 +1017,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                     : 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white'
                 }`}
               >
-                {loading ? '🔄' : '🪙'} <TranslatedText text="Claimen" language={language} />
+                {loading ? '🔄' : '🪙'} <TranslatedText text="Abholen" language={language} />
               </button>
             </div>
           </div>
@@ -1123,7 +1123,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
               <p className="text-red-200 leading-relaxed mb-4">
-                <TranslatedText text="Deine" language={language} /> <strong className="text-red-400">Mining Power</strong> <TranslatedText text="bestimmt, wie viele D.FAITH Token du pro YouTube Claim erhältst." language={language} />
+                <TranslatedText text="Deine" language={language} /> <strong className="text-red-400">Mining Power</strong> <TranslatedText text="bestimmt, wie viele D.FAITH Token du pro YouTube Abholen erhältst." language={language} />
               </p>
               
               <div className="space-y-3">
@@ -1803,7 +1803,7 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
                   <TranslatedText text="Dashboard Login" language={language} />
                 </h3>
                 <p className="text-gray-400 text-xs leading-tight">
-                  <TranslatedText text="Tokens claimen nach Bestätigung" language={language} />
+                  <TranslatedText text="Tokens abholen nach Bestätigung" language={language} />
                 </p>
               </div>
               <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1853,7 +1853,7 @@ export default function YouTubeTab({ language }: { language: SupportedLanguage }
             </div>
             <div className="flex items-start gap-2">
               <span className="text-red-400 font-bold">3.</span>
-              <TranslatedText text="Dashboard login & Token claimen" language={language} />
+              <TranslatedText text="Dashboard login & Token abholen" language={language} />
             </div>
           </div>
         </div>

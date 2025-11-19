@@ -560,29 +560,29 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
         
         // Prüfe den Response-Typ
         if (responseData.status === 'success') {
-          setClaimStatus(language === 'de' ? '✅ Claim erfolgreich gesendet!' : language === 'en' ? '✅ Claim sent successfully!' : '✅ Claim wysłany pomyślnie!');
+          setClaimStatus(language === 'de' ? '✅ Abholen erfolgreich gesendet!' : language === 'en' ? '✅ Claim sent successfully!' : '✅ Odebranie wysłane pomyślnie!');
           setTimeout(() => {
             setShowClaimModal(false);
             setClaimStatus('');
             // KEINE Weiterleitung - User bleibt in der UserCard
           }, 2000);
         } else if (responseData.status === 'Info') {
-          // Info Response - bereits geclaimed
-          setClaimStatus(language === 'de' ? 'ℹ️ Du hast bereits geclaimed! Warte bis zum nächsten Claim-Zeitraum.' : language === 'en' ? 'ℹ️ You have already claimed! Wait for the next claim period.' : 'ℹ️ Już odebrałeś nagrodę! Poczekaj do następnego okresu.');
+          // Info Response - bereits abgeholt
+          setClaimStatus(language === 'de' ? 'ℹ️ Du hast bereits abgeholt! Warte bis zum nächsten Abhol-Zeitraum.' : language === 'en' ? 'ℹ️ You have already claimed! Wait for the next claim period.' : 'ℹ️ Już odebrałeś nagrodę! Poczekaj do następnego okresu.');
           setTimeout(() => {
             setClaimStatus('');
           }, 4000);
           // KEINE Weiterleitung bei Info!
         } else {
           // Fallback für andere Success-Responses
-          setClaimStatus(language === 'de' ? '✅ Claim erfolgreich gesendet!' : language === 'en' ? '✅ Claim sent successfully!' : '✅ Claim wysłany pomyślnie!');
+          setClaimStatus(language === 'de' ? '✅ Abholen erfolgreich gesendet!' : language === 'en' ? '✅ Claim sent successfully!' : '✅ Odebranie wysłane pomyślnie!');
           setTimeout(() => {
             setShowClaimModal(false);
             setClaimStatus('');
           }, 2000);
         }
       } else {
-        setClaimStatus(language === 'de' ? '❌ Fehler beim Claim. Bitte versuche es erneut.' : language === 'en' ? '❌ Claim error. Please try again.' : '❌ Błąd podczas odbioru. Spróbuj ponownie.');
+        setClaimStatus(language === 'de' ? '❌ Fehler beim Abholen. Bitte versuche es erneut.' : language === 'en' ? '❌ Claim error. Please try again.' : '❌ Błąd podczas odbioru. Spróbuj ponownie.');
         setTimeout(() => {
           setClaimStatus('');
         }, 3000);
@@ -713,7 +713,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             
             <div className="space-y-2 text-sm text-white">
               <div className="flex justify-between">
-                <span className="text-red-400 font-bold">❤️ <TranslatedText text="Like" language={language} /></span>
+                <span className="text-red-400 font-bold">❤️ Like</span>
                 <span>{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
               <div className="flex justify-between">
@@ -721,7 +721,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 <span>{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-green-400 font-bold">🔗 <TranslatedText text="Share" language={language} /></span>
+                <span className="text-green-400 font-bold">🔗 Share</span>
                 <span>{userData.shared === 'true' ? '✅' : '❌'} +10 EXP</span>
               </div>
               <div className="flex justify-between">
@@ -757,7 +757,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               <div className="relative flex items-center justify-center gap-1">
                 <span className="text-xl animate-bounce">🪙</span>
                 <span className="tracking-wider">
-                  <TranslatedText text="Claim" language={language} />
+                  <TranslatedText text="Abholen" language={language} />
                 </span>
               </div>
             </button>
@@ -1047,7 +1047,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
           <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-cyan-500/30 rounded-2xl p-8 w-96 max-w-md mx-4 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                <TranslatedText text="D.FAITH Claim" language={language} />
+                <TranslatedText text="D.FAITH Abholen" language={language} />
               </h2>
               <button
                 onClick={() => setShowClaimModal(false)}
@@ -1075,7 +1075,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                 `}</style>
               </div>
               <p className="text-cyan-200 leading-relaxed mb-4">
-                <TranslatedText text="Du kannst" language={language} /> <strong className="text-cyan-400">+{userData.miningpower} D.FAITH</strong> <TranslatedText text="für deine TikTok Aktivität claimen!" language={language} />
+                <TranslatedText text="Du kannst" language={language} /> <strong className="text-cyan-400">+{userData.miningpower} D.FAITH</strong> <TranslatedText text="für deine TikTok Aktivität abholen!" language={language} />
               </p>
               <div className="bg-black/30 border border-cyan-500/20 rounded-lg p-3 mb-4">
                 <div className="text-xs text-cyan-300 mb-1"><TranslatedText text="Wallet Adresse:" language={language} /></div>
@@ -1111,7 +1111,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                     Lädt...
                   </div>
                 ) : (
-                  '🚀 Claim'
+                  '🚀 Abholen'
                 )}
               </button>
             </div>
@@ -1222,7 +1222,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             
             <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4 mb-6">
               <p className="text-cyan-200 leading-relaxed mb-4">
-                <TranslatedText text="Deine" language={language} /> <strong className="text-cyan-400">Mining Power</strong> <TranslatedText text="bestimmt, wie viele D.FAITH Token du pro TikTok Claim erhältst." language={language} />
+                <TranslatedText text="Deine" language={language} /> <strong className="text-cyan-400">Mining Power</strong> <TranslatedText text="bestimmt, wie viele D.FAITH Token du pro TikTok Abholen erhältst." language={language} />
               </p>
               
               <div className="space-y-3">
@@ -1264,7 +1264,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
             
             <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-3 mb-6">
               <p className="text-pink-200 font-medium text-center">
-                ⚡ <strong><TranslatedText text="Aktuell:" language={language} /></strong> +{userData.miningpower} D.FAITH <TranslatedText text="pro Claim" language={language} />
+                ⚡ <strong><TranslatedText text="Aktuell:" language={language} /></strong> +{userData.miningpower} D.FAITH <TranslatedText text="pro Abholen" language={language} />
               </p>
             </div>
             
@@ -1366,7 +1366,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                   }}
                   className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
                 >
-                  ❤️ <TranslatedText text="Like, Share & Save" language={language} />
+                  ❤️ Like, Share & Save
                 </button>
                 <button 
                   onClick={() => {
@@ -1789,7 +1789,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
                   <TranslatedText text="Dashboard Login" language={language} />
                 </h3>
                 <p className="text-gray-400 text-xs leading-tight">
-                  <TranslatedText text="Tokens claimen nach Bestätigung" language={language} />
+                  <TranslatedText text="Tokens abholen nach Bestätigung" language={language} />
                 </p>
               </div>
               <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1839,7 +1839,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
             </div>
             <div className="flex items-start gap-2">
               <span className="text-pink-400 font-bold">3.</span>
-              <TranslatedText text="Dashboard login & Token claimen" language={language} />
+              <TranslatedText text="Dashboard login & Token abholen" language={language} />
             </div>
           </div>
         </div>
@@ -1943,7 +1943,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
               <div className="w-20 h-20 bg-gradient-to-r from-cyan-400 to-pink-500 rounded-full flex items-center justify-center">
                 <span className="text-3xl text-white">💰</span>
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-600 to-pink-600 bg-clip-text text-transparent"><TranslatedText text="Claim erfolgreich!" language={language} /></h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-600 to-pink-600 bg-clip-text text-transparent"><TranslatedText text="Abholen erfolgreich!" language={language} /></h2>
             </div>
             
             <div className="bg-cyan-50 border border-cyan-200 rounded-2xl p-4 mb-6">
@@ -1959,7 +1959,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
               onClick={() => setShowClaimModal(false)}
               className="w-full bg-gradient-to-r from-cyan-400 to-pink-500 hover:from-cyan-500 hover:to-pink-600 text-white p-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105"
             >
-              🚀 <TranslatedText text="Weiter claimen!" language={language} />
+              🚀 <TranslatedText text="Weiter abholen!" language={language} />
             </button>
           </div>
         </div>
@@ -2010,7 +2010,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
             
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4">
               <p className="text-yellow-800 font-medium text-sm">
-                <TranslatedText text="⚡ Nach dem Engagement kannst du deine D.FAITH Token claimen!" language={language} />
+                <TranslatedText text="⚡ Nach dem Engagement kannst du deine D.FAITH Token abholen!" language={language} />
               </p>
             </div>
             

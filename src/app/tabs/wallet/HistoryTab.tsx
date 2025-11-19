@@ -887,7 +887,7 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                 filter === "claim" ? "bg-cyan-500 text-white shadow-lg" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
-              <TranslatedText text="Claim" language={language} />
+              <TranslatedText text="Abholen" language={language} />
             </button>
             <button
               onClick={() => setFilter("shop")}
@@ -1096,7 +1096,7 @@ export default function HistoryTab({ language }: HistoryTabProps) {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-600/20 text-cyan-300 text-xs font-semibold">
-                        <span>🎁</span> <TranslatedText text="Claim" language={language} />
+                        <span>🎁</span> <TranslatedText text="Abholen" language={language} />
                       </span>
                       <span className="text-zinc-500 text-xs">Gruppiert</span>
                     </div>

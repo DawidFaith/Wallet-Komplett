@@ -377,7 +377,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
       } else {
         // Fallback für unbekannte Status oder alte API-Responses
         if (data.success === true || data.claimed === true) {
-          setClaimStatus('✅ Dein Claim war erfolgreich! Die Tokens werden in Kürze auf deine Wallet gesendet.');
+          setClaimStatus('✅ Dein Abholen war erfolgreich! Die Tokens werden in Kürze auf deine Wallet gesendet.');
           if (typeof window !== 'undefined') {
             localStorage.clear();
           }
@@ -571,7 +571,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             
             <div className="space-y-2 text-sm text-white">
                 <div className="flex justify-between">
-                  <span className="text-pink-400 font-bold">❤️ <TranslatedText text="Like" language={language} /></span>
+                  <span className="text-pink-400 font-bold">❤️ Like</span>
                   <span>{userData.liked === 'true' ? '✅' : '❌'} +10 EXP</span>
                 </div>
                 <div className="flex justify-between">
@@ -611,7 +611,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
               <div className="relative flex items-center justify-center gap-1">
                 <span className="text-xl animate-bounce">🪙</span>
                 <span className="tracking-wider">
-                  <TranslatedText text="Claim" language={language} />
+                  <TranslatedText text="Abholen" language={language} />
                 </span>
               </div>
             </button>
@@ -685,7 +685,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
           <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-pink-500/30 rounded-2xl p-6 w-96 max-w-md mx-4 shadow-2xl">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent">
-                <TranslatedText text="D.FAITH Claim" language={language} />
+                <TranslatedText text="D.FAITH Abholen" language={language} />
               </h2>
               <button
                 onClick={() => setShowClaimModal(false)}
@@ -711,7 +711,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                 `}</style>
               </div>
               <p className="text-pink-200 leading-relaxed mb-3 text-center">
-                <TranslatedText text="Du kannst" language={language} /> <strong className="text-pink-400">+{userData.miningpower} D.FAITH</strong> <TranslatedText text="für deine Instagram Aktivität claimen!" language={language} />
+                <TranslatedText text="Du kannst" language={language} /> <strong className="text-pink-400">+{userData.miningpower} D.FAITH</strong> <TranslatedText text="für deine Instagram Aktivität abholen!" language={language} />
               </p>
               
               {account?.address && (
@@ -754,7 +754,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                 disabled={!account?.address}
                 className="flex-1 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 disabled:from-gray-500 disabled:to-gray-600 text-white rounded-xl py-3 font-bold transition-all disabled:cursor-not-allowed"
               >
-                <TranslatedText text="Claimen" language={language} />
+                <TranslatedText text="Abholen" language={language} />
               </button>
             </div>
             
