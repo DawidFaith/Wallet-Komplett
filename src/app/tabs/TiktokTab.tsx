@@ -1111,7 +1111,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
                     Lädt...
                   </div>
                 ) : (
-                  '🚀 Abholen'
+                  <>🚀 <TranslatedText text="Abholen" language={language} /></>
                 )}
               </button>
             </div>
