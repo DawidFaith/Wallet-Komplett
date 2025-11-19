@@ -579,7 +579,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                   <span>{userData.commented === 'true' ? '✅' : '❌'} +10 EXP</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-yellow-400 font-bold">📣 <TranslatedText text="Story" language={language} /></span>
+                  <span className="text-yellow-400 font-bold">📣 Story</span>
                   <span>{userData.story === 'true' ? '✅' : '❌'} +20 EXP</span>
                 </div>
                 <div className="flex justify-between">
@@ -665,7 +665,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
                 className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl py-3 font-bold transition-all flex items-center justify-center gap-3"
               >
                 <span className="text-lg">📣</span>
-                <span><TranslatedText text="Story teilen" language={language} /></span>
+                <span>Story teilen</span>
               </button>
             </div>
             
@@ -958,7 +958,7 @@ export default function InstagramTab({ language }: InstagramTabProps) {
             </button>
             <div className="text-6xl mb-4">📣</div>
             <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
-              <TranslatedText text="Story teilen" language={language} />
+              Story teilen
             </h2>
             <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 mb-6">
               <p className="text-gray-700 leading-relaxed">
