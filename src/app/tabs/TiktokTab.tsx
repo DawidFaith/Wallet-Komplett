@@ -386,7 +386,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
       const data = await response.json();
 
       if (response.ok) {
-        setSecretMessage('✅ Secret Code erfolgreich eingegeben! +30 EXP erhalten.');
+        setSecretMessage('✅ Secret Code erfolgreich eingegeben! +20 EXP erhalten.');
       } else {
         setSecretMessage(data.error || 'Fehler beim Überprüfen des Secret Codes.');
       }
@@ -730,7 +730,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               </div>
               <div className="flex justify-between">
                 <span className="text-purple-400 font-bold">🔐 <TranslatedText text="Secret" language={language} /></span>
-                <span>{userData.secret === 'true' ? '✅' : '❌'} +30 EXP</span>
+                <span>{userData.secret === 'true' ? '✅' : '❌'} +20 EXP</span>
               </div>
             </div>
           </div>
