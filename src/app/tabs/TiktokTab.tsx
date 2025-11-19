@@ -42,6 +42,7 @@ interface UserData {
   commented: string;
   saved: boolean | string;
   shared?: string;
+  secret?: string;
   wallet?: string;
   walletAddress?: string;
 }
@@ -729,7 +730,7 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
               </div>
               <div className="flex justify-between">
                 <span className="text-purple-400 font-bold">🔐 <TranslatedText text="Secret" language={language} /></span>
-                <span>❓ +30 EXP</span>
+                <span>{userData.secret === 'true' ? '✅' : '❌'} +30 EXP</span>
               </div>
             </div>
           </div>
@@ -1675,6 +1676,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
             commented: responseData.commented === "true" ? "true" : "false",
             saved: responseData.saved === "true" || responseData.saved === true,
             shared: responseData.shared === "true" ? "true" : "false",
+            secret: responseData.secret === "true" ? "true" : "false",
             wallet: responseData.wallet || walletAddress,
             walletAddress: responseData.walletAddress || walletAddress
           });
@@ -1697,6 +1699,7 @@ export default function TiktokTab({ language }: TiktokTabProps) {
             commented: 'false',
             saved: false,
             shared: 'false',
+            secret: 'false',
             wallet: walletAddress,
             walletAddress: walletAddress
           });
