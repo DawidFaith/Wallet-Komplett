@@ -12,6 +12,7 @@ import {
   FaYoutube,
   FaMusic,
   FaGlobe,
+  FaTrophy,
 } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 import { useState } from "react";
@@ -154,10 +155,20 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
                   navigateToTab("youtube");
                   setOpen(false);
                 }}
-                className="flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200"
+                className="flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200 border-b border-zinc-700"
               >
                 <FaYoutube className="text-red-500" /> 
                 <span className="font-medium">YouTube</span>
+              </button>
+              <button
+                onClick={() => {
+                  navigateToTab("quest-board");
+                  setOpen(false);
+                }}
+                className="flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200"
+              >
+                <FaTrophy className="text-yellow-500" /> 
+                <span className="font-medium">Quest Board</span>
               </button>
             </div>
           )}
