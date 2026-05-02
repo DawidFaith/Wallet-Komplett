@@ -280,11 +280,13 @@ function QuestCard({
   return (
     <div className={`bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
       {/* Thumbnail */}
-      <div className="relative">
-        <img
+      <div className="relative h-40">
+        <Image
           src={quest.videoThumbnail}
           alt={quest.videoTitle}
-          className="w-full h-40 object-cover"
+          fill
+          unoptimized
+          className="object-cover"
         />
         <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
           <FaYoutube size={10} /> Shorts
@@ -436,7 +438,7 @@ function FanBoard({
       {/* Kanal-Badge */}
       <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 flex items-center gap-3">
         {binding.channelThumbnail && (
-          <img src={binding.channelThumbnail} alt={binding.channelName} className="w-10 h-10 rounded-full" />
+          <Image src={binding.channelThumbnail} alt={binding.channelName} width={40} height={40} unoptimized className="w-10 h-10 rounded-full" />
         )}
         <div className="flex-1 min-w-0">
           <p className="text-white font-semibold text-sm truncate">{binding.channelName}</p>
@@ -499,7 +501,7 @@ function FanBoard({
                   <p className="text-green-300 font-semibold">{verifyResult.message}</p>
                   {verifyResult.comment && (
                     <p className="text-zinc-400 text-sm italic">
-                      Gefundener Kommentar: „{verifyResult.comment}"
+                      Gefundener Kommentar: &bdquo;{verifyResult.comment}&ldquo;
                     </p>
                   )}
                 </div>
@@ -534,7 +536,7 @@ function FanBoard({
                   <ol className="mt-1 space-y-1 list-decimal list-inside text-xs">
                     <li>Öffne das Short und hinterlasse einen Kommentar</li>
                     <li>Warte ca. 30 Sekunden bis YouTube den Kommentar gespeichert hat</li>
-                    <li>Klicke unten auf "Jetzt verifizieren"</li>
+                    <li>Klicke unten auf &quot;Jetzt verifizieren&quot;</li>
                   </ol>
                 </div>
               </div>
