@@ -71,7 +71,6 @@ export interface QuestsByWalletEntry {
 
 // ─── Row-Mapper ───────────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rowToQuestDetail(row: any): QuestDetail {
   return {
     id: row.id,
@@ -92,7 +91,6 @@ function rowToQuestDetail(row: any): QuestDetail {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rowToBinding(row: any): YouTubeBinding {
   return {
     walletAddress: row.wallet_address,
@@ -104,7 +102,6 @@ function rowToBinding(row: any): YouTubeBinding {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rowToWalletEntry(row: any): QuestsByWalletEntry {
   return {
     questId: row.quest_id,
@@ -161,7 +158,6 @@ export async function saveQuestDetail(quest: QuestDetail): Promise<void> {
 }
 
 /** Kein-Op für Abwärtskompatibilität – Index wird durch saveQuestDetail verwaltet */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function saveQuestIndex(_quests: QuestIndexEntry[]): Promise<void> {
   // Mit Postgres nicht benötigt – saveQuestDetail macht den INSERT
 }
