@@ -566,7 +566,7 @@ function FanBoard({
 
 // ─── Creator Board ────────────────────────────────────────────────────────────
 
-function CreatorBoard({ walletAddress }: { walletAddress: string }) {
+function CreatorBoard({ walletAddress, binding }: { walletAddress: string; binding: YouTubeBinding | null }) {
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -629,6 +629,21 @@ function CreatorBoard({ walletAddress }: { walletAddress: string }) {
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-5">
+      {/* Kanal-Badge */}
+      {binding && (
+        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 flex items-center gap-3">
+          {binding.channelThumbnail && (
+            <Image src={binding.channelThumbnail} alt={binding.channelName} width={40} height={40} unoptimized className="w-10 h-10 rounded-full" />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-semibold text-sm truncate">{binding.channelName}</p>
+            <p className="text-zinc-500 text-xs">YouTube verknüpft</p>
+          </div>
+          <div className="flex items-center gap-1 text-green-400 text-xs font-semibold">
+            <FaUserCheck /> Verifiziert
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <h2 className="text-white font-bold text-lg">Meine Quests</h2>
         <button
@@ -874,7 +889,7 @@ export default function QuestBoardTab({ language }: QuestBoardTabProps) {
           />
         )
       ) : (
-        <CreatorBoard walletAddress={account.address} />
+        <CreatorBoard walletAddress={account.address} binding={binding} />
       )}
     </div>
   );
