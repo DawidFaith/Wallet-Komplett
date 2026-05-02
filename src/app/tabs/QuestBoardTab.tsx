@@ -15,6 +15,7 @@ import {
   FaChevronRight,
   FaInfoCircle,
 } from 'react-icons/fa';
+import Image from 'next/image';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
@@ -200,9 +201,12 @@ function LinkChannelView({
             {/* Kanal-Vorschau */}
             <div className="flex items-center gap-3 bg-zinc-800 rounded-xl p-3">
               {preview.channelThumbnail && (
-                <img
+                <Image
                   src={preview.channelThumbnail}
                   alt={preview.channelName}
+                  width={48}
+                  height={48}
+                  unoptimized
                   className="w-12 h-12 rounded-full"
                 />
               )}
@@ -229,8 +233,8 @@ function LinkChannelView({
               <ol className="text-zinc-400 text-sm space-y-1 list-decimal list-inside">
                 <li>Öffne <a href={`https://studio.youtube.com/channel/${preview.channelId}/editing/details`} target="_blank" rel="noopener noreferrer" className="text-red-400 underline">YouTube Studio → Kanal-Beschreibung</a></li>
                 <li>Füge den Code an beliebiger Stelle ein</li>
-                <li>Klicke "Speichern" in YouTube Studio</li>
-                <li>Komm zurück und klicke "Verifizieren"</li>
+                <li>Klicke &quot;Speichern&quot; in YouTube Studio</li>
+                <li>Komm zurück und klicke &quot;Verifizieren&quot;</li>
               </ol>
             </div>
 

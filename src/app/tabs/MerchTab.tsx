@@ -25,6 +25,7 @@ import {
   FaEuroSign
 } from "react-icons/fa";
 
+import Image from "next/image";
 // Translation Components
 import { TranslatedText, TranslatedTitle, TranslatedButton } from '../components/TranslatedText';
 
@@ -400,11 +401,13 @@ function EnhancedMediaPlayer({ media }: { media: MediaFile }) {
     case "IMAGE":
       return (
         <div className="w-full bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl overflow-hidden border border-zinc-700 shadow-lg">
-          <div className="relative group">
-            <img 
+          <div className="relative group h-64">
+            <Image 
               src={media.url} 
               alt={media.originalName}
-              className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
+              fill
+              unoptimized
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-1">
@@ -1659,16 +1662,18 @@ export default function MerchTab({ language }: MerchTabProps) {
                                   {imageMedias.map((media, index) => (
                                     <div 
                                       key={index} 
-                                      className="absolute inset-0 w-full h-full bg-zinc-900 flex items-center justify-center transition-opacity duration-300"
+                                      className="absolute inset-0 w-full h-full bg-zinc-900 flex items-center justify-center transition-opacity duration-300 relative"
                                       style={{ 
                                         opacity: index === (imageIndices[product.id] || 0) ? 1 : 0,
                                         zIndex: index === (imageIndices[product.id] || 0) ? 10 : 1
                                       }}
                                     >
-                                      <img 
+                                      <Image 
                                         src={media.url} 
                                         alt={`${product.name} - Bild ${index + 1}`}
-                                        className="max-w-full max-h-full object-contain rounded"
+                                        fill
+                                        unoptimized
+                                        className="object-contain rounded"
                                       />
                                     </div>
                                   ))}
