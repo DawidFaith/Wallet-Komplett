@@ -12,6 +12,7 @@ import InstagramTab from "./tabs/InstagramTab";
 import TiktokTab from "./tabs/TiktokTab";
 import FacebookTab from "./tabs/FacebookTab";
 import YoutubeTab from "./tabs/YoutubeTab";
+import QuestBoardTab from "./tabs/QuestBoardTab";
 import type { SupportedLanguage } from "./utils/deepLTranslation";
 
 function HomeContent() {
@@ -45,6 +46,7 @@ function HomeContent() {
         {activeTab === "tiktok" && <TiktokTab language={language} />}
         {activeTab === "facebook" && <FacebookTab language={language} />}
         {activeTab === "youtube" && <YoutubeTab language={language} />}
+        {activeTab === "quest-board" && <QuestBoardTab language={language} />}
       </section>
     </main>
   );
