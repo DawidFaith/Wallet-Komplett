@@ -852,6 +852,7 @@ export default function WalletTab({ language }: WalletTabProps) {
             <div className="flex justify-center w-full mb-8">
               <ConnectButton
                 client={client}
+                theme="dark"
                 connectButton={{ 
                   label: language === 'de' ? "🎵 Wallet verbinden" : language === 'en' ? "🎵 Connect Wallet" : "🎵 Połącz portfel",
                   className: "w-full py-4 px-6 bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-bold rounded-xl hover:from-amber-500 hover:to-yellow-600 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-amber-500/25 text-lg z-50 relative"
@@ -977,6 +978,7 @@ export default function WalletTab({ language }: WalletTabProps) {
               </div>
               <ConnectButton
                 client={client}
+                theme="dark"
                 connectButton={{ 
                   label: "", 
                   className: "bg-zinc-800 hover:bg-zinc-700 transition-colors border border-zinc-700"
