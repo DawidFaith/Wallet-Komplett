@@ -3,6 +3,7 @@ import {
   loadQuestIndex,
   saveQuestDetail,
   loadCompletionsByWallet,
+  loadBindingByWallet,
   extractShortsVideoId,
   buildShortsUrl,
   QuestDetail,
@@ -69,6 +70,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Prüfen ob Creator einen verknüpften YouTube-Kanal hat
+  const binding = await loadBindingByWallet(creatorWallet.toLowerCase());
+  if (!binding) {
+    return NextResponse.json(
+      { error: 'Du musst zuerst deinen YouTube-Kanal verknüpfen, bevor du Quests erstellen kannst.' },
+      { status: 403 }
+    );
+  }
+
   // Video-Info via YouTube API holen
   const ytRes = await fetch(
     `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${YT_API_KEY}`
@@ -80,6 +90,16 @@ export async function POST(req: NextRequest) {
   }
 
   const video = ytData.items[0];
+
+  // Prüfen ob das Video zum verknüpften Kanal gehört
+  const videoChannelId: string = video.snippet.channelId;
+  if (videoChannelId !== binding.channelId) {
+    return NextResponse.json(
+      { error: `Dieses Video gehört nicht zu deinem verknüpften Kanal "${binding.channelName}". Du kannst nur eigene Videos als Quest nutzen.` },
+      { status: 403 }
+    );
+  }
+
   const videoTitle: string = video.snippet.title;
   const videoThumbnail: string =
     video.snippet.thumbnails?.medium?.url ??

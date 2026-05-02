@@ -119,12 +119,13 @@ function LinkChannelView({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ walletAddress, channelInput: channelInput.trim(), action: 'preview' }),
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error); return; }
-      setPreview(data);
+      let data: { error?: string; channelId?: string; channelName?: string; channelThumbnail?: string; verificationCode?: string };
+      try { data = await res.json(); } catch { data = { error: `Server-Fehler (${res.status})` }; }
+      if (!res.ok) { setError(data.error ?? 'Unbekannter Fehler'); return; }
+      setPreview(data as { channelId: string; channelName: string; channelThumbnail: string; verificationCode: string });
       setStep('verify');
     } catch {
-      setError('Netzwerkfehler. Bitte versuche es erneut.');
+      setError('Netzwerkfehler. Prüfe deine Internetverbindung und versuche es erneut.');
     } finally {
       setLoading(false);
     }
@@ -140,11 +141,12 @@ function LinkChannelView({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ walletAddress, channelInput: channelInput.trim(), action: 'verify' }),
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error); return; }
-      onLinked(data.binding);
+      let data: { error?: string; binding?: YouTubeBinding };
+      try { data = await res.json(); } catch { data = { error: `Server-Fehler (${res.status})` }; }
+      if (!res.ok) { setError(data.error ?? 'Unbekannter Fehler'); return; }
+      if (data.binding) onLinked(data.binding);
     } catch {
-      setError('Netzwerkfehler. Bitte versuche es erneut.');
+      setError('Netzwerkfehler. Prüfe deine Internetverbindung und versuche es erneut.');
     } finally {
       setLoading(false);
     }

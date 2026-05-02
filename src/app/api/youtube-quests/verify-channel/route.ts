@@ -28,8 +28,13 @@ export async function GET(req: NextRequest) {
   if (!walletAddress) {
     return NextResponse.json({ error: 'wallet parameter required' }, { status: 400 });
   }
-  const binding = await loadBindingByWallet(walletAddress);
-  return NextResponse.json({ binding });
+  try {
+    const binding = await loadBindingByWallet(walletAddress);
+    return NextResponse.json({ binding });
+  } catch (dbErr) {
+    console.error('Datenbankfehler beim Laden des Bindings:', dbErr);
+    return NextResponse.json({ error: 'Datenbankfehler. Bitte Seite neu laden.' }, { status: 500 });
+  }
 }
 
 // POST: Kanal-Vorschau (action=preview) oder Verifizierung (action=verify)
@@ -118,35 +123,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Duplikat-Checks: Kanal bereits einer anderen Wallet zugeordnet?
-    const existingChannelBinding = await loadBindingByChannel(channelId);
-    if (existingChannelBinding && existingChannelBinding.walletAddress !== normalized) {
+    try {
+      // Duplikat-Checks: Kanal bereits einer anderen Wallet zugeordnet?
+      const existingChannelBinding = await loadBindingByChannel(channelId);
+      if (existingChannelBinding && existingChannelBinding.walletAddress !== normalized) {
+        return NextResponse.json(
+          { error: 'Dieser YouTube-Kanal ist bereits mit einer anderen Wallet verknüpft.' },
+          { status: 409 }
+        );
+      }
+
+      // Wallet bereits einem anderen Kanal zugeordnet?
+      const existingWalletBinding = await loadBindingByWallet(normalized);
+      if (existingWalletBinding && existingWalletBinding.channelId !== channelId) {
+        return NextResponse.json(
+          { error: 'Diese Wallet ist bereits mit einem anderen YouTube-Kanal verknüpft.' },
+          { status: 409 }
+        );
+      }
+
+      const binding = {
+        walletAddress: normalized,
+        channelId,
+        channelName,
+        channelThumbnail,
+        verificationCode,
+        verifiedAt: new Date().toISOString(),
+      };
+
+      await saveYouTubeBinding(binding);
+      return NextResponse.json({ success: true, binding });
+    } catch (dbErr) {
+      console.error('Datenbankfehler beim Verifizieren:', dbErr);
       return NextResponse.json(
-        { error: 'Dieser YouTube-Kanal ist bereits mit einer anderen Wallet verknüpft.' },
-        { status: 409 }
+        { error: 'Datenbankfehler beim Speichern der Verknüpfung. Bitte versuche es erneut.' },
+        { status: 500 }
       );
     }
-
-    // Wallet bereits einem anderen Kanal zugeordnet?
-    const existingWalletBinding = await loadBindingByWallet(normalized);
-    if (existingWalletBinding && existingWalletBinding.channelId !== channelId) {
-      return NextResponse.json(
-        { error: 'Diese Wallet ist bereits mit einem anderen YouTube-Kanal verknüpft.' },
-        { status: 409 }
-      );
-    }
-
-    const binding = {
-      walletAddress: normalized,
-      channelId,
-      channelName,
-      channelThumbnail,
-      verificationCode,
-      verifiedAt: new Date().toISOString(),
-    };
-
-    await saveYouTubeBinding(binding);
-    return NextResponse.json({ success: true, binding });
   }
 
   return NextResponse.json({ error: 'Ungültige action. Erlaubt: preview, verify' }, { status: 400 });
