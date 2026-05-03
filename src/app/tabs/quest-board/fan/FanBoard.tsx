@@ -29,16 +29,16 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
   const loadQuests = useCallback(async () => {
     setLoading(true);
     try {
-      const [questsRes, rewardsRes] = await Promise.all([
+      const [questsRes, balRes] = await Promise.all([
         fetch(`/api/youtube-quests/quests?wallet=${walletAddress}`),
-        fetch(`/api/youtube-quests/rewards?wallet=${walletAddress}`),
+        fetch(`/api/youtube-quests/creator-balance?wallet=${walletAddress}`),
       ]);
       const questsData = await questsRes.json();
       setQuests(questsData.quests ?? []);
       setCompletedIds(questsData.completedIds ?? []);
-      if (rewardsRes.ok) {
-        const rewardsData = await rewardsRes.json();
-        setCredits(rewardsData.balance ?? rewardsData.total ?? 0);
+      if (balRes.ok) {
+        const balData = await balRes.json();
+        setCredits(balData.balance ?? 0);
       }
     } catch {
       // Fehler beim Laden

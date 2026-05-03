@@ -25,16 +25,21 @@ export default function CreateQuestModal({
   const [videoUrl, setVideoUrl] = useState('');
   const [description, setDescription] = useState('');
   const [rewardAmount, setRewardAmount] = useState('100');
-  const [maxCompletions, setMaxCompletions] = useState('10');
+  const [maxParticipants, setMaxParticipants] = useState('10');
   const [questType, setQuestType] = useState<'comment'>('comment');
   const [durationHours, setDurationHours] = useState('24');
+  // freie Dauer-Eingabe
+  const [customDurationValue, setCustomDurationValue] = useState('30');
+  const [customDurationUnit, setCustomDurationUnit] = useState<'min' | 'h' | 'd'>('min');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
   const reset = () => {
-    setVideoUrl(''); setDescription(''); setRewardAmount('100'); setMaxCompletions('10');
-    setQuestType('comment'); setDurationHours('24'); setError(''); setSuccess(false);
+    setVideoUrl(''); setDescription(''); setRewardAmount('100'); setMaxParticipants('10');
+    setQuestType('comment'); setDurationHours('24');
+    setCustomDurationValue('30'); setCustomDurationUnit('min');
+    setError(''); setSuccess(false);
   };
 
   const handleClose = () => { reset(); onClose(); };
@@ -44,17 +49,32 @@ export default function CreateQuestModal({
     setCreating(true);
     setError('');
     try {
+      // Dauer in Stunden umrechnen
+      let finalDurationHours: number | undefined;
+      if (durationHours === 'custom') {
+        const val = Math.max(1, Number(customDurationValue) || 30);
+        if (customDurationUnit === 'min') finalDurationHours = val / 60;
+        else if (customDurationUnit === 'h') finalDurationHours = val;
+        else finalDurationHours = val * 24;
+      } else {
+        finalDurationHours = durationHours === '0' ? undefined : Number(durationHours);
+      }
+
+      // Auto-Beschreibung wenn leer
+      const finalDescription = description.trim() ||
+        '💬 Schreibe einen positiven Kommentar unter diesen YouTube Short!';
+
       const res = await fetch('/api/youtube-quests/quests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           creatorWallet: walletAddress,
           videoUrl: videoUrl.trim(),
-          description: description.trim(),
+          description: finalDescription,
           rewardAmount: Number(rewardAmount),
-          maxCompletions: Number(maxCompletions),
+          maxCompletions: Number(maxParticipants),
           questType,
-          durationHours: durationHours === '0' ? undefined : Number(durationHours),
+          durationHours: finalDurationHours,
         }),
       });
       const data = await res.json();
@@ -107,17 +127,35 @@ export default function CreateQuestModal({
                 className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm appearance-none cursor-pointer"
               >
                 <option value="1">1 Stunde</option>
-                <option value="3">3 Stunden</option>
-                <option value="6">6 Stunden</option>
                 <option value="12">12 Stunden</option>
                 <option value="24">1 Tag</option>
-                <option value="48">2 Tage</option>
-                <option value="72">3 Tage</option>
                 <option value="168">7 Tage</option>
-                <option value="0">Kein Ablauf</option>
+                <option value="0">∞ Kein Ablauf</option>
+                <option value="custom">⚙️ Eigene Dauer…</option>
               </select>
               <FaClock className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" size={13} />
             </div>
+            {durationHours === 'custom' && (
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="number"
+                  value={customDurationValue}
+                  onChange={(e) => setCustomDurationValue(e.target.value)}
+                  min="1"
+                  className="flex-1 bg-zinc-800 text-white rounded-xl px-4 py-2.5 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm"
+                  placeholder="z.B. 30"
+                />
+                <select
+                  value={customDurationUnit}
+                  onChange={(e) => setCustomDurationUnit(e.target.value as 'min' | 'h' | 'd')}
+                  className="bg-zinc-800 text-white rounded-xl px-3 py-2.5 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm cursor-pointer"
+                >
+                  <option value="min">Minuten</option>
+                  <option value="h">Stunden</option>
+                  <option value="d">Tage</option>
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Video URL */}
@@ -135,40 +173,48 @@ export default function CreateQuestModal({
 
           {/* Beschreibung */}
           <div>
-            <label className="text-zinc-300 text-sm font-medium block mb-1.5">Aufgabenbeschreibung für den Fan</label>
+            <label className="text-zinc-300 text-sm font-medium block mb-1.5">
+              Aufgabenbeschreibung für den Fan
+              <span className="text-zinc-500 font-normal ml-1">(optional)</span>
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="z.B. Schreibe einen wertsteigernden Kommentar unter meinen Short!"
+              placeholder="💬 Schreibe einen positiven Kommentar unter diesen YouTube Short!"
               rows={2}
               className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm placeholder-zinc-500 resize-none"
             />
+            <p className="text-zinc-600 text-xs mt-1">Leer lassen → Standardnachricht wird verwendet</p>
           </div>
 
           {/* Reward + Max */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Reward (DFAITH)</label>
-              <input
-                type="number"
-                value={rewardAmount}
-                onChange={(e) => setRewardAmount(e.target.value)}
-                min="1"
-                required
-                className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm"
-              />
+              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Belohnung pro Fan</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={rewardAmount}
+                  onChange={(e) => setRewardAmount(e.target.value)}
+                  min="1"
+                  required
+                  className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm pr-16"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">DFAITH</span>
+              </div>
             </div>
             <div>
-              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Max. Completions</label>
+              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Maximale Teilnehmer</label>
               <input
                 type="number"
-                value={maxCompletions}
-                onChange={(e) => setMaxCompletions(e.target.value)}
+                value={maxParticipants}
+                onChange={(e) => setMaxParticipants(e.target.value)}
                 min="1"
                 max="1000"
                 required
                 className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm"
               />
+              <p className="text-zinc-600 text-xs mt-1">Wie viele Fans mitmachen dürfen</p>
             </div>
           </div>
 
