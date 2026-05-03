@@ -16,15 +16,21 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const walletAddress = url.searchParams.get('wallet');
 
-  const [index, walletCompletions] = await Promise.all([
-    loadQuestIndex(),
-    walletAddress ? loadCompletionsByWallet(walletAddress) : Promise.resolve([]),
-  ]);
+  try {
+    const [index, walletCompletions] = await Promise.all([
+      loadQuestIndex(),
+      walletAddress ? loadCompletionsByWallet(walletAddress) : Promise.resolve([]),
+    ]);
 
-  const activeQuests = index.filter((q) => q.isActive);
-  const completedIds = walletCompletions.map((c) => c.questId);
+    const activeQuests = index.filter((q) => q.isActive);
+    const completedIds = walletCompletions.map((c) => c.questId);
 
-  return NextResponse.json({ quests: activeQuests, completedIds });
+    return NextResponse.json({ quests: activeQuests, completedIds });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[quests GET]', message);
+    return NextResponse.json({ error: `Datenbankfehler: ${message}` }, { status: 500 });
+  }
 }
 
 // POST: Neuen YouTube-Shorts-Quest erstellen (Creator)

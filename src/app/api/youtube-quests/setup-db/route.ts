@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
         max_completions INTEGER     NOT NULL DEFAULT 10,
         completions     INTEGER     NOT NULL DEFAULT 0,
         is_active       BOOLEAN     NOT NULL DEFAULT TRUE,
+        expires_at      TIMESTAMPTZ,
         created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
