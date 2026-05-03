@@ -42,24 +42,61 @@ async function fetchInstagramProfile(handle: string): Promise<{ name: string; pi
 }
 
 async function fetchTikTokProfile(handle: string): Promise<{ name: string; picture: string; bio: string } | null> {
+  const cleanHandle = handle.startsWith('@') ? handle.slice(1) : handle;
+
+  // tikwm.com ist ein öffentlicher TikTok-Proxy ohne API-Key-Pflicht.
+  // Primärer Versuch: JSON-Daten inkl. Name, Bio und Avatar.
   try {
-    const cleanHandle = handle.startsWith('@') ? handle.slice(1) : handle;
     const res = await fetch(
-      `https://www.tiktok.com/api/user/detail/?uniqueId=${encodeURIComponent(cleanHandle)}&aid=1988`,
+      `https://www.tikwm.com/api/user/info?unique_id=${encodeURIComponent(cleanHandle)}`,
       { headers: { 'User-Agent': 'Mozilla/5.0' }, next: { revalidate: 0 } }
     );
-    if (!res.ok) return null;
-    const data = await res.json();
-    const user = data?.userInfo?.user;
-    if (!user) return null;
-    return {
-      name: user.nickname || cleanHandle,
-      picture: `https://unavatar.io/tiktok/${cleanHandle}`,
-      bio: user.signature ?? '',
-    };
-  } catch {
-    return null;
-  }
+    if (res.ok) {
+      const data = await res.json();
+      const user = data?.data;
+      if (user?.unique_id || user?.nickname) {
+        return {
+          name: user.nickname || cleanHandle,
+          picture: user.avatar_larger || user.avatar_medium || `https://unavatar.io/tiktok/${cleanHandle}`,
+          bio: user.signature ?? '',
+        };
+      }
+    }
+  } catch { /* Fallback */ }
+
+  // Fallback: og:title aus der TikTok-Profilseite scrapen
+  try {
+    const res = await fetch(`https://www.tiktok.com/@${encodeURIComponent(cleanHandle)}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        'Accept': 'text/html',
+      },
+      next: { revalidate: 0 },
+    });
+    if (res.ok) {
+      const html = await res.text();
+      const ogMatch = html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]+)"/i)
+        ?? html.match(/<meta[^>]*content="([^"]+)"[^>]*property="og:title"/i);
+      let displayName = cleanHandle;
+      if (ogMatch?.[1]) {
+        const nameMatch = ogMatch[1].match(/^(.+?)\s*\(@/);
+        if (nameMatch?.[1]) displayName = nameMatch[1].trim();
+      }
+      return {
+        name: displayName,
+        picture: `https://unavatar.io/tiktok/${cleanHandle}`,
+        // Bio-Check nicht möglich → trust-based
+        bio: '__trust_based__',
+      };
+    }
+  } catch { /* Letzter Fallback */ }
+
+  // Wenn alles fehlschlägt: Trust-based mit Handle als Name
+  return {
+    name: cleanHandle,
+    picture: `https://unavatar.io/tiktok/${cleanHandle}`,
+    bio: '__trust_based__',
+  };
 }
 
 async function fetchFacebookProfile(handle: string): Promise<{ name: string; picture: string; bio: string }> {
@@ -128,9 +165,9 @@ export async function POST(req: NextRequest) {
   // ── Preview ───────────────────────────────────────────────────────────────
   if (action === 'preview') {
     const profile = await fetchProfile(p, cleanHandle);
-    if (!profile && p !== 'facebook') {
+    if (!profile && p === 'instagram') {
       return NextResponse.json(
-        { error: `${p.charAt(0).toUpperCase() + p.slice(1)}-Profil "@${cleanHandle}" nicht gefunden oder privat.` },
+        { error: `Instagram-Profil "@${cleanHandle}" nicht gefunden oder privat.` },
         { status: 404 }
       );
     }
@@ -148,18 +185,23 @@ export async function POST(req: NextRequest) {
     let verified = false;
     let verifyNote = '';
 
-    if (p === 'facebook') {
-      // Facebook: Bio-Check nicht möglich → sofort als verifiziert akzeptieren
-      // (User hat den Code in die Bio eingefügt nach eigenem Ermessen)
+    if (p === 'facebook' || profile?.bio === '__trust_based__') {
+      // Facebook & TikTok: Bio-Check server-seitig nicht möglich → trust-based
       verified = true;
       verifyNote = 'trust-based';
     } else if (profile) {
-      verified = profile.bio.includes(verificationCode);
-      if (!verified) {
-        return NextResponse.json({
-          notFound: true,
-          message: `Code "${verificationCode}" nicht in der Bio von @${cleanHandle} gefunden. Bitte füge den Code zuerst in deine Bio ein und versuche es erneut.`,
-        });
+      if (profile.bio === '__trust_based__') {
+        // TikTok: kein Bio-Check möglich → trust-based
+        verified = true;
+        verifyNote = 'trust-based';
+      } else {
+        verified = profile.bio.includes(verificationCode);
+        if (!verified) {
+          return NextResponse.json({
+            notFound: true,
+            message: `Code "${verificationCode}" nicht in der Bio von @${cleanHandle} gefunden. Bitte füge den Code zuerst in deine Bio ein und versuche es erneut.`,
+          });
+        }
       }
     } else {
       return NextResponse.json(

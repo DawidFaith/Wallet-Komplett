@@ -12,6 +12,9 @@ const nextConfig = {
       { protocol: 'https', hostname: 'yt3.googleusercontent.com' },
       { protocol: 'https', hostname: 'i.ytimg.com' },
       { protocol: 'https', hostname: 'img.youtube.com' },
+      { protocol: 'https', hostname: 'www.tikwm.com' },
+      { protocol: 'https', hostname: 'p16-sign-va.tiktokcdn.com' },
+      { protocol: 'https', hostname: 'p77-sign-va.tiktokcdn.com' },
     ],
   },
 };
