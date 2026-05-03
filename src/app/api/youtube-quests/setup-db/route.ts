@@ -158,6 +158,9 @@ export async function POST(req: NextRequest) {
       )
     `;
 
+    // Secret-Quest: Code-Spalte nachrüsten (idempotent)
+    await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS secret_code TEXT`;
+
     return NextResponse.json({
       success: true,
       message: 'Alle Tabellen (inkl. dfaith_credits, expires_at) erstellt.',

@@ -6,6 +6,7 @@ import { FaTrophy, FaSync, FaUserCheck } from 'react-icons/fa';
 import CreditsBox from '../components/CreditsBox';
 import VerifyModal from './VerifyModal';
 import LikeVerifyModal from './LikeVerifyModal';
+import SecretVerifyModal from './SecretVerifyModal';
 import YoutubeQuestCard from '../quests/youtube/YoutubeQuestCard';
 import type { QuestIndexEntry, YouTubeBinding, VerifyResult, ClaimResult } from '../types';
 
@@ -27,6 +28,7 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
   const [likeVerifyQuest, setLikeVerifyQuest] = useState<QuestIndexEntry | null>(null);
+  const [secretVerifyQuest, setSecretVerifyQuest] = useState<QuestIndexEntry | null>(null);
 
   const loadQuests = useCallback(async () => {
     setLoading(true);
@@ -56,6 +58,11 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
     // Like-Quest → eigener 3-Schritt-Flow
     if (quest?.type === 'like') {
       setLikeVerifyQuest(quest);
+      return;
+    }
+    // Secret-Quest → Code-Eingabe-Modal
+    if (quest?.type === 'secret') {
+      setSecretVerifyQuest(quest);
       return;
     }
     // Kommentar-Quest → bestehender Flow
@@ -211,6 +218,22 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
           }
         }}
         onClose={() => setLikeVerifyQuest(null)}
+      />
+
+      {/* Verifizierungs-Modal (Secret) */}
+      <SecretVerifyModal
+        quest={secretVerifyQuest}
+        walletAddress={walletAddress}
+        onCompleted={(amount) => {
+          if (secretVerifyQuest) {
+            setCompletedIds((prev) => [...prev, secretVerifyQuest.id]);
+            setCredits((prev) => prev + amount);
+            setQuests((prev) =>
+              prev.map((q) => q.id === secretVerifyQuest.id ? { ...q, completions: q.completions + 1 } : q)
+            );
+          }
+        }}
+        onClose={() => setSecretVerifyQuest(null)}
       />
     </div>
   );

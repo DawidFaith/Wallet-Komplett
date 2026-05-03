@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { FaYoutube, FaCoins, FaTrophy, FaCheck, FaExternalLinkAlt, FaClock, FaThumbsUp } from 'react-icons/fa';
+import { FaYoutube, FaCoins, FaTrophy, FaCheck, FaExternalLinkAlt, FaClock, FaThumbsUp, FaKey } from 'react-icons/fa';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry } from '../../utils';
 
@@ -29,7 +29,7 @@ export default function YoutubeQuestCard({ quest, isCompleted, onComplete }: You
           className="object-cover"
         />
         <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-          <FaYoutube size={10} /> {quest.type === 'like' ? 'Like' : 'Shorts'}
+          <FaYoutube size={10} /> {quest.type === 'like' ? 'Like' : quest.type === 'secret' ? 'Secret' : 'Shorts'}
         </div>
         <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
           <FaCoins size={10} /> {quest.rewardAmount} DFAITH
@@ -59,7 +59,7 @@ export default function YoutubeQuestCard({ quest, isCompleted, onComplete }: You
         </div>
 
         <p className="text-zinc-400 text-xs">
-          Aufgabe: <span className="text-zinc-300">{quest.description || (quest.type === 'like' ? '👍 Like dieses YouTube Short!' : '💬 Schreibe einen positiven Kommentar unter diesem Short!')}</span>
+          Aufgabe: <span className="text-zinc-300">{quest.description || (quest.type === 'like' ? '👍 Like dieses YouTube Short!' : quest.type === 'secret' ? '🔑 Finde den geheimen Code im Video und gib ihn ein!' : '💬 Schreibe einen positiven Kommentar unter diesem Short!')}</span>
         </p>
 
         <div className="flex gap-2">
@@ -92,7 +92,9 @@ export default function YoutubeQuestCard({ quest, isCompleted, onComplete }: You
               className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               {quest.type === 'like'
-                ? <><FaThumbsUp size={12} /> Liken</>  
+                ? <><FaThumbsUp size={12} /> Liken</>
+                : quest.type === 'secret'
+                ? <><FaKey size={12} /> Code eingeben</>
                 : <><FaTrophy size={12} /> Verifizieren</>
               }
             </button>

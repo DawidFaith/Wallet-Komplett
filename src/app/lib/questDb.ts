@@ -15,7 +15,7 @@ import { getDb } from './db';
 // ─── Typen ───────────────────────────────────────────────────────────────────
 
 export type Platform = 'youtube'; // erweiterbar: | 'instagram' | 'tiktok'
-export type QuestType = 'comment' | 'like'; // erweiterbar: | 'subscribe'
+export type QuestType = 'comment' | 'like' | 'secret'; // erweiterbar: | 'subscribe'
 
 export interface QuestIndexEntry {
   id: string;
@@ -39,6 +39,7 @@ export interface QuestIndexEntry {
 export interface QuestDetail extends QuestIndexEntry {
   description: string;
   updatedAt: string;
+  secretCode?: string | null;
 }
 
 export interface YouTubeBinding {
@@ -158,17 +159,20 @@ export async function saveQuestDetail(quest: QuestDetail): Promise<void> {
   const sql = getDb();
   const expiresAt = quest.expiresAt ?? null;
   const creditsLocked = quest.creditsLocked ?? 0;
+  const secretCode = quest.secretCode?.trim().toUpperCase() ?? null;
   await sql`
     INSERT INTO quests (
       id, platform, quest_type, creator_wallet,
       video_id, video_title, video_thumbnail, video_url,
       description, reward_amount, max_completions,
-      completions, is_active, expires_at, credits_locked, credits_refunded, created_at, updated_at
+      completions, is_active, expires_at, credits_locked, credits_refunded,
+      secret_code, created_at, updated_at
     ) VALUES (
       ${quest.id}, ${quest.platform}, ${quest.type}, ${quest.creatorWallet},
       ${quest.videoId}, ${quest.videoTitle}, ${quest.videoThumbnail}, ${quest.videoUrl},
       ${quest.description}, ${quest.rewardAmount}, ${quest.maxCompletions},
-      ${quest.completions}, ${quest.isActive}, ${expiresAt}, ${creditsLocked}, false, ${quest.createdAt}, ${quest.updatedAt}
+      ${quest.completions}, ${quest.isActive}, ${expiresAt}, ${creditsLocked}, false,
+      ${secretCode}, ${quest.createdAt}, ${quest.updatedAt}
     )
     ON CONFLICT (id) DO UPDATE SET
       video_title      = EXCLUDED.video_title,
@@ -178,8 +182,16 @@ export async function saveQuestDetail(quest: QuestDetail): Promise<void> {
       max_completions  = EXCLUDED.max_completions,
       is_active        = EXCLUDED.is_active,
       expires_at       = EXCLUDED.expires_at,
+      secret_code      = EXCLUDED.secret_code,
       updated_at       = NOW()
   `;
+}
+
+/** Geheimen Code eines Quests laden (nur serverseitig verwenden – niemals an Fans senden!) */
+export async function getQuestSecretCode(questId: string): Promise<string | null> {
+  const sql = getDb();
+  const rows = await sql`SELECT secret_code FROM quests WHERE id = ${questId} LIMIT 1`;
+  return rows.length > 0 ? (rows[0].secret_code ?? null) : null;
 }
 
 /**

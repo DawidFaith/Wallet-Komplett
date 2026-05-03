@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FaPlus, FaSync, FaCheck, FaCommentAlt, FaClock } from 'react-icons/fa';
+import { FaPlus, FaSync, FaCheck, FaCommentAlt, FaClock, FaKey } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import { shortenWallet } from '../utils';
 
@@ -26,7 +26,8 @@ export default function CreateQuestModal({
   const [description, setDescription] = useState('');
   const [rewardAmount, setRewardAmount] = useState('100');
   const [maxParticipants, setMaxParticipants] = useState('10');
-  const [questType, setQuestType] = useState<'comment' | 'like'>('comment');
+  const [questType, setQuestType] = useState<'comment' | 'like' | 'secret'>('comment');
+  const [secretCode, setSecretCode] = useState('');
   const [durationHours, setDurationHours] = useState('24');
   // freie Dauer-Eingabe
   const [customDurationValue, setCustomDurationValue] = useState('30');
@@ -39,6 +40,7 @@ export default function CreateQuestModal({
     setVideoUrl(''); setDescription(''); setRewardAmount('100'); setMaxParticipants('10');
     setQuestType('comment'); setDurationHours('24');
     setCustomDurationValue('30'); setCustomDurationUnit('min');
+    setSecretCode('');
     setError(''); setSuccess(false);
   };
 
@@ -64,6 +66,8 @@ export default function CreateQuestModal({
       const finalDescription = description.trim() || (
         questType === 'like'
           ? '👍 Like dieses YouTube Short!'
+          : questType === 'secret'
+          ? '🔑 Finde den geheimen Code im Video und gib ihn ein!'
           : '💬 Schreibe einen positiven Kommentar unter diesen YouTube Short!'
       );
 
@@ -78,6 +82,7 @@ export default function CreateQuestModal({
           maxCompletions: Number(maxParticipants),
           questType,
           durationHours: finalDurationHours,
+          secretCode: questType === 'secret' ? secretCode.trim() : undefined,
         }),
       });
       const data = await res.json();
@@ -110,20 +115,44 @@ export default function CreateQuestModal({
             <div className="relative">
               <select
                 value={questType}
-                onChange={(e) => setQuestType(e.target.value as 'comment' | 'like')}
+                onChange={(e) => setQuestType(e.target.value as 'comment' | 'like' | 'secret')}
                 className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm appearance-none cursor-pointer"
               >
                 <option value="comment">💬 Kommentar – Wertsteigernder Kommentar unter dem Video</option>
                 <option value="like">👍 Like – Klick auf Like unter dem Video</option>
+                <option value="secret">🔑 Secret – Versteckter Code im Video</option>
               </select>
               <FaCommentAlt className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" size={13} />
             </div>
             <p className="text-zinc-500 text-xs mt-1">
               {questType === 'like'
                 ? 'Verifizierung über Like-Anzahl-Delta: Fan entfernt Like → 5 Min Zeit um erneut zu liken.'
+                : questType === 'secret'
+                ? 'Der Fan gibt einen Code ein der im Video versteckt ist. Kein YouTube API-Aufruf nötig.'
                 : 'Die API prüft anhand des Kanalnamens ob der Fan kommentiert hat.'}
             </p>
           </div>
+
+          {/* Secret Code – nur bei secret-Typ ─────────────────────────────── */}
+          {questType === 'secret' && (
+            <div>
+              <label className="text-zinc-300 text-sm font-medium block mb-1.5">
+                <FaKey className="inline mr-1 text-yellow-400" size={12} />
+                Geheimer Code <span className="text-red-400">*</span>
+              </label>
+              <input
+                value={secretCode}
+                onChange={(e) => setSecretCode(e.target.value)}
+                placeholder="z.B. DFAITH oder W4LLET"
+                maxLength={50}
+                required
+                className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm placeholder-zinc-500 font-mono tracking-widest uppercase"
+              />
+              <p className="text-zinc-500 text-xs mt-1">
+                Groß-/Kleinschreibung egal – Fans müssen die Buchstaben nacheinander im Video finden und zusammensetzen.
+              </p>
+            </div>
+          )}
 
           {/* Dauer */}
           <div>
