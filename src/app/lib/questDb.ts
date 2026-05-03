@@ -435,3 +435,30 @@ export async function redeemDfaithCredits(walletAddress: string, amount: number)
   return Number(rows[0].balance);
 }
 
+/**
+ * Claim-Sperre setzen: verhindert gleichzeitige Einlösungen für dieselbe Wallet.
+ * Gibt true zurück wenn die Sperre erfolgreich gesetzt wurde, false wenn bereits gesperrt.
+ */
+export async function startClaimLock(walletAddress: string): Promise<boolean> {
+  const sql = getDb();
+  const rows = await sql`
+    UPDATE dfaith_credits
+    SET is_claiming = true
+    WHERE wallet_address = ${walletAddress.toLowerCase()} AND is_claiming = false
+    RETURNING wallet_address
+  `;
+  return rows.length > 0;
+}
+
+/**
+ * Claim-Sperre aufheben. Immer aufrufen nach Abschluss (Erfolg oder Fehler).
+ */
+export async function endClaimLock(walletAddress: string): Promise<void> {
+  const sql = getDb();
+  await sql`
+    UPDATE dfaith_credits
+    SET is_claiming = false
+    WHERE wallet_address = ${walletAddress.toLowerCase()}
+  `;
+}
+

@@ -111,9 +111,12 @@ export async function POST(req: NextRequest) {
       CREATE TABLE IF NOT EXISTS dfaith_credits (
         wallet_address  TEXT        PRIMARY KEY,
         balance         INTEGER     NOT NULL DEFAULT 0,
+        is_claiming     BOOLEAN     NOT NULL DEFAULT false,
         updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `;
+    // Für bestehende Installationen: Spalte nachrüsten falls fehlt
+    await sql`ALTER TABLE dfaith_credits ADD COLUMN IF NOT EXISTS is_claiming BOOLEAN NOT NULL DEFAULT false`;
 
     return NextResponse.json({
       success: true,
