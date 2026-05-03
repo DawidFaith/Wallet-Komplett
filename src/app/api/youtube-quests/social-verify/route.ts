@@ -33,7 +33,7 @@ async function fetchInstagramProfile(handle: string): Promise<{ name: string; pi
     if (!user) return null;
     return {
       name: user.full_name || handle,
-      picture: `https://unavatar.io/instagram/${handle}`,
+      picture: `/api/avatar?platform=instagram&handle=${encodeURIComponent(handle)}`,
       bio: user.biography ?? '',
     };
   } catch {
@@ -57,8 +57,7 @@ async function fetchTikTokProfile(handle: string): Promise<{ name: string; pictu
       if (user?.unique_id || user?.nickname) {
         return {
           name: user.nickname || cleanHandle,
-          // Direkte TikTok-CDN-URLs sind signed und laufen ab → unavatar.io
-          picture: `https://unavatar.io/tiktok/${cleanHandle}`,
+          picture: `/api/avatar?platform=tiktok&handle=${encodeURIComponent(cleanHandle)}`,
           bio: user.signature ?? '',
         };
       }
@@ -85,7 +84,7 @@ async function fetchTikTokProfile(handle: string): Promise<{ name: string; pictu
       }
       return {
         name: displayName,
-        picture: `https://unavatar.io/tiktok/${cleanHandle}`,
+        picture: `/api/avatar?platform=tiktok&handle=${encodeURIComponent(cleanHandle)}`,
         // Bio-Check nicht möglich → trust-based
         bio: '__trust_based__',
       };
@@ -95,18 +94,17 @@ async function fetchTikTokProfile(handle: string): Promise<{ name: string; pictu
   // Wenn alles fehlschlägt: Trust-based mit Handle als Name
   return {
     name: cleanHandle,
-    picture: `https://unavatar.io/tiktok/${cleanHandle}`,
+    picture: `/api/avatar?platform=tiktok&handle=${encodeURIComponent(cleanHandle)}`,
     bio: '__trust_based__',
   };
 }
 
 async function fetchFacebookProfile(handle: string): Promise<{ name: string; picture: string; bio: string }> {
   // Facebook erlaubt kein serverseitiges Auslesen der Bio ohne OAuth.
-  // Wir geben trotzdem einen sinnvollen Rückgabewert zurück.
   return {
     name: handle,
-    picture: `https://unavatar.io/facebook/${handle}`,
-    bio: '', // Bio-Check nicht möglich → Trust-based
+    picture: `/api/avatar?platform=facebook&handle=${encodeURIComponent(handle)}`,
+    bio: '',
   };
 }
 
