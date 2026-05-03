@@ -50,10 +50,15 @@ export async function POST(req: NextRequest) {
         completions     INTEGER     NOT NULL DEFAULT 0,
         is_active       BOOLEAN     NOT NULL DEFAULT TRUE,
         expires_at      TIMESTAMPTZ,
+        credits_locked  INTEGER     NOT NULL DEFAULT 0,
+        credits_refunded BOOLEAN    NOT NULL DEFAULT FALSE,
         created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `;
+    // Bestehende Installationen: Spalten nachrüsten
+    await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS credits_locked INTEGER NOT NULL DEFAULT 0`;
+    await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS credits_refunded BOOLEAN NOT NULL DEFAULT FALSE`;
     await sql`
       CREATE TABLE IF NOT EXISTS quest_completions (
         id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

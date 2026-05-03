@@ -32,6 +32,8 @@ export interface QuestIndexEntry {
   isActive: boolean;
   createdAt: string;
   expiresAt?: string | null;
+  creditsLocked: number;
+  creditsRefunded: boolean;
 }
 
 export interface QuestDetail extends QuestIndexEntry {
@@ -103,6 +105,8 @@ function rowToQuestDetail(row: any): QuestDetail {
     expiresAt: row.expires_at
       ? (row.expires_at instanceof Date ? row.expires_at.toISOString() : row.expires_at)
       : null,
+    creditsLocked: Number(row.credits_locked ?? 0),
+    creditsRefunded: Boolean(row.credits_refunded ?? false),
   };
 }
 
@@ -153,27 +157,117 @@ export async function loadQuestDetail(questId: string): Promise<QuestDetail | nu
 export async function saveQuestDetail(quest: QuestDetail): Promise<void> {
   const sql = getDb();
   const expiresAt = quest.expiresAt ?? null;
+  const creditsLocked = quest.creditsLocked ?? 0;
   await sql`
     INSERT INTO quests (
       id, platform, quest_type, creator_wallet,
       video_id, video_title, video_thumbnail, video_url,
       description, reward_amount, max_completions,
-      completions, is_active, expires_at, created_at, updated_at
+      completions, is_active, expires_at, credits_locked, credits_refunded, created_at, updated_at
     ) VALUES (
       ${quest.id}, ${quest.platform}, ${quest.type}, ${quest.creatorWallet},
       ${quest.videoId}, ${quest.videoTitle}, ${quest.videoThumbnail}, ${quest.videoUrl},
       ${quest.description}, ${quest.rewardAmount}, ${quest.maxCompletions},
-      ${quest.completions}, ${quest.isActive}, ${expiresAt}, ${quest.createdAt}, ${quest.updatedAt}
+      ${quest.completions}, ${quest.isActive}, ${expiresAt}, ${creditsLocked}, false, ${quest.createdAt}, ${quest.updatedAt}
     )
     ON CONFLICT (id) DO UPDATE SET
-      video_title     = EXCLUDED.video_title,
-      video_thumbnail = EXCLUDED.video_thumbnail,
-      description     = EXCLUDED.description,
-      reward_amount   = EXCLUDED.reward_amount,
-      max_completions = EXCLUDED.max_completions,
-      is_active       = EXCLUDED.is_active,
-      expires_at      = EXCLUDED.expires_at,
-      updated_at      = NOW()
+      video_title      = EXCLUDED.video_title,
+      video_thumbnail  = EXCLUDED.video_thumbnail,
+      description      = EXCLUDED.description,
+      reward_amount    = EXCLUDED.reward_amount,
+      max_completions  = EXCLUDED.max_completions,
+      is_active        = EXCLUDED.is_active,
+      expires_at       = EXCLUDED.expires_at,
+      updated_at       = NOW()
+  `;
+}
+
+/**
+ * Budget für einen Quest sperren: rewardAmount * maxCompletions werden beim Erstellen
+ * von creator_balances UND dfaith_credits abgezogen (Escrow).
+ * Gibt false zurück wenn nicht genügend Guthaben vorhanden.
+ */
+export async function lockQuestBudget(
+  creatorWallet: string,
+  totalBudget: number,
+): Promise<boolean> {
+  const sql = getDb();
+  // Atomisch prüfen + abziehen
+  const rows = await sql`
+    UPDATE dfaith_credits
+    SET balance = balance - ${totalBudget}, updated_at = NOW()
+    WHERE wallet_address = ${creatorWallet.toLowerCase()} AND balance >= ${totalBudget}
+    RETURNING balance
+  `;
+  if (rows.length === 0) return false;
+  // Auch creator_balances synchron halten
+  await sql`
+    UPDATE creator_balances
+    SET balance = GREATEST(0, balance - ${totalBudget}), updated_at = NOW()
+    WHERE wallet_address = ${creatorWallet.toLowerCase()}
+  `;
+  return true;
+}
+
+/**
+ * Abgelaufene Quests eines Creators finden und ungenutzte Credits zurückgeben.
+ * Gibt die Liste der erstatteten Quests zurück.
+ */
+export async function refundExpiredQuests(
+  creatorWallet: string,
+): Promise<{ questId: string; refundAmount: number }[]> {
+  const sql = getDb();
+  // Quests die abgelaufen oder ausgeschöpft sind, aber noch nicht erstattet wurden
+  const rows = await sql`
+    SELECT id, completions, max_completions, reward_amount, credits_locked
+    FROM quests
+    WHERE creator_wallet = ${creatorWallet.toLowerCase()}
+      AND credits_locked > 0
+      AND credits_refunded = false
+      AND (
+        (expires_at IS NOT NULL AND expires_at < NOW())
+        OR (completions >= max_completions)
+      )
+  `;
+  if (rows.length === 0) return [];
+
+  const refunds: { questId: string; refundAmount: number }[] = [];
+
+  for (const row of rows) {
+    const used = Number(row.completions) * Number(row.reward_amount);
+    const locked = Number(row.credits_locked);
+    const refundAmount = Math.max(0, locked - used);
+
+    if (refundAmount > 0) {
+      // Credits dem Creator zurückgeben
+      await sql`
+        INSERT INTO dfaith_credits (wallet_address, balance, updated_at)
+        VALUES (${creatorWallet.toLowerCase()}, ${refundAmount}, NOW())
+        ON CONFLICT (wallet_address) DO UPDATE SET
+          balance    = dfaith_credits.balance + ${refundAmount},
+          updated_at = NOW()
+      `;
+      await sql`
+        INSERT INTO creator_balances (wallet_address, balance, updated_at)
+        VALUES (${creatorWallet.toLowerCase()}, ${refundAmount}, NOW())
+        ON CONFLICT (wallet_address) DO UPDATE SET
+          balance    = creator_balances.balance + ${refundAmount},
+          updated_at = NOW()
+      `;
+    }
+
+    // Quest als erstattet markieren und deaktivieren
+    await sql`
+      UPDATE quests
+      SET credits_refunded = true, is_active = false, updated_at = NOW()
+      WHERE id = ${row.id}
+    `;
+
+    refunds.push({ questId: row.id, refundAmount });
+  }
+
+  return refunds;
+}
   `;
 }
 
