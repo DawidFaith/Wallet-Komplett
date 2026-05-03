@@ -751,3 +751,106 @@ export async function deleteLikeVerification(
     WHERE quest_id = ${questId} AND wallet_address = ${walletAddress.toLowerCase()}
   `;
 }
+
+// ─── User Profile ─────────────────────────────────────────────────────────────
+
+export interface SocialProfile {
+  instagramHandle: string | null;
+  instagramVerified: boolean;
+  tiktokHandle: string | null;
+  tiktokVerified: boolean;
+  facebookHandle: string | null;
+  facebookVerified: boolean;
+  youtubeChannelId: string | null;
+}
+
+export async function getUserProfile(walletAddress: string): Promise<SocialProfile> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT * FROM user_profiles WHERE wallet_address = ${walletAddress.toLowerCase()} LIMIT 1
+  `;
+  if (rows.length === 0) {
+    return {
+      instagramHandle: null, instagramVerified: false,
+      tiktokHandle: null, tiktokVerified: false,
+      facebookHandle: null, facebookVerified: false,
+      youtubeChannelId: null,
+    };
+  }
+  const r = rows[0];
+  return {
+    instagramHandle: r.instagram_handle ?? null,
+    instagramVerified: Boolean(r.instagram_verified),
+    tiktokHandle: r.tiktok_handle ?? null,
+    tiktokVerified: Boolean(r.tiktok_verified),
+    facebookHandle: r.facebook_handle ?? null,
+    facebookVerified: Boolean(r.facebook_verified),
+    youtubeChannelId: r.youtube_channel_id ?? null,
+  };
+}
+
+export async function upsertUserProfile(
+  walletAddress: string,
+  data: Partial<Omit<SocialProfile, 'youtubeChannelId'>>,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO user_profiles (wallet_address, updated_at)
+    VALUES (${walletAddress.toLowerCase()}, NOW())
+    ON CONFLICT (wallet_address) DO NOTHING
+  `;
+  if (data.instagramHandle !== undefined) {
+    await sql`
+      UPDATE user_profiles SET instagram_handle = ${data.instagramHandle}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+  if (data.tiktokHandle !== undefined) {
+    await sql`
+      UPDATE user_profiles SET tiktok_handle = ${data.tiktokHandle}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+  if (data.facebookHandle !== undefined) {
+    await sql`
+      UPDATE user_profiles SET facebook_handle = ${data.facebookHandle}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+}
+
+// ─── XP / Level ──────────────────────────────────────────────────────────────
+
+/** XP-Schwellen pro Level (Level 1 = 0 XP, Level 2 = 100, Level 3 = 250, ...) */
+export function xpToLevel(xp: number): { level: number; currentXp: number; nextLevelXp: number; progress: number } {
+  // Formel: Level n braucht n*(n-1)/2 * 100 XP
+  let level = 1;
+  while (xpForLevel(level + 1) <= xp) level++;
+  const currentXp = xp - xpForLevel(level);
+  const nextLevelXp = xpForLevel(level + 1) - xpForLevel(level);
+  return { level, currentXp, nextLevelXp, progress: Math.floor((currentXp / nextLevelXp) * 100) };
+}
+
+function xpForLevel(level: number): number {
+  if (level <= 1) return 0;
+  return ((level - 1) * level) / 2 * 100;
+}
+
+export async function getUserXp(walletAddress: string): Promise<number> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT xp FROM user_xp WHERE wallet_address = ${walletAddress.toLowerCase()} LIMIT 1
+  `;
+  return rows.length > 0 ? Number(rows[0].xp) : 0;
+}
+
+export async function addUserXp(walletAddress: string, xp: number): Promise<void> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO user_xp (wallet_address, xp, updated_at)
+    VALUES (${walletAddress.toLowerCase()}, ${xp}, NOW())
+    ON CONFLICT (wallet_address) DO UPDATE SET
+      xp         = user_xp.xp + ${xp},
+      updated_at = NOW()
+  `;
+}

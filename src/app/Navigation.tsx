@@ -12,7 +12,7 @@ import {
   FaYoutube,
   FaMusic,
   FaGlobe,
-  FaTrophy,
+  FaUserCircle,
 } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 import { useState } from "react";
@@ -67,6 +67,21 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
   return (
     <nav className="fixed top-0 left-0 w-full bg-zinc-900 border-b border-zinc-800 z-50">
       <ul className="flex justify-center items-center gap-8 py-3">
+        {/* Profil – ganz links */}
+        <li>
+          <button
+            title="Profil"
+            onClick={() => navigateToTab("profile")}
+            className="flex items-center"
+          >
+            <FaUserCircle
+              size={23}
+              className={`transition-colors ${
+                activeTab === "profile" ? "text-red-400" : "text-zinc-400"
+              } hover:text-red-400`}
+            />
+          </button>
+        </li>
         {/* Tokenomics */}
         <li>
           <button
@@ -155,20 +170,10 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
                   navigateToTab("youtube");
                   setOpen(false);
                 }}
-                className="flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200 border-b border-zinc-700"
+                className="flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200"
               >
                 <FaYoutube className="text-red-500" /> 
                 <span className="font-medium">YouTube</span>
-              </button>
-              <button
-                onClick={() => {
-                  navigateToTab("quest-board");
-                  setOpen(false);
-                }}
-                className="flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200"
-              >
-                <FaTrophy className="text-yellow-500" /> 
-                <span className="font-medium">Quest Board</span>
               </button>
             </div>
           )}
