@@ -401,6 +401,12 @@ export async function debitCreatorBalance(walletAddress: string, amount: number)
     SET balance = GREATEST(0, balance - ${amount}), updated_at = NOW()
     WHERE wallet_address = ${walletAddress.toLowerCase()}
   `;
+  // Dfaith Credits des Creators ebenfalls reduzieren (hält beide Werte synchron)
+  await sql`
+    UPDATE dfaith_credits
+    SET balance = GREATEST(0, balance - ${amount}), updated_at = NOW()
+    WHERE wallet_address = ${walletAddress.toLowerCase()}
+  `;
 }
 
 // ─── Dfaith Credits (Unified Balance) ────────────────────────────────────────
