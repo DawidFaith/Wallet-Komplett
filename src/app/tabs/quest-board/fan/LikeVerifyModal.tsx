@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { FaThumbsUp, FaExternalLinkAlt, FaCoins, FaInfoCircle, FaRedo } from 'react-icons/fa';
+import { FaThumbsUp, FaExternalLinkAlt, FaCoins, FaRedo } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
 
@@ -12,7 +12,7 @@ interface LikeVerifyModalProps {
   onClose: () => void;
 }
 
-type Step = 'loading' | 'baseline' | 'await_like' | 'not_yet' | 'success' | 'expired' | 'error';
+type Step = 'loading' | 'await_like' | 'not_yet' | 'success' | 'expired' | 'error';
 
 export default function LikeVerifyModal({
   quest,
@@ -49,7 +49,7 @@ export default function LikeVerifyModal({
   }, [step, expiresAt]);
 
   const callApi = useCallback(
-    async (action: 'start' | 'check-removal' | 'check-like') => {
+    async (action: 'start' | 'check-like') => {
       if (!quest) return;
       setLoading(true);
       setError('');
@@ -68,8 +68,6 @@ export default function LikeVerifyModal({
         }
 
         if (action === 'start') {
-          setStep('baseline');
-        } else if (action === 'check-removal') {
           setExpiresAt(data.expiresAt);
           setStep('await_like');
         } else if (action === 'check-like') {
@@ -119,54 +117,13 @@ export default function LikeVerifyModal({
       {step === 'loading' && (
         <div className="flex flex-col items-center py-8 gap-4">
           <div className="border-4 border-yellow-500/30 border-t-yellow-500 rounded-full w-12 h-12 animate-spin" />
-          <p className="text-zinc-400 text-sm">Like-Anzahl wird abgerufen…</p>
+          <p className="text-zinc-400 text-sm">Wird vorbereitet…</p>
         </div>
       )}
 
-      {/* ── Schritt 1: Like entfernen ────────────────────────── */}
-      {step === 'baseline' && quest && (
-        <div className="space-y-4">
-          <div className="bg-zinc-800 rounded-xl p-4 space-y-3">
-            <p className="text-white font-semibold text-sm">{quest.videoTitle}</p>
-            <div className="flex items-start gap-2 text-zinc-400 text-sm">
-              <FaInfoCircle className="mt-0.5 shrink-0 text-yellow-400" />
-              <div>
-                <p className="font-medium text-zinc-300">So läuft die Verifizierung ab:</p>
-                <ol className="mt-2 space-y-1.5 text-xs list-decimal list-inside">
-                  <li>Öffne das Short und <strong className="text-white">entferne deinen Like</strong> (falls vorhanden)</li>
-                  <li>Klicke auf <strong className="text-white">&bdquo;Likes entfernt &ndash; Pr&uuml;fen&ldquo;</strong></li>
-                  <li>Du hast dann <strong className="text-yellow-400">5 Minuten</strong> um das Video erneut zu liken</li>
-                  <li>Klicke auf <strong className="text-white">&bdquo;Geliked &ndash; Pr&uuml;fen&ldquo;</strong> &ndash; fertig!</li>
-                </ol>
-              </div>
-            </div>
-          </div>
-          <a
-            href={quest.videoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
-          >
-            <FaExternalLinkAlt size={13} /> Zum Short (Like entfernen)
-          </a>
-          <button
-            onClick={() => callApi('check-removal')}
-            disabled={loading}
-            className="w-full bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <div className="border-2 border-white/30 border-t-white rounded-full w-4 h-4 animate-spin" />
-            ) : (
-              '✅ Likes entfernt – Prüfen'
-            )}
-          </button>
-        </div>
-      )}
-
-      {/* ── Schritt 2: Jetzt liken ───────────────────────────── */}
+      {/* ── Liken ───────────────────────────────────────────── */}
       {(step === 'await_like' || step === 'not_yet') && quest && (
         <div className="space-y-4">
-          {/* Countdown */}
           <div className={`rounded-xl p-4 text-center ${secondsLeft < 60 ? 'bg-red-900/30 border border-red-700/40' : 'bg-zinc-800'}`}>
             <p className="text-zinc-400 text-sm mb-1">Verbleibende Zeit</p>
             <p className={`text-3xl font-bold tabular-nums ${secondsLeft < 60 ? 'text-red-400' : 'text-yellow-400'}`}>
@@ -177,7 +134,7 @@ export default function LikeVerifyModal({
           {step === 'not_yet' && (
             <div className="bg-orange-900/30 border border-orange-700/40 rounded-xl p-3">
               <p className="text-orange-300 text-sm">
-                Kein Like festgestellt. Bitte like das Video und versuche es erneut.
+                Like noch nicht erkannt. YouTube braucht manchmal einen Moment &ndash; kurz warten und erneut prüfen.
               </p>
             </div>
           )}
@@ -186,7 +143,7 @@ export default function LikeVerifyModal({
             <p className="text-white text-sm font-semibold">{quest.videoTitle}</p>
             <p className="text-zinc-400 text-xs flex items-center gap-1">
               <FaThumbsUp className="text-yellow-400" size={11} />
-              Jetzt das Video liken und dann prüfen
+              Like das Video und klicke dann auf &bdquo;Geliked &ndash; Prüfen&ldquo;
             </p>
           </div>
 
@@ -203,11 +160,10 @@ export default function LikeVerifyModal({
             disabled={loading || secondsLeft === 0}
             className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
-            {loading ? (
-              <div className="border-2 border-black/30 border-t-black rounded-full w-4 h-4 animate-spin" />
-            ) : (
-              <><FaThumbsUp size={14} /> Geliked – Prüfen</>
-            )}
+            {loading
+              ? <div className="border-2 border-black/30 border-t-black rounded-full w-4 h-4 animate-spin" />
+              : <><FaThumbsUp size={14} /> Geliked &ndash; Prüfen</>
+            }
           </button>
         </div>
       )}

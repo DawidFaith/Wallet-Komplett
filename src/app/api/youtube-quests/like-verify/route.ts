@@ -23,9 +23,17 @@ async function fetchLikeCount(videoId: string): Promise<number | null> {
       `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoId}&key=${YT_API_KEY}`
     );
     const data = await res.json();
-    const count = data?.items?.[0]?.statistics?.likeCount;
-    return count !== undefined ? Number(count) : null;
-  } catch {
+    if (data?.error) {
+      console.error('[fetchLikeCount] YouTube API error:', data.error.message);
+      return null;
+    }
+    if (!data?.items?.length) return null;
+    const stats = data.items[0].statistics;
+    // likeCount ist undefined wenn Creator Statistiken versteckt hat
+    if (stats?.likeCount === undefined) return null;
+    return Number(stats.likeCount);
+  } catch (err) {
+    console.error('[fetchLikeCount]', err);
     return null;
   }
 }
@@ -63,6 +71,7 @@ export async function POST(req: NextRequest) {
 
   const normalized = walletAddress.toLowerCase();
 
+  try {
   // ── Gemeinsame Vorab-Prüfungen ───────────────────────────────────────────
   const [binding, quest] = await Promise.all([
     loadBindingByWallet(normalized),
@@ -111,16 +120,20 @@ export async function POST(req: NextRequest) {
     const likes = await fetchLikeCount(quest.videoId);
     if (likes === null) {
       return NextResponse.json(
-        { error: 'Like-Anzahl konnte nicht abgerufen werden (YouTube API)' },
+        { error: 'Like-Anzahl nicht abrufbar. Das Video hat möglicherweise versteckte Statistiken oder der YOUTUBE_DATA_API_KEY fehlt.' },
         { status: 500 }
       );
     }
     await upsertLikeVerification(questId, normalized, quest.videoId, likes);
-    return NextResponse.json({ step: 'baseline', baselineLikes: likes });
+    // Direkt 5-Min-Fenster öffnen – User muss nur liken, kein Entfernen nötig
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    await advanceLikeVerificationToAwaitLike(questId, normalized, likes, expiresAt);
+    return NextResponse.json({ step: 'await_like', baselineLikes: likes, expiresAt });
   }
 
-  // ── action: check-removal ────────────────────────────────────────────────
+  // ── action: check-removal (Rückwärtskompatibilität – nicht mehr nötig) ──
   if (action === 'check-removal') {
+    // Direkt zum await_like Schritt weiterleiten
     const verification = await getLikeVerification(questId, normalized);
     if (!verification) {
       return NextResponse.json(
@@ -128,20 +141,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-
-    const currentLikes = await fetchLikeCount(quest.videoId);
-    if (currentLikes === null) {
-      return NextResponse.json(
-        { error: 'Like-Anzahl konnte nicht abgerufen werden (YouTube API)' },
-        { status: 500 }
-      );
-    }
-
-    // Snapshot des aktuellen Counts als "Removed-Baseline"
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-    await advanceLikeVerificationToAwaitLike(questId, normalized, currentLikes, expiresAt);
-
-    return NextResponse.json({ step: 'await_like', removedLikes: currentLikes, expiresAt });
+    return NextResponse.json({ step: 'await_like', expiresAt: verification.expiresAt });
   }
 
   // ── action: check-like ───────────────────────────────────────────────────
@@ -163,7 +163,7 @@ export async function POST(req: NextRequest) {
     const currentLikes = await fetchLikeCount(quest.videoId);
     if (currentLikes === null) {
       return NextResponse.json(
-        { error: 'Like-Anzahl konnte nicht abgerufen werden (YouTube API)' },
+        { error: 'Like-Anzahl nicht abrufbar. Bitte erneut versuchen.' },
         { status: 500 }
       );
     }
@@ -200,5 +200,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, rewardAmount: quest.rewardAmount });
   }
 
+
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[like-verify]', action, message);
+
+    // Häufige Ursache: like_verifications Tabelle existiert noch nicht
+    if (message.includes('like_verifications') || message.includes('does not exist')) {
+      return NextResponse.json(
+        { error: 'Datenbank nicht initialisiert. Bitte setup-db ausführen (like_verifications Tabelle fehlt).' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ error: `Serverfehler: ${message}` }, { status: 500 });
+  }
   return NextResponse.json({ error: `Unbekannte action: ${action}` }, { status: 400 });
 }
