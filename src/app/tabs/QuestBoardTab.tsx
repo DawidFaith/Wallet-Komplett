@@ -465,21 +465,23 @@ function FanBoard({
         </div>
       </div>
 
-      {/* Ausstehende Rewards */}
-      {pendingTotal > 0 && (
-        <div className="bg-gradient-to-r from-yellow-900/40 to-amber-900/30 border border-yellow-700/50 rounded-2xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
-            <FaCoins size={18} className="text-yellow-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-yellow-300 font-bold text-base">{pendingTotal} DFAITH</p>
-            <p className="text-yellow-600 text-xs">{pendingCount} Quest{pendingCount !== 1 ? 's' : ''} abgeschlossen · Auszahlung ausstehend</p>
-          </div>
-          <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-xl px-3 py-1.5 text-yellow-300 text-xs font-semibold">
-            Ausstehend
-          </div>
+      {/* Ausstehende Rewards – immer sichtbar */}
+      <div className="bg-gradient-to-r from-yellow-900/40 to-amber-900/30 border border-yellow-700/50 rounded-2xl p-4 flex items-center gap-4">
+        <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
+          <FaCoins size={18} className="text-yellow-400" />
         </div>
-      )}
+        <div className="flex-1 min-w-0">
+          <p className="text-yellow-300 font-bold text-base">{pendingTotal} DFAITH</p>
+          <p className="text-yellow-600 text-xs">
+            {pendingCount > 0
+              ? `${pendingCount} Quest${pendingCount !== 1 ? 's' : ''} abgeschlossen · Auszahlung ausstehend`
+              : 'Schließe Quests ab um Rewards zu verdienen'}
+          </p>
+        </div>
+        <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-xl px-3 py-1.5 text-yellow-300 text-xs font-semibold">
+          {pendingTotal > 0 ? 'Ausstehend' : '0 DFAITH'}
+        </div>
+      </div>
 
       {/* Quest Liste */}
       <div className="flex items-center justify-between">
