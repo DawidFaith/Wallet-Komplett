@@ -586,7 +586,7 @@ export default function MerchTab({ language }: MerchTabProps) {
             side: "SELL"
           });
           
-          const priceResponse = await fetch(`https://apiv5.paraswap.io/prices?${priceParams}`);
+          const priceResponse = await fetch(`/api/paraswap-proxy?path=prices&${priceParams}`);
           
           if (priceResponse.ok) {
             const priceData = await priceResponse.json();
