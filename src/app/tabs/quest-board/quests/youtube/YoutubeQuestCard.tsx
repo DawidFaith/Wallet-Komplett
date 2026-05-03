@@ -47,7 +47,7 @@ export default function YoutubeQuestCard({ quest, isCompleted, onComplete }: You
         {/* Fortschrittsbalken */}
         <div>
           <div className="flex justify-between text-xs text-zinc-400 mb-1">
-            <span>{quest.completions} / {quest.maxCompletions} abgeschlossen</span>
+            <span>{quest.completions} von {quest.maxCompletions} Plätzen belegt</span>
             <span>{progress}%</span>
           </div>
           <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
@@ -59,7 +59,7 @@ export default function YoutubeQuestCard({ quest, isCompleted, onComplete }: You
         </div>
 
         <p className="text-zinc-400 text-xs">
-          Aufgabe: <span className="text-zinc-300">Wertsteigernder Kommentar unter dem Short</span>
+          Aufgabe: <span className="text-zinc-300">{quest.description || '💬 Schreibe einen positiven Kommentar unter diesem Short!'}</span>
         </p>
 
         <div className="flex gap-2">
