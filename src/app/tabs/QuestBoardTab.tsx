@@ -379,9 +379,10 @@ function FanBoard({
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Pending Rewards
-  const [pendingTotal, setPendingTotal] = useState<number>(0);
-  const [pendingCount, setPendingCount] = useState<number>(0);
+  // Unified Dfaith Credits
+  const [credits, setCredits] = useState<number>(0);
+  const [claiming, setClaiming] = useState(false);
+  const [claimResult, setClaimResult] = useState<{ success: boolean; message: string; txHash?: string } | null>(null);
 
   // Verifizierungs-Modal
   const [verifyingQuestId, setVerifyingQuestId] = useState<string | null>(null);
@@ -405,8 +406,7 @@ function FanBoard({
       setCompletedIds(questsData.completedIds ?? []);
       if (rewardsRes.ok) {
         const rewardsData = await rewardsRes.json();
-        setPendingTotal(rewardsData.total ?? 0);
-        setPendingCount((rewardsData.rewards ?? []).length);
+        setCredits(rewardsData.balance ?? rewardsData.total ?? 0);
       }
     } catch {
       // Fehler beim Laden
@@ -431,13 +431,12 @@ function FanBoard({
       if (res.ok) {
         setVerifyResult({
           success: true,
-          message: `Quest abgeschlossen! ${data.rewardAmount} DFAITH werden dir gutgeschrieben.`,
+          message: `Quest abgeschlossen! +${data.rewardAmount} Dfaith Credits`,
           comment: data.comment?.text,
           rewardAmount: data.rewardAmount,
         });
         setCompletedIds((prev) => [...prev, questId]);
-        setPendingTotal((prev) => prev + (data.rewardAmount ?? 0));
-        setPendingCount((prev) => prev + 1);
+        setCredits((prev) => prev + (data.rewardAmount ?? 0));
         // Zähler im State aktualisieren
         setQuests((prev) =>
           prev.map((q) =>
@@ -472,23 +471,78 @@ function FanBoard({
         </div>
       </div>
 
-      {/* Ausstehende Rewards – immer sichtbar */}
+      {/* Dfaith Credits – immer sichtbar */}
       <div className="bg-gradient-to-r from-yellow-900/40 to-amber-900/30 border border-yellow-700/50 rounded-2xl p-4 flex items-center gap-4">
         <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
           <FaCoins size={18} className="text-yellow-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-yellow-300 font-bold text-base">{pendingTotal} DFAITH</p>
+          <p className="text-yellow-300 font-bold text-base">{credits} Dfaith Credits</p>
           <p className="text-yellow-600 text-xs">
-            {pendingCount > 0
-              ? `${pendingCount} Quest${pendingCount !== 1 ? 's' : ''} abgeschlossen · Auszahlung ausstehend`
-              : 'Schließe Quests ab um Rewards zu verdienen'}
+            {credits > 0
+              ? 'Bereit zum Einlösen als echte DFAITH Tokens'
+              : 'Schließe Quests ab um Credits zu verdienen'}
           </p>
         </div>
-        <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-xl px-3 py-1.5 text-yellow-300 text-xs font-semibold">
-          {pendingTotal > 0 ? 'Ausstehend' : '0 DFAITH'}
-        </div>
+        {credits > 0 && (
+          <button
+            onClick={async () => {
+              setClaiming(true);
+              setClaimResult(null);
+              try {
+                const res = await fetch('/api/youtube-quests/claim', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ walletAddress, amount: credits }),
+                });
+                const data = await res.json();
+                if (res.ok) {
+                  setClaimResult({ success: true, message: `${data.sentAmount} DFAITH wurden an deine Wallet gesendet!`, txHash: data.txHash });
+                  setCredits(0);
+                } else {
+                  setClaimResult({ success: false, message: data.error });
+                }
+              } catch {
+                setClaimResult({ success: false, message: 'Netzwerkfehler. Bitte versuche es erneut.' });
+              } finally {
+                setClaiming(false);
+              }
+            }}
+            disabled={claiming}
+            className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold px-4 py-2 rounded-xl text-sm transition-colors shrink-0 flex items-center gap-2"
+          >
+            {claiming ? <FaSync className="animate-spin" size={12} /> : null}
+            {claiming ? 'Sendet…' : 'Einlösen'}
+          </button>
+        )}
+        {credits === 0 && (
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-3 py-1.5 text-yellow-600 text-xs font-semibold">
+            0 Credits
+          </div>
+        )}
       </div>
+
+      {/* Claim-Ergebnis */}
+      {claimResult && (
+        <div className={`rounded-2xl p-4 border ${claimResult.success ? 'bg-green-900/30 border-green-700/40' : 'bg-red-900/30 border-red-700/40'}`}>
+          <p className={`font-semibold text-sm ${claimResult.success ? 'text-green-300' : 'text-red-300'}`}>
+            {claimResult.message}
+          </p>
+          {claimResult.txHash && (
+            <a
+              href={`https://basescan.org/tx/${claimResult.txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 text-xs underline mt-1 block"
+            >
+              Transaktion auf BaseScan ansehen →
+            </a>
+          )}
+          <button onClick={() => setClaimResult(null)} className="text-zinc-500 text-xs mt-2 hover:text-zinc-300">
+            Schließen
+          </button>
+        </div>
+      )}
 
       {/* Quest Liste */}
       <div className="flex items-center justify-between">
@@ -550,8 +604,7 @@ function FanBoard({
                   <FaCoins size={24} className="text-yellow-400" />
                   <div>
                     <p className="text-white font-bold text-lg">{verifyResult.rewardAmount} DFAITH</p>
-                    <p className="text-zinc-400 text-xs">Reward vorgemerkt – wird bald ausgezahlt</p>
-                  </div>
+                    <p className="text-zinc-400 text-xs">Credits zu deinem Dfaith Credits Guthaben hinzugefügt</p>                  </div>
                 </div>
               </>
             ) : (
@@ -806,7 +859,6 @@ function CreatorBoard({ walletAddress, binding }: { walletAddress: string; bindi
       // Fehler beim Laden des Guthabens
     }
   }, [walletAddress]);
-
   // Formular-State
   const [videoUrl, setVideoUrl] = useState('');
   const [description, setDescription] = useState('');
@@ -884,16 +936,16 @@ function CreatorBoard({ walletAddress, binding }: { walletAddress: string; bindi
         </div>
       )}
 
-      {/* Creator Pool Guthaben */}
+      {/* Dfaith Credits (Creator Pool) */}
       <div className="bg-gradient-to-r from-yellow-900/40 to-amber-900/30 border border-yellow-700/50 rounded-2xl p-4 flex items-center gap-4">
         <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
           <FaCoins size={18} className="text-yellow-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-yellow-300 font-bold text-base">{creatorBalance} DFAITH</p>
+          <p className="text-yellow-300 font-bold text-base">{creatorBalance} Dfaith Credits</p>
           <p className="text-yellow-600 text-xs">
             {creatorBalance > 0
-              ? 'Verfügbar für Quest-Auszahlungen'
+              ? 'Verfügbar für Quest-Auszahlungen an Fans'
               : 'Lade DFAITH auf um Quests zu finanzieren'}
           </p>
         </div>

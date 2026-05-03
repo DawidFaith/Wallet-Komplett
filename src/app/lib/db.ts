@@ -102,6 +102,13 @@ export const MIGRATION_SQL = `
     deposited_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
 
+  -- Unified Dfaith Credits Balance (Fan + Creator)
+  CREATE TABLE IF NOT EXISTS dfaith_credits (
+    wallet_address  TEXT        PRIMARY KEY,
+    balance         INTEGER     NOT NULL DEFAULT 0,
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
   CREATE INDEX IF NOT EXISTS idx_quests_active    ON quests(is_active, created_at DESC);
   CREATE INDEX IF NOT EXISTS idx_quests_creator   ON quests(creator_wallet);
   CREATE INDEX IF NOT EXISTS idx_completions_wallet ON quest_completions(wallet_address);
