@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCreatorBalance, creditCreatorBalance } from '@/app/lib/questDb';
+import { getCreatorBalance, creditCreatorBalance, getDfaithCredits } from '@/app/lib/questDb';
 
 const DFAITH_TOKEN = '0x69eFD833288605f320d77eB2aB99DDE62919BbC1';
 const DFAITH_DECIMALS = 2;
@@ -14,8 +14,11 @@ export async function GET(req: NextRequest) {
   if (!wallet) return NextResponse.json({ error: 'wallet fehlt' }, { status: 400 });
 
   try {
-    const balance = await getCreatorBalance(wallet);
-    return NextResponse.json({ balance });
+    const [poolBalance, credits] = await Promise.all([
+      getCreatorBalance(wallet),
+      getDfaithCredits(wallet),
+    ]);
+    return NextResponse.json({ balance: credits, poolBalance });
   } catch (e) {
     console.error('[creator-balance GET]', e);
     return NextResponse.json({ error: 'Datenbankfehler' }, { status: 500 });

@@ -5,6 +5,8 @@ import {
   loadQuestDetail,
   saveCompletion,
   savePendingReward,
+  addDfaithCredits,
+  debitCreatorBalance,
   QuestCompletion,
 } from '../../../lib/questDb';
 
@@ -164,7 +166,7 @@ export async function POST(req: NextRequest) {
 
   await saveCompletion(completion);
 
-  // Pending Reward in DB speichern (wird beim Claim ausgezahlt)
+  // Pending Reward in DB speichern (für Historie)
   await savePendingReward({
     walletAddress: normalized,
     amount: quest.rewardAmount,
@@ -172,6 +174,16 @@ export async function POST(req: NextRequest) {
     questId: questId,
     createdAt: new Date().toISOString(),
   });
+
+  // Dfaith Credits dem Fan gutschreiben
+  await addDfaithCredits(normalized, quest.rewardAmount);
+
+  // Creator-Pool entsprechend belasten (best-effort, kein Fehler wenn leer)
+  try {
+    await debitCreatorBalance(quest.creatorWallet, quest.rewardAmount);
+  } catch {
+    // Creator hat keinen Eintrag – ignorieren
+  }
 
   return NextResponse.json({
     success: true,

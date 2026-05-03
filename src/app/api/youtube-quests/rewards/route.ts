@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loadPendingRewardsByWallet, getPendingRewardTotal } from '../../../lib/questDb';
+import { getDfaithCredits } from '../../../lib/questDb';
 
-// GET: Ausstehende Rewards einer Wallet laden
+// GET: Dfaith Credits einer Wallet laden
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const walletAddress = url.searchParams.get('wallet');
@@ -9,13 +9,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'wallet parameter required' }, { status: 400 });
   }
   try {
-    const [rewards, total] = await Promise.all([
-      loadPendingRewardsByWallet(walletAddress),
-      getPendingRewardTotal(walletAddress),
-    ]);
-    return NextResponse.json({ rewards, total });
+    const balance = await getDfaithCredits(walletAddress);
+    return NextResponse.json({ balance, total: balance });
   } catch (err) {
-    console.error('Fehler beim Laden der Rewards:', err);
+    console.error('Fehler beim Laden der Credits:', err);
     return NextResponse.json({ error: 'Datenbankfehler' }, { status: 500 });
   }
 }

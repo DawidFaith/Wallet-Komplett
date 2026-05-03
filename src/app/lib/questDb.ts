@@ -359,6 +359,7 @@ export async function getCreatorBalance(walletAddress: string): Promise<number> 
 /**
  * DFAITH-Einzahlung eines Creators gutschreiben.
  * tx_hash ist UNIQUE – verhindert Doppel-Gutschriften.
+ * Gleichzeitig werden die Dfaith Credits des Creators erhöht.
  */
 export async function creditCreatorBalance(
   walletAddress: string,
@@ -371,7 +372,7 @@ export async function creditCreatorBalance(
     INSERT INTO creator_deposits (wallet_address, tx_hash, amount)
     VALUES (${walletAddress.toLowerCase()}, ${txHash.toLowerCase()}, ${amount})
   `;
-  // Guthaben aufstocken (oder neu anlegen)
+  // creator_balances aufstocken
   await sql`
     INSERT INTO creator_balances (wallet_address, balance, updated_at)
     VALUES (${walletAddress.toLowerCase()}, ${amount}, NOW())
@@ -379,9 +380,11 @@ export async function creditCreatorBalance(
       balance    = creator_balances.balance + EXCLUDED.balance,
       updated_at = NOW()
   `;
+  // Dfaith Credits aufstocken
+  await addDfaithCredits(walletAddress, amount);
 }
 
-/** Guthaben eines Creators reduzieren (z.B. nach Reward-Auszahlung) */
+/** Guthaben eines Creators reduzieren (z.B. nach Quest-Abschluss) */
 export async function debitCreatorBalance(walletAddress: string, amount: number): Promise<void> {
   const sql = getDb();
   await sql`
@@ -390,3 +393,45 @@ export async function debitCreatorBalance(walletAddress: string, amount: number)
     WHERE wallet_address = ${walletAddress.toLowerCase()}
   `;
 }
+
+// ─── Dfaith Credits (Unified Balance) ────────────────────────────────────────
+
+/** Aktuelles Dfaith-Credits-Guthaben laden */
+export async function getDfaithCredits(walletAddress: string): Promise<number> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT balance FROM dfaith_credits WHERE wallet_address = ${walletAddress.toLowerCase()} LIMIT 1
+  `;
+  return rows.length > 0 ? Number(rows[0].balance) : 0;
+}
+
+/** Dfaith Credits hinzufügen (Fan-Reward oder Creator-Deposit) */
+export async function addDfaithCredits(walletAddress: string, amount: number): Promise<void> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO dfaith_credits (wallet_address, balance, updated_at)
+    VALUES (${walletAddress.toLowerCase()}, ${amount}, NOW())
+    ON CONFLICT (wallet_address) DO UPDATE SET
+      balance    = dfaith_credits.balance + EXCLUDED.balance,
+      updated_at = NOW()
+  `;
+}
+
+/**
+ * Dfaith Credits einlösen: Guthaben reduzieren.
+ * Gibt neues Guthaben zurück. Wirft wenn nicht genug Credits vorhanden.
+ */
+export async function redeemDfaithCredits(walletAddress: string, amount: number): Promise<number> {
+  const sql = getDb();
+  const rows = await sql`
+    UPDATE dfaith_credits
+    SET balance = balance - ${amount}, updated_at = NOW()
+    WHERE wallet_address = ${walletAddress.toLowerCase()} AND balance >= ${amount}
+    RETURNING balance
+  `;
+  if (rows.length === 0) {
+    throw new Error('Nicht genug Dfaith Credits');
+  }
+  return Number(rows[0].balance);
+}
+

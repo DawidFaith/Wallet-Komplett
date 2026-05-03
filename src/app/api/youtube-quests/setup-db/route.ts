@@ -107,9 +107,17 @@ export async function POST(req: NextRequest) {
     `;
     await sql`CREATE INDEX IF NOT EXISTS idx_creator_deposits_wallet ON creator_deposits(wallet_address)`;
 
+    await sql`
+      CREATE TABLE IF NOT EXISTS dfaith_credits (
+        wallet_address  TEXT        PRIMARY KEY,
+        balance         INTEGER     NOT NULL DEFAULT 0,
+        updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+
     return NextResponse.json({
       success: true,
-      message: 'Tabellen youtube_bindings, quests, quest_completions, pending_rewards, creator_balances, creator_deposits und Indizes erstellt.',
+      message: 'Alle Tabellen (inkl. dfaith_credits) erstellt.',
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
