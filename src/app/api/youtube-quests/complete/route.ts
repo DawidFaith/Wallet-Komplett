@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   loadBindingByWallet,
   hasWalletCompletedQuest,
+  hasChannelCompletedQuest,
   loadQuestDetail,
   saveCompletion,
   savePendingReward,
@@ -66,11 +67,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 3. Doppelabschluss prüfen
+  // 3. Doppelabschluss prüfen – nach Wallet UND nach YouTube-Kanal
   const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
   if (alreadyDone) {
     return NextResponse.json(
       { error: 'Du hast diesen Quest bereits abgeschlossen' },
+      { status: 409 }
+    );
+  }
+
+  const channelAlreadyDone = await hasChannelCompletedQuest(binding.channelId, questId);
+  if (channelAlreadyDone) {
+    return NextResponse.json(
+      { error: 'Dieser YouTube-Kanal hat diesen Quest bereits abgeschlossen.' },
       { status: 409 }
     );
   }

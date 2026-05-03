@@ -111,6 +111,12 @@ export async function POST(req: NextRequest) {
     `;
     await sql`CREATE INDEX IF NOT EXISTS idx_creator_deposits_wallet ON creator_deposits(wallet_address)`;
 
+    // UNIQUE-Constraint: dieselbe channel_id darf denselben Quest nur einmal abschließen
+    await sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_completions_channel_quest
+      ON quest_completions(quest_id, channel_id)
+    `;
+
     await sql`
       CREATE TABLE IF NOT EXISTS dfaith_credits (
         wallet_address  TEXT        PRIMARY KEY,
@@ -121,6 +127,15 @@ export async function POST(req: NextRequest) {
     `;
     // Für bestehende Installationen: Spalte nachrüsten falls fehlt
     await sql`ALTER TABLE dfaith_credits ADD COLUMN IF NOT EXISTS is_claiming BOOLEAN NOT NULL DEFAULT false`;
+
+    // Einmalig: dfaith_credits aus creator_balances befüllen (nur wenn noch kein Eintrag)
+    // Verhindert dass Credits nach dem Einlösen wieder auf den alten Wert springen
+    await sql`
+      INSERT INTO dfaith_credits (wallet_address, balance, is_claiming, updated_at)
+      SELECT wallet_address, balance, false, NOW()
+      FROM creator_balances
+      ON CONFLICT (wallet_address) DO NOTHING
+    `;
 
     return NextResponse.json({
       success: true,
