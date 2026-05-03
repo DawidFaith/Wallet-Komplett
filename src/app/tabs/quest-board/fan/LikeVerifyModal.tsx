@@ -134,9 +134,9 @@ export default function LikeVerifyModal({
                 <p className="font-medium text-zinc-300">So läuft die Verifizierung ab:</p>
                 <ol className="mt-2 space-y-1.5 text-xs list-decimal list-inside">
                   <li>Öffne das Short und <strong className="text-white">entferne deinen Like</strong> (falls vorhanden)</li>
-                  <li>Klicke auf <strong className="text-white">„Likes entfernt – Prüfen"</strong></li>
+                  <li>Klicke auf <strong className="text-white">&bdquo;Likes entfernt &ndash; Pr&uuml;fen&ldquo;</strong></li>
                   <li>Du hast dann <strong className="text-yellow-400">5 Minuten</strong> um das Video erneut zu liken</li>
-                  <li>Klicke auf <strong className="text-white">„Geliked – Prüfen"</strong> – fertig!</li>
+                  <li>Klicke auf <strong className="text-white">&bdquo;Geliked &ndash; Pr&uuml;fen&ldquo;</strong> &ndash; fertig!</li>
                 </ol>
               </div>
             </div>
