@@ -15,7 +15,7 @@ import { getDb } from './db';
 // ─── Typen ───────────────────────────────────────────────────────────────────
 
 export type Platform = 'youtube'; // erweiterbar: | 'instagram' | 'tiktok'
-export type QuestType = 'comment'; // erweiterbar: | 'like' | 'subscribe'
+export type QuestType = 'comment' | 'like'; // erweiterbar: | 'subscribe'
 
 export interface QuestIndexEntry {
   id: string;
@@ -643,3 +643,99 @@ export async function endClaimLock(walletAddress: string): Promise<void> {
   `;
 }
 
+// ─── Like Verifications ───────────────────────────────────────────────────────
+
+export interface LikeVerification {
+  questId: string;
+  walletAddress: string;
+  videoId: string;
+  baselineLikes: number;
+  removedLikes: number | null;
+  step: 'baseline' | 'await_like';
+  removalAt: string | null;
+  expiresAt: string | null;
+  startedAt: string;
+}
+
+function rowToLikeVerification(row: any): LikeVerification {
+  return {
+    questId: row.quest_id,
+    walletAddress: row.wallet_address,
+    videoId: row.video_id,
+    baselineLikes: Number(row.baseline_likes),
+    removedLikes: row.removed_likes !== null ? Number(row.removed_likes) : null,
+    step: row.step as 'baseline' | 'await_like',
+    removalAt: row.removal_at
+      ? (row.removal_at instanceof Date ? row.removal_at.toISOString() : row.removal_at)
+      : null,
+    expiresAt: row.expires_at
+      ? (row.expires_at instanceof Date ? row.expires_at.toISOString() : row.expires_at)
+      : null,
+    startedAt: row.started_at instanceof Date ? row.started_at.toISOString() : row.started_at,
+  };
+}
+
+/** Like-Verification starten oder zurücksetzen (Neustart) */
+export async function upsertLikeVerification(
+  questId: string,
+  walletAddress: string,
+  videoId: string,
+  baselineLikes: number,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO like_verifications
+      (quest_id, wallet_address, video_id, baseline_likes, step, started_at)
+    VALUES
+      (${questId}, ${walletAddress.toLowerCase()}, ${videoId}, ${baselineLikes}, 'baseline', NOW())
+    ON CONFLICT (quest_id, wallet_address) DO UPDATE SET
+      baseline_likes = EXCLUDED.baseline_likes,
+      removed_likes  = NULL,
+      step           = 'baseline',
+      removal_at     = NULL,
+      expires_at     = NULL,
+      started_at     = NOW()
+  `;
+}
+
+/** Laufende Like-Verification laden */
+export async function getLikeVerification(
+  questId: string,
+  walletAddress: string,
+): Promise<LikeVerification | null> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT * FROM like_verifications
+    WHERE quest_id = ${questId} AND wallet_address = ${walletAddress.toLowerCase()}
+    LIMIT 1
+  `;
+  return rows.length > 0 ? rowToLikeVerification(rows[0]) : null;
+}
+
+/** Schritt 2: Likes-Entfernung bestätigt – 5-Minuten-Fenster öffnen */
+export async function advanceLikeVerificationToAwaitLike(
+  questId: string,
+  walletAddress: string,
+  removedLikes: number,
+  expiresAt: string,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    UPDATE like_verifications
+    SET step = 'await_like', removed_likes = ${removedLikes},
+        removal_at = NOW(), expires_at = ${expiresAt}
+    WHERE quest_id = ${questId} AND wallet_address = ${walletAddress.toLowerCase()}
+  `;
+}
+
+/** Verification-Eintrag löschen (nach Abschluss oder Ablauf) */
+export async function deleteLikeVerification(
+  questId: string,
+  walletAddress: string,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    DELETE FROM like_verifications
+    WHERE quest_id = ${questId} AND wallet_address = ${walletAddress.toLowerCase()}
+  `;
+}

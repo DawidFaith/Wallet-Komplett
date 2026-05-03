@@ -142,6 +142,22 @@ export async function POST(req: NextRequest) {
       ON CONFLICT (wallet_address) DO NOTHING
     `;
 
+    // Like-Verifications: temporäre Tabelle für den 3-Schritt-Like-Nachweis
+    await sql`
+      CREATE TABLE IF NOT EXISTS like_verifications (
+        quest_id        UUID        NOT NULL,
+        wallet_address  TEXT        NOT NULL,
+        video_id        TEXT        NOT NULL,
+        baseline_likes  INTEGER     NOT NULL,
+        removed_likes   INTEGER,
+        step            TEXT        NOT NULL DEFAULT 'baseline',
+        removal_at      TIMESTAMPTZ,
+        expires_at      TIMESTAMPTZ,
+        started_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (quest_id, wallet_address)
+      )
+    `;
+
     return NextResponse.json({
       success: true,
       message: 'Alle Tabellen (inkl. dfaith_credits, expires_at) erstellt.',

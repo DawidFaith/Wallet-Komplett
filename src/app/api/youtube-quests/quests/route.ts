@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
   const questDetail: QuestDetail = {
     id: questId,
     platform: 'youtube',
-    type: (questType === 'comment' ? 'comment' : 'comment') as QuestDetail['type'],
+    type: (questType === 'like' ? 'like' : 'comment') as QuestDetail['type'],
     creatorWallet: creatorWallet.toLowerCase(),
     videoId,
     videoTitle,
