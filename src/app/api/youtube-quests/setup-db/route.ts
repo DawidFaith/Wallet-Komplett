@@ -111,6 +111,12 @@ export async function POST(req: NextRequest) {
     `;
     await sql`CREATE INDEX IF NOT EXISTS idx_creator_deposits_wallet ON creator_deposits(wallet_address)`;
 
+    // UNIQUE-Constraint: dieselbe channel_id darf denselben Quest nur einmal abschließen
+    await sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_completions_channel_quest
+      ON quest_completions(quest_id, channel_id)
+    `;
+
     await sql`
       CREATE TABLE IF NOT EXISTS dfaith_credits (
         wallet_address  TEXT        PRIMARY KEY,
