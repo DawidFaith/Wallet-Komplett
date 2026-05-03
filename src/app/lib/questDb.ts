@@ -757,10 +757,16 @@ export async function deleteLikeVerification(
 export interface SocialProfile {
   instagramHandle: string | null;
   instagramVerified: boolean;
+  instagramName: string | null;
+  instagramPicture: string | null;
   tiktokHandle: string | null;
   tiktokVerified: boolean;
+  tiktokName: string | null;
+  tiktokPicture: string | null;
   facebookHandle: string | null;
   facebookVerified: boolean;
+  facebookName: string | null;
+  facebookPicture: string | null;
   youtubeChannelId: string | null;
 }
 
@@ -771,9 +777,9 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
   `;
   if (rows.length === 0) {
     return {
-      instagramHandle: null, instagramVerified: false,
-      tiktokHandle: null, tiktokVerified: false,
-      facebookHandle: null, facebookVerified: false,
+      instagramHandle: null, instagramVerified: false, instagramName: null, instagramPicture: null,
+      tiktokHandle: null, tiktokVerified: false, tiktokName: null, tiktokPicture: null,
+      facebookHandle: null, facebookVerified: false, facebookName: null, facebookPicture: null,
       youtubeChannelId: null,
     };
   }
@@ -781,10 +787,16 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
   return {
     instagramHandle: r.instagram_handle ?? null,
     instagramVerified: Boolean(r.instagram_verified),
+    instagramName: r.instagram_name ?? null,
+    instagramPicture: r.instagram_picture ?? null,
     tiktokHandle: r.tiktok_handle ?? null,
     tiktokVerified: Boolean(r.tiktok_verified),
+    tiktokName: r.tiktok_name ?? null,
+    tiktokPicture: r.tiktok_picture ?? null,
     facebookHandle: r.facebook_handle ?? null,
     facebookVerified: Boolean(r.facebook_verified),
+    facebookName: r.facebook_name ?? null,
+    facebookPicture: r.facebook_picture ?? null,
     youtubeChannelId: r.youtube_channel_id ?? null,
   };
 }
@@ -805,15 +817,69 @@ export async function upsertUserProfile(
       WHERE wallet_address = ${walletAddress.toLowerCase()}
     `;
   }
+  if (data.instagramVerified !== undefined) {
+    await sql`
+      UPDATE user_profiles SET instagram_verified = ${data.instagramVerified}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+  if (data.instagramName !== undefined) {
+    await sql`
+      UPDATE user_profiles SET instagram_name = ${data.instagramName}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+  if (data.instagramPicture !== undefined) {
+    await sql`
+      UPDATE user_profiles SET instagram_picture = ${data.instagramPicture}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
   if (data.tiktokHandle !== undefined) {
     await sql`
       UPDATE user_profiles SET tiktok_handle = ${data.tiktokHandle}, updated_at = NOW()
       WHERE wallet_address = ${walletAddress.toLowerCase()}
     `;
   }
+  if (data.tiktokVerified !== undefined) {
+    await sql`
+      UPDATE user_profiles SET tiktok_verified = ${data.tiktokVerified}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+  if (data.tiktokName !== undefined) {
+    await sql`
+      UPDATE user_profiles SET tiktok_name = ${data.tiktokName}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+  if (data.tiktokPicture !== undefined) {
+    await sql`
+      UPDATE user_profiles SET tiktok_picture = ${data.tiktokPicture}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
   if (data.facebookHandle !== undefined) {
     await sql`
       UPDATE user_profiles SET facebook_handle = ${data.facebookHandle}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+  if (data.facebookVerified !== undefined) {
+    await sql`
+      UPDATE user_profiles SET facebook_verified = ${data.facebookVerified}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+  if (data.facebookName !== undefined) {
+    await sql`
+      UPDATE user_profiles SET facebook_name = ${data.facebookName}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+  if (data.facebookPicture !== undefined) {
+    await sql`
+      UPDATE user_profiles SET facebook_picture = ${data.facebookPicture}, updated_at = NOW()
       WHERE wallet_address = ${walletAddress.toLowerCase()}
     `;
   }
