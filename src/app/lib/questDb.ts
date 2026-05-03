@@ -268,8 +268,6 @@ export async function refundExpiredQuests(
 
   return refunds;
 }
-  `;
-}
 
 /** Kein-Op für Abwärtskompatibilität – Index wird durch saveQuestDetail verwaltet */
 export async function saveQuestIndex(_quests: QuestIndexEntry[]): Promise<void> {
