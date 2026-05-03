@@ -17,6 +17,8 @@ import {
   FaSync,
   FaChevronRight,
   FaInfoCircle,
+  FaClock,
+  FaCommentAlt,
 } from 'react-icons/fa';
 import Image from 'next/image';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
@@ -41,6 +43,7 @@ interface QuestIndexEntry {
   completions: number;
   isActive: boolean;
   createdAt: string;
+  expiresAt?: string | null;
 }
 
 interface YouTubeBinding {
@@ -66,6 +69,17 @@ function shortenWallet(addr: string) {
 
 function getProgressPercent(completions: number, max: number) {
   return Math.min(100, Math.round((completions / max) * 100));
+}
+
+function formatExpiry(expiresAt?: string | null): string | null {
+  if (!expiresAt) return null;
+  const diff = new Date(expiresAt).getTime() - Date.now();
+  if (diff <= 0) return 'Abgelaufen';
+  const hours = Math.floor(diff / 3_600_000);
+  const minutes = Math.floor((diff % 3_600_000) / 60_000);
+  if (hours >= 24) return `${Math.floor(hours / 24)}T ${hours % 24}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
 }
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
@@ -303,6 +317,11 @@ function QuestCard({
         <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
           <FaCoins size={10} /> {quest.rewardAmount} DFAITH
         </div>
+        {quest.expiresAt && (
+          <div className="absolute bottom-2 left-2 bg-black/70 text-zinc-300 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+            <FaClock size={9} /> {formatExpiry(quest.expiresAt)}
+          </div>
+        )}
       </div>
 
       <div className="p-4 space-y-3">
@@ -864,6 +883,8 @@ function CreatorBoard({ walletAddress, binding }: { walletAddress: string; bindi
   const [description, setDescription] = useState('');
   const [rewardAmount, setRewardAmount] = useState('100');
   const [maxCompletions, setMaxCompletions] = useState('10');
+  const [questType, setQuestType] = useState<'comment'>('comment');
+  const [durationHours, setDurationHours] = useState<string>('24');
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
   const [createSuccess, setCreateSuccess] = useState(false);
@@ -904,12 +925,15 @@ function CreatorBoard({ walletAddress, binding }: { walletAddress: string; bindi
           description: description.trim(),
           rewardAmount: Number(rewardAmount),
           maxCompletions: Number(maxCompletions),
+          questType,
+          durationHours: durationHours === '0' ? undefined : Number(durationHours),
         }),
       });
       const data = await res.json();
       if (!res.ok) { setCreateError(data.error); return; }
       setCreateSuccess(true);
       setVideoUrl(''); setDescription(''); setRewardAmount('100'); setMaxCompletions('10');
+      setQuestType('comment'); setDurationHours('24');
       await loadCreatorQuests();
     } catch {
       setCreateError('Netzwerkfehler. Bitte versuche es erneut.');
@@ -960,7 +984,7 @@ function CreatorBoard({ walletAddress, binding }: { walletAddress: string; bindi
       <div className="flex items-center justify-between">
         <h2 className="text-white font-bold text-lg">Meine Quests</h2>
         <button
-          onClick={() => { setShowCreateModal(true); setCreateSuccess(false); setCreateError(''); }}
+          onClick={() => { setShowCreateModal(true); setCreateSuccess(false); setCreateError(''); setQuestType('comment'); setDurationHours('24'); }}
           className="bg-red-600 hover:bg-red-500 text-white font-semibold px-4 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
         >
           <FaPlus size={12} /> Quest erstellen
@@ -1044,6 +1068,51 @@ function CreatorBoard({ walletAddress, binding }: { walletAddress: string; bindi
           </div>
         ) : (
           <form onSubmit={handleCreate} className="space-y-4">
+            <div>
+              <label className="text-zinc-300 text-sm font-medium block mb-1.5">
+                Quest-Typ <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  value={questType}
+                  onChange={(e) => setQuestType(e.target.value as 'comment')}
+                  className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm appearance-none cursor-pointer"
+                >
+                  <option value="comment">💬 Kommentar – Wertsteigernder Kommentar unter dem Video</option>
+                </select>
+                <FaCommentAlt className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" size={13} />
+              </div>
+              {questType === 'comment' && (
+                <p className="text-zinc-500 text-xs mt-1">
+                  Der Fan muss einen Kommentar unter dem Short hinterlassen. Die API prüft anhand des Kanalnamens.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="text-zinc-300 text-sm font-medium block mb-1.5">
+                Dauer <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  value={durationHours}
+                  onChange={(e) => setDurationHours(e.target.value)}
+                  className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm appearance-none cursor-pointer"
+                >
+                  <option value="1">1 Stunde</option>
+                  <option value="3">3 Stunden</option>
+                  <option value="6">6 Stunden</option>
+                  <option value="12">12 Stunden</option>
+                  <option value="24">1 Tag</option>
+                  <option value="48">2 Tage</option>
+                  <option value="72">3 Tage</option>
+                  <option value="168">7 Tage</option>
+                  <option value="0">Kein Ablauf</option>
+                </select>
+                <FaClock className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" size={13} />
+              </div>
+            </div>
+
             <div>
               <label className="text-zinc-300 text-sm font-medium block mb-1.5">
                 YouTube Shorts URL <span className="text-red-400">*</span>
