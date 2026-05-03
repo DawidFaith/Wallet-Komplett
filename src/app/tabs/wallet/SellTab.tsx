@@ -297,7 +297,7 @@ export default function SellTab({ language }: SellTabProps) {
       console.log("D.FAITH Amount:", sellAmount);
       console.log("Account Address:", account.address);
       
-      const dfaithAmountRaw = (parseFloat(sellAmount) * Math.pow(10, DFAITH_DECIMALS)).toString();
+      const dfaithAmountRaw = Math.round(parseFloat(sellAmount) * Math.pow(10, DFAITH_DECIMALS)).toString();
       console.log("D.FAITH Amount Raw:", dfaithAmountRaw);
       
       // Verwende die ParaSwap TokenTransferProxy Adresse für Base Chain

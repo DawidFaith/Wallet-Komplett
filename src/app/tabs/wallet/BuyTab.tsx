@@ -359,7 +359,7 @@ export default function BuyTab({ language }: BuyTabProps) {
       }
       
       // Schritt 2: Nutze SELL-side Quote mit geschätzter ETH-Menge (bewährte Methode)
-      const ethAmountWei = (estimatedEthAmount * Math.pow(10, ETH_DECIMALS)).toString();
+      const ethAmountWei = Math.round(estimatedEthAmount * Math.pow(10, ETH_DECIMALS)).toString();
       console.log("ETH Amount in Wei for quote:", ethAmountWei);
       
       const priceParams = new URLSearchParams({
@@ -430,7 +430,7 @@ export default function BuyTab({ language }: BuyTabProps) {
       console.log("Scale factor:", scaleFactor, "Required ETH for", targetDfaith, "D.FAITH:", requiredEth);
       
       // Schritt 4: Hole finale Quote mit korrekter ETH-Menge
-      const finalEthAmountWei = (requiredEth * Math.pow(10, ETH_DECIMALS)).toString();
+      const finalEthAmountWei = Math.round(requiredEth * Math.pow(10, ETH_DECIMALS)).toString();
       
       const finalPriceParams = new URLSearchParams({
         srcToken: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
