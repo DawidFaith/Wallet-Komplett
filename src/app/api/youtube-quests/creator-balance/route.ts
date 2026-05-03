@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCreatorBalance, creditCreatorBalance, getDfaithCredits } from '@/app/lib/questDb';
+import { getCreatorBalance, creditCreatorBalance, getDfaithCredits, addDfaithCredits } from '@/app/lib/questDb';
 
 const DFAITH_TOKEN = '0x69eFD833288605f320d77eB2aB99DDE62919BbC1';
 const DFAITH_DECIMALS = 2;
@@ -18,7 +18,16 @@ export async function GET(req: NextRequest) {
       getCreatorBalance(wallet),
       getDfaithCredits(wallet),
     ]);
-    return NextResponse.json({ balance: credits, poolBalance });
+
+    // Auto-Sync: wenn creator_balances > dfaith_credits (z.B. nach Einzahlung vor Tabellen-Migration)
+    // dann dfaith_credits auf poolBalance anheben – damit beide Views dasselbe zeigen
+    let effectiveBalance = credits;
+    if (poolBalance > credits) {
+      await addDfaithCredits(wallet, poolBalance - credits);
+      effectiveBalance = poolBalance;
+    }
+
+    return NextResponse.json({ balance: effectiveBalance, poolBalance });
   } catch (e) {
     console.error('[creator-balance GET]', e);
     return NextResponse.json({ error: 'Datenbankfehler' }, { status: 500 });
