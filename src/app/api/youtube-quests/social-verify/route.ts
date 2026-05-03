@@ -119,6 +119,16 @@ async function fetchProfile(platform: Platform, handle: string) {
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  try {
+    return await handlePost(req);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[social-verify] Unhandled error:', message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+async function handlePost(req: NextRequest) {
   let body: {
     walletAddress?: string;
     platform?: string;
