@@ -122,6 +122,15 @@ export async function POST(req: NextRequest) {
     // Für bestehende Installationen: Spalte nachrüsten falls fehlt
     await sql`ALTER TABLE dfaith_credits ADD COLUMN IF NOT EXISTS is_claiming BOOLEAN NOT NULL DEFAULT false`;
 
+    // Einmalig: dfaith_credits aus creator_balances befüllen (nur wenn noch kein Eintrag)
+    // Verhindert dass Credits nach dem Einlösen wieder auf den alten Wert springen
+    await sql`
+      INSERT INTO dfaith_credits (wallet_address, balance, is_claiming, updated_at)
+      SELECT wallet_address, balance, false, NOW()
+      FROM creator_balances
+      ON CONFLICT (wallet_address) DO NOTHING
+    `;
+
     return NextResponse.json({
       success: true,
       message: 'Alle Tabellen (inkl. dfaith_credits, expires_at) erstellt.',

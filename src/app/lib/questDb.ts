@@ -447,6 +447,12 @@ export async function redeemDfaithCredits(walletAddress: string, amount: number)
   if (rows.length === 0) {
     throw new Error('Nicht genug Dfaith Credits');
   }
+  // Auch creator_balances reduzieren damit beide Tabellen synchron bleiben
+  await sql`
+    UPDATE creator_balances
+    SET balance = GREATEST(0, balance - ${amount}), updated_at = NOW()
+    WHERE wallet_address = ${walletAddress.toLowerCase()}
+  `;
   return Number(rows[0].balance);
 }
 
