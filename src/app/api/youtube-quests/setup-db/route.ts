@@ -89,9 +89,27 @@ export async function POST(req: NextRequest) {
     `;
     await sql`CREATE INDEX IF NOT EXISTS idx_pending_rewards_wallet ON pending_rewards(wallet_address, status)`;
 
+    await sql`
+      CREATE TABLE IF NOT EXISTS creator_balances (
+        wallet_address  TEXT        PRIMARY KEY,
+        balance         INTEGER     NOT NULL DEFAULT 0,
+        updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS creator_deposits (
+        id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+        wallet_address TEXT        NOT NULL,
+        tx_hash        TEXT        UNIQUE NOT NULL,
+        amount         INTEGER     NOT NULL,
+        deposited_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_creator_deposits_wallet ON creator_deposits(wallet_address)`;
+
     return NextResponse.json({
       success: true,
-      message: 'Tabellen youtube_bindings, quests, quest_completions, pending_rewards und Indizes erstellt.',
+      message: 'Tabellen youtube_bindings, quests, quest_completions, pending_rewards, creator_balances, creator_deposits und Indizes erstellt.',
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
