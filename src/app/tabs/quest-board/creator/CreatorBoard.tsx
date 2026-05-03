@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { FaPlus, FaSync, FaTrophy, FaCoins, FaExternalLinkAlt, FaUserCheck } from 'react-icons/fa';
+import { FaPlus, FaSync, FaTrophy, FaCoins, FaExternalLinkAlt, FaUserCheck, FaTimes } from 'react-icons/fa';
 import CreditsBox from '../components/CreditsBox';
 import DepositModal from './DepositModal';
 import CreateQuestModal from './CreateQuestModal';
@@ -20,6 +20,8 @@ export default function CreatorBoard({ walletAddress, binding }: CreatorBoardPro
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeposit, setShowDeposit] = useState(false);
   const [creatorBalance, setCreatorBalance] = useState(0);
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const loadCreatorBalance = useCallback(async () => {
     try {
@@ -43,6 +45,29 @@ export default function CreatorBoard({ walletAddress, binding }: CreatorBoardPro
     } catch { /* ignorieren */ }
     finally { setLoading(false); }
   }, [walletAddress]);
+
+  const handleCancel = useCallback(async (questId: string) => {
+    setCancellingId(questId);
+    setConfirmCancelId(null);
+    try {
+      const res = await fetch(`/api/youtube-quests/quests/${questId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ creatorWallet: walletAddress }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error ?? 'Fehler beim Stornieren');
+        return;
+      }
+      await loadCreatorBalance();
+      await loadCreatorQuests();
+    } catch {
+      alert('Netzwerkfehler beim Stornieren');
+    } finally {
+      setCancellingId(null);
+    }
+  }, [walletAddress, loadCreatorBalance, loadCreatorQuests]);
 
   useEffect(() => {
     // Erst abgelaufene Quests erstatten, dann Balance + Quests laden
@@ -126,6 +151,32 @@ export default function CreatorBoard({ walletAddress, binding }: CreatorBoardPro
                     style={{ width: `${getProgressPercent(quest.completions, quest.maxCompletions)}%` }}
                   />
                 </div>
+                {/* Cancel */}
+                {confirmCancelId === quest.id ? (
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      onClick={() => handleCancel(quest.id)}
+                      disabled={cancellingId === quest.id}
+                      className="text-xs bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white px-3 py-1 rounded-lg transition-colors"
+                    >
+                      {cancellingId === quest.id ? '…' : 'Ja, stornieren'}
+                    </button>
+                    <button
+                      onClick={() => setConfirmCancelId(null)}
+                      className="text-xs text-zinc-500 hover:text-zinc-300 px-2 py-1 rounded-lg transition-colors"
+                    >
+                      Abbrechen
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmCancelId(quest.id)}
+                    disabled={cancellingId === quest.id}
+                    className="flex items-center gap-1 text-xs text-zinc-600 hover:text-red-400 disabled:opacity-50 transition-colors pt-1"
+                  >
+                    <FaTimes size={10} /> Stornieren
+                  </button>
+                )}
               </div>
             </div>
           ))}

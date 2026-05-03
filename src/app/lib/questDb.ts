@@ -269,6 +269,60 @@ export async function refundExpiredQuests(
   return refunds;
 }
 
+/**
+ * Quest stornieren: Quest deaktivieren und nicht genutztes Budget zurückgeben.
+ * Gibt den erstatteten Betrag zurück, oder -1 wenn Quest nicht gefunden / keine Berechtigung.
+ */
+export async function cancelQuest(
+  questId: string,
+  creatorWallet: string,
+): Promise<number> {
+  const sql = getDb();
+
+  const rows = await sql`
+    SELECT creator_wallet, completions, reward_amount, credits_locked, credits_refunded, is_active
+    FROM quests
+    WHERE id = ${questId}
+    LIMIT 1
+  `;
+  if (rows.length === 0) return -1;
+  const row = rows[0];
+
+  if (row.creator_wallet !== creatorWallet.toLowerCase()) return -1;
+
+  // Bereits storniert / abgelaufen → nichts tun
+  if (!row.is_active && row.credits_refunded) return 0;
+
+  const used = Number(row.completions) * Number(row.reward_amount);
+  const locked = Number(row.credits_locked);
+  const refundAmount = Math.max(0, locked - used);
+
+  if (refundAmount > 0) {
+    await sql`
+      INSERT INTO dfaith_credits (wallet_address, balance, updated_at)
+      VALUES (${creatorWallet.toLowerCase()}, ${refundAmount}, NOW())
+      ON CONFLICT (wallet_address) DO UPDATE SET
+        balance    = dfaith_credits.balance + ${refundAmount},
+        updated_at = NOW()
+    `;
+    await sql`
+      INSERT INTO creator_balances (wallet_address, balance, updated_at)
+      VALUES (${creatorWallet.toLowerCase()}, ${refundAmount}, NOW())
+      ON CONFLICT (wallet_address) DO UPDATE SET
+        balance    = creator_balances.balance + ${refundAmount},
+        updated_at = NOW()
+    `;
+  }
+
+  await sql`
+    UPDATE quests
+    SET is_active = false, credits_refunded = true, updated_at = NOW()
+    WHERE id = ${questId}
+  `;
+
+  return refundAmount;
+}
+
 /** Kein-Op für Abwärtskompatibilität – Index wird durch saveQuestDetail verwaltet */
 export async function saveQuestIndex(_quests: QuestIndexEntry[]): Promise<void> {
   // Mit Postgres nicht benötigt – saveQuestDetail macht den INSERT
