@@ -4,6 +4,7 @@ import {
   hasWalletCompletedQuest,
   loadQuestDetail,
   saveCompletion,
+  savePendingReward,
   QuestCompletion,
 } from '../../../lib/questDb';
 
@@ -162,6 +163,15 @@ export async function POST(req: NextRequest) {
   };
 
   await saveCompletion(completion);
+
+  // Pending Reward in DB speichern (wird beim Claim ausgezahlt)
+  await savePendingReward({
+    walletAddress: normalized,
+    amount: quest.rewardAmount,
+    reason: `Quest abgeschlossen: ${quest.videoTitle}`,
+    questId: questId,
+    createdAt: new Date().toISOString(),
+  });
 
   return NextResponse.json({
     success: true,

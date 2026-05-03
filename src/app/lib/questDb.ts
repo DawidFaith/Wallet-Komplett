@@ -69,6 +69,17 @@ export interface QuestsByWalletEntry {
   completedAt: string;
 }
 
+export interface PendingReward {
+  id: string;
+  walletAddress: string;
+  amount: number;
+  reason: string;
+  questId: string | null;
+  status: 'pending' | 'paid';
+  createdAt: string;
+  paidAt: string | null;
+}
+
 // ─── Row-Mapper ───────────────────────────────────────────────────────────────
 
 function rowToQuestDetail(row: any): QuestDetail {
@@ -280,4 +291,56 @@ export function buildShortsUrl(videoId: string): string {
 /** Deterministischer Verifikationscode aus Wallet-Adresse */
 export function getVerificationCode(walletAddress: string): string {
   return `DFAITH-${walletAddress.slice(2, 10).toUpperCase()}`;
+}
+
+// ─── Pending Rewards ──────────────────────────────────────────────────────────
+
+function rowToPendingReward(row: any): PendingReward {
+  return {
+    id: row.id,
+    walletAddress: row.wallet_address,
+    amount: Number(row.amount),
+    reason: row.reason,
+    questId: row.quest_id ?? null,
+    status: row.status as 'pending' | 'paid',
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
+    paidAt: row.paid_at ? (row.paid_at instanceof Date ? row.paid_at.toISOString() : row.paid_at) : null,
+  };
+}
+
+/** Neuen ausstehenden Reward speichern */
+export async function savePendingReward(reward: Omit<PendingReward, 'id' | 'status' | 'paidAt'>): Promise<void> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO pending_rewards (wallet_address, amount, reason, quest_id, created_at)
+    VALUES (
+      ${reward.walletAddress.toLowerCase()},
+      ${reward.amount},
+      ${reward.reason},
+      ${reward.questId},
+      ${reward.createdAt}
+    )
+  `;
+}
+
+/** Alle ausstehenden Rewards einer Wallet laden */
+export async function loadPendingRewardsByWallet(walletAddress: string): Promise<PendingReward[]> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT * FROM pending_rewards
+    WHERE wallet_address = ${walletAddress.toLowerCase()} AND status = 'pending'
+    ORDER BY created_at DESC
+  `;
+  return rows.map(rowToPendingReward);
+}
+
+/** Gesamtsumme aller ausstehenden Rewards einer Wallet */
+export async function getPendingRewardTotal(walletAddress: string): Promise<number> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT COALESCE(SUM(amount), 0) AS total
+    FROM pending_rewards
+    WHERE wallet_address = ${walletAddress.toLowerCase()} AND status = 'pending'
+  `;
+  return Number(rows[0]?.total ?? 0);
 }
