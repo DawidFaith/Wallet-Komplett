@@ -214,7 +214,7 @@ export default function BuyTab({ language }: BuyTabProps) {
             side: "SELL"
           });
           
-          const priceResponse = await fetch(`https://apiv5.paraswap.io/prices?${priceParams}`);
+          const priceResponse = await fetch(`/api/paraswap-proxy?path=prices&${priceParams}`);
           
           if (priceResponse.ok) {
             const priceData = await priceResponse.json();
@@ -378,7 +378,7 @@ export default function BuyTab({ language }: BuyTabProps) {
       console.log("Price Parameters:", Object.fromEntries(priceParams));
       
       // 1. Hole Preis-Quote
-      const priceUrl = `https://apiv5.paraswap.io/prices?${priceParams}`;
+      const priceUrl = `/api/paraswap-proxy?path=prices&${priceParams}`;
       console.log("Price URL:", priceUrl);
       
       const priceResponse = await fetch(priceUrl);
@@ -445,7 +445,7 @@ export default function BuyTab({ language }: BuyTabProps) {
         maxImpact: "50"
       });
       
-      const finalPriceResponse = await fetch(`https://apiv5.paraswap.io/prices?${finalPriceParams}`);
+      const finalPriceResponse = await fetch(`/api/paraswap-proxy?path=prices&${finalPriceParams}`);
       
       if (!finalPriceResponse.ok) {
         // Fallback: verwende erste Quote
@@ -480,12 +480,9 @@ export default function BuyTab({ language }: BuyTabProps) {
       
       console.log("Build TX Parameters:", buildTxParams);
       
-      const buildTxResponse = await fetch('https://apiv5.paraswap.io/transactions/8453', {
+      const buildTxResponse = await fetch('/api/paraswap-proxy?path=transactions%2F8453', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'DawidFaithWallet/1.0'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildTxParams)
       });
       

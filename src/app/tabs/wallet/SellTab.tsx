@@ -144,7 +144,7 @@ export default function SellTab({ language }: SellTabProps) {
             side: "SELL"
           });
           
-          const priceResponse = await fetch(`https://apiv5.paraswap.io/prices?${priceParams}`);
+          const priceResponse = await fetch(`/api/paraswap-proxy?path=prices&${priceParams}`);
           
           if (priceResponse.ok) {
             const priceData = await priceResponse.json();
@@ -363,7 +363,7 @@ export default function SellTab({ language }: SellTabProps) {
       
       console.log("Price Parameters:", Object.fromEntries(priceParams));
       
-      const priceUrl = `https://apiv5.paraswap.io/prices?${priceParams}`;
+      const priceUrl = `/api/paraswap-proxy?path=prices&${priceParams}`;
       console.log("Price URL:", priceUrl);
       
       const priceResponse = await fetch(priceUrl);
@@ -416,12 +416,9 @@ export default function SellTab({ language }: SellTabProps) {
       
       console.log("Build TX Parameters:", buildTxParams);
       
-      const buildTxResponse = await fetch('https://apiv5.paraswap.io/transactions/8453', {
+      const buildTxResponse = await fetch('/api/paraswap-proxy?path=transactions%2F8453', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'DawidFaithWallet/1.0'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildTxParams)
       });
       
