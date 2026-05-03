@@ -131,8 +131,12 @@ export async function POST(req: NextRequest) {
     for (const item of ytData.items) {
       const comment = item.snippet.topLevelComment;
       const authorName = comment.snippet.authorDisplayName ?? '';
-      // Suche nach Kanalname (Groß-/Kleinschreibung ignorieren)
-      if (authorName.toLowerCase() === binding.channelName.toLowerCase()) {
+      const authorChannelId = comment.snippet.authorChannelId?.value ?? '';
+      // Primär: Channel-ID Vergleich (eindeutig, unabhängig vom Anzeigenamen)
+      // Fallback: Anzeigename (Groß-/Kleinschreibung ignorieren)
+      const matchById = authorChannelId && authorChannelId === binding.channelId;
+      const matchByName = authorName.toLowerCase() === binding.channelName.toLowerCase();
+      if (matchById || matchByName) {
         foundComment = {
           id: comment.id,
           text: comment.snippet.textDisplay,
@@ -150,8 +154,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          `Kein Kommentar von "${binding.channelName}" gefunden (letzte ~300 Kommentare durchsucht). ` +
-          'Stelle sicher dass du kommentiert hast und YouTube den Kommentar gespeichert hat.',
+          `Kein Kommentar von "${binding.channelName}" (Kanal-ID: ${binding.channelId}) gefunden. ` +
+          'Mögliche Ursachen: (1) YouTube hat den Kommentar noch nicht indexiert – warte 1-2 Minuten und versuche es erneut. ' +
+          '(2) Der Kommentar wurde unter einem anderen Kanal gepostet. ' +
+          '(3) Kommentare sind für dieses Video eingeschränkt.',
       },
       { status: 400 }
     );
