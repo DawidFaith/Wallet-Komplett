@@ -42,6 +42,8 @@ export async function POST(req: NextRequest) {
     description?: string;
     rewardAmount?: number;
     maxCompletions?: number;
+    questType?: string;
+    durationHours?: number;
   };
   try {
     body = await req.json();
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 });
   }
 
-  const { creatorWallet, videoUrl, description, rewardAmount, maxCompletions } = body;
+  const { creatorWallet, videoUrl, description, rewardAmount, maxCompletions, questType, durationHours } = body;
 
   if (!creatorWallet || !videoUrl) {
     return NextResponse.json(
@@ -109,10 +111,17 @@ export async function POST(req: NextRequest) {
   const questId = crypto.randomUUID();
   const now = new Date().toISOString();
 
+  // Ablaufzeit berechnen (optional)
+  let expiresAt: string | null = null;
+  if (durationHours && durationHours > 0) {
+    const expiry = new Date(Date.now() + durationHours * 60 * 60 * 1000);
+    expiresAt = expiry.toISOString();
+  }
+
   const questDetail: QuestDetail = {
     id: questId,
     platform: 'youtube',
-    type: 'comment',
+    type: (questType === 'comment' ? 'comment' : 'comment') as QuestDetail['type'],
     creatorWallet: creatorWallet.toLowerCase(),
     videoId,
     videoTitle,
@@ -123,6 +132,7 @@ export async function POST(req: NextRequest) {
     maxCompletions: Number(maxCompletions) || 10,
     completions: 0,
     isActive: true,
+    expiresAt,
     createdAt: now,
     updatedAt: now,
   };

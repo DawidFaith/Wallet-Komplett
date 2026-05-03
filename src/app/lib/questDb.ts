@@ -31,6 +31,7 @@ export interface QuestIndexEntry {
   completions: number;
   isActive: boolean;
   createdAt: string;
+  expiresAt?: string | null;
 }
 
 export interface QuestDetail extends QuestIndexEntry {
@@ -99,6 +100,9 @@ function rowToQuestDetail(row: any): QuestDetail {
     isActive: row.is_active,
     createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
     updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
+    expiresAt: row.expires_at
+      ? (row.expires_at instanceof Date ? row.expires_at.toISOString() : row.expires_at)
+      : null,
   };
 }
 
@@ -126,11 +130,14 @@ function rowToWalletEntry(row: any): QuestsByWalletEntry {
 
 // ─── Quest Operationen ────────────────────────────────────────────────────────
 
-/** Alle aktiven Quests laden (leichter Index) */
+/** Alle aktiven, nicht-abgelaufenen Quests laden (leichter Index) */
 export async function loadQuestIndex(): Promise<QuestIndexEntry[]> {
   const sql = getDb();
   const rows = await sql`
-    SELECT * FROM quests WHERE is_active = TRUE ORDER BY created_at DESC
+    SELECT * FROM quests
+    WHERE is_active = TRUE
+      AND (expires_at IS NULL OR expires_at > NOW())
+    ORDER BY created_at DESC
   `;
   return rows.map(rowToQuestDetail);
 }
@@ -145,17 +152,18 @@ export async function loadQuestDetail(questId: string): Promise<QuestDetail | nu
 /** Neuen Quest anlegen (INSERT) */
 export async function saveQuestDetail(quest: QuestDetail): Promise<void> {
   const sql = getDb();
+  const expiresAt = quest.expiresAt ?? null;
   await sql`
     INSERT INTO quests (
       id, platform, quest_type, creator_wallet,
       video_id, video_title, video_thumbnail, video_url,
       description, reward_amount, max_completions,
-      completions, is_active, created_at, updated_at
+      completions, is_active, expires_at, created_at, updated_at
     ) VALUES (
       ${quest.id}, ${quest.platform}, ${quest.type}, ${quest.creatorWallet},
       ${quest.videoId}, ${quest.videoTitle}, ${quest.videoThumbnail}, ${quest.videoUrl},
       ${quest.description}, ${quest.rewardAmount}, ${quest.maxCompletions},
-      ${quest.completions}, ${quest.isActive}, ${quest.createdAt}, ${quest.updatedAt}
+      ${quest.completions}, ${quest.isActive}, ${expiresAt}, ${quest.createdAt}, ${quest.updatedAt}
     )
     ON CONFLICT (id) DO UPDATE SET
       video_title     = EXCLUDED.video_title,
@@ -164,6 +172,7 @@ export async function saveQuestDetail(quest: QuestDetail): Promise<void> {
       reward_amount   = EXCLUDED.reward_amount,
       max_completions = EXCLUDED.max_completions,
       is_active       = EXCLUDED.is_active,
+      expires_at      = EXCLUDED.expires_at,
       updated_at      = NOW()
   `;
 }

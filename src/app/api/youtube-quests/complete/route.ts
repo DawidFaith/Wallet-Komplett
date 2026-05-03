@@ -55,6 +55,10 @@ export async function POST(req: NextRequest) {
   if (!quest.isActive) {
     return NextResponse.json({ error: 'Dieser Quest ist nicht mehr aktiv' }, { status: 400 });
   }
+  // Ablaufzeit prüfen
+  if (quest.expiresAt && new Date(quest.expiresAt) < new Date()) {
+    return NextResponse.json({ error: 'Dieser Quest ist abgelaufen' }, { status: 400 });
+  }
   if (quest.completions >= quest.maxCompletions) {
     return NextResponse.json(
       { error: 'Dieser Quest ist bereits vollständig abgeschlossen (alle Plätze vergeben)' },
@@ -91,6 +95,7 @@ export async function POST(req: NextRequest) {
             id: string;
             snippet: {
               authorChannelId?: { value: string };
+              authorDisplayName?: string;
               textDisplay: string;
               publishedAt: string;
             };
@@ -125,7 +130,9 @@ export async function POST(req: NextRequest) {
 
     for (const item of ytData.items) {
       const comment = item.snippet.topLevelComment;
-      if (comment.snippet.authorChannelId?.value === binding.channelId) {
+      const authorName = comment.snippet.authorDisplayName ?? '';
+      // Suche nach Kanalname (Groß-/Kleinschreibung ignorieren)
+      if (authorName.toLowerCase() === binding.channelName.toLowerCase()) {
         foundComment = {
           id: comment.id,
           text: comment.snippet.textDisplay,
@@ -143,8 +150,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          'Kein Kommentar von deinem YouTube-Kanal gefunden (letzte ~300 Kommentare durchsucht). ' +
-          'Stelle sicher, dass du kommentiert hast und YouTube den Kommentar gespeichert hat.',
+          `Kein Kommentar von "${binding.channelName}" gefunden (letzte ~300 Kommentare durchsucht). ` +
+          'Stelle sicher dass du kommentiert hast und YouTube den Kommentar gespeichert hat.',
       },
       { status: 400 }
     );

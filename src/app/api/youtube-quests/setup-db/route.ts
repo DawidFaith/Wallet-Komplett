@@ -69,6 +69,9 @@ export async function POST(req: NextRequest) {
         UNIQUE(quest_id, wallet_address)
       )
     `;
+    // Für bestehende Installationen: expires_at nachrüsten
+    await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ`;
+
     await sql`CREATE INDEX IF NOT EXISTS idx_quests_active      ON quests(is_active, created_at DESC)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_quests_creator     ON quests(creator_wallet)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_completions_wallet ON quest_completions(wallet_address)`;
@@ -120,7 +123,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Alle Tabellen (inkl. dfaith_credits) erstellt.',
+      message: 'Alle Tabellen (inkl. dfaith_credits, expires_at) erstellt.',
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
