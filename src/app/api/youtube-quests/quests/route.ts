@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
     maxCompletions?: number;
     questType?: string;
     durationHours?: number;
+    secretCode?: string;
   };
   try {
     body = await req.json();
@@ -59,13 +60,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 });
   }
 
-  const { creatorWallet, videoUrl, description, rewardAmount, maxCompletions, questType, durationHours } = body;
+  const { creatorWallet, videoUrl, description, rewardAmount, maxCompletions, questType, durationHours, secretCode } = body;
 
   if (!creatorWallet || !videoUrl) {
     return NextResponse.json(
       { error: 'creatorWallet und videoUrl sind erforderlich' },
       { status: 400 }
     );
+  }
+
+  // Secret-Quest: Code muss angegeben werden
+  if (questType === 'secret') {
+    if (!secretCode || secretCode.trim().length < 2) {
+      return NextResponse.json(
+        { error: 'Für Secret-Quests muss ein Code mit mindestens 2 Zeichen angegeben werden.' },
+        { status: 400 }
+      );
+    }
+    if (secretCode.trim().length > 50) {
+      return NextResponse.json(
+        { error: 'Der Code darf maximal 50 Zeichen lang sein.' },
+        { status: 400 }
+      );
+    }
   }
 
   // Nur YouTube Shorts erlaubt
@@ -153,7 +170,7 @@ export async function POST(req: NextRequest) {
   const questDetail: QuestDetail = {
     id: questId,
     platform: 'youtube',
-    type: (questType === 'like' ? 'like' : 'comment') as QuestDetail['type'],
+    type: (questType === 'like' ? 'like' : questType === 'secret' ? 'secret' : 'comment') as QuestDetail['type'],
     creatorWallet: creatorWallet.toLowerCase(),
     videoId,
     videoTitle,
@@ -167,6 +184,7 @@ export async function POST(req: NextRequest) {
     expiresAt,
     creditsLocked: totalBudget,
     creditsRefunded: false,
+    secretCode: questType === 'secret' ? (secretCode ?? null) : null,
     createdAt: now,
     updatedAt: now,
   };

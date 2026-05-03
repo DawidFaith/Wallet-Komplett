@@ -1,0 +1,172 @@
+'use client';
+
+import React, { useState } from 'react';
+import { FaKey, FaCoins, FaCheck } from 'react-icons/fa';
+import Modal from '../components/Modal';
+import type { QuestIndexEntry } from '../types';
+
+interface SecretVerifyModalProps {
+  quest: QuestIndexEntry | null;
+  walletAddress: string;
+  onCompleted: (rewardAmount: number) => void;
+  onClose: () => void;
+}
+
+type Step = 'input' | 'wrong' | 'success' | 'error';
+
+export default function SecretVerifyModal({
+  quest,
+  walletAddress,
+  onCompleted,
+  onClose,
+}: SecretVerifyModalProps) {
+  const [code, setCode] = useState('');
+  const [step, setStep] = useState<Step>('input');
+  const [loading, setLoading] = useState(false);
+  const [rewardAmount, setRewardAmount] = useState(0);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleClose = () => {
+    setCode('');
+    setStep('input');
+    setLoading(false);
+    setErrorMsg('');
+    onClose();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quest || !code.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/youtube-quests/secret-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questId: quest.id, walletAddress, code: code.trim() }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrorMsg(data.error ?? 'Unbekannter Fehler');
+        setStep('error');
+        return;
+      }
+
+      if (data.notYet) {
+        setStep('wrong');
+      } else if (data.success) {
+        setRewardAmount(data.rewardAmount);
+        setStep('success');
+        onCompleted(data.rewardAmount);
+      }
+    } catch {
+      setErrorMsg('Netzwerkfehler. Bitte versuche es erneut.');
+      setStep('error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const title =
+    step === 'success' ? '🎉 Code korrekt!'
+    : step === 'error' ? '❌ Fehler'
+    : '🔑 Secret-Quest';
+
+  return (
+    <Modal open={!!quest} onClose={handleClose} title={title}>
+      {/* ── Erfolg ─────────────────────────────────────────── */}
+      {step === 'success' && (
+        <div className="space-y-4">
+          <div className="bg-green-900/30 border border-green-700/40 rounded-xl p-6 text-center">
+            <FaCheck size={32} className="text-green-400 mx-auto mb-3" />
+            <p className="text-green-300 font-semibold text-lg">Code richtig!</p>
+            <div className="flex items-center justify-center gap-2 mt-2 text-yellow-400 font-bold text-xl">
+              <FaCoins size={16} /> +{rewardAmount} DFAITH
+            </div>
+          </div>
+          <button
+            onClick={handleClose}
+            className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold"
+          >
+            Schließen
+          </button>
+        </div>
+      )}
+
+      {/* ── Fehler ─────────────────────────────────────────── */}
+      {step === 'error' && (
+        <div className="space-y-4">
+          <div className="bg-red-900/30 border border-red-700/40 rounded-xl p-4">
+            <p className="text-red-300 text-sm">{errorMsg}</p>
+          </div>
+          <button
+            onClick={handleClose}
+            className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold"
+          >
+            Schließen
+          </button>
+        </div>
+      )}
+
+      {/* ── Code-Eingabe / Falscher Code ───────────────────── */}
+      {(step === 'input' || step === 'wrong') && quest && (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="bg-zinc-800 rounded-xl p-4 space-y-1">
+            <p className="text-white text-sm font-semibold">{quest.videoTitle}</p>
+            <p className="text-zinc-400 text-xs">
+              {quest.description || '🔑 Finde den geheimen Code im Video und gib ihn ein!'}
+            </p>
+          </div>
+
+          {step === 'wrong' && (
+            <div className="bg-orange-900/30 border border-orange-700/40 rounded-xl p-3">
+              <p className="text-orange-300 text-sm font-semibold">Falscher Code!</p>
+              <p className="text-orange-200 text-xs mt-0.5">
+                Schau nochmal ins Video – die Buchstaben sind nacheinander versteckt.
+              </p>
+            </div>
+          )}
+
+          <div>
+            <label className="text-zinc-300 text-sm font-medium block mb-1.5">
+              <FaKey className="inline mr-1 text-yellow-400" size={12} />
+              Geheimer Code
+            </label>
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              placeholder="CODE EINGEBEN"
+              maxLength={50}
+              required
+              autoFocus
+              className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-yellow-500 focus:outline-none text-sm placeholder-zinc-500 font-mono tracking-widest text-center text-lg uppercase"
+            />
+            <p className="text-zinc-600 text-xs mt-1 text-center">
+              Groß-/Kleinschreibung spielt keine Rolle
+            </p>
+          </div>
+
+          <a
+            href={quest.videoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
+          >
+            Zum Video (Code suchen) ↗
+          </a>
+
+          <button
+            type="submit"
+            disabled={loading || !code.trim()}
+            className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+          >
+            {loading
+              ? <div className="border-2 border-black/30 border-t-black rounded-full w-4 h-4 animate-spin" />
+              : <><FaKey size={14} /> Code einreichen</>
+            }
+          </button>
+        </form>
+      )}
+    </Modal>
+  );
+}
