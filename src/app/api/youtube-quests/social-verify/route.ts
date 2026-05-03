@@ -57,7 +57,8 @@ async function fetchTikTokProfile(handle: string): Promise<{ name: string; pictu
       if (user?.unique_id || user?.nickname) {
         return {
           name: user.nickname || cleanHandle,
-          picture: user.avatar_larger || user.avatar_medium || `https://unavatar.io/tiktok/${cleanHandle}`,
+          // Direkte TikTok-CDN-URLs sind signed und laufen ab → unavatar.io
+          picture: `https://unavatar.io/tiktok/${cleanHandle}`,
           bio: user.signature ?? '',
         };
       }

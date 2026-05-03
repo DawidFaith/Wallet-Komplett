@@ -139,7 +139,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           icon={<FaYoutube className="text-red-500" size={18} />}
           label="YouTube"
           name={p?.youtubeChannelName ?? null}
-          handle={p?.youtubeChannelId ?? null}
+          handle={p?.youtubeChannelName ?? null}
           picture={p?.youtubeChannelThumbnail ?? null}
           verified={p?.youtubeVerified ?? false}
           onVerify={null}
