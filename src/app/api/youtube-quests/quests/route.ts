@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   loadQuestIndex,
   saveQuestDetail,
+  lockQuestBudget,
   loadCompletionsByWallet,
   loadBindingByWallet,
   extractShortsVideoId,
   buildShortsUrl,
   QuestDetail,
 } from '../../../lib/questDb';
+import { getDfaithCredits } from '../../../lib/questDb';
 
 const YT_API_KEY = process.env.YOUTUBE_DATA_API_KEY;
 
@@ -117,6 +119,30 @@ export async function POST(req: NextRequest) {
   const questId = crypto.randomUUID();
   const now = new Date().toISOString();
 
+  const rewardAmountNum = Number(rewardAmount) || 100;
+  const maxCompletionsNum = Number(maxCompletions) || 10;
+  const totalBudget = rewardAmountNum * maxCompletionsNum;
+
+  // Creator-Guthaben prüfen
+  const creatorCredits = await getDfaithCredits(creatorWallet.toLowerCase());
+  if (creatorCredits < totalBudget) {
+    return NextResponse.json(
+      {
+        error: `Nicht genug Credits. Du brauchst ${totalBudget} DFAITH (${rewardAmountNum} × ${maxCompletionsNum} Teilnehmer), hast aber nur ${creatorCredits}.`,
+      },
+      { status: 400 }
+    );
+  }
+
+  // Budget für den Quest sperren (Escrow)
+  const locked = await lockQuestBudget(creatorWallet.toLowerCase(), totalBudget);
+  if (!locked) {
+    return NextResponse.json(
+      { error: 'Guthaben konnte nicht gesperrt werden. Bitte Seite neu laden und erneut versuchen.' },
+      { status: 400 }
+    );
+  }
+
   // Ablaufzeit berechnen (optional)
   let expiresAt: string | null = null;
   if (durationHours && durationHours > 0) {
@@ -134,11 +160,13 @@ export async function POST(req: NextRequest) {
     videoThumbnail,
     videoUrl: videoShortsUrl,
     description: description?.trim() ?? '',
-    rewardAmount: Number(rewardAmount) || 100,
-    maxCompletions: Number(maxCompletions) || 10,
+    rewardAmount: rewardAmountNum,
+    maxCompletions: maxCompletionsNum,
     completions: 0,
     isActive: true,
     expiresAt,
+    creditsLocked: totalBudget,
+    creditsRefunded: false,
     createdAt: now,
     updatedAt: now,
   };

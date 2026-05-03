@@ -45,9 +45,16 @@ export default function CreatorBoard({ walletAddress, binding }: CreatorBoardPro
   }, [walletAddress]);
 
   useEffect(() => {
-    loadCreatorQuests();
-    loadCreatorBalance();
-  }, [loadCreatorQuests, loadCreatorBalance]);
+    // Erst abgelaufene Quests erstatten, dann Balance + Quests laden
+    fetch('/api/youtube-quests/refund-expired', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ creatorWallet: walletAddress }),
+    }).finally(() => {
+      loadCreatorQuests();
+      loadCreatorBalance();
+    });
+  }, [loadCreatorQuests, loadCreatorBalance, walletAddress]);
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-5">

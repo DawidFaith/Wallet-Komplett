@@ -7,7 +7,6 @@ import {
   saveCompletion,
   savePendingReward,
   addDfaithCredits,
-  debitCreatorBalance,
   QuestCompletion,
 } from '../../../lib/questDb';
 
@@ -197,15 +196,8 @@ export async function POST(req: NextRequest) {
     createdAt: new Date().toISOString(),
   });
 
-  // Dfaith Credits dem Fan gutschreiben
+  // Dfaith Credits dem Fan gutschreiben (aus dem beim Quest-Erstellen gesperrten Budget)
   await addDfaithCredits(normalized, quest.rewardAmount);
-
-  // Creator-Pool entsprechend belasten (best-effort, kein Fehler wenn leer)
-  try {
-    await debitCreatorBalance(quest.creatorWallet, quest.rewardAmount);
-  } catch {
-    // Creator hat keinen Eintrag – ignorieren
-  }
 
   return NextResponse.json({
     success: true,

@@ -59,6 +59,8 @@ export const MIGRATION_SQL = `
     completions     INTEGER     NOT NULL DEFAULT 0,
     is_active       BOOLEAN     NOT NULL DEFAULT TRUE,
     expires_at      TIMESTAMPTZ,
+    credits_locked  INTEGER     NOT NULL DEFAULT 0,
+    credits_refunded BOOLEAN    NOT NULL DEFAULT FALSE,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
