@@ -82,7 +82,15 @@ export default function QuestBoard({ language: _language }: QuestBoardProps) {
           <LinkChannelView walletAddress={account.address} onLinked={(b) => setBinding(b)} />
         )
       ) : (
-        <CreatorBoard walletAddress={account.address} binding={binding} />
+        // Creator-View: ebenfalls Kanal-Verifikation voraussetzen
+        binding ? (
+          <CreatorBoard walletAddress={account.address} binding={binding} />
+        ) : (
+          <LinkChannelView
+            walletAddress={account.address}
+            onLinked={(b) => setBinding(b)}
+          />
+        )
       )}
     </div>
   );

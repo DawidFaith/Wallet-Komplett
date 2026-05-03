@@ -3,13 +3,13 @@ import {
   loadQuestIndex,
   saveQuestDetail,
   lockQuestBudget,
+  getDfaithCredits,
   loadCompletionsByWallet,
   loadBindingByWallet,
   extractShortsVideoId,
   buildShortsUrl,
   QuestDetail,
 } from '../../../lib/questDb';
-import { getDfaithCredits } from '../../../lib/questDb';
 
 const YT_API_KEY = process.env.YOUTUBE_DATA_API_KEY;
 
