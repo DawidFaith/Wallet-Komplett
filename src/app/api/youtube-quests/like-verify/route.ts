@@ -125,11 +125,15 @@ export async function POST(req: NextRequest) {
       );
     }
     await upsertLikeVerification(questId, normalized, quest.videoId, likes);
-    return NextResponse.json({ step: 'baseline', baselineLikes: likes });
+    // Direkt 5-Min-Fenster öffnen – User muss nur liken, kein Entfernen nötig
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    await advanceLikeVerificationToAwaitLike(questId, normalized, likes, expiresAt);
+    return NextResponse.json({ step: 'await_like', baselineLikes: likes, expiresAt });
   }
 
-  // ── action: check-removal ────────────────────────────────────────────────
+  // ── action: check-removal (Rückwärtskompatibilität – nicht mehr nötig) ──
   if (action === 'check-removal') {
+    // Direkt zum await_like Schritt weiterleiten
     const verification = await getLikeVerification(questId, normalized);
     if (!verification) {
       return NextResponse.json(
@@ -137,20 +141,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-
-    const currentLikes = await fetchLikeCount(quest.videoId);
-    if (currentLikes === null) {
-      return NextResponse.json(
-        { error: 'Like-Anzahl nicht abrufbar. Bitte erneut versuchen.' },
-        { status: 500 }
-      );
-    }
-
-    // Snapshot des aktuellen Counts als "Removed-Baseline"
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-    await advanceLikeVerificationToAwaitLike(questId, normalized, currentLikes, expiresAt);
-
-    return NextResponse.json({ step: 'await_like', removedLikes: currentLikes, expiresAt });
+    return NextResponse.json({ step: 'await_like', expiresAt: verification.expiresAt });
   }
 
   // ── action: check-like ───────────────────────────────────────────────────
