@@ -5,11 +5,13 @@ import { useActiveAccount } from 'thirdweb/react';
 import Image from 'next/image';
 import {
   FaInstagram, FaTiktok, FaFacebook, FaYoutube,
-  FaCheck, FaPencilAlt, FaTimes, FaSave,
-  FaCoins, FaStar, FaLock,
+  FaCheck, FaCoins, FaStar, FaLock, FaPlus,
 } from 'react-icons/fa';
+import SocialVerifyModal from './profile/SocialVerifyModal';
 import QuestBoardTab from './QuestBoardTab';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
+
+type SocialPlatform = 'instagram' | 'tiktok' | 'facebook';
 
 interface ProfileData {
   xp: number;
@@ -21,10 +23,16 @@ interface ProfileData {
   profile: {
     instagramHandle: string | null;
     instagramVerified: boolean;
+    instagramName: string | null;
+    instagramPicture: string | null;
     tiktokHandle: string | null;
     tiktokVerified: boolean;
+    tiktokName: string | null;
+    tiktokPicture: string | null;
     facebookHandle: string | null;
     facebookVerified: boolean;
+    facebookName: string | null;
+    facebookPicture: string | null;
     youtubeChannelId: string | null;
     youtubeChannelName: string | null;
     youtubeChannelThumbnail: string | null;
@@ -44,53 +52,20 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   const account = useActiveAccount();
   const [data, setData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(false);
-
-  // Bearbeitung
-  const [editing, setEditing] = useState(false);
-  const [igHandle, setIgHandle] = useState('');
-  const [ttHandle, setTtHandle] = useState('');
-  const [fbHandle, setFbHandle] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [verifyModal, setVerifyModal] = useState<SocialPlatform | null>(null);
 
   const loadProfile = useCallback(async () => {
     if (!account?.address) return;
     setLoading(true);
     try {
       const res = await fetch(`/api/youtube-quests/profile?wallet=${account.address}`);
-      if (res.ok) {
-        const d = await res.json();
-        setData(d);
-        setIgHandle(d.profile.instagramHandle ?? '');
-        setTtHandle(d.profile.tiktokHandle ?? '');
-        setFbHandle(d.profile.facebookHandle ?? '');
-      }
+      if (res.ok) setData(await res.json());
     } finally {
       setLoading(false);
     }
   }, [account?.address]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
-
-  const handleSave = async () => {
-    if (!account?.address) return;
-    setSaving(true);
-    try {
-      await fetch('/api/youtube-quests/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          wallet: account.address,
-          instagramHandle: igHandle.trim() || null,
-          tiktokHandle: ttHandle.trim() || null,
-          facebookHandle: fbHandle.trim() || null,
-        }),
-      });
-      await loadProfile();
-      setEditing(false);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   if (!account?.address) {
     return (
@@ -106,23 +81,20 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
     );
   }
 
+  const p = data?.profile;
+
   return (
     <div className="w-full max-w-2xl mx-auto px-4 pb-16 space-y-5">
 
       {/* ── Profil-Header ─────────────────────────────────────── */}
       <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5">
-        <div className="flex items-start gap-4">
-          {/* Avatar */}
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-600 to-yellow-500 flex items-center justify-center shrink-0 text-white font-bold text-2xl">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-600 to-yellow-500 flex items-center justify-center shrink-0 text-white font-bold text-2xl select-none">
             {account.address.slice(2, 4).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-lg truncate">
-              {shortenAddress(account.address)}
-            </p>
-            <p className="text-zinc-500 text-xs font-mono truncate">{account.address}</p>
-
-            {/* Credits */}
+            <p className="text-white font-bold text-lg truncate">{shortenAddress(account.address)}</p>
+            <p className="text-zinc-600 text-xs font-mono truncate">{account.address}</p>
             <div className="flex items-center gap-1.5 mt-2">
               <FaCoins className="text-yellow-400" size={13} />
               <span className="text-yellow-300 font-bold text-sm">
@@ -130,13 +102,6 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               </span>
             </div>
           </div>
-          <button
-            onClick={() => setEditing((v) => !v)}
-            className="text-zinc-500 hover:text-white transition-colors p-2 shrink-0"
-            title="Profil bearbeiten"
-          >
-            {editing ? <FaTimes size={16} /> : <FaPencilAlt size={14} />}
-          </button>
         </div>
       </div>
 
@@ -146,15 +111,14 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FaStar className="text-yellow-400" size={16} />
-              <span className="text-white font-bold text-base">Level {data.level}</span>
+              <span className="text-white font-bold">Level {data.level}</span>
             </div>
-            <span className="text-zinc-400 text-xs">{data.xp} XP gesamt</span>
+            <span className="text-zinc-500 text-xs">{data.xp} XP gesamt</span>
           </div>
-          {/* XP-Balken */}
           <div>
-            <div className="flex justify-between text-xs text-zinc-500 mb-1.5">
-              <span>{data.currentXp} XP</span>
-              <span>{data.nextLevelXp} XP bis Level {data.level + 1}</span>
+            <div className="flex justify-between text-xs text-zinc-600 mb-1.5">
+              <span>{data.currentXp} / {data.nextLevelXp} XP</span>
+              <span>Level {data.level + 1}</span>
             </div>
             <div className="h-2.5 bg-zinc-800 rounded-full overflow-hidden">
               <div
@@ -163,134 +127,145 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               />
             </div>
           </div>
-          <p className="text-zinc-600 text-xs">
-            XP werden durch abgeschlossene Quests gesammelt (1 DFAITH Reward = 10 XP)
-          </p>
+          <p className="text-zinc-600 text-xs">1 DFAITH Reward = 10 XP</p>
         </div>
       )}
 
       {/* ── Soziale Profile ───────────────────────────────────── */}
-      <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-white font-bold text-base">Soziale Profile</h3>
-          {editing && (
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
-            >
-              {saving
-                ? <div className="border-2 border-white/30 border-t-white rounded-full w-3 h-3 animate-spin" />
-                : <FaSave size={11} />
-              }
-              Speichern
-            </button>
-          )}
-        </div>
+      <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 space-y-3">
+        <h3 className="text-white font-bold text-base mb-1">Soziale Profile</h3>
 
-        {/* YouTube */}
         <SocialRow
           icon={<FaYoutube className="text-red-500" size={18} />}
           label="YouTube"
-          handle={data?.profile.youtubeChannelName ?? null}
-          verified={data?.profile.youtubeVerified ?? false}
-          editing={false}
-          placeholder="Noch nicht verknüpft"
-          hint={!data?.profile.youtubeVerified ? 'Im Quest Board verknüpfen' : undefined}
-          thumbnail={data?.profile.youtubeChannelThumbnail ?? null}
+          name={p?.youtubeChannelName ?? null}
+          handle={p?.youtubeChannelId ?? null}
+          picture={p?.youtubeChannelThumbnail ?? null}
+          verified={p?.youtubeVerified ?? false}
+          onVerify={null}
+          hint={!p?.youtubeVerified ? 'Im Quest Board verknüpfen' : undefined}
         />
 
-        {/* Instagram */}
+        <div className="border-t border-zinc-800" />
+
         <SocialRow
           icon={<FaInstagram className="text-pink-500" size={18} />}
           label="Instagram"
-          handle={data?.profile.instagramHandle ?? null}
-          verified={false}
-          editing={editing}
-          editValue={igHandle}
-          onEditChange={setIgHandle}
-          placeholder="@username"
+          name={p?.instagramName ?? null}
+          handle={p?.instagramHandle ?? null}
+          picture={p?.instagramPicture ?? null}
+          verified={p?.instagramVerified ?? false}
+          onVerify={() => setVerifyModal('instagram')}
         />
 
-        {/* TikTok */}
         <SocialRow
           icon={<FaTiktok className="text-zinc-200" size={17} />}
           label="TikTok"
-          handle={data?.profile.tiktokHandle ?? null}
-          verified={false}
-          editing={editing}
-          editValue={ttHandle}
-          onEditChange={setTtHandle}
-          placeholder="@username"
+          name={p?.tiktokName ?? null}
+          handle={p?.tiktokHandle ?? null}
+          picture={p?.tiktokPicture ?? null}
+          verified={p?.tiktokVerified ?? false}
+          onVerify={() => setVerifyModal('tiktok')}
         />
 
-        {/* Facebook */}
         <SocialRow
           icon={<FaFacebook className="text-blue-500" size={18} />}
           label="Facebook"
-          handle={data?.profile.facebookHandle ?? null}
-          verified={false}
-          editing={editing}
-          editValue={fbHandle}
-          onEditChange={setFbHandle}
-          placeholder="Profil-URL oder Name"
+          name={p?.facebookName ?? null}
+          handle={p?.facebookHandle ?? null}
+          picture={p?.facebookPicture ?? null}
+          verified={p?.facebookVerified ?? false}
+          onVerify={() => setVerifyModal('facebook')}
         />
       </div>
 
       {/* ── Quest Board ────────────────────────────────────────── */}
-      <div className="mt-2">
-        <QuestBoardTab language={_language} />
-      </div>
+      <QuestBoardTab language={_language} />
+
+      {/* ── Verify-Modal ───────────────────────────────────────── */}
+      {verifyModal && (
+        <SocialVerifyModal
+          platform={verifyModal}
+          walletAddress={account.address}
+          currentHandle={
+            verifyModal === 'instagram' ? (p?.instagramHandle ?? null)
+            : verifyModal === 'tiktok'  ? (p?.tiktokHandle ?? null)
+            : (p?.facebookHandle ?? null)
+          }
+          currentVerified={
+            verifyModal === 'instagram' ? (p?.instagramVerified ?? false)
+            : verifyModal === 'tiktok'  ? (p?.tiktokVerified ?? false)
+            : (p?.facebookVerified ?? false)
+          }
+          currentName={
+            verifyModal === 'instagram' ? (p?.instagramName ?? null)
+            : verifyModal === 'tiktok'  ? (p?.tiktokName ?? null)
+            : (p?.facebookName ?? null)
+          }
+          currentPicture={
+            verifyModal === 'instagram' ? (p?.instagramPicture ?? null)
+            : verifyModal === 'tiktok'  ? (p?.tiktokPicture ?? null)
+            : (p?.facebookPicture ?? null)
+          }
+          onDone={() => loadProfile()}
+          onClose={() => setVerifyModal(null)}
+        />
+      )}
     </div>
   );
 }
 
-// ─── Hilfskomponente: eine Zeile pro sozialem Netzwerk ───────────────────────
+// ─── SocialRow ────────────────────────────────────────────────────────────────
 
 interface SocialRowProps {
   icon: React.ReactNode;
   label: string;
+  name: string | null;
   handle: string | null;
+  picture: string | null;
   verified: boolean;
-  editing: boolean;
-  editValue?: string;
-  onEditChange?: (v: string) => void;
-  placeholder?: string;
+  onVerify: (() => void) | null;
   hint?: string;
-  thumbnail?: string | null;
 }
 
-function SocialRow({
-  icon, label, handle, verified, editing, editValue, onEditChange, placeholder, hint, thumbnail,
-}: SocialRowProps) {
+function SocialRow({ icon, label, name, handle, picture, verified, onVerify, hint }: SocialRowProps) {
+  const isLinked = !!handle;
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 py-1">
       <div className="w-8 flex justify-center shrink-0">{icon}</div>
-      <div className="flex-1 min-w-0">
-        {editing && onEditChange !== undefined ? (
-          <input
-            value={editValue ?? ''}
-            onChange={(e) => onEditChange(e.target.value)}
-            placeholder={placeholder}
-            className="w-full bg-zinc-800 text-white rounded-lg px-3 py-1.5 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm placeholder-zinc-600"
-          />
+      <div className="flex-1 flex items-center gap-2.5 min-w-0">
+        {isLinked && picture ? (
+          <Image src={picture} alt={name ?? label} width={32} height={32} unoptimized className="w-8 h-8 rounded-full shrink-0 object-cover" />
         ) : (
-          <div className="flex items-center gap-2 min-w-0">
-            {thumbnail && (
-              <Image src={thumbnail} alt={label} width={20} height={20} unoptimized className="w-5 h-5 rounded-full" />
-            )}
-            <span className={`text-sm truncate ${handle ? 'text-white' : 'text-zinc-600 italic'}`}>
-              {handle ?? (hint ?? 'Nicht hinterlegt')}
-            </span>
-            {verified && (
-              <span className="shrink-0 flex items-center gap-1 text-green-400 text-xs font-semibold bg-green-900/30 px-1.5 py-0.5 rounded-full">
-                <FaCheck size={9} /> Verifiziert
-              </span>
-            )}
-          </div>
+          <div className="w-8 h-8 rounded-full bg-zinc-800 shrink-0" />
         )}
+        <div className="min-w-0">
+          {isLinked ? (
+            <>
+              <p className="text-white text-sm font-semibold truncate">{name ?? handle}</p>
+              {name && handle && name !== handle && (
+                <p className="text-zinc-500 text-xs truncate">@{handle}</p>
+              )}
+            </>
+          ) : (
+            <p className="text-zinc-600 text-sm italic">{hint ?? 'Nicht verknüpft'}</p>
+          )}
+        </div>
       </div>
-      <span className="text-zinc-600 text-xs shrink-0">{label}</span>
+      <div className="shrink-0">
+        {verified ? (
+          <span className="flex items-center gap-1 text-green-400 text-xs font-semibold bg-green-900/30 px-2 py-1 rounded-full">
+            <FaCheck size={9} /> Verifiziert
+          </span>
+        ) : onVerify ? (
+          <button
+            onClick={onVerify}
+            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
+          >
+            {isLinked ? 'Ändern' : <><FaPlus size={9} /> Verknüpfen</>}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -167,14 +167,27 @@ export async function POST(req: NextRequest) {
         wallet_address      TEXT        PRIMARY KEY,
         instagram_handle    TEXT,
         instagram_verified  BOOLEAN     NOT NULL DEFAULT FALSE,
+        instagram_name      TEXT,
+        instagram_picture   TEXT,
         tiktok_handle       TEXT,
         tiktok_verified     BOOLEAN     NOT NULL DEFAULT FALSE,
+        tiktok_name         TEXT,
+        tiktok_picture      TEXT,
         facebook_handle     TEXT,
         facebook_verified   BOOLEAN     NOT NULL DEFAULT FALSE,
+        facebook_name       TEXT,
+        facebook_picture    TEXT,
         youtube_channel_id  TEXT,
         updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `;
+    // Bestehende Installationen: Spalten idempotent nachrüsten
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS instagram_name TEXT`;
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS instagram_picture TEXT`;
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS tiktok_name TEXT`;
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS tiktok_picture TEXT`;
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS facebook_name TEXT`;
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS facebook_picture TEXT`;
 
     // ── XP / Level ───────────────────────────────────────────────────────────
     await sql`
