@@ -88,10 +88,25 @@ export const MIGRATION_SQL = `
     paid_at        TIMESTAMPTZ
   );
 
+  CREATE TABLE IF NOT EXISTS creator_balances (
+    wallet_address  TEXT        PRIMARY KEY,
+    balance         INTEGER     NOT NULL DEFAULT 0,
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  CREATE TABLE IF NOT EXISTS creator_deposits (
+    id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    wallet_address TEXT        NOT NULL,
+    tx_hash        TEXT        UNIQUE NOT NULL,
+    amount         INTEGER     NOT NULL,
+    deposited_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
   CREATE INDEX IF NOT EXISTS idx_quests_active    ON quests(is_active, created_at DESC);
   CREATE INDEX IF NOT EXISTS idx_quests_creator   ON quests(creator_wallet);
   CREATE INDEX IF NOT EXISTS idx_completions_wallet ON quest_completions(wallet_address);
   CREATE INDEX IF NOT EXISTS idx_completions_quest  ON quest_completions(quest_id);
   CREATE INDEX IF NOT EXISTS idx_bindings_channel   ON youtube_bindings(channel_id);
   CREATE INDEX IF NOT EXISTS idx_pending_rewards_wallet ON pending_rewards(wallet_address, status);
+  CREATE INDEX IF NOT EXISTS idx_creator_deposits_wallet ON creator_deposits(wallet_address);
 `;

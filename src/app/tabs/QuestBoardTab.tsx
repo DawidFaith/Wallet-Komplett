@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useActiveAccount } from 'thirdweb/react';
+import { useActiveAccount, useSendTransaction } from 'thirdweb/react';
+import { getContract, prepareContractCall } from 'thirdweb';
+import { base } from 'thirdweb/chains';
+import { client } from '../client';
 import {
   FaYoutube,
   FaTrophy,
@@ -17,6 +20,10 @@ import {
 } from 'react-icons/fa';
 import Image from 'next/image';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
+
+// ─── Konstanten ────────────────────────────────────────────────────────────────
+const DFAITH_TOKEN = '0x69eFD833288605f320d77eB2aB99DDE62919BbC1';
+const DFAITH_DECIMALS = 2;
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
 
@@ -596,12 +603,209 @@ function FanBoard({
   );
 }
 
+// ─── Deposit Modal (Echter DFAITH-Transfer via thirdweb) ─────────────────────
+
+function DepositModal({
+  open,
+  onClose,
+  walletAddress,
+  onDeposited,
+}: {
+  open: boolean;
+  onClose: () => void;
+  walletAddress: string;
+  onDeposited: (amount: number) => void;
+}) {
+  const { mutateAsync: sendTransaction } = useSendTransaction();
+  const [amount, setAmount] = useState('');
+  const [step, setStep] = useState<'form' | 'sending' | 'verifying' | 'success' | 'error'>('form');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [creditedAmount, setCreditedAmount] = useState(0);
+
+  const poolAddress = process.env.NEXT_PUBLIC_REWARD_POOL_ADDRESS ?? '';
+
+  const handleDeposit = async () => {
+    const num = parseFloat(amount);
+    if (!num || num <= 0 || !poolAddress) return;
+    setStep('sending');
+    setErrorMsg('');
+    try {
+      const contract = getContract({ client, chain: base, address: DFAITH_TOKEN });
+      const tx = prepareContractCall({
+        contract,
+        method: 'function transfer(address,uint256) returns (bool)',
+        params: [
+          poolAddress as `0x${string}`,
+          BigInt(Math.round(num * Math.pow(10, DFAITH_DECIMALS))),
+        ],
+      });
+      const result = await sendTransaction(tx);
+      const txHash = result.transactionHash;
+
+      setStep('verifying');
+      // Kurz warten damit die RPC-Node den Receipt kennt
+      await new Promise((res) => setTimeout(res, 4000));
+
+      const res = await fetch('/api/youtube-quests/creator-balance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress, txHash, amount: Math.round(num) }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMsg(data.error ?? 'Fehler bei der Gutschrift');
+        setStep('error');
+        return;
+      }
+      setCreditedAmount(data.credited);
+      onDeposited(data.credited);
+      setStep('success');
+    } catch (e: any) {
+      setErrorMsg(e?.message ?? 'Unbekannter Fehler');
+      setStep('error');
+    }
+  };
+
+  const handleClose = () => {
+    setStep('form');
+    setAmount('');
+    setErrorMsg('');
+    onClose();
+  };
+
+  if (!open) return null;
+
+  return (
+    <Modal open={open} onClose={handleClose} title="Quest-Pool aufladen">
+      {step === 'form' && (
+        <div className="space-y-4">
+          <div className="bg-zinc-800 rounded-xl p-4 text-sm space-y-2">
+            <p className="text-yellow-400 font-semibold">So funktioniert es:</p>
+            <p className="text-zinc-300">
+              Zahle DFAITH ein – diese Tokens werden als Belohnungen an deine Fans ausgezahlt.
+            </p>
+            <div className="bg-zinc-900 rounded-lg p-3">
+              <p className="text-zinc-500 text-xs mb-1">Einzahlungsadresse (Reward Pool):</p>
+              <p className="text-white font-mono text-xs break-all">
+                {poolAddress || 'Nicht konfiguriert'}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-zinc-300 text-sm font-medium block mb-1.5">
+              Betrag (DFAITH)
+            </label>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="z.B. 1000"
+              min="1"
+              step="1"
+              className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-yellow-500 focus:outline-none text-sm placeholder-zinc-500"
+            />
+          </div>
+
+          {!poolAddress && (
+            <p className="text-red-400 text-sm bg-red-900/20 rounded-xl p-3">
+              NEXT_PUBLIC_REWARD_POOL_ADDRESS ist nicht konfiguriert.
+            </p>
+          )}
+
+          <button
+            onClick={handleDeposit}
+            disabled={!amount || parseFloat(amount) <= 0 || !poolAddress}
+            className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+          >
+            <FaCoins /> {amount || '0'} DFAITH einzahlen
+          </button>
+        </div>
+      )}
+
+      {step === 'sending' && (
+        <div className="flex flex-col items-center py-10 gap-4">
+          <div className="border-4 border-yellow-500/30 border-t-yellow-500 rounded-full w-12 h-12 animate-spin" />
+          <div className="text-center">
+            <p className="text-zinc-200 font-semibold">Transaktion wird gesendet…</p>
+            <p className="text-zinc-500 text-xs mt-1">Bitte in deiner Wallet bestätigen</p>
+          </div>
+        </div>
+      )}
+
+      {step === 'verifying' && (
+        <div className="flex flex-col items-center py-10 gap-4">
+          <div className="border-4 border-blue-500/30 border-t-blue-500 rounded-full w-12 h-12 animate-spin" />
+          <div className="text-center">
+            <p className="text-zinc-200 font-semibold">Transaktion wird verifiziert…</p>
+            <p className="text-zinc-500 text-xs mt-1">Einen Moment bitte</p>
+          </div>
+        </div>
+      )}
+
+      {step === 'success' && (
+        <div className="space-y-4">
+          <div className="bg-green-900/30 border border-green-700/40 rounded-xl p-5 text-center">
+            <FaCheck size={28} className="text-green-400 mx-auto mb-2" />
+            <p className="text-green-300 font-bold text-lg">{creditedAmount} DFAITH gutgeschrieben!</p>
+            <p className="text-zinc-400 text-sm mt-1">Dein Creator-Pool wurde aufgeladen.</p>
+          </div>
+          <button
+            onClick={handleClose}
+            className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold"
+          >
+            Schließen
+          </button>
+        </div>
+      )}
+
+      {step === 'error' && (
+        <div className="space-y-4">
+          <div className="bg-red-900/30 border border-red-700/40 rounded-xl p-4">
+            <p className="text-red-300">{errorMsg}</p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setStep('form')}
+              className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-3 rounded-xl transition-colors font-semibold"
+            >
+              Zurück
+            </button>
+            <button
+              onClick={handleClose}
+              className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white py-3 rounded-xl transition-colors font-semibold"
+            >
+              Schließen
+            </button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 // ─── Creator Board ────────────────────────────────────────────────────────────
 
 function CreatorBoard({ walletAddress, binding }: { walletAddress: string; binding: YouTubeBinding | null }) {
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Creator Balance + Deposit
+  const [creatorBalance, setCreatorBalance] = useState<number>(0);
+  const [showDeposit, setShowDeposit] = useState(false);
+
+  const loadCreatorBalance = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/youtube-quests/creator-balance?wallet=${walletAddress}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCreatorBalance(data.balance ?? 0);
+      }
+    } catch {
+      // Fehler beim Laden des Guthabens
+    }
+  }, [walletAddress]);
 
   // Formular-State
   const [videoUrl, setVideoUrl] = useState('');
@@ -628,7 +832,10 @@ function CreatorBoard({ walletAddress, binding }: { walletAddress: string; bindi
     }
   }, [walletAddress]);
 
-  useEffect(() => { loadCreatorQuests(); }, [loadCreatorQuests]);
+  useEffect(() => {
+    loadCreatorQuests();
+    loadCreatorBalance();
+  }, [loadCreatorQuests, loadCreatorBalance]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -676,6 +883,28 @@ function CreatorBoard({ walletAddress, binding }: { walletAddress: string; bindi
           </div>
         </div>
       )}
+
+      {/* Creator Pool Guthaben */}
+      <div className="bg-gradient-to-r from-yellow-900/40 to-amber-900/30 border border-yellow-700/50 rounded-2xl p-4 flex items-center gap-4">
+        <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
+          <FaCoins size={18} className="text-yellow-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-yellow-300 font-bold text-base">{creatorBalance} DFAITH</p>
+          <p className="text-yellow-600 text-xs">
+            {creatorBalance > 0
+              ? 'Verfügbar für Quest-Auszahlungen'
+              : 'Lade DFAITH auf um Quests zu finanzieren'}
+          </p>
+        </div>
+        <button
+          onClick={() => setShowDeposit(true)}
+          className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-4 py-2 rounded-xl text-sm transition-colors shrink-0"
+        >
+          Aufladen
+        </button>
+      </div>
+
       <div className="flex items-center justify-between">
         <h2 className="text-white font-bold text-lg">Meine Quests</h2>
         <button
@@ -700,11 +929,15 @@ function CreatorBoard({ walletAddress, binding }: { walletAddress: string; bindi
         <div className="space-y-3">
           {quests.map((quest) => (
             <div key={quest.id} className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 flex gap-4 items-start">
-              <img
-                src={quest.videoThumbnail}
-                alt={quest.videoTitle}
-                className="w-24 h-16 object-cover rounded-xl shrink-0"
-              />
+              <div className="relative w-24 h-16 shrink-0 rounded-xl overflow-hidden">
+                <Image
+                  src={quest.videoThumbnail}
+                  alt={quest.videoTitle}
+                  fill
+                  unoptimized
+                  className="object-cover"
+                />
+              </div>
               <div className="flex-1 min-w-0 space-y-1">
                 <p className="text-white text-sm font-semibold line-clamp-2">{quest.videoTitle}</p>
                 <a
@@ -818,7 +1051,19 @@ function CreatorBoard({ walletAddress, binding }: { walletAddress: string; bindi
 
             <div className="bg-zinc-800 rounded-xl p-3 text-xs text-zinc-400 space-y-1">
               <p className="text-yellow-400 font-semibold">Hinweis:</p>
-              <p>Der Reward wird aktuell manuell ausgezahlt. Automatische On-Chain-Auszahlung folgt im nächsten Update.</p>
+              <p>
+                Dein Quest-Pool-Guthaben:{' '}
+                <span className="text-yellow-300 font-bold">{creatorBalance} DFAITH</span>
+                {creatorBalance === 0 && (
+                  <button
+                    type="button"
+                    onClick={() => { setShowCreateModal(false); setShowDeposit(true); }}
+                    className="ml-2 text-yellow-400 underline"
+                  >
+                    Jetzt aufladen
+                  </button>
+                )}
+              </p>
               <p>Wallet: <span className="text-zinc-300 font-mono">{shortenWallet(walletAddress)}</span></p>
             </div>
 
@@ -835,6 +1080,14 @@ function CreatorBoard({ walletAddress, binding }: { walletAddress: string; bindi
           </form>
         )}
       </Modal>
+
+      {/* Einzahlungs-Modal */}
+      <DepositModal
+        open={showDeposit}
+        onClose={() => setShowDeposit(false)}
+        walletAddress={walletAddress}
+        onDeposited={(amount) => setCreatorBalance((prev) => prev + amount)}
+      />
     </div>
   );
 }

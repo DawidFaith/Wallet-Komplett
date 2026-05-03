@@ -344,3 +344,49 @@ export async function getPendingRewardTotal(walletAddress: string): Promise<numb
   `;
   return Number(rows[0]?.total ?? 0);
 }
+
+// ─── Creator Balance ──────────────────────────────────────────────────────────
+
+/** Aktuelles Guthaben eines Creators laden */
+export async function getCreatorBalance(walletAddress: string): Promise<number> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT balance FROM creator_balances WHERE wallet_address = ${walletAddress.toLowerCase()} LIMIT 1
+  `;
+  return rows.length > 0 ? Number(rows[0].balance) : 0;
+}
+
+/**
+ * DFAITH-Einzahlung eines Creators gutschreiben.
+ * tx_hash ist UNIQUE – verhindert Doppel-Gutschriften.
+ */
+export async function creditCreatorBalance(
+  walletAddress: string,
+  amount: number,
+  txHash: string,
+): Promise<void> {
+  const sql = getDb();
+  // Deposit-Record anlegen (UNIQUE tx_hash wirft bei Duplikat)
+  await sql`
+    INSERT INTO creator_deposits (wallet_address, tx_hash, amount)
+    VALUES (${walletAddress.toLowerCase()}, ${txHash.toLowerCase()}, ${amount})
+  `;
+  // Guthaben aufstocken (oder neu anlegen)
+  await sql`
+    INSERT INTO creator_balances (wallet_address, balance, updated_at)
+    VALUES (${walletAddress.toLowerCase()}, ${amount}, NOW())
+    ON CONFLICT (wallet_address) DO UPDATE SET
+      balance    = creator_balances.balance + EXCLUDED.balance,
+      updated_at = NOW()
+  `;
+}
+
+/** Guthaben eines Creators reduzieren (z.B. nach Reward-Auszahlung) */
+export async function debitCreatorBalance(walletAddress: string, amount: number): Promise<void> {
+  const sql = getDb();
+  await sql`
+    UPDATE creator_balances
+    SET balance = GREATEST(0, balance - ${amount}), updated_at = NOW()
+    WHERE wallet_address = ${walletAddress.toLowerCase()}
+  `;
+}
