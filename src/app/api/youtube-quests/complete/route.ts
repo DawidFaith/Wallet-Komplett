@@ -7,6 +7,7 @@ import {
   saveCompletion,
   savePendingReward,
   addDfaithCredits,
+  addUserXp,
   QuestCompletion,
 } from '../../../lib/questDb';
 
@@ -198,6 +199,8 @@ export async function POST(req: NextRequest) {
 
   // Dfaith Credits dem Fan gutschreiben (aus dem beim Quest-Erstellen gesperrten Budget)
   await addDfaithCredits(normalized, quest.rewardAmount);
+  // XP gutschreiben (1 DFAITH = 10 XP)
+  await addUserXp(normalized, quest.rewardAmount * 10);
 
   return NextResponse.json({
     success: true,

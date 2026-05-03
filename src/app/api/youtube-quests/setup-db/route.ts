@@ -161,6 +161,32 @@ export async function POST(req: NextRequest) {
     // Secret-Quest: Code-Spalte nachrüsten (idempotent)
     await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS secret_code TEXT`;
 
+    // ── Benutzerprofile ──────────────────────────────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS user_profiles (
+        wallet_address      TEXT        PRIMARY KEY,
+        instagram_handle    TEXT,
+        instagram_verified  BOOLEAN     NOT NULL DEFAULT FALSE,
+        tiktok_handle       TEXT,
+        tiktok_verified     BOOLEAN     NOT NULL DEFAULT FALSE,
+        facebook_handle     TEXT,
+        facebook_verified   BOOLEAN     NOT NULL DEFAULT FALSE,
+        youtube_channel_id  TEXT,
+        updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+
+    // ── XP / Level ───────────────────────────────────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS user_xp (
+        wallet_address  TEXT        PRIMARY KEY,
+        xp              INTEGER     NOT NULL DEFAULT 0,
+        updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    // XP pro abgeschlossenem Quest gutschreiben: Spalte in quest_completions (idempotent)
+    await sql`ALTER TABLE quest_completions ADD COLUMN IF NOT EXISTS xp_awarded INTEGER NOT NULL DEFAULT 0`;
+
     return NextResponse.json({
       success: true,
       message: 'Alle Tabellen (inkl. dfaith_credits, expires_at) erstellt.',

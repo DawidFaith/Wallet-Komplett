@@ -5,6 +5,7 @@ import {
   hasWalletCompletedQuest,
   saveCompletion,
   addDfaithCredits,
+  addUserXp,
 } from '../../../lib/questDb';
 
 export async function POST(req: NextRequest) {
@@ -85,6 +86,7 @@ export async function POST(req: NextRequest) {
     });
 
     await addDfaithCredits(walletAddress, quest.rewardAmount);
+    await addUserXp(walletAddress, quest.rewardAmount * 10);
 
     return NextResponse.json({ success: true, rewardAmount: quest.rewardAmount });
   } catch (err) {

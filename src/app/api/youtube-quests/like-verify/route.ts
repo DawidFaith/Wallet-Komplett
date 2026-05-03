@@ -10,6 +10,7 @@ import {
   deleteLikeVerification,
   saveCompletion,
   addDfaithCredits,
+  addUserXp,
   QuestCompletion,
 } from '../../../lib/questDb';
 
@@ -195,6 +196,7 @@ export async function POST(req: NextRequest) {
 
     await saveCompletion(completion);
     await addDfaithCredits(normalized, quest.rewardAmount);
+    await addUserXp(normalized, quest.rewardAmount * 10);
     await deleteLikeVerification(questId, normalized);
 
     return NextResponse.json({ success: true, rewardAmount: quest.rewardAmount });

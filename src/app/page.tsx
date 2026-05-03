@@ -13,10 +13,11 @@ import TiktokTab from "./tabs/TiktokTab";
 import FacebookTab from "./tabs/FacebookTab";
 import YoutubeTab from "./tabs/YoutubeTab";
 import QuestBoardTab from "./tabs/QuestBoardTab";
+import ProfileTab from "./tabs/ProfileTab";
 import type { SupportedLanguage } from "./utils/deepLTranslation";
 
 function HomeContent() {
-  const [activeTab, setActiveTab] = useState("wallet");
+  const [activeTab, setActiveTab] = useState("profile");
   const [language, setLanguage] = useState<SupportedLanguage>("de");
   const searchParams = useSearchParams();
 
@@ -37,6 +38,7 @@ function HomeContent() {
         setLanguage={setLanguage}
       />
       <section className="flex-1 flex flex-col items-center justify-center pt-24 pb-8">
+        {activeTab === "profile" && <ProfileTab language={language} />}
         {activeTab === "wallet" && <WalletTab language={language} />}
         {activeTab === "tokenomics" && <TokenomicsTab language={language} />}
         {activeTab === "merch" && <MerchTab language={language} />}
