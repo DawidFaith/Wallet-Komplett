@@ -26,7 +26,7 @@ export default function CreateQuestModal({
   const [description, setDescription] = useState('');
   const [rewardAmount, setRewardAmount] = useState('100');
   const [maxParticipants, setMaxParticipants] = useState('10');
-  const [questType, setQuestType] = useState<'comment'>('comment');
+  const [questType, setQuestType] = useState<'comment' | 'like'>('comment');
   const [durationHours, setDurationHours] = useState('24');
   // freie Dauer-Eingabe
   const [customDurationValue, setCustomDurationValue] = useState('30');
@@ -61,8 +61,11 @@ export default function CreateQuestModal({
       }
 
       // Auto-Beschreibung wenn leer
-      const finalDescription = description.trim() ||
-        '💬 Schreibe einen positiven Kommentar unter diesen YouTube Short!';
+      const finalDescription = description.trim() || (
+        questType === 'like'
+          ? '👍 Like dieses YouTube Short!'
+          : '💬 Schreibe einen positiven Kommentar unter diesen YouTube Short!'
+      );
 
       const res = await fetch('/api/youtube-quests/quests', {
         method: 'POST',
@@ -107,14 +110,19 @@ export default function CreateQuestModal({
             <div className="relative">
               <select
                 value={questType}
-                onChange={(e) => setQuestType(e.target.value as 'comment')}
+                onChange={(e) => setQuestType(e.target.value as 'comment' | 'like')}
                 className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm appearance-none cursor-pointer"
               >
                 <option value="comment">💬 Kommentar – Wertsteigernder Kommentar unter dem Video</option>
+                <option value="like">👍 Like – Klick auf Like unter dem Video</option>
               </select>
               <FaCommentAlt className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" size={13} />
             </div>
-            <p className="text-zinc-500 text-xs mt-1">Die API prüft anhand des Kanalnamens ob der Fan kommentiert hat.</p>
+            <p className="text-zinc-500 text-xs mt-1">
+              {questType === 'like'
+                ? 'Verifizierung über Like-Anzahl-Delta: Fan entfernt Like → 5 Min Zeit um erneut zu liken.'
+                : 'Die API prüft anhand des Kanalnamens ob der Fan kommentiert hat.'}
+            </p>
           </div>
 
           {/* Dauer */}

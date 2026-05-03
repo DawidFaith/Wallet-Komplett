@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { FaTrophy, FaSync, FaUserCheck } from 'react-icons/fa';
 import CreditsBox from '../components/CreditsBox';
 import VerifyModal from './VerifyModal';
+import LikeVerifyModal from './LikeVerifyModal';
 import YoutubeQuestCard from '../quests/youtube/YoutubeQuestCard';
 import type { QuestIndexEntry, YouTubeBinding, VerifyResult, ClaimResult } from '../types';
 
@@ -25,6 +26,7 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
   const [verifyingQuest, setVerifyingQuest] = useState<QuestIndexEntry | null>(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
+  const [likeVerifyQuest, setLikeVerifyQuest] = useState<QuestIndexEntry | null>(null);
 
   const loadQuests = useCallback(async () => {
     setLoading(true);
@@ -51,6 +53,12 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
 
   const handleVerify = async (questId: string) => {
     const quest = quests.find((q) => q.id === questId) ?? null;
+    // Like-Quest → eigener 3-Schritt-Flow
+    if (quest?.type === 'like') {
+      setLikeVerifyQuest(quest);
+      return;
+    }
+    // Kommentar-Quest → bestehender Flow
     setVerifyingQuest(quest);
     setVerifyResult(null);
     setVerifyLoading(true);
@@ -180,13 +188,29 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
         </div>
       )}
 
-      {/* Verifizierungs-Modal */}
+      {/* Verifizierungs-Modal (Kommentar) */}
       <VerifyModal
         quest={verifyingQuest}
         loading={verifyLoading}
         result={verifyResult}
         onVerify={handleVerify}
         onClose={() => { setVerifyingQuest(null); setVerifyResult(null); }}
+      />
+
+      {/* Verifizierungs-Modal (Like) */}
+      <LikeVerifyModal
+        quest={likeVerifyQuest}
+        walletAddress={walletAddress}
+        onCompleted={(amount) => {
+          if (likeVerifyQuest) {
+            setCompletedIds((prev) => [...prev, likeVerifyQuest.id]);
+            setCredits((prev) => prev + amount);
+            setQuests((prev) =>
+              prev.map((q) => q.id === likeVerifyQuest.id ? { ...q, completions: q.completions + 1 } : q)
+            );
+          }
+        }}
+        onClose={() => setLikeVerifyQuest(null)}
       />
     </div>
   );
