@@ -372,6 +372,10 @@ function FanBoard({
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Pending Rewards
+  const [pendingTotal, setPendingTotal] = useState<number>(0);
+  const [pendingCount, setPendingCount] = useState<number>(0);
+
   // Verifizierungs-Modal
   const [verifyingQuestId, setVerifyingQuestId] = useState<string | null>(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
@@ -385,10 +389,18 @@ function FanBoard({
   const loadQuests = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/youtube-quests/quests?wallet=${walletAddress}`);
-      const data = await res.json();
-      setQuests(data.quests ?? []);
-      setCompletedIds(data.completedIds ?? []);
+      const [questsRes, rewardsRes] = await Promise.all([
+        fetch(`/api/youtube-quests/quests?wallet=${walletAddress}`),
+        fetch(`/api/youtube-quests/rewards?wallet=${walletAddress}`),
+      ]);
+      const questsData = await questsRes.json();
+      setQuests(questsData.quests ?? []);
+      setCompletedIds(questsData.completedIds ?? []);
+      if (rewardsRes.ok) {
+        const rewardsData = await rewardsRes.json();
+        setPendingTotal(rewardsData.total ?? 0);
+        setPendingCount((rewardsData.rewards ?? []).length);
+      }
     } catch {
       // Fehler beim Laden
     } finally {
@@ -417,6 +429,8 @@ function FanBoard({
           rewardAmount: data.rewardAmount,
         });
         setCompletedIds((prev) => [...prev, questId]);
+        setPendingTotal((prev) => prev + (data.rewardAmount ?? 0));
+        setPendingCount((prev) => prev + 1);
         // Zähler im State aktualisieren
         setQuests((prev) =>
           prev.map((q) =>
@@ -450,6 +464,22 @@ function FanBoard({
           <FaUserCheck /> Verifiziert
         </div>
       </div>
+
+      {/* Ausstehende Rewards */}
+      {pendingTotal > 0 && (
+        <div className="bg-gradient-to-r from-yellow-900/40 to-amber-900/30 border border-yellow-700/50 rounded-2xl p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
+            <FaCoins size={18} className="text-yellow-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-yellow-300 font-bold text-base">{pendingTotal} DFAITH</p>
+            <p className="text-yellow-600 text-xs">{pendingCount} Quest{pendingCount !== 1 ? 's' : ''} abgeschlossen · Auszahlung ausstehend</p>
+          </div>
+          <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-xl px-3 py-1.5 text-yellow-300 text-xs font-semibold">
+            Ausstehend
+          </div>
+        </div>
+      )}
 
       {/* Quest Liste */}
       <div className="flex items-center justify-between">
@@ -566,7 +596,7 @@ function FanBoard({
 
 // ─── Creator Board ────────────────────────────────────────────────────────────
 
-function CreatorBoard({ walletAddress }: { walletAddress: string }) {
+function CreatorBoard({ walletAddress, binding }: { walletAddress: string; binding: YouTubeBinding | null }) {
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -629,6 +659,21 @@ function CreatorBoard({ walletAddress }: { walletAddress: string }) {
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-5">
+      {/* Kanal-Badge */}
+      {binding && (
+        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 flex items-center gap-3">
+          {binding.channelThumbnail && (
+            <Image src={binding.channelThumbnail} alt={binding.channelName} width={40} height={40} unoptimized className="w-10 h-10 rounded-full" />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-semibold text-sm truncate">{binding.channelName}</p>
+            <p className="text-zinc-500 text-xs">YouTube verknüpft</p>
+          </div>
+          <div className="flex items-center gap-1 text-green-400 text-xs font-semibold">
+            <FaUserCheck /> Verifiziert
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <h2 className="text-white font-bold text-lg">Meine Quests</h2>
         <button
@@ -874,7 +919,7 @@ export default function QuestBoardTab({ language }: QuestBoardTabProps) {
           />
         )
       ) : (
-        <CreatorBoard walletAddress={account.address} />
+        <CreatorBoard walletAddress={account.address} binding={binding} />
       )}
     </div>
   );
