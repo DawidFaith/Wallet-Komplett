@@ -75,9 +75,23 @@ export async function POST(req: NextRequest) {
     await sql`CREATE INDEX IF NOT EXISTS idx_completions_quest  ON quest_completions(quest_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_bindings_channel   ON youtube_bindings(channel_id)`;
 
+    await sql`
+      CREATE TABLE IF NOT EXISTS pending_rewards (
+        id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+        wallet_address TEXT        NOT NULL,
+        amount         INTEGER     NOT NULL,
+        reason         TEXT        NOT NULL DEFAULT '',
+        quest_id       UUID        REFERENCES quests(id) ON DELETE SET NULL,
+        status         TEXT        NOT NULL DEFAULT 'pending',
+        created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        paid_at        TIMESTAMPTZ
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_pending_rewards_wallet ON pending_rewards(wallet_address, status)`;
+
     return NextResponse.json({
       success: true,
-      message: 'Tabellen youtube_bindings, quests, quest_completions und Indizes erstellt.',
+      message: 'Tabellen youtube_bindings, quests, quest_completions, pending_rewards und Indizes erstellt.',
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
