@@ -1,0 +1,145 @@
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
+import { FaPlus, FaSync, FaTrophy, FaCoins, FaExternalLinkAlt, FaUserCheck } from 'react-icons/fa';
+import CreditsBox from '../components/CreditsBox';
+import DepositModal from './DepositModal';
+import CreateQuestModal from './CreateQuestModal';
+import type { QuestIndexEntry, YouTubeBinding } from '../types';
+import { getProgressPercent } from '../utils';
+
+interface CreatorBoardProps {
+  walletAddress: string;
+  binding: YouTubeBinding | null;
+}
+
+export default function CreatorBoard({ walletAddress, binding }: CreatorBoardProps) {
+  const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDeposit, setShowDeposit] = useState(false);
+  const [creatorBalance, setCreatorBalance] = useState(0);
+
+  const loadCreatorBalance = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/youtube-quests/creator-balance?wallet=${walletAddress}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCreatorBalance(data.balance ?? 0);
+      }
+    } catch { /* ignorieren */ }
+  }, [walletAddress]);
+
+  const loadCreatorQuests = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/youtube-quests/quests');
+      const data = await res.json();
+      const mine = (data.quests ?? []).filter(
+        (q: QuestIndexEntry) => q.creatorWallet === walletAddress.toLowerCase()
+      );
+      setQuests(mine);
+    } catch { /* ignorieren */ }
+    finally { setLoading(false); }
+  }, [walletAddress]);
+
+  useEffect(() => {
+    loadCreatorQuests();
+    loadCreatorBalance();
+  }, [loadCreatorQuests, loadCreatorBalance]);
+
+  return (
+    <div className="w-full max-w-2xl mx-auto space-y-5">
+      {/* Kanal-Badge */}
+      {binding && (
+        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 flex items-center gap-3">
+          {binding.channelThumbnail && (
+            <Image src={binding.channelThumbnail} alt={binding.channelName} width={40} height={40} unoptimized className="w-10 h-10 rounded-full" />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-semibold text-sm truncate">{binding.channelName}</p>
+            <p className="text-zinc-500 text-xs">YouTube verknüpft</p>
+          </div>
+          <div className="flex items-center gap-1 text-green-400 text-xs font-semibold">
+            <FaUserCheck /> Verifiziert
+          </div>
+        </div>
+      )}
+
+      {/* Credits Box */}
+      <CreditsBox
+        balance={creatorBalance}
+        subtitle={creatorBalance > 0 ? 'Verfügbar für Quest-Auszahlungen an Fans' : 'Lade DFAITH auf um Quests zu finanzieren'}
+        secondaryLabel="Aufladen"
+        onSecondary={() => setShowDeposit(true)}
+      />
+
+      {/* Header + Quest erstellen */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-white font-bold text-lg">Meine Quests</h2>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="bg-red-600 hover:bg-red-500 text-white font-semibold px-4 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
+        >
+          <FaPlus size={12} /> Quest erstellen
+        </button>
+      </div>
+
+      {/* Quest-Liste */}
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="border-4 border-red-500/30 border-t-red-500 rounded-full w-10 h-10 animate-spin" />
+        </div>
+      ) : quests.length === 0 ? (
+        <div className="text-center py-12 bg-zinc-900 rounded-2xl border border-zinc-800 text-zinc-500">
+          <FaPlus size={32} className="mx-auto mb-3 opacity-30" />
+          <p>Noch keine Quests erstellt.</p>
+          <p className="text-sm mt-1">Erstelle deinen ersten Quest!</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {quests.map((quest) => (
+            <div key={quest.id} className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 flex gap-4 items-start">
+              <div className="relative w-24 h-16 shrink-0 rounded-xl overflow-hidden">
+                <Image src={quest.videoThumbnail} alt={quest.videoTitle} fill unoptimized className="object-cover" />
+              </div>
+              <div className="flex-1 min-w-0 space-y-1">
+                <p className="text-white text-sm font-semibold line-clamp-2">{quest.videoTitle}</p>
+                <a href={quest.videoUrl} target="_blank" rel="noopener noreferrer" className="text-red-400 text-xs flex items-center gap-1 hover:underline">
+                  <FaExternalLinkAlt size={10} /> Shorts öffnen
+                </a>
+                <div className="flex items-center gap-3 text-xs text-zinc-400">
+                  <span className="flex items-center gap-1"><FaCoins size={10} className="text-yellow-400" />{quest.rewardAmount} DFAITH</span>
+                  <span className="flex items-center gap-1"><FaTrophy size={10} className="text-green-400" />{quest.completions}/{quest.maxCompletions}</span>
+                </div>
+                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden w-full">
+                  <div
+                    className="h-full bg-gradient-to-r from-red-500 to-yellow-500 rounded-full"
+                    style={{ width: `${getProgressPercent(quest.completions, quest.maxCompletions)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modals */}
+      <CreateQuestModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        walletAddress={walletAddress}
+        creatorBalance={creatorBalance}
+        onCreated={() => { setShowCreateModal(false); loadCreatorQuests(); }}
+        onOpenDeposit={() => setShowDeposit(true)}
+      />
+      <DepositModal
+        open={showDeposit}
+        onClose={() => setShowDeposit(false)}
+        walletAddress={walletAddress}
+        onDeposited={(amount) => setCreatorBalance((prev) => prev + amount)}
+      />
+    </div>
+  );
+}
