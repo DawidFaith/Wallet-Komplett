@@ -261,6 +261,11 @@ export default function SocialVerifyModal({
                     {codeCopied ? <FaCheck className="text-green-400" /> : <FaCopy size={13} />}
                   </button>
                 </div>
+                {!preview.bio && platform === 'tiktok' && (
+                  <p className="text-orange-400 text-xs bg-orange-900/20 rounded-lg px-3 py-2">
+                    ⚠ TikTok-Bio konnte jetzt nicht gelesen werden. Trage den Code trotzdem ein – beim Verifizieren versuchen wir es erneut.
+                  </p>
+                )}
                 <ol className="text-zinc-400 text-sm space-y-1 list-decimal list-inside">
                   {cfg.bioInstructions(preview.verificationCode).map((step, i) => (
                     <li key={i}>{step}</li>
