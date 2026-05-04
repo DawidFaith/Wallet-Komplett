@@ -24,10 +24,26 @@ const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 const RAPIDAPI_HOST = 'tiktok-api23.p.rapidapi.com';
 
 // TikTok-Video-ID aus URL extrahieren
-// Unterstützt: tiktok.com/@user/video/123, vm.tiktok.com/xxx (redirect)
+// Unterstützt: tiktok.com/@user/video/123 direkt, oder vm.tiktok.com/xxx (Short-Link → Redirect auflösen)
 function extractTikTokVideoId(url: string): string | null {
   const match = url.match(/\/video\/(\d+)/);
   return match?.[1] ?? null;
+}
+
+// Short-URL auflösen: vm.tiktok.com/xxx → folgt Redirects ohne Body
+async function resolveShortUrl(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+    return res.url || url;
+  } catch {
+    // Falls HEAD nicht klappt, GET ohne Body-Download probieren
+    try {
+      const res = await fetch(url, { redirect: 'follow' });
+      return res.url || url;
+    } catch {
+      return url;
+    }
+  }
 }
 
 // Video-Info via RapidAPI holen
@@ -122,11 +138,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Video-ID aus URL extrahieren
-  const videoId = extractTikTokVideoId(videoUrl);
+  // Video-ID aus URL extrahieren – ggf. Short-URL auflösen
+  const isShortUrl = /vm\.tiktok\.com|vt\.tiktok\.com/.test(videoUrl);
+  const resolvedUrl = isShortUrl ? await resolveShortUrl(videoUrl) : videoUrl;
+  const videoId = extractTikTokVideoId(resolvedUrl);
   if (!videoId) {
     return NextResponse.json(
-      { error: 'Ungültige TikTok-URL. Bitte eine URL im Format tiktok.com/@user/video/ID verwenden.' },
+      { error: 'TikTok-Video-ID konnte nicht gefunden werden. Bitte direkte Video-URL oder vm.tiktok.com-Link verwenden.' },
       { status: 400 }
     );
   }
