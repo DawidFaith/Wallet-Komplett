@@ -1,10 +1,8 @@
 'use client';
 
-// TikTok Quest-Karte – coming soon
-// Struktur analog zu YoutubeQuestCard, wird erweitert wenn TikTok-API integriert ist.
-
 import React from 'react';
-import { FaCoins, FaClock, FaKey } from 'react-icons/fa';
+import Image from 'next/image';
+import { FaCoins, FaTrophy, FaCheck, FaExternalLinkAlt, FaClock, FaKey } from 'react-icons/fa';
 import { SiTiktok } from 'react-icons/si';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry } from '../../utils';
@@ -17,42 +15,90 @@ interface TiktokQuestCardProps {
 
 export default function TiktokQuestCard({ quest, isCompleted, onComplete }: TiktokQuestCardProps) {
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
+  const isFull = quest.completions >= quest.maxCompletions;
   const expiry = formatExpiry(quest.expiresAt);
 
   return (
-    <div className={`bg-zinc-900 rounded-2xl border border-cyan-800/40 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
+    <div className={`bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
+      {/* Thumbnail */}
+      <div className="relative h-40">
+        <Image
+          src={quest.videoThumbnail}
+          alt={quest.videoTitle}
+          fill
+          unoptimized
+          className="object-cover"
+        />
+        <div className="absolute top-2 left-2 bg-cyan-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+          <SiTiktok size={10} /> {quest.type === 'secret' ? 'Secret' : quest.type === 'engagement' ? 'Engagement' : 'TikTok'}
+        </div>
+        <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+          <FaCoins size={10} /> {quest.rewardAmount} DFAITH
+        </div>
+        {expiry && (
+          <div className="absolute bottom-2 left-2 bg-black/70 text-zinc-300 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+            <FaClock size={9} /> {expiry}
+          </div>
+        )}
+      </div>
+
       <div className="p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <SiTiktok size={16} className="text-cyan-400" />
-          <span className="text-white font-semibold text-sm line-clamp-1">{quest.videoTitle}</span>
+        <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{quest.videoTitle}</h3>
+
+        {/* Fortschrittsbalken */}
+        <div>
+          <div className="flex justify-between text-xs text-zinc-400 mb-1">
+            <span>{quest.completions} von {quest.maxCompletions} Plätzen belegt</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
 
-        <div className="flex justify-between items-center text-xs text-zinc-400">
-          <span className="flex items-center gap-1">
-            <FaCoins size={10} className="text-yellow-400" /> {quest.rewardAmount} DFAITH
-          </span>
-          {expiry && (
-            <span className="flex items-center gap-1 text-zinc-500">
-              <FaClock size={9} /> {expiry}
-            </span>
+        <p className="text-zinc-400 text-xs">
+          Aufgabe: <span className="text-zinc-300">{quest.description || (quest.type === 'secret' ? '🔑 Finde den geheimen Code im Video und gib ihn ein!' : '💬 Schreibe einen positiven Kommentar unter dieses TikTok-Video!')}</span>
+        </p>
+
+        <div className="flex gap-2">
+          <a
+            href={quest.videoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+          >
+            <FaExternalLinkAlt size={12} /> Zum Video
+          </a>
+
+          {isCompleted ? (
+            <button
+              disabled
+              className="flex-1 bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30"
+            >
+              <FaCheck size={12} /> Erledigt
+            </button>
+          ) : isFull ? (
+            <button
+              disabled
+              className="flex-1 bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default"
+            >
+              Voll
+            </button>
+          ) : (
+            <button
+              onClick={() => onComplete(quest.id)}
+              className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
+              {quest.type === 'secret'
+                ? <><FaKey size={12} /> Code eingeben</>
+                : <><FaTrophy size={12} /> Verifizieren</>
+              }
+            </button>
           )}
         </div>
-
-        <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <p className="text-zinc-500 text-xs">{quest.completions}/{quest.maxCompletions} abgeschlossen</p>
-
-        <button
-          onClick={() => !isCompleted && onComplete(quest.id)}
-          disabled={isCompleted || quest.completions >= quest.maxCompletions}
-          className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
-        >
-          {isCompleted ? 'Erledigt' : quest.type === 'secret' ? <><FaKey size={12} /> Code eingeben</> : 'Verifizieren'}
-        </button>
       </div>
     </div>
   );
