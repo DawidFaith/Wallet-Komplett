@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { FaFacebook, FaCheck, FaUnlink, FaSync } from 'react-icons/fa';
 import { inAppWallet } from 'thirdweb/wallets';
 import { getProfiles } from 'thirdweb/wallets/in-app';
-import { client } from '../../client';
+import { client } from '../client';
 
 interface FacebookOAuthButtonProps {
   walletAddress: string;
