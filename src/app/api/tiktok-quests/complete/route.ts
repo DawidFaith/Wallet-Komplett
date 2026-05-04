@@ -127,10 +127,11 @@ export async function POST(req: NextRequest) {
   // 5. Abschluss speichern
   const now = new Date().toISOString();
   const completion: QuestCompletion = {
-    id: crypto.randomUUID(),
     questId,
     walletAddress: normalized,
     channelId: profile.tiktokHandle,
+    channelName: profile.tiktokHandle,
+    platform: 'tiktok',
     commentId: `tiktok-comment-${normalized}-${questId}`,
     commentText: foundComment.text,
     completedAt: now,
