@@ -8,6 +8,7 @@ import {
   FaCheck, FaCoins, FaStar, FaLock, FaPlus,
 } from 'react-icons/fa';
 import SocialVerifyModal from './profile/SocialVerifyModal';
+import LinkChannelView from './quest-board/fan/LinkChannelView';
 import QuestBoardTab from './QuestBoardTab';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
 
@@ -53,6 +54,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   const [data, setData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(false);
   const [verifyModal, setVerifyModal] = useState<SocialPlatform | null>(null);
+  const [showYoutubeModal, setShowYoutubeModal] = useState(false);
 
   const loadProfile = useCallback(async () => {
     if (!account?.address) return;
@@ -142,8 +144,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           handle={p?.youtubeChannelName ?? null}
           picture={p?.youtubeChannelThumbnail ?? null}
           verified={p?.youtubeVerified ?? false}
-          onVerify={null}
-          hint={!p?.youtubeVerified ? 'Im Quest Board verknüpfen' : undefined}
+          onVerify={() => setShowYoutubeModal(true)}
         />
 
         <div className="border-t border-zinc-800" />
@@ -183,6 +184,28 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
       <QuestBoardTab language={_language} />
 
       {/* ── Verify-Modal ───────────────────────────────────────── */}
+      {showYoutubeModal && account?.address && (
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4"
+          onClick={() => setShowYoutubeModal(false)}
+        >
+          <div className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-end mb-2">
+              <button
+                onClick={() => setShowYoutubeModal(false)}
+                className="text-zinc-400 hover:text-white text-2xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <LinkChannelView
+              walletAddress={account.address}
+              onLinked={() => { setShowYoutubeModal(false); loadProfile(); }}
+            />
+          </div>
+        </div>
+      )}
+
       {verifyModal && (
         <SocialVerifyModal
           platform={verifyModal}

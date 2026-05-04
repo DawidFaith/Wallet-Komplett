@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useActiveAccount } from 'thirdweb/react';
-import { FaTrophy } from 'react-icons/fa';
+import { FaTrophy, FaYoutube } from 'react-icons/fa';
 import FanBoard from './fan/FanBoard';
 import CreatorBoard from './creator/CreatorBoard';
-import LinkChannelView from './fan/LinkChannelView';
 import type { YouTubeBinding, QuestBoardView } from './types';
 import type { SupportedLanguage } from '../../utils/deepLTranslation';
 
@@ -79,17 +78,26 @@ export default function QuestBoard({ language: _language }: QuestBoardProps) {
         binding ? (
           <FanBoard walletAddress={account.address} binding={binding} />
         ) : (
-          <LinkChannelView walletAddress={account.address} onLinked={(b) => setBinding(b)} />
+          <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center py-20 text-center px-4 space-y-4">
+            <FaYoutube size={48} className="text-red-500 opacity-80" />
+            <h2 className="text-white text-xl font-bold">YouTube Kanal verknüpfen</h2>
+            <p className="text-zinc-400 text-sm leading-relaxed">
+              Verknüpfe deinen YouTube Kanal in deinen sozialen Profilen, um Quests abzuschließen.
+            </p>
+          </div>
         )
       ) : (
         // Creator-View: ebenfalls Kanal-Verifikation voraussetzen
         binding ? (
           <CreatorBoard walletAddress={account.address} binding={binding} />
         ) : (
-          <LinkChannelView
-            walletAddress={account.address}
-            onLinked={(b) => setBinding(b)}
-          />
+          <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center py-20 text-center px-4 space-y-4">
+            <FaYoutube size={48} className="text-red-500 opacity-80" />
+            <h2 className="text-white text-xl font-bold">YouTube Kanal verknüpfen</h2>
+            <p className="text-zinc-400 text-sm leading-relaxed">
+              Verknüpfe deinen YouTube Kanal in deinen sozialen Profilen, um Quests zu erstellen.
+            </p>
+          </div>
         )
       )}
     </div>
