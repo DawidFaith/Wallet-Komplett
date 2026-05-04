@@ -64,7 +64,7 @@ async function fetchTikTokProfile(handle: string): Promise<{ name: string; pictu
     }
   } catch { /* Fallback */ }
 
-  // Fallback: og:title aus der TikTok-Profilseite scrapen
+  // Fallback: og:title + og:description aus der TikTok-Profilseite scrapen
   try {
     const res = await fetch(`https://www.tiktok.com/@${encodeURIComponent(cleanHandle)}`, {
       headers: {
@@ -82,30 +82,59 @@ async function fetchTikTokProfile(handle: string): Promise<{ name: string; pictu
         const nameMatch = ogMatch[1].match(/^(.+?)\s*\(@/);
         if (nameMatch?.[1]) displayName = nameMatch[1].trim();
       }
+      const ogDesc = html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]+)"/i)
+        ?? html.match(/<meta[^>]*content="([^"]+)"[^>]*property="og:description"/i);
+      const bio = ogDesc?.[1]
+        ? ogDesc[1].replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&')
+        : '';
       return {
         name: displayName,
         picture: `/api/avatar?platform=tiktok&handle=${encodeURIComponent(cleanHandle)}`,
-        // Bio-Check nicht möglich → trust-based
-        bio: '__trust_based__',
+        bio,
       };
     }
-  } catch { /* Letzter Fallback */ }
+  } catch { /* ignore */ }
 
-  // Wenn alles fehlschlägt: Trust-based mit Handle als Name
-  return {
-    name: cleanHandle,
-    picture: `/api/avatar?platform=tiktok&handle=${encodeURIComponent(cleanHandle)}`,
-    bio: '__trust_based__',
-  };
+  return null;
 }
 
-async function fetchFacebookProfile(handle: string): Promise<{ name: string; picture: string; bio: string }> {
-  // Facebook erlaubt kein serverseitiges Auslesen der Bio ohne OAuth.
-  return {
-    name: handle,
-    picture: `/api/avatar?platform=facebook&handle=${encodeURIComponent(handle)}`,
-    bio: '',
-  };
+async function fetchFacebookProfile(handle: string): Promise<{ name: string; picture: string; bio: string } | null> {
+  const cleanHandle = handle.replace(/^@/, '').trim();
+  try {
+    const res = await fetch(`https://www.facebook.com/${encodeURIComponent(cleanHandle)}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'de-DE,de;q=0.9,en;q=0.8',
+      },
+      next: { revalidate: 0 },
+    });
+    if (res.ok) {
+      const html = await res.text();
+
+      // Name aus og:title
+      const ogTitle = html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]+)"/i)
+        ?? html.match(/<meta[^>]*content="([^"]+)"[^>]*property="og:title"/i);
+      const name = ogTitle?.[1]
+        ? ogTitle[1].replace(/\s*\|\s*Facebook.*$/i, '').trim()
+        : cleanHandle;
+
+      // Bio aus og:description
+      const ogDesc = html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]+)"/i)
+        ?? html.match(/<meta[^>]*content="([^"]+)"[^>]*property="og:description"/i);
+      const bio = ogDesc?.[1]
+        ? ogDesc[1].replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&')
+        : '';
+
+      return {
+        name,
+        picture: `/api/avatar?platform=facebook&handle=${encodeURIComponent(cleanHandle)}`,
+        bio,
+      };
+    }
+  } catch { /* Fallback */ }
+
+  return null;
 }
 
 async function fetchProfile(platform: Platform, handle: string) {
@@ -192,31 +221,25 @@ async function handlePost(req: NextRequest) {
     const profile = await fetchProfile(p, cleanHandle);
 
     let verified = false;
-    let verifyNote = '';
 
-    if (p === 'facebook' || profile?.bio === '__trust_based__') {
-      // Facebook & TikTok: Bio-Check server-seitig nicht möglich → trust-based
-      verified = true;
-      verifyNote = 'trust-based';
-    } else if (profile) {
-      if (profile.bio === '__trust_based__') {
-        // TikTok: kein Bio-Check möglich → trust-based
-        verified = true;
-        verifyNote = 'trust-based';
-      } else {
-        verified = profile.bio.includes(verificationCode);
-        if (!verified) {
-          return NextResponse.json({
-            notFound: true,
-            message: `Code "${verificationCode}" nicht in der Bio von @${cleanHandle} gefunden. Bitte füge den Code zuerst in deine Bio ein und versuche es erneut.`,
-          });
-        }
-      }
-    } else {
+    if (!profile) {
       return NextResponse.json(
         { error: `Profil "@${cleanHandle}" nicht abrufbar. Stelle sicher, dass das Profil öffentlich ist.` },
         { status: 400 }
       );
+    }
+    if (!profile.bio) {
+      return NextResponse.json(
+        { error: `Bio von @${cleanHandle} konnte nicht gelesen werden. Stelle sicher, dass dein Profil öffentlich ist.` },
+        { status: 400 }
+      );
+    }
+    verified = profile.bio.includes(verificationCode);
+    if (!verified) {
+      return NextResponse.json({
+        notFound: true,
+        message: `Code "${verificationCode}" nicht in der Bio von @${cleanHandle} gefunden. Bitte füge den Code zuerst in deine Bio ein und versuche es erneut.`,
+      });
     }
 
     // Speichern
@@ -246,7 +269,7 @@ async function handlePost(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ success: true, name, picture, note: verifyNote });
+    return NextResponse.json({ success: true, name, picture });
   }
 
   return NextResponse.json({ error: 'Ungültige action' }, { status: 400 });

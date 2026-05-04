@@ -46,8 +46,8 @@ const PLATFORM_CONFIG = {
     placeholder: 'dein.name oder Profil-URL',
     bioInstructions: (code: string) => [
       'Öffne Facebook → dein Profil',
-      'Klicke auf „Bio bearbeiten"',
-      `Füge „${code}" in deine Bio ein`,
+      'Klicke auf „Profil bearbeiten" → „Bio"',
+      `Füge „${code}" in die Bio ein`,
       'Speichere und komm zurück',
     ],
     profileUrl: (handle: string) => `https://www.facebook.com/${handle}`,
