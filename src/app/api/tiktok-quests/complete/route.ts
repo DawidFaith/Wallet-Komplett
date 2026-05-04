@@ -140,7 +140,13 @@ export async function POST(req: NextRequest) {
   };
 
   await saveCompletion(completion);
-  await savePendingReward(normalized, questId, quest.rewardAmount);
+  await savePendingReward({
+    walletAddress: normalized,
+    amount: quest.rewardAmount,
+    reason: `TikTok Quest abgeschlossen: ${quest.videoTitle}`,
+    questId: questId,
+    createdAt: new Date().toISOString(),
+  });
   await addDfaithCredits(normalized, quest.rewardAmount);
   await addUserXp(normalized, 10);
 
