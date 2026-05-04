@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { FaPlus, FaSync, FaTrophy, FaCoins, FaExternalLinkAlt, FaUserCheck, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaSync, FaTrophy, FaCoins, FaExternalLinkAlt, FaTimes } from 'react-icons/fa';
 import CreditsBox from '../components/CreditsBox';
 import DepositModal from './DepositModal';
 import CreateQuestModal from './CreateQuestModal';
@@ -83,22 +83,6 @@ export default function CreatorBoard({ walletAddress, binding }: CreatorBoardPro
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-5">
-      {/* Kanal-Badge */}
-      {binding && (
-        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 flex items-center gap-3">
-          {binding.channelThumbnail && (
-            <Image src={binding.channelThumbnail} alt={binding.channelName} width={40} height={40} unoptimized className="w-10 h-10 rounded-full" />
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="text-white font-semibold text-sm truncate">{binding.channelName}</p>
-            <p className="text-zinc-500 text-xs">YouTube verknüpft</p>
-          </div>
-          <div className="flex items-center gap-1 text-green-400 text-xs font-semibold">
-            <FaUserCheck /> Verifiziert
-          </div>
-        </div>
-      )}
-
       {/* Credits Box */}
       <CreditsBox
         balance={creatorBalance}

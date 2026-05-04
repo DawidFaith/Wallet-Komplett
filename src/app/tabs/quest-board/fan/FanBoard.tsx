@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { FaTrophy, FaSync, FaUserCheck } from 'react-icons/fa';
+import { FaTrophy, FaSync } from 'react-icons/fa';
 import CreditsBox from '../components/CreditsBox';
 import VerifyModal from './VerifyModal';
 import LikeVerifyModal from './LikeVerifyModal';
@@ -126,20 +126,6 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-5">
-      {/* Kanal-Badge */}
-      <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 flex items-center gap-3">
-        {binding.channelThumbnail && (
-          <Image src={binding.channelThumbnail} alt={binding.channelName} width={40} height={40} unoptimized className="w-10 h-10 rounded-full" />
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="text-white font-semibold text-sm truncate">{binding.channelName}</p>
-          <p className="text-zinc-500 text-xs">YouTube verknüpft</p>
-        </div>
-        <div className="flex items-center gap-1 text-green-400 text-xs font-semibold">
-          <FaUserCheck /> Verifiziert
-        </div>
-      </div>
-
       {/* Credits Box */}
       <CreditsBox
         balance={credits}

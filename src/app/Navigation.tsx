@@ -112,72 +112,7 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
             />
           </button>
         </li>
-        {/* Social Media Icon + Dropdown */}
-        <li className="relative flex items-center">
-          <button
-            title="Social Media"
-            onClick={() => setOpen((v) => !v)}
-            className="flex items-center"
-            aria-haspopup="true"
-            aria-expanded={open}
-          >
-            {socialIcons[activeSocial]}
-            <FiChevronDown
-              size={22}
-              className={`ml-1 transition-transform duration-300 ${
-                open ? "text-pink-400 rotate-180" : "text-zinc-400"
-              } hover:text-pink-400`}
-            />
-          </button>
-          {open && (
-            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 bg-zinc-800 rounded-lg shadow-xl flex flex-col z-50 min-w-[140px] border border-zinc-700 overflow-hidden">
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  setActiveSocial("instagram");
-                  navigateToTab("instagram");
-                }}
-                className="flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200 border-b border-zinc-700"
-              >
-                <FaInstagram className="text-pink-500" /> 
-                <span className="font-medium">Instagram</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveSocial("tiktok");
-                  navigateToTab("tiktok");
-                  setOpen(false);
-                }}
-                className="flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200 border-b border-zinc-700"
-              >
-                <FaTiktok className="text-zinc-100" /> 
-                <span className="font-medium">TikTok</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveSocial("facebook");
-                  navigateToTab("facebook");
-                  setOpen(false);
-                }}
-                className="flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200 border-b border-zinc-700"
-              >
-                <FaFacebook className="text-blue-600" /> 
-                <span className="font-medium">Facebook</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveSocial("youtube");
-                  navigateToTab("youtube");
-                  setOpen(false);
-                }}
-                className="flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200"
-              >
-                <FaYoutube className="text-red-500" /> 
-                <span className="font-medium">YouTube</span>
-              </button>
-            </div>
-          )}
-        </li>
+
         {/* Merch */}
         <li>
           <button
@@ -193,21 +128,7 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
             />
           </button>
         </li>
-        {/* Live */}
-        <li>
-          <button
-            title="Live"
-            onClick={() => navigateToTab("live")}
-            className="flex items-center"
-          >
-            <FaMusic
-              size={22}
-              className={`transition-colors ${
-                activeTab === "live" ? "text-purple-400" : "text-zinc-400"
-              } hover:text-purple-400`}
-            />
-          </button>
-        </li>
+
 
         {/* Language Selector */}
         <li className="relative flex items-center">

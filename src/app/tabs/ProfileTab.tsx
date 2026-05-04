@@ -147,8 +147,6 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           onVerify={() => setShowYoutubeModal(true)}
         />
 
-        <div className="border-t border-zinc-800" />
-
         <SocialRow
           icon={<FaInstagram className="text-pink-500" size={18} />}
           label="Instagram"
