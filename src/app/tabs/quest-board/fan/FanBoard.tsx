@@ -8,6 +8,7 @@ import VerifyModal from './VerifyModal';
 import LikeVerifyModal from './LikeVerifyModal';
 import SecretVerifyModal from './SecretVerifyModal';
 import YoutubeQuestCard from '../quests/youtube/YoutubeQuestCard';
+import TiktokQuestCard from '../quests/tiktok/TiktokQuestCard';
 import type { QuestIndexEntry, YouTubeBinding, VerifyResult, ClaimResult } from '../types';
 
 interface FanBoardProps {
@@ -98,8 +99,41 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
     }
   };
 
+  const handleTikTokVerify = async (questId: string) => {
+    const quest = quests.find((q) => q.id === questId) ?? null;
+    setVerifyingQuest(quest);
+    setVerifyResult(null);
+    setVerifyLoading(true);
+    try {
+      const res = await fetch('/api/tiktok-quests/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress, questId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setVerifyResult({
+          success: true,
+          message: `Quest abgeschlossen! +${data.rewardAmount} Dfaith Credits`,
+          comment: data.comment,
+          rewardAmount: data.rewardAmount,
+        });
+        setCompletedIds((prev) => [...prev, questId]);
+        setCredits((prev) => prev + (data.rewardAmount ?? 0));
+        setQuests((prev) =>
+          prev.map((q) => q.id === questId ? { ...q, completions: q.completions + 1 } : q)
+        );
+      } else {
+        setVerifyResult({ success: false, message: data.error ?? data.message });
+      }
+    } catch {
+      setVerifyResult({ success: false, message: 'Netzwerkfehler. Bitte versuche es erneut.' });
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
   const handleClaim = async () => {
-    setClaiming(true);
     setClaimResult(null);
     try {
       const res = await fetch('/api/youtube-quests/claim', {
@@ -121,8 +155,9 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
     }
   };
 
-  // Quests nach Plattform gruppieren (für spätere Erweiterung)
+  // Quests nach Plattform gruppieren
   const youtubeQuests = quests.filter((q) => q.platform === 'youtube');
+  const tiktokQuests = quests.filter((q) => q.platform === 'tiktok');
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-5">
@@ -162,22 +197,38 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
         <div className="flex justify-center py-12">
           <div className="border-4 border-red-500/30 border-t-red-500 rounded-full w-10 h-10 animate-spin" />
         </div>
-      ) : youtubeQuests.length === 0 ? (
+      ) : youtubeQuests.length === 0 && tiktokQuests.length === 0 ? (
         <div className="text-center py-12 text-zinc-500">
           <FaTrophy size={32} className="mx-auto mb-3 opacity-30" />
           <p>Noch keine Quests verfügbar.</p>
           <p className="text-sm mt-1">Schau später wieder rein!</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {youtubeQuests.map((quest) => (
-            <YoutubeQuestCard
-              key={quest.id}
-              quest={quest}
-              isCompleted={completedIds.includes(quest.id)}
-              onComplete={handleVerify}
-            />
-          ))}
+        <div className="space-y-4">
+          {youtubeQuests.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {youtubeQuests.map((quest) => (
+                <YoutubeQuestCard
+                  key={quest.id}
+                  quest={quest}
+                  isCompleted={completedIds.includes(quest.id)}
+                  onComplete={handleVerify}
+                />
+              ))}
+            </div>
+          )}
+          {tiktokQuests.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {tiktokQuests.map((quest) => (
+                <TiktokQuestCard
+                  key={quest.id}
+                  quest={quest}
+                  isCompleted={completedIds.includes(quest.id)}
+                  onComplete={handleTikTokVerify}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
