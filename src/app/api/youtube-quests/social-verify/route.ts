@@ -18,6 +18,22 @@ import { getVerificationCode, upsertUserProfile } from '../../../lib/questDb';
 
 type Platform = 'instagram' | 'tiktok' | 'facebook';
 
+// ─── Preview-Bio-Cache (verhindert doppelten tikwm-Fetch beim Verify) ─────────
+// TTL: 15 Minuten – genug Zeit um Code in Bio einzutragen und Verify zu klicken.
+interface CachedProfile { name: string; picture: string; bio: string; expiresAt: number; }
+const profilePreviewCache = new Map<string, CachedProfile>();
+
+function cachePreviewProfile(key: string, profile: { name: string; picture: string; bio: string }) {
+  profilePreviewCache.set(key, { ...profile, expiresAt: Date.now() + 15 * 60 * 1000 });
+}
+
+function getCachedProfile(key: string): { name: string; picture: string; bio: string } | null {
+  const entry = profilePreviewCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) { profilePreviewCache.delete(key); return null; }
+  return { name: entry.name, picture: entry.picture, bio: entry.bio };
+}
+
 // ─── Profil-Daten via unavatar.io (Bild) + inoffizielle APIs (Name/Bio) ─────
 
 async function fetchInstagramProfile(handle: string): Promise<{ name: string; picture: string; bio: string } | null> {
@@ -227,22 +243,36 @@ async function handlePost(req: NextRequest) {
         { status: 404 }
       );
     }
-    return NextResponse.json({
+    const resolvedProfile = {
       name: profile?.name ?? cleanHandle,
       picture: profile?.picture ?? `https://unavatar.io/${p}/${cleanHandle}`,
+      bio: profile?.bio ?? '',
+    };
+    // Bio für Verify zwischenspeichern (wichtig für TikTok – verhindert Rate-Limit-Fehler)
+    if (profile?.bio) {
+      cachePreviewProfile(`${p}:${cleanHandle}`, resolvedProfile);
+    }
+    return NextResponse.json({
+      name: resolvedProfile.name,
+      picture: resolvedProfile.picture,
       verificationCode,
     });
   }
 
   // ── Verify ────────────────────────────────────────────────────────────────
   if (action === 'verify') {
-    const profile = await fetchProfile(p, cleanHandle);
+    // 1. Zuerst aus Preview-Cache laden (kein erneuter API-Fetch nötig = kein Rate-Limit)
+    const cacheKey = `${p}:${cleanHandle}`;
+    const cachedProfile = getCachedProfile(cacheKey);
+
+    // 2. Falls kein Cache (z.B. nach Serverneustart), nochmal fetchen
+    const profile = cachedProfile ?? await fetchProfile(p, cleanHandle);
 
     let verified = false;
 
     if (!profile) {
       return NextResponse.json(
-        { error: `Profil "@${cleanHandle}" nicht abrufbar. Stelle sicher, dass das Profil öffentlich ist.` },
+        { error: `Profil "@${cleanHandle}" nicht abrufbar. Bitte klicke zuerst auf "Vorschau" und versuche es dann erneut.` },
         { status: 400 }
       );
     }
@@ -259,6 +289,9 @@ async function handlePost(req: NextRequest) {
         message: `Code "${verificationCode}" nicht in der Bio von @${cleanHandle} gefunden. Bitte füge den Code zuerst in deine Bio ein und versuche es erneut.`,
       });
     }
+
+    // Cache nach erfolgreichem Verify löschen
+    profilePreviewCache.delete(cacheKey);
 
     // Speichern
     const name = profile?.name ?? cleanHandle;
