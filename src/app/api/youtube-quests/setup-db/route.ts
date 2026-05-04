@@ -200,9 +200,24 @@ export async function POST(req: NextRequest) {
     // XP pro abgeschlossenem Quest gutschreiben: Spalte in quest_completions (idempotent)
     await sql`ALTER TABLE quest_completions ADD COLUMN IF NOT EXISTS xp_awarded INTEGER NOT NULL DEFAULT 0`;
 
+    // ── TikTok Engagement-Verifikationen ────────────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS tiktok_engagement_verifications (
+        quest_id        TEXT        NOT NULL,
+        wallet_address  TEXT        NOT NULL,
+        video_id        TEXT        NOT NULL,
+        baseline_likes  INTEGER     NOT NULL DEFAULT 0,
+        baseline_shares INTEGER     NOT NULL DEFAULT 0,
+        baseline_saves  INTEGER     NOT NULL DEFAULT 0,
+        expires_at      TIMESTAMPTZ NOT NULL,
+        started_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (quest_id, wallet_address)
+      )
+    `;
+
     return NextResponse.json({
       success: true,
-      message: 'Alle Tabellen (inkl. dfaith_credits, expires_at) erstellt.',
+      message: 'Alle Tabellen (inkl. dfaith_credits, expires_at, tiktok_engagement_verifications) erstellt.',
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
