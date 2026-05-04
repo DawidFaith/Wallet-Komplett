@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FaPlus, FaSync, FaCheck, FaCommentAlt, FaClock, FaKey, FaTiktok, FaYoutube } from 'react-icons/fa';
+import { FaPlus, FaSync, FaCheck, FaCommentAlt, FaClock, FaKey, FaTiktok, FaYoutube, FaThumbsUp, FaBookmark, FaShareAlt } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import { shortenWallet } from '../utils';
 
@@ -27,7 +27,7 @@ export default function CreateQuestModal({
   const [rewardAmount, setRewardAmount] = useState('100');
   const [maxParticipants, setMaxParticipants] = useState('10');
   const [platform, setPlatform] = useState<'youtube' | 'tiktok'>('youtube');
-  const [questType, setQuestType] = useState<'comment' | 'like' | 'secret'>('comment');
+  const [questType, setQuestType] = useState<'comment' | 'like' | 'secret' | 'engagement'>('comment');
   const [secretCode, setSecretCode] = useState('');
   const [durationHours, setDurationHours] = useState('24');
   // freie Dauer-Eingabe
@@ -66,7 +66,9 @@ export default function CreateQuestModal({
       // Auto-Beschreibung wenn leer
       const finalDescription = description.trim() || (
         platform === 'tiktok'
-          ? '💬 Schreibe einen positiven Kommentar unter dieses TikTok-Video!'
+          ? questType === 'engagement'
+            ? '👍 Like, 🔄 Teile und 🔖 Speichere dieses TikTok-Video!'
+            : '💬 Schreibe einen positiven Kommentar unter dieses TikTok-Video!'
           : questType === 'like'
           ? '👍 Like dieses YouTube Short!'
           : questType === 'secret'
@@ -84,7 +86,7 @@ export default function CreateQuestModal({
           description: finalDescription,
           rewardAmount: Number(rewardAmount),
           maxCompletions: Number(maxParticipants),
-          questType: platform === 'tiktok' ? 'comment' : questType,
+          questType: platform === 'tiktok' ? questType : questType,
           durationHours: finalDurationHours,
           secretCode: platform === 'youtube' && questType === 'secret' ? secretCode.trim() : undefined,
         }),
@@ -164,6 +166,42 @@ export default function CreateQuestModal({
                   : questType === 'secret'
                   ? 'Der Fan gibt einen Code ein der im Video versteckt ist. Kein YouTube API-Aufruf nötig.'
                   : 'Die API prüft anhand des Kanalnamens ob der Fan kommentiert hat.'}
+              </p>
+            </div>
+          )}
+
+          {/* Quest-Typ – nur bei TikTok */}
+          {platform === 'tiktok' && (
+            <div>
+              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Quest-Typ <span className="text-red-400">*</span></label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setQuestType('comment')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                    questType === 'comment'
+                      ? 'bg-cyan-600 border-cyan-500 text-white'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-cyan-600'
+                  }`}
+                >
+                  💬 Kommentar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuestType('engagement')}
+                  className={`flex items-center gap-1.5 justify-center py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                    questType === 'engagement'
+                      ? 'bg-purple-600 border-purple-500 text-white'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-purple-600'
+                  }`}
+                >
+                  <FaThumbsUp size={12} /><FaShareAlt size={12} /><FaBookmark size={12} /> Engagement
+                </button>
+              </div>
+              <p className="text-zinc-500 text-xs mt-1">
+                {questType === 'engagement'
+                  ? 'Fan muss liken, teilen und speichern. Jede Aktion = 1/3 des Rewards. Teilbelohnung möglich.'
+                  : 'API prüft via Kommentare ob der Fan kommentiert hat.'}
               </p>
             </div>
           )}

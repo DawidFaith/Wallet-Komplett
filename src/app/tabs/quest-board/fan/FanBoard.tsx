@@ -7,8 +7,10 @@ import CreditsBox from '../components/CreditsBox';
 import VerifyModal from './VerifyModal';
 import LikeVerifyModal from './LikeVerifyModal';
 import SecretVerifyModal from './SecretVerifyModal';
+import TiktokEngagementVerifyModal from './TiktokEngagementVerifyModal';
 import YoutubeQuestCard from '../quests/youtube/YoutubeQuestCard';
 import TiktokQuestCard from '../quests/tiktok/TiktokQuestCard';
+import TiktokEngagementQuestCard from '../quests/tiktok/TiktokEngagementQuestCard';
 import type { QuestIndexEntry, YouTubeBinding, VerifyResult, ClaimResult } from '../types';
 
 interface FanBoardProps {
@@ -30,6 +32,7 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
   const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
   const [likeVerifyQuest, setLikeVerifyQuest] = useState<QuestIndexEntry | null>(null);
   const [secretVerifyQuest, setSecretVerifyQuest] = useState<QuestIndexEntry | null>(null);
+  const [tiktokEngagementQuest, setTiktokEngagementQuest] = useState<QuestIndexEntry | null>(null);
 
   const loadQuests = useCallback(async () => {
     setLoading(true);
@@ -101,6 +104,12 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
 
   const handleTikTokVerify = async (questId: string) => {
     const quest = quests.find((q) => q.id === questId) ?? null;
+    // Engagement-Quest → eigener Verify-Modal
+    if (quest?.type === 'engagement') {
+      setTiktokEngagementQuest(quest);
+      return;
+    }
+    // Kommentar-Quest
     setVerifyingQuest(quest);
     setVerifyResult(null);
     setVerifyLoading(true);
@@ -155,9 +164,10 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
     }
   };
 
-  // Quests nach Plattform gruppieren
+  // Quests nach Plattform und Typ gruppieren
   const youtubeQuests = quests.filter((q) => q.platform === 'youtube');
-  const tiktokQuests = quests.filter((q) => q.platform === 'tiktok');
+  const tiktokCommentQuests = quests.filter((q) => q.platform === 'tiktok' && q.type !== 'engagement');
+  const tiktokEngagementQuests = quests.filter((q) => q.platform === 'tiktok' && q.type === 'engagement');
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-5">
@@ -197,7 +207,7 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
         <div className="flex justify-center py-12">
           <div className="border-4 border-red-500/30 border-t-red-500 rounded-full w-10 h-10 animate-spin" />
         </div>
-      ) : youtubeQuests.length === 0 && tiktokQuests.length === 0 ? (
+      ) : youtubeQuests.length === 0 && tiktokCommentQuests.length === 0 && tiktokEngagementQuests.length === 0 ? (
         <div className="text-center py-12 text-zinc-500">
           <FaTrophy size={32} className="mx-auto mb-3 opacity-30" />
           <p>Noch keine Quests verfügbar.</p>
@@ -217,10 +227,22 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
               ))}
             </div>
           )}
-          {tiktokQuests.length > 0 && (
+          {tiktokCommentQuests.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {tiktokQuests.map((quest) => (
+              {tiktokCommentQuests.map((quest) => (
                 <TiktokQuestCard
+                  key={quest.id}
+                  quest={quest}
+                  isCompleted={completedIds.includes(quest.id)}
+                  onComplete={handleTikTokVerify}
+                />
+              ))}
+            </div>
+          )}
+          {tiktokEngagementQuests.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {tiktokEngagementQuests.map((quest) => (
+                <TiktokEngagementQuestCard
                   key={quest.id}
                   quest={quest}
                   isCompleted={completedIds.includes(quest.id)}
@@ -271,6 +293,22 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
           }
         }}
         onClose={() => setSecretVerifyQuest(null)}
+      />
+
+      {/* Verifizierungs-Modal (TikTok Engagement) */}
+      <TiktokEngagementVerifyModal
+        quest={tiktokEngagementQuest}
+        walletAddress={walletAddress}
+        onCompleted={(amount) => {
+          if (tiktokEngagementQuest) {
+            setCompletedIds((prev) => [...prev, tiktokEngagementQuest.id]);
+            setCredits((prev) => prev + amount);
+            setQuests((prev) =>
+              prev.map((q) => q.id === tiktokEngagementQuest.id ? { ...q, completions: q.completions + 1 } : q)
+            );
+          }
+        }}
+        onClose={() => setTiktokEngagementQuest(null)}
       />
     </div>
   );

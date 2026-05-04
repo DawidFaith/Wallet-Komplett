@@ -104,6 +104,7 @@ export async function POST(req: NextRequest) {
     rewardAmount?: number;
     maxCompletions?: number;
     durationHours?: number;
+    questType?: string;
   };
   try {
     body = await req.json();
@@ -111,7 +112,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 });
   }
 
-  const { creatorWallet, videoUrl, description, rewardAmount, maxCompletions, durationHours } = body;
+  const { creatorWallet, videoUrl, description, rewardAmount, maxCompletions, durationHours, questType } = body;
 
   if (!creatorWallet || !videoUrl) {
     return NextResponse.json(
@@ -185,16 +186,23 @@ export async function POST(req: NextRequest) {
   const hours = Number(durationHours) || 72;
   const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
 
+  const finalQuestType = questType === 'engagement' ? 'engagement' : 'comment';
+
+  const autoDescription = description?.trim() ||
+    (finalQuestType === 'engagement'
+      ? '👍 Like, 🔄 Teile und 🔖 Speichere dieses TikTok-Video!'
+      : '💬 Schreibe einen positiven Kommentar unter dieses TikTok-Video!');
+
   const questDetail: QuestDetail = {
     id: questId,
     platform: 'tiktok',
-    type: 'comment',
+    type: finalQuestType as 'comment' | 'engagement',
     creatorWallet: creatorWallet.toLowerCase(),
     videoId,
     videoTitle: videoInfo.title,
     videoThumbnail: videoInfo.thumbnail,
     videoUrl: `https://www.tiktok.com/@${videoInfo.authorUniqueId}/video/${videoId}`,
-    description: description?.trim() ?? '',
+    description: autoDescription,
     rewardAmount: rewardAmountNum,
     maxCompletions: maxCompletionsNum,
     completions: 0,

@@ -119,4 +119,16 @@ export const MIGRATION_SQL = `
   CREATE INDEX IF NOT EXISTS idx_bindings_channel   ON youtube_bindings(channel_id);
   CREATE INDEX IF NOT EXISTS idx_pending_rewards_wallet ON pending_rewards(wallet_address, status);
   CREATE INDEX IF NOT EXISTS idx_creator_deposits_wallet ON creator_deposits(wallet_address);
+
+  CREATE TABLE IF NOT EXISTS tiktok_engagement_verifications (
+    quest_id        TEXT        NOT NULL,
+    wallet_address  TEXT        NOT NULL,
+    video_id        TEXT        NOT NULL,
+    baseline_likes  INTEGER     NOT NULL DEFAULT 0,
+    baseline_shares INTEGER     NOT NULL DEFAULT 0,
+    baseline_saves  INTEGER     NOT NULL DEFAULT 0,
+    expires_at      TIMESTAMPTZ NOT NULL,
+    started_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (quest_id, wallet_address)
+  );
 `;

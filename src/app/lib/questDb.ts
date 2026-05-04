@@ -15,7 +15,7 @@ import { getDb } from './db';
 // ─── Typen ───────────────────────────────────────────────────────────────────
 
 export type Platform = 'youtube' | 'tiktok'; // erweiterbar: | 'instagram'
-export type QuestType = 'comment' | 'like' | 'secret'; // erweiterbar: | 'subscribe'
+export type QuestType = 'comment' | 'like' | 'secret' | 'engagement'; // erweiterbar: | 'subscribe'
 
 export interface QuestIndexEntry {
   id: string;
@@ -748,6 +748,80 @@ export async function deleteLikeVerification(
   const sql = getDb();
   await sql`
     DELETE FROM like_verifications
+    WHERE quest_id = ${questId} AND wallet_address = ${walletAddress.toLowerCase()}
+  `;
+}
+
+// ─── TikTok Engagement Verification ──────────────────────────────────────────
+
+export interface TikTokEngagementVerification {
+  questId: string;
+  walletAddress: string;
+  videoId: string;
+  baselineLikes: number;
+  baselineShares: number;
+  baselineSaves: number;
+  expiresAt: string;
+  startedAt: string;
+}
+
+function rowToTikTokEngagementVerification(row: any): TikTokEngagementVerification {
+  return {
+    questId: row.quest_id,
+    walletAddress: row.wallet_address,
+    videoId: row.video_id,
+    baselineLikes: Number(row.baseline_likes),
+    baselineShares: Number(row.baseline_shares),
+    baselineSaves: Number(row.baseline_saves),
+    expiresAt: row.expires_at instanceof Date ? row.expires_at.toISOString() : row.expires_at,
+    startedAt: row.started_at instanceof Date ? row.started_at.toISOString() : row.started_at,
+  };
+}
+
+export async function upsertTikTokEngagementVerification(
+  questId: string,
+  walletAddress: string,
+  videoId: string,
+  baselineLikes: number,
+  baselineShares: number,
+  baselineSaves: number,
+  expiresAt: string,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO tiktok_engagement_verifications
+      (quest_id, wallet_address, video_id, baseline_likes, baseline_shares, baseline_saves, expires_at, started_at)
+    VALUES
+      (${questId}, ${walletAddress.toLowerCase()}, ${videoId}, ${baselineLikes}, ${baselineShares}, ${baselineSaves}, ${expiresAt}, NOW())
+    ON CONFLICT (quest_id, wallet_address) DO UPDATE SET
+      baseline_likes  = EXCLUDED.baseline_likes,
+      baseline_shares = EXCLUDED.baseline_shares,
+      baseline_saves  = EXCLUDED.baseline_saves,
+      expires_at      = EXCLUDED.expires_at,
+      started_at      = NOW()
+  `;
+}
+
+export async function getTikTokEngagementVerification(
+  questId: string,
+  walletAddress: string,
+): Promise<TikTokEngagementVerification | null> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT * FROM tiktok_engagement_verifications
+    WHERE quest_id = ${questId} AND wallet_address = ${walletAddress.toLowerCase()}
+    LIMIT 1
+  `;
+  return rows.length > 0 ? rowToTikTokEngagementVerification(rows[0]) : null;
+}
+
+export async function deleteTikTokEngagementVerification(
+  questId: string,
+  walletAddress: string,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    DELETE FROM tiktok_engagement_verifications
     WHERE quest_id = ${questId} AND wallet_address = ${walletAddress.toLowerCase()}
   `;
 }
