@@ -9,10 +9,11 @@ import {
 } from 'react-icons/fa';
 import SocialVerifyModal from './profile/SocialVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
+import FacebookOAuthButton from '../components/FacebookOAuthButton';
 import QuestBoardTab from './QuestBoardTab';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
 
-type SocialPlatform = 'instagram' | 'tiktok' | 'facebook';
+type SocialPlatform = 'instagram' | 'tiktok';
 
 interface ProfileData {
   xp: number;
@@ -55,6 +56,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   const [loading, setLoading] = useState(false);
   const [verifyModal, setVerifyModal] = useState<SocialPlatform | null>(null);
   const [showYoutubeModal, setShowYoutubeModal] = useState(false);
+  const [showFacebookModal, setShowFacebookModal] = useState(false);
 
   const loadProfile = useCallback(async () => {
     if (!account?.address) return;
@@ -174,7 +176,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           handle={p?.facebookHandle ?? null}
           picture={p?.facebookPicture ?? null}
           verified={p?.facebookVerified ?? false}
-          onVerify={() => setVerifyModal('facebook')}
+          onVerify={() => setShowFacebookModal(true)}
         />
       </div>
 
@@ -182,6 +184,35 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
       <QuestBoardTab language={_language} />
 
       {/* ── Verify-Modal ───────────────────────────────────────── */}
+      {showFacebookModal && account?.address && (
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4"
+          onClick={() => setShowFacebookModal(false)}
+        >
+          <div
+            className="w-full max-w-md bg-zinc-900 rounded-2xl border border-zinc-800 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
+              <div className="flex items-center gap-2.5">
+                <FaFacebook size={22} className="text-blue-500" />
+                <span className="text-white font-bold">Facebook verknüpfen</span>
+              </div>
+              <button onClick={() => setShowFacebookModal(false)} className="text-zinc-500 hover:text-white text-xl leading-none">×</button>
+            </div>
+            <div className="p-5">
+              <FacebookOAuthButton
+                walletAddress={account.address}
+                currentName={p?.facebookName ?? null}
+                currentPicture={p?.facebookPicture ?? null}
+                currentVerified={p?.facebookVerified ?? false}
+                onDone={() => { setShowFacebookModal(false); loadProfile(); }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {showYoutubeModal && account?.address && (
         <div
           className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4"
@@ -210,23 +241,19 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           walletAddress={account.address}
           currentHandle={
             verifyModal === 'instagram' ? (p?.instagramHandle ?? null)
-            : verifyModal === 'tiktok'  ? (p?.tiktokHandle ?? null)
-            : (p?.facebookHandle ?? null)
+            : (p?.tiktokHandle ?? null)
           }
           currentVerified={
             verifyModal === 'instagram' ? (p?.instagramVerified ?? false)
-            : verifyModal === 'tiktok'  ? (p?.tiktokVerified ?? false)
-            : (p?.facebookVerified ?? false)
+            : (p?.tiktokVerified ?? false)
           }
           currentName={
             verifyModal === 'instagram' ? (p?.instagramName ?? null)
-            : verifyModal === 'tiktok'  ? (p?.tiktokName ?? null)
-            : (p?.facebookName ?? null)
+            : (p?.tiktokName ?? null)
           }
           currentPicture={
             verifyModal === 'instagram' ? (p?.instagramPicture ?? null)
-            : verifyModal === 'tiktok'  ? (p?.tiktokPicture ?? null)
-            : (p?.facebookPicture ?? null)
+            : (p?.tiktokPicture ?? null)
           }
           onDone={() => loadProfile()}
           onClose={() => setVerifyModal(null)}
