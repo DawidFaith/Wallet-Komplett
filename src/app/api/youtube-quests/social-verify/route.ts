@@ -55,8 +55,9 @@ async function fetchTikTokProfile(handle: string): Promise<{ name: string; pictu
       );
       if (!res.ok) return null;
       const data = await res.json();
-      const user = data?.data;
-      if (user?.unique_id || user?.nickname) {
+      if (data?.code !== 0) return null;
+      const user = data?.data?.user;
+      if (user?.uniqueId || user?.nickname) {
         return {
           name: user.nickname || cleanHandle,
           picture: `/api/avatar?platform=tiktok&handle=${encodeURIComponent(cleanHandle)}`,
