@@ -44,14 +44,14 @@ async function fetchInstagramProfile(handle: string): Promise<{ name: string; pi
 async function fetchTikTokProfile(handle: string): Promise<{ name: string; picture: string; bio: string } | null> {
   const cleanHandle = handle.startsWith('@') ? handle.slice(1) : handle;
 
-  // tikwm.com ist ein öffentlicher TikTok-Proxy ohne API-Key-Pflicht.
-  // Primärer Versuch: JSON-Daten inkl. Name, Bio und Avatar.
-  try {
-    const res = await fetch(
-      `https://www.tikwm.com/api/user/info?unique_id=${encodeURIComponent(cleanHandle)}`,
-      { headers: { 'User-Agent': 'Mozilla/5.0' }, next: { revalidate: 0 } }
-    );
-    if (res.ok) {
+  // Hilfsfunktion: tikwm.com einmal abfragen
+  const tryTikwm = async (): Promise<{ name: string; picture: string; bio: string } | null> => {
+    try {
+      const res = await fetch(
+        `https://www.tikwm.com/api/user/info?unique_id=${encodeURIComponent(cleanHandle)}`,
+        { headers: { 'User-Agent': 'Mozilla/5.0' }, cache: 'no-store' }
+      );
+      if (!res.ok) return null;
       const data = await res.json();
       const user = data?.data;
       if (user?.unique_id || user?.nickname) {
@@ -61,36 +61,54 @@ async function fetchTikTokProfile(handle: string): Promise<{ name: string; pictu
           bio: user.signature ?? '',
         };
       }
-    }
-  } catch { /* Fallback */ }
+    } catch { /* ignore */ }
+    return null;
+  };
 
-  // Fallback: og:title + og:description aus der TikTok-Profilseite scrapen
+  // 1. Versuch: tikwm.com
+  let result = await tryTikwm();
+  if (result) return result;
+
+  // 2. Versuch: tikwm.com nach kurzer Pause (Rate-Limit umgehen)
+  await new Promise((r) => setTimeout(r, 1500));
+  result = await tryTikwm();
+  if (result) return result;
+
+  // 3. Versuch: TikTok-Seite direkt scrapen
   try {
     const res = await fetch(`https://www.tiktok.com/@${encodeURIComponent(cleanHandle)}`, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
         'Accept': 'text/html',
       },
-      next: { revalidate: 0 },
+      cache: 'no-store',
     });
     if (res.ok) {
       const html = await res.text();
-      const ogMatch = html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]+)"/i)
+
+      // Prüfen ob Profil existiert (404-Seite hat keinen og:title mit @handle)
+      const ogTitle = html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]+)"/i)
         ?? html.match(/<meta[^>]*content="([^"]+)"[^>]*property="og:title"/i);
+
+      // Wenn Seite keine relevanten Metadaten hat → Profil nicht gefunden
+      if (!ogTitle?.[1]) return null;
+
       let displayName = cleanHandle;
-      if (ogMatch?.[1]) {
-        const nameMatch = ogMatch[1].match(/^(.+?)\s*\(@/);
-        if (nameMatch?.[1]) displayName = nameMatch[1].trim();
-      }
+      const nameMatch = ogTitle[1].match(/^(.+?)\s*\(@/);
+      if (nameMatch?.[1]) displayName = nameMatch[1].trim();
+
       const ogDesc = html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]+)"/i)
         ?? html.match(/<meta[^>]*content="([^"]+)"[^>]*property="og:description"/i);
-      const bio = ogDesc?.[1]
+      const rawDesc = ogDesc?.[1]
         ? ogDesc[1].replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&')
         : '';
+
+      // og:description bei TikTok enthält Statistiken, keine echte Bio → leer lassen
+      // (Signatur kann nicht zuverlässig aus der HTML-Seite extrahiert werden)
       return {
         name: displayName,
         picture: `/api/avatar?platform=tiktok&handle=${encodeURIComponent(cleanHandle)}`,
-        bio,
+        bio: rawDesc,
       };
     }
   } catch { /* ignore */ }
