@@ -183,7 +183,7 @@ export default function TiktokEngagementVerifyModal({
 
           <div className="bg-zinc-800 rounded-xl p-3 space-y-1">
             <p className="text-white text-sm font-semibold">{quest.videoTitle}</p>
-            <p className="text-zinc-400 text-xs">Führe alle 3 Aktionen durch und klicke auf „Prüfen".</p>
+            <p className="text-zinc-400 text-xs">Führe alle 3 Aktionen durch und klicke auf &bdquo;Prüfen&ldquo;.</p>
           </div>
 
           <a
