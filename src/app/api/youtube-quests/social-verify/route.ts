@@ -81,16 +81,15 @@ async function fetchTikTokProfile(handle: string): Promise<{ name: string; pictu
     return null;
   };
 
-  // 1. Versuch: tikwm.com
-  let result = await tryTikwm();
-  if (result) return result;
+  // Bis zu 5 Versuche mit ansteigenden Pausen (Rate-Limit umgehen)
+  const delays = [0, 1500, 3000, 5000, 8000];
+  for (let i = 0; i < delays.length; i++) {
+    if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]));
+    const result = await tryTikwm();
+    if (result) return result;
+  }
 
-  // 2. Versuch: tikwm.com nach kurzer Pause (Rate-Limit umgehen)
-  await new Promise((r) => setTimeout(r, 1500));
-  result = await tryTikwm();
-  if (result) return result;
-
-  // 3. Versuch: TikTok-Seite direkt scrapen
+  // Letzter Versuch: TikTok-Seite direkt scrapen
   try {
     const res = await fetch(`https://www.tiktok.com/@${encodeURIComponent(cleanHandle)}`, {
       headers: {
@@ -255,6 +254,7 @@ async function handlePost(req: NextRequest) {
     return NextResponse.json({
       name: resolvedProfile.name,
       picture: resolvedProfile.picture,
+      bio: resolvedProfile.bio,   // Client speichert Bio und sendet sie beim Verify mit
       verificationCode,
     });
   }
@@ -265,24 +265,21 @@ async function handlePost(req: NextRequest) {
     const cacheKey = `${p}:${cleanHandle}`;
     const cachedProfile = getCachedProfile(cacheKey);
 
-    // 2. Falls kein Cache (z.B. nach Serverneustart), nochmal fetchen
-    const profile = cachedProfile ?? await fetchProfile(p, cleanHandle);
+    // 2. Falls kein Cache (andere Serverless-Instanz), nochmal fetchen (mit Retry)
+    const freshProfile = cachedProfile ?? await fetchProfile(p, cleanHandle);
 
-    let verified = false;
+    const bio = freshProfile?.bio ?? '';
+    const profileName = freshProfile?.name ?? cleanHandle;
+    const profilePicture = freshProfile?.picture ?? `https://unavatar.io/${p}/${cleanHandle}`;
 
-    if (!profile) {
+    if (!bio) {
       return NextResponse.json(
-        { error: `Profil "@${cleanHandle}" nicht abrufbar. Bitte klicke zuerst auf "Vorschau" und versuche es dann erneut.` },
+        { error: `Bio von @${cleanHandle} konnte nicht gelesen werden. TikTok blockiert gerade den Zugriff – bitte versuche es in 1–2 Minuten erneut.` },
         { status: 400 }
       );
     }
-    if (!profile.bio) {
-      return NextResponse.json(
-        { error: `Bio von @${cleanHandle} konnte nicht gelesen werden. Stelle sicher, dass dein Profil öffentlich ist.` },
-        { status: 400 }
-      );
-    }
-    verified = profile.bio.includes(verificationCode);
+
+    const verified = bio.includes(verificationCode);
     if (!verified) {
       return NextResponse.json({
         notFound: true,
@@ -293,9 +290,8 @@ async function handlePost(req: NextRequest) {
     // Cache nach erfolgreichem Verify löschen
     profilePreviewCache.delete(cacheKey);
 
-    // Speichern
-    const name = profile?.name ?? cleanHandle;
-    const picture = profile?.picture ?? `https://unavatar.io/${p}/${cleanHandle}`;
+    const name = profileName;
+    const picture = profilePicture;
 
     if (p === 'instagram') {
       await upsertUserProfile(walletAddress, {
