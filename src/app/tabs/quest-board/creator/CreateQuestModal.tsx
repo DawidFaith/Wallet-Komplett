@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FaPlus, FaSync, FaCheck, FaCommentAlt, FaClock, FaKey } from 'react-icons/fa';
+import { FaPlus, FaSync, FaCheck, FaCommentAlt, FaClock, FaKey, FaTiktok, FaYoutube } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import { shortenWallet } from '../utils';
 
@@ -26,6 +26,7 @@ export default function CreateQuestModal({
   const [description, setDescription] = useState('');
   const [rewardAmount, setRewardAmount] = useState('100');
   const [maxParticipants, setMaxParticipants] = useState('10');
+  const [platform, setPlatform] = useState<'youtube' | 'tiktok'>('youtube');
   const [questType, setQuestType] = useState<'comment' | 'like' | 'secret'>('comment');
   const [secretCode, setSecretCode] = useState('');
   const [durationHours, setDurationHours] = useState('24');
@@ -38,7 +39,7 @@ export default function CreateQuestModal({
 
   const reset = () => {
     setVideoUrl(''); setDescription(''); setRewardAmount('100'); setMaxParticipants('10');
-    setQuestType('comment'); setDurationHours('24');
+    setPlatform('youtube'); setQuestType('comment'); setDurationHours('24');
     setCustomDurationValue('30'); setCustomDurationUnit('min');
     setSecretCode('');
     setError(''); setSuccess(false);
@@ -64,14 +65,17 @@ export default function CreateQuestModal({
 
       // Auto-Beschreibung wenn leer
       const finalDescription = description.trim() || (
-        questType === 'like'
+        platform === 'tiktok'
+          ? '💬 Schreibe einen positiven Kommentar unter dieses TikTok-Video!'
+          : questType === 'like'
           ? '👍 Like dieses YouTube Short!'
           : questType === 'secret'
           ? '🔑 Finde den geheimen Code im Video und gib ihn ein!'
           : '💬 Schreibe einen positiven Kommentar unter diesen YouTube Short!'
       );
 
-      const res = await fetch('/api/youtube-quests/quests', {
+      const apiEndpoint = platform === 'tiktok' ? '/api/tiktok-quests/quests' : '/api/youtube-quests/quests';
+      const res = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -80,9 +84,9 @@ export default function CreateQuestModal({
           description: finalDescription,
           rewardAmount: Number(rewardAmount),
           maxCompletions: Number(maxParticipants),
-          questType,
+          questType: platform === 'tiktok' ? 'comment' : questType,
           durationHours: finalDurationHours,
-          secretCode: questType === 'secret' ? secretCode.trim() : undefined,
+          secretCode: platform === 'youtube' && questType === 'secret' ? secretCode.trim() : undefined,
         }),
       });
       const data = await res.json();
@@ -109,32 +113,63 @@ export default function CreateQuestModal({
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Quest-Typ */}
+          {/* Plattform-Auswahl */}
           <div>
-            <label className="text-zinc-300 text-sm font-medium block mb-1.5">Quest-Typ <span className="text-red-400">*</span></label>
-            <div className="relative">
-              <select
-                value={questType}
-                onChange={(e) => setQuestType(e.target.value as 'comment' | 'like' | 'secret')}
-                className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm appearance-none cursor-pointer"
+            <label className="text-zinc-300 text-sm font-medium block mb-1.5">Plattform <span className="text-red-400">*</span></label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => { setPlatform('youtube'); setQuestType('comment'); }}
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                  platform === 'youtube'
+                    ? 'bg-red-600 border-red-500 text-white'
+                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-red-600'
+                }`}
               >
-                <option value="comment">💬 Kommentar – Wertsteigernder Kommentar unter dem Video</option>
-                <option value="like">👍 Like – Klick auf Like unter dem Video</option>
-                <option value="secret">🔑 Secret – Versteckter Code im Video</option>
-              </select>
-              <FaCommentAlt className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" size={13} />
+                <FaYoutube size={16} /> YouTube
+              </button>
+              <button
+                type="button"
+                onClick={() => { setPlatform('tiktok'); setQuestType('comment'); }}
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                  platform === 'tiktok'
+                    ? 'bg-cyan-600 border-cyan-500 text-white'
+                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-cyan-600'
+                }`}
+              >
+                <FaTiktok size={15} /> TikTok
+              </button>
             </div>
-            <p className="text-zinc-500 text-xs mt-1">
-              {questType === 'like'
-                ? 'Verifizierung über Like-Anzahl-Delta: Fan entfernt Like → 5 Min Zeit um erneut zu liken.'
-                : questType === 'secret'
-                ? 'Der Fan gibt einen Code ein der im Video versteckt ist. Kein YouTube API-Aufruf nötig.'
-                : 'Die API prüft anhand des Kanalnamens ob der Fan kommentiert hat.'}
-            </p>
           </div>
 
-          {/* Secret Code – nur bei secret-Typ ─────────────────────────────── */}
-          {questType === 'secret' && (
+          {/* Quest-Typ – nur bei YouTube */}
+          {platform === 'youtube' && (
+            <div>
+              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Quest-Typ <span className="text-red-400">*</span></label>
+              <div className="relative">
+                <select
+                  value={questType}
+                  onChange={(e) => setQuestType(e.target.value as 'comment' | 'like' | 'secret')}
+                  className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm appearance-none cursor-pointer"
+                >
+                  <option value="comment">💬 Kommentar – Wertsteigernder Kommentar unter dem Video</option>
+                  <option value="like">👍 Like – Klick auf Like unter dem Video</option>
+                  <option value="secret">🔑 Secret – Versteckter Code im Video</option>
+                </select>
+                <FaCommentAlt className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" size={13} />
+              </div>
+              <p className="text-zinc-500 text-xs mt-1">
+                {questType === 'like'
+                  ? 'Verifizierung über Like-Anzahl-Delta: Fan entfernt Like → 5 Min Zeit um erneut zu liken.'
+                  : questType === 'secret'
+                  ? 'Der Fan gibt einen Code ein der im Video versteckt ist. Kein YouTube API-Aufruf nötig.'
+                  : 'Die API prüft anhand des Kanalnamens ob der Fan kommentiert hat.'}
+              </p>
+            </div>
+          )}
+
+          {/* Secret Code – nur bei YouTube + secret-Typ */}
+          {platform === 'youtube' && questType === 'secret' && (
             <div>
               <label className="text-zinc-300 text-sm font-medium block mb-1.5">
                 <FaKey className="inline mr-1 text-yellow-400" size={12} />
@@ -197,15 +232,20 @@ export default function CreateQuestModal({
 
           {/* Video URL */}
           <div>
-            <label className="text-zinc-300 text-sm font-medium block mb-1.5">YouTube Shorts URL <span className="text-red-400">*</span></label>
+            <label className="text-zinc-300 text-sm font-medium block mb-1.5">
+              {platform === 'tiktok' ? 'TikTok Video URL' : 'YouTube Shorts URL'}{' '}
+              <span className="text-red-400">*</span>
+            </label>
             <input
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
-              placeholder="https://www.youtube.com/shorts/VIDEO_ID"
+              placeholder={platform === 'tiktok' ? 'https://www.tiktok.com/@user/video/VIDEO_ID' : 'https://www.youtube.com/shorts/VIDEO_ID'}
               required
               className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm placeholder-zinc-500"
             />
-            <p className="text-zinc-500 text-xs mt-1">Nur YouTube Shorts sind erlaubt</p>
+            <p className="text-zinc-500 text-xs mt-1">
+              {platform === 'tiktok' ? 'Nur Videos deines verknüpften TikTok-Kontos sind erlaubt' : 'Nur YouTube Shorts sind erlaubt'}
+            </p>
           </div>
 
           {/* Beschreibung */}
@@ -221,7 +261,7 @@ export default function CreateQuestModal({
               rows={2}
               className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm placeholder-zinc-500 resize-none"
             />
-            <p className="text-zinc-600 text-xs mt-1">Leer lassen → Standardnachricht wird verwendet</p>
+            <p className="text-zinc-600 text-xs mt-1">Leer lassen → Standardnachricht wird verwendet ({platform === 'tiktok' ? 'TikTok-Kommentar' : 'YouTube-Kommentar/-Like/-Code'})</p>
           </div>
 
           {/* Reward + Max */}
@@ -282,7 +322,7 @@ export default function CreateQuestModal({
             className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             {creating ? <FaSync className="animate-spin" /> : <FaPlus />}
-            {creating ? 'Erstelle Quest…' : 'Quest veröffentlichen'}
+            {creating ? 'Erstelle Quest…' : `Quest veröffentlichen (${platform === 'tiktok' ? 'TikTok' : 'YouTube'})`}
           </button>
         </form>
       )}
