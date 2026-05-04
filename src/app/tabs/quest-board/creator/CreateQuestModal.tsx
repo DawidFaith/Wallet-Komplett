@@ -68,6 +68,8 @@ export default function CreateQuestModal({
         platform === 'tiktok'
           ? questType === 'engagement'
             ? '👍 Like, 🔄 Teile und 🔖 Speichere dieses TikTok-Video!'
+            : questType === 'secret'
+            ? '🔑 Finde den geheimen Code im TikTok-Video und gib ihn ein!'
             : '💬 Schreibe einen positiven Kommentar unter dieses TikTok-Video!'
           : questType === 'like'
           ? '👍 Like dieses YouTube Short!'
@@ -88,7 +90,7 @@ export default function CreateQuestModal({
           maxCompletions: Number(maxParticipants),
           questType: platform === 'tiktok' ? questType : questType,
           durationHours: finalDurationHours,
-          secretCode: platform === 'youtube' && questType === 'secret' ? secretCode.trim() : undefined,
+          secretCode: questType === 'secret' ? secretCode.trim() : undefined,
         }),
       });
       const data = await res.json();
@@ -188,6 +190,17 @@ export default function CreateQuestModal({
                 </button>
                 <button
                   type="button"
+                  onClick={() => setQuestType('secret')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                    questType === 'secret'
+                      ? 'bg-yellow-600 border-yellow-500 text-white'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-yellow-600'
+                  }`}
+                >
+                  🔑 Secret
+                </button>
+                <button
+                  type="button"
                   onClick={() => setQuestType('engagement')}
                   className={`flex items-center gap-1.5 justify-center py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'engagement'
@@ -201,13 +214,15 @@ export default function CreateQuestModal({
               <p className="text-zinc-500 text-xs mt-1">
                 {questType === 'engagement'
                   ? 'Fan muss liken, teilen und speichern. Jede Aktion = 1/3 des Rewards. Teilbelohnung möglich.'
+                  : questType === 'secret'
+                  ? 'Fan gibt einen Code ein, der im TikTok-Video versteckt ist. Kein API-Aufruf nötig.'
                   : 'API prüft via Kommentare ob der Fan kommentiert hat.'}
               </p>
             </div>
           )}
 
-          {/* Secret Code – nur bei YouTube + secret-Typ */}
-          {platform === 'youtube' && questType === 'secret' && (
+          {/* Secret Code – bei YouTube oder TikTok + secret-Typ */}
+          {questType === 'secret' && (
             <div>
               <label className="text-zinc-300 text-sm font-medium block mb-1.5">
                 <FaKey className="inline mr-1 text-yellow-400" size={12} />

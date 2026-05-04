@@ -4,7 +4,7 @@
 // Struktur analog zu YoutubeQuestCard, wird erweitert wenn TikTok-API integriert ist.
 
 import React from 'react';
-import { FaCoins, FaClock } from 'react-icons/fa';
+import { FaCoins, FaClock, FaKey } from 'react-icons/fa';
 import { SiTiktok } from 'react-icons/si';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry } from '../../utils';
@@ -49,9 +49,9 @@ export default function TiktokQuestCard({ quest, isCompleted, onComplete }: Tikt
         <button
           onClick={() => !isCompleted && onComplete(quest.id)}
           disabled={isCompleted || quest.completions >= quest.maxCompletions}
-          className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+          className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
         >
-          {isCompleted ? 'Erledigt' : 'Verifizieren'}
+          {isCompleted ? 'Erledigt' : quest.type === 'secret' ? <><FaKey size={12} /> Code eingeben</> : 'Verifizieren'}
         </button>
       </div>
     </div>

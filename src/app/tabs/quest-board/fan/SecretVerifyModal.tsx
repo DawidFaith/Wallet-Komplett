@@ -39,7 +39,10 @@ export default function SecretVerifyModal({
     if (!quest || !code.trim()) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/youtube-quests/secret-verify', {
+      const endpoint = quest.platform === 'tiktok'
+        ? '/api/tiktok-quests/secret-verify'
+        : '/api/youtube-quests/secret-verify';
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ questId: quest.id, walletAddress, code: code.trim() }),

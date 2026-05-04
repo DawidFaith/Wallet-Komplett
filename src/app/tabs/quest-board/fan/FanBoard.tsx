@@ -109,6 +109,11 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
       setTiktokEngagementQuest(quest);
       return;
     }
+    // Secret-Quest → Code-Eingabe-Modal
+    if (quest?.type === 'secret') {
+      setSecretVerifyQuest(quest);
+      return;
+    }
     // Kommentar-Quest
     setVerifyingQuest(quest);
     setVerifyResult(null);

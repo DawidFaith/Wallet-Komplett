@@ -105,6 +105,7 @@ export async function POST(req: NextRequest) {
     maxCompletions?: number;
     durationHours?: number;
     questType?: string;
+    secretCode?: string;
   };
   try {
     body = await req.json();
@@ -112,7 +113,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 });
   }
 
-  const { creatorWallet, videoUrl, description, rewardAmount, maxCompletions, durationHours, questType } = body;
+  const { creatorWallet, videoUrl, description, rewardAmount, maxCompletions, durationHours, questType, secretCode } = body;
 
   if (!creatorWallet || !videoUrl) {
     return NextResponse.json(
@@ -186,17 +187,26 @@ export async function POST(req: NextRequest) {
   const hours = Number(durationHours) || 72;
   const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
 
-  const finalQuestType = questType === 'engagement' ? 'engagement' : 'comment';
+  const finalQuestType = questType === 'engagement' ? 'engagement' : questType === 'secret' ? 'secret' : 'comment';
+
+  if (finalQuestType === 'secret' && !secretCode?.trim()) {
+    return NextResponse.json(
+      { error: 'Ein geheimer Code ist für Secret-Quests erforderlich' },
+      { status: 400 }
+    );
+  }
 
   const autoDescription = description?.trim() ||
     (finalQuestType === 'engagement'
       ? '👍 Like, 🔄 Teile und 🔖 Speichere dieses TikTok-Video!'
+      : finalQuestType === 'secret'
+      ? '🔑 Finde den geheimen Code im Video und gib ihn ein!'
       : '💬 Schreibe einen positiven Kommentar unter dieses TikTok-Video!');
 
   const questDetail: QuestDetail = {
     id: questId,
     platform: 'tiktok',
-    type: finalQuestType as 'comment' | 'engagement',
+    type: finalQuestType as 'comment' | 'engagement' | 'secret',
     creatorWallet: creatorWallet.toLowerCase(),
     videoId,
     videoTitle: videoInfo.title,
@@ -210,7 +220,7 @@ export async function POST(req: NextRequest) {
     expiresAt,
     creditsLocked: totalBudget,
     creditsRefunded: false,
-    secretCode: null,
+    secretCode: finalQuestType === 'secret' ? (secretCode?.trim() ?? null) : null,
     createdAt: now,
     updatedAt: now,
   };
