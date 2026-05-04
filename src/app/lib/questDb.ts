@@ -246,7 +246,13 @@ export async function refundExpiredQuests(
   const refunds: { questId: string; refundAmount: number }[] = [];
 
   for (const row of rows) {
-    const used = Number(row.completions) * Number(row.reward_amount);
+    // Tatsächlich ausbezahlte Rewards summieren (wichtig bei Partial-Rewards wie Engagement-Quests)
+    const [sumRow] = await sql`
+      SELECT COALESCE(SUM(reward_amount), 0) AS total_paid
+      FROM quest_completions
+      WHERE quest_id = ${row.id}
+    `;
+    const used = Number(sumRow?.total_paid ?? 0);
     const locked = Number(row.credits_locked);
     const refundAmount = Math.max(0, locked - used);
 
