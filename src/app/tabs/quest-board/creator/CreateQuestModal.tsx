@@ -150,17 +150,40 @@ export default function CreateQuestModal({
           {platform === 'youtube' && (
             <div>
               <label className="text-zinc-300 text-sm font-medium block mb-1.5">Quest-Typ <span className="text-red-400">*</span></label>
-              <div className="relative">
-                <select
-                  value={questType}
-                  onChange={(e) => setQuestType(e.target.value as 'comment' | 'like' | 'secret')}
-                  className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm appearance-none cursor-pointer"
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setQuestType('comment')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                    questType === 'comment'
+                      ? 'bg-red-600 border-red-500 text-white'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-red-600'
+                  }`}
                 >
-                  <option value="comment">💬 Kommentar – Wertsteigernder Kommentar unter dem Video</option>
-                  <option value="like">👍 Like – Klick auf Like unter dem Video</option>
-                  <option value="secret">🔑 Secret – Versteckter Code im Video</option>
-                </select>
-                <FaCommentAlt className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" size={13} />
+                  💬 Kommentar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuestType('like')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                    questType === 'like'
+                      ? 'bg-blue-600 border-blue-500 text-white'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-blue-600'
+                  }`}
+                >
+                  👍 Like
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuestType('secret')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                    questType === 'secret'
+                      ? 'bg-yellow-600 border-yellow-500 text-white'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-yellow-600'
+                  }`}
+                >
+                  🔑 Secret
+                </button>
               </div>
               <p className="text-zinc-500 text-xs mt-1">
                 {questType === 'like'

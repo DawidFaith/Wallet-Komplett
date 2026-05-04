@@ -29,7 +29,7 @@ export default function YoutubeQuestCard({ quest, isCompleted, onComplete }: You
           className="object-cover"
         />
         <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-          <FaYoutube size={10} /> {quest.type === 'like' ? 'Like' : quest.type === 'secret' ? 'Secret' : 'Shorts'}
+          <FaYoutube size={10} /> {quest.type === 'like' ? 'Like' : quest.type === 'secret' ? 'Secret' : 'Kommentar'}
         </div>
         <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
           <FaCoins size={10} /> {quest.rewardAmount} DFAITH
