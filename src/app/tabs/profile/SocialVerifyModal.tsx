@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
   FaInstagram, FaTiktok, FaFacebook,
@@ -78,9 +78,31 @@ export default function SocialVerifyModal({
   onClose,
 }: SocialVerifyModalProps) {
   const cfg = PLATFORM_CONFIG[platform];
-  const [step, setStep] = useState<Step>(currentHandle ? 'success' : 'start');
-  const [handle, setHandle] = useState(currentHandle ?? '');
-  const [preview, setPreview] = useState<{ name: string; picture: string; verificationCode: string } | null>(null);
+  const cacheKey = `social_preview_${platform}_${walletAddress}`;
+
+  // Cache-Hilfsfunktionen
+  const savePreviewCache = (h: string, p: { name: string; picture: string; verificationCode: string }) => {
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify({ handle: h, ...p, ts: Date.now() }));
+    } catch { /* ignore */ }
+  };
+  const clearPreviewCache = () => { try { localStorage.removeItem(cacheKey); } catch { /* ignore */ } };
+  const loadPreviewCache = (): { handle: string; name: string; picture: string; verificationCode: string } | null => {
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (!raw) return null;
+      const d = JSON.parse(raw);
+      // Max 2 Stunden gültig
+      if (!d.ts || Date.now() - d.ts > 2 * 60 * 60 * 1000) { localStorage.removeItem(cacheKey); return null; }
+      return d;
+    } catch { return null; }
+  };
+
+  const cached = !currentHandle ? loadPreviewCache() : null;
+
+  const [step, setStep] = useState<Step>(currentHandle ? 'success' : cached ? 'instructions' : 'start');
+  const [handle, setHandle] = useState(currentHandle ?? cached?.handle ?? '');
+  const [preview, setPreview] = useState<{ name: string; picture: string; verificationCode: string } | null>(cached ?? null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [codeCopied, setCodeCopied] = useState(false);
@@ -103,6 +125,7 @@ export default function SocialVerifyModal({
       const { ok, data } = await call({ handle: handle.trim(), action: 'preview' });
       if (!ok) { setError(data.error ?? 'Fehler'); return; }
       setPreview(data);
+      savePreviewCache(handle.trim(), data);
       setStep('instructions');
     } catch { setError('Netzwerkfehler'); }
     finally { setLoading(false); }
@@ -115,6 +138,7 @@ export default function SocialVerifyModal({
       const { ok, data } = await call({ handle: handle.trim(), action: 'verify' });
       if (!ok) { setError(data.error ?? 'Serverfehler'); return; }
       if (data.notFound) { setError(data.message); return; }
+      clearPreviewCache();
       setName(data.name); setPicture(data.picture);
       setStep('success');
       onDone();
@@ -126,6 +150,7 @@ export default function SocialVerifyModal({
     setLoading(true);
     try {
       await call({ action: 'unlink' });
+      clearPreviewCache();
       setHandle(''); setPreview(null); setName(null); setPicture(null);
       setStep('start');
       onDone();
