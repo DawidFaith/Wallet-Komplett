@@ -55,6 +55,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   const [loading, setLoading] = useState(false);
   const [verifyModal, setVerifyModal] = useState<SocialPlatform | null>(null);
   const [showYoutubeModal, setShowYoutubeModal] = useState(false);
+  const [unlinkPending, setUnlinkPending] = useState<SocialPlatform | null>(null);
 
   const loadProfile = useCallback(async () => {
     if (!account?.address) return;
@@ -66,6 +67,21 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
       setLoading(false);
     }
   }, [account?.address]);
+
+  const handleUnlink = useCallback(async (platform: SocialPlatform) => {
+    if (!account?.address) return;
+    setUnlinkPending(platform);
+    try {
+      await fetch('/api/youtube-quests/social-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress: account.address, platform, action: 'unlink' }),
+      });
+      await loadProfile();
+    } finally {
+      setUnlinkPending(null);
+    }
+  }, [account?.address, loadProfile]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
@@ -155,6 +171,8 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           picture={p?.instagramPicture ?? null}
           verified={p?.instagramVerified ?? false}
           onVerify={() => setVerifyModal('instagram')}
+          onUnlink={p?.instagramHandle ? () => handleUnlink('instagram') : undefined}
+          unlinkLoading={unlinkPending === 'instagram'}
         />
 
         <SocialRow
@@ -165,6 +183,8 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           picture={p?.tiktokPicture ?? null}
           verified={p?.tiktokVerified ?? false}
           onVerify={() => setVerifyModal('tiktok')}
+          onUnlink={p?.tiktokHandle ? () => handleUnlink('tiktok') : undefined}
+          unlinkLoading={unlinkPending === 'tiktok'}
         />
 
         <SocialRow
@@ -175,6 +195,8 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           picture={p?.facebookPicture ?? null}
           verified={p?.facebookVerified ?? false}
           onVerify={() => setVerifyModal('facebook')}
+          onUnlink={p?.facebookHandle ? () => handleUnlink('facebook') : undefined}
+          unlinkLoading={unlinkPending === 'facebook'}
         />
       </div>
 
@@ -245,10 +267,12 @@ interface SocialRowProps {
   picture: string | null;
   verified: boolean;
   onVerify: (() => void) | null;
+  onUnlink?: () => void;
+  unlinkLoading?: boolean;
   hint?: string;
 }
 
-function SocialRow({ icon, label, name, handle, picture, verified, onVerify, hint }: SocialRowProps) {
+function SocialRow({ icon, label, name, handle, picture, verified, onVerify, onUnlink, unlinkLoading, hint }: SocialRowProps) {
   const isLinked = !!handle;
   return (
     <div className="flex items-center gap-3 py-1">
@@ -272,7 +296,7 @@ function SocialRow({ icon, label, name, handle, picture, verified, onVerify, hin
           )}
         </div>
       </div>
-      <div className="shrink-0">
+      <div className="shrink-0 flex items-center gap-1.5">
         {verified ? (
           <span className="flex items-center gap-1 text-green-400 text-xs font-semibold bg-green-900/30 px-2 py-1 rounded-full">
             <FaCheck size={9} /> Verifiziert
@@ -285,6 +309,16 @@ function SocialRow({ icon, label, name, handle, picture, verified, onVerify, hin
             {isLinked ? 'Ändern' : <><FaPlus size={9} /> Verknüpfen</>}
           </button>
         ) : null}
+        {isLinked && onUnlink && (
+          <button
+            onClick={onUnlink}
+            disabled={unlinkLoading}
+            className="flex items-center gap-1 text-xs font-semibold px-2 py-1.5 rounded-lg transition-colors bg-red-900/30 hover:bg-red-900/60 text-red-400 disabled:opacity-40"
+            title="Trennen"
+          >
+            {unlinkLoading ? '…' : '✕'}
+          </button>
+        )}
       </div>
     </div>
   );

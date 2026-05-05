@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getUserProfile,
   hasWalletCompletedQuest,
+  hasChannelCompletedQuest,
   loadQuestDetail,
   saveCompletion,
   savePendingReward,
@@ -103,10 +104,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Falscher Quest-Typ' }, { status: 400 });
   }
 
-  // 3. Doppelabschluss prüfen
+  // 3. Doppelabschluss prüfen (Wallet-Ebene)
   const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
   if (alreadyDone) {
     return NextResponse.json({ error: 'Du hast diesen Quest bereits abgeschlossen' }, { status: 409 });
+  }
+
+  // 3b. Handle-Schutz: gleicher TikTok-Account darf Quest nicht für eine andere Wallet nochmal abschließen
+  const handleDone = await hasChannelCompletedQuest(profile.tiktokHandle, questId);
+  if (handleDone) {
+    return NextResponse.json({ error: 'Dieser TikTok-Account hat diesen Quest bereits abgeschlossen' }, { status: 409 });
   }
 
   // 4. Kommentar via RapidAPI suchen
