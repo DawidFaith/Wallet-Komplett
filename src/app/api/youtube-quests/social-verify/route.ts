@@ -16,7 +16,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getVerificationCode, upsertUserProfile } from '../../../lib/questDb';
 
-export const maxDuration = 30; // Vercel: bis zu 30s für TikTok-Retries
+export const maxDuration = 60; // Vercel Pro: 60s für Apify Instagram-Scraper
 
 type Platform = 'instagram' | 'tiktok' | 'facebook';
 
@@ -164,6 +164,41 @@ async function fetchProfile(platform: Platform, handle: string) {
   return fetchFacebookProfile(cleanHandle); // facebook
 }
 
+// ─── Apify Instagram Scraper (synchron) ──────────────────────────────────────
+
+const APIFY_TOKEN = process.env.APIFY_TOKEN;
+const APIFY_INSTAGRAM_ACTOR = 'apify~instagram-profile-scraper';
+
+async function fetchInstagramProfileApify(handle: string): Promise<{
+  name: string; picture: string; bio: string;
+} | null> {
+  if (!APIFY_TOKEN) return null;
+  try {
+    const res = await fetch(
+      `https://api.apify.com/v2/acts/${APIFY_INSTAGRAM_ACTOR}/run-sync-get-dataset-items?token=${APIFY_TOKEN}&timeout=55`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usernames: [handle] }),
+        signal: AbortSignal.timeout(55000),
+      }
+    );
+    if (!res.ok) return null;
+    const items = await res.json() as Array<{
+      username?: string; fullName?: string; biography?: string; profilePicUrl?: string;
+    }>;
+    if (!Array.isArray(items) || items.length === 0) return null;
+    const p = items[0];
+    return {
+      name: p.fullName || p.username || handle,
+      picture: p.profilePicUrl || `/api/avatar?platform=instagram&handle=${encodeURIComponent(handle)}`,
+      bio: p.biography ?? '',
+    };
+  } catch {
+    return null;
+  }
+}
+
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -222,13 +257,26 @@ async function handlePost(req: NextRequest) {
 
   // ── Preview ───────────────────────────────────────────────────────────────
   if (action === 'preview') {
-    const profile = await fetchProfile(p, cleanHandle);
-    if (!profile && p === 'instagram') {
-      return NextResponse.json(
-        { error: `Instagram-Profil "@${cleanHandle}" nicht gefunden oder privat.` },
-        { status: 404 }
-      );
+    // Instagram: via Apify (synchron, bis 55s)
+    if (p === 'instagram') {
+      if (!APIFY_TOKEN) {
+        return NextResponse.json({ error: 'APIFY_TOKEN nicht konfiguriert' }, { status: 500 });
+      }
+      const profile = await fetchInstagramProfileApify(cleanHandle);
+      if (!profile) {
+        return NextResponse.json(
+          { error: `Instagram-Profil "@${cleanHandle}" nicht gefunden oder privat.` },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({
+        name: profile.name,
+        picture: profile.picture,
+        verificationCode,
+      });
     }
+
+    const profile = await fetchProfile(p, cleanHandle);
     return NextResponse.json({
       name: profile?.name ?? cleanHandle,
       picture: profile?.picture ?? `https://unavatar.io/${p}/${cleanHandle}`,
@@ -238,7 +286,34 @@ async function handlePost(req: NextRequest) {
 
   // ── Verify ──────────────────────────────────────────────────────────────
   if (action === 'verify') {
-    // Profil erneut fetchen (Retry-Logik liegt in fetchTikTokProfile)
+    // Instagram: via Apify (synchron, bis 55s)
+    if (p === 'instagram') {
+      if (!APIFY_TOKEN) {
+        return NextResponse.json({ error: 'APIFY_TOKEN nicht konfiguriert' }, { status: 500 });
+      }
+      const profile = await fetchInstagramProfileApify(cleanHandle);
+      if (!profile) {
+        return NextResponse.json(
+          { error: `Instagram-Profil "@${cleanHandle}" nicht abrufbar. Bitte erneut versuchen.` },
+          { status: 500 }
+        );
+      }
+      if (!profile.bio.includes(verificationCode)) {
+        return NextResponse.json({
+          notFound: true,
+          message: `Code "${verificationCode}" nicht in der Bio von @${cleanHandle} gefunden. Bitte füge den Code zuerst in deine Bio ein und versuche es erneut.`,
+        });
+      }
+      await upsertUserProfile(walletAddress, {
+        instagramHandle: cleanHandle,
+        instagramVerified: true,
+        instagramName: profile.name,
+        instagramPicture: profile.picture,
+      });
+      return NextResponse.json({ success: true, name: profile.name, picture: profile.picture });
+    }
+
+    // TikTok / Facebook: synchron
     const freshProfile = await fetchProfile(p, cleanHandle);
 
     const bio = freshProfile?.bio ?? '';
@@ -263,14 +338,7 @@ async function handlePost(req: NextRequest) {
     const name = profileName;
     const picture = profilePicture;
 
-    if (p === 'instagram') {
-      await upsertUserProfile(walletAddress, {
-        instagramHandle: cleanHandle,
-        instagramVerified: verified,
-        instagramName: name,
-        instagramPicture: picture,
-      });
-    } else if (p === 'tiktok') {
+    if (p === 'tiktok') {
       await upsertUserProfile(walletAddress, {
         tiktokHandle: cleanHandle,
         tiktokVerified: verified,

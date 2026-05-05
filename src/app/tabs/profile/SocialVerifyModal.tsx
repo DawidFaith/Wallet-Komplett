@@ -230,7 +230,7 @@ export default function SocialVerifyModal({
                 className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 {loading ? <FaSync className="animate-spin" size={14} /> : <FaChevronRight size={14} />}
-                {loading ? 'Suche Profil…' : 'Profil laden'}
+                {loading ? (platform === 'instagram' ? 'Profil wird geladen (15–30s)…' : 'Suche Profil…') : 'Profil laden'}
               </button>
             </div>
           )}
