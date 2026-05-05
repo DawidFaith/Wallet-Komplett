@@ -47,6 +47,26 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const platform = searchParams.get('platform') as Platform | null;
   const handle = searchParams.get('handle')?.replace(/^@/, '').trim();
+  const directUrl = searchParams.get('url'); // direkte Bild-URL (z.B. von Apify)
+
+  // Direkte URL proxyen (z.B. Apify-Profilbild)
+  if (directUrl) {
+    try {
+      const imgRes = await fetch(directUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+      if (imgRes.ok) {
+        const contentType = imgRes.headers.get('content-type') ?? 'image/jpeg';
+        const buffer = await imgRes.arrayBuffer();
+        return new NextResponse(buffer, {
+          status: 200,
+          headers: { 'Content-Type': contentType, 'Cache-Control': 'public, max-age=3600, s-maxage=3600' },
+        });
+      }
+    } catch { /* Fallback below */ }
+    if (platform && handle) {
+      return NextResponse.redirect(`https://unavatar.io/${platform}/${handle}`, 302);
+    }
+    return new NextResponse('Not Found', { status: 404 });
+  }
 
   if (!platform || !PLATFORMS.includes(platform) || !handle) {
     return new NextResponse('Bad Request', { status: 400 });

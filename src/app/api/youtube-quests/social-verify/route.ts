@@ -189,9 +189,13 @@ async function fetchInstagramProfileApify(handle: string): Promise<{
     }>;
     if (!Array.isArray(items) || items.length === 0) return null;
     const p = items[0];
+    // Bild durch eigenen Proxy leiten damit keine externen CDN-Domains geblockt werden
+    const picUrl = p.profilePicUrl
+      ? `/api/avatar?platform=instagram&handle=${encodeURIComponent(handle)}&url=${encodeURIComponent(p.profilePicUrl)}`
+      : `/api/avatar?platform=instagram&handle=${encodeURIComponent(handle)}`;
     return {
       name: p.fullName || p.username || handle,
-      picture: p.profilePicUrl || `/api/avatar?platform=instagram&handle=${encodeURIComponent(handle)}`,
+      picture: picUrl,
       bio: p.biography ?? '',
     };
   } catch {
@@ -260,12 +264,12 @@ async function handlePost(req: NextRequest) {
     // Instagram: via Apify (synchron, bis 55s)
     if (p === 'instagram') {
       if (!APIFY_TOKEN) {
-        return NextResponse.json({ error: 'APIFY_TOKEN nicht konfiguriert' }, { status: 500 });
+        return NextResponse.json({ error: 'Instagram-Verifikation nicht konfiguriert.' }, { status: 500 });
       }
       const profile = await fetchInstagramProfileApify(cleanHandle);
       if (!profile) {
         return NextResponse.json(
-          { error: `Instagram-Profil "@${cleanHandle}" nicht gefunden oder privat.` },
+          { error: `Instagram-Profil "@${cleanHandle}" konnte nicht geladen werden. Bitte erneut versuchen.` },
           { status: 404 }
         );
       }
@@ -289,12 +293,12 @@ async function handlePost(req: NextRequest) {
     // Instagram: via Apify (synchron, bis 55s)
     if (p === 'instagram') {
       if (!APIFY_TOKEN) {
-        return NextResponse.json({ error: 'APIFY_TOKEN nicht konfiguriert' }, { status: 500 });
+        return NextResponse.json({ error: 'Instagram-Verifikation nicht konfiguriert.' }, { status: 500 });
       }
       const profile = await fetchInstagramProfileApify(cleanHandle);
       if (!profile) {
         return NextResponse.json(
-          { error: `Instagram-Profil "@${cleanHandle}" nicht abrufbar. Bitte erneut versuchen.` },
+          { error: `Instagram-Profil "@${cleanHandle}" konnte nicht geladen werden. Bitte erneut versuchen.` },
           { status: 500 }
         );
       }
