@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FaPlus, FaSync, FaCheck, FaCommentAlt, FaClock, FaKey, FaTiktok, FaYoutube, FaThumbsUp, FaBookmark, FaShareAlt } from 'react-icons/fa';
+import { FaPlus, FaSync, FaCheck, FaCommentAlt, FaClock, FaKey, FaTiktok, FaYoutube, FaInstagram, FaThumbsUp, FaBookmark, FaShareAlt, FaSearch } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import { shortenWallet } from '../utils';
 
@@ -26,7 +26,7 @@ export default function CreateQuestModal({
   const [description, setDescription] = useState('');
   const [rewardAmount, setRewardAmount] = useState('100');
   const [maxParticipants, setMaxParticipants] = useState('10');
-  const [platform, setPlatform] = useState<'youtube' | 'tiktok'>('youtube');
+  const [platform, setPlatform] = useState<'youtube' | 'tiktok' | 'instagram'>('youtube');
   const [questType, setQuestType] = useState<'comment' | 'like' | 'secret' | 'engagement'>('comment');
   const [secretCode, setSecretCode] = useState('');
   const [durationHours, setDurationHours] = useState('24');
@@ -36,13 +36,35 @@ export default function CreateQuestModal({
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  // Instagram Reel Auto-Resolve
+  const [reelResolved, setReelResolved] = useState<{ mediaId: string; title: string; thumbnailUrl: string; ownerUsername: string } | null>(null);
+  const [resolving, setResolving] = useState(false);
+  const [resolveError, setResolveError] = useState('');
 
   const reset = () => {
     setVideoUrl(''); setDescription(''); setRewardAmount('100'); setMaxParticipants('10');
     setPlatform('youtube'); setQuestType('comment'); setDurationHours('24');
     setCustomDurationValue('30'); setCustomDurationUnit('min');
     setSecretCode('');
+    setReelResolved(null); setResolving(false); setResolveError('');
     setError(''); setSuccess(false);
+  };
+
+  const handleResolveReel = async () => {
+    if (!videoUrl.trim()) return;
+    setResolving(true);
+    setResolveError('');
+    setReelResolved(null);
+    try {
+      const res = await fetch(`/api/instagram-quests/resolve-reel?url=${encodeURIComponent(videoUrl.trim())}`);
+      const data = await res.json();
+      if (!res.ok) { setResolveError(data.error); return; }
+      setReelResolved(data);
+    } catch {
+      setResolveError('Netzwerkfehler. Bitte versuche es erneut.');
+    } finally {
+      setResolving(false);
+    }
   };
 
   const handleClose = () => { reset(); onClose(); };
@@ -78,20 +100,46 @@ export default function CreateQuestModal({
           : '💬 Schreibe einen positiven Kommentar unter diesen YouTube Short!'
       );
 
-      const apiEndpoint = platform === 'tiktok' ? '/api/tiktok-quests/quests' : '/api/youtube-quests/quests';
+      // Instagram: muss vorher resolved sein
+      if (platform === 'instagram' && !reelResolved) {
+        setError('Bitte erst das Reel auflösen (Lupe klicken)');
+        return;
+      }
+
+      const apiEndpoint = platform === 'tiktok'
+        ? '/api/tiktok-quests/quests'
+        : platform === 'instagram'
+        ? '/api/instagram-quests/quests'
+        : '/api/youtube-quests/quests';
+
+      const body = platform === 'instagram'
+        ? {
+            creatorWallet: walletAddress,
+            videoUrl: `https://www.instagram.com/reel/${reelResolved!.ownerUsername}/`,
+            reelUrl: videoUrl.trim(),
+            mediaId: reelResolved!.mediaId,
+            videoTitle: reelResolved!.title,
+            thumbnailUrl: reelResolved!.thumbnailUrl,
+            description: finalDescription || `💬 Kommentiere dieses Instagram Reel von @${reelResolved!.ownerUsername}!`,
+            rewardAmount: Number(rewardAmount),
+            maxCompletions: Number(maxParticipants),
+            durationHours: finalDurationHours,
+          }
+        : {
+            creatorWallet: walletAddress,
+            videoUrl: videoUrl.trim(),
+            description: finalDescription,
+            rewardAmount: Number(rewardAmount),
+            maxCompletions: Number(maxParticipants),
+            questType,
+            durationHours: finalDurationHours,
+            secretCode: questType === 'secret' ? secretCode.trim() : undefined,
+          };
+
       const res = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          creatorWallet: walletAddress,
-          videoUrl: videoUrl.trim(),
-          description: finalDescription,
-          rewardAmount: Number(rewardAmount),
-          maxCompletions: Number(maxParticipants),
-          questType: platform === 'tiktok' ? questType : questType,
-          durationHours: finalDurationHours,
-          secretCode: questType === 'secret' ? secretCode.trim() : undefined,
-        }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error); return; }
@@ -120,10 +168,10 @@ export default function CreateQuestModal({
           {/* Plattform-Auswahl */}
           <div>
             <label className="text-zinc-300 text-sm font-medium block mb-1.5">Plattform <span className="text-red-400">*</span></label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => { setPlatform('youtube'); setQuestType('comment'); }}
+                onClick={() => { setPlatform('youtube'); setQuestType('comment'); setReelResolved(null); setResolveError(''); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                   platform === 'youtube'
                     ? 'bg-red-600 border-red-500 text-white'
@@ -134,7 +182,7 @@ export default function CreateQuestModal({
               </button>
               <button
                 type="button"
-                onClick={() => { setPlatform('tiktok'); setQuestType('comment'); }}
+                onClick={() => { setPlatform('tiktok'); setQuestType('comment'); setReelResolved(null); setResolveError(''); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                   platform === 'tiktok'
                     ? 'bg-cyan-600 border-cyan-500 text-white'
@@ -142,6 +190,17 @@ export default function CreateQuestModal({
                 }`}
               >
                 <FaTiktok size={15} /> TikTok
+              </button>
+              <button
+                type="button"
+                onClick={() => { setPlatform('instagram'); setQuestType('comment'); setReelResolved(null); setResolveError(''); }}
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                  platform === 'instagram'
+                    ? 'bg-pink-600 border-pink-500 text-white'
+                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-pink-600'
+                }`}
+              >
+                <FaInstagram size={15} /> Instagram
               </button>
             </div>
           </div>
@@ -309,19 +368,56 @@ export default function CreateQuestModal({
           {/* Video URL */}
           <div>
             <label className="text-zinc-300 text-sm font-medium block mb-1.5">
-              {platform === 'tiktok' ? 'TikTok Video URL' : 'YouTube Shorts URL'}{' '}
+              {platform === 'instagram' ? 'Instagram Reel URL' : platform === 'tiktok' ? 'TikTok Video URL' : 'YouTube Shorts URL'}{' '}
               <span className="text-red-400">*</span>
             </label>
-            <input
-              value={videoUrl}
-              onChange={(e) => setVideoUrl(e.target.value)}
-              placeholder={platform === 'tiktok' ? 'https://www.tiktok.com/@user/video/VIDEO_ID' : 'https://www.youtube.com/shorts/VIDEO_ID'}
-              required
-              className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm placeholder-zinc-500"
-            />
-            <p className="text-zinc-500 text-xs mt-1">
-              {platform === 'tiktok' ? 'Nur Videos deines verknüpften TikTok-Kontos sind erlaubt' : 'Nur YouTube Shorts sind erlaubt'}
-            </p>
+            <div className="flex gap-2">
+              <input
+                value={videoUrl}
+                onChange={(e) => { setVideoUrl(e.target.value); setReelResolved(null); setResolveError(''); }}
+                placeholder={
+                  platform === 'instagram'
+                    ? 'https://www.instagram.com/reel/SHORTCODE/'
+                    : platform === 'tiktok'
+                    ? 'https://www.tiktok.com/@user/video/VIDEO_ID'
+                    : 'https://www.youtube.com/shorts/VIDEO_ID'
+                }
+                required
+                className="flex-1 bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-pink-500 focus:outline-none text-sm placeholder-zinc-500"
+              />
+              {platform === 'instagram' && (
+                <button
+                  type="button"
+                  onClick={handleResolveReel}
+                  disabled={resolving || !videoUrl.trim()}
+                  className="bg-pink-600 hover:bg-pink-500 disabled:opacity-40 text-white px-4 rounded-xl transition-colors flex items-center gap-2 text-sm font-semibold shrink-0"
+                  title="Reel auflösen"
+                >
+                  {resolving ? <FaSync size={13} className="animate-spin" /> : <FaSearch size={13} />}
+                </button>
+              )}
+            </div>
+            {/* Instagram Resolve Ergebnis */}
+            {platform === 'instagram' && resolveError && (
+              <p className="text-red-400 text-xs mt-1">{resolveError}</p>
+            )}
+            {platform === 'instagram' && reelResolved && (
+              <div className="mt-2 flex items-center gap-3 bg-zinc-800 rounded-xl p-2.5">
+                {reelResolved.thumbnailUrl && (
+                  <img src={reelResolved.thumbnailUrl} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-xs font-semibold line-clamp-1">{reelResolved.title}</p>
+                  <p className="text-zinc-400 text-xs">@{reelResolved.ownerUsername} · Media ID: {reelResolved.mediaId}</p>
+                </div>
+                <span className="text-green-400 text-xs font-bold shrink-0">✓</span>
+              </div>
+            )}
+            {platform !== 'instagram' && (
+              <p className="text-zinc-500 text-xs mt-1">
+                {platform === 'tiktok' ? 'Nur Videos deines verknüpften TikTok-Kontos sind erlaubt' : 'Nur YouTube Shorts sind erlaubt'}
+              </p>
+            )}
           </div>
 
           {/* Beschreibung */}
@@ -398,7 +494,7 @@ export default function CreateQuestModal({
             className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             {creating ? <FaSync className="animate-spin" /> : <FaPlus />}
-            {creating ? 'Erstelle Quest…' : `Quest veröffentlichen (${platform === 'tiktok' ? 'TikTok' : 'YouTube'})`}
+            {creating ? 'Erstelle Quest…' : `Quest veröffentlichen (${platform === 'tiktok' ? 'TikTok' : platform === 'instagram' ? 'Instagram' : 'YouTube'})`}
           </button>
         </form>
       )}

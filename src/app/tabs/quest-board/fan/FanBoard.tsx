@@ -11,6 +11,8 @@ import TiktokEngagementVerifyModal from './TiktokEngagementVerifyModal';
 import YoutubeQuestCard from '../quests/youtube/YoutubeQuestCard';
 import TiktokQuestCard from '../quests/tiktok/TiktokQuestCard';
 import TiktokEngagementQuestCard from '../quests/tiktok/TiktokEngagementQuestCard';
+import InstagramQuestCard from '../quests/instagram/InstagramQuestCard';
+import InstagramCommentVerifyModal from './InstagramCommentVerifyModal';
 import type { QuestIndexEntry, YouTubeBinding, VerifyResult, ClaimResult } from '../types';
 
 interface FanBoardProps {
@@ -33,6 +35,7 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
   const [likeVerifyQuest, setLikeVerifyQuest] = useState<QuestIndexEntry | null>(null);
   const [secretVerifyQuest, setSecretVerifyQuest] = useState<QuestIndexEntry | null>(null);
   const [tiktokEngagementQuest, setTiktokEngagementQuest] = useState<QuestIndexEntry | null>(null);
+  const [instagramCommentQuest, setInstagramCommentQuest] = useState<QuestIndexEntry | null>(null);
 
   const loadQuests = useCallback(async () => {
     setLoading(true);
@@ -169,10 +172,16 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
     }
   };
 
+  const handleInstagramVerify = (questId: string) => {
+    const quest = quests.find((q) => q.id === questId) ?? null;
+    setInstagramCommentQuest(quest);
+  };
+
   // Quests nach Plattform und Typ gruppieren
   const youtubeQuests = quests.filter((q) => q.platform === 'youtube');
   const tiktokCommentQuests = quests.filter((q) => q.platform === 'tiktok' && q.type !== 'engagement');
   const tiktokEngagementQuests = quests.filter((q) => q.platform === 'tiktok' && q.type === 'engagement');
+  const instagramQuests = quests.filter((q) => q.platform === 'instagram');
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-5">
@@ -212,7 +221,7 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
         <div className="flex justify-center py-12">
           <div className="border-4 border-red-500/30 border-t-red-500 rounded-full w-10 h-10 animate-spin" />
         </div>
-      ) : youtubeQuests.length === 0 && tiktokCommentQuests.length === 0 && tiktokEngagementQuests.length === 0 ? (
+      ) : youtubeQuests.length === 0 && tiktokCommentQuests.length === 0 && tiktokEngagementQuests.length === 0 && instagramQuests.length === 0 ? (
         <div className="text-center py-12 text-zinc-500">
           <FaTrophy size={32} className="mx-auto mb-3 opacity-30" />
           <p>Noch keine Quests verfügbar.</p>
@@ -252,6 +261,18 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
                   quest={quest}
                   isCompleted={completedIds.includes(quest.id)}
                   onComplete={handleTikTokVerify}
+                />
+              ))}
+            </div>
+          )}
+          {instagramQuests.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {instagramQuests.map((quest) => (
+                <InstagramQuestCard
+                  key={quest.id}
+                  quest={quest}
+                  isCompleted={completedIds.includes(quest.id)}
+                  onComplete={handleInstagramVerify}
                 />
               ))}
             </div>
@@ -314,6 +335,23 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
           }
         }}
         onClose={() => setTiktokEngagementQuest(null)}
+      />
+
+      {/* Verifizierungs-Modal (Instagram Kommentar) */}
+      <InstagramCommentVerifyModal
+        quest={instagramCommentQuest}
+        walletAddress={walletAddress}
+        onCompleted={(amount) => {
+          if (instagramCommentQuest) {
+            setCompletedIds((prev) => [...prev, instagramCommentQuest.id]);
+            setCredits((prev) => prev + amount);
+            setQuests((prev) =>
+              prev.map((q) => q.id === instagramCommentQuest.id ? { ...q, completions: q.completions + 1 } : q)
+            );
+          }
+          setInstagramCommentQuest(null);
+        }}
+        onClose={() => setInstagramCommentQuest(null)}
       />
     </div>
   );
