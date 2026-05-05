@@ -1,9 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
-import { FaPlus, FaSync, FaCheck, FaCommentAlt, FaClock, FaKey, FaTiktok, FaYoutube, FaInstagram, FaThumbsUp, FaBookmark, FaShareAlt, FaSearch } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaPlus, FaSync, FaCheck, FaCommentAlt, FaClock, FaKey, FaTiktok, FaYoutube, FaInstagram, FaThumbsUp, FaBookmark, FaShareAlt, FaTrash } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import { shortenWallet } from '../utils';
+
+interface AvailableMediaItem {
+  shortcode: string;
+  graph_media_id: string;
+  caption: string;
+  thumbnail_url: string;
+  permalink: string;
+  posted_at: string | null;
+}
 
 interface CreateQuestModalProps {
   open: boolean;
@@ -36,36 +45,66 @@ export default function CreateQuestModal({
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  // Instagram Reel Auto-Resolve
-  const [reelResolved, setReelResolved] = useState<{ mediaId: string; title: string; thumbnailUrl: string; ownerUsername: string } | null>(null);
-  const [resolving, setResolving] = useState(false);
-  const [resolveError, setResolveError] = useState('');
+  // Instagram – verfügbare Videos aus DB
+  const [availableMedia, setAvailableMedia] = useState<AvailableMediaItem[]>([]);
+  const [loadingMedia, setLoadingMedia] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<AvailableMediaItem | null>(null);
 
   const reset = () => {
     setVideoUrl(''); setDescription(''); setRewardAmount('100'); setMaxParticipants('10');
     setPlatform('youtube'); setQuestType('comment'); setDurationHours('24');
     setCustomDurationValue('30'); setCustomDurationUnit('min');
     setSecretCode('');
-    setReelResolved(null); setResolving(false); setResolveError('');
+    setSelectedMedia(null); setAvailableMedia([]); setLoadingMedia(false);
     setError(''); setSuccess(false);
   };
 
-  const handleResolveReel = async () => {
-    if (!videoUrl.trim()) return;
-    setResolving(true);
-    setResolveError('');
-    setReelResolved(null);
+  const fetchAvailableMedia = async () => {
+    setLoadingMedia(true);
     try {
-      const res = await fetch(`/api/instagram-quests/resolve-reel?url=${encodeURIComponent(videoUrl.trim())}`);
+      const res = await fetch('/api/instagram-quests/available-media');
       const data = await res.json();
-      if (!res.ok) { setResolveError(data.error); return; }
-      setReelResolved(data);
-    } catch {
-      setResolveError('Netzwerkfehler. Bitte versuche es erneut.');
+      setAvailableMedia(data.media ?? []);
     } finally {
-      setResolving(false);
+      setLoadingMedia(false);
     }
   };
+
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState('');
+
+  const handleSyncMedia = async () => {
+    setSyncing(true);
+    setSyncMessage('');
+    try {
+      const res = await fetch('/api/instagram-quests/trigger-sync', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        setSyncMessage(`Fehler: ${data.error}`);
+        return;
+      }
+      setSyncMessage('Sync gestartet! Videos erscheinen in wenigen Sekunden…');
+      // Nach 4 Sekunden neu laden
+      setTimeout(() => fetchAvailableMedia(), 4000);
+    } catch {
+      setSyncMessage('Netzwerkfehler beim Sync.');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleDeleteMedia = async (shortcode: string) => {
+    await fetch(`/api/instagram-quests/available-media?shortcode=${encodeURIComponent(shortcode)}`, { method: 'DELETE' });
+    setAvailableMedia((prev) => prev.filter((m) => m.shortcode !== shortcode));
+    if (selectedMedia?.shortcode === shortcode) setSelectedMedia(null);
+  };
+
+  // Verfügbare Videos laden wenn Instagram-Plattform gewählt wird
+  useEffect(() => {
+    if (platform === 'instagram' && open) {
+      fetchAvailableMedia();
+    }
+  }, [platform, open]);
 
   const handleClose = () => { reset(); onClose(); };
 
@@ -100,9 +139,9 @@ export default function CreateQuestModal({
           : '💬 Schreibe einen positiven Kommentar unter diesen YouTube Short!'
       );
 
-      // Instagram: muss vorher resolved sein
-      if (platform === 'instagram' && !reelResolved) {
-        setError('Bitte erst das Reel auflösen (Lupe klicken)');
+      // Instagram: muss ein Video ausgewählt sein
+      if (platform === 'instagram' && !selectedMedia) {
+        setError('Bitte erst ein Instagram Video auswählen.');
         return;
       }
 
@@ -115,12 +154,11 @@ export default function CreateQuestModal({
       const body = platform === 'instagram'
         ? {
             creatorWallet: walletAddress,
-            videoUrl: `https://www.instagram.com/reel/${reelResolved!.ownerUsername}/`,
-            reelUrl: videoUrl.trim(),
-            mediaId: reelResolved!.mediaId,
-            videoTitle: reelResolved!.title,
-            thumbnailUrl: reelResolved!.thumbnailUrl,
-            description: finalDescription || `💬 Kommentiere dieses Instagram Reel von @${reelResolved!.ownerUsername}!`,
+            reelUrl: selectedMedia!.permalink || `https://www.instagram.com/reel/${selectedMedia!.shortcode}/`,
+            mediaId: selectedMedia!.graph_media_id,   // echte Graph API ID → direkt für /comments
+            videoTitle: (selectedMedia!.caption || `Instagram Reel`).slice(0, 100),
+            thumbnailUrl: selectedMedia!.thumbnail_url,
+            description: finalDescription || `💬 Kommentiere dieses Instagram Reel!`,
             rewardAmount: Number(rewardAmount),
             maxCompletions: Number(maxParticipants),
             durationHours: finalDurationHours,
@@ -171,7 +209,7 @@ export default function CreateQuestModal({
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => { setPlatform('youtube'); setQuestType('comment'); setReelResolved(null); setResolveError(''); }}
+                onClick={() => { setPlatform('youtube'); setQuestType('comment'); setSelectedMedia(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                   platform === 'youtube'
                     ? 'bg-red-600 border-red-500 text-white'
@@ -182,7 +220,7 @@ export default function CreateQuestModal({
               </button>
               <button
                 type="button"
-                onClick={() => { setPlatform('tiktok'); setQuestType('comment'); setReelResolved(null); setResolveError(''); }}
+                onClick={() => { setPlatform('tiktok'); setQuestType('comment'); setSelectedMedia(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                   platform === 'tiktok'
                     ? 'bg-cyan-600 border-cyan-500 text-white'
@@ -193,7 +231,7 @@ export default function CreateQuestModal({
               </button>
               <button
                 type="button"
-                onClick={() => { setPlatform('instagram'); setQuestType('comment'); setReelResolved(null); setResolveError(''); }}
+                onClick={() => { setPlatform('instagram'); setQuestType('comment'); setSelectedMedia(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                   platform === 'instagram'
                     ? 'bg-pink-600 border-pink-500 text-white'
@@ -365,60 +403,131 @@ export default function CreateQuestModal({
             )}
           </div>
 
-          {/* Video URL */}
-          <div>
-            <label className="text-zinc-300 text-sm font-medium block mb-1.5">
-              {platform === 'instagram' ? 'Instagram Reel URL' : platform === 'tiktok' ? 'TikTok Video URL' : 'YouTube Shorts URL'}{' '}
-              <span className="text-red-400">*</span>
-            </label>
-            <div className="flex gap-2">
+          {/* Video URL – nur YouTube / TikTok */}
+          {platform !== 'instagram' && (
+            <div>
+              <label className="text-zinc-300 text-sm font-medium block mb-1.5">
+                {platform === 'tiktok' ? 'TikTok Video URL' : 'YouTube Shorts URL'}{' '}
+                <span className="text-red-400">*</span>
+              </label>
               <input
                 value={videoUrl}
-                onChange={(e) => { setVideoUrl(e.target.value); setReelResolved(null); setResolveError(''); }}
+                onChange={(e) => setVideoUrl(e.target.value)}
                 placeholder={
-                  platform === 'instagram'
-                    ? 'https://www.instagram.com/reel/SHORTCODE/'
-                    : platform === 'tiktok'
+                  platform === 'tiktok'
                     ? 'https://www.tiktok.com/@user/video/VIDEO_ID'
                     : 'https://www.youtube.com/shorts/VIDEO_ID'
                 }
                 required
-                className="flex-1 bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-pink-500 focus:outline-none text-sm placeholder-zinc-500"
+                className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-pink-500 focus:outline-none text-sm placeholder-zinc-500"
               />
-              {platform === 'instagram' && (
-                <button
-                  type="button"
-                  onClick={handleResolveReel}
-                  disabled={resolving || !videoUrl.trim()}
-                  className="bg-pink-600 hover:bg-pink-500 disabled:opacity-40 text-white px-4 rounded-xl transition-colors flex items-center gap-2 text-sm font-semibold shrink-0"
-                  title="Reel auflösen"
-                >
-                  {resolving ? <FaSync size={13} className="animate-spin" /> : <FaSearch size={13} />}
-                </button>
-              )}
-            </div>
-            {/* Instagram Resolve Ergebnis */}
-            {platform === 'instagram' && resolveError && (
-              <p className="text-red-400 text-xs mt-1">{resolveError}</p>
-            )}
-            {platform === 'instagram' && reelResolved && (
-              <div className="mt-2 flex items-center gap-3 bg-zinc-800 rounded-xl p-2.5">
-                {reelResolved.thumbnailUrl && (
-                  <img src={reelResolved.thumbnailUrl} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-xs font-semibold line-clamp-1">{reelResolved.title}</p>
-                  <p className="text-zinc-400 text-xs">@{reelResolved.ownerUsername} · Media ID: {reelResolved.mediaId}</p>
-                </div>
-                <span className="text-green-400 text-xs font-bold shrink-0">✓</span>
-              </div>
-            )}
-            {platform !== 'instagram' && (
               <p className="text-zinc-500 text-xs mt-1">
                 {platform === 'tiktok' ? 'Nur Videos deines verknüpften TikTok-Kontos sind erlaubt' : 'Nur YouTube Shorts sind erlaubt'}
               </p>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Instagram – verfügbare Videos aus DB */}
+          {platform === 'instagram' && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-zinc-300 text-sm font-medium">
+                  Video auswählen <span className="text-red-400">*</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSyncMedia}
+                    disabled={syncing || loadingMedia}
+                    className="text-xs text-yellow-400 hover:text-yellow-300 flex items-center gap-1 disabled:opacity-50"
+                    title="Alle Videos von Instagram laden (inkl. ältere)"
+                  >
+                    <FaSync size={10} className={syncing ? 'animate-spin' : ''} /> Sync
+                  </button>
+                  <button
+                    type="button"
+                    onClick={fetchAvailableMedia}
+                    disabled={loadingMedia}
+                    className="text-xs text-pink-400 hover:text-pink-300 flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <FaSync size={10} className={loadingMedia ? 'animate-spin' : ''} /> Aktualisieren
+                  </button>
+                </div>
+              </div>
+              {syncMessage && (
+                <p className={`text-xs mb-2 ${syncMessage.startsWith('Fehler') ? 'text-red-400' : 'text-yellow-300'}`}>
+                  {syncMessage}
+                </p>
+              )}
+
+              {loadingMedia ? (
+                <div className="text-center text-zinc-500 py-8 text-sm bg-zinc-800/50 rounded-xl">
+                  <FaSync size={16} className="animate-spin mx-auto mb-2" />
+                  Lade Videos…
+                </div>
+              ) : availableMedia.length === 0 ? (
+                <div className="text-center py-6 text-sm bg-zinc-800/50 rounded-xl border border-zinc-700/50 space-y-2">
+                  <FaInstagram size={24} className="mx-auto text-zinc-600" />
+                  <p className="text-zinc-500">Noch keine Videos gespeichert.</p>
+                  <button
+                    type="button"
+                    onClick={handleSyncMedia}
+                    disabled={syncing}
+                    className="text-xs bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 mx-auto"
+                  >
+                    <FaSync size={10} className={syncing ? 'animate-spin' : ''} />
+                    Jetzt alle Videos laden
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
+                  {availableMedia.map((item) => (
+                    <div
+                      key={item.shortcode}
+                      onClick={() => setSelectedMedia(item)}
+                      className={`relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all ${
+                        selectedMedia?.shortcode === item.shortcode
+                          ? 'border-pink-500 ring-1 ring-pink-500/30'
+                          : 'border-transparent hover:border-zinc-600'
+                      }`}
+                    >
+                      {item.thumbnail_url ? (
+                        <img src={item.thumbnail_url} alt="" className="w-full h-24 object-cover" />
+                      ) : (
+                        <div className="w-full h-24 bg-zinc-700 flex items-center justify-center">
+                          <FaInstagram size={24} className="text-zinc-500" />
+                        </div>
+                      )}
+                      <div className="p-1.5 bg-zinc-900">
+                        <p className="text-white text-xs line-clamp-2 leading-tight">
+                          {item.caption || `Reel ${item.shortcode}`}
+                        </p>
+                      </div>
+                      {selectedMedia?.shortcode === item.shortcode && (
+                        <div className="absolute inset-0 bg-pink-500/20 flex items-center justify-center pointer-events-none">
+                          <FaCheck size={20} className="text-pink-400 drop-shadow" />
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteMedia(item.shortcode); }}
+                        className="absolute top-1 right-1 bg-black/60 hover:bg-red-900/80 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors"
+                        title="Video entfernen"
+                      >
+                        <FaTrash size={9} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {selectedMedia && (
+                <p className="text-pink-400 text-xs mt-1.5 flex items-center gap-1">
+                  <FaCheck size={10} /> Ausgewählt: {(selectedMedia.caption || selectedMedia.shortcode).slice(0, 50)}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Beschreibung */}
           <div>

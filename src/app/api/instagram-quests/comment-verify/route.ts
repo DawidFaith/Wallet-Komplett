@@ -99,6 +99,9 @@ export async function POST(req: NextRequest) {
   const verificationCode = getVerificationCode(walletAddress);
 
   // 5. Make.com Webhook aufrufen (synchron – Make.com antwortet mit "Webhook Response" Modul)
+  // quest.videoId enthält die echte Graph API Media ID (gespeichert beim Quest-Erstellen via available-media)
+  const graphMediaId = quest.videoId;
+
   let makeResult: { found: boolean; commentId?: string };
   try {
     const makeRes = await fetch(makeWebhookUrl, {
@@ -107,7 +110,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         username: profile.instagramHandle,
         verificationCode,
-        mediaId: quest.videoId,   // Instagram Media-ID (pk) – wird beim Quest-Erstellen gesetzt
+        graphMediaId,             // ← echte Graph API ID → direkt für GET /{graphMediaId}/comments
         questId,
       }),
       signal: AbortSignal.timeout(25000),
