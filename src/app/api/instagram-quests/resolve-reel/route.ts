@@ -154,7 +154,7 @@ export async function GET(req: NextRequest) {
 
   // Fallback: og:image aus HTML
   const ogImgMatch = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/);
-  const thumbnail = thumbnailUrl || ogImgMatch?.[1] ?? '';
+  const thumbnail = thumbnailUrl || (ogImgMatch?.[1] ?? '');
 
   // Titel aus og:title oder "Original audio by @owner"
   const ogTitleMatch = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/);
