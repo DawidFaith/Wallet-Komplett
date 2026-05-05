@@ -3,6 +3,7 @@ import {
   loadBindingByWallet,
   loadBindingByChannel,
   saveYouTubeBinding,
+  deleteYouTubeBinding,
   getVerificationCode,
 } from '../../../lib/questDb';
 
@@ -34,6 +35,25 @@ export async function GET(req: NextRequest) {
   } catch (dbErr) {
     console.error('Datenbankfehler beim Laden des Bindings:', dbErr);
     return NextResponse.json({ error: 'Datenbankfehler. Bitte Seite neu laden.' }, { status: 500 });
+  }
+}
+
+// DELETE: YouTube-Kanal-Verknüpfung trennen
+export async function DELETE(req: NextRequest) {
+  let body: { walletAddress?: string };
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: 'Ungültiger Body' }, { status: 400 });
+  }
+  const { walletAddress } = body;
+  if (!walletAddress) {
+    return NextResponse.json({ error: 'walletAddress fehlt' }, { status: 400 });
+  }
+  try {
+    await deleteYouTubeBinding(walletAddress);
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

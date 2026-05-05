@@ -83,6 +83,21 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
     }
   }, [account?.address, loadProfile]);
 
+  const handleUnlinkYoutube = useCallback(async () => {
+    if (!account?.address) return;
+    setUnlinkPending('youtube' as SocialPlatform);
+    try {
+      await fetch('/api/youtube-quests/verify-channel', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress: account.address }),
+      });
+      await loadProfile();
+    } finally {
+      setUnlinkPending(null);
+    }
+  }, [account?.address, loadProfile]);
+
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
   if (!account?.address) {
@@ -161,6 +176,8 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           picture={p?.youtubeChannelThumbnail ?? null}
           verified={p?.youtubeVerified ?? false}
           onVerify={() => setShowYoutubeModal(true)}
+          onUnlink={p?.youtubeChannelId ? handleUnlinkYoutube : undefined}
+          unlinkLoading={unlinkPending === ('youtube' as SocialPlatform)}
         />
 
         <SocialRow

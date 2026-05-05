@@ -391,6 +391,11 @@ export async function saveYouTubeBinding(binding: YouTubeBinding): Promise<void>
   `;
 }
 
+export async function deleteYouTubeBinding(walletAddress: string): Promise<void> {
+  const sql = getDb();
+  await sql`DELETE FROM youtube_bindings WHERE wallet_address = ${walletAddress.toLowerCase()}`;
+}
+
 // ─── Completions ──────────────────────────────────────────────────────────────
 
 export async function loadCompletionsByWallet(walletAddress: string): Promise<QuestsByWalletEntry[]> {
