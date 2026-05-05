@@ -1,53 +1,61 @@
 /**
  * POST /api/instagram-quests/trigger-sync
  *
- * Löst in Make.com einen Sync aus: Make.com ruft GET /me/media ab
- * und schickt jedes Video einzeln an POST /api/instagram-quests/save-media.
+ * Triggert das Make.com "Watch Media" Szenario on-demand via Make.com API.
  *
- * Make.com Szenario "Instagram Media Sync":
- *   [1] Custom Webhook (eingehend von hier)
- *   [2] HTTP: GET https://graph.facebook.com/v21.0/me/media
- *             ?fields=id,shortcode,caption,thumbnail_url,permalink,timestamp
- *             &limit=100&access_token={{TOKEN}}
- *   [3] Array Iterator über data[]
- *   [4] HTTP: POST https://app.dawidfaith.de/api/instagram-quests/save-media
- *             { graphMediaId: {{id}}, shortcode: {{shortcode}}, caption: {{caption}},
- *               thumbnailUrl: {{thumbnail_url}}, permalink: {{permalink}},
- *               postedAt: {{timestamp}} }
- *             Header: X-Make-Secret: {{MAKE_WEBHOOK_SECRET}}
+ * Voraussetzungen in Make.com:
+ *   - Szenario Scheduling: "On demand"
+ *   - Make.com API Token generieren (Profil → API → Token)
+ *   - Szenario-ID aus der URL kopieren (z.B. make.com/scenarios/12345)
  *
- * Env: MAKE_INSTAGRAM_SYNC_URL
+ * Env:
+ *   MAKE_API_TOKEN    → Make.com API Token
+ *   MAKE_SCENARIO_ID  → ID des Watch Media Szenarios
+ *   MAKE_API_REGION   → "eu2" oder "us1" (Standard: eu2)
  */
 
 import { NextResponse } from 'next/server';
 
+export const maxDuration = 15;
+
 export async function POST() {
-  const syncUrl = process.env.MAKE_INSTAGRAM_SYNC_URL;
-  if (!syncUrl) {
+  const token = process.env.MAKE_API_TOKEN;
+  const scenarioId = process.env.MAKE_SCENARIO_ID;
+  const region = process.env.MAKE_API_REGION ?? 'eu2';
+
+  if (!token || !scenarioId) {
     return NextResponse.json(
-      { error: 'MAKE_INSTAGRAM_SYNC_URL nicht konfiguriert' },
+      { error: 'MAKE_API_TOKEN und MAKE_SCENARIO_ID nicht konfiguriert' },
       { status: 500 }
     );
   }
 
   try {
-    const res = await fetch(syncUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ trigger: 'sync', source: 'dashboard' }),
-      signal: AbortSignal.timeout(10000),
-    });
+    const res = await fetch(
+      `https://${region}.make.com/api/v2/scenarios/${scenarioId}/run`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+        signal: AbortSignal.timeout(10000),
+      }
+    );
 
     if (!res.ok) {
+      const text = await res.text();
       return NextResponse.json(
-        { error: 'Make.com Sync Fehler', details: await res.text() },
+        { error: `Make.com API Fehler (${res.status})`, details: text },
         { status: 502 }
       );
     }
 
-    return NextResponse.json({ success: true, message: 'Sync gestartet – Videos werden geladen…' });
+    return NextResponse.json({ success: true, message: 'Sync gestartet – Aktualisieren in ~10 Sekunden' });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: 'Make.com nicht erreichbar', details: msg }, { status: 502 });
+    return NextResponse.json({ error: msg }, { status: 502 });
   }
 }
+

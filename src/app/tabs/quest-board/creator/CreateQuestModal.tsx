@@ -79,15 +79,10 @@ export default function CreateQuestModal({
     try {
       const res = await fetch('/api/instagram-quests/trigger-sync', { method: 'POST' });
       const data = await res.json();
-      if (!res.ok) {
-        setSyncMessage(`Fehler: ${data.error}`);
-        return;
-      }
-      setSyncMessage('Sync gestartet! Videos erscheinen in wenigen Sekunden…');
-      // Nach 4 Sekunden neu laden
-      setTimeout(() => fetchAvailableMedia(), 4000);
+      if (!res.ok) { setSyncMessage(`Fehler: ${data.error}`); return; }
+      setSyncMessage('Sync gestartet! In ~10 Sek. auf „Aktualisieren" klicken.');
     } catch {
-      setSyncMessage('Netzwerkfehler beim Sync.');
+      setSyncMessage('Netzwerkfehler.');
     } finally {
       setSyncing(false);
     }
@@ -435,21 +430,12 @@ export default function CreateQuestModal({
                   Video auswählen <span className="text-red-400">*</span>
                 </label>
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleSyncMedia}
-                    disabled={syncing || loadingMedia}
-                    className="text-xs text-yellow-400 hover:text-yellow-300 flex items-center gap-1 disabled:opacity-50"
-                    title="Alle Videos von Instagram laden (inkl. ältere)"
-                  >
+                  <button type="button" onClick={handleSyncMedia} disabled={syncing}
+                    className="text-xs text-yellow-400 hover:text-yellow-300 flex items-center gap-1 disabled:opacity-50">
                     <FaSync size={10} className={syncing ? 'animate-spin' : ''} /> Sync
                   </button>
-                  <button
-                    type="button"
-                    onClick={fetchAvailableMedia}
-                    disabled={loadingMedia}
-                    className="text-xs text-pink-400 hover:text-pink-300 flex items-center gap-1 disabled:opacity-50"
-                  >
+                  <button type="button" onClick={fetchAvailableMedia} disabled={loadingMedia}
+                    className="text-xs text-pink-400 hover:text-pink-300 flex items-center gap-1 disabled:opacity-50">
                     <FaSync size={10} className={loadingMedia ? 'animate-spin' : ''} /> Aktualisieren
                   </button>
                 </div>
@@ -466,18 +452,10 @@ export default function CreateQuestModal({
                   Lade Videos…
                 </div>
               ) : availableMedia.length === 0 ? (
-                <div className="text-center py-6 text-sm bg-zinc-800/50 rounded-xl border border-zinc-700/50 space-y-2">
-                  <FaInstagram size={24} className="mx-auto text-zinc-600" />
-                  <p className="text-zinc-500">Noch keine Videos gespeichert.</p>
-                  <button
-                    type="button"
-                    onClick={handleSyncMedia}
-                    disabled={syncing}
-                    className="text-xs bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 mx-auto"
-                  >
-                    <FaSync size={10} className={syncing ? 'animate-spin' : ''} />
-                    Jetzt alle Videos laden
-                  </button>
+                <div className="text-center py-6 text-sm bg-zinc-800/50 rounded-xl border border-zinc-700/50 space-y-1">
+                  <FaInstagram size={24} className="mx-auto text-zinc-600 mb-2" />
+                  <p className="text-zinc-400">Noch keine Videos verfügbar.</p>
+                  <p className="text-zinc-600 text-xs">Make.com sendet neue Videos automatisch.<br/>Danach hier auf „Aktualisieren" klicken.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
