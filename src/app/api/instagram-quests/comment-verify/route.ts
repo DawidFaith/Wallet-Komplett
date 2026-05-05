@@ -25,7 +25,6 @@ import {
   savePendingReward,
   addUserXp,
   getUserProfile,
-  getVerificationCode,
 } from '../../../lib/questDb';
 
 export const maxDuration = 30;
@@ -95,22 +94,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 4. Verifizierungscode berechnen
-  const verificationCode = getVerificationCode(walletAddress);
-
-  // 5. Make.com Webhook aufrufen (synchron – Make.com antwortet mit "Webhook Response" Modul)
-  // quest.videoId enthält die echte Graph API Media ID (gespeichert beim Quest-Erstellen via available-media)
+  // 4. Make.com Webhook aufrufen – prüft ob username in den Kommentaren des Reels vorkommt
   const graphMediaId = quest.videoId;
 
-  let makeResult: { found: boolean; commentId?: string };
+  let makeResult: { found: boolean | string; total?: number };
   try {
     const makeRes = await fetch(makeWebhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         username: profile.instagramHandle,
-        verificationCode,
-        graphMediaId,             // ← echte Graph API ID → direkt für GET /{graphMediaId}/comments
+        graphMediaId,
         questId,
       }),
       signal: AbortSignal.timeout(25000),
@@ -132,12 +126,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (!makeResult.found) {
+  const found = makeResult.found === true || makeResult.found === 'true';
+  if (!found) {
     return NextResponse.json(
-      {
-        error: `Kommentar nicht gefunden. Stelle sicher dass du unter dem Reel genau "${verificationCode}" kommentiert hast.`,
-        verificationCode,
-      },
+      { error: 'Kein Kommentar gefunden. Hinterlasse zuerst einen positiven Kommentar unter dem Reel mit deinem Instagram-Account @' + profile.instagramHandle },
       { status: 404 }
     );
   }
@@ -150,8 +142,8 @@ export async function POST(req: NextRequest) {
     channelId: profile.instagramHandle,
     channelName: profile.instagramName ?? profile.instagramHandle,
     platform: 'instagram',
-    commentId: makeResult.commentId ?? 'unknown',
-    commentText: verificationCode,
+    commentId: 'comment',
+    commentText: 'positive comment',
     rewardAmount: quest.rewardAmount,
     rewardPaid: false,
     completedAt: now,
