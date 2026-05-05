@@ -50,7 +50,13 @@ export async function POST(req: NextRequest) {
 
   let body: ({ items?: MediaItem[] }) & MediaItem;
   try {
-    body = await req.json();
+    // Make.com injiziert Caption-Zeilenumbrüche direkt in den JSON-String → ungültiges JSON.
+    // Lösung: Body als Text lesen, Steuerzeichen (außer Tab) escapen, dann parsen.
+    const raw = await req.text();
+    const sanitized = raw.replace(/[\x00-\x08\x0A-\x1F]/g, (c) =>
+      '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0')
+    );
+    body = JSON.parse(sanitized);
   } catch {
     return NextResponse.json({ error: 'Ungültiger JSON-Body' }, { status: 400 });
   }
