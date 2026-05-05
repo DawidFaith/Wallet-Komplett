@@ -455,7 +455,7 @@ export default function CreateQuestModal({
                 <div className="text-center py-6 text-sm bg-zinc-800/50 rounded-xl border border-zinc-700/50 space-y-1">
                   <FaInstagram size={24} className="mx-auto text-zinc-600 mb-2" />
                   <p className="text-zinc-400">Noch keine Videos verfügbar.</p>
-                  <p className="text-zinc-600 text-xs">Make.com sendet neue Videos automatisch.<br/>Danach hier auf „Aktualisieren" klicken.</p>
+                  <p className="text-zinc-600 text-xs">Make.com sendet neue Videos automatisch.<br/>Danach hier auf &bdquo;Aktualisieren&ldquo; klicken.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
