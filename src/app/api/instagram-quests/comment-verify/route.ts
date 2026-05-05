@@ -13,7 +13,7 @@
  *   6. Bei Erfolg: Quest-Abschluss speichern + Credits vergeben
  *
  * Env-Variablen:
- *   MAKE_INSTAGRAM_WEBHOOK_URL  – URL des Make.com Instant Webhook
+ *   MAKE_INSTAGRAM_COMMENT_WEBHOOK_URL  – URL des Make.com Instant Webhook
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -30,10 +30,10 @@ import {
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
-  const makeWebhookUrl = process.env.MAKE_INSTAGRAM_WEBHOOK_URL;
+  const makeWebhookUrl = process.env.MAKE_INSTAGRAM_COMMENT_WEBHOOK_URL;
   if (!makeWebhookUrl) {
     return NextResponse.json(
-      { error: 'MAKE_INSTAGRAM_WEBHOOK_URL nicht konfiguriert' },
+      { error: 'MAKE_INSTAGRAM_COMMENT_WEBHOOK_URL nicht konfiguriert' },
       { status: 500 }
     );
   }
