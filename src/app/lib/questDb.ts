@@ -14,7 +14,7 @@ import { getDb } from './db';
 
 // ─── Typen ───────────────────────────────────────────────────────────────────
 
-export type Platform = 'youtube' | 'tiktok'; // erweiterbar: | 'instagram'
+export type Platform = 'youtube' | 'tiktok' | 'instagram';
 export type QuestType = 'comment' | 'like' | 'secret' | 'engagement'; // erweiterbar: | 'subscribe'
 
 export interface QuestIndexEntry {
