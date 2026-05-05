@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import {
   FaInstagram, FaTiktok, FaFacebook,
@@ -79,6 +79,18 @@ export default function SocialVerifyModal({
 }: SocialVerifyModalProps) {
   const cfg = PLATFORM_CONFIG[platform];
   const cacheKey = `social_preview_${platform}_${walletAddress}`;
+  const fingerprintRef = useRef<string | null>(null);
+
+  // Fingerprint im Hintergrund laden
+  useEffect(() => {
+    let cancelled = false;
+    import('@fingerprintjs/fingerprintjs').then(FingerprintJS => {
+      FingerprintJS.load().then(fp => fp.get()).then(result => {
+        if (!cancelled) fingerprintRef.current = result.visitorId;
+      }).catch(() => {});
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   // Cache-Hilfsfunktionen
   const savePreviewCache = (h: string, p: { name: string; picture: string; verificationCode: string }) => {
@@ -113,7 +125,12 @@ export default function SocialVerifyModal({
     const res = await fetch('/api/youtube-quests/social-verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ walletAddress, platform, ...body }),
+      body: JSON.stringify({
+        walletAddress,
+        platform,
+        fingerprint: fingerprintRef.current ?? undefined,
+        ...body,
+      }),
     });
     return { ok: res.ok, data: await res.json() };
   };

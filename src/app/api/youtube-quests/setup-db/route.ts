@@ -215,9 +215,20 @@ export async function POST(req: NextRequest) {
       )
     `;
 
+    // ── Device Fingerprint Schutz ────────────────────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS device_fingerprints (
+        fingerprint     TEXT        NOT NULL,
+        wallet_address  TEXT        NOT NULL,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(fingerprint, wallet_address)
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_device_fingerprints ON device_fingerprints(fingerprint)`;
+
     return NextResponse.json({
       success: true,
-      message: 'Alle Tabellen (inkl. dfaith_credits, expires_at, tiktok_engagement_verifications) erstellt.',
+      message: 'Alle Tabellen (inkl. dfaith_credits, expires_at, tiktok_engagement_verifications, device_fingerprints) erstellt.',
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -480,6 +480,41 @@ export function getVerificationCode(walletAddress: string): string {
   return `DFAITH-${walletAddress.slice(2, 10).toUpperCase()}`;
 }
 
+// ─── Device Fingerprint Schutz ────────────────────────────────────────────────
+
+/**
+ * Speichert einen Gerät-Fingerprint + Wallet-Kombination.
+ * Gibt die Anzahl der verschiedenen Wallets zurück die von diesem Fingerprint verifiziert haben.
+ */
+export async function recordFingerprintVerification(
+  fingerprint: string,
+  walletAddress: string
+): Promise<number> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO device_fingerprints (fingerprint, wallet_address)
+    VALUES (${fingerprint}, ${walletAddress.toLowerCase()})
+    ON CONFLICT (fingerprint, wallet_address) DO NOTHING
+  `;
+  const rows = await sql`
+    SELECT COUNT(DISTINCT wallet_address) AS cnt
+    FROM device_fingerprints
+    WHERE fingerprint = ${fingerprint}
+  `;
+  return Number(rows[0]?.cnt ?? 0);
+}
+
+/** Gibt die Anzahl verschiedener Wallets zurück die von diesem Fingerprint stammen. */
+export async function getFingerprintWalletCount(fingerprint: string): Promise<number> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT COUNT(DISTINCT wallet_address) AS cnt
+    FROM device_fingerprints
+    WHERE fingerprint = ${fingerprint}
+  `;
+  return Number(rows[0]?.cnt ?? 0);
+}
+
 // ─── Pending Rewards ──────────────────────────────────────────────────────────
 
 function rowToPendingReward(row: any): PendingReward {

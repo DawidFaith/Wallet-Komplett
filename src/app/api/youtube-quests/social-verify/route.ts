@@ -14,7 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getVerificationCode, upsertUserProfile } from '../../../lib/questDb';
+import { getVerificationCode, upsertUserProfile, recordFingerprintVerification, getFingerprintWalletCount } from '../../../lib/questDb';
 
 export const maxDuration = 30; // Vercel Pro: 30s für Bright Data Web Unlocker
 
@@ -226,12 +226,13 @@ async function handlePost(req: NextRequest) {
     platform?: string;
     handle?: string;
     action?: 'preview' | 'verify' | 'unlink';
+    fingerprint?: string;
   };
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: 'Ungültiger Body' }, { status: 400 });
   }
 
-  const { walletAddress, platform, handle, action } = body;
+  const { walletAddress, platform, handle, action, fingerprint } = body;
 
   if (!walletAddress) {
     return NextResponse.json({ error: 'walletAddress fehlt' }, { status: 400 });
@@ -263,6 +264,27 @@ async function handlePost(req: NextRequest) {
   }
   const cleanHandle = handle.replace(/^@/, '').trim();
   const verificationCode = getVerificationCode(walletAddress);
+
+  // ── Fingerprint-Schutz: max. 2 verschiedene Wallets pro Gerät ─────────────
+  if (action === 'verify' && fingerprint) {
+    const count = await getFingerprintWalletCount(fingerprint);
+    const normalizedWallet = walletAddress.toLowerCase();
+    // Prüfen ob diese Wallet+Fingerprint bereits bekannt ist (dann kein neuer Slot nötig)
+    const { getDb } = await import('../../../lib/db');
+    const sql = getDb();
+    const existing = await sql`
+      SELECT 1 FROM device_fingerprints
+      WHERE fingerprint = ${fingerprint} AND wallet_address = ${normalizedWallet}
+      LIMIT 1
+    `;
+    const isNewCombination = existing.length === 0;
+    if (isNewCombination && count >= 2) {
+      return NextResponse.json(
+        { error: 'Dieses Gerät wurde bereits für 2 Wallets verwendet. Aus Sicherheitsgründen ist keine weitere Verknüpfung möglich.' },
+        { status: 403 }
+      );
+    }
+  }
 
   // ── Preview ───────────────────────────────────────────────────────────────
   if (action === 'preview') {
@@ -319,6 +341,7 @@ async function handlePost(req: NextRequest) {
         instagramName: profile.name,
         instagramPicture: profile.picture,
       });
+      if (fingerprint) await recordFingerprintVerification(fingerprint, walletAddress);
       return NextResponse.json({ success: true, name: profile.name, picture: profile.picture });
     }
 
@@ -362,7 +385,7 @@ async function handlePost(req: NextRequest) {
         facebookPicture: picture,
       });
     }
-
+    if (fingerprint) await recordFingerprintVerification(fingerprint, walletAddress);
     return NextResponse.json({ success: true, name, picture });
   }
 
