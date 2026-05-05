@@ -119,6 +119,14 @@ export async function POST(req: NextRequest) {
 
     makeResult = await makeRes.json();
   } catch (err: unknown) {
+    // Timeout = kein Kommentar mit passendem Username gefunden → Filter hat alles geblockt
+    const isTimeout = err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError');
+    if (isTimeout) {
+      return NextResponse.json(
+        { error: 'Kein Kommentar gefunden. Hinterlasse zuerst einen positiven Kommentar unter dem Reel mit deinem Instagram-Account @' + profile.instagramHandle },
+        { status: 404 }
+      );
+    }
     const msg = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
       { error: 'Make.com nicht erreichbar', details: msg },
