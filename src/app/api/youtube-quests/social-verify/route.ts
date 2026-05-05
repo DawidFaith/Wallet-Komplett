@@ -16,7 +16,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getVerificationCode, upsertUserProfile } from '../../../lib/questDb';
 
-export const maxDuration = 60; // Vercel Pro: 60s für Apify Instagram-Scraper
+export const maxDuration = 30; // Vercel Pro: 30s für Bright Data Web Unlocker
 
 type Platform = 'instagram' | 'tiktok' | 'facebook';
 
@@ -164,39 +164,44 @@ async function fetchProfile(platform: Platform, handle: string) {
   return fetchFacebookProfile(cleanHandle); // facebook
 }
 
-// ─── Apify Instagram Scraper (synchron) ──────────────────────────────────────
+// ─── Bright Data Web Unlocker – Instagram Scraper (~2–5s) ────────────────────
 
-const APIFY_TOKEN = process.env.APIFY_TOKEN;
-const APIFY_INSTAGRAM_ACTOR = 'apify~instagram-profile-scraper';
+const BRIGHTDATA_API_KEY = process.env.BRIGHTDATA_API_KEY;
+const BRIGHTDATA_ZONE    = process.env.BRIGHTDATA_ZONE ?? 'web_unlocker1';
 
-async function fetchInstagramProfileApify(handle: string): Promise<{
+async function fetchInstagramProfileBrightData(handle: string): Promise<{
   name: string; picture: string; bio: string;
 } | null> {
-  if (!APIFY_TOKEN) return null;
+  if (!BRIGHTDATA_API_KEY) return null;
   try {
-    const res = await fetch(
-      `https://api.apify.com/v2/acts/${APIFY_INSTAGRAM_ACTOR}/run-sync-get-dataset-items?token=${APIFY_TOKEN}&timeout=55`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usernames: [handle] }),
-        signal: AbortSignal.timeout(55000),
-      }
-    );
+    const targetUrl = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(handle)}`;
+    const res = await fetch('https://api.brightdata.com/request', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${BRIGHTDATA_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        zone: BRIGHTDATA_ZONE,
+        url: targetUrl,
+        format: 'raw',
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
     if (!res.ok) return null;
-    const items = await res.json() as Array<{
-      username?: string; fullName?: string; biography?: string; profilePicUrl?: string;
-    }>;
-    if (!Array.isArray(items) || items.length === 0) return null;
-    const p = items[0];
+    const data = await res.json() as { data?: { user?: {
+      full_name?: string; username?: string; biography?: string; profile_pic_url?: string;
+    } } };
+    const user = data?.data?.user;
+    if (!user) return null;
     // Bild durch eigenen Proxy leiten damit keine externen CDN-Domains geblockt werden
-    const picUrl = p.profilePicUrl
-      ? `/api/avatar?platform=instagram&handle=${encodeURIComponent(handle)}&url=${encodeURIComponent(p.profilePicUrl)}`
+    const picUrl = user.profile_pic_url
+      ? `/api/avatar?platform=instagram&handle=${encodeURIComponent(handle)}&url=${encodeURIComponent(user.profile_pic_url)}`
       : `/api/avatar?platform=instagram&handle=${encodeURIComponent(handle)}`;
     return {
-      name: p.fullName || p.username || handle,
+      name: user.full_name || user.username || handle,
       picture: picUrl,
-      bio: p.biography ?? '',
+      bio: user.biography ?? '',
     };
   } catch {
     return null;
@@ -261,12 +266,12 @@ async function handlePost(req: NextRequest) {
 
   // ── Preview ───────────────────────────────────────────────────────────────
   if (action === 'preview') {
-    // Instagram: via Apify (synchron, bis 55s)
+    // Instagram: via Bright Data Web Unlocker (~2–5s)
     if (p === 'instagram') {
-      if (!APIFY_TOKEN) {
+      if (!BRIGHTDATA_API_KEY) {
         return NextResponse.json({ error: 'Instagram-Verifikation nicht konfiguriert.' }, { status: 500 });
       }
-      const profile = await fetchInstagramProfileApify(cleanHandle);
+      const profile = await fetchInstagramProfileBrightData(cleanHandle);
       if (!profile) {
         return NextResponse.json(
           { error: `Instagram-Profil "@${cleanHandle}" konnte nicht geladen werden. Bitte erneut versuchen.` },
@@ -290,12 +295,12 @@ async function handlePost(req: NextRequest) {
 
   // ── Verify ──────────────────────────────────────────────────────────────
   if (action === 'verify') {
-    // Instagram: via Apify (synchron, bis 55s)
+    // Instagram: via Bright Data Web Unlocker (~2–5s)
     if (p === 'instagram') {
-      if (!APIFY_TOKEN) {
+      if (!BRIGHTDATA_API_KEY) {
         return NextResponse.json({ error: 'Instagram-Verifikation nicht konfiguriert.' }, { status: 500 });
       }
-      const profile = await fetchInstagramProfileApify(cleanHandle);
+      const profile = await fetchInstagramProfileBrightData(cleanHandle);
       if (!profile) {
         return NextResponse.json(
           { error: `Instagram-Profil "@${cleanHandle}" konnte nicht geladen werden. Bitte erneut versuchen.` },
