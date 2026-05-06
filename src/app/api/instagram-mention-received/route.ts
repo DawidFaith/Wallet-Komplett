@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
   try {
     const sql = getDb();
 
-    // Alte Einträge (> 30 Min) aufräumen
-    await sql`DELETE FROM instagram_mentions WHERE received_at < NOW() - INTERVAL '30 minutes'`;
+    // Alte Einträge (> 2 Stunden) aufräumen
+    await sql`DELETE FROM instagram_mentions WHERE received_at < NOW() - INTERVAL '2 hours'`;
 
     // Neuen Kommentar-User speichern (upsert: selber User darf mehrfach kommentieren)
     await sql`

@@ -334,6 +334,7 @@ export default function SocialVerifyModal({
                   <FaInstagram size={14} className="text-pink-400 shrink-0" />
                   <span className="text-pink-300 font-mono text-sm select-all">@dawidfaith</span>
                 </div>
+                <p className="text-yellow-500 text-xs">⏳ Warte 1–2 Minuten nach dem Kommentieren, bevor du auf &quot;Verifizieren&quot; klickst.</p>
               </div>
               )}
 

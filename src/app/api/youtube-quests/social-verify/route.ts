@@ -324,11 +324,11 @@ async function handlePost(req: NextRequest) {
     if (p === 'instagram') {
       const sql = getDb();
 
-      // Gibt es einen Kommentar von diesem Username aus den letzten 30 Minuten?
+      // Gibt es einen Kommentar von diesem Username aus den letzten 2 Stunden?
       const rows = await sql`
         SELECT id FROM instagram_mentions
         WHERE comment_id = ${cleanHandle.toLowerCase()}
-          AND received_at > NOW() - INTERVAL '30 minutes'
+          AND received_at > NOW() - INTERVAL '2 hours'
         LIMIT 1
       `;
 
@@ -337,7 +337,7 @@ async function handlePost(req: NextRequest) {
       if (!mentionFound) {
         return NextResponse.json({
           notFound: true,
-          message: `Kein Kommentar von @${cleanHandle} unter einem Post von @dawidfaith gefunden. Kommentiere unter einem Post oder Reel von @dawidfaith und versuche es erneut.`,
+          message: `Kein Kommentar von @${cleanHandle} gefunden. Instagram kann bis zu 2 Minuten brauchen – warte kurz und versuche es erneut.`,
         });
       }
 
