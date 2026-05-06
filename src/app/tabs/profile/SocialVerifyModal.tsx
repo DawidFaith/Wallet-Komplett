@@ -18,8 +18,8 @@ const PLATFORM_CONFIG = {
     placeholder: 'deinname',
     bioInstructions: (_code: string) => [
       'Öffne die Instagram App',
-      'Erstelle einen Beitrag, Kommentar oder Story',
-      'Tagge @dawidfaith darin',
+      'Gehe auf ein Reel oder Post von @dawidfaith',
+      'Schreibe einen Kommentar und tagge @dawidfaith darin',
       'Komm zurück und klicke auf „Verifizieren"',
     ],
     profileUrl: (handle: string) => `https://www.instagram.com/${handle}/`,
@@ -254,7 +254,7 @@ export default function SocialVerifyModal({
                   <>
                     <p>1. Gib deinen Instagram-Handle ein</p>
                     <p>2. Dein Profil wird geladen</p>
-                    <p>3. Tagge @dawidfaith in einem Beitrag oder Kommentar</p>
+                    <p>3. Kommentiere auf einem Post/Reel von @dawidfaith und tagge ihn</p>
                     <p>4. Klicke auf &quot;Verifizieren&quot;</p>
                   </>
                 ) : (
