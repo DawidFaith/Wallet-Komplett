@@ -12,9 +12,10 @@ interface InstagramQuestCardProps {
 }
 
 const QUEST_TYPE_CONFIG = {
-  like:    { label: 'Like',      icon: <FaHeart size={8} />,    bg: 'bg-pink-600/90',   btn: 'Like verifizieren' },
-  save:    { label: 'Speichern', icon: <FaBookmark size={8} />, bg: 'bg-yellow-600/90', btn: 'Speichern verifizieren' },
-  comment: { label: 'Kommentar', icon: <FaComment size={8} />,  bg: 'bg-purple-600/90', btn: 'Kommentar verifizieren' },
+  like:       { label: 'Like',             icon: <FaHeart size={8} />,    bg: 'bg-pink-600/90',                                          btn: 'Like verifizieren' },
+  save:       { label: 'Speichern',        icon: <FaBookmark size={8} />, bg: 'bg-yellow-600/90',                                        btn: 'Speichern verifizieren' },
+  comment:    { label: 'Kommentar',        icon: <FaComment size={8} />,  bg: 'bg-purple-600/90',                                        btn: 'Kommentar verifizieren' },
+  engagement: { label: 'Like & Speichern', icon: <FaHeart size={8} />,   bg: 'bg-gradient-to-r from-red-600/90 to-yellow-600/90',       btn: 'Engagement verifizieren' },
 } as const;
 
 export default function InstagramQuestCard({ quest, isCompleted, onComplete }: InstagramQuestCardProps) {

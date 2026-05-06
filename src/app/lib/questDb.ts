@@ -889,7 +889,7 @@ export async function upsertInstagramLikeVerification(
   questId: string,
   walletAddress: string,
   mediaId: string,
-  questType: 'like' | 'save',
+  questType: 'like' | 'save' | 'engagement',
   baselineLikes: number,
   baselineSaves: number,
   expiresAt: string,

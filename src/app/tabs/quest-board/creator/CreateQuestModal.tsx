@@ -165,6 +165,10 @@ export default function CreateQuestModal({
             : questType === 'secret'
             ? '🔑 Finde den geheimen Code im TikTok-Video und gib ihn ein!'
             : '💬 Schreibe einen positiven Kommentar unter dieses TikTok-Video!'
+          : platform === 'instagram'
+          ? questType === 'engagement'
+            ? '❤️ Like und 🔖 Speichere dieses Instagram Reel! (Teilbelohnung möglich)'
+            : '💬 Kommentiere dieses Instagram Reel!'
           : questType === 'like'
           ? '👍 Like dieses YouTube Short!'
           : questType === 'secret'
@@ -200,6 +204,7 @@ export default function CreateQuestModal({
             rewardAmount: Number(rewardAmount),
             maxCompletions: Number(maxParticipants),
             durationHours: finalDurationHours,
+            questType,
           }
         : {
             creatorWallet: walletAddress,
@@ -385,7 +390,7 @@ export default function CreateQuestModal({
           {platform === 'instagram' && (
             <div>
               <label className="text-zinc-300 text-sm font-medium block mb-1.5">Quest-Typ <span className="text-red-400">*</span></label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setQuestType('comment')}
@@ -399,32 +404,19 @@ export default function CreateQuestModal({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setQuestType('like')}
+                  onClick={() => setQuestType('engagement')}
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
-                    questType === 'like'
-                      ? 'bg-red-600 border-red-500 text-white'
+                    questType === 'engagement'
+                      ? 'bg-gradient-to-r from-red-600 to-yellow-600 border-red-500 text-white'
                       : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-red-600'
                   }`}
                 >
-                  ❤️ Like
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuestType('save')}
-                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
-                    questType === 'save'
-                      ? 'bg-yellow-600 border-yellow-500 text-white'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-yellow-600'
-                  }`}
-                >
-                  🔖 Speichern
+                  ❤️🔖 Like &amp; Speichern
                 </button>
               </div>
               <p className="text-zinc-500 text-xs mt-1">
-                {questType === 'like'
-                  ? 'Verifizierung über Like-Delta: Baseline wird gespeichert, Fan hat 10 Min um zu liken.'
-                  : questType === 'save'
-                  ? 'Verifizierung über Speichern-Delta: Baseline wird gespeichert, Fan hat 10 Min um zu speichern.'
+                {questType === 'engagement'
+                  ? 'Fan muss liken und speichern. Jede Aktion = 1/2 des Rewards. Teilbelohnung möglich.'
                   : 'Make.com prüft via Instagram Graph API ob der Fan kommentiert hat.'}
               </p>
             </div>

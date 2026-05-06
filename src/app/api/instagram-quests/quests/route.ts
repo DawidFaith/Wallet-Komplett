@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const type = (questType === 'like' || questType === 'save') ? questType : 'comment';
+  const type = (questType === 'like' || questType === 'save' || questType === 'engagement') ? questType : 'comment';
 
   const reward = Number(rewardAmount) || 100;
   const max = Math.max(1, Math.min(1000, Number(maxCompletions) || 10));

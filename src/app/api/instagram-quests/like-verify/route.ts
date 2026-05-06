@@ -103,8 +103,8 @@ export async function POST(req: NextRequest) {
     if (quest.platform !== 'instagram') {
       return NextResponse.json({ error: 'Kein Instagram-Quest' }, { status: 400 });
     }
-    if (quest.type !== 'like' && (quest.type as string) !== 'save') {
-      return NextResponse.json({ error: 'Kein Like- oder Save-Quest' }, { status: 400 });
+    if (quest.type !== 'like' && (quest.type as string) !== 'save' && (quest.type as string) !== 'engagement') {
+      return NextResponse.json({ error: 'Kein Like-, Save- oder Engagement-Quest' }, { status: 400 });
     }
     if (!quest.isActive) {
       return NextResponse.json({ error: 'Dieser Quest ist nicht mehr aktiv' }, { status: 400 });
@@ -134,13 +134,15 @@ export async function POST(req: NextRequest) {
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 Minuten
       await upsertInstagramLikeVerification(
         questId, normalized, quest.videoId,
-        quest.type as 'like' | 'save',
+        quest.type as 'like' | 'save' | 'engagement',
         Number(stats.likes ?? 0),
         Number(stats.saved ?? 0),
         expiresAt,
       );
 
-      const actionLabel = quest.type === 'like' ? 'like' : 'speichere';
+      const actionLabel =
+        (quest.type as string) === 'engagement' ? 'like und speichere'
+        : quest.type === 'like' ? 'like' : 'speichere';
       return NextResponse.json({
         step: 'pending',
         expiresAt,
@@ -173,6 +175,61 @@ export async function POST(req: NextRequest) {
 
       const likeVerified = Number(current.likes ?? 0) > verification.baselineLikes;
       const saveVerified = Number(current.saved ?? 0) > verification.baselineSaves;
+
+      // ── Engagement (Like + Save) mit Teilbelohnung ──────────────────────
+      if ((quest.type as string) === 'engagement') {
+        const verifiedCount = [likeVerified, saveVerified].filter(Boolean).length;
+
+        if (verifiedCount === 0) {
+          return NextResponse.json({
+            success: false,
+            notYet: true,
+            likeVerified: false,
+            saveVerified: false,
+            message: `Noch keine Aktion erkannt. Like und/oder speichere das Reel mit @${profile.instagramHandle}.`,
+            expiresAt: verification.expiresAt,
+          });
+        }
+
+        const earnedReward = Math.floor(quest.rewardAmount / 2) * verifiedCount;
+        const now = new Date().toISOString();
+        const completion: QuestCompletion = {
+          questId,
+          walletAddress: normalized,
+          channelId: profile.instagramHandle,
+          channelName: profile.instagramName ?? profile.instagramHandle,
+          platform: 'instagram',
+          commentId: `instagram-engagement-${normalized}-${questId}`,
+          commentText: `instagram engagement (like:${likeVerified}, save:${saveVerified})`,
+          rewardAmount: earnedReward,
+          rewardPaid: false,
+          completedAt: now,
+        };
+        await saveCompletion(completion);
+        await addDfaithCredits(normalized, earnedReward);
+        await savePendingReward({
+          walletAddress: normalized,
+          amount: earnedReward,
+          reason: `Instagram Engagement Quest: ${quest.videoTitle}`,
+          questId,
+          createdAt: now,
+        });
+        await addUserXp(normalized, earnedReward);
+        await deleteInstagramLikeVerification(questId, normalized);
+
+        return NextResponse.json({
+          success: true,
+          rewardAmount: earnedReward,
+          likeVerified,
+          saveVerified,
+          partial: verifiedCount < 2,
+          message: verifiedCount < 2
+            ? `Teilbelohnung: +${earnedReward} DFAITH Credits (${verifiedCount}/2 Aktionen erkannt)`
+            : `Quest abgeschlossen! Like & Speichern erkannt. +${earnedReward} DFAITH Credits`,
+        });
+      }
+
+      // ── Einzelaktion (Like oder Save) ────────────────────────────────────
       const verified = quest.type === 'like' ? likeVerified : saveVerified;
 
       if (!verified) {
