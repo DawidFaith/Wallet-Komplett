@@ -43,7 +43,7 @@ export default function CreateQuestModal({
   const [rewardAmount, setRewardAmount] = useState('100');
   const [maxParticipants, setMaxParticipants] = useState('10');
   const [platform, setPlatform] = useState<'youtube' | 'tiktok' | 'instagram'>('youtube');
-  const [questType, setQuestType] = useState<'comment' | 'like' | 'save' | 'secret' | 'engagement'>('comment');
+  const [questType, setQuestType] = useState<'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost'>('comment');
   const [secretCode, setSecretCode] = useState('');
   const [durationHours, setDurationHours] = useState('24');
   // freie Dauer-Eingabe
@@ -413,10 +413,23 @@ export default function CreateQuestModal({
                 >
                   ❤️🔖 Like &amp; Speichern
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setQuestType('repost')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                    questType === 'repost'
+                      ? 'bg-gradient-to-r from-blue-600 to-cyan-600 border-blue-500 text-white'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-blue-600'
+                  }`}
+                >
+                  🔁 Repost
+                </button>
               </div>
               <p className="text-zinc-500 text-xs mt-1">
                 {questType === 'engagement'
                   ? 'Fan muss liken und speichern. Jede Aktion = 1/2 des Rewards. Teilbelohnung möglich.'
+                  : questType === 'repost'
+                  ? 'Fan muss das Reel auf seinen Kanal reposten. Delta aus total_interactions wird gemessen.'
                   : 'Make.com prüft via Instagram Graph API ob der Fan kommentiert hat.'}
               </p>
             </div>

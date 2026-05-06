@@ -203,8 +203,8 @@ export async function POST(req: NextRequest) {
     if (quest.platform !== 'instagram') {
       return NextResponse.json({ error: 'Kein Instagram-Quest' }, { status: 400 });
     }
-    if (quest.type !== 'like' && (quest.type as string) !== 'save' && (quest.type as string) !== 'engagement') {
-      return NextResponse.json({ error: 'Kein Like-, Save- oder Engagement-Quest' }, { status: 400 });
+    if (quest.type !== 'like' && (quest.type as string) !== 'save' && (quest.type as string) !== 'engagement' && (quest.type as string) !== 'repost') {
+      return NextResponse.json({ error: 'Kein Like-, Save-, Engagement- oder Repost-Quest' }, { status: 400 });
     }
     if (!quest.isActive) {
       return NextResponse.json({ error: 'Dieser Quest ist nicht mehr aktiv' }, { status: 400 });
@@ -232,16 +232,22 @@ export async function POST(req: NextRequest) {
       }
 
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 Minuten
+      // Repost-Baseline = total_interactions - likes - comments - shares - saved
+      const repostBaseline = (quest.type as string) === 'repost'
+        ? Math.max(0, Number(stats.total_interactions ?? 0) - Number(stats.likes ?? 0) - Number(stats.comments ?? 0) - Number(stats.shares ?? 0) - Number(stats.saved ?? 0))
+        : 0;
+
       await upsertInstagramLikeVerification(
         questId, normalized, quest.videoId,
-        quest.type as 'like' | 'save' | 'engagement',
-        Number(stats.likes ?? 0),
-        Number(stats.saved ?? 0),
+        quest.type as 'like' | 'save' | 'engagement' | 'repost',
+        (quest.type as string) === 'repost' ? repostBaseline : Number(stats.likes ?? 0),
+        (quest.type as string) === 'repost' ? Number(stats.total_interactions ?? 0) : Number(stats.saved ?? 0),
         expiresAt,
       );
 
       const actionLabel =
         (quest.type as string) === 'engagement' ? 'like und speichere'
+        : (quest.type as string) === 'repost' ? 'teile (reposte)'
         : quest.type === 'like' ? 'like' : 'speichere';
       return NextResponse.json({
         step: 'pending',
@@ -275,6 +281,55 @@ export async function POST(req: NextRequest) {
 
       const likeVerified = Number(current.likes ?? 0) > verification.baselineLikes;
       const saveVerified = Number(current.saved ?? 0) > verification.baselineSaves;
+
+      // ── Repost ──────────────────────────────────────────────────────────
+      if ((quest.type as string) === 'repost') {
+        // baselineLikes = repost-Baseline, baselineSaves = total_interactions-Baseline
+        const currentReposts = Math.max(0,
+          Number(current.total_interactions ?? 0) - Number(current.likes ?? 0) - Number(current.comments ?? 0) - Number(current.shares ?? 0) - Number(current.saved ?? 0)
+        );
+        const repostVerified = currentReposts > verification.baselineLikes;
+
+        if (!repostVerified) {
+          return NextResponse.json({
+            success: false,
+            notYet: true,
+            message: `Noch nicht erkannt. Stelle sicher, dass du das Reel mit @${profile.instagramHandle} geteilt (repostet) hast.`,
+            expiresAt: verification.expiresAt,
+          });
+        }
+
+        const now = new Date().toISOString();
+        const completion: QuestCompletion = {
+          questId,
+          walletAddress: normalized,
+          channelId: profile.instagramHandle,
+          channelName: profile.instagramName ?? profile.instagramHandle,
+          platform: 'instagram',
+          commentId: `instagram-repost-${normalized}-${questId}`,
+          commentText: 'instagram repost',
+          rewardAmount: quest.rewardAmount,
+          rewardPaid: false,
+          completedAt: now,
+        };
+        await saveCompletion(completion);
+        await addDfaithCredits(normalized, quest.rewardAmount);
+        await savePendingReward({
+          walletAddress: normalized,
+          amount: quest.rewardAmount,
+          reason: `Instagram Repost Quest: ${quest.videoTitle}`,
+          questId,
+          createdAt: now,
+        });
+        await addUserXp(normalized, quest.rewardAmount);
+        await deleteInstagramLikeVerification(questId, normalized);
+
+        return NextResponse.json({
+          success: true,
+          rewardAmount: quest.rewardAmount,
+          message: `Quest abgeschlossen! Du hast das Reel geteilt. +${quest.rewardAmount} DFAITH Credits`,
+        });
+      }
 
       // ── Engagement (Like + Save) mit Teilbelohnung ──────────────────────
       if ((quest.type as string) === 'engagement') {

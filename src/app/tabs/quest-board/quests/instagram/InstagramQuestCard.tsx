@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FaInstagram, FaCoins, FaClock, FaComment, FaHeart, FaBookmark } from 'react-icons/fa';
+import { FaInstagram, FaCoins, FaClock, FaComment, FaHeart, FaBookmark, FaShareAlt } from 'react-icons/fa';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry } from '../../utils';
 
@@ -16,6 +16,7 @@ const QUEST_TYPE_CONFIG = {
   save:       { label: 'Speichern',        icon: <FaBookmark size={8} />, bg: 'bg-yellow-600/90',                                        btn: 'Speichern verifizieren' },
   comment:    { label: 'Kommentar',        icon: <FaComment size={8} />,  bg: 'bg-purple-600/90',                                        btn: 'Kommentar verifizieren' },
   engagement: { label: 'Like & Speichern', icon: <FaHeart size={8} />,   bg: 'bg-gradient-to-r from-red-600/90 to-yellow-600/90',       btn: 'Engagement verifizieren' },
+  repost:     { label: 'Repost',           icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-blue-600/90 to-cyan-600/90',        btn: 'Repost verifizieren' },
 } as const;
 
 export default function InstagramQuestCard({ quest, isCompleted, onComplete }: InstagramQuestCardProps) {

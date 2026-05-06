@@ -177,7 +177,7 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
   const handleInstagramVerify = (questId: string) => {
     const quest = quests.find((q) => q.id === questId) ?? null;
     if (!quest) return;
-    if (quest.type === 'like' || quest.type === 'save' || (quest.type as string) === 'engagement') {
+    if (quest.type === 'like' || quest.type === 'save' || (quest.type as string) === 'engagement' || (quest.type as string) === 'repost') {
       setInstagramLikeQuest(quest);
     } else {
       setInstagramCommentQuest(quest);

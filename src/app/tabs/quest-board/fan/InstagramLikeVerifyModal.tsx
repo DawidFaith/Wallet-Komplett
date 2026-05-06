@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { FaInstagram, FaCoins, FaExternalLinkAlt, FaRedo } from 'react-icons/fa';
+import { FaInstagram, FaCoins, FaExternalLinkAlt, FaRedo, FaShareAlt } from 'react-icons/fa';
 import { FiThumbsUp, FiBookmark } from 'react-icons/fi';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
@@ -33,11 +33,12 @@ export default function InstagramLikeVerifyModal({
 
   const isEngagement = quest?.type === 'engagement';
   const isLike = quest?.type === 'like';
+  const isRepost = quest?.type === 'repost';
 
-  // For legacy single-action quests
-  const ActionIcon = isLike ? FiThumbsUp : FiBookmark;
-  const accentColor = isLike ? 'text-pink-400' : 'text-yellow-400';
-  const accentBg = isLike ? 'bg-pink-600 hover:bg-pink-500' : 'bg-yellow-500 hover:bg-yellow-400';
+  // For single-action quests (like / save / repost)
+  const ActionIcon = isLike ? FiThumbsUp : isRepost ? FaShareAlt : FiBookmark;
+  const accentColor = isLike ? 'text-pink-400' : isRepost ? 'text-blue-400' : 'text-yellow-400';
+  const accentBg = isLike ? 'bg-pink-600 hover:bg-pink-500' : isRepost ? 'bg-blue-600 hover:bg-blue-500' : 'bg-yellow-500 hover:bg-yellow-400';
 
   const rewardPer = quest ? Math.floor(quest.rewardAmount / 2) : 0;
 
@@ -130,10 +131,11 @@ export default function InstagramLikeVerifyModal({
 
   const title =
     step === 'success'
-      ? isEngagement ? '🎉 Engagement bestätigt!' : `🎉 ${isLike ? 'Like' : 'Speichern'} bestätigt!`
+      ? isEngagement ? '🎉 Engagement bestätigt!' : isRepost ? '🎉 Repost bestätigt!' : `🎉 ${isLike ? 'Like' : 'Speichern'} bestätigt!`
     : step === 'expired' ? '⏰ Zeit abgelaufen'
     : step === 'error'   ? '❌ Fehler'
     : isEngagement ? '❤️🔖 Engagement verifizieren'
+    : isRepost ? '🔁 Repost verifizieren'
     : `${isLike ? '❤️' : '🔖'} ${isLike ? 'Like' : 'Speichern'} verifizieren`;
 
   return (
@@ -277,6 +279,8 @@ export default function InstagramLikeVerifyModal({
                 <span className={`${accentColor} font-bold shrink-0`}>2.</span>
                 {isLike
                   ? 'Tippe auf das Herz um das Reel zu liken'
+                  : isRepost
+                  ? 'Tippe auf das Teilen-Symbol und wähle "Auf Deinen Kanal posten" (Repost)'
                   : 'Tippe auf das Lesezeichen-Symbol um das Reel zu speichern'}
               </li>
               <li className="flex gap-2">
@@ -306,7 +310,7 @@ export default function InstagramLikeVerifyModal({
           >
             {loading
               ? <div className="border-2 border-current/30 border-t-current rounded-full w-4 h-4 animate-spin" />
-              : <><ActionIcon size={14} /> {isLike ? 'geliked' : 'gespeichert'}? – Prüfen</>
+              : <><ActionIcon size={14} /> {isLike ? 'geliked' : isRepost ? 'geteilt' : 'gespeichert'}? – Prüfen</>
             }
           </button>
           <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm py-2.5 rounded-xl transition-colors">

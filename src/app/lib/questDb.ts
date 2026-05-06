@@ -15,7 +15,7 @@ import { getDb } from './db';
 // ─── Typen ───────────────────────────────────────────────────────────────────
 
 export type Platform = 'youtube' | 'tiktok' | 'instagram';
-export type QuestType = 'comment' | 'like' | 'save' | 'secret' | 'engagement'; // erweiterbar: | 'subscribe'
+export type QuestType = 'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost'; // erweiterbar: | 'subscribe'
 
 export interface QuestIndexEntry {
   id: string;
@@ -889,7 +889,7 @@ export async function upsertInstagramLikeVerification(
   questId: string,
   walletAddress: string,
   mediaId: string,
-  questType: 'like' | 'save' | 'engagement',
+  questType: 'like' | 'save' | 'engagement' | 'repost',
   baselineLikes: number,
   baselineSaves: number,
   expiresAt: string,
