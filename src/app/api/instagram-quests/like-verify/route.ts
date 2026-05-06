@@ -40,17 +40,16 @@ interface MakeInsightsResult {
   total_interactions: number;
 }
 
-// Make.com GetMediaInsights liefert Metriken als Array:
-// { metrics: [{ name: "likes", period: "lifetime", values: [{ value: 123 }] }, ...] }
-// Alternativ (Legacy): Flaches Objekt { found, likes, saved, ... }
 interface MakeMetric {
   name: string;
   values: Array<{ value: number }>;
 }
 interface MakeRawResponse {
-  // Neues Array-Format
+  // Format 1: HTTP-Modul → Graph API gibt { data: [...] } zurück
+  data?: MakeMetric[];
+  // Format 2: Array Aggregator → { metrics: [...] }
   metrics?: MakeMetric[];
-  // Legacy Flach-Format
+  // Format 3: Legacy Flach-Format
   found?: string;
   likes?: number;
   saved?: number;
@@ -62,7 +61,7 @@ interface MakeRawResponse {
 }
 
 function parseInsightsResponse(raw: MakeRawResponse): MakeInsightsResult | null {
-  // Legacy Flach-Format (falls Make.com noch so konfiguriert ist)
+  // Legacy Flach-Format
   if (raw.found !== undefined) {
     return {
       found: String(raw.found),
@@ -76,13 +75,17 @@ function parseInsightsResponse(raw: MakeRawResponse): MakeInsightsResult | null 
     };
   }
 
-  // Neues Array-Format: { metrics: [...] }
-  const arr = raw.metrics;
+  // Array-Format (HTTP-Modul: data=[...] oder Aggregator: metrics=[...])
+  const arr = raw.data ?? raw.metrics;
   if (!arr || !Array.isArray(arr)) return null;
 
-  const get = (name: string) => {
-    const m = arr.find((x) => x.name === name);
-    return Number(m?.values?.[0]?.value ?? 0);
+  const get = (...names: string[]) => {
+    for (const name of names) {
+      const m = arr.find((x) => x.name === name);
+      const v = Number(m?.values?.[0]?.value ?? 0);
+      if (v > 0) return v;
+    }
+    return 0;
   };
 
   return {
@@ -91,7 +94,7 @@ function parseInsightsResponse(raw: MakeRawResponse): MakeInsightsResult | null 
     saved: get('saved'),
     comments: get('comments'),
     shares: get('shares'),
-    views: get('video_views') || get('plays') || get('views'),
+    views: get('video_views', 'plays', 'views'),
     reach: get('reach'),
     total_interactions: get('total_interactions'),
   };
