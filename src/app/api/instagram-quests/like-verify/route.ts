@@ -100,6 +100,34 @@ function parseInsightsResponse(raw: MakeRawResponse): MakeInsightsResult | null 
   };
 }
 
+// Make.com Array Aggregator gibt kein gültiges JSON-Array zurück, sondern:
+// {"metrics": {obj1}, {obj2}, ...} → ungültiges JSON.
+// Fallback: Regex-Extraktion der name+value Paare direkt aus dem Text.
+function parseInsightsFromText(text: string): MakeInsightsResult | null {
+  const metrics: Record<string, number> = {};
+  const pattern = /"name":"([^"]+)"[^[]*"values":\[{"value":(\d+)/g;
+  let match;
+  while ((match = pattern.exec(text)) !== null) {
+    metrics[match[1]] = Number(match[2]);
+  }
+  if (Object.keys(metrics).length === 0) return null;
+
+  const get = (...names: string[]) => {
+    for (const n of names) if (metrics[n] !== undefined) return metrics[n];
+    return 0;
+  };
+  return {
+    found: 'true',
+    likes: get('likes'),
+    saved: get('saved'),
+    comments: get('comments'),
+    shares: get('shares'),
+    views: get('views', 'video_views', 'plays'),
+    reach: get('reach'),
+    total_interactions: get('total_interactions'),
+  };
+}
+
 async function fetchInsights(
   webhookUrl: string,
   graphMediaId: string,
@@ -111,17 +139,20 @@ async function fetchInsights(
       body: JSON.stringify({ graphMediaId }),
       signal: AbortSignal.timeout(25000),
     });
-    // Make.com gibt manchmal HTTP 500 zurück obwohl make-actual-status: 200
-    // → immer versuchen den Body zu parsen, egal welcher HTTP-Status
     const text = await res.text();
     if (!text || text.trim() === '') return null;
-    let raw: MakeRawResponse;
+
+    // Versuch 1: Gültiges JSON parsen
     try {
-      raw = JSON.parse(text);
+      const raw: MakeRawResponse = JSON.parse(text);
+      const result = parseInsightsResponse(raw);
+      if (result) return result;
     } catch {
-      return null;
+      // kein gültiges JSON → Fallback
     }
-    return parseInsightsResponse(raw);
+
+    // Versuch 2: Regex-Extraktion (Make.com Array Aggregator Format)
+    return parseInsightsFromText(text);
   } catch {
     return null;
   }
