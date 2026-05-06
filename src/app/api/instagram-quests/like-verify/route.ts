@@ -40,6 +40,63 @@ interface MakeInsightsResult {
   total_interactions: number;
 }
 
+// Make.com GetMediaInsights liefert Metriken als Array:
+// { metrics: [{ name: "likes", period: "lifetime", values: [{ value: 123 }] }, ...] }
+// Alternativ (Legacy): Flaches Objekt { found, likes, saved, ... }
+interface MakeMetric {
+  name: string;
+  values: Array<{ value: number }>;
+}
+interface MakeRawResponse {
+  // Neues Array-Format
+  metrics?: MakeMetric[];
+  // Legacy Flach-Format
+  found?: string;
+  likes?: number;
+  saved?: number;
+  comments?: number;
+  shares?: number;
+  views?: number;
+  reach?: number;
+  total_interactions?: number;
+}
+
+function parseInsightsResponse(raw: MakeRawResponse): MakeInsightsResult | null {
+  // Legacy Flach-Format (falls Make.com noch so konfiguriert ist)
+  if (raw.found !== undefined) {
+    return {
+      found: String(raw.found),
+      likes: Number(raw.likes ?? 0),
+      saved: Number(raw.saved ?? 0),
+      comments: Number(raw.comments ?? 0),
+      shares: Number(raw.shares ?? 0),
+      views: Number(raw.views ?? 0),
+      reach: Number(raw.reach ?? 0),
+      total_interactions: Number(raw.total_interactions ?? 0),
+    };
+  }
+
+  // Neues Array-Format: { metrics: [...] }
+  const arr = raw.metrics;
+  if (!arr || !Array.isArray(arr)) return null;
+
+  const get = (name: string) => {
+    const m = arr.find((x) => x.name === name);
+    return Number(m?.values?.[0]?.value ?? 0);
+  };
+
+  return {
+    found: 'true',
+    likes: get('likes'),
+    saved: get('saved'),
+    comments: get('comments'),
+    shares: get('shares'),
+    views: get('video_views') || get('plays') || get('views'),
+    reach: get('reach'),
+    total_interactions: get('total_interactions'),
+  };
+}
+
 async function fetchInsights(
   webhookUrl: string,
   graphMediaId: string,
@@ -52,7 +109,8 @@ async function fetchInsights(
       signal: AbortSignal.timeout(25000),
     });
     if (!res.ok) return null;
-    return await res.json();
+    const raw: MakeRawResponse = await res.json();
+    return parseInsightsResponse(raw);
   } catch {
     return null;
   }
