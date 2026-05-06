@@ -50,6 +50,26 @@ export default function CreateQuestModal({
   const [loadingMedia, setLoadingMedia] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<AvailableMediaItem | null>(null);
 
+  const buildInstagramTitle = (item: AvailableMediaItem) => {
+    const cleanCaption = item.caption
+      ?.split(/[\n\r]/)[0]
+      .replace(/#\S+/g, '')
+      .replace(/@\S+/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (cleanCaption && cleanCaption.length > 3) {
+      return cleanCaption.slice(0, 100);
+    }
+
+    const shortCodeLabel = item.shortcode ? item.shortcode.slice(0, 10).toUpperCase() : 'OHNE-ID';
+    const dateLabel = item.posted_at
+      ? new Date(item.posted_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      : 'ohne Datum';
+
+    return `Instagram Reel vom ${dateLabel} (${shortCodeLabel})`;
+  };
+
   const reset = () => {
     setVideoUrl(''); setDescription(''); setRewardAmount('100'); setMaxParticipants('10');
     setPlatform('youtube'); setQuestType('comment'); setDurationHours('24');
@@ -135,7 +155,7 @@ export default function CreateQuestModal({
             creatorWallet: walletAddress,
             reelUrl: selectedMedia!.permalink || `https://www.instagram.com/reel/${selectedMedia!.shortcode}/`,
             mediaId: selectedMedia!.graph_media_id,   // echte Graph API ID → direkt für /comments
-            videoTitle: (selectedMedia!.caption || `Instagram Reel`).slice(0, 100),
+            videoTitle: buildInstagramTitle(selectedMedia!),
             thumbnailUrl: selectedMedia!.thumbnail_url,
             description: finalDescription || `💬 Kommentiere dieses Instagram Reel!`,
             rewardAmount: Number(rewardAmount),
@@ -442,6 +462,8 @@ export default function CreateQuestModal({
                           minute: '2-digit'
                         })
                       : 'Datum unbekannt';
+
+                    const title = buildInstagramTitle(item).slice(0, 70);
                     
                     return (
                       <div
@@ -465,7 +487,7 @@ export default function CreateQuestModal({
                         {/* Info */}
                         <div className="p-2 bg-zinc-900 flex-1 flex flex-col gap-1">
                           <p className="text-white text-xs font-semibold line-clamp-2 leading-tight flex-1">
-                            {item.caption ? item.caption.slice(0, 60) : `Reel ${item.shortcode}`}
+                            {title}
                           </p>
                           <p className="text-zinc-500 text-xs">{postedDate}</p>
                           
@@ -506,7 +528,7 @@ export default function CreateQuestModal({
 
               {selectedMedia && (
                 <p className="text-pink-400 text-xs mt-1.5 flex items-center gap-1">
-                  <FaCheck size={10} /> Ausgewählt: {(selectedMedia.caption || selectedMedia.shortcode).slice(0, 50)}
+                  <FaCheck size={10} /> Ausgewählt: {buildInstagramTitle(selectedMedia).slice(0, 60)}
                 </p>
               )}
             </div>
