@@ -78,7 +78,7 @@ export default function CreateQuestModal({
       ? new Date(item.posted_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
       : 'ohne Datum';
 
-    return `Instagram Reel vom ${dateLabel} (${shortCodeLabel})`;
+    return `Instagram Reel vom ${dateLabel}`;
   };
 
   const reset = () => {

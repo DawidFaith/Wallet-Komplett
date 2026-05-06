@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const type = (questType === 'like' || questType === 'save' || questType === 'engagement') ? questType : 'comment';
+  const type = (questType === 'like' || questType === 'save' || questType === 'engagement' || questType === 'repost') ? questType : 'comment';
 
   const reward = Number(rewardAmount) || 100;
   const max = Math.max(1, Math.min(1000, Number(maxCompletions) || 10));
@@ -99,9 +99,11 @@ export async function POST(req: NextRequest) {
     videoThumbnail: thumbnailUrl ?? '',
     videoUrl: reelUrl,
     description: description ?? (
-      type === 'like'  ? '❤️ Like dieses Instagram Reel!' :
-      type === 'save'  ? '🔖 Speichere dieses Instagram Reel!' :
-                         '💬 Kommentiere dieses Instagram Reel!'
+      type === 'like'       ? '❤️ Like dieses Instagram Reel!' :
+      type === 'save'       ? '🔖 Speichere dieses Instagram Reel!' :
+      type === 'engagement' ? '❤️🔖 Like und speichere dieses Instagram Reel!' :
+      type === 'repost'     ? '🔁 Reposte dieses Instagram Reel auf deinen Kanal!' :
+                              '💬 Kommentiere dieses Instagram Reel!'
     ),
     rewardAmount: reward,
     maxCompletions: max,
