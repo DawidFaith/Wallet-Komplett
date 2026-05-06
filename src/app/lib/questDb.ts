@@ -15,7 +15,7 @@ import { getDb } from './db';
 // ─── Typen ───────────────────────────────────────────────────────────────────
 
 export type Platform = 'youtube' | 'tiktok' | 'instagram';
-export type QuestType = 'comment' | 'like' | 'secret' | 'engagement'; // erweiterbar: | 'subscribe'
+export type QuestType = 'comment' | 'like' | 'save' | 'secret' | 'engagement'; // erweiterbar: | 'subscribe'
 
 export interface QuestIndexEntry {
   id: string;
@@ -868,6 +868,77 @@ export async function deleteTikTokEngagementVerification(
   const sql = getDb();
   await sql`
     DELETE FROM tiktok_engagement_verifications
+    WHERE quest_id = ${questId} AND wallet_address = ${walletAddress.toLowerCase()}
+  `;
+}
+
+// ─── Instagram Like/Save Verification ────────────────────────────────────────
+
+export interface InstagramLikeVerification {
+  questId: string;
+  walletAddress: string;
+  mediaId: string;
+  questType: 'like' | 'save';
+  baselineLikes: number;
+  baselineSaves: number;
+  expiresAt: string;
+  startedAt: string;
+}
+
+export async function upsertInstagramLikeVerification(
+  questId: string,
+  walletAddress: string,
+  mediaId: string,
+  questType: 'like' | 'save',
+  baselineLikes: number,
+  baselineSaves: number,
+  expiresAt: string,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO instagram_like_verifications
+      (quest_id, wallet_address, media_id, quest_type, baseline_likes, baseline_saves, expires_at, started_at)
+    VALUES
+      (${questId}, ${walletAddress.toLowerCase()}, ${mediaId}, ${questType}, ${baselineLikes}, ${baselineSaves}, ${expiresAt}, NOW())
+    ON CONFLICT (quest_id, wallet_address) DO UPDATE SET
+      baseline_likes  = EXCLUDED.baseline_likes,
+      baseline_saves  = EXCLUDED.baseline_saves,
+      expires_at      = EXCLUDED.expires_at,
+      started_at      = NOW()
+  `;
+}
+
+export async function getInstagramLikeVerification(
+  questId: string,
+  walletAddress: string,
+): Promise<InstagramLikeVerification | null> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT * FROM instagram_like_verifications
+    WHERE quest_id = ${questId} AND wallet_address = ${walletAddress.toLowerCase()}
+    LIMIT 1
+  `;
+  if (!rows.length) return null;
+  const r = rows[0];
+  return {
+    questId: r.quest_id,
+    walletAddress: r.wallet_address,
+    mediaId: r.media_id,
+    questType: r.quest_type,
+    baselineLikes: Number(r.baseline_likes),
+    baselineSaves: Number(r.baseline_saves),
+    expiresAt: r.expires_at instanceof Date ? r.expires_at.toISOString() : r.expires_at,
+    startedAt: r.started_at instanceof Date ? r.started_at.toISOString() : r.started_at,
+  };
+}
+
+export async function deleteInstagramLikeVerification(
+  questId: string,
+  walletAddress: string,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    DELETE FROM instagram_like_verifications
     WHERE quest_id = ${questId} AND wallet_address = ${walletAddress.toLowerCase()}
   `;
 }
