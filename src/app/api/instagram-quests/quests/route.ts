@@ -1,9 +1,9 @@
 /**
  * POST /api/instagram-quests/quests
  *
- * Erstellt einen Instagram Comment Quest.
+ * Erstellt einen Instagram Quest (comment | like | save).
  * Erwartet die Daten die vom resolve-reel Endpoint kommen:
- *   { creatorWallet, reelUrl, mediaId, videoTitle, thumbnailUrl, description, rewardAmount, maxCompletions, durationHours }
+ *   { creatorWallet, reelUrl, mediaId, videoTitle, thumbnailUrl, description, rewardAmount, maxCompletions, durationHours, questType }
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST: Neuen Instagram Comment Quest erstellen
+// POST: Neuen Instagram Quest erstellen (comment | like | save)
 export async function POST(req: NextRequest) {
   let body: {
     creatorWallet?: string;
@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
     rewardAmount?: number;
     maxCompletions?: number;
     durationHours?: number;
+    questType?: string;
   };
   try {
     body = await req.json();
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 });
   }
 
-  const { creatorWallet, reelUrl, mediaId, videoTitle, thumbnailUrl, description, rewardAmount, maxCompletions, durationHours } = body;
+  const { creatorWallet, reelUrl, mediaId, videoTitle, thumbnailUrl, description, rewardAmount, maxCompletions, durationHours, questType } = body;
 
   if (!creatorWallet || !reelUrl || !mediaId) {
     return NextResponse.json(
@@ -62,6 +63,8 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+
+  const type = (questType === 'like' || questType === 'save') ? questType : 'comment';
 
   const reward = Number(rewardAmount) || 100;
   const max = Math.max(1, Math.min(1000, Number(maxCompletions) || 10));
@@ -89,13 +92,17 @@ export async function POST(req: NextRequest) {
   const quest: QuestDetail = {
     id: questId,
     platform: 'instagram',
-    type: 'comment',
+    type,
     creatorWallet: creatorWallet.toLowerCase(),
     videoId: mediaId,           // Instagram Media ID (pk) → wird an Make.com weitergegeben
     videoTitle: videoTitle ?? 'Instagram Reel',
     videoThumbnail: thumbnailUrl ?? '',
     videoUrl: reelUrl,
-    description: description ?? '💬 Kommentiere dieses Instagram Reel!',
+    description: description ?? (
+      type === 'like'  ? '❤️ Like dieses Instagram Reel!' :
+      type === 'save'  ? '🔖 Speichere dieses Instagram Reel!' :
+                         '💬 Kommentiere dieses Instagram Reel!'
+    ),
     rewardAmount: reward,
     maxCompletions: max,
     completions: 0,
@@ -121,6 +128,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     success: true,
     questId,
-    message: `Instagram Quest erstellt. Budget: ${totalBudget} DFAITH gesperrt.`,
+    questType: type,
+    message: `Instagram ${type === 'like' ? 'Like' : type === 'save' ? 'Save' : 'Comment'} Quest erstellt. Budget: ${totalBudget} DFAITH gesperrt.`,
   });
 }
