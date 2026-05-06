@@ -139,6 +139,26 @@ export default function InstagramLikeVerifyModal({
   return (
     <Modal open={!!quest} onClose={onClose} title={title}>
 
+      {/* ── Reward-Banner (überall sichtbar außer Fehler/Ablauf) ─────────────── */}
+      {quest && step !== 'error' && step !== 'expired' && (
+        <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
+          <span className="text-zinc-400 text-xs">Belohnung</span>
+          {isEngagement ? (
+            <div className="flex items-center gap-3">
+              <span className="text-zinc-500 text-xs">pro Aktion:</span>
+              <span className="text-yellow-400 font-bold text-sm flex items-center gap-1">
+                <FaCoins size={12} /> +{rewardPer} DFAITH
+              </span>
+              <span className="text-zinc-600 text-xs">×2 max</span>
+            </div>
+          ) : (
+            <span className="text-yellow-400 font-bold text-sm flex items-center gap-1">
+              <FaCoins size={12} /> +{quest.rewardAmount} DFAITH
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Loading */}
       {step === 'loading' && (
         <div className="flex flex-col items-center py-8 gap-4">

@@ -291,7 +291,9 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        const earnedReward = Math.floor(quest.rewardAmount / 2) * verifiedCount;
+        const halfReward = Math.floor(quest.rewardAmount / 2);
+        const earnedReward = halfReward * verifiedCount;
+        const refundToCreator = quest.rewardAmount - earnedReward; // nicht verdiente Hälfte zurück
         const now = new Date().toISOString();
         const completion: QuestCompletion = {
           questId,
@@ -315,6 +317,12 @@ export async function POST(req: NextRequest) {
           createdAt: now,
         });
         await addUserXp(normalized, earnedReward);
+
+        // Nicht verdiente Hälfte sofort an Creator zurückbuchen
+        if (refundToCreator > 0) {
+          await addDfaithCredits(quest.creatorWallet, refundToCreator);
+        }
+
         await deleteInstagramLikeVerification(questId, normalized);
 
         return NextResponse.json({
