@@ -111,8 +111,16 @@ async function fetchInsights(
       body: JSON.stringify({ graphMediaId }),
       signal: AbortSignal.timeout(25000),
     });
-    if (!res.ok) return null;
-    const raw: MakeRawResponse = await res.json();
+    // Make.com gibt manchmal HTTP 500 zurück obwohl make-actual-status: 200
+    // → immer versuchen den Body zu parsen, egal welcher HTTP-Status
+    const text = await res.text();
+    if (!text || text.trim() === '') return null;
+    let raw: MakeRawResponse;
+    try {
+      raw = JSON.parse(text);
+    } catch {
+      return null;
+    }
     return parseInsightsResponse(raw);
   } catch {
     return null;
