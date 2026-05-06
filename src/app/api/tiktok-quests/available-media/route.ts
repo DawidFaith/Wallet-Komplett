@@ -27,6 +27,14 @@ type TikTokPost = {
   author?: { uniqueId?: string };
 };
 
+type TikTokMediaItem = {
+  video_id: string;
+  title: string;
+  thumbnail_url: string;
+  video_url: string;
+  created_at: string | null;
+};
+
 function extractScriptJson(html: string, scriptId: string): unknown | null {
   const regex = new RegExp(`<script[^>]*id=["']${scriptId}["'][^>]*>([\\s\\S]*?)<\\/script>`, 'i');
   const match = html.match(regex);
@@ -38,7 +46,51 @@ function extractScriptJson(html: string, scriptId: string): unknown | null {
   }
 }
 
-function parseBrightHtmlToMedia(html: string, fallbackHandle: string) {
+function mapObjectRecordToMedia(record: Record<string, unknown>, fallbackHandle: string): TikTokMediaItem[] {
+  const posts = Object.values(record).filter((item): item is TikTokPost => Boolean(item && typeof item === 'object'));
+  return mapPostsToMedia(posts, fallbackHandle);
+}
+
+function parseBrightJsonToMedia(payload: unknown, fallbackHandle: string): TikTokMediaItem[] {
+  if (!payload || typeof payload !== 'object') return [];
+
+  const candidateObjects: unknown[] = [payload];
+  const root = payload as Record<string, unknown>;
+
+  if (root.data) candidateObjects.push(root.data);
+  if (root.result) candidateObjects.push(root.result);
+  if (root.response) candidateObjects.push(root.response);
+  if (root.body) candidateObjects.push(root.body);
+
+  for (const candidate of candidateObjects) {
+    if (!candidate || typeof candidate !== 'object') continue;
+    const objectCandidate = candidate as Record<string, unknown>;
+
+    const itemModule = objectCandidate.ItemModule;
+    if (itemModule && typeof itemModule === 'object') {
+      const media = mapObjectRecordToMedia(itemModule as Record<string, unknown>, fallbackHandle);
+      if (media.length > 0) return media;
+    }
+
+    const itemList = objectCandidate.itemList ?? objectCandidate.item_list ?? objectCandidate.aweme_list ?? objectCandidate.items;
+    if (Array.isArray(itemList)) {
+      const posts = itemList
+        .map((item) => {
+          if (typeof item === 'string' && itemModule && typeof itemModule === 'object') {
+            return (itemModule as Record<string, unknown>)[item] as TikTokPost | undefined;
+          }
+          return item as TikTokPost;
+        })
+        .filter((item): item is TikTokPost => Boolean(item && typeof item === 'object'));
+      const media = mapPostsToMedia(posts, fallbackHandle);
+      if (media.length > 0) return media;
+    }
+  }
+
+  return [];
+}
+
+function parseBrightHtmlToMedia(html: string, fallbackHandle: string): TikTokMediaItem[] {
   const sigiState = extractScriptJson(html, 'SIGI_STATE') as { ItemModule?: Record<string, TikTokPost> } | null;
   const sigiPosts = sigiState?.ItemModule ? Object.values(sigiState.ItemModule) : [];
   const sigiMedia = mapPostsToMedia(sigiPosts, fallbackHandle);
@@ -73,6 +125,34 @@ function parseBrightHtmlToMedia(html: string, fallbackHandle: string) {
   }));
 }
 
+function parseBrightPayloadToMedia(rawPayload: string, fallbackHandle: string): TikTokMediaItem[] {
+  const trimmed = rawPayload.trim();
+  if (!trimmed) return [];
+
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+
+      const nestedStringCandidates = [parsed.html, parsed.body, parsed.content, parsed.response, parsed.data]
+        .filter((value): value is string => typeof value === 'string');
+
+      for (const nested of nestedStringCandidates) {
+        const mediaFromNested = nested.includes('<html') || nested.includes('<script')
+          ? parseBrightHtmlToMedia(nested, fallbackHandle)
+          : parseBrightJsonToMedia(JSON.parse(nested), fallbackHandle);
+        if (mediaFromNested.length > 0) return mediaFromNested;
+      }
+
+      const mediaFromJson = parseBrightJsonToMedia(parsed, fallbackHandle);
+      if (mediaFromJson.length > 0) return mediaFromJson;
+    } catch {
+      // Falls JSON-Parsing fehlschlägt, als HTML weiterprobieren.
+    }
+  }
+
+  return parseBrightHtmlToMedia(trimmed, fallbackHandle);
+}
+
 async function fetchTikTokMediaBrightData(handle: string) {
   if (!BRIGHTDATA_API_KEY) return [];
 
@@ -92,11 +172,11 @@ async function fetchTikTokMediaBrightData(handle: string) {
   });
 
   if (!res.ok) return [];
-  const html = await res.text();
-  return parseBrightHtmlToMedia(html, cleanHandle);
+  const payload = await res.text();
+  return parseBrightPayloadToMedia(payload, cleanHandle);
 }
 
-function mapPostsToMedia(posts: TikTokPost[], fallbackHandle: string) {
+function mapPostsToMedia(posts: TikTokPost[], fallbackHandle: string): TikTokMediaItem[] {
   return posts
     .map((post) => {
       const videoId = post.id;
@@ -137,15 +217,11 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    let media: Array<{
-      video_id: string;
-      title: string;
-      thumbnail_url: string;
-      video_url: string;
-      created_at: string | null;
-    }> = [];
+    let media: TikTokMediaItem[] = [];
+    let source: 'bright' | 'rapid' | 'none' = 'none';
 
     media = await fetchTikTokMediaBrightData(profile.tiktokHandle);
+    if (media.length > 0) source = 'bright';
 
     if (media.length === 0 && RAPIDAPI_KEY) {
       const candidates = [
@@ -171,14 +247,17 @@ export async function GET(req: NextRequest) {
             [];
 
           media = mapPostsToMedia(posts, profile.tiktokHandle);
-          if (media.length > 0) break;
+          if (media.length > 0) {
+            source = 'rapid';
+            break;
+          }
         } catch {
           // Nächsten Fallback-Endpunkt probieren
         }
       }
     }
 
-    return NextResponse.json({ media, handle: profile.tiktokHandle });
+    return NextResponse.json({ media, handle: profile.tiktokHandle, source });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
