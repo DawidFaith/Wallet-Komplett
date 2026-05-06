@@ -280,7 +280,7 @@ export default function InstagramLikeVerifyModal({
                 {isLike
                   ? 'Tippe auf das Herz um das Reel zu liken'
                   : isRepost
-                  ? 'Tippe auf das Teilen-Symbol und wähle "Auf Deinen Kanal posten" (Repost)'
+                  ? 'Tippe auf den Repost-Button (🔁) unter dem Reel'
                   : 'Tippe auf das Lesezeichen-Symbol um das Reel zu speichern'}
               </li>
               <li className="flex gap-2">
