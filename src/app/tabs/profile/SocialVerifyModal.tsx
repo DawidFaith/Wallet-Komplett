@@ -16,11 +16,11 @@ const PLATFORM_CONFIG = {
     color: 'pink',
     handlePrefix: '@',
     placeholder: 'deinname',
-    bioInstructions: (code: string) => [
+    bioInstructions: (_code: string) => [
       'Öffne die Instagram App',
-      'Gehe zu Einstellungen → Profil bearbeiten',
-      `Füge „${code}" irgendwo in deine Bio ein`,
-      'Tippe auf „Fertig" und komm zurück',
+      'Erstelle einen Beitrag, Kommentar oder Story',
+      'Tagge @dawidfaith darin',
+      'Komm zurück und klicke auf „Verifizieren"',
     ],
     profileUrl: (handle: string) => `https://www.instagram.com/${handle}/`,
   },
@@ -250,10 +250,21 @@ export default function SocialVerifyModal({
             <div className="space-y-4">
               <div className="bg-zinc-800 rounded-xl p-4 text-sm text-zinc-300 space-y-1.5">
                 <p className="font-semibold text-yellow-400 text-sm">So funktioniert es:</p>
-                <p>1. Gib deinen {cfg.label}-Handle ein</p>
-                <p>2. Du bekommst einen einzigartigen Code</p>
-                <p>3. Trage den Code in deine Bio ein</p>
-                <p>4. Wir verifizieren automatisch</p>
+                {platform === 'instagram' ? (
+                  <>
+                    <p>1. Gib deinen Instagram-Handle ein</p>
+                    <p>2. Dein Profil wird geladen</p>
+                    <p>3. Tagge @dawidfaith in einem Beitrag oder Kommentar</p>
+                    <p>4. Klicke auf "Verifizieren"</p>
+                  </>
+                ) : (
+                  <>
+                    <p>1. Gib deinen {cfg.label}-Handle ein</p>
+                    <p>2. Du bekommst einen einzigartigen Code</p>
+                    <p>3. Trage den Code in deine Bio ein</p>
+                    <p>4. Wir verifizieren automatisch</p>
+                  </>
+                )}
               </div>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm select-none">@</span>
@@ -289,7 +300,8 @@ export default function SocialVerifyModal({
                 </div>
               </div>
 
-              {/* Code */}
+              {/* Code – nur für TikTok/Facebook */}
+              {platform !== 'instagram' && (
               <div className="bg-zinc-800 rounded-xl p-4 space-y-3">
                 <p className="text-yellow-400 font-semibold text-sm">Dein Verifikationscode:</p>
                 <div className="flex items-center gap-2">
@@ -309,6 +321,21 @@ export default function SocialVerifyModal({
                   ))}
                 </ol>
               </div>
+              )}
+
+              {/* Tag-Anleitung – nur für Instagram */}
+              {platform === 'instagram' && (
+              <div className="bg-zinc-800 rounded-xl p-4 space-y-3">
+                <p className="text-pink-400 font-semibold text-sm">So verifizierst du dich:</p>
+                <ol className="text-zinc-400 text-sm space-y-1 list-decimal list-inside">
+                  {cfg.bioInstructions('').map((s, i) => <li key={i}>{s}</li>)}
+                </ol>
+                <div className="bg-zinc-900 rounded-lg px-3 py-2 flex items-center gap-2 border border-zinc-700">
+                  <FaInstagram size={14} className="text-pink-400 shrink-0" />
+                  <span className="text-pink-300 font-mono text-sm select-all">@dawidfaith</span>
+                </div>
+              </div>
+              )}
 
               {error && <p className="text-red-400 text-sm">{error}</p>}
 
