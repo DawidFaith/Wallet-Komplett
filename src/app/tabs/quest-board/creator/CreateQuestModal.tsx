@@ -14,6 +14,14 @@ interface AvailableMediaItem {
   posted_at: string | null;
 }
 
+interface AvailableQuestMediaItem {
+  video_id: string;
+  title: string;
+  thumbnail_url: string;
+  video_url: string;
+  created_at: string | null;
+}
+
 interface CreateQuestModalProps {
   open: boolean;
   onClose: () => void;
@@ -31,7 +39,6 @@ export default function CreateQuestModal({
   onCreated,
   onOpenDeposit,
 }: CreateQuestModalProps) {
-  const [videoUrl, setVideoUrl] = useState('');
   const [description, setDescription] = useState('');
   const [rewardAmount, setRewardAmount] = useState('100');
   const [maxParticipants, setMaxParticipants] = useState('10');
@@ -49,6 +56,10 @@ export default function CreateQuestModal({
   const [availableMedia, setAvailableMedia] = useState<AvailableMediaItem[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<AvailableMediaItem | null>(null);
+  const [availableQuestMedia, setAvailableQuestMedia] = useState<AvailableQuestMediaItem[]>([]);
+  const [loadingQuestMedia, setLoadingQuestMedia] = useState(false);
+  const [selectedQuestMediaId, setSelectedQuestMediaId] = useState<string | null>(null);
+  const selectedQuestMedia = availableQuestMedia.find((item) => item.video_id === selectedQuestMediaId) ?? null;
 
   const buildInstagramTitle = (item: AvailableMediaItem) => {
     const cleanCaption = item.caption
@@ -71,11 +82,12 @@ export default function CreateQuestModal({
   };
 
   const reset = () => {
-    setVideoUrl(''); setDescription(''); setRewardAmount('100'); setMaxParticipants('10');
+    setDescription(''); setRewardAmount('100'); setMaxParticipants('10');
     setPlatform('youtube'); setQuestType('comment'); setDurationHours('24');
     setCustomDurationValue('30'); setCustomDurationUnit('min');
     setSecretCode('');
     setSelectedMedia(null); setAvailableMedia([]); setLoadingMedia(false);
+    setAvailableQuestMedia([]); setLoadingQuestMedia(false); setSelectedQuestMediaId(null);
     setError(''); setSuccess(false);
   };
 
@@ -87,6 +99,25 @@ export default function CreateQuestModal({
       setAvailableMedia(data.media ?? []);
     } finally {
       setLoadingMedia(false);
+    }
+  };
+
+  const fetchAvailableQuestMedia = async () => {
+    if (!walletAddress) return;
+    setLoadingQuestMedia(true);
+    try {
+      const endpoint = platform === 'youtube'
+        ? `/api/youtube-quests/available-media?wallet=${encodeURIComponent(walletAddress)}`
+        : `/api/tiktok-quests/available-media?wallet=${encodeURIComponent(walletAddress)}`;
+
+      const res = await fetch(endpoint);
+      const data = await res.json();
+      setAvailableQuestMedia(data.media ?? []);
+      if (selectedQuestMediaId && !(data.media ?? []).some((item: AvailableQuestMediaItem) => item.video_id === selectedQuestMediaId)) {
+        setSelectedQuestMediaId(null);
+      }
+    } finally {
+      setLoadingQuestMedia(false);
     }
   };
 
@@ -103,7 +134,10 @@ export default function CreateQuestModal({
     if (platform === 'instagram' && open) {
       fetchAvailableMedia();
     }
-  }, [platform, open]);
+    if ((platform === 'youtube' || platform === 'tiktok') && open) {
+      fetchAvailableQuestMedia();
+    }
+  }, [platform, open, walletAddress]);
 
   const handleClose = () => { reset(); onClose(); };
 
@@ -144,6 +178,11 @@ export default function CreateQuestModal({
         return;
       }
 
+      if ((platform === 'youtube' || platform === 'tiktok') && !selectedQuestMedia) {
+        setError(`Bitte zuerst ein ${platform === 'youtube' ? 'YouTube' : 'TikTok'}-Video aus der Liste auswählen.`);
+        return;
+      }
+
       const apiEndpoint = platform === 'tiktok'
         ? '/api/tiktok-quests/quests'
         : platform === 'instagram'
@@ -164,7 +203,7 @@ export default function CreateQuestModal({
           }
         : {
             creatorWallet: walletAddress,
-            videoUrl: videoUrl.trim(),
+            videoUrl: selectedQuestMedia?.video_url ?? '',
             description: finalDescription,
             rewardAmount: Number(rewardAmount),
             maxCompletions: Number(maxParticipants),
@@ -208,7 +247,7 @@ export default function CreateQuestModal({
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => { setPlatform('youtube'); setQuestType('comment'); setSelectedMedia(null); }}
+                onClick={() => { setPlatform('youtube'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                   platform === 'youtube'
                     ? 'bg-red-600 border-red-500 text-white'
@@ -219,7 +258,7 @@ export default function CreateQuestModal({
               </button>
               <button
                 type="button"
-                onClick={() => { setPlatform('tiktok'); setQuestType('comment'); setSelectedMedia(null); }}
+                onClick={() => { setPlatform('tiktok'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                   platform === 'tiktok'
                     ? 'bg-cyan-600 border-cyan-500 text-white'
@@ -230,7 +269,7 @@ export default function CreateQuestModal({
               </button>
               <button
                 type="button"
-                onClick={() => { setPlatform('instagram'); setQuestType('comment'); setSelectedMedia(null); }}
+                onClick={() => { setPlatform('instagram'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                   platform === 'instagram'
                     ? 'bg-pink-600 border-pink-500 text-white'
@@ -402,27 +441,78 @@ export default function CreateQuestModal({
             )}
           </div>
 
-          {/* Video URL – nur YouTube / TikTok */}
+          {/* YouTube/TikTok – externe Videoauswahl */}
           {platform !== 'instagram' && (
             <div>
-              <label className="text-zinc-300 text-sm font-medium block mb-1.5">
-                {platform === 'tiktok' ? 'TikTok Video URL' : 'YouTube Shorts URL'}{' '}
-                <span className="text-red-400">*</span>
-              </label>
-              <input
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                placeholder={
-                  platform === 'tiktok'
-                    ? 'https://www.tiktok.com/@user/video/VIDEO_ID'
-                    : 'https://www.youtube.com/shorts/VIDEO_ID'
-                }
-                required
-                className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-pink-500 focus:outline-none text-sm placeholder-zinc-500"
-              />
-              <p className="text-zinc-500 text-xs mt-1">
-                {platform === 'tiktok' ? 'Nur Videos deines verknüpften TikTok-Kontos sind erlaubt' : 'Nur YouTube Shorts sind erlaubt'}
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-zinc-300 text-sm font-medium">
+                  Verfügbare {platform === 'youtube' ? 'YouTube' : 'TikTok'} Videos
+                </label>
+                <button
+                  type="button"
+                  onClick={fetchAvailableQuestMedia}
+                  disabled={loadingQuestMedia}
+                  className="text-xs text-pink-400 hover:text-pink-300 flex items-center gap-1 disabled:opacity-50"
+                >
+                  <FaSync size={10} className={loadingQuestMedia ? 'animate-spin' : ''} /> Aktualisieren
+                </button>
+              </div>
+
+              {loadingQuestMedia ? (
+                <div className="text-center text-zinc-500 py-6 text-sm bg-zinc-800/50 rounded-xl mb-3">
+                  <FaSync size={16} className="animate-spin mx-auto mb-2" />
+                  Lade Videos vom verknüpften Account…
+                </div>
+              ) : availableQuestMedia.length > 0 ? (
+                <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1 mb-3">
+                  {availableQuestMedia.map((item) => (
+                    <button
+                      key={item.video_id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedQuestMediaId(item.video_id);
+                      }}
+                      className={`text-left relative rounded-xl overflow-hidden border transition-all ${
+                        selectedQuestMediaId === item.video_id
+                          ? 'border-pink-500 ring-1 ring-pink-500/30'
+                          : 'border-zinc-700 hover:border-pink-400'
+                      }`}
+                    >
+                      {item.thumbnail_url ? (
+                        <img src={item.thumbnail_url} alt="" className="w-full h-24 object-cover" />
+                      ) : (
+                        <div className="w-full h-24 bg-zinc-700 flex items-center justify-center">
+                          {platform === 'youtube' ? <FaYoutube size={22} className="text-zinc-500" /> : <FaTiktok size={20} className="text-zinc-500" />}
+                        </div>
+                      )}
+                      <div className="p-2 bg-zinc-900">
+                        <p className="text-white text-xs font-semibold line-clamp-2 leading-tight">
+                          {item.title || `${platform === 'youtube' ? 'YouTube' : 'TikTok'} Video ${item.video_id.slice(0, 8)}`}
+                        </p>
+                        {item.created_at && (
+                          <p className="text-zinc-500 text-[11px] mt-1">
+                            {new Date(item.created_at).toLocaleDateString('de-DE')}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-xs bg-zinc-800/50 rounded-xl border border-zinc-700/50 text-zinc-500 mb-3">
+                  Keine Videos gefunden. Prüfe, ob dein {platform === 'youtube' ? 'YouTube-Kanal' : 'TikTok-Account'} korrekt verknüpft ist.
+                </div>
+              )}
+
+              {selectedQuestMedia ? (
+                <p className="text-pink-400 text-xs mt-1.5 flex items-center gap-1">
+                  <FaCheck size={10} /> Ausgewählt: {(selectedQuestMedia.title || selectedQuestMedia.video_id).slice(0, 70)}
+                </p>
+              ) : (
+                <p className="text-zinc-500 text-xs mt-1">
+                  Wähle ein Video aus der Liste, um den Quest zu veröffentlichen.
+                </p>
+              )}
             </div>
           )}
 
