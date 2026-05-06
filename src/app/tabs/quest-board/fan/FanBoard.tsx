@@ -13,6 +13,7 @@ import TiktokQuestCard from '../quests/tiktok/TiktokQuestCard';
 import TiktokEngagementQuestCard from '../quests/tiktok/TiktokEngagementQuestCard';
 import InstagramQuestCard from '../quests/instagram/InstagramQuestCard';
 import InstagramCommentVerifyModal from './InstagramCommentVerifyModal';
+import InstagramLikeVerifyModal from './InstagramLikeVerifyModal';
 import type { QuestIndexEntry, YouTubeBinding, VerifyResult, ClaimResult } from '../types';
 
 interface FanBoardProps {
@@ -36,6 +37,7 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
   const [secretVerifyQuest, setSecretVerifyQuest] = useState<QuestIndexEntry | null>(null);
   const [tiktokEngagementQuest, setTiktokEngagementQuest] = useState<QuestIndexEntry | null>(null);
   const [instagramCommentQuest, setInstagramCommentQuest] = useState<QuestIndexEntry | null>(null);
+  const [instagramLikeQuest, setInstagramLikeQuest] = useState<QuestIndexEntry | null>(null);
 
   const loadQuests = useCallback(async () => {
     setLoading(true);
@@ -174,7 +176,12 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
 
   const handleInstagramVerify = (questId: string) => {
     const quest = quests.find((q) => q.id === questId) ?? null;
-    setInstagramCommentQuest(quest);
+    if (!quest) return;
+    if (quest.type === 'like' || quest.type === 'save') {
+      setInstagramLikeQuest(quest);
+    } else {
+      setInstagramCommentQuest(quest);
+    }
   };
 
   // Quests nach Plattform und Typ gruppieren
@@ -335,6 +342,23 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
           }
         }}
         onClose={() => setTiktokEngagementQuest(null)}
+      />
+
+      {/* Verifizierungs-Modal (Instagram Like / Save) */}
+      <InstagramLikeVerifyModal
+        quest={instagramLikeQuest}
+        walletAddress={walletAddress}
+        onCompleted={(amount) => {
+          if (instagramLikeQuest) {
+            setCompletedIds((prev) => [...prev, instagramLikeQuest.id]);
+            setCredits((prev) => prev + amount);
+            setQuests((prev) =>
+              prev.map((q) => q.id === instagramLikeQuest.id ? { ...q, completions: q.completions + 1 } : q)
+            );
+          }
+          setInstagramLikeQuest(null);
+        }}
+        onClose={() => setInstagramLikeQuest(null)}
       />
 
       {/* Verifizierungs-Modal (Instagram Kommentar) */}
