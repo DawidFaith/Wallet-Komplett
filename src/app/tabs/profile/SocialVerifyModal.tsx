@@ -255,7 +255,7 @@ export default function SocialVerifyModal({
                     <p>1. Gib deinen Instagram-Handle ein</p>
                     <p>2. Dein Profil wird geladen</p>
                     <p>3. Tagge @dawidfaith in einem Beitrag oder Kommentar</p>
-                    <p>4. Klicke auf "Verifizieren"</p>
+                    <p>4. Klicke auf &quot;Verifizieren&quot;</p>
                   </>
                 ) : (
                   <>
