@@ -356,7 +356,7 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
               prev.map((q) => q.id === instagramLikeQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
           }
-          setInstagramLikeQuest(null);
+          // Modal NICHT schließen – onClose schließt nach dem Erfolgs-Screen
         }}
         onClose={() => setInstagramLikeQuest(null)}
       />
@@ -373,7 +373,7 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
               prev.map((q) => q.id === instagramCommentQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
           }
-          setInstagramCommentQuest(null);
+          // Modal NICHT schließen – onClose schließt nach dem Erfolgs-Screen
         }}
         onClose={() => setInstagramCommentQuest(null)}
       />
