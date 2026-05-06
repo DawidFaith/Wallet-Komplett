@@ -15,6 +15,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getVerificationCode, upsertUserProfile, recordFingerprintVerification, getFingerprintWalletCount } from '../../../lib/questDb';
+import { getDb } from '../../../lib/db';
 
 export const maxDuration = 30; // Vercel Pro: 30s für Bright Data Web Unlocker
 
@@ -317,47 +318,36 @@ async function handlePost(req: NextRequest) {
 
   // ── Verify ──────────────────────────────────────────────────────────────
   if (action === 'verify') {
-    // Instagram: Schritt 2 via Make.com Watch Mentions (kein Bio-Scraping)
+    // Instagram: Schritt 2 – DB nach gespeicherten Mentions abfragen
+    // Make.com (Szenario 9179868) hat beim Empfang der Erwähnung bereits
+    // POST /api/instagram-mention-received aufgerufen und den Eintrag gespeichert.
     if (p === 'instagram') {
-      const mentionWebhookUrl = process.env.MAKE_INSTAGRAM_MENTION_WEBHOOK_URL;
-      if (!mentionWebhookUrl) {
-        return NextResponse.json({ error: 'MAKE_INSTAGRAM_MENTION_WEBHOOK_URL nicht konfiguriert.' }, { status: 500 });
-      }
+      const sql = getDb();
 
-      // Profil-Daten aus Preview-Schritt müssen noch aus DB oder Bright Data kommen
-      // (preview wurde bereits gespeichert → wir holen name/picture aus dem Profil)
-      const profileForSave = await fetchInstagramProfileBrightData(cleanHandle);
-      const profileName = profileForSave?.name ?? cleanHandle;
-      const profilePicture = profileForSave?.picture ?? `/api/avatar?platform=instagram&handle=${encodeURIComponent(cleanHandle)}`;
+      // Gibt es eine Mention aus den letzten 30 Minuten?
+      const rows = await sql`
+        SELECT id FROM instagram_mentions
+        WHERE received_at > NOW() - INTERVAL '30 minutes'
+        ORDER BY received_at DESC
+        LIMIT 1
+      `;
 
-      // Make.com fragen: Hat @cleanHandle @dawidfaith kürzlich erwähnt?
-      let mentionFound = false;
-      try {
-        const res = await fetch(mentionWebhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: cleanHandle }),
-          signal: AbortSignal.timeout(25000),
-        });
-        const text = await res.text();
-        if (text && text.trim() !== '') {
-          try {
-            const data = JSON.parse(text);
-            mentionFound = data?.found === true || data?.found === 'true';
-          } catch {
-            // ungültiges JSON → nicht gefunden
-          }
-        }
-      } catch {
-        // Timeout oder Netzwerkfehler
-      }
+      const mentionFound = rows.length > 0;
 
       if (!mentionFound) {
         return NextResponse.json({
           notFound: true,
-          message: `Keine Erwähnung von @dawidfaith durch @${cleanHandle} gefunden. Tagge @dawidfaith in einem Beitrag, Kommentar oder deiner Story und versuche es erneut.`,
+          message: `Keine Erwähnung von @dawidfaith gefunden. Tagge @dawidfaith in einem Beitrag, Kommentar oder deiner Story und versuche es erneut.`,
         });
       }
+
+      // Verwendete Mention löschen (einmalig nutzbar)
+      await sql`DELETE FROM instagram_mentions WHERE id = ${rows[0].id}`;
+
+      // Profil-Daten für DB
+      const profileForSave = await fetchInstagramProfileBrightData(cleanHandle);
+      const profileName = profileForSave?.name ?? cleanHandle;
+      const profilePicture = profileForSave?.picture ?? `/api/avatar?platform=instagram&handle=${encodeURIComponent(cleanHandle)}`;
 
       await upsertUserProfile(walletAddress, {
         instagramHandle: cleanHandle,
