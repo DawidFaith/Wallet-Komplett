@@ -241,9 +241,21 @@ export async function POST(req: NextRequest) {
     `;
     await sql`CREATE INDEX IF NOT EXISTS idx_device_fingerprints ON device_fingerprints(fingerprint)`;
 
+    // ── Instagram Mention/Comment Verifikationen ─────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS instagram_mentions (
+        id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+        comment_id  TEXT        NOT NULL,
+        media_id    TEXT        NOT NULL DEFAULT '',
+        received_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_instagram_mentions_username ON instagram_mentions(comment_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_instagram_mentions_received ON instagram_mentions(received_at DESC)`;
+
     return NextResponse.json({
       success: true,
-      message: 'Alle Tabellen (inkl. dfaith_credits, expires_at, tiktok_engagement_verifications, instagram_like_verifications, device_fingerprints) erstellt.',
+      message: 'Alle Tabellen (inkl. dfaith_credits, expires_at, tiktok_engagement_verifications, instagram_like_verifications, device_fingerprints, instagram_mentions) erstellt.',
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
