@@ -70,23 +70,7 @@ export default function CreateQuestModal({
     }
   };
 
-  const [syncing, setSyncing] = useState(false);
-  const [syncMessage, setSyncMessage] = useState('');
 
-  const handleSyncMedia = async () => {
-    setSyncing(true);
-    setSyncMessage('');
-    try {
-      const res = await fetch('/api/instagram-quests/trigger-sync', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) { setSyncMessage(`Fehler: ${data.error}`); return; }
-      setSyncMessage('Sync gestartet! In ~10 Sek. auf „Aktualisieren" klicken.');
-    } catch {
-      setSyncMessage('Netzwerkfehler.');
-    } finally {
-      setSyncing(false);
-    }
-  };
 
   const handleDeleteMedia = async (shortcode: string) => {
     await fetch(`/api/instagram-quests/available-media?shortcode=${encodeURIComponent(shortcode)}`, { method: 'DELETE' });
@@ -429,22 +413,11 @@ export default function CreateQuestModal({
                 <label className="text-zinc-300 text-sm font-medium">
                   Video auswählen <span className="text-red-400">*</span>
                 </label>
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={handleSyncMedia} disabled={syncing}
-                    className="text-xs text-yellow-400 hover:text-yellow-300 flex items-center gap-1 disabled:opacity-50">
-                    <FaSync size={10} className={syncing ? 'animate-spin' : ''} /> Sync
-                  </button>
-                  <button type="button" onClick={fetchAvailableMedia} disabled={loadingMedia}
-                    className="text-xs text-pink-400 hover:text-pink-300 flex items-center gap-1 disabled:opacity-50">
-                    <FaSync size={10} className={loadingMedia ? 'animate-spin' : ''} /> Aktualisieren
-                  </button>
-                </div>
+                <button type="button" onClick={fetchAvailableMedia} disabled={loadingMedia}
+                  className="text-xs text-pink-400 hover:text-pink-300 flex items-center gap-1 disabled:opacity-50">
+                  <FaSync size={10} className={loadingMedia ? 'animate-spin' : ''} /> Aktualisieren
+                </button>
               </div>
-              {syncMessage && (
-                <p className={`text-xs mb-2 ${syncMessage.startsWith('Fehler') ? 'text-red-400' : 'text-yellow-300'}`}>
-                  {syncMessage}
-                </p>
-              )}
 
               {loadingMedia ? (
                 <div className="text-center text-zinc-500 py-8 text-sm bg-zinc-800/50 rounded-xl">
@@ -455,47 +428,79 @@ export default function CreateQuestModal({
                 <div className="text-center py-6 text-sm bg-zinc-800/50 rounded-xl border border-zinc-700/50 space-y-1">
                   <FaInstagram size={24} className="mx-auto text-zinc-600 mb-2" />
                   <p className="text-zinc-400">Noch keine Videos verfügbar.</p>
-                  <p className="text-zinc-600 text-xs">Make.com sendet neue Videos automatisch.<br/>Danach hier auf &bdquo;Aktualisieren&ldquo; klicken.</p>
+                  <p className="text-zinc-600 text-xs">Videos werden automatisch synchronisiert.<br/>Hier auf &bdquo;Aktualisieren&ldquo; klicken um sie anzuzeigen.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
-                  {availableMedia.map((item) => (
-                    <div
-                      key={item.shortcode}
-                      onClick={() => setSelectedMedia(item)}
-                      className={`relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all ${
-                        selectedMedia?.shortcode === item.shortcode
-                          ? 'border-pink-500 ring-1 ring-pink-500/30'
-                          : 'border-transparent hover:border-zinc-600'
-                      }`}
-                    >
-                      {item.thumbnail_url ? (
-                        <img src={item.thumbnail_url} alt="" className="w-full h-24 object-cover" />
-                      ) : (
-                        <div className="w-full h-24 bg-zinc-700 flex items-center justify-center">
-                          <FaInstagram size={24} className="text-zinc-500" />
-                        </div>
-                      )}
-                      <div className="p-1.5 bg-zinc-900">
-                        <p className="text-white text-xs line-clamp-2 leading-tight">
-                          {item.caption || `Reel ${item.shortcode}`}
-                        </p>
-                      </div>
-                      {selectedMedia?.shortcode === item.shortcode && (
-                        <div className="absolute inset-0 bg-pink-500/20 flex items-center justify-center pointer-events-none">
-                          <FaCheck size={20} className="text-pink-400 drop-shadow" />
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handleDeleteMedia(item.shortcode); }}
-                        className="absolute top-1 right-1 bg-black/60 hover:bg-red-900/80 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors"
-                        title="Video entfernen"
+                <div className="grid grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-2">
+                  {availableMedia.map((item) => {
+                    const postedDate = item.posted_at 
+                      ? new Date(item.posted_at).toLocaleDateString('de-DE', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : 'Datum unbekannt';
+                    
+                    return (
+                      <div
+                        key={item.shortcode}
+                        onClick={() => setSelectedMedia(item)}
+                        className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all flex flex-col h-full ${
+                          selectedMedia?.shortcode === item.shortcode
+                            ? 'border-pink-500 ring-2 ring-pink-500/30 bg-pink-950/20'
+                            : 'border-zinc-700 hover:border-pink-400 hover:bg-zinc-800/50'
+                        }`}
                       >
-                        <FaTrash size={9} />
-                      </button>
-                    </div>
-                  ))}
+                        {/* Thumbnail */}
+                        {item.thumbnail_url ? (
+                          <img src={item.thumbnail_url} alt="" className="w-full h-32 object-cover" />
+                        ) : (
+                          <div className="w-full h-32 bg-zinc-700 flex items-center justify-center">
+                            <FaInstagram size={28} className="text-zinc-500" />
+                          </div>
+                        )}
+                        
+                        {/* Info */}
+                        <div className="p-2 bg-zinc-900 flex-1 flex flex-col gap-1">
+                          <p className="text-white text-xs font-semibold line-clamp-2 leading-tight flex-1">
+                            {item.caption ? item.caption.slice(0, 60) : `Reel ${item.shortcode}`}
+                          </p>
+                          <p className="text-zinc-500 text-xs">{postedDate}</p>
+                          
+                          {/* Link zum Video */}
+                          <a 
+                            href={item.permalink} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-pink-400 text-xs hover:text-pink-300 hover:underline truncate"
+                            title={item.shortcode}
+                          >
+                            instagram.com/reel
+                          </a>
+                        </div>
+                        
+                        {/* Checkmark overlay */}
+                        {selectedMedia?.shortcode === item.shortcode && (
+                          <div className="absolute inset-0 bg-pink-500/10 flex items-center justify-center pointer-events-none rounded-lg">
+                            <FaCheck size={24} className="text-pink-400 drop-shadow-lg" />
+                          </div>
+                        )}
+                        
+                        {/* Delete button */}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleDeleteMedia(item.shortcode); }}
+                          className="absolute top-1.5 right-1.5 bg-red-900/90 hover:bg-red-700 text-white rounded-full w-7 h-7 flex items-center justify-center transition-colors shadow-lg"
+                          title="Video entfernen"
+                        >
+                          <FaTrash size={11} />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
