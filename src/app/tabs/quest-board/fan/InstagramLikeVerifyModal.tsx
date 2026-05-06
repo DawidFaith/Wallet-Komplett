@@ -261,7 +261,7 @@ export default function InstagramLikeVerifyModal({
               </li>
               <li className="flex gap-2">
                 <span className={`${accentColor} font-bold shrink-0`}>3.</span>
-                Klicke auf „Prüfen"
+                Klicke auf &bdquo;Prüfen&ldquo;
               </li>
             </ol>
           </div>
