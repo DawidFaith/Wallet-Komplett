@@ -204,6 +204,8 @@ export default function CreateQuestModal({
         : {
             creatorWallet: walletAddress,
             videoUrl: selectedQuestMedia?.video_url ?? '',
+          videoTitle: selectedQuestMedia?.title ?? '',
+          thumbnailUrl: selectedQuestMedia?.thumbnail_url ?? '',
             description: finalDescription,
             rewardAmount: Number(rewardAmount),
             maxCompletions: Number(maxParticipants),

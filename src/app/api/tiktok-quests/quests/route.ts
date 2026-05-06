@@ -30,6 +30,11 @@ function extractTikTokVideoId(url: string): string | null {
   return match?.[1] ?? null;
 }
 
+function extractTikTokHandle(url: string): string | null {
+  const match = url.match(/tiktok\.com\/@([^/]+)\/video\//i);
+  return match?.[1] ?? null;
+}
+
 // Short-URL auflösen: vm.tiktok.com/xxx → folgt Redirects ohne Body
 async function resolveShortUrl(url: string): Promise<string> {
   try {
@@ -106,16 +111,11 @@ export async function GET(req: NextRequest) {
 // ─── POST ─────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  if (!RAPIDAPI_KEY) {
-    return NextResponse.json(
-      { error: 'RAPIDAPI_KEY nicht konfiguriert' },
-      { status: 500 }
-    );
-  }
-
   let body: {
     creatorWallet?: string;
     videoUrl?: string;
+    videoTitle?: string;
+    thumbnailUrl?: string;
     description?: string;
     rewardAmount?: number;
     maxCompletions?: number;
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 });
   }
 
-  const { creatorWallet, videoUrl, description, rewardAmount, maxCompletions, durationHours, questType, secretCode } = body;
+  const { creatorWallet, videoUrl, videoTitle, thumbnailUrl, description, rewardAmount, maxCompletions, durationHours, questType, secretCode } = body;
 
   if (!creatorWallet || !videoUrl) {
     return NextResponse.json(
@@ -142,6 +142,7 @@ export async function POST(req: NextRequest) {
   const isShortUrl = /vm\.tiktok\.com|vt\.tiktok\.com/.test(videoUrl);
   const resolvedUrl = isShortUrl ? await resolveShortUrl(videoUrl) : videoUrl;
   const videoId = extractTikTokVideoId(resolvedUrl);
+  const videoHandle = extractTikTokHandle(resolvedUrl);
   if (!videoId) {
     return NextResponse.json(
       { error: 'TikTok-Video-ID konnte nicht gefunden werden. Bitte direkte Video-URL oder vm.tiktok.com-Link verwenden.' },
@@ -158,23 +159,47 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Video-Info via RapidAPI holen
-  const videoInfo = await fetchTikTokVideoInfo(videoId);
-  if (!videoInfo) {
-    return NextResponse.json({ error: 'TikTok-Video nicht gefunden oder API nicht erreichbar.' }, { status: 404 });
-  }
+  let finalVideoTitle = (videoTitle ?? '').trim();
+  let finalThumbnailUrl = (thumbnailUrl ?? '').trim();
+  let finalAuthorHandle = (videoHandle ?? '').trim();
 
-  // Prüfen ob das Video zum verknüpften TikTok-Account gehört
-  if (
-    videoInfo.authorUniqueId &&
-    videoInfo.authorUniqueId.toLowerCase() !== profile.tiktokHandle.toLowerCase()
-  ) {
+  if (finalAuthorHandle && finalAuthorHandle.toLowerCase() !== profile.tiktokHandle.toLowerCase()) {
     return NextResponse.json(
       {
         error: `Dieses Video gehört nicht zu deinem verknüpften TikTok-Account "@${profile.tiktokHandle}". Du kannst nur eigene Videos nutzen.`,
       },
       { status: 403 }
     );
+  }
+
+  if (!finalVideoTitle || !finalThumbnailUrl || !finalAuthorHandle) {
+    if (!RAPIDAPI_KEY) {
+      return NextResponse.json(
+        { error: 'TikTok-Metadaten fehlen und RAPIDAPI_KEY ist nicht konfiguriert.' },
+        { status: 500 }
+      );
+    }
+
+    const videoInfo = await fetchTikTokVideoInfo(videoId);
+    if (!videoInfo) {
+      return NextResponse.json({ error: 'TikTok-Video nicht gefunden oder API nicht erreichbar.' }, { status: 404 });
+    }
+
+    if (
+      videoInfo.authorUniqueId &&
+      videoInfo.authorUniqueId.toLowerCase() !== profile.tiktokHandle.toLowerCase()
+    ) {
+      return NextResponse.json(
+        {
+          error: `Dieses Video gehört nicht zu deinem verknüpften TikTok-Account "@${profile.tiktokHandle}". Du kannst nur eigene Videos nutzen.`,
+        },
+        { status: 403 }
+      );
+    }
+
+    finalVideoTitle = videoInfo.title;
+    finalThumbnailUrl = videoInfo.thumbnail;
+    finalAuthorHandle = videoInfo.authorUniqueId;
   }
 
   const rewardAmountNum = Number(rewardAmount) || 100;
@@ -227,9 +252,9 @@ export async function POST(req: NextRequest) {
     type: finalQuestType as 'comment' | 'engagement' | 'secret',
     creatorWallet: creatorWallet.toLowerCase(),
     videoId,
-    videoTitle: videoInfo.title,
-    videoThumbnail: videoInfo.thumbnail,
-    videoUrl: `https://www.tiktok.com/@${videoInfo.authorUniqueId}/video/${videoId}`,
+    videoTitle: finalVideoTitle || `TikTok Video ${videoId}`,
+    videoThumbnail: finalThumbnailUrl,
+    videoUrl: `https://www.tiktok.com/@${finalAuthorHandle || profile.tiktokHandle}/video/${videoId}`,
     description: autoDescription,
     rewardAmount: rewardAmountNum,
     maxCompletions: maxCompletionsNum,
