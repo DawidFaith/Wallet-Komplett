@@ -43,7 +43,7 @@ export default function CreateQuestModal({
   const [rewardAmount, setRewardAmount] = useState('100');
   const [maxParticipants, setMaxParticipants] = useState('10');
   const [platform, setPlatform] = useState<'youtube' | 'tiktok' | 'instagram'>('youtube');
-  const [questType, setQuestType] = useState<'comment' | 'like' | 'secret' | 'engagement'>('comment');
+  const [questType, setQuestType] = useState<'comment' | 'like' | 'save' | 'secret' | 'engagement'>('comment');
   const [secretCode, setSecretCode] = useState('');
   const [durationHours, setDurationHours] = useState('24');
   // freie Dauer-Eingabe
@@ -377,6 +377,55 @@ export default function CreateQuestModal({
                   : questType === 'secret'
                   ? 'Fan gibt einen Code ein, der im TikTok-Video versteckt ist. Kein API-Aufruf nötig.'
                   : 'API prüft via Kommentare ob der Fan kommentiert hat.'}
+              </p>
+            </div>
+          )}
+
+          {/* Quest-Typ – nur bei Instagram */}
+          {platform === 'instagram' && (
+            <div>
+              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Quest-Typ <span className="text-red-400">*</span></label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setQuestType('comment')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                    questType === 'comment'
+                      ? 'bg-pink-600 border-pink-500 text-white'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-pink-600'
+                  }`}
+                >
+                  💬 Kommentar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuestType('like')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                    questType === 'like'
+                      ? 'bg-red-600 border-red-500 text-white'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-red-600'
+                  }`}
+                >
+                  ❤️ Like
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuestType('save')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                    questType === 'save'
+                      ? 'bg-yellow-600 border-yellow-500 text-white'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-yellow-600'
+                  }`}
+                >
+                  🔖 Speichern
+                </button>
+              </div>
+              <p className="text-zinc-500 text-xs mt-1">
+                {questType === 'like'
+                  ? 'Verifizierung über Like-Delta: Baseline wird gespeichert, Fan hat 10 Min um zu liken.'
+                  : questType === 'save'
+                  ? 'Verifizierung über Speichern-Delta: Baseline wird gespeichert, Fan hat 10 Min um zu speichern.'
+                  : 'Make.com prüft via Instagram Graph API ob der Fan kommentiert hat.'}
               </p>
             </div>
           )}
