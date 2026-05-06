@@ -112,14 +112,16 @@ export const MIGRATION_SQL = `
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
 
-  -- Instagram Mention Events (von Make.com Watch Mentions gepushed)
+  -- Instagram Comment Events (von Make.com Watch Comments gepushed)
+  -- comment_id Spalte wird als username verwendet
   CREATE TABLE IF NOT EXISTS instagram_mentions (
     id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     comment_id  TEXT        NOT NULL,
-    media_id    TEXT        NOT NULL,
+    media_id    TEXT        NOT NULL DEFAULT '',
     received_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
 
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_instagram_mentions_username ON instagram_mentions(comment_id);
   CREATE INDEX IF NOT EXISTS idx_instagram_mentions_received ON instagram_mentions(received_at DESC);
 
   CREATE INDEX IF NOT EXISTS idx_quests_active    ON quests(is_active, created_at DESC);
