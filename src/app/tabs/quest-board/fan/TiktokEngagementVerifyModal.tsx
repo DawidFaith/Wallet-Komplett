@@ -115,7 +115,6 @@ export default function TiktokEngagementVerifyModal({
   }, [quest?.id]);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-  const rewardPer = quest ? Math.floor(quest.rewardAmount / 3) : 0;
 
   const actions = [
     { key: 'like', icon: <FiThumbsUp size={18} />, label: 'Like', color: 'text-cyan-400', verified: likeVerified },
@@ -129,8 +128,24 @@ export default function TiktokEngagementVerifyModal({
     : step === 'error' ? '❌ Fehler'
     : '📲 Engagement verifizieren';
 
+  const rewardPer = quest ? Math.floor(quest.rewardAmount / 3) : 0;
+
   return (
     <Modal open={!!quest} onClose={onClose} title={title}>
+      {/* Reward-Banner */}
+      {quest && step !== 'error' && step !== 'expired' && (
+        <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
+          <span className="text-zinc-400 text-xs">Belohnung</span>
+          <div className="flex items-center gap-3">
+            <span className="text-zinc-500 text-xs">pro Aktion:</span>
+            <span className="text-yellow-400 font-bold text-sm flex items-center gap-1">
+              <FaCoins size={12} /> +{rewardPer} DFAITH
+            </span>
+            <span className="text-zinc-600 text-xs">×3 max</span>
+          </div>
+        </div>
+      )}
+
       {/* Loading */}
       {step === 'loading' && (
         <div className="flex flex-col items-center py-8 gap-4">

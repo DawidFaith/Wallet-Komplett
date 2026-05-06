@@ -23,6 +23,16 @@ export default function VerifyModal({ quest, loading, result, onVerify, onClose 
 
   return (
     <Modal open={isOpen} onClose={onClose} title={title}>
+      {/* Reward-Banner */}
+      {quest && !result?.success && (
+        <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
+          <span className="text-zinc-400 text-xs">Belohnung</span>
+          <span className="text-yellow-400 font-bold text-sm flex items-center gap-1">
+            <FaCoins size={12} /> +{quest.rewardAmount} DFAITH
+          </span>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex flex-col items-center py-8 gap-4">
           <div className="border-4 border-yellow-500/30 border-t-yellow-500 rounded-full w-12 h-12 animate-spin" />
