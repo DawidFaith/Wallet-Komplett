@@ -134,10 +134,13 @@ export async function POST(req: NextRequest) {
   // 6. Quest-Abschluss speichern
   const now = new Date().toISOString();
   await saveCompletion({
-    id: crypto.randomUUID(),
-    walletAddress: normalized,
     questId,
+    walletAddress: normalized,
+    channelId: profile.facebookHandle,
+    channelName: profile.facebookName ?? profile.facebookHandle,
     platform: 'facebook',
+    commentId: 'comment',
+    commentText: 'positive comment',
     rewardAmount: quest.rewardAmount,
     rewardPaid: false,
     completedAt: now,
