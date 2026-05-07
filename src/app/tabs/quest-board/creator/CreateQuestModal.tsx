@@ -74,23 +74,21 @@ export default function CreateQuestModal({
   const selectedQuestMedia = availableQuestMedia.find((item) => item.video_id === selectedQuestMediaId) ?? null;
 
   const buildInstagramTitle = (item: AvailableMediaItem) => {
-    const cleanCaption = item.caption
-      ?.split(/[\n\r]/)[0]
-      .replace(/#\S+/g, '')
-      .replace(/@\S+/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    if (cleanCaption && cleanCaption.length > 3) {
-      return cleanCaption.slice(0, 100);
+    // Erste Zeile der Caption verwenden (mit Emojis & Hashtags)
+    const firstLine = item.caption?.split(/[\n\r]/)[0].trim();
+    if (firstLine && firstLine.length > 0) {
+      return firstLine.slice(0, 100);
     }
-
-    const shortCodeLabel = item.shortcode ? item.shortcode.slice(0, 10).toUpperCase() : 'OHNE-ID';
+    // Fallback: restliche Caption
+    const fullCaption = item.caption?.trim();
+    if (fullCaption && fullCaption.length > 0) {
+      return fullCaption.slice(0, 100);
+    }
+    // Kein Caption → Datum
     const dateLabel = item.posted_at
       ? new Date(item.posted_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-      : 'ohne Datum';
-
-    return `Instagram Reel vom ${dateLabel}`;
+      : 'Unbekannt';
+    return `${item.media_type === 'VIDEO' ? 'Reel' : item.media_type === 'CAROUSEL_ALBUM' ? 'Carousel' : 'Beitrag'} vom ${dateLabel}`;
   };
 
   const reset = () => {
