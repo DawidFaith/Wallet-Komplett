@@ -132,7 +132,7 @@ export async function GET(req: NextRequest) {
 
     await saveCompletion(completion);
     await addDfaithCredits(verif.walletAddress, quest.rewardAmount);
-    await savePendingReward(verif.walletAddress, quest.rewardAmount, `DM-Share Quest: ${quest.videoTitle}`, verif.questId);
+    await savePendingReward({ walletAddress: verif.walletAddress, amount: quest.rewardAmount, reason: `DM-Share Quest: ${quest.videoTitle}`, questId: verif.questId, createdAt: now });
     await addUserXp(verif.walletAddress, Math.round(quest.rewardAmount / 10));
     await deleteInstagramDmVerification(verif.questId, verif.walletAddress);
 
