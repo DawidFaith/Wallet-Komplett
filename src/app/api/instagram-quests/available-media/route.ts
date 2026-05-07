@@ -8,7 +8,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 
 interface MakeVideoItem {
-  ig_id?: string;
+  id?: string;             // Graph API Media-ID (für /insights & /comments)
+  ig_id?: string;          // Legacy IG-Original-ID (NICHT für Graph API geeignet)
   caption?: string;
   media_url?: string;
   permalink?: string;
@@ -19,6 +20,36 @@ interface MakeVideoItem {
   thumbnail_url?: string;
   comments_count?: string | number;
   media_product_type?: string;
+}
+
+// Top-Level-Objekte aus Make.com Aggregator-Format extrahieren
+// (Make liefert oft ungültiges JSON wie "{metrics: {obj1}, {obj2}}").
+// Iteratives Klammer-Balancing, damit nur Items der obersten Ebene zurückkommen
+// und keine verschachtelten Sub-Objekte (z. B. image_versions) miterfasst werden.
+function extractTopLevelObjects(text: string): string[] {
+  const result: string[] = [];
+  let depth = 0;
+  let start = -1;
+  let inString = false;
+  let escape = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\') { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '{') {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (ch === '}') {
+      depth--;
+      if (depth === 0 && start >= 0) {
+        result.push(text.slice(start, i + 1));
+        start = -1;
+      }
+    }
+  }
+  return result;
 }
 
 async function fetchFromMake(): Promise<MakeVideoItem[] | null> {
@@ -44,13 +75,18 @@ async function fetchFromMake(): Promise<MakeVideoItem[] | null> {
     } catch { /* weiter zu Regex-Fallback */ }
 
     // Regex-Fallback für Make.com Array-Aggregator-Format
+    // Nur Top-Level-Objekte sammeln, sonst werden verschachtelte Sub-Objekte
+    // (z.B. image_versions) fälschlich als eigene Media-Items interpretiert.
     const items: MakeVideoItem[] = [];
-    const objRegex = /\{[^{}]*\}/g;
-    const matches = text.match(objRegex);
-    if (matches) {
-      for (const m of matches) {
-        try { items.push(JSON.parse(m)); } catch { /* überspringen */ }
-      }
+    const matches = extractTopLevelObjects(text);
+    for (const m of matches) {
+      try {
+        const parsed = JSON.parse(m);
+        // Nur Objekte akzeptieren, die plausibel ein Media-Item sind
+        if (parsed && (parsed.id || parsed.ig_id || parsed.shortcode)) {
+          items.push(parsed);
+        }
+      } catch { /* überspringen */ }
     }
     return items.length > 0 ? items : null;
   } catch {
@@ -64,8 +100,10 @@ export async function GET() {
 
   if (makeItems && makeItems.length > 0) {
     const media = makeItems.map((item) => ({
-      shortcode: item.shortcode ?? item.ig_id ?? '',
-      graph_media_id: item.ig_id ?? '',
+      shortcode: item.shortcode ?? item.id ?? item.ig_id ?? '',
+      // Graph API Media-ID bevorzugen (benötigt von /insights & /comments).
+      // ig_id ist die Legacy-ID und führt zu Fehlern bei Insights → Bug-Fix.
+      graph_media_id: item.id ?? item.ig_id ?? '',
       caption: item.caption ?? '',
       thumbnail_url: item.thumbnail_url ?? item.media_url ?? '',
       permalink: item.permalink ?? '',
