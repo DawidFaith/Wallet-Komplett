@@ -284,12 +284,13 @@ async function handlePost(req: NextRequest) {
     handle?: string;
     action?: 'preview' | 'verify' | 'unlink';
     fingerprint?: string;
+    postId?: string;
   };
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: 'Ungültiger Body' }, { status: 400 });
   }
 
-  const { walletAddress, platform, handle, action, fingerprint } = body;
+  const { walletAddress, platform, handle, action, fingerprint, postId } = body;
 
   if (!walletAddress) {
     return NextResponse.json({ error: 'walletAddress fehlt' }, { status: 400 });
@@ -415,9 +416,7 @@ async function handlePost(req: NextRequest) {
       return NextResponse.json({ success: true, name: profileName, picture: profilePicture });
     }
 
-    // Facebook: Schritt 2 – DB nach gespeicherten Mentions abfragen
-    // Make.com (Szenario Facebook Comments) hat beim Empfang der Erwähnung bereits
-    // POST /api/facebook-mention-received aufgerufen und den Eintrag gespeichert.
+    // Facebook: Schritt 2 – Make.com fragt Kommentare des neuesten Posts ab
     if (p === 'facebook') {
       const sql = getDb();
 
@@ -436,23 +435,25 @@ async function handlePost(req: NextRequest) {
         );
       }
 
-      // Gibt es einen Kommentar von diesem Username aus den letzten 2 Stunden?
-      const rows = await sql`
-        SELECT id FROM facebook_mentions
-        WHERE username = ${cleanHandle.toLowerCase()}
-          AND received_at > NOW() - INTERVAL '2 hours'
-        LIMIT 1
-      `;
-
-      if (rows.length === 0) {
-        return NextResponse.json({
-          notFound: true,
-          message: `Kein Kommentar von ${cleanHandle} gefunden. Facebook kann bis zu 2 Minuten brauchen – warte kurz und versuche es erneut.`,
-        });
+      const commentWebhook = process.env.MAKE_FACEBOOK_COMMENT_WEBHOOK_URL;
+      if (!commentWebhook) {
+        return NextResponse.json({ error: 'Facebook-Verifikation nicht konfiguriert.' }, { status: 500 });
       }
 
-      // Verwendete Mention löschen (einmalig nutzbar)
-      await sql`DELETE FROM facebook_mentions WHERE id = ${rows[0].id}`;
+      const makeRes = await fetch(commentWebhook, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: cleanHandle, post_id: postId ?? '' }),
+        signal: AbortSignal.timeout(15000),
+      });
+      const makeData = await makeRes.json().catch(() => ({})) as { found?: boolean };
+
+      if (!makeData.found) {
+        return NextResponse.json({
+          notFound: true,
+          message: `Kein Kommentar von ${cleanHandle} gefunden. Stelle sicher, dass du @dawidfaith im Kommentar getaggt hast und versuche es erneut.`,
+        });
+      }
 
       await upsertUserProfile(walletAddress, {
         facebookHandle: cleanHandle,

@@ -120,7 +120,7 @@ export default function SocialVerifyModal({
   const [codeCopied, setCodeCopied] = useState(false);
   const [name, setName] = useState(currentName);
   const [picture, setPicture] = useState(currentPicture);
-  const [latestFbPost, setLatestFbPost] = useState<{ permalink: string; thumbnail: string; caption: string } | null>(null);
+  const [latestFbPost, setLatestFbPost] = useState<{ permalink: string; thumbnail: string; caption: string; post_id: string } | null>(null);
 
   const call = async (body: object) => {
     const res = await fetch('/api/youtube-quests/social-verify', {
@@ -150,6 +150,7 @@ export default function SocialVerifyModal({
             permalink: posts[0].permalink,
             thumbnail: posts[0].thumbnail_url,
             caption: posts[0].caption,
+            post_id: posts[0].post_id,
           });
         }
         const fakePreview = { name: handle.trim(), picture: '', verificationCode: '' };
@@ -171,7 +172,8 @@ export default function SocialVerifyModal({
     if (!preview) return;
     setLoading(true); setError('');
     try {
-      const { ok, data } = await call({ handle: handle.trim(), action: 'verify' });
+      const extraBody = platform === 'facebook' && latestFbPost ? { postId: latestFbPost.post_id } : {};
+      const { ok, data } = await call({ handle: handle.trim(), action: 'verify', ...extraBody });
       if (!ok) { setError(data.error ?? 'Serverfehler'); return; }
       if (data.notFound) { setError(data.message); return; }
       clearPreviewCache();
