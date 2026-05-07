@@ -43,7 +43,7 @@ export default function CreateQuestModal({
   const [rewardAmount, setRewardAmount] = useState('100');
   const [maxParticipants, setMaxParticipants] = useState('10');
   const [platform, setPlatform] = useState<'youtube' | 'tiktok' | 'instagram'>('youtube');
-  const [questType, setQuestType] = useState<'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost'>('comment');
+  const [questType, setQuestType] = useState<'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost' | 'dm_share'>('comment');
   const [secretCode, setSecretCode] = useState('');
   const [durationHours, setDurationHours] = useState('24');
   // freie Dauer-Eingabe
@@ -168,6 +168,8 @@ export default function CreateQuestModal({
           : platform === 'instagram'
           ? questType === 'engagement'
             ? '❤️ Like und 🔖 Speichere dieses Instagram Reel! (Teilbelohnung möglich)'
+            : questType === 'dm_share'
+            ? '📩 Teile dieses Reel in deiner Story und klicke den DM-Link!'
             : '💬 Kommentiere dieses Instagram Reel!'
           : questType === 'like'
           ? '👍 Like dieses YouTube Short!'
@@ -424,12 +426,25 @@ export default function CreateQuestModal({
                 >
                   🔁 Repost
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setQuestType('dm_share')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors col-span-2 ${
+                    questType === 'dm_share'
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 border-purple-500 text-white'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-purple-600'
+                  }`}
+                >
+                  📩 DM-Share (Story + Link-Klick)
+                </button>
               </div>
               <p className="text-zinc-500 text-xs mt-1">
                 {questType === 'engagement'
                   ? 'Fan muss liken und speichern. Jede Aktion = 1/2 des Rewards. Teilbelohnung möglich.'
                   : questType === 'repost'
                   ? 'Fan muss das Reel auf seinen Kanal reposten. Delta aus total_interactions wird gemessen.'
+                  : questType === 'dm_share'
+                  ? 'Fan teilt das Reel in seiner Story (Teil 1) und klickt den Link-DM-Link (Teil 2).'
                   : 'Make.com prüft via Instagram Graph API ob der Fan kommentiert hat.'}
               </p>
             </div>
