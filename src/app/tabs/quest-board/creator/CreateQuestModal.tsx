@@ -8,10 +8,18 @@ import { shortenWallet } from '../utils';
 interface AvailableMediaItem {
   shortcode: string;
   graph_media_id: string;
+  ig_id?: string;
+  username?: string;
   caption: string;
+  media_url?: string;
   thumbnail_url: string;
   permalink: string;
   posted_at: string | null;
+  media_type?: string;
+  media_product_type?: string;
+  like_count?: number;
+  comments_count?: number;
+  is_comment_enabled?: boolean;
 }
 
 interface AvailableQuestMediaItem {
@@ -660,24 +668,43 @@ export default function CreateQuestModal({
                             <FaInstagram size={28} className="text-zinc-500" />
                           </div>
                         )}
-                        
+
+                        {/* Media-Type Badge */}
+                        {item.media_type && (
+                          <div className="absolute top-1.5 left-1.5 bg-black/75 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                            {item.media_type === 'VIDEO' ? '🎬 Reel' : item.media_type === 'CAROUSEL_ALBUM' ? '🖼️ Carousel' : item.media_type === 'IMAGE' ? '📷 Bild' : item.media_type}
+                          </div>
+                        )}
+
                         {/* Info */}
                         <div className="p-2 bg-zinc-900 flex-1 flex flex-col gap-1">
                           <p className="text-white text-xs font-semibold line-clamp-2 leading-tight flex-1">
                             {title}
                           </p>
                           <p className="text-zinc-500 text-xs">{postedDate}</p>
-                          
+
+                          {/* Engagement-Statistiken */}
+                          {(typeof item.like_count === 'number' || typeof item.comments_count === 'number') && (
+                            <div className="flex items-center gap-3 text-xs text-zinc-400">
+                              {typeof item.like_count === 'number' && (
+                                <span title="Likes">❤️ {item.like_count}</span>
+                              )}
+                              {typeof item.comments_count === 'number' && (
+                                <span title="Kommentare">💬 {item.comments_count}</span>
+                              )}
+                            </div>
+                          )}
+
                           {/* Link zum Video */}
-                          <a 
-                            href={item.permalink} 
-                            target="_blank" 
+                          <a
+                            href={item.permalink}
+                            target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
                             className="text-pink-400 text-xs hover:text-pink-300 hover:underline truncate"
                             title={item.shortcode}
                           >
-                            instagram.com/reel
+                            {item.media_product_type === 'REELS' ? 'instagram.com/reel' : 'instagram.com/p'}
                           </a>
                         </div>
                         

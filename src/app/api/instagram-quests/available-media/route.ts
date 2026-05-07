@@ -10,6 +10,7 @@ import { getDb } from '../../../lib/db';
 interface MakeVideoItem {
   id?: string;             // Graph API Media-ID (für /insights & /comments)
   ig_id?: string;          // Legacy IG-Original-ID (NICHT für Graph API geeignet)
+  username?: string;
   caption?: string;
   media_url?: string;
   permalink?: string;
@@ -19,6 +20,7 @@ interface MakeVideoItem {
   media_type?: string;
   thumbnail_url?: string;
   comments_count?: string | number;
+  is_comment_enabled?: boolean;
   media_product_type?: string;
 }
 
@@ -104,13 +106,18 @@ export async function GET() {
       // Graph API Media-ID bevorzugen (benötigt von /insights & /comments).
       // ig_id ist die Legacy-ID und führt zu Fehlern bei Insights → Bug-Fix.
       graph_media_id: item.id ?? item.ig_id ?? '',
+      ig_id: item.ig_id ?? '',
+      username: item.username ?? '',
       caption: item.caption ?? '',
+      media_url: item.media_url ?? '',
       thumbnail_url: item.thumbnail_url ?? item.media_url ?? '',
       permalink: item.permalink ?? '',
       posted_at: item.timestamp ?? null,
       media_type: item.media_type ?? '',
+      media_product_type: item.media_product_type ?? '',
       like_count: Number(item.like_count ?? 0),
       comments_count: Number(item.comments_count ?? 0),
+      is_comment_enabled: item.is_comment_enabled ?? true,
     }));
     return NextResponse.json({ media, source: 'make' });
   }
