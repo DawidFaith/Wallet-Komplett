@@ -44,13 +44,38 @@ async function fetchBaselineShares(
     });
     const text = await res.text();
     if (!text) return 0;
+    const extract = (arr: any[]): number | null => {
+      for (const it of arr) {
+        if (it && typeof it === 'object' && it.name === 'shares') {
+          const n = Number(it?.values?.[0]?.value);
+          if (Number.isFinite(n)) return n;
+        }
+      }
+      return null;
+    };
     try {
       const json = JSON.parse(text);
-      return Number(json.shares ?? 0);
+      if (typeof json?.shares === 'number') return json.shares;
+      if (Array.isArray(json?.metrics)) {
+        const n = extract(json.metrics);
+        if (n !== null) return n;
+      }
+      if (Array.isArray(json?.data)) {
+        const n = extract(json.data);
+        if (n !== null) return n;
+      }
+      if (Array.isArray(json)) {
+        const n = extract(json);
+        if (n !== null) return n;
+      }
     } catch {
-      const m = text.match(/"shares"[:\s]+(\d+)/);
-      return m ? Number(m[1]) : 0;
+      // Fallthrough
     }
+    const block = text.match(/"name"\s*:\s*"shares"[\s\S]{0,300}?"value"\s*:\s*(\d+)/);
+    if (block) return Number(block[1]);
+    const direct = text.match(/(?<!\/)"shares"\s*:\s*(\d+)/);
+    if (direct) return Number(direct[1]);
+    return 0;
   } catch {
     return 0;
   }

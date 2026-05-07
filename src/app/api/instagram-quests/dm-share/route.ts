@@ -42,6 +42,18 @@ function buildLinkTemplate(): string {
 
 // ─── Make.com Shares-Abfrage (identisch zu like-verify) ──────────────────────
 
+/** Extrahiert die "shares"-Metrik aus einem Insights-Array (Instagram Graph API Format). */
+function extractSharesFromMetricsArray(arr: any[]): number | null {
+  for (const item of arr) {
+    if (item && typeof item === 'object' && item.name === 'shares') {
+      const v = item?.values?.[0]?.value;
+      const n = Number(v);
+      if (Number.isFinite(n)) return n;
+    }
+  }
+  return null;
+}
+
 async function fetchCurrentShares(webhookUrl: string, graphMediaId: string): Promise<number> {
   try {
     const res = await fetch(webhookUrl, {
@@ -52,17 +64,40 @@ async function fetchCurrentShares(webhookUrl: string, graphMediaId: string): Pro
     });
     const text = await res.text();
     if (!text) return 0;
+
+    // 1) Versuche reguläres JSON.parse
     try {
       const json = JSON.parse(text);
-      if (typeof json.shares === 'number') return json.shares;
-      if (json.data && Array.isArray(json.data)) {
-        const m = json.data.find((x: any) => x.name === 'shares');
-        return Number(m?.values?.[0]?.value ?? 0);
+      // Direktes Feld
+      if (typeof json?.shares === 'number') return json.shares;
+      // metrics: [...]
+      if (Array.isArray(json?.metrics)) {
+        const n = extractSharesFromMetricsArray(json.metrics);
+        if (n !== null) return n;
+      }
+      // data: [...] (klassisches Insights Format)
+      if (Array.isArray(json?.data)) {
+        const n = extractSharesFromMetricsArray(json.data);
+        if (n !== null) return n;
+      }
+      // Top-Level Array
+      if (Array.isArray(json)) {
+        const n = extractSharesFromMetricsArray(json);
+        if (n !== null) return n;
       }
     } catch {
-      const m = text.match(/"shares"[:\s]+(\d+)/);
-      return m ? Number(m[1]) : 0;
+      // Make.com schickt manchmal ungültiges JSON (mehrere Keys mit gleichem Namen).
+      // Fallback: regex-basiert nach `"name":"shares" ... "value":N` suchen.
     }
+
+    // 2) Robust-Fallback: Suche nach `"name":"shares"` Block und extrahiere ersten "value":N
+    const block = text.match(/"name"\s*:\s*"shares"[\s\S]{0,300}?"value"\s*:\s*(\d+)/);
+    if (block) return Number(block[1]);
+
+    // 3) Letzter Fallback: einfaches "shares":N (kein url-Substring)
+    const direct = text.match(/(?<!\/)"shares"\s*:\s*(\d+)/);
+    if (direct) return Number(direct[1]);
+
     return 0;
   } catch {
     return 0;
