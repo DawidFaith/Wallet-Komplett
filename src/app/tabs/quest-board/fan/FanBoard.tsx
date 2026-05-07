@@ -15,6 +15,8 @@ import InstagramQuestCard from '../quests/instagram/InstagramQuestCard';
 import InstagramCommentVerifyModal from './InstagramCommentVerifyModal';
 import InstagramLikeVerifyModal from './InstagramLikeVerifyModal';
 import InstagramDmShareModal from './InstagramDmShareModal';
+import FacebookCommentVerifyModal from './FacebookCommentVerifyModal';
+import FacebookQuestCard from '../quests/facebook/FacebookQuestCard';
 import type { QuestIndexEntry, VerifiedPlatforms, VerifyResult, ClaimResult } from '../types';
 import { formatCredits } from '../utils';
 
@@ -41,6 +43,7 @@ export default function FanBoard({ walletAddress, verified }: FanBoardProps) {
   const [instagramCommentQuest, setInstagramCommentQuest] = useState<QuestIndexEntry | null>(null);
   const [instagramLikeQuest, setInstagramLikeQuest] = useState<QuestIndexEntry | null>(null);
   const [instagramDmShareQuest, setInstagramDmShareQuest] = useState<QuestIndexEntry | null>(null);
+  const [facebookCommentQuest, setFacebookCommentQuest] = useState<QuestIndexEntry | null>(null);
 
   const loadQuests = useCallback(async () => {
     setLoading(true);
@@ -189,6 +192,12 @@ export default function FanBoard({ walletAddress, verified }: FanBoardProps) {
     }
   };
 
+  const handleFacebookVerify = (questId: string) => {
+    const quest = quests.find((q) => q.id === questId) ?? null;
+    if (!quest) return;
+    setFacebookCommentQuest(quest);
+  };
+
   // Quests nach Plattform und Typ gruppieren – nur verifizierte Plattformen anzeigen
   const youtubeQuests = verified.youtube
     ? quests.filter((q) => q.platform === 'youtube')
@@ -201,6 +210,9 @@ export default function FanBoard({ walletAddress, verified }: FanBoardProps) {
     : [];
   const instagramQuests = verified.instagram
     ? quests.filter((q) => q.platform === 'instagram')
+    : [];
+  const facebookQuests = verified.facebook
+    ? quests.filter((q) => q.platform === 'facebook')
     : [];
 
   return (
@@ -241,7 +253,7 @@ export default function FanBoard({ walletAddress, verified }: FanBoardProps) {
         <div className="flex justify-center py-12">
           <div className="border-4 border-red-500/30 border-t-red-500 rounded-full w-10 h-10 animate-spin" />
         </div>
-      ) : youtubeQuests.length === 0 && tiktokCommentQuests.length === 0 && tiktokEngagementQuests.length === 0 && instagramQuests.length === 0 ? (
+      ) : youtubeQuests.length === 0 && tiktokCommentQuests.length === 0 && tiktokEngagementQuests.length === 0 && instagramQuests.length === 0 && facebookQuests.length === 0 ? (
         <div className="text-center py-12 text-zinc-500">
           <FaTrophy size={32} className="mx-auto mb-3 opacity-30" />
           <p>Noch keine Quests verfügbar.</p>
@@ -293,6 +305,18 @@ export default function FanBoard({ walletAddress, verified }: FanBoardProps) {
                   quest={quest}
                   isCompleted={completedIds.includes(quest.id)}
                   onComplete={handleInstagramVerify}
+                />
+              ))}
+            </div>
+          )}
+          {facebookQuests.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {facebookQuests.map((quest) => (
+                <FacebookQuestCard
+                  key={quest.id}
+                  quest={quest}
+                  isCompleted={completedIds.includes(quest.id)}
+                  onComplete={handleFacebookVerify}
                 />
               ))}
             </div>
@@ -388,6 +412,22 @@ export default function FanBoard({ walletAddress, verified }: FanBoardProps) {
           }
         }}
         onClose={() => setInstagramCommentQuest(null)}
+      />
+
+      {/* Verifizierungs-Modal (Facebook Kommentar) */}
+      <FacebookCommentVerifyModal
+        quest={facebookCommentQuest}
+        walletAddress={walletAddress}
+        onCompleted={(amount) => {
+          if (facebookCommentQuest) {
+            setCompletedIds((prev) => [...prev, facebookCommentQuest.id]);
+            setCredits((prev) => prev + amount);
+            setQuests((prev) =>
+              prev.map((q) => q.id === facebookCommentQuest.id ? { ...q, completions: q.completions + 1 } : q)
+            );
+          }
+        }}
+        onClose={() => setFacebookCommentQuest(null)}
       />
 
       {/* Verifizierungs-Modal (Instagram DM-Share) */}
