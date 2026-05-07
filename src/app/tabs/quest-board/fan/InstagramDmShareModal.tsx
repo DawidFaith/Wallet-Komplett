@@ -391,4 +391,3 @@ function StepBadge({ num, label, done, active }: { num: number; label: string; d
     </div>
   );
 }
-      if (!expiresAt) return;
