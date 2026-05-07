@@ -109,6 +109,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Quest ist abgelaufen.' }, { status: 400 });
     }
 
+    // Creator-Handle für Mention-Hinweis laden
+    const creatorProfile = await getUserProfile(quest.creatorWallet);
+    const creatorHandle = creatorProfile?.instagramHandle ?? null;
+
     // ── START: Baseline-Shares laden, Verifikation anlegen ───────────────────
     if (action === 'start') {
       const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
@@ -142,6 +146,7 @@ export async function POST(req: NextRequest) {
         baselineShares,
         videoUrl: quest.videoUrl,
         instagramHandle: profile.instagramHandle,
+        creatorHandle,
         linkTemplate,
         message: 'Teile jetzt den Beitrag in deiner Story. Komm dann zurück und klicke "Share prüfen".',
       });

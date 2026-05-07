@@ -38,6 +38,7 @@ export default function InstagramDmShareModal({
   const [linkTemplate, setLinkTemplate] = useState('');
   const [copied, setCopied] = useState(false);
   const [instagramHandle, setInstagramHandle] = useState('');
+  const [creatorHandle, setCreatorHandle] = useState('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Countdown Timer
@@ -115,6 +116,7 @@ export default function InstagramDmShareModal({
       }
       setExpiresAt(data.expiresAt);
       setInstagramHandle(data.instagramHandle ?? '');
+      setCreatorHandle(data.creatorHandle ?? '');
       setLinkTemplate(data.linkTemplate ?? '');
       setStep('part1');
     } catch {
@@ -249,7 +251,12 @@ export default function InstagramDmShareModal({
             <div className="bg-zinc-800/60 rounded-xl px-3 py-3 space-y-1">
               <p className="font-semibold text-white text-xs">📸 Teil 1 – Story teilen</p>
               <p className="text-xs text-zinc-400">
-                Öffne den Beitrag auf Instagram und teile ihn in deiner Story. Komm dann zurück und klicke &quot;Share prüfen&quot;.
+                Öffne den Beitrag auf Instagram und teile ihn in deiner Story.
+                {creatorHandle && (
+                  <> Markiere dabei <span className="text-pink-400 font-semibold">@{creatorHandle}</span> in der Story.</>)}
+              </p>
+              <p className="text-xs text-zinc-400">
+                Komm dann zurück und klicke &quot;Share prüfen&quot;.
               </p>
             </div>
 
