@@ -636,7 +636,7 @@ export default function CreateQuestModal({
                 <div className="text-center py-6 text-sm bg-zinc-800/50 rounded-xl border border-zinc-700/50 space-y-1">
                   <FaFacebookF size={24} className="mx-auto text-zinc-600 mb-2" />
                   <p className="text-zinc-400">Keine Posts verfügbar.</p>
-                  <p className="text-zinc-600 text-xs">Auf „Aktualisieren" klicken um Posts von Make.com zu laden.</p>
+                  <p className="text-zinc-600 text-xs">Auf &bdquo;Aktualisieren&ldquo; klicken um Posts von Make.com zu laden.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-2">
