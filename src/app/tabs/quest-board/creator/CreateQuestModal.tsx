@@ -1,18 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaSync, FaCheck, FaCommentAlt, FaClock, FaKey, FaTiktok, FaYoutube, FaInstagram, FaFacebookF, FaThumbsUp, FaBookmark, FaShareAlt, FaTrash } from 'react-icons/fa';
+import { FaPlus, FaSync, FaCheck, FaCommentAlt, FaClock, FaKey, FaTiktok, FaYoutube, FaInstagram, FaThumbsUp, FaBookmark, FaShareAlt, FaTrash } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import { shortenWallet } from '../utils';
-
-interface AvailableFacebookMediaItem {
-  post_id: string;
-  permalink: string;
-  caption: string;
-  thumbnail_url: string;
-  posted_at: string | null;
-  media_type?: string;
-}
 
 interface AvailableMediaItem {
   shortcode: string;
@@ -61,8 +52,8 @@ export default function CreateQuestModal({
   const [description, setDescription] = useState('');
   const [rewardAmount, setRewardAmount] = useState('100');
   const [maxParticipants, setMaxParticipants] = useState('10');
-  const [platform, setPlatform] = useState<'youtube' | 'tiktok' | 'instagram' | 'facebook'>(
-    verified.youtube ? 'youtube' : verified.tiktok ? 'tiktok' : verified.instagram ? 'instagram' : verified.facebook ? 'facebook' : 'youtube'
+  const [platform, setPlatform] = useState<'youtube' | 'tiktok' | 'instagram'>(
+    verified.youtube ? 'youtube' : verified.tiktok ? 'tiktok' : verified.instagram ? 'instagram' : 'youtube'
   );
   const [questType, setQuestType] = useState<'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost' | 'dm_share'>('comment');
   const [secretCode, setSecretCode] = useState('');
@@ -82,10 +73,6 @@ export default function CreateQuestModal({
   const [questMediaError, setQuestMediaError] = useState<string>('');
   const [selectedQuestMediaId, setSelectedQuestMediaId] = useState<string | null>(null);
   const selectedQuestMedia = availableQuestMedia.find((item) => item.video_id === selectedQuestMediaId) ?? null;
-  // Facebook – verfügbare Posts von Make
-  const [availableFacebookMedia, setAvailableFacebookMedia] = useState<AvailableFacebookMediaItem[]>([]);
-  const [loadingFacebookMedia, setLoadingFacebookMedia] = useState(false);
-  const [selectedFacebookMedia, setSelectedFacebookMedia] = useState<AvailableFacebookMediaItem | null>(null);
 
   const buildInstagramTitle = (item: AvailableMediaItem) => {
     // Erste Zeile der Caption verwenden (mit Emojis & Hashtags)
@@ -112,19 +99,7 @@ export default function CreateQuestModal({
     setSecretCode('');
     setSelectedMedia(null); setAvailableMedia([]); setLoadingMedia(false);
     setAvailableQuestMedia([]); setLoadingQuestMedia(false); setSelectedQuestMediaId(null);
-    setAvailableFacebookMedia([]); setLoadingFacebookMedia(false); setSelectedFacebookMedia(null);
     setError(''); setSuccess(false);
-  };
-
-  const fetchAvailableFacebookMedia = async () => {
-    setLoadingFacebookMedia(true);
-    try {
-      const res = await fetch('/api/facebook-quests/available-media');
-      const data = await res.json();
-      setAvailableFacebookMedia(data.media ?? []);
-    } finally {
-      setLoadingFacebookMedia(false);
-    }
   };
 
   const fetchAvailableMedia = async () => {
@@ -174,7 +149,7 @@ export default function CreateQuestModal({
     if (selectedMedia?.shortcode === shortcode) setSelectedMedia(null);
   };
 
-  // Verfügbare Videos laden wenn Plattform gewählt wird
+  // Verfügbare Videos laden wenn Instagram-Plattform gewählt wird
   useEffect(() => {
     if (platform === 'instagram' && open) {
       fetchAvailableMedia();
@@ -182,17 +157,40 @@ export default function CreateQuestModal({
     if ((platform === 'youtube' || platform === 'tiktok') && open) {
       fetchAvailableQuestMedia();
     }
-    if (platform === 'facebook' && open) {
-      fetchAvailableFacebookMedia();
-    }
   }, [platform, open, walletAddress]);
 
   const handleClose = () => { reset(); onClose(); };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setCreatplatform === 'facebook'
-          ? '💬 Kommentiere diesen Facebook Post und tagge @dawidfaith!'
+    setCreating(true);
+    setError('');
+    try {
+      // Dauer in Stunden umrechnen
+      let finalDurationHours: number | undefined;
+      if (durationHours === 'custom') {
+        const val = Math.max(1, Number(customDurationValue) || 30);
+        if (customDurationUnit === 'min') finalDurationHours = val / 60;
+        else if (customDurationUnit === 'h') finalDurationHours = val;
+        else finalDurationHours = val * 24;
+      } else {
+        finalDurationHours = durationHours === '0' ? undefined : Number(durationHours);
+      }
+
+      // Auto-Beschreibung wenn leer
+      const finalDescription = description.trim() || (
+        platform === 'tiktok'
+          ? questType === 'engagement'
+            ? '👍 Like, 🔄 Teile und 🔖 Speichere dieses TikTok-Video!'
+            : questType === 'secret'
+            ? '🔑 Finde den geheimen Code im TikTok-Video und gib ihn ein!'
+            : '💬 Schreibe einen positiven Kommentar unter dieses TikTok-Video!'
+          : platform === 'instagram'
+          ? questType === 'engagement'
+            ? '❤️ Like und 🔖 Speichere dieses Instagram Reel! (Teilbelohnung möglich)'
+            : questType === 'dm_share'
+            ? '📩 Teile dieses Reel in deiner Story und klicke den DM-Link!'
+            : '💬 Kommentiere dieses Instagram Reel!'
           : questType === 'like'
           ? '👍 Like dieses YouTube Short!'
           : questType === 'secret'
@@ -206,61 +204,7 @@ export default function CreateQuestModal({
         return;
       }
 
-      if (platform === 'facebook' && !selectedFacebookMedia) {
-        setError('Bitte erst einen Facebook Post auswählen.');
-        return;
-      }
-
       if ((platform === 'youtube' || platform === 'tiktok') && !selectedQuestMedia) {
-        setError(`Bitte zuerst ein ${platform === 'youtube' ? 'YouTube' : 'TikTok'}-Video aus der Liste auswählen.`);
-        return;
-      }
-
-      const apiEndpoint = platform === 'tiktok'
-        ? '/api/tiktok-quests/quests'
-        : platform === 'instagram'
-        ? '/api/instagram-quests/quests'
-        : platform === 'facebook'
-        ? '/api/facebook-quests/quests'
-        : '/api/youtube-quests/quests';
-
-      const buildFacebookTitle = (item: AvailableFacebookMediaItem) => {
-        const firstLine = item.caption?.split(/[\n\r]/)[0].trim();
-        if (firstLine && firstLine.length > 0) return firstLine.slice(0, 100);
-        if (item.posted_at) return `Facebook Post vom ${new Date(item.posted_at).toLocaleDateString('de-DE')}`;
-        return 'Facebook Post';
-      };
-
-      const body = platform === 'instagram'
-        ? {
-            creatorWallet: walletAddress,
-            reelUrl: selectedMedia!.permalink || `https://www.instagram.com/reel/${selectedMedia!.shortcode}/`,
-            mediaId: selectedMedia!.graph_media_id,
-            videoTitle: buildInstagramTitle(selectedMedia!),
-            thumbnailUrl: selectedMedia!.thumbnail_url,
-            description: finalDescription || `💬 Kommentiere dieses Instagram Reel!`,
-            rewardAmount: Number(rewardAmount),
-            maxCompletions: Number(maxParticipants),
-            durationHours: finalDurationHours,
-            questType,
-          }
-        : platform === 'facebook'
-        ? {
-            creatorWallet: walletAddress,
-            postUrl: selectedFacebookMedia!.permalink,
-            postId: selectedFacebookMedia!.post_id,
-            videoTitle: buildFacebookTitle(selectedFacebookMedia!),
-            thumbnailUrl: selectedFacebookMedia!.thumbnail_url,
-            description: finalDescription,
-            rewardAmount: Number(rewardAmount),
-            maxCompletions: Number(maxParticipants),
-            durationHours: finalDurationHours,
-          }
-        : {
-            creatorWallet: walletAddress,
-            videoUrl: selectedQuestMedia?.video_url ?? '',
-            videoTitle: selectedQuestMedia?.title ?? '',
-        if ((platform === 'youtube' || platform === 'tiktok') && !selectedQuestMedia) {
         setError(`Bitte zuerst ein ${platform === 'youtube' ? 'YouTube' : 'TikTok'}-Video aus der Liste auswählen.`);
         return;
       }
@@ -301,12 +245,12 @@ export default function CreateQuestModal({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-      });2 gap-2">
-              <button
-                type="button"
-                disabled={!verified.youtube}
-                title={verified.youtube ? '' : 'YouTube-Konto im Profil verknüpfen'}
-                onClick={() => { setPlatform('youtube'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); setSelectedFacebookMedia
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error); return; }
+      setSuccess(true);
+      onCreated();
+    } catch {
       setError('Netzwerkfehler. Bitte versuche es erneut.');
     } finally {
       setCreating(false);
@@ -321,7 +265,7 @@ export default function CreateQuestModal({
             <FaCheck size={28} className="text-green-400 mx-auto mb-2" />
             <p className="text-green-300 font-semibold">Quest erfolgreich erstellt!</p>
             <p className="text-zinc-400 text-sm mt-1">Fans können jetzt deinen Quest sehen und abschließen.</p>
-          </div>setSelectedFacebookMedia(null); 
+          </div>
           <button onClick={handleClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">Schließen</button>
         </div>
       ) : (
@@ -336,31 +280,16 @@ export default function CreateQuestModal({
                 title={verified.youtube ? '' : 'YouTube-Konto im Profil verknüpfen'}
                 onClick={() => { setPlatform('youtube'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
-                  !verified.youtubesetSelectedFacebookMedia(null); }}
-                className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
-                  !verified.instagram
+                  !verified.youtube
                     ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed opacity-50'
-                    : platform === 'instagram'
-                    ? 'bg-pink-600 border-pink-500 text-white'
-                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-pink-600'
+                    : platform === 'youtube'
+                    ? 'bg-red-600 border-red-500 text-white'
+                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-red-600'
                 }`}
               >
-                <FaInstagram size={15} /> Instagram
+                <FaYoutube size={16} /> YouTube
               </button>
               <button
-                type="button"
-                disabled={!verified.facebook}
-                title={verified.facebook ? '' : 'Facebook-Konto im Profil verknüpfen'}
-                onClick={() => { setPlatform('facebook'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); setSelectedFacebookMedia(null); }}
-                className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
-                  !verified.facebook
-                    ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed opacity-50'
-                    : platform === 'facebook'
-                    ? 'bg-blue-600 border-blue-500 text-white'
-                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-blue-600'
-                }`}
-              >
-                <FaFacebookF size={14} /> Facebook
                 type="button"
                 disabled={!verified.tiktok}
                 title={verified.tiktok ? '' : 'TikTok-Konto im Profil verknüpfen'}
@@ -545,76 +474,7 @@ export default function CreateQuestModal({
                 {questType === 'engagement'
                   ? 'Fan muss liken und speichern. Jede Aktion = 1/2 des Rewards. Teilbelohnung möglich.'
                   : questType === 'repost'
-           /* Facebook – verfügbare Posts von Make */}
-          {platform === 'facebook' && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-zinc-300 text-sm font-medium">
-                  Post auswählen <span className="text-red-400">*</span>
-                </label>
-                <button type="button" onClick={fetchAvailableFacebookMedia} disabled={loadingFacebookMedia}
-                  className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 disabled:opacity-50">
-                  <FaSync size={10} className={loadingFacebookMedia ? 'animate-spin' : ''} /> Aktualisieren
-                </button>
-              </div>
-              {loadingFacebookMedia ? (
-                <div className="text-center text-zinc-500 py-8 text-sm bg-zinc-800/50 rounded-xl">
-                  <FaSync size={16} className="animate-spin mx-auto mb-2" />
-                  Lade Posts…
-                </div>
-              ) : availableFacebookMedia.length === 0 ? (
-                <div className="text-center py-6 text-sm bg-zinc-800/50 rounded-xl border border-zinc-700/50 space-y-1">
-                  <FaFacebookF size={24} className="mx-auto text-zinc-600 mb-2" />
-                  <p className="text-zinc-400">Keine Posts verfügbar.</p>
-                  <p className="text-zinc-600 text-xs">Auf „Aktualisieren" klicken um Posts von Make.com zu laden.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-2">
-                  {availableFacebookMedia.map((item) => {
-                    const postedDate = item.posted_at
-                      ? new Date(item.posted_at).toLocaleDateString('de-DE', { year: 'numeric', month: 'short', day: 'numeric' })
-                      : '';
-                    const title = (item.caption?.split(/[\n\r]/)[0].trim() || postedDate || 'Facebook Post').slice(0, 80);
-                    return (
-                      <div
-                        key={item.post_id}
-                        onClick={() => setSelectedFacebookMedia(item)}
-                        className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all flex flex-col ${
-                          selectedFacebookMedia?.post_id === item.post_id
-                            ? 'border-blue-500 ring-2 ring-blue-500/30 bg-blue-950/20'
-                            : 'border-zinc-700 hover:border-blue-400 hover:bg-zinc-800/50'
-                        }`}
-                      >
-                        {item.thumbnail_url ? (
-                          <img src={item.thumbnail_url} alt="" className="w-full h-28 object-cover" />
-                        ) : (
-                          <div className="w-full h-28 bg-zinc-700 flex items-center justify-center">
-                            <FaFacebookF size={24} className="text-zinc-500" />
-                          </div>
-                        )}
-                        <div className="p-2 bg-zinc-900 flex-1">
-                          <p className="text-white text-xs font-semibold line-clamp-2 leading-tight">{title}</p>
-                          {postedDate && <p className="text-zinc-500 text-[11px] mt-1">{postedDate}</p>}
-                        </div>
-                        {selectedFacebookMedia?.post_id === item.post_id && (
-                          <div className="absolute inset-0 bg-blue-500/10 flex items-center justify-center pointer-events-none rounded-lg">
-                            <FaCheck size={24} className="text-blue-400 drop-shadow-lg" />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              {selectedFacebookMedia && (
-                <p className="text-blue-400 text-xs mt-1.5 flex items-center gap-1">
-                  <FaCheck size={10} /> Ausgewählt: {(selectedFacebookMedia.caption?.split(/[\n\r]/)[0].trim() || selectedFacebookMedia.post_id).slice(0, 60)}
-                </p>
-              )}
-            </div>
-          )}
-
-          {(platform === 'youtube' || platform === 'tiktok')eel auf seinen Kanal reposten. Delta aus total_interactions wird gemessen.'
+                  ? 'Fan muss das Reel auf seinen Kanal reposten. Delta aus total_interactions wird gemessen.'
                   : questType === 'dm_share'
                   ? 'Fan teilt das Reel in seiner Story (Teil 1) und klickt den Link-DM-Link (Teil 2).'
                   : 'Make.com prüft via Instagram Graph API ob der Fan kommentiert hat.'}
