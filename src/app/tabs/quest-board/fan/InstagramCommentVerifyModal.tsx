@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { FaInstagram, FaCheck, FaSync, FaCoins, FaExternalLinkAlt } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry, VerifyResult } from '../types';
+import { formatCredits } from '../utils';
 
 interface InstagramCommentVerifyModalProps {
   quest: QuestIndexEntry | null;
