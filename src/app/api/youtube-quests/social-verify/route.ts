@@ -441,7 +441,8 @@ async function handlePost(req: NextRequest) {
         ? (await fetchFacebookProfileBrightData(cleanHandle) ?? await fetchFacebookProfile(cleanHandle))
         : await fetchFacebookProfile(cleanHandle);
       const profileName = profileForSave?.name ?? cleanHandle;
-      const profilePicture = profileForSave?.picture ?? `/api/avatar?platform=facebook&handle=${encodeURIComponent(cleanHandle)}`;
+      // Stabile Handle-URL in DB speichern (signierte CDN-URLs laufen ab)
+      const profilePicture = `/api/avatar?platform=facebook&handle=${encodeURIComponent(cleanHandle)}`;
 
       await upsertUserProfile(walletAddress, {
         facebookHandle: cleanHandle,

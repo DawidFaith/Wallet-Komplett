@@ -43,6 +43,30 @@ async function getInstagramAvatarUrl(handle: string): Promise<string | null> {
   }
 }
 
+async function getFacebookAvatarUrlBrightData(handle: string): Promise<string | null> {
+  const apiKey = process.env.BRIGHTDATA_API_KEY;
+  const zone = process.env.BRIGHTDATA_ZONE ?? 'web_unlocker1';
+  if (!apiKey) return null;
+  try {
+    const res = await fetch('https://api.brightdata.com/request', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        zone,
+        url: `https://www.facebook.com/${encodeURIComponent(handle)}`,
+        format: 'raw',
+      }),
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const ogImage = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]+)"/i)
+      ?? html.match(/<meta[^>]*content="([^"]+)"[^>]*property="og:image"/i);
+    return ogImage?.[1]?.replace(/&amp;/g, '&') ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const platform = searchParams.get('platform') as Platform | null;
@@ -51,8 +75,10 @@ export async function GET(req: NextRequest) {
 
   // Direkte URL proxyen (z.B. Facebook CDN, Apify-Profilbild)
   if (directUrl) {
+    const isFbCdn = directUrl.includes('fbcdn.net') || directUrl.includes('facebook.com');
+
+    // Erstversuch: direkt
     try {
-      const isFbCdn = directUrl.includes('fbcdn.net') || directUrl.includes('facebook.com');
       const imgRes = await fetch(directUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -68,6 +94,33 @@ export async function GET(req: NextRequest) {
         });
       }
     } catch { /* Fallback below */ }
+
+    // Fallback für Facebook CDN: über Bright Data Web Unlocker
+    if (isFbCdn) {
+      const apiKey = process.env.BRIGHTDATA_API_KEY;
+      const zone = process.env.BRIGHTDATA_ZONE ?? 'web_unlocker1';
+      if (apiKey) {
+        try {
+          const bdRes = await fetch('https://api.brightdata.com/request', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ zone, url: directUrl, format: 'raw' }),
+          });
+          if (bdRes.ok) {
+            const contentType = bdRes.headers.get('content-type') ?? 'image/jpeg';
+            const buffer = await bdRes.arrayBuffer();
+            return new NextResponse(buffer, {
+              status: 200,
+              headers: { 'Content-Type': contentType, 'Cache-Control': 'public, max-age=3600, s-maxage=3600' },
+            });
+          }
+        } catch { /* ignore */ }
+      }
+    }
+
     if (platform && handle) {
       return NextResponse.redirect(`https://unavatar.io/${platform}/${handle}`, 302);
     }
@@ -84,8 +137,10 @@ export async function GET(req: NextRequest) {
     avatarUrl = await getTikTokAvatarUrl(handle);
   } else if (platform === 'instagram') {
     avatarUrl = await getInstagramAvatarUrl(handle);
+  } else if (platform === 'facebook') {
+    avatarUrl = await getFacebookAvatarUrlBrightData(handle);
   }
-  // facebook + youtube: kein zuverlässiger öffentlicher Endpoint → Fallback
+  // youtube: kein zuverlässiger öffentlicher Endpoint → Fallback
 
   if (!avatarUrl) {
     // Fallback: redirect zu unavatar.io (funktioniert für instagram/facebook/youtube)
@@ -94,9 +149,28 @@ export async function GET(req: NextRequest) {
 
   // Bild proxyen
   try {
-    const imgRes = await fetch(avatarUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0' },
+    const isFbCdn = avatarUrl.includes('fbcdn.net') || avatarUrl.includes('facebook.com');
+    let imgRes = await fetch(avatarUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        ...(isFbCdn ? { 'Referer': 'https://www.facebook.com/' } : {}),
+      },
     });
+
+    // Facebook CDN-Fallback via Bright Data falls direkt blockiert
+    if (!imgRes.ok && isFbCdn) {
+      const apiKey = process.env.BRIGHTDATA_API_KEY;
+      const zone = process.env.BRIGHTDATA_ZONE ?? 'web_unlocker1';
+      if (apiKey) {
+        const bdRes = await fetch('https://api.brightdata.com/request', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ zone, url: avatarUrl, format: 'raw' }),
+        });
+        if (bdRes.ok) imgRes = bdRes;
+      }
+    }
+
     if (!imgRes.ok) {
       return NextResponse.redirect(`https://unavatar.io/${platform}/${handle}`, 302);
     }
