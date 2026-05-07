@@ -429,13 +429,13 @@ export default function CreateQuestModal({
                 <button
                   type="button"
                   onClick={() => setQuestType('dm_share')}
-                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors col-span-2 ${
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'dm_share'
                       ? 'bg-gradient-to-r from-purple-600 to-pink-600 border-purple-500 text-white'
                       : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-purple-600'
                   }`}
                 >
-                  📩 DM-Share (Story + Link-Klick)
+                  📩 Story Quest
                 </button>
               </div>
               <p className="text-zinc-500 text-xs mt-1">
