@@ -15,14 +15,14 @@ import InstagramQuestCard from '../quests/instagram/InstagramQuestCard';
 import InstagramCommentVerifyModal from './InstagramCommentVerifyModal';
 import InstagramLikeVerifyModal from './InstagramLikeVerifyModal';
 import InstagramDmShareModal from './InstagramDmShareModal';
-import type { QuestIndexEntry, YouTubeBinding, VerifyResult, ClaimResult } from '../types';
+import type { QuestIndexEntry, VerifiedPlatforms, VerifyResult, ClaimResult } from '../types';
 
 interface FanBoardProps {
   walletAddress: string;
-  binding: YouTubeBinding;
+  verified: VerifiedPlatforms;
 }
 
-export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
+export default function FanBoard({ walletAddress, verified }: FanBoardProps) {
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -188,11 +188,19 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
     }
   };
 
-  // Quests nach Plattform und Typ gruppieren
-  const youtubeQuests = quests.filter((q) => q.platform === 'youtube');
-  const tiktokCommentQuests = quests.filter((q) => q.platform === 'tiktok' && q.type !== 'engagement');
-  const tiktokEngagementQuests = quests.filter((q) => q.platform === 'tiktok' && q.type === 'engagement');
-  const instagramQuests = quests.filter((q) => q.platform === 'instagram');
+  // Quests nach Plattform und Typ gruppieren – nur verifizierte Plattformen anzeigen
+  const youtubeQuests = verified.youtube
+    ? quests.filter((q) => q.platform === 'youtube')
+    : [];
+  const tiktokCommentQuests = verified.tiktok
+    ? quests.filter((q) => q.platform === 'tiktok' && q.type !== 'engagement')
+    : [];
+  const tiktokEngagementQuests = verified.tiktok
+    ? quests.filter((q) => q.platform === 'tiktok' && q.type === 'engagement')
+    : [];
+  const instagramQuests = verified.instagram
+    ? quests.filter((q) => q.platform === 'instagram')
+    : [];
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-5">

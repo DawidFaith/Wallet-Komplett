@@ -6,15 +6,16 @@ import { FaPlus, FaSync, FaTrophy, FaCoins, FaExternalLinkAlt, FaTimes } from 'r
 import CreditsBox from '../components/CreditsBox';
 import DepositModal from './DepositModal';
 import CreateQuestModal from './CreateQuestModal';
-import type { QuestIndexEntry, YouTubeBinding } from '../types';
+import type { QuestIndexEntry, YouTubeBinding, VerifiedPlatforms } from '../types';
 import { getProgressPercent } from '../utils';
 
 interface CreatorBoardProps {
   walletAddress: string;
   binding: YouTubeBinding | null;
+  verified: VerifiedPlatforms;
 }
 
-export default function CreatorBoard({ walletAddress, binding }: CreatorBoardProps) {
+export default function CreatorBoard({ walletAddress, binding: _binding, verified }: CreatorBoardProps) {
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -173,6 +174,7 @@ export default function CreatorBoard({ walletAddress, binding }: CreatorBoardPro
         onClose={() => setShowCreateModal(false)}
         walletAddress={walletAddress}
         creatorBalance={creatorBalance}
+        verified={verified}
         onCreated={() => { setShowCreateModal(false); loadCreatorQuests(); }}
         onOpenDeposit={() => setShowDeposit(true)}
       />

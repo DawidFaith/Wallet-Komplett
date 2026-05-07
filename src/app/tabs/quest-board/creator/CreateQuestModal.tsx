@@ -27,6 +27,7 @@ interface CreateQuestModalProps {
   onClose: () => void;
   walletAddress: string;
   creatorBalance: number;
+  verified: { youtube: boolean; instagram: boolean; tiktok: boolean; facebook: boolean };
   onCreated: () => void;
   onOpenDeposit: () => void;
 }
@@ -36,13 +37,16 @@ export default function CreateQuestModal({
   onClose,
   walletAddress,
   creatorBalance,
+  verified,
   onCreated,
   onOpenDeposit,
 }: CreateQuestModalProps) {
   const [description, setDescription] = useState('');
   const [rewardAmount, setRewardAmount] = useState('100');
   const [maxParticipants, setMaxParticipants] = useState('10');
-  const [platform, setPlatform] = useState<'youtube' | 'tiktok' | 'instagram'>('youtube');
+  const [platform, setPlatform] = useState<'youtube' | 'tiktok' | 'instagram'>(
+    verified.youtube ? 'youtube' : verified.tiktok ? 'tiktok' : verified.instagram ? 'instagram' : 'youtube'
+  );
   const [questType, setQuestType] = useState<'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost' | 'dm_share'>('comment');
   const [secretCode, setSecretCode] = useState('');
   const [durationHours, setDurationHours] = useState('24');
@@ -256,9 +260,13 @@ export default function CreateQuestModal({
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
+                disabled={!verified.youtube}
+                title={verified.youtube ? '' : 'YouTube-Konto im Profil verknüpfen'}
                 onClick={() => { setPlatform('youtube'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
-                  platform === 'youtube'
+                  !verified.youtube
+                    ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed opacity-50'
+                    : platform === 'youtube'
                     ? 'bg-red-600 border-red-500 text-white'
                     : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-red-600'
                 }`}
@@ -267,9 +275,13 @@ export default function CreateQuestModal({
               </button>
               <button
                 type="button"
+                disabled={!verified.tiktok}
+                title={verified.tiktok ? '' : 'TikTok-Konto im Profil verknüpfen'}
                 onClick={() => { setPlatform('tiktok'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
-                  platform === 'tiktok'
+                  !verified.tiktok
+                    ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed opacity-50'
+                    : platform === 'tiktok'
                     ? 'bg-cyan-600 border-cyan-500 text-white'
                     : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-cyan-600'
                 }`}
@@ -278,9 +290,13 @@ export default function CreateQuestModal({
               </button>
               <button
                 type="button"
+                disabled={!verified.instagram}
+                title={verified.instagram ? '' : 'Instagram-Konto im Profil verknüpfen'}
                 onClick={() => { setPlatform('instagram'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
-                  platform === 'instagram'
+                  !verified.instagram
+                    ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed opacity-50'
+                    : platform === 'instagram'
                     ? 'bg-pink-600 border-pink-500 text-white'
                     : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-pink-600'
                 }`}

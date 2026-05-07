@@ -46,3 +46,17 @@ export interface ClaimResult {
 }
 
 export type QuestBoardView = 'fan' | 'creator';
+
+export interface VerifiedPlatforms {
+  youtube: boolean;
+  instagram: boolean;
+  tiktok: boolean;
+  facebook: boolean;
+}
+
+export const PLATFORM_LABELS: Record<keyof VerifiedPlatforms, string> = {
+  youtube: 'YouTube',
+  instagram: 'Instagram',
+  tiktok: 'TikTok',
+  facebook: 'Facebook',
+};
