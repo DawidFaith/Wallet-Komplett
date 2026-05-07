@@ -70,6 +70,7 @@ export default function CreateQuestModal({
   const [selectedMedia, setSelectedMedia] = useState<AvailableMediaItem | null>(null);
   const [availableQuestMedia, setAvailableQuestMedia] = useState<AvailableQuestMediaItem[]>([]);
   const [loadingQuestMedia, setLoadingQuestMedia] = useState(false);
+  const [questMediaError, setQuestMediaError] = useState<string>('');
   const [selectedQuestMediaId, setSelectedQuestMediaId] = useState<string | null>(null);
   const selectedQuestMedia = availableQuestMedia.find((item) => item.video_id === selectedQuestMediaId) ?? null;
 
@@ -115,17 +116,26 @@ export default function CreateQuestModal({
   const fetchAvailableQuestMedia = async () => {
     if (!walletAddress) return;
     setLoadingQuestMedia(true);
+    setQuestMediaError('');
     try {
       const endpoint = platform === 'youtube'
         ? `/api/youtube-quests/available-media?wallet=${encodeURIComponent(walletAddress)}`
         : `/api/tiktok-quests/available-media?wallet=${encodeURIComponent(walletAddress)}`;
 
       const res = await fetch(endpoint);
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setQuestMediaError(data?.error ?? `Fehler ${res.status}: Videos konnten nicht geladen werden`);
+        setAvailableQuestMedia([]);
+        return;
+      }
       setAvailableQuestMedia(data.media ?? []);
       if (selectedQuestMediaId && !(data.media ?? []).some((item: AvailableQuestMediaItem) => item.video_id === selectedQuestMediaId)) {
         setSelectedQuestMediaId(null);
       }
+    } catch (err) {
+      setQuestMediaError(err instanceof Error ? err.message : 'Netzwerkfehler beim Laden der Videos');
+      setAvailableQuestMedia([]);
     } finally {
       setLoadingQuestMedia(false);
     }
@@ -593,7 +603,11 @@ export default function CreateQuestModal({
                 </div>
               ) : (
                 <div className="text-center py-4 text-xs bg-zinc-800/50 rounded-xl border border-zinc-700/50 text-zinc-500 mb-3">
-                  Keine Videos gefunden. Prüfe, ob dein {platform === 'youtube' ? 'YouTube-Kanal' : 'TikTok-Account'} korrekt verknüpft ist.
+                  {questMediaError ? (
+                    <span className="text-red-400">{questMediaError}</span>
+                  ) : (
+                    <>Keine Videos gefunden. Prüfe, ob dein {platform === 'youtube' ? 'YouTube-Kanal' : 'TikTok-Account'} korrekt verknüpft ist.</>
+                  )}
                 </div>
               )}
 
