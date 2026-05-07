@@ -224,16 +224,22 @@ export async function GET(req: NextRequest) {
     if (media.length > 0) source = 'bright';
 
     if (media.length === 0 && RAPIDAPI_KEY) {
-      const candidates = [
-        `/api/user/posts?uniqueId=${encodeURIComponent(profile.tiktokHandle)}&count=20&cursor=0`,
-        `/api/user/posts?secUid=&uniqueId=${encodeURIComponent(profile.tiktokHandle)}&count=20&cursor=0`,
-        `/api/user/posts?unique_id=${encodeURIComponent(profile.tiktokHandle)}&count=20&cursor=0`,
-      ];
+      try {
+        // 1) secUid via /api/user/info auflösen
+        const cleanHandle = profile.tiktokHandle.replace(/^@/, '');
+        const info = await rapidGet(`/api/user/info?uniqueId=${encodeURIComponent(cleanHandle)}`) as {
+          userInfo?: { user?: { secUid?: string } };
+          data?: { user?: { secUid?: string } };
+        };
+        const secUid = info?.userInfo?.user?.secUid ?? info?.data?.user?.secUid;
 
-      for (const path of candidates) {
-        try {
-          const data = await rapidGet(path) as {
+        if (secUid) {
+          // 2) Posts via secUid laden
+          const data = await rapidGet(
+            `/api/user/posts?secUid=${encodeURIComponent(secUid)}&count=35&cursor=0`,
+          ) as {
             itemList?: TikTokPost[];
+            data?: { itemList?: TikTokPost[]; item_list?: TikTokPost[] };
             item_list?: TikTokPost[];
             items?: TikTokPost[];
             aweme_list?: TikTokPost[];
@@ -241,19 +247,18 @@ export async function GET(req: NextRequest) {
 
           const posts =
             data.itemList ??
+            data.data?.itemList ??
+            data.data?.item_list ??
             data.item_list ??
             data.items ??
             data.aweme_list ??
             [];
 
           media = mapPostsToMedia(posts, profile.tiktokHandle);
-          if (media.length > 0) {
-            source = 'rapid';
-            break;
-          }
-        } catch {
-          // Nächsten Fallback-Endpunkt probieren
+          if (media.length > 0) source = 'rapid';
         }
+      } catch (rapidErr) {
+        console.error('[tiktok available-media] RapidAPI error:', rapidErr);
       }
     }
 
