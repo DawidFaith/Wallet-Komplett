@@ -123,7 +123,9 @@ export async function POST(req: NextRequest) {
       }
 
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
-      const clickToken = profile.instagramHandle.toLowerCase();
+      // click_token muss UNIQUE sein → handle alleine kollidiert wenn der User
+      // mehrere DM-Share Quests parallel hat. Daher kombinieren mit questId.
+      const clickToken = `${profile.instagramHandle.toLowerCase()}:${questId}`;
 
       await upsertInstagramDmVerification(questId, normalized, profile.instagramHandle, clickToken, expiresAt);
       // Baseline direkt setzen ohne click_verified zu ändern
