@@ -140,6 +140,14 @@ async function fetchFacebookProfile(handle: string): Promise<{ name: string; pic
         ? ogTitle[1].replace(/\s*\|\s*Facebook.*$/i, '').trim()
         : cleanHandle;
 
+      // Bild aus og:image
+      const ogImage = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]+)"/i)
+        ?? html.match(/<meta[^>]*content="([^"]+)"[^>]*property="og:image"/i);
+      const rawPic = ogImage?.[1]?.replace(/&amp;/g, '&') ?? null;
+      const picture = rawPic
+        ? `/api/avatar?url=${encodeURIComponent(rawPic)}&platform=facebook&handle=${encodeURIComponent(cleanHandle)}`
+        : `/api/avatar?platform=facebook&handle=${encodeURIComponent(cleanHandle)}`;
+
       // Bio aus og:description
       const ogDesc = html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]+)"/i)
         ?? html.match(/<meta[^>]*content="([^"]+)"[^>]*property="og:description"/i);
@@ -149,7 +157,7 @@ async function fetchFacebookProfile(handle: string): Promise<{ name: string; pic
 
       return {
         name,
-        picture: `/api/avatar?platform=facebook&handle=${encodeURIComponent(cleanHandle)}`,
+        picture,
         bio,
       };
     }
@@ -241,9 +249,16 @@ async function fetchFacebookProfileBrightData(handle: string): Promise<{
 
     if (!name || name.toLowerCase() === handle.toLowerCase()) return null;
 
+    const ogImage = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]+)"/i)
+      ?? html.match(/<meta[^>]*content="([^"]+)"[^>]*property="og:image"/i);
+    const rawPic = ogImage?.[1]?.replace(/&amp;/g, '&') ?? null;
+    const picture = rawPic
+      ? `/api/avatar?url=${encodeURIComponent(rawPic)}&platform=facebook&handle=${encodeURIComponent(handle)}`
+      : `/api/avatar?platform=facebook&handle=${encodeURIComponent(handle)}`;
+
     return {
       name,
-      picture: `/api/avatar?platform=facebook&handle=${encodeURIComponent(handle)}`,
+      picture,
     };
   } catch {
     return null;

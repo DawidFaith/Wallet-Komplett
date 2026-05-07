@@ -49,10 +49,16 @@ export async function GET(req: NextRequest) {
   const handle = searchParams.get('handle')?.replace(/^@/, '').trim();
   const directUrl = searchParams.get('url'); // direkte Bild-URL (z.B. von Apify)
 
-  // Direkte URL proxyen (z.B. Apify-Profilbild)
+  // Direkte URL proxyen (z.B. Facebook CDN, Apify-Profilbild)
   if (directUrl) {
     try {
-      const imgRes = await fetch(directUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+      const isFbCdn = directUrl.includes('fbcdn.net') || directUrl.includes('facebook.com');
+      const imgRes = await fetch(directUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          ...(isFbCdn ? { 'Referer': 'https://www.facebook.com/' } : {}),
+        },
+      });
       if (imgRes.ok) {
         const contentType = imgRes.headers.get('content-type') ?? 'image/jpeg';
         const buffer = await imgRes.arrayBuffer();
