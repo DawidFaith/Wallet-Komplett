@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
     videoTitle: videoTitle ?? 'Facebook Post',
     videoThumbnail: thumbnailUrl ?? '',
     videoUrl: postUrl,
-    description: description ?? '💬 Kommentiere diesen Facebook Post und tagge @dawidfaith!',
+    description: description ?? '💬 Kommentiere diesen Facebook Post!',
     rewardAmount: reward,
     maxCompletions: max,
     completions: 0,

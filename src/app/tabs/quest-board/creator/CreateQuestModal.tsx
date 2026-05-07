@@ -220,7 +220,7 @@ export default function CreateQuestModal({
             ? '📩 Teile dieses Reel in deiner Story und klicke den DM-Link!'
             : '💬 Kommentiere dieses Instagram Reel!'
           : platform === 'facebook'
-          ? '💬 Kommentiere diesen Facebook Post und tagge @dawidfaith!'
+          ? '💬 Kommentiere diesen Facebook Post!'
           : questType === 'like'
           ? '👍 Like dieses YouTube Short!'
           : questType === 'secret'

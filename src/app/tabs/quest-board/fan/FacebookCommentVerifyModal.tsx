@@ -128,7 +128,7 @@ export default function FacebookCommentVerifyModal({
             <p className="text-zinc-300 text-sm font-semibold">So funktioniert&apos;s:</p>
             <ol className="space-y-1.5 text-zinc-400 text-sm">
               <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">1.</span>Öffne den Post über den Link oben</li>
-              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">2.</span>Schreibe einen Kommentar und tagge <span className="text-blue-300">@dawidfaith</span></li>
+              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">2.</span>Schreibe einen Kommentar unter dem Post</li>
               <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">3.</span>Komm zurück und klicke &bdquo;Verifizieren&ldquo;</li>
             </ol>
           </div>
