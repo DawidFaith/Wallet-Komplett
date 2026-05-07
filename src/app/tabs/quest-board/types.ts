@@ -1,7 +1,7 @@
 // ─── Gemeinsame Typen für das Quest Board ────────────────────────────────────
 
 export type Platform = 'youtube' | 'instagram' | 'tiktok' | 'facebook';
-export type QuestType = 'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost';
+export type QuestType = 'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost' | 'dm_share';
 
 export const DFAITH_TOKEN = '0x69eFD833288605f320d77eB2aB99DDE62919BbC1';
 export const DFAITH_DECIMALS = 2;

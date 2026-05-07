@@ -253,9 +253,28 @@ export async function POST(req: NextRequest) {
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_instagram_mentions_username ON instagram_mentions(comment_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_instagram_mentions_received ON instagram_mentions(received_at DESC)`;
 
+    // ── Instagram DM Share Verifikationen ────────────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS instagram_dm_verifications (
+        quest_id          TEXT        NOT NULL,
+        wallet_address    TEXT        NOT NULL,
+        instagram_handle  TEXT        NOT NULL DEFAULT '',
+        click_token       TEXT        NOT NULL,
+        click_verified    BOOLEAN     NOT NULL DEFAULT FALSE,
+        clicked_at        TIMESTAMPTZ,
+        baseline_shares   INTEGER     NOT NULL DEFAULT 0,
+        story_verified    BOOLEAN     NOT NULL DEFAULT FALSE,
+        story_received_at TIMESTAMPTZ,
+        expires_at        TIMESTAMPTZ NOT NULL,
+        started_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (quest_id, wallet_address)
+      )
+    `;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_dm_verif_token ON instagram_dm_verifications(click_token)`;
+
     return NextResponse.json({
       success: true,
-      message: 'Alle Tabellen (inkl. dfaith_credits, expires_at, tiktok_engagement_verifications, instagram_like_verifications, device_fingerprints, instagram_mentions) erstellt.',
+      message: 'Alle Tabellen (inkl. dfaith_credits, expires_at, tiktok_engagement_verifications, instagram_like_verifications, device_fingerprints, instagram_mentions, instagram_dm_verifications) erstellt.',
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

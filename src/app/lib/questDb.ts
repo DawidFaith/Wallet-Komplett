@@ -15,7 +15,7 @@ import { getDb } from './db';
 // ─── Typen ───────────────────────────────────────────────────────────────────
 
 export type Platform = 'youtube' | 'tiktok' | 'instagram';
-export type QuestType = 'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost'; // erweiterbar: | 'subscribe'
+export type QuestType = 'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost' | 'dm_share'; // erweiterbar: | 'subscribe'
 
 export interface QuestIndexEntry {
   id: string;
@@ -941,6 +941,175 @@ export async function deleteInstagramLikeVerification(
     DELETE FROM instagram_like_verifications
     WHERE quest_id = ${questId} AND wallet_address = ${walletAddress.toLowerCase()}
   `;
+}
+
+// ─── Instagram DM Share Verifikationen ────────────────────────────────────────
+
+export interface InstagramDmVerification {
+  questId: string;
+  walletAddress: string;
+  instagramHandle: string;
+  clickToken: string;
+  clickVerified: boolean;
+  clickedAt: string | null;
+  baselineShares: number;
+  storyVerified: boolean;
+  storyReceivedAt: string | null;
+  expiresAt: string;
+  startedAt: string;
+}
+
+export async function upsertInstagramDmVerification(
+  questId: string,
+  walletAddress: string,
+  instagramHandle: string,
+  clickToken: string,
+  expiresAt: string,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO instagram_dm_verifications
+      (quest_id, wallet_address, instagram_handle, click_token, expires_at, started_at)
+    VALUES
+      (${questId}, ${walletAddress.toLowerCase()}, ${instagramHandle}, ${clickToken}, ${expiresAt}, NOW())
+    ON CONFLICT (quest_id, wallet_address) DO UPDATE SET
+      click_token     = EXCLUDED.click_token,
+      instagram_handle = EXCLUDED.instagram_handle,
+      click_verified  = FALSE,
+      clicked_at      = NULL,
+      story_verified  = FALSE,
+      story_received_at = NULL,
+      baseline_shares = 0,
+      expires_at      = EXCLUDED.expires_at,
+      started_at      = NOW()
+  `;
+}
+
+export async function getInstagramDmVerification(
+  questId: string,
+  walletAddress: string,
+): Promise<InstagramDmVerification | null> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT * FROM instagram_dm_verifications
+    WHERE quest_id = ${questId} AND wallet_address = ${walletAddress.toLowerCase()}
+    LIMIT 1
+  `;
+  if (!rows.length) return null;
+  return rowToDmVerification(rows[0]);
+}
+
+export async function getInstagramDmVerificationByToken(
+  clickToken: string,
+): Promise<InstagramDmVerification | null> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT * FROM instagram_dm_verifications
+    WHERE click_token = ${clickToken}
+    LIMIT 1
+  `;
+  if (!rows.length) return null;
+  return rowToDmVerification(rows[0]);
+}
+
+/** Findet die neueste aktive DM-Verifikation für einen Instagram-Handle (universeller Link) */
+export async function getInstagramDmVerificationByHandle(
+  instagramHandle: string,
+): Promise<InstagramDmVerification | null> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT * FROM instagram_dm_verifications
+    WHERE instagram_handle = ${instagramHandle.toLowerCase()}
+    ORDER BY started_at DESC
+    LIMIT 1
+  `;
+  if (!rows.length) return null;
+  return rowToDmVerification(rows[0]);
+}
+
+export async function markInstagramDmClicked(
+  clickToken: string,
+  baselineShares: number,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    UPDATE instagram_dm_verifications
+    SET click_verified = TRUE, clicked_at = NOW(), baseline_shares = ${baselineShares}
+    WHERE click_token = ${clickToken}
+  `;
+}
+
+export async function markInstagramDmClickedByHandle(
+  instagramHandle: string,
+  baselineShares: number,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    UPDATE instagram_dm_verifications
+    SET click_verified = TRUE, clicked_at = NOW(), baseline_shares = ${baselineShares}
+    WHERE instagram_handle = ${instagramHandle.toLowerCase()}
+  `;
+}
+
+export async function markInstagramDmStoryVerified(
+  questId: string,
+  walletAddress: string,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    UPDATE instagram_dm_verifications
+    SET story_verified = TRUE, story_received_at = NOW()
+    WHERE quest_id = ${questId} AND wallet_address = ${walletAddress.toLowerCase()}
+  `;
+}
+
+export async function markInstagramDmStoryVerifiedByToken(
+  clickToken: string,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    UPDATE instagram_dm_verifications
+    SET story_verified = TRUE, story_received_at = NOW()
+    WHERE click_token = ${clickToken}
+  `;
+}
+
+export async function markInstagramDmStoryVerifiedByHandle(
+  instagramHandle: string,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    UPDATE instagram_dm_verifications
+    SET story_verified = TRUE, story_received_at = NOW()
+    WHERE instagram_handle = ${instagramHandle.toLowerCase()}
+  `;
+}
+
+export async function deleteInstagramDmVerification(
+  questId: string,
+  walletAddress: string,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    DELETE FROM instagram_dm_verifications
+    WHERE quest_id = ${questId} AND wallet_address = ${walletAddress.toLowerCase()}
+  `;
+}
+
+function rowToDmVerification(r: any): InstagramDmVerification {
+  return {
+    questId: r.quest_id,
+    walletAddress: r.wallet_address,
+    instagramHandle: r.instagram_handle,
+    clickToken: r.click_token,
+    clickVerified: Boolean(r.click_verified),
+    clickedAt: r.clicked_at ? (r.clicked_at instanceof Date ? r.clicked_at.toISOString() : r.clicked_at) : null,
+    baselineShares: Number(r.baseline_shares ?? 0),
+    storyVerified: Boolean(r.story_verified),
+    storyReceivedAt: r.story_received_at ? (r.story_received_at instanceof Date ? r.story_received_at.toISOString() : r.story_received_at) : null,
+    expiresAt: r.expires_at instanceof Date ? r.expires_at.toISOString() : r.expires_at,
+    startedAt: r.started_at instanceof Date ? r.started_at.toISOString() : r.started_at,
+  };
 }
 
 // ─── User Profile ─────────────────────────────────────────────────────────────

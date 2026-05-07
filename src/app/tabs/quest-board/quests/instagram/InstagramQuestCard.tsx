@@ -17,6 +17,7 @@ const QUEST_TYPE_CONFIG = {
   comment:    { label: 'Kommentar',        icon: <FaComment size={8} />,  bg: 'bg-purple-600/90',                                        btn: 'Kommentar verifizieren' },
   engagement: { label: 'Like & Speichern', icon: <FaHeart size={8} />,   bg: 'bg-gradient-to-r from-red-600/90 to-yellow-600/90',       btn: 'Engagement verifizieren' },
   repost:     { label: 'Repost',           icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-blue-600/90 to-cyan-600/90',        btn: 'Repost verifizieren' },
+  dm_share:   { label: 'DM-Share',         icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-pink-600/90 to-purple-600/90',      btn: 'DM-Share Quest starten' },
 } as const;
 
 export default function InstagramQuestCard({ quest, isCompleted, onComplete }: InstagramQuestCardProps) {

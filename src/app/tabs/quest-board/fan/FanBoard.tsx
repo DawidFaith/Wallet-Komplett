@@ -14,6 +14,7 @@ import TiktokEngagementQuestCard from '../quests/tiktok/TiktokEngagementQuestCar
 import InstagramQuestCard from '../quests/instagram/InstagramQuestCard';
 import InstagramCommentVerifyModal from './InstagramCommentVerifyModal';
 import InstagramLikeVerifyModal from './InstagramLikeVerifyModal';
+import InstagramDmShareModal from './InstagramDmShareModal';
 import type { QuestIndexEntry, YouTubeBinding, VerifyResult, ClaimResult } from '../types';
 
 interface FanBoardProps {
@@ -38,6 +39,7 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
   const [tiktokEngagementQuest, setTiktokEngagementQuest] = useState<QuestIndexEntry | null>(null);
   const [instagramCommentQuest, setInstagramCommentQuest] = useState<QuestIndexEntry | null>(null);
   const [instagramLikeQuest, setInstagramLikeQuest] = useState<QuestIndexEntry | null>(null);
+  const [instagramDmShareQuest, setInstagramDmShareQuest] = useState<QuestIndexEntry | null>(null);
 
   const loadQuests = useCallback(async () => {
     setLoading(true);
@@ -177,7 +179,9 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
   const handleInstagramVerify = (questId: string) => {
     const quest = quests.find((q) => q.id === questId) ?? null;
     if (!quest) return;
-    if (quest.type === 'like' || quest.type === 'save' || (quest.type as string) === 'engagement' || (quest.type as string) === 'repost') {
+    if ((quest.type as string) === 'dm_share') {
+      setInstagramDmShareQuest(quest);
+    } else if (quest.type === 'like' || quest.type === 'save' || (quest.type as string) === 'engagement' || (quest.type as string) === 'repost') {
       setInstagramLikeQuest(quest);
     } else {
       setInstagramCommentQuest(quest);
@@ -373,9 +377,24 @@ export default function FanBoard({ walletAddress, binding }: FanBoardProps) {
               prev.map((q) => q.id === instagramCommentQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
           }
-          // Modal NICHT schließen – onClose schließt nach dem Erfolgs-Screen
         }}
         onClose={() => setInstagramCommentQuest(null)}
+      />
+
+      {/* Verifizierungs-Modal (Instagram DM-Share) */}
+      <InstagramDmShareModal
+        quest={instagramDmShareQuest}
+        walletAddress={walletAddress}
+        onCompleted={(amount) => {
+          if (instagramDmShareQuest) {
+            setCompletedIds((prev) => [...prev, instagramDmShareQuest.id]);
+            setCredits((prev) => prev + amount);
+            setQuests((prev) =>
+              prev.map((q) => q.id === instagramDmShareQuest.id ? { ...q, completions: q.completions + 1 } : q)
+            );
+          }
+        }}
+        onClose={() => setInstagramDmShareQuest(null)}
       />
     </div>
   );
