@@ -124,6 +124,17 @@ export const MIGRATION_SQL = `
   CREATE UNIQUE INDEX IF NOT EXISTS idx_instagram_mentions_username ON instagram_mentions(comment_id);
   CREATE INDEX IF NOT EXISTS idx_instagram_mentions_received ON instagram_mentions(received_at DESC);
 
+  -- Facebook Comment Events (von Make.com gepushed, analog zu Instagram)
+  CREATE TABLE IF NOT EXISTS facebook_mentions (
+    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    username    TEXT        NOT NULL,
+    post_id     TEXT        NOT NULL DEFAULT '',
+    received_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_facebook_mentions_username ON facebook_mentions(username);
+  CREATE INDEX IF NOT EXISTS idx_facebook_mentions_received ON facebook_mentions(received_at DESC);
+
   CREATE INDEX IF NOT EXISTS idx_quests_active    ON quests(is_active, created_at DESC);
   CREATE INDEX IF NOT EXISTS idx_quests_creator   ON quests(creator_wallet);
   CREATE INDEX IF NOT EXISTS idx_completions_wallet ON quest_completions(wallet_address);

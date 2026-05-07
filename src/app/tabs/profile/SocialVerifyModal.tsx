@@ -6,8 +6,6 @@ import {
   FaInstagram, FaTiktok, FaFacebook,
   FaCheck, FaSync, FaCopy, FaUnlink, FaChevronRight, FaUserCheck,
 } from 'react-icons/fa';
-import { inAppWallet } from 'thirdweb/wallets';
-import { client } from '../../client';
 
 type Platform = 'instagram' | 'tiktok' | 'facebook';
 
@@ -46,11 +44,11 @@ const PLATFORM_CONFIG = {
     color: 'blue',
     handlePrefix: '',
     placeholder: 'dein.name oder Profil-URL',
-    bioInstructions: (code: string) => [
-      'Öffne Facebook → dein Profil',
-      'Klicke auf „Profil bearbeiten" → „Bio"',
-      `Füge „${code}" in die Bio ein`,
-      'Speichere und komm zurück',
+    bioInstructions: (_code: string) => [
+      'Öffne Facebook',
+      'Gehe auf einen Post oder ein Video von @dawidfaith',
+      'Schreibe einen Kommentar und tagge @dawidfaith darin',
+      'Komm zurück und klicke auf „Verifizieren"',
     ],
     profileUrl: (handle: string) => `https://www.facebook.com/${handle}`,
   },
@@ -122,7 +120,7 @@ export default function SocialVerifyModal({
   const [codeCopied, setCodeCopied] = useState(false);
   const [name, setName] = useState(currentName);
   const [picture, setPicture] = useState(currentPicture);
-  const [fbOAuthLoading, setFbOAuthLoading] = useState(false);
+  const [latestFbPost, setLatestFbPost] = useState<{ permalink: string; thumbnail: string; caption: string } | null>(null);
 
   const call = async (body: object) => {
     const res = await fetch('/api/youtube-quests/social-verify', {
@@ -142,6 +140,24 @@ export default function SocialVerifyModal({
     if (!handle.trim()) return;
     setLoading(true); setError('');
     try {
+      if (platform === 'facebook') {
+        // Neuesten Facebook-Post direkt von Make holen (kein social-verify für Preview)
+        const mediaRes = await fetch('/api/facebook-quests/available-media');
+        const mediaData = await mediaRes.json();
+        const posts: Array<{ post_id: string; permalink: string; thumbnail_url: string; caption: string }> = mediaData.media ?? [];
+        if (posts.length > 0) {
+          setLatestFbPost({
+            permalink: posts[0].permalink,
+            thumbnail: posts[0].thumbnail_url,
+            caption: posts[0].caption,
+          });
+        }
+        const fakePreview = { name: handle.trim(), picture: '', verificationCode: '' };
+        setPreview(fakePreview);
+        savePreviewCache(handle.trim(), fakePreview);
+        setStep('instructions');
+        return;
+      }
       const { ok, data } = await call({ handle: handle.trim(), action: 'preview' });
       if (!ok) { setError(data.error ?? 'Fehler'); return; }
       setPreview(data);
@@ -151,12 +167,11 @@ export default function SocialVerifyModal({
     finally { setLoading(false); }
   };
 
-  const handleVerify = async (facebookId?: string) => {
+  const handleVerify = async () => {
     if (!preview) return;
     setLoading(true); setError('');
     try {
-      const extra = facebookId ? { facebookId } : {};
-      const { ok, data } = await call({ handle: handle.trim(), action: 'verify', ...extra });
+      const { ok, data } = await call({ handle: handle.trim(), action: 'verify' });
       if (!ok) { setError(data.error ?? 'Serverfehler'); return; }
       if (data.notFound) { setError(data.message); return; }
       clearPreviewCache();
@@ -165,25 +180,6 @@ export default function SocialVerifyModal({
       onDone();
     } catch { setError('Netzwerkfehler'); }
     finally { setLoading(false); }
-  };
-
-  const handleFacebookOAuth = async () => {
-    setFbOAuthLoading(true); setError('');
-    const wallet = inAppWallet();
-    try {
-      const acct = await wallet.connect({ client, strategy: 'facebook' });
-      await handleVerify(acct.address);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.toLowerCase().includes('cancel') || msg.toLowerCase().includes('abbruch')) {
-        setError('Facebook-Anmeldung abgebrochen.');
-      } else {
-        setError('Facebook-Login fehlgeschlagen. Bitte erneut versuchen.');
-      }
-    } finally {
-      try { await wallet.disconnect(); } catch { /* ignore */ }
-      setFbOAuthLoading(false);
-    }
   };
 
   const handleUnlink = async () => {
@@ -283,8 +279,8 @@ export default function SocialVerifyModal({
                 ) : platform === 'facebook' ? (
                   <>
                     <p>1. Gib deinen Facebook-Profilnamen (aus der URL) ein</p>
-                    <p>2. Wir laden dein Profil via Bright Data</p>
-                    <p>3. Melde dich mit Facebook an um dich zu verifizieren</p>
+                    <p>2. Kommentiere auf einem Post/Video von @dawidfaith und tagge ihn</p>
+                    <p>3. Klicke auf &quot;Verifizieren&quot;</p>
                   </>
                 ) : (
                   <>
@@ -312,7 +308,7 @@ export default function SocialVerifyModal({
                 className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 {loading ? <FaSync className="animate-spin" size={14} /> : <FaChevronRight size={14} />}
-                {loading ? (platform === 'instagram' || platform === 'facebook' ? 'Profil wird geladen (15–30s)…' : 'Suche Profil…') : 'Profil laden'}
+                {loading ? (platform === 'instagram' ? 'Profil wird geladen (15–30s)…' : 'Suche Profil…') : (platform === 'facebook' ? 'Weiter' : 'Profil laden')}
               </button>
             </div>
           )}
@@ -322,7 +318,13 @@ export default function SocialVerifyModal({
             <div className="space-y-4">
               {/* Profil-Vorschau */}
               <div className="flex items-center gap-3 bg-zinc-800 rounded-xl p-3">
-                <Image src={preview.picture} alt={preview.name} width={44} height={44} unoptimized className="w-11 h-11 rounded-full" />
+                {platform === 'facebook' ? (
+                  <div className="w-11 h-11 rounded-full bg-blue-600/20 flex items-center justify-center shrink-0">
+                    <FaFacebook className="text-blue-400" size={20} />
+                  </div>
+                ) : (
+                  <Image src={preview.picture} alt={preview.name} width={44} height={44} unoptimized className="w-11 h-11 rounded-full" />
+                )}
                 <div>
                   <p className="text-white font-semibold text-sm">{preview.name}</p>
                   <p className="text-zinc-400 text-xs">@{handle.replace(/^@/, '')}</p>
@@ -352,7 +354,7 @@ export default function SocialVerifyModal({
               </div>
               )}
 
-              {/* Tag-Anleitung – nur für Instagram */}
+              {/* Tag-Anleitung – Instagram */}
               {platform === 'instagram' && (
               <div className="bg-zinc-800 rounded-xl p-4 space-y-3">
                 <p className="text-pink-400 font-semibold text-sm">So verifizierst du dich:</p>
@@ -367,19 +369,37 @@ export default function SocialVerifyModal({
               </div>
               )}
 
-              {/* Facebook OAuth – statt Bio-Code */}
+              {/* Facebook – zeigt neuesten Post + Kommentar-Anweisung */}
               {platform === 'facebook' && (
               <div className="bg-zinc-800 rounded-xl p-4 space-y-3">
-                <p className="text-blue-400 font-semibold text-sm">Melde dich mit Facebook an um dich zu verifizieren:</p>
-                <p className="text-zinc-400 text-xs">Deine Profildaten (Name &amp; Bild) wurden bereits geladen. Bestätige jetzt dein Konto über Facebook-Login.</p>
-                <button
-                  onClick={handleFacebookOAuth}
-                  disabled={loading || fbOAuthLoading}
-                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
-                >
-                  {fbOAuthLoading ? <FaSync className="animate-spin" size={14} /> : <FaFacebook size={14} />}
-                  {fbOAuthLoading ? 'Verbinde mit Facebook…' : 'Mit Facebook anmelden & verifizieren'}
-                </button>
+                <p className="text-blue-400 font-semibold text-sm">Kommentiere auf diesem Post:</p>
+                {latestFbPost ? (
+                  <a
+                    href={latestFbPost.permalink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex gap-3 bg-zinc-900 rounded-xl p-3 border border-zinc-700 hover:border-blue-500 transition-colors"
+                  >
+                    {latestFbPost.thumbnail && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={latestFbPost.thumbnail} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-zinc-300 text-xs leading-relaxed line-clamp-3">{latestFbPost.caption || 'Neuester Post'}</p>
+                      <p className="text-blue-400 text-xs mt-1.5 font-semibold">Post öffnen ↗</p>
+                    </div>
+                  </a>
+                ) : (
+                  <p className="text-zinc-500 text-xs">Konnte neuesten Post nicht laden – gehe direkt zum Facebook-Profil von @dawidfaith.</p>
+                )}
+                <ol className="text-zinc-400 text-sm space-y-1 list-decimal list-inside">
+                  {cfg.bioInstructions('').map((s, i) => <li key={i}>{s}</li>)}
+                </ol>
+                <div className="bg-zinc-900 rounded-lg px-3 py-2 flex items-center gap-2 border border-zinc-700">
+                  <FaFacebook size={14} className="text-blue-400 shrink-0" />
+                  <span className="text-blue-300 font-mono text-sm select-all">@dawidfaith</span>
+                </div>
+                <p className="text-yellow-500 text-xs">⏳ Warte 1–2 Minuten nach dem Kommentieren, bevor du auf &quot;Verifizieren&quot; klickst.</p>
               </div>
               )}
 
@@ -392,7 +412,6 @@ export default function SocialVerifyModal({
                 >
                   Zurück
                 </button>
-                {platform !== 'facebook' && (
                 <button
                   onClick={() => handleVerify()}
                   disabled={loading}
@@ -401,7 +420,6 @@ export default function SocialVerifyModal({
                   {loading ? <FaSync className="animate-spin" size={13} /> : <FaUserCheck size={14} />}
                   {loading ? 'Verifiziere…' : 'Verifizieren'}
                 </button>
-                )}
               </div>
             </div>
           )}

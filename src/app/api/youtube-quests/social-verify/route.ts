@@ -284,13 +284,12 @@ async function handlePost(req: NextRequest) {
     handle?: string;
     action?: 'preview' | 'verify' | 'unlink';
     fingerprint?: string;
-    facebookId?: string;
   };
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: 'Ungültiger Body' }, { status: 400 });
   }
 
-  const { walletAddress, platform, handle, action, fingerprint, facebookId } = body;
+  const { walletAddress, platform, handle, action, fingerprint } = body;
 
   if (!walletAddress) {
     return NextResponse.json({ error: 'walletAddress fehlt' }, { status: 400 });
@@ -416,17 +415,17 @@ async function handlePost(req: NextRequest) {
       return NextResponse.json({ success: true, name: profileName, picture: profilePicture });
     }
 
-    // Facebook: Verifikation via ThirdWeb OAuth
+    // Facebook: Schritt 2 – DB nach gespeicherten Mentions abfragen
+    // Make.com (Szenario Facebook Comments) hat beim Empfang der Erwähnung bereits
+    // POST /api/facebook-mention-received aufgerufen und den Eintrag gespeichert.
     if (p === 'facebook') {
-      if (!facebookId) {
-        return NextResponse.json({ error: 'Facebook-Anmeldung erforderlich.' }, { status: 400 });
-      }
       const sql = getDb();
-      const normalized = walletAddress.toLowerCase();
+
       // Duplikat-Check: selber Handle bereits einer anderen Wallet zugeordnet?
+      const normalized = walletAddress.toLowerCase();
       const existing = await sql`
         SELECT wallet_address FROM user_profiles
-        WHERE facebook_handle = ${cleanHandle}
+        WHERE facebook_handle = ${cleanHandle.toLowerCase()}
           AND wallet_address != ${normalized}
         LIMIT 1
       `;
@@ -436,22 +435,33 @@ async function handlePost(req: NextRequest) {
           { status: 409 }
         );
       }
-      // Profil-Daten via Bright Data holen
-      const profileForSave = BRIGHTDATA_API_KEY
-        ? (await fetchFacebookProfileBrightData(cleanHandle) ?? await fetchFacebookProfile(cleanHandle))
-        : await fetchFacebookProfile(cleanHandle);
-      const profileName = profileForSave?.name ?? cleanHandle;
-      // Stabile Handle-URL in DB speichern (signierte CDN-URLs laufen ab)
-      const profilePicture = `/api/avatar?platform=facebook&handle=${encodeURIComponent(cleanHandle)}`;
+
+      // Gibt es einen Kommentar von diesem Username aus den letzten 2 Stunden?
+      const rows = await sql`
+        SELECT id FROM facebook_mentions
+        WHERE username = ${cleanHandle.toLowerCase()}
+          AND received_at > NOW() - INTERVAL '2 hours'
+        LIMIT 1
+      `;
+
+      if (rows.length === 0) {
+        return NextResponse.json({
+          notFound: true,
+          message: `Kein Kommentar von ${cleanHandle} gefunden. Facebook kann bis zu 2 Minuten brauchen – warte kurz und versuche es erneut.`,
+        });
+      }
+
+      // Verwendete Mention löschen (einmalig nutzbar)
+      await sql`DELETE FROM facebook_mentions WHERE id = ${rows[0].id}`;
 
       await upsertUserProfile(walletAddress, {
         facebookHandle: cleanHandle,
         facebookVerified: true,
-        facebookName: profileName,
-        facebookPicture: profilePicture,
+        facebookName: cleanHandle,
+        facebookPicture: null,
       });
       if (fingerprint) await recordFingerprintVerification(fingerprint, walletAddress);
-      return NextResponse.json({ success: true, name: profileName, picture: profilePicture });
+      return NextResponse.json({ success: true, name: cleanHandle, picture: null });
     }
 
     // TikTok: synchron
@@ -479,21 +489,13 @@ async function handlePost(req: NextRequest) {
     const name = profileName;
     const picture = profilePicture;
 
-    if (p === 'tiktok') {
-      await upsertUserProfile(walletAddress, {
-        tiktokHandle: cleanHandle,
-        tiktokVerified: verified,
-        tiktokName: name,
-        tiktokPicture: picture,
-      });
-    } else {
-      await upsertUserProfile(walletAddress, {
-        facebookHandle: cleanHandle,
-        facebookVerified: verified,
-        facebookName: name,
-        facebookPicture: picture,
-      });
-    }
+    // Nur noch TikTok in diesem Branch (Facebook hat eigenen Mention-Flow oben)
+    await upsertUserProfile(walletAddress, {
+      tiktokHandle: cleanHandle,
+      tiktokVerified: verified,
+      tiktokName: name,
+      tiktokPicture: picture,
+    });
     if (fingerprint) await recordFingerprintVerification(fingerprint, walletAddress);
     return NextResponse.json({ success: true, name, picture });
   }
