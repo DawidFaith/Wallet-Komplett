@@ -310,7 +310,7 @@ export default function InstagramLikeVerifyModal({
           >
             {loading
               ? <div className="border-2 border-current/30 border-t-current rounded-full w-4 h-4 animate-spin" />
-              : <><ActionIcon size={14} /> {isLike ? 'geliked' : isRepost ? 'geteilt' : 'gespeichert'}? – Prüfen</>
+              : <><ActionIcon size={14} /> {isLike ? 'geliked' : isRepost ? 'repostet' : 'gespeichert'}? – Prüfen</>
             }
           </button>
           <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm py-2.5 rounded-xl transition-colors">
