@@ -260,7 +260,7 @@ export default function TiktokEngagementVerifyModal({
             <div className="text-center">
               <p className="text-zinc-400 text-sm">Verdient:</p>
               <p className="text-yellow-400 text-2xl font-bold flex items-center justify-center gap-2">
-                <FaCoins /> {rewardAmount} DFAITH
+                <FaCoins /> {formatCredits(rewardAmount)} DFAITH
               </p>
             </div>
           </div>

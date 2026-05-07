@@ -6,7 +6,7 @@
 import React from 'react';
 import { FaFacebook, FaCoins, FaClock } from 'react-icons/fa';
 import type { QuestIndexEntry } from '../../types';
-import { getProgressPercent, formatExpiry } from '../../utils';
+import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
 
 interface FacebookQuestCardProps {
   quest: QuestIndexEntry;
@@ -28,7 +28,7 @@ export default function FacebookQuestCard({ quest, isCompleted, onComplete }: Fa
 
         <div className="flex justify-between items-center text-xs text-zinc-400">
           <span className="flex items-center gap-1">
-            <FaCoins size={10} className="text-yellow-400" /> {quest.rewardAmount} DFAITH
+            <FaCoins size={10} className="text-yellow-400" /> {formatCredits(quest.rewardAmount)} DFAITH
           </span>
           {expiry && (
             <span className="flex items-center gap-1 text-zinc-500">

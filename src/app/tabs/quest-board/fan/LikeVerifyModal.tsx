@@ -118,7 +118,7 @@ export default function LikeVerifyModal({
         <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
           <span className="text-zinc-400 text-xs">Belohnung</span>
           <span className="text-yellow-400 font-bold text-sm flex items-center gap-1">
-            <FaCoins size={12} /> +{quest.rewardAmount} DFAITH
+            <FaCoins size={12} /> +{formatCredits(quest.rewardAmount)} DFAITH
           </span>
         </div>
       )}
@@ -229,7 +229,7 @@ export default function LikeVerifyModal({
           <div className="bg-zinc-800 rounded-xl p-4 flex items-center gap-3">
             <FaCoins size={24} className="text-yellow-400" />
             <div>
-              <p className="text-white font-bold text-lg">{rewardAmount} DFAITH</p>
+              <p className="text-white font-bold text-lg">{formatCredits(rewardAmount)} DFAITH</p>
               <p className="text-zinc-400 text-xs">Zu deinem DFAITH Credits Guthaben hinzugefügt</p>
             </div>
           </div>

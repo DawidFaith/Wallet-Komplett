@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { FaCoins, FaSync } from 'react-icons/fa';
+import { formatCredits } from '../utils';
 
 interface CreditsBoxProps {
   balance: number;
@@ -31,7 +32,7 @@ export default function CreditsBox({
         <FaCoins size={18} className="text-yellow-400" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-yellow-300 font-bold text-base">{balance} Dfaith Credits</p>
+        <p className="text-yellow-300 font-bold text-base">{formatCredits(balance)} Dfaith Credits</p>
         {subtitle && <p className="text-yellow-600 text-xs">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-2 shrink-0">

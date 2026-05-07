@@ -18,3 +18,10 @@ export function formatExpiry(expiresAt?: string | null): string | null {
   if (hours > 0) return `${hours}h ${minutes}m`;
   return `${minutes}m`;
 }
+
+/** DFAITH Credits mit 2 Nachkommastellen formatieren (DFAITH-Token-Decimals). */
+export function formatCredits(amount: number | string | null | undefined): string {
+  const n = Number(amount ?? 0);
+  if (!Number.isFinite(n)) return '0.00';
+  return n.toFixed(2);
+}

@@ -16,6 +16,7 @@ import InstagramCommentVerifyModal from './InstagramCommentVerifyModal';
 import InstagramLikeVerifyModal from './InstagramLikeVerifyModal';
 import InstagramDmShareModal from './InstagramDmShareModal';
 import type { QuestIndexEntry, VerifiedPlatforms, VerifyResult, ClaimResult } from '../types';
+import { formatCredits } from '../utils';
 
 interface FanBoardProps {
   walletAddress: string;
@@ -90,7 +91,7 @@ export default function FanBoard({ walletAddress, verified }: FanBoardProps) {
       if (res.ok) {
         setVerifyResult({
           success: true,
-          message: `Quest abgeschlossen! +${data.rewardAmount} Dfaith Credits`,
+          message: `Quest abgeschlossen! +${formatCredits(data.rewardAmount)} Dfaith Credits`,
           comment: data.comment?.text,
           rewardAmount: data.rewardAmount,
         });
@@ -135,7 +136,7 @@ export default function FanBoard({ walletAddress, verified }: FanBoardProps) {
       if (res.ok && data.success) {
         setVerifyResult({
           success: true,
-          message: `Quest abgeschlossen! +${data.rewardAmount} Dfaith Credits`,
+          message: `Quest abgeschlossen! +${formatCredits(data.rewardAmount)} Dfaith Credits`,
           comment: data.comment,
           rewardAmount: data.rewardAmount,
         });
@@ -164,7 +165,7 @@ export default function FanBoard({ walletAddress, verified }: FanBoardProps) {
       });
       const data = await res.json();
       if (res.ok) {
-        setClaimResult({ success: true, message: `${data.sentAmount} DFAITH wurden an deine Wallet gesendet!`, txHash: data.txHash });
+        setClaimResult({ success: true, message: `${formatCredits(data.sentAmount)} DFAITH wurden an deine Wallet gesendet!`, txHash: data.txHash });
         setCredits(0);
       } else {
         setClaimResult({ success: false, message: data.error });

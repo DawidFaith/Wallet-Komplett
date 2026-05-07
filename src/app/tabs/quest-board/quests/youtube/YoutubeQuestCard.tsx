@@ -4,7 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { FaYoutube, FaCoins, FaTrophy, FaCheck, FaExternalLinkAlt, FaClock, FaThumbsUp, FaKey } from 'react-icons/fa';
 import type { QuestIndexEntry } from '../../types';
-import { getProgressPercent, formatExpiry } from '../../utils';
+import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
 
 interface YoutubeQuestCardProps {
   quest: QuestIndexEntry;
@@ -32,7 +32,7 @@ export default function YoutubeQuestCard({ quest, isCompleted, onComplete }: You
           <FaYoutube size={10} /> {quest.type === 'like' ? 'Like' : quest.type === 'secret' ? 'Secret' : 'Kommentar'}
         </div>
         <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-          <FaCoins size={10} /> {quest.rewardAmount} DFAITH
+          <FaCoins size={10} /> {formatCredits(quest.rewardAmount)} DFAITH
         </div>
         {expiry && (
           <div className="absolute bottom-2 left-2 bg-black/70 text-zinc-300 text-xs px-2 py-1 rounded-full flex items-center gap-1">

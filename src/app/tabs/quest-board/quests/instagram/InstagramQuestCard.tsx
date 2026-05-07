@@ -3,7 +3,7 @@
 import React from 'react';
 import { FaInstagram, FaCoins, FaClock, FaComment, FaHeart, FaBookmark, FaShareAlt } from 'react-icons/fa';
 import type { QuestIndexEntry } from '../../types';
-import { getProgressPercent, formatExpiry } from '../../utils';
+import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
 
 interface InstagramQuestCardProps {
   quest: QuestIndexEntry;
@@ -47,7 +47,7 @@ export default function InstagramQuestCard({ quest, isCompleted, onComplete }: I
 
         <div className="flex justify-between items-center text-xs text-zinc-400">
           <span className="flex items-center gap-1">
-            <FaCoins size={10} className="text-yellow-400" /> {quest.rewardAmount} DFAITH
+            <FaCoins size={10} className="text-yellow-400" /> {formatCredits(quest.rewardAmount)} DFAITH
           </span>
           {expiry && (
             <span className="flex items-center gap-1 text-zinc-500">

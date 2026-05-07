@@ -94,10 +94,11 @@ export async function POST(req: NextRequest) {
     // Übertragene Menge aus Event-Data dekodieren
     const transferredWei = BigInt(transfer.data);
     const transferredAmount = Number(transferredWei) / Math.pow(10, DFAITH_DECIMALS);
-    const actualAmount = Math.round(transferredAmount); // DFAITH hat 2 Dezimalstellen
+    // Auf 2 Nachkommastellen runden (DFAITH-Decimals)
+    const actualAmount = Math.round(transferredAmount * 100) / 100;
 
-    // Toleranz: ±0.5 DFAITH (Rundungsschutz)
-    if (Math.abs(transferredAmount - amount) > 0.5) {
+    // Toleranz: ±0.01 DFAITH (kleinste Einheit)
+    if (Math.abs(transferredAmount - amount) > 0.01) {
       return NextResponse.json(
         {
           error: `Betrag stimmt nicht überein. Gefunden: ${transferredAmount} DFAITH, gemeldet: ${amount} DFAITH.`,

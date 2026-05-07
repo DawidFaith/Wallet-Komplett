@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
 
   const type = (questType === 'like' || questType === 'save' || questType === 'engagement' || questType === 'repost' || questType === 'dm_share') ? questType : 'comment';
 
-  const reward = Number(rewardAmount) || 100;
+  const reward = Math.round((Number(rewardAmount) || 100) * 100) / 100;
   const max = Math.max(1, Math.min(1000, Number(maxCompletions) || 10));
   const totalBudget = reward * max;
 

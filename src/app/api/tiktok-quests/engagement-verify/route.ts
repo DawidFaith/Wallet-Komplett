@@ -175,8 +175,8 @@ export async function POST(req: NextRequest) {
 
       // ✅ Mindestens eine Aktion verifiziert → Partial-Reward berechnen
       const totalReward = quest.rewardAmount;
-      const rewardPerAction = Math.floor(totalReward / 3);
-      const earnedReward = rewardPerAction * verifiedCount;
+      const rewardPerAction = Math.round((totalReward / 3) * 100) / 100;
+      const earnedReward = Math.round(rewardPerAction * verifiedCount * 100) / 100;
 
       const now = new Date().toISOString();
       const completion: QuestCompletion = {

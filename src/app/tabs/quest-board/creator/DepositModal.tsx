@@ -49,7 +49,7 @@ export default function DepositModal({ open, onClose, walletAddress, onDeposited
       const res = await fetch('/api/youtube-quests/creator-balance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress, txHash, amount: Math.round(num) }),
+        body: JSON.stringify({ walletAddress, txHash, amount: Math.round(num * 100) / 100 }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -92,8 +92,8 @@ export default function DepositModal({ open, onClose, walletAddress, onDeposited
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="z.B. 1000"
-              min="1"
-              step="1"
+              min="0.01"
+              step="0.01"
               className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-yellow-500 focus:outline-none text-sm placeholder-zinc-500"
             />
           </div>
@@ -131,7 +131,7 @@ export default function DepositModal({ open, onClose, walletAddress, onDeposited
         <div className="space-y-4">
           <div className="bg-green-900/30 border border-green-700/40 rounded-xl p-5 text-center">
             <FaCheck size={28} className="text-green-400 mx-auto mb-2" />
-            <p className="text-green-300 font-bold text-lg">{creditedAmount} DFAITH gutgeschrieben!</p>
+            <p className="text-green-300 font-bold text-lg">{Number(creditedAmount).toFixed(2)} DFAITH gutgeschrieben!</p>
             <p className="text-zinc-400 text-sm mt-1">Dein Creator-Pool wurde aufgeladen.</p>
           </div>
           <button onClick={handleClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">

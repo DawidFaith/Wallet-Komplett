@@ -7,7 +7,7 @@ import CreditsBox from '../components/CreditsBox';
 import DepositModal from './DepositModal';
 import CreateQuestModal from './CreateQuestModal';
 import type { QuestIndexEntry, YouTubeBinding, VerifiedPlatforms } from '../types';
-import { getProgressPercent } from '../utils';
+import { getProgressPercent, formatCredits } from '../utils';
 
 interface CreatorBoardProps {
   walletAddress: string;
@@ -127,7 +127,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                   <FaExternalLinkAlt size={10} /> Shorts öffnen
                 </a>
                 <div className="flex items-center gap-3 text-xs text-zinc-400">
-                  <span className="flex items-center gap-1"><FaCoins size={10} className="text-yellow-400" />{quest.rewardAmount} DFAITH</span>
+                  <span className="flex items-center gap-1"><FaCoins size={10} className="text-yellow-400" />{formatCredits(quest.rewardAmount)} DFAITH</span>
                   <span className="flex items-center gap-1"><FaTrophy size={10} className="text-green-400" />{quest.completions}/{quest.maxCompletions}</span>
                 </div>
                 <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden w-full">

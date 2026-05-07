@@ -196,7 +196,7 @@ export default function InstagramDmShareModal({
           <FaInstagram size={20} className="text-pink-400 shrink-0" />
           <div>
             <p className="font-semibold text-sm">{quest.videoTitle}</p>
-            <p className="text-xs text-zinc-500">DM-Share Quest · {quest.rewardAmount} DFAITH</p>
+            <p className="text-xs text-zinc-500">DM-Share Quest · {formatCredits(quest.rewardAmount)} DFAITH</p>
           </div>
         </div>
 
@@ -331,7 +331,7 @@ export default function InstagramDmShareModal({
             <div className="text-4xl">🎉</div>
             <p className="font-bold text-lg text-green-400">Quest abgeschlossen!</p>
             <p className="text-sm text-zinc-400">
-              +{rewardAmount || quest.rewardAmount} DFAITH Credits wurden gutgeschrieben.
+              +{formatCredits(rewardAmount || quest.rewardAmount)} DFAITH Credits wurden gutgeschrieben.
             </p>
             <button onClick={onClose} className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
               Schließen

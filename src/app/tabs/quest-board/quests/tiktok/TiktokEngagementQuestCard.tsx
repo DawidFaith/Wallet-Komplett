@@ -6,7 +6,7 @@ import { FaCoins, FaClock, FaCheck, FaExternalLinkAlt } from 'react-icons/fa';
 import { SiTiktok } from 'react-icons/si';
 import { FiThumbsUp, FiShare2, FiBookmark } from 'react-icons/fi';
 import type { QuestIndexEntry } from '../../types';
-import { getProgressPercent, formatExpiry } from '../../utils';
+import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
 
 interface TiktokEngagementQuestCardProps {
   quest: QuestIndexEntry;
@@ -18,7 +18,7 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, onComple
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
   const isFull = quest.completions >= quest.maxCompletions;
   const expiry = formatExpiry(quest.expiresAt);
-  const rewardPer = Math.floor(quest.rewardAmount / 3);
+  const rewardPer = Math.round((quest.rewardAmount / 3) * 100) / 100;
 
   return (
     <div className={`bg-zinc-900 rounded-2xl border border-cyan-800/40 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
@@ -36,7 +36,7 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, onComple
             <SiTiktok size={10} /> Engagement
           </div>
           <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-            <FaCoins size={10} /> {quest.rewardAmount} DFAITH
+            <FaCoins size={10} /> {formatCredits(quest.rewardAmount)} DFAITH
           </div>
           {expiry && (
             <div className="absolute bottom-2 left-2 bg-black/70 text-zinc-300 text-xs px-2 py-1 rounded-full flex items-center gap-1">
@@ -59,7 +59,7 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, onComple
             <div key={label} className="bg-zinc-800 rounded-xl p-2 flex flex-col items-center gap-1">
               <span className={color}>{icon}</span>
               <span className="text-zinc-300 text-xs font-semibold">{label}</span>
-              <span className="text-yellow-400 text-xs">+{rewardPer}</span>
+              <span className="text-yellow-400 text-xs">+{formatCredits(rewardPer)}</span>
             </div>
           ))}
         </div>

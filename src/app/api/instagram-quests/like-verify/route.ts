@@ -346,9 +346,9 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        const halfReward = Math.floor(quest.rewardAmount / 2);
-        const earnedReward = halfReward * verifiedCount;
-        const refundToCreator = quest.rewardAmount - earnedReward; // nicht verdiente Hälfte zurück
+        const halfReward = Math.round((quest.rewardAmount / 2) * 100) / 100;
+        const earnedReward = Math.round(halfReward * verifiedCount * 100) / 100;
+        const refundToCreator = Math.round((quest.rewardAmount - earnedReward) * 100) / 100; // nicht verdiente Hälfte zurück
         const now = new Date().toISOString();
         const completion: QuestCompletion = {
           questId,

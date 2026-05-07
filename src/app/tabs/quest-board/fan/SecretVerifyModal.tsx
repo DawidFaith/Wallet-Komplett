@@ -82,7 +82,7 @@ export default function SecretVerifyModal({
         <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
           <span className="text-zinc-400 text-xs">Belohnung</span>
           <span className="text-yellow-400 font-bold text-sm flex items-center gap-1">
-            <FaCoins size={12} /> +{quest.rewardAmount} DFAITH
+            <FaCoins size={12} /> +{formatCredits(quest.rewardAmount)} DFAITH
           </span>
         </div>
       )}
@@ -94,7 +94,7 @@ export default function SecretVerifyModal({
             <FaCheck size={32} className="text-green-400 mx-auto mb-3" />
             <p className="text-green-300 font-semibold text-lg">Code richtig!</p>
             <div className="flex items-center justify-center gap-2 mt-2 text-yellow-400 font-bold text-xl">
-              <FaCoins size={16} /> +{rewardAmount} DFAITH
+              <FaCoins size={16} /> +{formatCredits(rewardAmount)} DFAITH
             </div>
           </div>
           <button

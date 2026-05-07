@@ -54,12 +54,12 @@ export const MIGRATION_SQL = `
     video_thumbnail TEXT        NOT NULL DEFAULT '',
     video_url       TEXT        NOT NULL,
     description     TEXT        NOT NULL DEFAULT '',
-    reward_amount   INTEGER     NOT NULL DEFAULT 100,
+    reward_amount   NUMERIC(20,2) NOT NULL DEFAULT 100,
     max_completions INTEGER     NOT NULL DEFAULT 10,
     completions     INTEGER     NOT NULL DEFAULT 0,
     is_active       BOOLEAN     NOT NULL DEFAULT TRUE,
     expires_at      TIMESTAMPTZ,
-    credits_locked  INTEGER     NOT NULL DEFAULT 0,
+    credits_locked  NUMERIC(20,2) NOT NULL DEFAULT 0,
     credits_refunded BOOLEAN    NOT NULL DEFAULT FALSE,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -74,7 +74,7 @@ export const MIGRATION_SQL = `
     platform       TEXT        NOT NULL DEFAULT 'youtube',
     comment_id     TEXT        NOT NULL,
     comment_text   TEXT        NOT NULL DEFAULT '',
-    reward_amount  INTEGER     NOT NULL,
+    reward_amount  NUMERIC(20,2) NOT NULL,
     reward_paid    BOOLEAN     NOT NULL DEFAULT FALSE,
     completed_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(quest_id, wallet_address)
@@ -83,7 +83,7 @@ export const MIGRATION_SQL = `
   CREATE TABLE IF NOT EXISTS pending_rewards (
     id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     wallet_address TEXT        NOT NULL,
-    amount         INTEGER     NOT NULL,
+    amount         NUMERIC(20,2) NOT NULL,
     reason         TEXT        NOT NULL DEFAULT '',
     quest_id       UUID        REFERENCES quests(id) ON DELETE SET NULL,
     status         TEXT        NOT NULL DEFAULT 'pending',
@@ -93,7 +93,7 @@ export const MIGRATION_SQL = `
 
   CREATE TABLE IF NOT EXISTS creator_balances (
     wallet_address  TEXT        PRIMARY KEY,
-    balance         INTEGER     NOT NULL DEFAULT 0,
+    balance         NUMERIC(20,2) NOT NULL DEFAULT 0,
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
 
@@ -101,14 +101,14 @@ export const MIGRATION_SQL = `
     id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     wallet_address TEXT        NOT NULL,
     tx_hash        TEXT        UNIQUE NOT NULL,
-    amount         INTEGER     NOT NULL,
+    amount         NUMERIC(20,2) NOT NULL,
     deposited_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
 
   -- Unified Dfaith Credits Balance (Fan + Creator)
   CREATE TABLE IF NOT EXISTS dfaith_credits (
     wallet_address  TEXT        PRIMARY KEY,
-    balance         INTEGER     NOT NULL DEFAULT 0,
+    balance         NUMERIC(20,2) NOT NULL DEFAULT 0,
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
 
@@ -143,4 +143,14 @@ export const MIGRATION_SQL = `
     started_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (quest_id, wallet_address)
   );
+
+  -- ── Migrationen: bestehende INTEGER-Spalten auf NUMERIC(20,2) erweitern ──
+  -- DFAITH hat 2 Decimals, daher müssen Beträge mit 2 Nachkommastellen gespeichert werden.
+  ALTER TABLE quests             ALTER COLUMN reward_amount  TYPE NUMERIC(20,2) USING reward_amount::numeric;
+  ALTER TABLE quests             ALTER COLUMN credits_locked TYPE NUMERIC(20,2) USING credits_locked::numeric;
+  ALTER TABLE quest_completions  ALTER COLUMN reward_amount  TYPE NUMERIC(20,2) USING reward_amount::numeric;
+  ALTER TABLE pending_rewards    ALTER COLUMN amount         TYPE NUMERIC(20,2) USING amount::numeric;
+  ALTER TABLE creator_balances   ALTER COLUMN balance        TYPE NUMERIC(20,2) USING balance::numeric;
+  ALTER TABLE creator_deposits   ALTER COLUMN amount         TYPE NUMERIC(20,2) USING amount::numeric;
+  ALTER TABLE dfaith_credits     ALTER COLUMN balance        TYPE NUMERIC(20,2) USING balance::numeric;
 `;

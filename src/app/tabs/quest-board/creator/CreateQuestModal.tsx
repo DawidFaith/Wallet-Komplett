@@ -736,7 +736,8 @@ export default function CreateQuestModal({
                   type="number"
                   value={rewardAmount}
                   onChange={(e) => setRewardAmount(e.target.value)}
-                  min="1"
+                  min="0.01"
+                  step="0.01"
                   required
                   className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm pr-16"
                 />
@@ -763,7 +764,7 @@ export default function CreateQuestModal({
             <p className="text-yellow-400 font-semibold">Hinweis:</p>
             <p>
               Quest-Pool:{' '}
-              <span className="text-yellow-300 font-bold">{creatorBalance} DFAITH</span>
+              <span className="text-yellow-300 font-bold">{creatorBalance.toFixed(2)} DFAITH</span>
               {creatorBalance === 0 && (
                 <button
                   type="button"

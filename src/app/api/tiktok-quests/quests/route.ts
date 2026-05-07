@@ -202,7 +202,7 @@ export async function POST(req: NextRequest) {
     finalAuthorHandle = videoInfo.authorUniqueId;
   }
 
-  const rewardAmountNum = Number(rewardAmount) || 100;
+  const rewardAmountNum = Math.round((Number(rewardAmount) || 100) * 100) / 100;
   const maxCompletionsNum = Number(maxCompletions) || 10;
   const totalBudget = rewardAmountNum * maxCompletionsNum;
 

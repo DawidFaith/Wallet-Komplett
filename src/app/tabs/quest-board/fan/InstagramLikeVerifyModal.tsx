@@ -5,6 +5,7 @@ import { FaInstagram, FaCoins, FaExternalLinkAlt, FaRedo, FaShareAlt } from 'rea
 import { FiThumbsUp, FiBookmark } from 'react-icons/fi';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
+import { formatCredits } from '../utils';
 
 interface InstagramLikeVerifyModalProps {
   quest: QuestIndexEntry | null;
@@ -40,7 +41,7 @@ export default function InstagramLikeVerifyModal({
   const accentColor = isLike ? 'text-pink-400' : isRepost ? 'text-blue-400' : 'text-yellow-400';
   const accentBg = isLike ? 'bg-pink-600 hover:bg-pink-500' : isRepost ? 'bg-blue-600 hover:bg-blue-500' : 'bg-yellow-500 hover:bg-yellow-400';
 
-  const rewardPer = quest ? Math.floor(quest.rewardAmount / 2) : 0;
+  const rewardPer = quest ? Math.round((quest.rewardAmount / 2) * 100) / 100 : 0;
 
   const engagementActions = [
     { key: 'like', icon: <FiThumbsUp size={18} />, label: 'Like', color: 'text-pink-400', verified: likeVerified },
@@ -149,13 +150,13 @@ export default function InstagramLikeVerifyModal({
             <div className="flex items-center gap-3">
               <span className="text-zinc-500 text-xs">pro Aktion:</span>
               <span className="text-yellow-400 font-bold text-sm flex items-center gap-1">
-                <FaCoins size={12} /> +{rewardPer} DFAITH
+                <FaCoins size={12} /> +{formatCredits(rewardPer)} DFAITH
               </span>
               <span className="text-zinc-600 text-xs">×2 max</span>
             </div>
           ) : (
             <span className="text-yellow-400 font-bold text-sm flex items-center gap-1">
-              <FaCoins size={12} /> +{quest.rewardAmount} DFAITH
+              <FaCoins size={12} /> +{formatCredits(quest.rewardAmount)} DFAITH
             </span>
           )}
         </div>
@@ -368,7 +369,7 @@ export default function InstagramLikeVerifyModal({
                 <span className={verified ? 'text-green-400' : 'text-zinc-500'}>{icon}</span>
                 <span className="text-white text-xs font-semibold">{label}</span>
                 {verified
-                  ? <span className="text-green-400 text-xs">✓ +{rewardPer} DFAITH</span>
+                  ? <span className="text-green-400 text-xs">✓ +{formatCredits(rewardPer)} DFAITH</span>
                   : <span className="text-zinc-500 text-xs">–</span>
                 }
               </div>
@@ -377,7 +378,7 @@ export default function InstagramLikeVerifyModal({
           <div className="bg-zinc-800 rounded-xl p-4 flex items-center gap-3">
             <FaCoins size={24} className="text-yellow-400" />
             <div>
-              <p className="text-white font-bold text-lg">{rewardAmount} DFAITH</p>
+              <p className="text-white font-bold text-lg">{formatCredits(rewardAmount)} DFAITH</p>
               <p className="text-zinc-400 text-xs">Zu deinem DFAITH Credits Guthaben hinzugefügt</p>
             </div>
           </div>
@@ -399,7 +400,7 @@ export default function InstagramLikeVerifyModal({
           <div className="bg-zinc-800 rounded-xl p-4 flex items-center gap-3">
             <FaCoins size={24} className="text-yellow-400" />
             <div>
-              <p className="text-white font-bold text-lg">{rewardAmount} DFAITH</p>
+              <p className="text-white font-bold text-lg">{formatCredits(rewardAmount)} DFAITH</p>
               <p className="text-zinc-400 text-xs">Zu deinem DFAITH Credits Guthaben hinzugefügt</p>
             </div>
           </div>
