@@ -31,6 +31,7 @@ export default function FacebookQuestCard({ quest, isCompleted, onComplete }: Fa
           </span>
         </div>
       )}
+      <div className="p-4 space-y-3">
         <div className="flex items-center gap-2">
           <FaFacebook size={16} className="text-blue-400" />
           <span className="text-white font-semibold text-sm line-clamp-1">{quest.videoTitle}</span>
