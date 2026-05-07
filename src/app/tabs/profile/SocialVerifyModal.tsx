@@ -6,6 +6,8 @@ import {
   FaInstagram, FaTiktok, FaFacebook,
   FaCheck, FaSync, FaCopy, FaUnlink, FaChevronRight, FaUserCheck,
 } from 'react-icons/fa';
+import { inAppWallet } from 'thirdweb/wallets';
+import { client } from '../../client';
 
 type Platform = 'instagram' | 'tiktok' | 'facebook';
 
@@ -120,6 +122,7 @@ export default function SocialVerifyModal({
   const [codeCopied, setCodeCopied] = useState(false);
   const [name, setName] = useState(currentName);
   const [picture, setPicture] = useState(currentPicture);
+  const [fbOAuthLoading, setFbOAuthLoading] = useState(false);
 
   const call = async (body: object) => {
     const res = await fetch('/api/youtube-quests/social-verify', {
@@ -148,11 +151,12 @@ export default function SocialVerifyModal({
     finally { setLoading(false); }
   };
 
-  const handleVerify = async () => {
+  const handleVerify = async (facebookId?: string) => {
     if (!preview) return;
     setLoading(true); setError('');
     try {
-      const { ok, data } = await call({ handle: handle.trim(), action: 'verify' });
+      const extra = facebookId ? { facebookId } : {};
+      const { ok, data } = await call({ handle: handle.trim(), action: 'verify', ...extra });
       if (!ok) { setError(data.error ?? 'Serverfehler'); return; }
       if (data.notFound) { setError(data.message); return; }
       clearPreviewCache();
@@ -161,6 +165,25 @@ export default function SocialVerifyModal({
       onDone();
     } catch { setError('Netzwerkfehler'); }
     finally { setLoading(false); }
+  };
+
+  const handleFacebookOAuth = async () => {
+    setFbOAuthLoading(true); setError('');
+    const wallet = inAppWallet();
+    try {
+      const acct = await wallet.connect({ client, strategy: 'facebook' });
+      await handleVerify(acct.address);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.toLowerCase().includes('cancel') || msg.toLowerCase().includes('abbruch')) {
+        setError('Facebook-Anmeldung abgebrochen.');
+      } else {
+        setError('Facebook-Login fehlgeschlagen. Bitte erneut versuchen.');
+      }
+    } finally {
+      try { await wallet.disconnect(); } catch { /* ignore */ }
+      setFbOAuthLoading(false);
+    }
   };
 
   const handleUnlink = async () => {
@@ -257,6 +280,12 @@ export default function SocialVerifyModal({
                     <p>3. Kommentiere auf einem Post/Reel von @dawidfaith und tagge ihn</p>
                     <p>4. Klicke auf &quot;Verifizieren&quot;</p>
                   </>
+                ) : platform === 'facebook' ? (
+                  <>
+                    <p>1. Gib deinen Facebook-Profilnamen (aus der URL) ein</p>
+                    <p>2. Wir laden dein Profil via Bright Data</p>
+                    <p>3. Melde dich mit Facebook an um dich zu verifizieren</p>
+                  </>
                 ) : (
                   <>
                     <p>1. Gib deinen {cfg.label}-Handle ein</p>
@@ -283,7 +312,7 @@ export default function SocialVerifyModal({
                 className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 {loading ? <FaSync className="animate-spin" size={14} /> : <FaChevronRight size={14} />}
-                {loading ? (platform === 'instagram' ? 'Profil wird geladen (15–30s)…' : 'Suche Profil…') : 'Profil laden'}
+                {loading ? (platform === 'instagram' || platform === 'facebook' ? 'Profil wird geladen (15–30s)…' : 'Suche Profil…') : 'Profil laden'}
               </button>
             </div>
           )}
@@ -300,8 +329,8 @@ export default function SocialVerifyModal({
                 </div>
               </div>
 
-              {/* Code – nur für TikTok/Facebook */}
-              {platform !== 'instagram' && (
+              {/* Code – nur für TikTok */}
+              {platform === 'tiktok' && (
               <div className="bg-zinc-800 rounded-xl p-4 space-y-3">
                 <p className="text-yellow-400 font-semibold text-sm">Dein Verifikationscode:</p>
                 <div className="flex items-center gap-2">
@@ -338,6 +367,22 @@ export default function SocialVerifyModal({
               </div>
               )}
 
+              {/* Facebook OAuth – statt Bio-Code */}
+              {platform === 'facebook' && (
+              <div className="bg-zinc-800 rounded-xl p-4 space-y-3">
+                <p className="text-blue-400 font-semibold text-sm">Melde dich mit Facebook an um dich zu verifizieren:</p>
+                <p className="text-zinc-400 text-xs">Deine Profildaten (Name &amp; Bild) wurden bereits geladen. Bestätige jetzt dein Konto über Facebook-Login.</p>
+                <button
+                  onClick={handleFacebookOAuth}
+                  disabled={loading || fbOAuthLoading}
+                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  {fbOAuthLoading ? <FaSync className="animate-spin" size={14} /> : <FaFacebook size={14} />}
+                  {fbOAuthLoading ? 'Verbinde mit Facebook…' : 'Mit Facebook anmelden & verifizieren'}
+                </button>
+              </div>
+              )}
+
               {error && <p className="text-red-400 text-sm">{error}</p>}
 
               <div className="flex gap-2">
@@ -347,14 +392,16 @@ export default function SocialVerifyModal({
                 >
                   Zurück
                 </button>
+                {platform !== 'facebook' && (
                 <button
-                  onClick={handleVerify}
+                  onClick={() => handleVerify()}
                   disabled={loading}
                   className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
                 >
                   {loading ? <FaSync className="animate-spin" size={13} /> : <FaUserCheck size={14} />}
                   {loading ? 'Verifiziere…' : 'Verifizieren'}
                 </button>
+                )}
               </div>
             </div>
           )}

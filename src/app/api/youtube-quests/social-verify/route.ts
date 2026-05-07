@@ -209,6 +209,47 @@ async function fetchInstagramProfileBrightData(handle: string): Promise<{
   }
 }
 
+// ─── Bright Data Web Unlocker – Facebook Scraper ────────────────────────────
+
+async function fetchFacebookProfileBrightData(handle: string): Promise<{
+  name: string; picture: string;
+} | null> {
+  if (!BRIGHTDATA_API_KEY) return null;
+  try {
+    const targetUrl = `https://www.facebook.com/${encodeURIComponent(handle)}`;
+    const res = await fetch('https://api.brightdata.com/request', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${BRIGHTDATA_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        zone: BRIGHTDATA_ZONE,
+        url: targetUrl,
+        format: 'raw',
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+
+    const ogTitle = html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]+)"/i)
+      ?? html.match(/<meta[^>]*content="([^"]+)"[^>]*property="og:title"/i);
+    const name = ogTitle?.[1]
+      ? ogTitle[1].replace(/\s*\|\s*Facebook.*$/i, '').trim()
+      : handle;
+
+    if (!name || name.toLowerCase() === handle.toLowerCase()) return null;
+
+    return {
+      name,
+      picture: `/api/avatar?platform=facebook&handle=${encodeURIComponent(handle)}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -228,12 +269,13 @@ async function handlePost(req: NextRequest) {
     handle?: string;
     action?: 'preview' | 'verify' | 'unlink';
     fingerprint?: string;
+    facebookId?: string;
   };
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: 'Ungültiger Body' }, { status: 400 });
   }
 
-  const { walletAddress, platform, handle, action, fingerprint } = body;
+  const { walletAddress, platform, handle, action, fingerprint, facebookId } = body;
 
   if (!walletAddress) {
     return NextResponse.json({ error: 'walletAddress fehlt' }, { status: 400 });
@@ -359,7 +401,44 @@ async function handlePost(req: NextRequest) {
       return NextResponse.json({ success: true, name: profileName, picture: profilePicture });
     }
 
-    // TikTok / Facebook: synchron
+    // Facebook: Verifikation via ThirdWeb OAuth
+    if (p === 'facebook') {
+      if (!facebookId) {
+        return NextResponse.json({ error: 'Facebook-Anmeldung erforderlich.' }, { status: 400 });
+      }
+      const sql = getDb();
+      const normalized = walletAddress.toLowerCase();
+      // Duplikat-Check: selber Handle bereits einer anderen Wallet zugeordnet?
+      const existing = await sql`
+        SELECT wallet_address FROM user_profiles
+        WHERE facebook_handle = ${cleanHandle}
+          AND wallet_address != ${normalized}
+        LIMIT 1
+      `;
+      if (existing.length > 0) {
+        return NextResponse.json(
+          { error: 'Dieser Facebook-Account ist bereits mit einer anderen Wallet verknüpft.' },
+          { status: 409 }
+        );
+      }
+      // Profil-Daten via Bright Data holen
+      const profileForSave = BRIGHTDATA_API_KEY
+        ? (await fetchFacebookProfileBrightData(cleanHandle) ?? await fetchFacebookProfile(cleanHandle))
+        : await fetchFacebookProfile(cleanHandle);
+      const profileName = profileForSave?.name ?? cleanHandle;
+      const profilePicture = profileForSave?.picture ?? `/api/avatar?platform=facebook&handle=${encodeURIComponent(cleanHandle)}`;
+
+      await upsertUserProfile(walletAddress, {
+        facebookHandle: cleanHandle,
+        facebookVerified: true,
+        facebookName: profileName,
+        facebookPicture: profilePicture,
+      });
+      if (fingerprint) await recordFingerprintVerification(fingerprint, walletAddress);
+      return NextResponse.json({ success: true, name: profileName, picture: profilePicture });
+    }
+
+    // TikTok: synchron
     const freshProfile = await fetchProfile(p, cleanHandle);
 
     const bio = freshProfile?.bio ?? '';
