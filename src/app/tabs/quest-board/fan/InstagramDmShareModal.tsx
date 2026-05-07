@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { FaInstagram, FaShareAlt, FaExternalLinkAlt, FaRedo, FaCheck, FaCopy } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
+import { formatCredits } from '../utils';
 
 interface InstagramDmShareModalProps {
   quest: QuestIndexEntry | null;

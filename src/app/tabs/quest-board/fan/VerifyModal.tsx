@@ -4,6 +4,7 @@ import React from 'react';
 import { FaCheck, FaSync, FaExternalLinkAlt, FaCoins, FaInfoCircle } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry, VerifyResult } from '../types';
+import { formatCredits } from '../utils';
 
 interface VerifyModalProps {
   quest: QuestIndexEntry | null;

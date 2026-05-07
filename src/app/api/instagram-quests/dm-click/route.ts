@@ -96,7 +96,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Bereits abgeschlossen?
-    const alreadyDone = await hasWalletCompletedQuest(verif.questId, verif.walletAddress);
+    const alreadyDone = await hasWalletCompletedQuest(verif.walletAddress, verif.questId);
     if (alreadyDone || verif.clickVerified) {
       return new NextResponse(buildPage('Bereits abgeschlossen', 'Diese Quest hast du bereits erfolgreich abgeschlossen.', true, `${appUrl}/?tab=quests`), {
         headers: { 'Content-Type': 'text/html; charset=utf-8' },

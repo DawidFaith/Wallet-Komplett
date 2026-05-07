@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { FaKey, FaCoins, FaCheck } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
+import { formatCredits } from '../utils';
 
 interface SecretVerifyModalProps {
   quest: QuestIndexEntry | null;

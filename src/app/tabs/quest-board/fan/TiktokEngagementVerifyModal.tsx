@@ -5,6 +5,7 @@ import { FaCoins, FaExternalLinkAlt, FaRedo, FaCheck } from 'react-icons/fa';
 import { FiThumbsUp, FiShare2, FiBookmark } from 'react-icons/fi';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
+import { formatCredits } from '../utils';
 
 interface TiktokEngagementVerifyModalProps {
   quest: QuestIndexEntry | null;

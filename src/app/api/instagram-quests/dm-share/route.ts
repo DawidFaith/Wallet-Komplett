@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
 
     // ── START: Baseline-Shares laden, Verifikation anlegen ───────────────────
     if (action === 'start') {
-      const alreadyDone = await hasWalletCompletedQuest(questId, normalized);
+      const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
       if (alreadyDone) {
         return NextResponse.json({ error: 'Du hast diese Quest bereits abgeschlossen.' }, { status: 400 });
       }
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
 
     // ── CHECK: Share-Delta prüfen ─────────────────────────────────────────────
     if (action === 'check') {
-      const alreadyDone = await hasWalletCompletedQuest(questId, normalized);
+      const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
       if (alreadyDone) {
         return NextResponse.json({ error: 'Quest bereits abgeschlossen.' }, { status: 400 });
       }
