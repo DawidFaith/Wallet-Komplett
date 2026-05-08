@@ -53,6 +53,7 @@ interface ArtistEntry {
   artistType: string | null;
   artistBio: string | null;
   questCount: number;
+  credits: number;
   socials: {
     youtubeChannelId: string | null;
     youtubeChannelName: string | null;
@@ -329,12 +330,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               )}
             </div>
 
-            <div className="flex items-center gap-1.5">
-              <FaCoins className="text-yellow-400" size={13} />
-              <span className="text-yellow-300 font-bold text-sm">
-                {loading ? '–' : (data?.credits ?? 0).toFixed(2)} DFAITH Credits
-              </span>
-            </div>
+
           </div>
 
           {/* Level Badge */}
@@ -580,30 +576,11 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               {selectedArtist.artistBio && (
                 <p className="text-zinc-400 text-xs leading-relaxed">{selectedArtist.artistBio}</p>
               )}
-              <div className="flex flex-wrap gap-1.5">
-                {selectedArtist.socials.youtubeChannelId && (
-                  <span className="flex items-center gap-1 text-xs bg-red-900/20 text-red-300 px-2 py-0.5 rounded-lg border border-red-800/30">
-                    <FaYoutube size={9} /> {selectedArtist.socials.youtubeChannelName ?? 'YouTube'} <FaCheck size={8} className="text-green-400" />
-                  </span>
-                )}
-                {selectedArtist.socials.instagramHandle && (
-                  <span className="flex items-center gap-1 text-xs bg-pink-900/20 text-pink-300 px-2 py-0.5 rounded-lg border border-pink-800/30">
-                    <FaInstagram size={9} /> @{selectedArtist.socials.instagramHandle}
-                    {selectedArtist.socials.instagramVerified && <FaCheck size={8} className="text-green-400" />}
-                  </span>
-                )}
-                {selectedArtist.socials.tiktokHandle && (
-                  <span className="flex items-center gap-1 text-xs bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-lg border border-zinc-700">
-                    <FaTiktok size={9} /> @{selectedArtist.socials.tiktokHandle}
-                    {selectedArtist.socials.tiktokVerified && <FaCheck size={8} className="text-green-400" />}
-                  </span>
-                )}
-                {selectedArtist.socials.facebookHandle && (
-                  <span className="flex items-center gap-1 text-xs bg-blue-900/20 text-blue-300 px-2 py-0.5 rounded-lg border border-blue-800/30">
-                    <FaFacebook size={9} /> {selectedArtist.socials.facebookHandle}
-                    {selectedArtist.socials.facebookVerified && <FaCheck size={8} className="text-green-400" />}
-                  </span>
-                )}
+              <div className="flex items-center gap-1.5">
+                <FaCoins className="text-yellow-400" size={13} />
+                <span className="text-yellow-300 font-bold text-sm">
+                  {selectedArtist.credits.toFixed(2)} DFAITH Credits
+                </span>
               </div>
             </div>
           )}
