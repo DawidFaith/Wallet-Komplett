@@ -6,8 +6,7 @@ import Image from 'next/image';
 import {
   FaInstagram, FaTiktok, FaFacebook, FaYoutube,
   FaCheck, FaCoins, FaStar, FaLock, FaPlus, FaChevronDown,
-} from 'react-icons/fa';
-import SocialVerifyModal from './profile/SocialVerifyModal';
+} from 'react-icons/fa';import SocialVerifyModal from './profile/SocialVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
 import QuestBoardTab from './QuestBoardTab';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
@@ -69,6 +68,8 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   const [unlinkPending, setUnlinkPending] = useState<AnyPlatform | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  // YouTube: manage (already linked) vs. link-flow
+  const [showYoutubeManage, setShowYoutubeManage] = useState(false);
 
   const [primaryPlatform, setPrimaryPlatformState] = useState<AnyPlatform | null>(null);
 
@@ -320,7 +321,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               verified={p?.youtubeVerified ?? false}
               isActive={primaryPlatform === 'youtube'}
               unlinkLoading={unlinkPending === 'youtube'}
-              onClick={() => setShowYoutubeModal(true)}
+              onClick={() => p?.youtubeChannelId ? setShowYoutubeManage(true) : setShowYoutubeModal(true)}
               onUnlink={p?.youtubeChannelId ? handleUnlinkYoutube : undefined}
             />
 
@@ -376,7 +377,51 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
       {/* ── Quest Board ────────────────────────────────────────── */}
       <QuestBoardTab language={_language} />
 
-      {/* YouTube Modal */}
+      {/* YouTube Manage Modal (bereits verknüpft) */}
+      {showYoutubeManage && p?.youtubeChannelId && (
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4"
+          onClick={() => setShowYoutubeManage(false)}
+        >
+          <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <FaYoutube className="text-red-500" size={20} />
+                <span className="text-white font-bold text-base">YouTube</span>
+              </div>
+              <button onClick={() => setShowYoutubeManage(false)} className="text-zinc-500 hover:text-white text-xl leading-none">×</button>
+            </div>
+            {/* Kanal-Info */}
+            <div className="flex items-center gap-3 bg-zinc-800 rounded-xl p-3">
+              {p.youtubeChannelThumbnail && (
+                <Image src={p.youtubeChannelThumbnail} alt={p.youtubeChannelName ?? ''} width={40} height={40} unoptimized className="w-10 h-10 rounded-full object-cover" />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-semibold text-sm truncate">{p.youtubeChannelName}</p>
+                <p className="text-green-400 text-xs flex items-center gap-1 mt-0.5"><FaCheck size={9} /> Verifiziert</p>
+              </div>
+            </div>
+            {/* Buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowYoutubeManage(false); setShowYoutubeModal(true); }}
+                className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-sm py-2.5 rounded-xl transition-colors"
+              >
+                Ändern
+              </button>
+              <button
+                onClick={async () => { setShowYoutubeManage(false); await handleUnlinkYoutube(); }}
+                disabled={unlinkPending === 'youtube'}
+                className="flex-1 bg-red-900/30 hover:bg-red-900/60 text-red-400 font-semibold text-sm py-2.5 rounded-xl transition-colors disabled:opacity-40"
+              >
+                {unlinkPending === 'youtube' ? '…' : 'Trennen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* YouTube Link Modal */}
       {showYoutubeModal && account?.address && (
         <div
           className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4"
