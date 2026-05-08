@@ -457,68 +457,60 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
         {/* Divider vor Sozialen Profilen (nur wenn Artist-Sektion sichtbar) */}
         {p?.isArtist && <div className="border-t border-zinc-800" />}
 
-        {/* Soziale Profile 2×2 Grid */}
+        {/* Soziale Profile – kompakte Icon-Reihe */}
         <div>
           <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-3">Soziale Profile</p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="flex gap-3 flex-wrap">
 
-            <SocialTile
-              icon={<FaYoutube className="text-red-500" size={14} />}
+            <SocialChip
+              icon={<FaYoutube className="text-red-500" size={15} />}
               label="YouTube"
-              bgColor="bg-red-900/20"
-              borderColor="border-red-800/30"
               name={p?.youtubeChannelName ?? null}
               handle={p?.youtubeChannelName ?? null}
               picture={p?.youtubeChannelThumbnail ?? null}
               verified={p?.youtubeVerified ?? false}
-              isActive={primaryPlatform === 'youtube'}
               unlinkLoading={unlinkPending === 'youtube'}
-              onClick={() => p?.youtubeChannelId ? setShowYoutubeManage(true) : setShowYoutubeModal(true)}
+              onAdd={() => setShowYoutubeModal(true)}
+              onChange={() => setShowYoutubeModal(true)}
               onUnlink={p?.youtubeChannelId ? handleUnlinkYoutube : undefined}
             />
 
-            <SocialTile
-              icon={<FaInstagram className="text-pink-500" size={14} />}
+            <SocialChip
+              icon={<FaInstagram className="text-pink-500" size={15} />}
               label="Instagram"
-              bgColor="bg-pink-900/20"
-              borderColor="border-pink-800/30"
               name={p?.instagramName ?? null}
               handle={p?.instagramHandle ?? null}
               picture={p?.instagramPicture ?? null}
               verified={p?.instagramVerified ?? false}
-              isActive={primaryPlatform === 'instagram'}
               unlinkLoading={unlinkPending === 'instagram'}
-              onClick={() => setVerifyModal('instagram')}
+              onAdd={() => setVerifyModal('instagram')}
+              onChange={() => setVerifyModal('instagram')}
               onUnlink={p?.instagramHandle ? () => handleUnlink('instagram') : undefined}
             />
 
-            <SocialTile
-              icon={<FaTiktok className="text-zinc-200" size={13} />}
+            <SocialChip
+              icon={<FaTiktok className="text-zinc-200" size={14} />}
               label="TikTok"
-              bgColor="bg-zinc-800/60"
-              borderColor="border-zinc-700/30"
               name={p?.tiktokName ?? null}
               handle={p?.tiktokHandle ?? null}
               picture={p?.tiktokPicture ?? null}
               verified={p?.tiktokVerified ?? false}
-              isActive={primaryPlatform === 'tiktok'}
               unlinkLoading={unlinkPending === 'tiktok'}
-              onClick={() => setVerifyModal('tiktok')}
+              onAdd={() => setVerifyModal('tiktok')}
+              onChange={() => setVerifyModal('tiktok')}
               onUnlink={p?.tiktokHandle ? () => handleUnlink('tiktok') : undefined}
             />
 
-            <SocialTile
-              icon={<FaFacebook className="text-blue-500" size={14} />}
+            <SocialChip
+              icon={<FaFacebook className="text-blue-500" size={15} />}
               label="Facebook"
-              bgColor="bg-blue-900/20"
-              borderColor="border-blue-800/30"
               name={p?.facebookName ?? null}
               handle={p?.facebookHandle ?? null}
               picture={p?.facebookPicture ?? null}
               verified={p?.facebookVerified ?? false}
-              isActive={primaryPlatform === 'facebook'}
               unlinkLoading={unlinkPending === 'facebook'}
-              onClick={() => setVerifyModal('facebook')}
+              onAdd={() => setVerifyModal('facebook')}
+              onChange={() => setVerifyModal('facebook')}
               onUnlink={p?.facebookHandle ? () => handleUnlink('facebook') : undefined}
             />
 
@@ -728,70 +720,86 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
 
 // ─── SocialTile ───────────────────────────────────────────────────────────────
 
-interface SocialTileProps {
+interface SocialChipProps {
   icon: React.ReactNode;
   label: string;
-  bgColor: string;
-  borderColor: string;
   name: string | null;
   handle: string | null;
   picture: string | null;
   verified: boolean;
-  isActive: boolean;
   unlinkLoading?: boolean;
-  onClick: () => void;
+  onAdd: () => void;
+  onChange: () => void;
   onUnlink?: () => void;
 }
 
-function SocialTile({
-  icon, label, bgColor, borderColor,
-  name, handle, picture, verified,
-  isActive, unlinkLoading, onClick, onUnlink,
-}: SocialTileProps) {
-  const isLinked = !!handle;
+function SocialChip({
+  icon, label, name, handle, picture, verified, unlinkLoading, onAdd, onChange, onUnlink,
+}: SocialChipProps) {
+  const [open, setOpen] = React.useState(false);
   const displayText = name ?? (handle ? `@${handle}` : null);
 
-  return (
-    <button
-      onClick={onClick}
-      className={`relative w-full text-left ${bgColor} border ${isActive ? 'border-red-500/60 ring-1 ring-red-500/30' : borderColor} rounded-xl p-3 flex flex-col gap-2 transition-all hover:brightness-110 active:scale-[0.98]`}
-    >
-      {/* Header */}
-      <div className="flex items-center gap-1.5">
+  if (!handle && !verified) {
+    // Nicht verknüpft: Icon + Label + +
+    return (
+      <button
+        onClick={onAdd}
+        className="flex items-center gap-1.5 bg-zinc-800/60 border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-white rounded-xl px-3 py-2 text-xs font-semibold transition-all"
+      >
         {icon}
-        <span className="text-zinc-400 text-xs font-semibold flex-1">{label}</span>
-        {verified && <FaCheck size={9} className="text-green-400 shrink-0" />}
-      </div>
+        {label}
+        <FaPlus size={9} className="text-zinc-600" />
+      </button>
+    );
+  }
 
-      {/* Avatar + Name */}
-      <div className="flex items-center gap-2">
-        {isLinked && picture ? (
-          <Image src={picture} alt={displayText ?? label} width={28} height={28} unoptimized
-            className="w-7 h-7 rounded-full shrink-0 object-cover" />
-        ) : (
-          <div className="w-7 h-7 rounded-full bg-zinc-700/60 shrink-0 flex items-center justify-center">
-            {icon}
+  // Verknüpft: Icon + Label + grüner Haken, Klick öffnet Popup
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 bg-zinc-800/60 border border-green-700/40 hover:border-green-500/60 text-white rounded-xl px-3 py-2 text-xs font-semibold transition-all"
+      >
+        {icon}
+        {label}
+        <FaCheck size={9} className="text-green-400" />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-2 z-50 bg-zinc-900 border border-zinc-700 rounded-2xl p-3 shadow-xl w-52 space-y-3">
+          {/* Name + Bild */}
+          <div className="flex items-center gap-2">
+            {picture ? (
+              <Image src={picture} alt={displayText ?? label} width={32} height={32} unoptimized
+                className="w-8 h-8 rounded-full object-cover shrink-0" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center shrink-0">{icon}</div>
+            )}
+            <p className="text-white text-xs font-semibold truncate flex-1">{displayText ?? label}</p>
           </div>
-        )}
-        <p className={`text-xs font-semibold truncate flex-1 ${isLinked ? 'text-white' : 'text-zinc-600 italic'}`}>
-          {displayText ?? 'Nicht verknüpft'}
-        </p>
-        {!isLinked && <FaPlus size={10} className="text-zinc-600 shrink-0" />}
-      </div>
-
-      {/* Trennen-Button (stoppt Klick-Propagation zur Kachel) */}
-      {isLinked && onUnlink && (
-        <div className="flex justify-end mt-auto">
-          <button
-            onClick={(e) => { e.stopPropagation(); onUnlink(); }}
-            disabled={unlinkLoading}
-            className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-red-900/20 hover:bg-red-900/50 text-red-400 disabled:opacity-40 transition-colors"
-            title="Trennen"
-          >
-            {unlinkLoading ? '…' : 'Trennen'}
+          {/* Aktionen */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setOpen(false); onChange(); }}
+              className="flex-1 text-xs px-2 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold transition-colors"
+            >
+              Ändern
+            </button>
+            {onUnlink && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setOpen(false); onUnlink(); }}
+                disabled={unlinkLoading}
+                className="flex-1 text-xs px-2 py-1.5 rounded-xl bg-red-900/30 hover:bg-red-900/60 text-red-400 font-semibold transition-colors disabled:opacity-40"
+              >
+                {unlinkLoading ? '…' : 'Trennen'}
+              </button>
+            )}
+          </div>
+          <button onClick={() => setOpen(false)} className="absolute top-2 right-2 text-zinc-600 hover:text-white">
+            <FaTimes size={10} />
           </button>
         </div>
       )}
-    </button>
+    </div>
   );
 }
