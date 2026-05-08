@@ -292,7 +292,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
 
       {/* ── Supporter ─────────────────────────────────────────── */}
       <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 space-y-4">
-        <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">Supporter</p>
+        <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1">Supporter</p>
 
         {/* Avatar + Name + Dropdown */}
         <div className="flex items-center gap-4">
