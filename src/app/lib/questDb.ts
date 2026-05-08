@@ -1193,6 +1193,26 @@ export interface SocialProfile {
   facebookName: string | null;
   facebookPicture: string | null;
   youtubeChannelId: string | null;
+  isArtist: boolean;
+}
+
+export interface AdminUserRow {
+  walletAddress: string;
+  displayName: string | null;
+  isArtist: boolean;
+  instagramHandle: string | null;
+  instagramVerified: boolean;
+  tiktokHandle: string | null;
+  tiktokVerified: boolean;
+  facebookHandle: string | null;
+  facebookVerified: boolean;
+  youtubeChannelId: string | null;
+  youtubeChannelName: string | null;
+  youtubeVerified: boolean;
+  credits: number;
+  xp: number;
+  level: number;
+  updatedAt: string;
 }
 
 export async function getUserProfile(walletAddress: string): Promise<SocialProfile> {
@@ -1207,6 +1227,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
       tiktokHandle: null, tiktokVerified: false, tiktokName: null, tiktokPicture: null,
       facebookHandle: null, facebookVerified: false, facebookName: null, facebookPicture: null,
       youtubeChannelId: null,
+      isArtist: false,
     };
   }
   const r = rows[0];
@@ -1225,6 +1246,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
     facebookName: r.facebook_name ?? null,
     facebookPicture: r.facebook_picture ?? null,
     youtubeChannelId: r.youtube_channel_id ?? null,
+    isArtist: Boolean(r.is_artist),
   };
 }
 
@@ -1357,6 +1379,68 @@ export async function addUserXp(walletAddress: string, xp: number): Promise<void
     VALUES (${walletAddress.toLowerCase()}, ${xp}, NOW())
     ON CONFLICT (wallet_address) DO UPDATE SET
       xp         = user_xp.xp + ${xp},
+      updated_at = NOW()
+  `;
+}
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
+
+export async function getAllUserProfiles(): Promise<AdminUserRow[]> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT
+      p.wallet_address,
+      p.display_name,
+      p.is_artist,
+      p.instagram_handle,
+      p.instagram_verified,
+      p.tiktok_handle,
+      p.tiktok_verified,
+      p.facebook_handle,
+      p.facebook_verified,
+      p.youtube_channel_id,
+      p.updated_at,
+      yb.channel_name  AS youtube_channel_name,
+      yb.channel_id IS NOT NULL AS youtube_verified,
+      COALESCE(dc.balance, 0) AS credits,
+      COALESCE(ux.xp, 0)     AS xp
+    FROM user_profiles p
+    LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
+    LEFT JOIN dfaith_credits   dc ON dc.wallet_address = p.wallet_address
+    LEFT JOIN user_xp          ux ON ux.wallet_address = p.wallet_address
+    ORDER BY p.updated_at DESC
+  `;
+  return rows.map((r) => {
+    const xp = Number(r.xp);
+    const { level } = xpToLevel(xp);
+    return {
+      walletAddress: r.wallet_address,
+      displayName: r.display_name ?? null,
+      isArtist: Boolean(r.is_artist),
+      instagramHandle: r.instagram_handle ?? null,
+      instagramVerified: Boolean(r.instagram_verified),
+      tiktokHandle: r.tiktok_handle ?? null,
+      tiktokVerified: Boolean(r.tiktok_verified),
+      facebookHandle: r.facebook_handle ?? null,
+      facebookVerified: Boolean(r.facebook_verified),
+      youtubeChannelId: r.youtube_channel_id ?? null,
+      youtubeChannelName: r.youtube_channel_name ?? null,
+      youtubeVerified: Boolean(r.youtube_verified),
+      credits: Number(r.credits),
+      xp,
+      level,
+      updatedAt: r.updated_at instanceof Date ? r.updated_at.toISOString() : r.updated_at,
+    };
+  });
+}
+
+export async function setArtistStatus(walletAddress: string, isArtist: boolean): Promise<void> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO user_profiles (wallet_address, is_artist, updated_at)
+    VALUES (${walletAddress.toLowerCase()}, ${isArtist}, NOW())
+    ON CONFLICT (wallet_address) DO UPDATE SET
+      is_artist  = ${isArtist},
       updated_at = NOW()
   `;
 }
