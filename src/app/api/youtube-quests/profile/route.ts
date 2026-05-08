@@ -48,18 +48,19 @@ export async function POST(req: NextRequest) {
     facebookHandle?: string | null;
     artistType?: string | null;
     artistBio?: string | null;
+    rewardToken?: string | null;
   };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Ungültiger Body' }, { status: 400 });
   }
-  const { wallet, displayName, instagramHandle, tiktokHandle, facebookHandle, artistType, artistBio } = body;
+  const { wallet, displayName, instagramHandle, tiktokHandle, facebookHandle, artistType, artistBio, rewardToken } = body;
   if (!wallet) {
     return NextResponse.json({ error: 'wallet fehlt' }, { status: 400 });
   }
   try {
-    await upsertUserProfile(wallet, { displayName, instagramHandle, tiktokHandle, facebookHandle, artistType, artistBio });
+    await upsertUserProfile(wallet, { displayName, instagramHandle, tiktokHandle, facebookHandle, artistType, artistBio, rewardToken });
     return NextResponse.json({ success: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

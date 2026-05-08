@@ -1196,6 +1196,7 @@ export interface SocialProfile {
   isArtist: boolean;
   artistType: string | null;
   artistBio: string | null;
+  rewardToken: string | null;
 }
 
 export interface AdminUserRow {
@@ -1232,6 +1233,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
       isArtist: false,
       artistType: null,
       artistBio: null,
+      rewardToken: null,
     };
   }
   const r = rows[0];
@@ -1253,6 +1255,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
     isArtist: Boolean(r.is_artist),
     artistType: r.artist_type ?? null,
     artistBio: r.artist_bio ?? null,
+    rewardToken: r.reward_token ?? null,
   };
 }
 
@@ -1360,6 +1363,12 @@ export async function upsertUserProfile(
   if (data.artistBio !== undefined) {
     await sql`
       UPDATE user_profiles SET artist_bio = ${data.artistBio}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+  if (data.rewardToken !== undefined) {
+    await sql`
+      UPDATE user_profiles SET reward_token = ${data.rewardToken}, updated_at = NOW()
       WHERE wallet_address = ${walletAddress.toLowerCase()}
     `;
   }

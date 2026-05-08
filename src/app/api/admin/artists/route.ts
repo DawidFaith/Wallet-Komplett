@@ -8,6 +8,7 @@ export async function GET() {
     // Spalten artist_type / artist_bio ggf. noch nicht vorhanden → sicher nachrüsten
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS artist_type TEXT`;
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS artist_bio TEXT`;
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS reward_token TEXT DEFAULT 'D.FAITH'`;
 
     const rows = await sql`
       SELECT
@@ -15,6 +16,7 @@ export async function GET() {
         p.display_name,
         p.artist_type,
         p.artist_bio,
+        p.reward_token,
         p.instagram_handle,
         p.instagram_verified,
         p.instagram_name,
@@ -66,6 +68,7 @@ export async function GET() {
         picture,
         artistType: r.artist_type ?? null,
         artistBio: r.artist_bio ?? null,
+        rewardToken: r.reward_token ?? 'D.FAITH',
         questCount: Number(r.quest_count),
         socials: {
           youtubeChannelId: r.youtube_channel_id ?? null,

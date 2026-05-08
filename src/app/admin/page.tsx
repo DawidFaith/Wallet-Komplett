@@ -10,6 +10,7 @@ interface AdminUser {
   walletAddress: string;
   displayName: string | null;
   isArtist: boolean;
+  rewardToken: string | null;
   instagramHandle: string | null;
   instagramVerified: boolean;
   tiktokHandle: string | null;
@@ -40,6 +41,9 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
   const [filterArtist, setFilterArtist] = useState<'all' | 'artist' | 'fan'>('all');
   const [toggling, setToggling] = useState<string | null>(null);
+  const [editingRewardToken, setEditingRewardToken] = useState<string | null>(null);
+  const [rewardTokenInput, setRewardTokenInput] = useState('');
+  const [savingRewardToken, setSavingRewardToken] = useState<string | null>(null);
 
   // Passwort aus sessionStorage laden
   useEffect(() => {
@@ -104,6 +108,28 @@ export default function AdminPage() {
       setError(e instanceof Error ? e.message : 'Fehler beim Speichern');
     } finally {
       setToggling(null);
+    }
+  };
+
+  const handleSaveRewardToken = async (walletAddress: string) => {
+    setSavingRewardToken(walletAddress);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ walletAddress, rewardToken: rewardTokenInput.trim() || null }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.walletAddress === walletAddress ? { ...u, rewardToken: rewardTokenInput.trim() || null } : u,
+        ),
+      );
+      setEditingRewardToken(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler beim Speichern');
+    } finally {
+      setSavingRewardToken(null);
     }
   };
 
@@ -263,6 +289,13 @@ export default function AdminPage() {
               user={user}
               toggling={toggling === user.walletAddress}
               onToggle={() => handleToggleArtist(user.walletAddress, user.isArtist)}
+              editingRewardToken={editingRewardToken === user.walletAddress}
+              rewardTokenInput={rewardTokenInput}
+              onEditRewardToken={() => { setEditingRewardToken(user.walletAddress); setRewardTokenInput(user.rewardToken ?? 'D.FAITH'); }}
+              onRewardTokenInputChange={setRewardTokenInput}
+              onSaveRewardToken={() => handleSaveRewardToken(user.walletAddress)}
+              onCancelRewardToken={() => setEditingRewardToken(null)}
+              savingRewardToken={savingRewardToken === user.walletAddress}
             />
           ))}
         </div>
@@ -277,10 +310,24 @@ function UserRow({
   user,
   toggling,
   onToggle,
+  editingRewardToken,
+  rewardTokenInput,
+  onEditRewardToken,
+  onRewardTokenInputChange,
+  onSaveRewardToken,
+  onCancelRewardToken,
+  savingRewardToken,
 }: {
   user: AdminUser;
   toggling: boolean;
   onToggle: () => void;
+  editingRewardToken: boolean;
+  rewardTokenInput: string;
+  onEditRewardToken: () => void;
+  onRewardTokenInputChange: (v: string) => void;
+  onSaveRewardToken: () => void;
+  onCancelRewardToken: () => void;
+  savingRewardToken: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -377,27 +424,46 @@ function UserRow({
       </div>
 
       {/* Right: Artist toggle */}
-      <button
-        onClick={onToggle}
-        disabled={toggling}
-        className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-          user.isArtist
-            ? 'bg-red-600 hover:bg-red-700 text-white'
-            : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 border border-zinc-700'
-        } disabled:opacity-50`}
-      >
-        {toggling ? (
-          <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
-        ) : user.isArtist ? (
-          <>
-            <FaTimes size={10} /> Artist entfernen
-          </>
-        ) : (
-          <>
-            <FaCheck size={10} /> Als Artist setzen
-          </>
+      <div className="flex flex-col items-end gap-2 shrink-0">
+        <button
+          onClick={onToggle}
+          disabled={toggling}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            user.isArtist
+              ? 'bg-red-600 hover:bg-red-700 text-white'
+              : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 border border-zinc-700'
+          } disabled:opacity-50`}
+        >
+          {toggling ? (
+            <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+          ) : user.isArtist ? (
+            <><FaTimes size={10} /> Artist entfernen</>
+          ) : (
+            <><FaCheck size={10} /> Als Artist setzen</>
+          )}
+        </button>
+        {user.isArtist && (
+          editingRewardToken ? (
+            <div className="flex items-center gap-1">
+              <input
+                value={rewardTokenInput}
+                onChange={(e) => onRewardTokenInputChange(e.target.value)}
+                className="bg-zinc-800 border border-zinc-600 text-white text-xs rounded-lg px-2 py-1 w-24 outline-none focus:border-yellow-500"
+                placeholder="D.FAITH"
+                autoFocus
+              />
+              <button onClick={onSaveRewardToken} disabled={savingRewardToken} className="text-xs bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-2 py-1 rounded-lg disabled:opacity-50">
+                {savingRewardToken ? '…' : 'OK'}
+              </button>
+              <button onClick={onCancelRewardToken} className="text-zinc-500 hover:text-white text-xs px-1">✕</button>
+            </div>
+          ) : (
+            <button onClick={onEditRewardToken} className="flex items-center gap-1 text-xs text-zinc-500 hover:text-yellow-400 transition-colors">
+              <FaCoins size={9} /> {user.rewardToken ?? 'D.FAITH'}
+            </button>
+          )
         )}
-      </button>
+      </div>
     </div>
   );
 }

@@ -27,6 +27,7 @@ interface ProfileData {
     isArtist: boolean;
     artistType: string | null;
     artistBio: string | null;
+    rewardToken: string | null;
     instagramHandle: string | null;
     instagramVerified: boolean;
     instagramName: string | null;
@@ -52,6 +53,7 @@ interface ArtistEntry {
   picture: string | null;
   artistType: string | null;
   artistBio: string | null;
+  rewardToken: string | null;
   questCount: number;
   socials: {
     youtubeChannelId: string | null;
@@ -108,6 +110,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   const [editingArtist, setEditingArtist] = useState(false);
   const [artistTypeInput, setArtistTypeInput] = useState('');
   const [artistBioInput, setArtistBioInput] = useState('');
+  const [artistRewardTokenInput, setArtistRewardTokenInput] = useState('');
   const [artistSaving, setArtistSaving] = useState(false);
 
   const [primaryPlatform, setPrimaryPlatformState] = useState<AnyPlatform | null>(null);
@@ -205,6 +208,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           wallet: account.address,
           artistType: artistTypeInput.trim() || null,
           artistBio: artistBioInput.trim() || null,
+          rewardToken: artistRewardTokenInput.trim() || null,
         }),
       });
       setEditingArtist(false);
@@ -212,7 +216,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
     } finally {
       setArtistSaving(false);
     }
-  }, [account?.address, artistTypeInput, artistBioInput, loadProfile]);
+  }, [account?.address, artistTypeInput, artistBioInput, artistRewardTokenInput, loadProfile]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
@@ -393,6 +397,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                   onClick={() => {
                     setArtistTypeInput(p.artistType ?? '');
                     setArtistBioInput(p.artistBio ?? '');
+                    setArtistRewardTokenInput(p.rewardToken ?? 'D.FAITH');
                     setEditingArtist(true);
                   }}
                   className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 bg-zinc-800 hover:bg-zinc-700 px-2 py-1 rounded-lg transition-colors"
@@ -407,6 +412,12 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                   value={artistTypeInput}
                   onChange={(e) => setArtistTypeInput(e.target.value)}
                   placeholder="Künstlertyp (z.B. Musiker, Rapper, DJ…)"
+                  className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-red-500 transition-colors"
+                />
+                <input
+                  value={artistRewardTokenInput}
+                  onChange={(e) => setArtistRewardTokenInput(e.target.value)}
+                  placeholder="Reward Token (z.B. D.FAITH)"
                   className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-red-500 transition-colors"
                 />
                 <textarea
@@ -591,6 +602,10 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               {selectedArtist.artistBio && (
                 <p className="text-zinc-400 text-xs leading-relaxed">{selectedArtist.artistBio}</p>
               )}
+              <div className="flex items-center justify-between text-xs px-1">
+                <span className="text-zinc-500">Reward Token</span>
+                <span className="text-white font-bold tracking-wide">{selectedArtist.rewardToken ?? 'D.FAITH'}</span>
+              </div>
               {(data?.credits ?? 0) > 0 && (
                 <div className="flex items-center gap-2 bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-3 py-1.5">
                   <FaCoins className="text-yellow-400" size={12} />

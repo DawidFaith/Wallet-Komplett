@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllUserProfiles, setArtistStatus } from '../../../lib/questDb';
+import { getAllUserProfiles, setArtistStatus, upsertUserProfile } from '../../../lib/questDb';
 
 function checkAuth(req: NextRequest): boolean {
   const secret = req.headers.get('x-admin-secret');
@@ -24,18 +24,23 @@ export async function PATCH(req: NextRequest) {
   if (!checkAuth(req)) {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
-  let body: { walletAddress?: string; isArtist?: boolean };
+  let body: { walletAddress?: string; isArtist?: boolean; rewardToken?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Ungültiger JSON-Body' }, { status: 400 });
   }
-  const { walletAddress, isArtist } = body;
-  if (!walletAddress || typeof isArtist !== 'boolean') {
-    return NextResponse.json({ error: 'walletAddress und isArtist erforderlich' }, { status: 400 });
+  const { walletAddress, isArtist, rewardToken } = body;
+  if (!walletAddress) {
+    return NextResponse.json({ error: 'walletAddress erforderlich' }, { status: 400 });
   }
   try {
-    await setArtistStatus(walletAddress, isArtist);
+    if (typeof isArtist === 'boolean') {
+      await setArtistStatus(walletAddress, isArtist);
+    }
+    if (rewardToken !== undefined) {
+      await upsertUserProfile(walletAddress, { rewardToken });
+    }
     return NextResponse.json({ success: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
