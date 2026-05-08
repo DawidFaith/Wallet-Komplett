@@ -132,7 +132,7 @@ export default function DepositModal({ open, onClose, walletAddress, onDeposited
           <div className="bg-green-900/30 border border-green-700/40 rounded-xl p-5 text-center">
             <FaCheck size={28} className="text-green-400 mx-auto mb-2" />
             <p className="text-green-300 font-bold text-lg">{Number(creditedAmount).toFixed(2)} DFAITH gutgeschrieben!</p>
-            <p className="text-zinc-400 text-sm mt-1">Dein Creator-Pool wurde aufgeladen.</p>
+            <p className="text-zinc-400 text-sm mt-1">Dein Artist-Pool wurde aufgeladen.</p>
           </div>
           <button onClick={handleClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">
             Schließen

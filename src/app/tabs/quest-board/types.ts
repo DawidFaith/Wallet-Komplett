@@ -45,7 +45,7 @@ export interface ClaimResult {
   txHash?: string;
 }
 
-export type QuestBoardView = 'fan' | 'creator';
+export type QuestBoardView = 'fan' | 'artist';
 
 export interface VerifiedPlatforms {
   youtube: boolean;

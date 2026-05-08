@@ -24,9 +24,11 @@ import { formatCredits } from '../utils';
 interface FanBoardProps {
   walletAddress: string;
   verified: VerifiedPlatforms;
+  /** Optionaler Filter: nur Quests dieses Artists (creatorWallet, lowercase) anzeigen */
+  filterCreator?: string;
 }
 
-export default function FanBoard({ walletAddress, verified }: FanBoardProps) {
+export default function FanBoard({ walletAddress, verified, filterCreator }: FanBoardProps) {
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -207,20 +209,24 @@ export default function FanBoard({ walletAddress, verified }: FanBoardProps) {
   };
 
   // Quests nach Plattform und Typ gruppieren – nur verifizierte Plattformen anzeigen
+  // Optionaler filterCreator (lowercase wallet) für Artist-Selektion
+  const filteredQuests = filterCreator
+    ? quests.filter((q) => q.creatorWallet.toLowerCase() === filterCreator.toLowerCase())
+    : quests;
   const youtubeQuests = verified.youtube
-    ? quests.filter((q) => q.platform === 'youtube')
+    ? filteredQuests.filter((q) => q.platform === 'youtube')
     : [];
   const tiktokCommentQuests = verified.tiktok
-    ? quests.filter((q) => q.platform === 'tiktok' && q.type !== 'engagement')
+    ? filteredQuests.filter((q) => q.platform === 'tiktok' && q.type !== 'engagement')
     : [];
   const tiktokEngagementQuests = verified.tiktok
-    ? quests.filter((q) => q.platform === 'tiktok' && q.type === 'engagement')
+    ? filteredQuests.filter((q) => q.platform === 'tiktok' && q.type === 'engagement')
     : [];
   const instagramQuests = verified.instagram
-    ? quests.filter((q) => q.platform === 'instagram')
+    ? filteredQuests.filter((q) => q.platform === 'instagram')
     : [];
   const facebookQuests = verified.facebook
-    ? quests.filter((q) => q.platform === 'facebook')
+    ? filteredQuests.filter((q) => q.platform === 'facebook')
     : [];
 
   return (
