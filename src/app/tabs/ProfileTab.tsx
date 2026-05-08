@@ -112,21 +112,6 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
 
   const [primaryPlatform, setPrimaryPlatformState] = useState<AnyPlatform | null>(null);
 
-  const handleClaim = useCallback(async () => {
-    if (!account?.address || !data || data.credits <= 0) return;
-    setClaiming(true);
-    try {
-      const res = await fetch('/api/youtube-quests/claim', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress: account.address, amount: data.credits }),
-      });
-      if (res.ok) await loadProfile();
-    } finally {
-      setClaiming(false);
-    }
-  }, [account?.address, data, loadProfile]);
-
   const setPrimaryPlatform = useCallback((platform: AnyPlatform | null) => {
     setPrimaryPlatformState(platform);
     if (typeof window !== 'undefined') {
@@ -161,6 +146,21 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
       setLoading(false);
     }
   }, [account?.address, setPrimaryPlatform]);
+
+  const handleClaim = useCallback(async () => {
+    if (!account?.address || !data || data.credits <= 0) return;
+    setClaiming(true);
+    try {
+      const res = await fetch('/api/youtube-quests/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress: account.address, amount: data.credits }),
+      });
+      if (res.ok) await loadProfile();
+    } finally {
+      setClaiming(false);
+    }
+  }, [account?.address, data, loadProfile]);
 
   const handleUnlink = useCallback(async (platform: SocialPlatform) => {
     if (!account?.address) return;
