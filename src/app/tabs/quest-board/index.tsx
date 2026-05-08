@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useActiveAccount } from 'thirdweb/react';
 import { FaTrophy, FaYoutube, FaInstagram, FaTiktok, FaFacebookF, FaCheck, FaMusic, FaTimes } from 'react-icons/fa';
 import Image from 'next/image';
-import Image from 'next/image';
 import FanBoard from './fan/FanBoard';
 import CreatorBoard from './creator/CreatorBoard';
 import type { YouTubeBinding, QuestBoardView, VerifiedPlatforms } from './types';
