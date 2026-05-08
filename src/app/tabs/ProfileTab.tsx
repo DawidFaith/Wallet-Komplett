@@ -566,7 +566,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                 <p className="text-zinc-400 text-xs leading-relaxed">{selectedArtist.artistBio}</p>
               )}
               <div className="flex items-center gap-2 text-xs px-1">
-                <span className="text-zinc-500">Reward Token</span>
+                <span className="text-white font-bold tracking-wide">Reward Token</span>
                 <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
                 <span className="text-white font-bold tracking-wide">{selectedArtist.rewardToken ?? 'D.FAITH'}</span>
               </div>
