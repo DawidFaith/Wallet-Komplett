@@ -220,7 +220,11 @@ export default function CreateQuestModal({
             ? '📩 Teile dieses Reel in deiner Story und klicke den DM-Link!'
             : '💬 Kommentiere dieses Instagram Reel!'
           : platform === 'facebook'
-          ? '💬 Kommentiere diesen Facebook Post!'
+          ? questType === 'like'
+            ? '👍 Like diesen Facebook Post!'
+            : questType === 'secret'
+            ? '🔑 Finde den geheimen Code im Post / Video und gib ihn ein!'
+            : '💬 Kommentiere diesen Facebook Post!'
           : questType === 'like'
           ? '👍 Like dieses YouTube Short!'
           : questType === 'secret'
@@ -283,6 +287,8 @@ export default function CreateQuestModal({
             rewardAmount: Number(rewardAmount),
             maxCompletions: Number(maxParticipants),
             durationHours: finalDurationHours,
+            questType,
+            secretCode: questType === 'secret' ? secretCode.trim() : undefined,
           }
         : {
             creatorWallet: walletAddress,
@@ -549,6 +555,55 @@ export default function CreateQuestModal({
                   : questType === 'dm_share'
                   ? 'Fan teilt das Reel in seiner Story (Teil 1) und klickt den Link-DM-Link (Teil 2).'
                   : 'Make.com prüft via Instagram Graph API ob der Fan kommentiert hat.'}
+              </p>
+            </div>
+          )}
+
+          {/* Quest-Typ – nur bei Facebook */}
+          {platform === 'facebook' && (
+            <div>
+              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Quest-Typ <span className="text-red-400">*</span></label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setQuestType('comment')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                    questType === 'comment'
+                      ? 'bg-blue-600 border-blue-500 text-white'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-blue-600'
+                  }`}
+                >
+                  💬 Kommentar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuestType('like')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                    questType === 'like'
+                      ? 'bg-blue-600 border-blue-500 text-white'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-blue-600'
+                  }`}
+                >
+                  👍 Like
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuestType('secret')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                    questType === 'secret'
+                      ? 'bg-yellow-600 border-yellow-500 text-white'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-yellow-600'
+                  }`}
+                >
+                  🔑 Secret
+                </button>
+              </div>
+              <p className="text-zinc-500 text-xs mt-1">
+                {questType === 'like'
+                  ? 'Verifizierung über Like-Anzahl-Delta: Fan muss innerhalb von 10 Min liken.'
+                  : questType === 'secret'
+                  ? 'Fan gibt einen Code ein, der im Post / Video versteckt ist.'
+                  : 'Make.com prüft ob der Fan unter dem Post kommentiert hat.'}
               </p>
             </div>
           )}

@@ -155,6 +155,16 @@ export const MIGRATION_SQL = `
     PRIMARY KEY (quest_id, wallet_address)
   );
 
+  CREATE TABLE IF NOT EXISTS facebook_like_verifications (
+    quest_id        TEXT        NOT NULL,
+    wallet_address  TEXT        NOT NULL,
+    post_id         TEXT        NOT NULL,
+    baseline_likes  INTEGER     NOT NULL DEFAULT 0,
+    expires_at      TIMESTAMPTZ NOT NULL,
+    started_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (quest_id, wallet_address)
+  );
+
   -- ── Migrationen: bestehende INTEGER-Spalten auf NUMERIC(20,2) erweitern ──
   -- DFAITH hat 2 Decimals, daher müssen Beträge mit 2 Nachkommastellen gespeichert werden.
   ALTER TABLE quests             ALTER COLUMN reward_amount  TYPE NUMERIC(20,2) USING reward_amount::numeric;

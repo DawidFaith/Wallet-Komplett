@@ -42,6 +42,8 @@ export default function SecretVerifyModal({
     try {
       const endpoint = quest.platform === 'tiktok'
         ? '/api/tiktok-quests/secret-verify'
+        : quest.platform === 'facebook'
+        ? '/api/facebook-quests/secret-verify'
         : '/api/youtube-quests/secret-verify';
       const res = await fetch(endpoint, {
         method: 'POST',

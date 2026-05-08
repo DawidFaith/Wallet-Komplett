@@ -48,6 +48,8 @@ export async function POST(req: NextRequest) {
     rewardAmount?: number;
     maxCompletions?: number;
     durationHours?: number;
+    questType?: 'comment' | 'like' | 'secret';
+    secretCode?: string;
   };
   try {
     body = await req.json();
@@ -55,11 +57,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 });
   }
 
-  const { creatorWallet, postUrl, postId, videoTitle, thumbnailUrl, description, rewardAmount, maxCompletions, durationHours } = body;
+  const { creatorWallet, postUrl, postId, videoTitle, thumbnailUrl, description, rewardAmount, maxCompletions, durationHours, questType, secretCode } = body;
 
   if (!creatorWallet || !postUrl || !postId) {
     return NextResponse.json(
       { error: 'creatorWallet, postUrl und postId sind erforderlich.' },
+      { status: 400 }
+    );
+  }
+
+  const type: 'comment' | 'like' | 'secret' = questType === 'like' || questType === 'secret' ? questType : 'comment';
+
+  if (type === 'secret' && !secretCode?.trim()) {
+    return NextResponse.json(
+      { error: 'Bei Secret-Quests muss ein Code angegeben werden.' },
       { status: 400 }
     );
   }
@@ -84,16 +95,22 @@ export async function POST(req: NextRequest) {
   const now = new Date().toISOString();
   const questId = randomUUID();
 
+  const defaultDescription = type === 'like'
+    ? '👍 Like diesen Facebook Post!'
+    : type === 'secret'
+    ? '🔑 Finde den geheimen Code im Post / Video und gib ihn ein!'
+    : '💬 Kommentiere diesen Facebook Post!';
+
   const quest: QuestDetail = {
     id: questId,
     platform: 'facebook',
-    type: 'comment',
+    type,
     creatorWallet: creatorWallet.toLowerCase(),
     videoId: postId,            // Facebook Post-ID → wird an Make.com weitergegeben
     videoTitle: videoTitle ?? 'Facebook Post',
     videoThumbnail: thumbnailUrl ?? '',
     videoUrl: postUrl,
-    description: description ?? '💬 Kommentiere diesen Facebook Post!',
+    description: description ?? defaultDescription,
     rewardAmount: reward,
     maxCompletions: max,
     completions: 0,
@@ -103,6 +120,7 @@ export async function POST(req: NextRequest) {
     expiresAt,
     creditsLocked: totalBudget,
     creditsRefunded: false,
+    secretCode: type === 'secret' ? secretCode!.trim() : null,
   };
 
   const locked = await lockQuestBudget(creatorWallet.toLowerCase(), totalBudget);

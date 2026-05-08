@@ -943,6 +943,70 @@ export async function deleteInstagramLikeVerification(
   `;
 }
 
+// ─── Facebook Like Verifikationen ────────────────────────────────────────────
+
+export interface FacebookLikeVerification {
+  questId: string;
+  walletAddress: string;
+  postId: string;
+  baselineLikes: number;
+  expiresAt: string;
+  startedAt: string;
+}
+
+export async function upsertFacebookLikeVerification(
+  questId: string,
+  walletAddress: string,
+  postId: string,
+  baselineLikes: number,
+  expiresAt: string,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO facebook_like_verifications
+      (quest_id, wallet_address, post_id, baseline_likes, expires_at, started_at)
+    VALUES
+      (${questId}, ${walletAddress.toLowerCase()}, ${postId}, ${baselineLikes}, ${expiresAt}, NOW())
+    ON CONFLICT (quest_id, wallet_address) DO UPDATE SET
+      baseline_likes = EXCLUDED.baseline_likes,
+      expires_at     = EXCLUDED.expires_at,
+      started_at     = NOW()
+  `;
+}
+
+export async function getFacebookLikeVerification(
+  questId: string,
+  walletAddress: string,
+): Promise<FacebookLikeVerification | null> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT * FROM facebook_like_verifications
+    WHERE quest_id = ${questId} AND wallet_address = ${walletAddress.toLowerCase()}
+    LIMIT 1
+  `;
+  if (!rows.length) return null;
+  const r = rows[0];
+  return {
+    questId: r.quest_id,
+    walletAddress: r.wallet_address,
+    postId: r.post_id,
+    baselineLikes: Number(r.baseline_likes),
+    expiresAt: r.expires_at instanceof Date ? r.expires_at.toISOString() : r.expires_at,
+    startedAt: r.started_at instanceof Date ? r.started_at.toISOString() : r.started_at,
+  };
+}
+
+export async function deleteFacebookLikeVerification(
+  questId: string,
+  walletAddress: string,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    DELETE FROM facebook_like_verifications
+    WHERE quest_id = ${questId} AND wallet_address = ${walletAddress.toLowerCase()}
+  `;
+}
+
 // ─── Instagram DM Share Verifikationen ────────────────────────────────────────
 
 export interface InstagramDmVerification {

@@ -230,6 +230,19 @@ export async function POST(req: NextRequest) {
       )
     `;
 
+    // ── Facebook Like-Verifikationen ────────────────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS facebook_like_verifications (
+        quest_id        TEXT        NOT NULL,
+        wallet_address  TEXT        NOT NULL,
+        post_id         TEXT        NOT NULL,
+        baseline_likes  INTEGER     NOT NULL DEFAULT 0,
+        expires_at      TIMESTAMPTZ NOT NULL,
+        started_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (quest_id, wallet_address)
+      )
+    `;
+
     // ── Device Fingerprint Schutz ────────────────────────────────────────────
     await sql`
       CREATE TABLE IF NOT EXISTS device_fingerprints (

@@ -17,6 +17,7 @@ import InstagramLikeVerifyModal from './InstagramLikeVerifyModal';
 import InstagramDmShareModal from './InstagramDmShareModal';
 import FacebookCommentVerifyModal from './FacebookCommentVerifyModal';
 import FacebookQuestCard from '../quests/facebook/FacebookQuestCard';
+import FacebookLikeVerifyModal from './FacebookLikeVerifyModal';
 import type { QuestIndexEntry, VerifiedPlatforms, VerifyResult, ClaimResult } from '../types';
 import { formatCredits } from '../utils';
 
@@ -44,6 +45,7 @@ export default function FanBoard({ walletAddress, verified }: FanBoardProps) {
   const [instagramLikeQuest, setInstagramLikeQuest] = useState<QuestIndexEntry | null>(null);
   const [instagramDmShareQuest, setInstagramDmShareQuest] = useState<QuestIndexEntry | null>(null);
   const [facebookCommentQuest, setFacebookCommentQuest] = useState<QuestIndexEntry | null>(null);
+  const [facebookLikeQuest, setFacebookLikeQuest] = useState<QuestIndexEntry | null>(null);
 
   const loadQuests = useCallback(async () => {
     setLoading(true);
@@ -195,7 +197,13 @@ export default function FanBoard({ walletAddress, verified }: FanBoardProps) {
   const handleFacebookVerify = (questId: string) => {
     const quest = quests.find((q) => q.id === questId) ?? null;
     if (!quest) return;
-    setFacebookCommentQuest(quest);
+    if (quest.type === 'like') {
+      setFacebookLikeQuest(quest);
+    } else if (quest.type === 'secret') {
+      setSecretVerifyQuest(quest);
+    } else {
+      setFacebookCommentQuest(quest);
+    }
   };
 
   // Quests nach Plattform und Typ gruppieren – nur verifizierte Plattformen anzeigen
@@ -428,6 +436,22 @@ export default function FanBoard({ walletAddress, verified }: FanBoardProps) {
           }
         }}
         onClose={() => setFacebookCommentQuest(null)}
+      />
+
+      {/* Verifizierungs-Modal (Facebook Like) */}
+      <FacebookLikeVerifyModal
+        quest={facebookLikeQuest}
+        walletAddress={walletAddress}
+        onCompleted={(amount) => {
+          if (facebookLikeQuest) {
+            setCompletedIds((prev) => [...prev, facebookLikeQuest.id]);
+            setCredits((prev) => prev + amount);
+            setQuests((prev) =>
+              prev.map((q) => q.id === facebookLikeQuest.id ? { ...q, completions: q.completions + 1 } : q)
+            );
+          }
+        }}
+        onClose={() => setFacebookLikeQuest(null)}
       />
 
       {/* Verifizierungs-Modal (Instagram DM-Share) */}
