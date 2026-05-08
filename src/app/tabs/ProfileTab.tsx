@@ -290,6 +290,12 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   return (
     <div className="w-full max-w-2xl mx-auto px-4 pb-16 space-y-5">
 
+      {/* ── Page Title ─────────────────────────────────────────── */}
+      <div>
+        <h1 className="text-white font-bold text-2xl">Support &amp; Earn</h1>
+        <p className="text-zinc-500 text-sm mt-0.5">Unterstütze Artists und verdiene Rewards.</p>
+      </div>
+
       {/* ── Supporter ─────────────────────────────────────────── */}
       <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 space-y-4">
         <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1">Supporter</p>
