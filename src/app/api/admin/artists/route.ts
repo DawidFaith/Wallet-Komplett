@@ -4,6 +4,11 @@ import { getDb } from '../../../lib/db';
 export async function GET() {
   try {
     const sql = getDb();
+
+    // Spalten artist_type / artist_bio ggf. noch nicht vorhanden → sicher nachrüsten
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS artist_type TEXT`;
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS artist_bio TEXT`;
+
     const rows = await sql`
       SELECT
         p.wallet_address,

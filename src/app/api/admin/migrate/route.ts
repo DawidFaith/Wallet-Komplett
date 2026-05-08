@@ -10,7 +10,9 @@ export async function POST(req: NextRequest) {
   try {
     const sql = getDb();
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS is_artist BOOLEAN NOT NULL DEFAULT FALSE`;
-    return NextResponse.json({ success: true, message: 'is_artist Spalte hinzugefügt' });
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS artist_type TEXT`;
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS artist_bio TEXT`;
+    return NextResponse.json({ success: true, message: 'is_artist, artist_type, artist_bio Spalten hinzugefügt' });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
