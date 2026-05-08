@@ -5,7 +5,7 @@ import { useActiveAccount } from 'thirdweb/react';
 import Image from 'next/image';
 import {
   FaInstagram, FaTiktok, FaFacebook, FaYoutube,
-  FaCheck, FaCoins, FaStar, FaLock, FaPlus, FaPen, FaTimes,
+  FaCheck, FaCoins, FaStar, FaLock, FaPlus, FaCrown,
 } from 'react-icons/fa';
 import SocialVerifyModal from './profile/SocialVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
@@ -13,6 +13,7 @@ import QuestBoardTab from './QuestBoardTab';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
 
 type SocialPlatform = 'instagram' | 'tiktok' | 'facebook';
+type AnyPlatform = SocialPlatform | 'youtube';
 
 interface ProfileData {
   xp: number;
@@ -50,18 +51,32 @@ function shortenAddress(addr: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
+const LS_KEY = 'dfaith_primary_platform';
+
 export default function ProfileTab({ language: _language }: ProfileTabProps) {
   const account = useActiveAccount();
   const [data, setData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(false);
   const [verifyModal, setVerifyModal] = useState<SocialPlatform | null>(null);
   const [showYoutubeModal, setShowYoutubeModal] = useState(false);
-  const [unlinkPending, setUnlinkPending] = useState<SocialPlatform | null>(null);
+  const [unlinkPending, setUnlinkPending] = useState<AnyPlatform | null>(null);
 
-  // Profilname bearbeiten
-  const [editingName, setEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState('');
-  const [savingName, setSavingName] = useState(false);
+  const [primaryPlatform, setPrimaryPlatformState] = useState<AnyPlatform | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(LS_KEY) as AnyPlatform | null;
+      setPrimaryPlatformState(stored);
+    }
+  }, []);
+
+  const setPrimaryPlatform = useCallback((platform: AnyPlatform | null) => {
+    setPrimaryPlatformState(platform);
+    if (typeof window !== 'undefined') {
+      if (platform) localStorage.setItem(LS_KEY, platform);
+      else localStorage.removeItem(LS_KEY);
+    }
+  }, []);
 
   const loadProfile = useCallback(async () => {
     if (!account?.address) return;
@@ -74,22 +89,6 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
     }
   }, [account?.address]);
 
-  const handleSaveName = useCallback(async () => {
-    if (!account?.address) return;
-    setSavingName(true);
-    try {
-      await fetch('/api/youtube-quests/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet: account.address, displayName: nameInput.trim() || null }),
-      });
-      setEditingName(false);
-      await loadProfile();
-    } finally {
-      setSavingName(false);
-    }
-  }, [account?.address, nameInput, loadProfile]);
-
   const handleUnlink = useCallback(async (platform: SocialPlatform) => {
     if (!account?.address) return;
     setUnlinkPending(platform);
@@ -99,26 +98,28 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ walletAddress: account.address, platform, action: 'unlink' }),
       });
+      if (primaryPlatform === platform) setPrimaryPlatform(null);
       await loadProfile();
     } finally {
       setUnlinkPending(null);
     }
-  }, [account?.address, loadProfile]);
+  }, [account?.address, loadProfile, primaryPlatform, setPrimaryPlatform]);
 
   const handleUnlinkYoutube = useCallback(async () => {
     if (!account?.address) return;
-    setUnlinkPending('youtube' as SocialPlatform);
+    setUnlinkPending('youtube');
     try {
       await fetch('/api/youtube-quests/verify-channel', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ walletAddress: account.address }),
       });
+      if (primaryPlatform === 'youtube') setPrimaryPlatform(null);
       await loadProfile();
     } finally {
       setUnlinkPending(null);
     }
-  }, [account?.address, loadProfile]);
+  }, [account?.address, loadProfile, primaryPlatform, setPrimaryPlatform]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
@@ -137,7 +138,29 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   }
 
   const p = data?.profile;
-  const displayName = p?.displayName || shortenAddress(account.address);
+
+  const profileInfo: { name: string; picture: string | null } = (() => {
+    switch (primaryPlatform) {
+      case 'youtube':
+        if (p?.youtubeVerified && p.youtubeChannelName)
+          return { name: p.youtubeChannelName, picture: p.youtubeChannelThumbnail ?? null };
+        break;
+      case 'instagram':
+        if (p?.instagramHandle)
+          return { name: p.instagramName ?? `@${p.instagramHandle}`, picture: p.instagramPicture ?? null };
+        break;
+      case 'tiktok':
+        if (p?.tiktokHandle)
+          return { name: p.tiktokName ?? `@${p.tiktokHandle}`, picture: p.tiktokPicture ?? null };
+        break;
+      case 'facebook':
+        if (p?.facebookHandle)
+          return { name: p.facebookName ?? `@${p.facebookHandle}`, picture: p.facebookPicture ?? null };
+        break;
+    }
+    return { name: shortenAddress(account.address), picture: null };
+  })();
+
   const initials = account.address.slice(2, 4).toUpperCase();
 
   return (
@@ -146,54 +169,38 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
       {/* ── UserBoard ─────────────────────────────────────────── */}
       <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 space-y-4">
 
-        {/* Avatar + Name + Credits */}
+        {/* Avatar + Name + Credits + Level */}
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-600 to-yellow-500 flex items-center justify-center shrink-0 text-white font-bold text-2xl select-none">
-            {initials}
-          </div>
-          <div className="flex-1 min-w-0">
-            {/* Editierbarer Name */}
-            {editingName ? (
-              <div className="flex items-center gap-2 mb-1">
-                <input
-                  autoFocus
-                  value={nameInput}
-                  onChange={(e) => setNameInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') setEditingName(false); }}
-                  maxLength={32}
-                  placeholder="Dein Name…"
-                  className="bg-zinc-800 border border-zinc-600 focus:border-red-500 outline-none text-white font-bold text-base rounded-lg px-3 py-1 w-full"
-                />
-                <button
-                  onClick={handleSaveName}
-                  disabled={savingName}
-                  className="shrink-0 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
-                >
-                  {savingName ? '…' : 'Speichern'}
-                </button>
-                <button onClick={() => setEditingName(false)} className="shrink-0 text-zinc-500 hover:text-white">
-                  <FaTimes size={14} />
-                </button>
-              </div>
+          <div className="shrink-0">
+            {profileInfo.picture ? (
+              <Image
+                src={profileInfo.picture}
+                alt={profileInfo.name}
+                width={64}
+                height={64}
+                unoptimized
+                className="w-16 h-16 rounded-full object-cover ring-2 ring-red-600/50"
+              />
             ) : (
-              <button
-                className="flex items-center gap-2 group mb-0.5"
-                onClick={() => { setNameInput(p?.displayName ?? ''); setEditingName(true); }}
-              >
-                <span className="text-white font-bold text-lg truncate">{displayName}</span>
-                <FaPen size={11} className="text-zinc-600 group-hover:text-zinc-400 transition-colors shrink-0" />
-              </button>
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-600 to-yellow-500 flex items-center justify-center text-white font-bold text-2xl select-none">
+                {initials}
+              </div>
             )}
-            <p className="text-zinc-600 text-xs font-mono truncate">{account.address}</p>
-            {/* Credits */}
-            <div className="flex items-center gap-1.5 mt-2">
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-lg truncate">{profileInfo.name}</p>
+            {!primaryPlatform && (
+              <p className="text-zinc-600 text-xs mb-1">Wähle ein Profil als Anzeigename ↓</p>
+            )}
+            <div className="flex items-center gap-1.5 mt-1">
               <FaCoins className="text-yellow-400" size={13} />
               <span className="text-yellow-300 font-bold text-sm">
                 {loading ? '–' : (data?.credits ?? 0).toFixed(2)} DFAITH Credits
               </span>
             </div>
           </div>
-          {/* Level Badge (rechts) */}
+
           {data && (
             <div className="shrink-0 flex flex-col items-center gap-1">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-red-600 flex items-center justify-center">
@@ -208,7 +215,10 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
         {data && (
           <div>
             <div className="flex justify-between text-xs text-zinc-600 mb-1.5">
-              <span className="flex items-center gap-1"><FaStar size={10} className="text-yellow-500" />{data.currentXp} / {data.nextLevelXp} XP bis Level {data.level + 1}</span>
+              <span className="flex items-center gap-1">
+                <FaStar size={10} className="text-yellow-500" />
+                {data.currentXp} / {data.nextLevelXp} XP bis Level {data.level + 1}
+              </span>
               <span>{data.xp} XP gesamt</span>
             </div>
             <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
@@ -229,6 +239,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           <div className="grid grid-cols-2 gap-3">
 
             <SocialTile
+              platform="youtube"
               icon={<FaYoutube className="text-red-500" size={14} />}
               label="YouTube"
               bgColor="bg-red-900/20"
@@ -237,12 +248,15 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               handle={p?.youtubeChannelName ?? null}
               picture={p?.youtubeChannelThumbnail ?? null}
               verified={p?.youtubeVerified ?? false}
+              isPrimary={primaryPlatform === 'youtube'}
+              onSetPrimary={() => setPrimaryPlatform('youtube')}
               onVerify={() => setShowYoutubeModal(true)}
               onUnlink={p?.youtubeChannelId ? handleUnlinkYoutube : undefined}
-              unlinkLoading={unlinkPending === ('youtube' as SocialPlatform)}
+              unlinkLoading={unlinkPending === 'youtube'}
             />
 
             <SocialTile
+              platform="instagram"
               icon={<FaInstagram className="text-pink-500" size={14} />}
               label="Instagram"
               bgColor="bg-pink-900/20"
@@ -251,12 +265,15 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               handle={p?.instagramHandle ?? null}
               picture={p?.instagramPicture ?? null}
               verified={p?.instagramVerified ?? false}
+              isPrimary={primaryPlatform === 'instagram'}
+              onSetPrimary={() => setPrimaryPlatform('instagram')}
               onVerify={() => setVerifyModal('instagram')}
               onUnlink={p?.instagramHandle ? () => handleUnlink('instagram') : undefined}
               unlinkLoading={unlinkPending === 'instagram'}
             />
 
             <SocialTile
+              platform="tiktok"
               icon={<FaTiktok className="text-zinc-200" size={13} />}
               label="TikTok"
               bgColor="bg-zinc-800/60"
@@ -265,12 +282,15 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               handle={p?.tiktokHandle ?? null}
               picture={p?.tiktokPicture ?? null}
               verified={p?.tiktokVerified ?? false}
+              isPrimary={primaryPlatform === 'tiktok'}
+              onSetPrimary={() => setPrimaryPlatform('tiktok')}
               onVerify={() => setVerifyModal('tiktok')}
               onUnlink={p?.tiktokHandle ? () => handleUnlink('tiktok') : undefined}
               unlinkLoading={unlinkPending === 'tiktok'}
             />
 
             <SocialTile
+              platform="facebook"
               icon={<FaFacebook className="text-blue-500" size={14} />}
               label="Facebook"
               bgColor="bg-blue-900/20"
@@ -279,6 +299,8 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               handle={p?.facebookHandle ?? null}
               picture={p?.facebookPicture ?? null}
               verified={p?.facebookVerified ?? false}
+              isPrimary={primaryPlatform === 'facebook'}
+              onSetPrimary={() => setPrimaryPlatform('facebook')}
               onVerify={() => setVerifyModal('facebook')}
               onUnlink={p?.facebookHandle ? () => handleUnlink('facebook') : undefined}
               unlinkLoading={unlinkPending === 'facebook'}
@@ -298,12 +320,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
         >
           <div className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-end mb-2">
-              <button
-                onClick={() => setShowYoutubeModal(false)}
-                className="text-zinc-400 hover:text-white text-2xl leading-none"
-              >
-                ×
-              </button>
+              <button onClick={() => setShowYoutubeModal(false)} className="text-zinc-400 hover:text-white text-2xl leading-none">×</button>
             </div>
             <LinkChannelView
               walletAddress={account.address}
@@ -345,9 +362,10 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   );
 }
 
-// ─── SocialTile (2×2 Grid) ────────────────────────────────────────────────────
+// ─── SocialTile ───────────────────────────────────────────────────────────────
 
 interface SocialTileProps {
+  platform: AnyPlatform;
   icon: React.ReactNode;
   label: string;
   bgColor: string;
@@ -356,35 +374,39 @@ interface SocialTileProps {
   handle: string | null;
   picture: string | null;
   verified: boolean;
-  onVerify: (() => void) | null;
+  isPrimary: boolean;
+  onSetPrimary: () => void;
+  onVerify: () => void;
   onUnlink?: () => void;
   unlinkLoading?: boolean;
 }
 
-function SocialTile({ icon, label, bgColor, borderColor, name, handle, picture, verified, onVerify, onUnlink, unlinkLoading }: SocialTileProps) {
+function SocialTile({
+  icon, label, bgColor, borderColor,
+  name, handle, picture, verified,
+  isPrimary, onSetPrimary, onVerify, onUnlink, unlinkLoading,
+}: SocialTileProps) {
   const isLinked = !!handle;
   const displayText = name ?? (handle ? `@${handle}` : null);
 
   return (
-    <div className={`${bgColor} border ${borderColor} rounded-xl p-3 flex flex-col gap-2`}>
-      {/* Header: Icon + Label + Verified */}
-      <div className="flex items-center gap-1.5">
+    <div className={`relative ${bgColor} border ${isPrimary ? 'border-red-500/60 ring-1 ring-red-500/30' : borderColor} rounded-xl p-3 flex flex-col gap-2 transition-all`}>
+      {isPrimary && (
+        <div className="absolute top-2 right-2">
+          <FaCrown size={11} className="text-yellow-400" />
+        </div>
+      )}
+
+      <div className="flex items-center gap-1.5 pr-4">
         {icon}
         <span className="text-zinc-400 text-xs font-semibold flex-1">{label}</span>
         {verified && <FaCheck size={9} className="text-green-400 shrink-0" />}
       </div>
 
-      {/* Avatar + Name */}
       <div className="flex items-center gap-2">
         {isLinked && picture ? (
-          <Image
-            src={picture}
-            alt={displayText ?? label}
-            width={28}
-            height={28}
-            unoptimized
-            className="w-7 h-7 rounded-full shrink-0 object-cover"
-          />
+          <Image src={picture} alt={displayText ?? label} width={28} height={28} unoptimized
+            className="w-7 h-7 rounded-full shrink-0 object-cover" />
         ) : (
           <div className="w-7 h-7 rounded-full bg-zinc-700/60 shrink-0 flex items-center justify-center">
             {icon}
@@ -395,29 +417,40 @@ function SocialTile({ icon, label, bgColor, borderColor, name, handle, picture, 
         </p>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex items-center gap-1.5 mt-auto">
-        {!verified && onVerify && (
+      <div className="flex items-center gap-1 mt-auto flex-wrap">
+        {isLinked ? (
+          <>
+            {!isPrimary && (
+              <button
+                onClick={onSetPrimary}
+                className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg bg-red-900/30 hover:bg-red-900/50 text-red-300 transition-colors"
+              >
+                <FaCrown size={8} /> Wählen
+              </button>
+            )}
+            <button
+              onClick={onVerify}
+              className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg bg-zinc-700/60 hover:bg-zinc-700 text-zinc-300 transition-colors"
+            >
+              Ändern
+            </button>
+            {onUnlink && (
+              <button
+                onClick={onUnlink}
+                disabled={unlinkLoading}
+                className="text-xs font-semibold px-2 py-1 rounded-lg bg-red-900/20 hover:bg-red-900/50 text-red-400 disabled:opacity-40 transition-colors"
+                title="Trennen"
+              >
+                {unlinkLoading ? '…' : '✕'}
+              </button>
+            )}
+          </>
+        ) : (
           <button
             onClick={onVerify}
-            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors bg-zinc-700/60 hover:bg-zinc-700 text-zinc-300 flex-1 justify-center"
+            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-zinc-700/60 hover:bg-zinc-700 text-zinc-300 transition-colors"
           >
-            {isLinked ? 'Ändern' : <><FaPlus size={8} /> Verknüpfen</>}
-          </button>
-        )}
-        {verified && (
-          <span className="flex items-center gap-1 text-green-400 text-xs font-semibold flex-1">
-            <FaCheck size={9} /> Verifiziert
-          </span>
-        )}
-        {isLinked && onUnlink && (
-          <button
-            onClick={onUnlink}
-            disabled={unlinkLoading}
-            className="text-xs font-semibold px-2 py-1 rounded-lg transition-colors bg-red-900/30 hover:bg-red-900/60 text-red-400 disabled:opacity-40"
-            title="Trennen"
-          >
-            {unlinkLoading ? '…' : '✕'}
+            <FaPlus size={8} /> Verknüpfen
           </button>
         )}
       </div>
