@@ -414,12 +414,6 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                   placeholder="Künstlertyp (z.B. Musiker, Rapper, DJ…)"
                   className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-red-500 transition-colors"
                 />
-                <input
-                  value={artistRewardTokenInput}
-                  onChange={(e) => setArtistRewardTokenInput(e.target.value)}
-                  placeholder="Reward Token (z.B. D.FAITH)"
-                  className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-red-500 transition-colors"
-                />
                 <textarea
                   value={artistBioInput}
                   onChange={(e) => setArtistBioInput(e.target.value)}

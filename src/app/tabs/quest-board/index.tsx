@@ -122,7 +122,7 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
               onClick={() => setView('fan')}
               className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${view === 'fan' ? 'bg-red-600 text-white' : 'text-zinc-400 hover:text-white'}`}
             >
-              Fan
+              Support
             </button>
             <button
               onClick={() => setView('artist')}
