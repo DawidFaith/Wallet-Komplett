@@ -103,6 +103,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   const [showYoutubeManage, setShowYoutubeManage] = useState(false);
   const [artists, setArtists] = useState<ArtistEntry[]>([]);
   const [selectedArtist, setSelectedArtist] = useState<ArtistEntry | null>(null);
+  const [claiming, setClaiming] = useState(false);
   // Artist-Profil bearbeiten
   const [editingArtist, setEditingArtist] = useState(false);
   const [artistTypeInput, setArtistTypeInput] = useState('');
@@ -110,6 +111,21 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   const [artistSaving, setArtistSaving] = useState(false);
 
   const [primaryPlatform, setPrimaryPlatformState] = useState<AnyPlatform | null>(null);
+
+  const handleClaim = useCallback(async () => {
+    if (!account?.address || !data || data.credits <= 0) return;
+    setClaiming(true);
+    try {
+      const res = await fetch('/api/youtube-quests/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress: account.address, amount: data.credits }),
+      });
+      if (res.ok) await loadProfile();
+    } finally {
+      setClaiming(false);
+    }
+  }, [account?.address, data, loadProfile]);
 
   const setPrimaryPlatform = useCallback((platform: AnyPlatform | null) => {
     setPrimaryPlatformState(platform);
@@ -576,11 +592,18 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                 <p className="text-zinc-400 text-xs leading-relaxed">{selectedArtist.artistBio}</p>
               )}
               {(data?.credits ?? 0) > 0 && (
-                <div className="flex items-center gap-1.5 bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-3 py-1.5">
+                <div className="flex items-center gap-2 bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-3 py-1.5">
                   <FaCoins className="text-yellow-400" size={12} />
-                  <span className="text-yellow-300 font-semibold text-xs">
-                    {(data?.credits ?? 0).toFixed(2)} einlösbare DFAITH Credits
+                  <span className="text-yellow-300 font-semibold text-xs flex-1">
+                    {(data?.credits ?? 0).toFixed(2)} DFAITH Credits
                   </span>
+                  <button
+                    onClick={handleClaim}
+                    disabled={claiming}
+                    className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold text-xs px-3 py-1 rounded-lg transition-colors"
+                  >
+                    {claiming ? '…' : 'Einlösen'}
+                  </button>
                 </div>
               )}
             </div>
