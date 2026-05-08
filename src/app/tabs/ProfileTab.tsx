@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useActiveAccount } from 'thirdweb/react';
 import Image from 'next/image';
 import {
   FaInstagram, FaTiktok, FaFacebook, FaYoutube,
-  FaCheck, FaCoins, FaStar, FaLock, FaPlus, FaCrown,
+  FaCheck, FaCoins, FaStar, FaLock, FaPlus, FaChevronDown,
 } from 'react-icons/fa';
 import SocialVerifyModal from './profile/SocialVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
@@ -53,6 +53,13 @@ function shortenAddress(addr: string) {
 
 const LS_KEY = 'dfaith_primary_platform';
 
+const PLATFORM_META: Record<AnyPlatform, { label: string; icon: React.ReactNode }> = {
+  youtube:   { label: 'YouTube',   icon: <FaYoutube  className="text-red-500"   size={13} /> },
+  instagram: { label: 'Instagram', icon: <FaInstagram className="text-pink-500" size={13} /> },
+  tiktok:    { label: 'TikTok',    icon: <FaTiktok   className="text-zinc-200"  size={12} /> },
+  facebook:  { label: 'Facebook',  icon: <FaFacebook className="text-blue-500"  size={13} /> },
+};
+
 export default function ProfileTab({ language: _language }: ProfileTabProps) {
   const account = useActiveAccount();
   const [data, setData] = useState<ProfileData | null>(null);
@@ -60,15 +67,10 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   const [verifyModal, setVerifyModal] = useState<SocialPlatform | null>(null);
   const [showYoutubeModal, setShowYoutubeModal] = useState(false);
   const [unlinkPending, setUnlinkPending] = useState<AnyPlatform | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [primaryPlatform, setPrimaryPlatformState] = useState<AnyPlatform | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(LS_KEY) as AnyPlatform | null;
-      setPrimaryPlatformState(stored);
-    }
-  }, []);
 
   const setPrimaryPlatform = useCallback((platform: AnyPlatform | null) => {
     setPrimaryPlatformState(platform);
@@ -83,11 +85,27 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
     setLoading(true);
     try {
       const res = await fetch(`/api/youtube-quests/profile?wallet=${account.address}`);
-      if (res.ok) setData(await res.json());
+      if (res.ok) {
+        const d: ProfileData = await res.json();
+        setData(d);
+        // Auto-set erste verifizierte Plattform falls noch keine gewählt
+        const stored = typeof window !== 'undefined' ? localStorage.getItem(LS_KEY) as AnyPlatform | null : null;
+        if (!stored) {
+          const p = d.profile;
+          const first: AnyPlatform | null =
+            p.youtubeVerified ? 'youtube' :
+            p.instagramVerified ? 'instagram' :
+            p.tiktokVerified ? 'tiktok' :
+            p.facebookVerified ? 'facebook' : null;
+          if (first) setPrimaryPlatform(first);
+        } else {
+          setPrimaryPlatformState(stored);
+        }
+      }
     } finally {
       setLoading(false);
     }
-  }, [account?.address]);
+  }, [account?.address, setPrimaryPlatform]);
 
   const handleUnlink = useCallback(async (platform: SocialPlatform) => {
     if (!account?.address) return;
@@ -123,6 +141,17 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
+  // Dropdown bei Klick außen schließen
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
+
   if (!account?.address) {
     return (
       <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center py-24 px-4 text-center">
@@ -139,6 +168,15 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
 
   const p = data?.profile;
 
+  // Verfügbare (verknüpfte) Plattformen für das Dropdown
+  const linkedPlatforms: AnyPlatform[] = [
+    ...(p?.youtubeVerified ? ['youtube' as const] : []),
+    ...(p?.instagramHandle ? ['instagram' as const] : []),
+    ...(p?.tiktokHandle ? ['tiktok' as const] : []),
+    ...(p?.facebookHandle ? ['facebook' as const] : []),
+  ];
+
+  // Anzeige-Infos der gewählten Plattform
   const profileInfo: { name: string; picture: string | null } = (() => {
     switch (primaryPlatform) {
       case 'youtube':
@@ -169,8 +207,9 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
       {/* ── UserBoard ─────────────────────────────────────────── */}
       <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 space-y-4">
 
-        {/* Avatar + Name + Credits + Level */}
+        {/* Avatar + Name + Dropdown + Credits + Level */}
         <div className="flex items-center gap-4">
+          {/* Avatar */}
           <div className="shrink-0">
             {profileInfo.picture ? (
               <Image
@@ -189,11 +228,42 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-lg truncate">{profileInfo.name}</p>
-            {!primaryPlatform && (
-              <p className="text-zinc-600 text-xs mb-1">Wähle ein Profil als Anzeigename ↓</p>
-            )}
-            <div className="flex items-center gap-1.5 mt-1">
+            {/* Name + Plattform-Dropdown */}
+            <div className="flex items-center gap-2 mb-1" ref={dropdownRef}>
+              <p className="text-white font-bold text-lg truncate">{profileInfo.name}</p>
+              {linkedPlatforms.length > 0 && (
+                <div className="relative shrink-0">
+                  <button
+                    onClick={() => setDropdownOpen((o) => !o)}
+                    className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 bg-zinc-800 hover:bg-zinc-700 px-2 py-1 rounded-lg transition-colors"
+                  >
+                    {primaryPlatform && PLATFORM_META[primaryPlatform].icon}
+                    <FaChevronDown size={9} className={`transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {dropdownOpen && (
+                    <div className="absolute left-0 top-full mt-1 z-50 bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl overflow-hidden min-w-[140px]">
+                      {linkedPlatforms.map((platform) => {
+                        const meta = PLATFORM_META[platform];
+                        const isActive = primaryPlatform === platform;
+                        return (
+                          <button
+                            key={platform}
+                            onClick={() => { setPrimaryPlatform(platform); setDropdownOpen(false); }}
+                            className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors ${isActive ? 'bg-red-900/40 text-white' : 'text-zinc-400 hover:bg-zinc-700 hover:text-white'}`}
+                          >
+                            {meta.icon}
+                            <span className="font-medium">{meta.label}</span>
+                            {isActive && <FaCheck size={9} className="ml-auto text-green-400" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5">
               <FaCoins className="text-yellow-400" size={13} />
               <span className="text-yellow-300 font-bold text-sm">
                 {loading ? '–' : (data?.credits ?? 0).toFixed(2)} DFAITH Credits
@@ -201,6 +271,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
             </div>
           </div>
 
+          {/* Level Badge */}
           {data && (
             <div className="shrink-0 flex flex-col items-center gap-1">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-red-600 flex items-center justify-center">
@@ -239,7 +310,6 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           <div className="grid grid-cols-2 gap-3">
 
             <SocialTile
-              platform="youtube"
               icon={<FaYoutube className="text-red-500" size={14} />}
               label="YouTube"
               bgColor="bg-red-900/20"
@@ -248,15 +318,13 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               handle={p?.youtubeChannelName ?? null}
               picture={p?.youtubeChannelThumbnail ?? null}
               verified={p?.youtubeVerified ?? false}
-              isPrimary={primaryPlatform === 'youtube'}
-              onSetPrimary={() => setPrimaryPlatform('youtube')}
-              onVerify={() => setShowYoutubeModal(true)}
-              onUnlink={p?.youtubeChannelId ? handleUnlinkYoutube : undefined}
+              isActive={primaryPlatform === 'youtube'}
               unlinkLoading={unlinkPending === 'youtube'}
+              onClick={() => setShowYoutubeModal(true)}
+              onUnlink={p?.youtubeChannelId ? handleUnlinkYoutube : undefined}
             />
 
             <SocialTile
-              platform="instagram"
               icon={<FaInstagram className="text-pink-500" size={14} />}
               label="Instagram"
               bgColor="bg-pink-900/20"
@@ -265,15 +333,13 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               handle={p?.instagramHandle ?? null}
               picture={p?.instagramPicture ?? null}
               verified={p?.instagramVerified ?? false}
-              isPrimary={primaryPlatform === 'instagram'}
-              onSetPrimary={() => setPrimaryPlatform('instagram')}
-              onVerify={() => setVerifyModal('instagram')}
-              onUnlink={p?.instagramHandle ? () => handleUnlink('instagram') : undefined}
+              isActive={primaryPlatform === 'instagram'}
               unlinkLoading={unlinkPending === 'instagram'}
+              onClick={() => setVerifyModal('instagram')}
+              onUnlink={p?.instagramHandle ? () => handleUnlink('instagram') : undefined}
             />
 
             <SocialTile
-              platform="tiktok"
               icon={<FaTiktok className="text-zinc-200" size={13} />}
               label="TikTok"
               bgColor="bg-zinc-800/60"
@@ -282,15 +348,13 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               handle={p?.tiktokHandle ?? null}
               picture={p?.tiktokPicture ?? null}
               verified={p?.tiktokVerified ?? false}
-              isPrimary={primaryPlatform === 'tiktok'}
-              onSetPrimary={() => setPrimaryPlatform('tiktok')}
-              onVerify={() => setVerifyModal('tiktok')}
-              onUnlink={p?.tiktokHandle ? () => handleUnlink('tiktok') : undefined}
+              isActive={primaryPlatform === 'tiktok'}
               unlinkLoading={unlinkPending === 'tiktok'}
+              onClick={() => setVerifyModal('tiktok')}
+              onUnlink={p?.tiktokHandle ? () => handleUnlink('tiktok') : undefined}
             />
 
             <SocialTile
-              platform="facebook"
               icon={<FaFacebook className="text-blue-500" size={14} />}
               label="Facebook"
               bgColor="bg-blue-900/20"
@@ -299,11 +363,10 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               handle={p?.facebookHandle ?? null}
               picture={p?.facebookPicture ?? null}
               verified={p?.facebookVerified ?? false}
-              isPrimary={primaryPlatform === 'facebook'}
-              onSetPrimary={() => setPrimaryPlatform('facebook')}
-              onVerify={() => setVerifyModal('facebook')}
-              onUnlink={p?.facebookHandle ? () => handleUnlink('facebook') : undefined}
+              isActive={primaryPlatform === 'facebook'}
               unlinkLoading={unlinkPending === 'facebook'}
+              onClick={() => setVerifyModal('facebook')}
+              onUnlink={p?.facebookHandle ? () => handleUnlink('facebook') : undefined}
             />
 
           </div>
@@ -313,6 +376,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
       {/* ── Quest Board ────────────────────────────────────────── */}
       <QuestBoardTab language={_language} />
 
+      {/* YouTube Modal */}
       {showYoutubeModal && account?.address && (
         <div
           className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4"
@@ -330,6 +394,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
         </div>
       )}
 
+      {/* Instagram / TikTok / Facebook Modal */}
       {verifyModal && (
         <SocialVerifyModal
           platform={verifyModal}
@@ -365,7 +430,6 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
 // ─── SocialTile ───────────────────────────────────────────────────────────────
 
 interface SocialTileProps {
-  platform: AnyPlatform;
   icon: React.ReactNode;
   label: string;
   bgColor: string;
@@ -374,35 +438,33 @@ interface SocialTileProps {
   handle: string | null;
   picture: string | null;
   verified: boolean;
-  isPrimary: boolean;
-  onSetPrimary: () => void;
-  onVerify: () => void;
-  onUnlink?: () => void;
+  isActive: boolean;
   unlinkLoading?: boolean;
+  onClick: () => void;
+  onUnlink?: () => void;
 }
 
 function SocialTile({
   icon, label, bgColor, borderColor,
   name, handle, picture, verified,
-  isPrimary, onSetPrimary, onVerify, onUnlink, unlinkLoading,
+  isActive, unlinkLoading, onClick, onUnlink,
 }: SocialTileProps) {
   const isLinked = !!handle;
   const displayText = name ?? (handle ? `@${handle}` : null);
 
   return (
-    <div className={`relative ${bgColor} border ${isPrimary ? 'border-red-500/60 ring-1 ring-red-500/30' : borderColor} rounded-xl p-3 flex flex-col gap-2 transition-all`}>
-      {isPrimary && (
-        <div className="absolute top-2 right-2">
-          <FaCrown size={11} className="text-yellow-400" />
-        </div>
-      )}
-
-      <div className="flex items-center gap-1.5 pr-4">
+    <button
+      onClick={onClick}
+      className={`relative w-full text-left ${bgColor} border ${isActive ? 'border-red-500/60 ring-1 ring-red-500/30' : borderColor} rounded-xl p-3 flex flex-col gap-2 transition-all hover:brightness-110 active:scale-[0.98]`}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-1.5">
         {icon}
         <span className="text-zinc-400 text-xs font-semibold flex-1">{label}</span>
         {verified && <FaCheck size={9} className="text-green-400 shrink-0" />}
       </div>
 
+      {/* Avatar + Name */}
       <div className="flex items-center gap-2">
         {isLinked && picture ? (
           <Image src={picture} alt={displayText ?? label} width={28} height={28} unoptimized
@@ -415,45 +477,22 @@ function SocialTile({
         <p className={`text-xs font-semibold truncate flex-1 ${isLinked ? 'text-white' : 'text-zinc-600 italic'}`}>
           {displayText ?? 'Nicht verknüpft'}
         </p>
+        {!isLinked && <FaPlus size={10} className="text-zinc-600 shrink-0" />}
       </div>
 
-      <div className="flex items-center gap-1 mt-auto flex-wrap">
-        {isLinked ? (
-          <>
-            {!isPrimary && (
-              <button
-                onClick={onSetPrimary}
-                className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg bg-red-900/30 hover:bg-red-900/50 text-red-300 transition-colors"
-              >
-                <FaCrown size={8} /> Wählen
-              </button>
-            )}
-            <button
-              onClick={onVerify}
-              className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg bg-zinc-700/60 hover:bg-zinc-700 text-zinc-300 transition-colors"
-            >
-              Ändern
-            </button>
-            {onUnlink && (
-              <button
-                onClick={onUnlink}
-                disabled={unlinkLoading}
-                className="text-xs font-semibold px-2 py-1 rounded-lg bg-red-900/20 hover:bg-red-900/50 text-red-400 disabled:opacity-40 transition-colors"
-                title="Trennen"
-              >
-                {unlinkLoading ? '…' : '✕'}
-              </button>
-            )}
-          </>
-        ) : (
+      {/* Trennen-Button (stoppt Klick-Propagation zur Kachel) */}
+      {isLinked && onUnlink && (
+        <div className="flex justify-end mt-auto">
           <button
-            onClick={onVerify}
-            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-zinc-700/60 hover:bg-zinc-700 text-zinc-300 transition-colors"
+            onClick={(e) => { e.stopPropagation(); onUnlink(); }}
+            disabled={unlinkLoading}
+            className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-red-900/20 hover:bg-red-900/50 text-red-400 disabled:opacity-40 transition-colors"
+            title="Trennen"
           >
-            <FaPlus size={8} /> Verknüpfen
+            {unlinkLoading ? '…' : 'Trennen'}
           </button>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </button>
   );
 }
