@@ -98,6 +98,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   const [unlinkPending, setUnlinkPending] = useState<AnyPlatform | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const questBoardRef = useRef<HTMLDivElement>(null);
   // YouTube: manage (already linked) vs. link-flow
   const [showYoutubeManage, setShowYoutubeManage] = useState(false);
   const [artists, setArtists] = useState<ArtistEntry[]>([]);
@@ -519,7 +520,10 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               return (
                 <button
                   key={artist.walletAddress}
-                  onClick={() => setSelectedArtist(artist)}
+                  onClick={() => {
+                    setSelectedArtist(artist);
+                    setTimeout(() => questBoardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                  }}
                   className="flex flex-col items-center gap-2 shrink-0 w-16 group"
                 >
                   <div className="relative">
@@ -554,122 +558,13 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
       )}
 
       {/* ── Quest Board ────────────────────────────────────────── */}
-      <QuestBoardTab language={_language} />
-
-      {/* ── Artist Modal ─────────────────────────────────────────── */}
-      {selectedArtist && (
-        <div
-          className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-4"
-          onClick={() => setSelectedArtist(null)}
-        >
-          <div
-            className="w-full max-w-lg bg-zinc-950 border border-zinc-800 rounded-2xl overflow-hidden max-h-[90vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800 shrink-0">
-              <div className="flex items-center gap-3">
-                {selectedArtist.picture ? (
-                  <Image src={selectedArtist.picture} alt={selectedArtist.name} width={40} height={40} unoptimized
-                    className="w-10 h-10 rounded-full object-cover ring-2 ring-red-500/50" />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-600 to-yellow-500 flex items-center justify-center text-white font-bold text-sm">
-                    {selectedArtist.name.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
-                <div>
-                  <p className="text-white font-bold text-sm">{selectedArtist.name}</p>
-                  {selectedArtist.artistType && (
-                    <p className="text-red-400 text-xs flex items-center gap-1">
-                      <FaMusic size={8} /> {selectedArtist.artistType}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <button onClick={() => setSelectedArtist(null)} className="text-zinc-500 hover:text-white transition-colors">
-                <FaTimes size={16} />
-              </button>
-            </div>
-
-            {/* Scrollable Content */}
-            <div className="overflow-y-auto flex-1 p-5 space-y-5">
-
-              {/* 1. Credits-Anzeige für diesen Artist */}
-              <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
-                <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2">Verfügbare Quests</p>
-                <div className="flex items-center gap-2">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black ${selectedArtist.questCount > 0 ? 'bg-red-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}>
-                    {selectedArtist.questCount}
-                  </div>
-                  <p className="text-zinc-400 text-sm">
-                    {selectedArtist.questCount === 0 ? 'Keine aktiven Quests' : selectedArtist.questCount === 1 ? '1 aktiver Quest' : `${selectedArtist.questCount} aktive Quests`}
-                  </p>
-                </div>
-              </div>
-
-              {/* 2. Artist-Info */}
-              {(selectedArtist.artistBio || selectedArtist.artistType) && (
-                <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 space-y-2">
-                  <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">Über den Artist</p>
-                  {selectedArtist.artistBio && (
-                    <p className="text-zinc-300 text-sm leading-relaxed">{selectedArtist.artistBio}</p>
-                  )}
-                </div>
-              )}
-
-              {/* 3. Socials */}
-              <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 space-y-2">
-                <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">Soziale Profile</p>
-                <div className="flex flex-wrap gap-2">
-                  {selectedArtist.socials.youtubeChannelId && (
-                    <span className="flex items-center gap-1.5 text-xs bg-red-900/20 text-red-300 px-2.5 py-1 rounded-lg border border-red-800/30">
-                      <FaYoutube size={11} />
-                      {selectedArtist.socials.youtubeChannelName ?? 'YouTube'}
-                      <FaCheck size={9} className="text-green-400" />
-                    </span>
-                  )}
-                  {selectedArtist.socials.instagramHandle && (
-                    <span className="flex items-center gap-1.5 text-xs bg-pink-900/20 text-pink-300 px-2.5 py-1 rounded-lg border border-pink-800/30">
-                      <FaInstagram size={11} />
-                      @{selectedArtist.socials.instagramHandle}
-                      {selectedArtist.socials.instagramVerified && <FaCheck size={9} className="text-green-400" />}
-                    </span>
-                  )}
-                  {selectedArtist.socials.tiktokHandle && (
-                    <span className="flex items-center gap-1.5 text-xs bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded-lg border border-zinc-700">
-                      <FaTiktok size={11} />
-                      @{selectedArtist.socials.tiktokHandle}
-                      {selectedArtist.socials.tiktokVerified && <FaCheck size={9} className="text-green-400" />}
-                    </span>
-                  )}
-                  {selectedArtist.socials.facebookHandle && (
-                    <span className="flex items-center gap-1.5 text-xs bg-blue-900/20 text-blue-300 px-2.5 py-1 rounded-lg border border-blue-800/30">
-                      <FaFacebook size={11} />
-                      {selectedArtist.socials.facebookHandle}
-                      {selectedArtist.socials.facebookVerified && <FaCheck size={9} className="text-green-400" />}
-                    </span>
-                  )}
-                  {!selectedArtist.socials.youtubeChannelId && !selectedArtist.socials.instagramHandle &&
-                   !selectedArtist.socials.tiktokHandle && !selectedArtist.socials.facebookHandle && (
-                    <p className="text-zinc-600 text-xs italic">Keine Social-Profile verknüpft</p>
-                  )}
-                </div>
-              </div>
-
-              {/* 4. Zu den Quests Button */}
-              {selectedArtist.questCount > 0 && (
-                <button
-                  onClick={() => setSelectedArtist(null)}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-colors text-sm flex items-center justify-center gap-2"
-                >
-                  <FaCoins size={13} />
-                  Quests ansehen
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <div ref={questBoardRef}>
+        <QuestBoardTab
+          language={_language}
+          filterArtist={selectedArtist}
+          onClearArtist={() => setSelectedArtist(null)}
+        />
+      </div>
 
       {/* YouTube Manage Modal (bereits verknüpft) */}
       {showYoutubeManage && p?.youtubeChannelId && (

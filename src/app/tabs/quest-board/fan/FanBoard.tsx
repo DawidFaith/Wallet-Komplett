@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { FaTrophy, FaSync } from 'react-icons/fa';
+import { FaTrophy, FaSync, FaLock } from 'react-icons/fa';
 import CreditsBox from '../components/CreditsBox';
 import VerifyModal from './VerifyModal';
 import LikeVerifyModal from './LikeVerifyModal';
@@ -208,26 +208,16 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
     }
   };
 
-  // Quests nach Plattform und Typ gruppieren – nur verifizierte Plattformen anzeigen
+  // Quests nach Plattform und Typ gruppieren – ALLE anzeigen, gesperrte mit Lock
   // Optionaler filterCreator (lowercase wallet) für Artist-Selektion
   const filteredQuests = filterCreator
     ? quests.filter((q) => q.creatorWallet.toLowerCase() === filterCreator.toLowerCase())
     : quests;
-  const youtubeQuests = verified.youtube
-    ? filteredQuests.filter((q) => q.platform === 'youtube')
-    : [];
-  const tiktokCommentQuests = verified.tiktok
-    ? filteredQuests.filter((q) => q.platform === 'tiktok' && q.type !== 'engagement')
-    : [];
-  const tiktokEngagementQuests = verified.tiktok
-    ? filteredQuests.filter((q) => q.platform === 'tiktok' && q.type === 'engagement')
-    : [];
-  const instagramQuests = verified.instagram
-    ? filteredQuests.filter((q) => q.platform === 'instagram')
-    : [];
-  const facebookQuests = verified.facebook
-    ? filteredQuests.filter((q) => q.platform === 'facebook')
-    : [];
+  const youtubeQuests = filteredQuests.filter((q) => q.platform === 'youtube');
+  const tiktokCommentQuests = filteredQuests.filter((q) => q.platform === 'tiktok' && q.type !== 'engagement');
+  const tiktokEngagementQuests = filteredQuests.filter((q) => q.platform === 'tiktok' && q.type === 'engagement');
+  const instagramQuests = filteredQuests.filter((q) => q.platform === 'instagram');
+  const facebookQuests = filteredQuests.filter((q) => q.platform === 'facebook');
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-5">
@@ -276,63 +266,103 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
       ) : (
         <div className="space-y-4">
           {youtubeQuests.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {youtubeQuests.map((quest) => (
-                <YoutubeQuestCard
-                  key={quest.id}
-                  quest={quest}
-                  isCompleted={completedIds.includes(quest.id)}
-                  onComplete={handleVerify}
-                />
-              ))}
+            <div className="relative">
+              {!verified.youtube && (
+                <div className="absolute inset-0 z-10 rounded-2xl bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 border border-zinc-700/50">
+                  <FaLock size={18} className="text-zinc-400" />
+                  <p className="text-zinc-300 text-sm font-semibold">YouTube verknüpfen</p>
+                  <p className="text-zinc-500 text-xs">Verifiziere deinen YouTube-Kanal im Profil</p>
+                </div>
+              )}
+              <div className={!verified.youtube ? 'pointer-events-none select-none' : ''}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {youtubeQuests.map((quest) => (
+                    <YoutubeQuestCard
+                      key={quest.id}
+                      quest={quest}
+                      isCompleted={completedIds.includes(quest.id)}
+                      onComplete={handleVerify}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           )}
-          {tiktokCommentQuests.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {tiktokCommentQuests.map((quest) => (
-                <TiktokQuestCard
-                  key={quest.id}
-                  quest={quest}
-                  isCompleted={completedIds.includes(quest.id)}
-                  onComplete={handleTikTokVerify}
-                />
-              ))}
-            </div>
-          )}
-          {tiktokEngagementQuests.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {tiktokEngagementQuests.map((quest) => (
-                <TiktokEngagementQuestCard
-                  key={quest.id}
-                  quest={quest}
-                  isCompleted={completedIds.includes(quest.id)}
-                  onComplete={handleTikTokVerify}
-                />
-              ))}
+          {(tiktokCommentQuests.length > 0 || tiktokEngagementQuests.length > 0) && (
+            <div className="relative">
+              {!verified.tiktok && (
+                <div className="absolute inset-0 z-10 rounded-2xl bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 border border-zinc-700/50">
+                  <FaLock size={18} className="text-zinc-400" />
+                  <p className="text-zinc-300 text-sm font-semibold">TikTok verknüpfen</p>
+                  <p className="text-zinc-500 text-xs">Verifiziere dein TikTok-Konto im Profil</p>
+                </div>
+              )}
+              <div className={!verified.tiktok ? 'pointer-events-none select-none' : ''}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {tiktokCommentQuests.map((quest) => (
+                    <TiktokQuestCard
+                      key={quest.id}
+                      quest={quest}
+                      isCompleted={completedIds.includes(quest.id)}
+                      onComplete={handleTikTokVerify}
+                    />
+                  ))}
+                  {tiktokEngagementQuests.map((quest) => (
+                    <TiktokEngagementQuestCard
+                      key={quest.id}
+                      quest={quest}
+                      isCompleted={completedIds.includes(quest.id)}
+                      onComplete={handleTikTokVerify}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           )}
           {instagramQuests.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {instagramQuests.map((quest) => (
-                <InstagramQuestCard
-                  key={quest.id}
-                  quest={quest}
-                  isCompleted={completedIds.includes(quest.id)}
-                  onComplete={handleInstagramVerify}
-                />
-              ))}
+            <div className="relative">
+              {!verified.instagram && (
+                <div className="absolute inset-0 z-10 rounded-2xl bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 border border-zinc-700/50">
+                  <FaLock size={18} className="text-zinc-400" />
+                  <p className="text-zinc-300 text-sm font-semibold">Instagram verknüpfen</p>
+                  <p className="text-zinc-500 text-xs">Verifiziere dein Instagram-Konto im Profil</p>
+                </div>
+              )}
+              <div className={!verified.instagram ? 'pointer-events-none select-none' : ''}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {instagramQuests.map((quest) => (
+                    <InstagramQuestCard
+                      key={quest.id}
+                      quest={quest}
+                      isCompleted={completedIds.includes(quest.id)}
+                      onComplete={handleInstagramVerify}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           )}
           {facebookQuests.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {facebookQuests.map((quest) => (
-                <FacebookQuestCard
-                  key={quest.id}
-                  quest={quest}
-                  isCompleted={completedIds.includes(quest.id)}
-                  onComplete={handleFacebookVerify}
-                />
-              ))}
+            <div className="relative">
+              {!verified.facebook && (
+                <div className="absolute inset-0 z-10 rounded-2xl bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 border border-zinc-700/50">
+                  <FaLock size={18} className="text-zinc-400" />
+                  <p className="text-zinc-300 text-sm font-semibold">Facebook verknüpfen</p>
+                  <p className="text-zinc-500 text-xs">Verifiziere dein Facebook-Konto im Profil</p>
+                </div>
+              )}
+              <div className={!verified.facebook ? 'pointer-events-none select-none' : ''}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {facebookQuests.map((quest) => (
+                    <FacebookQuestCard
+                      key={quest.id}
+                      quest={quest}
+                      isCompleted={completedIds.includes(quest.id)}
+                      onComplete={handleFacebookVerify}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
