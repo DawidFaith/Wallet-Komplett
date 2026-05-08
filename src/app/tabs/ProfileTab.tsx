@@ -53,7 +53,6 @@ interface ArtistEntry {
   artistType: string | null;
   artistBio: string | null;
   questCount: number;
-  credits: number;
   socials: {
     youtubeChannelId: string | null;
     youtubeChannelName: string | null;
@@ -576,12 +575,14 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               {selectedArtist.artistBio && (
                 <p className="text-zinc-400 text-xs leading-relaxed">{selectedArtist.artistBio}</p>
               )}
-              <div className="flex items-center gap-1.5">
-                <FaCoins className="text-yellow-400" size={13} />
-                <span className="text-yellow-300 font-bold text-sm">
-                  {selectedArtist.credits.toFixed(2)} DFAITH Credits
-                </span>
-              </div>
+              {(data?.credits ?? 0) > 0 && (
+                <div className="flex items-center gap-1.5 bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-3 py-1.5">
+                  <FaCoins className="text-yellow-400" size={12} />
+                  <span className="text-yellow-300 font-semibold text-xs">
+                    {(data?.credits ?? 0).toFixed(2)} einlösbare DFAITH Credits
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>

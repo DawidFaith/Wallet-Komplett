@@ -30,7 +30,6 @@ export async function GET() {
         yb.channel_id        AS youtube_channel_id,
         yb.channel_name      AS youtube_channel_name,
         yb.channel_thumbnail AS youtube_channel_thumbnail,
-        COALESCE(dc.balance, 0) AS credits,
         COALESCE((
           SELECT COUNT(*) FROM quests q
           WHERE q.creator_wallet = p.wallet_address
@@ -39,7 +38,6 @@ export async function GET() {
         ), 0) AS quest_count
       FROM user_profiles p
       LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
-      LEFT JOIN dfaith_credits dc ON dc.wallet_address = p.wallet_address
       WHERE p.is_artist = TRUE
       ORDER BY p.updated_at DESC
     `;
@@ -69,7 +67,6 @@ export async function GET() {
         artistType: r.artist_type ?? null,
         artistBio: r.artist_bio ?? null,
         questCount: Number(r.quest_count),
-        credits: Number(r.credits),
         socials: {
           youtubeChannelId: r.youtube_channel_id ?? null,
           youtubeChannelName: r.youtube_channel_name ?? null,

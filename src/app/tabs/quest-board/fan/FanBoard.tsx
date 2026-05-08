@@ -221,15 +221,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-5">
-      {/* Credits Box */}
-      <CreditsBox
-        balance={credits}
-        subtitle={credits > 0 ? 'Bereit zum Einlösen als echte DFAITH Tokens' : 'Schließe Quests ab um Credits zu verdienen'}
-        actionLabel="Einlösen"
-        actionLoading={claiming}
-        onAction={handleClaim}
-      />
-
       {/* Claim-Ergebnis */}
       {claimResult && (
         <div className={`rounded-2xl p-4 border ${claimResult.success ? 'bg-green-900/30 border-green-700/40' : 'bg-red-900/30 border-red-700/40'}`}>
