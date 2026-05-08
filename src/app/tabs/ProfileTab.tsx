@@ -605,12 +605,6 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                   </span>
                 )}
               </div>
-              <button
-                onClick={() => setTimeout(() => questBoardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)}
-                className="w-full py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl transition-colors"
-              >
-                Quests ansehen
-              </button>
             </div>
           )}
         </div>
