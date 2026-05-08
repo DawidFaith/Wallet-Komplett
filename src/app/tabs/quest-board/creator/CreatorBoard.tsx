@@ -2,12 +2,33 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { FaPlus, FaSync, FaTrophy, FaCoins, FaExternalLinkAlt, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaSync, FaTrophy, FaExternalLinkAlt, FaTimes, FaYoutube, FaInstagram, FaTiktok, FaFacebook } from 'react-icons/fa';
 import CreditsBox from '../components/CreditsBox';
 import DepositModal from './DepositModal';
 import CreateQuestModal from './CreateQuestModal';
-import type { QuestIndexEntry, YouTubeBinding, VerifiedPlatforms } from '../types';
+import type { QuestIndexEntry, YouTubeBinding, VerifiedPlatforms, Platform, QuestType } from '../types';
 import { getProgressPercent, formatCredits } from '../utils';
+
+const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
+  youtube:   <FaYoutube   className="text-red-500"  size={13} />,
+  instagram: <FaInstagram className="text-pink-500" size={13} />,
+  tiktok:    <FaTiktok    className="text-white"    size={12} />,
+  facebook:  <FaFacebook  className="text-blue-500" size={13} />,
+};
+
+const PLATFORM_LABELS: Record<Platform, string> = {
+  youtube: 'YouTube', instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook',
+};
+
+const TYPE_LABELS: Record<QuestType, string> = {
+  comment:    'Kommentar',
+  like:       'Like',
+  save:       'Speichern',
+  secret:     'Geheimcode',
+  engagement: 'Engagement',
+  repost:     'Repost',
+  dm_share:   'DM teilen',
+};
 
 interface CreatorBoardProps {
   walletAddress: string;
@@ -87,7 +108,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       {/* Credits Box */}
       <CreditsBox
         balance={creatorBalance}
-        subtitle={creatorBalance > 0 ? 'Verfügbar für Quest-Auszahlungen an Fans' : 'Lade DFAITH auf um Quests zu finanzieren'}
+        subtitle={creatorBalance > 0 ? 'Verfügbar für Quest-Auszahlungen an Fans' : 'Lade D.FAITH auf um Quests zu finanzieren'}
         secondaryLabel="Aufladen"
         onSecondary={() => setShowDeposit(true)}
       />
@@ -122,12 +143,24 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                 <Image src={quest.videoThumbnail} alt={quest.videoTitle} fill unoptimized className="object-cover" />
               </div>
               <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="flex items-center gap-1 bg-zinc-800 rounded-lg px-2 py-0.5 text-xs font-medium">
+                    {PLATFORM_ICONS[quest.platform]}
+                    <span className="text-zinc-300">{PLATFORM_LABELS[quest.platform]}</span>
+                  </span>
+                  <span className="bg-zinc-800 rounded-lg px-2 py-0.5 text-xs text-zinc-400 font-medium">
+                    {TYPE_LABELS[quest.type] ?? quest.type}
+                  </span>
+                </div>
                 <p className="text-white text-sm font-semibold line-clamp-2">{quest.videoTitle}</p>
                 <a href={quest.videoUrl} target="_blank" rel="noopener noreferrer" className="text-red-400 text-xs flex items-center gap-1 hover:underline">
-                  <FaExternalLinkAlt size={10} /> Shorts öffnen
+                  <FaExternalLinkAlt size={10} /> Öffnen
                 </a>
                 <div className="flex items-center gap-3 text-xs text-zinc-400">
-                  <span className="flex items-center gap-1"><FaCoins size={10} className="text-yellow-400" />{formatCredits(quest.rewardAmount)} DFAITH</span>
+                  <span className="flex items-center gap-1">
+                    <Image src="/D.FAITH.png" alt="D.FAITH" width={12} height={12} className="w-3 h-3 object-contain" />
+                    {formatCredits(quest.rewardAmount)} D.FAITH
+                  </span>
                   <span className="flex items-center gap-1"><FaTrophy size={10} className="text-green-400" />{quest.completions}/{quest.maxCompletions}</span>
                 </div>
                 <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden w-full">

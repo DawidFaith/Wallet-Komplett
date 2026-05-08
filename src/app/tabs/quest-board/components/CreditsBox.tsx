@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { FaCoins, FaSync } from 'react-icons/fa';
+import Image from 'next/image';
+import { FaSync } from 'react-icons/fa';
 import { formatCredits } from '../utils';
 
 interface CreditsBoxProps {
@@ -29,10 +30,10 @@ export default function CreditsBox({
   return (
     <div className="bg-gradient-to-r from-yellow-900/40 to-amber-900/30 border border-yellow-700/50 rounded-2xl p-4 flex items-center gap-4">
       <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
-        <FaCoins size={18} className="text-yellow-400" />
+        <Image src="/D.FAITH.png" alt="D.FAITH" width={28} height={28} className="w-7 h-7 object-contain" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-yellow-300 font-bold text-base">{formatCredits(balance)} Dfaith Credits</p>
+        <p className="text-yellow-300 font-bold text-base">{formatCredits(balance)} D.FAITH Credits</p>
         {subtitle && <p className="text-yellow-600 text-xs">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-2 shrink-0">
