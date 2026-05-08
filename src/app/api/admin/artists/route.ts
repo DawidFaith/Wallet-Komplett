@@ -36,7 +36,7 @@ export async function GET(req: Request) {
         yb.channel_thumbnail AS youtube_channel_thumbnail,
         COALESCE((
           SELECT COUNT(*) FROM quests q
-          WHERE q.creator_wallet = p.wallet_address
+          WHERE LOWER(q.creator_wallet) = LOWER(p.wallet_address)
             AND q.is_active = TRUE
             AND (q.expires_at IS NULL OR q.expires_at > NOW())
         ), 0) AS quest_count
@@ -50,13 +50,13 @@ export async function GET(req: Request) {
     let completedByCreator: Record<string, number> = {};
     if (viewerWallet) {
       const done = await sql`
-        SELECT q.creator_wallet, COUNT(*) AS cnt
+        SELECT LOWER(q.creator_wallet) AS creator_wallet, COUNT(*) AS cnt
         FROM quest_completions qc
         JOIN quests q ON q.id = qc.quest_id
         WHERE qc.wallet_address = ${viewerWallet}
           AND q.is_active = TRUE
           AND (q.expires_at IS NULL OR q.expires_at > NOW())
-        GROUP BY q.creator_wallet
+        GROUP BY LOWER(q.creator_wallet)
       `;
       for (const row of done) {
         completedByCreator[row.creator_wallet as string] = Number(row.cnt);
@@ -88,7 +88,7 @@ export async function GET(req: Request) {
         artistType: r.artist_type ?? null,
         artistBio: r.artist_bio ?? null,
         rewardToken: r.reward_token ?? 'D.FAITH',
-        questCount: Math.max(0, Number(r.quest_count) - (completedByCreator[r.wallet_address] ?? 0)),
+        questCount: Math.max(0, Number(r.quest_count) - (completedByCreator[(r.wallet_address as string).toLowerCase()] ?? 0)),
         socials: {
           youtubeChannelId: r.youtube_channel_id ?? null,
           youtubeChannelName: r.youtube_channel_name ?? null,
