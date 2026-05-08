@@ -290,10 +290,10 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   return (
     <div className="w-full max-w-2xl mx-auto px-4 pb-16 space-y-5">
 
-      {/* ── UserBoard ─────────────────────────────────────────── */}
+      {/* ── Supporter ─────────────────────────────────────────── */}
       <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 space-y-4">
 
-        {/* Avatar + Name + Dropdown + Credits + Level */}
+        {/* Avatar + Name + Dropdown */}
         <div className="flex items-center gap-4">
           {/* Avatar */}
           <div className="shrink-0">
@@ -349,38 +349,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               )}
             </div>
 
-
-          </div>
-
-          {/* Level Badge */}
-          {data && (
-            <div className="shrink-0 flex flex-col items-center gap-1">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-red-600 flex items-center justify-center">
-                <span className="text-white font-black text-sm">{data.level}</span>
-              </div>
-              <span className="text-zinc-500 text-xs font-semibold">Level</span>
-            </div>
-          )}
         </div>
-
-        {/* XP-Balken */}
-        {data && (
-          <div>
-            <div className="flex justify-between text-xs text-zinc-600 mb-1.5">
-              <span className="flex items-center gap-1">
-                <FaStar size={10} className="text-yellow-500" />
-                {data.currentXp} / {data.nextLevelXp} XP bis Level {data.level + 1}
-              </span>
-              <span>{data.xp} XP gesamt</span>
-            </div>
-            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-red-500 transition-all duration-700"
-                style={{ width: `${data.progress}%` }}
-              />
-            </div>
-          </div>
-        )}
 
         {/* Divider */}
         <div className="border-t border-zinc-800" />
