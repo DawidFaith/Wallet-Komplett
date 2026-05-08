@@ -39,20 +39,27 @@ export async function GET(req: Request) {
           WHERE q.creator_wallet = p.wallet_address
             AND q.is_active = TRUE
             AND (q.expires_at IS NULL OR q.expires_at > NOW())
-            AND (
-              ${viewerWallet}
-                IS NULL
-              OR q.id NOT IN (
-                SELECT qc.quest_id FROM quest_completions qc
-                WHERE qc.wallet_address = ${viewerWallet}
-              )
-            )
         ), 0) AS quest_count
       FROM user_profiles p
       LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
       WHERE p.is_artist = TRUE
       ORDER BY p.updated_at DESC
     `;
+
+    // Bereits abgeschlossene Quests des Supporters nachladen (mit creator_wallet)
+    let completedByCreator: Record<string, number> = {};
+    if (viewerWallet) {
+      const done = await sql`
+        SELECT q.creator_wallet, COUNT(*) AS cnt
+        FROM quest_completions qc
+        JOIN quests q ON q.id = qc.quest_id
+        WHERE qc.wallet_address = ${viewerWallet}
+        GROUP BY q.creator_wallet
+      `;
+      for (const row of done) {
+        completedByCreator[row.creator_wallet as string] = Number(row.cnt);
+      }
+    }
 
     const artists = rows.map((r) => {
       let name: string | null = r.display_name ?? null;
@@ -79,7 +86,7 @@ export async function GET(req: Request) {
         artistType: r.artist_type ?? null,
         artistBio: r.artist_bio ?? null,
         rewardToken: r.reward_token ?? 'D.FAITH',
-        questCount: Number(r.quest_count),
+        questCount: Math.max(0, Number(r.quest_count) - (completedByCreator[r.wallet_address] ?? 0)),
         socials: {
           youtubeChannelId: r.youtube_channel_id ?? null,
           youtubeChannelName: r.youtube_channel_name ?? null,
