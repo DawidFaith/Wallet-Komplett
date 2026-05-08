@@ -349,6 +349,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               )}
             </div>
 
+          </div>
         </div>
 
         {/* Divider */}
@@ -428,7 +429,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
 
         {/* Soziale Profile – kompakte Icon-Reihe */}
         <div>
-          <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-3">Soziale Profile</p>
+          <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-3">Verbinde dich mit Social Media und erhalte Rewards für deine Unterstützung</p>
           <div className="flex gap-3 flex-wrap">
 
             <SocialChip
