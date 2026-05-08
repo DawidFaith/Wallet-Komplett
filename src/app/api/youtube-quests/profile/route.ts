@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   let body: {
     wallet?: string;
+    displayName?: string | null;
     instagramHandle?: string | null;
     tiktokHandle?: string | null;
     facebookHandle?: string | null;
@@ -51,12 +52,12 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Ungültiger Body' }, { status: 400 });
   }
-  const { wallet, instagramHandle, tiktokHandle, facebookHandle } = body;
+  const { wallet, displayName, instagramHandle, tiktokHandle, facebookHandle } = body;
   if (!wallet) {
     return NextResponse.json({ error: 'wallet fehlt' }, { status: 400 });
   }
   try {
-    await upsertUserProfile(wallet, { instagramHandle, tiktokHandle, facebookHandle });
+    await upsertUserProfile(wallet, { displayName, instagramHandle, tiktokHandle, facebookHandle });
     return NextResponse.json({ success: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

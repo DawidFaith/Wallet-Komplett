@@ -1179,6 +1179,7 @@ function rowToDmVerification(r: any): InstagramDmVerification {
 // ─── User Profile ─────────────────────────────────────────────────────────────
 
 export interface SocialProfile {
+  displayName: string | null;
   instagramHandle: string | null;
   instagramVerified: boolean;
   instagramName: string | null;
@@ -1201,6 +1202,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
   `;
   if (rows.length === 0) {
     return {
+      displayName: null,
       instagramHandle: null, instagramVerified: false, instagramName: null, instagramPicture: null,
       tiktokHandle: null, tiktokVerified: false, tiktokName: null, tiktokPicture: null,
       facebookHandle: null, facebookVerified: false, facebookName: null, facebookPicture: null,
@@ -1209,6 +1211,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
   }
   const r = rows[0];
   return {
+    displayName: r.display_name ?? null,
     instagramHandle: r.instagram_handle ?? null,
     instagramVerified: Boolean(r.instagram_verified),
     instagramName: r.instagram_name ?? null,
@@ -1229,6 +1232,19 @@ export async function upsertUserProfile(
   walletAddress: string,
   data: Partial<Omit<SocialProfile, 'youtubeChannelId'>>,
 ): Promise<void> {
+  // Handle displayName separately
+  if (data.displayName !== undefined) {
+    const sql = getDb();
+    await sql`
+      INSERT INTO user_profiles (wallet_address, display_name, updated_at)
+      VALUES (${walletAddress.toLowerCase()}, ${data.displayName}, NOW())
+      ON CONFLICT (wallet_address) DO UPDATE SET display_name = ${data.displayName}, updated_at = NOW()
+    `;
+    // Remove so it doesn't double-process below
+    const { displayName: _dn, ...rest } = data;
+    data = rest;
+    if (Object.keys(data).length === 0) return;
+  }
   const sql = getDb();
   await sql`
     INSERT INTO user_profiles (wallet_address, updated_at)
