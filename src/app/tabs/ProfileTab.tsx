@@ -430,7 +430,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                   <p className="text-zinc-600 text-xs italic">Noch keine Bio eingetragen</p>
                 )}
                 {!p.artistType && !p.artistBio && (
-                  <p className="text-zinc-600 text-xs italic">Klicke „Bearbeiten" um dein Artist-Profil auszufüllen</p>
+                  <p className="text-zinc-600 text-xs italic">Klicke &bdquo;Bearbeiten&ldquo; um dein Artist-Profil auszufüllen</p>
                 )}
               </div>
             )}
