@@ -106,6 +106,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   const [artists, setArtists] = useState<ArtistEntry[]>([]);
   const [selectedArtist, setSelectedArtist] = useState<ArtistEntry | null>(null);
   const [claiming, setClaiming] = useState(false);
+  const [claimModal, setClaimModal] = useState<{ sentAmount: number } | null>(null);
   // Artist-Profil bearbeiten
   const [editingArtist, setEditingArtist] = useState(false);
   const [artistTypeInput, setArtistTypeInput] = useState('');
@@ -159,7 +160,12 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ walletAddress: account.address, amount: data.credits }),
       });
-      if (res.ok) await loadProfile();
+      if (res.ok) {
+        const json = await res.json();
+        const sentAmount: number = json.sentAmount ?? data.credits;
+        await loadProfile();
+        setClaimModal({ sentAmount });
+      }
     } finally {
       setClaiming(false);
     }
@@ -570,21 +576,19 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                 <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
                 <span className="text-white font-bold tracking-wide">{selectedArtist.rewardToken ?? 'D.FAITH'}</span>
               </div>
-              {(data?.credits ?? 0) > 0 && (
-                <div className="flex items-center gap-2 bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-3 py-1.5">
+              <div className="flex items-center gap-2 bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-3 py-1.5">
                   <Image src="/D.FAITH.png" alt="D.FAITH" width={16} height={16} className="w-4 h-4 rounded-full shrink-0" />
                   <span className="text-yellow-300 font-semibold text-xs flex-1">
                     {(data?.credits ?? 0).toFixed(2)} D.FAITH Credits
                   </span>
                   <button
                     onClick={handleClaim}
-                    disabled={claiming}
-                    className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black font-bold text-xs px-3 py-1 rounded-lg transition-colors"
+                    disabled={claiming || (data?.credits ?? 0) <= 0}
+                    className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold text-xs px-3 py-1 rounded-lg transition-colors"
                   >
                     {claiming ? '…' : 'Einlösen'}
                   </button>
                 </div>
-              )}
             </div>
           )}
         </div>
@@ -659,6 +663,36 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               walletAddress={account.address}
               onLinked={() => { setShowYoutubeModal(false); loadProfile(); }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Einlösen-Erfolgs-Modal */}
+      {claimModal && (
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+          onClick={() => setClaimModal(null)}
+        >
+          <div
+            className="w-full max-w-sm bg-zinc-900 border border-yellow-700/50 rounded-2xl p-6 space-y-4 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-16 h-16 mx-auto">
+              <Image src="/D.FAITH.png" alt="D.FAITH" width={64} height={64} className="w-16 h-16 object-contain" />
+            </div>
+            <h3 className="text-white font-bold text-lg">Erfolgreich eingelöst!</h3>
+            <p className="text-zinc-400 text-sm">Folgende Menge wurde an deine Wallet gesendet:</p>
+            <div className="bg-yellow-900/30 border border-yellow-700/40 rounded-xl py-3 px-4 flex items-center justify-center gap-2">
+              <FaCoins className="text-yellow-400" size={18} />
+              <span className="text-yellow-300 font-bold text-2xl">{claimModal.sentAmount.toFixed(2)}</span>
+              <span className="text-yellow-500 font-semibold text-sm">D.FAITH</span>
+            </div>
+            <button
+              onClick={() => setClaimModal(null)}
+              className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 rounded-xl transition-colors"
+            >
+              OK
+            </button>
           </div>
         </div>
       )}
