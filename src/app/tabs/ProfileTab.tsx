@@ -517,13 +517,11 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           <div className="flex gap-4 overflow-x-auto pt-2 pb-1 scrollbar-none">
             {artists.map((artist) => {
               const hasQuests = artist.questCount > 0;
+              const isSelected = selectedArtist?.walletAddress === artist.walletAddress;
               return (
                 <button
                   key={artist.walletAddress}
-                  onClick={() => {
-                    setSelectedArtist(artist);
-                    setTimeout(() => questBoardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-                  }}
+                  onClick={() => setSelectedArtist(isSelected ? null : artist)}
                   className="flex flex-col items-center gap-2 shrink-0 w-16 group"
                 >
                   <div className="relative">
@@ -534,10 +532,10 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                         width={56}
                         height={56}
                         unoptimized
-                        className={`w-14 h-14 rounded-full object-cover transition-transform group-hover:scale-105 ${hasQuests ? 'ring-2 ring-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]' : 'ring-2 ring-zinc-700'}`}
+                        className={`w-14 h-14 rounded-full object-cover transition-transform group-hover:scale-105 ${isSelected ? 'ring-2 ring-white shadow-[0_0_12px_rgba(255,255,255,0.4)]' : hasQuests ? 'ring-2 ring-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]' : 'ring-2 ring-zinc-700'}`}
                       />
                     ) : (
-                      <div className={`w-14 h-14 rounded-full bg-gradient-to-br from-red-600 to-yellow-500 flex items-center justify-center text-white font-bold text-lg select-none transition-transform group-hover:scale-105 ${hasQuests ? 'ring-2 ring-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]' : 'ring-2 ring-zinc-700'}`}>
+                      <div className={`w-14 h-14 rounded-full bg-gradient-to-br from-red-600 to-yellow-500 flex items-center justify-center text-white font-bold text-lg select-none transition-transform group-hover:scale-105 ${isSelected ? 'ring-2 ring-white shadow-[0_0_12px_rgba(255,255,255,0.4)]' : hasQuests ? 'ring-2 ring-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]' : 'ring-2 ring-zinc-700'}`}>
                         {artist.name.slice(0, 2).toUpperCase()}
                       </div>
                     )}
@@ -547,24 +545,87 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                       </span>
                     )}
                   </div>
-                  <p className="text-zinc-300 text-xs font-medium text-center leading-tight line-clamp-2 w-full">
+                  <p className={`text-xs font-medium text-center leading-tight line-clamp-2 w-full ${isSelected ? 'text-white' : 'text-zinc-300'}`}>
                     {artist.name}
                   </p>
                 </button>
               );
             })}
           </div>
+
+          {/* Artist-Info-Card (inline, expandiert beim Klick) */}
+          {selectedArtist && (
+            <div className="mt-4 pt-4 border-t border-zinc-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {selectedArtist.picture ? (
+                    <Image src={selectedArtist.picture} alt={selectedArtist.name} width={44} height={44} unoptimized
+                      className="w-11 h-11 rounded-full object-cover ring-2 ring-red-500/50" />
+                  ) : (
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-red-600 to-yellow-500 flex items-center justify-center text-white font-bold text-sm">
+                      {selectedArtist.name.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-white font-bold text-sm">{selectedArtist.name}</p>
+                    {selectedArtist.artistType && (
+                      <p className="text-red-400 text-xs flex items-center gap-1"><FaMusic size={8} /> {selectedArtist.artistType}</p>
+                    )}
+                  </div>
+                </div>
+                <button onClick={() => setSelectedArtist(null)} className="text-zinc-500 hover:text-white transition-colors p-1">
+                  <FaTimes size={14} />
+                </button>
+              </div>
+              {selectedArtist.artistBio && (
+                <p className="text-zinc-400 text-xs leading-relaxed">{selectedArtist.artistBio}</p>
+              )}
+              <div className="flex flex-wrap gap-1.5">
+                {selectedArtist.socials.youtubeChannelId && (
+                  <span className="flex items-center gap-1 text-xs bg-red-900/20 text-red-300 px-2 py-0.5 rounded-lg border border-red-800/30">
+                    <FaYoutube size={9} /> {selectedArtist.socials.youtubeChannelName ?? 'YouTube'} <FaCheck size={8} className="text-green-400" />
+                  </span>
+                )}
+                {selectedArtist.socials.instagramHandle && (
+                  <span className="flex items-center gap-1 text-xs bg-pink-900/20 text-pink-300 px-2 py-0.5 rounded-lg border border-pink-800/30">
+                    <FaInstagram size={9} /> @{selectedArtist.socials.instagramHandle}
+                    {selectedArtist.socials.instagramVerified && <FaCheck size={8} className="text-green-400" />}
+                  </span>
+                )}
+                {selectedArtist.socials.tiktokHandle && (
+                  <span className="flex items-center gap-1 text-xs bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-lg border border-zinc-700">
+                    <FaTiktok size={9} /> @{selectedArtist.socials.tiktokHandle}
+                    {selectedArtist.socials.tiktokVerified && <FaCheck size={8} className="text-green-400" />}
+                  </span>
+                )}
+                {selectedArtist.socials.facebookHandle && (
+                  <span className="flex items-center gap-1 text-xs bg-blue-900/20 text-blue-300 px-2 py-0.5 rounded-lg border border-blue-800/30">
+                    <FaFacebook size={9} /> {selectedArtist.socials.facebookHandle}
+                    {selectedArtist.socials.facebookVerified && <FaCheck size={8} className="text-green-400" />}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setTimeout(() => questBoardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)}
+                className="w-full py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl transition-colors"
+              >
+                Quests ansehen
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* ── Quest Board ────────────────────────────────────────── */}
-      <div ref={questBoardRef}>
-        <QuestBoardTab
-          language={_language}
-          filterArtist={selectedArtist}
-          onClearArtist={() => setSelectedArtist(null)}
-        />
-      </div>
+      {selectedArtist && (
+        <div ref={questBoardRef}>
+          <QuestBoardTab
+            language={_language}
+            filterArtist={selectedArtist}
+            onClearArtist={() => setSelectedArtist(null)}
+          />
+        </div>
+      )}
 
       {/* YouTube Manage Modal (bereits verknüpft) */}
       {showYoutubeManage && p?.youtubeChannelId && (

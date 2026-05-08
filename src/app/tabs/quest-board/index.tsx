@@ -153,63 +153,6 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
           </div>
         ) : (
           <>
-            {/* Artist-Info-Card wenn Artist ausgewählt */}
-            {filterArtist && (
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {filterArtist.picture ? (
-                      <Image src={filterArtist.picture} alt={filterArtist.name} width={44} height={44} unoptimized
-                        className="w-11 h-11 rounded-full object-cover ring-2 ring-red-500/50" />
-                    ) : (
-                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-red-600 to-yellow-500 flex items-center justify-center text-white font-bold text-sm">
-                        {filterArtist.name.slice(0, 2).toUpperCase()}
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-white font-bold text-sm">{filterArtist.name}</p>
-                      {filterArtist.artistType && (
-                        <p className="text-red-400 text-xs flex items-center gap-1">
-                          <FaMusic size={8} /> {filterArtist.artistType}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <button onClick={onClearArtist} className="text-zinc-500 hover:text-white transition-colors p-1">
-                    <FaTimes size={14} />
-                  </button>
-                </div>
-                {filterArtist.artistBio && (
-                  <p className="text-zinc-400 text-xs leading-relaxed border-t border-zinc-800 pt-3">{filterArtist.artistBio}</p>
-                )}
-                <div className="flex flex-wrap gap-1.5">
-                  {filterArtist.socials.youtubeChannelId && (
-                    <span className="flex items-center gap-1 text-xs bg-red-900/20 text-red-300 px-2 py-0.5 rounded-lg border border-red-800/30">
-                      <FaYoutube size={9} /> {filterArtist.socials.youtubeChannelName ?? 'YouTube'} <FaCheck size={8} className="text-green-400" />
-                    </span>
-                  )}
-                  {filterArtist.socials.instagramHandle && (
-                    <span className="flex items-center gap-1 text-xs bg-pink-900/20 text-pink-300 px-2 py-0.5 rounded-lg border border-pink-800/30">
-                      <FaInstagram size={9} /> @{filterArtist.socials.instagramHandle}
-                      {filterArtist.socials.instagramVerified && <FaCheck size={8} className="text-green-400" />}
-                    </span>
-                  )}
-                  {filterArtist.socials.tiktokHandle && (
-                    <span className="flex items-center gap-1 text-xs bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-lg border border-zinc-700">
-                      <FaTiktok size={9} /> @{filterArtist.socials.tiktokHandle}
-                      {filterArtist.socials.tiktokVerified && <FaCheck size={8} className="text-green-400" />}
-                    </span>
-                  )}
-                  {filterArtist.socials.facebookHandle && (
-                    <span className="flex items-center gap-1 text-xs bg-blue-900/20 text-blue-300 px-2 py-0.5 rounded-lg border border-blue-800/30">
-                      <FaFacebookF size={9} /> {filterArtist.socials.facebookHandle}
-                      {filterArtist.socials.facebookVerified && <FaCheck size={8} className="text-green-400" />}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Fan Board */}
             <FanBoard
               walletAddress={account.address}
