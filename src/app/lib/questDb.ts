@@ -1194,6 +1194,8 @@ export interface SocialProfile {
   facebookPicture: string | null;
   youtubeChannelId: string | null;
   isArtist: boolean;
+  artistType: string | null;
+  artistBio: string | null;
 }
 
 export interface AdminUserRow {
@@ -1228,6 +1230,8 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
       facebookHandle: null, facebookVerified: false, facebookName: null, facebookPicture: null,
       youtubeChannelId: null,
       isArtist: false,
+      artistType: null,
+      artistBio: null,
     };
   }
   const r = rows[0];
@@ -1247,6 +1251,8 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
     facebookPicture: r.facebook_picture ?? null,
     youtubeChannelId: r.youtube_channel_id ?? null,
     isArtist: Boolean(r.is_artist),
+    artistType: r.artist_type ?? null,
+    artistBio: r.artist_bio ?? null,
   };
 }
 
@@ -1342,6 +1348,18 @@ export async function upsertUserProfile(
   if (data.facebookPicture !== undefined) {
     await sql`
       UPDATE user_profiles SET facebook_picture = ${data.facebookPicture}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+  if (data.artistType !== undefined) {
+    await sql`
+      UPDATE user_profiles SET artist_type = ${data.artistType}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+  if (data.artistBio !== undefined) {
+    await sql`
+      UPDATE user_profiles SET artist_bio = ${data.artistBio}, updated_at = NOW()
       WHERE wallet_address = ${walletAddress.toLowerCase()}
     `;
   }
