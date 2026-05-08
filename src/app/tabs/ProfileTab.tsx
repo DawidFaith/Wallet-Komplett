@@ -42,6 +42,12 @@ interface ProfileData {
   };
 }
 
+interface ArtistEntry {
+  walletAddress: string;
+  name: string;
+  picture: string | null;
+}
+
 interface ProfileTabProps {
   language: SupportedLanguage;
 }
@@ -70,6 +76,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   // YouTube: manage (already linked) vs. link-flow
   const [showYoutubeManage, setShowYoutubeManage] = useState(false);
+  const [artists, setArtists] = useState<ArtistEntry[]>([]);
 
   const [primaryPlatform, setPrimaryPlatformState] = useState<AnyPlatform | null>(null);
 
@@ -141,6 +148,13 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   }, [account?.address, loadProfile, primaryPlatform, setPrimaryPlatform]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
+
+  useEffect(() => {
+    fetch('/api/admin/artists')
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.artists) setArtists(d.artists); })
+      .catch(() => {});
+  }, []);
 
   // Dropdown bei Klick außen schließen
   useEffect(() => {
@@ -373,6 +387,36 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           </div>
         </div>
       </div>
+
+      {/* ── ArtistBoard ────────────────────────────────────────── */}
+      {artists.length > 0 && (
+        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5">
+          <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-4">Artists</p>
+          <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-none">
+            {artists.map((artist) => (
+              <div key={artist.walletAddress} className="flex flex-col items-center gap-2 shrink-0 w-16">
+                {artist.picture ? (
+                  <Image
+                    src={artist.picture}
+                    alt={artist.name}
+                    width={56}
+                    height={56}
+                    unoptimized
+                    className="w-14 h-14 rounded-full object-cover ring-2 ring-red-600/50"
+                  />
+                ) : (
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-red-600 to-yellow-500 flex items-center justify-center text-white font-bold text-lg select-none ring-2 ring-red-600/30">
+                    {artist.name.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+                <p className="text-zinc-300 text-xs font-medium text-center leading-tight line-clamp-2 w-full">
+                  {artist.name}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Quest Board ────────────────────────────────────────── */}
       <QuestBoardTab language={_language} />
