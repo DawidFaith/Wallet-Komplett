@@ -27,7 +27,7 @@ const TYPE_LABELS: Record<QuestType, string> = {
   secret:     'Geheimcode',
   engagement: 'Engagement',
   repost:     'Repost',
-  dm_share:   'DM teilen',
+  dm_share:   'Story Quest',
 };
 
 interface CreatorBoardProps {
