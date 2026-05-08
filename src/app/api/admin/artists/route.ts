@@ -54,6 +54,8 @@ export async function GET(req: Request) {
         FROM quest_completions qc
         JOIN quests q ON q.id = qc.quest_id
         WHERE qc.wallet_address = ${viewerWallet}
+          AND q.is_active = TRUE
+          AND (q.expires_at IS NULL OR q.expires_at > NOW())
         GROUP BY q.creator_wallet
       `;
       for (const row of done) {
