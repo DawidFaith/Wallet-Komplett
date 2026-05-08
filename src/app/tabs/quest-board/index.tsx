@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useActiveAccount } from 'thirdweb/react';
-import { FaTrophy, FaYoutube, FaInstagram, FaTiktok, FaFacebookF, FaUser, FaStar } from 'react-icons/fa';
-import FanBoard from './fan/FanBoard';
+import { FaTrophy, FaYoutube, FaInstagram, FaTiktok, FaFacebookF, FaStar } from 'react-icons/fa';import FanBoard from './fan/FanBoard';
 import CreatorBoard from './creator/CreatorBoard';
 import type { YouTubeBinding, QuestBoardView, VerifiedPlatforms, QuestIndexEntry } from './types';
 import type { SupportedLanguage } from '../../utils/deepLTranslation';
-import { formatCredits, shortenWallet } from './utils';
+import { shortenWallet } from './utils';
 
 interface QuestBoardProps {
   language: SupportedLanguage;
@@ -23,12 +22,6 @@ interface ProfileResponse {
     tiktokVerified?: boolean;
     facebookVerified?: boolean;
   };
-  credits?: number;
-  xp?: number;
-  level?: number;
-  currentXp?: number;
-  nextLevelXp?: number;
-  progress?: number;
 }
 
 interface ArtistChip {
@@ -44,13 +37,6 @@ export default function QuestBoard({ language: _language }: QuestBoardProps) {
     youtube: false, instagram: false, tiktok: false, facebook: false,
   });
   const [loaded, setLoaded] = useState(false);
-
-  // Profil-Daten für UserProfileCard
-  const [credits, setCredits] = useState(0);
-  const [level, setLevel] = useState(1);
-  const [currentXp, setCurrentXp] = useState(0);
-  const [nextLevelXp, setNextLevelXp] = useState(100);
-  const [xpProgress, setXpProgress] = useState(0);
 
   // Quest-Daten für Artist-Auswahl
   const [allQuests, setAllQuests] = useState<QuestIndexEntry[]>([]);
@@ -82,11 +68,6 @@ export default function QuestBoard({ language: _language }: QuestBoardProps) {
         } else {
           setBinding(null);
         }
-        setCredits(profileRes.credits ?? 0);
-        setLevel(profileRes.level ?? 1);
-        setCurrentXp(profileRes.currentXp ?? 0);
-        setNextLevelXp(profileRes.nextLevelXp ?? 100);
-        setXpProgress(profileRes.progress ?? 0);
         setAllQuests(questsRes.quests ?? []);
       })
       .catch(() => {})
@@ -150,57 +131,6 @@ export default function QuestBoard({ language: _language }: QuestBoardProps) {
             >
               Artist
             </button>
-          </div>
-        </div>
-
-        {/* ─── User Profile Card ─── */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
-              <FaUser size={14} className="text-zinc-500" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-yellow-300 font-bold text-sm">{formatCredits(credits)} DFAITH</span>
-                <span className="text-yellow-700 text-xs">Credits</span>
-                <span className="ml-auto bg-red-900/40 border border-red-700/40 text-red-300 text-xs px-2 py-0.5 rounded-full font-semibold shrink-0">
-                  Lv. {level}
-                </span>
-              </div>
-              <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-red-500 to-yellow-500 rounded-full transition-all"
-                  style={{ width: `${xpProgress}%` }}
-                />
-              </div>
-              <p className="text-zinc-600 text-xs mt-0.5">{currentXp} / {nextLevelXp} XP</p>
-            </div>
-          </div>
-          {/* Social Badges */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {verified.youtube && (
-              <span className="flex items-center gap-1 bg-red-900/30 border border-red-700/30 text-red-400 text-xs px-2 py-0.5 rounded-full">
-                <FaYoutube size={10} /> YouTube
-              </span>
-            )}
-            {verified.instagram && (
-              <span className="flex items-center gap-1 bg-pink-900/30 border border-pink-700/30 text-pink-400 text-xs px-2 py-0.5 rounded-full">
-                <FaInstagram size={10} /> Instagram
-              </span>
-            )}
-            {verified.tiktok && (
-              <span className="flex items-center gap-1 bg-cyan-900/30 border border-cyan-700/30 text-cyan-400 text-xs px-2 py-0.5 rounded-full">
-                <FaTiktok size={10} /> TikTok
-              </span>
-            )}
-            {verified.facebook && (
-              <span className="flex items-center gap-1 bg-blue-900/30 border border-blue-700/30 text-blue-400 text-xs px-2 py-0.5 rounded-full">
-                <FaFacebookF size={10} /> Facebook
-              </span>
-            )}
-            {!anyVerified && (
-              <p className="text-zinc-600 text-xs">Kein Social-Konto verknüpft</p>
-            )}
           </div>
         </div>
 
