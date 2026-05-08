@@ -221,7 +221,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
   useEffect(() => {
-    fetch('/api/admin/artists')
+    fetch(`/api/admin/artists${account?.address ? `?wallet=${account.address}` : ''}`)
       .then((r) => r.ok ? r.json() : null)
       .then((d) => { if (d?.artists) setArtists(d.artists); })
       .catch(() => {});
@@ -571,9 +571,9 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               </div>
               {(data?.credits ?? 0) > 0 && (
                 <div className="flex items-center gap-2 bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-3 py-1.5">
-                  <FaCoins className="text-yellow-400" size={12} />
+                  <Image src="/D.FAITH.png" alt="D.FAITH" width={16} height={16} className="w-4 h-4 rounded-full shrink-0" />
                   <span className="text-yellow-300 font-semibold text-xs flex-1">
-                    {(data?.credits ?? 0).toFixed(2)} DFAITH Credits
+                    {(data?.credits ?? 0).toFixed(2)} D.FAITH Credits
                   </span>
                   <button
                     onClick={handleClaim}

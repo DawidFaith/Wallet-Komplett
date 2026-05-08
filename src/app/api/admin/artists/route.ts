@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const viewerWallet = searchParams.get('wallet')?.toLowerCase() ?? null;
     const sql = getDb();
 
     // Spalten artist_type / artist_bio ggf. noch nicht vorhanden → sicher nachrüsten
@@ -37,6 +39,14 @@ export async function GET() {
           WHERE q.creator_wallet = p.wallet_address
             AND q.is_active = TRUE
             AND (q.expires_at IS NULL OR q.expires_at > NOW())
+            AND (
+              ${viewerWallet}
+                IS NULL
+              OR q.id NOT IN (
+                SELECT qc.quest_id FROM quest_completions qc
+                WHERE qc.wallet_address = ${viewerWallet}
+              )
+            )
         ), 0) AS quest_count
       FROM user_profiles p
       LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
