@@ -514,7 +514,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
       {artists.length > 0 && (
         <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5">
           <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-4">Artists</p>
-          <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex gap-4 overflow-x-auto pt-2 pb-1 scrollbar-none">
             {artists.map((artist) => {
               const hasQuests = artist.questCount > 0;
               return (
