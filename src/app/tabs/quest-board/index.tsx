@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useActiveAccount } from 'thirdweb/react';
-import { FaTrophy, FaYoutube, FaInstagram, FaTiktok, FaFacebookF, FaStar } from 'react-icons/fa';import FanBoard from './fan/FanBoard';
+import { FaTrophy, FaYoutube, FaInstagram, FaTiktok, FaFacebookF } from 'react-icons/fa';
+import FanBoard from './fan/FanBoard';
 import CreatorBoard from './creator/CreatorBoard';
-import type { YouTubeBinding, QuestBoardView, VerifiedPlatforms, QuestIndexEntry } from './types';
+import type { YouTubeBinding, QuestBoardView, VerifiedPlatforms } from './types';
 import type { SupportedLanguage } from '../../utils/deepLTranslation';
-import { shortenWallet } from './utils';
 
 interface QuestBoardProps {
   language: SupportedLanguage;
@@ -24,11 +24,6 @@ interface ProfileResponse {
   };
 }
 
-interface ArtistChip {
-  wallet: string;
-  questCount: number;
-}
-
 export default function QuestBoard({ language: _language }: QuestBoardProps) {
   const account = useActiveAccount();
   const [view, setView] = useState<QuestBoardView>('fan');
@@ -38,18 +33,13 @@ export default function QuestBoard({ language: _language }: QuestBoardProps) {
   });
   const [loaded, setLoaded] = useState(false);
 
-  // Quest-Daten für Artist-Auswahl
-  const [allQuests, setAllQuests] = useState<QuestIndexEntry[]>([]);
-  const [selectedArtist, setSelectedArtist] = useState<string | null>(null);
-
   useEffect(() => {
     if (!account?.address) { setLoaded(false); return; }
     setLoaded(false);
     Promise.all([
       fetch(`/api/youtube-quests/profile?wallet=${account.address}`).then((r) => r.json()),
-      fetch('/api/youtube-quests/quests').then((r) => r.json()),
     ])
-      .then(([profileRes, questsRes]: [ProfileResponse, { quests?: QuestIndexEntry[] }]) => {
+      .then(([profileRes]: [ProfileResponse]) => {
         const p = profileRes.profile ?? {};
         setVerified({
           youtube: !!p.youtubeVerified,
@@ -68,23 +58,10 @@ export default function QuestBoard({ language: _language }: QuestBoardProps) {
         } else {
           setBinding(null);
         }
-        setAllQuests(questsRes.quests ?? []);
       })
       .catch(() => {})
       .finally(() => setLoaded(true));
   }, [account?.address]);
-
-  // Artist-Chips aus aktiven Quests ableiten
-  const artistChips = useMemo((): ArtistChip[] => {
-    const map = new Map<string, number>();
-    allQuests
-      .filter((q) => q.isActive)
-      .forEach((q) => {
-        const w = q.creatorWallet.toLowerCase();
-        map.set(w, (map.get(w) ?? 0) + 1);
-      });
-    return Array.from(map.entries()).map(([wallet, questCount]) => ({ wallet, questCount }));
-  }, [allQuests]);
 
   if (!account?.address) {
     return (
@@ -154,50 +131,11 @@ export default function QuestBoard({ language: _language }: QuestBoardProps) {
           </div>
         ) : (
           <>
-            {/* Artist-Filter Chips */}
-            {artistChips.length > 0 && (
-              <div>
-                <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2">Artist wählen</p>
-                <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-                  <button
-                    onClick={() => setSelectedArtist(null)}
-                    className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                      selectedArtist === null
-                        ? 'bg-red-600 border-red-500 text-white'
-                        : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-white'
-                    }`}
-                  >
-                    Alle
-                    <span className={`px-1.5 py-0.5 rounded-full text-xs ${selectedArtist === null ? 'bg-red-700/60 text-red-100' : 'bg-zinc-800 text-zinc-500'}`}>
-                      {artistChips.reduce((s, a) => s + a.questCount, 0)}
-                    </span>
-                  </button>
-                  {artistChips.map((artist) => (
-                    <button
-                      key={artist.wallet}
-                      onClick={() => setSelectedArtist(selectedArtist === artist.wallet ? null : artist.wallet)}
-                      className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                        selectedArtist === artist.wallet
-                          ? 'bg-red-600 border-red-500 text-white'
-                          : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-white'
-                      }`}
-                    >
-                      <FaStar size={9} />
-                      {shortenWallet(artist.wallet)}
-                      <span className={`px-1.5 py-0.5 rounded-full text-xs ${selectedArtist === artist.wallet ? 'bg-red-700/60 text-red-100' : 'bg-zinc-800 text-zinc-500'}`}>
-                        {artist.questCount}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Fan Board */}
             <FanBoard
               walletAddress={account.address}
               verified={verified}
-              filterCreator={selectedArtist ?? undefined}
+              filterCreator={undefined}
             />
           </>
         )}
