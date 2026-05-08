@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useActiveAccount, useSendTransaction } from 'thirdweb/react';
 import { getContract, prepareContractCall } from 'thirdweb';
 import { base } from 'thirdweb/chains';
 import { client } from '../../../client';
-import { FaCoins, FaCheck, FaSync } from 'react-icons/fa';
+import { FaCheck, FaSync } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import { DFAITH_TOKEN, DFAITH_DECIMALS } from '../types';
 
@@ -105,7 +106,8 @@ export default function DepositModal({ open, onClose, walletAddress, onDeposited
             disabled={!amount || parseFloat(amount) <= 0 || !poolAddress}
             className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
-            <FaCoins /> {amount || '0'} DFAITH einzahlen
+            <Image src="/D.FAITH.png" alt="D.FAITH" width={20} height={20} className="w-5 h-5 object-contain" />
+            {amount || '0'} D.FAITH einzahlen
           </button>
         </div>
       )}
@@ -131,8 +133,13 @@ export default function DepositModal({ open, onClose, walletAddress, onDeposited
         <div className="space-y-4">
           <div className="bg-green-900/30 border border-green-700/40 rounded-xl p-5 text-center">
             <FaCheck size={28} className="text-green-400 mx-auto mb-2" />
-            <p className="text-green-300 font-bold text-lg">{Number(creditedAmount).toFixed(2)} DFAITH gutgeschrieben!</p>
-            <p className="text-zinc-400 text-sm mt-1">Dein Artist-Pool wurde aufgeladen.</p>
+            <p className="text-green-300 font-bold text-sm mb-2">Erfolgreich aufgeladen!</p>
+            <div className="flex items-center justify-center gap-2">
+              <Image src="/D.FAITH.png" alt="D.FAITH" width={28} height={28} className="w-7 h-7 object-contain" />
+              <span className="text-yellow-300 font-bold text-2xl">{Number(creditedAmount).toFixed(2)}</span>
+              <span className="text-yellow-500 font-semibold text-sm">D.FAITH</span>
+            </div>
+            <p className="text-zinc-400 text-sm mt-2">Dein Artist-Pool wurde aufgeladen.</p>
           </div>
           <button onClick={handleClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">
             Schließen

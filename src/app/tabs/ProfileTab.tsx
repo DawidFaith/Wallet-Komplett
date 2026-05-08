@@ -683,7 +683,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
             <h3 className="text-white font-bold text-lg">Erfolgreich eingelöst!</h3>
             <p className="text-zinc-400 text-sm">Folgende Menge wurde an deine Wallet gesendet:</p>
             <div className="bg-yellow-900/30 border border-yellow-700/40 rounded-xl py-3 px-4 flex items-center justify-center gap-2">
-              <FaCoins className="text-yellow-400" size={18} />
+              <Image src="/D.FAITH.png" alt="D.FAITH" width={28} height={28} className="w-7 h-7 object-contain" />
               <span className="text-yellow-300 font-bold text-2xl">{claimModal.sentAmount.toFixed(2)}</span>
               <span className="text-yellow-500 font-semibold text-sm">D.FAITH</span>
             </div>
