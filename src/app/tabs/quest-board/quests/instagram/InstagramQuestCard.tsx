@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { FaInstagram, FaCoins, FaClock, FaComment, FaHeart, FaBookmark, FaShareAlt } from 'react-icons/fa';
+import Image from 'next/image';
+import { FaInstagram, FaClock, FaComment, FaHeart, FaBookmark, FaShareAlt } from 'react-icons/fa';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
 
@@ -47,7 +48,7 @@ export default function InstagramQuestCard({ quest, isCompleted, onComplete }: I
 
         <div className="flex justify-between items-center text-xs text-zinc-400">
           <span className="flex items-center gap-1">
-            <FaCoins size={10} className="text-yellow-400" /> {formatCredits(quest.rewardAmount)} DFAITH
+            <Image src="/D.FAITH.png" alt="D.FAITH" width={10} height={10} className="w-2.5 h-2.5 rounded-full" unoptimized /> {formatCredits(quest.rewardAmount)} D.FAITH
           </span>
           {expiry && (
             <span className="flex items-center gap-1 text-zinc-500">

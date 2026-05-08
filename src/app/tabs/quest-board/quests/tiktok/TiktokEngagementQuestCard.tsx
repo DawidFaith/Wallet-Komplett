@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { FaCoins, FaClock, FaCheck, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaClock, FaCheck, FaExternalLinkAlt } from 'react-icons/fa';
 import { SiTiktok } from 'react-icons/si';
 import { FiThumbsUp, FiShare2, FiBookmark } from 'react-icons/fi';
 import type { QuestIndexEntry } from '../../types';
@@ -36,7 +36,7 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, onComple
             <SiTiktok size={10} /> Engagement
           </div>
           <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-            <FaCoins size={10} /> {formatCredits(quest.rewardAmount)} DFAITH
+            <Image src="/D.FAITH.png" alt="D.FAITH" width={10} height={10} className="w-2.5 h-2.5 rounded-full" unoptimized /> {formatCredits(quest.rewardAmount)} D.FAITH
           </div>
           {expiry && (
             <div className="absolute bottom-2 left-2 bg-black/70 text-zinc-300 text-xs px-2 py-1 rounded-full flex items-center gap-1">
