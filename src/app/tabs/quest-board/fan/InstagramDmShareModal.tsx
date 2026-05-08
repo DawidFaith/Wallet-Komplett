@@ -192,14 +192,14 @@ export default function InstagramDmShareModal({
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <Modal open={true} title="DM-Share Quest" onClose={onClose}>
+    <Modal open={true} title="Story Quest" onClose={onClose}>
       <div className="space-y-4 text-white">
         {/* Header */}
         <div className="flex items-center gap-3">
           <FaInstagram size={20} className="text-pink-400 shrink-0" />
           <div>
             <p className="font-semibold text-sm">{quest.videoTitle}</p>
-            <p className="text-xs text-zinc-500">DM-Share Quest · {formatCredits(quest.rewardAmount)} DFAITH</p>
+            <p className="text-xs text-zinc-500">Story Quest · {formatCredits(quest.rewardAmount)} DFAITH</p>
           </div>
         </div>
 

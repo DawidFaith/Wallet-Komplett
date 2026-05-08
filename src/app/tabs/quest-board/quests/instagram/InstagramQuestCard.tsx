@@ -18,7 +18,7 @@ const QUEST_TYPE_CONFIG = {
   comment:    { label: 'Kommentar',        icon: <FaComment size={8} />,  bg: 'bg-purple-600/90',                                        btn: 'Kommentar verifizieren' },
   engagement: { label: 'Like & Speichern', icon: <FaHeart size={8} />,   bg: 'bg-gradient-to-r from-red-600/90 to-yellow-600/90',       btn: 'Engagement verifizieren' },
   repost:     { label: 'Repost',           icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-blue-600/90 to-cyan-600/90',        btn: 'Repost verifizieren' },
-  dm_share:   { label: 'DM-Share',         icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-pink-600/90 to-purple-600/90',      btn: 'DM-Share Quest starten' },
+  dm_share:   { label: 'Story Quest',         icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-pink-600/90 to-purple-600/90',      btn: 'Story Quest starten' },
 } as const;
 
 export default function InstagramQuestCard({ quest, isCompleted, onComplete }: InstagramQuestCardProps) {
@@ -48,7 +48,7 @@ export default function InstagramQuestCard({ quest, isCompleted, onComplete }: I
 
         <div className="flex justify-between items-center text-xs text-zinc-400">
           <span className="flex items-center gap-1">
-            <Image src="/D.FAITH.png" alt="D.FAITH" width={10} height={10} className="w-2.5 h-2.5 rounded-full" unoptimized /> {formatCredits(quest.rewardAmount)} D.FAITH
+            <Image src="/D.FAITH.png" alt="D.FAITH" width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(quest.rewardAmount)} D.FAITH
           </span>
           {expiry && (
             <span className="flex items-center gap-1 text-zinc-500">
