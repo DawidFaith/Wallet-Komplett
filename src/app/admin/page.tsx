@@ -5,6 +5,7 @@ import {
   FaYoutube, FaInstagram, FaTiktok, FaFacebook,
   FaCheck, FaTimes, FaSearch, FaShieldAlt, FaCoins, FaStar, FaSync,
 } from 'react-icons/fa';
+import { SiHedera } from 'react-icons/si';
 
 interface AdminUser {
   walletAddress: string;
@@ -300,7 +301,142 @@ export default function AdminPage() {
           ))}
         </div>
       )}
+
+      {/* Hedera Token Mint */}
+      <HederaMintSection secret={secret} />
+    </dHederaMintSection ────────────────────────────────────────────────────────
+
+function HederaMintSection({ secret }: { secret: string }) {
+  const [name, setName]           = useState('D.FAITH');
+  const [symbol, setSymbol]       = useState('DFAITH');
+  const [decimals, setDecimals]   = useState('2');
+  const [supply, setSupply]       = useState('1000000000');
+  const [memo, setMemo]           = useState('D.FAITH Fan Token by Dawid Faith');
+  const [loading, setLoading]     = useState(false);
+  const [result, setResult]       = useState<{ tokenId: string; explorerUrl: string } | null>(null);
+  const [error, setError]         = useState('');
+
+  const handleMint = async () => {
+    setLoading(true);
+    setError('');
+    setResult(null);
+    try {
+      const res = await fetch('/api/admin/hedera-mint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({
+          name: name.trim(),
+          symbol: symbol.trim(),
+          decimals: parseInt(decimals),
+          initialSupply: parseInt(supply),
+          memo: memo.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Fehler');
+      setResult(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unbekannter Fehler');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="mt-8 bg-zinc-900 border border-zinc-700/50 rounded-2xl p-6 space-y-5">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-purple-900/30 border border-purple-800/50 flex items-center justify-center">
+          <SiHedera size={16} className="text-purple-400" />
+        </div>
+        <div>
+          <h2 className="text-white font-bold text-base">Hedera Token Minten (HTS)</h2>
+          <p className="text-zinc-500 text-xs">Erstellt einen neuen Fungible Token auf Hedera Mainnet</p>
+        </div>
+      </div>
+
+      {result ? (
+        <div className="bg-green-900/20 border border-green-800/40 rounded-xl p-4 space-y-2">
+          <p className="text-green-400 font-semibold text-sm">✓ Token erfolgreich erstellt!</p>
+          <div>
+            <p className="text-zinc-400 text-xs">Token-ID (in .env.local eintragen):</p>
+            <code className="text-yellow-300 text-sm font-mono break-all">{result.tokenId}</code>
+          </div>
+          <p className="text-zinc-500 text-xs">
+            → <code className="text-zinc-300">NEXT_PUBLIC_HEDERA_DFAITH_TOKEN_ID={result.tokenId}</code>
+          </p>
+          <a
+            href={result.explorerUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-purple-400 hover:text-purple-300 text-xs underline block mt-1"
+          >
+            HashScan Explorer öffnen →
+          </a>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-zinc-400 text-xs block mb-1">Token Name</label>
+            <input value={name} onChange={e => setName(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
+          </div>
+          <div>
+            <label className="text-zinc-400 text-xs block mb-1">Symbol</label>
+            <input value={symbol} onChange={e => setSymbol(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
+          </div>
+          <div>
+            <label className="text-zinc-400 text-xs block mb-1">Decimals</label>
+            <input type="number" value={decimals} onChange={e => setDecimals(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
+          </div>
+          <div>
+            <label className="text-zinc-400 text-xs block mb-1">Initial Supply (kleinste Einheit)</label>
+            <input type="number" value={supply} onChange={e => setSupply(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
+            <p className="text-zinc-600 text-xs mt-0.5">
+              = {(parseInt(supply || '0') / Math.pow(10, parseInt(decimals || '0'))).toLocaleString()} {symbol}
+            </p>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-zinc-400 text-xs block mb-1">Memo</label>
+            <input value={memo} onChange={e => setMemo(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-900/20 border border-red-800/40 rounded-xl px-4 py-3 text-red-300 text-sm break-all">
+          {error}
+        </div>
+      )}
+
+      {!result && (
+        <button
+          onClick={handleMint}
+          disabled={loading || !name.trim() || !symbol.trim()}
+          className="w-full bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
+        >
+          {loading
+            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Token wird erstellt…</>
+            : <><SiHedera size={14} /> D.FAITH Token auf Hedera erstellen</>}
+        </button>
+      )}
+
+      {result && (
+        <button
+          onClick={() => setResult(null)}
+          className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2 rounded-xl text-sm"
+        >
+          Neuen Token erstellen
+        </button>
+      )}
     </div>
+  );
+}
+
+// ─── iv>
   );
 }
 
