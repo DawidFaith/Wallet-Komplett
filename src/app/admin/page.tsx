@@ -436,10 +436,6 @@ function HederaMintSection({ secret }: { secret: string }) {
   );
 }
 
-// ─── iv>
-  );
-}
-
 // ─── UserRow ──────────────────────────────────────────────────────────────────
 
 function UserRow({
