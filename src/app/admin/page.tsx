@@ -316,9 +316,27 @@ function HederaMintSection({ secret }: { secret: string }) {
   const [decimals, setDecimals]   = useState('2');
   const [supply, setSupply]       = useState('1000000000');
   const [memo, setMemo]           = useState('D.FAITH Fan Token by Dawid Faith');
+  const [description, setDescription] = useState('The official D.FAITH fan token by Dawid Faith');
+  const [imageBase64, setImageBase64] = useState('');
+  const [imageMimeType, setImageMimeType] = useState('image/png');
+  const [imagePreview, setImagePreview]   = useState('');
   const [loading, setLoading]     = useState(false);
-  const [result, setResult]       = useState<{ tokenId: string; explorerUrl: string } | null>(null);
+  const [result, setResult]       = useState<{ tokenId: string; explorerUrl: string; metadataUri?: string } | null>(null);
   const [error, setError]         = useState('');
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageMimeType(file.type || 'image/png');
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setImagePreview(dataUrl);
+      // base64 ohne data:...-Prefix
+      setImageBase64(dataUrl.split(',')[1] ?? '');
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleMint = async () => {
     setLoading(true);
@@ -334,6 +352,9 @@ function HederaMintSection({ secret }: { secret: string }) {
           decimals: parseInt(decimals),
           initialSupply: parseInt(supply),
           memo: memo.trim(),
+          description: description.trim(),
+          imageBase64: imageBase64 || undefined,
+          imageMimeType,
         }),
       });
       const data = await res.json();
@@ -368,6 +389,9 @@ function HederaMintSection({ secret }: { secret: string }) {
           <p className="text-zinc-500 text-xs">
             → <code className="text-zinc-300">NEXT_PUBLIC_HEDERA_DFAITH_TOKEN_ID={result.tokenId}</code>
           </p>
+          {result.metadataUri && (
+            <p className="text-zinc-500 text-xs">Metadata: <code className="text-zinc-300 break-all">{result.metadataUri}</code></p>
+          )}
           <a
             href={result.explorerUrl}
             target="_blank"
@@ -403,9 +427,31 @@ function HederaMintSection({ secret }: { secret: string }) {
             </p>
           </div>
           <div className="sm:col-span-2">
-            <label className="text-zinc-400 text-xs block mb-1">Memo</label>
+            <label className="text-zinc-400 text-xs block mb-1">Beschreibung</label>
+            <input value={description} onChange={e => setDescription(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-zinc-400 text-xs block mb-1">Memo (on-chain)</label>
             <input value={memo} onChange={e => setMemo(e.target.value)}
               className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-zinc-400 text-xs block mb-1">Token-Bild (optional, wird auf IPFS hochgeladen)</label>
+            <div className="flex items-center gap-3">
+              {imagePreview && (
+                <img src={imagePreview} alt="Vorschau" className="w-14 h-14 rounded-xl object-cover border border-zinc-700" />
+              )}
+              <label className="flex-1 cursor-pointer bg-zinc-800 border border-zinc-700 border-dashed hover:border-purple-500 text-zinc-400 hover:text-purple-300 rounded-xl px-4 py-3 text-sm text-center transition-colors">
+                {imagePreview ? 'Anderes Bild wählen' : 'Bild auswählen (PNG, JPG, SVG)'}
+                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+              </label>
+              {imagePreview && (
+                <button onClick={() => { setImagePreview(''); setImageBase64(''); }}
+                  className="text-zinc-500 hover:text-red-400 text-xs px-2">✕</button>
+              )}
+            </div>
+            {imageBase64 && <p className="text-zinc-600 text-xs mt-1">Bild wird beim Mint auf Pinata IPFS hochgeladen</p>}
           </div>
         </div>
       )}
