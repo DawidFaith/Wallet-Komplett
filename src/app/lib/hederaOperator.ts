@@ -46,6 +46,7 @@ export async function getOperatorKey(): Promise<PrivateKeyType> {
       const onChainPub = await fetchOnChainPubKey(operatorId, network);
       if (onChainPub) {
         const candidates: Array<() => Promise<PrivateKeyType>> = [
+          () => (m as unknown as { toEd25519PrivateKey: () => Promise<PrivateKeyType> }).toEd25519PrivateKey(),
           () => m.toStandardEd25519PrivateKey('', 0),
           () => m.toStandardECDSAsecp256k1PrivateKey('', 0),
           () => m.toStandardEd25519PrivateKey('', 1),
