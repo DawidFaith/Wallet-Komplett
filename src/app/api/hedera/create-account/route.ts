@@ -37,16 +37,6 @@ export async function POST(req: NextRequest) {
   }
 
   const normalized = walletAddress.toLowerCase();
-  const sql = getDb();
-
-  // Idempotent: bereits vorhandenen Account zurückgeben
-  const existing = await sql`
-    SELECT hedera_account_id FROM hedera_accounts
-    WHERE wallet_address = ${normalized} LIMIT 1
-  `;
-  if (existing.length > 0) {
-    return NextResponse.json({ hederaAccountId: existing[0].hedera_account_id, created: false });
-  }
 
   const operatorId  = process.env.HEDERA_OPERATOR_ID;
   const dfaithToken = process.env.NEXT_PUBLIC_HEDERA_DFAITH_TOKEN_ID;
@@ -54,6 +44,12 @@ export async function POST(req: NextRequest) {
 
   if (!operatorId) {
     return NextResponse.json({ error: 'HEDERA_OPERATOR_ID nicht konfiguriert' }, { status: 503 });
+  }
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ error: 'DATABASE_URL nicht konfiguriert' }, { status: 503 });
+  }
+  if (!process.env.HEDERA_ENCRYPTION_KEY) {
+    return NextResponse.json({ error: 'HEDERA_ENCRYPTION_KEY nicht konfiguriert' }, { status: 503 });
   }
 
   const {
@@ -66,6 +62,17 @@ export async function POST(req: NextRequest) {
 
   let client: InstanceType<typeof Client> | null = null;
   try {
+    const sql = getDb();
+
+    // Idempotent: bereits vorhandenen Account zurückgeben
+    const existing = await sql`
+      SELECT hedera_account_id FROM hedera_accounts
+      WHERE wallet_address = ${normalized} LIMIT 1
+    `;
+    if (existing.length > 0) {
+      return NextResponse.json({ hederaAccountId: existing[0].hedera_account_id, created: false });
+    }
+
     const operatorKey = await getOperatorKey();
     client = network === 'testnet' ? Client.forTestnet() : Client.forMainnet();
     client.setOperator(operatorId, operatorKey);
