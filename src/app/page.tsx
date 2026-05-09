@@ -14,6 +14,7 @@ import FacebookTab from "./tabs/FacebookTab";
 import YoutubeTab from "./tabs/YoutubeTab";
 import QuestBoardTab from "./tabs/QuestBoardTab";
 import ProfileTab from "./tabs/ProfileTab";
+import HederaWalletTab from "./tabs/HederaWalletTab";
 import type { SupportedLanguage } from "./utils/deepLTranslation";
 
 function HomeContent() {
@@ -49,6 +50,7 @@ function HomeContent() {
         {activeTab === "facebook" && <FacebookTab language={language} />}
         {activeTab === "youtube" && <YoutubeTab language={language} />}
         {activeTab === "quest-board" && <QuestBoardTab language={language} />}
+        {activeTab === "hedera-wallet" && <HederaWalletTab />}
       </section>
     </main>
   );
