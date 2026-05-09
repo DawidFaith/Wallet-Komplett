@@ -304,7 +304,11 @@ export default function AdminPage() {
 
       {/* Hedera Token Mint */}
       <HederaMintSection secret={secret} />
-    </dHederaMintSection ────────────────────────────────────────────────────────
+    </div>
+  );
+}
+
+// ─── HederaMintSection ────────────────────────────────────────────────────────
 
 function HederaMintSection({ secret }: { secret: string }) {
   const [name, setName]           = useState('D.FAITH');
