@@ -1,8 +1,6 @@
 /**
- * GET /api/hedera/debug-key
- * Zeigt alle möglichen Public Keys für die aktuelle Mnemonic.
- * Vergleich mit HashScan → Settings → Key deines Accounts.
- * NUR lokal verwenden, nie auf Production deployen.
+ * GET /api/hedera/debug-key?secret=ADMIN_SECRET
+ * Vergleicht alle möglichen abgeleiteten Public Keys mit dem on-chain Key.
  */
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -12,36 +10,54 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const mnemonic = process.env.HEDERA_OPERATOR_MNEMONIC?.trim();
-  if (!mnemonic) return NextResponse.json({ error: 'HEDERA_OPERATOR_MNEMONIC nicht gesetzt' }, { status: 400 });
+  const operatorId = process.env.HEDERA_OPERATOR_ID;
+  const mnemonic   = process.env.HEDERA_OPERATOR_MNEMONIC?.trim();
+  const network    = process.env.HEDERA_NETWORK ?? 'mainnet';
 
-  const { Mnemonic } = await import('@hashgraph/sdk');
-  const m = await Mnemonic.fromString(mnemonic);
+  const result: Record<string, unknown> = {
+    operatorId,
+    network,
+    mnemonicWordCount: mnemonic?.split(' ').length ?? 0,
+  };
 
-  const results: Record<string, string> = {};
-
+  // 1) On-chain Public Key holen
   try {
-    const k = await m.toStandardEd25519PrivateKey('', 0);
-    results['toStandardEd25519PrivateKey(index=0)'] = k.publicKey.toStringDer();
-  } catch (e) { results['toStandardEd25519PrivateKey(index=0)'] = 'FEHLER: ' + e; }
+    const base = network === 'testnet'
+      ? 'https://testnet.mirrornode.hedera.com'
+      : 'https://mainnet-public.mirrornode.hedera.com';
+    const res = await fetch(`${base}/api/v1/accounts/${operatorId}`, { cache: 'no-store' });
+    const data = await res.json();
+    result['onChainKey'] = data?.key ?? null;
+  } catch (e) {
+    result['onChainKey'] = 'FEHLER: ' + (e instanceof Error ? e.message : String(e));
+  }
 
-  try {
-    const k = await m.toStandardEd25519PrivateKey('', 0);
-    results['toStandardEd25519PrivateKey(index=0)_raw'] = k.publicKey.toStringRaw();
-  } catch (e) { results['toStandardEd25519PrivateKey(index=0)_raw'] = 'FEHLER: ' + e; }
+  // 2) Alle Derivationspfade
+  if (mnemonic) {
+    try {
+      const { Mnemonic } = await import('@hashgraph/sdk');
+      const m = await Mnemonic.fromString(mnemonic);
 
-  try {
-    const k = await m.toStandardECDSAsecp256k1PrivateKey('', 0);
-    results['toStandardECDSAsecp256k1(index=0)'] = k.publicKey.toStringDer();
-  } catch (e) { results['toStandardECDSAsecp256k1(index=0)'] = 'FEHLER: ' + e; }
+      const derived: Record<string, string> = {};
+      const variants: Array<[string, () => Promise<{ publicKey: { toStringRaw(): string } }>]> = [
+        ['ED25519_idx0', () => m.toStandardEd25519PrivateKey('', 0)],
+        ['ED25519_idx1', () => m.toStandardEd25519PrivateKey('', 1)],
+        ['ECDSA_idx0',   () => m.toStandardECDSAsecp256k1PrivateKey('', 0)],
+        ['ECDSA_idx1',   () => m.toStandardECDSAsecp256k1PrivateKey('', 1)],
+      ];
+      for (const [name, fn] of variants) {
+        try {
+          const k = await fn();
+          derived[name] = k.publicKey.toStringRaw();
+        } catch (e) {
+          derived[name] = 'FEHLER: ' + (e instanceof Error ? e.message : String(e));
+        }
+      }
+      result['derivedPublicKeys'] = derived;
+    } catch (e) {
+      result['mnemonicError'] = e instanceof Error ? e.message : String(e);
+    }
+  }
 
-  try {
-    const k = await (m as any).toLegacyPrivateKey();
-    results['toLegacyPrivateKey'] = k.publicKey.toStringDer();
-  } catch (e) { results['toLegacyPrivateKey'] = 'FEHLER: ' + e; }
-
-  return NextResponse.json({
-    hint: `Öffne HashScan: https://hashscan.io/mainnet/account/${process.env.HEDERA_OPERATOR_ID} → Keys → vergleiche den Public Key`,
-    keys: results,
-  });
+  return NextResponse.json(result);
 }
