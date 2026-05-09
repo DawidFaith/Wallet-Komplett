@@ -165,6 +165,14 @@ export const MIGRATION_SQL = `
     PRIMARY KEY (quest_id, wallet_address)
   );
 
+  -- Hedera Accounts: server-seitig erstellt, verknüpft mit EVM wallet_address
+  CREATE TABLE IF NOT EXISTS hedera_accounts (
+    wallet_address     TEXT        PRIMARY KEY,
+    hedera_account_id  TEXT        NOT NULL UNIQUE,
+    hedera_private_key TEXT        NOT NULL,
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
   -- ── Migrationen: bestehende INTEGER-Spalten auf NUMERIC(20,2) erweitern ──
   -- DFAITH hat 2 Decimals, daher müssen Beträge mit 2 Nachkommastellen gespeichert werden.
   ALTER TABLE quests             ALTER COLUMN reward_amount  TYPE NUMERIC(20,2) USING reward_amount::numeric;
