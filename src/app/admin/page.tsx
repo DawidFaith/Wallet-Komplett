@@ -462,6 +462,12 @@ function SolanaMintSection({ secret }: { secret: string }) {
   const [totalSupply, setTotalSupply] = useState('1000000000');
   const [decimals, setDecimals]       = useState('6');
   const [description, setDescription] = useState('The official D.FAITH fan token by Dawid Faith');
+  const [website, setWebsite]         = useState('');
+  const [twitter, setTwitter]         = useState('');
+  const [instagram, setInstagram]     = useState('');
+  const [youtube, setYoutube]         = useState('');
+  const [telegram, setTelegram]       = useState('');
+  const [discord, setDiscord]         = useState('');
   const [imageBase64, setImageBase64] = useState('');
   const [imageMimeType, setImageMimeType] = useState('image/png');
   const [imagePreview, setImagePreview]   = useState('');
@@ -497,6 +503,12 @@ function SolanaMintSection({ secret }: { secret: string }) {
           description: description.trim(),
           imageBase64: imageBase64 || undefined,
           imageMimeType,
+          website:   website.trim()   || undefined,
+          twitter:   twitter.trim()   || undefined,
+          instagram: instagram.trim() || undefined,
+          youtube:   youtube.trim()   || undefined,
+          telegram:  telegram.trim()  || undefined,
+          discord:   discord.trim()   || undefined,
         }),
       });
       const data = await res.json();
@@ -584,6 +596,25 @@ function SolanaMintSection({ secret }: { secret: string }) {
             </div>
             {imageBase64 && <p className="text-zinc-600 text-xs mt-1">Bild + Metaplex JSON werden beim Mint auf Pinata IPFS hochgeladen</p>}
           </div>
+          {/* Social Links */}
+          <div className="sm:col-span-2 border-t border-zinc-800 pt-3">
+            <p className="text-zinc-500 text-xs mb-2">Social Links (optional — erscheinen in Phantom &amp; Explorern)</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[{label:'Website', val:website, set:setWebsite, ph:'https://dawidfaith.de'},
+                {label:'Twitter / X', val:twitter, set:setTwitter, ph:'https://twitter.com/dawidfaith'},
+                {label:'Instagram', val:instagram, set:setInstagram, ph:'https://instagram.com/dawidfaith'},
+                {label:'YouTube', val:youtube, set:setYoutube, ph:'https://youtube.com/@dawidfaith'},
+                {label:'Telegram', val:telegram, set:setTelegram, ph:'https://t.me/dawidfaith'},
+                {label:'Discord', val:discord, set:setDiscord, ph:'https://discord.gg/...'},
+              ].map(({label, val, set, ph}) => (
+                <div key={label}>
+                  <label className="text-zinc-500 text-xs block mb-0.5">{label}</label>
+                  <input value={val} onChange={e => set(e.target.value)} placeholder={ph}
+                    className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-1.5 text-xs outline-none focus:border-purple-500" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -664,6 +695,12 @@ function SolanaUpdateMetadataSection({ secret }: { secret: string }) {
   const [name, setName]               = useState('D.FAITH');
   const [symbol, setSymbol]           = useState('DFAITH');
   const [description, setDescription] = useState('The official D.FAITH fan token by Dawid Faith');
+  const [website, setWebsite]         = useState('');
+  const [twitter, setTwitter]         = useState('');
+  const [instagram, setInstagram]     = useState('');
+  const [youtube, setYoutube]         = useState('');
+  const [telegram, setTelegram]       = useState('');
+  const [discord, setDiscord]         = useState('');
   const [imageBase64, setImageBase64] = useState('');
   const [imageMimeType, setImageMimeType] = useState('image/png');
   const [imagePreview, setImagePreview]   = useState('');
@@ -698,6 +735,12 @@ function SolanaUpdateMetadataSection({ secret }: { secret: string }) {
           description: description.trim(),
           imageBase64: imageBase64 || undefined,
           imageMimeType,
+          website:   website.trim()   || undefined,
+          twitter:   twitter.trim()   || undefined,
+          instagram: instagram.trim() || undefined,
+          youtube:   youtube.trim()   || undefined,
+          telegram:  telegram.trim()  || undefined,
+          discord:   discord.trim()   || undefined,
         }),
       });
       const data = await res.json();
@@ -769,6 +812,25 @@ function SolanaUpdateMetadataSection({ secret }: { secret: string }) {
                 <button onClick={() => { setImagePreview(''); setImageBase64(''); }}
                   className="text-zinc-500 hover:text-red-400 text-xs px-2 shrink-0">✕</button>
               )}
+            </div>
+          </div>
+          {/* Social Links */}
+          <div className="sm:col-span-2 border-t border-zinc-800 pt-3">
+            <p className="text-zinc-500 text-xs mb-2">Social Links (optional — erscheinen in Phantom &amp; Explorern)</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[{label:'Website', val:website, set:setWebsite, ph:'https://dawidfaith.de'},
+                {label:'Twitter / X', val:twitter, set:setTwitter, ph:'https://twitter.com/dawidfaith'},
+                {label:'Instagram', val:instagram, set:setInstagram, ph:'https://instagram.com/dawidfaith'},
+                {label:'YouTube', val:youtube, set:setYoutube, ph:'https://youtube.com/@dawidfaith'},
+                {label:'Telegram', val:telegram, set:setTelegram, ph:'https://t.me/dawidfaith'},
+                {label:'Discord', val:discord, set:setDiscord, ph:'https://discord.gg/...'},
+              ].map(({label, val, set, ph}) => (
+                <div key={label}>
+                  <label className="text-zinc-500 text-xs block mb-0.5">{label}</label>
+                  <input value={val} onChange={e => set(e.target.value)} placeholder={ph}
+                    className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-1.5 text-xs outline-none focus:border-blue-500" />
+                </div>
+              ))}
             </div>
           </div>
         </div>

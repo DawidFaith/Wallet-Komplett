@@ -34,9 +34,12 @@ async function uploadToPinata(content: string | Buffer, filename: string, mimeTy
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { secret, mintAddress, name, symbol, description, imageBase64, imageMimeType, metadataUri: metadataUriDirect } = body as {
+    const { secret, mintAddress, name, symbol, description, imageBase64, imageMimeType, metadataUri: metadataUriDirect,
+      website, twitter, instagram, youtube, telegram, discord,
+    } = body as {
       secret?: string; mintAddress?: string; name?: string; symbol?: string;
       description?: string; imageBase64?: string; imageMimeType?: string; metadataUri?: string;
+      website?: string; twitter?: string; instagram?: string; youtube?: string; telegram?: string; discord?: string;
     };
 
     if (secret !== process.env.MIGRATION_SECRET) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -52,13 +55,22 @@ export async function POST(req: Request) {
       const imgBuffer = Buffer.from(imageBase64, 'base64');
       const imageHash = await uploadToPinata(imgBuffer, `${symbol.toLowerCase()}.${ext}`, mime);
 
-      const metadata = {
+      const extensions: Record<string, string> = {};
+      if (website)   extensions.website   = website;
+      if (twitter)   extensions.twitter   = twitter;
+      if (instagram) extensions.instagram = instagram;
+      if (youtube)   extensions.youtube   = youtube;
+      if (telegram)  extensions.telegram  = telegram;
+      if (discord)   extensions.discord   = discord;
+
+      const metadata: Record<string, unknown> = {
         name,
         symbol,
         description: description ?? '',
         image: `ipfs://${imageHash}`,
         properties: { files: [{ uri: `ipfs://${imageHash}`, type: mime }], category: 'image' },
       };
+      if (Object.keys(extensions).length > 0) metadata.extensions = extensions;
       const metaHash = await uploadToPinata(
         JSON.stringify(metadata), `${symbol.toLowerCase()}-metadata.json`, 'application/json',
       );
