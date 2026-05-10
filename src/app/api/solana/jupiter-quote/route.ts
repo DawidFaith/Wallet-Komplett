@@ -26,9 +26,23 @@ export async function GET(req: Request) {
     if (JUPITER_API_KEY) headers['Authorization'] = `Bearer ${JUPITER_API_KEY}`;
     const res  = await fetch(url, { headers, signal: AbortSignal.timeout(8000) });
     const data = await res.json() as Record<string, unknown>;
+
+    // Jupiter gibt 400 zurück wenn keine Route gefunden wurde
+    if (res.status === 400) {
+      const errCode = data?.errorCode as string ?? '';
+      if (errCode === 'TOKEN_NOT_TRADABLE' || errCode === 'COULD_NOT_FIND_ANY_ROUTE') {
+        return NextResponse.json(
+          { error: 'Kein Liquiditätspool gefunden. D.FAITH muss erst auf Raydium gelistet werden.', errorCode: errCode },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({ error: data?.error ?? 'Kein Swap-Route gefunden', errorCode: errCode }, { status: 404 });
+    }
+
     if (!res.ok) return NextResponse.json({ error: data?.error ?? 'Jupiter API Fehler' }, { status: res.status });
     return NextResponse.json(data);
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : 'Netzwerkfehler' }, { status: 502 });
+    const msg = e instanceof Error ? e.message : 'Netzwerkfehler';
+    return NextResponse.json({ error: `Jupiter nicht erreichbar: ${msg}` }, { status: 502 });
   }
 }

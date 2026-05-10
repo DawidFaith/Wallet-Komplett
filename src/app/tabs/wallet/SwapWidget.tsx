@@ -283,7 +283,19 @@ export default function SwapWidget({ walletAddress, evmAddress, tokens, solBalan
         )}
 
         {quoteErr && (
-          <p className="text-red-400 text-xs px-1">⚠ {quoteErr}</p>
+          <div className="bg-zinc-800/80 border border-zinc-700 rounded-xl p-3 space-y-1">
+            <p className="text-red-400 text-xs font-medium">⚠ {quoteErr}</p>
+            {quoteErr.includes('Liquiditätspool') && (
+              <p className="text-zinc-500 text-xs">
+                Erstelle zuerst einen Pool auf{' '}
+                <a href="https://raydium.io/liquidity/create-pool" target="_blank" rel="noopener noreferrer"
+                  className="text-emerald-400 underline">Raydium</a>{' '}
+                oder{' '}
+                <a href="https://app.meteora.ag/dlmm/create" target="_blank" rel="noopener noreferrer"
+                  className="text-emerald-400 underline">Meteora</a>.
+              </p>
+            )}
+          </div>
         )}
 
         {/* ── Swap Button ── */}
