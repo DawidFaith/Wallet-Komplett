@@ -153,6 +153,8 @@ export default function AdminPage() {
     return matchSearch && matchFilter;
   });
 
+  const [activeTab, setActiveTab] = useState<'users' | 'token'>('users');
+
   // ── Login Screen ────────────────────────────────────────────────────────────
   if (!secret) {
     return (
@@ -223,93 +225,115 @@ export default function AdminPage() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-0">
+        {(['users', 'token'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 text-sm font-semibold rounded-t-xl transition-colors border-b-2 -mb-px ${
+              activeTab === tab
+                ? 'text-white border-red-500 bg-zinc-900'
+                : 'text-zinc-500 border-transparent hover:text-zinc-300'
+            }`}
+          >
+            {tab === 'users' ? 'Benutzer' : 'Token'}
+          </button>
+        ))}
+      </div>
+
       {error && (
         <div className="mb-4 bg-red-900/30 border border-red-800/50 text-red-300 text-sm px-4 py-3 rounded-xl">
           {error}
         </div>
       )}
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
-        <div className="relative flex-1">
-          <FaSearch size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Wallet, Name, Handle suchen…"
-            className="w-full bg-zinc-900 border border-zinc-800 text-white rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:border-zinc-600 transition-colors"
-          />
-        </div>
-        <div className="flex gap-2">
-          {(['all', 'artist', 'fan'] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilterArtist(f)}
-              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
-                filterArtist === f
-                  ? 'bg-red-600 text-white'
-                  : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white'
-              }`}
-            >
-              {f === 'all' ? 'Alle' : f === 'artist' ? 'Artists' : 'Fans'}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* ── Benutzer Tab ──────────────────────────────────────────────────────── */}
+      {activeTab === 'users' && (
+        <>
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-5">
+            <div className="relative flex-1">
+              <FaSearch size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Wallet, Name, Handle suchen…"
+                className="w-full bg-zinc-900 border border-zinc-800 text-white rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:border-zinc-600 transition-colors"
+              />
+            </div>
+            <div className="flex gap-2">
+              {(['all', 'artist', 'fan'] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilterArtist(f)}
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                    filterArtist === f
+                      ? 'bg-red-600 text-white'
+                      : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  {f === 'all' ? 'Alle' : f === 'artist' ? 'Artists' : 'Fans'}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
-          <p className="text-zinc-500 text-xs mb-0.5">Gesamt</p>
-          <p className="text-white font-bold text-xl">{users.length}</p>
-        </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
-          <p className="text-zinc-500 text-xs mb-0.5">Artists</p>
-          <p className="text-red-400 font-bold text-xl">{users.filter((u) => u.isArtist).length}</p>
-        </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
-          <p className="text-zinc-500 text-xs mb-0.5">Fans</p>
-          <p className="text-blue-400 font-bold text-xl">{users.filter((u) => !u.isArtist).length}</p>
-        </div>
-      </div>
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
+              <p className="text-zinc-500 text-xs mb-0.5">Gesamt</p>
+              <p className="text-white font-bold text-xl">{users.length}</p>
+            </div>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
+              <p className="text-zinc-500 text-xs mb-0.5">Artists</p>
+              <p className="text-red-400 font-bold text-xl">{users.filter((u) => u.isArtist).length}</p>
+            </div>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
+              <p className="text-zinc-500 text-xs mb-0.5">Fans</p>
+              <p className="text-blue-400 font-bold text-xl">{users.filter((u) => !u.isArtist).length}</p>
+            </div>
+          </div>
 
-      {/* Table */}
-      {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-2 border-zinc-600 border-t-red-500 rounded-full animate-spin" />
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {filtered.length === 0 && (
-            <p className="text-zinc-600 text-center py-12 text-sm">Keine Accounts gefunden</p>
+          {/* Table */}
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <div className="w-8 h-8 border-2 border-zinc-600 border-t-red-500 rounded-full animate-spin" />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filtered.length === 0 && (
+                <p className="text-zinc-600 text-center py-12 text-sm">Keine Accounts gefunden</p>
+              )}
+              {filtered.map((user) => (
+                <UserRow
+                  key={user.walletAddress}
+                  user={user}
+                  toggling={toggling === user.walletAddress}
+                  onToggle={() => handleToggleArtist(user.walletAddress, user.isArtist)}
+                  editingRewardToken={editingRewardToken === user.walletAddress}
+                  rewardTokenInput={rewardTokenInput}
+                  onEditRewardToken={() => { setEditingRewardToken(user.walletAddress); setRewardTokenInput(user.rewardToken ?? 'D.FAITH'); }}
+                  onRewardTokenInputChange={setRewardTokenInput}
+                  onSaveRewardToken={() => handleSaveRewardToken(user.walletAddress)}
+                  onCancelRewardToken={() => setEditingRewardToken(null)}
+                  savingRewardToken={savingRewardToken === user.walletAddress}
+                />
+              ))}
+            </div>
           )}
-          {filtered.map((user) => (
-            <UserRow
-              key={user.walletAddress}
-              user={user}
-              toggling={toggling === user.walletAddress}
-              onToggle={() => handleToggleArtist(user.walletAddress, user.isArtist)}
-              editingRewardToken={editingRewardToken === user.walletAddress}
-              rewardTokenInput={rewardTokenInput}
-              onEditRewardToken={() => { setEditingRewardToken(user.walletAddress); setRewardTokenInput(user.rewardToken ?? 'D.FAITH'); }}
-              onRewardTokenInputChange={setRewardTokenInput}
-              onSaveRewardToken={() => handleSaveRewardToken(user.walletAddress)}
-              onCancelRewardToken={() => setEditingRewardToken(null)}
-              savingRewardToken={savingRewardToken === user.walletAddress}
-            />
-          ))}
-        </div>
+        </>
       )}
 
-      {/* Hedera Treasury */}
-      <HederaTreasurySection secret={secret} />
-
-      {/* Hedera Token Mint */}
-      <HederaMintSection secret={secret} />
-
-      {/* Hedera Token Metadata Update */}
-      <HederaUpdateMetadataSection secret={secret} />
+      {/* ── Token Tab ─────────────────────────────────────────────────────────── */}
+      {activeTab === 'token' && (
+        <>
+          <HederaTreasurySection secret={secret} />
+          <HederaMintSection secret={secret} />
+          <HederaUpdateMetadataSection secret={secret} />
+        </>
+      )}
     </div>
   );
 }
