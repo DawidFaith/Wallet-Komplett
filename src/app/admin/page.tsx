@@ -5,7 +5,7 @@ import {
   FaYoutube, FaInstagram, FaTiktok, FaFacebook,
   FaCheck, FaTimes, FaSearch, FaShieldAlt, FaCoins, FaStar, FaSync, FaPaperPlane,
 } from 'react-icons/fa';
-import { SiHedera, SiSolana } from 'react-icons/si';
+import { SiSolana } from 'react-icons/si';
 
 interface AdminUser {
   walletAddress: string;
@@ -332,12 +332,6 @@ export default function AdminPage() {
           <SolanaTreasurySection secret={secret} />
           <SolanaMintSection secret={secret} />
           <SolanaDBMigrationSection secret={secret} />
-          <div className="mt-8 border-t border-zinc-800 pt-6">
-            <p className="text-zinc-600 text-xs mb-4">─── Legacy: Hedera ───</p>
-            <HederaTreasurySection secret={secret} />
-            <HederaMintSection secret={secret} />
-            <HederaUpdateMetadataSection secret={secret} />
-          </div>
         </>
       )}
     </div>
@@ -465,6 +459,7 @@ function SolanaMintSection({ secret }: { secret: string }) {
   const [name, setName]               = useState('D.FAITH');
   const [symbol, setSymbol]           = useState('DFAITH');
   const [totalSupply, setTotalSupply] = useState('1000000000');
+  const [decimals, setDecimals]       = useState('6');
   const [description, setDescription] = useState('The official D.FAITH fan token by Dawid Faith');
   const [imageBase64, setImageBase64] = useState('');
   const [imageMimeType, setImageMimeType] = useState('image/png');
@@ -497,6 +492,7 @@ function SolanaMintSection({ secret }: { secret: string }) {
           name: name.trim(),
           symbol: symbol.trim(),
           totalSupply: parseInt(totalSupply),
+          decimals: parseInt(decimals),
           description: description.trim(),
           imageBase64: imageBase64 || undefined,
           imageMimeType,
@@ -552,11 +548,17 @@ function SolanaMintSection({ secret }: { secret: string }) {
             <input value={symbol} onChange={e => setSymbol(e.target.value)}
               className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
           </div>
-          <div className="sm:col-span-2">
-            <label className="text-zinc-400 text-xs block mb-1">Total Supply (gesamt, 6 Decimals)</label>
+          <div>
+            <label className="text-zinc-400 text-xs block mb-1">Total Supply</label>
             <input type="number" value={totalSupply} onChange={e => setTotalSupply(e.target.value)}
               className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
-            <p className="text-zinc-600 text-xs mt-0.5">= {parseInt(totalSupply || '0').toLocaleString()} D.FAITH (6 Decimals)</p>
+            <p className="text-zinc-600 text-xs mt-0.5">{parseInt(totalSupply || '0').toLocaleString()} Token</p>
+          </div>
+          <div>
+            <label className="text-zinc-400 text-xs block mb-1">Decimals</label>
+            <input type="number" min="0" max="9" value={decimals} onChange={e => setDecimals(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
+            <p className="text-zinc-600 text-xs mt-0.5">Standard: 6 (wie USDC)</p>
           </div>
           <div className="sm:col-span-2">
             <label className="text-zinc-400 text-xs block mb-1">Beschreibung</label>
@@ -649,445 +651,6 @@ function SolanaDBMigrationSection({ secret }: { secret: string }) {
         {loading
           ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Migration läuft…</>
           : 'solana_accounts Tabelle erstellen'}
-      </button>
-    </div>
-  );
-}
-
-// ─── HederaTreasurySection ────────────────────────────────────────────────────
-
-function HederaTreasurySection({ secret }: { secret: string }) {
-  type TokenInfo = { tokenId: string; balance: number; name: string; symbol: string };
-  const [hbar, setHbar]             = useState<number | null>(null);
-  const [tokens, setTokens]         = useState<TokenInfo[]>([]);
-  const [operatorId, setOperatorId] = useState('');
-  const [loadingBal, setLoadingBal] = useState(false);
-
-  const [sendTo, setSendTo]     = useState('');
-  const [sendAmt, setSendAmt]   = useState('');
-  const [sendMode, setSendMode] = useState<string>('');
-  const [sending, setSending]   = useState(false);
-  const [sendOk, setSendOk]     = useState('');
-  const [sendErr, setSendErr]   = useState('');
-
-  const loadBalance = useCallback(async () => {
-    setLoadingBal(true);
-    setSendOk(''); setSendErr('');
-    try {
-      const res = await fetch('/api/admin/hedera-balance', { headers: { 'x-admin-secret': secret } });
-      const d   = await res.json();
-      if (!res.ok) throw new Error(d.error);
-      setHbar(d.hbar ?? null);
-      const toks: TokenInfo[] = d.tokens ?? [];
-      setTokens(toks);
-      setOperatorId(d.operatorId ?? '');
-      setSendMode(prev => {
-        if (prev === '') return toks.length > 0 ? toks[0].tokenId : 'hbar';
-        return prev;
-      });
-    } catch (e) {
-      setSendErr(e instanceof Error ? e.message : 'Fehler');
-    } finally {
-      setLoadingBal(false);
-    }
-  }, [secret]);
-
-  useEffect(() => { loadBalance(); }, [loadBalance]);
-
-  const handleSend = async () => {
-    setSendErr(''); setSendOk('');
-    if (!/^\d+\.\d+\.\d+$/.test(sendTo.trim())) { setSendErr('Ungültige Account-ID'); return; }
-    const amt = parseFloat(sendAmt);
-    if (!isFinite(amt) || amt <= 0) { setSendErr('Ungültiger Betrag'); return; }
-    setSending(true);
-    try {
-      const isHbar = sendMode === 'hbar';
-      const body: Record<string, unknown> = { toAccountId: sendTo.trim(), amount: amt, sendHbar: isHbar };
-      if (!isHbar) body.tokenId = sendMode;
-      const res = await fetch('/api/admin/hedera-send-token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
-        body: JSON.stringify(body),
-      });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error);
-      setSendOk(`✓ gesendet! TX: ${d.transactionId}`);
-      setSendTo(''); setSendAmt('');
-      setTimeout(loadBalance, 3000);
-    } catch (e) {
-      setSendErr(e instanceof Error ? e.message : 'Fehler');
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const currentToken = tokens.find(t => t.tokenId === sendMode);
-  const gridCols = tokens.length >= 2 ? 'grid-cols-3' : 'grid-cols-2';
-
-  return (
-    <div className="mt-8 bg-zinc-900 border border-zinc-700/50 rounded-2xl p-6 space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-            <SiHedera size={16} className="text-zinc-300" />
-          </div>
-          <div>
-            <h2 className="text-white font-bold text-base">Treasury Wallet</h2>
-            <p className="text-zinc-500 text-xs font-mono">{operatorId || '—'}</p>
-          </div>
-        </div>
-        <button onClick={loadBalance} disabled={loadingBal}
-          className="text-zinc-500 hover:text-white transition-colors disabled:opacity-40">
-          <FaSync size={13} className={loadingBal ? 'animate-spin' : ''} />
-        </button>
-      </div>
-
-      {/* Balances */}
-      <div className={`grid ${gridCols} gap-3`}>
-        <div className="bg-zinc-800 rounded-xl px-4 py-3">
-          <p className="text-zinc-500 text-xs mb-1">HBAR</p>
-          <p className="text-white text-2xl font-bold">{loadingBal ? '…' : hbar !== null ? hbar.toFixed(2) : '—'}</p>
-        </div>
-        {tokens.map(tok => (
-          <div key={tok.tokenId} className="bg-zinc-800 rounded-xl px-4 py-3">
-            <p className="text-zinc-500 text-xs mb-1">{tok.name} <span className="text-zinc-600">({tok.tokenId})</span></p>
-            <p className="text-white text-2xl font-bold">{loadingBal ? '…' : tok.balance.toLocaleString()}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Send */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <FaPaperPlane size={11} className="text-zinc-400" />
-          <h3 className="text-white text-sm font-semibold">Senden (vom Treasury)</h3>
-          <div className="flex gap-1 ml-auto flex-wrap justify-end">
-            <button onClick={() => setSendMode('hbar')}
-              className={`px-2 py-0.5 rounded-lg text-xs font-semibold transition-colors ${sendMode === 'hbar' ? 'bg-zinc-600 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
-              HBAR
-            </button>
-            {tokens.map(tok => (
-              <button key={tok.tokenId} onClick={() => setSendMode(tok.tokenId)}
-                className={`px-2 py-0.5 rounded-lg text-xs font-semibold transition-colors ${sendMode === tok.tokenId ? 'bg-zinc-600 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
-                {tok.name}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <input value={sendTo} onChange={e => setSendTo(e.target.value)} placeholder="Empfänger (0.0.12345)"
-            className="bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-zinc-500 w-full" />
-          <div className="flex gap-2">
-            <input type="number" step="any" min="0" value={sendAmt} onChange={e => setSendAmt(e.target.value)}
-              placeholder={`Betrag (${sendMode === 'hbar' ? 'HBAR' : currentToken?.name ?? 'Token'})`}
-              className="bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-zinc-500 flex-1 min-w-0" />
-            {currentToken && (
-              <button onClick={() => setSendAmt(String(currentToken.balance))}
-                className="text-zinc-400 hover:text-white text-xs px-2 shrink-0">MAX</button>
-            )}
-          </div>
-        </div>
-        {sendErr && <p className="text-red-400 text-xs">{sendErr}</p>}
-        {sendOk  && <p className="text-green-400 text-xs break-all">{sendOk}</p>}
-        <button onClick={handleSend} disabled={sending || !sendTo.trim() || !sendAmt.trim()}
-          className="w-full bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all">
-          {sending
-            ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Wird gesendet…</>
-            : <><FaPaperPlane size={11}/> {sendMode === 'hbar' ? 'HBAR' : (currentToken?.name ?? 'Token')} senden</>}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── HederaMintSection ────────────────────────────────────────────────────────
-
-function HederaMintSection({ secret }: { secret: string }) {
-  const [name, setName]           = useState('D.FAITH');
-  const [symbol, setSymbol]       = useState('DFAITH');
-  const [decimals, setDecimals]   = useState('2');
-  const [supply, setSupply]       = useState('1000000000');
-  const [memo, setMemo]           = useState('D.FAITH Fan Token by Dawid Faith');
-  const [description, setDescription] = useState('The official D.FAITH fan token by Dawid Faith');
-  const [imageBase64, setImageBase64] = useState('');
-  const [imageMimeType, setImageMimeType] = useState('image/png');
-  const [imagePreview, setImagePreview]   = useState('');
-  const [loading, setLoading]     = useState(false);
-  const [result, setResult]       = useState<{ tokenId: string; explorerUrl: string; metadataUri?: string } | null>(null);
-  const [error, setError]         = useState('');
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageMimeType(file.type || 'image/png');
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      setImagePreview(dataUrl);
-      // base64 ohne data:...-Prefix
-      setImageBase64(dataUrl.split(',')[1] ?? '');
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleMint = async () => {
-    setLoading(true);
-    setError('');
-    setResult(null);
-    try {
-      const res = await fetch('/api/admin/hedera-mint', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
-        body: JSON.stringify({
-          name: name.trim(),
-          symbol: symbol.trim(),
-          decimals: parseInt(decimals),
-          initialSupply: parseInt(supply),
-          memo: memo.trim(),
-          description: description.trim(),
-          imageBase64: imageBase64 || undefined,
-          imageMimeType,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Fehler');
-      setResult(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unbekannter Fehler');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="mt-8 bg-zinc-900 border border-zinc-700/50 rounded-2xl p-6 space-y-5">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-purple-900/30 border border-purple-800/50 flex items-center justify-center">
-          <SiHedera size={16} className="text-purple-400" />
-        </div>
-        <div>
-          <h2 className="text-white font-bold text-base">Hedera Token Minten (HTS)</h2>
-          <p className="text-zinc-500 text-xs">Erstellt einen neuen Fungible Token auf Hedera Mainnet</p>
-        </div>
-      </div>
-
-      {result ? (
-        <div className="bg-green-900/20 border border-green-800/40 rounded-xl p-4 space-y-2">
-          <p className="text-green-400 font-semibold text-sm">✓ Token erfolgreich erstellt!</p>
-          <div>
-            <p className="text-zinc-400 text-xs">Token-ID (in .env.local eintragen):</p>
-            <code className="text-yellow-300 text-sm font-mono break-all">{result.tokenId}</code>
-          </div>
-          <p className="text-zinc-500 text-xs">
-            → <code className="text-zinc-300">NEXT_PUBLIC_HEDERA_DFAITH_TOKEN_ID={result.tokenId}</code>
-          </p>
-          {result.metadataUri && (
-            <p className="text-zinc-500 text-xs">Metadata: <code className="text-zinc-300 break-all">{result.metadataUri}</code></p>
-          )}
-          <a
-            href={result.explorerUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-purple-400 hover:text-purple-300 text-xs underline block mt-1"
-          >
-            HashScan Explorer öffnen →
-          </a>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="text-zinc-400 text-xs block mb-1">Token Name</label>
-            <input value={name} onChange={e => setName(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
-          </div>
-          <div>
-            <label className="text-zinc-400 text-xs block mb-1">Symbol</label>
-            <input value={symbol} onChange={e => setSymbol(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
-          </div>
-          <div>
-            <label className="text-zinc-400 text-xs block mb-1">Decimals</label>
-            <input type="number" value={decimals} onChange={e => setDecimals(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
-          </div>
-          <div>
-            <label className="text-zinc-400 text-xs block mb-1">Initial Supply (kleinste Einheit)</label>
-            <input type="number" value={supply} onChange={e => setSupply(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
-            <p className="text-zinc-600 text-xs mt-0.5">
-              = {(parseInt(supply || '0') / Math.pow(10, parseInt(decimals || '0'))).toLocaleString()} {symbol}
-            </p>
-          </div>
-          <div className="sm:col-span-2">
-            <label className="text-zinc-400 text-xs block mb-1">Beschreibung</label>
-            <input value={description} onChange={e => setDescription(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="text-zinc-400 text-xs block mb-1">Memo (on-chain)</label>
-            <input value={memo} onChange={e => setMemo(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="text-zinc-400 text-xs block mb-1">Token-Bild (optional, wird auf IPFS hochgeladen)</label>
-            <div className="flex items-center gap-3">
-              {imagePreview && (
-                <img src={imagePreview} alt="Vorschau" className="w-14 h-14 rounded-xl object-cover border border-zinc-700" />
-              )}
-              <label className="flex-1 cursor-pointer bg-zinc-800 border border-zinc-700 border-dashed hover:border-purple-500 text-zinc-400 hover:text-purple-300 rounded-xl px-4 py-3 text-sm text-center transition-colors">
-                {imagePreview ? 'Anderes Bild wählen' : 'Bild auswählen (PNG, JPG, SVG)'}
-                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-              </label>
-              {imagePreview && (
-                <button onClick={() => { setImagePreview(''); setImageBase64(''); }}
-                  className="text-zinc-500 hover:text-red-400 text-xs px-2">✕</button>
-              )}
-            </div>
-            {imageBase64 && <p className="text-zinc-600 text-xs mt-1">Bild wird beim Mint auf Pinata IPFS hochgeladen</p>}
-          </div>
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-red-900/20 border border-red-800/40 rounded-xl px-4 py-3 text-red-300 text-sm break-all">
-          {error}
-        </div>
-      )}
-
-      {!result && (
-        <button
-          onClick={handleMint}
-          disabled={loading || !name.trim() || !symbol.trim()}
-          className="w-full bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
-        >
-          {loading
-            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Token wird erstellt…</>
-            : <><SiHedera size={14} /> D.FAITH Token auf Hedera erstellen</>}
-        </button>
-      )}
-
-      {result && (
-        <button
-          onClick={() => setResult(null)}
-          className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2 rounded-xl text-sm"
-        >
-          Neuen Token erstellen
-        </button>
-      )}
-    </div>
-  );
-}
-
-// ─── HederaUpdateMetadataSection ─────────────────────────────────────────────
-
-function HederaUpdateMetadataSection({ secret }: { secret: string }) {
-  const defaultToken = process.env.NEXT_PUBLIC_HEDERA_DFAITH_TOKEN_ID ?? '';
-  const [tokenId, setTokenId]         = useState(defaultToken);
-  const [description, setDescription] = useState('');
-  const [imageBase64, setImageBase64] = useState('');
-  const [imageMimeType, setImageMimeType] = useState('image/png');
-  const [imagePreview, setImagePreview]   = useState('');
-  const [loading, setLoading]   = useState(false);
-  const [result, setResult]     = useState<{ metadataUri: string; status: string } | null>(null);
-  const [error, setError]       = useState('');
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageMimeType(file.type || 'image/png');
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      setImagePreview(dataUrl);
-      setImageBase64(dataUrl.split(',')[1] ?? '');
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleUpdate = async () => {
-    setLoading(true); setError(''); setResult(null);
-    try {
-      const res = await fetch('/api/admin/hedera-update-metadata', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
-        body: JSON.stringify({
-          tokenId: tokenId.trim(),
-          description: description.trim(),
-          imageBase64: imageBase64 || undefined,
-          imageMimeType,
-        }),
-      });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error ?? 'Fehler');
-      setResult(d);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unbekannter Fehler');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="mt-8 bg-zinc-900 border border-zinc-700/50 rounded-2xl p-6 space-y-5">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-blue-900/30 border border-blue-800/50 flex items-center justify-center">
-          <SiHedera size={16} className="text-blue-400" />
-        </div>
-        <div>
-          <h2 className="text-white font-bold text-base">Token Metadata aktualisieren</h2>
-          <p className="text-zinc-500 text-xs">Bild + HIP-412 auf IPFS hochladen und On-Chain Metadata setzen</p>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <div>
-          <label className="text-zinc-400 text-xs block mb-1">Token-ID</label>
-          <input value={tokenId} onChange={e => setTokenId(e.target.value)}
-            placeholder="0.0.XXXXXXX"
-            className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500" />
-        </div>
-        <div>
-          <label className="text-zinc-400 text-xs block mb-1">Beschreibung</label>
-          <input value={description} onChange={e => setDescription(e.target.value)}
-            placeholder="The official D.FAITH fan token by Dawid Faith"
-            className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500" />
-        </div>
-        <div>
-          <label className="text-zinc-400 text-xs block mb-1">Token-Bild (wird auf Pinata IPFS hochgeladen)</label>
-          <div className="flex items-center gap-3">
-            {imagePreview && (
-              <img src={imagePreview} alt="Vorschau" className="w-14 h-14 rounded-xl object-cover border border-zinc-700" />
-            )}
-            <label className="flex-1 cursor-pointer bg-zinc-800 border border-zinc-700 border-dashed hover:border-blue-500 text-zinc-400 hover:text-blue-300 rounded-xl px-4 py-3 text-sm text-center transition-colors">
-              {imagePreview ? 'Anderes Bild wählen' : 'Bild auswählen (PNG, JPG, SVG)'}
-              <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-            </label>
-            {imagePreview && (
-              <button onClick={() => { setImagePreview(''); setImageBase64(''); }}
-                className="text-zinc-500 hover:text-red-400 text-xs px-2">✕</button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {error && (
-        <div className="bg-red-900/20 border border-red-800/40 rounded-xl px-4 py-3 text-red-300 text-sm break-all">{error}</div>
-      )}
-
-      {result && (
-        <div className="bg-green-900/20 border border-green-800/40 rounded-xl p-4 space-y-2">
-          <p className="text-green-400 font-semibold text-sm">✓ Metadata aktualisiert! Status: {result.status}</p>
-          <p className="text-zinc-400 text-xs">Neue Metadata-URI:</p>
-          <code className="text-blue-300 text-xs font-mono break-all">{result.metadataUri}</code>
-        </div>
-      )}
-
-      <button onClick={handleUpdate} disabled={loading || !tokenId.trim()}
-        className="w-full bg-blue-700 hover:bg-blue-600 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all">
-        {loading
-          ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Wird hochgeladen…</>
-          : <><SiHedera size={13}/> Metadata on-chain aktualisieren</>}
       </button>
     </div>
   );

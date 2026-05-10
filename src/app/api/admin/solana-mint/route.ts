@@ -23,7 +23,7 @@ import {
 import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
 
 const RPC_URL  = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
-const DECIMALS = 6;
+const DEFAULT_DECIMALS = 6;
 
 // Metaplex Token Metadata Program ID (Mainnet)
 const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
@@ -56,10 +56,13 @@ async function uploadToPinata(content: string | Buffer, filename: string, mimeTy
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { secret, name, symbol, totalSupply, description, imageBase64, imageMimeType, metadataUri: metadataUriDirect } = body as {
-      secret?: string; name?: string; symbol?: string; totalSupply?: number;
+    const { secret, name, symbol, totalSupply, decimals: decimalsRaw, description, imageBase64, imageMimeType, metadataUri: metadataUriDirect } = body as {
+      secret?: string; name?: string; symbol?: string; totalSupply?: number; decimals?: number;
       description?: string; imageBase64?: string; imageMimeType?: string; metadataUri?: string;
     };
+    const DECIMALS = typeof decimalsRaw === 'number' && decimalsRaw >= 0 && decimalsRaw <= 9
+      ? decimalsRaw
+      : DEFAULT_DECIMALS;
 
     if (secret !== process.env.MIGRATION_SECRET) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     if (!name || !symbol || typeof totalSupply !== 'number' || totalSupply <= 0) {
@@ -109,7 +112,8 @@ export async function POST(req: Request) {
       createAssociatedTokenAccountInstruction(treasury.publicKey, ata, treasury.publicKey, mintKp.publicKey, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID),
       createMintToInstruction(
         mintKp.publicKey, ata, treasury.publicKey,
-        BigInt(Math.round(totalSupply * 10 ** DECIMALS)),
+        BigInt(Math.round(totalSupply * 10 ** DECIMALS)), // totalSupply ist die rohe Anzahl ohne Dezimalstellen
+        // z.B. totalSupply=1_000_000_000, decimals=6 → 1 Billion Token mit 6 Nachkommastellen
         [],
       ),
     );
