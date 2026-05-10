@@ -5,7 +5,7 @@
  */
 import { NextResponse } from 'next/server';
 
-const JUPITER_QUOTE  = 'https://quote-api.jup.ag/v6/quote';
+const JUPITER_QUOTE  = 'https://api.jup.ag/swap/v1/quote';
 const JUPITER_API_KEY = process.env.JUPITER_API_KEY ?? '';
 
 export async function GET(req: Request) {

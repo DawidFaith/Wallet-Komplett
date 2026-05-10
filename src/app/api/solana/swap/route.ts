@@ -12,7 +12,7 @@ import { getDb } from '@/app/lib/db';
 import { decryptKey } from '@/app/lib/solanaCrypto';
 
 const RPC_URL       = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
-const JUPITER_SWAP  = 'https://quote-api.jup.ag/v6/swap';
+const JUPITER_SWAP  = 'https://api.jup.ag/swap/v1/swap';
 const JUPITER_API_KEY = process.env.JUPITER_API_KEY ?? '';
 
 export async function POST(req: Request) {
