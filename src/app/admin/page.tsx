@@ -5,7 +5,7 @@ import {
   FaYoutube, FaInstagram, FaTiktok, FaFacebook,
   FaCheck, FaTimes, FaSearch, FaShieldAlt, FaCoins, FaStar, FaSync, FaPaperPlane,
 } from 'react-icons/fa';
-import { SiHedera } from 'react-icons/si';
+import { SiHedera, SiSolana } from 'react-icons/si';
 
 interface AdminUser {
   walletAddress: string;
@@ -329,11 +329,290 @@ export default function AdminPage() {
       {/* ── Token Tab ─────────────────────────────────────────────────────────── */}
       {activeTab === 'token' && (
         <>
-          <HederaTreasurySection secret={secret} />
-          <HederaMintSection secret={secret} />
-          <HederaUpdateMetadataSection secret={secret} />
+          <SolanaTreasurySection secret={secret} />
+          <SolanaMintSection secret={secret} />
+          <SolanaDBMigrationSection secret={secret} />
+          <div className="mt-8 border-t border-zinc-800 pt-6">
+            <p className="text-zinc-600 text-xs mb-4">─── Legacy: Hedera ───</p>
+            <HederaTreasurySection secret={secret} />
+            <HederaMintSection secret={secret} />
+            <HederaUpdateMetadataSection secret={secret} />
+          </div>
         </>
       )}
+    </div>
+  );
+}
+
+// ─── SolanaTreasurySection ────────────────────────────────────────────────────
+
+function SolanaTreasurySection({ secret }: { secret: string }) {
+  const [address, setAddress]   = useState('');
+  const [sol, setSol]           = useState<number | null>(null);
+  const [dfaith, setDfaith]     = useState<number | null>(null);
+  const [loading, setLoading]   = useState(false);
+  const [sendTo, setSendTo]     = useState('');
+  const [sendAmt, setSendAmt]   = useState('');
+  const [sending, setSending]   = useState(false);
+  const [sendOk, setSendOk]     = useState('');
+  const [sendErr, setSendErr]   = useState('');
+
+  const loadBalance = useCallback(async () => {
+    setLoading(true); setSendOk(''); setSendErr('');
+    try {
+      const res = await fetch(`/api/admin/solana-balance?secret=${encodeURIComponent(secret)}`);
+      const d   = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      setAddress(d.address ?? '');
+      setSol(d.solBalance ?? null);
+      setDfaith(d.dfaithBalance ?? null);
+    } catch (e) {
+      setSendErr(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setLoading(false);
+    }
+  }, [secret]);
+
+  useEffect(() => { loadBalance(); }, [loadBalance]);
+
+  const handleSend = async () => {
+    setSendErr(''); setSendOk('');
+    if (!sendTo.trim()) { setSendErr('Ziel-Adresse eingeben'); return; }
+    const amt = parseFloat(sendAmt);
+    if (!isFinite(amt) || amt <= 0) { setSendErr('Ungültiger Betrag'); return; }
+    setSending(true);
+    try {
+      const res = await fetch('/api/admin/solana-send-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret, toAddress: sendTo.trim(), amount: amt }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      setSendOk(`✓ D.FAITH gesendet! TX: ${d.signature}`);
+      setSendTo(''); setSendAmt('');
+      setTimeout(loadBalance, 4000);
+    } catch (e) {
+      setSendErr(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="mt-8 bg-zinc-900 border border-zinc-700/50 rounded-2xl p-6 space-y-5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-purple-900/30 border border-purple-800/50 flex items-center justify-center">
+            <SiSolana size={16} className="text-purple-400" />
+          </div>
+          <div>
+            <h2 className="text-white font-bold text-base">Solana Treasury Wallet</h2>
+            <p className="text-zinc-500 text-xs font-mono break-all">{address || '—'}</p>
+          </div>
+        </div>
+        <button onClick={loadBalance} disabled={loading}
+          className="text-zinc-500 hover:text-white transition-colors disabled:opacity-40">
+          <FaSync size={13} className={loading ? 'animate-spin' : ''} />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-zinc-800 rounded-xl px-4 py-3">
+          <p className="text-zinc-500 text-xs mb-1">SOL</p>
+          <p className="text-white text-2xl font-bold">{loading ? '…' : sol !== null ? sol.toFixed(4) : '—'}</p>
+        </div>
+        <div className="bg-zinc-800 rounded-xl px-4 py-3">
+          <p className="text-zinc-500 text-xs mb-1">D.FAITH</p>
+          <p className="text-white text-2xl font-bold">{loading ? '…' : dfaith !== null ? dfaith.toLocaleString() : '—'}</p>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <FaPaperPlane size={11} className="text-zinc-400" />
+          <h3 className="text-white text-sm font-semibold">D.FAITH senden (vom Treasury)</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <input value={sendTo} onChange={e => setSendTo(e.target.value)} placeholder="Empfänger Solana-Adresse"
+            className="bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-purple-500 w-full" />
+          <div className="flex gap-2">
+            <input type="number" step="any" min="0" value={sendAmt} onChange={e => setSendAmt(e.target.value)}
+              placeholder="Betrag D.FAITH"
+              className="bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500 flex-1 min-w-0" />
+            {dfaith !== null && (
+              <button onClick={() => setSendAmt(String(dfaith))}
+                className="text-zinc-400 hover:text-white text-xs px-2 shrink-0">MAX</button>
+            )}
+          </div>
+        </div>
+        {sendErr && <p className="text-red-400 text-xs">{sendErr}</p>}
+        {sendOk  && <p className="text-green-400 text-xs break-all">{sendOk}</p>}
+        <button onClick={handleSend} disabled={sending || !sendTo.trim() || !sendAmt.trim()}
+          className="w-full bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all">
+          {sending
+            ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Wird gesendet…</>
+            : <><FaPaperPlane size={11}/> D.FAITH senden</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── SolanaMintSection ────────────────────────────────────────────────────────
+
+function SolanaMintSection({ secret }: { secret: string }) {
+  const [name, setName]               = useState('D.FAITH');
+  const [symbol, setSymbol]           = useState('DFAITH');
+  const [totalSupply, setTotalSupply] = useState('1000000000');
+  const [metadataUri, setMetadataUri] = useState('');
+  const [loading, setLoading]         = useState(false);
+  const [result, setResult]           = useState<{ mintAddress: string; explorerUrl: string; nextStep: string; sig1: string } | null>(null);
+  const [error, setError]             = useState('');
+
+  const handleMint = async () => {
+    setLoading(true); setError(''); setResult(null);
+    try {
+      const res = await fetch('/api/admin/solana-mint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          secret,
+          name: name.trim(),
+          symbol: symbol.trim(),
+          totalSupply: parseInt(totalSupply),
+          metadataUri: metadataUri.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Fehler');
+      setResult(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unbekannter Fehler');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="mt-8 bg-zinc-900 border border-zinc-700/50 rounded-2xl p-6 space-y-5">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-purple-900/30 border border-purple-800/50 flex items-center justify-center">
+          <SiSolana size={16} className="text-purple-400" />
+        </div>
+        <div>
+          <h2 className="text-white font-bold text-base">SPL Token Minten (Solana)</h2>
+          <p className="text-zinc-500 text-xs">Erstellt einen neuen SPL Token auf Solana Mainnet</p>
+        </div>
+      </div>
+
+      {result ? (
+        <div className="bg-green-900/20 border border-green-800/40 rounded-xl p-4 space-y-2">
+          <p className="text-green-400 font-semibold text-sm">✓ Token erfolgreich erstellt!</p>
+          <div>
+            <p className="text-zinc-400 text-xs">Mint-Adresse (in .env.local eintragen):</p>
+            <code className="text-yellow-300 text-sm font-mono break-all">{result.mintAddress}</code>
+          </div>
+          <p className="text-zinc-500 text-xs">→ <code className="text-zinc-300">NEXT_PUBLIC_SOLANA_DFAITH_TOKEN={result.mintAddress}</code></p>
+          <a href={result.explorerUrl} target="_blank" rel="noopener noreferrer"
+            className="text-purple-400 hover:text-purple-300 text-xs underline block mt-1">
+            Solscan Explorer öffnen →
+          </a>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-zinc-400 text-xs block mb-1">Token Name</label>
+            <input value={name} onChange={e => setName(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
+          </div>
+          <div>
+            <label className="text-zinc-400 text-xs block mb-1">Symbol</label>
+            <input value={symbol} onChange={e => setSymbol(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-zinc-400 text-xs block mb-1">Total Supply (mit 6 Decimals)</label>
+            <input type="number" value={totalSupply} onChange={e => setTotalSupply(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
+            <p className="text-zinc-600 text-xs mt-0.5">= {parseInt(totalSupply || '0').toLocaleString()} D.FAITH (6 Decimals)</p>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-zinc-400 text-xs block mb-1">Metadata URI (optional, Metaplex Standard)</label>
+            <input value={metadataUri} onChange={e => setMetadataUri(e.target.value)}
+              placeholder="https://arweave.net/... oder https://ipfs.io/ipfs/..."
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
+            <p className="text-zinc-600 text-xs mt-0.5">JSON mit: name, symbol, image, description</p>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-900/20 border border-red-800/40 rounded-xl px-4 py-3 text-red-300 text-sm break-all">{error}</div>
+      )}
+
+      {!result && (
+        <button onClick={handleMint} disabled={loading || !name.trim() || !symbol.trim()}
+          className="w-full bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all">
+          {loading
+            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Token wird erstellt…</>
+            : <><SiSolana size={14} /> D.FAITH Token auf Solana erstellen</>}
+        </button>
+      )}
+      {result && (
+        <button onClick={() => setResult(null)}
+          className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2 rounded-xl text-sm">
+          Neuen Token erstellen
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── SolanaDBMigrationSection ─────────────────────────────────────────────────
+
+function SolanaDBMigrationSection({ secret }: { secret: string }) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult]   = useState('');
+  const [error, setError]     = useState('');
+
+  const handleMigrate = async () => {
+    setLoading(true); setResult(''); setError('');
+    try {
+      const res = await fetch('/api/admin/migrate-solana', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      setResult(d.message);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="mt-6 bg-zinc-900 border border-zinc-700/50 rounded-2xl p-5 space-y-3">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-blue-900/30 border border-blue-800/50 flex items-center justify-center">
+          <SiSolana size={14} className="text-blue-400" />
+        </div>
+        <div>
+          <h2 className="text-white font-bold text-sm">Solana DB Migration</h2>
+          <p className="text-zinc-500 text-xs">solana_accounts Tabelle anlegen (einmalig)</p>
+        </div>
+      </div>
+      {result && <p className="text-green-400 text-xs">{result}</p>}
+      {error  && <p className="text-red-400 text-xs">{error}</p>}
+      <button onClick={handleMigrate} disabled={loading}
+        className="w-full bg-blue-700 hover:bg-blue-600 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2">
+        {loading
+          ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Migration läuft…</>
+          : 'solana_accounts Tabelle erstellen'}
+      </button>
     </div>
   );
 }

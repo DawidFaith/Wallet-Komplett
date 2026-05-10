@@ -14,7 +14,7 @@ import {
   FaGlobe,
   FaUserCircle,
 } from "react-icons/fa";
-import { SiHedera } from "react-icons/si";
+import { SiSolana } from "react-icons/si";
 import { FiChevronDown } from "react-icons/fi";
 import { useState } from "react";
 
@@ -130,17 +130,17 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
           </button>
         </li>
 
-        {/* Hedera Wallet */}
+        {/* Solana Wallet */}
         <li>
           <button
-            title="Hedera Wallet"
-            onClick={() => navigateToTab("hedera-wallet")}
+            title="Solana Wallet"
+            onClick={() => navigateToTab("solana-wallet")}
             className="flex items-center"
           >
-            <SiHedera
+            <SiSolana
               size={22}
               className={`transition-colors ${
-                activeTab === "hedera-wallet" ? "text-purple-400" : "text-zinc-400"
+                activeTab === "solana-wallet" ? "text-purple-400" : "text-zinc-400"
               } hover:text-purple-400`}
             />
           </button>
