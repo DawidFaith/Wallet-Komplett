@@ -465,10 +465,26 @@ function SolanaMintSection({ secret }: { secret: string }) {
   const [name, setName]               = useState('D.FAITH');
   const [symbol, setSymbol]           = useState('DFAITH');
   const [totalSupply, setTotalSupply] = useState('1000000000');
-  const [metadataUri, setMetadataUri] = useState('');
+  const [description, setDescription] = useState('The official D.FAITH fan token by Dawid Faith');
+  const [imageBase64, setImageBase64] = useState('');
+  const [imageMimeType, setImageMimeType] = useState('image/png');
+  const [imagePreview, setImagePreview]   = useState('');
   const [loading, setLoading]         = useState(false);
-  const [result, setResult]           = useState<{ mintAddress: string; explorerUrl: string; nextStep: string; sig1: string } | null>(null);
+  const [result, setResult]           = useState<{ mintAddress: string; explorerUrl: string; metadataUri?: string } | null>(null);
   const [error, setError]             = useState('');
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageMimeType(file.type || 'image/png');
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setImagePreview(dataUrl);
+      setImageBase64(dataUrl.split(',')[1] ?? '');
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleMint = async () => {
     setLoading(true); setError(''); setResult(null);
@@ -481,7 +497,9 @@ function SolanaMintSection({ secret }: { secret: string }) {
           name: name.trim(),
           symbol: symbol.trim(),
           totalSupply: parseInt(totalSupply),
-          metadataUri: metadataUri.trim() || undefined,
+          description: description.trim(),
+          imageBase64: imageBase64 || undefined,
+          imageMimeType,
         }),
       });
       const data = await res.json();
@@ -514,6 +532,9 @@ function SolanaMintSection({ secret }: { secret: string }) {
             <code className="text-yellow-300 text-sm font-mono break-all">{result.mintAddress}</code>
           </div>
           <p className="text-zinc-500 text-xs">→ <code className="text-zinc-300">NEXT_PUBLIC_SOLANA_DFAITH_TOKEN={result.mintAddress}</code></p>
+          {result.metadataUri && (
+            <p className="text-zinc-500 text-xs">Metadata: <code className="text-zinc-300 break-all">{result.metadataUri}</code></p>
+          )}
           <a href={result.explorerUrl} target="_blank" rel="noopener noreferrer"
             className="text-purple-400 hover:text-purple-300 text-xs underline block mt-1">
             Solscan Explorer öffnen →
@@ -532,17 +553,33 @@ function SolanaMintSection({ secret }: { secret: string }) {
               className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
           </div>
           <div className="sm:col-span-2">
-            <label className="text-zinc-400 text-xs block mb-1">Total Supply (mit 6 Decimals)</label>
+            <label className="text-zinc-400 text-xs block mb-1">Total Supply (gesamt, 6 Decimals)</label>
             <input type="number" value={totalSupply} onChange={e => setTotalSupply(e.target.value)}
               className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
             <p className="text-zinc-600 text-xs mt-0.5">= {parseInt(totalSupply || '0').toLocaleString()} D.FAITH (6 Decimals)</p>
           </div>
           <div className="sm:col-span-2">
-            <label className="text-zinc-400 text-xs block mb-1">Metadata URI (optional, Metaplex Standard)</label>
-            <input value={metadataUri} onChange={e => setMetadataUri(e.target.value)}
-              placeholder="https://arweave.net/... oder https://ipfs.io/ipfs/..."
+            <label className="text-zinc-400 text-xs block mb-1">Beschreibung</label>
+            <input value={description} onChange={e => setDescription(e.target.value)}
+              placeholder="The official D.FAITH fan token by Dawid Faith"
               className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
-            <p className="text-zinc-600 text-xs mt-0.5">JSON mit: name, symbol, image, description</p>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-zinc-400 text-xs block mb-1">Token-Bild (wird auf Pinata IPFS hochgeladen)</label>
+            <div className="flex items-center gap-3">
+              {imagePreview && (
+                <img src={imagePreview} alt="Vorschau" className="w-14 h-14 rounded-xl object-cover border border-zinc-700 shrink-0" />
+              )}
+              <label className="flex-1 cursor-pointer bg-zinc-800 border border-zinc-700 border-dashed hover:border-purple-500 text-zinc-400 hover:text-purple-300 rounded-xl px-4 py-3 text-sm text-center transition-colors">
+                {imagePreview ? 'Anderes Bild wählen' : 'Bild auswählen (PNG, JPG, SVG)'}
+                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+              </label>
+              {imagePreview && (
+                <button onClick={() => { setImagePreview(''); setImageBase64(''); }}
+                  className="text-zinc-500 hover:text-red-400 text-xs px-2 shrink-0">✕</button>
+              )}
+            </div>
+            {imageBase64 && <p className="text-zinc-600 text-xs mt-1">Bild + Metaplex JSON werden beim Mint auf Pinata IPFS hochgeladen</p>}
           </div>
         </div>
       )}
@@ -555,7 +592,7 @@ function SolanaMintSection({ secret }: { secret: string }) {
         <button onClick={handleMint} disabled={loading || !name.trim() || !symbol.trim()}
           className="w-full bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all">
           {loading
-            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Token wird erstellt…</>
+            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{imageBase64 ? 'IPFS + Token wird erstellt…' : 'Token wird erstellt…'}</>
             : <><SiSolana size={14} /> D.FAITH Token auf Solana erstellen</>}
         </button>
       )}

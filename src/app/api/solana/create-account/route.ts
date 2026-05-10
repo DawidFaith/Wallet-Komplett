@@ -27,21 +27,26 @@ const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN;
 const FUND_SOL = 0.01;
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const walletAddress = searchParams.get('walletAddress')?.toLowerCase();
-  if (!walletAddress) return NextResponse.json({ error: 'walletAddress fehlt' }, { status: 400 });
+  try {
+    const { searchParams } = new URL(req.url);
+    const walletAddress = searchParams.get('walletAddress')?.toLowerCase();
+    if (!walletAddress) return NextResponse.json({ error: 'walletAddress fehlt' }, { status: 400 });
 
-  const sql = getDb();
-  const rows = await sql`
-    SELECT solana_address FROM solana_accounts WHERE wallet_address = ${walletAddress}
-  `;
-  if (rows.length > 0) {
-    return NextResponse.json({ solanaAddress: rows[0].solana_address });
+    const sql = getDb();
+    const rows = await sql`
+      SELECT solana_address FROM solana_accounts WHERE wallet_address = ${walletAddress}
+    `;
+    if (rows.length > 0) {
+      return NextResponse.json({ solanaAddress: rows[0].solana_address });
+    }
+    return NextResponse.json({ solanaAddress: null });
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
-  return NextResponse.json({ solanaAddress: null });
 }
 
 export async function POST(req: Request) {
+  try {
   const body = await req.json().catch(() => ({}));
   const walletAddress = (body.walletAddress as string | undefined)?.toLowerCase();
   if (!walletAddress) return NextResponse.json({ error: 'walletAddress fehlt' }, { status: 400 });
@@ -103,5 +108,8 @@ export async function POST(req: Request) {
   } catch (e) {
     // Funding fehlgeschlagen, Account trotzdem zurückgeben
     return NextResponse.json({ solanaAddress: newAddress, funded: false, fundError: String(e) });
+  }
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }

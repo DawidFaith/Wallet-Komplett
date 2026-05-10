@@ -2,11 +2,13 @@
  * Solana Treasury Operator.
  *
  * Unterstützt zwei ENV-Variablen (erste gefundene gewinnt):
- *   SOLANA_TREASURY_MNEMONIC  – 12 oder 24 Wörter Seed Phrase (Phantom/Solflare Standard)
+ *   SOLANA_TREASURY_MNEMONIC    – 12 oder 24 Wörter Seed Phrase (Phantom/Solflare Standard)
  *   SOLANA_TREASURY_PRIVATE_KEY – BS58-encoded 64-Byte Secret Key
  */
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
+import * as bip39 from 'bip39';
+import { derivePath } from 'ed25519-hd-key';
 
 let _cached: Keypair | null = null;
 
@@ -16,8 +18,6 @@ export function getTreasuryKeypair(): Keypair {
   // Option 1: Seed Phrase (12 oder 24 Wörter)
   const mnemonic = process.env.SOLANA_TREASURY_MNEMONIC;
   if (mnemonic && mnemonic.trim().split(/\s+/).length >= 12) {
-    const bip39 = require('bip39') as typeof import('bip39'); // eslint-disable-line
-    const { derivePath } = require('ed25519-hd-key') as typeof import('ed25519-hd-key'); // eslint-disable-line
     const seed = bip39.mnemonicToSeedSync(mnemonic.trim());
     const { key } = derivePath("m/44'/501'/0'/0'", seed.toString('hex'));
     _cached = Keypair.fromSeed(key);
@@ -39,3 +39,4 @@ export function getTreasuryKeypair(): Keypair {
     'Weder SOLANA_TREASURY_MNEMONIC noch SOLANA_TREASURY_PRIVATE_KEY ist gesetzt.',
   );
 }
+
