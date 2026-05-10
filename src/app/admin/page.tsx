@@ -307,6 +307,9 @@ export default function AdminPage() {
 
       {/* Hedera Token Mint */}
       <HederaMintSection secret={secret} />
+
+      {/* Hedera Token Metadata Update */}
+      <HederaUpdateMetadataSection secret={secret} />
     </div>
   );
 }
@@ -632,6 +635,120 @@ function HederaMintSection({ secret }: { secret: string }) {
           Neuen Token erstellen
         </button>
       )}
+    </div>
+  );
+}
+
+// ─── HederaUpdateMetadataSection ─────────────────────────────────────────────
+
+function HederaUpdateMetadataSection({ secret }: { secret: string }) {
+  const defaultToken = process.env.NEXT_PUBLIC_HEDERA_DFAITH_TOKEN_ID ?? '';
+  const [tokenId, setTokenId]         = useState(defaultToken);
+  const [description, setDescription] = useState('');
+  const [imageBase64, setImageBase64] = useState('');
+  const [imageMimeType, setImageMimeType] = useState('image/png');
+  const [imagePreview, setImagePreview]   = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [result, setResult]     = useState<{ metadataUri: string; status: string } | null>(null);
+  const [error, setError]       = useState('');
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageMimeType(file.type || 'image/png');
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setImagePreview(dataUrl);
+      setImageBase64(dataUrl.split(',')[1] ?? '');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUpdate = async () => {
+    setLoading(true); setError(''); setResult(null);
+    try {
+      const res = await fetch('/api/admin/hedera-update-metadata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({
+          tokenId: tokenId.trim(),
+          description: description.trim(),
+          imageBase64: imageBase64 || undefined,
+          imageMimeType,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? 'Fehler');
+      setResult(d);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unbekannter Fehler');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="mt-8 bg-zinc-900 border border-zinc-700/50 rounded-2xl p-6 space-y-5">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-blue-900/30 border border-blue-800/50 flex items-center justify-center">
+          <SiHedera size={16} className="text-blue-400" />
+        </div>
+        <div>
+          <h2 className="text-white font-bold text-base">Token Metadata aktualisieren</h2>
+          <p className="text-zinc-500 text-xs">Bild + HIP-412 auf IPFS hochladen und On-Chain Metadata setzen</p>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <label className="text-zinc-400 text-xs block mb-1">Token-ID</label>
+          <input value={tokenId} onChange={e => setTokenId(e.target.value)}
+            placeholder="0.0.XXXXXXX"
+            className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500" />
+        </div>
+        <div>
+          <label className="text-zinc-400 text-xs block mb-1">Beschreibung</label>
+          <input value={description} onChange={e => setDescription(e.target.value)}
+            placeholder="The official D.FAITH fan token by Dawid Faith"
+            className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500" />
+        </div>
+        <div>
+          <label className="text-zinc-400 text-xs block mb-1">Token-Bild (wird auf Pinata IPFS hochgeladen)</label>
+          <div className="flex items-center gap-3">
+            {imagePreview && (
+              <img src={imagePreview} alt="Vorschau" className="w-14 h-14 rounded-xl object-cover border border-zinc-700" />
+            )}
+            <label className="flex-1 cursor-pointer bg-zinc-800 border border-zinc-700 border-dashed hover:border-blue-500 text-zinc-400 hover:text-blue-300 rounded-xl px-4 py-3 text-sm text-center transition-colors">
+              {imagePreview ? 'Anderes Bild wählen' : 'Bild auswählen (PNG, JPG, SVG)'}
+              <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+            </label>
+            {imagePreview && (
+              <button onClick={() => { setImagePreview(''); setImageBase64(''); }}
+                className="text-zinc-500 hover:text-red-400 text-xs px-2">✕</button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-red-900/20 border border-red-800/40 rounded-xl px-4 py-3 text-red-300 text-sm break-all">{error}</div>
+      )}
+
+      {result && (
+        <div className="bg-green-900/20 border border-green-800/40 rounded-xl p-4 space-y-2">
+          <p className="text-green-400 font-semibold text-sm">✓ Metadata aktualisiert! Status: {result.status}</p>
+          <p className="text-zinc-400 text-xs">Neue Metadata-URI:</p>
+          <code className="text-blue-300 text-xs font-mono break-all">{result.metadataUri}</code>
+        </div>
+      )}
+
+      <button onClick={handleUpdate} disabled={loading || !tokenId.trim()}
+        className="w-full bg-blue-700 hover:bg-blue-600 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all">
+        {loading
+          ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Wird hochgeladen…</>
+          : <><SiHedera size={13}/> Metadata on-chain aktualisieren</>}
+      </button>
     </div>
   );
 }
