@@ -11,8 +11,11 @@ import { SiSolana } from 'react-icons/si';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
 import Image from 'next/image';
+import SwapWidget from './wallet/SwapWidget';
 
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
+
+type SubTab = 'wallet' | 'swap';
 
 interface TokenEntry {
   mint:     string;
@@ -108,6 +111,7 @@ export default function SolanaWalletTab() {
   const [tokens, setTokens]         = useState<TokenEntry[]>([]);
   const [loadingBal, setLoadingBal] = useState(false);
 
+  const [subTab, setSubTab]       = useState<SubTab>('wallet');
   const [panel, setPanel]         = useState<Panel>(null);
   const [sendMode, setSendMode]   = useState<SendMode>({ type: 'sol' });
   const [recipient, setRecipient] = useState('');
@@ -351,6 +355,34 @@ export default function SolanaWalletTab() {
         </button>
       </div>
 
+      {/* ── Sub-Tab-Bar ── */}
+      <div className="flex gap-1 bg-zinc-900 border border-zinc-800 rounded-xl p-1">
+        <button onClick={() => setSubTab('wallet')}
+          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5
+            ${subTab === 'wallet' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
+          <FaSync size={10} /> Wallet
+        </button>
+        <button onClick={() => setSubTab('swap')}
+          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5
+            ${subTab === 'swap' ? 'bg-emerald-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
+          <FaExchangeAlt size={10} /> Swap
+        </button>
+      </div>
+
+      {/* ── Swap Tab ── */}
+      {subTab === 'swap' && (
+        <SwapWidget
+          walletAddress={solanaAddr!}
+          evmAddress={evmAddress!}
+          tokens={tokens}
+          solBalance={solBalance ?? 0}
+          onSwapSuccess={() => loadBalance(solanaAddr!)}
+        />
+      )}
+
+      {/* ── Wallet Tab ── */}
+      {subTab === 'wallet' && (<>
+
       {/* ── Adresse ── */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 flex items-center justify-between gap-2">
         <div className="min-w-0">
@@ -508,6 +540,8 @@ export default function SolanaWalletTab() {
           </div>
         )}
       </div>
+
+      </>)} {/* end subTab === 'wallet' */}
 
     </div>
   );
