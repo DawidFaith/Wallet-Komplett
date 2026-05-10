@@ -331,6 +331,7 @@ export default function AdminPage() {
         <>
           <SolanaTreasurySection secret={secret} />
           <SolanaMintSection secret={secret} />
+          <SolanaUpdateMetadataSection secret={secret} />
           <SolanaDBMigrationSection secret={secret} />
         </>
       )}
@@ -652,6 +653,145 @@ function SolanaDBMigrationSection({ secret }: { secret: string }) {
           ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Migration läuft…</>
           : 'solana_accounts Tabelle erstellen'}
       </button>
+    </div>
+  );
+}
+
+// ─── SolanaUpdateMetadataSection ───────────────────────────────────────
+
+function SolanaUpdateMetadataSection({ secret }: { secret: string }) {
+  const [mintAddress, setMintAddress] = useState(process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '');
+  const [name, setName]               = useState('D.FAITH');
+  const [symbol, setSymbol]           = useState('DFAITH');
+  const [description, setDescription] = useState('The official D.FAITH fan token by Dawid Faith');
+  const [imageBase64, setImageBase64] = useState('');
+  const [imageMimeType, setImageMimeType] = useState('image/png');
+  const [imagePreview, setImagePreview]   = useState('');
+  const [loading, setLoading]         = useState(false);
+  const [result, setResult]           = useState<{ metadataUri: string; explorerUrl: string } | null>(null);
+  const [error, setError]             = useState('');
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageMimeType(file.type || 'image/png');
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setImagePreview(dataUrl);
+      setImageBase64(dataUrl.split(',')[1] ?? '');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUpdate = async () => {
+    setLoading(true); setError(''); setResult(null);
+    try {
+      const res = await fetch('/api/admin/solana-update-metadata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          secret,
+          mintAddress: mintAddress.trim(),
+          name: name.trim(),
+          symbol: symbol.trim(),
+          description: description.trim(),
+          imageBase64: imageBase64 || undefined,
+          imageMimeType,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Fehler');
+      setResult(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unbekannter Fehler');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="mt-8 bg-zinc-900 border border-zinc-700/50 rounded-2xl p-6 space-y-5">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-blue-900/30 border border-blue-800/50 flex items-center justify-center">
+          <SiSolana size={16} className="text-blue-400" />
+        </div>
+        <div>
+          <h2 className="text-white font-bold text-base">Token Metadata setzen / aktualisieren</h2>
+          <p className="text-zinc-500 text-xs">Für bestehende Tokens — setzt Bild + Name on-chain via Metaplex</p>
+        </div>
+      </div>
+
+      {result ? (
+        <div className="bg-green-900/20 border border-green-800/40 rounded-xl p-4 space-y-2">
+          <p className="text-green-400 font-semibold text-sm">✓ Metadata erfolgreich gesetzt!</p>
+          <p className="text-zinc-500 text-xs">Metadata URI: <code className="text-zinc-300 break-all">{result.metadataUri}</code></p>
+          <p className="text-zinc-500 text-xs">Phantom zeigt das Bild nach ca. 1–5 Minuten.</p>
+          <a href={result.explorerUrl} target="_blank" rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300 text-xs underline block mt-1">
+            Solscan Explorer öffnen →
+          </a>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="sm:col-span-2">
+            <label className="text-zinc-400 text-xs block mb-1">Token Mint-Adresse</label>
+            <input value={mintAddress} onChange={e => setMintAddress(e.target.value)}
+              placeholder="z.B. 9jB95PZQ2eYs83upTpDv7gqMvuMVtB55QRATZajnmki6"
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500" />
+          </div>
+          <div>
+            <label className="text-zinc-400 text-xs block mb-1">Token Name</label>
+            <input value={name} onChange={e => setName(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500" />
+          </div>
+          <div>
+            <label className="text-zinc-400 text-xs block mb-1">Symbol</label>
+            <input value={symbol} onChange={e => setSymbol(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-zinc-400 text-xs block mb-1">Beschreibung</label>
+            <input value={description} onChange={e => setDescription(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-zinc-400 text-xs block mb-1">Token-Bild (wird auf Pinata IPFS hochgeladen)</label>
+            <div className="flex items-center gap-3">
+              {imagePreview && (
+                <img src={imagePreview} alt="Vorschau" className="w-14 h-14 rounded-xl object-cover border border-zinc-700 shrink-0" />
+              )}
+              <label className="flex-1 cursor-pointer bg-zinc-800 border border-zinc-700 border-dashed hover:border-blue-500 text-zinc-400 hover:text-blue-300 rounded-xl px-4 py-3 text-sm text-center transition-colors">
+                {imagePreview ? 'Anderes Bild wählen' : 'Bild auswählen (PNG, JPG, SVG)'}
+                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+              </label>
+              {imagePreview && (
+                <button onClick={() => { setImagePreview(''); setImageBase64(''); }}
+                  className="text-zinc-500 hover:text-red-400 text-xs px-2 shrink-0">✕</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-900/20 border border-red-800/40 rounded-xl px-4 py-3 text-red-300 text-sm break-all">{error}</div>
+      )}
+
+      {!result && (
+        <button onClick={handleUpdate} disabled={loading || !mintAddress.trim() || !name.trim() || !imageBase64}
+          className="w-full bg-blue-700 hover:bg-blue-600 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all">
+          {loading
+            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{imageBase64 ? 'IPFS + Metadata wird gesetzt…' : 'Metadata wird gesetzt…'}</>
+            : <><SiSolana size={14} /> Metadata on-chain setzen</>}
+        </button>
+      )}
+      {result && (
+        <button onClick={() => setResult(null)}
+          className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2 rounded-xl text-sm">
+          Erneut aktualisieren
+        </button>
+      )}
     </div>
   );
 }

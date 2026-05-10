@@ -1,18 +1,11 @@
 /**
  * POST /api/admin/solana-mint
- * Body: { secret, name, symbol, totalSupply, description?, imageBase64?, imageMimeType?, metadataUri? }
- *
- * Erstellt einen neuen SPL Token auf Solana.
- * - Wenn imageBase64 angegeben: Bild + Metaplex JSON wird auf Pinata IPFS hochgeladen
- * - Wenn metadataUri direkt angegeben: wird direkt verwendet
- * - Metadaten werden via Metaplex Token Metadata Program on-chain gesetzt
- *
- * Nach dem Mint: NEXT_PUBLIC_SOLANA_DFAITH_TOKEN auf die neue Mint-Adresse setzen.
+ * Body: { secret, name, symbol, totalSupply, decimals?, description?, imageBase64?, imageMimeType?, metadataUri? }
  */
 import { NextResponse } from 'next/server';
 import {
-  Connection, Keypair, PublicKey, SystemProgram,
-  Transaction, sendAndConfirmTransaction, TransactionInstruction,
+  Connection, Keypair, SystemProgram,
+  Transaction, sendAndConfirmTransaction,
 } from '@solana/web3.js';
 import {
   createInitializeMintInstruction, getMinimumBalanceForRentExemptMint,
@@ -20,21 +13,14 @@ import {
   getAssociatedTokenAddress, createAssociatedTokenAccountInstruction,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
+import { mplTokenMetadata, createMetadataAccountV3 } from '@metaplex-foundation/mpl-token-metadata';
+import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
+import { keypairIdentity, publicKey as umiPublicKey, none } from '@metaplex-foundation/umi';
 import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
 
 const RPC_URL  = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DEFAULT_DECIMALS = 6;
-
-// Metaplex Token Metadata Program ID (Mainnet)
-const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
-
-function getMetadataPDA(mint: PublicKey): PublicKey {
-  const [pda] = PublicKey.findProgramAddressSync(
-    [Buffer.from('metadata'), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer()],
-    TOKEN_METADATA_PROGRAM_ID,
-  );
-  return pda;
-}
 
 async function uploadToPinata(content: string | Buffer, filename: string, mimeType: string): Promise<string> {
   const jwt = process.env.PINATA_JWT;
@@ -112,53 +98,37 @@ export async function POST(req: Request) {
       createAssociatedTokenAccountInstruction(treasury.publicKey, ata, treasury.publicKey, mintKp.publicKey, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID),
       createMintToInstruction(
         mintKp.publicKey, ata, treasury.publicKey,
-        BigInt(Math.round(totalSupply * 10 ** DECIMALS)), // totalSupply ist die rohe Anzahl ohne Dezimalstellen
-        // z.B. totalSupply=1_000_000_000, decimals=6 → 1 Billion Token mit 6 Nachkommastellen
+        BigInt(Math.round(totalSupply * 10 ** DECIMALS)),
         [],
       ),
     );
     const sig1 = await sendAndConfirmTransaction(connection, tx1, [treasury, mintKp]);
 
-    // ── Schritt 3: Metaplex Metadata on-chain setzen ──────────────────────────
+    // ── Schritt 3: Metaplex Metadata on-chain setzen (offizielles SDK) ────────
     let sig2: string | null = null;
     if (metadataUri) {
       try {
-        const metadataPda = getMetadataPDA(mintKp.publicKey);
-        const nameBytes   = Buffer.from(name.slice(0, 32),        'utf8');
-        const symbolBytes = Buffer.from(symbol.slice(0, 10),      'utf8');
-        const uriBytes    = Buffer.from(metadataUri.slice(0, 200), 'utf8');
+        const umi = createUmi(RPC_URL)
+          .use(mplTokenMetadata())
+          .use(keypairIdentity(fromWeb3JsKeypair(treasury)));
 
-        const writeU32LE = (n: number) => { const b = Buffer.alloc(4); b.writeUInt32LE(n); return b; };
-        const writeU16LE = (n: number) => { const b = Buffer.alloc(2); b.writeUInt16LE(n); return b; };
-        const boolBuf    = (v: boolean) => Buffer.from([v ? 1 : 0]);
+        const tx = await createMetadataAccountV3(umi, {
+          mint:          umiPublicKey(mintKp.publicKey.toBase58()),
+          mintAuthority: umi.identity,
+          data: {
+            name:                 name.slice(0, 32),
+            symbol:               symbol.slice(0, 10),
+            uri:                  metadataUri.slice(0, 200),
+            sellerFeeBasisPoints: 0,
+            creators:             none(),
+            collection:           none(),
+            uses:                 none(),
+          },
+          isMutable:         true,
+          collectionDetails: none(),
+        }).sendAndConfirm(umi);
 
-        const data = Buffer.concat([
-          Buffer.from([33]),              // CreateMetadataAccountV3 discriminator
-          writeU32LE(nameBytes.length),   nameBytes,
-          writeU32LE(symbolBytes.length), symbolBytes,
-          writeU32LE(uriBytes.length),    uriBytes,
-          writeU16LE(0),                  // sellerFeeBasisPoints
-          boolBuf(false),                 // creators = None
-          boolBuf(false),                 // collection = None
-          boolBuf(false),                 // uses = None
-          boolBuf(true),                  // isMutable
-          boolBuf(false),                 // collectionDetails = None
-        ]);
-
-        const metaIx = new TransactionInstruction({
-          programId: TOKEN_METADATA_PROGRAM_ID,
-          keys: [
-            { pubkey: metadataPda,             isSigner: false, isWritable: true  },
-            { pubkey: mintKp.publicKey,        isSigner: false, isWritable: false },
-            { pubkey: treasury.publicKey,      isSigner: true,  isWritable: false },
-            { pubkey: treasury.publicKey,      isSigner: true,  isWritable: true  },
-            { pubkey: treasury.publicKey,      isSigner: false, isWritable: false },
-            { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-          ],
-          data,
-        });
-
-        sig2 = await sendAndConfirmTransaction(connection, new Transaction().add(metaIx), [treasury]);
+        sig2 = Buffer.from(tx.signature).toString('base64');
       } catch (e) {
         console.error('Metadata-Setzen fehlgeschlagen:', e);
       }
@@ -178,4 +148,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }
-
