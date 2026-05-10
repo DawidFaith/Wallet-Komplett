@@ -13,7 +13,6 @@ export async function GET(req: NextRequest) {
 
   const configuredTokenIds = [
     process.env.NEXT_PUBLIC_HEDERA_DFAITH_TOKEN_ID,
-    process.env.NEXT_PUBLIC_HEDERA_DFAITH2_TOKEN_ID,
   ].filter(Boolean) as string[];
 
   try {
