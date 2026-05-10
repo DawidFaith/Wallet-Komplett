@@ -29,7 +29,7 @@ export async function GET(req: Request) {
       const mintPk = new PublicKey(DFAITH_MINT);
       const ata    = await getAssociatedTokenAddress(mintPk, treasury.publicKey, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
       const info   = await getAccount(connection, ata);
-      dfaithBalance = Number(info.amount) / 1e6;
+      dfaithBalance = Number(info.amount) / 1e2; // Decimals=2
     } catch {
       dfaithBalance = 0;
     }
