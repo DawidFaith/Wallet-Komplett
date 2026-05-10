@@ -314,18 +314,18 @@ export default function AdminPage() {
 // ─── HederaTreasurySection ────────────────────────────────────────────────────
 
 function HederaTreasurySection({ secret }: { secret: string }) {
+  type TokenInfo = { tokenId: string; balance: number; name: string; symbol: string };
   const [hbar, setHbar]             = useState<number | null>(null);
-  const [dfaith, setDfaith]         = useState<number | null>(null);
+  const [tokens, setTokens]         = useState<TokenInfo[]>([]);
   const [operatorId, setOperatorId] = useState('');
-  const [tokenId, setTokenId]       = useState('');
   const [loadingBal, setLoadingBal] = useState(false);
 
-  const [sendTo, setSendTo]       = useState('');
-  const [sendAmt, setSendAmt]     = useState('');
-  const [sendMode, setSendMode]   = useState<'token' | 'hbar'>('token');
-  const [sending, setSending]     = useState(false);
-  const [sendOk, setSendOk]       = useState('');
-  const [sendErr, setSendErr]     = useState('');
+  const [sendTo, setSendTo]     = useState('');
+  const [sendAmt, setSendAmt]   = useState('');
+  const [sendMode, setSendMode] = useState<string>('');
+  const [sending, setSending]   = useState(false);
+  const [sendOk, setSendOk]     = useState('');
+  const [sendErr, setSendErr]   = useState('');
 
   const loadBalance = useCallback(async () => {
     setLoadingBal(true);
@@ -335,9 +335,13 @@ function HederaTreasurySection({ secret }: { secret: string }) {
       const d   = await res.json();
       if (!res.ok) throw new Error(d.error);
       setHbar(d.hbar ?? null);
-      setDfaith(d.tokenBalance ?? null);
+      const toks: TokenInfo[] = d.tokens ?? [];
+      setTokens(toks);
       setOperatorId(d.operatorId ?? '');
-      setTokenId(d.tokenId ?? '');
+      setSendMode(prev => {
+        if (prev === '') return toks.length > 0 ? toks[0].tokenId : 'hbar';
+        return prev;
+      });
     } catch (e) {
       setSendErr(e instanceof Error ? e.message : 'Fehler');
     } finally {
@@ -354,10 +358,13 @@ function HederaTreasurySection({ secret }: { secret: string }) {
     if (!isFinite(amt) || amt <= 0) { setSendErr('Ungültiger Betrag'); return; }
     setSending(true);
     try {
+      const isHbar = sendMode === 'hbar';
+      const body: Record<string, unknown> = { toAccountId: sendTo.trim(), amount: amt, sendHbar: isHbar };
+      if (!isHbar) body.tokenId = sendMode;
       const res = await fetch('/api/admin/hedera-send-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
-        body: JSON.stringify({ toAccountId: sendTo.trim(), amount: amt, sendHbar: sendMode === 'hbar' }),
+        body: JSON.stringify(body),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error);
@@ -370,6 +377,9 @@ function HederaTreasurySection({ secret }: { secret: string }) {
       setSending(false);
     }
   };
+
+  const currentToken = tokens.find(t => t.tokenId === sendMode);
+  const gridCols = tokens.length >= 2 ? 'grid-cols-3' : 'grid-cols-2';
 
   return (
     <div className="mt-8 bg-zinc-900 border border-zinc-700/50 rounded-2xl p-6 space-y-5">
@@ -391,15 +401,17 @@ function HederaTreasurySection({ secret }: { secret: string }) {
       </div>
 
       {/* Balances */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className={`grid ${gridCols} gap-3`}>
         <div className="bg-zinc-800 rounded-xl px-4 py-3">
           <p className="text-zinc-500 text-xs mb-1">HBAR</p>
           <p className="text-white text-2xl font-bold">{loadingBal ? '…' : hbar !== null ? hbar.toFixed(2) : '—'}</p>
         </div>
-        <div className="bg-zinc-800 rounded-xl px-4 py-3">
-          <p className="text-zinc-500 text-xs mb-1">D.FAITH {tokenId && <span className="text-zinc-600">({tokenId})</span>}</p>
-          <p className="text-white text-2xl font-bold">{loadingBal ? '…' : dfaith !== null ? dfaith.toLocaleString() : '—'}</p>
-        </div>
+        {tokens.map(tok => (
+          <div key={tok.tokenId} className="bg-zinc-800 rounded-xl px-4 py-3">
+            <p className="text-zinc-500 text-xs mb-1">{tok.name} <span className="text-zinc-600">({tok.tokenId})</span></p>
+            <p className="text-white text-2xl font-bold">{loadingBal ? '…' : tok.balance.toLocaleString()}</p>
+          </div>
+        ))}
       </div>
 
       {/* Send */}
@@ -407,11 +419,15 @@ function HederaTreasurySection({ secret }: { secret: string }) {
         <div className="flex items-center gap-2">
           <FaPaperPlane size={11} className="text-zinc-400" />
           <h3 className="text-white text-sm font-semibold">Senden (vom Treasury)</h3>
-          <div className="flex gap-1 ml-auto">
-            {(['token', 'hbar'] as const).map(m => (
-              <button key={m} onClick={() => setSendMode(m)}
-                className={`px-2 py-0.5 rounded-lg text-xs font-semibold transition-colors ${sendMode === m ? 'bg-zinc-600 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
-                {m === 'token' ? 'D.FAITH' : 'HBAR'}
+          <div className="flex gap-1 ml-auto flex-wrap justify-end">
+            <button onClick={() => setSendMode('hbar')}
+              className={`px-2 py-0.5 rounded-lg text-xs font-semibold transition-colors ${sendMode === 'hbar' ? 'bg-zinc-600 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
+              HBAR
+            </button>
+            {tokens.map(tok => (
+              <button key={tok.tokenId} onClick={() => setSendMode(tok.tokenId)}
+                className={`px-2 py-0.5 rounded-lg text-xs font-semibold transition-colors ${sendMode === tok.tokenId ? 'bg-zinc-600 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
+                {tok.name}
               </button>
             ))}
           </div>
@@ -421,10 +437,10 @@ function HederaTreasurySection({ secret }: { secret: string }) {
             className="bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-zinc-500 w-full" />
           <div className="flex gap-2">
             <input type="number" step="any" min="0" value={sendAmt} onChange={e => setSendAmt(e.target.value)}
-              placeholder={`Betrag (${sendMode === 'token' ? 'D.FAITH' : 'HBAR'})`}
+              placeholder={`Betrag (${sendMode === 'hbar' ? 'HBAR' : currentToken?.name ?? 'Token'})`}
               className="bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-zinc-500 flex-1 min-w-0" />
-            {sendMode === 'token' && dfaith !== null && (
-              <button onClick={() => setSendAmt(String(dfaith))}
+            {currentToken && (
+              <button onClick={() => setSendAmt(String(currentToken.balance))}
                 className="text-zinc-400 hover:text-white text-xs px-2 shrink-0">MAX</button>
             )}
           </div>
@@ -435,7 +451,7 @@ function HederaTreasurySection({ secret }: { secret: string }) {
           className="w-full bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all">
           {sending
             ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Wird gesendet…</>
-            : <><FaPaperPlane size={11}/> {sendMode === 'token' ? 'D.FAITH' : 'HBAR'} senden</>}
+            : <><FaPaperPlane size={11}/> {sendMode === 'hbar' ? 'HBAR' : (currentToken?.name ?? 'Token')} senden</>}
         </button>
       </div>
     </div>
