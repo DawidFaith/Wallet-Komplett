@@ -16,10 +16,8 @@ export function getTreasuryKeypair(): Keypair {
   // Option 1: Seed Phrase (12 oder 24 Wörter)
   const mnemonic = process.env.SOLANA_TREASURY_MNEMONIC;
   if (mnemonic && mnemonic.trim().split(/\s+/).length >= 12) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const bip39 = require('bip39') as typeof import('bip39');
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { derivePath } = require('ed25519-hd-key') as typeof import('ed25519-hd-key');
+    const bip39 = require('bip39') as typeof import('bip39'); // eslint-disable-line
+    const { derivePath } = require('ed25519-hd-key') as typeof import('ed25519-hd-key'); // eslint-disable-line
     const seed = bip39.mnemonicToSeedSync(mnemonic.trim());
     const { key } = derivePath("m/44'/501'/0'/0'", seed.toString('hex'));
     _cached = Keypair.fromSeed(key);
