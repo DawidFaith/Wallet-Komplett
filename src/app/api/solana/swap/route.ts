@@ -11,8 +11,9 @@ import bs58 from 'bs58';
 import { getDb } from '@/app/lib/db';
 import { decryptKey } from '@/app/lib/solanaCrypto';
 
-const RPC_URL      = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
-const JUPITER_SWAP = 'https://quote-api.jup.ag/v6/swap';
+const RPC_URL       = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
+const JUPITER_SWAP  = 'https://quote-api.jup.ag/v6/swap';
+const JUPITER_API_KEY = process.env.JUPITER_API_KEY ?? '';
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({})) as {
@@ -37,9 +38,12 @@ export async function POST(req: Request) {
   const userPk    = kp.publicKey.toBase58();
 
   // Swap-Transaktion von Jupiter anfordern
+  const swapHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (JUPITER_API_KEY) swapHeaders['Authorization'] = `Bearer ${JUPITER_API_KEY}`;
+
   const swapRes = await fetch(JUPITER_SWAP, {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: swapHeaders,
     body:    JSON.stringify({
       quoteResponse,
       userPublicKey:              userPk,

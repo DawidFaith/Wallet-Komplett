@@ -5,7 +5,8 @@
  */
 import { NextResponse } from 'next/server';
 
-const JUPITER_QUOTE = 'https://quote-api.jup.ag/v6/quote';
+const JUPITER_QUOTE  = 'https://quote-api.jup.ag/v6/quote';
+const JUPITER_API_KEY = process.env.JUPITER_API_KEY ?? '';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -21,7 +22,9 @@ export async function GET(req: Request) {
   const url = `${JUPITER_QUOTE}?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${slippage}&onlyDirectRoutes=false`;
 
   try {
-    const res  = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(8000) });
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    if (JUPITER_API_KEY) headers['Authorization'] = `Bearer ${JUPITER_API_KEY}`;
+    const res  = await fetch(url, { headers, signal: AbortSignal.timeout(8000) });
     const data = await res.json() as Record<string, unknown>;
     if (!res.ok) return NextResponse.json({ error: data?.error ?? 'Jupiter API Fehler' }, { status: res.status });
     return NextResponse.json(data);
