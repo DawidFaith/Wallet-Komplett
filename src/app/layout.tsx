@@ -3,6 +3,7 @@ import { Inter, Orbitron, Pirata_One } from "next/font/google";
 import "./globals.css";
 import { ThirdwebProvider } from "thirdweb/react";
 import QueryProvider from "./QueryProvider";
+import ParticleAuthProvider from "./components/ParticleAuthProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 const orbitron = Orbitron({ 
@@ -36,7 +37,9 @@ export default function RootLayout({
     <html lang="de" className="bg-zinc-950">
       <body className={`${inter.className} ${orbitron.variable} ${pirataOne.variable} bg-zinc-950`}>
         <ThirdwebProvider>
-          <QueryProvider>{children}</QueryProvider>
+          <ParticleAuthProvider>
+            <QueryProvider>{children}</QueryProvider>
+          </ParticleAuthProvider>
         </ThirdwebProvider>
       </body>
     </html>

@@ -1,32 +1,30 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useActiveAccount } from 'thirdweb/react';
-import { inAppWallet, createWallet } from 'thirdweb/wallets';
-import { ConnectButton } from 'thirdweb/react';
-import { client } from '../client';
+import { useConnect, useAuthCore, useSolana } from '@particle-network/auth-core-modal';
 import {
   FaCopy, FaCheckCircle, FaSync, FaPaperPlane, FaExternalLinkAlt,
   FaKey, FaEye, FaEyeSlash, FaSpinner, FaExchangeAlt,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
+import { FcGoogle } from 'react-icons/fc';
+import { FaApple } from 'react-icons/fa';
 
 const DFAITH_MINT   = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
 const JUPITER_URL   = DFAITH_MINT
   ? `https://jup.ag/swap/SOL-${DFAITH_MINT}`
   : 'https://jup.ag';
 
-const wallets = [
-  inAppWallet({ auth: { options: ['email', 'google', 'facebook'] } }),
-  createWallet('io.metamask'),
-];
-
 type TabView = 'wallet' | 'swap';
 type SendMode = 'sol' | 'dfaith';
 
 export default function SolanaWalletTab() {
-  const account      = useActiveAccount();
-  const evmAddress   = account?.address ?? null;
+  const { connect, disconnect, connected, connectionStatus } = useConnect();
+  const { userInfo } = useAuthCore();
+  const { address: particleAddress } = useSolana();
+
+  // Particle Solana-Adresse als stabiler User-Identifier (nur für DB-Lookup)
+  const evmAddress = particleAddress ?? null;
 
   const [solanaAddr, setSolanaAddr]   = useState<string | null>(null);
   const [creating, setCreating]       = useState(false);
@@ -161,8 +159,17 @@ export default function SolanaWalletTab() {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  // ── States: Particle lädt ──────────────────────────────────────────────────
+  if (connectionStatus === 'loading') {
+    return (
+      <div className="w-full max-w-md mx-auto px-4 py-6 flex items-center justify-center min-h-[200px]">
+        <FaSpinner size={24} className="animate-spin text-purple-400" />
+      </div>
+    );
+  }
+
   // ── States: nicht eingeloggt ───────────────────────────────────────────────
-  if (!evmAddress) {
+  if (!connected) {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center gap-3">
@@ -178,18 +185,27 @@ export default function SolanaWalletTab() {
             <p className="text-white font-semibold">Anmelden um fortzufahren</p>
             <p className="text-zinc-400 text-sm">Dein Solana Wallet wird automatisch erstellt — kein Wallet-App nötig.</p>
           </div>
-          <div className="flex justify-center">
-            <ConnectButton
-              client={client}
-              wallets={wallets}
-              theme="dark"
-              connectButton={{ label: 'Mit Google / E-Mail anmelden' }}
-              connectModal={{
-                size: 'compact',
-                title: 'Anmelden',
-                welcomeScreen: { title: 'Solana Wallet', subtitle: 'Dein Account wird automatisch erstellt' },
-              }}
-            />
+          <div className="space-y-3">
+            <button
+              onClick={() => connect({ socialType: 'google' })}
+              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-800 font-semibold py-3 rounded-xl text-sm transition-colors"
+            >
+              <FcGoogle size={20} />
+              Mit Google anmelden
+            </button>
+            <button
+              onClick={() => connect({ socialType: 'apple' })}
+              className="w-full flex items-center justify-center gap-3 bg-black hover:bg-zinc-800 text-white border border-zinc-700 font-semibold py-3 rounded-xl text-sm transition-colors"
+            >
+              <FaApple size={18} />
+              Mit Apple anmelden
+            </button>
+            <button
+              onClick={() => connect({ email: '' })}
+              className="w-full flex items-center justify-center gap-3 bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 font-semibold py-3 rounded-xl text-sm transition-colors"
+            >
+              ✉ Mit E-Mail anmelden
+            </button>
           </div>
         </div>
       </div>
@@ -255,11 +271,19 @@ export default function SolanaWalletTab() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
             <div className="flex items-center justify-between mb-1">
               <p className="text-zinc-500 text-xs font-medium">Deine Solana-Adresse</p>
-              <button onClick={() => handleCopy(solanaAddr!)} className="text-zinc-500 hover:text-white text-xs flex items-center gap-1">
-                {copied ? <><FaCheckCircle size={10} className="text-green-400" /> Kopiert</> : <><FaCopy size={10} /> Kopieren</>}
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => handleCopy(solanaAddr!)} className="text-zinc-500 hover:text-white text-xs flex items-center gap-1">
+                  {copied ? <><FaCheckCircle size={10} className="text-green-400" /> Kopiert</> : <><FaCopy size={10} /> Kopieren</>}
+                </button>
+                <button onClick={() => disconnect()} className="text-zinc-600 hover:text-red-400 text-xs">Abmelden</button>
+              </div>
             </div>
             <p className="text-white font-mono text-xs break-all">{solanaAddr}</p>
+            {userInfo && (
+              <p className="text-zinc-600 text-xs mt-1">
+                {userInfo.name ?? userInfo.email ?? userInfo.google_email ?? ''}
+              </p>
+            )}
             <a href={`https://solscan.io/account/${solanaAddr}`} target="_blank" rel="noopener noreferrer"
               className="text-zinc-500 hover:text-zinc-300 text-xs flex items-center gap-1 mt-1">
               Solscan <FaExternalLinkAlt size={9} />
