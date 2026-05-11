@@ -5,7 +5,7 @@ import { useConnect, useAuthCore, useSolana } from '@particle-network/auth-core-
 import {
   FaCopy, FaCheckCircle, FaSync, FaPaperPlane, FaExternalLinkAlt,
   FaKey, FaEye, FaEyeSlash, FaSpinner, FaExchangeAlt,
-  FaChevronDown, FaChevronUp,
+  FaChevronDown, FaChevronUp, FaDownload, FaCreditCard,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
 import { FcGoogle } from 'react-icons/fc';
@@ -14,8 +14,6 @@ import Image from 'next/image';
 import SwapWidget from './wallet/SwapWidget';
 
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
-
-type SubTab = 'wallet' | 'swap';
 
 interface TokenEntry {
   mint:     string;
@@ -30,18 +28,19 @@ type SendMode =
   | { type: 'sol' }
   | { type: 'token'; mint: string; symbol: string; max: number };
 
-type Panel = 'send' | 'key' | null;
+type Panel = 'key' | null;
+type ActionModal = 'send' | 'swap' | 'receive' | 'buy' | null;
 
 // ─── Token Row ────────────────────────────────────────────────────────────────
 function TokenRow({
-  token, loading, onSend,
+  token, loading, onSend, onSwap,
 }: {
   token: TokenEntry;
   loading: boolean;
   onSend: (mode: SendMode) => void;
+  onSwap: () => void;
 }) {
   const isDfaith    = token.mint === DFAITH_MINT;
-  const jupiterUrl  = `https://jup.ag/swap/${token.mint}-SOL`;
 
   return (
     <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-colors
@@ -86,11 +85,11 @@ function TokenRow({
           className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1">
           <FaPaperPlane size={9} /> Send
         </button>
-        <a
-          href={jupiterUrl} target="_blank" rel="noopener noreferrer"
+        <button
+          onClick={onSwap}
           className="bg-zinc-800 hover:bg-emerald-900/40 text-emerald-400 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1">
           <FaExchangeAlt size={9} /> Swap
-        </a>
+        </button>
       </div>
     </div>
   );
@@ -111,7 +110,7 @@ export default function SolanaWalletTab() {
   const [tokens, setTokens]         = useState<TokenEntry[]>([]);
   const [loadingBal, setLoadingBal] = useState(false);
 
-  const [subTab, setSubTab]       = useState<SubTab>('wallet');
+  const [actionModal, setActionModal] = useState<ActionModal>(null);
   const [panel, setPanel]         = useState<Panel>(null);
   const [sendMode, setSendMode]   = useState<SendMode>({ type: 'sol' });
   const [recipient, setRecipient] = useState('');
@@ -251,7 +250,7 @@ export default function SolanaWalletTab() {
   const openSendPanel = (mode: SendMode) => {
     setSendErr(''); setSendOk(''); setRecipient(''); setSendAmt('');
     setSendMode(mode);
-    setPanel(p => p === 'send' ? null : 'send');
+    setActionModal('send');
   };
 
   // ── Loading oder nicht eingeloggt → immer Login-UI zeigen ───────────────
@@ -336,6 +335,7 @@ export default function SolanaWalletTab() {
   const sendMax   = sendMode.type === 'sol'
     ? (solBalance !== null ? Math.max(0, solBalance - 0.001).toFixed(6) : '')
     : String((sendMode as { type: 'token'; max: number }).max ?? 0);
+  const receiveQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(`solana:${solanaAddr}`)}`;
 
   return (
     <div className="w-full max-w-md mx-auto px-4 py-6 space-y-4">
@@ -355,33 +355,31 @@ export default function SolanaWalletTab() {
         </button>
       </div>
 
-      {/* ── Sub-Tab-Bar ── */}
-      <div className="flex gap-1 bg-zinc-900 border border-zinc-800 rounded-xl p-1">
-        <button onClick={() => setSubTab('wallet')}
-          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5
-            ${subTab === 'wallet' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
-          <FaSync size={10} /> Wallet
+      {/* ── Top Actions ── */}
+      <div className="grid grid-cols-4 gap-2">
+        <button
+          onClick={() => openSendPanel({ type: 'sol' })}
+          className="bg-zinc-900 border border-zinc-800 hover:border-purple-700/50 hover:bg-purple-900/20 text-zinc-200 text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-colors">
+          <FaPaperPlane size={10} /> Send
         </button>
-        <button onClick={() => setSubTab('swap')}
-          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5
-            ${subTab === 'swap' ? 'bg-emerald-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
+        <button
+          onClick={() => setActionModal('swap')}
+          className="bg-zinc-900 border border-zinc-800 hover:border-emerald-700/50 hover:bg-emerald-900/20 text-zinc-200 text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-colors">
           <FaExchangeAlt size={10} /> Swap
+        </button>
+        <button
+          onClick={() => setActionModal('receive')}
+          className="bg-zinc-900 border border-zinc-800 hover:border-blue-700/50 hover:bg-blue-900/20 text-zinc-200 text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-colors">
+          <FaDownload size={10} /> Receive
+        </button>
+        <button
+          onClick={() => setActionModal('buy')}
+          className="bg-zinc-900 border border-zinc-800 hover:border-amber-700/50 hover:bg-amber-900/20 text-zinc-200 text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-colors">
+          <FaCreditCard size={10} /> Buy
         </button>
       </div>
 
-      {/* ── Swap Tab ── */}
-      {subTab === 'swap' && (
-        <SwapWidget
-          walletAddress={solanaAddr!}
-          evmAddress={evmAddress!}
-          tokens={tokens}
-          solBalance={solBalance ?? 0}
-          onSwapSuccess={() => loadBalance(solanaAddr!)}
-        />
-      )}
-
-      {/* ── Wallet Tab ── */}
-      {subTab === 'wallet' && (<>
+      <>
 
       {/* ── Adresse ── */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 flex items-center justify-between gap-2">
@@ -422,10 +420,6 @@ export default function SolanaWalletTab() {
             <p className="text-zinc-500 text-xs">SOL</p>
           </div>
         </div>
-        <button onClick={() => openSendPanel({ type: 'sol' })}
-          className="mt-4 w-full bg-purple-700/40 hover:bg-purple-600/50 text-purple-200 text-xs font-semibold py-2 rounded-xl flex items-center justify-center gap-1.5 transition-colors">
-          <FaPaperPlane size={10} /> SOL senden
-        </button>
       </div>
 
       {/* ── Artist Tokens ── */}
@@ -443,11 +437,12 @@ export default function SolanaWalletTab() {
           }}
           loading={loadingBal}
           onSend={openSendPanel}
+          onSwap={() => setActionModal('swap')}
         />
 
         {/* Weitere Artist Tokens */}
         {otherTokens.map(token => (
-          <TokenRow key={token.mint} token={token} loading={false} onSend={openSendPanel} />
+          <TokenRow key={token.mint} token={token} loading={false} onSend={openSendPanel} onSwap={() => setActionModal('swap')} />
         ))}
 
         {tokens.length === 0 && !loadingBal && (
@@ -457,45 +452,6 @@ export default function SolanaWalletTab() {
           </div>
         )}
       </div>
-
-      {/* ── Send Panel ── */}
-      {panel === 'send' && (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FaPaperPlane size={12} className="text-zinc-400" />
-              <h3 className="text-white text-sm font-semibold">{sendLabel} senden</h3>
-            </div>
-            <button onClick={() => setPanel(null)} className="text-zinc-500 hover:text-white">
-              <FaChevronUp size={12} />
-            </button>
-          </div>
-          <div>
-            <label className="text-zinc-400 text-xs block mb-1">Empfänger (Solana-Adresse)</label>
-            <input value={recipient} onChange={e => setRecipient(e.target.value)}
-              placeholder="Bs58-Adresse…"
-              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-zinc-500" />
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-zinc-400 text-xs">Betrag ({sendLabel})</label>
-              <button onClick={() => setSendAmt(sendMax)} className="text-zinc-400 hover:text-white text-xs font-semibold">MAX</button>
-            </div>
-            <input type="number" step="0.000001" min="0" value={sendAmt} onChange={e => setSendAmt(e.target.value)}
-              placeholder="0.00"
-              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-zinc-500" />
-          </div>
-          {sendErr && <p className="text-red-400 text-xs">{sendErr}</p>}
-          {sendOk  && <p className="text-green-400 text-xs break-all">{sendOk}</p>}
-          <button onClick={handleSend} disabled={sending || !recipient.trim() || !sendAmt.trim()}
-            className="w-full bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
-            {sending
-              ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Wird gesendet…</>
-              : <><FaPaperPlane size={12} /> Senden</>}
-          </button>
-          <p className="text-zinc-600 text-xs text-center">On-Chain · Kein Wallet-App nötig</p>
-        </div>
-      )}
 
       {/* ── Private Key (aufklappbar) ── */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
@@ -541,7 +497,102 @@ export default function SolanaWalletTab() {
         )}
       </div>
 
-      </>)} {/* end subTab === 'wallet' */}
+      </>
+
+      {/* ── Action Modal ── */}
+      {actionModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="w-full sm:max-w-md max-h-[88vh] bg-zinc-900 border border-zinc-800 rounded-t-2xl sm:rounded-2xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
+              <h3 className="text-white font-semibold text-sm">
+                {actionModal === 'send' && `${sendLabel} senden`}
+                {actionModal === 'swap' && 'Token Swap'}
+                {actionModal === 'receive' && 'SOL empfangen'}
+                {actionModal === 'buy' && 'SOL kaufen'}
+              </h3>
+              <button onClick={() => setActionModal(null)} className="text-zinc-500 hover:text-white text-sm">Schließen</button>
+            </div>
+
+            <div className="overflow-y-auto max-h-[calc(88vh-56px)] p-4">
+              {actionModal === 'send' && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-zinc-400 text-xs block mb-1">Empfänger (Solana-Adresse)</label>
+                    <input value={recipient} onChange={e => setRecipient(e.target.value)}
+                      placeholder="Bs58-Adresse…"
+                      className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-zinc-500" />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-zinc-400 text-xs">Betrag ({sendLabel})</label>
+                      <button onClick={() => setSendAmt(sendMax)} className="text-zinc-400 hover:text-white text-xs font-semibold">MAX</button>
+                    </div>
+                    <input type="number" step="0.000001" min="0" value={sendAmt} onChange={e => setSendAmt(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-zinc-500" />
+                  </div>
+                  {sendErr && <p className="text-red-400 text-xs">{sendErr}</p>}
+                  {sendOk  && <p className="text-green-400 text-xs break-all">{sendOk}</p>}
+                  <button onClick={handleSend} disabled={sending || !recipient.trim() || !sendAmt.trim()}
+                    className="w-full bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
+                    {sending
+                      ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Wird gesendet…</>
+                      : <><FaPaperPlane size={12} /> Senden</>}
+                  </button>
+                  <p className="text-zinc-600 text-xs text-center">On-Chain · Kein Wallet-App nötig</p>
+                </div>
+              )}
+
+              {actionModal === 'swap' && (
+                <SwapWidget
+                  walletAddress={solanaAddr!}
+                  evmAddress={evmAddress!}
+                  tokens={tokens}
+                  solBalance={solBalance ?? 0}
+                  onSwapSuccess={() => loadBalance(solanaAddr!)}
+                />
+              )}
+
+              {actionModal === 'receive' && (
+                <div className="space-y-4">
+                  <div className="bg-zinc-800/50 border border-zinc-700 rounded-2xl p-4 text-center space-y-3">
+                    <img src={receiveQrUrl} alt="SOL Receive QR" className="w-48 h-48 rounded-xl mx-auto bg-white p-2" />
+                    <p className="text-zinc-400 text-xs">Scanne den QR Code oder kopiere die Adresse.</p>
+                    <p className="text-white font-mono text-xs break-all bg-zinc-800 rounded-xl p-3">{solanaAddr}</p>
+                    <button onClick={() => handleCopy(solanaAddr!)}
+                      className="w-full bg-blue-700 hover:bg-blue-600 text-white text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2">
+                      {copied ? <><FaCheckCircle size={11} /> Kopiert</> : <><FaCopy size={11} /> Adresse kopieren</>}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {actionModal === 'buy' && (
+                <div className="space-y-3">
+                  <p className="text-zinc-400 text-xs">Wähle einen On-Ramp Anbieter und kaufe SOL direkt auf diese Wallet-Adresse.</p>
+                  <div className="space-y-2">
+                    <a
+                      href={`https://www.moonpay.com/buy/sol?walletAddress=${solanaAddr}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full bg-amber-700/20 border border-amber-700/40 hover:bg-amber-700/30 text-amber-200 text-sm font-semibold py-3 rounded-xl flex items-center justify-center gap-2">
+                      <FaCreditCard size={12} /> Mit MoonPay kaufen
+                    </a>
+                    <a
+                      href="https://www.coinbase.com/buy/solana"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-200 text-sm font-semibold py-3 rounded-xl flex items-center justify-center gap-2">
+                      <FaExternalLinkAlt size={11} /> Mit Coinbase kaufen
+                    </a>
+                  </div>
+                  <p className="text-zinc-500 text-xs">Tipp: Prüfe vor dem Kauf, dass die Zieladresse korrekt ist.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
