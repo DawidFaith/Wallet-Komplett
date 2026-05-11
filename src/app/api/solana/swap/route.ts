@@ -83,7 +83,7 @@ export async function POST(req: Request) {
     const [userLamports, feeResult, rentExemptMin] = await Promise.all([
       connection.getBalance(kp.publicKey),
       connection.getFeeForMessage(tx.message, 'confirmed'),
-      connection.getMinimumBalanceForRentExemption(0),
+      connection.getMinimumBalanceForRentExemption(165), // SPL Token Account Größe
     ]);
 
     const exactFeeLamports = feeResult.value ?? 5000;
