@@ -24,11 +24,6 @@ export interface TokenEntry {
   priceChange24h: number | null;
 }
 
-interface TokenMarketData {
-  usd?: number;
-  usd_24h_change?: number;
-}
-
 function resolveUri(uri: string): string {
   if (!uri) return '';
   if (uri.startsWith('ipfs://')) return `${PINATA_GW}/ipfs/${uri.slice(7)}`;
@@ -76,29 +71,31 @@ async function fetchSolMarket(): Promise<{ priceUsd: number | null; change24h: n
 
 async function fetchSplMarket(mints: string[]): Promise<Record<string, { usd: number | null; change24h: number | null }>> {
   if (mints.length === 0) return {};
+
+  const out: Record<string, { usd: number | null; change24h: number | null }> = {};
+  for (const m of mints) out[m] = { usd: null, change24h: null };
+
   try {
-    const url = new URL('https://api.coingecko.com/api/v3/simple/token_price/solana');
-    url.searchParams.set('contract_addresses', mints.join(','));
-    url.searchParams.set('vs_currencies', 'usd');
-    url.searchParams.set('include_24hr_change', 'true');
+    // Jupiter Price API v2 – kennt alle Tokens mit Liquiditätspool
+    const ids = mints.join(',');
+    const r = await fetch(
+      `https://api.jup.ag/price/v2?ids=${ids}&showExtraInfo=false`,
+      { signal: AbortSignal.timeout(6000) }
+    );
+    if (!r.ok) return out;
 
-    const r = await fetch(url.toString(), { signal: AbortSignal.timeout(6000) });
-    if (!r.ok) return {};
-
-    const raw = await r.json() as Record<string, TokenMarketData>;
-    const out: Record<string, { usd: number | null; change24h: number | null }> = {};
+    const raw = await r.json() as { data?: Record<string, { price?: string | number } | null> };
+    if (!raw.data) return out;
 
     for (const mint of mints) {
-      const row = raw[mint.toLowerCase()];
-      out[mint] = {
-        usd: typeof row?.usd === 'number' ? row.usd : null,
-        change24h: typeof row?.usd_24h_change === 'number' ? row.usd_24h_change : null,
-      };
+      const row = raw.data[mint];
+      if (row?.price !== undefined && row.price !== null) {
+        out[mint].usd = typeof row.price === 'string' ? parseFloat(row.price) : row.price;
+      }
     }
-    return out;
-  } catch {
-    return {};
-  }
+  } catch { /* Jupiter nicht erreichbar – Preise bleiben null */ }
+
+  return out;
 }
 
 export async function GET(req: Request) {
