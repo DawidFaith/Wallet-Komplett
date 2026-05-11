@@ -63,9 +63,10 @@ export default function SwapWidget({ walletAddress, evmAddress, tokens, solBalan
     ...tokens.filter(t => t.balance > 0 && t.mint !== SOL_MINT),
   ];
 
-  const dfaithToken: TokenOption = tokens.find(t => t.mint === DFAITH_MINT) ?? {
-    mint: DFAITH_MINT, symbol: 'DFAITH', name: 'D.FAITH', image: null, decimals: 2, balance: 0,
-  };
+  const dfaithRaw = tokens.find(t => t.mint === DFAITH_MINT);
+  const dfaithToken: TokenOption = dfaithRaw
+    ? { ...dfaithRaw, image: dfaithRaw.image || '/D.FAITH.png' }
+    : { mint: DFAITH_MINT, symbol: 'DFAITH', name: 'D.FAITH', image: '/D.FAITH.png', decimals: 2, balance: 0 };
 
   const [inputToken, setInputToken]   = useState<TokenOption>(inputOptions[0]);
   const [outputToken, setOutputToken] = useState<TokenOption>(dfaithToken);
@@ -170,11 +171,9 @@ export default function SwapWidget({ walletAddress, evmAddress, tokens, solBalan
         <div className="bg-zinc-800/60 rounded-xl p-3 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-zinc-500 text-xs">Von</span>
-            <button
-              onClick={() => { setInputAmt(String(inputToken.balance)); }}
-              className="text-zinc-400 hover:text-white text-xs font-semibold">
-              Max: {inputToken.balance.toLocaleString('de-DE', { maximumFractionDigits: 4 })}
-            </button>
+            <span className="text-zinc-500 text-xs">
+              {inputToken.balance.toLocaleString('de-DE', { maximumFractionDigits: 4 })} {inputToken.symbol}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -207,6 +206,18 @@ export default function SwapWidget({ walletAddress, evmAddress, tokens, solBalan
                 </div>
               )}
             </div>
+          </div>
+          <div className="flex gap-1.5">
+            {[25, 50, 75, 100].map(pct => (
+              <button key={pct}
+                onClick={() => {
+                  const val = +(inputToken.balance * pct / 100).toFixed(Math.min(inputToken.decimals, 6));
+                  setInputAmt(val > 0 ? String(val) : '');
+                }}
+                className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-xs font-medium py-1 rounded-lg transition-colors">
+                {pct === 100 ? 'MAX' : `${pct}%`}
+              </button>
+            ))}
           </div>
         </div>
 

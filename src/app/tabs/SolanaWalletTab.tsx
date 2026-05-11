@@ -383,6 +383,10 @@ export default function SolanaWalletTab() {
     ? 'text-emerald-400'
     : 'text-red-400';
 
+  const totalValueUsd   = (solValueUsd ?? 0) + tokens.reduce((s, t) => s + (t.valueUsd ?? 0), 0);
+  const hasPriceData    = solValueUsd !== null || tokens.some(t => t.valueUsd !== null);
+  const totalValueLabel = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(totalValueUsd);
+
   return (
     <div className="w-full max-w-md mx-auto px-4 py-6 space-y-4">
 
@@ -405,6 +409,14 @@ export default function SolanaWalletTab() {
           </button>
         </div>
       </div>
+
+      {/* ── Total Wallet Value ── */}
+      {hasPriceData && (
+        <div className="text-center py-1">
+          <p className="text-zinc-500 text-xs uppercase tracking-wider mb-0.5">Wallet Gesamt</p>
+          <p className="text-white text-3xl font-bold tracking-tight">{loadingBal ? '…' : totalValueLabel}</p>
+        </div>
+      )}
 
       {/* ── Top Actions ── */}
       <div className="grid grid-cols-4 gap-2">
@@ -432,25 +444,32 @@ export default function SolanaWalletTab() {
 
       <>
 
-      {/* ── SOL — oben, groß ── */}
-      <div className="bg-gradient-to-br from-purple-950/60 to-zinc-900 border border-purple-800/30 rounded-2xl p-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-purple-700/40 rounded-full flex items-center justify-center">
-              <SiSolana size={22} className="text-purple-300" />
-            </div>
-            <div>
-              <p className="text-white font-semibold">Solana</p>
-              <p className="text-zinc-500 text-xs">SOL</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-white text-2xl font-bold">
-              {loadingBal ? '…' : solBalance !== null ? solBalance.toFixed(4) : '—'}
-            </p>
-            <p className="text-zinc-400 text-xs">{loadingBal ? '…' : solValueLabel}</p>
-            <p className={`text-xs ${solChangeClass}`}>{loadingBal ? '…' : solChangeLabel}</p>
-          </div>
+      {/* ── SOL ── */}
+      <div className="flex items-center gap-3 px-4 py-3 rounded-2xl border bg-purple-950/30 border-purple-800/40">
+        <div className="w-10 h-10 bg-purple-700/40 rounded-full flex items-center justify-center shrink-0">
+          <SiSolana size={20} className="text-purple-300" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-white text-sm font-semibold">Solana</p>
+          <p className="text-zinc-500 text-xs">
+            {loadingBal ? '…' : (solBalance ?? 0).toFixed(4)} SOL
+          </p>
+        </div>
+        <div className="text-right mr-1 shrink-0">
+          <p className="text-white font-bold text-sm">{loadingBal ? '…' : solValueLabel}</p>
+          <p className={`text-xs ${solChangeClass}`}>{loadingBal ? '…' : solChangeLabel}</p>
+        </div>
+        <div className="flex flex-col gap-1.5 shrink-0">
+          <button
+            onClick={() => openSendPanel({ type: 'sol' })}
+            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1">
+            <FaPaperPlane size={9} /> Send
+          </button>
+          <button
+            onClick={() => setActionModal('receive')}
+            className="bg-zinc-800 hover:bg-blue-900/40 text-blue-400 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1">
+            <FaDownload size={9} /> Recv
+          </button>
         </div>
       </div>
 
