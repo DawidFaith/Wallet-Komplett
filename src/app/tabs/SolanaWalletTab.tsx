@@ -177,11 +177,19 @@ export default function SolanaWalletTab() {
         }
         setCreating(true);
         setCreateError('');
-        const res = await fetch('/api/solana/create-account', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ walletAddress: evmAddress }),
-        });
+        const createController = new AbortController();
+        const createTimeout = setTimeout(() => createController.abort(), 30_000);
+        let res: Response;
+        try {
+          res = await fetch('/api/solana/create-account', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ walletAddress: evmAddress }),
+            signal: createController.signal,
+          });
+        } finally {
+          clearTimeout(createTimeout);
+        }
         const data = await res.json();
         if (cancelled) return;
         if (!res.ok) throw new Error(data.error ?? 'Fehler beim Erstellen des Accounts');

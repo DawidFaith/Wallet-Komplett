@@ -74,7 +74,10 @@ export async function POST(req: Request) {
   `;
 
   // Mit SOL befüllen + ggf. ATA für D.FAITH anlegen
-  try {
+  // Sofort mit Adresse antworten sobald DB-Eintrag existiert;
+  // Funding läuft mit max. 20s Timeout – schlägt es fehl, kann der User
+  // die Wallet trotzdem sofort sehen und nutzen.
+  const fundingPromise = (async () => {
     const treasury = getTreasuryKeypair();
     const connection = new Connection(RPC_URL, 'confirmed');
 
@@ -103,10 +106,20 @@ export async function POST(req: Request) {
     }
 
     const tx = new Transaction().add(...instructions);
-    const sig = await sendAndConfirmTransaction(connection, tx, [treasury]);
+    return sendAndConfirmTransaction(connection, tx, [treasury]);
+  })();
+
+  const FUNDING_TIMEOUT_MS = 20_000;
+  try {
+    const sig = await Promise.race([
+      fundingPromise,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Funding timeout')), FUNDING_TIMEOUT_MS),
+      ),
+    ]);
     return NextResponse.json({ solanaAddress: newAddress, funded: true, sig });
   } catch (e) {
-    // Funding fehlgeschlagen, Account trotzdem zurückgeben
+    // Funding fehlgeschlagen oder Timeout – Account trotzdem zurückgeben
     return NextResponse.json({ solanaAddress: newAddress, funded: false, fundError: String(e) });
   }
   } catch (e) {
