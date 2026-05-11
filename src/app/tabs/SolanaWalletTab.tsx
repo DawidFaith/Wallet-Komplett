@@ -67,7 +67,7 @@ function TokenRow({
           <Image
             src={token.image} alt={token.symbol}
             width={40} height={40}
-            className="rounded-full object-cover"
+            className="w-full h-full rounded-full object-cover"
             unoptimized
           />
         ) : (
@@ -584,8 +584,10 @@ export default function SolanaWalletTab() {
                             key={token.mint}
                             onClick={() => { openSendPanel({ type: 'token', mint: token.mint, symbol: token.symbol, max: token.balance }); setShowSendTokenDrop(false); }}
                             className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-zinc-700 transition-colors text-left border-t border-zinc-700">
-                            <div className="w-6 h-6 bg-zinc-700 rounded-full flex items-center justify-center shrink-0">
-                              <span className="text-white text-xs font-bold">{token.symbol.slice(0, 1)}</span>
+                            <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 bg-zinc-700 flex items-center justify-center">
+                              {token.image
+                                ? <Image src={token.image} alt={token.symbol} width={24} height={24} className="w-full h-full object-cover" unoptimized />
+                                : <span className="text-white text-xs font-bold">{token.symbol.slice(0, 1)}</span>}
                             </div>
                             <div>
                               <p className="text-white text-sm font-semibold">{token.symbol}</p>
