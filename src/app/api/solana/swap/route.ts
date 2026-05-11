@@ -21,9 +21,7 @@ const DFAITH_MINT     = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
 const SOL_MINT        = 'So11111111111111111111111111111111111111112';
 
 /** Unter diesem Wert sendet Treasury einen SOL-Vorschuss an den User (bei DFAITH→SOL Swaps). */
-const MIN_SOL_FOR_FEE   = 0.012;
-/** Wie viel SOL Treasury überweist – reicht für Fees + ATA-Erstellung */
-const TREASURY_SOL_ADVANCE = 0.015;
+const MIN_SOL_FOR_FEE = 0.012;
 
 export async function POST(req: Request) {
   try {
@@ -64,7 +62,9 @@ export async function POST(req: Request) {
 
     if (solBalance < MIN_SOL_FOR_FEE) {
       const treasury   = getTreasuryKeypair();
-      const advanceLamports = Math.round(TREASURY_SOL_ADVANCE * LAMPORTS_PER_SOL);
+      // Nur die Differenz senden, nicht mehr
+      const needed = MIN_SOL_FOR_FEE - solBalance;
+      const advanceLamports = Math.ceil(needed * LAMPORTS_PER_SOL);
 
       const advanceTx = new Transaction().add(
         SystemProgram.transfer({
