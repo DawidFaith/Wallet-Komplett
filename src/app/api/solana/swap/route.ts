@@ -2,7 +2,8 @@
  * POST /api/solana/swap
  * Body: { walletAddress, quoteResponse }
  * Führt Jupiter Swap mit dem custodial User-Keypair durch.
- * Sonderfall: DFAITH → SOL ohne SOL-Balance → Treasury sendet vorher SOL-Vorschuss.
+ * Sonderfall: DFAITH → SOL ohne SOL-Balance → Treasury sendet exakt die fehlenden Lamports.
+ * Die exakte Fee wird aus der Jupiter-Transaktion berechnet, kein pauschaler Betrag.
  */
 import { NextResponse } from 'next/server';
 import {
@@ -19,9 +20,6 @@ const JUPITER_SWAP    = 'https://api.jup.ag/swap/v1/swap';
 const JUPITER_API_KEY = process.env.JUPITER_API_KEY ?? '';
 const DFAITH_MINT     = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
 const SOL_MINT        = 'So11111111111111111111111111111111111111112';
-
-/** Unter diesem Wert sendet Treasury einen SOL-Vorschuss an den User (bei DFAITH→SOL Swaps). */
-const MIN_SOL_FOR_FEE = 0.012;
 
 export async function POST(req: Request) {
   try {
@@ -48,42 +46,7 @@ export async function POST(req: Request) {
 
   const connection = new Connection(RPC_URL, 'confirmed');
 
-  // Prüfen ob Treasury-Vorschuss nötig:
-  // Nur bei DFAITH→SOL Swap UND User hat zu wenig SOL für Fees
-  const isDfaithToSol =
-    DFAITH_MINT &&
-    (quoteResponse.inputMint as string | undefined) === DFAITH_MINT &&
-    (quoteResponse.outputMint as string | undefined) === SOL_MINT;
-
-  let treasuryAdvanceSig: string | null = null;
-  if (isDfaithToSol) {
-    const lamports   = await connection.getBalance(kp.publicKey);
-    const solBalance = lamports / LAMPORTS_PER_SOL;
-
-    if (solBalance < MIN_SOL_FOR_FEE) {
-      const treasury   = getTreasuryKeypair();
-      // Nur die Differenz senden, nicht mehr
-      const needed = MIN_SOL_FOR_FEE - solBalance;
-      const advanceLamports = Math.ceil(needed * LAMPORTS_PER_SOL);
-
-      const advanceTx = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: treasury.publicKey,
-          toPubkey:   kp.publicKey,
-          lamports:   advanceLamports,
-        }),
-      );
-
-      // Vorschuss senden und bestätigen (Treasury zahlt hier die Fee)
-      treasuryAdvanceSig = await sendAndConfirmTransaction(connection, advanceTx, [treasury], {
-        commitment:          'confirmed',
-        maxRetries:          3,
-      });
-      console.log('[swap] Treasury-Vorschuss gesendet:', treasuryAdvanceSig);
-    }
-  }
-
-  // Swap-Transaktion von Jupiter anfordern
+  // Swap-Transaktion von Jupiter anfordern (immer zuerst)
   const swapHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
   if (JUPITER_API_KEY) swapHeaders['Authorization'] = `Bearer ${JUPITER_API_KEY}`;
 
@@ -105,9 +68,44 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: swapData.error ?? 'Jupiter Swap Transaction fehlgeschlagen' }, { status: 502 });
   }
 
-  // Transaktion deserialisieren, signieren (nur User) und senden
+  // Transaktion deserialisieren
   const txBuf = Buffer.from(swapData.swapTransaction, 'base64');
   const tx    = VersionedTransaction.deserialize(txBuf);
+
+  // Sonderfall: DFAITH→SOL — exakte Fee berechnen und nur Differenz vorschießen
+  const isDfaithToSol =
+    DFAITH_MINT &&
+    (quoteResponse.inputMint as string | undefined) === DFAITH_MINT &&
+    (quoteResponse.outputMint as string | undefined) === SOL_MINT;
+
+  let treasuryAdvanceSig: string | null = null;
+  if (isDfaithToSol) {
+    const [userLamports, feeResult] = await Promise.all([
+      connection.getBalance(kp.publicKey),
+      connection.getFeeForMessage(tx.message, 'confirmed'),
+    ]);
+
+    const exactFeeLamports = feeResult.value ?? 5000;
+    const missing = exactFeeLamports - userLamports;
+
+    if (missing > 0) {
+      const treasury = getTreasuryKeypair();
+      const advanceTx = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: treasury.publicKey,
+          toPubkey:   kp.publicKey,
+          lamports:   missing,
+        }),
+      );
+      treasuryAdvanceSig = await sendAndConfirmTransaction(connection, advanceTx, [treasury], {
+        commitment: 'confirmed',
+        maxRetries: 3,
+      });
+      console.log(`[swap] Treasury-Vorschuss: ${missing} Lamports (exakte Fee: ${exactFeeLamports})`);
+    }
+  }
+
+  // Signieren und senden
   tx.sign([kp]);
 
   const sig = await connection.sendRawTransaction(tx.serialize(), {
