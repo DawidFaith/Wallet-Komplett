@@ -334,6 +334,17 @@ export default function SolanaWalletTab() {
   // ── Haupt-UI ───────────────────────────────────────────────────────────────
   const dfaithToken = tokens.find(t => t.mint === DFAITH_MINT);
   const otherTokens = tokens.filter(t => t.mint !== DFAITH_MINT);
+  const sendTokenOptions: TokenEntry[] = [
+    dfaithToken ?? {
+      mint: DFAITH_MINT,
+      balance: 0,
+      decimals: 2,
+      name: 'D.FAITH',
+      symbol: 'DFAITH',
+      image: '/D.FAITH.png',
+    },
+    ...otherTokens,
+  ];
 
   const sendLabel = sendMode.type === 'sol' ? 'SOL' : sendMode.symbol;
   const sendMax   = sendMode.type === 'sol'
@@ -420,10 +431,12 @@ export default function SolanaWalletTab() {
 
         {/* D.FAITH — wird immer angezeigt */}
         <TokenRow
-          token={dfaithToken ?? {
-            mint: DFAITH_MINT, balance: 0, decimals: 2,
-            name: 'D.FAITH', symbol: 'DFAITH', image: '/Dawid Faith Wallet.png',
-          }}
+          token={dfaithToken
+            ? { ...dfaithToken, image: dfaithToken.image || '/D.FAITH.png' }
+            : {
+              mint: DFAITH_MINT, balance: 0, decimals: 2,
+              name: 'D.FAITH', symbol: 'DFAITH', image: '/D.FAITH.png',
+            }}
           loading={loadingBal}
           onSend={openSendPanel}
           onSwap={() => setActionModal('swap')}
@@ -527,7 +540,7 @@ export default function SolanaWalletTab() {
                             <p className="text-zinc-500 text-xs">{solBalance?.toLocaleString('de-DE', { maximumFractionDigits: 4 }) || '0'}</p>
                           </div>
                         </button>
-                        {tokens.map(token => (
+                        {sendTokenOptions.map(token => (
                           <button
                             key={token.mint}
                             onClick={() => { openSendPanel({ type: 'token', mint: token.mint, symbol: token.symbol, max: token.balance }); setShowSendTokenDrop(false); }}
