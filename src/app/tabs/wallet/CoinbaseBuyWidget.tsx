@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { initOnRamp } from '@coinbase/cbpay-js';
+import type { CBPayInstanceType } from '@coinbase/cbpay-js';
 import { FaCreditCard, FaSpinner } from 'react-icons/fa';
 
 const APP_ID = process.env.NEXT_PUBLIC_COINBASE_APP_ID ?? '';
@@ -11,7 +12,7 @@ interface Props {
 }
 
 export default function CoinbaseBuyWidget({ solanaAddress }: Props) {
-  const instanceRef = useRef<{ open: () => void; destroy: () => void } | null>(null);
+  const instanceRef = useRef<CBPayInstanceType | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
 
@@ -33,24 +34,18 @@ export default function CoinbaseBuyWidget({ solanaAddress }: Props) {
             },
           ],
         },
-        onSuccess: () => {
-          setReady(false);
-        },
-        onExit: () => {
-          /* Widget geschlossen */
-        },
-        onEvent: () => {
-          /* optional: Events tracken */
-        },
+        onSuccess: () => { /* Kauf abgeschlossen */ },
+        onExit: () => { /* Widget geschlossen */ },
         experienceLoggedIn:  'popup',
         experienceLoggedOut: 'popup',
+        closeOnSuccess: false,
       },
       (err, instance) => {
-        if (err) {
-          setError('Widget konnte nicht geladen werden');
+        if (err || !instance) {
+          setError('Widget konnte nicht geladen werden: ' + (err?.message ?? 'unbekannt'));
           return;
         }
-        instanceRef.current = instance ?? null;
+        instanceRef.current = instance;
         setReady(true);
       },
     );
@@ -58,6 +53,7 @@ export default function CoinbaseBuyWidget({ solanaAddress }: Props) {
     return () => {
       instanceRef.current?.destroy();
       instanceRef.current = null;
+      setReady(false);
     };
   }, [solanaAddress]);
 
@@ -78,10 +74,12 @@ export default function CoinbaseBuyWidget({ solanaAddress }: Props) {
           : <><FaSpinner size={14} className="animate-spin" /> Widget lädt…</>}
       </button>
 
-      {error && <p className="text-red-400 text-xs text-center">{error}</p>}
+      {error && (
+        <p className="text-red-400 text-xs text-center break-all">{error}</p>
+      )}
 
       <p className="text-zinc-600 text-xs text-center">
-        Powered by Coinbase · Karte, Bank, Apple Pay
+        Powered by Coinbase &middot; Karte, Bank, Apple Pay
       </p>
     </div>
   );
