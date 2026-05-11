@@ -324,7 +324,7 @@ export default function SolanaWalletTab() {
   }
 
   // ── Erstellen ──────────────────────────────────────────────────────────────
-  if (creating || (!solanaAddr && !createError)) {
+  if (creating || (evmAddress && !solanaAddr && !createError)) {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center gap-3">
