@@ -1,7 +1,8 @@
 /**
  * POST /api/solana/send-sol
- * Body: { walletAddress: string, toAddress: string, amountSol: number }
+ * Body: { walletAddress: string, toAddress: string, amountSol: number | 'max' }
  * Sendet SOL aus dem custodial User-Wallet.
+ * Bei amountSol = 'max' wird die Tx-Gebühr automatisch abgezogen.
  */
 import { NextResponse } from 'next/server';
 import {
@@ -17,10 +18,10 @@ const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-b
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const { walletAddress, toAddress, amountSol } = body as {
-    walletAddress?: string; toAddress?: string; amountSol?: number;
+    walletAddress?: string; toAddress?: string; amountSol?: number | 'max';
   };
 
-  if (!walletAddress || !toAddress || typeof amountSol !== 'number' || amountSol <= 0) {
+  if (!walletAddress || !toAddress || amountSol === undefined || amountSol === null) {
     return NextResponse.json({ error: 'Ungültige Eingabe (walletAddress, toAddress, amountSol benötigt)' }, { status: 400 });
   }
 
@@ -39,7 +40,34 @@ export async function POST(req: Request) {
   const kp = Keypair.fromSecretKey(bs58.decode(secretB58));
 
   const connection = new Connection(RPC_URL, 'confirmed');
-  const lamports   = Math.round(amountSol * LAMPORTS_PER_SOL);
+
+  let lamports: number;
+
+  if (amountSol === 'max') {
+    // Aktuelle Balance holen
+    const balanceLamports = await connection.getBalance(kp.publicKey);
+
+    // Dummy-Transaktion bauen um echte Gebühr zu berechnen
+    const { blockhash } = await connection.getLatestBlockhash('confirmed');
+    const dummyTx = new Transaction({
+      recentBlockhash: blockhash,
+      feePayer: kp.publicKey,
+    }).add(SystemProgram.transfer({ fromPubkey: kp.publicKey, toPubkey: toPk, lamports: 1 }));
+    dummyTx.sign(kp);
+
+    const fee = await connection.getFeeForMessage(dummyTx.compileMessage(), 'confirmed');
+    const feeValue = fee.value ?? 5000; // Fallback: 5000 Lamports
+
+    lamports = balanceLamports - feeValue;
+    if (lamports <= 0) {
+      return NextResponse.json({ error: 'Nicht genug SOL für die Transaktionsgebühr' }, { status: 400 });
+    }
+  } else {
+    if (typeof amountSol !== 'number' || amountSol <= 0) {
+      return NextResponse.json({ error: 'Ungültiger Betrag' }, { status: 400 });
+    }
+    lamports = Math.round(amountSol * LAMPORTS_PER_SOL);
+  }
 
   const tx  = new Transaction().add(SystemProgram.transfer({ fromPubkey: kp.publicKey, toPubkey: toPk, lamports }));
   const sig = await sendAndConfirmTransaction(connection, tx, [kp]);

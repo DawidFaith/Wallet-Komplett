@@ -207,15 +207,16 @@ export default function SolanaWalletTab() {
   const handleSend = async () => {
     setSendErr(''); setSendOk('');
     if (!recipient.trim()) { setSendErr('Empfänger-Adresse eingeben'); return; }
+    const isSolMax = sendMode.type === 'sol' && sendAmt === 'max';
     const amt = parseFloat(sendAmt);
-    if (!isFinite(amt) || amt <= 0) { setSendErr('Ungültiger Betrag'); return; }
+    if (!isSolMax && (!isFinite(amt) || amt <= 0)) { setSendErr('Ungültiger Betrag'); return; }
     setSending(true);
     try {
       if (sendMode.type === 'sol') {
         const res = await fetch('/api/solana/send-sol', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ walletAddress: userId, toAddress: recipient.trim(), amountSol: amt }),
+          body: JSON.stringify({ walletAddress: userId, toAddress: recipient.trim(), amountSol: isSolMax ? 'max' : amt }),
         });
         const d = await res.json();
         if (!res.ok) throw new Error(d.error ?? 'Transaktion fehlgeschlagen');
@@ -370,7 +371,7 @@ export default function SolanaWalletTab() {
 
   const sendLabel = sendMode.type === 'sol' ? 'SOL' : sendMode.symbol;
   const sendMax   = sendMode.type === 'sol'
-    ? (solBalance !== null ? Math.max(0, solBalance - 0.001).toFixed(6) : '')
+    ? 'max'
     : String((sendMode as { type: 'token'; max: number }).max ?? 0);
   const receiveQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(`solana:${solanaAddr}`)}`;
   const solValueLabel = solValueUsd !== null
@@ -614,9 +615,17 @@ export default function SolanaWalletTab() {
                       <label className="text-zinc-400 text-xs">Betrag ({sendLabel})</label>
                       <button onClick={() => setSendAmt(sendMax)} className="text-zinc-400 hover:text-white text-xs font-semibold">MAX</button>
                     </div>
-                    <input type="number" step="0.000001" min="0" value={sendAmt} onChange={e => setSendAmt(e.target.value)}
-                      placeholder="0.00"
-                      className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-zinc-500" />
+                    {sendAmt === 'max'
+                      ? (
+                        <div className="w-full bg-zinc-800 border border-purple-600 text-purple-300 rounded-xl px-3 py-2 text-sm flex items-center justify-between">
+                          <span>Gesamte Balance (abzgl. Fee)</span>
+                          <button onClick={() => setSendAmt('')} className="text-zinc-500 hover:text-white text-xs ml-2">✕</button>
+                        </div>
+                      ) : (
+                        <input type="number" step="0.000001" min="0" value={sendAmt} onChange={e => setSendAmt(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-zinc-500" />
+                      )}
                   </div>
                   {sendErr && <p className="text-red-400 text-xs">{sendErr}</p>}
                   {sendOk  && <p className="text-green-400 text-xs break-all">{sendOk}</p>}
