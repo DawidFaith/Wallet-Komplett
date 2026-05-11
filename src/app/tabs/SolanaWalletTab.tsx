@@ -359,6 +359,8 @@ export default function SolanaWalletTab() {
       name: 'D.FAITH',
       symbol: 'DFAITH',
       image: '/D.FAITH.png',
+      valueUsd: null,
+      priceChange24h: null,
     },
     ...otherTokens,
   ];
