@@ -79,18 +79,20 @@ function TokenRow({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-col gap-1.5 shrink-0">
-        <button
-          onClick={() => onSend({ type: 'token', mint: token.mint, symbol: token.symbol, max: token.balance })}
-          className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1">
-          <FaPaperPlane size={9} /> Send
-        </button>
-        <button
-          onClick={onSwap}
-          className="bg-zinc-800 hover:bg-emerald-900/40 text-emerald-400 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1">
-          <FaExchangeAlt size={9} /> Swap
-        </button>
-      </div>
+      {!isDfaith && (
+        <div className="flex flex-col gap-1.5 shrink-0">
+          <button
+            onClick={() => onSend({ type: 'token', mint: token.mint, symbol: token.symbol, max: token.balance })}
+            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1">
+            <FaPaperPlane size={9} /> Send
+          </button>
+          <button
+            onClick={onSwap}
+            className="bg-zinc-800 hover:bg-emerald-900/40 text-emerald-400 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1">
+            <FaExchangeAlt size={9} /> Swap
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -118,6 +120,7 @@ export default function SolanaWalletTab() {
   const [sending, setSending]     = useState(false);
   const [sendErr, setSendErr]     = useState('');
   const [sendOk, setSendOk]       = useState('');
+  const [showSendTokenDrop, setShowSendTokenDrop] = useState(false);
 
   const [exportKey, setExportKey]         = useState('');
   const [showExport, setShowExport]       = useState(false);
@@ -250,6 +253,7 @@ export default function SolanaWalletTab() {
   const openSendPanel = (mode: SendMode) => {
     setSendErr(''); setSendOk(''); setRecipient(''); setSendAmt('');
     setSendMode(mode);
+    setShowSendTokenDrop(false);
     setActionModal('send');
   };
 
@@ -349,10 +353,15 @@ export default function SolanaWalletTab() {
             <p className="text-purple-400 text-xs font-medium">Support &amp; Earn</p>
           </div>
         </div>
-        <button onClick={() => loadBalance(solanaAddr!)} disabled={loadingBal}
-          className="text-zinc-500 hover:text-white disabled:opacity-40 p-1.5 rounded-lg hover:bg-zinc-800 transition-colors">
-          <FaSync size={13} className={loadingBal ? 'animate-spin' : ''} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => loadBalance(solanaAddr!)} disabled={loadingBal}
+            className="text-zinc-500 hover:text-white disabled:opacity-40 p-1.5 rounded-lg hover:bg-zinc-800 transition-colors">
+            <FaSync size={13} className={loadingBal ? 'animate-spin' : ''} />
+          </button>
+          <button onClick={() => disconnect()} className="text-zinc-500 hover:text-red-400 text-xs font-semibold px-2 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors">
+            Abmelden
+          </button>
+        </div>
       </div>
 
       {/* ── Top Actions ── */}
@@ -380,26 +389,6 @@ export default function SolanaWalletTab() {
       </div>
 
       <>
-
-      {/* ── Adresse ── */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          {userInfo && (
-            <p className="text-zinc-400 text-xs mb-0.5 truncate">
-              {userInfo.name ?? userInfo.email ?? (userInfo as unknown as Record<string, string>).google_email ?? ''}
-            </p>
-          )}
-          <p className="text-white font-mono text-xs truncate">{solanaAddr}</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button onClick={() => handleCopy(solanaAddr!)} className="text-zinc-500 hover:text-white">
-            {copied ? <FaCheckCircle size={11} className="text-green-400" /> : <FaCopy size={11} />}
-          </button>
-          <a href={`https://solscan.io/account/${solanaAddr}`} target="_blank" rel="noopener noreferrer"
-            className="text-zinc-500 hover:text-white"><FaExternalLinkAlt size={10} /></a>
-          <button onClick={() => disconnect()} className="text-zinc-600 hover:text-red-400 text-xs ml-1">Abmelden</button>
-        </div>
-      </div>
 
       {/* ── SOL — oben, groß ── */}
       <div className="bg-gradient-to-br from-purple-950/60 to-zinc-900 border border-purple-800/30 rounded-2xl p-5">
@@ -433,7 +422,7 @@ export default function SolanaWalletTab() {
         <TokenRow
           token={dfaithToken ?? {
             mint: DFAITH_MINT, balance: 0, decimals: 2,
-            name: 'D.FAITH', symbol: 'DFAITH', image: null,
+            name: 'D.FAITH', symbol: 'DFAITH', image: '/Dawid Faith Wallet.png',
           }}
           loading={loadingBal}
           onSend={openSendPanel}
@@ -516,6 +505,45 @@ export default function SolanaWalletTab() {
             <div className="overflow-y-auto max-h-[calc(88vh-56px)] p-4">
               {actionModal === 'send' && (
                 <div className="space-y-3">
+                  {/* Token Selector */}
+                  <div className="relative">
+                    <label className="text-zinc-400 text-xs block mb-1">Token</label>
+                    <button
+                      onClick={() => setShowSendTokenDrop(!showSendTokenDrop)}
+                      className="w-full bg-zinc-800 border border-zinc-700 hover:border-zinc-600 rounded-xl px-3 py-2 flex items-center justify-between text-white text-sm">
+                      <span>{sendLabel}</span>
+                      <FaChevronDown size={10} className={`transition-transform ${showSendTokenDrop ? 'rotate-180' : ''}`} />
+                    </button>
+                    {showSendTokenDrop && (
+                      <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl overflow-hidden">
+                        <button
+                          onClick={() => { openSendPanel({ type: 'sol' }); setShowSendTokenDrop(false); }}
+                          className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-zinc-700 transition-colors text-left">
+                          <div className="w-6 h-6 bg-purple-700/40 rounded-full flex items-center justify-center shrink-0">
+                            <SiSolana size={12} className="text-purple-300" />
+                          </div>
+                          <div>
+                            <p className="text-white text-sm font-semibold">SOL</p>
+                            <p className="text-zinc-500 text-xs">{solBalance?.toLocaleString('de-DE', { maximumFractionDigits: 4 }) || '0'}</p>
+                          </div>
+                        </button>
+                        {tokens.map(token => (
+                          <button
+                            key={token.mint}
+                            onClick={() => { openSendPanel({ type: 'token', mint: token.mint, symbol: token.symbol, max: token.balance }); setShowSendTokenDrop(false); }}
+                            className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-zinc-700 transition-colors text-left border-t border-zinc-700">
+                            <div className="w-6 h-6 bg-zinc-700 rounded-full flex items-center justify-center shrink-0">
+                              <span className="text-white text-xs font-bold">{token.symbol.slice(0, 1)}</span>
+                            </div>
+                            <div>
+                              <p className="text-white text-sm font-semibold">{token.symbol}</p>
+                              <p className="text-zinc-500 text-xs">{token.balance.toLocaleString('de-DE', { maximumFractionDigits: 4 })}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <div>
                     <label className="text-zinc-400 text-xs block mb-1">Empfänger (Solana-Adresse)</label>
                     <input value={recipient} onChange={e => setRecipient(e.target.value)}
