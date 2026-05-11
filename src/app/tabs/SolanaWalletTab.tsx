@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useConnect, useAuthCore, useSolana } from '@particle-network/auth-core-modal';
+import { useConnect, useAuthCore } from '@particle-network/auth-core-modal';
 import {
   FaCopy, FaCheckCircle, FaSync, FaPaperPlane, FaExternalLinkAlt,
   FaKey, FaEye, FaEyeSlash, FaSpinner, FaExchangeAlt,
@@ -114,8 +114,8 @@ function TokenRow({
 export default function SolanaWalletTab() {
   const { connect, disconnect, connected, connectionStatus } = useConnect();
   const { userInfo } = useAuthCore();
-  const { address: particleAddress } = useSolana();
-  const evmAddress = particleAddress ?? null;
+  // userInfo.uuid ist der stabile Identifier – unabhängig von Particle-Wallet-Adressen
+  const userId = (userInfo as { uuid?: string } | null | undefined)?.uuid ?? null;
 
   const [solanaAddr, setSolanaAddr]   = useState<string | null>(null);
   const [creating, setCreating]       = useState(false);
@@ -161,7 +161,7 @@ export default function SolanaWalletTab() {
 
   // ── Account init ──────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!evmAddress) {
+    if (!userId) {
       setSolanaAddr(null); setSolBalance(null); setSolValueUsd(null); setSolChange24h(null); setTokens([]);
       setCreateError('');
       return;
@@ -169,7 +169,7 @@ export default function SolanaWalletTab() {
     let cancelled = false;
     async function init() {
       try {
-        const check = await fetch(`/api/solana/create-account?walletAddress=${evmAddress}`);
+        const check = await fetch(`/api/solana/create-account?walletAddress=${encodeURIComponent(userId!)}`);
         const checkData = await check.json();
         if (cancelled) return;
         if (checkData.solanaAddress) {
@@ -178,19 +178,11 @@ export default function SolanaWalletTab() {
         }
         setCreating(true);
         setCreateError('');
-        const createController = new AbortController();
-        const createTimeout = setTimeout(() => createController.abort(), 30_000);
-        let res: Response;
-        try {
-          res = await fetch('/api/solana/create-account', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ walletAddress: evmAddress }),
-            signal: createController.signal,
-          });
-        } finally {
-          clearTimeout(createTimeout);
-        }
+        const res = await fetch('/api/solana/create-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ walletAddress: userId }),
+        });
         const data = await res.json();
         if (cancelled) return;
         if (!res.ok) throw new Error(data.error ?? 'Fehler beim Erstellen des Accounts');
@@ -203,7 +195,7 @@ export default function SolanaWalletTab() {
     }
     init();
     return () => { cancelled = true; };
-  }, [evmAddress]);
+  }, [userId]);
 
   useEffect(() => {
     if (solanaAddr) loadBalance(solanaAddr);
@@ -221,7 +213,7 @@ export default function SolanaWalletTab() {
         const res = await fetch('/api/solana/send-sol', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ walletAddress: evmAddress, toAddress: recipient.trim(), amountSol: amt }),
+          body: JSON.stringify({ walletAddress: userId, toAddress: recipient.trim(), amountSol: amt }),
         });
         const d = await res.json();
         if (!res.ok) throw new Error(d.error ?? 'Transaktion fehlgeschlagen');
@@ -231,7 +223,7 @@ export default function SolanaWalletTab() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            walletAddress: evmAddress,
+            walletAddress: userId,
             toAddress: recipient.trim(),
             amount: amt,
             mintAddress: sendMode.mint,
@@ -257,7 +249,7 @@ export default function SolanaWalletTab() {
       const res = await fetch('/api/solana/export-key', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress: evmAddress }),
+        body: JSON.stringify({ walletAddress: userId }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error ?? 'Export fehlgeschlagen');
@@ -325,7 +317,7 @@ export default function SolanaWalletTab() {
   }
 
   // ── Erstellen ──────────────────────────────────────────────────────────────
-  if (creating || (evmAddress && !solanaAddr && !createError)) {
+  if (creating || (userId && !solanaAddr && !createError)) {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center gap-3">
@@ -627,7 +619,7 @@ export default function SolanaWalletTab() {
               {actionModal === 'swap' && (
                 <SwapWidget
                   walletAddress={solanaAddr!}
-                  evmAddress={evmAddress!}
+                  evmAddress={userId!}
                   tokens={tokens}
                   solBalance={solBalance ?? 0}
                   onSwapSuccess={() => loadBalance(solanaAddr!)}
