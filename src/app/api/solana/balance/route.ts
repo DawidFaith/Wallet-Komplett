@@ -76,10 +76,10 @@ async function fetchSplMarket(mints: string[]): Promise<Record<string, { usd: nu
   for (const m of mints) out[m] = { usd: null, change24h: null };
 
   try {
-    // Jupiter Price API v2 – kennt alle Tokens mit Liquiditätspool
+    // Jupiter Price API v2 – kennt bekannte Tokens mit Liquiditätspool
     const ids = mints.join(',');
     const r = await fetch(
-      `https://api.jup.ag/price/v2?ids=${ids}&showExtraInfo=false`,
+      `https://api.jup.ag/price/v2?ids=${ids}`,
       { signal: AbortSignal.timeout(6000) }
     );
     if (!r.ok) return out;
@@ -96,6 +96,40 @@ async function fetchSplMarket(mints: string[]): Promise<Record<string, { usd: nu
   } catch { /* Jupiter nicht erreichbar – Preise bleiben null */ }
 
   return out;
+}
+
+/**
+ * Ableitung des D.FAITH-Preises via Jupiter Quote API:
+ * 1 DFAITH → WSOL Quote → Umrechnung mit aktuellem SOL-Preis.
+ * Fallback wenn Price API den Token nicht kennt.
+ */
+const WSOL_MINT     = 'So11111111111111111111111111111111111111112';
+const JUPITER_QUOTE = 'https://api.jup.ag/swap/v1/quote';
+const JUPITER_API_KEY = process.env.JUPITER_API_KEY ?? '';
+
+async function fetchDfaithPriceFromQuote(
+  dfaithMint: string,
+  dfaithDecimals: number,
+  solPriceUsd: number,
+): Promise<number | null> {
+  try {
+    const amount = Math.pow(10, dfaithDecimals); // = 1 DFAITH in Basiseinheiten
+    const url = `${JUPITER_QUOTE}?inputMint=${dfaithMint}&outputMint=${WSOL_MINT}&amount=${amount}&slippageBps=100&onlyDirectRoutes=false`;
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    if (JUPITER_API_KEY) headers['Authorization'] = `Bearer ${JUPITER_API_KEY}`;
+
+    const r = await fetch(url, { headers, signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return null;
+
+    const q = await r.json() as { outAmount?: string; outputAmount?: string } | null;
+    const outRaw = q?.outAmount ?? q?.outputAmount;
+    if (!outRaw) return null;
+
+    const solOut      = parseInt(outRaw, 10) / 1e9; // WSOL hat 9 Dezimalstellen
+    return solOut * solPriceUsd;
+  } catch {
+    return null;
+  }
 }
 
 export async function GET(req: Request) {
@@ -125,6 +159,21 @@ export async function GET(req: Request) {
     fetchSplMarket(uniqueMints),
     fetchSolMarket(),
   ]);
+
+  // Fallback: D.FAITH Preis über Jupiter Quote ableiten wenn Price API ihn nicht kennt
+  if (
+    DFAITH_MINT &&
+    uniqueMints.includes(DFAITH_MINT) &&
+    splMarket[DFAITH_MINT]?.usd === null &&
+    solMarket.priceUsd !== null
+  ) {
+    const dfaithAccount = nonEmpty.find(({ account }) => account.data.parsed.info.mint === DFAITH_MINT);
+    const dfaithDecimals: number = dfaithAccount?.account.data.parsed.info.tokenAmount.decimals ?? 6;
+    const derivedPrice = await fetchDfaithPriceFromQuote(DFAITH_MINT, dfaithDecimals, solMarket.priceUsd);
+    if (derivedPrice !== null) {
+      splMarket[DFAITH_MINT] = { usd: derivedPrice, change24h: null };
+    }
+  }
 
   // Fetch metadata in parallel
   const tokens: TokenEntry[] = await Promise.all(

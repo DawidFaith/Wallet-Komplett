@@ -12,7 +12,6 @@ import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
 import Image from 'next/image';
 import SwapWidget from './wallet/SwapWidget';
-import CoinbaseBuyWidget from './wallet/CoinbaseBuyWidget';
 
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
 
@@ -658,20 +657,23 @@ export default function SolanaWalletTab() {
               {actionModal === 'buy' && (
                 <div className="space-y-4">
                   <p className="text-zinc-400 text-xs">Kaufe SOL oder USDC direkt auf deine Wallet — per Karte, Bank oder Apple Pay.</p>
-                  <CoinbaseBuyWidget solanaAddress={solanaAddr!} />
+                  <a
+                    href={`https://pay.coinbase.com/buy/select-asset?appId=${process.env.NEXT_PUBLIC_COINBASE_APP_ID ?? ''}&destinationWallets=${encodeURIComponent(JSON.stringify([{address: solanaAddr, assets: ['SOL','USDC'], supportedNetworks: ['solana']}]))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
+                    <FaCreditCard size={14} /> Mit Coinbase kaufen
+                  </a>
+                  <a
+                    href={`https://www.moonpay.com/buy/sol?walletAddress=${solanaAddr}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full bg-amber-700/20 border border-amber-700/40 hover:bg-amber-700/30 text-amber-200 text-sm font-semibold py-3 rounded-xl flex items-center justify-center gap-2">
+                    <FaCreditCard size={12} /> Mit MoonPay kaufen
+                  </a>
                   <div className="bg-zinc-800/50 rounded-xl px-3 py-2">
                     <p className="text-zinc-500 text-xs font-medium mb-0.5">Ziel-Adresse</p>
                     <p className="text-zinc-300 font-mono text-xs break-all">{solanaAddr}</p>
-                  </div>
-                  <div className="border-t border-zinc-800 pt-3">
-                    <p className="text-zinc-500 text-xs text-center mb-2">Alternativ</p>
-                    <a
-                      href={`https://www.moonpay.com/buy/sol?walletAddress=${solanaAddr}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full bg-amber-700/20 border border-amber-700/40 hover:bg-amber-700/30 text-amber-200 text-sm font-semibold py-3 rounded-xl flex items-center justify-center gap-2">
-                      <FaCreditCard size={12} /> Mit MoonPay kaufen
-                    </a>
                   </div>
                 </div>
               )}
