@@ -19,8 +19,10 @@ const JUPITER_API_KEY = process.env.JUPITER_API_KEY ?? '';
 const DFAITH_MINT     = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
 const SOL_MINT        = 'So11111111111111111111111111111111111111112';
 
-/** Unter diesem Wert übernimmt Treasury die Fee (bei DFAITH→SOL Swaps) */
-const MIN_SOL_FOR_FEE = 0.001;
+/** Unter diesem Wert übernimmt Treasury die Fee (bei DFAITH→SOL Swaps).
+ *  0.012 SOL deckt: Basis-Fee (~0.000005) + Priority Fee (~0.001) + ATA-Erstellung (~0.002039) + Puffer
+ */
+const MIN_SOL_FOR_FEE = 0.012;
 
 export async function POST(req: Request) {
   try {

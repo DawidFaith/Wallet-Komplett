@@ -5,9 +5,10 @@ import { FaExchangeAlt, FaSpinner, FaCheckCircle, FaChevronDown, FaArrowDown, Fa
 import { SiSolana } from 'react-icons/si';
 import Image from 'next/image';
 
-const SOL_MINT    = 'So11111111111111111111111111111111111111112';
-const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
-const SLIPPAGE    = 50; // 0.5% in bps
+const SOL_MINT       = 'So11111111111111111111111111111111111111112';
+const DFAITH_MINT    = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
+const SLIPPAGE       = 50; // 0.5% in bps
+const SOL_FEE_BUFFER = 0.005; // SOL-Reserve für Transaktionsgebühren + evtl. ATA-Erstellung
 
 interface TokenOption {
   mint:     string;
@@ -215,7 +216,10 @@ export default function SwapWidget({ walletAddress, evmAddress, tokens, solBalan
             {[25, 50, 75, 100].map(pct => (
               <button key={pct}
                 onClick={() => {
-                  const val = +(inputToken.balance * pct / 100).toFixed(Math.min(inputToken.decimals, 6));
+                  const maxBalance = inputToken.mint === SOL_MINT
+                    ? Math.max(0, inputToken.balance - SOL_FEE_BUFFER)
+                    : inputToken.balance;
+                  const val = +(maxBalance * pct / 100).toFixed(Math.min(inputToken.decimals, 6));
                   setInputAmt(val > 0 ? String(val) : '');
                 }}
                 className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-xs font-medium py-1 rounded-lg transition-colors">
