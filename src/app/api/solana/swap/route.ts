@@ -73,9 +73,10 @@ export async function POST(req: Request) {
   };
 
   // Treasury als Fee-Payer eintragen wenn nötig
+  // feePayerPublicKey = Jupiter baut die Tx mit Treasury als feePayer
   if (useTreasuryFee) {
     const treasury = getTreasuryKeypair();
-    swapBody.feeAccount = treasury.publicKey.toBase58();
+    swapBody.feePayerPublicKey = treasury.publicKey.toBase58();
   }
 
   const swapRes = await fetch(JUPITER_SWAP, {
