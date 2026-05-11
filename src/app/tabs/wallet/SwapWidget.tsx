@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { FaExchangeAlt, FaSpinner, FaCheckCircle, FaChevronDown, FaArrowDown } from 'react-icons/fa';
+import { FaExchangeAlt, FaSpinner, FaCheckCircle, FaChevronDown, FaArrowDown, FaArrowUp } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
 import Image from 'next/image';
 
@@ -224,8 +224,9 @@ export default function SwapWidget({ walletAddress, evmAddress, tokens, solBalan
         {/* ── Flip Button ── */}
         <div className="flex justify-center py-1">
           <button onClick={flipTokens}
-            className="w-8 h-8 bg-zinc-700 hover:bg-zinc-600 rounded-full flex items-center justify-center transition-colors text-zinc-400 hover:text-white">
-            <FaArrowDown size={12} />
+            className="w-9 h-9 bg-zinc-700 hover:bg-emerald-800/60 border border-zinc-600 hover:border-emerald-600 rounded-full flex flex-col items-center justify-center gap-0 transition-colors text-zinc-400 hover:text-emerald-300">
+            <FaArrowUp size={9} />
+            <FaArrowDown size={9} />
           </button>
         </div>
 

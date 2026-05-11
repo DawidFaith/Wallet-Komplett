@@ -455,21 +455,9 @@ export default function SolanaWalletTab() {
             {loadingBal ? '…' : (solBalance ?? 0).toFixed(4)} SOL
           </p>
         </div>
-        <div className="text-right mr-1 shrink-0">
+        <div className="text-right shrink-0">
           <p className="text-white font-bold text-sm">{loadingBal ? '…' : solValueLabel}</p>
           <p className={`text-xs ${solChangeClass}`}>{loadingBal ? '…' : solChangeLabel}</p>
-        </div>
-        <div className="flex flex-col gap-1.5 shrink-0">
-          <button
-            onClick={() => openSendPanel({ type: 'sol' })}
-            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1">
-            <FaPaperPlane size={9} /> Send
-          </button>
-          <button
-            onClick={() => setActionModal('receive')}
-            className="bg-zinc-800 hover:bg-blue-900/40 text-blue-400 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1">
-            <FaDownload size={9} /> Recv
-          </button>
         </div>
       </div>
 
