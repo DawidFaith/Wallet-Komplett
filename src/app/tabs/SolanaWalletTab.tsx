@@ -22,6 +22,8 @@ interface TokenEntry {
   name:     string;
   symbol:   string;
   image:    string | null;
+  valueUsd: number | null;
+  priceChange24h: number | null;
 }
 
 type SendMode =
@@ -41,6 +43,17 @@ function TokenRow({
   onSwap: () => void;
 }) {
   const isDfaith    = token.mint === DFAITH_MINT;
+  const formattedValue = token.valueUsd !== null
+    ? new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(token.valueUsd)
+    : '—';
+  const changeClass = token.priceChange24h === null
+    ? 'text-zinc-500'
+    : token.priceChange24h >= 0
+    ? 'text-emerald-400'
+    : 'text-red-400';
+  const formattedChange = token.priceChange24h === null
+    ? '—'
+    : `${token.priceChange24h >= 0 ? '+' : ''}${token.priceChange24h.toFixed(2)}%`;
 
   return (
     <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-colors
@@ -67,15 +80,15 @@ function TokenRow({
       {/* Name + Symbol */}
       <div className="flex-1 min-w-0">
         <p className="text-white text-sm font-semibold truncate">{token.name}</p>
-        <p className="text-zinc-500 text-xs">{token.symbol}</p>
+        <p className="text-zinc-500 text-xs truncate">
+          {loading ? '…' : token.balance.toLocaleString('de-DE', { maximumFractionDigits: 4 })} {token.symbol}
+        </p>
       </div>
 
-      {/* Balance */}
+      {/* Value + Change */}
       <div className="text-right mr-1 shrink-0">
-        <p className="text-white font-bold text-sm">
-          {loading ? '…' : token.balance.toLocaleString('de-DE', { maximumFractionDigits: 2 })}
-        </p>
-        <p className="text-zinc-500 text-xs">{token.symbol}</p>
+        <p className="text-white font-bold text-sm">{loading ? '…' : formattedValue}</p>
+        <p className={`text-xs ${changeClass}`}>{loading ? '…' : formattedChange}</p>
       </div>
 
       {/* Action Buttons */}
@@ -109,6 +122,8 @@ export default function SolanaWalletTab() {
   const [createError, setCreateError] = useState('');
 
   const [solBalance, setSolBalance] = useState<number | null>(null);
+  const [solValueUsd, setSolValueUsd] = useState<number | null>(null);
+  const [solChange24h, setSolChange24h] = useState<number | null>(null);
   const [tokens, setTokens]         = useState<TokenEntry[]>([]);
   const [loadingBal, setLoadingBal] = useState(false);
 
@@ -136,6 +151,8 @@ export default function SolanaWalletTab() {
       if (!res.ok) return;
       const d = await res.json();
       setSolBalance(d.solBalance ?? null);
+      setSolValueUsd(d.solValueUsd ?? null);
+      setSolChange24h(d.solChange24h ?? null);
       setTokens(d.tokens ?? []);
     } finally {
       setLoadingBal(false);
@@ -145,7 +162,7 @@ export default function SolanaWalletTab() {
   // ── Account init ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!evmAddress) {
-      setSolanaAddr(null); setSolBalance(null); setTokens([]);
+      setSolanaAddr(null); setSolBalance(null); setSolValueUsd(null); setSolChange24h(null); setTokens([]);
       return;
     }
     let cancelled = false;
@@ -351,6 +368,17 @@ export default function SolanaWalletTab() {
     ? (solBalance !== null ? Math.max(0, solBalance - 0.001).toFixed(6) : '')
     : String((sendMode as { type: 'token'; max: number }).max ?? 0);
   const receiveQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(`solana:${solanaAddr}`)}`;
+  const solValueLabel = solValueUsd !== null
+    ? new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(solValueUsd)
+    : '—';
+  const solChangeLabel = solChange24h === null
+    ? '—'
+    : `${solChange24h >= 0 ? '+' : ''}${solChange24h.toFixed(2)}%`;
+  const solChangeClass = solChange24h === null
+    ? 'text-zinc-500'
+    : solChange24h >= 0
+    ? 'text-emerald-400'
+    : 'text-red-400';
 
   return (
     <div className="w-full max-w-md mx-auto px-4 py-6 space-y-4">
@@ -417,7 +445,8 @@ export default function SolanaWalletTab() {
             <p className="text-white text-2xl font-bold">
               {loadingBal ? '…' : solBalance !== null ? solBalance.toFixed(4) : '—'}
             </p>
-            <p className="text-zinc-500 text-xs">SOL</p>
+            <p className="text-zinc-400 text-xs">{loadingBal ? '…' : solValueLabel}</p>
+            <p className={`text-xs ${solChangeClass}`}>{loadingBal ? '…' : solChangeLabel}</p>
           </div>
         </div>
       </div>
@@ -435,7 +464,7 @@ export default function SolanaWalletTab() {
             ? { ...dfaithToken, image: dfaithToken.image || '/D.FAITH.png' }
             : {
               mint: DFAITH_MINT, balance: 0, decimals: 2,
-              name: 'D.FAITH', symbol: 'DFAITH', image: '/D.FAITH.png',
+              name: 'D.FAITH', symbol: 'DFAITH', image: '/D.FAITH.png', valueUsd: null, priceChange24h: null,
             }}
           loading={loadingBal}
           onSend={openSendPanel}

@@ -20,6 +20,13 @@ export interface TokenEntry {
   name:     string;
   symbol:   string;
   image:    string | null;
+  valueUsd: number | null;
+  priceChange24h: number | null;
+}
+
+interface TokenMarketData {
+  usd?: number;
+  usd_24h_change?: number;
 }
 
 function resolveUri(uri: string): string {
@@ -50,6 +57,50 @@ async function fetchTokenMeta(umi: ReturnType<typeof createUmi>, mint: string): 
   return { name, symbol, image };
 }
 
+async function fetchSolMarket(): Promise<{ priceUsd: number | null; change24h: number | null }> {
+  try {
+    const r = await fetch(
+      'https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd&include_24hr_change=true',
+      { signal: AbortSignal.timeout(5000) }
+    );
+    if (!r.ok) return { priceUsd: null, change24h: null };
+    const d = await r.json() as { solana?: { usd?: number; usd_24h_change?: number } };
+    return {
+      priceUsd: typeof d.solana?.usd === 'number' ? d.solana.usd : null,
+      change24h: typeof d.solana?.usd_24h_change === 'number' ? d.solana.usd_24h_change : null,
+    };
+  } catch {
+    return { priceUsd: null, change24h: null };
+  }
+}
+
+async function fetchSplMarket(mints: string[]): Promise<Record<string, { usd: number | null; change24h: number | null }>> {
+  if (mints.length === 0) return {};
+  try {
+    const url = new URL('https://api.coingecko.com/api/v3/simple/token_price/solana');
+    url.searchParams.set('contract_addresses', mints.join(','));
+    url.searchParams.set('vs_currencies', 'usd');
+    url.searchParams.set('include_24hr_change', 'true');
+
+    const r = await fetch(url.toString(), { signal: AbortSignal.timeout(6000) });
+    if (!r.ok) return {};
+
+    const raw = await r.json() as Record<string, TokenMarketData>;
+    const out: Record<string, { usd: number | null; change24h: number | null }> = {};
+
+    for (const mint of mints) {
+      const row = raw[mint.toLowerCase()];
+      out[mint] = {
+        usd: typeof row?.usd === 'number' ? row.usd : null,
+        change24h: typeof row?.usd_24h_change === 'number' ? row.usd_24h_change : null,
+      };
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const address = searchParams.get('solanaAddress');
@@ -71,6 +122,12 @@ export async function GET(req: Request) {
   const nonEmpty = tokenAccounts.value.filter(
     ({ account }) => (account.data.parsed.info.tokenAmount.uiAmount ?? 0) > 0
   );
+  const uniqueMints = [...new Set(nonEmpty.map(({ account }) => account.data.parsed.info.mint as string))];
+
+  const [splMarket, solMarket] = await Promise.all([
+    fetchSplMarket(uniqueMints),
+    fetchSolMarket(),
+  ]);
 
   // Fetch metadata in parallel
   const tokens: TokenEntry[] = await Promise.all(
@@ -80,7 +137,18 @@ export async function GET(req: Request) {
       const decimals: number = info.tokenAmount.decimals;
       const balance: number  = info.tokenAmount.uiAmount ?? 0;
       const { name, symbol, image } = await fetchTokenMeta(umi, mint);
-      return { mint, balance, decimals, name, symbol, image };
+      const market = splMarket[mint];
+      const priceUsd = market?.usd ?? null;
+      return {
+        mint,
+        balance,
+        decimals,
+        name,
+        symbol,
+        image,
+        valueUsd: priceUsd !== null ? balance * priceUsd : null,
+        priceChange24h: market?.change24h ?? null,
+      };
     })
   );
 
@@ -92,6 +160,16 @@ export async function GET(req: Request) {
   });
 
   const dfaithBalance = tokens.find(t => t.mint === DFAITH_MINT)?.balance ?? null;
+  const solPriceUsd = solMarket.priceUsd;
+  const solValueUsd = solPriceUsd !== null ? solBalance * solPriceUsd : null;
+  const solChange24h = solMarket.change24h;
 
-  return NextResponse.json({ solBalance, dfaithBalance, tokens });
+  return NextResponse.json({
+    solBalance,
+    solPriceUsd,
+    solValueUsd,
+    solChange24h,
+    dfaithBalance,
+    tokens,
+  });
 }
