@@ -163,6 +163,7 @@ export default function SolanaWalletTab() {
   useEffect(() => {
     if (!evmAddress) {
       setSolanaAddr(null); setSolBalance(null); setSolValueUsd(null); setSolChange24h(null); setTokens([]);
+      setCreateError('');
       return;
     }
     let cancelled = false;
