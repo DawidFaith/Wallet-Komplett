@@ -80,13 +80,16 @@ export async function POST(req: Request) {
 
   let treasuryAdvanceSig: string | null = null;
   if (isDfaithToSol) {
-    const [userLamports, feeResult] = await Promise.all([
+    const [userLamports, feeResult, rentExemptMin] = await Promise.all([
       connection.getBalance(kp.publicKey),
       connection.getFeeForMessage(tx.message, 'confirmed'),
+      connection.getMinimumBalanceForRentExemption(0),
     ]);
 
     const exactFeeLamports = feeResult.value ?? 5000;
-    const missing = exactFeeLamports - userLamports;
+    // User braucht: Tx-Fee + Rent-Exempt-Minimum damit das Konto nach der Fee existenzfähig bleibt
+    const minRequired = exactFeeLamports + rentExemptMin;
+    const missing = minRequired - userLamports;
 
     if (missing > 0) {
       const treasury = getTreasuryKeypair();
@@ -101,7 +104,7 @@ export async function POST(req: Request) {
         commitment: 'confirmed',
         maxRetries: 3,
       });
-      console.log(`[swap] Treasury-Vorschuss: ${missing} Lamports (exakte Fee: ${exactFeeLamports})`);
+      console.log(`[swap] Treasury-Vorschuss: ${missing} Lamports (fee: ${exactFeeLamports}, rentMin: ${rentExemptMin})`);
     }
   }
 
