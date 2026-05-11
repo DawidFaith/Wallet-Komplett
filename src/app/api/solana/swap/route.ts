@@ -2,11 +2,12 @@
  * POST /api/solana/swap
  * Body: { walletAddress, quoteResponse }
  * Führt Jupiter Swap mit dem custodial User-Keypair durch.
- * Sonderfall: DFAITH → SOL ohne SOL-Balance → Treasury übernimmt Fee.
+ * Sonderfall: DFAITH → SOL ohne SOL-Balance → Treasury sendet vorher SOL-Vorschuss.
  */
 import { NextResponse } from 'next/server';
 import {
   Connection, Keypair, VersionedTransaction, LAMPORTS_PER_SOL,
+  SystemProgram, Transaction, sendAndConfirmTransaction,
 } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { getDb } from '@/app/lib/db';
@@ -19,10 +20,10 @@ const JUPITER_API_KEY = process.env.JUPITER_API_KEY ?? '';
 const DFAITH_MINT     = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
 const SOL_MINT        = 'So11111111111111111111111111111111111111112';
 
-/** Unter diesem Wert übernimmt Treasury die Fee (bei DFAITH→SOL Swaps).
- *  0.012 SOL deckt: Basis-Fee (~0.000005) + Priority Fee (~0.001) + ATA-Erstellung (~0.002039) + Puffer
- */
-const MIN_SOL_FOR_FEE = 0.012;
+/** Unter diesem Wert sendet Treasury einen SOL-Vorschuss an den User (bei DFAITH→SOL Swaps). */
+const MIN_SOL_FOR_FEE   = 0.012;
+/** Wie viel SOL Treasury überweist – reicht für Fees + ATA-Erstellung */
+const TREASURY_SOL_ADVANCE = 0.015;
 
 export async function POST(req: Request) {
   try {
@@ -49,43 +50,53 @@ export async function POST(req: Request) {
 
   const connection = new Connection(RPC_URL, 'confirmed');
 
-  // Prüfen ob Treasury Fee übernehmen soll:
-  // Nur wenn DFAITH→SOL Swap UND User hat kein SOL
+  // Prüfen ob Treasury-Vorschuss nötig:
+  // Nur bei DFAITH→SOL Swap UND User hat zu wenig SOL für Fees
   const isDfaithToSol =
     DFAITH_MINT &&
     (quoteResponse.inputMint as string | undefined) === DFAITH_MINT &&
     (quoteResponse.outputMint as string | undefined) === SOL_MINT;
 
-  let useTreasuryFee = false;
+  let treasuryAdvanceSig: string | null = null;
   if (isDfaithToSol) {
     const lamports   = await connection.getBalance(kp.publicKey);
     const solBalance = lamports / LAMPORTS_PER_SOL;
-    useTreasuryFee   = solBalance < MIN_SOL_FOR_FEE;
+
+    if (solBalance < MIN_SOL_FOR_FEE) {
+      const treasury   = getTreasuryKeypair();
+      const advanceLamports = Math.round(TREASURY_SOL_ADVANCE * LAMPORTS_PER_SOL);
+
+      const advanceTx = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: treasury.publicKey,
+          toPubkey:   kp.publicKey,
+          lamports:   advanceLamports,
+        }),
+      );
+
+      // Vorschuss senden und bestätigen (Treasury zahlt hier die Fee)
+      treasuryAdvanceSig = await sendAndConfirmTransaction(connection, advanceTx, [treasury], {
+        commitment:          'confirmed',
+        maxRetries:          3,
+      });
+      console.log('[swap] Treasury-Vorschuss gesendet:', treasuryAdvanceSig);
+    }
   }
 
   // Swap-Transaktion von Jupiter anfordern
   const swapHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
   if (JUPITER_API_KEY) swapHeaders['Authorization'] = `Bearer ${JUPITER_API_KEY}`;
 
-  const swapBody: Record<string, unknown> = {
-    quoteResponse,
-    userPublicKey:             userPk,
-    wrapAndUnwrapSol:          true,
-    dynamicComputeUnitLimit:   true,
-    prioritizationFeeLamports: 'auto',
-  };
-
-  // Treasury als Fee-Payer eintragen wenn nötig
-  // feePayerPublicKey = Jupiter baut die Tx mit Treasury als feePayer
-  if (useTreasuryFee) {
-    const treasury = getTreasuryKeypair();
-    swapBody.feePayerPublicKey = treasury.publicKey.toBase58();
-  }
-
   const swapRes = await fetch(JUPITER_SWAP, {
     method:  'POST',
     headers: swapHeaders,
-    body:    JSON.stringify(swapBody),
+    body:    JSON.stringify({
+      quoteResponse,
+      userPublicKey:             userPk,
+      wrapAndUnwrapSol:          true,
+      dynamicComputeUnitLimit:   true,
+      prioritizationFeeLamports: 'auto',
+    }),
     signal:  AbortSignal.timeout(15000),
   });
 
@@ -94,17 +105,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: swapData.error ?? 'Jupiter Swap Transaction fehlgeschlagen' }, { status: 502 });
   }
 
-  // Transaktion deserialisieren und signieren
+  // Transaktion deserialisieren, signieren (nur User) und senden
   const txBuf = Buffer.from(swapData.swapTransaction, 'base64');
   const tx    = VersionedTransaction.deserialize(txBuf);
-
-  if (useTreasuryFee) {
-    // Beide Keypairs signieren: Treasury (Fee-Payer) + User (Token-Authority)
-    const treasury = getTreasuryKeypair();
-    tx.sign([treasury, kp]);
-  } else {
-    tx.sign([kp]);
-  }
+  tx.sign([kp]);
 
   const sig = await connection.sendRawTransaction(tx.serialize(), {
     skipPreflight:       false,
@@ -116,10 +120,10 @@ export async function POST(req: Request) {
   await connection.confirmTransaction({ signature: sig, ...latestBlockhash }, 'confirmed');
 
   return NextResponse.json({
-    success:          true,
-    signature:        sig,
-    explorerUrl:      `https://solscan.io/tx/${sig}`,
-    treasuryPaidFee:  useTreasuryFee,
+    success:             true,
+    signature:           sig,
+    explorerUrl:         `https://solscan.io/tx/${sig}`,
+    treasuryAdvanceSig,
   });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
