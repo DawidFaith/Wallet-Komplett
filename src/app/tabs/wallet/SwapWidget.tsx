@@ -45,7 +45,7 @@ function TokenIcon({ token }: { token: TokenOption }) {
   if (token.image) {
     return (
       <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
-        <Image src={token.image} alt={token.symbol} width={32} height={32} className="rounded-full object-cover" unoptimized />
+        <Image src={token.image} alt={token.symbol} width={32} height={32} style={{ width: '32px', height: '32px', objectFit: 'cover', display: 'block' }} unoptimized />
       </div>
     );
   }

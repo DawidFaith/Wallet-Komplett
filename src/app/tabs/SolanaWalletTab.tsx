@@ -61,21 +61,23 @@ function TokenRow({
         ? 'bg-purple-950/30 border-purple-800/40'
         : 'bg-zinc-900 border-zinc-800'}`}>
       {/* Icon */}
-      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden
-        ${isDfaith ? 'bg-purple-800/50' : 'bg-zinc-800'}`}>
-        {token.image ? (
+      {token.image ? (
+        <div className="w-10 h-10 shrink-0 overflow-hidden rounded-full">
           <Image
             src={token.image} alt={token.symbol}
             width={40} height={40}
-            className="w-full h-full rounded-full object-cover"
+            style={{ width: '40px', height: '40px', objectFit: 'cover', display: 'block' }}
             unoptimized
           />
-        ) : (
+        </div>
+      ) : (
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0
+          ${isDfaith ? 'bg-purple-800/50' : 'bg-zinc-800'}`}>
           <span className="text-white font-bold text-sm">
             {token.symbol.slice(0, 2).toUpperCase()}
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Name + Symbol */}
       <div className="flex-1 min-w-0">
@@ -584,11 +586,14 @@ export default function SolanaWalletTab() {
                             key={token.mint}
                             onClick={() => { openSendPanel({ type: 'token', mint: token.mint, symbol: token.symbol, max: token.balance }); setShowSendTokenDrop(false); }}
                             className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-zinc-700 transition-colors text-left border-t border-zinc-700">
-                            <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 bg-zinc-700 flex items-center justify-center">
-                              {token.image
-                                ? <Image src={token.image} alt={token.symbol} width={24} height={24} className="w-full h-full object-cover" unoptimized />
-                                : <span className="text-white text-xs font-bold">{token.symbol.slice(0, 1)}</span>}
-                            </div>
+                            {token.image
+                              ? <div className="w-6 h-6 rounded-full overflow-hidden shrink-0">
+                                  <Image src={token.image} alt={token.symbol} width={24} height={24} style={{ width: '24px', height: '24px', objectFit: 'cover', display: 'block' }} unoptimized />
+                                </div>
+                              : <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center shrink-0">
+                                  <span className="text-white text-xs font-bold">{token.symbol.slice(0, 1)}</span>
+                                </div>
+                            }
                             <div>
                               <p className="text-white text-sm font-semibold">{token.symbol}</p>
                               <p className="text-zinc-500 text-xs">{token.balance.toLocaleString('de-DE', { maximumFractionDigits: 4 })}</p>
