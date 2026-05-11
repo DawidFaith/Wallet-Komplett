@@ -112,7 +112,9 @@ export default function SwapWidget({ walletAddress, evmAddress, tokens, solBalan
       const res = await fetch(
         `/api/solana/jupiter-quote?inputMint=${inTok.mint}&outputMint=${outTok.mint}&amount=${rawAmount}&slippage=${SLIPPAGE}`
       );
-      const data = await res.json() as Record<string, unknown>;
+      const rawText = await res.text();
+      let data: Record<string, unknown> = {};
+      try { data = JSON.parse(rawText); } catch { throw new Error(`Quote-Fehler (${res.status}): ${rawText.slice(0, 200)}`); }
       if (!res.ok) throw new Error((data.error as string) ?? 'Quote fehlgeschlagen');
       setQuote({
         inAmount:       data.inAmount as string,
@@ -145,7 +147,9 @@ export default function SwapWidget({ walletAddress, evmAddress, tokens, solBalan
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ walletAddress: evmAddress, quoteResponse: quote.raw }),
       });
-      const d = await res.json() as { success?: boolean; signature?: string; error?: string };
+      const text = await res.text();
+      let d: { success?: boolean; signature?: string; error?: string } = {};
+      try { d = JSON.parse(text); } catch { throw new Error(`Server-Fehler (${res.status}): ${text.slice(0, 200)}`); }
       if (!res.ok) throw new Error(d.error ?? 'Swap fehlgeschlagen');
       setSwapOk(d.signature!);
       setInputAmt(''); setQuote(null);

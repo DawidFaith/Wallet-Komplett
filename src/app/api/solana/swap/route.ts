@@ -23,6 +23,7 @@ const SOL_MINT        = 'So11111111111111111111111111111111111111112';
 const MIN_SOL_FOR_FEE = 0.001;
 
 export async function POST(req: Request) {
+  try {
   const body = await req.json().catch(() => ({})) as {
     walletAddress?: string;
     quoteResponse?: Record<string, unknown>;
@@ -118,4 +119,9 @@ export async function POST(req: Request) {
     explorerUrl:      `https://solscan.io/tx/${sig}`,
     treasuryPaidFee:  useTreasuryFee,
   });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[swap] uncaught error:', msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
