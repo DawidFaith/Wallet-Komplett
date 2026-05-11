@@ -4,27 +4,13 @@
  * POST /api/solana/create-account
  *   Body: { walletAddress: string }
  *   → Erstellt neues Solana Keypair, verschlüsselt Private Key, speichert in DB
- *     Sendet 0.01 SOL vom Treasury als Startguthaben
+ *     Kein Funding, kein ATA – Account existiert off-chain in der DB.
  */
 import { NextResponse } from 'next/server';
-import {
-  Connection, Keypair, SystemProgram, Transaction,
-  LAMPORTS_PER_SOL, sendAndConfirmTransaction, PublicKey,
-} from '@solana/web3.js';
-import {
-  getAssociatedTokenAddress, createAssociatedTokenAccountInstruction,
-  TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
+import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { getDb } from '@/app/lib/db';
 import { encryptKey } from '@/app/lib/solanaCrypto';
-import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
-
-const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
-const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN;
-
-// 0.01 SOL Startguthaben für Rent-Exemption + Fees
-const FUND_SOL = 0.01;
 
 export async function GET(req: Request) {
   try {
@@ -73,55 +59,7 @@ export async function POST(req: Request) {
     VALUES (${walletAddress}, ${newAddress}, ${encrypted})
   `;
 
-  // Mit SOL befüllen + ggf. ATA für D.FAITH anlegen
-  // Sofort mit Adresse antworten sobald DB-Eintrag existiert;
-  // Funding läuft mit max. 20s Timeout – schlägt es fehl, kann der User
-  // die Wallet trotzdem sofort sehen und nutzen.
-  const fundingPromise = (async () => {
-    const treasury = getTreasuryKeypair();
-    const connection = new Connection(RPC_URL, 'confirmed');
-
-    const instructions = [
-      SystemProgram.transfer({
-        fromPubkey: treasury.publicKey,
-        toPubkey:   newKp.publicKey,
-        lamports:   Math.round(FUND_SOL * LAMPORTS_PER_SOL),
-      }),
-    ];
-
-    // ATA für D.FAITH anlegen wenn Token konfiguriert
-    if (DFAITH_MINT) {
-      const mintPk = new PublicKey(DFAITH_MINT);
-      const ata = await getAssociatedTokenAddress(mintPk, newKp.publicKey, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
-      instructions.push(
-        createAssociatedTokenAccountInstruction(
-          treasury.publicKey, // payer
-          ata,
-          newKp.publicKey,    // owner
-          mintPk,
-          TOKEN_PROGRAM_ID,
-          ASSOCIATED_TOKEN_PROGRAM_ID,
-        ),
-      );
-    }
-
-    const tx = new Transaction().add(...instructions);
-    return sendAndConfirmTransaction(connection, tx, [treasury]);
-  })();
-
-  const FUNDING_TIMEOUT_MS = 20_000;
-  try {
-    const sig = await Promise.race([
-      fundingPromise,
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Funding timeout')), FUNDING_TIMEOUT_MS),
-      ),
-    ]);
-    return NextResponse.json({ solanaAddress: newAddress, funded: true, sig });
-  } catch (e) {
-    // Funding fehlgeschlagen oder Timeout – Account trotzdem zurückgeben
-    return NextResponse.json({ solanaAddress: newAddress, funded: false, fundError: String(e) });
-  }
+  return NextResponse.json({ solanaAddress: newAddress });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
