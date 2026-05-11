@@ -79,6 +79,7 @@ export async function POST(req: Request) {
     (quoteResponse.outputMint as string | undefined) === SOL_MINT;
 
   let treasuryAdvanceSig: string | null = null;
+  let advancedLamports = 0;
   if (isDfaithToSol) {
     const [userLamports, feeResult, rentExemptMin] = await Promise.all([
       connection.getBalance(kp.publicKey),
@@ -87,11 +88,12 @@ export async function POST(req: Request) {
     ]);
 
     const exactFeeLamports = feeResult.value ?? 5000;
-    // User braucht: Tx-Fee + Rent-Exempt-Minimum damit das Konto nach der Fee existenzfähig bleibt
+    // User braucht: Tx-Fee + Rent-Exempt-Minimum
     const minRequired = exactFeeLamports + rentExemptMin;
     const missing = minRequired - userLamports;
 
     if (missing > 0) {
+      advancedLamports = missing;
       const treasury = getTreasuryKeypair();
       const advanceTx = new Transaction().add(
         SystemProgram.transfer({
@@ -120,11 +122,42 @@ export async function POST(req: Request) {
   const latestBlockhash = await connection.getLatestBlockhash('confirmed');
   await connection.confirmTransaction({ signature: sig, ...latestBlockhash }, 'confirmed');
 
+  // Treasury-Vorschuss zurückzahlen: User hat jetzt SOL aus dem Swap → sendet den Vorschuss zurück
+  let treasuryRefundSig: string | null = null;
+  if (advancedLamports > 0) {
+    try {
+      const treasury          = getTreasuryKeypair();
+      const refundFeeLamports = 5000; // Schätzung für diese Legacy-Tx
+      const userBalanceAfter  = await connection.getBalance(kp.publicKey);
+      // Nur zurückzahlen wenn User genug hat (Swap-Output muss > advancedLamports sein)
+      const refundAmount = Math.min(advancedLamports, userBalanceAfter - refundFeeLamports);
+
+      if (refundAmount > 0) {
+        const refundTx = new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey: kp.publicKey,
+            toPubkey:   treasury.publicKey,
+            lamports:   refundAmount,
+          }),
+        );
+        treasuryRefundSig = await sendAndConfirmTransaction(connection, refundTx, [kp], {
+          commitment: 'confirmed',
+          maxRetries: 3,
+        });
+        console.log(`[swap] Treasury-Rückzahlung: ${refundAmount} Lamports`);
+      }
+    } catch (refundErr) {
+      // Rückzahlung nicht kritisch – Swap war erfolgreich
+      console.error('[swap] Rückzahlung fehlgeschlagen (nicht kritisch):', refundErr);
+    }
+  }
+
   return NextResponse.json({
-    success:             true,
-    signature:           sig,
-    explorerUrl:         `https://solscan.io/tx/${sig}`,
+    success:            true,
+    signature:          sig,
+    explorerUrl:        `https://solscan.io/tx/${sig}`,
     treasuryAdvanceSig,
+    treasuryRefundSig,
   });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
