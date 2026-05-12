@@ -8,8 +8,6 @@ import {
   FaChevronDown, FaChevronUp, FaDownload, FaCreditCard,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
-import { FcGoogle } from 'react-icons/fc';
-import { FaApple } from 'react-icons/fa';
 import Image from 'next/image';
 import SwapWidget from './wallet/SwapWidget';
 
@@ -299,20 +297,12 @@ export default function SolanaWalletTab() {
             <p className="text-white font-semibold">Anmelden um fortzufahren</p>
             <p className="text-zinc-400 text-sm">Dein Solana Wallet wird automatisch erstellt — kein Wallet-App nötig.</p>
           </div>
-          <div className="space-y-3">
-            <button onClick={() => openSignIn()} disabled={!isLoaded}
-              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 disabled:opacity-50 text-gray-800 font-semibold py-3 rounded-xl text-sm transition-colors">
-              <FcGoogle size={20} /> Mit Google anmelden
-            </button>
-            <button onClick={() => openSignIn()} disabled={!isLoaded}
-              className="w-full flex items-center justify-center gap-3 bg-black hover:bg-zinc-800 disabled:opacity-50 text-white border border-zinc-700 font-semibold py-3 rounded-xl text-sm transition-colors">
-              <FaApple size={18} /> Mit Apple anmelden
-            </button>
-            <button onClick={() => openSignIn()} disabled={!isLoaded}
-              className="w-full flex items-center justify-center gap-3 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-white border border-zinc-700 font-semibold py-3 rounded-xl text-sm transition-colors">
-              ✉ Mit E-Mail anmelden
-            </button>
-          </div>
+          <button onClick={() => openSignIn()} disabled={!isLoaded}
+            className="w-full flex items-center justify-center gap-3 bg-purple-700 hover:bg-purple-600 disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors">
+            {!isLoaded
+              ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              : 'Anmelden'}
+          </button>
         </div>
       </div>
     );
