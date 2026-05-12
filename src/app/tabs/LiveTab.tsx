@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useActiveAccount } from "thirdweb/react";
+import { useUser } from "@clerk/nextjs";
 import { Button } from "../../../components/ui/button";
 import { FaTicketAlt, FaLock, FaTimes } from "react-icons/fa";
 import { TranslatedText } from "../components/TranslatedText";
@@ -16,7 +16,8 @@ export default function LiveTab({ language }: LiveTabProps) {
   const [result, setResult] = useState<any>(null);
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const account = useActiveAccount();
+  const { user: _clerkUser } = useUser();
+  const account = _clerkUser?.id ? { address: _clerkUser.id } : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { FaInfoCircle, FaInstagram, FaFacebookF, FaYoutube } from 'react-icons/fa';
 import { FaTiktok } from 'react-icons/fa6';
 import { useRouter } from 'next/navigation';
-import { useActiveAccount } from 'thirdweb/react';
+import { useUser } from '@clerk/nextjs';
 import { TranslatedText } from '../components/TranslatedText';
 import type { SupportedLanguage } from "../utils/deepLTranslation";
 
@@ -1493,7 +1493,8 @@ interface TiktokTabProps {
 
 export default function TiktokTab({ language }: TiktokTabProps) {
   const router = useRouter();
-  const account = useActiveAccount(); // Thirdweb Hook für eingeloggte Wallet
+  const { user: _clerkUser } = useUser();
+  const account = _clerkUser?.id ? { address: _clerkUser.id } : null;
   const [isCheckModalOpen, setIsCheckModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

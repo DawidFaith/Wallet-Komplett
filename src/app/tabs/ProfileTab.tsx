@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useActiveAccount } from 'thirdweb/react';
+import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
 import {
   FaInstagram, FaTiktok, FaFacebook, FaYoutube,
@@ -92,7 +92,8 @@ const PLATFORM_META: Record<AnyPlatform, { label: string; icon: React.ReactNode 
 };
 
 export default function ProfileTab({ language: _language }: ProfileTabProps) {
-  const account = useActiveAccount();
+  const { user: _clerkUser } = useUser();
+  const account = _clerkUser?.id ? { address: _clerkUser.id } : null;
   const [data, setData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(false);
   const [verifyModal, setVerifyModal] = useState<SocialPlatform | null>(null);

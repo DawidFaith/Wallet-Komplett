@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  FaWallet,
   FaChartBar,
   FaTshirt,
   FaVideo,
@@ -83,6 +82,21 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
             />
           </button>
         </li>
+        {/* Solana Wallet */}
+        <li>
+          <button
+            title="Solana Wallet"
+            onClick={() => navigateToTab("solana-wallet")}
+            className="flex items-center"
+          >
+            <SiSolana
+              size={22}
+              className={`transition-colors ${
+                activeTab === "solana-wallet" ? "text-purple-400" : "text-zinc-400"
+              } hover:text-purple-400`}
+            />
+          </button>
+        </li>
         {/* Tokenomics */}
         <li>
           <button
@@ -98,21 +112,7 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
             />
           </button>
         </li>
-        {/* Wallet */}
-        <li>
-          <button
-            title="Wallet"
-            onClick={() => navigateToTab("wallet")}
-            className="flex items-center"
-          >
-            <FaWallet
-              size={22}
-              className={`transition-colors ${
-                activeTab === "wallet" ? "text-blue-400" : "text-zinc-400"
-              } hover:text-blue-400`}
-            />
-          </button>
-        </li>
+
 
         {/* Merch */}
         <li>
@@ -129,23 +129,6 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
             />
           </button>
         </li>
-
-        {/* Solana Wallet */}
-        <li>
-          <button
-            title="Solana Wallet"
-            onClick={() => navigateToTab("solana-wallet")}
-            className="flex items-center"
-          >
-            <SiSolana
-              size={22}
-              className={`transition-colors ${
-                activeTab === "solana-wallet" ? "text-purple-400" : "text-zinc-400"
-              } hover:text-purple-400`}
-            />
-          </button>
-        </li>
-
 
         {/* Language Selector */}
         <li className="relative flex items-center">

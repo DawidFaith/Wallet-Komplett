@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { FaInfoCircle, FaInstagram, FaFacebookF, FaYoutube } from 'react-icons/fa';
 import { FaTiktok } from 'react-icons/fa6';
 import { useRouter } from 'next/navigation';
-import { useActiveAccount } from 'thirdweb/react';
+import { useUser } from '@clerk/nextjs';
 import { TranslatedText } from '../components/TranslatedText';
 import type { SupportedLanguage } from "../utils/deepLTranslation";
 
@@ -1561,7 +1561,8 @@ function UserCard({ userData, onBack, language }: { userData: UserData; onBack: 
 
 export default function YouTubeTab({ language }: { language: SupportedLanguage }) {
   const router = useRouter();
-  const account = useActiveAccount();
+  const { user: _clerkUser } = useUser();
+  const account = _clerkUser?.id ? { address: _clerkUser.id } : null;
   const [userData, setUserData] = useState<UserData | null>(null);
   const [showUserCard, setShowUserCard] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState('');

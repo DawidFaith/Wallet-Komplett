@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useActiveAccount } from 'thirdweb/react';
+import { useUser } from '@clerk/nextjs';
 import { FaTrophy, FaYoutube, FaInstagram, FaTiktok, FaFacebookF, FaCheck, FaMusic, FaTimes } from 'react-icons/fa';
 import Image from 'next/image';
 import FanBoard from './fan/FanBoard';
@@ -47,7 +47,8 @@ interface ProfileResponse {
 }
 
 export default function QuestBoard({ language: _language, filterArtist, onClearArtist }: QuestBoardProps) {
-  const account = useActiveAccount();
+  const { user: _clerkUser } = useUser();
+  const account = _clerkUser?.id ? { address: _clerkUser.id } : null;
   const [view, setView] = useState<QuestBoardView>('fan');
   const [binding, setBinding] = useState<YouTubeBinding | null>(null);
   const [verified, setVerified] = useState<VerifiedPlatforms>({

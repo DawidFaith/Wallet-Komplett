@@ -5,7 +5,7 @@ import { FaInstagram, FaFacebookF, FaInfoCircle, FaYoutube } from 'react-icons/f
 import { FaTiktok } from 'react-icons/fa6';
 import { useRouter } from 'next/navigation';
 import { validateBaseAddress, validateBaseAddressRealTime } from '../utils/walletValidation';
-import { useActiveAccount } from 'thirdweb/react';
+import { useUser } from '@clerk/nextjs';
 import type { SupportedLanguage } from "../utils/deepLTranslation";
 import { translationService } from "../utils/deepLTranslation";
 import { TranslatedText } from '../components/TranslatedText';
@@ -33,7 +33,8 @@ interface FacebookTabProps {
 
 export default function FacebookTab({ language }: FacebookTabProps) {
   const router = useRouter();
-  const account = useActiveAccount(); // Thirdweb Hook für eingeloggte Wallet
+  const { user: _clerkUser } = useUser();
+  const account = _clerkUser?.id ? { address: _clerkUser.id } : null;
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
