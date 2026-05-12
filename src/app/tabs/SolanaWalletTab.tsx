@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useConnect, useAuthCore } from '@particle-network/auth-core-modal';
+import { useUser, useClerk } from '@clerk/nextjs';
 import {
   FaCopy, FaCheckCircle, FaSync, FaPaperPlane, FaExternalLinkAlt,
   FaKey, FaEye, FaEyeSlash, FaSpinner, FaExchangeAlt,
@@ -114,10 +114,10 @@ function TokenRow({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function SolanaWalletTab() {
-  const { connect, disconnect, connected, connectionStatus } = useConnect();
-  const { userInfo } = useAuthCore();
-  // userInfo.uuid ist der stabile Identifier – unabhängig von Particle-Wallet-Adressen
-  const userId = (userInfo as { uuid?: string } | null | undefined)?.uuid ?? null;
+  const { isLoaded, isSignedIn, user } = useUser();
+  const { openSignIn, signOut } = useClerk();
+  const userId = user?.id ?? null;
+  const connected = isLoaded && !!isSignedIn;
 
   const [solanaAddr, setSolanaAddr]   = useState<string | null>(null);
   const [creating, setCreating]       = useState(false);
@@ -280,7 +280,7 @@ export default function SolanaWalletTab() {
 
   // ── Loading oder nicht eingeloggt → immer Login-UI zeigen ───────────────
   if (!connected) {
-    const isLoading = connectionStatus === 'loading';
+    const isLoading = !isLoaded;
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center gap-3">
@@ -301,15 +301,15 @@ export default function SolanaWalletTab() {
             <p className="text-zinc-400 text-sm">Dein Solana Wallet wird automatisch erstellt — kein Wallet-App nötig.</p>
           </div>
           <div className="space-y-3">
-            <button onClick={() => connect({ socialType: 'google' })} disabled={isLoading}
+            <button onClick={() => openSignIn()} disabled={isLoading}
               className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 disabled:opacity-50 text-gray-800 font-semibold py-3 rounded-xl text-sm transition-colors">
               <FcGoogle size={20} /> Mit Google anmelden
             </button>
-            <button onClick={() => connect({ socialType: 'apple' })} disabled={isLoading}
+            <button onClick={() => openSignIn()} disabled={isLoading}
               className="w-full flex items-center justify-center gap-3 bg-black hover:bg-zinc-800 disabled:opacity-50 text-white border border-zinc-700 font-semibold py-3 rounded-xl text-sm transition-colors">
               <FaApple size={18} /> Mit Apple anmelden
             </button>
-            <button onClick={() => connect({ email: '' })} disabled={isLoading}
+            <button onClick={() => openSignIn()} disabled={isLoading}
               className="w-full flex items-center justify-center gap-3 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-white border border-zinc-700 font-semibold py-3 rounded-xl text-sm transition-colors">
               ✉ Mit E-Mail anmelden
             </button>
@@ -407,7 +407,7 @@ export default function SolanaWalletTab() {
             className="text-zinc-500 hover:text-white disabled:opacity-40 p-1.5 rounded-lg hover:bg-zinc-800 transition-colors">
             <FaSync size={13} className={loadingBal ? 'animate-spin' : ''} />
           </button>
-          <button onClick={() => disconnect()} className="text-zinc-500 hover:text-red-400 text-xs font-semibold px-2 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors">
+          <button onClick={() => signOut()} className="text-zinc-500 hover:text-red-400 text-xs font-semibold px-2 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors">
             Abmelden
           </button>
         </div>

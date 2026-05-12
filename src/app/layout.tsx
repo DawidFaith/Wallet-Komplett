@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Orbitron, Pirata_One } from "next/font/google";
 import "./globals.css";
 import { ThirdwebProvider } from "thirdweb/react";
+import { ClerkProvider } from "@clerk/nextjs";
 import QueryProvider from "./QueryProvider";
-import ParticleAuthProvider from "./components/ParticleAuthProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 const orbitron = Orbitron({ 
@@ -34,14 +34,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de" className="bg-zinc-950">
-      <body className={`${inter.className} ${orbitron.variable} ${pirataOne.variable} bg-zinc-950`}>
-        <ThirdwebProvider>
-          <ParticleAuthProvider>
+    <ClerkProvider>
+      <html lang="de" className="bg-zinc-950">
+        <body className={`${inter.className} ${orbitron.variable} ${pirataOne.variable} bg-zinc-950`}>
+          <ThirdwebProvider>
             <QueryProvider>{children}</QueryProvider>
-          </ParticleAuthProvider>
-        </ThirdwebProvider>
-      </body>
-    </html>
+          </ThirdwebProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
