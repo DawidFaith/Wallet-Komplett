@@ -662,20 +662,6 @@ export default function SolanaWalletTab() {
                     className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
                     <FaCreditCard size={14} /> Mit MoonPay kaufen
                   </a>
-                  <a
-                    href={`https://buy.ramp.network/?asset=SOL&userAddress=${solanaAddr}&hostAppName=D.FAITH+Wallet`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-200 text-sm font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors">
-                    <FaCreditCard size={12} /> Mit Ramp kaufen
-                  </a>
-                  <a
-                    href={`https://app.kado.money/?onPayCurrency=USD&onRevCurrency=SOL&network=SOLANA&onToAddress=${solanaAddr}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-200 text-sm font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors">
-                    <FaCreditCard size={12} /> Mit Kado kaufen
-                  </a>
                   <div className="bg-zinc-800/50 rounded-xl px-3 py-2">
                     <p className="text-zinc-500 text-xs font-medium mb-0.5">Ziel-Adresse</p>
                     <p className="text-zinc-300 font-mono text-xs break-all">{solanaAddr}</p>
