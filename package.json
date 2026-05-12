@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.2.2",
-    "@clerk/nextjs": "^7.3.3",
+    "@clerk/nextjs": "^5.7.6",
     "@coinbase/cbpay-js": "^2.4.0",
     "@fingerprintjs/fingerprintjs": "^5.2.0",
     "@hashgraph/sdk": "^2.81.0",
