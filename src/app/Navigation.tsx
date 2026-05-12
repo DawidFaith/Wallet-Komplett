@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
+  FaWallet,
   FaChartBar,
   FaTshirt,
   FaVideo,
@@ -13,7 +14,6 @@ import {
   FaGlobe,
   FaUserCircle,
 } from "react-icons/fa";
-import { SiSolana } from "react-icons/si";
 import { FiChevronDown } from "react-icons/fi";
 import { useState } from "react";
 
@@ -89,7 +89,7 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
             onClick={() => navigateToTab("solana-wallet")}
             className="flex items-center"
           >
-            <SiSolana
+            <FaWallet
               size={22}
               className={`transition-colors ${
                 activeTab === "solana-wallet" ? "text-purple-400" : "text-zinc-400"

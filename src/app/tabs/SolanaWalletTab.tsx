@@ -656,18 +656,25 @@ export default function SolanaWalletTab() {
                 <div className="space-y-4">
                   <p className="text-zinc-400 text-xs">Kaufe SOL direkt auf deine Wallet — per Karte, Bank oder Apple Pay.</p>
                   <a
-                    href={`https://pay.coinbase.com/buy/select-asset?appId=${process.env.NEXT_PUBLIC_COINBASE_APP_ID ?? ''}&destinationWallets=${encodeURIComponent(JSON.stringify([{address: solanaAddr, assets: ['SOL'], supportedNetworks: ['solana']}]))}`}
+                    href={`https://buy.moonpay.com/?currencyCode=sol&walletAddress=${solanaAddr}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
-                    <FaCreditCard size={14} /> Mit Coinbase kaufen
+                    className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
+                    <FaCreditCard size={14} /> Mit MoonPay kaufen
                   </a>
                   <a
-                    href={`https://global.transak.com/?defaultCryptoCurrency=SOL&walletAddress=${solanaAddr}&network=solana`}
+                    href={`https://buy.ramp.network/?asset=SOL&userAddress=${solanaAddr}&hostAppName=D.FAITH+Wallet`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full bg-indigo-700/20 border border-indigo-700/40 hover:bg-indigo-700/30 text-indigo-200 text-sm font-semibold py-3 rounded-xl flex items-center justify-center gap-2">
-                    <FaCreditCard size={12} /> Mit Transak kaufen
+                    className="w-full bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-200 text-sm font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors">
+                    <FaCreditCard size={12} /> Mit Ramp kaufen
+                  </a>
+                  <a
+                    href={`https://app.kado.money/?onPayCurrency=USD&onRevCurrency=SOL&network=SOLANA&onToAddress=${solanaAddr}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-200 text-sm font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors">
+                    <FaCreditCard size={12} /> Mit Kado kaufen
                   </a>
                   <div className="bg-zinc-800/50 rounded-xl px-3 py-2">
                     <p className="text-zinc-500 text-xs font-medium mb-0.5">Ziel-Adresse</p>
