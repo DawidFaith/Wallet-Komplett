@@ -278,9 +278,17 @@ export default function SolanaWalletTab() {
     setActionModal('send');
   };
 
-  // ── Loading oder nicht eingeloggt → immer Login-UI zeigen ───────────────
+  // ── Clerk lädt noch ───────────────────────────────────────────────────────
+  if (!isLoaded) {
+    return (
+      <div className="w-full max-w-md mx-auto px-4 py-6 flex items-center justify-center min-h-[300px]">
+        <FaSpinner size={28} className="animate-spin text-purple-400" />
+      </div>
+    );
+  }
+
+  // ── Nicht eingeloggt → Login-UI ───────────────────────────────────────────
   if (!connected) {
-    const isLoading = !isLoaded;
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center gap-3">
@@ -292,25 +300,23 @@ export default function SolanaWalletTab() {
         </div>
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-6 text-center">
           <div className="w-16 h-16 mx-auto bg-purple-900/30 rounded-full flex items-center justify-center">
-            {isLoading
-              ? <FaSpinner size={28} className="animate-spin text-purple-400" />
-              : <SiSolana size={32} className="text-purple-400" />}
+            <SiSolana size={32} className="text-purple-400" />
           </div>
           <div className="space-y-1">
             <p className="text-white font-semibold">Anmelden um fortzufahren</p>
             <p className="text-zinc-400 text-sm">Dein Solana Wallet wird automatisch erstellt — kein Wallet-App nötig.</p>
           </div>
           <div className="space-y-3">
-            <button onClick={() => openSignIn()} disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 disabled:opacity-50 text-gray-800 font-semibold py-3 rounded-xl text-sm transition-colors">
+            <button onClick={() => openSignIn()}
+              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-800 font-semibold py-3 rounded-xl text-sm transition-colors">
               <FcGoogle size={20} /> Mit Google anmelden
             </button>
-            <button onClick={() => openSignIn()} disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 bg-black hover:bg-zinc-800 disabled:opacity-50 text-white border border-zinc-700 font-semibold py-3 rounded-xl text-sm transition-colors">
+            <button onClick={() => openSignIn()}
+              className="w-full flex items-center justify-center gap-3 bg-black hover:bg-zinc-800 text-white border border-zinc-700 font-semibold py-3 rounded-xl text-sm transition-colors">
               <FaApple size={18} /> Mit Apple anmelden
             </button>
-            <button onClick={() => openSignIn()} disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-white border border-zinc-700 font-semibold py-3 rounded-xl text-sm transition-colors">
+            <button onClick={() => openSignIn()}
+              className="w-full flex items-center justify-center gap-3 bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 font-semibold py-3 rounded-xl text-sm transition-colors">
               ✉ Mit E-Mail anmelden
             </button>
           </div>
