@@ -29,13 +29,13 @@ function Modal({ open, onClose, title, children }: { open: boolean, onClose: () 
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div 
-        className="bg-zinc-900 rounded-xl w-full sm:min-w-[340px] sm:max-w-4xl sm:w-auto sm:mx-4 max-h-[90vh] overflow-y-auto shadow-2xl relative border border-zinc-700 transition-all duration-300 m-4"
+        className="bg-[#1a1710] rounded-xl w-full sm:min-w-[340px] sm:max-w-4xl sm:w-auto sm:mx-4 max-h-[90vh] overflow-y-auto shadow-2xl relative border border-white/[0.1] transition-all duration-300 m-4"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-zinc-700 sticky top-0 bg-zinc-900 z-10">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-white/[0.1] sticky top-0 bg-[#1a1710] z-10">
           <h3 className="font-bold text-lg sm:text-xl text-amber-400 truncate pr-4">{title}</h3>
           <button 
-            className="p-2 text-amber-400 hover:text-yellow-300 hover:bg-zinc-800 rounded-lg transition-all flex-shrink-0 touch-manipulation"
+            className="p-2 text-amber-400 hover:text-yellow-300 hover:bg-[#231e12] rounded-lg transition-all flex-shrink-0 touch-manipulation"
             onClick={onClose}
           >
             <FaTimes size={16} />
@@ -774,10 +774,10 @@ export default function WalletTab({ language }: WalletTabProps) {
           <div className="absolute top-1/3 right-1/3 text-orange-400/25 text-xs animate-bounce" style={{ animationDelay: '3s', animationDuration: '2s' }}>♩</div>
         </div>
 
-        <Card className="w-full max-w-md bg-gradient-to-br from-zinc-900/95 to-black/95 rounded-3xl shadow-2xl border border-zinc-700/50 relative overflow-hidden backdrop-blur-xl">
+        <Card className="w-full max-w-md bg-gradient-to-br from-[#1a1710]/95 to-black/95 rounded-3xl shadow-2xl border border-white/[0.1]/50 relative overflow-hidden backdrop-blur-xl">
           {/* Musikalische Glanzeffekte */}
-          <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-br from-zinc-800/15 via-zinc-700/8 to-zinc-900/15 rounded-t-3xl"></div>
-          <div className="absolute bottom-0 right-0 w-2/3 h-1/3 bg-gradient-to-tl from-zinc-800/8 via-zinc-700/4 to-transparent rounded-br-3xl"></div>
+          <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-br from-[#231e12]/15 via-[#2d2615]/8 to-[#1a1710]/15 rounded-t-3xl"></div>
+          <div className="absolute bottom-0 right-0 w-2/3 h-1/3 bg-gradient-to-tl from-[#231e12]/8 via-[#2d2615]/4 to-transparent rounded-br-3xl"></div>
           
           {/* Equalizer-Balken als Dekoration */}
           <div className="absolute top-4 right-4 flex gap-1">
@@ -817,7 +817,7 @@ export default function WalletTab({ language }: WalletTabProps) {
                 </div>
                 
                 {/* Subtiler Ambient Glow */}
-                <div className="absolute inset-0 w-40 h-40 bg-gradient-to-r from-zinc-800/5 via-zinc-700/8 to-zinc-800/5 blur-3xl animate-pulse"></div>
+                <div className="absolute inset-0 w-40 h-40 bg-gradient-to-r from-[#231e12]/5 via-[#2d2615]/8 to-[#231e12]/5 blur-3xl animate-pulse"></div>
               </div>
               
               {/* Willkommens-Text mit musikalischem Flair */}
@@ -881,7 +881,7 @@ export default function WalletTab({ language }: WalletTabProps) {
                 <span className="text-xs">♪</span>
               </div>
               
-              <div className="pt-4 border-t border-zinc-800/50">
+              <div className="pt-4 border-t border-white/[0.08]/50">
                 <p className="text-xs text-zinc-600">
                   <TranslatedText text="🎤 Powered by Dawid Faith ♫" language={language} />
                 </p>
@@ -899,7 +899,7 @@ export default function WalletTab({ language }: WalletTabProps) {
     const hasStaked = parseFloat(stakedBalance) > 0;
     
     return (
-      <div className="flex flex-col items-center p-4 bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl border border-zinc-700 w-full">
+      <div className="flex flex-col items-center p-4 bg-gradient-to-br from-[#231e12]/90 to-[#1a1710]/90 rounded-xl border border-white/[0.1] w-full">
         <div className="uppercase text-xs tracking-widest text-amber-500/80 mb-2">D.INVEST</div>
         
         {/* D.INVEST Balance normal anzeigen */}
@@ -956,7 +956,7 @@ export default function WalletTab({ language }: WalletTabProps) {
 
   return (
     <div className="flex justify-center min-h-[70vh] items-center py-8 bg-black">
-        <Card className="w-full max-w-xl bg-gradient-to-br from-zinc-900 to-black rounded-3xl shadow-2xl border border-zinc-700 relative overflow-hidden">
+        <Card className="w-full max-w-xl bg-gradient-to-br from-[#1a1710] to-black rounded-3xl shadow-2xl border border-white/[0.1] relative overflow-hidden">
           {/* Verbesserte Glanzeffekte */}
           <div className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-r from-amber-500/5 via-yellow-500/10 to-amber-500/5 rounded-t-3xl"></div>
           <div className="absolute top-0 right-0 w-1/3 h-20 bg-amber-400/10 blur-3xl rounded-full"></div>
@@ -981,7 +981,7 @@ export default function WalletTab({ language }: WalletTabProps) {
                 theme="dark"
                 connectButton={{ 
                   label: "", 
-                  className: "bg-zinc-800 hover:bg-zinc-700 transition-colors border border-zinc-700"
+                  className: "bg-[#231e12] hover:bg-[#2d2615] transition-colors border border-white/[0.1]"
                 }}
                 connectModal={{ size: "compact" }}
                 wallets={wallets}
@@ -994,7 +994,7 @@ export default function WalletTab({ language }: WalletTabProps) {
             </div>
 
             {/* Wallet Address mit besserem Styling und Refresh Button */}
-            <div className="flex justify-between items-center bg-zinc-800/70 backdrop-blur-sm rounded-xl p-3 mb-6 border border-zinc-700/80">
+            <div className="flex justify-between items-center bg-[#231e12]/70 backdrop-blur-sm rounded-xl p-3 mb-6 border border-white/[0.1]/80">
               <div className="flex flex-col">
                 <span className="text-xs text-amber-300 mb-0.5"><TranslatedText text="Wallet Adresse" language={language} /></span>
                 <button
@@ -1010,7 +1010,7 @@ export default function WalletTab({ language }: WalletTabProps) {
                 <button
                   onClick={refreshBalances}
                   disabled={isRefreshing || isLoadingBalances}
-                  className={`p-2 rounded-lg ${isRefreshing || isLoadingBalances ? 'bg-amber-600/20' : 'bg-zinc-700 hover:bg-zinc-600'} text-zinc-200 text-sm font-medium transition-all duration-200`}
+                  className={`p-2 rounded-lg ${isRefreshing || isLoadingBalances ? 'bg-amber-600/20' : 'bg-[#2d2615] hover:bg-zinc-600'} text-zinc-200 text-sm font-medium transition-all duration-200`}
                   title={language === 'de' ? "Aktualisieren" : language === 'en' ? "Refresh" : "Odśwież"}
                 >
                   <FaSync className={`text-amber-400 ${isRefreshing || isLoadingBalances ? 'animate-spin' : ''}`} />
@@ -1026,7 +1026,7 @@ export default function WalletTab({ language }: WalletTabProps) {
             </div>
 
             {/* DFAITH Token-Karte - jetzt mit D.FAITH */}
-            <div className="flex flex-col items-center p-4 bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 rounded-xl border border-zinc-700 w-full mb-6">
+            <div className="flex flex-col items-center p-4 bg-gradient-to-br from-[#231e12]/90 to-[#1a1710]/90 rounded-xl border border-white/[0.1] w-full mb-6">
               <span className="uppercase text-xs tracking-widest text-amber-500/80 mb-2">D.FAITH</span>
               <div className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 drop-shadow-sm">
                 {dfaithBalance ? dfaithBalance : "0.00"}
@@ -1064,7 +1064,7 @@ export default function WalletTab({ language }: WalletTabProps) {
             {/* Action Buttons */}
             <div className="grid grid-cols-4 gap-2 md:gap-3 mb-6">
               <Button
-                className="flex flex-col items-center justify-center gap-1 px-1 py-3 md:py-4 bg-gradient-to-br from-zinc-800/90 to-zinc-900 hover:from-zinc-800 hover:to-zinc-800 shadow-lg shadow-black/20 rounded-xl hover:scale-[1.02] transition-all duration-300 border border-zinc-700/80"
+                className="flex flex-col items-center justify-center gap-1 px-1 py-3 md:py-4 bg-gradient-to-br from-[#231e12]/90 to-[#1a1710] hover:from-[#231e12] hover:to-[#231e12] shadow-lg shadow-black/20 rounded-xl hover:scale-[1.02] transition-all duration-300 border border-white/[0.1]/80"
                 onClick={() => setShowBuyModal(true)}
               >
                 <div className="w-7 h-7 flex items-center justify-center bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full mb-1 shadow-inner">
@@ -1073,7 +1073,7 @@ export default function WalletTab({ language }: WalletTabProps) {
                 <span className="text-xs bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent font-medium"><TranslatedText text="Kaufen" language={language} /></span>
               </Button>
               <Button
-                className="flex flex-col items-center justify-center gap-1 px-1 py-3 md:py-4 bg-gradient-to-br from-zinc-800/90 to-zinc-900 hover:from-zinc-800 hover:to-zinc-800 shadow-lg shadow-black/20 rounded-xl hover:scale-[1.02] transition-all duration-300 border border-zinc-700/80"
+                className="flex flex-col items-center justify-center gap-1 px-1 py-3 md:py-4 bg-gradient-to-br from-[#231e12]/90 to-[#1a1710] hover:from-[#231e12] hover:to-[#231e12] shadow-lg shadow-black/20 rounded-xl hover:scale-[1.02] transition-all duration-300 border border-white/[0.1]/80"
                 onClick={() => setShowSellModal(true)}
               >
                 <div className="w-7 h-7 flex items-center justify-center bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full mb-1 shadow-inner">
@@ -1082,7 +1082,7 @@ export default function WalletTab({ language }: WalletTabProps) {
                 <span className="text-xs bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent font-medium"><TranslatedText text="Verkauf" language={language} /></span>
               </Button>
               <Button
-                className="flex flex-col items-center justify-center gap-1 px-1 py-3 md:py-4 bg-gradient-to-br from-zinc-800/90 to-zinc-900 hover:from-zinc-800 hover:to-zinc-800 shadow-lg shadow-black/20 rounded-xl hover:scale-[1.02] transition-all duration-300 border border-zinc-700/80"
+                className="flex flex-col items-center justify-center gap-1 px-1 py-3 md:py-4 bg-gradient-to-br from-[#231e12]/90 to-[#1a1710] hover:from-[#231e12] hover:to-[#231e12] shadow-lg shadow-black/20 rounded-xl hover:scale-[1.02] transition-all duration-300 border border-white/[0.1]/80"
                 onClick={() => setShowSendModal(true)}
               >
                 <div className="w-7 h-7 flex items-center justify-center bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full mb-1 shadow-inner">
@@ -1091,7 +1091,7 @@ export default function WalletTab({ language }: WalletTabProps) {
                 <span className="text-xs bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent font-medium"><TranslatedText text="Senden" language={language} /></span>
               </Button>
               <Button
-                className="flex flex-col items-center justify-center gap-1 px-1 py-3 md:py-4 bg-gradient-to-br from-zinc-800/90 to-zinc-900 hover:from-zinc-800 hover:to-zinc-800 shadow-lg shadow-black/20 rounded-xl hover:scale-[1.02] transition-all duration-300 border border-zinc-700/80"
+                className="flex flex-col items-center justify-center gap-1 px-1 py-3 md:py-4 bg-gradient-to-br from-[#231e12]/90 to-[#1a1710] hover:from-[#231e12] hover:to-[#231e12] shadow-lg shadow-black/20 rounded-xl hover:scale-[1.02] transition-all duration-300 border border-white/[0.1]/80"
                 onClick={() => setShowHistoryModal(true)}
               >
                 <div className="w-7 h-7 flex items-center justify-center bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full mb-1 shadow-inner">
@@ -1161,7 +1161,7 @@ export default function WalletTab({ language }: WalletTabProps) {
                   } language={language} />
                 </p>
                 {copySuccess && (
-                  <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700">
+                  <div className="bg-[#231e12]/50 rounded-lg p-3 border border-white/[0.1]">
                     <p className="text-xs text-zinc-500 mb-1"><TranslatedText text="Kopierte Adresse:" language={language} /></p>
                     <p className="text-amber-400 font-mono text-sm break-all">
                       {account?.address}

@@ -31,7 +31,7 @@ function HomeContent() {
   }, [searchParams]);
 
   return (
-    <main className="min-h-screen flex flex-col bg-zinc-950">
+    <main className="min-h-screen flex flex-col bg-[#13120e]">
       <Navigation 
         activeTab={activeTab} 
         setActiveTab={setActiveTab}
@@ -59,7 +59,7 @@ function HomeContent() {
 export default function Home() {
   return (
     <Suspense fallback={
-      <main className="min-h-screen flex flex-col bg-zinc-950">
+      <main className="min-h-screen flex flex-col bg-[#13120e]">
         <div className="fixed top-0 left-0 w-full bg-zinc-900 border-b border-zinc-800 z-50 h-16"></div>
         <section className="flex-1 flex flex-col items-center justify-center pt-24 pb-8">
           <div className="flex items-center justify-center">

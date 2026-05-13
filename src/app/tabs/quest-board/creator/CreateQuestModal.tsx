@@ -329,7 +329,7 @@ export default function CreateQuestModal({
             <p className="text-green-300 font-semibold">Quest erfolgreich erstellt!</p>
             <p className="text-zinc-400 text-sm mt-1">Fans können jetzt deinen Quest sehen und abschließen.</p>
           </div>
-          <button onClick={handleClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">Schließen</button>
+          <button onClick={handleClose} className="w-full bg-[#231e12] hover:bg-[#2d2615] text-white py-3 rounded-xl transition-colors font-semibold">Schließen</button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -344,10 +344,10 @@ export default function CreateQuestModal({
                 onClick={() => { setPlatform('youtube'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); setSelectedFacebookMedia(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                   !verified.youtube
-                    ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed opacity-50'
+                    ? 'bg-[#1a1710] border-white/[0.08] text-zinc-600 cursor-not-allowed opacity-50'
                     : platform === 'youtube'
                     ? 'bg-red-600 border-red-500 text-white'
-                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-red-600'
+                    : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-red-600'
                 }`}
               >
                 <FaYoutube size={16} /> YouTube
@@ -359,10 +359,10 @@ export default function CreateQuestModal({
                 onClick={() => { setPlatform('tiktok'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); setSelectedFacebookMedia(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                   !verified.tiktok
-                    ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed opacity-50'
+                    ? 'bg-[#1a1710] border-white/[0.08] text-zinc-600 cursor-not-allowed opacity-50'
                     : platform === 'tiktok'
                     ? 'bg-cyan-600 border-cyan-500 text-white'
-                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-cyan-600'
+                    : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-cyan-600'
                 }`}
               >
                 <FaTiktok size={15} /> TikTok
@@ -374,10 +374,10 @@ export default function CreateQuestModal({
                 onClick={() => { setPlatform('instagram'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); setSelectedFacebookMedia(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                   !verified.instagram
-                    ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed opacity-50'
+                    ? 'bg-[#1a1710] border-white/[0.08] text-zinc-600 cursor-not-allowed opacity-50'
                     : platform === 'instagram'
                     ? 'bg-pink-600 border-pink-500 text-white'
-                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-pink-600'
+                    : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-pink-600'
                 }`}
               >
                 <FaInstagram size={15} /> Instagram
@@ -389,10 +389,10 @@ export default function CreateQuestModal({
                 onClick={() => { setPlatform('facebook'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); setSelectedFacebookMedia(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                   !verified.facebook
-                    ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed opacity-50'
+                    ? 'bg-[#1a1710] border-white/[0.08] text-zinc-600 cursor-not-allowed opacity-50'
                     : platform === 'facebook'
                     ? 'bg-blue-600 border-blue-500 text-white'
-                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-blue-600'
+                    : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-blue-600'
                 }`}
               >
                 <FaFacebookF size={14} /> Facebook
@@ -411,7 +411,7 @@ export default function CreateQuestModal({
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'comment'
                       ? 'bg-red-600 border-red-500 text-white'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-red-600'
+                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-red-600'
                   }`}
                 >
                   💬 Kommentar
@@ -422,7 +422,7 @@ export default function CreateQuestModal({
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'like'
                       ? 'bg-blue-600 border-blue-500 text-white'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-blue-600'
+                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-blue-600'
                   }`}
                 >
                   👍 Like
@@ -433,7 +433,7 @@ export default function CreateQuestModal({
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'secret'
                       ? 'bg-yellow-600 border-yellow-500 text-white'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-yellow-600'
+                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-yellow-600'
                   }`}
                 >
                   🔑 Secret
@@ -460,7 +460,7 @@ export default function CreateQuestModal({
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'comment'
                       ? 'bg-cyan-600 border-cyan-500 text-white'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-cyan-600'
+                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-cyan-600'
                   }`}
                 >
                   💬 Kommentar
@@ -471,7 +471,7 @@ export default function CreateQuestModal({
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'secret'
                       ? 'bg-yellow-600 border-yellow-500 text-white'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-yellow-600'
+                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-yellow-600'
                   }`}
                 >
                   🔑 Secret
@@ -482,7 +482,7 @@ export default function CreateQuestModal({
                   className={`flex items-center gap-1.5 justify-center py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'engagement'
                       ? 'bg-purple-600 border-purple-500 text-white'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-purple-600'
+                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-purple-600'
                   }`}
                 >
                   <FaThumbsUp size={12} /><FaShareAlt size={12} /><FaBookmark size={12} /> Engagement
@@ -509,7 +509,7 @@ export default function CreateQuestModal({
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'comment'
                       ? 'bg-pink-600 border-pink-500 text-white'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-pink-600'
+                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-pink-600'
                   }`}
                 >
                   💬 Kommentar
@@ -520,7 +520,7 @@ export default function CreateQuestModal({
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'engagement'
                       ? 'bg-gradient-to-r from-red-600 to-yellow-600 border-red-500 text-white'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-red-600'
+                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-red-600'
                   }`}
                 >
                   ❤️🔖 Like &amp; Speichern
@@ -531,7 +531,7 @@ export default function CreateQuestModal({
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'repost'
                       ? 'bg-gradient-to-r from-blue-600 to-cyan-600 border-blue-500 text-white'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-blue-600'
+                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-blue-600'
                   }`}
                 >
                   🔁 Repost
@@ -542,7 +542,7 @@ export default function CreateQuestModal({
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'dm_share'
                       ? 'bg-gradient-to-r from-purple-600 to-pink-600 border-purple-500 text-white'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-purple-600'
+                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-purple-600'
                   }`}
                 >
                   📩 Story Quest
@@ -571,7 +571,7 @@ export default function CreateQuestModal({
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'comment'
                       ? 'bg-blue-600 border-blue-500 text-white'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-blue-600'
+                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-blue-600'
                   }`}
                 >
                   💬 Kommentar
@@ -582,7 +582,7 @@ export default function CreateQuestModal({
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'like'
                       ? 'bg-blue-600 border-blue-500 text-white'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-blue-600'
+                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-blue-600'
                   }`}
                 >
                   👍 Like
@@ -593,7 +593,7 @@ export default function CreateQuestModal({
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'secret'
                       ? 'bg-yellow-600 border-yellow-500 text-white'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-yellow-600'
+                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-yellow-600'
                   }`}
                 >
                   🔑 Secret
@@ -622,7 +622,7 @@ export default function CreateQuestModal({
                 placeholder="z.B. DFAITH oder W4LLET"
                 maxLength={50}
                 required
-                className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm placeholder-zinc-500 font-mono tracking-widest uppercase"
+                className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm placeholder-zinc-500 font-mono tracking-widest uppercase"
               />
               <p className="text-zinc-500 text-xs mt-1">
                 Groß-/Kleinschreibung egal – Fans müssen die Buchstaben nacheinander im Video finden und zusammensetzen.
@@ -637,7 +637,7 @@ export default function CreateQuestModal({
               <select
                 value={durationHours}
                 onChange={(e) => setDurationHours(e.target.value)}
-                className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm appearance-none cursor-pointer"
+                className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm appearance-none cursor-pointer"
               >
                 <option value="1">1 Stunde</option>
                 <option value="12">12 Stunden</option>
@@ -655,13 +655,13 @@ export default function CreateQuestModal({
                   value={customDurationValue}
                   onChange={(e) => setCustomDurationValue(e.target.value)}
                   min="1"
-                  className="flex-1 bg-zinc-800 text-white rounded-xl px-4 py-2.5 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm"
+                  className="flex-1 bg-[#231e12] text-white rounded-xl px-4 py-2.5 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm"
                   placeholder="z.B. 30"
                 />
                 <select
                   value={customDurationUnit}
                   onChange={(e) => setCustomDurationUnit(e.target.value as 'min' | 'h' | 'd')}
-                  className="bg-zinc-800 text-white rounded-xl px-3 py-2.5 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm cursor-pointer"
+                  className="bg-[#231e12] text-white rounded-xl px-3 py-2.5 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm cursor-pointer"
                 >
                   <option value="min">Minuten</option>
                   <option value="h">Stunden</option>
@@ -684,12 +684,12 @@ export default function CreateQuestModal({
                 </button>
               </div>
               {loadingFacebookMedia ? (
-                <div className="text-center text-zinc-500 py-8 text-sm bg-zinc-800/50 rounded-xl">
+                <div className="text-center text-zinc-500 py-8 text-sm bg-[#231e12]/50 rounded-xl">
                   <FaSync size={16} className="animate-spin mx-auto mb-2" />
                   Lade Posts…
                 </div>
               ) : availableFacebookMedia.length === 0 ? (
-                <div className="text-center py-6 text-sm bg-zinc-800/50 rounded-xl border border-zinc-700/50 space-y-1">
+                <div className="text-center py-6 text-sm bg-[#231e12]/50 rounded-xl border border-white/[0.1]/50 space-y-1">
                   <FaFacebookF size={24} className="mx-auto text-zinc-600 mb-2" />
                   <p className="text-zinc-400">Keine Posts verfügbar.</p>
                   <p className="text-zinc-600 text-xs">Auf &bdquo;Aktualisieren&ldquo; klicken um Posts von Make.com zu laden.</p>
@@ -708,17 +708,17 @@ export default function CreateQuestModal({
                         className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all flex flex-col ${
                           selectedFacebookMedia?.post_id === item.post_id
                             ? 'border-blue-500 ring-2 ring-blue-500/30 bg-blue-950/20'
-                            : 'border-zinc-700 hover:border-blue-400 hover:bg-zinc-800/50'
+                            : 'border-white/[0.1] hover:border-blue-400 hover:bg-[#231e12]/50'
                         }`}
                       >
                         {item.thumbnail_url ? (
                           <img src={item.thumbnail_url} alt="" className="w-full h-28 object-cover" />
                         ) : (
-                          <div className="w-full h-28 bg-zinc-700 flex items-center justify-center">
+                          <div className="w-full h-28 bg-[#2d2615] flex items-center justify-center">
                             <FaFacebookF size={24} className="text-zinc-500" />
                           </div>
                         )}
-                        <div className="p-2 bg-zinc-900 flex-1">
+                        <div className="p-2 bg-[#1a1710] flex-1">
                           <p className="text-white text-xs font-semibold line-clamp-2 leading-tight">{title}</p>
                           {postedDate && <p className="text-zinc-500 text-[11px] mt-1">{postedDate}</p>}
                         </div>
@@ -758,7 +758,7 @@ export default function CreateQuestModal({
               </div>
 
               {loadingQuestMedia ? (
-                <div className="text-center text-zinc-500 py-6 text-sm bg-zinc-800/50 rounded-xl mb-3">
+                <div className="text-center text-zinc-500 py-6 text-sm bg-[#231e12]/50 rounded-xl mb-3">
                   <FaSync size={16} className="animate-spin mx-auto mb-2" />
                   Lade Videos vom verknüpften Account…
                 </div>
@@ -774,17 +774,17 @@ export default function CreateQuestModal({
                       className={`text-left relative rounded-xl overflow-hidden border transition-all ${
                         selectedQuestMediaId === item.video_id
                           ? 'border-pink-500 ring-1 ring-pink-500/30'
-                          : 'border-zinc-700 hover:border-pink-400'
+                          : 'border-white/[0.1] hover:border-pink-400'
                       }`}
                     >
                       {item.thumbnail_url ? (
                         <img src={item.thumbnail_url} alt="" className="w-full h-24 object-cover" />
                       ) : (
-                        <div className="w-full h-24 bg-zinc-700 flex items-center justify-center">
+                        <div className="w-full h-24 bg-[#2d2615] flex items-center justify-center">
                           {platform === 'youtube' ? <FaYoutube size={22} className="text-zinc-500" /> : <FaTiktok size={20} className="text-zinc-500" />}
                         </div>
                       )}
-                      <div className="p-2 bg-zinc-900">
+                      <div className="p-2 bg-[#1a1710]">
                         <p className="text-white text-xs font-semibold line-clamp-2 leading-tight">
                           {item.title || `${platform === 'youtube' ? 'YouTube' : 'TikTok'} Video ${item.video_id.slice(0, 8)}`}
                         </p>
@@ -798,7 +798,7 @@ export default function CreateQuestModal({
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-4 text-xs bg-zinc-800/50 rounded-xl border border-zinc-700/50 text-zinc-500 mb-3">
+                <div className="text-center py-4 text-xs bg-[#231e12]/50 rounded-xl border border-white/[0.1]/50 text-zinc-500 mb-3">
                   {questMediaError ? (
                     <span className="text-red-400">{questMediaError}</span>
                   ) : (
@@ -833,12 +833,12 @@ export default function CreateQuestModal({
               </div>
 
               {loadingMedia ? (
-                <div className="text-center text-zinc-500 py-8 text-sm bg-zinc-800/50 rounded-xl">
+                <div className="text-center text-zinc-500 py-8 text-sm bg-[#231e12]/50 rounded-xl">
                   <FaSync size={16} className="animate-spin mx-auto mb-2" />
                   Lade Videos…
                 </div>
               ) : availableMedia.length === 0 ? (
-                <div className="text-center py-6 text-sm bg-zinc-800/50 rounded-xl border border-zinc-700/50 space-y-1">
+                <div className="text-center py-6 text-sm bg-[#231e12]/50 rounded-xl border border-white/[0.1]/50 space-y-1">
                   <FaInstagram size={24} className="mx-auto text-zinc-600 mb-2" />
                   <p className="text-zinc-400">Noch keine Videos verfügbar.</p>
                   <p className="text-zinc-600 text-xs">Videos werden automatisch synchronisiert.<br/>Hier auf &bdquo;Aktualisieren&ldquo; klicken um sie anzuzeigen.</p>
@@ -865,14 +865,14 @@ export default function CreateQuestModal({
                         className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all flex flex-col h-full ${
                           selectedMedia?.shortcode === item.shortcode
                             ? 'border-pink-500 ring-2 ring-pink-500/30 bg-pink-950/20'
-                            : 'border-zinc-700 hover:border-pink-400 hover:bg-zinc-800/50'
+                            : 'border-white/[0.1] hover:border-pink-400 hover:bg-[#231e12]/50'
                         }`}
                       >
                         {/* Thumbnail */}
                         {item.thumbnail_url ? (
                           <img src={item.thumbnail_url} alt="" className="w-full h-32 object-cover" />
                         ) : (
-                          <div className="w-full h-32 bg-zinc-700 flex items-center justify-center">
+                          <div className="w-full h-32 bg-[#2d2615] flex items-center justify-center">
                             <FaInstagram size={28} className="text-zinc-500" />
                           </div>
                         )}
@@ -885,7 +885,7 @@ export default function CreateQuestModal({
                         )}
 
                         {/* Info */}
-                        <div className="p-2 bg-zinc-900 flex-1 flex flex-col gap-1">
+                        <div className="p-2 bg-[#1a1710] flex-1 flex flex-col gap-1">
                           <p className="text-white text-xs font-semibold line-clamp-2 leading-tight flex-1">
                             {title}
                           </p>
@@ -957,7 +957,7 @@ export default function CreateQuestModal({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="💬 Schreibe einen positiven Kommentar unter diesen YouTube Short!"
               rows={2}
-              className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm placeholder-zinc-500 resize-none"
+              className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm placeholder-zinc-500 resize-none"
             />
             <p className="text-zinc-600 text-xs mt-1">Leer lassen → Standardnachricht wird verwendet ({platform === 'tiktok' ? 'TikTok-Kommentar' : 'YouTube-Kommentar/-Like/-Code'})</p>
           </div>
@@ -974,7 +974,7 @@ export default function CreateQuestModal({
                   min="0.01"
                   step="0.01"
                   required
-                  className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm pr-16"
+                  className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm pr-16"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">DFAITH</span>
               </div>
@@ -988,7 +988,7 @@ export default function CreateQuestModal({
                 min="1"
                 max="1000"
                 required
-                className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm"
+                className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm"
               />
               <p className="text-zinc-600 text-xs mt-1">Wie viele Fans mitmachen dürfen</p>
             </div>

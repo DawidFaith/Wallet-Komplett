@@ -37,10 +37,10 @@ export default function LandingPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#060608] text-white overflow-x-hidden">
+    <main className="min-h-screen bg-[#13120e] text-white overflow-x-hidden">
 
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-3.5 bg-[#060608]/90 backdrop-blur-xl border-b border-white/5">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-3.5 bg-[#13120e]/90 backdrop-blur-xl border-b border-white/5">
         <div className="flex items-center gap-2.5">
           <Image src="/D.FAITH.png" alt="D.FAITH" width={26} height={26} className="rounded-full" />
           <span className="font-bold text-sm tracking-widest uppercase">D.Faith</span>
@@ -66,8 +66,8 @@ export default function LandingPage() {
             className="object-cover object-top"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#060608] via-[#060608]/65 to-[#060608]/10" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#060608]/70 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#13120e] via-[#13120e]/65 to-[#13120e]/10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#13120e]/70 via-transparent to-transparent" />
         </div>
 
         {/* Text content — sits at the bottom of the hero */}

@@ -35,8 +35,8 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="de" className="bg-zinc-950">
-        <body className={`${inter.className} ${orbitron.variable} ${pirataOne.variable} bg-zinc-950`}>
+      <html lang="de" className="bg-[#13120e]">
+          <body className={`${inter.className} ${orbitron.variable} ${pirataOne.variable} bg-[#13120e]`}>
           <ThirdwebProvider>
             <QueryProvider>{children}</QueryProvider>
           </ThirdwebProvider>

@@ -248,7 +248,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   if (!account?.address) {
     return (
       <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center py-24 px-4 text-center">
-        <div className="w-20 h-20 rounded-full bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center mb-5">
+        <div className="w-20 h-20 rounded-full bg-[#231e12] border-2 border-white/[0.1] flex items-center justify-center mb-5">
           <FaLock size={28} className="text-zinc-500" />
         </div>
         <h2 className="text-white text-xl font-bold mb-2">Dein Profil</h2>
@@ -308,7 +308,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
       </div>
 
       {/* ── Supporter ─────────────────────────────────────────── */}
-      <div className="bg-white/3 rounded-2xl border border-white/7 p-5 space-y-4">
+      <div className="bg-white/[0.06] rounded-2xl border border-white/[0.1] p-5 space-y-4">
         <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-1">Supporter</p>
 
         {/* Avatar + Name + Dropdown */}
@@ -339,13 +339,13 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                 <div className="relative shrink-0">
                   <button
                     onClick={() => setDropdownOpen((o) => !o)}
-                    className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 bg-white/5 hover:bg-white/10 border border-white/7 px-2 py-1 rounded-lg transition-colors"
+                    className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 bg-white/5 hover:bg-white/10 border border-white/[0.1] px-2 py-1 rounded-lg transition-colors"
                   >
                     {primaryPlatform && PLATFORM_META[primaryPlatform].icon}
                     <FaChevronDown size={9} className={`transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
                   {dropdownOpen && (
-                    <div className="absolute left-0 top-full mt-1 z-50 bg-[#0d0a05] border border-white/8 rounded-xl shadow-xl overflow-hidden min-w-[140px]">
+                    <div className="absolute left-0 top-full mt-1 z-50 bg-[#1a150a] border border-white/8 rounded-xl shadow-xl overflow-hidden min-w-[140px]">
                       {linkedPlatforms.map((platform) => {
                         const meta = PLATFORM_META[platform];
                         const isActive = primaryPlatform === platform;
@@ -371,7 +371,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-white/7" />
+        <div className="border-t border-white/[0.1]" />
 
         {/* Info-Banner wenn kein Social Account verbunden */}
         {noSocials && (
@@ -398,7 +398,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                     setArtistRewardTokenInput(p.rewardToken ?? 'D.FAITH');
                     setEditingArtist(true);
                   }}
-                  className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 bg-white/5 hover:bg-white/10 border border-white/7 px-2 py-1 rounded-lg transition-colors"
+                  className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 bg-white/5 hover:bg-white/10 border border-white/[0.1] px-2 py-1 rounded-lg transition-colors"
                 >
                   <FaPen size={9} /> Bearbeiten
                 </button>
@@ -434,7 +434,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                 </div>
               </div>
             ) : (
-              <div className="bg-zinc-800/50 rounded-xl p-3 space-y-1.5">
+              <div className="bg-[#231e12]/50 rounded-xl p-3 space-y-1.5">
                 {p.artistType && (
                   <p className="text-amber-400 text-xs font-semibold flex items-center gap-1.5">
                     <FaMusic size={9} /> {p.artistType}
@@ -454,7 +454,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
         )}
 
         {/* Divider vor Sozialen Profilen (nur wenn Artist-Sektion sichtbar) */}
-        {p?.isArtist && <div className="border-t border-white/7" />}
+        {p?.isArtist && <div className="border-t border-white/[0.1]" />}
 
         {/* Soziale Profile – kompakte Icon-Reihe */}
         <div>
@@ -519,7 +519,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
 
       {/* ── ArtistBoard ────────────────────────────────────────── */}
       {artists.length > 0 && (
-        <div className="bg-white/3 rounded-2xl border border-white/7 p-5">
+        <div className="bg-white/[0.06] rounded-2xl border border-white/[0.1] p-5">
           <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-4">Artists</p>
           <div className="flex gap-4 overflow-x-auto pt-2 pb-1 scrollbar-none">
             {artists.map((artist) => {
@@ -562,7 +562,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
 
           {/* Artist-Info-Card (inline, expandiert beim Klick) */}
           {selectedArtist && (
-              <div className="mt-4 pt-4 border-t border-white/7 space-y-3">
+              <div className="mt-4 pt-4 border-t border-white/[0.1] space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {selectedArtist.picture ? (
@@ -627,7 +627,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4"
           onClick={() => setShowYoutubeManage(false)}
         >
-          <div className="w-full max-w-md bg-[#0d0a05] border border-white/8 rounded-2xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md bg-[#1a150a] border border-white/8 rounded-2xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <FaYoutube className="text-red-500" size={20} />
@@ -636,7 +636,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               <button onClick={() => setShowYoutubeManage(false)} className="text-zinc-500 hover:text-white text-xl leading-none">×</button>
             </div>
             {/* Kanal-Info */}
-            <div className="flex items-center gap-3 bg-white/5 border border-white/7 rounded-xl p-3">
+            <div className="flex items-center gap-3 bg-white/5 border border-white/[0.1] rounded-xl p-3">
               {p.youtubeChannelThumbnail && (
                 <Image src={p.youtubeChannelThumbnail} alt={p.youtubeChannelName ?? ''} width={40} height={40} unoptimized className="w-10 h-10 rounded-full object-cover" />
               )}
@@ -690,7 +690,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           onClick={() => setClaimModal(null)}
         >
           <div
-            className="w-full max-w-sm bg-[#0d0a05] border border-amber-700/40 rounded-2xl p-6 space-y-4 text-center"
+            className="w-full max-w-sm bg-[#1a150a] border border-amber-700/40 rounded-2xl p-6 space-y-4 text-center"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-16 h-16 mx-auto">
@@ -772,7 +772,7 @@ function SocialChip({
     return (
       <button
         onClick={onAdd}
-        className="flex items-center gap-1.5 bg-zinc-800/60 border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-white rounded-xl px-3 py-2 text-xs font-semibold transition-all"
+        className="flex items-center gap-1.5 bg-[#231e12]/60 border border-white/[0.1] hover:border-zinc-500 text-zinc-400 hover:text-white rounded-xl px-3 py-2 text-xs font-semibold transition-all"
       >
         {icon}
         {label}
@@ -786,7 +786,7 @@ function SocialChip({
     <div className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 bg-zinc-800/60 border border-green-700/40 hover:border-green-500/60 text-white rounded-xl px-3 py-2 text-xs font-semibold transition-all"
+        className="flex items-center gap-1.5 bg-[#231e12]/60 border border-green-700/40 hover:border-green-500/60 text-white rounded-xl px-3 py-2 text-xs font-semibold transition-all"
       >
         {icon}
         {label}
@@ -794,14 +794,14 @@ function SocialChip({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-2 z-50 bg-[#0d0a05] border border-white/8 rounded-2xl p-3 shadow-xl w-52 space-y-3">
+        <div className="absolute left-0 top-full mt-2 z-50 bg-[#1a150a] border border-white/8 rounded-2xl p-3 shadow-xl w-52 space-y-3">
           {/* Name + Bild */}
           <div className="flex items-center gap-2">
             {picture ? (
               <Image src={picture} alt={displayText ?? label} width={32} height={32} unoptimized
                 className="w-8 h-8 rounded-full object-cover shrink-0" />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center shrink-0">{icon}</div>
+              <div className="w-8 h-8 rounded-full bg-[#2d2615] flex items-center justify-center shrink-0">{icon}</div>
             )}
             <p className="text-white text-xs font-semibold truncate flex-1">{displayText ?? label}</p>
           </div>

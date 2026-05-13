@@ -61,7 +61,7 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
   };
 
   return (
-    <nav className="fixed top-0 left-0 w-full bg-zinc-900 border-b border-zinc-800 z-50">
+    <nav className="fixed top-0 left-0 w-full bg-[#1a180f] border-b border-white/8 z-50">
       <ul className="flex justify-center items-center gap-8 py-3">
         {/* Profil – ganz links */}
         <li>
@@ -144,13 +144,13 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
             />
           </button>
           {langOpen && (
-            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 bg-zinc-800 rounded-lg shadow-xl flex flex-col z-50 min-w-[120px] border border-zinc-700 overflow-hidden">
+            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 bg-[#231e12] rounded-lg shadow-xl flex flex-col z-50 min-w-[120px] border border-white/10 overflow-hidden">
               <button
                 onClick={() => {
                   setLanguage?.("de");
                   setLangOpen(false);
                 }}
-                className={`flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200 border-b border-zinc-700 ${
+                className={`flex items-center gap-2 px-4 py-3 hover:bg-[#2d2515] text-zinc-100 w-full transition-colors duration-200 border-b border-white/10 ${
                   language === "de" ? "bg-zinc-700" : ""
                 }`}
               >
@@ -162,7 +162,7 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
                   setLanguage?.("en");
                   setLangOpen(false);
                 }}
-                className={`flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200 border-b border-zinc-700 ${
+                className={`flex items-center gap-2 px-4 py-3 hover:bg-[#2d2515] text-zinc-100 w-full transition-colors duration-200 border-b border-white/10 ${
                   language === "en" ? "bg-zinc-700" : ""
                 }`}
               >
@@ -174,7 +174,7 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
                   setLanguage?.("pl");
                   setLangOpen(false);
                 }}
-                className={`flex items-center gap-2 px-4 py-3 hover:bg-zinc-700 text-zinc-100 w-full transition-colors duration-200 ${
+                className={`flex items-center gap-2 px-4 py-3 hover:bg-[#2d2515] text-zinc-100 w-full transition-colors duration-200 ${
                   language === "pl" ? "bg-zinc-700" : ""
                 }`}
               >

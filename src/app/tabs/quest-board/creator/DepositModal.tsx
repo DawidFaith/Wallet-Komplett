@@ -88,7 +88,7 @@ export default function DepositModal({ open, onClose, walletAddress, onDeposited
             </p>
             <div className="space-y-1.5">
               <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-bold">Einzahlungsadresse (Reward Pool)</p>
-              <div className="flex items-center gap-2 bg-black/40 rounded-lg px-3 py-2 border border-white/5">
+              <div className="flex items-center gap-2 bg-white/[0.04] rounded-lg px-3 py-2 border border-white/5">
                 <p className="text-white font-mono text-xs flex-1 break-all">{poolAddress || 'Nicht konfiguriert'}</p>
                 {poolAddress && (
                   <button onClick={() => handleCopy(poolAddress, 'pool')} className="text-amber-400 hover:text-amber-300 shrink-0 ml-1">
@@ -99,7 +99,7 @@ export default function DepositModal({ open, onClose, walletAddress, onDeposited
             </div>
             <div className="space-y-1.5">
               <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-bold">D.FAITH Token-Mint (Solana)</p>
-              <div className="flex items-center gap-2 bg-black/40 rounded-lg px-3 py-2 border border-white/5">
+              <div className="flex items-center gap-2 bg-white/[0.04] rounded-lg px-3 py-2 border border-white/5">
                 <p className="text-zinc-400 font-mono text-xs flex-1 truncate">{dfaithMint || 'Nicht konfiguriert'}</p>
                 {dfaithMint && (
                   <button onClick={() => handleCopy(dfaithMint, 'token')} className="text-amber-400 hover:text-amber-300 shrink-0 ml-1">

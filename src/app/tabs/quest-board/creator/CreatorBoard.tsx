@@ -130,7 +130,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
           <div className="border-4 border-red-500/30 border-t-red-500 rounded-full w-10 h-10 animate-spin" />
         </div>
       ) : quests.length === 0 ? (
-        <div className="text-center py-12 bg-zinc-900 rounded-2xl border border-zinc-800 text-zinc-500">
+        <div className="text-center py-12 bg-[#1a1710] rounded-2xl border border-white/[0.08] text-zinc-500">
           <FaPlus size={32} className="mx-auto mb-3 opacity-30" />
           <p>Noch keine Quests erstellt.</p>
           <p className="text-sm mt-1">Erstelle deinen ersten Quest!</p>
@@ -138,17 +138,17 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       ) : (
         <div className="space-y-3">
           {quests.map((quest) => (
-            <div key={quest.id} className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 flex gap-4 items-start">
+            <div key={quest.id} className="bg-[#1a1710] rounded-2xl border border-white/[0.08] p-4 flex gap-4 items-start">
               <div className="relative w-24 h-16 shrink-0 rounded-xl overflow-hidden">
                 <Image src={quest.videoThumbnail} alt={quest.videoTitle} fill unoptimized className="object-cover" />
               </div>
               <div className="flex-1 min-w-0 space-y-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="flex items-center gap-1 bg-zinc-800 rounded-lg px-2 py-0.5 text-xs font-medium">
+                  <span className="flex items-center gap-1 bg-[#231e12] rounded-lg px-2 py-0.5 text-xs font-medium">
                     {PLATFORM_ICONS[quest.platform]}
                     <span className="text-zinc-300">{PLATFORM_LABELS[quest.platform]}</span>
                   </span>
-                  <span className="bg-zinc-800 rounded-lg px-2 py-0.5 text-xs text-zinc-400 font-medium">
+                  <span className="bg-[#231e12] rounded-lg px-2 py-0.5 text-xs text-zinc-400 font-medium">
                     {TYPE_LABELS[quest.type] ?? quest.type}
                   </span>
                 </div>
@@ -163,7 +163,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                   </span>
                   <span className="flex items-center gap-1"><FaTrophy size={10} className="text-green-400" />{quest.completions}/{quest.maxCompletions}</span>
                 </div>
-                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden w-full">
+                <div className="h-1.5 bg-[#231e12] rounded-full overflow-hidden w-full">
                   <div
                     className="h-full bg-gradient-to-r from-red-500 to-yellow-500 rounded-full"
                     style={{ width: `${getProgressPercent(quest.completions, quest.maxCompletions)}%` }}
