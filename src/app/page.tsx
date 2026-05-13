@@ -172,6 +172,92 @@ export default function LandingPage() {
             </div>
           )}
 
+          {/* Mobile Feature-Tabs */}
+          <div className="mb-8">
+            <div className="flex gap-6 border-b border-white/[0.07] mb-6">
+              {(['fan', 'artist'] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={`pb-3 text-[11px] font-black tracking-[0.25em] uppercase border-b-2 transition-all -mb-px ${
+                    tab === t
+                      ? 'border-amber-400 text-white'
+                      : 'border-transparent text-zinc-600 hover:text-zinc-400'
+                  }`}
+                >
+                  {t === 'fan' ? 'Für Fans' : 'Für Künstler'}
+                </button>
+              ))}
+            </div>
+
+            {tab === 'fan' ? (
+              <div className="space-y-5">
+                {fanFeatures.map((f) => (
+                  <div key={f.n} className="flex gap-4 items-start">
+                    <span className="text-[10px] font-black text-amber-400/40 w-6 shrink-0 pt-0.5">{f.n}</span>
+                    <div>
+                      <p className="text-[14px] font-bold text-white mb-1">{f.title}</p>
+                      <p className="text-[12px] text-zinc-500 leading-relaxed">{f.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div>
+                {!applied ? (
+                  <div className="space-y-4">
+                    {artistFeatures.map((f) => (
+                      <div key={f.n} className="flex gap-4 items-start">
+                        <span className="text-[10px] font-black text-amber-400/40 w-6 shrink-0 pt-0.5">{f.n}</span>
+                        <div>
+                          <p className="text-[14px] font-bold text-white mb-1">{f.title}</p>
+                          <p className="text-[12px] text-zinc-500 leading-relaxed">{f.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="space-y-2.5 pt-2">
+                      <div>
+                        <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
+                          Künstlername *
+                        </label>
+                        <input
+                          value={artistName}
+                          onChange={(e) => setArtistName(e.target.value)}
+                          placeholder="Dein Name"
+                          className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-700 outline-none transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
+                          Social Link
+                        </label>
+                        <input
+                          value={artistSocial}
+                          onChange={(e) => setArtistSocial(e.target.value)}
+                          placeholder="instagram.com/…"
+                          className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-700 outline-none transition-colors"
+                        />
+                      </div>
+                      <button
+                        onClick={handleApply}
+                        disabled={!artistName.trim() || sending}
+                        className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 disabled:opacity-20 disabled:cursor-not-allowed text-black font-black text-xs tracking-[0.1em] uppercase rounded-xl transition-colors flex items-center justify-center gap-2"
+                      >
+                        {sending ? 'Sende…' : <>Interesse anmelden <FaChevronRight size={9} /></>}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-10 text-center">
+                    <FaCheckCircle size={30} className="text-amber-400 mx-auto mb-4" />
+                    <p className="font-black text-white mb-2">Danke, {artistName}!</p>
+                    <p className="text-zinc-600 text-sm">Wir melden uns so schnell wie möglich.</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Mobile CTAs */}
           <div className="mt-8 space-y-2.5">
             <SignUpButton mode="modal">
