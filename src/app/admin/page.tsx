@@ -180,6 +180,8 @@ export default function AdminPage() {
   });
 
   const [activeTab, setActiveTab] = useState<'users' | 'token'>('users');
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillMsg, setBackfillMsg] = useState('');
 
   // ── Login Screen ────────────────────────────────────────────────────────────
   if (!secret) {
@@ -277,6 +279,37 @@ export default function AdminPage() {
       {/* ── Benutzer Tab ──────────────────────────────────────────────────────── */}
       {activeTab === 'users' && (
         <>
+          {/* Backfill Banner */}
+          <div className="flex items-center gap-3 mb-4 p-3 bg-zinc-900 border border-zinc-800 rounded-xl">
+            <div className="flex-1 text-xs text-zinc-400">
+              {backfillMsg || 'Fehlende user_profiles aus solana_accounts nachfüllen (einmalig ausführen)'}
+            </div>
+            <button
+              onClick={async () => {
+                setBackfilling(true);
+                setBackfillMsg('');
+                try {
+                  const res = await fetch('/api/admin/migrate', {
+                    method: 'POST',
+                    headers: { 'x-admin-secret': secret },
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error);
+                  setBackfillMsg(data.message);
+                  fetchUsers(secret);
+                } catch (e) {
+                  setBackfillMsg(e instanceof Error ? e.message : 'Fehler');
+                } finally {
+                  setBackfilling(false);
+                }
+              }}
+              disabled={backfilling}
+              className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-700 hover:bg-zinc-600 text-white disabled:opacity-50 transition-colors"
+            >
+              {backfilling ? '…' : 'Backfill'}
+            </button>
+          </div>
+
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-3 mb-5">
             <div className="relative flex-1">

@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       )
     `;
 
-    return NextResponse.json({ success: true, message: `Migration + Backfill abgeschlossen (${backfill.count} neue Profile)` });
+    return NextResponse.json({ success: true, message: `Migration + Backfill abgeschlossen (${(backfill as unknown as { count?: number }).count ?? backfill.length} neue Profile)` });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
