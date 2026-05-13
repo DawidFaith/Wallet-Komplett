@@ -60,7 +60,7 @@ export default function LandingPage() {
         {/* Background photo */}
         <div className="absolute inset-0">
           <Image
-            src="/_ARC6705.jpg"
+            src="/Still%202025-03-19%20193121_19.7.1.jpg"
             alt="Dawid Faith"
             fill
             className="object-cover object-top"
@@ -76,7 +76,7 @@ export default function LandingPage() {
             <div className="w-8 h-0.5 bg-amber-400 mb-5" />
             <h1 className="text-3xl sm:text-4xl font-black leading-tight tracking-tight mb-3">
               Sei dabei.<br />
-              <span className="text-amber-400">Support deine</span>{' '}
+              <span className="text-amber-400">Supporte deine</span>{' '}
               Künstler.<br />
               Werde belohnt.
             </h1>
