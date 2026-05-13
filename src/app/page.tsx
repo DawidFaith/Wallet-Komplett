@@ -101,7 +101,7 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════════════ */}
       {/*  MOBILE LAYOUT  (versteckt ab lg)             */}
       {/* ══════════════════════════════════════════════ */}
-      <div className="lg:hidden min-h-[100svh] flex flex-col pt-14">
+      <div className="lg:hidden flex flex-col pt-14">
 
         {/* Foto */}
         <div className="relative w-full" style={{ aspectRatio: '16/7' }}>
@@ -173,7 +173,7 @@ export default function LandingPage() {
           )}
 
           {/* Mobile CTAs */}
-          <div className="mt-auto space-y-2.5">
+          <div className="mt-8 space-y-2.5">
             <SignUpButton mode="modal">
               <button className="w-full py-[14px] bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-black font-black text-sm tracking-[0.08em] uppercase rounded-2xl transition-all">
                 Jetzt Supporter werden
@@ -191,10 +191,10 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════════════ */}
       {/*  DESKTOP LAYOUT  (ab lg sichtbar)             */}
       {/* ══════════════════════════════════════════════ */}
-      <div className="hidden lg:flex" style={{ height: 'calc(100svh - 3.5rem)', marginTop: '3.5rem' }}>
+      <div className="hidden lg:flex" style={{ marginTop: '3.5rem' }}>
 
-        {/* ── LINKE HÄLFTE: Foto fullscreen + Overlay-Content ── */}
-        <div className="relative w-[50%] h-full overflow-hidden">
+        {/* ── LINKE HÄLFTE: Foto sticky + Overlay-Content ── */}
+        <div className="relative w-[50%] shrink-0 sticky top-14 h-[calc(100svh-3.5rem)] overflow-hidden">
           <Image
             src="/Still%202025-03-19%20193121_19.7.1.jpg"
             alt="Dawid Faith"
@@ -270,8 +270,8 @@ export default function LandingPage() {
         <div className="w-px bg-white/[0.06] self-stretch shrink-0" />
 
         {/* ── RECHTE HÄLFTE: Features + CTA ── */}
-        <div className="flex-1 flex flex-col h-full overflow-y-auto">
-          <div className="flex flex-col justify-between h-full px-14 py-12 max-w-[520px] w-full mx-auto">
+        <div className="flex-1">
+          <div className="flex flex-col px-14 py-12 max-w-[520px] w-full mx-auto">
 
             {/* Einleitung */}
             <div className="mb-2">
@@ -302,7 +302,7 @@ export default function LandingPage() {
             </div>
 
             {/* Feature-Listen / Formular */}
-            <div className="flex-1">
+            <div>
               {tab === 'fan' ? (
                 <div className="space-y-6">
                   {fanFeatures.map((f) => (
