@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { UserButton } from "@clerk/nextjs";
 import {
   FaWallet,
   FaChartBar,
@@ -52,15 +53,10 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
 
   // Funktionen für Navigation
   const navigateToTab = (tab: string) => {
-    if (pathname === "/wallet" && tab !== "wallet") {
-      // Wenn wir auf der Wallet-Seite sind und zu einem anderen Tab wechseln wollen
-      router.push(`/?tab=${tab}`);
-    } else if (pathname === "/" || pathname === "/wallet") {
-      // Auf der Hauptseite oder Wallet-Seite
+    if (pathname === "/home") {
       setActiveTab(tab);
     } else {
-      // Von anderen Seiten zur Hauptseite mit Tab
-      router.push(`/?tab=${tab}`);
+      router.push(`/home?tab=${tab}`);
     }
   };
 
@@ -187,6 +183,10 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
               </button>
             </div>
           )}
+        </li>
+        {/* User / Logout */}
+        <li className="flex items-center">
+          <UserButton afterSignOutUrl="/" />
         </li>
       </ul>
     </nav>
