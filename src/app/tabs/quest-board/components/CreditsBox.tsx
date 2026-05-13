@@ -29,9 +29,7 @@ export default function CreditsBox({
 }: CreditsBoxProps) {
   return (
     <div className="bg-gradient-to-r from-yellow-900/40 to-amber-900/30 border border-yellow-700/50 rounded-2xl p-4 flex items-center gap-4">
-      <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
-        <Image src="/D.FAITH.png" alt="D.FAITH" width={28} height={28} className="w-7 h-7 object-contain" />
-      </div>
+      <Image src="/D.FAITH.png" alt="D.FAITH" width={44} height={44} className="object-contain shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-yellow-300 font-bold text-base">{formatCredits(balance)} D.FAITH Credits</p>
         {subtitle && <p className="text-yellow-600 text-xs">{subtitle}</p>}

@@ -998,9 +998,7 @@ export default function CreateQuestModal({
           <div className="bg-amber-950/20 border border-amber-800/25 rounded-xl p-3 space-y-2">
             <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">Quest-Pool</p>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
-                <Image src="/D.FAITH.png" alt="D.FAITH" width={22} height={22} className="w-5 h-5 object-contain" />
-              </div>
+              <Image src="/D.FAITH.png" alt="D.FAITH" width={32} height={32} className="object-contain shrink-0" />
               <span className="text-amber-300 font-bold text-sm">{creatorBalance.toFixed(2)}</span>
               <span className="text-amber-600 text-xs font-medium">D.FAITH Credits</span>
               {creatorBalance === 0 && (
