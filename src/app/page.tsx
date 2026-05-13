@@ -9,6 +9,14 @@ import {
   FaGift, FaStar, FaMusic, FaCheckCircle, FaChevronRight,
 } from 'react-icons/fa';
 
+interface Artist {
+  walletAddress: string;
+  name: string;
+  picture: string | null;
+  artistType: string | null;
+  questCount: number;
+}
+
 export default function LandingPage() {
   const { isSignedIn, isLoaded } = useUser();
   const router = useRouter();
@@ -16,6 +24,7 @@ export default function LandingPage() {
   const [applied, setApplied] = useState(false);
   const [artistName, setArtistName] = useState('');
   const [artistSocial, setArtistSocial] = useState('');
+  const [artists, setArtists] = useState<Artist[]>([]);
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
@@ -23,9 +32,16 @@ export default function LandingPage() {
     }
   }, [isLoaded, isSignedIn, router]);
 
+  useEffect(() => {
+    fetch('/api/admin/artists')
+      .then((r) => r.json())
+      .then((d) => setArtists(d.artists ?? []))
+      .catch(() => {});
+  }, []);
+
   if (!isLoaded || isSignedIn) {
     return (
-      <main className="min-h-screen bg-black flex items-center justify-center">
+      <main className="min-h-screen bg-[#13120e] flex items-center justify-center">
         <div className="border-2 border-white/10 border-t-amber-400 rounded-full w-10 h-10 animate-spin" />
       </main>
     );
@@ -55,23 +71,43 @@ export default function LandingPage() {
         </SignInButton>
       </nav>
 
-      {/* Hero — Artist Photo */}
-      <section className="relative min-h-[100svh] flex flex-col">
-        {/* Background photo */}
+      {/* Hero — D.FAITH Token */}
+      <section className="relative min-h-[100svh] flex flex-col overflow-hidden">
+        {/* Ambient glow background */}
         <div className="absolute inset-0">
-          <Image
-            src="/Still%202025-03-19%20193121_19.7.1.jpg"
-            alt="Dawid Faith"
-            fill
-            className="object-cover object-top"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#13120e] via-[#13120e]/65 to-[#13120e]/10" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#13120e]/70 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-[#13120e]" />
+          {/* amber glow behind token */}
+          <div className="absolute top-[18%] left-1/2 -translate-x-1/2 w-72 h-72 bg-amber-500/10 rounded-full blur-[80px]" />
+          <div className="absolute top-[22%] left-1/2 -translate-x-1/2 w-40 h-40 bg-amber-400/15 rounded-full blur-[40px]" />
+          <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#13120e] to-transparent" />
+        </div>
+
+        {/* Token visual */}
+        <div className="relative z-10 flex flex-col items-center pt-28 pb-6">
+          <div className="relative">
+            {/* outer ring */}
+            <div className="absolute inset-0 rounded-full border border-amber-400/20 scale-125 animate-pulse" />
+            <div className="absolute inset-0 rounded-full border border-amber-400/10 scale-150" />
+            {/* token */}
+            <div className="w-28 h-28 rounded-full border-2 border-amber-400/40 shadow-[0_0_40px_rgba(251,191,36,0.25)] overflow-hidden bg-[#1a150a]">
+              <Image
+                src="/D.FAITH.png"
+                alt="D.FAITH Token"
+                width={112}
+                height={112}
+                className="w-full h-full object-cover"
+                priority
+              />
+            </div>
+          </div>
+          <div className="mt-5 text-center">
+            <p className="text-[10px] tracking-[0.35em] uppercase text-amber-400/70 font-bold mb-1">D.FAITH Token</p>
+            <p className="text-[10px] tracking-widest uppercase text-zinc-600">Solana · Music Ecosystem</p>
+          </div>
         </div>
 
         {/* Text content — sits at the bottom of the hero */}
-        <div className="relative z-10 flex flex-col justify-end flex-1 px-6 pb-10 pt-24 max-w-lg mx-auto w-full">
+        <div className="relative z-10 flex flex-col justify-end flex-1 px-6 pb-10 max-w-lg mx-auto w-full">
           <div className="mb-8">
             <div className="w-8 h-0.5 bg-amber-400 mb-5" />
             <h1 className="text-3xl sm:text-4xl font-black leading-tight tracking-tight mb-3">
@@ -80,11 +116,8 @@ export default function LandingPage() {
               Künstler.<br />
               Werde belohnt.
             </h1>
-            <p className="text-zinc-400 text-sm leading-relaxed mb-3 max-w-sm">
+            <p className="text-zinc-400 text-sm leading-relaxed max-w-sm">
               Das D.FAITH Ecosystem verbindet Künstler und Fans — mit echten Belohnungen und echter Community.
-            </p>
-            <p className="text-zinc-600 text-xs tracking-widest uppercase font-medium">
-              — Dawid Faith
             </p>
           </div>
 
@@ -110,8 +143,53 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Active Artists Strip */}
+      {artists.length > 0 && (
+        <section className="relative z-10 px-6 pb-6 max-w-lg mx-auto">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1 h-3 bg-amber-400 rounded-full" />
+            <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-zinc-500">
+              Aktive Künstler
+            </p>
+            <span className="text-[9px] bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full px-1.5 py-0.5 font-bold">
+              {artists.length}
+            </span>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
+            {artists.map((a) => (
+              <div
+                key={a.walletAddress}
+                className="flex flex-col items-center gap-1.5 shrink-0 w-[68px]"
+              >
+                <div className="relative">
+                  {a.picture ? (
+                    <img
+                      src={a.picture}
+                      alt={a.name}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-amber-400/30 shadow-[0_0_12px_rgba(251,191,36,0.15)]"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full border-2 border-amber-400/30 bg-amber-500/10 flex items-center justify-center shadow-[0_0_12px_rgba(251,191,36,0.1)]">
+                      <FaMusic size={16} className="text-amber-400/60" />
+                    </div>
+                  )}
+                  {a.questCount > 0 && (
+                    <span className="absolute -bottom-0.5 -right-0.5 bg-amber-400 text-black text-[8px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                      {a.questCount > 9 ? '9+' : a.questCount}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[9px] text-zinc-400 text-center leading-tight line-clamp-2 max-w-full font-medium">
+                  {a.name}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Dynamic Content */}
-      <section className="relative z-10 px-6 pb-20 max-w-lg mx-auto">
+      <section className="relative z-10 px-6 pb-20 max-w-lg mx-auto pt-0">
 
         {tab === 'fan' ? (
           /* ── FAN ─────────────────────────────────────────── */
