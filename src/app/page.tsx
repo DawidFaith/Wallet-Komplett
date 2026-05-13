@@ -1,19 +1,21 @@
 'use client';
 
 import { useUser, SignInButton, SignUpButton } from '@clerk/nextjs';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { SiSolana } from 'react-icons/si';
 import {
-  FaInstagram, FaTiktok, FaYoutube, FaFacebook,
-  FaWallet, FaCoins, FaRocket, FaStar,
-  FaUsers, FaShieldAlt, FaTrophy, FaArrowRight,
+  FaRocket, FaArrowRight, FaBolt, FaLock,
+  FaGift, FaStar, FaMusic, FaCheckCircle, FaChevronRight,
 } from 'react-icons/fa';
 
 export default function LandingPage() {
   const { isSignedIn, isLoaded } = useUser();
   const router = useRouter();
+  const [tab, setTab] = useState<'fan' | 'artist'>('fan');
+  const [applied, setApplied] = useState(false);
+  const [artistName, setArtistName] = useState('');
+  const [artistSocial, setArtistSocial] = useState('');
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
@@ -29,194 +31,223 @@ export default function LandingPage() {
     );
   }
 
+  const handleApply = () => {
+    if (!artistName.trim()) return;
+    setApplied(true);
+  };
+
   return (
     <main className="min-h-screen bg-[#060608] text-white overflow-x-hidden">
 
-      {/* ── Ambient Background ─────────────────────────────── */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[100px]" />
-        <div className="absolute top-1/2 -right-60 w-[600px] h-[600px] bg-violet-700/8 rounded-full blur-[120px]" />
-        <div className="absolute -bottom-20 left-1/3 w-[400px] h-[400px] bg-amber-600/4 rounded-full blur-[100px]" />
-      </div>
-
-      {/* ── Navbar ──────────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#060608]/90 backdrop-blur-xl">
-        <div className="flex items-center gap-3">
-          <Image src="/D.FAITH.png" alt="D.FAITH" width={28} height={28} className="rounded-full" />
-          <span className="font-bold text-sm tracking-widest uppercase text-white">D.Faith</span>
+      {/* Navbar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-3.5 bg-[#060608]/90 backdrop-blur-xl border-b border-white/5">
+        <div className="flex items-center gap-2.5">
+          <Image src="/D.FAITH.png" alt="D.FAITH" width={26} height={26} className="rounded-full" />
+          <span className="font-bold text-sm tracking-widest uppercase">D.Faith</span>
           <span className="text-[9px] bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full px-2 py-0.5 font-bold tracking-widest uppercase">
             Beta
           </span>
         </div>
         <SignInButton mode="modal">
-          <button className="text-xs text-zinc-400 hover:text-amber-400 transition-colors font-medium tracking-wide uppercase">
+          <button className="text-xs text-zinc-500 hover:text-amber-400 transition-colors uppercase tracking-wide font-medium">
             Einloggen
           </button>
         </SignInButton>
       </nav>
 
-      {/* ── Hero ────────────────────────────────────────────── */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-28 pb-20 text-center">
+      {/* Hero — Artist Photo */}
+      <section className="relative min-h-[100svh] flex flex-col">
+        {/* Background photo */}
+        <div className="absolute inset-0">
+          <Image
+            src="/_ARC6705.jpg"
+            alt="Dawid Faith"
+            fill
+            className="object-cover object-top"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#060608] via-[#060608]/65 to-[#060608]/10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#060608]/70 via-transparent to-transparent" />
+        </div>
 
-        {/* Thin horizontal line */}
-        <div className="absolute top-28 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
-
-        <div className="relative z-10 flex flex-col items-center max-w-xl mx-auto gap-8">
-
-          {/* Logo */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-amber-500/20 rounded-full blur-2xl scale-150" />
-            <Image
-              src="/D.FAITH.png"
-              alt="D.FAITH"
-              width={80}
-              height={80}
-              className="relative rounded-full ring-1 ring-amber-500/30"
-            />
-          </div>
-
-          {/* Badge */}
-          <div className="flex items-center gap-2 border border-white/8 rounded-full px-4 py-1.5 bg-white/3 backdrop-blur-sm">
-            <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse" />
-            <span className="text-[10px] text-zinc-400 tracking-widest uppercase font-medium">
-              Beta · Für Künstler &amp; Fans
-            </span>
-          </div>
-
-          {/* Headline */}
-          <div className="space-y-3">
-            <h1 className="text-[42px] sm:text-6xl font-black leading-none tracking-tight">
-              <span className="text-white">D.</span>
-              <span className="text-amber-400">FAITH</span>
+        {/* Text content — sits at the bottom of the hero */}
+        <div className="relative z-10 flex flex-col justify-end flex-1 px-6 pb-10 pt-24 max-w-lg mx-auto w-full">
+          <div className="mb-8">
+            <div className="w-8 h-0.5 bg-amber-400 mb-5" />
+            <h1 className="text-3xl sm:text-4xl font-black leading-tight tracking-tight mb-3">
+              Sei dabei.<br />
+              <span className="text-amber-400">Support deine</span>{' '}
+              Künstler.<br />
+              Werde belohnt.
             </h1>
-            <p className="text-zinc-400 text-sm sm:text-base tracking-widest uppercase font-medium">
-              Ecosystem
+            <p className="text-zinc-400 text-sm leading-relaxed mb-3 max-w-sm">
+              Das D.FAITH Ecosystem verbindet Künstler und Fans — mit echten Belohnungen und echter Community.
+            </p>
+            <p className="text-zinc-600 text-xs tracking-widest uppercase font-medium">
+              — Dawid Faith
             </p>
           </div>
 
-          {/* Description */}
-          <p className="text-zinc-500 text-sm sm:text-base leading-relaxed max-w-md">
-            Die Plattform, die Künstler und Fans durch{' '}
-            <span className="text-zinc-300">Blockchain-Technologie</span>,{' '}
-            <span className="text-zinc-300">Social Media Quests</span> und{' '}
-            <span className="text-zinc-300">echte Rewards</span> verbindet.
-          </p>
+          {/* Toggle */}
+          <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full p-1 w-fit">
+            <button
+              onClick={() => setTab('fan')}
+              className={`px-5 py-2 rounded-full text-xs font-bold tracking-wide uppercase transition-all ${
+                tab === 'fan' ? 'bg-amber-400 text-black' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              Ich bin Fan
+            </button>
+            <button
+              onClick={() => setTab('artist')}
+              className={`px-5 py-2 rounded-full text-xs font-bold tracking-wide uppercase transition-all ${
+                tab === 'artist' ? 'bg-amber-400 text-black' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              Ich bin Künstler
+            </button>
+          </div>
+        </div>
+      </section>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-xs">
+      {/* Dynamic Content */}
+      <section className="relative z-10 px-6 pb-20 max-w-lg mx-auto">
+
+        {tab === 'fan' ? (
+          /* ── FAN ─────────────────────────────────────────── */
+          <div className="space-y-3">
+            <div className="bg-white/3 border border-white/7 rounded-2xl p-5">
+              <div className="space-y-4">
+                {[
+                  {
+                    icon: <FaBolt size={15} className="text-amber-400" />,
+                    title: 'Erfülle Aufgaben deines Künstlers',
+                    desc: 'Absolviere Quests und erhalte dafür echte Belohnungen direkt in dein Wallet.',
+                  },
+                  {
+                    icon: <FaLock size={15} className="text-amber-400" />,
+                    title: 'Frühzugang zu Songs & limitierten Merch',
+                    desc: 'Als aktiver Fan erhältst du exklusiven Zugang vor allen anderen.',
+                  },
+                  {
+                    icon: <FaGift size={15} className="text-amber-400" />,
+                    title: 'Dein Engagement wird belohnt',
+                    desc: 'Sammle XP, steige im Leaderboard auf und löse Punkte gegen Rewards ein.',
+                  },
+                  {
+                    icon: <FaStar size={15} className="text-amber-400" />,
+                    title: 'Social Quests',
+                    desc: 'Verknüpfe Instagram, TikTok, YouTube & Facebook für maximale Belohnungen.',
+                  },
+                ].map((f) => (
+                  <div key={f.title} className="flex gap-3 items-start">
+                    <div className="mt-0.5 w-7 h-7 bg-amber-500/10 rounded-lg flex items-center justify-center shrink-0">
+                      {f.icon}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white leading-snug">{f.title}</p>
+                      <p className="text-xs text-zinc-500 leading-relaxed mt-0.5">{f.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <SignUpButton mode="modal">
-              <button className="w-full flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-300 text-black font-bold py-3 px-6 rounded-xl transition-all text-sm tracking-wide">
+              <button className="w-full flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-300 text-black font-bold py-3.5 rounded-xl text-sm transition-all tracking-wide">
                 <FaRocket size={12} />
-                Registrieren
+                Jetzt kostenlos registrieren
               </button>
             </SignUpButton>
+
             <SignInButton mode="modal">
-              <button className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 font-semibold py-3 px-6 rounded-xl transition-all text-sm">
-                Einloggen
-                <FaArrowRight size={11} />
+              <button className="w-full flex items-center justify-center gap-1.5 text-zinc-600 hover:text-zinc-400 text-xs py-2 transition-colors">
+                Bereits registriert? Einloggen
+                <FaArrowRight size={9} />
               </button>
             </SignInButton>
           </div>
 
-          {/* Platforms */}
-          <div className="flex items-center gap-6 opacity-30 mt-2">
-            <FaInstagram size={16} className="text-pink-400" />
-            <FaTiktok size={16} className="text-white" />
-            <FaYoutube size={16} className="text-red-400" />
-            <FaFacebook size={16} className="text-blue-400" />
-            <SiSolana size={16} className="text-green-400" />
-          </div>
-        </div>
+        ) : (
+          /* ── KÜNSTLER ─────────────────────────────────────── */
+          <div>
+            {!applied ? (
+              <div className="bg-white/3 border border-amber-500/15 rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-1">
+                  <FaMusic size={13} className="text-amber-400" />
+                  <h2 className="font-bold text-sm text-white uppercase tracking-wide">Künstler Bewerbung</h2>
+                </div>
+                <p className="text-zinc-500 text-xs mb-5 leading-relaxed">
+                  Baue deine eigene Community mit Quests, eigenem Token und Rewards. Bewirb dich jetzt für einen Platz auf der Plattform.
+                </p>
 
-        {/* Bottom fade line */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+                <div className="space-y-3 mb-4">
+                  <div>
+                    <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium mb-1 block">
+                      Dein Künstlername *
+                    </label>
+                    <input
+                      value={artistName}
+                      onChange={(e) => setArtistName(e.target.value)}
+                      placeholder="z.B. Dawid Faith"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500/40 transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium mb-1 block">
+                      Social Media Link
+                    </label>
+                    <input
+                      value={artistSocial}
+                      onChange={(e) => setArtistSocial(e.target.value)}
+                      placeholder="instagram.com/deinname"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500/40 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2 mb-5">
+                  {[
+                    'Eigene Solana Wallet & D.FAITH Token',
+                    'Quest System für deine Fanbase',
+                    'Merch & exklusive Content-Drops',
+                  ].map((f) => (
+                    <div key={f} className="flex items-center gap-2 text-xs text-zinc-400">
+                      <FaCheckCircle size={10} className="text-amber-400 shrink-0" />
+                      {f}
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleApply}
+                  disabled={!artistName.trim()}
+                  className="w-full flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-300 disabled:opacity-30 disabled:cursor-not-allowed text-black font-bold py-3 rounded-xl text-sm transition-all tracking-wide"
+                >
+                  Interesse anmelden
+                  <FaChevronRight size={11} />
+                </button>
+              </div>
+            ) : (
+              <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-8 text-center">
+                <FaCheckCircle size={34} className="text-amber-400 mx-auto mb-3" />
+                <h3 className="font-bold text-white text-base mb-2">Danke, {artistName}!</h3>
+                <p className="text-zinc-500 text-xs leading-relaxed max-w-xs mx-auto">
+                  Deine Bewerbung ist bei uns eingegangen. Wir melden uns so schnell wie möglich bei dir.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
-      {/* ── Features ────────────────────────────────────────── */}
-      <section className="relative px-6 py-20 max-w-3xl mx-auto">
-
-        {/* Für Künstler */}
-        <div className="mb-16">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="h-px flex-1 bg-gradient-to-r from-amber-500/40 to-transparent" />
-            <span className="text-[10px] text-amber-400 font-bold tracking-widest uppercase px-3">Für Künstler</span>
-            <div className="h-px flex-1 bg-gradient-to-l from-amber-500/40 to-transparent" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { icon: <FaWallet size={18} className="text-amber-400" />, title: 'Custodial Wallet', desc: 'Eigene Solana-Wallet ohne Seed-Phrase' },
-              { icon: <FaCoins size={18} className="text-amber-400" />, title: 'D.FAITH Token', desc: 'Token an deine Community verteilen' },
-              { icon: <FaRocket size={18} className="text-amber-400" />, title: 'Quest System', desc: 'Missionen für Fans erstellen' },
-              { icon: <SiSolana size={18} className="text-amber-400" />, title: 'On-Chain', desc: 'Direkte Transfers auf Solana' },
-            ].map((f) => (
-              <div
-                key={f.title}
-                className="bg-white/3 backdrop-blur-sm border border-white/7 rounded-2xl p-4 hover:border-amber-500/20 hover:bg-white/5 transition-all group"
-              >
-                <div className="mb-3">{f.icon}</div>
-                <p className="font-semibold text-sm text-white mb-1">{f.title}</p>
-                <p className="text-zinc-600 text-xs leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
+      {/* Footer */}
+      <footer className="border-t border-white/5 px-6 py-6 text-center">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <Image src="/D.FAITH.png" alt="D.FAITH" width={16} height={16} className="rounded-full opacity-40" />
+          <span className="text-zinc-700 text-[10px] tracking-widest uppercase">D.Faith Ecosystem · Beta</span>
         </div>
-
-        {/* Für Fans */}
-        <div className="mb-16">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="h-px flex-1 bg-gradient-to-r from-violet-500/40 to-transparent" />
-            <span className="text-[10px] text-violet-400 font-bold tracking-widest uppercase px-3">Für Fans</span>
-            <div className="h-px flex-1 bg-gradient-to-l from-violet-500/40 to-transparent" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { icon: <FaUsers size={18} className="text-violet-400" />, title: 'Unterstützen', desc: 'Quests absolvieren & Künstler supporten' },
-              { icon: <FaTrophy size={18} className="text-violet-400" />, title: 'XP & Ranking', desc: 'Punkte sammeln & im Leaderboard steigen' },
-              { icon: <FaStar size={18} className="text-violet-400" />, title: 'Rewards', desc: 'Token, Merch & exklusive Inhalte' },
-              { icon: <FaShieldAlt size={18} className="text-violet-400" />, title: 'Social Quests', desc: 'Instagram, TikTok, YouTube & Facebook' },
-            ].map((f) => (
-              <div
-                key={f.title}
-                className="bg-white/3 backdrop-blur-sm border border-white/7 rounded-2xl p-4 hover:border-violet-500/20 hover:bg-white/5 transition-all"
-              >
-                <div className="mb-3">{f.icon}</div>
-                <p className="font-semibold text-sm text-white mb-1">{f.title}</p>
-                <p className="text-zinc-600 text-xs leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Bottom CTA */}
-        <div className="relative rounded-2xl overflow-hidden border border-amber-500/15 p-8 text-center">
-          {/* gold shimmer background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/8 via-transparent to-violet-600/8" />
-          <div className="absolute inset-0 bg-[#060608]/60" />
-          <div className="relative z-10">
-            <Image src="/D.FAITH.png" alt="D.FAITH" width={44} height={44} className="rounded-full mx-auto mb-4 ring-1 ring-amber-500/30" />
-            <h3 className="text-lg font-bold mb-2 tracking-wide">Werde Teil des Ecosystems</h3>
-            <p className="text-zinc-500 text-xs mb-6 max-w-xs mx-auto leading-relaxed">
-              Registriere dich kostenlos und sei Teil der ersten Beta-Generation des D.FAITH Ecosystems.
-            </p>
-            <SignUpButton mode="modal">
-              <button className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-300 text-black font-bold py-2.5 px-7 rounded-xl transition-all text-sm tracking-wide">
-                <FaRocket size={12} />
-                Kostenlos beitreten
-              </button>
-            </SignUpButton>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Footer ──────────────────────────────────────────── */}
-      <footer className="border-t border-white/5 px-6 py-8 text-center">
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <Image src="/D.FAITH.png" alt="D.FAITH" width={18} height={18} className="rounded-full opacity-50" />
-          <span className="text-zinc-700 text-xs tracking-widest uppercase font-medium">D.Faith Ecosystem</span>
-        </div>
-        <p className="text-zinc-800 text-[10px] tracking-wide">
-          Beta Version · © 2025 · Alle Rechte vorbehalten
-        </p>
+        <p className="text-zinc-800 text-[10px]">© 2025 · Alle Rechte vorbehalten</p>
       </footer>
 
     </main>
