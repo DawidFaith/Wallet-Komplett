@@ -56,8 +56,8 @@ function TokenRow({
   return (
     <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-colors
       ${isDfaith
-        ? 'bg-purple-950/30 border-purple-800/40'
-        : 'bg-zinc-900 border-zinc-800'}`}>
+        ? 'bg-amber-950/20 border-amber-800/25'
+        : 'bg-white/3 border-white/7'}`}>
       {/* Icon */}
       {token.image ? (
         <div className="w-10 h-10 shrink-0 overflow-hidden rounded-full">
@@ -70,7 +70,7 @@ function TokenRow({
         </div>
       ) : (
         <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0
-          ${isDfaith ? 'bg-purple-800/50' : 'bg-zinc-800'}`}>
+          ${isDfaith ? 'bg-amber-800/20' : 'bg-white/8'}`}>
           <span className="text-white font-bold text-sm">
             {token.symbol.slice(0, 2).toUpperCase()}
           </span>
@@ -281,23 +281,23 @@ export default function SolanaWalletTab() {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-purple-700/30 rounded-full flex items-center justify-center">
-            <SiSolana size={16} className="text-purple-400" />
+          <div className="w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center">
+            <SiSolana size={16} className="text-amber-400" />
           </div>
-          <h2 className="text-white font-bold text-lg">D.FAITH Ecosystem</h2>
+          <h2 className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</h2>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-6 text-center">
-          <div className="w-16 h-16 mx-auto bg-purple-900/30 rounded-full flex items-center justify-center">
+        <div className="bg-white/3 border border-white/7 rounded-2xl p-8 space-y-6 text-center">
+          <div className="w-16 h-16 mx-auto bg-amber-500/10 rounded-full flex items-center justify-center">
             {!isLoaded
-              ? <FaSpinner size={28} className="animate-spin text-purple-400" />
-              : <SiSolana size={32} className="text-purple-400" />}
+              ? <FaSpinner size={28} className="animate-spin text-amber-400" />
+              : <SiSolana size={32} className="text-amber-400" />}
           </div>
           <div className="space-y-1">
             <p className="text-white font-semibold">Anmelden um fortzufahren</p>
             <p className="text-zinc-400 text-sm">Dein Solana Wallet wird automatisch erstellt — kein Wallet-App nötig.</p>
           </div>
           <button onClick={() => openSignIn()} disabled={!isLoaded}
-            className="w-full flex items-center justify-center gap-3 bg-purple-700 hover:bg-purple-600 disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors">
+            className="w-full flex items-center justify-center gap-3 bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-black font-bold py-3.5 rounded-xl text-sm transition-colors tracking-wide">
             {!isLoaded
               ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               : 'Anmelden'}
@@ -312,13 +312,13 @@ export default function SolanaWalletTab() {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-purple-700/30 rounded-full flex items-center justify-center">
-            <SiSolana size={16} className="text-purple-400" />
+          <div className="w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center">
+            <SiSolana size={16} className="text-amber-400" />
           </div>
-          <h2 className="text-white font-bold text-lg">D.FAITH Ecosystem</h2>
+          <h2 className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</h2>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center space-y-4">
-          <FaSpinner size={28} className="animate-spin text-purple-400 mx-auto" />
+        <div className="bg-white/3 border border-white/7 rounded-2xl p-8 text-center space-y-4">
+          <FaSpinner size={28} className="animate-spin text-amber-400 mx-auto" />
           <p className="text-white font-semibold">Wallet wird erstellt…</p>
           <p className="text-zinc-400 text-sm">Einmalig, dauert ca. 5 Sekunden.</p>
         </div>
@@ -331,10 +331,10 @@ export default function SolanaWalletTab() {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-purple-700/30 rounded-full flex items-center justify-center">
-            <SiSolana size={16} className="text-purple-400" />
+          <div className="w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center">
+            <SiSolana size={16} className="text-amber-400" />
           </div>
-          <h2 className="text-white font-bold text-lg">D.FAITH Ecosystem</h2>
+          <h2 className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</h2>
         </div>
         <div className="bg-red-900/20 border border-red-800/40 rounded-2xl p-6 space-y-3">
           <p className="text-red-300 font-semibold text-sm">Account-Erstellung fehlgeschlagen</p>
@@ -388,10 +388,10 @@ export default function SolanaWalletTab() {
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-purple-700/30 rounded-full flex items-center justify-center">
-            <SiSolana size={15} className="text-purple-400" />
+          <div className="w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center">
+            <SiSolana size={15} className="text-amber-400" />
           </div>
-          <span className="text-white font-bold text-lg">D.FAITH Ecosystem</span>
+          <span className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</span>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => loadBalance(solanaAddr!)} disabled={loadingBal}
@@ -405,16 +405,16 @@ export default function SolanaWalletTab() {
       </div>
 
       {/* ── Balance Card ── */}
-      <div className="relative rounded-3xl overflow-hidden p-6 shadow-2xl"
-        style={{ background: 'linear-gradient(135deg, #3b0764 0%, #4c1d95 40%, #1e1b4b 100%)' }}>
+      <div className="relative rounded-3xl overflow-hidden p-6 shadow-2xl border border-amber-900/20"
+        style={{ background: 'linear-gradient(135deg, #0d0a05 0%, #1a1205 50%, #0d0a05 100%)' }}>
         {/* Dekorative Kreise */}
-        <div className="absolute top-0 right-0 w-56 h-56 rounded-full opacity-10 pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #a855f7, transparent)', transform: 'translate(30%, -30%)' }} />
-        <div className="absolute bottom-0 left-0 w-40 h-40 rounded-full opacity-10 pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #6366f1, transparent)', transform: 'translate(-30%, 30%)' }} />
+        <div className="absolute top-0 right-0 w-56 h-56 rounded-full opacity-15 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #d97706, transparent)', transform: 'translate(30%, -30%)' }} />
+        <div className="absolute bottom-0 left-0 w-40 h-40 rounded-full opacity-8 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #92400e, transparent)', transform: 'translate(-30%, 30%)' }} />
         <div className="relative z-10 space-y-5">
           <div>
-            <p className="text-purple-200/60 text-xs font-medium uppercase tracking-widest mb-1">Gesamtvermögen</p>
+            <p className="text-amber-200/50 text-xs font-medium uppercase tracking-widest mb-1">Gesamtvermögen</p>
             <p className="text-white text-4xl font-bold tracking-tight">
               {loadingBal ? <span className="opacity-40">…</span> : hasPriceData ? totalValueLabel : '—'}
             </p>
@@ -423,16 +423,16 @@ export default function SolanaWalletTab() {
             )}
           </div>
           {/* Wallet Adresse */}
-          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-2xl px-3 py-2.5">
-            <SiSolana size={13} className="text-purple-300 shrink-0" />
-            <span className="text-purple-100 font-mono text-xs flex-1 truncate">
+          <div className="flex items-center gap-2 bg-white/5 backdrop-blur-sm rounded-2xl px-3 py-2.5 border border-amber-900/20">
+            <SiSolana size={13} className="text-amber-400/70 shrink-0" />
+            <span className="text-amber-100/70 font-mono text-xs flex-1 truncate">
               {solanaAddr?.slice(0, 10)}…{solanaAddr?.slice(-8)}
             </span>
-            <button onClick={() => handleCopy(solanaAddr!)} className="text-purple-300 hover:text-white transition-colors shrink-0 p-1">
+            <button onClick={() => handleCopy(solanaAddr!)} className="text-amber-400/60 hover:text-amber-300 transition-colors shrink-0 p-1">
               {copied ? <FaCheckCircle size={12} className="text-emerald-400" /> : <FaCopy size={12} />}
             </button>
             <a href={`https://solscan.io/account/${solanaAddr}`} target="_blank" rel="noopener noreferrer"
-              className="text-purple-300 hover:text-white transition-colors shrink-0 p-1">
+              className="text-amber-400/60 hover:text-amber-300 transition-colors shrink-0 p-1">
               <FaExternalLinkAlt size={10} />
             </a>
           </div>
@@ -442,13 +442,13 @@ export default function SolanaWalletTab() {
       {/* ── Action Buttons ── */}
       <div className="grid grid-cols-4 gap-3">
         {([
-          { label: 'Send',    icon: <FaPaperPlane size={20} />,  color: 'text-purple-400 group-hover:text-purple-300', onClick: () => openSendPanel({ type: 'sol' }) },
+          { label: 'Send',    icon: <FaPaperPlane size={20} />,  color: 'text-amber-400 group-hover:text-amber-300', onClick: () => openSendPanel({ type: 'sol' }) },
           { label: 'Receive', icon: <FaDownload size={20} />,    color: 'text-blue-400 group-hover:text-blue-300',    onClick: () => setActionModal('receive') },
           { label: 'Swap',    icon: <FaExchangeAlt size={20} />, color: 'text-emerald-400 group-hover:text-emerald-300', onClick: () => setActionModal('swap') },
           { label: 'Buy',     icon: <FaCreditCard size={20} />,  color: 'text-amber-400 group-hover:text-amber-300',  onClick: () => setActionModal('buy') },
         ] as const).map(({ label, icon, color, onClick }) => (
           <button key={label} onClick={onClick}
-            className="group flex flex-col items-center gap-2 py-4 bg-zinc-900 border border-zinc-800 hover:border-zinc-600 rounded-2xl transition-all hover:bg-zinc-800/80">
+            className="group flex flex-col items-center gap-2 py-4 bg-white/3 border border-white/7 hover:border-white/15 rounded-2xl transition-all hover:bg-white/6">
             <span className={`transition-all ${color}`}>{icon}</span>
             <span className="text-zinc-400 group-hover:text-white text-xs font-semibold transition-colors">{label}</span>
           </button>
@@ -460,15 +460,15 @@ export default function SolanaWalletTab() {
       {/* ── Assets ── */}
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1">
-          <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">Vermögenswerte</p>
+          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">Vermögenswerte</p>
           {loadingBal && <FaSpinner size={10} className="text-zinc-600 animate-spin" />}
         </div>
 
         {/* SOL Row */}
-        <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors">
-          <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 ring-1 ring-purple-600/30"
-            style={{ background: 'linear-gradient(135deg, rgba(109,40,217,0.5), rgba(67,56,202,0.5))' }}>
-            <SiSolana size={20} className="text-purple-200" />
+        <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border bg-white/3 border-white/7 hover:border-white/12 transition-colors">
+          <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 ring-1 ring-amber-600/20"
+            style={{ background: 'linear-gradient(135deg, rgba(217,119,6,0.25), rgba(146,64,14,0.2))' }}>
+            <SiSolana size={20} className="text-amber-300" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white text-sm font-semibold">Solana</p>
@@ -482,7 +482,7 @@ export default function SolanaWalletTab() {
 
         {/* Artist Tokens */}
         <div className="flex items-center justify-between px-1 pt-1">
-          <p className="text-zinc-600 text-xs font-semibold uppercase tracking-wider">Artist Tokens</p>
+          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">Artist Tokens</p>
         </div>
 
         {/* D.FAITH — wird immer angezeigt */}
@@ -506,16 +506,16 @@ export default function SolanaWalletTab() {
         {tokens.length === 0 && !loadingBal && (
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 text-center space-y-1">
             <p className="text-zinc-500 text-sm">Noch keine Artist Tokens</p>
-            <p className="text-zinc-600 text-xs">Schließe Quests ab um Artist Tokens zu verdienen.</p>
+            <p className="text-zinc-600 text-xs">Schließe Quests ab, um Artist Tokens zu verdienen.</p>
           </div>
         )}
       </div>
 
       {/* ── Private Key (aufklappbar) ── */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+      <div className="bg-white/3 border border-white/7 rounded-2xl overflow-hidden">
         <button
           onClick={() => setPanel(p => p === 'key' ? null : 'key')}
-          className="w-full flex items-center justify-between px-4 py-3 text-zinc-400 hover:text-white transition-colors">
+          className="w-full flex items-center justify-between px-4 py-3 text-zinc-500 hover:text-amber-400 transition-colors">
           <div className="flex items-center gap-2">
             <FaKey size={12} />
             <span className="text-sm font-semibold">Private Key exportieren</span>
@@ -523,10 +523,10 @@ export default function SolanaWalletTab() {
           {panel === 'key' ? <FaChevronUp size={11} /> : <FaChevronDown size={11} />}
         </button>
         {panel === 'key' && (
-          <div className="px-4 pb-4 space-y-3 border-t border-zinc-800 pt-3">
+          <div className="px-4 pb-4 space-y-3 border-t border-white/5 pt-3">
             {!showExport ? (
               <button onClick={handleExport} disabled={exportLoading}
-                className="w-full bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2">
+                className="w-full bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-40 text-zinc-300 font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2">
                 {exportLoading
                   ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Lädt…</>
                   : <><FaKey size={12} /> Private Key anzeigen</>}
@@ -560,18 +560,18 @@ export default function SolanaWalletTab() {
       {/* ── Action Modal ── */}
       {actionModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="w-full sm:max-w-md max-h-[88vh] bg-zinc-900 border border-zinc-800 rounded-t-2xl sm:rounded-2xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
-              <h3 className="text-white font-semibold text-sm">
+          <div className="w-full sm:max-w-md max-h-[88vh] bg-[#0d0a05] border border-white/8 rounded-t-2xl sm:rounded-2xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-white/7 flex items-center justify-between">
+              <h3 className="text-amber-400 font-bold text-xs uppercase tracking-widest">
                 {actionModal === 'send' && `${sendLabel} senden`}
                 {actionModal === 'swap' && 'Token Swap'}
                 {actionModal === 'receive' && 'SOL empfangen'}
                 {actionModal === 'buy' && 'SOL kaufen'}
               </h3>
-              <button onClick={() => setActionModal(null)} className="text-zinc-500 hover:text-white text-sm">Schließen</button>
+              <button onClick={() => setActionModal(null)} className="text-zinc-600 hover:text-zinc-300 text-xs uppercase tracking-wide">Schließen</button>
             </div>
 
-            <div className="overflow-y-auto max-h-[calc(88vh-56px)] p-4">
+            <div className="overflow-y-auto max-h-[calc(88vh-56px)] p-4 bg-[#060608]">
               {actionModal === 'send' && (
                 <div className="space-y-3">
                   {/* Token Selector */}
@@ -588,8 +588,8 @@ export default function SolanaWalletTab() {
                         <button
                           onClick={() => { openSendPanel({ type: 'sol' }); setShowSendTokenDrop(false); }}
                           className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-zinc-700 transition-colors text-left">
-                          <div className="w-6 h-6 bg-purple-700/40 rounded-full flex items-center justify-center shrink-0">
-                            <SiSolana size={12} className="text-purple-300" />
+                          <div className="w-6 h-6 bg-amber-700/30 rounded-full flex items-center justify-center shrink-0">
+                            <SiSolana size={12} className="text-amber-400" />
                           </div>
                           <div>
                             <p className="text-white text-sm font-semibold">SOL</p>
@@ -631,7 +631,7 @@ export default function SolanaWalletTab() {
                     </div>
                     {sendAmt === 'max'
                       ? (
-                        <div className="w-full bg-zinc-800 border border-purple-600 text-purple-300 rounded-xl px-3 py-2 text-sm flex items-center justify-between">
+                        <div className="w-full bg-zinc-900 border border-amber-700/50 text-amber-300/80 rounded-xl px-3 py-2 text-sm flex items-center justify-between">
                           <span>Gesamte Balance (abzgl. Fee)</span>
                           <button onClick={() => setSendAmt('')} className="text-zinc-500 hover:text-white text-xs ml-2">✕</button>
                         </div>
@@ -644,7 +644,7 @@ export default function SolanaWalletTab() {
                   {sendErr && <p className="text-red-400 text-xs">{sendErr}</p>}
                   {sendOk  && <p className="text-green-400 text-xs break-all">{sendOk}</p>}
                   <button onClick={handleSend} disabled={sending || !recipient.trim() || !sendAmt.trim()}
-                    className="w-full bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
+                    className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-black font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
                     {sending
                       ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Wird gesendet…</>
                       : <><FaPaperPlane size={12} /> Senden</>}
@@ -684,7 +684,7 @@ export default function SolanaWalletTab() {
                     href={`https://buy.moonpay.com/?currencyCode=sol&walletAddress=${solanaAddr}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
+                    className="w-full bg-amber-400 hover:bg-amber-300 text-black font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
                     <FaCreditCard size={14} /> Mit MoonPay kaufen
                   </a>
                   <div className="bg-zinc-800/50 rounded-xl px-3 py-2">
