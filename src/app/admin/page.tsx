@@ -182,6 +182,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'users' | 'token'>('users');
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState('');
+  const [resetting, setResetting] = useState(false);
 
   // ── Login Screen ────────────────────────────────────────────────────────────
   if (!secret) {
@@ -307,6 +308,31 @@ export default function AdminPage() {
               className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-700 hover:bg-zinc-600 text-white disabled:opacity-50 transition-colors"
             >
               {backfilling ? '…' : 'Backfill'}
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm('ALLE Daten unwiderruflich löschen?')) return;
+                setResetting(true);
+                setBackfillMsg('');
+                try {
+                  const res = await fetch('/api/admin/reset', {
+                    method: 'POST',
+                    headers: { 'x-admin-secret': secret },
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error);
+                  setBackfillMsg(data.message);
+                  setUsers([]);
+                } catch (e) {
+                  setBackfillMsg(e instanceof Error ? e.message : 'Fehler');
+                } finally {
+                  setResetting(false);
+                }
+              }}
+              disabled={resetting}
+              className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-900/60 hover:bg-red-800 text-red-300 disabled:opacity-50 transition-colors border border-red-800/40"
+            >
+              {resetting ? '…' : 'Full Reset'}
             </button>
           </div>
 
