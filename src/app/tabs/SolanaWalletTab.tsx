@@ -281,16 +281,14 @@ export default function SolanaWalletTab() {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center">
-            <SiSolana size={16} className="text-amber-400" />
-          </div>
+          <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 rounded-full object-contain" />
           <h2 className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</h2>
         </div>
         <div className="bg-white/3 border border-white/7 rounded-2xl p-8 space-y-6 text-center">
-          <div className="w-16 h-16 mx-auto bg-amber-500/10 rounded-full flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center overflow-hidden">
             {!isLoaded
               ? <FaSpinner size={28} className="animate-spin text-amber-400" />
-              : <SiSolana size={32} className="text-amber-400" />}
+              : <img src="/D.FAITH.png" alt="D.FAITH" className="w-16 h-16 object-contain" />}
           </div>
           <div className="space-y-1">
             <p className="text-white font-semibold">Anmelden um fortzufahren</p>
@@ -312,9 +310,7 @@ export default function SolanaWalletTab() {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center">
-            <SiSolana size={16} className="text-amber-400" />
-          </div>
+          <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 rounded-full object-contain" />
           <h2 className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</h2>
         </div>
         <div className="bg-white/3 border border-white/7 rounded-2xl p-8 text-center space-y-4">
@@ -331,9 +327,7 @@ export default function SolanaWalletTab() {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center">
-            <SiSolana size={16} className="text-amber-400" />
-          </div>
+          <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 rounded-full object-contain" />
           <h2 className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</h2>
         </div>
         <div className="bg-red-900/20 border border-red-800/40 rounded-2xl p-6 space-y-3">
@@ -388,9 +382,7 @@ export default function SolanaWalletTab() {
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center">
-            <SiSolana size={15} className="text-amber-400" />
-          </div>
+          <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 rounded-full object-contain" />
           <span className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</span>
         </div>
         <div className="flex items-center gap-2">

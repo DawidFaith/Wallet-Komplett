@@ -305,8 +305,8 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
       </div>
 
       {/* ── Supporter ─────────────────────────────────────────── */}
-      <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 space-y-4">
-        <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1">Supporter</p>
+      <div className="bg-white/3 rounded-2xl border border-white/7 p-5 space-y-4">
+        <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-1">Supporter</p>
 
         {/* Avatar + Name + Dropdown */}
         <div className="flex items-center gap-4">
@@ -336,13 +336,13 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                 <div className="relative shrink-0">
                   <button
                     onClick={() => setDropdownOpen((o) => !o)}
-                    className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 bg-zinc-800 hover:bg-zinc-700 px-2 py-1 rounded-lg transition-colors"
+                    className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 bg-white/5 hover:bg-white/10 border border-white/7 px-2 py-1 rounded-lg transition-colors"
                   >
                     {primaryPlatform && PLATFORM_META[primaryPlatform].icon}
                     <FaChevronDown size={9} className={`transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
                   {dropdownOpen && (
-                    <div className="absolute left-0 top-full mt-1 z-50 bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl overflow-hidden min-w-[140px]">
+                    <div className="absolute left-0 top-full mt-1 z-50 bg-[#0d0a05] border border-white/8 rounded-xl shadow-xl overflow-hidden min-w-[140px]">
                       {linkedPlatforms.map((platform) => {
                         const meta = PLATFORM_META[platform];
                         const isActive = primaryPlatform === platform;
@@ -350,7 +350,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                           <button
                             key={platform}
                             onClick={() => { setPrimaryPlatform(platform); setDropdownOpen(false); }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors ${isActive ? 'bg-red-900/40 text-white' : 'text-zinc-400 hover:bg-zinc-700 hover:text-white'}`}
+                            className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors ${isActive ? 'bg-amber-900/30 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
                           >
                             {meta.icon}
                             <span className="font-medium">{meta.label}</span>
@@ -368,13 +368,13 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-zinc-800" />
+        <div className="border-t border-white/7" />
 
         {/* Info-Banner wenn kein Social Account verbunden */}
         {noSocials && (
-          <div className="flex items-start gap-3 bg-purple-950/30 border border-purple-800/30 rounded-xl px-4 py-3">
-            <FaInfoCircle size={14} className="text-purple-400 shrink-0 mt-0.5" />
-            <p className="text-purple-300 text-xs leading-relaxed">
+          <div className="flex items-start gap-3 bg-amber-950/20 border border-amber-800/25 rounded-xl px-4 py-3">
+            <FaInfoCircle size={14} className="text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-amber-200/80 text-xs leading-relaxed">
               Verbinde deine Social Media Profile, um deine Lieblings-Künstler zu unterstützen und Rewards zu verdienen.
             </p>
           </div>
@@ -384,8 +384,8 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
         {p?.isArtist && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
-                <FaMusic size={10} className="text-red-400" /> Artist-Profil
+              <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5">
+                <FaMusic size={10} className="text-amber-400" /> Artist-Profil
               </p>
               {!editingArtist && (
                 <button
@@ -395,7 +395,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                     setArtistRewardTokenInput(p.rewardToken ?? 'D.FAITH');
                     setEditingArtist(true);
                   }}
-                  className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 bg-zinc-800 hover:bg-zinc-700 px-2 py-1 rounded-lg transition-colors"
+                  className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 bg-white/5 hover:bg-white/10 border border-white/7 px-2 py-1 rounded-lg transition-colors"
                 >
                   <FaPen size={9} /> Bearbeiten
                 </button>
@@ -407,23 +407,24 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                   value={artistTypeInput}
                   onChange={(e) => setArtistTypeInput(e.target.value)}
                   placeholder="Künstlertyp (z.B. Musiker, Rapper, DJ…)"
-                  className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-red-500 transition-colors"
+                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-500/50 transition-colors"
                 />
                 <textarea
                   value={artistBioInput}
                   onChange={(e) => setArtistBioInput(e.target.value)}
                   placeholder="Warum solltest du supported werden? (Bio)"
                   rows={3}
-                  className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-red-500 transition-colors resize-none"
+                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-500/50 transition-colors resize-none"
                 />
                 <div className="flex gap-2 justify-end">
-                  <button onClick={() => setEditingArtist(false)} className="text-xs px-3 py-1.5 rounded-xl bg-zinc-800 text-zinc-400 hover:bg-zinc-700 transition-colors">
+                  <button onClick={() => setEditingArtist(false)}
+                  className="text-xs px-3 py-1.5 rounded-xl bg-white/5 border border-white/8 text-zinc-400 hover:bg-white/10 transition-colors">
                     Abbrechen
                   </button>
                   <button
                     onClick={handleSaveArtistInfo}
                     disabled={artistSaving}
-                    className="text-xs px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold disabled:opacity-50 transition-colors"
+                    className="text-xs px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold disabled:opacity-50 transition-colors"
                   >
                     {artistSaving ? 'Speichern…' : 'Speichern'}
                   </button>
@@ -432,7 +433,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
             ) : (
               <div className="bg-zinc-800/50 rounded-xl p-3 space-y-1.5">
                 {p.artistType && (
-                  <p className="text-red-300 text-xs font-semibold flex items-center gap-1.5">
+                  <p className="text-amber-400 text-xs font-semibold flex items-center gap-1.5">
                     <FaMusic size={9} /> {p.artistType}
                   </p>
                 )}
@@ -450,11 +451,11 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
         )}
 
         {/* Divider vor Sozialen Profilen (nur wenn Artist-Sektion sichtbar) */}
-        {p?.isArtist && <div className="border-t border-zinc-800" />}
+        {p?.isArtist && <div className="border-t border-white/7" />}
 
         {/* Soziale Profile – kompakte Icon-Reihe */}
         <div>
-          <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-3">Deine Plattformen</p>
+          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-3">Deine Plattformen</p>
           <div className="flex gap-3 flex-wrap">
 
             <SocialChip
@@ -515,8 +516,8 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
 
       {/* ── ArtistBoard ────────────────────────────────────────── */}
       {artists.length > 0 && (
-        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5">
-          <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-4">Artists</p>
+        <div className="bg-white/3 rounded-2xl border border-white/7 p-5">
+          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-4">Artists</p>
           <div className="flex gap-4 overflow-x-auto pt-2 pb-1 scrollbar-none">
             {artists.map((artist) => {
               const hasQuests = artist.questCount > 0;
@@ -535,15 +536,15 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                         width={56}
                         height={56}
                         unoptimized
-                        className={`w-14 h-14 rounded-full object-cover transition-transform group-hover:scale-105 ${isSelected ? 'ring-2 ring-white shadow-[0_0_12px_rgba(255,255,255,0.4)]' : hasQuests ? 'ring-2 ring-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]' : 'ring-2 ring-zinc-700'}`}
+                        className={`w-14 h-14 rounded-full object-cover transition-transform group-hover:scale-105 ${isSelected ? 'ring-2 ring-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.4)]' : hasQuests ? 'ring-2 ring-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 'ring-2 ring-white/10'}`}
                       />
                     ) : (
-                      <div className={`w-14 h-14 rounded-full bg-gradient-to-br from-red-600 to-yellow-500 flex items-center justify-center text-white font-bold text-lg select-none transition-transform group-hover:scale-105 ${isSelected ? 'ring-2 ring-white shadow-[0_0_12px_rgba(255,255,255,0.4)]' : hasQuests ? 'ring-2 ring-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]' : 'ring-2 ring-zinc-700'}`}>
+                      <div className={`w-14 h-14 rounded-full bg-gradient-to-br from-amber-700 to-amber-400 flex items-center justify-center text-black font-bold text-lg select-none transition-transform group-hover:scale-105 ${isSelected ? 'ring-2 ring-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.4)]' : hasQuests ? 'ring-2 ring-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 'ring-2 ring-white/10'}`}>
                         {artist.name.slice(0, 2).toUpperCase()}
                       </div>
                     )}
                     {hasQuests && (
-                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-lg animate-pulse">
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-amber-400 text-black text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-lg animate-pulse">
                         {artist.questCount}
                       </span>
                     )}
@@ -558,21 +559,21 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
 
           {/* Artist-Info-Card (inline, expandiert beim Klick) */}
           {selectedArtist && (
-            <div className="mt-4 pt-4 border-t border-zinc-800 space-y-3">
+              <div className="mt-4 pt-4 border-t border-white/7 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {selectedArtist.picture ? (
                     <Image src={selectedArtist.picture} alt={selectedArtist.name} width={44} height={44} unoptimized
-                      className="w-11 h-11 rounded-full object-cover ring-2 ring-red-500/50" />
+                      className="w-11 h-11 rounded-full object-cover ring-2 ring-amber-500/40" />
                   ) : (
-                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-red-600 to-yellow-500 flex items-center justify-center text-white font-bold text-sm">
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-700 to-amber-400 flex items-center justify-center text-black font-bold text-sm">
                       {selectedArtist.name.slice(0, 2).toUpperCase()}
                     </div>
                   )}
                   <div>
                     <p className="text-white font-bold text-sm">{selectedArtist.name}</p>
                     {selectedArtist.artistType && (
-                      <p className="text-red-400 text-xs flex items-center gap-1"><FaMusic size={8} /> {selectedArtist.artistType}</p>
+                      <p className="text-amber-400 text-xs flex items-center gap-1"><FaMusic size={8} /> {selectedArtist.artistType}</p>
                     )}
                   </div>
                 </div>
@@ -623,7 +624,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4"
           onClick={() => setShowYoutubeManage(false)}
         >
-          <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md bg-[#0d0a05] border border-white/8 rounded-2xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <FaYoutube className="text-red-500" size={20} />
@@ -632,7 +633,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
               <button onClick={() => setShowYoutubeManage(false)} className="text-zinc-500 hover:text-white text-xl leading-none">×</button>
             </div>
             {/* Kanal-Info */}
-            <div className="flex items-center gap-3 bg-zinc-800 rounded-xl p-3">
+            <div className="flex items-center gap-3 bg-white/5 border border-white/7 rounded-xl p-3">
               {p.youtubeChannelThumbnail && (
                 <Image src={p.youtubeChannelThumbnail} alt={p.youtubeChannelName ?? ''} width={40} height={40} unoptimized className="w-10 h-10 rounded-full object-cover" />
               )}
@@ -645,7 +646,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
             <div className="flex gap-2">
               <button
                 onClick={() => { setShowYoutubeManage(false); setShowYoutubeModal(true); }}
-                className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-sm py-2.5 rounded-xl transition-colors"
+                className="flex-1 bg-white/5 border border-white/8 hover:bg-white/10 text-zinc-300 font-semibold text-sm py-2.5 rounded-xl transition-colors"
               >
                 Ändern
               </button>
@@ -686,7 +687,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           onClick={() => setClaimModal(null)}
         >
           <div
-            className="w-full max-w-sm bg-zinc-900 border border-yellow-700/50 rounded-2xl p-6 space-y-4 text-center"
+            className="w-full max-w-sm bg-[#0d0a05] border border-amber-700/40 rounded-2xl p-6 space-y-4 text-center"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-16 h-16 mx-auto">
@@ -790,7 +791,7 @@ function SocialChip({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-2 z-50 bg-zinc-900 border border-zinc-700 rounded-2xl p-3 shadow-xl w-52 space-y-3">
+        <div className="absolute left-0 top-full mt-2 z-50 bg-[#0d0a05] border border-white/8 rounded-2xl p-3 shadow-xl w-52 space-y-3">
           {/* Name + Bild */}
           <div className="flex items-center gap-2">
             {picture ? (
@@ -805,7 +806,7 @@ function SocialChip({
           <div className="flex gap-2">
             <button
               onClick={() => { setOpen(false); onChange(); }}
-              className="flex-1 text-xs px-2 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold transition-colors"
+              className="flex-1 text-xs px-2 py-1.5 rounded-xl bg-white/5 border border-white/8 hover:bg-white/10 text-zinc-300 font-semibold transition-colors"
             >
               Ändern
             </button>
