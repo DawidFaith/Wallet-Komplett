@@ -280,12 +280,11 @@ export default function SolanaWalletTab() {
   if (!connected) {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-center gap-3">
-          <SiSolana size={24} className="text-purple-400" />
-          <div>
-            <h2 className="text-white font-bold text-xl leading-tight">Solana Wallet</h2>
-            <p className="text-purple-400 text-xs font-medium">Support &amp; Earn</p>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-purple-700/30 rounded-full flex items-center justify-center">
+            <SiSolana size={16} className="text-purple-400" />
           </div>
+          <h2 className="text-white font-bold text-lg">D.FAITH Ecosystem</h2>
         </div>
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-6 text-center">
           <div className="w-16 h-16 mx-auto bg-purple-900/30 rounded-full flex items-center justify-center">
@@ -312,13 +311,15 @@ export default function SolanaWalletTab() {
   if (creating || (userId && !solanaAddr && !createError)) {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-center gap-3">
-          <SiSolana size={24} className="text-purple-400" />
-          <h2 className="text-white font-bold text-xl">Solana Wallet</h2>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-purple-700/30 rounded-full flex items-center justify-center">
+            <SiSolana size={16} className="text-purple-400" />
+          </div>
+          <h2 className="text-white font-bold text-lg">D.FAITH Ecosystem</h2>
         </div>
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center space-y-4">
           <FaSpinner size={28} className="animate-spin text-purple-400 mx-auto" />
-          <p className="text-white font-semibold">Solana Wallet wird erstellt…</p>
+          <p className="text-white font-semibold">Wallet wird erstellt…</p>
           <p className="text-zinc-400 text-sm">Einmalig, dauert ca. 5 Sekunden.</p>
         </div>
       </div>
@@ -329,9 +330,11 @@ export default function SolanaWalletTab() {
   if (createError) {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-4">
-        <div className="flex items-center gap-3">
-          <SiSolana size={24} className="text-purple-400" />
-          <h2 className="text-white font-bold text-xl">Solana Wallet</h2>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-purple-700/30 rounded-full flex items-center justify-center">
+            <SiSolana size={16} className="text-purple-400" />
+          </div>
+          <h2 className="text-white font-bold text-lg">D.FAITH Ecosystem</h2>
         </div>
         <div className="bg-red-900/20 border border-red-800/40 rounded-2xl p-6 space-y-3">
           <p className="text-red-300 font-semibold text-sm">Account-Erstellung fehlgeschlagen</p>
@@ -384,12 +387,11 @@ export default function SolanaWalletTab() {
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <SiSolana size={22} className="text-purple-400" />
-          <div>
-            <h2 className="text-white font-bold text-xl leading-tight">Solana Wallet</h2>
-            <p className="text-purple-400 text-xs font-medium">Support &amp; Earn</p>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-purple-700/30 rounded-full flex items-center justify-center">
+            <SiSolana size={15} className="text-purple-400" />
           </div>
+          <span className="text-white font-bold text-lg">D.FAITH Ecosystem</span>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => loadBalance(solanaAddr!)} disabled={loadingBal}
@@ -402,62 +404,85 @@ export default function SolanaWalletTab() {
         </div>
       </div>
 
-      {/* ── Total Wallet Value ── */}
-      {hasPriceData && (
-        <div className="text-center py-1">
-          <p className="text-zinc-500 text-xs uppercase tracking-wider mb-0.5">Wallet Gesamt</p>
-          <p className="text-white text-3xl font-bold tracking-tight">{loadingBal ? '…' : totalValueLabel}</p>
+      {/* ── Balance Card ── */}
+      <div className="relative rounded-3xl overflow-hidden p-6 shadow-2xl"
+        style={{ background: 'linear-gradient(135deg, #3b0764 0%, #4c1d95 40%, #1e1b4b 100%)' }}>
+        {/* Dekorative Kreise */}
+        <div className="absolute top-0 right-0 w-56 h-56 rounded-full opacity-10 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #a855f7, transparent)', transform: 'translate(30%, -30%)' }} />
+        <div className="absolute bottom-0 left-0 w-40 h-40 rounded-full opacity-10 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #6366f1, transparent)', transform: 'translate(-30%, 30%)' }} />
+        <div className="relative z-10 space-y-5">
+          <div>
+            <p className="text-purple-200/60 text-xs font-medium uppercase tracking-widest mb-1">Gesamtvermögen</p>
+            <p className="text-white text-4xl font-bold tracking-tight">
+              {loadingBal ? <span className="opacity-40">…</span> : hasPriceData ? totalValueLabel : '—'}
+            </p>
+            {solChange24h !== null && (
+              <p className={`text-sm mt-1 font-medium ${solChangeClass}`}>{solChangeLabel} (24h)</p>
+            )}
+          </div>
+          {/* Wallet Adresse */}
+          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-2xl px-3 py-2.5">
+            <SiSolana size={13} className="text-purple-300 shrink-0" />
+            <span className="text-purple-100 font-mono text-xs flex-1 truncate">
+              {solanaAddr?.slice(0, 10)}…{solanaAddr?.slice(-8)}
+            </span>
+            <button onClick={() => handleCopy(solanaAddr!)} className="text-purple-300 hover:text-white transition-colors shrink-0 p-1">
+              {copied ? <FaCheckCircle size={12} className="text-emerald-400" /> : <FaCopy size={12} />}
+            </button>
+            <a href={`https://solscan.io/account/${solanaAddr}`} target="_blank" rel="noopener noreferrer"
+              className="text-purple-300 hover:text-white transition-colors shrink-0 p-1">
+              <FaExternalLinkAlt size={10} />
+            </a>
+          </div>
         </div>
-      )}
+      </div>
 
-      {/* ── Top Actions ── */}
-      <div className="grid grid-cols-4 gap-2">
-        <button
-          onClick={() => openSendPanel({ type: 'sol' })}
-          className="bg-zinc-900 border border-zinc-800 hover:border-purple-700/50 hover:bg-purple-900/20 text-zinc-200 text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-colors">
-          <FaPaperPlane size={10} /> Send
-        </button>
-        <button
-          onClick={() => setActionModal('swap')}
-          className="bg-zinc-900 border border-zinc-800 hover:border-emerald-700/50 hover:bg-emerald-900/20 text-zinc-200 text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-colors">
-          <FaExchangeAlt size={10} /> Swap
-        </button>
-        <button
-          onClick={() => setActionModal('receive')}
-          className="bg-zinc-900 border border-zinc-800 hover:border-blue-700/50 hover:bg-blue-900/20 text-zinc-200 text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-colors">
-          <FaDownload size={10} /> Receive
-        </button>
-        <button
-          onClick={() => setActionModal('buy')}
-          className="bg-zinc-900 border border-zinc-800 hover:border-amber-700/50 hover:bg-amber-900/20 text-zinc-200 text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-colors">
-          <FaCreditCard size={10} /> Buy
-        </button>
+      {/* ── Action Buttons ── */}
+      <div className="grid grid-cols-4 gap-3">
+        {([
+          { label: 'Send',    icon: <FaPaperPlane size={20} />,  color: 'text-purple-400 group-hover:text-purple-300', onClick: () => openSendPanel({ type: 'sol' }) },
+          { label: 'Receive', icon: <FaDownload size={20} />,    color: 'text-blue-400 group-hover:text-blue-300',    onClick: () => setActionModal('receive') },
+          { label: 'Swap',    icon: <FaExchangeAlt size={20} />, color: 'text-emerald-400 group-hover:text-emerald-300', onClick: () => setActionModal('swap') },
+          { label: 'Buy',     icon: <FaCreditCard size={20} />,  color: 'text-amber-400 group-hover:text-amber-300',  onClick: () => setActionModal('buy') },
+        ] as const).map(({ label, icon, color, onClick }) => (
+          <button key={label} onClick={onClick}
+            className="group flex flex-col items-center gap-2 py-4 bg-zinc-900 border border-zinc-800 hover:border-zinc-600 rounded-2xl transition-all hover:bg-zinc-800/80">
+            <span className={`transition-all ${color}`}>{icon}</span>
+            <span className="text-zinc-400 group-hover:text-white text-xs font-semibold transition-colors">{label}</span>
+          </button>
+        ))}
       </div>
 
       <>
 
-      {/* ── SOL ── */}
-      <div className="flex items-center gap-3 px-4 py-3 rounded-2xl border bg-purple-950/30 border-purple-800/40">
-        <div className="w-10 h-10 bg-purple-700/40 rounded-full flex items-center justify-center shrink-0">
-          <SiSolana size={20} className="text-purple-300" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-white text-sm font-semibold">Solana</p>
-          <p className="text-zinc-500 text-xs">
-            {loadingBal ? '…' : (solBalance ?? 0).toFixed(4)} SOL
-          </p>
-        </div>
-        <div className="text-right shrink-0">
-          <p className="text-white font-bold text-sm">{loadingBal ? '…' : solValueLabel}</p>
-          <p className={`text-xs ${solChangeClass}`}>{loadingBal ? '…' : solChangeLabel}</p>
-        </div>
-      </div>
-
-      {/* ── Artist Tokens ── */}
+      {/* ── Assets ── */}
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1">
-          <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">Artist Tokens</p>
+          <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">Vermögenswerte</p>
           {loadingBal && <FaSpinner size={10} className="text-zinc-600 animate-spin" />}
+        </div>
+
+        {/* SOL Row */}
+        <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors">
+          <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 ring-1 ring-purple-600/30"
+            style={{ background: 'linear-gradient(135deg, rgba(109,40,217,0.5), rgba(67,56,202,0.5))' }}>
+            <SiSolana size={20} className="text-purple-200" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-sm font-semibold">Solana</p>
+            <p className="text-zinc-500 text-xs">{loadingBal ? '…' : (solBalance ?? 0).toFixed(4)} SOL</p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-white font-bold text-sm">{loadingBal ? '…' : solValueLabel}</p>
+            <p className={`text-xs ${solChangeClass}`}>{loadingBal ? '…' : solChangeLabel}</p>
+          </div>
+        </div>
+
+        {/* Artist Tokens */}
+        <div className="flex items-center justify-between px-1 pt-1">
+          <p className="text-zinc-600 text-xs font-semibold uppercase tracking-wider">Artist Tokens</p>
         </div>
 
         {/* D.FAITH — wird immer angezeigt */}
