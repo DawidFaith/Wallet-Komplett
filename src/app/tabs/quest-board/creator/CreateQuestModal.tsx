@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { FaPlus, FaSync, FaCheck, FaCommentAlt, FaClock, FaKey, FaTiktok, FaYoutube, FaInstagram, FaFacebookF, FaThumbsUp, FaBookmark, FaShareAlt, FaTrash } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import { shortenWallet } from '../utils';
@@ -994,22 +995,25 @@ export default function CreateQuestModal({
           </div>
 
           {/* Hinweis */}
-          <div className="bg-zinc-800 rounded-xl p-3 text-xs text-zinc-400 space-y-1">
-            <p className="text-yellow-400 font-semibold">Hinweis:</p>
-            <p>
-              Quest-Pool:{' '}
-              <span className="text-yellow-300 font-bold">{creatorBalance.toFixed(2)} DFAITH</span>
+          <div className="bg-amber-950/20 border border-amber-800/25 rounded-xl p-3 space-y-2">
+            <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">Quest-Pool</p>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
+                <Image src="/D.FAITH.png" alt="D.FAITH" width={22} height={22} className="w-5 h-5 object-contain" />
+              </div>
+              <span className="text-amber-300 font-bold text-sm">{creatorBalance.toFixed(2)}</span>
+              <span className="text-amber-600 text-xs font-medium">D.FAITH Credits</span>
               {creatorBalance === 0 && (
                 <button
                   type="button"
                   onClick={() => { handleClose(); onOpenDeposit(); }}
-                  className="ml-2 text-yellow-400 underline"
+                  className="ml-auto text-xs bg-amber-400 hover:bg-amber-300 text-black font-bold px-3 py-1 rounded-lg transition-colors"
                 >
-                  Jetzt aufladen
+                  Aufladen
                 </button>
               )}
-            </p>
-            <p>Wallet: <span className="text-zinc-300 font-mono">{shortenWallet(walletAddress)}</span></p>
+            </div>
+            <p className="text-zinc-600 text-xs">Wallet: <span className="text-zinc-400 font-mono">{shortenWallet(walletAddress)}</span></p>
           </div>
 
           {error && <p className="text-red-400 text-sm">{error}</p>}

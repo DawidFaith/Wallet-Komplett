@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createThirdwebClient, getContract, prepareContractCall, sendTransaction } from 'thirdweb';
-import { privateKeyToAccount } from 'thirdweb/wallets';
-import { base } from 'thirdweb/chains';
+import {
+  Connection, PublicKey, Transaction, sendAndConfirmTransaction,
+} from '@solana/web3.js';
+import {
+  getAssociatedTokenAddress, createAssociatedTokenAccountInstruction,
+  createTransferInstruction, getAccount, getMint,
+  TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID,
+} from '@solana/spl-token';
 import {
   getDfaithCredits,
   redeemDfaithCredits,
@@ -9,16 +14,17 @@ import {
   startClaimLock,
   endClaimLock,
 } from '@/app/lib/questDb';
+import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
+import { getDb } from '@/app/lib/db';
 
-const DFAITH_TOKEN = '0x69eFD833288605f320d77eB2aB99DDE62919BbC1';
-const DFAITH_DECIMALS = 2;
+const RPC_URL     = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
+const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
 
-// POST: Dfaith Credits einlösen → echte DFAITH-Tokens senden
+// POST: D.FAITH Credits einlösen → echte D.FAITH SPL-Token senden (Solana)
 export async function POST(req: NextRequest) {
-  const relayerKey = process.env.RELAYER_PRIVATE_KEY;
-  if (!relayerKey) {
+  if (!DFAITH_MINT) {
     return NextResponse.json(
-      { error: 'Auszahlung nicht verfügbar (RELAYER_PRIVATE_KEY nicht konfiguriert)' },
+      { error: 'Auszahlung nicht verfügbar (NEXT_PUBLIC_SOLANA_DFAITH_TOKEN nicht konfiguriert)' },
       { status: 500 },
     );
   }
@@ -38,11 +44,24 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Solana-Adresse des Nutzers aus custodial Wallet-DB holen
+  const sql = getDb();
+  const rows = await sql`
+    SELECT solana_address FROM solana_accounts WHERE wallet_address = ${walletAddress.toLowerCase()}
+  `;
+  if (rows.length === 0) {
+    return NextResponse.json(
+      { error: 'Kein Solana-Wallet für diesen Account gefunden. Bitte zuerst ein Solana-Wallet erstellen.' },
+      { status: 404 },
+    );
+  }
+  const recipientSolana = rows[0].solana_address as string;
+
   // Schnelle Guthaben-Prüfung (vor dem Lock)
   const currentBalance = await getDfaithCredits(walletAddress);
   if (currentBalance < amount) {
     return NextResponse.json(
-      { error: `Nicht genug Dfaith Credits. Verfügbar: ${currentBalance}` },
+      { error: `Nicht genug D.FAITH Credits. Verfügbar: ${currentBalance}` },
       { status: 400 },
     );
   }
@@ -51,52 +70,58 @@ export async function POST(req: NextRequest) {
   const locked = await startClaimLock(walletAddress);
   if (!locked) {
     return NextResponse.json(
-      { error: 'Eine Einlösung für diese Wallet läuft bereits. Bitte warte kurz.' },
+      { error: 'Eine Einlösung für diesen Account läuft bereits. Bitte warte kurz.' },
       { status: 409 },
     );
   }
 
   try {
-    // Credits atomisch abziehen (prüft Balance nochmals auf DB-Ebene)
+    // Credits atomisch abziehen
     try {
       await redeemDfaithCredits(walletAddress, amount);
     } catch {
       return NextResponse.json(
-        { error: 'Nicht genug Dfaith Credits.' },
+        { error: 'Nicht genug D.FAITH Credits.' },
         { status: 400 },
       );
     }
 
-    // Echten DFAITH-Transfer via Hot Wallet senden
+    // Echten D.FAITH-Transfer via Treasury Wallet senden
     try {
-      const thirdwebClient = createThirdwebClient({
-        secretKey: process.env.THIRDWEB_SECRET_KEY || '',
-        clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || '',
-      });
-      const relayerAccount = privateKeyToAccount({
-        client: thirdwebClient,
-        privateKey: relayerKey as `0x${string}`,
-      });
-      const contract = getContract({
-        client: thirdwebClient,
-        chain: base,
-        address: DFAITH_TOKEN,
-      });
-      const tx = prepareContractCall({
-        contract,
-        method: 'function transfer(address,uint256) returns (bool)',
-        params: [
-          walletAddress as `0x${string}`,
-          BigInt(Math.round(amount * Math.pow(10, DFAITH_DECIMALS))),
-        ],
-      });
-      const result = await sendTransaction({ transaction: tx, account: relayerAccount });
+      const treasury = getTreasuryKeypair();
+      const mintPk   = new PublicKey(DFAITH_MINT);
+      const toPk     = new PublicKey(recipientSolana);
+      const connection = new Connection(RPC_URL, 'confirmed');
+
+      const mintInfo = await getMint(connection, mintPk, 'confirmed', TOKEN_PROGRAM_ID);
+      const decimals = mintInfo.decimals;
+
+      const fromAta = await getAssociatedTokenAddress(mintPk, treasury.publicKey, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
+      const toAta   = await getAssociatedTokenAddress(mintPk, toPk, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
+
+      const tx = new Transaction();
+
+      // Ziel-ATA anlegen wenn noch nicht vorhanden
+      try {
+        await getAccount(connection, toAta);
+      } catch {
+        tx.add(createAssociatedTokenAccountInstruction(
+          treasury.publicKey, toAta, toPk, mintPk,
+          TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID,
+        ));
+      }
+
+      const rawAmount = BigInt(Math.round(amount * 10 ** decimals));
+      tx.add(createTransferInstruction(fromAta, toAta, treasury.publicKey, rawAmount, [], TOKEN_PROGRAM_ID));
+
+      const sig = await sendAndConfirmTransaction(connection, tx, [treasury]);
       return NextResponse.json({
         success: true,
-        txHash: result.transactionHash,
+        signature: sig,
         sentAmount: amount,
+        explorerUrl: `https://solscan.io/tx/${sig}`,
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Credits wiederherstellen wenn Transfer fehlschlägt
       await addDfaithCredits(walletAddress, amount);
       console.error('[claim POST] Transfer fehlgeschlagen:', e);
@@ -106,7 +131,6 @@ export async function POST(req: NextRequest) {
       );
     }
   } finally {
-    // Sperre immer freigeben – egal ob Erfolg oder Fehler
     await endClaimLock(walletAddress);
   }
 }

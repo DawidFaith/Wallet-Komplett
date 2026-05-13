@@ -299,9 +299,12 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
     <div className="w-full max-w-2xl mx-auto px-4 pb-16 space-y-5">
 
       {/* ── Page Title ─────────────────────────────────────────── */}
-      <div>
-        <h1 className="text-white font-bold text-2xl">D.FAITH Ecosystem</h1>
-        <p className="text-zinc-500 text-sm mt-0.5">Unterstütze Artists und verdiene Rewards.</p>
+      <div className="flex items-center gap-3 pt-1">
+        <img src="/D.FAITH.png" alt="D.FAITH" className="w-10 h-10 rounded-full object-contain shrink-0" />
+        <div>
+          <h1 className="text-white font-bold text-xl tracking-wide">D.FAITH Ecosystem</h1>
+          <p className="text-zinc-500 text-[10px] tracking-widest uppercase font-medium mt-0.5">Unterstütze Artists · Verdiene Rewards</p>
+        </div>
       </div>
 
       {/* ── Supporter ─────────────────────────────────────────── */}

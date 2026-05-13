@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCreatorBalance, creditCreatorBalance, getDfaithCredits } from '@/app/lib/questDb';
 
-const DFAITH_TOKEN = '0x69eFD833288605f320d77eB2aB99DDE62919BbC1';
-const DFAITH_DECIMALS = 2;
-const BASE_RPC = 'https://mainnet.base.org';
-
-// Transfer(address,address,uint256) – keccak256 Signatur
-const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+const SOLANA_RPC  = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
+const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
 
 // ─── GET: Guthaben eines Creators abrufen ─────────────────────────────────────
 export async function GET(req: NextRequest) {
@@ -28,17 +24,27 @@ export async function GET(req: NextRequest) {
 
 // ─── POST: Einzahlung verifizieren & gutschreiben ─────────────────────────────
 export async function POST(req: NextRequest) {
-  let body: { walletAddress?: string; txHash?: string; amount?: number };
+  let body: { walletAddress?: string; senderWallet?: string; txHash?: string; amount?: number };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Ungültiger Request-Body' }, { status: 400 });
   }
 
-  const { walletAddress, txHash, amount } = body;
+  const { walletAddress, senderWallet, txHash, amount } = body;
   if (!walletAddress || !txHash || !amount || amount <= 0) {
     return NextResponse.json(
       { error: 'walletAddress, txHash und amount sind erforderlich' },
+      { status: 400 },
+    );
+  }
+
+  // senderWallet = Solana-Adresse des Absenders für On-Chain-Prüfung.
+  // Fallback auf walletAddress für Rückwärtskompatibilität.
+  const sender = (senderWallet ?? walletAddress).trim();
+  if (!sender || sender.length < 32) {
+    return NextResponse.json(
+      { error: 'Ungültige Solana-Absenderadresse.' },
       { status: 400 },
     );
   }
@@ -47,72 +53,71 @@ export async function POST(req: NextRequest) {
   if (!rewardPool) {
     return NextResponse.json({ error: 'Reward-Pool nicht konfiguriert (NEXT_PUBLIC_REWARD_POOL_ADDRESS)' }, { status: 500 });
   }
+  if (!DFAITH_MINT) {
+    return NextResponse.json({ error: 'D.FAITH Token-Mint nicht konfiguriert (NEXT_PUBLIC_SOLANA_DFAITH_TOKEN)' }, { status: 500 });
+  }
 
-  // ── On-Chain Verifizierung via Base-RPC ──────────────────────────────────
+  // ── On-Chain Verifizierung via Solana-RPC ──────────────────────────────────
   try {
-    const rpcRes = await fetch(BASE_RPC, {
+    const rpcRes = await fetch(SOLANA_RPC, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         jsonrpc: '2.0',
         id: 1,
-        method: 'eth_getTransactionReceipt',
-        params: [txHash],
+        method: 'getTransaction',
+        params: [txHash, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0 }],
       }),
     });
     const rpcData = await rpcRes.json();
-    const receipt = rpcData?.result;
+    const tx = rpcData?.result;
 
-    if (!receipt) {
+    if (!tx) {
       return NextResponse.json(
-        { error: 'Transaktion noch nicht bestätigt. Bitte kurz warten und erneut versuchen.' },
+        { error: 'Transaktion nicht gefunden. Bitte kurz warten und erneut versuchen.' },
         { status: 400 },
       );
     }
-    if (receipt.status !== '0x1') {
-      return NextResponse.json({ error: 'Transaktion ist fehlgeschlagen (reverted).' }, { status: 400 });
+    if (tx.meta?.err !== null) {
+      return NextResponse.json({ error: 'Transaktion ist fehlgeschlagen.' }, { status: 400 });
     }
 
-    // Transfer-Event aus DFAITH-Vertrag suchen
-    const transfer = (receipt.logs as any[])?.find(
-      (log) =>
-        log.address?.toLowerCase() === DFAITH_TOKEN.toLowerCase() &&
-        log.topics?.[0]?.toLowerCase() === TRANSFER_TOPIC.toLowerCase() &&
-        // from = creator wallet (32-Byte padded)
-        log.topics?.[1]?.toLowerCase().endsWith(walletAddress.toLowerCase().replace('0x', '')) &&
-        // to = reward pool (32-Byte padded)
-        log.topics?.[2]?.toLowerCase().endsWith(rewardPool.toLowerCase().replace('0x', '')),
-    );
+    // Token Balance Changes: D.FAITH-Eingang beim Pool prüfen
+    const preBal: { owner: string; mint: string; uiTokenAmount: { uiAmount: number | null } }[] =
+      tx.meta?.preTokenBalances ?? [];
+    const postBal: { owner: string; mint: string; uiTokenAmount: { uiAmount: number | null } }[] =
+      tx.meta?.postTokenBalances ?? [];
 
-    if (!transfer) {
+    const poolPost = postBal.find((b) => b.owner === rewardPool && b.mint === DFAITH_MINT);
+    const poolPre  = preBal.find((b) => b.owner === rewardPool && b.mint === DFAITH_MINT)
+      ?? { uiTokenAmount: { uiAmount: 0 } };
+
+    if (!poolPost) {
       return NextResponse.json(
-        { error: 'Kein gültiger DFAITH-Transfer an den Reward-Pool gefunden.' },
-        { status: 400 },
-      );
-    }
-
-    // Übertragene Menge aus Event-Data dekodieren
-    const transferredWei = BigInt(transfer.data);
-    const transferredAmount = Number(transferredWei) / Math.pow(10, DFAITH_DECIMALS);
-    // Auf 2 Nachkommastellen runden (DFAITH-Decimals)
-    const actualAmount = Math.round(transferredAmount * 100) / 100;
-
-    // Toleranz: ±0.01 DFAITH (kleinste Einheit)
-    if (Math.abs(transferredAmount - amount) > 0.01) {
-      return NextResponse.json(
-        {
-          error: `Betrag stimmt nicht überein. Gefunden: ${transferredAmount} DFAITH, gemeldet: ${amount} DFAITH.`,
-        },
+        { error: 'Kein D.FAITH-Transfer an den Reward-Pool gefunden.' },
         { status: 400 },
       );
     }
 
+    const received = (poolPost.uiTokenAmount.uiAmount ?? 0) - (poolPre.uiTokenAmount.uiAmount ?? 0);
+    if (received <= 0) {
+      return NextResponse.json({ error: 'Pool-Guthaben hat sich nicht erhöht.' }, { status: 400 });
+    }
+
+    if (Math.abs(received - amount) > 0.01) {
+      return NextResponse.json(
+        { error: `Betrag stimmt nicht überein. Gefunden: ${received} D.FAITH, gemeldet: ${amount} D.FAITH.` },
+        { status: 400 },
+      );
+    }
+
+    const actualAmount = Math.round(received * 100) / 100;
     // Gutschreiben (UNIQUE tx_hash verhindert Doppelgutschrift)
     await creditCreatorBalance(walletAddress, actualAmount, txHash);
     return NextResponse.json({ success: true, credited: actualAmount });
-  } catch (e: any) {
+  } catch (e: unknown) {
     // PostgreSQL unique-violation = Tx bereits gutgeschrieben
-    if (e?.code === '23505' || e?.message?.includes('duplicate')) {
+    if ((e as { code?: string })?.code === '23505' || (e as Error)?.message?.includes('duplicate')) {
       return NextResponse.json(
         { error: 'Diese Transaktion wurde bereits gutgeschrieben.' },
         { status: 409 },
