@@ -150,17 +150,17 @@ export default function LandingPage() {
                   </>
                 )}
               </div>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-3 flex-wrap">
                 {artists.slice(0, 8).map((a) => (
-                  <div key={a.walletAddress} className="relative flex items-center gap-1.5 bg-white/[0.05] hover:bg-white/[0.08] transition-colors rounded-full pl-0.5 pr-2.5 py-0.5 cursor-default">
+                  <div key={a.walletAddress} className="relative flex flex-col items-center gap-1 cursor-default">
                     {a.picture ? (
-                      <img src={a.picture} alt={a.name} className="w-6 h-6 rounded-full object-cover shrink-0" />
+                      <img src={a.picture} alt={a.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
                     ) : (
-                      <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                        <FaMusic size={9} className="text-zinc-600" />
+                      <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                        <FaMusic size={11} className="text-zinc-600" />
                       </div>
                     )}
-                    <span className="text-[10px] font-semibold text-zinc-300 truncate max-w-[80px]">{a.name}</span>
+                    <span className="text-[9px] font-semibold text-zinc-400 truncate max-w-[60px] text-center">{a.name}</span>
                     {a.questCount > 0 && (
                       <span className="absolute -top-1 -right-1 bg-amber-400 text-black text-[8px] font-black rounded-full w-4 h-4 flex items-center justify-center ring-1 ring-[#0a0908]">
                         {a.questCount > 9 ? '9+' : a.questCount}
@@ -329,17 +329,17 @@ export default function LandingPage() {
                     </>
                   )}
                 </div>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-4 flex-wrap">
                   {artists.slice(0, 8).map((a) => (
-                    <div key={a.walletAddress} className="relative flex items-center gap-1.5 bg-black/50 backdrop-blur-sm border border-white/[0.08] hover:border-amber-400/20 transition-colors rounded-full pl-0.5 pr-3 py-0.5 cursor-default">
+                    <div key={a.walletAddress} className="relative flex flex-col items-center gap-1.5 cursor-default">
                       {a.picture ? (
-                        <img src={a.picture} alt={a.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                        <img src={a.picture} alt={a.name} className="w-12 h-12 rounded-full object-cover shrink-0" />
                       ) : (
-                        <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                          <FaMusic size={10} className="text-zinc-600" />
+                        <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                          <FaMusic size={13} className="text-zinc-600" />
                         </div>
                       )}
-                      <span className="text-[11px] font-semibold text-zinc-300 truncate max-w-[100px]">{a.name}</span>
+                      <span className="text-[10px] font-semibold text-zinc-300 truncate max-w-[70px] text-center">{a.name}</span>
                       {a.questCount > 0 && (
                         <span className="absolute -top-1 -right-1 bg-amber-400 text-black text-[8px] font-black rounded-full w-4 h-4 flex items-center justify-center ring-1 ring-[#0a0908]">
                           {a.questCount > 9 ? '9+' : a.questCount}
