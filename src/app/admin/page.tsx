@@ -179,7 +179,7 @@ export default function AdminPage() {
     return matchSearch && matchFilter;
   });
 
-  const [activeTab, setActiveTab] = useState<'users' | 'token'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits'>('users');
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState('');
   const [resetting, setResetting] = useState(false);
@@ -256,7 +256,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-0">
-        {(['users', 'token'] as const).map((tab) => (
+        {(['users', 'credits', 'token'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -266,7 +266,7 @@ export default function AdminPage() {
                 : 'text-zinc-500 border-transparent hover:text-zinc-300'
             }`}
           >
-            {tab === 'users' ? 'Benutzer' : 'Token'}
+            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : 'Token'}
           </button>
         ))}
       </div>
@@ -416,6 +416,11 @@ export default function AdminPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* ── Credits Tab ───────────────────────────────────────────────────────── */}
+      {activeTab === 'credits' && (
+        <GrantCreditsSection secret={secret} users={users} />
       )}
 
       {/* ── Token Tab ─────────────────────────────────────────────────────────── */}
@@ -1146,6 +1151,209 @@ function UserRow({
             </button>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── GrantCreditsSection ──────────────────────────────────────────────────────
+
+function GrantCreditsSection({ secret, users }: { secret: string; users: AdminUser[] }) {
+  const [walletInput, setWalletInput] = useState('');
+  const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
+  const [granting, setGranting] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [log, setLog] = useState<{ wallet: string; name: string | null; amount: number; ts: number }[]>([]);
+
+  // Dropdown-Vorschläge aus User-Liste
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const query = walletInput.trim().toLowerCase();
+  const suggestions = query.length >= 2
+    ? users.filter((u) =>
+        u.walletAddress.toLowerCase().includes(query) ||
+        (u.displayName ?? '').toLowerCase().includes(query) ||
+        (u.youtubeChannelName ?? '').toLowerCase().includes(query),
+      ).slice(0, 6)
+    : [];
+
+  const handleGrant = async () => {
+    setSuccessMsg(''); setErrorMsg('');
+    const addr = walletInput.trim();
+    const amt = parseFloat(amount);
+    if (!addr) { setErrorMsg('Wallet-Adresse eingeben'); return; }
+    if (!isFinite(amt) || amt <= 0) { setErrorMsg('Ungültiger Betrag'); return; }
+    setGranting(true);
+    try {
+      const res = await fetch('/api/admin/credit-creator', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ walletAddress: addr, amount: amt, note: note.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Fehler');
+      const userName = users.find((u) => u.walletAddress.toLowerCase() === addr.toLowerCase())?.displayName ?? null;
+      setSuccessMsg(`✓ ${amt.toLocaleString()} D.FAITH Credits gutgeschrieben → Neues Guthaben: ${data.newBalance?.toLocaleString() ?? '?'}`);
+      setLog((prev) => [{ wallet: addr, name: userName, amount: amt, ts: Date.now() }, ...prev.slice(0, 9)]);
+      setAmount('');
+      setNote('');
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setGranting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-zinc-900 border border-yellow-800/40 rounded-2xl p-6 space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-yellow-900/30 border border-yellow-800/50 flex items-center justify-center">
+            <FaCoins size={14} className="text-yellow-400" />
+          </div>
+          <div>
+            <h2 className="text-white font-bold text-base">D.FAITH Credits vergeben</h2>
+            <p className="text-zinc-500 text-xs">Manuell Credits einem Künstler-Wallet gutschreiben</p>
+          </div>
+        </div>
+
+        {/* Wallet-Suche */}
+        <div className="relative">
+          <label className="text-zinc-400 text-xs block mb-1.5">Wallet-Adresse oder Name</label>
+          <input
+            value={walletInput}
+            onChange={(e) => { setWalletInput(e.target.value); setShowSuggestions(true); setSuccessMsg(''); }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+            placeholder="Adresse eingeben oder Name suchen…"
+            className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2.5 text-sm font-mono outline-none focus:border-yellow-500 transition-colors"
+          />
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute z-10 left-0 right-0 mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden shadow-xl">
+              {suggestions.map((u) => (
+                <button
+                  key={u.walletAddress}
+                  onMouseDown={() => { setWalletInput(u.walletAddress); setShowSuggestions(false); }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-zinc-700 transition-colors flex items-center gap-3"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm font-medium truncate">{u.displayName ?? u.youtubeChannelName ?? 'Unbekannt'}</p>
+                    <p className="text-zinc-500 text-xs font-mono truncate">{u.walletAddress.slice(0, 10)}…{u.walletAddress.slice(-6)}</p>
+                  </div>
+                  {u.credits > 0 && (
+                    <span className="text-yellow-500 text-xs shrink-0">{u.credits.toLocaleString()} Cr.</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Betrag */}
+        <div>
+          <label className="text-zinc-400 text-xs block mb-1.5">Betrag (D.FAITH Credits)</label>
+          <div className="flex gap-2 flex-wrap mb-2">
+            {[100, 500, 1000, 5000].map((v) => (
+              <button
+                key={v}
+                onClick={() => setAmount(String(v))}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  amount === String(v)
+                    ? 'bg-yellow-600 text-white'
+                    : 'bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white'
+                }`}
+              >
+                {v.toLocaleString()}
+              </button>
+            ))}
+          </div>
+          <input
+            type="number"
+            step="any"
+            min="1"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Eigenen Betrag eingeben"
+            className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2.5 text-sm outline-none focus:border-yellow-500 transition-colors"
+          />
+        </div>
+
+        {/* Notiz */}
+        <div>
+          <label className="text-zinc-400 text-xs block mb-1.5">Notiz (optional)</label>
+          <input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="z.B. Kampagne März, Bonus, Partnerschaft…"
+            className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2.5 text-sm outline-none focus:border-zinc-600 transition-colors"
+          />
+        </div>
+
+        {errorMsg && <p className="text-red-400 text-sm">{errorMsg}</p>}
+        {successMsg && <p className="text-green-400 text-sm">{successMsg}</p>}
+
+        <button
+          onClick={handleGrant}
+          disabled={granting || !walletInput.trim() || !amount.trim()}
+          className="w-full bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-black font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
+        >
+          {granting
+            ? <><span className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin"/>Wird gutgeschrieben…</>
+            : <><FaCoins size={12}/> {amount ? `${parseFloat(amount || '0').toLocaleString()} Credits vergeben` : 'Credits vergeben'}</>}
+        </button>
+      </div>
+
+      {/* Log */}
+      {log.length > 0 && (
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-3">
+          <h3 className="text-zinc-400 text-xs font-semibold uppercase tracking-wide">Vergabe-Protokoll (diese Session)</h3>
+          <div className="space-y-2">
+            {log.map((entry, i) => (
+              <div key={i} className="flex items-center justify-between text-sm">
+                <div className="min-w-0 flex-1">
+                  <span className="text-white font-medium">{entry.name ?? entry.wallet.slice(0, 10) + '…'}</span>
+                  <span className="text-zinc-500 text-xs ml-2 font-mono">{entry.wallet.slice(0, 6)}…{entry.wallet.slice(-4)}</span>
+                </div>
+                <span className="text-yellow-400 font-bold shrink-0 ml-3">+{entry.amount.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Übersicht Artists mit Credits */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-3">
+        <h3 className="text-zinc-400 text-xs font-semibold uppercase tracking-wide">Alle Artists – Credit-Guthaben</h3>
+        {users.filter((u) => u.isArtist).length === 0 ? (
+          <p className="text-zinc-600 text-sm">Keine Artists geladen</p>
+        ) : (
+          <div className="space-y-2">
+            {users
+              .filter((u) => u.isArtist)
+              .sort((a, b) => b.credits - a.credits)
+              .map((u) => (
+                <div key={u.walletAddress} className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-white text-sm font-medium truncate">{u.displayName ?? u.youtubeChannelName ?? 'Unbekannt'}</p>
+                    <p className="text-zinc-500 text-xs font-mono">{u.walletAddress.slice(0, 8)}…{u.walletAddress.slice(-6)}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`text-sm font-bold ${u.credits > 0 ? 'text-yellow-400' : 'text-zinc-600'}`}>
+                      {u.credits.toLocaleString()}
+                    </span>
+                    <button
+                      onClick={() => setWalletInput(u.walletAddress)}
+                      className="text-xs text-zinc-500 hover:text-yellow-400 transition-colors"
+                      title="Wallet übernehmen"
+                    >
+                      <FaCoins size={10} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+          </div>
+        )}
       </div>
     </div>
   );
