@@ -104,6 +104,19 @@ export default function LandingPage() {
         {/* ── LEFT COLUMN: brand + headline (desktop: fixed left half) ── */}
         <div className="flex flex-col justify-between px-6 py-10 lg:py-16 lg:px-14 lg:w-1/2 lg:min-h-[calc(100svh-3.5rem)] lg:sticky lg:top-14 lg:self-start">
 
+          {/* Artist photo */}
+          <div className="relative w-full rounded-2xl overflow-hidden mb-7" style={{ aspectRatio: '16/7' }}>
+            <Image
+              src="/Still%202025-03-19%20193121_19.7.1.jpg"
+              alt="Dawid Faith"
+              fill
+              className="object-cover object-top"
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0908]/70 via-transparent to-transparent" />
+          </div>
+
           {/* Headline block */}
           <div className="flex-1 flex flex-col justify-center">
             <h1 className="text-[clamp(2.6rem,7vw,4.5rem)] font-black leading-[1.0] tracking-tight mb-5">
@@ -175,7 +188,7 @@ export default function LandingPage() {
           <div className="lg:hidden space-y-2.5 mt-10">
             <SignUpButton mode="modal">
               <button className="w-full py-[14px] bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-black font-black text-sm tracking-[0.08em] uppercase rounded-2xl transition-all">
-                Kostenlos starten
+                Jetzt Supporter werden
               </button>
             </SignUpButton>
             <SignInButton mode="modal">
@@ -193,20 +206,6 @@ export default function LandingPage() {
 
         {/* ── RIGHT COLUMN: features + apply + desktop CTA ── */}
         <div className="flex flex-col px-6 py-10 lg:py-16 lg:px-14 lg:w-1/2">
-
-          {/* Desktop CTA at top of right column */}
-          <div className="hidden lg:flex flex-col gap-2.5 mb-10">
-            <SignUpButton mode="modal">
-              <button className="w-full py-[14px] bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-black font-black text-sm tracking-[0.08em] uppercase rounded-2xl transition-all">
-                Kostenlos starten
-              </button>
-            </SignUpButton>
-            <SignInButton mode="modal">
-              <button className="w-full py-3 border border-white/[0.07] hover:border-amber-400/20 text-zinc-600 hover:text-zinc-300 font-semibold text-[11px] tracking-[0.2em] uppercase transition-all rounded-xl">
-                Bereits registriert? Einloggen
-              </button>
-            </SignInButton>
-          </div>
 
           {/* Tab toggle */}
           <div className="flex gap-5 border-b border-white/[0.07] mb-7 pb-0">
@@ -226,7 +225,7 @@ export default function LandingPage() {
           </div>
 
           {tab === 'fan' ? (
-            <div className="space-y-5">
+            <div className="space-y-5 flex flex-col">
               {fanFeatures.map((f) => (
                 <div key={f.n} className="flex gap-4 items-start">
                   <span className="text-[10px] font-black text-amber-400/50 w-6 shrink-0 pt-0.5">{f.n}</span>
@@ -236,6 +235,19 @@ export default function LandingPage() {
                   </div>
                 </div>
               ))}
+              {/* Desktop CTAs below features */}
+              <div className="hidden lg:flex flex-col gap-2.5 pt-4">
+                <SignUpButton mode="modal">
+                  <button className="w-full py-[14px] bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-black font-black text-sm tracking-[0.08em] uppercase rounded-2xl transition-all">
+                    Jetzt Supporter werden
+                  </button>
+                </SignUpButton>
+                <SignInButton mode="modal">
+                  <button className="w-full py-3 border border-white/[0.07] hover:border-amber-400/20 text-zinc-600 hover:text-zinc-300 font-semibold text-[11px] tracking-[0.2em] uppercase transition-all rounded-xl">
+                    Bereits registriert? Einloggen
+                  </button>
+                </SignInButton>
+              </div>
             </div>
           ) : (
             <div>
