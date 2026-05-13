@@ -10,7 +10,6 @@ interface Artist {
   walletAddress: string;
   name: string;
   picture: string | null;
-  artistType: string | null;
   questCount: number;
 }
 
@@ -54,148 +53,121 @@ export default function LandingPage() {
   const totalQuests = artists.reduce((s, a) => s + (a.questCount || 0), 0);
 
   return (
-    <main className="min-h-screen bg-[#0a0908] text-white">
+    <main className="bg-[#0a0908] text-white min-h-screen">
 
-      {/* NAV */}
-      <nav className="fixed inset-x-0 top-0 z-50 flex items-center justify-between px-6 h-14 bg-[#0a0908]/90 backdrop-blur-lg">
-        <div className="flex items-center gap-2.5">
-          <Image src="/D.FAITH.png" alt="" width={22} height={22} className="rounded-md" />
-          <span className="text-xs font-black tracking-[0.3em] uppercase text-white">D.FAITH</span>
-          <span className="text-xs font-black tracking-[0.3em] uppercase text-white/30">Ecosystem</span>
+      {/* ── SCREEN 1: everything above the fold ── */}
+      <section className="min-h-[100svh] flex flex-col px-5 pt-5 pb-6 max-w-sm mx-auto">
+
+        {/* Top row: brand + login */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-2">
+            <Image src="/D.FAITH.png" alt="" width={28} height={28} className="rounded-lg" priority />
+            <div className="leading-none">
+              <div className="text-[11px] font-black tracking-[0.3em] uppercase text-white">D.FAITH</div>
+              <div className="text-[9px] font-bold tracking-[0.25em] uppercase text-white/30 mt-px">Ecosystem</div>
+            </div>
+          </div>
+          <SignInButton mode="modal">
+            <button className="text-[11px] font-bold tracking-[0.2em] uppercase text-zinc-600 hover:text-amber-400 transition-colors">
+              Login
+            </button>
+          </SignInButton>
         </div>
-        <SignInButton mode="modal">
-          <button className="text-[11px] font-semibold tracking-widest uppercase text-zinc-600 hover:text-amber-400 transition-colors">
-            Login
-          </button>
-        </SignInButton>
-      </nav>
 
-      {/* HERO */}
-      <section className="flex flex-col min-h-[100svh] px-6 pt-28 pb-12 max-w-lg mx-auto">
+        {/* Headline block — takes up the most visual weight */}
+        <div className="flex-1 flex flex-col justify-center">
 
-        {/* Token — naked, no decorations */}
-        <div className="mb-10">
+          {/* Token — just the image */}
           <Image
             src="/D.FAITH.png"
-            alt="D.FAITH Token"
-            width={72}
-            height={72}
-            className="rounded-2xl"
-            priority
+            alt="D.FAITH"
+            width={56}
+            height={56}
+            className="rounded-xl mb-6"
           />
+
+          <h1 className="text-[2.8rem] font-black leading-[1.0] tracking-tight mb-5">
+            Sei dabei.<br />
+            Supporte deine<br />
+            <em className="not-italic text-amber-400">Künstler.</em><br />
+            Werde belohnt.
+          </h1>
+
+          <p className="text-[13px] text-zinc-500 leading-relaxed mb-1 max-w-[280px]">
+            Das D.FAITH Ecosystem verbindet Künstler und Fans — mit echten Belohnungen und echter Community.
+          </p>
+          <p className="text-[11px] text-zinc-700 font-medium tracking-widest mb-7">— Dawid Faith</p>
+
+          {/* Artists: pill row */}
+          {artists.length > 0 && (
+            <div className="mb-7">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-500">
+                  Aktive Künstler
+                </span>
+                {totalQuests > 0 && (
+                  <>
+                    <span className="text-zinc-800">·</span>
+                    <span className="flex items-center gap-1 text-[9px] font-black tracking-[0.2em] uppercase text-amber-500">
+                      <FaFire size={8} />
+                      {totalQuests} Quests
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {artists.slice(0, 6).map((a) => (
+                  <div
+                    key={a.walletAddress}
+                    className="relative flex items-center gap-1.5 bg-white/[0.05] rounded-full pl-0.5 pr-2.5 py-0.5"
+                  >
+                    {a.picture ? (
+                      <img src={a.picture} alt={a.name} className="w-6 h-6 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                        <FaMusic size={9} className="text-zinc-600" />
+                      </div>
+                    )}
+                    <span className="text-[10px] font-semibold text-zinc-300 truncate max-w-[72px]">{a.name}</span>
+                    {a.questCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-amber-400 text-black text-[8px] font-black rounded-full w-4 h-4 flex items-center justify-center ring-1 ring-[#0a0908]">
+                        {a.questCount > 9 ? '9+' : a.questCount}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Headline */}
-        <h1 className="text-[2.6rem] sm:text-[3.2rem] font-black leading-[1.0] tracking-tight mb-6">
-          Sei dabei.<br />
-          Supporte deine<br />
-          <span className="text-amber-400">Künstler.</span><br />
-          Werde belohnt.
-        </h1>
-
-        {/* Quote */}
-        <p className="text-zinc-400 text-sm leading-relaxed mb-2 max-w-[340px]">
-          Das D.FAITH Ecosystem verbindet Künstler und Fans — mit echten Belohnungen und echter Community.
-        </p>
-        <p className="text-zinc-600 text-xs font-medium tracking-widest mb-10">— Dawid Faith</p>
-
-        {/* Quest hint */}
-        {stats.openQuests > 0 && (
-          <div className="flex items-center gap-2 mb-10">
-            <FaFire size={11} className="text-amber-400" />
-            <span className="text-xs font-bold tracking-[0.2em] uppercase text-amber-400">
-              {stats.openQuests} {stats.openQuests === 1 ? 'Quest' : 'Quests'} verfügbar
-            </span>
-          </div>
-        )}
-
-        {/* CTA */}
-        <div className="mt-auto space-y-3">
+        {/* CTA — pinned to bottom */}
+        <div className="space-y-2.5 pt-2">
           <SignUpButton mode="modal">
-            <button className="w-full py-4 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-black font-black text-sm tracking-[0.1em] uppercase rounded-xl transition-colors">
+            <button className="w-full py-[14px] bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-black font-black text-sm tracking-[0.08em] uppercase rounded-2xl transition-all">
               Kostenlos starten
             </button>
           </SignUpButton>
           <SignInButton mode="modal">
-            <button className="w-full py-3.5 text-zinc-500 hover:text-white font-semibold text-xs tracking-[0.15em] uppercase transition-colors">
+            <button className="w-full py-3 text-zinc-600 hover:text-zinc-300 font-semibold text-[11px] tracking-[0.2em] uppercase transition-colors">
               Bereits registriert? Einloggen
             </button>
           </SignInButton>
         </div>
       </section>
 
-      {/* DIVIDER */}
-      <div className="h-px bg-white/[0.06] mx-6" />
+      {/* ── SCREEN 2: details (scrollable bonus) ── */}
+      <section className="px-5 py-10 max-w-sm mx-auto border-t border-white/[0.05]">
 
-      {/* AKTIVE KÜNSTLER */}
-      {artists.length > 0 && (
-        <section className="px-6 py-10 max-w-lg mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <p className="text-[10px] font-black tracking-[0.35em] uppercase text-zinc-400">
-                Aktive Künstler
-              </p>
-            </div>
-            {totalQuests > 0 && (
-              <p className="text-[10px] font-black tracking-[0.2em] uppercase text-amber-400">
-                {totalQuests} offen
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            {artists.map((a) => (
-              <button
-                key={a.walletAddress}
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="group relative focus:outline-none"
-              >
-                <div className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] active:scale-95 transition-all">
-                  <div className="relative">
-                    {a.picture ? (
-                      <img
-                        src={a.picture}
-                        alt={a.name}
-                        className="w-14 h-14 rounded-xl object-cover"
-                      />
-                    ) : (
-                      <div className="w-14 h-14 rounded-xl bg-white/5 flex items-center justify-center">
-                        <FaMusic size={16} className="text-zinc-600" />
-                      </div>
-                    )}
-                    {a.questCount > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 bg-amber-400 text-black text-[9px] font-black rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center ring-2 ring-[#0a0908]">
-                        {a.questCount > 9 ? '9+' : a.questCount}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[10px] font-semibold text-zinc-300 text-center leading-tight line-clamp-2 w-full">
-                    {a.name}
-                  </p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* DIVIDER */}
-      <div className="h-px bg-white/[0.06] mx-6" />
-
-      {/* FAN / ARTIST */}
-      <section className="px-6 py-10 max-w-lg mx-auto">
-
-        {/* Toggle */}
-        <div className="flex gap-4 mb-8 border-b border-white/[0.06] pb-4">
+        {/* Tab toggle */}
+        <div className="flex gap-1 p-1 bg-white/[0.04] rounded-xl mb-7">
           {(['fan', 'artist'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`text-[11px] font-black tracking-[0.25em] uppercase pb-1 border-b-2 transition-all ${
-                tab === t
-                  ? 'border-amber-400 text-white'
-                  : 'border-transparent text-zinc-600 hover:text-zinc-400'
+              className={`flex-1 py-2 text-[10px] font-black tracking-[0.2em] uppercase rounded-lg transition-all ${
+                tab === t ? 'bg-amber-400 text-black' : 'text-zinc-600 hover:text-zinc-300'
               }`}
             >
               {t === 'fan' ? 'Für Fans' : 'Für Künstler'}
@@ -204,26 +176,23 @@ export default function LandingPage() {
         </div>
 
         {tab === 'fan' ? (
-          <div className="space-y-6">
+          <div className="space-y-5">
             {[
-              { title: 'Quests erfüllen', desc: 'Absolviere Aufgaben deines Künstlers und erhalte echte Token direkt in dein Wallet.' },
-              { title: 'Social verknüpfen', desc: 'Verbinde Instagram, TikTok, YouTube & Facebook für maximale Rewards.' },
-              { title: 'Exklusive Vorteile', desc: 'Frühzugang zu Songs, limitiertem Merch und mehr für aktive Supporter.' },
-              { title: 'Leaderboard & XP', desc: 'Sammle Punkte, steige auf und löse sie gegen weitere Belohnungen ein.' },
-            ].map((f, i) => (
-              <div key={f.title} className="flex gap-4">
-                <span className="text-[11px] font-black text-amber-400/60 w-5 pt-0.5 shrink-0">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
+              { n: '01', title: 'Quests erfüllen', desc: 'Absolviere Aufgaben und erhalte echte Token direkt in dein Wallet.' },
+              { n: '02', title: 'Social verknüpfen', desc: 'Instagram, TikTok, YouTube & Facebook für maximale Rewards.' },
+              { n: '03', title: 'Exklusive Vorteile', desc: 'Frühzugang zu Songs, limitiertem Merch und mehr.' },
+              { n: '04', title: 'Leaderboard & XP', desc: 'Sammle Punkte, steige auf und löse sie gegen Belohnungen ein.' },
+            ].map((f) => (
+              <div key={f.n} className="flex gap-3.5 items-start">
+                <span className="text-[10px] font-black text-amber-400/50 w-6 shrink-0 pt-0.5">{f.n}</span>
                 <div>
-                  <p className="text-sm font-bold text-white mb-1">{f.title}</p>
-                  <p className="text-xs text-zinc-500 leading-relaxed">{f.desc}</p>
+                  <p className="text-sm font-bold text-white mb-0.5">{f.title}</p>
+                  <p className="text-xs text-zinc-600 leading-relaxed">{f.desc}</p>
                 </div>
               </div>
             ))}
-
             <SignUpButton mode="modal">
-              <button className="w-full py-4 bg-amber-400 hover:bg-amber-300 text-black font-black text-sm tracking-[0.1em] uppercase rounded-xl transition-colors mt-2">
+              <button className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs tracking-[0.1em] uppercase rounded-xl transition-colors mt-2">
                 Jetzt registrieren
               </button>
             </SignUpButton>
@@ -233,24 +202,21 @@ export default function LandingPage() {
             {!applied ? (
               <div className="space-y-5">
                 {[
-                  { title: 'Eigene Wallet & Token', desc: 'Dein eigenes Solana Wallet und dein eigener Token für deine Community.' },
-                  { title: 'Quest System', desc: 'Erstelle eigene Aufgaben mit individuellen Rewards für deine Fans.' },
-                  { title: 'Merch & Content Drops', desc: 'Exklusive Drops nur für deine aktivsten Supporter.' },
-                ].map((f, i) => (
-                  <div key={f.title} className="flex gap-4">
-                    <span className="text-[11px] font-black text-amber-400/60 w-5 pt-0.5 shrink-0">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
+                  { n: '01', title: 'Eigene Wallet & Token', desc: 'Dein eigenes Solana Wallet und Token für deine Community.' },
+                  { n: '02', title: 'Quest System', desc: 'Erstelle eigene Aufgaben mit individuellen Rewards.' },
+                  { n: '03', title: 'Merch & Content Drops', desc: 'Exklusive Drops nur für deine aktivsten Supporter.' },
+                ].map((f) => (
+                  <div key={f.n} className="flex gap-3.5 items-start">
+                    <span className="text-[10px] font-black text-amber-400/50 w-6 shrink-0 pt-0.5">{f.n}</span>
                     <div>
-                      <p className="text-sm font-bold text-white mb-1">{f.title}</p>
-                      <p className="text-xs text-zinc-500 leading-relaxed">{f.desc}</p>
+                      <p className="text-sm font-bold text-white mb-0.5">{f.title}</p>
+                      <p className="text-xs text-zinc-600 leading-relaxed">{f.desc}</p>
                     </div>
                   </div>
                 ))}
-
-                <div className="pt-2 space-y-3">
+                <div className="space-y-2.5 pt-1">
                   <div>
-                    <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-600 mb-1.5 block">
+                    <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
                       Künstlername *
                     </label>
                     <input
@@ -261,7 +227,7 @@ export default function LandingPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-600 mb-1.5 block">
+                    <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
                       Social Link
                     </label>
                     <input
@@ -274,18 +240,17 @@ export default function LandingPage() {
                   <button
                     onClick={handleApply}
                     disabled={!artistName.trim()}
-                    className="w-full py-4 bg-amber-400 hover:bg-amber-300 disabled:opacity-20 disabled:cursor-not-allowed text-black font-black text-sm tracking-[0.1em] uppercase rounded-xl transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 disabled:opacity-20 disabled:cursor-not-allowed text-black font-black text-xs tracking-[0.1em] uppercase rounded-xl transition-colors flex items-center justify-center gap-2"
                   >
-                    Interesse anmelden
-                    <FaChevronRight size={10} />
+                    Interesse anmelden <FaChevronRight size={9} />
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="py-14 text-center">
-                <FaCheckCircle size={32} className="text-amber-400 mx-auto mb-4" />
+              <div className="py-12 text-center">
+                <FaCheckCircle size={30} className="text-amber-400 mx-auto mb-4" />
                 <p className="font-black text-white mb-2">Danke, {artistName}!</p>
-                <p className="text-zinc-500 text-sm">Wir melden uns so schnell wie möglich.</p>
+                <p className="text-zinc-600 text-sm">Wir melden uns so schnell wie möglich.</p>
               </div>
             )}
           </div>
@@ -293,11 +258,10 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <div className="h-px bg-white/[0.06] mx-6" />
-      <footer className="px-6 py-6 flex items-center justify-between max-w-lg mx-auto">
+      <footer className="border-t border-white/[0.04] px-5 py-5 flex items-center justify-between max-w-sm mx-auto">
         <div className="flex items-center gap-2">
-          <Image src="/D.FAITH.png" alt="" width={14} height={14} className="rounded opacity-25" />
-          <span className="text-[9px] font-bold tracking-[0.3em] uppercase text-zinc-700">D.FAITH Ecosystem</span>
+          <Image src="/D.FAITH.png" alt="" width={12} height={12} className="rounded opacity-20" />
+          <span className="text-[9px] font-bold tracking-[0.3em] uppercase text-zinc-800">D.FAITH Ecosystem</span>
         </div>
         <span className="text-[9px] text-zinc-800">© 2025</span>
       </footer>
