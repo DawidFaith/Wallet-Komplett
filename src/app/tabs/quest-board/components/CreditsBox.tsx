@@ -16,6 +16,9 @@ interface CreditsBoxProps {
   /** Zweiter Button (z.B. "Aufladen") */
   secondaryLabel?: string;
   onSecondary?: () => void;
+  /** Refresh-Button */
+  onRefresh?: () => void;
+  refreshLoading?: boolean;
 }
 
 export default function CreditsBox({
@@ -26,6 +29,8 @@ export default function CreditsBox({
   onAction,
   secondaryLabel,
   onSecondary,
+  onRefresh,
+  refreshLoading,
 }: CreditsBoxProps) {
   return (
     <div className="bg-gradient-to-r from-yellow-900/40 to-amber-900/30 border border-yellow-700/50 rounded-2xl p-4 flex items-center gap-4">
@@ -35,6 +40,16 @@ export default function CreditsBox({
         {subtitle && <p className="text-yellow-600 text-xs">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-2 shrink-0">
+        {onRefresh && (
+          <button
+            onClick={onRefresh}
+            disabled={refreshLoading}
+            className="text-yellow-600 hover:text-yellow-400 transition-colors disabled:opacity-40 p-1"
+            title="Guthaben neu laden"
+          >
+            <FaSync size={12} className={refreshLoading ? 'animate-spin' : ''} />
+          </button>
+        )}
         {secondaryLabel && onSecondary && (
           <button
             onClick={onSecondary}

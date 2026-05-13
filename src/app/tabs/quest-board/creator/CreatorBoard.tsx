@@ -42,17 +42,21 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeposit, setShowDeposit] = useState(false);
   const [creatorBalance, setCreatorBalance] = useState(0);
+  const [balanceLoading, setBalanceLoading] = useState(false);
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const loadCreatorBalance = useCallback(async () => {
+    setBalanceLoading(true);
     try {
-      const res = await fetch(`/api/youtube-quests/creator-balance?wallet=${walletAddress}`);
-      if (res.ok) {
-        const data = await res.json();
-        setCreatorBalance(data.balance ?? 0);
-      }
+      const res = await fetch(
+        `/api/youtube-quests/creator-balance?wallet=${walletAddress}&t=${Date.now()}`,
+        { cache: 'no-store' },
+      );
+      const data = await res.json();
+      setCreatorBalance(data.balance ?? 0);
     } catch { /* ignorieren */ }
+    finally { setBalanceLoading(false); }
   }, [walletAddress]);
 
   const loadCreatorQuests = useCallback(async () => {
@@ -111,6 +115,8 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         subtitle={creatorBalance > 0 ? 'Verfügbar für Quest-Auszahlungen an Fans' : 'Lade D.FAITH auf um Quests zu finanzieren'}
         secondaryLabel="Aufladen"
         onSecondary={() => setShowDeposit(true)}
+        onRefresh={loadCreatorBalance}
+        refreshLoading={balanceLoading}
       />
 
       {/* Header + Quest erstellen */}
