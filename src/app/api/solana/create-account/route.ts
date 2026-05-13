@@ -11,6 +11,7 @@ import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { getDb } from '@/app/lib/db';
 import { encryptKey } from '@/app/lib/solanaCrypto';
+import { upsertUserProfile } from '@/app/lib/questDb';
 
 export async function GET(req: Request) {
   try {
@@ -44,6 +45,8 @@ export async function POST(req: Request) {
     SELECT solana_address FROM solana_accounts WHERE wallet_address = ${walletAddress}
   `;
   if (existing.length > 0) {
+    // Sicherstellen dass user_profiles-Eintrag existiert
+    await upsertUserProfile(walletAddress, {});
     return NextResponse.json({ solanaAddress: existing[0].solana_address, existed: true });
   }
 
@@ -58,6 +61,9 @@ export async function POST(req: Request) {
     INSERT INTO solana_accounts (wallet_address, solana_address, solana_private_key)
     VALUES (${walletAddress}, ${newAddress}, ${encrypted})
   `;
+
+  // User-Profil anlegen damit User im Admin Panel erscheint
+  await upsertUserProfile(walletAddress, {});
 
   return NextResponse.json({ solanaAddress: newAddress });
   } catch (e) {
