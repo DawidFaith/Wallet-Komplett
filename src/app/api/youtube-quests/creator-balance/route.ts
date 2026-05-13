@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCreatorBalance, creditCreatorBalance, getDfaithCredits } from '@/app/lib/questDb';
 import { getDb } from '@/app/lib/db';
 
+// Verhindert Next.js-Caching – Balance muss immer live aus der DB kommen
+export const dynamic = 'force-dynamic';
+
 const SOLANA_RPC  = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
 

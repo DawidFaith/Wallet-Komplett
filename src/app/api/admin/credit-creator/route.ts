@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { creditCreatorBalance, getCreatorBalance } from '../../../lib/questDb';
+import { creditCreatorBalance, getCreatorBalance, getDfaithCredits } from '../../../lib/questDb';
 
 function checkAuth(req: NextRequest): boolean {
   const secret = req.headers.get('x-admin-secret');
@@ -35,8 +35,11 @@ export async function POST(req: NextRequest) {
 
   try {
     await creditCreatorBalance(walletAddress.trim(), amount, txHash);
-    const newBalance = await getCreatorBalance(walletAddress.trim());
-    return NextResponse.json({ success: true, newBalance, credited: amount });
+    const [creatorBalance, dfaithBalance] = await Promise.all([
+      getCreatorBalance(walletAddress.trim()),
+      getDfaithCredits(walletAddress.trim()),
+    ]);
+    return NextResponse.json({ success: true, newBalance: dfaithBalance, creatorBalance, credited: amount });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });

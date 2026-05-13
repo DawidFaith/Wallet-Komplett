@@ -1194,7 +1194,7 @@ function GrantCreditsSection({ secret, users }: { secret: string; users: AdminUs
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Fehler');
       const userName = users.find((u) => u.walletAddress.toLowerCase() === addr.toLowerCase())?.displayName ?? null;
-      setSuccessMsg(`✓ ${amt.toLocaleString()} D.FAITH Credits gutgeschrieben → Neues Guthaben: ${data.newBalance?.toLocaleString() ?? '?'}`);
+      setSuccessMsg(`✓ ${amt.toLocaleString()} Credits gutgeschrieben → D.FAITH-Guthaben: ${data.newBalance?.toLocaleString() ?? '?'} (DB: creator_balances=${data.creatorBalance?.toLocaleString() ?? '?'})`);
       setLog((prev) => [{ wallet: addr, name: userName, amount: amt, ts: Date.now() }, ...prev.slice(0, 9)]);
       setAmount('');
       setNote('');
