@@ -299,7 +299,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
 
       {/* ── Page Title ─────────────────────────────────────────── */}
       <div>
-        <h1 className="text-white font-bold text-2xl">Support &amp; Earn</h1>
+        <h1 className="text-white font-bold text-2xl">D.FAITH Ecosystem</h1>
         <p className="text-zinc-500 text-sm mt-0.5">Unterstütze Artists und verdiene Rewards.</p>
       </div>
 

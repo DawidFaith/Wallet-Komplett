@@ -1216,6 +1216,7 @@ export interface AdminUserRow {
   xp: number;
   level: number;
   updatedAt: string;
+  solanaAddress: string | null;
 }
 
 export async function getUserProfile(walletAddress: string): Promise<SocialProfile> {
@@ -1430,11 +1431,13 @@ export async function getAllUserProfiles(): Promise<AdminUserRow[]> {
       yb.channel_name  AS youtube_channel_name,
       yb.channel_id IS NOT NULL AS youtube_verified,
       COALESCE(dc.balance, 0) AS credits,
-      COALESCE(ux.xp, 0)     AS xp
+      COALESCE(ux.xp, 0)     AS xp,
+      sa.solana_address
     FROM user_profiles p
     LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
     LEFT JOIN dfaith_credits   dc ON dc.wallet_address = p.wallet_address
     LEFT JOIN user_xp          ux ON ux.wallet_address = p.wallet_address
+    LEFT JOIN solana_accounts  sa ON sa.wallet_address = p.wallet_address
     ORDER BY p.updated_at DESC
   `;
   return rows.map((r) => {
@@ -1457,6 +1460,7 @@ export async function getAllUserProfiles(): Promise<AdminUserRow[]> {
       xp,
       level,
       updatedAt: r.updated_at instanceof Date ? r.updated_at.toISOString() : r.updated_at,
+      solanaAddress: r.solana_address ?? null,
     };
   });
 }

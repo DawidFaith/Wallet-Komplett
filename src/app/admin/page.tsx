@@ -25,6 +25,7 @@ interface AdminUser {
   xp: number;
   level: number;
   updatedAt: string;
+  solanaAddress: string | null;
 }
 
 function shortenAddress(addr: string) {
@@ -45,6 +46,9 @@ export default function AdminPage() {
   const [editingRewardToken, setEditingRewardToken] = useState<string | null>(null);
   const [rewardTokenInput, setRewardTokenInput] = useState('');
   const [savingRewardToken, setSavingRewardToken] = useState<string | null>(null);
+  const [editingSolana, setEditingSolana] = useState<string | null>(null);
+  const [solanaInput, setSolanaInput] = useState('');
+  const [savingSolana, setSavingSolana] = useState<string | null>(null);
 
   // Passwort aus sessionStorage laden
   useEffect(() => {
@@ -131,6 +135,28 @@ export default function AdminPage() {
       setError(e instanceof Error ? e.message : 'Fehler beim Speichern');
     } finally {
       setSavingRewardToken(null);
+    }
+  };
+
+  const handleSaveSolana = async (walletAddress: string) => {
+    setSavingSolana(walletAddress);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ walletAddress, solanaAddress: solanaInput.trim() }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.walletAddress === walletAddress ? { ...u, solanaAddress: solanaInput.trim() || null } : u,
+        ),
+      );
+      setEditingSolana(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler beim Speichern');
+    } finally {
+      setSavingSolana(null);
     }
   };
 
@@ -319,6 +345,13 @@ export default function AdminPage() {
                   onSaveRewardToken={() => handleSaveRewardToken(user.walletAddress)}
                   onCancelRewardToken={() => setEditingRewardToken(null)}
                   savingRewardToken={savingRewardToken === user.walletAddress}
+                  editingSolana={editingSolana === user.walletAddress}
+                  solanaInput={solanaInput}
+                  onEditSolana={() => { setEditingSolana(user.walletAddress); setSolanaInput(user.solanaAddress ?? ''); }}
+                  onSolanaInputChange={setSolanaInput}
+                  onSaveSolana={() => handleSaveSolana(user.walletAddress)}
+                  onCancelSolana={() => setEditingSolana(null)}
+                  savingSolana={savingSolana === user.walletAddress}
                 />
               ))}
             </div>
@@ -871,6 +904,13 @@ function UserRow({
   onSaveRewardToken,
   onCancelRewardToken,
   savingRewardToken,
+  editingSolana,
+  solanaInput,
+  onEditSolana,
+  onSolanaInputChange,
+  onSaveSolana,
+  onCancelSolana,
+  savingSolana,
 }: {
   user: AdminUser;
   toggling: boolean;
@@ -882,6 +922,13 @@ function UserRow({
   onSaveRewardToken: () => void;
   onCancelRewardToken: () => void;
   savingRewardToken: boolean;
+  editingSolana: boolean;
+  solanaInput: string;
+  onEditSolana: () => void;
+  onSolanaInputChange: (v: string) => void;
+  onSaveSolana: () => void;
+  onCancelSolana: () => void;
+  savingSolana: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -1017,6 +1064,29 @@ function UserRow({
             </button>
           )
         )}
+        {/* Solana Wallet */}
+        <div className="flex items-center gap-1 mt-1">
+          <SiSolana size={10} className="text-purple-400 shrink-0" />
+          {editingSolana ? (
+            <div className="flex items-center gap-1">
+              <input
+                value={solanaInput}
+                onChange={(e) => onSolanaInputChange(e.target.value)}
+                className="bg-zinc-800 border border-zinc-600 text-white text-xs rounded-lg px-2 py-1 w-40 outline-none focus:border-purple-500 font-mono"
+                placeholder="Solana-Adresse"
+                autoFocus
+              />
+              <button onClick={onSaveSolana} disabled={savingSolana} className="text-xs bg-purple-600 hover:bg-purple-500 text-white font-bold px-2 py-1 rounded-lg disabled:opacity-50">
+                {savingSolana ? '…' : 'OK'}
+              </button>
+              <button onClick={onCancelSolana} className="text-zinc-500 hover:text-white text-xs px-1">✕</button>
+            </div>
+          ) : (
+            <button onClick={onEditSolana} className="text-xs text-zinc-500 hover:text-purple-400 transition-colors font-mono truncate max-w-[200px]">
+              {user.solanaAddress ? user.solanaAddress.slice(0, 8) + '…' + user.solanaAddress.slice(-6) : '— keine Wallet'}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
