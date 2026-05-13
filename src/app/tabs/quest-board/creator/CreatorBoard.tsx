@@ -214,7 +214,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         walletAddress={walletAddress}
         creatorBalance={creatorBalance}
         verified={verified}
-        onCreated={() => { loadCreatorQuests(); }}
+        onCreated={() => { loadCreatorQuests(); loadCreatorBalance(); }}
         onOpenDeposit={() => setShowDeposit(true)}
       />
       <DepositModal
