@@ -6,7 +6,7 @@ import Image from 'next/image';
 import {
   FaInstagram, FaTiktok, FaFacebook, FaYoutube,
   FaCheck, FaCoins, FaStar, FaLock, FaPlus, FaChevronDown,
-  FaPen, FaMusic, FaTimes,
+  FaPen, FaMusic, FaTimes, FaInfoCircle,
 } from 'react-icons/fa';import SocialVerifyModal from './profile/SocialVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
 import QuestBoardTab from './QuestBoardTab';
@@ -289,10 +289,11 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           return { name: p.facebookName ?? `@${p.facebookHandle}`, picture: p.facebookPicture ?? null };
         break;
     }
-    return { name: shortenAddress(account.address), picture: null };
+    return { name: 'Nicht verbunden', picture: null };
   })();
 
-  const initials = account.address.slice(2, 4).toUpperCase();
+  const noSocials = linkedPlatforms.length === 0;
+  const initials = noSocials ? '?' : (p?.displayName?.slice(0, 2) ?? '??').toUpperCase();
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 pb-16 space-y-5">
@@ -330,7 +331,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
           <div className="flex-1 min-w-0">
             {/* Name + Plattform-Dropdown */}
             <div className="flex items-center gap-2 mb-1" ref={dropdownRef}>
-              <p className="text-white font-bold text-lg truncate">{profileInfo.name}</p>
+              <p className={`font-bold text-lg truncate ${noSocials ? 'text-zinc-500 italic' : 'text-white'}`}>{profileInfo.name}</p>
               {linkedPlatforms.length > 0 && (
                 <div className="relative shrink-0">
                   <button
@@ -368,6 +369,16 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
 
         {/* Divider */}
         <div className="border-t border-zinc-800" />
+
+        {/* Info-Banner wenn kein Social Account verbunden */}
+        {noSocials && (
+          <div className="flex items-start gap-3 bg-purple-950/30 border border-purple-800/30 rounded-xl px-4 py-3">
+            <FaInfoCircle size={14} className="text-purple-400 shrink-0 mt-0.5" />
+            <p className="text-purple-300 text-xs leading-relaxed">
+              Verbinde deine Social Media Profile, um deine Lieblings-Künstler zu unterstützen und Rewards zu verdienen.
+            </p>
+          </div>
+        )}
 
         {/* ── Artist-Info (nur wenn is_artist) ── */}
         {p?.isArtist && (
