@@ -303,13 +303,13 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
         <img src="/D.FAITH.png" alt="D.FAITH" className="w-10 h-10 rounded-full object-contain shrink-0" />
         <div>
           <h1 className="text-white font-bold text-xl tracking-wide">D.FAITH Ecosystem</h1>
-          <p className="text-zinc-500 text-[10px] tracking-widest uppercase font-medium mt-0.5">Unterstütze Artists · Verdiene Rewards</p>
+          <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">Unterstütze Artists · Verdiene Rewards</p>
         </div>
       </div>
 
       {/* ── Supporter ─────────────────────────────────────────── */}
       <div className="bg-white/[0.06] rounded-2xl border border-white/[0.1] p-5 space-y-4">
-        <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-1">Supporter</p>
+        <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-1">Supporter</p>
 
         {/* Avatar + Name + Dropdown */}
         <div className="flex items-center gap-4">
@@ -387,7 +387,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
         {p?.isArtist && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5">
+              <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] flex items-center gap-1.5">
                 <FaMusic size={10} className="text-amber-400" /> Artist-Profil
               </p>
               {!editingArtist && (
@@ -443,10 +443,10 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                 {p.artistBio ? (
                   <p className="text-zinc-400 text-xs leading-relaxed">{p.artistBio}</p>
                 ) : (
-                  <p className="text-zinc-600 text-xs italic">Noch keine Bio eingetragen</p>
+                  <p className="text-zinc-400 text-xs italic">Noch keine Bio eingetragen</p>
                 )}
                 {!p.artistType && !p.artistBio && (
-                  <p className="text-zinc-600 text-xs italic">Klicke &bdquo;Bearbeiten&ldquo; um dein Artist-Profil auszufüllen</p>
+                  <p className="text-zinc-400 text-xs italic">Klicke &bdquo;Bearbeiten&ldquo; um dein Artist-Profil auszufüllen</p>
                 )}
               </div>
             )}
@@ -458,7 +458,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
 
         {/* Soziale Profile – kompakte Icon-Reihe */}
         <div>
-          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-3">Deine Plattformen</p>
+          <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-3">Deine Plattformen</p>
           <div className="flex gap-3 flex-wrap">
 
             <SocialChip
@@ -520,7 +520,7 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
       {/* ── ArtistBoard ────────────────────────────────────────── */}
       {artists.length > 0 && (
         <div className="bg-white/[0.06] rounded-2xl border border-white/[0.1] p-5">
-          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-4">Artists</p>
+          <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-4">Artists</p>
           <div className="flex gap-4 overflow-x-auto pt-2 pb-1 scrollbar-none">
             {artists.map((artist) => {
               const hasQuests = artist.questCount > 0;

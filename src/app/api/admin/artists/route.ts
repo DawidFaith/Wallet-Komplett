@@ -109,7 +109,24 @@ export async function GET(req: Request) {
       };
     });
 
-    return NextResponse.json({ artists });
+    // Ecosystem-Statistiken: offene Quests + verbleibender Reward-Pool
+    const statsRow = await sql`
+      SELECT
+        COUNT(*)::int AS open_quests,
+        COALESCE(SUM(
+          GREATEST(0, (max_completions - completions)) * reward_amount
+        ), 0)::numeric AS open_rewards
+      FROM quests
+      WHERE is_active = TRUE
+        AND (expires_at IS NULL OR expires_at > NOW())
+    `;
+    const stats = {
+      artistCount: artists.length,
+      openQuests: Number(statsRow[0]?.open_quests ?? 0),
+      openRewards: Number(statsRow[0]?.open_rewards ?? 0),
+    };
+
+    return NextResponse.json({ artists, stats });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
