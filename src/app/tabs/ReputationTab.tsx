@@ -143,10 +143,7 @@ function ArtistDetailView({
               {nextLevel.creditReward > 0 && (
                 <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 flex items-center gap-1.5">
                   <Image src="/D.FAITH.png" alt="" width={16} height={16} className="w-4 h-4 rounded-full shrink-0" />
-                  <div>
-                    <p className="text-amber-300 font-bold text-sm">+{nextLevel.creditReward}</p>
-                    <p className="text-zinc-500 text-[10px]">D.FAITH Credits</p>
-                  </div>
+                  <p className="text-amber-300 font-bold text-sm">+{nextLevel.creditReward} <span className="text-zinc-400 font-normal text-xs">D.FAITH Credits</span></p>
                 </div>
               )}
               {nextLevel.prizeDescription && (
