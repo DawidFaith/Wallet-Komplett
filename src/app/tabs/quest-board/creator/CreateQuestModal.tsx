@@ -1015,23 +1015,6 @@ export default function CreateQuestModal({
             <p className="text-zinc-600 text-xs mt-1">Wie viel Reputation deine Fans bei dir verdienen</p>
           </div>
 
-          {/* Reputation Reward */}
-          <div>
-            <label className="text-zinc-300 text-sm font-medium block mb-1.5">Reputation-Punkte pro Abschluss</label>
-            <div className="relative">
-              <input
-                type="number"
-                value={reputationReward}
-                onChange={(e) => setReputationReward(e.target.value)}
-                min="0"
-                step="1"
-                className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm pr-12"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">REP</span>
-            </div>
-            <p className="text-zinc-600 text-xs mt-1">Wie viel Reputation deine Fans bei dir verdienen</p>
-          </div>
-
           {/* Hinweis */}
           <div className="bg-amber-950/20 border border-amber-800/25 rounded-xl p-3 space-y-2">
             <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">Quest-Pool</p>
