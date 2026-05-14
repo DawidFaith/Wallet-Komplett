@@ -180,7 +180,7 @@ function ArtistDetailView({
             tab === 'contest' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
           }`}
         >
-          <FaTrophy size={11} /> Contest
+          <FaTrophy size={11} /> Season
         </button>
       </div>
 
@@ -284,8 +284,8 @@ function ArtistDetailView({
               {!contest ? (
                 <div className="px-4 py-8 text-center">
                   <FaTrophy size={28} className="text-zinc-700 mx-auto mb-2" />
-                  <p className="text-zinc-500 text-sm">Kein aktiver Contest</p>
-                  <p className="text-zinc-600 text-xs mt-1">Dieser Künstler hat noch keinen Contest gestartet.</p>
+                  <p className="text-zinc-500 text-sm">Keine aktive Season</p>
+                  <p className="text-zinc-600 text-xs mt-1">Dieser Künstler hat noch keine Season gestartet.</p>
                 </div>
               ) : (
                 <div className="p-4 space-y-3">
@@ -296,10 +296,10 @@ function ArtistDetailView({
                   }`}>
                     <p className="text-white font-semibold text-sm">
                       {contest.distributed
-                        ? '✅ Contest beendet'
+                        ? '✅ Season beendet'
                         : new Date(contest.endDate) <= new Date()
-                        ? '⏰ Läuft aus'
-                        : '🟢 Aktiver Contest'}
+                        ? '⏰ Season läuft aus'
+                        : '🟢 Aktive Season'}
                     </p>
                     <p className="text-zinc-400 text-xs mt-0.5">Ende: {new Date(contest.endDate).toLocaleString('de-DE')}</p>
                   </div>
@@ -764,7 +764,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                 }`}>
                   <div>
                     <p className="text-xs font-semibold text-white">
-                      {contest.distributed ? '✅ Verteilt' : contestExpired ? '⏰ Abgelaufen – bereit zum Verteilen' : '🟢 Läuft'}
+                      {contest.distributed ? '✅ Season beendet' : contestExpired ? '⏰ Season abgelaufen – bereit zum Verteilen' : '🟢 Season läuft'}
                     </p>
                     <p className="text-zinc-400 text-[11px] mt-0.5">
                       Ende: {new Date(contest.endDate).toLocaleString('de-DE')}
@@ -782,7 +782,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                   {contestRunning && (
                     <button
                       onClick={() => {
-                        if (confirm('Contest jetzt vorzeitig beenden und alle Rewards sofort ausschütten?')) {
+                        if (confirm('Season jetzt vorzeitig beenden und alle Rewards sofort ausschütten?')) {
                           distributeContest(true);
                         }
                       }}
@@ -821,7 +821,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                     onClick={() => { setShowContestForm(true); setContestError(''); }}
                     className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors"
                   >
-                    Contest ersetzen
+                    Season aktualisieren
                   </button>
                 )}
               </div>
@@ -903,7 +903,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                     disabled={contestSaving || !contestEndDate}
                     className="flex-1 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black text-xs font-bold py-2.5 rounded-xl transition-colors"
                   >
-                    {contestSaving ? 'Speichern…' : 'Contest starten'}
+                    {contestSaving ? 'Speichern…' : 'Season starten'}
                   </button>
                   <button
                     onClick={() => setShowContestForm(false)}
@@ -917,8 +917,8 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
 
             {!contest && !showContestForm && (
               <div className="px-4 py-6 text-center">
-                <p className="text-zinc-500 text-sm">Noch kein aktiver Contest</p>
-                <p className="text-zinc-600 text-xs mt-1">Starte einen Contest mit Preisen für deine Top-Fans.</p>
+                <p className="text-zinc-500 text-sm">Noch keine aktive Season</p>
+                <p className="text-zinc-600 text-xs mt-1">Starte eine Season mit Preisen für deine Top-Fans.</p>
               </div>
             )}
           </div>
