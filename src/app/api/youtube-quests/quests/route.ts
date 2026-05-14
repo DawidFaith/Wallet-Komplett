@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
     videoUrl?: string;
     description?: string;
     rewardAmount?: number;
+    reputationReward?: number;
     maxCompletions?: number;
     questType?: string;
     durationHours?: number;
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 });
   }
 
-  const { creatorWallet, videoUrl, description, rewardAmount, maxCompletions, questType, durationHours, secretCode } = body;
+  const { creatorWallet, videoUrl, description, rewardAmount, reputationReward, maxCompletions, questType, durationHours, secretCode } = body;
 
   if (!creatorWallet || !videoUrl) {
     return NextResponse.json(
@@ -185,6 +186,7 @@ export async function POST(req: NextRequest) {
     creditsLocked: totalBudget,
     creditsRefunded: false,
     secretCode: questType === 'secret' ? (secretCode ?? null) : null,
+    reputationReward: Math.max(0, Math.round(Number(reputationReward) || 50)),
     createdAt: now,
     updatedAt: now,
   };

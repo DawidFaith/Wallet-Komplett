@@ -25,6 +25,7 @@ import {
   addDfaithCredits,
   savePendingReward,
   addUserXp,
+  addUserReputation,
   deleteInstagramDmVerification,
   type QuestCompletion,
 } from '../../../lib/questDb';
@@ -159,6 +160,7 @@ export async function GET(req: NextRequest) {
     await addDfaithCredits(verif.walletAddress, quest.rewardAmount);
     await savePendingReward({ walletAddress: verif.walletAddress, amount: quest.rewardAmount, reason: `DM-Share Quest: ${quest.videoTitle}`, questId: verif.questId, createdAt: now });
     await addUserXp(verif.walletAddress, Math.round(quest.rewardAmount / 10));
+    await addUserReputation(verif.walletAddress, quest.creatorWallet, quest.reputationReward);
     await deleteInstagramDmVerification(verif.questId, verif.walletAddress);
 
     const returnUrl = `${appUrl}/?tab=quests`;

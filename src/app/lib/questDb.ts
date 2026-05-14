@@ -27,6 +27,7 @@ export interface QuestIndexEntry {
   videoThumbnail: string;
   videoUrl: string;
   rewardAmount: number;
+  reputationReward: number;  // Reputation-Punkte pro Abschluss
   maxCompletions: number;
   completions: number;
   isActive: boolean;
@@ -34,6 +35,33 @@ export interface QuestIndexEntry {
   expiresAt?: string | null;
   creditsLocked: number;
   creditsRefunded: boolean;
+}
+
+// ─── Reputation-Typen ─────────────────────────────────────────────────────────
+
+export interface ReputationLevel {
+  levelNumber: number;
+  levelName: string;
+  minReputation: number;
+  prizeDescription: string;
+}
+
+export interface UserArtistReputation {
+  artistWallet: string;
+  reputation: number;
+  level: number;
+  levelName: string;
+  nextLevelRep: number | null;   // null = höchstes Level erreicht
+  progress: number;              // 0–100 %
+}
+
+export interface ReputationLeaderboardEntry {
+  rank: number;
+  walletAddress: string;
+  displayName: string | null;
+  reputation: number;
+  level: number;
+  levelName: string;
 }
 
 export interface QuestDetail extends QuestIndexEntry {
@@ -98,6 +126,7 @@ function rowToQuestDetail(row: any): QuestDetail {
     videoUrl: row.video_url,
     description: row.description,
     rewardAmount: Number(row.reward_amount),
+    reputationReward: Number(row.reputation_reward ?? 50),
     maxCompletions: Number(row.max_completions),
     completions: Number(row.completions),
     isActive: row.is_active,
@@ -160,30 +189,32 @@ export async function saveQuestDetail(quest: QuestDetail): Promise<void> {
   const expiresAt = quest.expiresAt ?? null;
   const creditsLocked = quest.creditsLocked ?? 0;
   const secretCode = quest.secretCode?.trim().toUpperCase() ?? null;
+  const reputationReward = quest.reputationReward ?? 50;
   await sql`
     INSERT INTO quests (
       id, platform, quest_type, creator_wallet,
       video_id, video_title, video_thumbnail, video_url,
-      description, reward_amount, max_completions,
+      description, reward_amount, reputation_reward, max_completions,
       completions, is_active, expires_at, credits_locked, credits_refunded,
       secret_code, created_at, updated_at
     ) VALUES (
       ${quest.id}, ${quest.platform}, ${quest.type}, ${quest.creatorWallet},
       ${quest.videoId}, ${quest.videoTitle}, ${quest.videoThumbnail}, ${quest.videoUrl},
-      ${quest.description}, ${quest.rewardAmount}, ${quest.maxCompletions},
+      ${quest.description}, ${quest.rewardAmount}, ${reputationReward}, ${quest.maxCompletions},
       ${quest.completions}, ${quest.isActive}, ${expiresAt}, ${creditsLocked}, false,
       ${secretCode}, ${quest.createdAt}, ${quest.updatedAt}
     )
     ON CONFLICT (id) DO UPDATE SET
-      video_title      = EXCLUDED.video_title,
-      video_thumbnail  = EXCLUDED.video_thumbnail,
-      description      = EXCLUDED.description,
-      reward_amount    = EXCLUDED.reward_amount,
-      max_completions  = EXCLUDED.max_completions,
-      is_active        = EXCLUDED.is_active,
-      expires_at       = EXCLUDED.expires_at,
-      secret_code      = EXCLUDED.secret_code,
-      updated_at       = NOW()
+      video_title        = EXCLUDED.video_title,
+      video_thumbnail    = EXCLUDED.video_thumbnail,
+      description        = EXCLUDED.description,
+      reward_amount      = EXCLUDED.reward_amount,
+      reputation_reward  = EXCLUDED.reputation_reward,
+      max_completions    = EXCLUDED.max_completions,
+      is_active          = EXCLUDED.is_active,
+      expires_at         = EXCLUDED.expires_at,
+      secret_code        = EXCLUDED.secret_code,
+      updated_at         = NOW()
   `;
 }
 
@@ -1474,4 +1505,153 @@ export async function setArtistStatus(walletAddress: string, isArtist: boolean):
       is_artist  = ${isArtist},
       updated_at = NOW()
   `;
+}
+
+// ─── Reputation ───────────────────────────────────────────────────────────────
+
+const DEFAULT_REPUTATION_LEVELS: Omit<ReputationLevel, never>[] = [
+  { levelNumber: 1, levelName: 'Newcomer',     minReputation: 0,    prizeDescription: '' },
+  { levelNumber: 2, levelName: 'Fan',           minReputation: 100,  prizeDescription: '' },
+  { levelNumber: 3, levelName: 'Supporter',     minReputation: 300,  prizeDescription: '' },
+  { levelNumber: 4, levelName: 'True Fan',      minReputation: 700,  prizeDescription: '' },
+  { levelNumber: 5, levelName: 'VIP',           minReputation: 1500, prizeDescription: '' },
+  { levelNumber: 6, levelName: 'Legend',        minReputation: 3000, prizeDescription: '' },
+];
+
+/** Reputation eines Users für einen Artist erhöhen */
+export async function addUserReputation(
+  walletAddress: string,
+  artistWallet: string,
+  amount: number,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO user_reputation (wallet_address, artist_wallet, reputation, updated_at)
+    VALUES (${walletAddress.toLowerCase()}, ${artistWallet.toLowerCase()}, ${amount}, NOW())
+    ON CONFLICT (wallet_address, artist_wallet) DO UPDATE SET
+      reputation = user_reputation.reputation + ${amount},
+      updated_at = NOW()
+  `;
+}
+
+/** Reputation-Level-Konfiguration eines Artists laden (Fallback: Standardlevel) */
+export async function getReputationLevels(artistWallet: string): Promise<ReputationLevel[]> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT level_number, level_name, min_reputation, prize_description
+    FROM reputation_levels
+    WHERE artist_wallet = ${artistWallet.toLowerCase()}
+    ORDER BY level_number ASC
+  `;
+  if (rows.length === 0) return DEFAULT_REPUTATION_LEVELS;
+  return rows.map((r) => ({
+    levelNumber: Number(r.level_number),
+    levelName: String(r.level_name),
+    minReputation: Number(r.min_reputation),
+    prizeDescription: String(r.prize_description ?? ''),
+  }));
+}
+
+/** Level-Konfiguration eines Artists speichern */
+export async function saveReputationLevels(
+  artistWallet: string,
+  levels: ReputationLevel[],
+): Promise<void> {
+  const sql = getDb();
+  await sql`DELETE FROM reputation_levels WHERE artist_wallet = ${artistWallet.toLowerCase()}`;
+  for (const lvl of levels) {
+    await sql`
+      INSERT INTO reputation_levels (artist_wallet, level_number, level_name, min_reputation, prize_description, updated_at)
+      VALUES (${artistWallet.toLowerCase()}, ${lvl.levelNumber}, ${lvl.levelName}, ${lvl.minReputation}, ${lvl.prizeDescription}, NOW())
+    `;
+  }
+}
+
+/** Berechnet Level und Fortschritt basierend auf Reputation + Level-Config */
+export function reputationToLevel(
+  reputation: number,
+  levels: ReputationLevel[],
+): { level: number; levelName: string; nextLevelRep: number | null; progress: number } {
+  const sorted = [...levels].sort((a, b) => a.minReputation - b.minReputation);
+  let current = sorted[0];
+  for (const lvl of sorted) {
+    if (reputation >= lvl.minReputation) current = lvl;
+    else break;
+  }
+  const idx = sorted.indexOf(current);
+  const next = sorted[idx + 1] ?? null;
+  const progress = next
+    ? Math.min(100, Math.floor(((reputation - current.minReputation) / (next.minReputation - current.minReputation)) * 100))
+    : 100;
+  return {
+    level: current.levelNumber,
+    levelName: current.levelName,
+    nextLevelRep: next?.minReputation ?? null,
+    progress,
+  };
+}
+
+/** Reputation eines Users für alle Artists laden */
+export async function getUserReputationAll(walletAddress: string): Promise<UserArtistReputation[]> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT artist_wallet, reputation FROM user_reputation
+    WHERE wallet_address = ${walletAddress.toLowerCase()}
+    ORDER BY reputation DESC
+  `;
+  const result: UserArtistReputation[] = [];
+  for (const row of rows) {
+    const artistWallet = row.artist_wallet as string;
+    const reputation = Number(row.reputation);
+    const levels = await getReputationLevels(artistWallet);
+    const { level, levelName, nextLevelRep, progress } = reputationToLevel(reputation, levels);
+    result.push({ artistWallet, reputation, level, levelName, nextLevelRep, progress });
+  }
+  return result;
+}
+
+/** Reputation eines Users für einen Artist laden */
+export async function getUserReputation(walletAddress: string, artistWallet: string): Promise<UserArtistReputation> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT reputation FROM user_reputation
+    WHERE wallet_address = ${walletAddress.toLowerCase()} AND artist_wallet = ${artistWallet.toLowerCase()}
+    LIMIT 1
+  `;
+  const reputation = rows.length > 0 ? Number(rows[0].reputation) : 0;
+  const levels = await getReputationLevels(artistWallet);
+  const { level, levelName, nextLevelRep, progress } = reputationToLevel(reputation, levels);
+  return { artistWallet, reputation, level, levelName, nextLevelRep, progress };
+}
+
+/** Reputation-Leaderboard für einen Artist (Top 50) */
+export async function getReputationLeaderboard(
+  artistWallet: string,
+  limit = 50,
+): Promise<ReputationLeaderboardEntry[]> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT
+      ur.wallet_address,
+      ur.reputation,
+      COALESCE(p.display_name, NULL) AS display_name
+    FROM user_reputation ur
+    LEFT JOIN user_profiles p ON p.wallet_address = ur.wallet_address
+    WHERE ur.artist_wallet = ${artistWallet.toLowerCase()}
+    ORDER BY ur.reputation DESC
+    LIMIT ${limit}
+  `;
+  const levels = await getReputationLevels(artistWallet);
+  return rows.map((r, i) => {
+    const reputation = Number(r.reputation);
+    const { level, levelName } = reputationToLevel(reputation, levels);
+    return {
+      rank: i + 1,
+      walletAddress: r.wallet_address as string,
+      displayName: r.display_name ?? null,
+      reputation,
+      level,
+      levelName,
+    };
+  });
 }

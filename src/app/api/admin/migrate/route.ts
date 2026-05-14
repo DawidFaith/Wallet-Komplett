@@ -90,6 +90,33 @@ export async function POST(req: NextRequest) {
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS display_name TEXT`;
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS reward_token TEXT`;
 
+    // ── Reputation-System Migration ──────────────────────────────────────────
+    await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS reputation_reward INTEGER NOT NULL DEFAULT 50`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS user_reputation (
+        wallet_address  TEXT        NOT NULL,
+        artist_wallet   TEXT        NOT NULL,
+        reputation      INTEGER     NOT NULL DEFAULT 0,
+        updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (wallet_address, artist_wallet)
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_user_reputation_artist ON user_reputation(artist_wallet, reputation DESC)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_user_reputation_wallet ON user_reputation(wallet_address)`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS reputation_levels (
+        artist_wallet     TEXT        NOT NULL,
+        level_number      INTEGER     NOT NULL,
+        level_name        TEXT        NOT NULL DEFAULT '',
+        min_reputation    INTEGER     NOT NULL DEFAULT 0,
+        prize_description TEXT        NOT NULL DEFAULT '',
+        updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (artist_wallet, level_number)
+      )
+    `;
+
     // ── Backfill: user_profiles aus solana_accounts ──────────────────────────
     const backfill = await sql`
       INSERT INTO user_profiles (wallet_address, updated_at)

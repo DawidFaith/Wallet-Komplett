@@ -14,6 +14,7 @@ import {
   addDfaithCredits,
   savePendingReward,
   addUserXp,
+  addUserReputation,
 } from '../../../lib/questDb';
 
 export async function POST(req: NextRequest) {
@@ -96,6 +97,7 @@ export async function POST(req: NextRequest) {
       createdAt: now,
     });
     await addUserXp(normalized, quest.rewardAmount * 10);
+    await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
 
     return NextResponse.json({ success: true, rewardAmount: quest.rewardAmount });
   } catch (err) {

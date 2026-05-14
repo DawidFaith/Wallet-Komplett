@@ -20,6 +20,7 @@ import {
   addDfaithCredits,
   savePendingReward,
   addUserXp,
+  addUserReputation,
   getUserProfile,
   upsertInstagramLikeVerification,
   getInstagramLikeVerification,
@@ -322,6 +323,7 @@ export async function POST(req: NextRequest) {
           createdAt: now,
         });
         await addUserXp(normalized, quest.rewardAmount);
+        await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
         await deleteInstagramLikeVerification(questId, normalized);
 
         return NextResponse.json({
@@ -372,6 +374,7 @@ export async function POST(req: NextRequest) {
           createdAt: now,
         });
         await addUserXp(normalized, earnedReward);
+        await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
 
         // Nicht verdiente Hälfte sofort an Creator zurückbuchen
         if (refundToCreator > 0) {
@@ -430,6 +433,7 @@ export async function POST(req: NextRequest) {
         createdAt: now,
       });
       await addUserXp(normalized, quest.rewardAmount);
+      await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
       await deleteInstagramLikeVerification(questId, normalized);
 
       const actionDone = quest.type === 'like' ? 'geliked' : 'gespeichert';

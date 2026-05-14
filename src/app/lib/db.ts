@@ -182,4 +182,30 @@ export const MIGRATION_SQL = `
   ALTER TABLE creator_balances   ALTER COLUMN balance        TYPE NUMERIC(20,2) USING balance::numeric;
   ALTER TABLE creator_deposits   ALTER COLUMN amount         TYPE NUMERIC(20,2) USING amount::numeric;
   ALTER TABLE dfaith_credits     ALTER COLUMN balance        TYPE NUMERIC(20,2) USING balance::numeric;
+
+  -- Reputation: reputation_reward Spalte in quests
+  ALTER TABLE quests ADD COLUMN IF NOT EXISTS reputation_reward INTEGER NOT NULL DEFAULT 50;
+
+  -- Reputation: user_reputation Tabelle (pro User pro Artist)
+  CREATE TABLE IF NOT EXISTS user_reputation (
+    wallet_address  TEXT        NOT NULL,
+    artist_wallet   TEXT        NOT NULL,
+    reputation      INTEGER     NOT NULL DEFAULT 0,
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (wallet_address, artist_wallet)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_user_reputation_artist ON user_reputation(artist_wallet, reputation DESC);
+  CREATE INDEX IF NOT EXISTS idx_user_reputation_wallet ON user_reputation(wallet_address);
+
+  -- Reputation: Level-Konfiguration pro Artist
+  CREATE TABLE IF NOT EXISTS reputation_levels (
+    artist_wallet     TEXT        NOT NULL,
+    level_number      INTEGER     NOT NULL,
+    level_name        TEXT        NOT NULL DEFAULT '',
+    min_reputation    INTEGER     NOT NULL DEFAULT 0,
+    prize_description TEXT        NOT NULL DEFAULT '',
+    updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (artist_wallet, level_number)
+  );
 `;

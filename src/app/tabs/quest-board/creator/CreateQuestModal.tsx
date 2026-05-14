@@ -61,6 +61,7 @@ export default function CreateQuestModal({
 }: CreateQuestModalProps) {
   const [description, setDescription] = useState('');
   const [rewardAmount, setRewardAmount] = useState('100');
+  const [reputationReward, setReputationReward] = useState('50');
   const [maxParticipants, setMaxParticipants] = useState('10');
   const [platform, setPlatform] = useState<'youtube' | 'tiktok' | 'instagram' | 'facebook'>(
     verified.youtube ? 'youtube' : verified.tiktok ? 'tiktok' : verified.instagram ? 'instagram' : verified.facebook ? 'facebook' : 'youtube'
@@ -273,6 +274,7 @@ export default function CreateQuestModal({
             thumbnailUrl: selectedMedia!.thumbnail_url,
             description: finalDescription || `💬 Kommentiere dieses Instagram Reel!`,
             rewardAmount: Number(rewardAmount),
+            reputationReward: Math.max(0, Number(reputationReward) || 50),
             maxCompletions: Number(maxParticipants),
             durationHours: finalDurationHours,
             questType,
@@ -286,6 +288,7 @@ export default function CreateQuestModal({
             thumbnailUrl: selectedFacebookMedia!.thumbnail_url,
             description: finalDescription,
             rewardAmount: Number(rewardAmount),
+            reputationReward: Math.max(0, Number(reputationReward) || 50),
             maxCompletions: Number(maxParticipants),
             durationHours: finalDurationHours,
             questType,
@@ -298,6 +301,7 @@ export default function CreateQuestModal({
           thumbnailUrl: selectedQuestMedia?.thumbnail_url ?? '',
             description: finalDescription,
             rewardAmount: Number(rewardAmount),
+            reputationReward: Math.max(0, Number(reputationReward) || 50),
             maxCompletions: Number(maxParticipants),
             questType,
             durationHours: finalDurationHours,
@@ -992,6 +996,40 @@ export default function CreateQuestModal({
               />
               <p className="text-zinc-600 text-xs mt-1">Wie viele Fans mitmachen dürfen</p>
             </div>
+          </div>
+
+          {/* Reputation Reward */}
+          <div>
+            <label className="text-zinc-300 text-sm font-medium block mb-1.5">Reputation-Punkte pro Abschluss</label>
+            <div className="relative">
+              <input
+                type="number"
+                value={reputationReward}
+                onChange={(e) => setReputationReward(e.target.value)}
+                min="0"
+                step="1"
+                className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm pr-12"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">REP</span>
+            </div>
+            <p className="text-zinc-600 text-xs mt-1">Wie viel Reputation deine Fans bei dir verdienen</p>
+          </div>
+
+          {/* Reputation Reward */}
+          <div>
+            <label className="text-zinc-300 text-sm font-medium block mb-1.5">Reputation-Punkte pro Abschluss</label>
+            <div className="relative">
+              <input
+                type="number"
+                value={reputationReward}
+                onChange={(e) => setReputationReward(e.target.value)}
+                min="0"
+                step="1"
+                className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm pr-12"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">REP</span>
+            </div>
+            <p className="text-zinc-600 text-xs mt-1">Wie viel Reputation deine Fans bei dir verdienen</p>
           </div>
 
           {/* Hinweis */}

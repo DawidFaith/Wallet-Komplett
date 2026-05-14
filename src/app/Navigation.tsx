@@ -14,6 +14,7 @@ import {
   FaMusic,
   FaGlobe,
   FaUserCircle,
+  FaTrophy,
 } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 import { useState } from "react";
@@ -126,7 +127,21 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
           </button>
         </li>
 
-        {/* Language Selector */}
+        {/* Reputation */}
+        <li>
+          <button
+            title="Reputation"
+            onClick={() => navigateToTab("reputation")}
+            className="flex items-center"
+          >
+            <FaTrophy
+              size={20}
+              className={`transition-colors ${
+                activeTab === "reputation" ? "text-amber-400" : "text-zinc-400"
+              } hover:text-amber-400`}
+            />
+          </button>
+        </li>
         <li className="relative flex items-center">
           <button
             title="Sprache / Language / Język"

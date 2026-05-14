@@ -15,6 +15,7 @@ import YoutubeTab from "../tabs/YoutubeTab";
 import QuestBoardTab from "../tabs/QuestBoardTab";
 import ProfileTab from "../tabs/ProfileTab";
 import SolanaWalletTab from "../tabs/SolanaWalletTab";
+import ReputationTab from "../tabs/ReputationTab";
 import type { SupportedLanguage } from "../utils/deepLTranslation";
 
 function HomeContent() {
@@ -51,6 +52,7 @@ function HomeContent() {
         {activeTab === "youtube" && <YoutubeTab language={language} />}
         {activeTab === "quest-board" && <QuestBoardTab language={language} />}
         {activeTab === "solana-wallet" && <SolanaWalletTab />}
+        {activeTab === "reputation" && <ReputationTab />}
       </section>
     </main>
   );

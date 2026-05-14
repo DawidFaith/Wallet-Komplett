@@ -29,6 +29,7 @@ import {
   addDfaithCredits,
   savePendingReward,
   addUserXp,
+  addUserReputation,
   getUserProfile,
   upsertFacebookLikeVerification,
   getFacebookLikeVerification,
@@ -227,6 +228,7 @@ export async function POST(req: NextRequest) {
         createdAt: now,
       });
       await addUserXp(normalized, quest.rewardAmount);
+      await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
       await deleteFacebookLikeVerification(questId, normalized);
 
       return NextResponse.json({
