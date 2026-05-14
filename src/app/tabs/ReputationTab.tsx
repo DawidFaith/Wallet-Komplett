@@ -155,8 +155,11 @@ function SupporterArtistCard({
                         <div className="flex-1 min-w-0">
                           <span className="text-white font-medium">{lvl.levelName}</span>
                           <span className="text-zinc-500 text-xs ml-2">ab {lvl.minReputation} REP</span>
+                          {lvl.creditReward > 0 && (
+                            <p className="text-amber-300 text-xs mt-0.5">+{lvl.creditReward} D.FAITH Credits</p>
+                          )}
                           {lvl.prizeDescription && (
-                            <p className="text-amber-300/80 text-xs truncate mt-0.5">\U0001f381 {lvl.prizeDescription}</p>
+                            <p className="text-amber-300/80 text-xs truncate mt-0.5">🎁 {lvl.prizeDescription}</p>
                           )}
                         </div>
                       </div>
@@ -180,7 +183,7 @@ function SupporterArtistCard({
                           lb.rank === 3 ? 'bg-amber-700 text-white' :
                           'bg-zinc-700 text-zinc-300'
                         }`}>
-                          {lb.rank === 1 ? '\U0001f947' : lb.rank === 2 ? '\U0001f948' : lb.rank === 3 ? '\U0001f949' : lb.rank}
+                          {lb.rank === 1 ? '🥇' : lb.rank === 2 ? '🥈' : lb.rank === 3 ? '🥉' : lb.rank}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-white text-xs font-medium truncate">
@@ -377,7 +380,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
       {creditBalance !== null && (
         <div className="flex items-center justify-between bg-zinc-900/60 border border-white/[0.07] rounded-2xl px-4 py-3">
           <span className="text-zinc-400 text-sm">Dein Guthaben</span>
-          <span className="text-amber-300 font-bold text-sm">{creditBalance.toFixed(2)} Credits</span>
+          <span className="text-amber-300 font-bold text-sm">{creditBalance.toFixed(2)} D.FAITH Credits</span>
         </div>
       )}
       {/* Sub-Navigation */}
@@ -433,7 +436,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
             )}
           </div>
           {saveError && <p className="text-red-400 text-xs px-4 py-2">{saveError}</p>}
-          {editing && <p className="text-zinc-500 text-xs px-4 pt-3 pb-1">Level-Namen, Mindest-REP, Credits und Rewards anpassen.</p>}
+          {editing && <p className="text-zinc-500 text-xs px-4 pt-3 pb-1">Level-Namen, Mindest-REP, D.FAITH Credits und Rewards anpassen.</p>}
           {!editing && <p className="text-zinc-600 text-xs px-4 pt-3 pb-1 italic">Das sind die voreingestellten Level. Klicke auf &bdquo;Bearbeiten&ldquo; um sie anzupassen.</p>}
           <div className="p-4 space-y-2">
             {(editing ? editLevels : levels).map((lvl, idx) => (
@@ -472,7 +475,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       />
                     </div>
                     <div>
-                      <label className="text-zinc-500 text-[10px] mb-0.5 block">Credits bei Level-Up</label>
+                      <label className="text-zinc-500 text-[10px] mb-0.5 block">D.FAITH Credits bei Level-Up</label>
                       <div className="relative">
                         <input
                           type="number" min="0"
@@ -481,7 +484,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                           onChange={e => { const u = [...editLevels]; u[idx] = { ...u[idx], creditReward: Number(e.target.value) }; setEditLevels(u); }}
                           placeholder="0"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">Credits</span>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">DFC</span>
                       </div>
                     </div>
                     <div>
@@ -504,7 +507,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                         <span className="text-white text-sm font-semibold">{lvl.levelName}</span>
                         <span className="text-zinc-500 text-xs">ab {lvl.minReputation} REP</span>
                         {lvl.creditReward > 0 && (
-                          <span className="text-amber-300 text-xs font-semibold">+{lvl.creditReward} Credits</span>
+                          <span className="text-amber-300 text-xs font-semibold">+{lvl.creditReward} DFC</span>
                         )}
                       </div>
                       {lvl.prizeDescription
@@ -535,12 +538,17 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                             'bg-red-950/40 border border-red-700/40'
                 }`}>
                   <div>
-                    <p className="text-zinc-300 font-semibold">Credits pro Fan (alle Level)</p>
-                    <p className="text-zinc-500 mt-0.5">Dein Guthaben: {creditBalance !== null ? `${creditBalance.toFixed(2)} Credits` : '–'}</p>
+                    <p className="text-zinc-300 font-semibold">D.FAITH Credits pro Fan (alle Level)</p>
+                    <p className="text-zinc-500 mt-0.5">Dein Guthaben: {creditBalance !== null ? `${creditBalance.toFixed(2)} DFC` : '–'}</p>
+                    {creditBalance !== null && totalRewards > 0 && (
+                      <p className={`text-[11px] mt-1 ${enough ? 'text-green-400' : 'text-red-400'}`}>
+                        Reicht für ca. <strong>{Math.floor(creditBalance / totalRewards)}</strong> Fans
+                      </p>
+                    )}
                   </div>
                   <div className="text-right">
                     <p className={`font-bold text-sm ${enough ? 'text-green-400' : unknown ? 'text-zinc-300' : 'text-red-400'}`}>
-                      {totalRewards} Credits
+                      {totalRewards} DFC
                     </p>
                     <p className={`text-[10px] mt-0.5 ${enough ? 'text-green-500' : unknown ? 'text-zinc-500' : 'text-red-500'}`}>
                       {unknown ? 'Guthaben unbekannt' : enough ? '✓ Ausreichend' : '⚠ Nicht ausreichend'}
@@ -603,7 +611,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       <span className="text-zinc-300 text-xs">
                         {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`} Platz
                       </span>
-                      <span className="text-amber-300 text-xs font-bold">{p.creditReward} Credits</span>
+                      <span className="text-amber-300 text-xs font-bold">{p.creditReward} DFC</span>
                     </div>
                   ))}
                 </div>
@@ -612,7 +620,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                     <p className="text-green-400 text-xs font-semibold mb-1">Verteilt!</p>
                     {distributeResult.map(r => (
                       <p key={r.rank} className="text-zinc-300 text-xs">
-                        #{r.rank}: {shortenWallet(r.walletAddress)} → {r.credited} Credits
+                        #{r.rank}: {shortenWallet(r.walletAddress)} → {r.credited} DFC
                       </p>
                     ))}
                   </div>
@@ -649,7 +657,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                     <div className="relative flex-1">
                       <input
                         type="number" min="0"
-                        placeholder="0 Credits"
+                        placeholder="0 DFC"
                         className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500 pr-14"
                         value={contestPrizes[i].creditReward || ''}
                         onChange={e => {
@@ -658,7 +666,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                           setContestPrizes(u);
                         }}
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">Credits</span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">DFC</span>
                     </div>
                     {contestPrizes.length > 1 && (
                       <button
