@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { FaTrophy, FaSync, FaLock } from 'react-icons/fa';
+import { FaTrophy, FaSync, FaLock, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import CreditsBox from '../components/CreditsBox';
 import VerifyModal from './VerifyModal';
 import LikeVerifyModal from './LikeVerifyModal';
@@ -213,11 +213,11 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
   const filteredQuests = filterCreator
     ? quests.filter((q) => q.creatorWallet.toLowerCase() === filterCreator.toLowerCase())
     : quests;
-  const youtubeQuests = filteredQuests.filter((q) => q.platform === 'youtube');
-  const tiktokCommentQuests = filteredQuests.filter((q) => q.platform === 'tiktok' && q.type !== 'engagement');
-  const tiktokEngagementQuests = filteredQuests.filter((q) => q.platform === 'tiktok' && q.type === 'engagement');
-  const instagramQuests = filteredQuests.filter((q) => q.platform === 'instagram');
-  const facebookQuests = filteredQuests.filter((q) => q.platform === 'facebook');
+  const youtubeQuests = filteredQuests.filter((q) => q.platform === 'youtube' && !completedIds.includes(q.id));
+  const tiktokCommentQuests = filteredQuests.filter((q) => q.platform === 'tiktok' && q.type !== 'engagement' && !completedIds.includes(q.id));
+  const tiktokEngagementQuests = filteredQuests.filter((q) => q.platform === 'tiktok' && q.type === 'engagement' && !completedIds.includes(q.id));
+  const instagramQuests = filteredQuests.filter((q) => q.platform === 'instagram' && !completedIds.includes(q.id));
+  const facebookQuests = filteredQuests.filter((q) => q.platform === 'facebook' && !completedIds.includes(q.id));
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-5">
@@ -251,7 +251,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
       ) : youtubeQuests.length === 0 && tiktokCommentQuests.length === 0 && tiktokEngagementQuests.length === 0 && instagramQuests.length === 0 && facebookQuests.length === 0 ? (
         <div className="text-center py-12 text-zinc-500">
           <FaTrophy size={32} className="mx-auto mb-3 opacity-30" />
-          <p>Noch keine Quests verfügbar.</p>
+          <p>Alle Quests erledigt oder noch keine verfügbar.</p>
           <p className="text-sm mt-1">Schau später wieder rein!</p>
         </div>
       ) : (
@@ -266,7 +266,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
                 </div>
               )}
               <div className={!verified.youtube ? 'pointer-events-none select-none' : ''}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <QuestCarousel>
                   {youtubeQuests.map((quest) => (
                     <YoutubeQuestCard
                       key={quest.id}
@@ -275,7 +275,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
                       onComplete={handleVerify}
                     />
                   ))}
-                </div>
+                </QuestCarousel>
               </div>
             </div>
           )}
@@ -289,7 +289,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
                 </div>
               )}
               <div className={!verified.tiktok ? 'pointer-events-none select-none' : ''}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <QuestCarousel>
                   {tiktokCommentQuests.map((quest) => (
                     <TiktokQuestCard
                       key={quest.id}
@@ -306,7 +306,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
                       onComplete={handleTikTokVerify}
                     />
                   ))}
-                </div>
+                </QuestCarousel>
               </div>
             </div>
           )}
@@ -320,7 +320,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
                 </div>
               )}
               <div className={!verified.instagram ? 'pointer-events-none select-none' : ''}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <QuestCarousel>
                   {instagramQuests.map((quest) => (
                     <InstagramQuestCard
                       key={quest.id}
@@ -329,7 +329,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
                       onComplete={handleInstagramVerify}
                     />
                   ))}
-                </div>
+                </QuestCarousel>
               </div>
             </div>
           )}
@@ -343,7 +343,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
                 </div>
               )}
               <div className={!verified.facebook ? 'pointer-events-none select-none' : ''}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <QuestCarousel>
                   {facebookQuests.map((quest) => (
                     <FacebookQuestCard
                       key={quest.id}
@@ -352,7 +352,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
                       onComplete={handleFacebookVerify}
                     />
                   ))}
-                </div>
+                </QuestCarousel>
               </div>
             </div>
           )}
@@ -496,6 +496,68 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
         }}
         onClose={() => setInstagramDmShareQuest(null)}
       />
+    </div>
+  );
+}
+
+// ─── QuestCarousel ──────────────────────────────────────────────────────────────────────────────
+function QuestCarousel({ children }: { children: React.ReactNode }) {
+  const items = React.Children.toArray(children).filter(Boolean);
+  const [idx, setIdx] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+
+  // Index klemmen falls Liste nach Quest-Abschluss schrumpft
+  const safeIdx = Math.min(idx, Math.max(0, items.length - 1));
+  useEffect(() => {
+    if (idx >= items.length && items.length > 0) setIdx(items.length - 1);
+  }, [items.length, idx]);
+
+  if (items.length === 0) return null;
+  if (items.length === 1) return <>{items[0]}</>;
+
+  const prev = () => setIdx(i => Math.max(0, i - 1));
+  const next = () => setIdx(i => Math.min(items.length - 1, i + 1));
+
+  return (
+    <div
+      className="relative"
+      onTouchStart={e => setTouchStart(e.touches[0].clientX)}
+      onTouchEnd={e => {
+        if (touchStart === null) return;
+        const diff = touchStart - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 50) diff > 0 ? next() : prev();
+        setTouchStart(null);
+      }}
+    >
+      {items[safeIdx]}
+      <div className="flex items-center justify-between mt-3 px-1">
+        <button
+          onClick={prev}
+          disabled={safeIdx === 0}
+          className="p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 text-white transition-colors"
+        >
+          <FaChevronLeft size={12} />
+        </button>
+        <div className="flex gap-1.5 items-center">
+          {items.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIdx(i)}
+              className={`rounded-full transition-all ${
+                i === safeIdx ? 'w-4 h-2 bg-white' : 'w-2 h-2 bg-zinc-600 hover:bg-zinc-400'
+              }`}
+            />
+          ))}
+          <span className="text-zinc-500 text-xs ml-1">{safeIdx + 1} / {items.length}</span>
+        </div>
+        <button
+          onClick={next}
+          disabled={safeIdx === items.length - 1}
+          className="p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 text-white transition-colors"
+        >
+          <FaChevronRight size={12} />
+        </button>
+      </div>
     </div>
   );
 }
