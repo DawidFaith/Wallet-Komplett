@@ -62,11 +62,12 @@ async function fetchDfaithFromGeckoTerminal(): Promise<{ priceUsd: number | null
       { signal: AbortSignal.timeout(6000), headers: { Accept: 'application/json' } }
     );
     if (!r.ok) return { priceUsd: null, change24h: null };
-    const d = await r.json() as { data?: Array<{ attributes?: { base_token_price_usd?: string; price_change_percentage?: { h24?: number } } }> };
+    const d = await r.json() as { data?: Array<{ attributes?: { base_token_price_usd?: string; price_change_percentage?: { h24?: number | string } } }> };
     const pool = d?.data?.[0]?.attributes;
+    const rawChange = pool?.price_change_percentage?.h24;
     return {
       priceUsd:  pool?.base_token_price_usd  ? parseFloat(pool.base_token_price_usd) : null,
-      change24h: pool?.price_change_percentage?.h24 ?? null,
+      change24h: rawChange != null ? parseFloat(String(rawChange)) : null,
     };
   } catch {
     return { priceUsd: null, change24h: null };
