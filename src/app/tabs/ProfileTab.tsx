@@ -6,7 +6,7 @@ import Image from 'next/image';
 import {
   FaInstagram, FaTiktok, FaFacebook, FaYoutube,
   FaCheck, FaCoins, FaStar, FaLock, FaPlus, FaChevronDown,
-  FaPen, FaMusic, FaTimes, FaInfoCircle,
+  FaPen, FaMusic, FaTimes, FaInfoCircle, FaTrophy,
 } from 'react-icons/fa';import SocialVerifyModal from './profile/SocialVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
 import QuestBoardTab from './QuestBoardTab';
@@ -76,6 +76,7 @@ interface ArtistEntry {
 
 interface ProfileTabProps {
   language: SupportedLanguage;
+  onNavigate?: (tab: string) => void;
 }
 
 function shortenAddress(addr: string) {
@@ -91,7 +92,7 @@ const PLATFORM_META: Record<AnyPlatform, { label: string; icon: React.ReactNode 
   facebook:  { label: 'Facebook',  icon: <FaFacebook className="text-blue-500"  size={13} /> },
 };
 
-export default function ProfileTab({ language: _language }: ProfileTabProps) {
+export default function ProfileTab({ language: _language, onNavigate }: ProfileTabProps) {
   const { user: _clerkUser } = useUser();
   const account = _clerkUser?.id ? { address: _clerkUser.id } : null;
   const [data, setData] = useState<ProfileData | null>(null);
@@ -108,12 +109,21 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
   const [selectedArtist, setSelectedArtist] = useState<ArtistEntry | null>(null);
   const [claiming, setClaiming] = useState(false);
   const [claimModal, setClaimModal] = useState<{ sentAmount: number } | null>(null);
+  const [repData, setRepData] = useState<{ reputation: number; level: number; levelName: string; progress: number; nextLevelRep: number | null } | null>(null);
+  // Reputation des Users bei ausgewähltem Artist laden
+  useEffect(() => {
+    if (!account?.address || !selectedArtist) { setRepData(null); return; }
+    fetch(`/api/reputation?wallet=${account.address}&artistWallet=${selectedArtist.walletAddress}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setRepData(d && !d.error ? d : null))
+      .catch(() => setRepData(null));
+  }, [account?.address, selectedArtist?.walletAddress]);
+  const [artistSaving, setArtistSaving] = useState(false);
   // Artist-Profil bearbeiten
   const [editingArtist, setEditingArtist] = useState(false);
   const [artistTypeInput, setArtistTypeInput] = useState('');
   const [artistBioInput, setArtistBioInput] = useState('');
   const [artistRewardTokenInput, setArtistRewardTokenInput] = useState('');
-  const [artistSaving, setArtistSaving] = useState(false);
 
   const [primaryPlatform, setPrimaryPlatformState] = useState<AnyPlatform | null>(null);
 
@@ -605,6 +615,34 @@ export default function ProfileTab({ language: _language }: ProfileTabProps) {
                     {claiming ? '…' : 'Einlösen'}
                   </button>
                 </div>
+              {/* Reputation bei diesem Artist */}
+              {repData && repData.reputation > 0 && (
+                <div className="flex items-center gap-3 bg-amber-950/30 border border-amber-700/20 rounded-xl px-3 py-2">
+                  <FaTrophy className="text-amber-400 shrink-0" size={14} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-amber-300 text-xs font-semibold">
+                      Lv.{repData.level} &ndash; {repData.levelName}
+                    </p>
+                    <p className="text-zinc-500 text-[10px]">{repData.reputation.toLocaleString()} REP bei diesem Artist</p>
+                  </div>
+                  {onNavigate && (
+                    <button
+                      onClick={() => onNavigate('reputation')}
+                      className="text-amber-400 hover:text-amber-300 text-xs font-semibold shrink-0 transition-colors"
+                    >
+                      Details →
+                    </button>
+                  )}
+                </div>
+              )}
+              {onNavigate && (
+                <button
+                  onClick={() => onNavigate('reputation')}
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs font-semibold transition-colors"
+                >
+                  <FaTrophy size={11} /> Zum Reputation-Tab
+                </button>
+              )}
             </div>
           )}
         </div>

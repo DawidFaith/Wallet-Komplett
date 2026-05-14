@@ -40,7 +40,7 @@ function HomeContent() {
         setLanguage={setLanguage}
       />
       <section className="flex-1 flex flex-col items-center justify-center pt-24 pb-8">
-        {activeTab === "profile" && <ProfileTab language={language} />}
+        {activeTab === "profile" && <ProfileTab language={language} onNavigate={setActiveTab} />}
         {activeTab === "wallet" && <WalletTab language={language} />}
         {activeTab === "tokenomics" && <TokenomicsTab language={language} />}
         {activeTab === "merch" && <MerchTab language={language} />}
