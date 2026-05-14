@@ -429,6 +429,7 @@ export default function AdminPage() {
           <SolanaTreasurySection secret={secret} />
           <SolanaMintSection secret={secret} />
           <SolanaUpdateMetadataSection secret={secret} />
+          <SolanaDisableMintingSection secret={secret} />
           <SolanaDBMigrationSection secret={secret} />
         </>
       )}
@@ -752,6 +753,79 @@ function SolanaMintSection({ secret }: { secret: string }) {
           className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2 rounded-xl text-sm">
           Neuen Token erstellen
         </button>
+      )}
+    </div>
+  );
+}
+
+// ─── SolanaDisableMintingSection ──────────────────────────────────────────────
+
+function SolanaDisableMintingSection({ secret }: { secret: string }) {
+  const [mintAddress, setMintAddress] = useState(process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleDisable = async () => {
+    if (!mintAddress.trim()) return;
+    setLoading(true); setError(''); setSuccess(false);
+    try {
+      const res = await fetch('/api/admin/solana-update-metadata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret, mintAddress: mintAddress.trim(), disableMinting: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Fehler');
+      setSuccess(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="mt-6 bg-zinc-900 border border-red-900/40 rounded-2xl p-5 space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-red-900/30 border border-red-800/50 flex items-center justify-center">
+          <span className="text-red-400 text-base">🔒</span>
+        </div>
+        <div>
+          <h2 className="text-white font-bold text-sm">Minting permanent deaktivieren</h2>
+          <p className="text-red-400/70 text-xs">Unwiderruflich — danach können keine weiteren Token erzeugt werden</p>
+        </div>
+      </div>
+
+      {success ? (
+        <div className="bg-orange-900/20 border border-orange-700/40 rounded-xl px-4 py-3 text-orange-300 text-sm font-semibold">
+          🔒 Minting erfolgreich deaktiviert. Die Mint Authority ist jetzt null.
+        </div>
+      ) : (
+        <>
+          <div>
+            <label className="text-zinc-400 text-xs block mb-1">Token Mint-Adresse</label>
+            <input
+              value={mintAddress}
+              onChange={e => setMintAddress(e.target.value)}
+              placeholder="z.B. 9jB95PZQ2eYs83upTpDv7gqMvuMVtB55QRATZajnmki6"
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-red-500"
+            />
+          </div>
+          {error && <p className="text-red-400 text-xs">{error}</p>}
+          <button
+            onClick={() => {
+              if (!confirm('Minting wirklich PERMANENT deaktivieren? Das kann nicht rückgängig gemacht werden!')) return;
+              handleDisable();
+            }}
+            disabled={loading || !mintAddress.trim()}
+            className="w-full bg-red-700 hover:bg-red-600 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
+          >
+            {loading
+              ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Wird deaktiviert…</>
+              : '🔒 Minting jetzt permanent deaktivieren'}
+          </button>
+        </>
       )}
     </div>
   );
