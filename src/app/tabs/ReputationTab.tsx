@@ -225,19 +225,22 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
   const [contestError, setContestError] = useState('');
   const [distributing, setDistributing] = useState(false);
   const [distributeResult, setDistributeResult] = useState<{ rank: number; walletAddress: string; credited: number }[] | null>(null);
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
 
   const loadData = useCallback(async () => {
     if (!walletAddress) return;
     setLoading(true);
     try {
-      const [lvs, lb, ct] = await Promise.all([
+      const [lvs, lb, ct, profile] = await Promise.all([
         fetch(`/api/reputation/levels?artistWallet=${walletAddress}`).then(r => r.ok ? r.json() : []),
         fetch(`/api/reputation/leaderboard?artistWallet=${walletAddress}&limit=50`).then(r => r.ok ? r.json() : []),
         fetch(`/api/reputation/contest?artistWallet=${walletAddress}`).then(r => r.ok ? r.json() : null),
+        fetch(`/api/youtube-quests/profile?wallet=${walletAddress}`).then(r => r.ok ? r.json() : null),
       ]);
       setLevels(Array.isArray(lvs) ? lvs : []);
       setLeaderboard(Array.isArray(lb) ? lb : []);
       setContest(ct);
+      setCreditBalance(profile?.credits ?? null);
     } finally {
       setLoading(false);
     }
@@ -345,6 +348,13 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
 
   return (
     <div className="px-4 space-y-4">
+      {/* Credit-Balance */}
+      {creditBalance !== null && (
+        <div className="flex items-center justify-between bg-zinc-900/60 border border-white/[0.07] rounded-2xl px-4 py-3">
+          <span className="text-zinc-400 text-sm">Dein Guthaben</span>
+          <span className="text-amber-300 font-bold text-sm">{creditBalance.toFixed(2)} Credits</span>
+        </div>
+      )}
       {/* Sub-Navigation */}
       <div className="flex bg-zinc-900/60 rounded-xl p-1 border border-white/[0.07]">
         <button
