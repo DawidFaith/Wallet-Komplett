@@ -22,6 +22,7 @@ interface TokenEntry {
   symbol:   string;
   image:    string | null;
   valueUsd: number | null;
+  unitPriceUsd: number | null;  // Preis pro Token in USD
   priceChange24h: number | null;
 }
 
@@ -45,7 +46,7 @@ function TokenRow({
   const isDfaith    = token.mint === DFAITH_MINT;
   const formattedValue = token.valueUsd !== null
     ? new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(token.valueUsd)
-    : '—';
+    : isDfaith ? '$0.00' : '—';
   const changeClass = token.priceChange24h === null
     ? 'text-zinc-500'
     : token.priceChange24h >= 0
@@ -158,7 +159,7 @@ function TokenDetailModal({
   const image  = isSol ? null      : t.image;
   const price  = isSol
     ? (token as { solValueUsd: number | null }).solValueUsd
-    : t.valueUsd != null && t.balance > 0 ? t.valueUsd / t.balance : null;
+    : t.unitPriceUsd ?? (t.valueUsd != null && t.balance > 0 ? t.valueUsd / t.balance : null);
   const change = isSol
     ? (token as { solChange24h: number | null }).solChange24h
     : t.priceChange24h;
@@ -599,6 +600,7 @@ export default function SolanaWalletTab() {
       symbol: 'DFAITH',
       image: '/D.FAITH.png',
       valueUsd: null,
+      unitPriceUsd: null,
       priceChange24h: null,
     },
     ...otherTokens,
@@ -729,20 +731,20 @@ export default function SolanaWalletTab() {
         </div>
 
         {/* D.FAITH — wird immer angezeigt */}
-        <TokenRow
-          token={dfaithToken
+        {(() => {
+          const dfaithDisplay = dfaithToken
             ? { ...dfaithToken, image: dfaithToken.image || '/D.FAITH.png' }
-            : {
-              mint: DFAITH_MINT, balance: 0, decimals: 2,
-              name: 'D.FAITH', symbol: 'DFAITH', image: '/D.FAITH.png', valueUsd: null, priceChange24h: null,
-            }}
-          loading={loadingBal}
-          onSend={openSendPanel}
-          onSwap={() => setActionModal('swap')}
-          onClick={() => setTokenDetailModal(dfaithToken
-            ? { ...dfaithToken, image: dfaithToken.image || '/D.FAITH.png' }
-            : { mint: DFAITH_MINT, balance: 0, decimals: 2, name: 'D.FAITH', symbol: 'DFAITH', image: '/D.FAITH.png', valueUsd: null, priceChange24h: null })}
-        />
+            : { mint: DFAITH_MINT, balance: 0, decimals: 2, name: 'D.FAITH', symbol: 'DFAITH', image: '/D.FAITH.png', valueUsd: 0, unitPriceUsd: null, priceChange24h: null };
+          return (
+            <TokenRow
+              token={dfaithDisplay}
+              loading={loadingBal}
+              onSend={openSendPanel}
+              onSwap={() => setActionModal('swap')}
+              onClick={() => setTokenDetailModal(dfaithDisplay)}
+            />
+          );
+        })()}
 
         {/* Weitere Artist Tokens */}
         {otherTokens.map(token => (

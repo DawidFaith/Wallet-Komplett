@@ -12,6 +12,7 @@ import { publicKey as umiPubkey } from '@metaplex-foundation/umi';
 const RPC_URL       = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DFAITH_MINT   = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
 const PINATA_GW     = process.env.PINATA_GATEWAY ?? 'https://gateway.pinata.cloud';
+const DFAITH_POOL   = '9Ei1AhVghZJxH1hsxP2rdakqBFN9sYsqH2hmTCgzC7yK';
 
 export interface TokenEntry {
   mint:     string;
@@ -21,6 +22,7 @@ export interface TokenEntry {
   symbol:   string;
   image:    string | null;
   valueUsd: number | null;
+  unitPriceUsd: number | null;  // Preis pro einzelnem Token in USD
   priceChange24h: number | null;
 }
 
@@ -50,6 +52,24 @@ async function fetchTokenMeta(umi: ReturnType<typeof createUmi>, mint: string): 
     }
   } catch { /* no on-chain metadata */ }
   return { name, symbol, image };
+}
+
+async function fetchDfaithFromDexscreener(): Promise<{ priceUsd: number | null; change24h: number | null }> {
+  try {
+    const r = await fetch(
+      `https://api.dexscreener.com/latest/dex/pairs/solana/${DFAITH_POOL}`,
+      { signal: AbortSignal.timeout(6000) }
+    );
+    if (!r.ok) return { priceUsd: null, change24h: null };
+    const d = await r.json() as { pairs?: Array<{ priceUsd?: string; priceChange?: { h24?: number } }> };
+    const pair = d?.pairs?.[0];
+    return {
+      priceUsd:  pair?.priceUsd  ? parseFloat(pair.priceUsd) : null,
+      change24h: pair?.priceChange?.h24 ?? null,
+    };
+  } catch {
+    return { priceUsd: null, change24h: null };
+  }
 }
 
 async function fetchSolMarket(): Promise<{ priceUsd: number | null; change24h: number | null }> {
@@ -155,23 +175,29 @@ export async function GET(req: Request) {
   );
   const uniqueMints = [...new Set(nonEmpty.map(({ account }) => account.data.parsed.info.mint as string))];
 
-  const [splMarket, solMarket] = await Promise.all([
+  const [splMarket, solMarket, dfaithDex] = await Promise.all([
     fetchSplMarket(uniqueMints),
     fetchSolMarket(),
+    fetchDfaithFromDexscreener(),   // immer den DFAITH Pool von DEXscreener abrufen
   ]);
 
-  // Fallback: D.FAITH Preis über Jupiter Quote ableiten wenn Price API ihn nicht kennt
-  if (
-    DFAITH_MINT &&
-    uniqueMints.includes(DFAITH_MINT) &&
-    splMarket[DFAITH_MINT]?.usd === null &&
-    solMarket.priceUsd !== null
-  ) {
-    const dfaithAccount = nonEmpty.find(({ account }) => account.data.parsed.info.mint === DFAITH_MINT);
-    const dfaithDecimals: number = dfaithAccount?.account.data.parsed.info.tokenAmount.decimals ?? 6;
-    const derivedPrice = await fetchDfaithPriceFromQuote(DFAITH_MINT, dfaithDecimals, solMarket.priceUsd);
-    if (derivedPrice !== null) {
-      splMarket[DFAITH_MINT] = { usd: derivedPrice, change24h: null };
+  // DFAITH Preis: DEXscreener ist primäre Quelle, Jupiter Quote als Fallback
+  if (DFAITH_MINT) {
+    const hasJupiterPrice = splMarket[DFAITH_MINT]?.usd !== null && splMarket[DFAITH_MINT]?.usd !== undefined;
+    if (!hasJupiterPrice) {
+      if (dfaithDex.priceUsd !== null) {
+        splMarket[DFAITH_MINT] = { usd: dfaithDex.priceUsd, change24h: dfaithDex.change24h };
+      } else if (uniqueMints.includes(DFAITH_MINT) && solMarket.priceUsd !== null) {
+        const dfaithAccount = nonEmpty.find(({ account }) => account.data.parsed.info.mint === DFAITH_MINT);
+        const dfaithDecimals: number = dfaithAccount?.account.data.parsed.info.tokenAmount.decimals ?? 2;
+        const derivedPrice = await fetchDfaithPriceFromQuote(DFAITH_MINT, dfaithDecimals, solMarket.priceUsd);
+        if (derivedPrice !== null) {
+          splMarket[DFAITH_MINT] = { usd: derivedPrice, change24h: null };
+        }
+      }
+    } else if (splMarket[DFAITH_MINT]?.change24h === null && dfaithDex.change24h !== null) {
+      // Jupiter hat Preis aber kein Change → DEXscreener Change übernehmen
+      splMarket[DFAITH_MINT] = { usd: splMarket[DFAITH_MINT].usd, change24h: dfaithDex.change24h };
     }
   }
 
@@ -193,10 +219,28 @@ export async function GET(req: Request) {
         symbol,
         image,
         valueUsd: priceUsd !== null ? balance * priceUsd : null,
+        unitPriceUsd: priceUsd,
         priceChange24h: market?.change24h ?? null,
       };
     })
   );
+
+  // DFAITH immer in der Liste — auch wenn kein ATA angelegt ist
+  if (DFAITH_MINT && !tokens.some(t => t.mint === DFAITH_MINT)) {
+    const dfaithMarket = splMarket[DFAITH_MINT];
+    const dfaithMeta = await fetchTokenMeta(umi, DFAITH_MINT);
+    tokens.push({
+      mint: DFAITH_MINT,
+      balance: 0,
+      decimals: 2,
+      name: dfaithMeta.name || 'D.FAITH',
+      symbol: dfaithMeta.symbol || 'DFAITH',
+      image: dfaithMeta.image || null,
+      valueUsd: 0,
+      unitPriceUsd: dfaithMarket?.usd ?? null,
+      priceChange24h: dfaithMarket?.change24h ?? null,
+    });
+  }
 
   // Sort: DFAITH first, then by balance desc
   tokens.sort((a, b) => {
