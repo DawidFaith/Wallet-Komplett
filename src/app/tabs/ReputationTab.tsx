@@ -248,21 +248,27 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
   const [distributing, setDistributing] = useState(false);
   const [distributeResult, setDistributeResult] = useState<{ rank: number; walletAddress: string; credited: number }[] | null>(null);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
+  const [poolBalance, setPoolBalance] = useState<number>(0);
+  const [depositAmount, setDepositAmount] = useState('');
+  const [depositing, setDepositing] = useState(false);
+  const [depositError, setDepositError] = useState('');
 
   const loadData = useCallback(async () => {
     if (!walletAddress) return;
     setLoading(true);
     try {
-      const [lvs, lb, ct, profile] = await Promise.all([
+      const [lvs, lb, ct, profile, pool] = await Promise.all([
         fetch(`/api/reputation/levels?artistWallet=${walletAddress}`).then(r => r.ok ? r.json() : []),
         fetch(`/api/reputation/leaderboard?artistWallet=${walletAddress}&limit=50`).then(r => r.ok ? r.json() : []),
         fetch(`/api/reputation/contest?artistWallet=${walletAddress}`).then(r => r.ok ? r.json() : null),
         fetch(`/api/youtube-quests/profile?wallet=${walletAddress}`).then(r => r.ok ? r.json() : null),
+        fetch(`/api/reputation/pool?artistWallet=${walletAddress}`).then(r => r.ok ? r.json() : { balance: 0 }),
       ]);
       setLevels(Array.isArray(lvs) ? lvs : []);
       setLeaderboard(Array.isArray(lb) ? lb : []);
       setContest(ct);
       setCreditBalance(profile?.credits ?? null);
+      setPoolBalance(Number(pool?.balance ?? 0));
     } finally {
       setLoading(false);
     }
@@ -376,13 +382,55 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
 
   return (
     <div className="px-4 space-y-4">
-      {/* Credit-Balance */}
-      {creditBalance !== null && (
-        <div className="flex items-center justify-between bg-zinc-900/60 border border-white/[0.07] rounded-2xl px-4 py-3">
+      {/* Credit-Balance + Reward-Pool */}
+      <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
           <span className="text-zinc-400 text-sm">Dein Guthaben</span>
-          <span className="text-amber-300 font-bold text-sm">{creditBalance.toFixed(2)} D.FAITH Credits</span>
+          <span className="text-amber-300 font-bold text-sm">{creditBalance !== null ? `${creditBalance.toFixed(2)} DFC` : '–'}</span>
         </div>
-      )}
+        <div className="flex items-center justify-between px-4 py-3">
+          <div>
+            <span className="text-zinc-400 text-sm">Reward-Pool</span>
+            <p className="text-zinc-600 text-xs mt-0.5">Sofort gesperrtes Budget für Level-Up Rewards</p>
+          </div>
+          <span className="text-green-400 font-bold text-sm">{poolBalance.toFixed(2)} DFC</span>
+        </div>
+        {/* Einzahlen */}
+        <div className="px-4 pb-3 flex gap-2">
+          <input
+            type="number" min="1" step="1"
+            className="flex-1 bg-zinc-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500"
+            placeholder="Betrag einzahlen…"
+            value={depositAmount}
+            onChange={e => { setDepositAmount(e.target.value); setDepositError(''); }}
+          />
+          <button
+            onClick={async () => {
+              const amt = Number(depositAmount);
+              if (!amt || amt <= 0) return;
+              setDepositing(true); setDepositError('');
+              try {
+                const res = await fetch('/api/reputation/pool', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ artistWallet: walletAddress, amount: amt }),
+                });
+                const data = await res.json();
+                if (!res.ok) { setDepositError(data.error ?? 'Fehler'); return; }
+                setPoolBalance(Number(data.poolBalance));
+                setCreditBalance(prev => prev !== null ? prev - amt : null);
+                setDepositAmount('');
+              } catch { setDepositError('Netzwerkfehler'); }
+              finally { setDepositing(false); }
+            }}
+            disabled={depositing || !depositAmount}
+            className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-black text-sm font-bold px-4 py-2 rounded-lg transition-colors"
+          >
+            {depositing ? '…' : 'Einzahlen'}
+          </button>
+        </div>
+        {depositError && <p className="text-red-400 text-xs px-4 pb-3">{depositError}</p>}
+      </div>
       {/* Sub-Navigation */}
       <div className="flex bg-zinc-900/60 rounded-xl p-1 border border-white/[0.07]">
         <button

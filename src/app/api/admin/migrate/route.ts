@@ -141,6 +141,14 @@ export async function POST(req: NextRequest) {
       )
     `;
 
+    await sql`
+      CREATE TABLE IF NOT EXISTS reputation_reward_pool (
+        artist_wallet TEXT        PRIMARY KEY,
+        balance       NUMERIC     NOT NULL DEFAULT 0,
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+
     // ── Backfill: user_profiles aus solana_accounts ──────────────────────────
     const backfill = await sql`
       INSERT INTO user_profiles (wallet_address, updated_at)

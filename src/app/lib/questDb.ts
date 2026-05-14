@@ -717,6 +717,48 @@ export async function redeemDfaithCredits(walletAddress: string, amount: number)
   return Number(rows[0].balance);
 }
 
+// ── Reputation Reward Pool ────────────────────────────────────────────────────
+
+/** Aktuellen Pool-Stand eines Artists laden */
+export async function getReputationPool(artistWallet: string): Promise<number> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT balance FROM reputation_reward_pool
+    WHERE artist_wallet = ${artistWallet.toLowerCase()}
+    LIMIT 1
+  `;
+  return rows.length > 0 ? Number(rows[0].balance) : 0;
+}
+
+/**
+ * Budget in den Reward-Pool einzahlen:
+ * Sofortiger Abzug vom Künstler-Guthaben + Gutschrift auf den Pool.
+ * Gibt false zurück wenn nicht genug Guthaben vorhanden.
+ */
+export async function depositReputationPool(artistWallet: string, amount: number): Promise<boolean> {
+  const sql = getDb();
+  const rows = await sql`
+    UPDATE dfaith_credits
+    SET balance = balance - ${amount}, updated_at = NOW()
+    WHERE wallet_address = ${artistWallet.toLowerCase()} AND balance >= ${amount}
+    RETURNING balance
+  `;
+  if (rows.length === 0) return false;
+  await sql`
+    UPDATE creator_balances
+    SET balance = GREATEST(0, balance - ${amount}), updated_at = NOW()
+    WHERE wallet_address = ${artistWallet.toLowerCase()}
+  `;
+  await sql`
+    INSERT INTO reputation_reward_pool (artist_wallet, balance, updated_at)
+    VALUES (${artistWallet.toLowerCase()}, ${amount}, NOW())
+    ON CONFLICT (artist_wallet) DO UPDATE SET
+      balance    = reputation_reward_pool.balance + ${amount},
+      updated_at = NOW()
+  `;
+  return true;
+}
+
 /**
  * Claim-Sperre setzen: verhindert gleichzeitige Einlösungen für dieselbe Wallet.
  * Gibt true zurück wenn die Sperre erfolgreich gesetzt wurde, false wenn bereits gesperrt.
@@ -1565,10 +1607,23 @@ export async function addUserReputation(
     for (const lvl of levels) {
       if (lvl.levelNumber > oldLevel && lvl.levelNumber <= newLevel && lvl.creditReward > 0) {
         try {
-          await redeemDfaithCredits(artistWallet, lvl.creditReward);
-          await addDfaithCredits(walletAddress, lvl.creditReward);
+          // Credits aus dem Reward-Pool abziehen (sofort eingelegt vom Künstler)
+          const poolRows = await sql`
+            UPDATE reputation_reward_pool
+            SET balance = balance - ${lvl.creditReward}, updated_at = NOW()
+            WHERE artist_wallet = ${artistWallet.toLowerCase()} AND balance >= ${lvl.creditReward}
+            RETURNING balance
+          `;
+          if (poolRows.length > 0) {
+            await addDfaithCredits(walletAddress, lvl.creditReward);
+          }
+          // Falls kein Pool vorhanden, direkt vom Künstler-Guthaben abziehen (Fallback)
+          else {
+            await redeemDfaithCredits(artistWallet, lvl.creditReward);
+            await addDfaithCredits(walletAddress, lvl.creditReward);
+          }
         } catch {
-          // Artist hat nicht genug Credits – Reward überspringen
+          // Nicht genug Credits – Reward überspringen
         }
       }
     }
