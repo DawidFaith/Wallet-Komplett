@@ -131,7 +131,9 @@ function SupporterArtistCard({
       {expanded && (
         <div className="border-t border-white/[0.07] p-4 space-y-5">
           {loading ? (
-            <p className="text-zinc-500 text-sm text-center py-4">Lade\u2026</p>
+            <div className="flex justify-center py-4">
+              <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+            </div>
           ) : (
             <>
               {levels.length > 0 && (
