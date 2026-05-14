@@ -142,13 +142,14 @@ function ArtistDetailView({
             <div className="flex gap-2 flex-wrap">
               {nextLevel.creditReward > 0 && (
                 <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 flex items-center gap-1.5">
-                  <Image src="/D.FAITH.png" alt="" width={16} height={16} className="w-4 h-4 rounded-full shrink-0" />
-                  <p className="text-amber-300 font-bold text-sm">+{nextLevel.creditReward} <span className="text-zinc-400 font-normal text-xs">D.FAITH Credits</span></p>
+                  <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
+                  <span className="text-amber-300 font-bold text-xs">+{nextLevel.creditReward}</span>
+                  <span className="text-zinc-400 text-xs">D.FAITH Credits</span>
                 </div>
               )}
               {nextLevel.prizeDescription && (
                 <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
-                  <p className="text-amber-300/80 text-sm">&#127881; {nextLevel.prizeDescription}</p>
+                  <span className="text-amber-300/80 text-xs">🎁 {nextLevel.prizeDescription}</span>
                 </div>
               )}
             </div>
