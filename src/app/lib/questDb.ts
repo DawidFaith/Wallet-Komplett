@@ -44,6 +44,16 @@ export interface ReputationLevel {
   levelName: string;
   minReputation: number;
   prizeDescription: string;
+  creditReward: number;  // D.FAITH Credits die beim Level-Up ausgezahlt werden
+}
+
+export interface ReputationContest {
+  id: string;
+  artistWallet: string;
+  endDate: string;
+  distributed: boolean;
+  createdAt: string;
+  prizes: { rank: number; creditReward: number }[];
 }
 
 export interface UserArtistReputation {
@@ -1509,22 +1519,33 @@ export async function setArtistStatus(walletAddress: string, isArtist: boolean):
 
 // ─── Reputation ───────────────────────────────────────────────────────────────
 
-const DEFAULT_REPUTATION_LEVELS: Omit<ReputationLevel, never>[] = [
-  { levelNumber: 1, levelName: 'Newcomer',     minReputation: 0,    prizeDescription: '' },
-  { levelNumber: 2, levelName: 'Fan',           minReputation: 100,  prizeDescription: '' },
-  { levelNumber: 3, levelName: 'Supporter',     minReputation: 300,  prizeDescription: '' },
-  { levelNumber: 4, levelName: 'True Fan',      minReputation: 700,  prizeDescription: '' },
-  { levelNumber: 5, levelName: 'VIP',           minReputation: 1500, prizeDescription: '' },
-  { levelNumber: 6, levelName: 'Legend',        minReputation: 3000, prizeDescription: '' },
+const DEFAULT_REPUTATION_LEVELS: ReputationLevel[] = [
+  { levelNumber: 1, levelName: 'Newcomer',  minReputation: 0,    prizeDescription: '', creditReward: 0 },
+  { levelNumber: 2, levelName: 'Fan',        minReputation: 100,  prizeDescription: '', creditReward: 0 },
+  { levelNumber: 3, levelName: 'Supporter',  minReputation: 300,  prizeDescription: '', creditReward: 0 },
+  { levelNumber: 4, levelName: 'True Fan',   minReputation: 700,  prizeDescription: '', creditReward: 0 },
+  { levelNumber: 5, levelName: 'VIP',        minReputation: 1500, prizeDescription: '', creditReward: 0 },
+  { levelNumber: 6, levelName: 'Legend',     minReputation: 3000, prizeDescription: '', creditReward: 0 },
 ];
 
-/** Reputation eines Users für einen Artist erhöhen */
+/** Reputation eines Users für einen Artist erhöhen + Level-Up Credits auszahlen */
 export async function addUserReputation(
   walletAddress: string,
   artistWallet: string,
   amount: number,
 ): Promise<void> {
   const sql = getDb();
+  // Alte Reputation + Level-Config laden
+  const [repRows, levels] = await Promise.all([
+    sql`SELECT reputation FROM user_reputation WHERE wallet_address = ${walletAddress.toLowerCase()} AND artist_wallet = ${artistWallet.toLowerCase()} LIMIT 1`,
+    getReputationLevels(artistWallet),
+  ]);
+  const oldRep = repRows.length > 0 ? Number(repRows[0].reputation) : 0;
+  const newRep = oldRep + amount;
+  const oldLevel = reputationToLevel(oldRep, levels).level;
+  const newLevel = reputationToLevel(newRep, levels).level;
+
+  // Reputation updaten
   await sql`
     INSERT INTO user_reputation (wallet_address, artist_wallet, reputation, updated_at)
     VALUES (${walletAddress.toLowerCase()}, ${artistWallet.toLowerCase()}, ${amount}, NOW())
@@ -1532,13 +1553,27 @@ export async function addUserReputation(
       reputation = user_reputation.reputation + ${amount},
       updated_at = NOW()
   `;
+
+  // Level-Up: Credits für alle überschrittenen Level auszahlen
+  if (newLevel > oldLevel) {
+    for (const lvl of levels) {
+      if (lvl.levelNumber > oldLevel && lvl.levelNumber <= newLevel && lvl.creditReward > 0) {
+        try {
+          await redeemDfaithCredits(artistWallet, lvl.creditReward);
+          await addDfaithCredits(walletAddress, lvl.creditReward);
+        } catch {
+          // Artist hat nicht genug Credits – Reward überspringen
+        }
+      }
+    }
+  }
 }
 
 /** Reputation-Level-Konfiguration eines Artists laden (Fallback: Standardlevel) */
 export async function getReputationLevels(artistWallet: string): Promise<ReputationLevel[]> {
   const sql = getDb();
   const rows = await sql`
-    SELECT level_number, level_name, min_reputation, prize_description
+    SELECT level_number, level_name, min_reputation, prize_description, credit_reward
     FROM reputation_levels
     WHERE artist_wallet = ${artistWallet.toLowerCase()}
     ORDER BY level_number ASC
@@ -1549,6 +1584,7 @@ export async function getReputationLevels(artistWallet: string): Promise<Reputat
     levelName: String(r.level_name),
     minReputation: Number(r.min_reputation),
     prizeDescription: String(r.prize_description ?? ''),
+    creditReward: Number(r.credit_reward ?? 0),
   }));
 }
 
@@ -1560,11 +1596,113 @@ export async function saveReputationLevels(
   const sql = getDb();
   await sql`DELETE FROM reputation_levels WHERE artist_wallet = ${artistWallet.toLowerCase()}`;
   for (const lvl of levels) {
+    const creditReward = Math.max(0, Math.round(Number(lvl.creditReward) || 0));
     await sql`
-      INSERT INTO reputation_levels (artist_wallet, level_number, level_name, min_reputation, prize_description, updated_at)
-      VALUES (${artistWallet.toLowerCase()}, ${lvl.levelNumber}, ${lvl.levelName}, ${lvl.minReputation}, ${lvl.prizeDescription}, NOW())
+      INSERT INTO reputation_levels (artist_wallet, level_number, level_name, min_reputation, prize_description, credit_reward, updated_at)
+      VALUES (${artistWallet.toLowerCase()}, ${lvl.levelNumber}, ${lvl.levelName}, ${lvl.minReputation}, ${lvl.prizeDescription}, ${creditReward}, NOW())
     `;
   }
+}
+
+// ─── Reputation Contest ────────────────────────────────────────────────────────
+
+/** Aktiven Contest eines Artists laden */
+export async function getActiveReputationContest(artistWallet: string): Promise<ReputationContest | null> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT id, artist_wallet, end_date, distributed, created_at
+    FROM reputation_contests
+    WHERE artist_wallet = ${artistWallet.toLowerCase()}
+    ORDER BY created_at DESC
+    LIMIT 1
+  `;
+  if (rows.length === 0) return null;
+  const row = rows[0];
+  const prizes = await sql`
+    SELECT rank, credit_reward FROM reputation_contest_prizes
+    WHERE contest_id = ${row.id}
+    ORDER BY rank ASC
+  `;
+  return {
+    id: row.id as string,
+    artistWallet: row.artist_wallet as string,
+    endDate: row.end_date instanceof Date ? row.end_date.toISOString() : String(row.end_date),
+    distributed: Boolean(row.distributed),
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
+    prizes: prizes.map(p => ({ rank: Number(p.rank), creditReward: Number(p.credit_reward) })),
+  };
+}
+
+/** Contest erstellen / ersetzen */
+export async function upsertReputationContest(
+  artistWallet: string,
+  endDate: Date,
+  prizes: { rank: number; creditReward: number }[],
+): Promise<string> {
+  const sql = getDb();
+  // Alten Contest löschen
+  await sql`DELETE FROM reputation_contests WHERE artist_wallet = ${artistWallet.toLowerCase()}`;
+  const rows = await sql`
+    INSERT INTO reputation_contests (artist_wallet, end_date)
+    VALUES (${artistWallet.toLowerCase()}, ${endDate})
+    RETURNING id
+  `;
+  const contestId = rows[0].id as string;
+  for (const p of prizes) {
+    if (p.creditReward > 0) {
+      await sql`
+        INSERT INTO reputation_contest_prizes (contest_id, rank, credit_reward)
+        VALUES (${contestId}, ${p.rank}, ${p.creditReward})
+      `;
+    }
+  }
+  return contestId;
+}
+
+/** Contest-Rewards verteilen: Credits vom Artist an Top-Fans */
+export async function distributeReputationContest(
+  contestId: string,
+  artistWallet: string,
+): Promise<{ rank: number; walletAddress: string; credited: number }[]> {
+  const sql = getDb();
+  // Prüfen ob Contest existiert, undistributed und abgelaufen
+  const contestRows = await sql`
+    SELECT end_date, distributed FROM reputation_contests
+    WHERE id = ${contestId} AND artist_wallet = ${artistWallet.toLowerCase()}
+    LIMIT 1
+  `;
+  if (contestRows.length === 0) throw new Error('Contest nicht gefunden');
+  if (contestRows[0].distributed) throw new Error('Bereits verteilt');
+  const endDate = contestRows[0].end_date instanceof Date ? contestRows[0].end_date : new Date(contestRows[0].end_date as string);
+  if (endDate > new Date()) throw new Error('Contest läuft noch');
+
+  const prizes = await sql`
+    SELECT rank, credit_reward FROM reputation_contest_prizes
+    WHERE contest_id = ${contestId}
+    ORDER BY rank ASC
+  `;
+  if (prizes.length === 0) throw new Error('Keine Preise definiert');
+
+  const maxRank = Math.max(...prizes.map(p => Number(p.rank)));
+  const leaderboard = await getReputationLeaderboard(artistWallet, maxRank);
+
+  const results: { rank: number; walletAddress: string; credited: number }[] = [];
+  for (const prize of prizes) {
+    const rank = Number(prize.rank);
+    const creditReward = Number(prize.credit_reward);
+    const winner = leaderboard.find(e => e.rank === rank);
+    if (!winner || creditReward <= 0) continue;
+    try {
+      await redeemDfaithCredits(artistWallet, creditReward);
+      await addDfaithCredits(winner.walletAddress, creditReward);
+      results.push({ rank, walletAddress: winner.walletAddress, credited: creditReward });
+    } catch {
+      // Nicht genug Credits – überspringen
+    }
+  }
+
+  await sql`UPDATE reputation_contests SET distributed = TRUE WHERE id = ${contestId}`;
+  return results;
 }
 
 /** Berechnet Level und Fortschritt basierend auf Reputation + Level-Config */

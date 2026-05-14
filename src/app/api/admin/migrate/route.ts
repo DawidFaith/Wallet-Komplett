@@ -112,8 +112,32 @@ export async function POST(req: NextRequest) {
         level_name        TEXT        NOT NULL DEFAULT '',
         min_reputation    INTEGER     NOT NULL DEFAULT 0,
         prize_description TEXT        NOT NULL DEFAULT '',
+        credit_reward     INTEGER     NOT NULL DEFAULT 0,
         updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         PRIMARY KEY (artist_wallet, level_number)
+      )
+    `;
+
+    // Spalten nachrüsten (idempotent)
+    await sql`ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS credit_reward INTEGER NOT NULL DEFAULT 0`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS reputation_contests (
+        id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+        artist_wallet TEXT        NOT NULL,
+        end_date      TIMESTAMPTZ NOT NULL,
+        distributed   BOOLEAN     NOT NULL DEFAULT FALSE,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_reputation_contests_artist ON reputation_contests(artist_wallet, created_at DESC)`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS reputation_contest_prizes (
+        contest_id    UUID     NOT NULL,
+        rank          INTEGER  NOT NULL,
+        credit_reward INTEGER  NOT NULL DEFAULT 0,
+        PRIMARY KEY (contest_id, rank)
       )
     `;
 
