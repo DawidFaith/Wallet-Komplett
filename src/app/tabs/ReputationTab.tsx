@@ -404,6 +404,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
           </div>
           {saveError && <p className="text-red-400 text-xs px-4 py-2">{saveError}</p>}
           {editing && <p className="text-zinc-500 text-xs px-4 pt-3 pb-1">Level-Namen, Mindest-REP, Credits und Rewards anpassen.</p>}
+          {!editing && <p className="text-zinc-600 text-xs px-4 pt-3 pb-1 italic">Das sind die voreingestellten Level. Klicke auf „Bearbeiten" um sie anzupassen.</p>}
           <div className="p-4 space-y-2">
             {(editing ? editLevels : levels).map((lvl, idx) => (
               <div key={idx} className="bg-zinc-800/50 rounded-xl overflow-hidden">
@@ -422,48 +423,45 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                         </button>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-zinc-500 text-[10px] mb-0.5 block">Level-Name</label>
-                        <input
-                          className="w-full bg-zinc-700 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
-                          value={editLevels[idx].levelName}
-                          onChange={e => { const u = [...editLevels]; u[idx] = { ...u[idx], levelName: e.target.value }; setEditLevels(u); }}
-                          placeholder="z.B. Newcomer"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-zinc-500 text-[10px] mb-0.5 block">Mindest-REP</label>
+                    <div>
+                      <label className="text-zinc-500 text-[10px] mb-0.5 block">Level-Name</label>
+                      <input
+                        className="w-full bg-zinc-700 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
+                        value={editLevels[idx].levelName}
+                        onChange={e => { const u = [...editLevels]; u[idx] = { ...u[idx], levelName: e.target.value }; setEditLevels(u); }}
+                        placeholder="z.B. Newcomer"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-zinc-500 text-[10px] mb-0.5 block">Mindest-REP</label>
+                      <input
+                        type="number" min="0"
+                        className="w-full bg-zinc-700 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
+                        value={editLevels[idx].minReputation}
+                        onChange={e => { const u = [...editLevels]; u[idx] = { ...u[idx], minReputation: Number(e.target.value) }; setEditLevels(u); }}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-zinc-500 text-[10px] mb-0.5 block">Credits bei Level-Up</label>
+                      <div className="relative">
                         <input
                           type="number" min="0"
-                          className="w-full bg-zinc-700 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
-                          value={editLevels[idx].minReputation}
-                          onChange={e => { const u = [...editLevels]; u[idx] = { ...u[idx], minReputation: Number(e.target.value) }; setEditLevels(u); }}
+                          className="w-full bg-zinc-700 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 pr-14"
+                          value={editLevels[idx].creditReward}
+                          onChange={e => { const u = [...editLevels]; u[idx] = { ...u[idx], creditReward: Number(e.target.value) }; setEditLevels(u); }}
+                          placeholder="0"
                         />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">Credits</span>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-zinc-500 text-[10px] mb-0.5 block">Credits bei Level-Up</label>
-                        <div className="relative">
-                          <input
-                            type="number" min="0"
-                            className="w-full bg-zinc-700 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 pr-10"
-                            value={editLevels[idx].creditReward}
-                            onChange={e => { const u = [...editLevels]; u[idx] = { ...u[idx], creditReward: Number(e.target.value) }; setEditLevels(u); }}
-                          />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">CR</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-zinc-500 text-[10px] mb-0.5 block">Reward-Beschreibung</label>
-                        <input
-                          className="w-full bg-zinc-700 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
-                          value={editLevels[idx].prizeDescription}
-                          onChange={e => { const u = [...editLevels]; u[idx] = { ...u[idx], prizeDescription: e.target.value }; setEditLevels(u); }}
-                          placeholder="z.B. Discord-Zugang"
-                        />
-                      </div>
+                    <div>
+                      <label className="text-zinc-500 text-[10px] mb-0.5 block">Reward-Beschreibung</label>
+                      <input
+                        className="w-full bg-zinc-700 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
+                        value={editLevels[idx].prizeDescription}
+                        onChange={e => { const u = [...editLevels]; u[idx] = { ...u[idx], prizeDescription: e.target.value }; setEditLevels(u); }}
+                        placeholder="z.B. Exklusiver Discord-Zugang"
+                      />
                     </div>
                   </div>
                 ) : (
@@ -721,7 +719,8 @@ export default function ReputationTab() {
   const supporterEntries = reputations.filter(r => r.artistWallet !== walletAddress);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0e0c0a] text-white pb-24">
+    <div className="w-full flex flex-col min-h-screen bg-[#0e0c0a] text-white pb-24">
+      <div className="max-w-2xl mx-auto w-full">
       <div className="px-4 pt-6 pb-4">
         <div className="flex items-center gap-3 mb-1">
           <FaTrophy className="text-amber-400" size={22} />
@@ -782,6 +781,7 @@ export default function ReputationTab() {
       {mode === 'artist' && isArtist && (
         <ArtistPanel walletAddress={walletAddress} />
       )}
+      </div>
     </div>
   );
 }
