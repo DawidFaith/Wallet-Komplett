@@ -978,11 +978,15 @@ function SolanaUpdateMetadataSection({ secret }: { secret: string }) {
       )}
 
       {!result && (
-        <button onClick={handleUpdate} disabled={loading || !mintAddress.trim() || !name.trim() || !imageBase64}
-          className="w-full bg-blue-700 hover:bg-blue-600 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all">
+        <button
+          onClick={handleUpdate}
+          disabled={loading || !mintAddress.trim() || (!disableMinting && (!name.trim() || !imageBase64))}
+          className="w-full bg-blue-700 hover:bg-blue-600 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
+        >
           {loading
-            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{imageBase64 ? 'IPFS + Metadata wird gesetzt…' : 'Metadata wird gesetzt…'}</>
-            : <><SiSolana size={14} /> Metadata on-chain setzen</>}
+            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{imageBase64 ? 'IPFS + Metadata wird gesetzt…' : disableMinting ? 'Minting wird deaktiviert…' : 'Metadata wird gesetzt…'}</>
+            : <><SiSolana size={14} /> {disableMinting && !imageBase64 && !name.trim() ? 'Minting permanent deaktivieren' : 'Metadata on-chain setzen'}</>
+          }
         </button>
       )}
       {result && (

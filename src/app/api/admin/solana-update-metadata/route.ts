@@ -48,8 +48,20 @@ export async function POST(req: Request) {
     const disableMinting = body.disableMinting === true;
 
     if (secret !== process.env.MIGRATION_SECRET) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    if (!mintAddress || !name || !symbol) {
-      return NextResponse.json({ error: 'mintAddress, name, symbol benötigt' }, { status: 400 });
+    if (!mintAddress) {
+      return NextResponse.json({ error: 'mintAddress benötigt' }, { status: 400 });
+    }
+
+    // Wenn nur Minting deaktiviert werden soll (ohne Metadata-Update)
+    if (disableMinting && !imageBase64 && !metadataUriDirect && !name && !symbol) {
+      const connection = new Connection(RPC_URL, 'confirmed');
+      const treasury = getTreasuryKeypair();
+      await setAuthority(connection, treasury, new PublicKey(mintAddress), treasury, AuthorityType.MintTokens, null);
+      return NextResponse.json({ success: true, metadataUri: null, signature: null, mintingDisabled: true, explorerUrl: `https://solscan.io/token/${mintAddress}` });
+    }
+
+    if (!name || !symbol) {
+      return NextResponse.json({ error: 'name und symbol benötigt (oder nur disableMinting ohne weitere Felder)' }, { status: 400 });
     }
 
     // ── Schritt 1: Bild auf Pinata hochladen (falls vorhanden) ───────────────
