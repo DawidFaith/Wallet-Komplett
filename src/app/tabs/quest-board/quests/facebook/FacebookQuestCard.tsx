@@ -4,7 +4,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { FaFacebook, FaClock } from 'react-icons/fa';
+import { FaFacebook, FaClock, FaComment, FaThumbsUp, FaKey } from 'react-icons/fa';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
 
