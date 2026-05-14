@@ -94,39 +94,6 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
             />
           </button>
         </li>
-        {/* Tokenomics */}
-        <li>
-          <button
-            title="Tokenomics"
-            onClick={() => navigateToTab("tokenomics")}
-            className="flex items-center"
-          >
-            <FaChartBar
-              size={22}
-              className={`transition-colors ${
-                activeTab === "tokenomics" ? "text-yellow-400" : "text-zinc-400"
-              } hover:text-yellow-400`}
-            />
-          </button>
-        </li>
-
-
-        {/* Merch */}
-        <li>
-          <button
-            title="Merch"
-            onClick={() => navigateToTab("merch")}
-            className="flex items-center"
-          >
-            <FaTshirt
-              size={22}
-              className={`transition-colors ${
-                activeTab === "merch" ? "text-green-400" : "text-zinc-400"
-              } hover:text-green-400`}
-            />
-          </button>
-        </li>
-
         {/* Reputation */}
         <li>
           <button
