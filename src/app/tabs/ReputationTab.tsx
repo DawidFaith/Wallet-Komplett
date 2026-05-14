@@ -202,6 +202,19 @@ function SupporterArtistCard({
 }
 
 // Artist: Verwaltungs-Panel
+const DEFAULT_LEVELS: ReputationLevel[] = [
+  { levelNumber:  1, levelName: 'Newcomer',  minReputation: 0,     prizeDescription: '', creditReward: 0 },
+  { levelNumber:  2, levelName: 'Follower',  minReputation: 50,    prizeDescription: '', creditReward: 0 },
+  { levelNumber:  3, levelName: 'Fan',       minReputation: 150,   prizeDescription: '', creditReward: 0 },
+  { levelNumber:  4, levelName: 'Supporter', minReputation: 350,   prizeDescription: '', creditReward: 0 },
+  { levelNumber:  5, levelName: 'Loyalist',  minReputation: 700,   prizeDescription: '', creditReward: 0 },
+  { levelNumber:  6, levelName: 'True Fan',  minReputation: 1200,  prizeDescription: '', creditReward: 0 },
+  { levelNumber:  7, levelName: 'Advocate',  minReputation: 2000,  prizeDescription: '', creditReward: 0 },
+  { levelNumber:  8, levelName: 'VIP',       minReputation: 3500,  prizeDescription: '', creditReward: 0 },
+  { levelNumber:  9, levelName: 'Elite',     minReputation: 6000,  prizeDescription: '', creditReward: 0 },
+  { levelNumber: 10, levelName: 'Legend',    minReputation: 10000, prizeDescription: '', creditReward: 0 },
+];
+
 function ArtistPanel({ walletAddress }: { walletAddress: string }) {
   const [levels, setLevels] = useState<ReputationLevel[]>([]);
   const [editLevels, setEditLevels] = useState<ReputationLevel[]>([]);
@@ -250,6 +263,12 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
 
   const startEdit = () => {
     setEditLevels(levels.map(l => ({ ...l })));
+    setSaveError('');
+    setEditing(true);
+  };
+
+  const loadDefaults = () => {
+    setEditLevels(DEFAULT_LEVELS.map(l => ({ ...l })));
     setSaveError('');
     setEditing(true);
   };
@@ -388,9 +407,14 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
             <p className="text-white font-semibold text-sm">Level-Konfiguration</p>
             {!editing ? (
-              <button onClick={startEdit} className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 text-xs font-medium transition-colors">
-                <FaEdit size={11} /> Bearbeiten
-              </button>
+              <div className="flex gap-3">
+                <button onClick={loadDefaults} className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-300 text-xs font-medium transition-colors">
+                  Standard (10)
+                </button>
+                <button onClick={startEdit} className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 text-xs font-medium transition-colors">
+                  <FaEdit size={11} /> Bearbeiten
+                </button>
+              </div>
             ) : (
               <div className="flex gap-3">
                 <button onClick={saveEdit} disabled={saving} className="flex items-center gap-1.5 text-green-400 hover:text-green-300 text-xs font-medium disabled:opacity-50">
