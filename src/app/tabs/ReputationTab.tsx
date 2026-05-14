@@ -718,7 +718,7 @@ export default function ReputationTab() {
           <h1 className="text-xl font-bold">Reputation</h1>
         </div>
         <p className="text-zinc-500 text-sm">
-          {mode === 'supporter' ? 'Deine Reputation bei K\u00fcnstlern' : 'Dein Reputation-System als K\u00fcnstler'}
+          {mode === 'supporter' ? 'Deine Reputation bei Künstlern' : 'Dein Reputation-System als Künstler'}
         </p>
       </div>
 
@@ -757,7 +757,7 @@ export default function ReputationTab() {
             <FaStar size={40} className="text-zinc-700 mb-4" />
             <p className="text-zinc-400 font-semibold">Noch keine Reputation</p>
             <p className="text-zinc-600 text-sm mt-2">
-              Schlie\u00dfe Quests ab, um Reputation bei K\u00fcnstlern zu verdienen.
+              Schließe Quests ab, um Reputation bei Künstlern zu verdienen.
             </p>
           </div>
         ) : (
