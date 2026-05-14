@@ -30,6 +30,7 @@ interface ReputationLevel {
   minReputation: number;
   prizeDescription: string;
   creditReward: number;
+  maxRecipients: number;
 }
 
 interface ReputationContest {
@@ -212,16 +213,16 @@ function SupporterArtistCard({
 
 // Artist: Verwaltungs-Panel
 const DEFAULT_LEVELS: ReputationLevel[] = [
-  { levelNumber:  1, levelName: 'Newcomer',  minReputation: 0,     prizeDescription: '', creditReward: 0 },
-  { levelNumber:  2, levelName: 'Follower',  minReputation: 50,    prizeDescription: '', creditReward: 0 },
-  { levelNumber:  3, levelName: 'Fan',       minReputation: 150,   prizeDescription: '', creditReward: 0 },
-  { levelNumber:  4, levelName: 'Supporter', minReputation: 350,   prizeDescription: '', creditReward: 0 },
-  { levelNumber:  5, levelName: 'Loyalist',  minReputation: 700,   prizeDescription: '', creditReward: 0 },
-  { levelNumber:  6, levelName: 'True Fan',  minReputation: 1200,  prizeDescription: '', creditReward: 0 },
-  { levelNumber:  7, levelName: 'Advocate',  minReputation: 2000,  prizeDescription: '', creditReward: 0 },
-  { levelNumber:  8, levelName: 'VIP',       minReputation: 3500,  prizeDescription: '', creditReward: 0 },
-  { levelNumber:  9, levelName: 'Elite',     minReputation: 6000,  prizeDescription: '', creditReward: 0 },
-  { levelNumber: 10, levelName: 'Legend',    minReputation: 10000, prizeDescription: '', creditReward: 0 },
+  { levelNumber:  1, levelName: 'Newcomer',  minReputation: 0,     prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  2, levelName: 'Follower',  minReputation: 50,    prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  3, levelName: 'Fan',       minReputation: 150,   prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  4, levelName: 'Supporter', minReputation: 350,   prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  5, levelName: 'Loyalist',  minReputation: 700,   prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  6, levelName: 'True Fan',  minReputation: 1200,  prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  7, levelName: 'Advocate',  minReputation: 2000,  prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  8, levelName: 'VIP',       minReputation: 3500,  prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  9, levelName: 'Elite',     minReputation: 6000,  prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber: 10, levelName: 'Legend',    minReputation: 10000, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
 ];
 
 function ArtistPanel({ walletAddress }: { walletAddress: string }) {
@@ -248,27 +249,21 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
   const [distributing, setDistributing] = useState(false);
   const [distributeResult, setDistributeResult] = useState<{ rank: number; walletAddress: string; credited: number }[] | null>(null);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
-  const [poolBalance, setPoolBalance] = useState<number>(0);
-  const [depositAmount, setDepositAmount] = useState('');
-  const [depositing, setDepositing] = useState(false);
-  const [depositError, setDepositError] = useState('');
 
   const loadData = useCallback(async () => {
     if (!walletAddress) return;
     setLoading(true);
     try {
-      const [lvs, lb, ct, profile, pool] = await Promise.all([
+      const [lvs, lb, ct, profile] = await Promise.all([
         fetch(`/api/reputation/levels?artistWallet=${walletAddress}`).then(r => r.ok ? r.json() : []),
         fetch(`/api/reputation/leaderboard?artistWallet=${walletAddress}&limit=50`).then(r => r.ok ? r.json() : []),
         fetch(`/api/reputation/contest?artistWallet=${walletAddress}`).then(r => r.ok ? r.json() : null),
         fetch(`/api/youtube-quests/profile?wallet=${walletAddress}`).then(r => r.ok ? r.json() : null),
-        fetch(`/api/reputation/pool?artistWallet=${walletAddress}`).then(r => r.ok ? r.json() : { balance: 0 }),
       ]);
       setLevels(Array.isArray(lvs) ? lvs : []);
       setLeaderboard(Array.isArray(lb) ? lb : []);
       setContest(ct);
       setCreditBalance(profile?.credits ?? null);
-      setPoolBalance(Number(pool?.balance ?? 0));
     } finally {
       setLoading(false);
     }
@@ -297,6 +292,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
       minReputation: maxRep + 500,
       prizeDescription: '',
       creditReward: 0,
+      maxRecipients: 0,
     }]);
   };
 
@@ -382,54 +378,15 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
 
   return (
     <div className="px-4 space-y-4">
-      {/* Credit-Balance + Reward-Pool */}
+      {/* Credit-Balance */}
       <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
-          <span className="text-zinc-400 text-sm">Dein Guthaben</span>
-          <span className="text-amber-300 font-bold text-sm">{creditBalance !== null ? `${creditBalance.toFixed(2)} DFC` : '–'}</span>
-        </div>
         <div className="flex items-center justify-between px-4 py-3">
           <div>
-            <span className="text-zinc-400 text-sm">Reward-Pool</span>
-            <p className="text-zinc-600 text-xs mt-0.5">Sofort gesperrtes Budget für Level-Up Rewards</p>
+            <span className="text-zinc-400 text-sm">Dein Guthaben</span>
+            <p className="text-zinc-600 text-xs mt-0.5">Credits werden beim Speichern von Rewards reserviert</p>
           </div>
-          <span className="text-green-400 font-bold text-sm">{poolBalance.toFixed(2)} DFC</span>
+          <span className="text-amber-300 font-bold text-sm">{creditBalance !== null ? `${creditBalance.toFixed(2)} DFC` : '–'}</span>
         </div>
-        {/* Einzahlen */}
-        <div className="px-4 pb-3 flex gap-2">
-          <input
-            type="number" min="1" step="1"
-            className="flex-1 bg-zinc-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500"
-            placeholder="Betrag einzahlen…"
-            value={depositAmount}
-            onChange={e => { setDepositAmount(e.target.value); setDepositError(''); }}
-          />
-          <button
-            onClick={async () => {
-              const amt = Number(depositAmount);
-              if (!amt || amt <= 0) return;
-              setDepositing(true); setDepositError('');
-              try {
-                const res = await fetch('/api/reputation/pool', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ artistWallet: walletAddress, amount: amt }),
-                });
-                const data = await res.json();
-                if (!res.ok) { setDepositError(data.error ?? 'Fehler'); return; }
-                setPoolBalance(Number(data.poolBalance));
-                setCreditBalance(prev => prev !== null ? prev - amt : null);
-                setDepositAmount('');
-              } catch { setDepositError('Netzwerkfehler'); }
-              finally { setDepositing(false); }
-            }}
-            disabled={depositing || !depositAmount}
-            className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-black text-sm font-bold px-4 py-2 rounded-lg transition-colors"
-          >
-            {depositing ? '…' : 'Einzahlen'}
-          </button>
-        </div>
-        {depositError && <p className="text-red-400 text-xs px-4 pb-3">{depositError}</p>}
       </div>
       {/* Sub-Navigation */}
       <div className="flex bg-zinc-900/60 rounded-xl p-1 border border-white/[0.07]">
@@ -536,6 +493,24 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       </div>
                     </div>
                     <div>
+                      <label className="text-zinc-500 text-[10px] mb-0.5 block">Wie viele Fans erhalten diesen Reward?</label>
+                      <div className="relative">
+                        <input
+                          type="number" min="0"
+                          className="w-full bg-zinc-700 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 pr-14"
+                          value={editLevels[idx].maxRecipients}
+                          onChange={e => { const u = [...editLevels]; u[idx] = { ...u[idx], maxRecipients: Number(e.target.value) }; setEditLevels(u); }}
+                          placeholder="0 = kein Reward"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">Fans</span>
+                      </div>
+                      {editLevels[idx].creditReward > 0 && editLevels[idx].maxRecipients > 0 && (
+                        <p className="text-amber-400 text-[10px] mt-1">
+                          Kosten: {editLevels[idx].creditReward * editLevels[idx].maxRecipients} DFC (wird beim Speichern abgezogen)
+                        </p>
+                      )}
+                    </div>
+                    <div>
                       <label className="text-zinc-500 text-[10px] mb-0.5 block">Reward-Beschreibung</label>
                       <input
                         className="w-full bg-zinc-700 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
@@ -554,8 +529,8 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-white text-sm font-semibold">{lvl.levelName}</span>
                         <span className="text-zinc-500 text-xs">ab {lvl.minReputation} REP</span>
-                        {lvl.creditReward > 0 && (
-                          <span className="text-amber-300 text-xs font-semibold">+{lvl.creditReward} DFC</span>
+                        {lvl.creditReward > 0 && lvl.maxRecipients > 0 && (
+                          <span className="text-amber-300 text-xs font-semibold">+{lvl.creditReward} DFC × {lvl.maxRecipients} Fans</span>
                         )}
                       </div>
                       {lvl.prizeDescription
@@ -575,10 +550,10 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
               </button>
             )}
             {editing && (() => {
-              const totalRewards = editLevels.reduce((sum, l) => sum + (l.creditReward || 0), 0);
-              const enough = creditBalance !== null && totalRewards <= creditBalance;
+              const totalCost = editLevels.reduce((sum, l) => sum + (l.creditReward || 0) * (l.maxRecipients || 0), 0);
+              const enough = creditBalance !== null && totalCost <= creditBalance;
               const unknown = creditBalance === null;
-              if (totalRewards === 0) return null;
+              if (totalCost === 0) return null;
               return (
                 <div className={`mt-2 rounded-xl px-3 py-2.5 flex items-center justify-between text-xs ${
                   unknown ? 'bg-zinc-800/60 border border-zinc-700/40' :
@@ -586,17 +561,13 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                             'bg-red-950/40 border border-red-700/40'
                 }`}>
                   <div>
-                    <p className="text-zinc-300 font-semibold">D.FAITH Credits pro Fan (alle Level)</p>
+                    <p className="text-zinc-300 font-semibold">Gesamtkosten aller Rewards</p>
                     <p className="text-zinc-500 mt-0.5">Dein Guthaben: {creditBalance !== null ? `${creditBalance.toFixed(2)} DFC` : '–'}</p>
-                    {creditBalance !== null && totalRewards > 0 && (
-                      <p className={`text-[11px] mt-1 ${enough ? 'text-green-400' : 'text-red-400'}`}>
-                        Reicht für ca. <strong>{Math.floor(creditBalance / totalRewards)}</strong> Fans
-                      </p>
-                    )}
+                    <p className="text-zinc-600 text-[10px] mt-0.5">(Differenz zu bisherigen Levels wird abgezogen/erstattet)</p>
                   </div>
                   <div className="text-right">
                     <p className={`font-bold text-sm ${enough ? 'text-green-400' : unknown ? 'text-zinc-300' : 'text-red-400'}`}>
-                      {totalRewards} DFC
+                      {totalCost} DFC
                     </p>
                     <p className={`text-[10px] mt-0.5 ${enough ? 'text-green-500' : unknown ? 'text-zinc-500' : 'text-red-500'}`}>
                       {unknown ? 'Guthaben unbekannt' : enough ? '✓ Ausreichend' : '⚠ Nicht ausreichend'}

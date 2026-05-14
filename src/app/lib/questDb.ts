@@ -44,7 +44,8 @@ export interface ReputationLevel {
   levelName: string;
   minReputation: number;
   prizeDescription: string;
-  creditReward: number;  // D.FAITH Credits die beim Level-Up ausgezahlt werden
+  creditReward: number;   // D.FAITH Credits die beim Level-Up ausgezahlt werden
+  maxRecipients: number; // Wie viele Fans diesen Reward erhalten können (0 = kein Reward)
 }
 
 export interface ReputationContest {
@@ -1564,16 +1565,16 @@ export async function setArtistStatus(walletAddress: string, isArtist: boolean):
 // ─── Reputation ───────────────────────────────────────────────────────────────
 
 const DEFAULT_REPUTATION_LEVELS: ReputationLevel[] = [
-  { levelNumber:  1, levelName: 'Newcomer',       minReputation: 0,     prizeDescription: '', creditReward: 0 },
-  { levelNumber:  2, levelName: 'Follower',        minReputation: 50,    prizeDescription: '', creditReward: 0 },
-  { levelNumber:  3, levelName: 'Fan',             minReputation: 150,   prizeDescription: '', creditReward: 0 },
-  { levelNumber:  4, levelName: 'Supporter',       minReputation: 350,   prizeDescription: '', creditReward: 0 },
-  { levelNumber:  5, levelName: 'Loyalist',        minReputation: 700,   prizeDescription: '', creditReward: 0 },
-  { levelNumber:  6, levelName: 'True Fan',        minReputation: 1200,  prizeDescription: '', creditReward: 0 },
-  { levelNumber:  7, levelName: 'Advocate',        minReputation: 2000,  prizeDescription: '', creditReward: 0 },
-  { levelNumber:  8, levelName: 'VIP',             minReputation: 3500,  prizeDescription: '', creditReward: 0 },
-  { levelNumber:  9, levelName: 'Elite',           minReputation: 6000,  prizeDescription: '', creditReward: 0 },
-  { levelNumber: 10, levelName: 'Legend',          minReputation: 10000, prizeDescription: '', creditReward: 0 },
+  { levelNumber:  1, levelName: 'Newcomer',       minReputation: 0,     prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  2, levelName: 'Follower',        minReputation: 50,    prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  3, levelName: 'Fan',             minReputation: 150,   prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  4, levelName: 'Supporter',       minReputation: 350,   prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  5, levelName: 'Loyalist',        minReputation: 700,   prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  6, levelName: 'True Fan',        minReputation: 1200,  prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  7, levelName: 'Advocate',        minReputation: 2000,  prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  8, levelName: 'VIP',             minReputation: 3500,  prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  9, levelName: 'Elite',           minReputation: 6000,  prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber: 10, levelName: 'Legend',          minReputation: 10000, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
 ];
 
 /** Reputation eines Users für einen Artist erhöhen + Level-Up Credits auszahlen */
@@ -1605,25 +1606,23 @@ export async function addUserReputation(
   // Level-Up: Credits für alle überschrittenen Level auszahlen
   if (newLevel > oldLevel) {
     for (const lvl of levels) {
-      if (lvl.levelNumber > oldLevel && lvl.levelNumber <= newLevel && lvl.creditReward > 0) {
+      if (lvl.levelNumber > oldLevel && lvl.levelNumber <= newLevel && lvl.creditReward > 0 && lvl.maxRecipients > 0) {
         try {
-          // Credits aus dem Reward-Pool abziehen (sofort eingelegt vom Künstler)
-          const poolRows = await sql`
-            UPDATE reputation_reward_pool
-            SET balance = balance - ${lvl.creditReward}, updated_at = NOW()
-            WHERE artist_wallet = ${artistWallet.toLowerCase()} AND balance >= ${lvl.creditReward}
-            RETURNING balance
+          // Freien Platz prüfen + Zähler atomar erhöhen
+          const updated = await sql`
+            UPDATE reputation_levels
+            SET recipients_count = recipients_count + 1, updated_at = NOW()
+            WHERE artist_wallet = ${artistWallet.toLowerCase()}
+              AND level_number = ${lvl.levelNumber}
+              AND recipients_count < max_recipients
+            RETURNING recipients_count
           `;
-          if (poolRows.length > 0) {
-            await addDfaithCredits(walletAddress, lvl.creditReward);
-          }
-          // Falls kein Pool vorhanden, direkt vom Künstler-Guthaben abziehen (Fallback)
-          else {
-            await redeemDfaithCredits(artistWallet, lvl.creditReward);
+          if (updated.length > 0) {
+            // Budget wurde beim Speichern reserviert → direkt auszahlen
             await addDfaithCredits(walletAddress, lvl.creditReward);
           }
         } catch {
-          // Nicht genug Credits – Reward überspringen
+          // Fehler überspringen
         }
       }
     }
@@ -1634,7 +1633,7 @@ export async function addUserReputation(
 export async function getReputationLevels(artistWallet: string): Promise<ReputationLevel[]> {
   const sql = getDb();
   const rows = await sql`
-    SELECT level_number, level_name, min_reputation, prize_description, credit_reward
+    SELECT level_number, level_name, min_reputation, prize_description, credit_reward, max_recipients
     FROM reputation_levels
     WHERE artist_wallet = ${artistWallet.toLowerCase()}
     ORDER BY level_number ASC
@@ -1646,21 +1645,93 @@ export async function getReputationLevels(artistWallet: string): Promise<Reputat
     minReputation: Number(r.min_reputation),
     prizeDescription: String(r.prize_description ?? ''),
     creditReward: Number(r.credit_reward ?? 0),
+    maxRecipients: Number(r.max_recipients ?? 0),
   }));
 }
 
-/** Level-Konfiguration eines Artists speichern */
+/** Level-Konfiguration eines Artists speichern – Credits für Rewards sofort reservieren */
 export async function saveReputationLevels(
   artistWallet: string,
   levels: ReputationLevel[],
 ): Promise<void> {
   const sql = getDb();
-  await sql`DELETE FROM reputation_levels WHERE artist_wallet = ${artistWallet.toLowerCase()}`;
+  const wallet = artistWallet.toLowerCase();
+
+  // Alte Level laden (inkl. recipients_count zum Berechnen des noch verfügbaren Budgets)
+  const oldRows = await sql`
+    SELECT level_number, credit_reward, max_recipients, recipients_count
+    FROM reputation_levels
+    WHERE artist_wallet = ${wallet}
+  `;
+
+  type OldRow = { level_number: unknown; credit_reward: unknown; max_recipients: unknown; recipients_count: unknown };
+  const oldByLevel = new Map<number, OldRow>(
+    (oldRows as OldRow[]).map((r) => [Number(r.level_number), r])
+  );
+  const newLevelNums = new Set(levels.map((l) => l.levelNumber));
+
+  // Netto-Kosten berechnen (positiv = abziehen, negativ = rückerstatten)
+  let netCost = 0;
+
+  // Gelöschte Level rückerstatten
+  for (const [lvlNum, r] of oldByLevel) {
+    if (!newLevelNums.has(lvlNum)) {
+      const remaining = Math.max(
+        0,
+        (Number(r.max_recipients) - Number(r.recipients_count)) * Number(r.credit_reward),
+      );
+      netCost -= remaining;
+    }
+  }
+
+  // Neue / geänderte Level
   for (const lvl of levels) {
-    const creditReward = Math.max(0, Math.round(Number(lvl.creditReward) || 0));
+    const creditReward   = Math.max(0, Math.round(Number(lvl.creditReward)   || 0));
+    const maxRecipients  = Math.max(0, Math.round(Number(lvl.maxRecipients)  || 0));
+    const newTotal = creditReward * maxRecipients;
+
+    if (oldByLevel.has(lvl.levelNumber)) {
+      const old = oldByLevel.get(lvl.levelNumber)!;
+      const oldRemaining = Math.max(
+        0,
+        (Number(old.max_recipients) - Number(old.recipients_count)) * Number(old.credit_reward),
+      );
+      netCost += newTotal - oldRemaining;
+    } else {
+      netCost += newTotal;
+    }
+  }
+
+  if (netCost > 0) {
+    const ok = await redeemDfaithCredits(wallet, netCost);
+    if (!ok) throw new Error(`Nicht genügend Guthaben. Benötigt: ${netCost} DFC`);
+  } else if (netCost < 0) {
+    await addDfaithCredits(wallet, -netCost);
+  }
+
+  // Gelöschte Level entfernen
+  for (const [lvlNum] of oldByLevel) {
+    if (!newLevelNums.has(lvlNum)) {
+      await sql`DELETE FROM reputation_levels WHERE artist_wallet = ${wallet} AND level_number = ${lvlNum}`;
+    }
+  }
+
+  // Neue / geänderte Level per UPSERT einfügen (recipients_count beibehalten)
+  for (const lvl of levels) {
+    const creditReward  = Math.max(0, Math.round(Number(lvl.creditReward)  || 0));
+    const maxRecipients = Math.max(0, Math.round(Number(lvl.maxRecipients) || 0));
     await sql`
-      INSERT INTO reputation_levels (artist_wallet, level_number, level_name, min_reputation, prize_description, credit_reward, updated_at)
-      VALUES (${artistWallet.toLowerCase()}, ${lvl.levelNumber}, ${lvl.levelName}, ${lvl.minReputation}, ${lvl.prizeDescription}, ${creditReward}, NOW())
+      INSERT INTO reputation_levels
+        (artist_wallet, level_number, level_name, min_reputation, prize_description, credit_reward, max_recipients, recipients_count, updated_at)
+      VALUES
+        (${wallet}, ${lvl.levelNumber}, ${lvl.levelName}, ${lvl.minReputation}, ${lvl.prizeDescription}, ${creditReward}, ${maxRecipients}, 0, NOW())
+      ON CONFLICT (artist_wallet, level_number) DO UPDATE SET
+        level_name        = EXCLUDED.level_name,
+        min_reputation    = EXCLUDED.min_reputation,
+        prize_description = EXCLUDED.prize_description,
+        credit_reward     = EXCLUDED.credit_reward,
+        max_recipients    = EXCLUDED.max_recipients,
+        updated_at        = EXCLUDED.updated_at
     `;
   }
 }
