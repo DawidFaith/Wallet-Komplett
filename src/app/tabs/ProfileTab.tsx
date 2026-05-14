@@ -616,7 +616,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                   </button>
                 </div>
               {/* Reputation bei diesem Artist */}
-              {repData && repData.reputation > 0 && (
+              {repData && (
                 <div className="flex items-center gap-3 bg-amber-950/30 border border-amber-700/20 rounded-xl px-3 py-2">
                   <FaTrophy className="text-amber-400 shrink-0" size={14} />
                   <div className="flex-1 min-w-0">
