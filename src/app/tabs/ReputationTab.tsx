@@ -386,31 +386,42 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
   const [distributeResult, setDistributeResult] = useState<{ rank: number; walletAddress: string; credited: number }[] | null>(null);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
 
-  // Leaderboard-Direktrewards
-  const [showLbRewardsForm, setShowLbRewardsForm] = useState(false);
-  const [lbPrizes, setLbPrizes] = useState([
+  // Quartals-Leaderboard-Rewards
+  const [quarterlyConfig, setQuarterlyConfig] = useState<{ prizes: { rank: number; creditReward: number }[] } | null>(null);
+  const [quarterlyHistory, setQuarterlyHistory] = useState<{ id: string; quarter: string; results: { rank: number; walletAddress: string; credited: number }[]; totalCredited: number; distributedAt: string }[]>([]);
+  const [quarterlyInfo, setQuarterlyInfo] = useState<{ quarter: string; start: string; end: string } | null>(null);
+  const [showQlyForm, setShowQlyForm] = useState(false);
+  const [qlyPrizes, setQlyPrizes] = useState([
     { rank: 1, creditReward: 0 },
     { rank: 2, creditReward: 0 },
     { rank: 3, creditReward: 0 },
   ]);
-  const [lbDistributing, setLbDistributing] = useState(false);
-  const [lbResult, setLbResult] = useState<{ rank: number; walletAddress: string; credited: number }[] | null>(null);
-  const [lbError, setLbError] = useState('');
+  const [qlySaving, setQlySaving] = useState(false);
+  const [qlyDistributing, setQlyDistributing] = useState(false);
+  const [qlyDistResult, setQlyDistResult] = useState<{ quarter: string; distributed: { rank: number; walletAddress: string; credited: number }[] } | null>(null);
+  const [qlyError, setQlyError] = useState('');
 
   const loadData = useCallback(async () => {
     if (!walletAddress) return;
     setLoading(true);
     try {
-      const [lvs, lb, ct, profile] = await Promise.all([
+      const [lvs, lb, ct, profile, qly] = await Promise.all([
         fetch(`/api/reputation/levels?artistWallet=${walletAddress}`).then(r => r.ok ? r.json() : []),
         fetch(`/api/reputation/leaderboard?artistWallet=${walletAddress}&limit=50`).then(r => r.ok ? r.json() : []),
         fetch(`/api/reputation/contest?artistWallet=${walletAddress}`).then(r => r.ok ? r.json() : null),
         fetch(`/api/youtube-quests/profile?wallet=${walletAddress}`).then(r => r.ok ? r.json() : null),
+        fetch(`/api/reputation/leaderboard-quarterly?artistWallet=${walletAddress}`).then(r => r.ok ? r.json() : null),
       ]);
       setLevels(Array.isArray(lvs) ? lvs : []);
       setLeaderboard(Array.isArray(lb) ? lb : []);
       setContest(ct);
       setCreditBalance(profile?.credits ?? null);
+      if (qly) {
+        setQuarterlyConfig(qly.config);
+        setQuarterlyHistory(Array.isArray(qly.history) ? qly.history : []);
+        setQuarterlyInfo(qly.quarterInfo ?? null);
+        if (qly.config?.prizes?.length > 0) setQlyPrizes(qly.config.prizes);
+      }
     } finally {
       setLoading(false);
     }
@@ -974,102 +985,170 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
             )}
           </div>
 
-          {/* Leaderboard Direktrewards */}
+          {/* Quartals-Leaderboard-Rewards */}
           <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
               <div>
-                <p className="text-white font-semibold text-sm">All-Time Rewards</p>
-                <p className="text-zinc-500 text-xs mt-0.5">Credits jetzt sofort an Top-Fans verteilen</p>
+                <p className="text-white font-semibold text-sm">Quartals-Rewards</p>
+                {quarterlyInfo && (
+                  <p className="text-zinc-500 text-xs mt-0.5">
+                    {quarterlyInfo.quarter} &bull; endet {new Date(quarterlyInfo.end).toLocaleDateString('de-DE')}
+                  </p>
+                )}
               </div>
-              {!showLbRewardsForm && (
+              {!showQlyForm && (
                 <button
-                  onClick={() => { setShowLbRewardsForm(true); setLbResult(null); setLbError(''); }}
+                  onClick={() => { setShowQlyForm(true); setQlyError(''); setQlyDistResult(null); }}
                   className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 text-xs font-medium"
                 >
-                  <FaPlus size={10} /> Rewards verteilen
+                  <FaEdit size={10} /> {quarterlyConfig ? 'Bearbeiten' : 'Einrichten'}
                 </button>
               )}
             </div>
 
-            {lbResult && !showLbRewardsForm && (
-              <div className="p-4 space-y-1.5">
-                <p className="text-green-400 text-xs font-semibold mb-2">✅ Verteilt!</p>
-                {lbResult.map(r => (
-                  <div key={r.rank} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-zinc-800/50">
-                    <span className="text-zinc-300 text-xs w-6 shrink-0">
-                      {r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : `#${r.rank}`}
-                    </span>
-                    <span className="text-zinc-300 text-xs flex-1 truncate">{shortenWallet(r.walletAddress)}</span>
-                    <span className="flex items-center gap-1 text-amber-300 text-xs font-bold shrink-0">
-                      <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full shrink-0" />
-                      +{r.credited} D.FAITH Credits
-                    </span>
+            {/* Aktuelle Konfiguration + Verteilen */}
+            {!showQlyForm && quarterlyConfig && (
+              <div className="p-4 space-y-3">
+                {/* Quartal-Status */}
+                {quarterlyInfo && (() => {
+                  const ended = new Date() > new Date(quarterlyInfo.end);
+                  const alreadyDone = quarterlyHistory.some(h => h.quarter === quarterlyInfo.quarter);
+                  return (
+                    <div className={`rounded-xl px-3 py-2.5 flex items-center justify-between ${
+                      alreadyDone ? 'bg-zinc-800/40' : ended ? 'bg-amber-950/30 border border-amber-700/30' : 'bg-green-950/30 border border-green-700/30'
+                    }`}>
+                      <div>
+                        <p className="text-xs font-semibold text-white">
+                          {alreadyDone ? `✅ ${quarterlyInfo.quarter} verteilt` : ended ? `⏰ ${quarterlyInfo.quarter} abgelaufen` : `🟢 ${quarterlyInfo.quarter} läuft`}
+                        </p>
+                        <p className="text-zinc-400 text-[11px] mt-0.5">
+                          {new Date(quarterlyInfo.start).toLocaleDateString('de-DE')} – {new Date(quarterlyInfo.end).toLocaleDateString('de-DE')}
+                        </p>
+                      </div>
+                      {!alreadyDone && (
+                        <div className="flex gap-2">
+                          {ended && (
+                            <button
+                              onClick={async () => {
+                                setQlyDistributing(true); setQlyError('');
+                                try {
+                                  const res = await fetch('/api/reputation/leaderboard-quarterly', {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ artistWallet: walletAddress, force: false }),
+                                  });
+                                  const data = await res.json();
+                                  if (res.ok) { setQlyDistResult(data); await loadData(); }
+                                  else setQlyError(data.error || 'Fehler');
+                                } finally { setQlyDistributing(false); }
+                              }}
+                              disabled={qlyDistributing}
+                              className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black text-xs font-bold px-3 py-1.5 rounded-lg"
+                            >
+                              {qlyDistributing ? '…' : '🎁 Verteilen'}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              if (confirm('Quartal jetzt vorzeitig abschließen und Rewards ausschütten?')) {
+                                setQlyDistributing(true); setQlyError('');
+                                fetch('/api/reputation/leaderboard-quarterly', {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ artistWallet: walletAddress, force: true }),
+                                })
+                                  .then(r => r.json())
+                                  .then(data => { setQlyDistResult(data); return loadData(); })
+                                  .catch(err => setQlyError(err.message))
+                                  .finally(() => setQlyDistributing(false));
+                              }
+                            }}
+                            disabled={qlyDistributing}
+                            className="bg-zinc-700/60 hover:bg-zinc-600 disabled:opacity-50 text-zinc-300 text-xs font-bold px-3 py-1.5 rounded-lg"
+                          >
+                            ⏹ Jetzt
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Preise */}
+                <div className="space-y-1.5">
+                  {quarterlyConfig.prizes.map(p => (
+                    <div key={p.rank} className="flex items-center justify-between px-3 py-2 rounded-lg bg-zinc-800/50">
+                      <span className="text-zinc-300 text-xs">
+                        {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`} Platz
+                      </span>
+                      <span className="flex items-center gap-1 text-amber-300 text-xs font-bold">
+                        <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full shrink-0" />
+                        {p.creditReward} D.FAITH Credits
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Verteilungsergebnis */}
+                {qlyDistResult && (
+                  <div className="bg-green-950/30 border border-green-700/30 rounded-xl p-3 space-y-1">
+                    <p className="text-green-400 text-xs font-semibold mb-1">✅ {qlyDistResult.quarter} verteilt!</p>
+                    {qlyDistResult.distributed.map(r => (
+                      <p key={r.rank} className="text-zinc-300 text-xs">
+                        #{r.rank}: {shortenWallet(r.walletAddress)} → {r.credited} D.FAITH Credits
+                      </p>
+                    ))}
                   </div>
-                ))}
-                <button
-                  onClick={() => { setShowLbRewardsForm(true); setLbResult(null); setLbError(''); }}
-                  className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors pt-1"
-                >
-                  Erneut verteilen
-                </button>
+                )}
+                {qlyError && <p className="text-red-400 text-xs">{qlyError}</p>}
               </div>
             )}
 
-            {showLbRewardsForm && (
+            {/* Konfigurationsformular */}
+            {showQlyForm && (
               <div className="p-4 space-y-3">
-                <p className="text-zinc-500 text-xs">Credits werden sofort abgezogen und an die aktuellen Ranglisten-Plätze ausgezahlt.</p>
+                <p className="text-zinc-400 text-xs">Preise gelten jeden Quartal. Am Ende des Quartals wird automatisch die aktuelle Rangliste verwendet.</p>
                 <p className="text-zinc-500 text-xs font-semibold uppercase tracking-widest">Preise pro Platz</p>
-                {lbPrizes.map((p, i) => (
+                {qlyPrizes.map((p, i) => (
                   <div key={p.rank} className="flex items-center gap-3">
                     <span className="text-zinc-300 text-sm w-8 shrink-0">
                       {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`}
                     </span>
                     <div className="relative flex-1">
                       <input
-                        type="number" min="0"
-                        placeholder="0"
+                        type="number" min="0" placeholder="0"
                         className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500 pr-10"
-                        value={lbPrizes[i].creditReward || ''}
-                        onChange={e => {
-                          const u = [...lbPrizes];
-                          u[i] = { ...u[i], creditReward: Number(e.target.value) || 0 };
-                          setLbPrizes(u);
-                        }}
+                        value={qlyPrizes[i].creditReward || ''}
+                        onChange={e => { const u = [...qlyPrizes]; u[i] = { ...u[i], creditReward: Number(e.target.value) || 0 }; setQlyPrizes(u); }}
                       />
                       <span className="absolute right-2.5 top-1/2 -translate-y-1/2">
                         <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full" />
                       </span>
                     </div>
-                    {lbPrizes.length > 1 && (
-                      <button
-                        onClick={() => setLbPrizes(prev => prev.filter((_, j) => j !== i).map((x, j) => ({ ...x, rank: j + 1 })))}
-                        className="text-red-500 hover:text-red-400 shrink-0"
-                      >
+                    {qlyPrizes.length > 1 && (
+                      <button onClick={() => setQlyPrizes(prev => prev.filter((_, j) => j !== i).map((x, j) => ({ ...x, rank: j + 1 })))} className="text-red-500 hover:text-red-400 shrink-0">
                         <FaTimes size={11} />
                       </button>
                     )}
                   </div>
                 ))}
-                <button
-                  onClick={() => setLbPrizes(prev => [...prev, { rank: prev.length + 1, creditReward: 0 }])}
-                  className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 text-xs"
-                >
-                  <FaPlus size={9} /> Weiteren Platz hinzufügen
+                <button onClick={() => setQlyPrizes(prev => [...prev, { rank: prev.length + 1, creditReward: 0 }])} className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 text-xs">
+                  <FaPlus size={9} /> Weiteren Platz
                 </button>
-                {lbError && <p className="text-red-400 text-xs">{lbError}</p>}
+                {qlyError && <p className="text-red-400 text-xs">{qlyError}</p>}
                 {(() => {
-                  const total = lbPrizes.reduce((s, p) => s + (p.creditReward || 0), 0);
+                  const total = qlyPrizes.reduce((s, p) => s + (p.creditReward || 0), 0);
                   if (total === 0) return null;
                   const enough = creditBalance !== null && total <= creditBalance;
                   return (
                     <div className={`rounded-xl px-3 py-2 flex items-center justify-between text-xs ${
                       enough ? 'bg-green-950/40 border border-green-700/30' : 'bg-red-950/40 border border-red-700/40'
                     }`}>
-                      <p className={enough ? 'text-green-300' : 'text-red-300'}>Gesamtpreisgeld</p>
+                      <p className={enough ? 'text-green-300' : 'text-red-300'}>Preisgeld pro Quartal</p>
                       <p className={`flex items-center gap-1 font-bold ${enough ? 'text-green-400' : 'text-red-400'}`}>
                         {total}
                         <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full shrink-0" />
-                        D.FAITH Credits {enough ? '✓' : '⚠'}
+                        D.FAITH {enough ? '✓' : '⚠'}
                       </p>
                     </div>
                   );
@@ -1077,45 +1156,53 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                 <div className="flex gap-2 pt-1">
                   <button
                     onClick={async () => {
-                      setLbDistributing(true);
-                      setLbError('');
+                      setQlySaving(true); setQlyError('');
                       try {
-                        const res = await fetch('/api/reputation/leaderboard-rewards', {
+                        const res = await fetch('/api/reputation/leaderboard-quarterly', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ artistWallet: walletAddress, prizes: lbPrizes }),
+                          body: JSON.stringify({ artistWallet: walletAddress, prizes: qlyPrizes }),
                         });
                         const data = await res.json();
-                        if (res.ok) {
-                          setLbResult(data.distributed);
-                          setShowLbRewardsForm(false);
-                          await loadData();
-                        } else {
-                          setLbError(data.error || 'Fehler beim Verteilen');
-                        }
-                      } finally {
-                        setLbDistributing(false);
-                      }
+                        if (res.ok) { setShowQlyForm(false); await loadData(); }
+                        else setQlyError(data.error || 'Fehler');
+                      } finally { setQlySaving(false); }
                     }}
-                    disabled={lbDistributing || lbPrizes.every(p => p.creditReward <= 0)}
-                    className="flex-1 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black text-xs font-bold py-2.5 rounded-xl transition-colors"
+                    disabled={qlySaving || qlyPrizes.every(p => p.creditReward <= 0)}
+                    className="flex-1 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black text-xs font-bold py-2.5 rounded-xl"
                   >
-                    {lbDistributing ? 'Verteilen…' : '🎁 Jetzt verteilen'}
+                    {qlySaving ? 'Speichern…' : 'Konfiguration speichern'}
                   </button>
-                  <button
-                    onClick={() => setShowLbRewardsForm(false)}
-                    className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-xs px-3"
-                  >
+                  <button onClick={() => setShowQlyForm(false)} className="text-zinc-400 hover:text-white text-xs px-3">
                     <FaTimes size={11} />
                   </button>
                 </div>
               </div>
             )}
 
-            {!showLbRewardsForm && !lbResult && (
+            {!showQlyForm && !quarterlyConfig && (
               <div className="px-4 py-6 text-center">
-                <p className="text-zinc-500 text-sm">Einmalige Belohnung für Top-Fans</p>
-                <p className="text-zinc-600 text-xs mt-1">Credits werden sofort verteilt – ohne Zeitlimit.</p>
+                <FaTrophy size={24} className="text-zinc-700 mx-auto mb-2" />
+                <p className="text-zinc-500 text-sm">Noch keine Quartals-Rewards konfiguriert</p>
+                <p className="text-zinc-600 text-xs mt-1">Jedes Quartal werden Rewards automatisch an die Top-Fans ausgezahlt.</p>
+              </div>
+            )}
+
+            {/* Historie */}
+            {quarterlyHistory.length > 0 && !showQlyForm && (
+              <div className="border-t border-white/[0.07] px-4 py-3">
+                <p className="text-zinc-500 text-xs font-semibold uppercase tracking-widest mb-2">Vergangene Quartale</p>
+                <div className="space-y-1.5">
+                  {quarterlyHistory.slice(0, 4).map(h => (
+                    <div key={h.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-zinc-800/40">
+                      <span className="text-zinc-300 text-xs font-semibold">{h.quarter}</span>
+                      <span className="flex items-center gap-1 text-amber-300/70 text-xs">
+                        <Image src="/D.FAITH.png" alt="" width={10} height={10} className="w-2.5 h-2.5 rounded-full shrink-0" />
+                        {h.totalCredited} verteilt
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

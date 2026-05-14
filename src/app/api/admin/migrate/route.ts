@@ -162,6 +162,29 @@ export async function POST(req: NextRequest) {
       )
     `;
 
+    // ── Quarterly Leaderboard Rewards ─────────────────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS leaderboard_quarterly_config (
+        id           TEXT        PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        artist_wallet TEXT       NOT NULL UNIQUE,
+        prizes       JSONB       NOT NULL DEFAULT '[]',
+        updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS leaderboard_quarterly_history (
+        id             TEXT        PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        artist_wallet  TEXT        NOT NULL,
+        quarter        TEXT        NOT NULL,
+        prizes         JSONB       NOT NULL DEFAULT '[]',
+        results        JSONB       NOT NULL DEFAULT '[]',
+        total_credited INTEGER     NOT NULL DEFAULT 0,
+        distributed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_lq_history_wallet_quarter ON leaderboard_quarterly_history(artist_wallet, quarter)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_lq_history_wallet ON leaderboard_quarterly_history(artist_wallet)`;
+
     return NextResponse.json({ success: true, message: `Migration abgeschlossen (${(backfill as unknown as { count?: number }).count ?? backfill.length} neue Profile)` });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -1917,6 +1917,153 @@ export async function distributeLeaderboardRewards(
   return results;
 }
 
+/** Liefert Quartal-String + Start/End-Datum für ein Datum (default: heute) */
+export function getQuarterInfo(date: Date = new Date()): {
+  quarter: string;
+  start: Date;
+  end: Date;
+} {
+  const year = date.getFullYear();
+  const q = Math.floor(date.getMonth() / 3) + 1;
+  const startMonth = (q - 1) * 3;
+  const start = new Date(year, startMonth, 1);
+  const end = new Date(year, startMonth + 3, 0, 23, 59, 59, 999);
+  return { quarter: `${year}-Q${q}`, start, end };
+}
+
+/** Quartals-Reward-Konfiguration laden */
+export async function getLeaderboardQuarterlyConfig(
+  artistWallet: string,
+): Promise<{ prizes: { rank: number; creditReward: number }[] } | null> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT prizes FROM leaderboard_quarterly_config
+    WHERE artist_wallet = ${artistWallet.toLowerCase()}
+    LIMIT 1
+  `;
+  if (rows.length === 0) return null;
+  return { prizes: rows[0].prizes as { rank: number; creditReward: number }[] };
+}
+
+/** Quartals-Reward-Konfiguration speichern / aktualisieren */
+export async function upsertLeaderboardQuarterlyConfig(
+  artistWallet: string,
+  prizes: { rank: number; creditReward: number }[],
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO leaderboard_quarterly_config (id, artist_wallet, prizes, updated_at)
+    VALUES (gen_random_uuid()::text, ${artistWallet.toLowerCase()}, ${JSON.stringify(prizes)}::jsonb, NOW())
+    ON CONFLICT (artist_wallet) DO UPDATE
+      SET prizes = EXCLUDED.prizes, updated_at = NOW()
+  `;
+}
+
+/** Quartals-Historie laden */
+export async function getLeaderboardQuarterlyHistory(
+  artistWallet: string,
+): Promise<{ id: string; quarter: string; prizes: { rank: number; creditReward: number }[]; results: { rank: number; walletAddress: string; credited: number }[]; totalCredited: number; distributedAt: string }[]> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT id, quarter, prizes, results, total_credited, distributed_at
+    FROM leaderboard_quarterly_history
+    WHERE artist_wallet = ${artistWallet.toLowerCase()}
+    ORDER BY distributed_at DESC
+    LIMIT 20
+  `;
+  return rows.map(r => ({
+    id: r.id as string,
+    quarter: r.quarter as string,
+    prizes: r.prizes as { rank: number; creditReward: number }[],
+    results: r.results as { rank: number; walletAddress: string; credited: number }[],
+    totalCredited: Number(r.total_credited),
+    distributedAt: (r.distributed_at as Date).toISOString(),
+  }));
+}
+
+/**
+ * Quartals-Rewards verteilen.
+ * force = true: auch wenn Quartal noch nicht abgelaufen
+ */
+export async function distributeLeaderboardQuarterly(
+  artistWallet: string,
+  force = false,
+): Promise<{ quarter: string; distributed: { rank: number; walletAddress: string; credited: number }[] }> {
+  const wallet = artistWallet.toLowerCase();
+  const sql = getDb();
+  const { quarter, end } = getQuarterInfo();
+
+  if (!force && new Date() < end) {
+    throw new Error(`Quartal ${quarter} läuft noch bis ${end.toLocaleDateString('de-DE')}`);
+  }
+
+  // Bereits verteilt?
+  const already = await sql`
+    SELECT id FROM leaderboard_quarterly_history
+    WHERE artist_wallet = ${wallet} AND quarter = ${quarter}
+    LIMIT 1
+  `;
+  if (already.length > 0 && !force) {
+    throw new Error(`Quartal ${quarter} wurde bereits verteilt`);
+  }
+
+  const config = await getLeaderboardQuarterlyConfig(artistWallet);
+  if (!config || config.prizes.length === 0) throw new Error('Keine Konfiguration gefunden');
+
+  const validPrizes = config.prizes.filter(p => p.creditReward > 0);
+  if (validPrizes.length === 0) throw new Error('Keine Preise > 0 konfiguriert');
+
+  const total = validPrizes.reduce((s, p) => s + p.creditReward, 0);
+
+  // Guthaben prüfen
+  const balRows = await sql`SELECT balance FROM dfaith_credits WHERE wallet_address = ${wallet}`;
+  const balance = Number(balRows[0]?.balance ?? 0);
+  if (balance < total) throw new Error(`Nicht genug Credits (Guthaben: ${balance.toFixed(2)}, benötigt: ${total})`);
+
+  const maxRank = Math.max(...validPrizes.map(p => p.rank));
+  const leaderboard = await getReputationLeaderboard(artistWallet, maxRank);
+
+  await addDfaithCredits(wallet, -total);
+
+  const results: { rank: number; walletAddress: string; credited: number }[] = [];
+  let actuallySpent = 0;
+
+  for (const prize of validPrizes) {
+    const winner = leaderboard.find(e => e.rank === prize.rank);
+    if (!winner) continue;
+    try {
+      await addDfaithCredits(winner.walletAddress, prize.creditReward);
+      results.push({ rank: prize.rank, walletAddress: winner.walletAddress, credited: prize.creditReward });
+      actuallySpent += prize.creditReward;
+    } catch { /* überspringen */ }
+  }
+
+  // Refund nicht vergebener Preise
+  const refund = total - actuallySpent;
+  if (refund > 0) await addDfaithCredits(wallet, refund);
+
+  // Historie speichern (upsert für force-Fall)
+  await sql`
+    INSERT INTO leaderboard_quarterly_history
+      (id, artist_wallet, quarter, prizes, results, total_credited, distributed_at)
+    VALUES (
+      gen_random_uuid()::text,
+      ${wallet},
+      ${quarter},
+      ${JSON.stringify(config.prizes)}::jsonb,
+      ${JSON.stringify(results)}::jsonb,
+      ${actuallySpent},
+      NOW()
+    )
+    ON CONFLICT (artist_wallet, quarter) DO UPDATE
+      SET results = EXCLUDED.results,
+          total_credited = EXCLUDED.total_credited,
+          distributed_at = NOW()
+  `;
+
+  return { quarter, distributed: results };
+}
+
 /** Berechnet Level und Fortschritt basierend auf Reputation + Level-Config */
 export function reputationToLevel(
   reputation: number,
