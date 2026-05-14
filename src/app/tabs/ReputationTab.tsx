@@ -101,7 +101,7 @@ function SupporterArtistCard({
             {entry.artistName || shortenWallet(entry.artistWallet)}
           </p>
           <p className="text-amber-400 text-xs font-medium">
-            Level {entry.level} \u2013 {entry.levelName}
+            Level {entry.level} – {entry.levelName}
           </p>
         </div>
         <div className="text-right shrink-0">
