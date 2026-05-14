@@ -1816,6 +1816,7 @@ export async function upsertReputationContest(
 export async function distributeReputationContest(
   contestId: string,
   artistWallet: string,
+  force = false,
 ): Promise<{ rank: number; walletAddress: string; credited: number }[]> {
   const sql = getDb();
   // Prüfen ob Contest existiert, undistributed und abgelaufen
@@ -1827,7 +1828,7 @@ export async function distributeReputationContest(
   if (contestRows.length === 0) throw new Error('Contest nicht gefunden');
   if (contestRows[0].distributed) throw new Error('Bereits verteilt');
   const endDate = contestRows[0].end_date instanceof Date ? contestRows[0].end_date : new Date(contestRows[0].end_date as string);
-  if (endDate > new Date()) throw new Error('Contest läuft noch');
+  if (!force && endDate > new Date()) throw new Error('Contest läuft noch');
 
   const prizes = await sql`
     SELECT rank, credit_reward FROM reputation_contest_prizes

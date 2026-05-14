@@ -298,9 +298,11 @@ function ArtistDetailView({
                     'bg-green-950/30 border border-green-700/30'
                   }`}>
                     <p className="text-white font-semibold text-sm">
-                      {contest.distributed ? '&#9989; Contest beendet' :
-                       new Date(contest.endDate) <= new Date() ? '&#9200; Läuft aus' :
-                       '&#128994; Aktiver Contest'}
+                      {contest.distributed
+                        ? '✅ Contest beendet'
+                        : new Date(contest.endDate) <= new Date()
+                        ? '⏰ Läuft aus'
+                        : '🟢 Aktiver Contest'}
                     </p>
                     <p className="text-zinc-400 text-xs mt-0.5">Ende: {new Date(contest.endDate).toLocaleString('de-DE')}</p>
                   </div>
@@ -482,14 +484,14 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
     }
   };
 
-  const distributeContest = async () => {
+  const distributeContest = async (force = false) => {
     if (!contest) return;
     setDistributing(true);
     try {
       const res = await fetch('/api/reputation/contest', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contestId: contest.id, artistWallet: walletAddress }),
+        body: JSON.stringify({ contestId: contest.id, artistWallet: walletAddress, force }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -773,11 +775,24 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                   </div>
                   {contestExpired && (
                     <button
-                      onClick={distributeContest}
+                      onClick={() => distributeContest(false)}
                       disabled={distributing}
                       className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
                     >
                       {distributing ? '…' : '🎁 Verteilen'}
+                    </button>
+                  )}
+                  {contestRunning && (
+                    <button
+                      onClick={() => {
+                        if (confirm('Contest jetzt vorzeitig beenden und alle Rewards sofort ausschütten?')) {
+                          distributeContest(true);
+                        }
+                      }}
+                      disabled={distributing}
+                      className="flex items-center gap-1.5 bg-red-600/80 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      {distributing ? '…' : '⏹ Jetzt beenden'}
                     </button>
                   )}
                 </div>

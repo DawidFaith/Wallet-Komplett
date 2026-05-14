@@ -55,13 +55,13 @@ export async function POST(req: NextRequest) {
 /** PUT /api/reputation/contest/distribute – Rewards verteilen */
 export async function PUT(req: NextRequest) {
   try {
-    const body: { contestId?: string; artistWallet?: string } = await req.json();
-    const { contestId, artistWallet } = body;
+    const body: { contestId?: string; artistWallet?: string; force?: boolean } = await req.json();
+    const { contestId, artistWallet, force } = body;
     if (!contestId || !artistWallet) {
       return NextResponse.json({ error: 'contestId und artistWallet erforderlich' }, { status: 400 });
     }
 
-    const results = await distributeReputationContest(contestId, artistWallet);
+    const results = await distributeReputationContest(contestId, artistWallet, force === true);
     return NextResponse.json({ success: true, distributed: results });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
