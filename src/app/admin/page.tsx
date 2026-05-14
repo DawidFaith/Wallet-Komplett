@@ -568,8 +568,9 @@ function SolanaMintSection({ secret }: { secret: string }) {
   const [imageBase64, setImageBase64] = useState('');
   const [imageMimeType, setImageMimeType] = useState('image/png');
   const [imagePreview, setImagePreview]   = useState('');
+  const [disableMinting, setDisableMinting] = useState(false);
   const [loading, setLoading]         = useState(false);
-  const [result, setResult]           = useState<{ mintAddress: string; explorerUrl: string; metadataUri?: string } | null>(null);
+  const [result, setResult]           = useState<{ mintAddress: string; explorerUrl: string; metadataUri?: string; mintingDisabled?: boolean } | null>(null);
   const [error, setError]             = useState('');
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -606,6 +607,7 @@ function SolanaMintSection({ secret }: { secret: string }) {
           youtube:   youtube.trim()   || undefined,
           telegram:  telegram.trim()  || undefined,
           discord:   discord.trim()   || undefined,
+          disableMinting,
         }),
       });
       const data = await res.json();
@@ -633,6 +635,9 @@ function SolanaMintSection({ secret }: { secret: string }) {
       {result ? (
         <div className="bg-green-900/20 border border-green-800/40 rounded-xl p-4 space-y-2">
           <p className="text-green-400 font-semibold text-sm">✓ Token erfolgreich erstellt!</p>
+          {result.mintingDisabled && (
+            <p className="text-orange-400 text-xs font-semibold">🔒 Minting wurde permanent deaktiviert — keine weiteren Token können erstellt werden.</p>
+          )}
           <div>
             <p className="text-zinc-400 text-xs">Mint-Adresse (in .env.local eintragen):</p>
             <code className="text-yellow-300 text-sm font-mono break-all">{result.mintAddress}</code>
@@ -711,6 +716,21 @@ function SolanaMintSection({ secret }: { secret: string }) {
                 </div>
               ))}
             </div>
+          </div>
+          {/* Minting deaktivieren */}
+          <div className="sm:col-span-2 border-t border-zinc-800 pt-3">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={disableMinting}
+                onChange={e => setDisableMinting(e.target.checked)}
+                className="mt-0.5 accent-red-500 w-4 h-4 shrink-0"
+              />
+              <span className="text-sm">
+                <span className="text-red-400 font-semibold">Minting nach Erstellung permanent deaktivieren</span>
+                <span className="block text-zinc-500 text-xs mt-0.5">Unwiderruflich! Nach dem Aktivieren können keine weiteren Token mehr erzeugt werden. Die Mint Authority wird auf null gesetzt.</span>
+              </span>
+            </label>
           </div>
         </div>
       )}
@@ -801,8 +821,9 @@ function SolanaUpdateMetadataSection({ secret }: { secret: string }) {
   const [imageBase64, setImageBase64] = useState('');
   const [imageMimeType, setImageMimeType] = useState('image/png');
   const [imagePreview, setImagePreview]   = useState('');
+  const [disableMinting, setDisableMinting] = useState(false);
   const [loading, setLoading]         = useState(false);
-  const [result, setResult]           = useState<{ metadataUri: string; explorerUrl: string } | null>(null);
+  const [result, setResult]           = useState<{ metadataUri: string; explorerUrl: string; mintingDisabled?: boolean } | null>(null);
   const [error, setError]             = useState('');
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -838,6 +859,7 @@ function SolanaUpdateMetadataSection({ secret }: { secret: string }) {
           youtube:   youtube.trim()   || undefined,
           telegram:  telegram.trim()  || undefined,
           discord:   discord.trim()   || undefined,
+          disableMinting,
         }),
       });
       const data = await res.json();
@@ -865,6 +887,9 @@ function SolanaUpdateMetadataSection({ secret }: { secret: string }) {
       {result ? (
         <div className="bg-green-900/20 border border-green-800/40 rounded-xl p-4 space-y-2">
           <p className="text-green-400 font-semibold text-sm">✓ Metadata erfolgreich gesetzt!</p>
+          {result.mintingDisabled && (
+            <p className="text-orange-400 text-xs font-semibold">🔒 Minting wurde permanent deaktiviert — keine weiteren Token können erstellt werden.</p>
+          )}
           <p className="text-zinc-500 text-xs">Metadata URI: <code className="text-zinc-300 break-all">{result.metadataUri}</code></p>
           <p className="text-zinc-500 text-xs">Phantom zeigt das Bild nach ca. 1–5 Minuten.</p>
           <a href={result.explorerUrl} target="_blank" rel="noopener noreferrer"
@@ -929,6 +954,21 @@ function SolanaUpdateMetadataSection({ secret }: { secret: string }) {
                 </div>
               ))}
             </div>
+          </div>
+          {/* Minting deaktivieren */}
+          <div className="sm:col-span-2 border-t border-zinc-800 pt-3">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={disableMinting}
+                onChange={e => setDisableMinting(e.target.checked)}
+                className="mt-0.5 accent-red-500 w-4 h-4 shrink-0"
+              />
+              <span className="text-sm">
+                <span className="text-red-400 font-semibold">Minting permanent deaktivieren</span>
+                <span className="block text-zinc-500 text-xs mt-0.5">Unwiderruflich! Nach dem Aktivieren können keine weiteren Token mehr erzeugt werden. Die Mint Authority wird auf null gesetzt.</span>
+              </span>
+            </label>
           </div>
         </div>
       )}

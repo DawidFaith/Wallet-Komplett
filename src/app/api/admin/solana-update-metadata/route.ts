@@ -6,6 +6,9 @@
  * Nutzt das offizielle @metaplex-foundation SDK für korrekte Borsh-Serialisierung.
  */
 import { NextResponse } from 'next/server';
+import { Connection } from '@solana/web3.js';
+import { setAuthority, AuthorityType } from '@solana/spl-token';
+import { PublicKey } from '@solana/web3.js';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { mplTokenMetadata, createMetadataAccountV3, updateV1, fetchMetadataFromSeeds } from '@metaplex-foundation/mpl-token-metadata';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
@@ -40,7 +43,9 @@ export async function POST(req: Request) {
       secret?: string; mintAddress?: string; name?: string; symbol?: string;
       description?: string; imageBase64?: string; imageMimeType?: string; metadataUri?: string;
       website?: string; twitter?: string; instagram?: string; youtube?: string; telegram?: string; discord?: string;
+      disableMinting?: boolean;
     };
+    const disableMinting = body.disableMinting === true;
 
     if (secret !== process.env.MIGRATION_SECRET) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     if (!mintAddress || !name || !symbol) {
@@ -122,10 +127,20 @@ export async function POST(req: Request) {
       txSignature = Buffer.from(tx.signature).toString('base64');
     }
 
+    // ── Minting permanent deaktivieren (optional) ─────────────────────────────
+    let mintingDisabled = false;
+    if (disableMinting) {
+      const connection = new Connection(RPC_URL, 'confirmed');
+      const treasury = getTreasuryKeypair();
+      await setAuthority(connection, treasury, new PublicKey(mintAddress), treasury, AuthorityType.MintTokens, null);
+      mintingDisabled = true;
+    }
+
     return NextResponse.json({
       success:     true,
       metadataUri,
       signature:   txSignature,
+      mintingDisabled,
       explorerUrl: `https://solscan.io/token/${mintAddress}`,
     });
   } catch (e) {

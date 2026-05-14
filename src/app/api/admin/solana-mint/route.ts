@@ -11,7 +11,7 @@ import {
   createInitializeMintInstruction, getMinimumBalanceForRentExemptMint,
   MINT_SIZE, TOKEN_PROGRAM_ID, createMintToInstruction,
   getAssociatedTokenAddress, createAssociatedTokenAccountInstruction,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID, setAuthority, AuthorityType,
 } from '@solana/spl-token';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { mplTokenMetadata, createMetadataAccountV3 } from '@metaplex-foundation/mpl-token-metadata';
@@ -48,7 +48,9 @@ export async function POST(req: Request) {
       secret?: string; name?: string; symbol?: string; totalSupply?: number; decimals?: number;
       description?: string; imageBase64?: string; imageMimeType?: string; metadataUri?: string;
       website?: string; twitter?: string; instagram?: string; youtube?: string; telegram?: string; discord?: string;
+      disableMinting?: boolean;
     };
+    const disableMinting = body.disableMinting === true;
     const DECIMALS = typeof decimalsRaw === 'number' && decimalsRaw >= 0 && decimalsRaw <= 9
       ? decimalsRaw
       : DEFAULT_DECIMALS;
@@ -116,7 +118,13 @@ export async function POST(req: Request) {
     );
     const sig1 = await sendAndConfirmTransaction(connection, tx1, [treasury, mintKp]);
 
-    // ── Schritt 3: Metaplex Metadata on-chain setzen (offizielles SDK) ────────
+    // ── Schritt 2b: Minting permanent deaktivieren (optional) ─────────────────
+    let mintingDisabled = false;
+    if (disableMinting) {
+      await setAuthority(connection, treasury, mintKp.publicKey, treasury, AuthorityType.MintTokens, null);
+      mintingDisabled = true;
+    }
+
     let sig2: string | null = null;
     if (metadataUri) {
       try {
@@ -151,6 +159,7 @@ export async function POST(req: Request) {
       mintAddress: mintKp.publicKey.toBase58(),
       ata:         ata.toBase58(),
       metadataUri: metadataUri || null,
+      mintingDisabled,
       sig1,
       sig2,
       explorerUrl: `https://solscan.io/token/${mintKp.publicKey.toBase58()}`,
