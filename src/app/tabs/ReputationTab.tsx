@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { FaTrophy, FaStar, FaChevronDown, FaChevronUp, FaEdit, FaCheck, FaTimes, FaUsers, FaMedal, FaPlus } from 'react-icons/fa';
+import { FaTrophy, FaStar, FaChevronDown, FaChevronUp, FaChevronLeft, FaEdit, FaCheck, FaTimes, FaUsers, FaMedal, FaPlus } from 'react-icons/fa';
 
 interface ReputationEntry {
   artistWallet: string;
@@ -56,154 +56,278 @@ function ProgressBar({ progress }: { progress: number }) {
 const shortenWallet = (w: string) =>
   w.length > 16 ? `${w.slice(0, 8)}\u2026${w.slice(-6)}` : w;
 
-// Supporter: Karte pro Artist
-function SupporterArtistCard({
+// Supporter: Detail-Ansicht für einen Künstler
+function ArtistDetailView({
   entry,
   walletAddress,
+  onBack,
 }: {
   entry: ReputationEntry;
   walletAddress: string;
+  onBack: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [tab, setTab] = useState<'levels' | 'leaderboard' | 'contest'>('levels');
   const [levels, setLevels] = useState<ReputationLevel[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [contest, setContest] = useState<ReputationContest | null | false>(false); // false = nicht geladen
+  const [loading, setLoading] = useState(true);
 
-  const loadDetails = useCallback(async () => {
-    if (!expanded) return;
-    setLoading(true);
-    try {
-      const [lbRes, lvRes] = await Promise.all([
-        fetch(`/api/reputation/leaderboard?artistWallet=${entry.artistWallet}&limit=10`),
-        fetch(`/api/reputation/levels?artistWallet=${entry.artistWallet}`),
-      ]);
-      if (lbRes.ok) setLeaderboard(await lbRes.json());
-      if (lvRes.ok) setLevels(await lvRes.json());
-    } finally {
-      setLoading(false);
-    }
-  }, [expanded, entry.artistWallet]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const [lvRes, lbRes, ctRes] = await Promise.all([
+          fetch(`/api/reputation/levels?artistWallet=${entry.artistWallet}`),
+          fetch(`/api/reputation/leaderboard?artistWallet=${entry.artistWallet}&limit=50`),
+          fetch(`/api/reputation/contest?artistWallet=${entry.artistWallet}`),
+        ]);
+        if (cancelled) return;
+        if (lvRes.ok) setLevels(await lvRes.json());
+        if (lbRes.ok) setLeaderboard(await lbRes.json());
+        setContest(ctRes.ok ? (await ctRes.json()) : null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [entry.artistWallet]);
 
-  useEffect(() => { loadDetails(); }, [loadDetails]);
+  const nextLevel = levels.find(l => l.levelNumber === entry.level + 1);
 
   return (
-    <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+    <div className="space-y-4">
+      {/* Zurück */}
       <button
-        onClick={() => setExpanded(e => !e)}
-        className="w-full flex items-center gap-3 p-4 text-left hover:bg-white/[0.02] transition-colors"
+        onClick={onBack}
+        className="flex items-center gap-2 text-zinc-400 hover:text-white text-sm transition-colors px-4 pt-2"
       >
-        <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 overflow-hidden">
-          {entry.artistPicture
-            ? <img src={entry.artistPicture} alt="" className="w-10 h-10 object-cover" />
-            : <FaStar className="text-amber-400" size={16} />}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-white font-semibold text-sm truncate">
-            {entry.artistName || shortenWallet(entry.artistWallet)}
-          </p>
-          <p className="text-amber-400 text-xs font-medium">
-            Level {entry.level} – {entry.levelName}
-          </p>
-        </div>
-        <div className="text-right shrink-0">
-          <p className="text-white font-bold">{entry.reputation.toLocaleString()} REP</p>
-          {entry.nextLevelRep && (
-            <p className="text-zinc-500 text-xs">
-              {entry.nextLevelRep - entry.reputation} bis Lv.{entry.level + 1}
-            </p>
-          )}
-        </div>
-        <div className="ml-2 text-zinc-500 shrink-0">
-          {expanded ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
-        </div>
+        <FaChevronLeft size={11} /> Alle Künstler
       </button>
 
-      <div className="px-4 pb-3">
-        <ProgressBar progress={entry.progress} />
-        <div className="flex justify-between mt-1">
-          <span className="text-zinc-600 text-[10px]">Lv.{entry.level}</span>
-          <span className="text-zinc-600 text-[10px]">{entry.progress.toFixed(0)}%</span>
-          {entry.nextLevelRep
-            ? <span className="text-zinc-600 text-[10px]">Lv.{entry.level + 1}</span>
-            : <span className="text-amber-500 text-[10px]">MAX</span>}
+      {/* Künstler-Header + Meine Rep */}
+      <div className="mx-4 bg-zinc-900/60 border border-white/[0.07] rounded-2xl p-4">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 ring-2 ring-amber-500/30">
+            {entry.artistPicture
+              ? <img src={entry.artistPicture} alt="" className="w-14 h-14 object-cover" />
+              : <div className="w-14 h-14 bg-amber-500/20 flex items-center justify-center"><FaStar className="text-amber-400" size={20} /></div>}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-base truncate">
+              {entry.artistName || shortenWallet(entry.artistWallet)}
+            </p>
+            <p className="text-amber-400 text-sm font-medium">Lv.{entry.level} &ndash; {entry.levelName}</p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-amber-300 font-bold text-xl">{entry.reputation.toLocaleString()}</p>
+            <p className="text-zinc-500 text-xs">REP</p>
+          </div>
         </div>
-      </div>
-
-      {expanded && (
-        <div className="border-t border-white/[0.07] p-4 space-y-5">
-          {loading ? (
-            <div className="flex justify-center py-4">
-              <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <>
-              {levels.length > 0 && (
-                <div>
-                  <p className="text-zinc-400 text-xs font-semibold uppercase tracking-widest mb-2">Level & Rewards</p>
-                  <div className="space-y-1.5">
-                    {levels.map(lvl => (
-                      <div
-                        key={lvl.levelNumber}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm ${
-                          entry.level === lvl.levelNumber
-                            ? 'bg-amber-500/15 border border-amber-500/30'
-                            : 'bg-zinc-800/50'
-                        }`}
-                      >
-                        <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
-                          <span className="text-amber-400 text-[10px] font-bold">{lvl.levelNumber}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-white font-medium">{lvl.levelName}</span>
-                          <span className="text-zinc-500 text-xs ml-2">ab {lvl.minReputation} REP</span>
-                          {lvl.creditReward > 0 && (
-                            <p className="text-amber-300 text-xs mt-0.5">+{lvl.creditReward} D.FAITH Credits</p>
-                          )}
-                          {lvl.prizeDescription && (
-                            <p className="text-amber-300/80 text-xs truncate mt-0.5">🎁 {lvl.prizeDescription}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+        <ProgressBar progress={entry.progress} />
+        <div className="flex justify-between mt-1.5">
+          <span className="text-zinc-600 text-xs">Lv.{entry.level}</span>
+          <span className="text-zinc-500 text-xs">{entry.progress.toFixed(0)}%</span>
+          {entry.nextLevelRep
+            ? <span className="text-zinc-600 text-xs">{(entry.nextLevelRep - entry.reputation).toLocaleString()} REP bis Lv.{entry.level + 1}</span>
+            : <span className="text-amber-500 text-xs">MAX LEVEL</span>}
+        </div>
+        {/* Nächster Reward */}
+        {nextLevel && (nextLevel.creditReward > 0 || nextLevel.prizeDescription) && (
+          <div className="mt-3 pt-3 border-t border-white/[0.07]">
+            <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-2 font-semibold">
+              Nächster Reward bei Lv.{nextLevel.levelNumber} &ndash; {nextLevel.levelName}
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              {nextLevel.creditReward > 0 && (
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
+                  <p className="text-amber-300 font-bold text-sm">+{nextLevel.creditReward} DFC</p>
+                  <p className="text-zinc-500 text-[10px]">D.FAITH Credits</p>
                 </div>
               )}
-              <div>
-                <p className="text-zinc-400 text-xs font-semibold uppercase tracking-widest mb-2">Top Fans</p>
-                {leaderboard.length === 0 ? (
-                  <p className="text-zinc-600 text-xs text-center py-3">Noch keine Daten</p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {leaderboard.map(lb => (
-                      <div key={lb.walletAddress} className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm ${
-                        lb.walletAddress === walletAddress ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-zinc-800/50'
+              {nextLevel.prizeDescription && (
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
+                  <p className="text-amber-300/80 text-sm">&#127881; {nextLevel.prizeDescription}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Tab-Navigation */}
+      <div className="mx-4 flex bg-zinc-900/60 rounded-xl p-1 border border-white/[0.07]">
+        <button
+          onClick={() => setTab('levels')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
+            tab === 'levels' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+          }`}
+        >
+          <FaMedal size={11} /> Levels
+        </button>
+        <button
+          onClick={() => setTab('leaderboard')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
+            tab === 'leaderboard' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+          }`}
+        >
+          <FaUsers size={11} /> Leaderboard
+        </button>
+        <button
+          onClick={() => setTab('contest')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
+            tab === 'contest' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+          }`}
+        >
+          <FaTrophy size={11} /> Contest
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-10">
+          <div className="w-7 h-7 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : (
+        <div className="mx-4 pb-4 space-y-3">
+
+          {/* ── Levels ── */}
+          {tab === 'levels' && (
+            <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl p-4 space-y-2">
+              {levels.length === 0 ? (
+                <p className="text-zinc-500 text-sm text-center py-4">Keine Level definiert</p>
+              ) : levels.map(lvl => (
+                <div
+                  key={lvl.levelNumber}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${
+                    entry.level === lvl.levelNumber
+                      ? 'bg-amber-500/15 border border-amber-500/30'
+                      : entry.level > lvl.levelNumber
+                      ? 'bg-zinc-800/30'
+                      : 'bg-zinc-800/50'
+                  }`}
+                >
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                    entry.level > lvl.levelNumber ? 'bg-amber-400 text-black' :
+                    entry.level === lvl.levelNumber ? 'bg-amber-400 text-black' :
+                    'bg-amber-500/20 text-amber-400'
+                  }`}>
+                    {entry.level > lvl.levelNumber ? '✓' : lvl.levelNumber}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-sm font-semibold ${
+                        entry.level >= lvl.levelNumber ? 'text-white' : 'text-zinc-400'
+                      }`}>{lvl.levelName}</span>
+                      <span className="text-zinc-500 text-xs">ab {lvl.minReputation} REP</span>
+                      {entry.level === lvl.levelNumber && (
+                        <span className="text-amber-400 text-[10px] bg-amber-500/10 border border-amber-500/20 rounded-full px-2 py-0.5">Aktuell</span>
+                      )}
+                    </div>
+                    {lvl.creditReward > 0 && <p className="text-amber-300 text-xs mt-0.5">+{lvl.creditReward} DFC</p>}
+                    {lvl.prizeDescription && <p className="text-amber-300/80 text-xs mt-0.5 truncate">&#127873; {lvl.prizeDescription}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Leaderboard ── */}
+          {tab === 'leaderboard' && (
+            <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-white/[0.07]">
+                <p className="text-white font-semibold text-sm">All-Time Leaderboard</p>
+                <p className="text-zinc-500 text-xs mt-0.5">Top Fans nach gesammelter Reputation</p>
+              </div>
+              {leaderboard.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <FaUsers size={28} className="text-zinc-700 mx-auto mb-2" />
+                  <p className="text-zinc-500 text-sm">Noch keine Fans</p>
+                </div>
+              ) : (
+                <div className="p-4 space-y-1.5">
+                  {leaderboard.map(lb => (
+                    <div key={lb.walletAddress} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${
+                      lb.walletAddress === walletAddress ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-zinc-800/50'
+                    }`}>
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                        lb.rank === 1 ? 'bg-amber-400 text-black' :
+                        lb.rank === 2 ? 'bg-zinc-400 text-black' :
+                        lb.rank === 3 ? 'bg-amber-700 text-white' :
+                        'bg-zinc-700 text-zinc-300'
                       }`}>
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[11px] font-bold ${
-                          lb.rank === 1 ? 'bg-amber-400 text-black' :
-                          lb.rank === 2 ? 'bg-zinc-400 text-black' :
-                          lb.rank === 3 ? 'bg-amber-700 text-white' :
+                        {lb.rank === 1 ? '🥇' : lb.rank === 2 ? '🥈' : lb.rank === 3 ? '🥉' : lb.rank}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium truncate">
+                          {lb.displayName || shortenWallet(lb.walletAddress)}
+                          {lb.walletAddress === walletAddress && <span className="text-amber-400 ml-1 text-xs">(Du)</span>}
+                        </p>
+                        <p className="text-zinc-500 text-xs">{lb.levelName}</p>
+                      </div>
+                      <span className="text-amber-300 font-bold text-sm shrink-0">{lb.reputation.toLocaleString()} REP</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Contest ── */}
+          {tab === 'contest' && (
+            <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+              {!contest ? (
+                <div className="px-4 py-8 text-center">
+                  <FaTrophy size={28} className="text-zinc-700 mx-auto mb-2" />
+                  <p className="text-zinc-500 text-sm">Kein aktiver Contest</p>
+                  <p className="text-zinc-600 text-xs mt-1">Dieser Künstler hat noch keinen Contest gestartet.</p>
+                </div>
+              ) : (
+                <div className="p-4 space-y-3">
+                  <div className={`rounded-xl px-3 py-2.5 ${
+                    contest.distributed ? 'bg-zinc-800/40' :
+                    new Date(contest.endDate) <= new Date() ? 'bg-amber-950/30 border border-amber-700/30' :
+                    'bg-green-950/30 border border-green-700/30'
+                  }`}>
+                    <p className="text-white font-semibold text-sm">
+                      {contest.distributed ? '&#9989; Contest beendet' :
+                       new Date(contest.endDate) <= new Date() ? '&#9200; Läuft aus' :
+                       '&#128994; Aktiver Contest'}
+                    </p>
+                    <p className="text-zinc-400 text-xs mt-0.5">Ende: {new Date(contest.endDate).toLocaleString('de-DE')}</p>
+                  </div>
+                  <p className="text-zinc-400 text-[10px] font-semibold uppercase tracking-widest">Preise &amp; aktuelle Rangliste</p>
+                  {contest.prizes.map(p => {
+                    const winner = leaderboard.find(lb => lb.rank === p.rank);
+                    return (
+                      <div key={p.rank} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-zinc-800/50">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                          p.rank === 1 ? 'bg-amber-400 text-black' :
+                          p.rank === 2 ? 'bg-zinc-400 text-black' :
+                          p.rank === 3 ? 'bg-amber-700 text-white' :
                           'bg-zinc-700 text-zinc-300'
                         }`}>
-                          {lb.rank === 1 ? '🥇' : lb.rank === 2 ? '🥈' : lb.rank === 3 ? '🥉' : lb.rank}
+                          {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-white text-xs font-medium truncate">
-                            {lb.displayName || shortenWallet(lb.walletAddress)}
-                            {lb.walletAddress === walletAddress && (
-                              <span className="text-amber-400 ml-1 text-[10px]">(Du)</span>
-                            )}
-                          </p>
-                          <p className="text-zinc-500 text-[10px]">{lb.levelName}</p>
+                          {winner ? (
+                            <>
+                              <p className="text-white text-sm font-medium truncate">
+                                {winner.displayName || shortenWallet(winner.walletAddress)}
+                                {winner.walletAddress === walletAddress && <span className="text-amber-400 ml-1 text-xs">(Du)</span>}
+                              </p>
+                              <p className="text-zinc-500 text-xs">{winner.reputation.toLocaleString()} REP</p>
+                            </>
+                          ) : (
+                            <p className="text-zinc-500 text-sm italic">Noch kein Teilnehmer</p>
+                          )}
                         </div>
-                        <span className="text-amber-300 text-xs font-bold shrink-0">
-                          {lb.reputation.toLocaleString()} REP
-                        </span>
+                        <span className="text-amber-300 font-bold shrink-0 text-sm">{p.creditReward} DFC</span>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -704,6 +828,23 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                   <FaPlus size={9} /> Weiteren Platz hinzufügen
                 </button>
                 {contestError && <p className="text-red-400 text-xs">{contestError}</p>}
+                {(() => {
+                  const total = contestPrizes.reduce((s, p) => s + (p.creditReward || 0), 0);
+                  if (total === 0) return null;
+                  const enough = creditBalance !== null && total <= creditBalance;
+                  return (
+                    <div className={`rounded-xl px-3 py-2 flex items-center justify-between text-xs ${
+                      enough ? 'bg-green-950/40 border border-green-700/30' : 'bg-red-950/40 border border-red-700/40'
+                    }`}>
+                      <p className={enough ? 'text-green-300' : 'text-red-300'}>
+                        Gesamtpreisgeld – wird beim Starten sofort reserviert
+                      </p>
+                      <p className={`font-bold ${enough ? 'text-green-400' : 'text-red-400'}`}>
+                        {total} DFC {enough ? '✓' : '⚠'}
+                      </p>
+                    </div>
+                  );
+                })()}
                 <div className="flex gap-2 pt-1">
                   <button
                     onClick={saveContest}
@@ -783,6 +924,7 @@ export default function ReputationTab() {
   const [reputations, setReputations] = useState<ReputationEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [isArtist, setIsArtist] = useState(false);
+  const [selectedArtist, setSelectedArtist] = useState<ReputationEntry | null>(null);
 
   useEffect(() => {
     if (!walletAddress) return;
@@ -818,7 +960,7 @@ export default function ReputationTab() {
         <div className="px-4 mb-4">
           <div className="flex bg-zinc-900/70 rounded-xl p-1 border border-white/[0.07]">
             <button
-              onClick={() => setMode('supporter')}
+              onClick={() => { setMode('supporter'); setSelectedArtist(null); }}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 mode === 'supporter' ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'
               }`}
@@ -841,11 +983,17 @@ export default function ReputationTab() {
 
       {mode === 'supporter' && (
         loading ? (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center py-20">
             <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
           </div>
+        ) : selectedArtist ? (
+          <ArtistDetailView
+            entry={selectedArtist}
+            walletAddress={walletAddress}
+            onBack={() => setSelectedArtist(null)}
+          />
         ) : supporterEntries.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-20">
             <FaStar size={40} className="text-zinc-700 mb-4" />
             <p className="text-zinc-400 font-semibold">Keine Künstler gefunden</p>
             <p className="text-zinc-600 text-sm mt-2">
@@ -853,10 +1001,40 @@ export default function ReputationTab() {
             </p>
           </div>
         ) : (
-          <div className="px-4 space-y-3">
-            {supporterEntries.map(entry => (
-              <SupporterArtistCard key={entry.artistWallet} entry={entry} walletAddress={walletAddress} />
-            ))}
+          <div className="px-4 space-y-4">
+            <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Künstler</p>
+            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
+              {supporterEntries.map(entry => (
+                <button
+                  key={entry.artistWallet}
+                  onClick={() => setSelectedArtist(entry)}
+                  className="flex flex-col items-center gap-2 shrink-0 w-[68px] group"
+                >
+                  <div className="relative">
+                    <div className={`w-14 h-14 rounded-full overflow-hidden ring-2 transition-all group-hover:scale-105 ${
+                      entry.reputation > 0
+                        ? 'ring-amber-500/60 shadow-[0_0_10px_rgba(245,158,11,0.3)]'
+                        : 'ring-white/10'
+                    }`}>
+                      {entry.artistPicture
+                        ? <img src={entry.artistPicture} alt="" className="w-14 h-14 object-cover" />
+                        : <div className="w-14 h-14 bg-amber-500/20 flex items-center justify-center">
+                            <FaStar className="text-amber-400" size={18} />
+                          </div>}
+                    </div>
+                    {entry.reputation > 0 && (
+                      <div className="absolute -bottom-1 -right-1 bg-amber-500 text-black text-[9px] font-black rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+                        {entry.level}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-zinc-300 text-center line-clamp-2 leading-tight w-full group-hover:text-white transition-colors">
+                    {entry.artistName || shortenWallet(entry.artistWallet)}
+                  </p>
+                </button>
+              ))}
+            </div>
+            <p className="text-zinc-600 text-xs">Tippe auf einen Künstler um deine Reputation zu sehen.</p>
           </div>
         )
       )}

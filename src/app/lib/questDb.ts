@@ -1772,21 +1772,42 @@ export async function upsertReputationContest(
   prizes: { rank: number; creditReward: number }[],
 ): Promise<string> {
   const sql = getDb();
+  const wallet = artistWallet.toLowerCase();
+
+  // Alten Contest laden – falls nicht verteilt, gesperrte Credits zurückbuchen
+  const oldContests = await sql`
+    SELECT id, credits_locked, distributed FROM reputation_contests
+    WHERE artist_wallet = ${wallet}
+    ORDER BY created_at DESC LIMIT 1
+  `;
+  if (oldContests.length > 0 && !oldContests[0].distributed) {
+    const refund = Number(oldContests[0].credits_locked ?? 0);
+    if (refund > 0) {
+      await addDfaithCredits(wallet, refund);
+    }
+  }
   // Alten Contest löschen
-  await sql`DELETE FROM reputation_contests WHERE artist_wallet = ${artistWallet.toLowerCase()}`;
+  await sql`DELETE FROM reputation_contests WHERE artist_wallet = ${wallet}`;
+
+  // Gesamtkosten berechnen und sofort abziehen
+  const validPrizes = prizes.filter(p => p.creditReward > 0);
+  const totalCost = validPrizes.reduce((sum, p) => sum + p.creditReward, 0);
+  if (totalCost > 0) {
+    const ok = await redeemDfaithCredits(wallet, totalCost);
+    if (!ok) throw new Error(`Nicht genügend Guthaben. Benötigt: ${totalCost} DFC`);
+  }
+
   const rows = await sql`
-    INSERT INTO reputation_contests (artist_wallet, end_date)
-    VALUES (${artistWallet.toLowerCase()}, ${endDate})
+    INSERT INTO reputation_contests (artist_wallet, end_date, credits_locked)
+    VALUES (${wallet}, ${endDate}, ${totalCost})
     RETURNING id
   `;
   const contestId = rows[0].id as string;
-  for (const p of prizes) {
-    if (p.creditReward > 0) {
-      await sql`
-        INSERT INTO reputation_contest_prizes (contest_id, rank, credit_reward)
-        VALUES (${contestId}, ${p.rank}, ${p.creditReward})
-      `;
-    }
+  for (const p of validPrizes) {
+    await sql`
+      INSERT INTO reputation_contest_prizes (contest_id, rank, credit_reward)
+      VALUES (${contestId}, ${p.rank}, ${p.creditReward})
+    `;
   }
   return contestId;
 }
@@ -1825,12 +1846,21 @@ export async function distributeReputationContest(
     const winner = leaderboard.find(e => e.rank === rank);
     if (!winner || creditReward <= 0) continue;
     try {
-      await redeemDfaithCredits(artistWallet, creditReward);
+      // Credits wurden bereits beim Erstellen des Contests reserviert
       await addDfaithCredits(winner.walletAddress, creditReward);
       results.push({ rank, walletAddress: winner.walletAddress, credited: creditReward });
     } catch {
-      // Nicht genug Credits – überspringen
+      // Fehler beim Übertragen – überspringen
     }
+  }
+
+  // Nicht vergebene Preise an Artist zurücküberweisen
+  const totalAwarded = results.reduce((sum, r) => sum + r.credited, 0);
+  const lockedRows = await sql`SELECT credits_locked FROM reputation_contests WHERE id = ${contestId}`;
+  const locked = Number(lockedRows[0]?.credits_locked ?? 0);
+  const refund = locked - totalAwarded;
+  if (refund > 0) {
+    await addDfaithCredits(artistWallet.toLowerCase(), refund);
   }
 
   await sql`UPDATE reputation_contests SET distributed = TRUE WHERE id = ${contestId}`;

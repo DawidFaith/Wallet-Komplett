@@ -133,6 +133,7 @@ export async function POST(req: NextRequest) {
       )
     `;
     await sql`CREATE INDEX IF NOT EXISTS idx_reputation_contests_artist ON reputation_contests(artist_wallet, created_at DESC)`;
+    await sql`ALTER TABLE reputation_contests ADD COLUMN IF NOT EXISTS credits_locked INTEGER NOT NULL DEFAULT 0`;
 
     await sql`
       CREATE TABLE IF NOT EXISTS reputation_contest_prizes (
