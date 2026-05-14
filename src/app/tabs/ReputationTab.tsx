@@ -517,6 +517,32 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                 <FaPlus size={10} /> Level hinzufügen
               </button>
             )}
+            {editing && (() => {
+              const totalRewards = editLevels.reduce((sum, l) => sum + (l.creditReward || 0), 0);
+              const enough = creditBalance !== null && totalRewards <= creditBalance;
+              const unknown = creditBalance === null;
+              if (totalRewards === 0) return null;
+              return (
+                <div className={`mt-2 rounded-xl px-3 py-2.5 flex items-center justify-between text-xs ${
+                  unknown ? 'bg-zinc-800/60 border border-zinc-700/40' :
+                  enough  ? 'bg-green-950/40 border border-green-700/30' :
+                            'bg-red-950/40 border border-red-700/40'
+                }`}>
+                  <div>
+                    <p className="text-zinc-300 font-semibold">Credits pro Fan (alle Level)</p>
+                    <p className="text-zinc-500 mt-0.5">Dein Guthaben: {creditBalance !== null ? `${creditBalance.toFixed(2)} Credits` : '–'}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`font-bold text-sm ${enough ? 'text-green-400' : unknown ? 'text-zinc-300' : 'text-red-400'}`}>
+                      {totalRewards} Credits
+                    </p>
+                    <p className={`text-[10px] mt-0.5 ${enough ? 'text-green-500' : unknown ? 'text-zinc-500' : 'text-red-500'}`}>
+                      {unknown ? 'Guthaben unbekannt' : enough ? '✓ Ausreichend' : '⚠ Nicht ausreichend'}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
