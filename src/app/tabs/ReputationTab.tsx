@@ -404,7 +404,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
           </div>
           {saveError && <p className="text-red-400 text-xs px-4 py-2">{saveError}</p>}
           {editing && <p className="text-zinc-500 text-xs px-4 pt-3 pb-1">Level-Namen, Mindest-REP, Credits und Rewards anpassen.</p>}
-          {!editing && <p className="text-zinc-600 text-xs px-4 pt-3 pb-1 italic">Das sind die voreingestellten Level. Klicke auf „Bearbeiten" um sie anzupassen.</p>}
+          {!editing && <p className="text-zinc-600 text-xs px-4 pt-3 pb-1 italic">Das sind die voreingestellten Level. Klicke auf &bdquo;Bearbeiten&ldquo; um sie anzupassen.</p>}
           <div className="p-4 space-y-2">
             {(editing ? editLevels : levels).map((lvl, idx) => (
               <div key={idx} className="bg-zinc-800/50 rounded-xl overflow-hidden">
