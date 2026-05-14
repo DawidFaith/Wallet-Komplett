@@ -408,18 +408,23 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
 export default function ReputationTab() {
   const { user } = useUser();
   const walletAddress = user?.id ?? '';
-  const isArtist = !!(user?.publicMetadata as Record<string, unknown> | undefined)?.isArtist;
 
   const [mode, setMode] = useState<'supporter' | 'artist'>('supporter');
   const [reputations, setReputations] = useState<ReputationEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isArtist, setIsArtist] = useState(false);
 
   useEffect(() => {
     if (!walletAddress) return;
     setLoading(true);
-    fetch(`/api/reputation?wallet=${walletAddress}`)
-      .then(r => r.ok ? r.json() : [])
-      .then(data => setReputations(Array.isArray(data) ? data : []))
+    Promise.all([
+      fetch(`/api/reputation?wallet=${walletAddress}`).then(r => r.ok ? r.json() : []),
+      fetch(`/api/youtube-quests/profile?wallet=${walletAddress}`).then(r => r.ok ? r.json() : null),
+    ])
+      .then(([repData, profileData]) => {
+        setReputations(Array.isArray(repData) ? repData : []);
+        setIsArtist(!!(profileData?.profile?.isArtist));
+      })
       .catch(() => setReputations([]))
       .finally(() => setLoading(false));
   }, [walletAddress]);
