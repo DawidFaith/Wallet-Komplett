@@ -1868,6 +1868,55 @@ export async function distributeReputationContest(
   return results;
 }
 
+/**
+ * Verteilt Leaderboard-Rewards sofort an die aktuellen Top-Fans.
+ * Zieht Credits vom Artist ab und fügt sie den Gewinnern hinzu.
+ */
+export async function distributeLeaderboardRewards(
+  artistWallet: string,
+  prizes: { rank: number; creditReward: number }[],
+): Promise<{ rank: number; walletAddress: string; credited: number }[]> {
+  const wallet = artistWallet.toLowerCase();
+  const total = prizes.reduce((sum, p) => sum + (p.creditReward || 0), 0);
+  if (total <= 0) throw new Error('Keine Credits definiert');
+
+  // Guthaben prüfen
+  const sql = getDb();
+  const balRows = await sql`SELECT balance FROM dfaith_credits WHERE wallet_address = ${wallet}`;
+  const balance = Number(balRows[0]?.balance ?? 0);
+  if (balance < total) throw new Error(`Nicht genug Credits (Guthaben: ${balance}, benötigt: ${total})`);
+
+  const maxRank = Math.max(...prizes.map(p => p.rank));
+  const leaderboard = await getReputationLeaderboard(artistWallet, maxRank);
+
+  // Credits vom Artist abziehen
+  await addDfaithCredits(wallet, -total);
+
+  const results: { rank: number; walletAddress: string; credited: number }[] = [];
+  let actuallySpent = 0;
+
+  for (const prize of prizes) {
+    if (prize.creditReward <= 0) continue;
+    const winner = leaderboard.find(e => e.rank === prize.rank);
+    if (!winner) continue;
+    try {
+      await addDfaithCredits(winner.walletAddress, prize.creditReward);
+      results.push({ rank: prize.rank, walletAddress: winner.walletAddress, credited: prize.creditReward });
+      actuallySpent += prize.creditReward;
+    } catch {
+      // Überspringen, Refund am Ende
+    }
+  }
+
+  // Nicht vergebene Preise zurückerstatten
+  const refund = total - actuallySpent;
+  if (refund > 0) {
+    await addDfaithCredits(wallet, refund);
+  }
+
+  return results;
+}
+
 /** Berechnet Level und Fortschritt basierend auf Reputation + Level-Config */
 export function reputationToLevel(
   reputation: number,

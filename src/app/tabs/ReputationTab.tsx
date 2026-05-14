@@ -181,7 +181,7 @@ function ArtistDetailView({
             tab === 'contest' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
           }`}
         >
-          <FaTrophy size={11} /> Season
+          <FaTrophy size={11} /> Contest
         </button>
       </div>
 
@@ -285,8 +285,8 @@ function ArtistDetailView({
               {!contest ? (
                 <div className="px-4 py-8 text-center">
                   <FaTrophy size={28} className="text-zinc-700 mx-auto mb-2" />
-                  <p className="text-zinc-500 text-sm">Keine aktive Season</p>
-                  <p className="text-zinc-600 text-xs mt-1">Dieser Künstler hat noch keine Season gestartet.</p>
+                  <p className="text-zinc-500 text-sm">Keine aktive Contest</p>
+                  <p className="text-zinc-600 text-xs mt-1">Dieser Künstler hat noch keine Contest gestartet.</p>
                 </div>
               ) : (
                 <div className="p-4 space-y-3">
@@ -297,10 +297,10 @@ function ArtistDetailView({
                   }`}>
                     <p className="text-white font-semibold text-sm">
                       {contest.distributed
-                        ? '✅ Season beendet'
+                        ? '✅ Contest beendet'
                         : new Date(contest.endDate) <= new Date()
-                        ? '⏰ Season läuft aus'
-                        : '🟢 Aktive Season'}
+                        ? '⏰ Contest läuft aus'
+                        : '🟢 Aktive Contest'}
                     </p>
                     <p className="text-zinc-400 text-xs mt-0.5">Ende: {new Date(contest.endDate).toLocaleString('de-DE')}</p>
                   </div>
@@ -385,6 +385,17 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
   const [distributing, setDistributing] = useState(false);
   const [distributeResult, setDistributeResult] = useState<{ rank: number; walletAddress: string; credited: number }[] | null>(null);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
+
+  // Leaderboard-Direktrewards
+  const [showLbRewardsForm, setShowLbRewardsForm] = useState(false);
+  const [lbPrizes, setLbPrizes] = useState([
+    { rank: 1, creditReward: 0 },
+    { rank: 2, creditReward: 0 },
+    { rank: 3, creditReward: 0 },
+  ]);
+  const [lbDistributing, setLbDistributing] = useState(false);
+  const [lbResult, setLbResult] = useState<{ rank: number; walletAddress: string; credited: number }[] | null>(null);
+  const [lbError, setLbError] = useState('');
 
   const loadData = useCallback(async () => {
     if (!walletAddress) return;
@@ -765,7 +776,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                 }`}>
                   <div>
                     <p className="text-xs font-semibold text-white">
-                      {contest.distributed ? '✅ Season beendet' : contestExpired ? '⏰ Season abgelaufen – bereit zum Verteilen' : '🟢 Season läuft'}
+                      {contest.distributed ? '✅ Contest beendet' : contestExpired ? '⏰ Contest abgelaufen – bereit zum Verteilen' : '🟢 Contest läuft'}
                     </p>
                     <p className="text-zinc-400 text-[11px] mt-0.5">
                       Ende: {new Date(contest.endDate).toLocaleString('de-DE')}
@@ -783,7 +794,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                   {contestRunning && (
                     <button
                       onClick={() => {
-                        if (confirm('Season jetzt vorzeitig beenden und alle Rewards sofort ausschütten?')) {
+                        if (confirm('Contest jetzt vorzeitig beenden und alle Rewards sofort ausschütten?')) {
                           distributeContest(true);
                         }
                       }}
@@ -822,7 +833,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                     onClick={() => { setShowContestForm(true); setContestError(''); }}
                     className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors"
                   >
-                    Season aktualisieren
+                    Contest aktualisieren
                   </button>
                 )}
               </div>
@@ -904,7 +915,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                     disabled={contestSaving || !contestEndDate}
                     className="flex-1 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black text-xs font-bold py-2.5 rounded-xl transition-colors"
                   >
-                    {contestSaving ? 'Speichern…' : 'Season starten'}
+                    {contestSaving ? 'Speichern…' : 'Contest starten'}
                   </button>
                   <button
                     onClick={() => setShowContestForm(false)}
@@ -918,8 +929,8 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
 
             {!contest && !showContestForm && (
               <div className="px-4 py-6 text-center">
-                <p className="text-zinc-500 text-sm">Noch keine aktive Season</p>
-                <p className="text-zinc-600 text-xs mt-1">Starte eine Season mit Preisen für deine Top-Fans.</p>
+                <p className="text-zinc-500 text-sm">Noch keine aktive Contest</p>
+                <p className="text-zinc-600 text-xs mt-1">Starte eine Contest mit Preisen für deine Top-Fans.</p>
               </div>
             )}
           </div>
@@ -959,6 +970,152 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                     </span>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* Leaderboard Direktrewards */}
+          <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
+              <div>
+                <p className="text-white font-semibold text-sm">All-Time Rewards</p>
+                <p className="text-zinc-500 text-xs mt-0.5">Credits jetzt sofort an Top-Fans verteilen</p>
+              </div>
+              {!showLbRewardsForm && (
+                <button
+                  onClick={() => { setShowLbRewardsForm(true); setLbResult(null); setLbError(''); }}
+                  className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 text-xs font-medium"
+                >
+                  <FaPlus size={10} /> Rewards verteilen
+                </button>
+              )}
+            </div>
+
+            {lbResult && !showLbRewardsForm && (
+              <div className="p-4 space-y-1.5">
+                <p className="text-green-400 text-xs font-semibold mb-2">✅ Verteilt!</p>
+                {lbResult.map(r => (
+                  <div key={r.rank} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-zinc-800/50">
+                    <span className="text-zinc-300 text-xs w-6 shrink-0">
+                      {r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : `#${r.rank}`}
+                    </span>
+                    <span className="text-zinc-300 text-xs flex-1 truncate">{shortenWallet(r.walletAddress)}</span>
+                    <span className="flex items-center gap-1 text-amber-300 text-xs font-bold shrink-0">
+                      <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full shrink-0" />
+                      +{r.credited} D.FAITH Credits
+                    </span>
+                  </div>
+                ))}
+                <button
+                  onClick={() => { setShowLbRewardsForm(true); setLbResult(null); setLbError(''); }}
+                  className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors pt-1"
+                >
+                  Erneut verteilen
+                </button>
+              </div>
+            )}
+
+            {showLbRewardsForm && (
+              <div className="p-4 space-y-3">
+                <p className="text-zinc-500 text-xs">Credits werden sofort abgezogen und an die aktuellen Ranglisten-Plätze ausgezahlt.</p>
+                <p className="text-zinc-500 text-xs font-semibold uppercase tracking-widest">Preise pro Platz</p>
+                {lbPrizes.map((p, i) => (
+                  <div key={p.rank} className="flex items-center gap-3">
+                    <span className="text-zinc-300 text-sm w-8 shrink-0">
+                      {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`}
+                    </span>
+                    <div className="relative flex-1">
+                      <input
+                        type="number" min="0"
+                        placeholder="0"
+                        className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500 pr-10"
+                        value={lbPrizes[i].creditReward || ''}
+                        onChange={e => {
+                          const u = [...lbPrizes];
+                          u[i] = { ...u[i], creditReward: Number(e.target.value) || 0 };
+                          setLbPrizes(u);
+                        }}
+                      />
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                        <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full" />
+                      </span>
+                    </div>
+                    {lbPrizes.length > 1 && (
+                      <button
+                        onClick={() => setLbPrizes(prev => prev.filter((_, j) => j !== i).map((x, j) => ({ ...x, rank: j + 1 })))}
+                        className="text-red-500 hover:text-red-400 shrink-0"
+                      >
+                        <FaTimes size={11} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={() => setLbPrizes(prev => [...prev, { rank: prev.length + 1, creditReward: 0 }])}
+                  className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 text-xs"
+                >
+                  <FaPlus size={9} /> Weiteren Platz hinzufügen
+                </button>
+                {lbError && <p className="text-red-400 text-xs">{lbError}</p>}
+                {(() => {
+                  const total = lbPrizes.reduce((s, p) => s + (p.creditReward || 0), 0);
+                  if (total === 0) return null;
+                  const enough = creditBalance !== null && total <= creditBalance;
+                  return (
+                    <div className={`rounded-xl px-3 py-2 flex items-center justify-between text-xs ${
+                      enough ? 'bg-green-950/40 border border-green-700/30' : 'bg-red-950/40 border border-red-700/40'
+                    }`}>
+                      <p className={enough ? 'text-green-300' : 'text-red-300'}>Gesamtpreisgeld</p>
+                      <p className={`flex items-center gap-1 font-bold ${enough ? 'text-green-400' : 'text-red-400'}`}>
+                        {total}
+                        <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full shrink-0" />
+                        D.FAITH Credits {enough ? '✓' : '⚠'}
+                      </p>
+                    </div>
+                  );
+                })()}
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={async () => {
+                      setLbDistributing(true);
+                      setLbError('');
+                      try {
+                        const res = await fetch('/api/reputation/leaderboard-rewards', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ artistWallet: walletAddress, prizes: lbPrizes }),
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          setLbResult(data.distributed);
+                          setShowLbRewardsForm(false);
+                          await loadData();
+                        } else {
+                          setLbError(data.error || 'Fehler beim Verteilen');
+                        }
+                      } finally {
+                        setLbDistributing(false);
+                      }
+                    }}
+                    disabled={lbDistributing || lbPrizes.every(p => p.creditReward <= 0)}
+                    className="flex-1 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black text-xs font-bold py-2.5 rounded-xl transition-colors"
+                  >
+                    {lbDistributing ? 'Verteilen…' : '🎁 Jetzt verteilen'}
+                  </button>
+                  <button
+                    onClick={() => setShowLbRewardsForm(false)}
+                    className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-xs px-3"
+                  >
+                    <FaTimes size={11} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!showLbRewardsForm && !lbResult && (
+              <div className="px-4 py-6 text-center">
+                <p className="text-zinc-500 text-sm">Einmalige Belohnung für Top-Fans</p>
+                <p className="text-zinc-600 text-xs mt-1">Credits werden sofort verteilt – ohne Zeitlimit.</p>
               </div>
             )}
           </div>
