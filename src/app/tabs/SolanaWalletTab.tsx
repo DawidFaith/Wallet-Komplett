@@ -167,11 +167,17 @@ function TokenDetailModal({
     : t.balance;
   const mintAddress = isSol ? null : t.mint;
 
-  // DEXscreener-Embed URL
-  const chartUrl = isSol
-    ? 'https://dexscreener.com/solana/so11111111111111111111111111111111111111112?embed=1&theme=dark&trades=0&info=0'
+  // GeckoTerminal-Embed (unterstützt Meteora, DLMM-Pools etc.)
+  // Für SOL: Wrapped-SOL Pool auf Raydium; für SPL: Token-Suche auf GeckoTerminal
+  const geckoTerminalUrl = isSol
+    ? 'https://www.geckoterminal.com/solana/pools/58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWaS3oBDNABDP?embed=1&info=0&swaps=0'
     : mintAddress
-    ? `https://dexscreener.com/solana/${mintAddress}?embed=1&theme=dark&trades=0&info=0`
+    ? `https://www.geckoterminal.com/solana/tokens/${mintAddress}?embed=1&info=0&swaps=0`
+    : null;
+  const dexscreenerLink = isSol
+    ? 'https://dexscreener.com/solana/so11111111111111111111111111111111111111112'
+    : mintAddress
+    ? `https://dexscreener.com/solana/${mintAddress}`
     : null;
 
   const changeClass = change === null ? 'text-zinc-500' : change >= 0 ? 'text-emerald-400' : 'text-red-400';
@@ -271,12 +277,9 @@ function TokenDetailModal({
               <div className="bg-amber-950/20 border border-amber-800/20 rounded-xl px-4 py-3 space-y-2">
                 <p className="text-amber-300 text-xs font-bold uppercase tracking-wider">Was ist DFAITH?</p>
                 <p className="text-zinc-300 text-sm leading-relaxed">
-                  <strong className="text-amber-300">D.FAITH</strong> ist der offizielle Fan-Token des Künstlers D.FAITH. 
-                  Als Halter erhältst du Zugang zu exklusiven Quests, Belohnungen und besonderen Inhalten innerhalb des D.FAITH Ecosystems.
-                </p>
-                <p className="text-zinc-400 text-xs leading-relaxed">
-                  Token werden durch das Abschließen von Quests auf Social-Media-Plattformen (YouTube, Instagram, TikTok, Facebook) verdient. 
-                  Sie können nicht frei gehandelt werden — sie repräsentieren deine Aktivität und Treue als Fan.
+                  <strong className="text-amber-300">DFAITH</strong> ist der offizielle Token des Künstlers{' '}
+                  <strong className="text-amber-300">Dawid Faith</strong>. Als Halter erhältst du Zugang zu exklusiven Songs, 
+                  limitiertem Merch und weiteren besonderen Vorteilen innerhalb des D.FAITH Ecosystems.
                 </p>
                 {mintAddress && (
                   <a
@@ -303,19 +306,27 @@ function TokenDetailModal({
           </div>
 
           {/* Preis-Chart */}
-          {chartUrl && (
+          {geckoTerminalUrl && (
             <div className="px-5 pb-3">
-              <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1">
-                <FaChartLine size={9} /> Preis-Chart
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
+                  <FaChartLine size={9} /> Preis-Chart
+                </p>
+                {dexscreenerLink && (
+                  <a href={dexscreenerLink} target="_blank" rel="noopener noreferrer"
+                    className="text-zinc-600 hover:text-amber-400 text-[10px] flex items-center gap-1 transition-colors">
+                    DEXscreener <FaExternalLinkAlt size={8} />
+                  </a>
+                )}
+              </div>
               <div className="rounded-2xl overflow-hidden border border-white/[0.08]" style={{ height: 320 }}>
                 <iframe
-                  src={chartUrl}
+                  src={geckoTerminalUrl}
                   title={`${symbol} Preis-Chart`}
                   width="100%"
                   height="320"
                   style={{ border: 'none', display: 'block' }}
-                  sandbox="allow-scripts allow-same-origin allow-popups"
+                  sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
                 />
               </div>
             </div>
