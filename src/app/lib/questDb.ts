@@ -63,6 +63,8 @@ export interface UserArtistReputation {
   levelName: string;
   nextLevelRep: number | null;   // null = höchstes Level erreicht
   progress: number;              // 0–100 %
+  artistName?: string | null;
+  artistPicture?: string | null;
 }
 
 export interface ReputationLeaderboardEntry {
@@ -1748,6 +1750,53 @@ export async function getUserReputationAll(walletAddress: string): Promise<UserA
     const levels = await getReputationLevels(artistWallet);
     const { level, levelName, nextLevelRep, progress } = reputationToLevel(reputation, levels);
     result.push({ artistWallet, reputation, level, levelName, nextLevelRep, progress });
+  }
+  return result;
+}
+
+/** Alle Artists mit der Reputation des Users (0 wenn noch keine vorhanden) */
+export async function getAllArtistsWithReputation(walletAddress: string): Promise<UserArtistReputation[]> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT
+      p.wallet_address                AS artist_wallet,
+      p.display_name,
+      p.instagram_name, p.instagram_picture,
+      p.tiktok_name,    p.tiktok_picture,
+      p.facebook_name,  p.facebook_picture,
+      yb.channel_name        AS youtube_channel_name,
+      yb.channel_thumbnail   AS youtube_channel_thumbnail,
+      COALESCE(ur.reputation, 0) AS reputation
+    FROM user_profiles p
+    LEFT JOIN user_reputation ur
+      ON  LOWER(ur.artist_wallet)  = LOWER(p.wallet_address)
+      AND LOWER(ur.wallet_address) = ${walletAddress.toLowerCase()}
+    LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
+    WHERE p.is_artist = TRUE
+    ORDER BY COALESCE(ur.reputation, 0) DESC, p.display_name ASC
+  `;
+  const result: UserArtistReputation[] = [];
+  for (const row of rows) {
+    const artistWallet = row.artist_wallet as string;
+    const reputation = Number(row.reputation);
+    const levels = await getReputationLevels(artistWallet);
+    const { level, levelName, nextLevelRep, progress } = reputationToLevel(reputation, levels);
+    let artistName: string | null = (row.display_name as string | null) ?? null;
+    let artistPicture: string | null = null;
+    if (row.youtube_channel_name) {
+      artistName ??= row.youtube_channel_name as string;
+      artistPicture = (row.youtube_channel_thumbnail as string | null) ?? null;
+    } else if (row.instagram_name) {
+      artistName ??= row.instagram_name as string;
+      artistPicture = (row.instagram_picture as string | null) ?? null;
+    } else if (row.tiktok_name) {
+      artistName ??= row.tiktok_name as string;
+      artistPicture = (row.tiktok_picture as string | null) ?? null;
+    } else if (row.facebook_name) {
+      artistName ??= row.facebook_name as string;
+      artistPicture = (row.facebook_picture as string | null) ?? null;
+    }
+    result.push({ artistWallet, reputation, level, levelName, nextLevelRep, progress, artistName, artistPicture });
   }
   return result;
 }

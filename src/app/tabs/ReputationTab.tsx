@@ -11,6 +11,8 @@ interface ReputationEntry {
   levelName: string;
   nextLevelRep: number | null;
   progress: number;
+  artistName?: string | null;
+  artistPicture?: string | null;
 }
 
 interface LeaderboardEntry {
@@ -89,12 +91,14 @@ function SupporterArtistCard({
         onClick={() => setExpanded(e => !e)}
         className="w-full flex items-center gap-3 p-4 text-left hover:bg-white/[0.02] transition-colors"
       >
-        <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
-          <FaStar className="text-amber-400" size={16} />
+        <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 overflow-hidden">
+          {entry.artistPicture
+            ? <img src={entry.artistPicture} alt="" className="w-10 h-10 object-cover" />
+            : <FaStar className="text-amber-400" size={16} />}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-white font-semibold text-sm truncate">
-            {shortenWallet(entry.artistWallet)}
+            {entry.artistName || shortenWallet(entry.artistWallet)}
           </p>
           <p className="text-amber-400 text-xs font-medium">
             Level {entry.level} \u2013 {entry.levelName}
@@ -755,7 +759,7 @@ export default function ReputationTab() {
     if (!walletAddress) return;
     setLoading(true);
     Promise.all([
-      fetch(`/api/reputation?wallet=${walletAddress}`).then(r => r.ok ? r.json() : []),
+      fetch(`/api/reputation?wallet=${walletAddress}&all=true`).then(r => r.ok ? r.json() : []),
       fetch(`/api/youtube-quests/profile?wallet=${walletAddress}`).then(r => r.ok ? r.json() : null),
     ])
       .then(([repData, profileData]) => {
@@ -814,9 +818,9 @@ export default function ReputationTab() {
         ) : supporterEntries.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
             <FaStar size={40} className="text-zinc-700 mb-4" />
-            <p className="text-zinc-400 font-semibold">Noch keine Reputation</p>
+            <p className="text-zinc-400 font-semibold">Keine Künstler gefunden</p>
             <p className="text-zinc-600 text-sm mt-2">
-              Schließe Quests ab, um Reputation bei Künstlern zu verdienen.
+              Noch sind keine Künstler registriert.
             </p>
           </div>
         ) : (
