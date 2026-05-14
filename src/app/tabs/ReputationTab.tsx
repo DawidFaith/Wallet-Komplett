@@ -839,14 +839,12 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                     ))}
                   </div>
                 )}
-                {!contest.distributed && (
-                  <button
-                    onClick={() => { setShowContestForm(true); setContestError(''); }}
-                    className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors"
-                  >
-                    Contest aktualisieren
-                  </button>
-                )}
+                <button
+                  onClick={() => { setShowContestForm(true); setContestError(''); }}
+                  className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors"
+                >
+                  {contest.distributed ? '+ Neuen Contest erstellen' : 'Contest aktualisieren'}
+                </button>
               </div>
             )}
 
