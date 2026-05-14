@@ -6,6 +6,7 @@ import {
   FaCopy, FaCheckCircle, FaSync, FaPaperPlane, FaExternalLinkAlt,
   FaKey, FaEye, FaEyeSlash, FaSpinner, FaExchangeAlt,
   FaChevronDown, FaChevronUp, FaDownload, FaCreditCard,
+  FaTimes, FaLock, FaUnlock, FaChartLine, FaInfoCircle,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
 import Image from 'next/image';
@@ -33,12 +34,13 @@ type ActionModal = 'send' | 'swap' | 'receive' | 'buy' | null;
 
 // ─── Token Row ────────────────────────────────────────────────────────────────
 function TokenRow({
-  token, loading, onSend, onSwap,
+  token, loading, onSend, onSwap, onClick,
 }: {
   token: TokenEntry;
   loading: boolean;
   onSend: (mode: SendMode) => void;
   onSwap: () => void;
+  onClick?: () => void;
 }) {
   const isDfaith    = token.mint === DFAITH_MINT;
   const formattedValue = token.valueUsd !== null
@@ -54,10 +56,13 @@ function TokenRow({
     : `${token.priceChange24h >= 0 ? '+' : ''}${token.priceChange24h.toFixed(2)}%`;
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-colors
-      ${isDfaith
-        ? 'bg-amber-950/20 border-amber-800/25'
-        : 'bg-white/[0.06] border-white/[0.1]'}`}>
+    <div
+      onClick={onClick}
+      className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-colors
+        ${onClick ? 'cursor-pointer' : ''}
+        ${isDfaith
+          ? 'bg-amber-950/20 border-amber-800/25 hover:bg-amber-950/30'
+          : 'bg-white/[0.06] border-white/[0.1] hover:bg-white/[0.09]'}`}>
       {/* Icon */}
       {token.image ? (
         <div className="w-10 h-10 shrink-0 overflow-hidden rounded-full">
@@ -93,7 +98,7 @@ function TokenRow({
 
       {/* Action Buttons */}
       {!isDfaith && (
-        <div className="flex flex-col gap-1.5 shrink-0">
+        <div className="flex flex-col gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
           <button
             onClick={() => onSend({ type: 'token', mint: token.mint, symbol: token.symbol, max: token.balance })}
             className="bg-[#231e12] hover:bg-[#2d2615] text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1">
@@ -106,6 +111,234 @@ function TokenRow({
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Token Detail Modal ───────────────────────────────────────────────────────
+type TokenDetailToken = TokenEntry | { type: 'sol'; solBalance: number | null; solValueUsd: number | null; solChange24h: number | null };
+
+function TokenDetailModal({
+  token,
+  onClose,
+  onSend,
+  onSwap,
+}: {
+  token: TokenDetailToken;
+  onClose: () => void;
+  onSend: (mode: SendMode) => void;
+  onSwap: () => void;
+}) {
+  const isSol = 'type' in token && token.type === 'sol';
+  const isDfaith = !isSol && (token as TokenEntry).mint === DFAITH_MINT;
+
+  const [supply, setSupply]           = useState<number | null>(null);
+  const [mintingEnabled, setMintingEnabled] = useState<boolean | null>(null);
+  const [supplyLoading, setSupplyLoading] = useState(false);
+
+  // Max Supply für SPL Tokens laden
+  useEffect(() => {
+    if (isSol) return;
+    const mint = (token as TokenEntry).mint;
+    if (!mint) return;
+    setSupplyLoading(true);
+    fetch(`/api/solana/token-supply?mint=${encodeURIComponent(mint)}`)
+      .then(r => r.json())
+      .then((d: { totalSupply?: number; mintingEnabled?: boolean }) => {
+        if (typeof d.totalSupply === 'number') setSupply(d.totalSupply);
+        if (typeof d.mintingEnabled === 'boolean') setMintingEnabled(d.mintingEnabled);
+      })
+      .catch(() => {})
+      .finally(() => setSupplyLoading(false));
+  }, [isSol, token]);
+
+  const t = token as TokenEntry;
+  const name   = isSol ? 'Solana'  : t.name;
+  const symbol = isSol ? 'SOL'     : t.symbol;
+  const image  = isSol ? null      : t.image;
+  const price  = isSol
+    ? (token as { solValueUsd: number | null }).solValueUsd
+    : t.valueUsd != null && t.balance > 0 ? t.valueUsd / t.balance : null;
+  const change = isSol
+    ? (token as { solChange24h: number | null }).solChange24h
+    : t.priceChange24h;
+  const balance = isSol
+    ? (token as { solBalance: number | null }).solBalance
+    : t.balance;
+  const mintAddress = isSol ? null : t.mint;
+
+  // DEXscreener-Embed URL
+  const chartUrl = isSol
+    ? 'https://dexscreener.com/solana/so11111111111111111111111111111111111111112?embed=1&theme=dark&trades=0&info=0'
+    : mintAddress
+    ? `https://dexscreener.com/solana/${mintAddress}?embed=1&theme=dark&trades=0&info=0`
+    : null;
+
+  const changeClass = change === null ? 'text-zinc-500' : change >= 0 ? 'text-emerald-400' : 'text-red-400';
+  const changeLabel = change === null ? '—' : `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="w-full sm:max-w-md max-h-[92vh] bg-[#13100a] border border-white/8 rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] shrink-0">
+          <div className="flex items-center gap-3">
+            {image ? (
+              <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
+                <Image src={image} alt={symbol} width={36} height={36}
+                  style={{ width: '36px', height: '36px', objectFit: 'cover', display: 'block' }} unoptimized />
+              </div>
+            ) : isSol ? (
+              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: 'linear-gradient(135deg, rgba(217,119,6,0.3), rgba(146,64,14,0.25))' }}>
+                <SiSolana size={16} className="text-amber-300" />
+              </div>
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-amber-900/30 flex items-center justify-center shrink-0">
+                <span className="text-amber-300 font-bold text-sm">{symbol.slice(0, 2)}</span>
+              </div>
+            )}
+            <div>
+              <p className="text-white font-bold text-base leading-tight">{name}</p>
+              <p className="text-zinc-500 text-xs">{symbol}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/8">
+            <FaTimes size={14} />
+          </button>
+        </div>
+
+        {/* Scrollbarer Inhalt */}
+        <div className="overflow-y-auto flex-1">
+
+          {/* Preis + Balance */}
+          <div className="px-5 py-4 space-y-3">
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-zinc-500 text-xs mb-0.5">Dein Guthaben</p>
+                <p className="text-white text-2xl font-bold">
+                  {balance !== null ? balance.toLocaleString('de-DE', { maximumFractionDigits: 4 }) : '—'} {symbol}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className={`text-sm font-semibold ${changeClass}`}>{changeLabel}</p>
+                <p className="text-zinc-500 text-xs">24h</p>
+              </div>
+            </div>
+
+            {/* Statistiken */}
+            {!isSol && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white/[0.05] rounded-xl px-3 py-2.5">
+                  <p className="text-zinc-500 text-[10px] uppercase tracking-wider mb-1 flex items-center gap-1">
+                    <FaChartLine size={8} /> Preis (ca.)
+                  </p>
+                  <p className="text-white text-sm font-semibold">
+                    {price != null
+                      ? new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'USD', maximumFractionDigits: 6 }).format(price)
+                      : '—'}
+                  </p>
+                </div>
+                <div className="bg-white/[0.05] rounded-xl px-3 py-2.5">
+                  <p className="text-zinc-500 text-[10px] uppercase tracking-wider mb-1 flex items-center gap-1">
+                    <FaInfoCircle size={8} /> Max Supply
+                  </p>
+                  <p className="text-white text-sm font-semibold">
+                    {supplyLoading
+                      ? <span className="text-zinc-500 text-xs">Lädt…</span>
+                      : supply !== null
+                      ? supply.toLocaleString('de-DE', { maximumFractionDigits: 0 })
+                      : '—'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Minting-Status für SPL Tokens */}
+            {!isSol && mintingEnabled !== null && (
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs
+                ${mintingEnabled
+                  ? 'bg-amber-900/20 border border-amber-800/30 text-amber-400'
+                  : 'bg-emerald-900/15 border border-emerald-800/25 text-emerald-400'}`}>
+                {mintingEnabled ? <FaUnlock size={10} /> : <FaLock size={10} />}
+                <span>{mintingEnabled ? 'Minting aktiv — weitere Token können erstellt werden' : 'Minting dauerhaft deaktiviert — feste Gesamtmenge'}</span>
+              </div>
+            )}
+
+            {/* DFAITH Beschreibung */}
+            {isDfaith && (
+              <div className="bg-amber-950/20 border border-amber-800/20 rounded-xl px-4 py-3 space-y-2">
+                <p className="text-amber-300 text-xs font-bold uppercase tracking-wider">Was ist DFAITH?</p>
+                <p className="text-zinc-300 text-sm leading-relaxed">
+                  <strong className="text-amber-300">D.FAITH</strong> ist der offizielle Fan-Token des Künstlers D.FAITH. 
+                  Als Halter erhältst du Zugang zu exklusiven Quests, Belohnungen und besonderen Inhalten innerhalb des D.FAITH Ecosystems.
+                </p>
+                <p className="text-zinc-400 text-xs leading-relaxed">
+                  Token werden durch das Abschließen von Quests auf Social-Media-Plattformen (YouTube, Instagram, TikTok, Facebook) verdient. 
+                  Sie können nicht frei gehandelt werden — sie repräsentieren deine Aktivität und Treue als Fan.
+                </p>
+                {mintAddress && (
+                  <a
+                    href={`https://solscan.io/token/${mintAddress}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-amber-500 hover:text-amber-300 text-xs transition-colors">
+                    <FaExternalLinkAlt size={9} /> Auf Solscan ansehen
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Mint-Adresse für andere Tokens */}
+            {!isSol && !isDfaith && mintAddress && (
+              <div className="flex items-center gap-2 bg-white/[0.04] rounded-xl px-3 py-2 border border-white/[0.06]">
+                <span className="text-zinc-500 text-xs font-mono truncate flex-1">{mintAddress.slice(0, 16)}…{mintAddress.slice(-8)}</span>
+                <a href={`https://solscan.io/token/${mintAddress}`} target="_blank" rel="noopener noreferrer"
+                  className="text-zinc-500 hover:text-amber-300 transition-colors shrink-0">
+                  <FaExternalLinkAlt size={10} />
+                </a>
+              </div>
+            )}
+          </div>
+
+          {/* Preis-Chart */}
+          {chartUrl && (
+            <div className="px-5 pb-3">
+              <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1">
+                <FaChartLine size={9} /> Preis-Chart
+              </p>
+              <div className="rounded-2xl overflow-hidden border border-white/[0.08]" style={{ height: 320 }}>
+                <iframe
+                  src={chartUrl}
+                  title={`${symbol} Preis-Chart`}
+                  width="100%"
+                  height="320"
+                  style={{ border: 'none', display: 'block' }}
+                  sandbox="allow-scripts allow-same-origin allow-popups"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          {!isDfaith && (
+            <div className="px-5 py-4 flex gap-3">
+              <button
+                onClick={() => { onClose(); isSol ? onSend({ type: 'sol' }) : onSend({ type: 'token', mint: t.mint, symbol: t.symbol, max: t.balance }); }}
+                className="flex-1 bg-amber-400 hover:bg-amber-300 text-black font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
+                <FaPaperPlane size={12} /> Senden
+              </button>
+              <button
+                onClick={() => { onClose(); onSwap(); }}
+                className="flex-1 bg-white/[0.08] hover:bg-emerald-900/30 border border-white/[0.1] text-emerald-400 font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
+                <FaExchangeAlt size={12} /> Swap
+              </button>
+            </div>
+          )}
+          {isDfaith && <div className="pb-5" />}
+        </div>
+      </div>
     </div>
   );
 }
@@ -128,6 +361,7 @@ export default function SolanaWalletTab() {
   const [loadingBal, setLoadingBal] = useState(false);
 
   const [actionModal, setActionModal] = useState<ActionModal>(null);
+  const [tokenDetailModal, setTokenDetailModal] = useState<TokenDetailToken | null>(null);
   const [panel, setPanel]         = useState<Panel>(null);
   const [sendMode, setSendMode]   = useState<SendMode>({ type: 'sol' });
   const [recipient, setRecipient] = useState('');
@@ -457,7 +691,9 @@ export default function SolanaWalletTab() {
         </div>
 
         {/* SOL Row */}
-        <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border bg-white/[0.06] border-white/[0.1] hover:border-white/12 transition-colors">
+        <div
+          onClick={() => setTokenDetailModal({ type: 'sol', solBalance, solValueUsd, solChange24h })}
+          className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border bg-white/[0.06] border-white/[0.1] hover:bg-white/[0.09] hover:border-white/15 transition-colors cursor-pointer">
           <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 ring-1 ring-amber-600/20"
             style={{ background: 'linear-gradient(135deg, rgba(217,119,6,0.25), rgba(146,64,14,0.2))' }}>
             <SiSolana size={20} className="text-amber-300" />
@@ -488,11 +724,15 @@ export default function SolanaWalletTab() {
           loading={loadingBal}
           onSend={openSendPanel}
           onSwap={() => setActionModal('swap')}
+          onClick={() => setTokenDetailModal(dfaithToken
+            ? { ...dfaithToken, image: dfaithToken.image || '/D.FAITH.png' }
+            : { mint: DFAITH_MINT, balance: 0, decimals: 2, name: 'D.FAITH', symbol: 'DFAITH', image: '/D.FAITH.png', valueUsd: null, priceChange24h: null })}
         />
 
         {/* Weitere Artist Tokens */}
         {otherTokens.map(token => (
-          <TokenRow key={token.mint} token={token} loading={false} onSend={openSendPanel} onSwap={() => setActionModal('swap')} />
+          <TokenRow key={token.mint} token={token} loading={false} onSend={openSendPanel} onSwap={() => setActionModal('swap')}
+            onClick={() => setTokenDetailModal(token)} />
         ))}
 
         {tokens.length === 0 && !loadingBal && (
@@ -548,6 +788,16 @@ export default function SolanaWalletTab() {
       </div>
 
       </>
+
+      {/* ── Token Detail Modal ── */}
+      {tokenDetailModal && (
+        <TokenDetailModal
+          token={tokenDetailModal}
+          onClose={() => setTokenDetailModal(null)}
+          onSend={openSendPanel}
+          onSwap={() => setActionModal('swap')}
+        />
+      )}
 
       {/* ── Action Modal ── */}
       {actionModal && (
