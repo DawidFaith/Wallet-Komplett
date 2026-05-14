@@ -170,15 +170,16 @@ function TokenDetailModal({
 
   // GeckoTerminal-Embed (unterstützt Meteora, DLMM-Pools etc.)
   const DFAITH_POOL = '9Ei1AhVghZJxH1hsxP2rdakqBFN9sYsqH2hmTCgzC7yK';
+  const SOL_USDC_POOL = 'Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE'; // Raydium SOL/USDC
   const geckoTerminalUrl = isSol
-    ? 'https://www.geckoterminal.com/solana/pools/58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWaS3oBDNABDP?embed=1&info=0&swaps=0'
+    ? `https://www.geckoterminal.com/solana/pools/${SOL_USDC_POOL}?embed=1&info=0&swaps=0`
     : isDfaith
     ? `https://www.geckoterminal.com/solana/pools/${DFAITH_POOL}?embed=1&info=0&swaps=0`
     : mintAddress
     ? `https://www.geckoterminal.com/solana/tokens/${mintAddress}?embed=1&info=0&swaps=0`
     : null;
   const dexscreenerLink = isSol
-    ? 'https://dexscreener.com/solana/so11111111111111111111111111111111111111112'
+    ? `https://dexscreener.com/solana/So11111111111111111111111111111111111111112`
     : isDfaith
     ? `https://dexscreener.com/solana/${DFAITH_POOL}`
     : mintAddress

@@ -54,18 +54,19 @@ async function fetchTokenMeta(umi: ReturnType<typeof createUmi>, mint: string): 
   return { name, symbol, image };
 }
 
-async function fetchDfaithFromDexscreener(): Promise<{ priceUsd: number | null; change24h: number | null }> {
+// GeckoTerminal hat DFAITH indexiert (DEXscreener nicht)
+async function fetchDfaithFromGeckoTerminal(): Promise<{ priceUsd: number | null; change24h: number | null }> {
   try {
     const r = await fetch(
-      `https://api.dexscreener.com/latest/dex/pairs/solana/${DFAITH_POOL}`,
-      { signal: AbortSignal.timeout(6000) }
+      `https://api.geckoterminal.com/api/v2/networks/solana/tokens/${DFAITH_MINT}/pools?page=1`,
+      { signal: AbortSignal.timeout(6000), headers: { Accept: 'application/json' } }
     );
     if (!r.ok) return { priceUsd: null, change24h: null };
-    const d = await r.json() as { pairs?: Array<{ priceUsd?: string; priceChange?: { h24?: number } }> };
-    const pair = d?.pairs?.[0];
+    const d = await r.json() as { data?: Array<{ attributes?: { base_token_price_usd?: string; price_change_percentage?: { h24?: number } } }> };
+    const pool = d?.data?.[0]?.attributes;
     return {
-      priceUsd:  pair?.priceUsd  ? parseFloat(pair.priceUsd) : null,
-      change24h: pair?.priceChange?.h24 ?? null,
+      priceUsd:  pool?.base_token_price_usd  ? parseFloat(pool.base_token_price_usd) : null,
+      change24h: pool?.price_change_percentage?.h24 ?? null,
     };
   } catch {
     return { priceUsd: null, change24h: null };
@@ -178,7 +179,7 @@ export async function GET(req: Request) {
   const [splMarket, solMarket, dfaithDex] = await Promise.all([
     fetchSplMarket(uniqueMints),
     fetchSolMarket(),
-    fetchDfaithFromDexscreener(),   // immer den DFAITH Pool von DEXscreener abrufen
+    fetchDfaithFromGeckoTerminal(),  // immer DFAITH Preis+Change via GeckoTerminal
   ]);
 
   // DFAITH Preis: DEXscreener ist primäre Quelle, Jupiter Quote als Fallback
