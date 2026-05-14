@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useUser } from '@clerk/nextjs';
 import { FaTrophy, FaStar, FaChevronDown, FaChevronUp, FaChevronLeft, FaEdit, FaCheck, FaTimes, FaUsers, FaMedal, FaPlus } from 'react-icons/fa';
 
@@ -140,9 +141,12 @@ function ArtistDetailView({
             </p>
             <div className="flex gap-2 flex-wrap">
               {nextLevel.creditReward > 0 && (
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
-                  <p className="text-amber-300 font-bold text-sm">+{nextLevel.creditReward} DFC</p>
-                  <p className="text-zinc-500 text-[10px]">D.FAITH Credits</p>
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 flex items-center gap-1.5">
+                  <Image src="/D.FAITH.png" alt="" width={16} height={16} className="w-4 h-4 rounded-full shrink-0" />
+                  <div>
+                    <p className="text-amber-300 font-bold text-sm">+{nextLevel.creditReward}</p>
+                    <p className="text-zinc-500 text-[10px]">D.FAITH Credits</p>
+                  </div>
                 </div>
               )}
               {nextLevel.prizeDescription && (
@@ -223,7 +227,12 @@ function ArtistDetailView({
                         <span className="text-amber-400 text-[10px] bg-amber-500/10 border border-amber-500/20 rounded-full px-2 py-0.5">Aktuell</span>
                       )}
                     </div>
-                    {lvl.creditReward > 0 && <p className="text-amber-300 text-xs mt-0.5">+{lvl.creditReward} DFC</p>}
+                    {lvl.creditReward > 0 && (
+                      <p className="flex items-center gap-1 text-amber-300 text-xs mt-0.5">
+                        <Image src="/D.FAITH.png" alt="" width={10} height={10} className="w-2.5 h-2.5 rounded-full shrink-0" />
+                        +{lvl.creditReward} D.FAITH Credits
+                      </p>
+                    )}
                     {lvl.prizeDescription && <p className="text-amber-300/80 text-xs mt-0.5 truncate">&#127873; {lvl.prizeDescription}</p>}
                   </div>
                 </div>
@@ -321,7 +330,10 @@ function ArtistDetailView({
                             <p className="text-zinc-500 text-sm italic">Noch kein Teilnehmer</p>
                           )}
                         </div>
-                        <span className="text-amber-300 font-bold shrink-0 text-sm">{p.creditReward} DFC</span>
+                        <span className="flex items-center gap-1 text-amber-300 font-bold shrink-0 text-sm">
+                          <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full shrink-0" />
+                          {p.creditReward} D.FAITH
+                        </span>
                       </div>
                     );
                   })}
@@ -509,7 +521,13 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
             <span className="text-zinc-400 text-sm">Dein Guthaben</span>
             <p className="text-zinc-600 text-xs mt-0.5">Credits werden beim Speichern von Rewards reserviert</p>
           </div>
-          <span className="text-amber-300 font-bold text-sm">{creditBalance !== null ? `${creditBalance.toFixed(2)} DFC` : '–'}</span>
+          {creditBalance !== null ? (
+            <span className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
+              {creditBalance.toFixed(2)}
+              <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
+              D.FAITH Credits
+            </span>
+          ) : <span className="text-amber-300 font-bold text-sm">–</span>}
         </div>
       </div>
       {/* Sub-Navigation */}
@@ -613,7 +631,9 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                           onChange={e => { const u = [...editLevels]; u[idx] = { ...u[idx], creditReward: Number(e.target.value) }; setEditLevels(u); }}
                           placeholder="0"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">DFC</span>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
+                          <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full" />
+                        </span>
                       </div>
                     </div>
                     <div>
@@ -630,7 +650,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       </div>
                       {editLevels[idx].creditReward > 0 && editLevels[idx].maxRecipients > 0 && (
                         <p className="text-amber-400 text-[10px] mt-1">
-                          Kosten: {editLevels[idx].creditReward * editLevels[idx].maxRecipients} DFC (wird beim Speichern abgezogen)
+                          Kosten: {editLevels[idx].creditReward * editLevels[idx].maxRecipients} D.FAITH Credits (wird beim Speichern abgezogen)
                         </p>
                       )}
                     </div>
@@ -654,7 +674,10 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                         <span className="text-white text-sm font-semibold">{lvl.levelName}</span>
                         <span className="text-zinc-500 text-xs">ab {lvl.minReputation} REP</span>
                         {lvl.creditReward > 0 && lvl.maxRecipients > 0 && (
-                          <span className="text-amber-300 text-xs font-semibold">+{lvl.creditReward} DFC × {lvl.maxRecipients} Fans</span>
+                          <span className="inline-flex items-center gap-1 text-amber-300 text-xs font-semibold">
+                            <Image src="/D.FAITH.png" alt="" width={10} height={10} className="w-2.5 h-2.5 rounded-full shrink-0" />
+                            +{lvl.creditReward} D.FAITH Credits × {lvl.maxRecipients} Fans
+                          </span>
                         )}
                       </div>
                       {lvl.prizeDescription
@@ -686,12 +709,22 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                 }`}>
                   <div>
                     <p className="text-zinc-300 font-semibold">Gesamtkosten aller Rewards</p>
-                    <p className="text-zinc-500 mt-0.5">Dein Guthaben: {creditBalance !== null ? `${creditBalance.toFixed(2)} DFC` : '–'}</p>
+                    <p className="flex items-center gap-1 text-zinc-500 text-xs mt-0.5">
+                      Dein Guthaben:
+                      {creditBalance !== null ? (
+                        <>
+                          <Image src="/D.FAITH.png" alt="" width={10} height={10} className="w-2.5 h-2.5 rounded-full shrink-0" />
+                          <span>{creditBalance.toFixed(2)} D.FAITH Credits</span>
+                        </>
+                      ) : '–'}
+                    </p>
                     <p className="text-zinc-600 text-[10px] mt-0.5">(Differenz zu bisherigen Levels wird abgezogen/erstattet)</p>
                   </div>
                   <div className="text-right">
-                    <p className={`font-bold text-sm ${enough ? 'text-green-400' : unknown ? 'text-zinc-300' : 'text-red-400'}`}>
-                      {totalCost} DFC
+                    <p className={`flex items-center justify-end gap-1 font-bold text-sm ${enough ? 'text-green-400' : unknown ? 'text-zinc-300' : 'text-red-400'}`}>
+                      {totalCost}
+                      <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full shrink-0" />
+                      D.FAITH
                     </p>
                     <p className={`text-[10px] mt-0.5 ${enough ? 'text-green-500' : unknown ? 'text-zinc-500' : 'text-red-500'}`}>
                       {unknown ? 'Guthaben unbekannt' : enough ? '✓ Ausreichend' : '⚠ Nicht ausreichend'}
@@ -754,7 +787,10 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       <span className="text-zinc-300 text-xs">
                         {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`} Platz
                       </span>
-                      <span className="text-amber-300 text-xs font-bold">{p.creditReward} DFC</span>
+                      <span className="flex items-center gap-1 text-amber-300 text-xs font-bold">
+                        <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full shrink-0" />
+                        {p.creditReward} D.FAITH Credits
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -763,7 +799,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                     <p className="text-green-400 text-xs font-semibold mb-1">Verteilt!</p>
                     {distributeResult.map(r => (
                       <p key={r.rank} className="text-zinc-300 text-xs">
-                        #{r.rank}: {shortenWallet(r.walletAddress)} → {r.credited} DFC
+                        #{r.rank}: {shortenWallet(r.walletAddress)} → {r.credited} D.FAITH Credits
                       </p>
                     ))}
                   </div>
@@ -800,8 +836,8 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                     <div className="relative flex-1">
                       <input
                         type="number" min="0"
-                        placeholder="0 DFC"
-                        className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500 pr-14"
+                        placeholder="0"
+                        className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500 pr-10"
                         value={contestPrizes[i].creditReward || ''}
                         onChange={e => {
                           const u = [...contestPrizes];
@@ -809,7 +845,9 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                           setContestPrizes(u);
                         }}
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">DFC</span>
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                        <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full" />
+                      </span>
                     </div>
                     {contestPrizes.length > 1 && (
                       <button
@@ -839,8 +877,10 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       <p className={enough ? 'text-green-300' : 'text-red-300'}>
                         Gesamtpreisgeld – wird beim Starten sofort reserviert
                       </p>
-                      <p className={`font-bold ${enough ? 'text-green-400' : 'text-red-400'}`}>
-                        {total} DFC {enough ? '✓' : '⚠'}
+                      <p className={`flex items-center gap-1 font-bold ${enough ? 'text-green-400' : 'text-red-400'}`}>
+                        {total}
+                        <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full shrink-0" />
+                        D.FAITH Credits {enough ? '✓' : '⚠'}
                       </p>
                     </div>
                   );
