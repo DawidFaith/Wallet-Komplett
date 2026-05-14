@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { FaTrophy, FaCheck, FaExternalLinkAlt, FaClock, FaKey } from 'react-icons/fa';
+import { FaTrophy, FaCheck, FaClock } from 'react-icons/fa';
 import { SiTiktok } from 'react-icons/si';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
@@ -63,42 +63,22 @@ export default function TiktokQuestCard({ quest, isCompleted, onComplete }: Tikt
           Aufgabe: <span className="text-zinc-300">{quest.description || (quest.type === 'secret' ? '🔑 Finde den geheimen Code im Video und gib ihn ein!' : '💬 Schreibe einen positiven Kommentar unter dieses TikTok-Video!')}</span>
         </p>
 
-        <div className="flex gap-2">
-          <a
-            href={quest.videoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+        {isCompleted ? (
+          <button disabled className="w-full bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30">
+            <FaCheck size={12} /> Erledigt
+          </button>
+        ) : isFull ? (
+          <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">
+            Voll
+          </button>
+        ) : (
+          <button
+            onClick={() => onComplete(quest.id)}
+            className="w-full bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
-            <FaExternalLinkAlt size={12} /> Zum Video
-          </a>
-
-          {isCompleted ? (
-            <button
-              disabled
-              className="flex-1 bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30"
-            >
-              <FaCheck size={12} /> Erledigt
-            </button>
-          ) : isFull ? (
-            <button
-              disabled
-              className="flex-1 bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default"
-            >
-              Voll
-            </button>
-          ) : (
-            <button
-              onClick={() => onComplete(quest.id)}
-              className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
-            >
-              {quest.type === 'secret'
-                ? <><FaKey size={12} /> Code eingeben</>
-                : <><FaTrophy size={12} /> Verifizieren</>
-              }
-            </button>
-          )}
-        </div>
+            <FaTrophy size={12} /> Starten
+          </button>
+        )}
       </div>
     </div>
   );

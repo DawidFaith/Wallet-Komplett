@@ -4,7 +4,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { FaFacebook, FaClock, FaComment, FaThumbsUp, FaKey } from 'react-icons/fa';
+import { FaFacebook, FaClock } from 'react-icons/fa';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
 
@@ -29,11 +29,7 @@ export default function FacebookQuestCard({ quest, isCompleted, onComplete }: Fa
     ? '✓ Erledigt'
     : isFull
     ? 'Ausgebucht'
-    : isLike
-    ? 'Like verifizieren'
-    : isSecret
-    ? 'Code eingeben'
-    : 'Kommentar verifizieren';
+    : 'Starten';
 
   return (
     <div className={`bg-zinc-900 rounded-2xl border border-blue-800/40 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>

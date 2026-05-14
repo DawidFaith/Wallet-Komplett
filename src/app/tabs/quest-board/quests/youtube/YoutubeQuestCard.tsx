@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { FaYoutube, FaTrophy, FaCheck, FaExternalLinkAlt, FaClock, FaThumbsUp, FaKey } from 'react-icons/fa';
+import { FaYoutube, FaTrophy, FaCheck, FaClock } from 'react-icons/fa';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
 
@@ -62,44 +62,22 @@ export default function YoutubeQuestCard({ quest, isCompleted, onComplete }: You
           Aufgabe: <span className="text-zinc-300">{quest.description || (quest.type === 'like' ? '👍 Like dieses YouTube Short!' : quest.type === 'secret' ? '🔑 Finde den geheimen Code im Video und gib ihn ein!' : '💬 Schreibe einen positiven Kommentar unter diesem Short!')}</span>
         </p>
 
-        <div className="flex gap-2">
-          <a
-            href={quest.videoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 bg-red-600 hover:bg-red-500 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+        {isCompleted ? (
+          <button disabled className="w-full bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30">
+            <FaCheck size={12} /> Erledigt
+          </button>
+        ) : isFull ? (
+          <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">
+            Voll
+          </button>
+        ) : (
+          <button
+            onClick={() => onComplete(quest.id)}
+            className="w-full bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
-            <FaExternalLinkAlt size={12} /> Zum Short
-          </a>
-
-          {isCompleted ? (
-            <button
-              disabled
-              className="flex-1 bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30"
-            >
-              <FaCheck size={12} /> Erledigt
-            </button>
-          ) : isFull ? (
-            <button
-              disabled
-              className="flex-1 bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default"
-            >
-              Voll
-            </button>
-          ) : (
-            <button
-              onClick={() => onComplete(quest.id)}
-              className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
-            >
-              {quest.type === 'like'
-                ? <><FaThumbsUp size={12} /> Liken</>
-                : quest.type === 'secret'
-                ? <><FaKey size={12} /> Code eingeben</>
-                : <><FaTrophy size={12} /> Verifizieren</>
-              }
-            </button>
-          )}
-        </div>
+            <FaTrophy size={12} /> Starten
+          </button>
+        )}
       </div>
     </div>
   );

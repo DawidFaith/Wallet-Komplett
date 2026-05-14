@@ -70,7 +70,7 @@ export default function InstagramQuestCard({ quest, isCompleted, onComplete }: I
           disabled={isCompleted || isFull}
           className="w-full bg-pink-600 hover:bg-pink-500 disabled:opacity-40 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
         >
-          {isCompleted ? '✓ Erledigt' : isFull ? 'Ausgebucht' : typeConfig.btn}
+          {isCompleted ? '✓ Erledigt' : isFull ? 'Ausgebucht' : 'Starten'}
         </button>
       </div>
     </div>

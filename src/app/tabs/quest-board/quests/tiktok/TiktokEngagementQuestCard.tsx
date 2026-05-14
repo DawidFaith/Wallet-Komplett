@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { FaClock, FaCheck, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaClock, FaCheck } from 'react-icons/fa';
 import { SiTiktok } from 'react-icons/si';
 import { FiThumbsUp, FiShare2, FiBookmark } from 'react-icons/fi';
 import type { QuestIndexEntry } from '../../types';
@@ -78,32 +78,19 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, onComple
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <a
-            href={quest.videoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-cyan-400 text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+        {isCompleted ? (
+          <button disabled className="w-full bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30">
+            <FaCheck size={12} /> Erledigt
+          </button>
+        ) : (
+          <button
+            onClick={() => !isFull && onComplete(quest.id)}
+            disabled={isFull}
+            className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
-            <FaExternalLinkAlt size={11} /> TikTok öffnen
-          </a>
-          {isCompleted ? (
-            <button
-              disabled
-              className="flex-1 bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30"
-            >
-              <FaCheck size={12} /> Erledigt
-            </button>
-          ) : (
-            <button
-              onClick={() => !isFull && onComplete(quest.id)}
-              disabled={isFull}
-              className="flex-1 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
-            >
-              {isFull ? 'Voll' : 'Verifizieren'}
-            </button>
-          )}
-        </div>
+            {isFull ? 'Voll' : <><FaCheck size={12} /> Starten</>}
+          </button>
+        )}
       </div>
     </div>
   );
