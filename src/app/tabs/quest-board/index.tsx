@@ -45,6 +45,7 @@ interface ProfileResponse {
     tiktokVerified?: boolean;
     facebookVerified?: boolean;
     rewardToken?: string | null;
+    isArtist?: boolean;
   };
 }
 
@@ -57,6 +58,7 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
     youtube: false, instagram: false, tiktok: false, facebook: false,
   });
   const [myRewardToken, setMyRewardToken] = useState<string | null>(null);
+  const [isArtist, setIsArtist] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -74,6 +76,7 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
           facebook: !!p.facebookVerified,
         });
         setMyRewardToken(p.rewardToken ?? null);
+        setIsArtist(!!p.isArtist);
         if (p.youtubeVerified && p.youtubeChannelId) {
           setBinding({
             walletAddress: account.address,
@@ -122,6 +125,7 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
             <FaTrophy size={22} className="text-yellow-400" />
             <h1 className="text-white font-bold text-xl">Quest Board</h1>
           </div>
+          {isArtist && (
           <div className="flex bg-zinc-900 border border-zinc-800 rounded-xl p-1">
             <button
               onClick={() => setView('fan')}
@@ -136,6 +140,7 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
               Artist
             </button>
           </div>
+          )}
         </div>
 
         {/* ─── Inhalt ─── */}
