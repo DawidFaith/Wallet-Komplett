@@ -35,6 +35,7 @@ interface ShopArtist {
   displayName: string | null;
   pictureUrl: string | null;
   itemCount: number;
+  rewardToken: string | null;
 }
 
 // ─── Hilfsfunktionen ─────────────────────────────────────────────────────────
@@ -73,15 +74,18 @@ function ItemCard({
   onBuy,
   buying,
   walletAddress,
+  artistRewardToken,
 }: {
   item: ShopItem;
   onBuy: (item: ShopItem, paymentMethod: 'credits' | 'tokens') => void;
   buying: string | null;
   walletAddress: string | null;
+  artistRewardToken?: string | null;
 }) {
   const [payMethod, setPayMethod] = useState<'credits' | 'tokens'>('credits');
   const [previewPlaying, setPreviewPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const tokenLabel = artistRewardToken ?? 'D.FAITH';
 
   const togglePreview = () => {
     const audio = audioRef.current;
@@ -123,7 +127,7 @@ function ItemCard({
         {/* Preis-Badge unten rechts */}
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm border border-amber-500/30 rounded-xl px-2.5 py-1">
           <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
-          <span className="text-amber-300 font-bold text-xs">{item.priceCredits.toLocaleString('de-DE')} D.FAITH</span>
+          <span className="text-amber-300 font-bold text-xs">{item.priceCredits.toLocaleString('de-DE')} {tokenLabel}</span>
         </div>
       </div>
 
@@ -192,7 +196,7 @@ function ItemCard({
                     payMethod === 'credits' ? 'bg-amber-500 text-black shadow-md' : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  <FaCoins size={10} /> D.FAITH
+                  <FaCoins size={10} /> {tokenLabel}
                 </button>
                 <button
                   onClick={() => setPayMethod('tokens')}
@@ -216,7 +220,7 @@ function ItemCard({
                   ? <span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
                   : payMethod === 'tokens'
                     ? <><SiSolana size={13} /> Kaufen mit Tokens</>
-                    : <><FaCoins size={13} /> Kaufen mit D.FAITH</>
+                    : <><FaCoins size={13} /> Kaufen mit {tokenLabel}</>
                 }
               </button>
             </div>
@@ -332,7 +336,7 @@ function ArtistShopView({
               <span className="flex items-center gap-1 text-amber-300 font-bold text-sm">
                 {creditBalance.toFixed(2)}
                 <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
-                D.FAITH
+                {artist.rewardToken ?? 'D.FAITH'}
               </span>
             </div>
           )}
@@ -379,7 +383,7 @@ function ArtistShopView({
       ) : (
         <div className="px-4 grid grid-cols-1 gap-3">
           {items.map(item => (
-            <ItemCard key={item.id} item={item} onBuy={handleBuy} buying={buying} walletAddress={walletAddress} />
+            <ItemCard key={item.id} item={item} onBuy={handleBuy} buying={buying} walletAddress={walletAddress} artistRewardToken={artist.rewardToken} />
           ))}
         </div>
       )}
@@ -609,7 +613,8 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
 
 // ─── Mein Shop (Artist-Modus) ─────────────────────────────────────────────────
 
-function MyShopPanel({ walletAddress, creditBalance }: { walletAddress: string; creditBalance: number | null }) {
+function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddress: string; creditBalance: number | null; rewardToken?: string | null }) {
+  const myTokenLabel = rewardToken ?? 'D.FAITH';
   const [items, setItems] = useState<ShopItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -735,7 +740,7 @@ function MyShopPanel({ walletAddress, creditBalance }: { walletAddress: string; 
           <span className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
             {creditBalance.toFixed(2)}
             <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
-            D.FAITH
+            {myTokenLabel}
           </span>
         )}
         {!showForm && (
@@ -917,7 +922,7 @@ function MyShopPanel({ walletAddress, creditBalance }: { walletAddress: string; 
                       <p className="text-zinc-500 text-xs mt-0.5 line-clamp-1">{item.description}</p>
                     )}
                     <p className="text-amber-400 text-xs mt-1 font-semibold flex items-center gap-1">
-                      <FaCoins size={9} /> {item.priceCredits.toLocaleString('de-DE')} D.FAITH / Tokens
+                      <FaCoins size={9} /> {item.priceCredits.toLocaleString('de-DE')} {myTokenLabel} / Tokens
                     </p>
                   </div>
                 </div>
@@ -960,6 +965,7 @@ function ArtistList({
         displayName: a.display_name as string | null,
         pictureUrl: a.picture_url as string | null,
         itemCount: a.item_count as number,
+        rewardToken: a.reward_token as string | null ?? null,
       }))))
       .finally(() => setLoading(false));
   }, []);
@@ -1021,6 +1027,7 @@ export default function ShopTab() {
 
   const [mode, setMode] = useState<'supporter' | 'inventory' | 'artist'>('supporter');
   const [isArtist, setIsArtist] = useState(false);
+  const [myRewardToken, setMyRewardToken] = useState<string | null>(null);
   const [selectedArtist, setSelectedArtist] = useState<ShopArtist | null>(null);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
 
@@ -1039,7 +1046,10 @@ export default function ShopTab() {
     if (!walletAddress) return;
     fetch(`/api/youtube-quests/profile?wallet=${walletAddress}`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => setIsArtist(!!(data?.profile?.isArtist)));
+      .then(data => {
+        setIsArtist(!!(data?.profile?.isArtist));
+        setMyRewardToken(data?.profile?.rewardToken ?? null);
+      });
   }, [walletAddress]);
 
   useEffect(() => { loadCredits(); }, [loadCredits]);
@@ -1102,7 +1112,7 @@ export default function ShopTab() {
           </div>
         ) : mode === 'artist' && isArtist ? (
           /* ── Artist: Mein Shop ── */
-          <MyShopPanel walletAddress={walletAddress!} creditBalance={creditBalance} />
+          <MyShopPanel walletAddress={walletAddress!} creditBalance={creditBalance} rewardToken={myRewardToken} />
         ) : mode === 'inventory' ? (
           /* ── Inventar ── */
           <InventoryPanel walletAddress={walletAddress!} />

@@ -63,15 +63,26 @@ export async function POST(req: NextRequest) {
     is_active: boolean;
   };
 
+  // Artist-Token-Konfiguration laden (custom oder D.FAITH Fallback)
+  const artistProfileRows = await sql`
+    SELECT reward_token, token_mint_address FROM user_profiles
+    WHERE wallet_address = ${item.artist_wallet} LIMIT 1
+  `;
+  const artistMint: string | null = artistProfileRows.length > 0
+    ? (artistProfileRows[0].token_mint_address as string | null ?? null)
+    : null;
+  // Nutze Artist-Token wenn gesetzt, sonst globaler D.FAITH-Token
+  const effectiveMint = artistMint ?? DFAITH_MINT ?? null;
+
   // Käufer darf sich nichts selbst verkaufen
   if (item.artist_wallet === buyerWallet.toLowerCase()) {
     return NextResponse.json({ error: 'Du kannst dein eigenes Item nicht kaufen' }, { status: 400 });
   }
 
-  // Token-Zahlung: DFAITH-Mint prüfen
+  // Token-Zahlung: Mint prüfen
   if (paymentMethod === 'tokens') {
-    if (!DFAITH_MINT) {
-      return NextResponse.json({ error: 'D.FAITH Token nicht konfiguriert' }, { status: 503 });
+    if (!effectiveMint) {
+      return NextResponse.json({ error: 'Token nicht konfiguriert' }, { status: 503 });
     }
   }
 
@@ -120,7 +131,7 @@ export async function POST(req: NextRequest) {
     const secretB58  = decryptKey(buyerRows[0].solana_private_key as string);
     const buyerKp    = Keypair.fromSecretKey(bs58.decode(secretB58));
     const artistPk   = new PublicKey(artistRows[0].solana_address as string);
-    const mintPk     = new PublicKey(DFAITH_MINT!);
+    const mintPk     = new PublicKey(effectiveMint!);
     const connection = new Connection(RPC_URL, 'confirmed');
 
     const mintInfo = await getMint(connection, mintPk, 'confirmed', TOKEN_PROGRAM_ID);

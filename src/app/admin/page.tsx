@@ -121,6 +121,13 @@ export default function AdminPage() {
   };
 
   const handleSaveRewardToken = async (walletAddress: string) => {
+    const newName = rewardTokenInput.trim();
+    const user = users.find(u => u.walletAddress === walletAddress);
+    // Wenn custom Name (≠ D.FAITH / leer), muss Token-Mint-Adresse gesetzt sein
+    if (newName && newName !== 'D.FAITH' && !user?.tokenMintAddress && !tokenMintInput.trim()) {
+      setError('Token-Mint-Adresse muss gleichzeitig gesetzt sein (grünes Feld).');
+      return;
+    }
     setSavingRewardToken(walletAddress);
     try {
       const res = await fetch('/api/admin/users', {
@@ -143,6 +150,13 @@ export default function AdminPage() {
   };
 
   const handleSaveTokenMint = async (walletAddress: string) => {
+    const newMint = tokenMintInput.trim();
+    const user = users.find(u => u.walletAddress === walletAddress);
+    // Wenn Mint gesetzt, muss auch ein custom Token-Name gesetzt sein
+    if (newMint && (!user?.rewardToken || user.rewardToken === 'D.FAITH') && !rewardTokenInput.trim()) {
+      setError('Token-Name (gelbes Feld) muss gleichzeitig gesetzt sein.');
+      return;
+    }
     setSavingTokenMint(walletAddress);
     try {
       const res = await fetch('/api/admin/users', {

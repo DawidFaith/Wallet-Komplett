@@ -14,6 +14,8 @@ export async function GET() {
     SELECT
       p.wallet_address     AS artist_wallet,
       p.display_name,
+      p.reward_token,
+      p.token_mint_address,
       p.instagram_name,    p.instagram_picture,
       p.tiktok_name,       p.tiktok_picture,
       p.facebook_name,     p.facebook_picture,
@@ -27,6 +29,7 @@ export async function GET() {
     WHERE p.is_artist = TRUE
     GROUP BY
       p.wallet_address, p.display_name,
+      p.reward_token, p.token_mint_address,
       p.instagram_name, p.instagram_picture,
       p.tiktok_name, p.tiktok_picture,
       p.facebook_name, p.facebook_picture,
@@ -52,10 +55,12 @@ export async function GET() {
       displayName ??= r.facebook_name as string ?? null;
     }
     return {
-      artist_wallet: r.artist_wallet,
-      display_name:  displayName,
-      picture_url:   pictureUrl,
-      item_count:    r.item_count,
+      artist_wallet:      r.artist_wallet,
+      display_name:       displayName,
+      picture_url:        pictureUrl,
+      item_count:         r.item_count,
+      reward_token:       (r.reward_token as string | null) ?? null,
+      token_mint_address: (r.token_mint_address as string | null) ?? null,
     };
   });
 
