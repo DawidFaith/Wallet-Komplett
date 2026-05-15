@@ -15,6 +15,7 @@ interface ArtistInfo {
   picture: string | null;
   artistType: string | null;
   artistBio: string | null;
+  rewardToken: string | null;
   questCount: number;
   socials: {
     youtubeChannelId: string | null;
@@ -43,6 +44,7 @@ interface ProfileResponse {
     instagramVerified?: boolean;
     tiktokVerified?: boolean;
     facebookVerified?: boolean;
+    rewardToken?: string | null;
   };
 }
 
@@ -54,6 +56,7 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
   const [verified, setVerified] = useState<VerifiedPlatforms>({
     youtube: false, instagram: false, tiktok: false, facebook: false,
   });
+  const [myRewardToken, setMyRewardToken] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -70,6 +73,7 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
           tiktok: !!p.tiktokVerified,
           facebook: !!p.facebookVerified,
         });
+        setMyRewardToken(p.rewardToken ?? null);
         if (p.youtubeVerified && p.youtubeChannelId) {
           setBinding({
             walletAddress: account.address,
@@ -136,7 +140,7 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
 
         {/* ─── Inhalt ─── */}
         {view === 'artist' ? (
-          <CreatorBoard walletAddress={account.address} binding={binding} verified={verified} />
+          <CreatorBoard walletAddress={account.address} binding={binding} verified={verified} rewardToken={myRewardToken} />
         ) : !anyVerified ? (
           <div className="flex flex-col items-center justify-center py-16 text-center px-4 space-y-4">
             <FaTrophy size={40} className="text-yellow-400 opacity-80" />
@@ -159,6 +163,7 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
               walletAddress={account.address}
               verified={verified}
               filterCreator={filterArtist?.walletAddress ?? undefined}
+              rewardToken={filterArtist?.rewardToken ?? null}
             />
           </>
         )}

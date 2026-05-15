@@ -26,9 +26,12 @@ interface FanBoardProps {
   verified: VerifiedPlatforms;
   /** Optionaler Filter: nur Quests dieses Artists (creatorWallet, lowercase) anzeigen */
   filterCreator?: string;
+  /** Token-Name des gefilterten Artists (z.B. "MYTOKEN") */
+  rewardToken?: string | null;
 }
 
-export default function FanBoard({ walletAddress, verified, filterCreator }: FanBoardProps) {
+export default function FanBoard({ walletAddress, verified, filterCreator, rewardToken }: FanBoardProps) {
+  const tokenName = rewardToken ?? 'D.FAITH';
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,7 +101,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
       if (res.ok) {
         setVerifyResult({
           success: true,
-          message: `Quest abgeschlossen! +${formatCredits(data.rewardAmount)} Dfaith Credits`,
+          message: `Quest abgeschlossen! +${formatCredits(data.rewardAmount)} ${tokenName} Credits`,
           comment: data.comment?.text,
           rewardAmount: data.rewardAmount,
         });
@@ -143,7 +146,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
       if (res.ok && data.success) {
         setVerifyResult({
           success: true,
-          message: `Quest abgeschlossen! +${formatCredits(data.rewardAmount)} Dfaith Credits`,
+          message: `Quest abgeschlossen! +${formatCredits(data.rewardAmount)} ${tokenName} Credits`,
           comment: data.comment,
           rewardAmount: data.rewardAmount,
         });
@@ -168,11 +171,11 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
       const res = await fetch('/api/youtube-quests/claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress, amount: credits }),
+        body: JSON.stringify({ walletAddress, amount: credits, ...(filterCreator ? { creatorWallet: filterCreator } : {}) }),
       });
       const data = await res.json();
       if (res.ok) {
-        setClaimResult({ success: true, message: `${formatCredits(data.sentAmount)} DFAITH wurden an deine Wallet gesendet!`, txHash: data.txHash });
+        setClaimResult({ success: true, message: `${formatCredits(data.sentAmount)} ${tokenName} wurden an deine Wallet gesendet!`, txHash: data.txHash });
         setCredits(0);
       } else {
         setClaimResult({ success: false, message: data.error });
@@ -221,6 +224,18 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-5">
+      {/* Credits Box mit Einlösen-Button */}
+      <CreditsBox
+        balance={credits}
+        tokenName={tokenName}
+        subtitle={credits > 0 ? `Bereit zum Einlösen als echte ${tokenName}-Token` : 'Schließe Quests ab, um Credits zu verdienen'}
+        actionLabel="Einlösen"
+        actionLoading={claiming}
+        onAction={() => { setClaiming(true); handleClaim(); }}
+        onRefresh={loadQuests}
+        refreshLoading={loading}
+      />
+
       {/* Claim-Ergebnis */}
       {claimResult && (
         <div className={`rounded-2xl p-4 border ${claimResult.success ? 'bg-green-900/30 border-green-700/40' : 'bg-red-900/30 border-red-700/40'}`}>
@@ -273,6 +288,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
                       quest={quest}
                       isCompleted={completedIds.includes(quest.id)}
                       onComplete={handleVerify}
+                      rewardTokenName={tokenName}
                     />
                   ))}
                 </QuestCarousel>
@@ -296,6 +312,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
                       quest={quest}
                       isCompleted={completedIds.includes(quest.id)}
                       onComplete={handleTikTokVerify}
+                      rewardTokenName={tokenName}
                     />
                   ))}
                   {tiktokEngagementQuests.map((quest) => (
@@ -304,6 +321,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
                       quest={quest}
                       isCompleted={completedIds.includes(quest.id)}
                       onComplete={handleTikTokVerify}
+                      rewardTokenName={tokenName}
                     />
                   ))}
                 </QuestCarousel>
@@ -327,6 +345,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
                       quest={quest}
                       isCompleted={completedIds.includes(quest.id)}
                       onComplete={handleInstagramVerify}
+                      rewardTokenName={tokenName}
                     />
                   ))}
                 </QuestCarousel>
@@ -350,6 +369,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator }: Fan
                       quest={quest}
                       isCompleted={completedIds.includes(quest.id)}
                       onComplete={handleFacebookVerify}
+                      rewardTokenName={tokenName}
                     />
                   ))}
                 </QuestCarousel>

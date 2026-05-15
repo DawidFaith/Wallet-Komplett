@@ -20,23 +20,16 @@ import { getDb } from '@/app/lib/db';
 const RPC_URL     = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
 
-// POST: D.FAITH Credits einlösen → echte D.FAITH SPL-Token senden (Solana)
+// POST: Credits einlösen → echte SPL-Token senden (Solana)
 export async function POST(req: NextRequest) {
-  if (!DFAITH_MINT) {
-    return NextResponse.json(
-      { error: 'Auszahlung nicht verfügbar (NEXT_PUBLIC_SOLANA_DFAITH_TOKEN nicht konfiguriert)' },
-      { status: 500 },
-    );
-  }
-
-  let body: { walletAddress?: string; amount?: number };
+  let body: { walletAddress?: string; amount?: number; creatorWallet?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Ungültiger Request-Body' }, { status: 400 });
   }
 
-  const { walletAddress, amount } = body;
+  const { walletAddress, amount, creatorWallet } = body;
   if (!walletAddress || !amount || amount <= 0) {
     return NextResponse.json(
       { error: 'walletAddress und amount sind erforderlich' },
@@ -56,6 +49,23 @@ export async function POST(req: NextRequest) {
     );
   }
   const recipientSolana = rows[0].solana_address as string;
+
+  // Token-Mint bestimmen: Artist-spezifischer Token oder Standard D.FAITH
+  let effectiveMint = DFAITH_MINT;
+  if (creatorWallet) {
+    const mintRows = await sql`
+      SELECT token_mint_address FROM user_profiles WHERE wallet_address = ${creatorWallet.toLowerCase()} LIMIT 1
+    `;
+    if (mintRows.length > 0 && mintRows[0].token_mint_address) {
+      effectiveMint = mintRows[0].token_mint_address as string;
+    }
+  }
+  if (!effectiveMint) {
+    return NextResponse.json(
+      { error: 'Token nicht konfiguriert für diese Auszahlung' },
+      { status: 500 },
+    );
+  }
 
   // Schnelle Guthaben-Prüfung (vor dem Lock)
   const currentBalance = await getDfaithCredits(walletAddress);
@@ -86,10 +96,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Echten D.FAITH-Transfer via Treasury Wallet senden
+    // Echten Token-Transfer via Treasury Wallet senden
     try {
       const treasury = getTreasuryKeypair();
-      const mintPk   = new PublicKey(DFAITH_MINT);
+      const mintPk   = new PublicKey(effectiveMint);
       const toPk     = new PublicKey(recipientSolana);
       const connection = new Connection(RPC_URL, 'confirmed');
 

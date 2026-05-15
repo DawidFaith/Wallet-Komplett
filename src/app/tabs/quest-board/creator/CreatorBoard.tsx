@@ -34,9 +34,12 @@ interface CreatorBoardProps {
   walletAddress: string;
   binding: YouTubeBinding | null;
   verified: VerifiedPlatforms;
+  /** Eigener Token-Name des Artists */
+  rewardToken?: string | null;
 }
 
-export default function CreatorBoard({ walletAddress, binding: _binding, verified }: CreatorBoardProps) {
+export default function CreatorBoard({ walletAddress, binding: _binding, verified, rewardToken }: CreatorBoardProps) {
+  const tokenName = rewardToken ?? 'D.FAITH';
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -112,7 +115,8 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       {/* Credits Box */}
       <CreditsBox
         balance={creatorBalance}
-        subtitle={creatorBalance > 0 ? 'Verfügbar für Quest-Auszahlungen an Fans' : 'Lade D.FAITH auf um Quests zu finanzieren'}
+        tokenName={tokenName}
+        subtitle={creatorBalance > 0 ? `Verfügbar für Quest-Auszahlungen an Fans` : `Lade ${tokenName} auf um Quests zu finanzieren`}
         secondaryLabel="Aufladen"
         onSecondary={() => setShowDeposit(true)}
         onRefresh={loadCreatorBalance}
@@ -164,8 +168,8 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                 </a>
                 <div className="flex items-center gap-3 text-xs text-zinc-400">
                   <span className="flex items-center gap-1">
-                    <Image src="/D.FAITH.png" alt="D.FAITH" width={12} height={12} className="w-3 h-3 object-contain" />
-                    {formatCredits(quest.rewardAmount)} D.FAITH
+                    <Image src="/D.FAITH.png" alt={tokenName} width={12} height={12} className="w-3 h-3 object-contain" />
+                    {formatCredits(quest.rewardAmount)} {tokenName}
                   </span>
                   <span className="flex items-center gap-1"><FaTrophy size={10} className="text-green-400" />{quest.completions}/{quest.maxCompletions}</span>
                 </div>

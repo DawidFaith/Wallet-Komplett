@@ -12,9 +12,11 @@ interface FacebookQuestCardProps {
   quest: QuestIndexEntry;
   isCompleted: boolean;
   onComplete: (questId: string) => void;
+  rewardTokenName?: string | null;
 }
 
-export default function FacebookQuestCard({ quest, isCompleted, onComplete }: FacebookQuestCardProps) {
+export default function FacebookQuestCard({ quest, isCompleted, onComplete, rewardTokenName }: FacebookQuestCardProps) {
+  const tokenLabel = rewardTokenName ?? 'D.FAITH';
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
   const expiry = formatExpiry(quest.expiresAt);
   const isFull = quest.completions >= quest.maxCompletions;
@@ -51,7 +53,7 @@ export default function FacebookQuestCard({ quest, isCompleted, onComplete }: Fa
 
         <div className="flex justify-between items-center text-xs text-zinc-400">
           <span className="flex items-center gap-1">
-            <Image src="/D.FAITH.png" alt="D.FAITH" width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(quest.rewardAmount)} D.FAITH
+            <Image src="/D.FAITH.png" alt={tokenLabel} width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(quest.rewardAmount)} {tokenLabel}
           </span>
           {expiry && (
             <span className="flex items-center gap-1 text-zinc-500">

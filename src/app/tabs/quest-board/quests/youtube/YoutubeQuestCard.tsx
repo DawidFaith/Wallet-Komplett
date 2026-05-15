@@ -10,9 +10,11 @@ interface YoutubeQuestCardProps {
   quest: QuestIndexEntry;
   isCompleted: boolean;
   onComplete: (questId: string) => void;
+  rewardTokenName?: string | null;
 }
 
-export default function YoutubeQuestCard({ quest, isCompleted, onComplete }: YoutubeQuestCardProps) {
+export default function YoutubeQuestCard({ quest, isCompleted, onComplete, rewardTokenName }: YoutubeQuestCardProps) {
+  const tokenLabel = rewardTokenName ?? 'D.FAITH';
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
   const isFull = quest.completions >= quest.maxCompletions;
   const expiry = formatExpiry(quest.expiresAt);
@@ -32,7 +34,7 @@ export default function YoutubeQuestCard({ quest, isCompleted, onComplete }: You
           <FaYoutube size={10} /> {quest.type === 'like' ? 'Like' : quest.type === 'secret' ? 'Secret' : 'Kommentar'}
         </div>
         <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-          <Image src="/D.FAITH.png" alt="D.FAITH" width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(quest.rewardAmount)} D.FAITH
+          <Image src="/D.FAITH.png" alt={tokenLabel} width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(quest.rewardAmount)} {tokenLabel}
         </div>
         {expiry && (
           <div className="absolute bottom-2 left-2 bg-black/70 text-zinc-300 text-xs px-2 py-1 rounded-full flex items-center gap-1">

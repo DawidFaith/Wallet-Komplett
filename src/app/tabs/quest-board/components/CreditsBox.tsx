@@ -7,6 +7,8 @@ import { formatCredits } from '../utils';
 
 interface CreditsBoxProps {
   balance: number;
+  /** Token-Name, z.B. "D.FAITH" oder custom Artist-Token */
+  tokenName?: string | null;
   /** Beschreibung unter dem Betrag */
   subtitle?: string;
   /** Text für den Action-Button. Wenn nicht gesetzt, kein Button. */
@@ -23,6 +25,7 @@ interface CreditsBoxProps {
 
 export default function CreditsBox({
   balance,
+  tokenName,
   subtitle,
   actionLabel,
   actionLoading,
@@ -32,11 +35,12 @@ export default function CreditsBox({
   onRefresh,
   refreshLoading,
 }: CreditsBoxProps) {
+  const label = tokenName ?? 'D.FAITH';
   return (
     <div className="bg-gradient-to-r from-yellow-900/40 to-amber-900/30 border border-yellow-700/50 rounded-2xl p-4 flex items-center gap-4">
-      <Image src="/D.FAITH.png" alt="D.FAITH" width={44} height={44} className="object-contain shrink-0" />
+      <Image src="/D.FAITH.png" alt={label} width={44} height={44} className="object-contain shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-yellow-300 font-bold text-base">{formatCredits(balance)} D.FAITH Credits</p>
+        <p className="text-yellow-300 font-bold text-base">{formatCredits(balance)} {label} Credits</p>
         {subtitle && <p className="text-yellow-600 text-xs">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-2 shrink-0">
