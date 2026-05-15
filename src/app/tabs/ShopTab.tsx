@@ -76,7 +76,6 @@ function ItemCard({
   buying: string | null;
   walletAddress: string | null;
 }) {
-  const hasTokens = item.priceTokens !== null && item.priceTokens > 0;
   const [payMethod, setPayMethod] = useState<'credits' | 'tokens'>('credits');
 
   return (
@@ -87,7 +86,7 @@ function ItemCard({
         </div>
       )}
       <div className="p-4 space-y-3">
-        {/* Typ-Badge + Titel + Preise */}
+        {/* Typ-Badge + Titel + Preis */}
         <div className="flex items-start justify-between gap-2">
           <div>
             <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${TYPE_COLORS[item.type]}`}>
@@ -96,17 +95,11 @@ function ItemCard({
             </span>
             <p className="text-white font-semibold text-sm mt-1.5 leading-snug">{item.title}</p>
           </div>
-          <div className="shrink-0 flex flex-col items-end gap-1">
+          <div className="shrink-0">
             <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 rounded-xl px-2.5 py-1">
               <FaCoins size={10} className="text-amber-400" />
               <span className="text-amber-300 font-bold text-xs">{item.priceCredits.toLocaleString('de-DE')}</span>
             </div>
-            {hasTokens && (
-              <div className="flex items-center gap-1 bg-violet-500/10 border border-violet-500/20 rounded-xl px-2.5 py-1">
-                <SiSolana size={9} className="text-violet-400" />
-                <span className="text-violet-300 font-bold text-xs">{Number(item.priceTokens).toLocaleString('de-DE', { maximumFractionDigits: 2 })} DFAITH</span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -135,27 +128,25 @@ function ItemCard({
             </div>
           ) : (
             <div className="space-y-2">
-              {/* Zahlungsart-Toggle (nur wenn Tokens verfügbar) */}
-              {hasTokens && (
-                <div className="flex bg-zinc-800/80 rounded-xl p-0.5 border border-white/[0.06]">
-                  <button
-                    onClick={() => setPayMethod('credits')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                      payMethod === 'credits' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    <FaCoins size={10} /> Credits
-                  </button>
-                  <button
-                    onClick={() => setPayMethod('tokens')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                      payMethod === 'tokens' ? 'bg-violet-600 text-white' : 'text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    <SiSolana size={10} /> Tokens
-                  </button>
-                </div>
-              )}
+              {/* Zahlungsart-Toggle – immer sichtbar */}
+              <div className="flex bg-zinc-800/80 rounded-xl p-0.5 border border-white/[0.06]">
+                <button
+                  onClick={() => setPayMethod('credits')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    payMethod === 'credits' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <FaCoins size={10} /> Credits
+                </button>
+                <button
+                  onClick={() => setPayMethod('tokens')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    payMethod === 'tokens' ? 'bg-violet-600 text-white' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <SiSolana size={10} /> Tokens
+                </button>
+              </div>
               <button
                 onClick={() => onBuy(item, payMethod)}
                 disabled={buying === item.id}
@@ -339,7 +330,6 @@ function MyShopPanel({ walletAddress }: { walletAddress: string }) {
   const [fDesc, setFDesc] = useState('');
   const [fType, setFType] = useState<ItemType>('song');
   const [fPrice, setFPrice] = useState('0');
-  const [fPriceTokens, setFPriceTokens] = useState('');
   const [fContent, setFContent] = useState('');
   const [fImage, setFImage] = useState('');
 
@@ -369,7 +359,7 @@ function MyShopPanel({ walletAddress }: { walletAddress: string }) {
 
   const resetForm = () => {
     setFTitle(''); setFDesc(''); setFType('song'); setFPrice('0');
-    setFPriceTokens(''); setFContent(''); setFImage(''); setFormError('');
+    setFContent(''); setFImage(''); setFormError('');
     setShowForm(false);
   };
 
@@ -390,7 +380,6 @@ function MyShopPanel({ walletAddress }: { walletAddress: string }) {
           description: fDesc,
           type: fType,
           priceCredits: price,
-          priceTokens: fPriceTokens.trim() !== '' ? parseFloat(fPriceTokens) : null,
           contentUrl: fContent,
           imageUrl: fImage,
         }),
@@ -491,23 +480,6 @@ function MyShopPanel({ walletAddress }: { walletAddress: string }) {
             </div>
           </div>
 
-          {/* Token-Preis */}
-          <div>
-            <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">
-              Preis DFAITH Tokens
-              <span className="ml-1 text-zinc-600 normal-case tracking-normal">(optional – leer lassen = nur Credits)</span>
-            </label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={fPriceTokens}
-              onChange={e => setFPriceTokens(e.target.value)}
-              placeholder="z.B. 10"
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-violet-500/50"
-            />
-          </div>
-
           {/* Content-URL */}
           <div>
             <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Content-URL (nach Kauf sichtbar)</label>
@@ -579,13 +551,8 @@ function MyShopPanel({ walletAddress }: { walletAddress: string }) {
                       <p className="text-zinc-500 text-xs mt-0.5 line-clamp-1">{item.description}</p>
                     )}
                     <p className="text-amber-400 text-xs mt-1 font-semibold flex items-center gap-1">
-                      <FaCoins size={9} /> {item.priceCredits.toLocaleString('de-DE')} Credits
+                      <FaCoins size={9} /> {item.priceCredits.toLocaleString('de-DE')} Credits / Tokens
                     </p>
-                    {item.priceTokens !== null && item.priceTokens > 0 && (
-                      <p className="text-violet-400 text-xs mt-0.5 font-semibold flex items-center gap-1">
-                        <SiSolana size={9} /> {Number(item.priceTokens).toLocaleString('de-DE', { maximumFractionDigits: 2 })} DFAITH
-                      </p>
-                    )}
                   </div>
                 </div>
                 <button

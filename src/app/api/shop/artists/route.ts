@@ -12,25 +12,26 @@ export async function GET() {
 
   const rows = await sql`
     SELECT
-      si.artist_wallet,
-      up.display_name,
-      up.instagram_name,   up.instagram_picture,
-      up.tiktok_name,      up.tiktok_picture,
-      up.facebook_name,    up.facebook_picture,
+      p.wallet_address     AS artist_wallet,
+      p.display_name,
+      p.instagram_name,    p.instagram_picture,
+      p.tiktok_name,       p.tiktok_picture,
+      p.facebook_name,     p.facebook_picture,
       yb.channel_name      AS youtube_channel_name,
       yb.channel_thumbnail AS youtube_channel_thumbnail,
       COUNT(si.id)::int    AS item_count
-    FROM shop_items si
-    LEFT JOIN user_profiles up ON up.wallet_address = si.artist_wallet
-    LEFT JOIN youtube_bindings yb ON yb.wallet_address = si.artist_wallet
-    WHERE si.is_active = TRUE
+    FROM user_profiles p
+    LEFT JOIN shop_items si
+      ON si.artist_wallet = p.wallet_address AND si.is_active = TRUE
+    LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
+    WHERE p.is_artist = TRUE
     GROUP BY
-      si.artist_wallet, up.display_name,
-      up.instagram_name, up.instagram_picture,
-      up.tiktok_name, up.tiktok_picture,
-      up.facebook_name, up.facebook_picture,
+      p.wallet_address, p.display_name,
+      p.instagram_name, p.instagram_picture,
+      p.tiktok_name, p.tiktok_picture,
+      p.facebook_name, p.facebook_picture,
       yb.channel_name, yb.channel_thumbnail
-    ORDER BY item_count DESC, up.display_name ASC
+    ORDER BY item_count DESC, p.display_name ASC
   `;
 
   const result = rows.map((r) => {

@@ -68,11 +68,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Du kannst dein eigenes Item nicht kaufen' }, { status: 400 });
   }
 
-  // Token-Zahlung: prüfen ob Preis gesetzt
+  // Token-Zahlung: DFAITH-Mint prüfen
   if (paymentMethod === 'tokens') {
-    if (!item.price_tokens || item.price_tokens <= 0) {
-      return NextResponse.json({ error: 'Dieser Artikel unterstützt keine Token-Zahlung' }, { status: 400 });
-    }
     if (!DFAITH_MINT) {
       return NextResponse.json({ error: 'D.FAITH Token nicht konfiguriert' }, { status: 503 });
     }
@@ -99,8 +96,8 @@ export async function POST(req: NextRequest) {
     await addDfaithCredits(item.artist_wallet, item.price_credits);
 
   } else {
-    // Token-Transfer on-chain
-    const tokenAmount = Number(item.price_tokens);
+    // Token-Transfer on-chain – gleicher Betrag wie Credits
+    const tokenAmount = Number(item.price_credits);
 
     // Käufer-Keypair laden
     const buyerRows = await sql`
