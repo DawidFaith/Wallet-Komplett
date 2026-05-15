@@ -67,7 +67,7 @@ function ArtistDetailView({
   walletAddress: string;
   onBack: () => void;
 }) {
-  const [tab, setTab] = useState<'levels' | 'leaderboard' | 'contest'>('levels');
+  const [tab, setTab] = useState<'leaderboard' | 'contest'>('leaderboard');
   const [levels, setLevels] = useState<ReputationLevel[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [contest, setContest] = useState<ReputationContest | null | false>(false); // false = nicht geladen
@@ -160,14 +160,6 @@ function ArtistDetailView({
       {/* Tab-Navigation */}
       <div className="mx-4 flex bg-zinc-900/60 rounded-xl p-1 border border-white/[0.07]">
         <button
-          onClick={() => setTab('levels')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
-            tab === 'levels' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          <FaMedal size={11} /> Levels
-        </button>
-        <button
           onClick={() => setTab('leaderboard')}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
             tab === 'leaderboard' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
@@ -191,52 +183,6 @@ function ArtistDetailView({
         </div>
       ) : (
         <div className="mx-4 pb-4 space-y-3">
-
-          {/* ── Levels ── */}
-          {tab === 'levels' && (
-            <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl p-4 space-y-2">
-              {levels.length === 0 ? (
-                <p className="text-zinc-500 text-sm text-center py-4">Keine Level definiert</p>
-              ) : levels.map(lvl => (
-                <div
-                  key={lvl.levelNumber}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${
-                    entry.level === lvl.levelNumber
-                      ? 'bg-amber-500/15 border border-amber-500/30'
-                      : entry.level > lvl.levelNumber
-                      ? 'bg-zinc-800/30'
-                      : 'bg-zinc-800/50'
-                  }`}
-                >
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
-                    entry.level > lvl.levelNumber ? 'bg-amber-400 text-black' :
-                    entry.level === lvl.levelNumber ? 'bg-amber-400 text-black' :
-                    'bg-amber-500/20 text-amber-400'
-                  }`}>
-                    {entry.level > lvl.levelNumber ? '✓' : lvl.levelNumber}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`text-sm font-semibold ${
-                        entry.level >= lvl.levelNumber ? 'text-white' : 'text-zinc-400'
-                      }`}>{lvl.levelName}</span>
-                      <span className="text-zinc-500 text-xs">ab {lvl.minReputation} REP</span>
-                      {entry.level === lvl.levelNumber && (
-                        <span className="text-amber-400 text-[10px] bg-amber-500/10 border border-amber-500/20 rounded-full px-2 py-0.5">Aktuell</span>
-                      )}
-                    </div>
-                    {lvl.creditReward > 0 && (
-                      <p className="flex items-center gap-1 text-amber-300 text-xs mt-0.5">
-                        <Image src="/D.FAITH.png" alt="" width={10} height={10} className="w-2.5 h-2.5 rounded-full shrink-0" />
-                        +{lvl.creditReward} D.FAITH Credits
-                      </p>
-                    )}
-                    {lvl.prizeDescription && <p className="text-amber-300/80 text-xs mt-0.5 truncate">&#127873; {lvl.prizeDescription}</p>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
 
           {/* ── Leaderboard ── */}
           {tab === 'leaderboard' && (
