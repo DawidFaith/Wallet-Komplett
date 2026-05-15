@@ -22,7 +22,7 @@ export async function GET() {
       COUNT(si.id)::int    AS item_count
     FROM user_profiles p
     LEFT JOIN shop_items si
-      ON si.artist_wallet = p.wallet_address AND si.is_active = TRUE
+      ON LOWER(si.artist_wallet) = LOWER(p.wallet_address) AND si.is_active = TRUE
     LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
     WHERE p.is_artist = TRUE
     GROUP BY

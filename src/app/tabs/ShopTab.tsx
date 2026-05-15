@@ -274,7 +274,7 @@ function ArtistShopView({
             <p className="text-white font-bold text-base truncate">
               {artist.displayName || shortenWallet(artist.artistWallet)}
             </p>
-            <p className="text-zinc-400 text-xs mt-0.5">{artist.itemCount} {artist.itemCount === 1 ? 'Item' : 'Items'} im Shop</p>
+            <p className="text-zinc-400 text-xs mt-0.5">{loading ? '…' : `${items.length} ${items.length === 1 ? 'Item' : 'Items'} im Shop`}</p>
           </div>
           {creditBalance !== null && creditBalance !== undefined && (
             <div className="shrink-0 flex flex-col items-end gap-0.5">
