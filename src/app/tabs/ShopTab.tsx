@@ -123,7 +123,7 @@ function ItemCard({
         {/* Preis-Badge unten rechts */}
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm border border-amber-500/30 rounded-xl px-2.5 py-1">
           <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
-          <span className="text-amber-300 font-bold text-xs">{item.priceCredits.toLocaleString('de-DE')} Credits</span>
+          <span className="text-amber-300 font-bold text-xs">{item.priceCredits.toLocaleString('de-DE')} D.FAITH</span>
         </div>
       </div>
 
@@ -192,7 +192,7 @@ function ItemCard({
                     payMethod === 'credits' ? 'bg-amber-500 text-black shadow-md' : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  <FaCoins size={10} /> Credits
+                  <FaCoins size={10} /> D.FAITH
                 </button>
                 <button
                   onClick={() => setPayMethod('tokens')}
@@ -216,7 +216,7 @@ function ItemCard({
                   ? <span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
                   : payMethod === 'tokens'
                     ? <><SiSolana size={13} /> Kaufen mit Tokens</>
-                    : <><FaCoins size={13} /> Kaufen mit Credits</>
+                    : <><FaCoins size={13} /> Kaufen mit D.FAITH</>
                 }
               </button>
             </div>
@@ -332,7 +332,7 @@ function ArtistShopView({
               <span className="flex items-center gap-1 text-amber-300 font-bold text-sm">
                 {creditBalance.toFixed(2)}
                 <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
-                Credits
+                D.FAITH
               </span>
             </div>
           )}
@@ -735,7 +735,7 @@ function MyShopPanel({ walletAddress, creditBalance }: { walletAddress: string; 
           <span className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
             {creditBalance.toFixed(2)}
             <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
-            D.FAITH Credits
+            D.FAITH
           </span>
         )}
         {!showForm && (
@@ -917,7 +917,7 @@ function MyShopPanel({ walletAddress, creditBalance }: { walletAddress: string; 
                       <p className="text-zinc-500 text-xs mt-0.5 line-clamp-1">{item.description}</p>
                     )}
                     <p className="text-amber-400 text-xs mt-1 font-semibold flex items-center gap-1">
-                      <FaCoins size={9} /> {item.priceCredits.toLocaleString('de-DE')} Credits / Tokens
+                      <FaCoins size={9} /> {item.priceCredits.toLocaleString('de-DE')} D.FAITH / Tokens
                     </p>
                   </div>
                 </div>
