@@ -1242,13 +1242,15 @@ export default function ReputationTab() {
     <div className="w-full flex flex-col min-h-screen bg-[#0e0c0a] text-white pb-24">
       <div className="max-w-2xl mx-auto w-full">
       <div className="px-4 pt-6 pb-4">
-        <div className="flex items-center gap-3 mb-1">
-          <FaTrophy className="text-amber-400" size={22} />
-          <h1 className="text-xl font-bold">Reputation</h1>
+        <div className="flex items-center gap-3 pt-1">
+          <img src="/D.FAITH.png" alt="D.FAITH" className="w-10 h-10 rounded-full object-contain shrink-0" />
+          <div>
+            <h1 className="text-white font-bold text-xl tracking-wide">D.FAITH Ecosystem</h1>
+            <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">
+              {mode === 'supporter' ? 'Reputation · Rewards' : 'Dein Reputation-System'}
+            </p>
+          </div>
         </div>
-        <p className="text-zinc-500 text-sm">
-          {mode === 'supporter' ? 'Deine Reputation bei Künstlern' : 'Dein Reputation-System als Künstler'}
-        </p>
       </div>
 
       {isArtist && (

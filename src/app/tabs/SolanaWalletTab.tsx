@@ -531,9 +531,12 @@ export default function SolanaWalletTab() {
   if (!connected) {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-center gap-2">
-          <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 rounded-full object-contain" />
-          <h2 className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</h2>
+        <div>
+          <div className="flex items-center gap-2">
+            <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 rounded-full object-contain" />
+            <h2 className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</h2>
+          </div>
+          <p className="text-zinc-400 text-[10px] tracking-widest uppercase font-semibold mt-0.5 ml-10">Solana Wallet</p>
         </div>
         <div className="bg-white/[0.06] border border-white/[0.1] rounded-2xl p-8 space-y-6 text-center">
           <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center overflow-hidden">
@@ -560,9 +563,12 @@ export default function SolanaWalletTab() {
   if (creating || (userId && !solanaAddr && !createError)) {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-center gap-2">
-          <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 rounded-full object-contain" />
-          <h2 className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</h2>
+        <div>
+          <div className="flex items-center gap-2">
+            <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 rounded-full object-contain" />
+            <h2 className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</h2>
+          </div>
+          <p className="text-zinc-400 text-[10px] tracking-widest uppercase font-semibold mt-0.5 ml-10">Solana Wallet</p>
         </div>
         <div className="bg-white/[0.06] border border-white/[0.1] rounded-2xl p-8 text-center space-y-4">
           <FaSpinner size={28} className="animate-spin text-amber-400 mx-auto" />
@@ -577,9 +583,12 @@ export default function SolanaWalletTab() {
   if (createError) {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-4">
-        <div className="flex items-center gap-2">
-          <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 rounded-full object-contain" />
-          <h2 className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</h2>
+        <div>
+          <div className="flex items-center gap-2">
+            <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 rounded-full object-contain" />
+            <h2 className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</h2>
+          </div>
+          <p className="text-zinc-400 text-[10px] tracking-widest uppercase font-semibold mt-0.5 ml-10">Solana Wallet</p>
         </div>
         <div className="bg-red-900/20 border border-red-800/40 rounded-2xl p-6 space-y-3">
           <p className="text-red-300 font-semibold text-sm">Account-Erstellung fehlgeschlagen</p>
@@ -633,9 +642,12 @@ export default function SolanaWalletTab() {
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 rounded-full object-contain" />
-          <span className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</span>
+        <div>
+          <div className="flex items-center gap-2">
+            <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 rounded-full object-contain" />
+            <span className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</span>
+          </div>
+          <p className="text-zinc-400 text-[10px] tracking-widest uppercase font-semibold mt-0.5 ml-10">Solana Wallet</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => loadBalance(solanaAddr!)} disabled={loadingBal}
