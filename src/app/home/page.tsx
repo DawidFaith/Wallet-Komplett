@@ -16,6 +16,7 @@ import QuestBoardTab from "../tabs/QuestBoardTab";
 import ProfileTab from "../tabs/ProfileTab";
 import SolanaWalletTab from "../tabs/SolanaWalletTab";
 import ReputationTab from "../tabs/ReputationTab";
+import ShopTab from "../tabs/ShopTab";
 import type { SupportedLanguage } from "../utils/deepLTranslation";
 
 function HomeContent() {
@@ -53,6 +54,7 @@ function HomeContent() {
         {activeTab === "quest-board" && <QuestBoardTab language={language} />}
         {activeTab === "solana-wallet" && <SolanaWalletTab />}
         {activeTab === "reputation" && <ReputationTab />}
+        {activeTab === "shop" && <ShopTab />}
       </section>
     </main>
   );

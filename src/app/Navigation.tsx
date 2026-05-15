@@ -15,6 +15,7 @@ import {
   FaGlobe,
   FaUserCircle,
   FaTrophy,
+  FaShoppingBag,
 } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 import { useState } from "react";
@@ -106,6 +107,21 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
               className={`transition-colors ${
                 activeTab === "reputation" ? "text-amber-400" : "text-zinc-400"
               } hover:text-amber-400`}
+            />
+          </button>
+        </li>
+        {/* Shop */}
+        <li>
+          <button
+            title="Shop"
+            onClick={() => navigateToTab("shop")}
+            className="flex items-center"
+          >
+            <FaShoppingBag
+              size={19}
+              className={`transition-colors ${
+                activeTab === "shop" ? "text-emerald-400" : "text-zinc-400"
+              } hover:text-emerald-400`}
             />
           </button>
         </li>

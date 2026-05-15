@@ -185,6 +185,36 @@ export async function POST(req: NextRequest) {
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_lq_history_wallet_quarter ON leaderboard_quarterly_history(artist_wallet, quarter)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_lq_history_wallet ON leaderboard_quarterly_history(artist_wallet)`;
 
+    // ── Shop-Tabellen ────────────────────────────────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS shop_items (
+        id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+        artist_wallet  TEXT        NOT NULL,
+        title          TEXT        NOT NULL,
+        description    TEXT        NOT NULL DEFAULT '',
+        type           TEXT        NOT NULL DEFAULT 'other',
+        price_credits  INTEGER     NOT NULL DEFAULT 0,
+        content_url    TEXT        NOT NULL DEFAULT '',
+        image_url      TEXT        NOT NULL DEFAULT '',
+        is_active      BOOLEAN     NOT NULL DEFAULT TRUE,
+        created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_shop_items_artist ON shop_items(artist_wallet)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_shop_items_active ON shop_items(is_active)`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS shop_purchases (
+        id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+        buyer_wallet        TEXT        NOT NULL,
+        item_id             UUID        NOT NULL REFERENCES shop_items(id),
+        price_credits_paid  INTEGER     NOT NULL DEFAULT 0,
+        purchased_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_shop_purchases_unique ON shop_purchases(buyer_wallet, item_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_shop_purchases_buyer ON shop_purchases(buyer_wallet)`;
+
     return NextResponse.json({ success: true, message: `Migration abgeschlossen (${(backfill as unknown as { count?: number }).count ?? backfill.length} neue Profile)` });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
