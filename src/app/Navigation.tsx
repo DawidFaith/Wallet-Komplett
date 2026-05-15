@@ -13,7 +13,7 @@ import {
   FaYoutube,
   FaMusic,
   FaGlobe,
-  FaUserCircle,
+  FaIdBadge,
   FaTrophy,
   FaShoppingBag,
 } from "react-icons/fa";
@@ -72,7 +72,7 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
             onClick={() => navigateToTab("profile")}
             className="flex items-center"
           >
-            <FaUserCircle
+            <FaIdBadge
               size={23}
               className={`transition-colors ${
                 activeTab === "profile" ? "text-red-400" : "text-zinc-400"
