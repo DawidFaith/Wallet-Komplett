@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   const items = await sql`
     SELECT id, artist_wallet, title, description, type,
-           price_credits, content_url, image_url, is_active, created_at
+           price_credits, price_tokens, content_url, image_url, is_active, created_at
     FROM shop_items
     WHERE artist_wallet = ${artistWallet} AND is_active = TRUE
     ORDER BY created_at DESC
@@ -49,12 +49,13 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: 'Kein Body' }, { status: 400 });
 
-  const { wallet, title, description, type, priceCredits, contentUrl, imageUrl } = body as {
+  const { wallet, title, description, type, priceCredits, priceTokens, contentUrl, imageUrl } = body as {
     wallet?: string;
     title?: string;
     description?: string;
     type?: string;
     priceCredits?: number;
+    priceTokens?: number | null;
     contentUrl?: string;
     imageUrl?: string;
   };
@@ -80,17 +81,18 @@ export async function POST(req: NextRequest) {
   }
 
   const rows = await sql`
-    INSERT INTO shop_items (artist_wallet, title, description, type, price_credits, content_url, image_url)
+    INSERT INTO shop_items (artist_wallet, title, description, type, price_credits, price_tokens, content_url, image_url)
     VALUES (
       ${wallet.toLowerCase()},
       ${title.trim()},
       ${description?.trim() ?? ''},
       ${type},
       ${priceCredits},
+      ${typeof priceTokens === 'number' && priceTokens > 0 ? priceTokens : null},
       ${contentUrl?.trim() ?? ''},
       ${imageUrl?.trim() ?? ''}
     )
-    RETURNING id, title, type, price_credits, is_active, created_at
+    RETURNING id, title, type, price_credits, price_tokens, is_active, created_at
   `;
 
   return NextResponse.json(rows[0], { status: 201 });

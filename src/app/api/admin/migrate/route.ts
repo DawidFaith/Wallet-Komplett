@@ -215,6 +215,9 @@ export async function POST(req: NextRequest) {
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_shop_purchases_unique ON shop_purchases(buyer_wallet, item_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_shop_purchases_buyer ON shop_purchases(buyer_wallet)`;
 
+    // ── price_tokens Spalte (falls noch nicht vorhanden) ─────────────────────
+    await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS price_tokens NUMERIC(20,6)`;
+
     return NextResponse.json({ success: true, message: `Migration abgeschlossen (${(backfill as unknown as { count?: number }).count ?? backfill.length} neue Profile)` });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
