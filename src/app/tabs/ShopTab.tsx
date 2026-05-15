@@ -79,70 +79,74 @@ function ItemCard({
 }) {
   const [payMethod, setPayMethod] = useState<'credits' | 'tokens'>('credits');
 
+  const fallbackGradient: Record<ItemType, string> = {
+    song:      'from-violet-900/60 to-zinc-900',
+    video:     'from-red-900/60 to-zinc-900',
+    nft:       'from-amber-900/60 to-zinc-900',
+    exclusive: 'from-emerald-900/60 to-zinc-900',
+  };
+
   return (
-    <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
-      {item.imageUrl && (
-        <div className="w-full h-36 overflow-hidden bg-zinc-800">
+    <div className="bg-zinc-900 border border-white/[0.08] rounded-2xl overflow-hidden shadow-xl">
+      {/* Cover */}
+      <div className="relative aspect-[16/7] overflow-hidden bg-zinc-800">
+        {item.imageUrl ? (
           <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
-        </div>
-      )}
-      <div className="p-4 space-y-3">
-        {/* Typ-Badge + Titel + Preis */}
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${TYPE_COLORS[item.type]}`}>
-              <TypeIcon type={item.type} />
-              {TYPE_LABELS[item.type]}
-            </span>
-            <p className="text-white font-semibold text-sm mt-1.5 leading-snug">{item.title}</p>
+        ) : (
+          <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
+            <span className="opacity-20 scale-[3]"><TypeIcon type={item.type} /></span>
           </div>
-          <div className="shrink-0">
-            <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 rounded-xl px-2.5 py-1">
-              <FaCoins size={10} className="text-amber-400" />
-              <span className="text-amber-300 font-bold text-xs">{item.priceCredits.toLocaleString('de-DE')}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Beschreibung */}
-        {item.description && (
-          <p className="text-zinc-400 text-xs leading-relaxed line-clamp-2">{item.description}</p>
         )}
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent" />
+        {/* Typ-Badge oben links */}
+        <span className={`absolute top-3 left-3 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border backdrop-blur-md ${TYPE_COLORS[item.type]}`}>
+          <TypeIcon type={item.type} /> {TYPE_LABELS[item.type]}
+        </span>
+        {/* Preis-Badge unten rechts */}
+        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm border border-amber-500/30 rounded-xl px-2.5 py-1">
+          <FaCoins size={10} className="text-amber-400" />
+          <span className="text-amber-300 font-bold text-xs">{item.priceCredits.toLocaleString('de-DE')}</span>
+        </div>
+      </div>
 
-        {/* Kauf-Bereich */}
-        {walletAddress && (
+      {/* Content */}
+      <div className="p-4 space-y-3">
+        <div>
+          <p className="text-white font-bold text-base leading-snug">{item.title}</p>
+          {item.description && (
+            <p className="text-zinc-400 text-xs leading-relaxed line-clamp-2 mt-1">{item.description}</p>
+          )}
+        </div>
+
+        {walletAddress ? (
           item.purchased ? (
             <div className="flex gap-2">
-              <div className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-900/30 border border-emerald-700/40 rounded-xl py-2 text-emerald-400 text-xs font-semibold">
-                <FaCheck size={10} /> Gekauft
+              <div className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-900/30 border border-emerald-700/40 rounded-xl py-2.5 text-emerald-400 text-xs font-bold">
+                <FaCheck size={10} /> Bereits gekauft
               </div>
               {item.contentUrl && (
-                <a
-                  href={item.contentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-3 py-2 text-zinc-300 text-xs font-semibold transition-colors"
-                >
+                <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-4 py-2.5 text-zinc-300 text-xs font-semibold transition-colors">
                   <FaExternalLinkAlt size={9} /> Öffnen
                 </a>
               )}
             </div>
           ) : (
             <div className="space-y-2">
-              {/* Zahlungsart-Toggle – immer sichtbar */}
-              <div className="flex bg-zinc-800/80 rounded-xl p-0.5 border border-white/[0.06]">
+              <div className="flex bg-zinc-800 rounded-xl p-0.5 border border-white/[0.06]">
                 <button
                   onClick={() => setPayMethod('credits')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    payMethod === 'credits' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                    payMethod === 'credits' ? 'bg-amber-500 text-black shadow-md' : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
                   <FaCoins size={10} /> Credits
                 </button>
                 <button
                   onClick={() => setPayMethod('tokens')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    payMethod === 'tokens' ? 'bg-violet-600 text-white' : 'text-zinc-400 hover:text-white'
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                    payMethod === 'tokens' ? 'bg-violet-600 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
                   <SiSolana size={10} /> Tokens
@@ -151,22 +155,23 @@ function ItemCard({
               <button
                 onClick={() => onBuy(item, payMethod)}
                 disabled={buying === item.id}
-                className={`w-full flex items-center justify-center gap-2 disabled:opacity-50 text-black font-bold py-2.5 rounded-xl text-sm transition-colors ${
-                  payMethod === 'tokens' ? 'bg-violet-600 hover:bg-violet-500 text-white' : 'bg-amber-500 hover:bg-amber-400 text-black'
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold disabled:opacity-50 transition-colors ${
+                  payMethod === 'tokens'
+                    ? 'bg-violet-600 hover:bg-violet-500 text-white'
+                    : 'bg-amber-500 hover:bg-amber-400 text-black'
                 }`}
               >
                 {buying === item.id
-                  ? <span className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                  ? <span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
                   : payMethod === 'tokens'
-                    ? <><SiSolana size={12} /> Mit Tokens kaufen</>
-                    : <><FaCoins size={12} /> Mit Credits kaufen</>
+                    ? <><SiSolana size={13} /> Kaufen mit Tokens</>
+                    : <><FaCoins size={13} /> Kaufen mit Credits</>
                 }
               </button>
             </div>
           )
-        )}
-        {!walletAddress && (
-          <div className="text-center text-zinc-600 text-xs py-1">Anmelden zum Kaufen</div>
+        ) : (
+          <p className="text-center text-zinc-600 text-xs py-2">Bitte einloggen zum Kaufen</p>
         )}
       </div>
     </div>
@@ -179,10 +184,14 @@ function ArtistShopView({
   artist,
   walletAddress,
   onBack,
+  creditBalance,
+  onPurchased,
 }: {
   artist: ShopArtist;
   walletAddress: string | null;
   onBack: () => void;
+  creditBalance?: number | null;
+  onPurchased?: () => void;
 }) {
   const [items, setItems] = useState<ShopItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -236,6 +245,7 @@ function ArtistShopView({
       const data = await res.json();
       setBuyResult({ itemId: item.id, contentUrl: data.contentUrl, type: data.type });
       setItems(prev => prev.map(i => i.id === item.id ? { ...i, purchased: true } : i));
+      onPurchased?.();
     } finally {
       setBuying(null);
     }
@@ -252,19 +262,28 @@ function ArtistShopView({
       </button>
 
       {/* Artist-Header */}
-      <div className="mx-4 bg-zinc-900/60 border border-white/[0.07] rounded-2xl p-4">
+      <div className="mx-4 bg-zinc-900/80 border border-white/[0.08] rounded-2xl p-4">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 ring-2 ring-amber-500/30">
+          <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 ring-2 ring-amber-500/40 shadow-[0_0_14px_rgba(245,158,11,0.2)]">
             {artist.pictureUrl
               ? <img src={artist.pictureUrl} alt="" className="w-14 h-14 object-cover" />
               : <div className="w-14 h-14 bg-amber-500/20 flex items-center justify-center"><FaStar className="text-amber-400" size={20} /></div>}
           </div>
-          <div>
-            <p className="text-white font-bold text-base">
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-base truncate">
               {artist.displayName || shortenWallet(artist.artistWallet)}
             </p>
             <p className="text-zinc-400 text-xs mt-0.5">{artist.itemCount} {artist.itemCount === 1 ? 'Item' : 'Items'} im Shop</p>
           </div>
+          {creditBalance !== null && creditBalance !== undefined && (
+            <div className="shrink-0 flex flex-col items-end gap-0.5">
+              <span className="text-zinc-500 text-[9px] uppercase tracking-widest">Guthaben</span>
+              <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/25 rounded-xl px-2.5 py-1">
+                <FaCoins size={9} className="text-amber-400" />
+                <span className="text-amber-300 font-bold text-sm">{creditBalance.toLocaleString('de-DE', { maximumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -724,6 +743,18 @@ export default function ShopTab() {
   const [mode, setMode] = useState<'supporter' | 'artist'>('supporter');
   const [isArtist, setIsArtist] = useState(false);
   const [selectedArtist, setSelectedArtist] = useState<ShopArtist | null>(null);
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
+
+  const loadCredits = useCallback(async () => {
+    if (!walletAddress) return;
+    try {
+      const res = await fetch(`/api/youtube-quests/creator-balance?wallet=${walletAddress}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCreditBalance(typeof data.balance === 'number' ? data.balance : Number(data.balance ?? 0));
+      }
+    } catch { /* ignorieren */ }
+  }, [walletAddress]);
 
   useEffect(() => {
     if (!walletAddress) return;
@@ -732,12 +763,14 @@ export default function ShopTab() {
       .then(data => setIsArtist(!!(data?.profile?.isArtist)));
   }, [walletAddress]);
 
+  useEffect(() => { loadCredits(); }, [loadCredits]);
+
   return (
     <div className="w-full flex flex-col min-h-screen bg-[#0e0c0a] text-white pb-24">
       <div className="max-w-2xl mx-auto w-full">
 
         {/* ── Header ── */}
-        <div className="px-4 pt-6 pb-4">
+        <div className="px-4 pt-6 pb-2">
           <div className="flex items-center gap-3 pt-1">
             <img src="/D.FAITH.png" alt="D.FAITH" className="w-10 h-10 rounded-full object-contain shrink-0" />
             <div>
@@ -748,6 +781,26 @@ export default function ShopTab() {
             </div>
           </div>
         </div>
+
+        {/* ── Credits-Balance ── */}
+        {walletAddress && creditBalance !== null && (
+          <div className="mx-4 mb-3 mt-1">
+            <div className="flex items-center justify-between bg-amber-500/[0.08] border border-amber-500/20 rounded-2xl px-4 py-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <FaCoins size={12} className="text-amber-400" />
+                </div>
+                <span className="text-zinc-300 text-sm">Dein Credits-Guthaben</span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-amber-300 font-black text-lg tabular-nums">
+                  {creditBalance.toLocaleString('de-DE', { maximumFractionDigits: 2 })}
+                </span>
+                <span className="text-amber-500/70 text-xs font-semibold">Credits</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Modus-Toggle (nur für Artists) ── */}
         {isArtist && (
@@ -787,6 +840,8 @@ export default function ShopTab() {
             artist={selectedArtist}
             walletAddress={walletAddress}
             onBack={() => setSelectedArtist(null)}
+            creditBalance={creditBalance}
+            onPurchased={loadCredits}
           />
         ) : (
           /* ── Supporter: Artist-Liste ── */
