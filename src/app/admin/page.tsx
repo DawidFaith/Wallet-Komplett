@@ -12,6 +12,7 @@ interface AdminUser {
   displayName: string | null;
   isArtist: boolean;
   rewardToken: string | null;
+  tokenMintAddress: string | null;
   instagramHandle: string | null;
   instagramVerified: boolean;
   tiktokHandle: string | null;
@@ -46,6 +47,9 @@ export default function AdminPage() {
   const [editingRewardToken, setEditingRewardToken] = useState<string | null>(null);
   const [rewardTokenInput, setRewardTokenInput] = useState('');
   const [savingRewardToken, setSavingRewardToken] = useState<string | null>(null);
+  const [editingTokenMint, setEditingTokenMint] = useState<string | null>(null);
+  const [tokenMintInput, setTokenMintInput] = useState('');
+  const [savingTokenMint, setSavingTokenMint] = useState<string | null>(null);
   const [editingSolana, setEditingSolana] = useState<string | null>(null);
   const [solanaInput, setSolanaInput] = useState('');
   const [savingSolana, setSavingSolana] = useState<string | null>(null);
@@ -135,6 +139,28 @@ export default function AdminPage() {
       setError(e instanceof Error ? e.message : 'Fehler beim Speichern');
     } finally {
       setSavingRewardToken(null);
+    }
+  };
+
+  const handleSaveTokenMint = async (walletAddress: string) => {
+    setSavingTokenMint(walletAddress);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ walletAddress, tokenMintAddress: tokenMintInput.trim() || null }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.walletAddress === walletAddress ? { ...u, tokenMintAddress: tokenMintInput.trim() || null } : u,
+        ),
+      );
+      setEditingTokenMint(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler beim Speichern');
+    } finally {
+      setSavingTokenMint(null);
     }
   };
 
@@ -404,6 +430,13 @@ export default function AdminPage() {
                   onSaveRewardToken={() => handleSaveRewardToken(user.walletAddress)}
                   onCancelRewardToken={() => setEditingRewardToken(null)}
                   savingRewardToken={savingRewardToken === user.walletAddress}
+                  editingTokenMint={editingTokenMint === user.walletAddress}
+                  tokenMintInput={tokenMintInput}
+                  onEditTokenMint={() => { setEditingTokenMint(user.walletAddress); setTokenMintInput(user.tokenMintAddress ?? ''); }}
+                  onTokenMintInputChange={setTokenMintInput}
+                  onSaveTokenMint={() => handleSaveTokenMint(user.walletAddress)}
+                  onCancelTokenMint={() => setEditingTokenMint(null)}
+                  savingTokenMint={savingTokenMint === user.walletAddress}
                   editingSolana={editingSolana === user.walletAddress}
                   solanaInput={solanaInput}
                   onEditSolana={() => { setEditingSolana(user.walletAddress); setSolanaInput(user.solanaAddress ?? ''); }}
@@ -1086,6 +1119,13 @@ function UserRow({
   onSaveRewardToken,
   onCancelRewardToken,
   savingRewardToken,
+  editingTokenMint,
+  tokenMintInput,
+  onEditTokenMint,
+  onTokenMintInputChange,
+  onSaveTokenMint,
+  onCancelTokenMint,
+  savingTokenMint,
   editingSolana,
   solanaInput,
   onEditSolana,
@@ -1104,6 +1144,13 @@ function UserRow({
   onSaveRewardToken: () => void;
   onCancelRewardToken: () => void;
   savingRewardToken: boolean;
+  editingTokenMint: boolean;
+  tokenMintInput: string;
+  onEditTokenMint: () => void;
+  onTokenMintInputChange: (v: string) => void;
+  onSaveTokenMint: () => void;
+  onCancelTokenMint: () => void;
+  savingTokenMint: boolean;
   editingSolana: boolean;
   solanaInput: string;
   onEditSolana: () => void;
@@ -1243,6 +1290,30 @@ function UserRow({
           ) : (
             <button onClick={onEditRewardToken} className="flex items-center gap-1 text-xs text-zinc-500 hover:text-yellow-400 transition-colors">
               <FaCoins size={9} /> {user.rewardToken ?? 'D.FAITH'}
+            </button>
+          )
+        )}
+        {user.isArtist && (
+          editingTokenMint ? (
+            <div className="flex items-center gap-1">
+              <input
+                value={tokenMintInput}
+                onChange={(e) => onTokenMintInputChange(e.target.value)}
+                className="bg-zinc-800 border border-zinc-600 text-white text-xs rounded-lg px-2 py-1 w-44 outline-none focus:border-green-500 font-mono"
+                placeholder="Token Mint Adresse…"
+                autoFocus
+              />
+              <button onClick={onSaveTokenMint} disabled={savingTokenMint} className="text-xs bg-green-600 hover:bg-green-500 text-white font-bold px-2 py-1 rounded-lg disabled:opacity-50">
+                {savingTokenMint ? '…' : 'OK'}
+              </button>
+              <button onClick={onCancelTokenMint} className="text-zinc-500 hover:text-white text-xs px-1">✕</button>
+            </div>
+          ) : (
+            <button onClick={onEditTokenMint} className="flex items-center gap-1 text-xs text-zinc-500 hover:text-green-400 transition-colors font-mono truncate max-w-[200px]">
+              <SiSolana size={9} className="text-green-500 shrink-0" />
+              {user.tokenMintAddress
+                ? user.tokenMintAddress.slice(0, 6) + '…' + user.tokenMintAddress.slice(-4)
+                : '— Token Mint'}
             </button>
           )
         )}

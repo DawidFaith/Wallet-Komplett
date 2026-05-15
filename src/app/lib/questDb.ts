@@ -1283,6 +1283,7 @@ export interface SocialProfile {
   artistType: string | null;
   artistBio: string | null;
   rewardToken: string | null;
+  tokenMintAddress: string | null;
 }
 
 export interface AdminUserRow {
@@ -1303,6 +1304,8 @@ export interface AdminUserRow {
   level: number;
   updatedAt: string;
   solanaAddress: string | null;
+  rewardToken: string | null;
+  tokenMintAddress: string | null;
 }
 
 export async function getUserProfile(walletAddress: string): Promise<SocialProfile> {
@@ -1459,6 +1462,12 @@ export async function upsertUserProfile(
       WHERE wallet_address = ${walletAddress.toLowerCase()}
     `;
   }
+  if (data.tokenMintAddress !== undefined) {
+    await sql`
+      UPDATE user_profiles SET token_mint_address = ${data.tokenMintAddress}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
 }
 
 // ─── XP / Level ──────────────────────────────────────────────────────────────
@@ -1514,6 +1523,8 @@ export async function getAllUserProfiles(): Promise<AdminUserRow[]> {
       p.facebook_verified,
       p.youtube_channel_id,
       p.updated_at,
+      p.reward_token,
+      p.token_mint_address,
       yb.channel_name  AS youtube_channel_name,
       yb.channel_id IS NOT NULL AS youtube_verified,
       COALESCE(dc.balance, 0) AS credits,
@@ -1547,6 +1558,8 @@ export async function getAllUserProfiles(): Promise<AdminUserRow[]> {
       level,
       updatedAt: r.updated_at instanceof Date ? r.updated_at.toISOString() : r.updated_at,
       solanaAddress: r.solana_address ?? null,
+      rewardToken: r.reward_token ?? null,
+      tokenMintAddress: r.token_mint_address ?? null,
     };
   });
 }

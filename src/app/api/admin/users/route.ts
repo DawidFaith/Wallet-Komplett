@@ -25,13 +25,13 @@ export async function PATCH(req: NextRequest) {
   if (!checkAuth(req)) {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
-  let body: { walletAddress?: string; isArtist?: boolean; rewardToken?: string; solanaAddress?: string };
+  let body: { walletAddress?: string; isArtist?: boolean; rewardToken?: string; solanaAddress?: string; tokenMintAddress?: string | null };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Ungültiger JSON-Body' }, { status: 400 });
   }
-  const { walletAddress, isArtist, rewardToken, solanaAddress } = body;
+  const { walletAddress, isArtist, rewardToken, solanaAddress, tokenMintAddress } = body;
   if (!walletAddress) {
     return NextResponse.json({ error: 'walletAddress erforderlich' }, { status: 400 });
   }
@@ -41,6 +41,9 @@ export async function PATCH(req: NextRequest) {
     }
     if (rewardToken !== undefined) {
       await upsertUserProfile(walletAddress, { rewardToken });
+    }
+    if (tokenMintAddress !== undefined) {
+      await upsertUserProfile(walletAddress, { tokenMintAddress });
     }
     if (solanaAddress !== undefined) {
       const sql = getDb();
