@@ -1257,7 +1257,7 @@ export default function ReputationTab() {
                     <div className={`w-14 h-14 rounded-full ring-2 transition-all group-hover:scale-105 ${
                       entry.reputation > 0
                         ? 'ring-amber-500/60 shadow-[0_0_10px_rgba(245,158,11,0.3)]'
-                        : 'ring-white/10'
+                        : 'ring-white/25'
                     }`}>
                       {entry.artistPicture
                         ? <img src={entry.artistPicture} alt="" className="w-14 h-14 rounded-full object-cover" />

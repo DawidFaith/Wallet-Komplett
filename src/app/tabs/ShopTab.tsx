@@ -505,6 +505,7 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
 function InventoryPanel({ walletAddress }: { walletAddress: string }) {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedArtistWallet, setSelectedArtistWallet] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -527,11 +528,20 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
       .finally(() => setLoading(false));
   }, [walletAddress]);
 
+  // Unique artists aus Items
+  const artists = Array.from(
+    new Map(items.map(i => [i.artistWallet, { wallet: i.artistWallet, name: i.artistName, picture: i.artistPicture }])).values()
+  );
+
+  const filtered = selectedArtistWallet
+    ? items.filter(i => i.artistWallet === selectedArtistWallet)
+    : items;
+
   return (
     <div className="px-4 space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em]">Mein Inventar</p>
-        <span className="text-zinc-600 text-xs">{items.length} Item{items.length !== 1 ? 's' : ''}</span>
+        <span className="text-zinc-600 text-xs">{filtered.length} Item{filtered.length !== 1 ? 's' : ''}</span>
       </div>
 
       {loading ? (
@@ -545,9 +555,53 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
           <p className="text-zinc-600 text-xs mt-1">Hier erscheinen alle deine gekauften Inhalte.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 pb-4">
-          {items.map(item => <InventoryItemCard key={item.id} item={item} />)}
-        </div>
+        <>
+          {/* Artist-Filter-Scroller */}
+          <div>
+            <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest mb-3">Künstler</p>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+              {/* Alle */}
+              <button
+                onClick={() => setSelectedArtistWallet(null)}
+                className="flex flex-col items-center gap-1.5 shrink-0 w-[60px] group"
+              >
+                <div className={`w-12 h-12 rounded-full ring-2 transition-all group-hover:scale-105 flex items-center justify-center bg-zinc-800 ${
+                  selectedArtistWallet === null ? 'ring-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.3)]' : 'ring-white/20'
+                }`}>
+                  <FaShoppingBag size={16} className={selectedArtistWallet === null ? 'text-amber-400' : 'text-zinc-500'} />
+                </div>
+                <p className="text-[10px] text-center leading-tight w-full truncate text-zinc-400 group-hover:text-white transition-colors">Alle</p>
+              </button>
+
+              {artists.map(a => (
+                <button
+                  key={a.wallet}
+                  onClick={() => setSelectedArtistWallet(a.wallet === selectedArtistWallet ? null : a.wallet)}
+                  className="flex flex-col items-center gap-1.5 shrink-0 w-[60px] group"
+                >
+                  <div className={`w-12 h-12 rounded-full ring-2 transition-all group-hover:scale-105 ${
+                    selectedArtistWallet === a.wallet
+                      ? 'ring-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.3)]'
+                      : 'ring-white/20'
+                  }`}>
+                    {a.picture
+                      ? <img src={a.picture} alt="" className="w-12 h-12 rounded-full object-cover" />
+                      : <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
+                          <FaStar className="text-amber-400" size={16} />
+                        </div>}
+                  </div>
+                  <p className="text-[10px] text-center leading-tight w-full line-clamp-2 text-zinc-400 group-hover:text-white transition-colors">
+                    {a.name || shortenWallet(a.wallet)}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 pb-4">
+            {filtered.map(item => <InventoryItemCard key={item.id} item={item} />)}
+          </div>
+        </>
       )}
     </div>
   );
