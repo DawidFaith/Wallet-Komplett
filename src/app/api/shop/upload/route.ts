@@ -67,11 +67,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Sicheren Dateinamen erzeugen
+    // Sicheren Dateinamen erzeugen – Artist-eigener Unterordner
     const ext        = file.name.replace(/.*\./, '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const timestamp  = Date.now();
-    const shortWallet = wallet.slice(0, 12).replace(/[^a-zA-Z0-9]/g, '');
-    const blobPath   = `shop/${isImage ? 'images' : 'content'}/${shortWallet}_${timestamp}.${ext}`;
+    const safeWallet = wallet.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 32);
+    const blobPath   = `shop/${isImage ? 'images' : 'content'}/${safeWallet}/${timestamp}.${ext}`;
 
     const blob = await put(blobPath, file, {
       access: 'public',
