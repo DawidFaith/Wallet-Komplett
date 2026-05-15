@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useUser } from '@clerk/nextjs';
 import { upload } from '@vercel/blob/client';
 import {
   FaChevronLeft, FaPlus, FaTimes, FaMusic, FaVideo, FaGem, FaStar,
   FaCoins, FaCheck, FaExternalLinkAlt, FaTrash, FaShoppingBag,
+  FaPlay, FaPause, FaDownload, FaBoxOpen,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
 
@@ -79,6 +80,21 @@ function ItemCard({
   walletAddress: string | null;
 }) {
   const [payMethod, setPayMethod] = useState<'credits' | 'tokens'>('credits');
+  const [previewPlaying, setPreviewPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const togglePreview = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (previewPlaying) {
+      audio.pause();
+      setPreviewPlaying(false);
+    } else {
+      audio.currentTime = 0;
+      audio.play();
+      setPreviewPlaying(true);
+    }
+  };
 
   const fallbackGradient: Record<ItemType, string> = {
     song:      'from-violet-900/60 to-zinc-900',
@@ -119,6 +135,40 @@ function ItemCard({
             <p className="text-zinc-400 text-xs leading-relaxed line-clamp-2 mt-1">{item.description}</p>
           )}
         </div>
+
+        {/* 30s Vorschau für Songs (nicht gekauft) */}
+        {item.type === 'song' && item.contentUrl && !item.purchased && (
+          <div className="flex items-center gap-2 bg-zinc-800/60 rounded-xl px-3 py-2">
+            <audio
+              ref={audioRef}
+              src={item.contentUrl}
+              onTimeUpdate={() => {
+                if (audioRef.current && audioRef.current.currentTime >= 30) {
+                  audioRef.current.pause();
+                  audioRef.current.currentTime = 0;
+                  setPreviewPlaying(false);
+                }
+              }}
+              onEnded={() => setPreviewPlaying(false)}
+            />
+            <button
+              onClick={togglePreview}
+              className="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center shrink-0 hover:bg-amber-400 transition-colors"
+            >
+              {previewPlaying ? <FaPause size={9} className="text-black" /> : <FaPlay size={9} className="text-black ml-0.5" />}
+            </button>
+            <div className="flex-1 min-w-0">
+              <p className="text-zinc-300 text-xs font-medium truncate">Vorschau (30 Sek.)</p>
+              <div className="mt-1 h-1 bg-zinc-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-amber-500 rounded-full transition-all"
+                  style={{ width: previewPlaying ? '100%' : '0%', transition: previewPlaying ? 'width 30s linear' : 'none' }}
+                />
+              </div>
+            </div>
+            <span className="text-zinc-600 text-[10px] shrink-0">30s</span>
+          </div>
+        )}
 
         {walletAddress ? (
           item.purchased ? (
@@ -331,6 +381,172 @@ function ArtistShopView({
           {items.map(item => (
             <ItemCard key={item.id} item={item} onBuy={handleBuy} buying={buying} walletAddress={walletAddress} />
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Inventar (alle gekauften Items) ─────────────────────────────────────────
+
+interface InventoryItem {
+  id: string;
+  artistWallet: string;
+  title: string;
+  description: string;
+  type: ItemType;
+  contentUrl: string;
+  imageUrl: string;
+  purchasedAt: string;
+  artistName: string | null;
+  artistPicture: string | null;
+}
+
+function InventoryItemCard({ item }: { item: InventoryItem }) {
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const togglePlay = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) { audio.pause(); setPlaying(false); }
+    else { audio.play(); setPlaying(true); }
+  };
+
+  const fallbackGradient: Record<ItemType, string> = {
+    song:      'from-violet-900/60 to-zinc-900',
+    video:     'from-red-900/60 to-zinc-900',
+    nft:       'from-amber-900/60 to-zinc-900',
+    exclusive: 'from-emerald-900/60 to-zinc-900',
+  };
+
+  return (
+    <div className="bg-zinc-900 border border-white/[0.08] rounded-2xl overflow-hidden shadow-xl">
+      {/* Cover */}
+      <div className="relative aspect-[16/7] overflow-hidden bg-zinc-800">
+        {item.imageUrl ? (
+          <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+        ) : (
+          <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
+            <span className="opacity-20 scale-[3]"><TypeIcon type={item.type} /></span>
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent" />
+        <span className={`absolute top-3 left-3 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border backdrop-blur-md ${TYPE_COLORS[item.type]}`}>
+          <TypeIcon type={item.type} /> {TYPE_LABELS[item.type]}
+        </span>
+        <span className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-900/70 border border-emerald-700/40 text-emerald-400 backdrop-blur-md">
+          <FaCheck size={8} /> Gekauft
+        </span>
+      </div>
+
+      <div className="p-4 space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-white font-bold text-base leading-snug truncate">{item.title}</p>
+            {item.description && <p className="text-zinc-400 text-xs leading-relaxed line-clamp-2 mt-1">{item.description}</p>}
+          </div>
+          {item.artistName && (
+            <div className="flex items-center gap-1.5 shrink-0">
+              {item.artistPicture
+                ? <img src={item.artistPicture} alt="" className="w-5 h-5 rounded-full object-cover" />
+                : <div className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center"><FaStar size={8} className="text-amber-400" /></div>}
+              <span className="text-zinc-400 text-xs truncate max-w-[80px]">{item.artistName}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Song: Audio-Player */}
+        {item.type === 'song' && item.contentUrl && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 bg-zinc-800/60 rounded-xl px-3 py-2.5">
+              <audio ref={audioRef} src={item.contentUrl} onEnded={() => setPlaying(false)} />
+              <button
+                onClick={togglePlay}
+                className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center shrink-0 hover:bg-amber-400 transition-colors"
+              >
+                {playing ? <FaPause size={10} className="text-black" /> : <FaPlay size={10} className="text-black ml-0.5" />}
+              </button>
+              <div className="flex-1 min-w-0">
+                <p className="text-zinc-200 text-xs font-semibold truncate">{item.title}</p>
+                <p className="text-zinc-500 text-[10px]">Voller Song</p>
+              </div>
+            </div>
+            <a
+              href={item.contentUrl}
+              download
+              className="flex items-center justify-center gap-2 w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl py-2.5 text-zinc-300 text-xs font-semibold transition-colors"
+            >
+              <FaDownload size={10} /> Download
+            </a>
+          </div>
+        )}
+
+        {/* Video: Link öffnen */}
+        {item.type === 'video' && item.contentUrl && (
+          <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full bg-red-900/20 hover:bg-red-900/30 border border-red-800/30 rounded-xl py-2.5 text-red-300 text-xs font-semibold transition-colors">
+            <FaVideo size={11} /> Video ansehen
+          </a>
+        )}
+
+        {/* NFT / Exclusive: Inhalt öffnen */}
+        {(item.type === 'nft' || item.type === 'exclusive') && item.contentUrl && (
+          <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full bg-amber-900/20 hover:bg-amber-900/30 border border-amber-700/30 rounded-xl py-2.5 text-amber-300 text-xs font-semibold transition-colors">
+            <FaExternalLinkAlt size={10} /> Inhalt öffnen
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InventoryPanel({ walletAddress }: { walletAddress: string }) {
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/shop/inventory?wallet=${walletAddress}`)
+      .then(r => r.ok ? r.json() : [])
+      .then((data: Array<Record<string, unknown>>) => {
+        setItems(data.map(i => ({
+          id: String(i.id),
+          artistWallet: String(i.artist_wallet),
+          title: String(i.title),
+          description: String(i.description ?? ''),
+          type: i.type as ItemType,
+          contentUrl: String(i.content_url ?? ''),
+          imageUrl: String(i.image_url ?? ''),
+          purchasedAt: String(i.purchased_at ?? ''),
+          artistName: i.artist_name ? String(i.artist_name) : null,
+          artistPicture: i.artist_picture ? String(i.artist_picture) : null,
+        })));
+      })
+      .finally(() => setLoading(false));
+  }, [walletAddress]);
+
+  return (
+    <div className="px-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em]">Mein Inventar</p>
+        <span className="text-zinc-600 text-xs">{items.length} Item{items.length !== 1 ? 's' : ''}</span>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <span className="w-6 h-6 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+        </div>
+      ) : items.length === 0 ? (
+        <div className="bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-10 text-center">
+          <FaBoxOpen size={32} className="text-zinc-700 mx-auto mb-3" />
+          <p className="text-zinc-400 text-sm font-semibold">Noch keine Käufe</p>
+          <p className="text-zinc-600 text-xs mt-1">Hier erscheinen alle deine gekauften Inhalte.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 pb-4">
+          {items.map(item => <InventoryItemCard key={item.id} item={item} />)}
         </div>
       )}
     </div>
@@ -749,7 +965,7 @@ export default function ShopTab() {
   const { user, isLoaded } = useUser();
   const walletAddress = user?.id ?? null;
 
-  const [mode, setMode] = useState<'supporter' | 'artist'>('supporter');
+  const [mode, setMode] = useState<'supporter' | 'inventory' | 'artist'>('supporter');
   const [isArtist, setIsArtist] = useState(false);
   const [selectedArtist, setSelectedArtist] = useState<ShopArtist | null>(null);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
@@ -807,26 +1023,36 @@ export default function ShopTab() {
           </div>
         )}
 
-        {/* ── Modus-Toggle (nur für Artists) ── */}
-        {isArtist && (
+        {/* ── Modus-Toggle ── */}
+        {walletAddress && (
           <div className="px-4 mb-4">
             <div className="flex bg-zinc-900/70 rounded-xl p-1 border border-white/[0.07]">
               <button
                 onClick={() => { setMode('supporter'); setSelectedArtist(null); }}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${
                   mode === 'supporter' ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'
                 }`}
               >
-                <FaShoppingBag size={13} /> Shop durchsuchen
+                <FaShoppingBag size={11} /> Shop
               </button>
               <button
-                onClick={() => setMode('artist')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                  mode === 'artist' ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'
+                onClick={() => { setMode('inventory'); setSelectedArtist(null); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${
+                  mode === 'inventory' ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'
                 }`}
               >
-                <FaPlus size={13} /> Mein Shop
+                <FaBoxOpen size={11} /> Inventar
               </button>
+              {isArtist && (
+                <button
+                  onClick={() => setMode('artist')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${
+                    mode === 'artist' ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <FaPlus size={11} /> Mein Shop
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -839,6 +1065,9 @@ export default function ShopTab() {
         ) : mode === 'artist' && isArtist ? (
           /* ── Artist: Mein Shop ── */
           <MyShopPanel walletAddress={walletAddress!} creditBalance={creditBalance} />
+        ) : mode === 'inventory' ? (
+          /* ── Inventar ── */
+          <InventoryPanel walletAddress={walletAddress!} />
         ) : selectedArtist ? (
           /* ── Supporter: Einzelner Artist-Shop ── */
           <ArtistShopView
