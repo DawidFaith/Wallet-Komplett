@@ -1324,6 +1324,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
       artistType: null,
       artistBio: null,
       rewardToken: null,
+      tokenMintAddress: null,
     };
   }
   const r = rows[0];
@@ -1346,6 +1347,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
     artistType: r.artist_type ?? null,
     artistBio: r.artist_bio ?? null,
     rewardToken: r.reward_token ?? null,
+    tokenMintAddress: r.token_mint_address ?? null,
   };
 }
 
