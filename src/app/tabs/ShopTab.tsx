@@ -339,7 +339,7 @@ function ArtistShopView({
 
 // ─── Mein Shop (Artist-Modus) ─────────────────────────────────────────────────
 
-function MyShopPanel({ walletAddress }: { walletAddress: string }) {
+function MyShopPanel({ walletAddress, creditBalance }: { walletAddress: string; creditBalance: number | null }) {
   const [items, setItems] = useState<ShopItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -461,6 +461,13 @@ function MyShopPanel({ walletAddress }: { walletAddress: string }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em]">Mein Shop</p>
+        {creditBalance !== null && (
+          <span className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
+            {creditBalance.toFixed(2)}
+            <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
+            D.FAITH Credits
+          </span>
+        )}
         {!showForm && (
           <button
             onClick={() => setShowForm(true)}
@@ -784,38 +791,19 @@ export default function ShopTab() {
           </div>
         </div>
 
-        {/* ── Credits-Balance ── */}
-        {walletAddress && creditBalance !== null && (
+        {/* ── Credits-Balance (nur für Supporter) ── */}
+        {walletAddress && creditBalance !== null && !isArtist && (
           <div className="mx-4 mb-3 mt-1">
-            {isArtist ? (
-              <button
-                onClick={() => setMode('artist')}
-                className="w-full bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden active:opacity-80 transition-opacity"
-              >
-                <div className="flex items-center justify-between px-4 py-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-zinc-400 text-sm">Dein Guthaben</span>
-                    <span className="text-zinc-600 text-xs">→ Mein Shop</span>
-                  </div>
-                  <span className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
-                    {creditBalance.toFixed(2)}
-                    <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
-                    D.FAITH Credits
-                  </span>
-                </div>
-              </button>
-            ) : (
-              <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3">
-                  <span className="text-zinc-400 text-sm">Dein Guthaben</span>
-                  <span className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
-                    {creditBalance.toFixed(2)}
-                    <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
-                    D.FAITH Credits
-                  </span>
-                </div>
+            <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-zinc-400 text-sm">Dein Guthaben</span>
+                <span className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
+                  {creditBalance.toFixed(2)}
+                  <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
+                  D.FAITH Credits
+                </span>
               </div>
-            )}
+            </div>
           </div>
         )}
 
@@ -850,7 +838,7 @@ export default function ShopTab() {
           </div>
         ) : mode === 'artist' && isArtist ? (
           /* ── Artist: Mein Shop ── */
-          <MyShopPanel walletAddress={walletAddress!} />
+          <MyShopPanel walletAddress={walletAddress!} creditBalance={creditBalance} />
         ) : selectedArtist ? (
           /* ── Supporter: Einzelner Artist-Shop ── */
           <ArtistShopView
