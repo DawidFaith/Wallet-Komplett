@@ -648,31 +648,34 @@ function ArtistList({
   }
 
   return (
-    <div className="px-4 space-y-3">
-      <p className="text-zinc-500 text-xs">Wähle einen Artist um seinen Shop zu öffnen.</p>
-      {artists.map(artist => (
-        <button
-          key={artist.artistWallet}
-          onClick={() => onSelect(artist)}
-          className="w-full flex items-center gap-4 bg-zinc-900/60 hover:bg-zinc-800/70 border border-white/[0.07] hover:border-amber-500/20 rounded-2xl p-4 transition-all text-left"
-        >
-          <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 ring-2 ring-amber-500/20">
-            {artist.pictureUrl
-              ? <img src={artist.pictureUrl} alt="" className="w-12 h-12 object-cover" />
-              : <div className="w-12 h-12 bg-amber-500/20 flex items-center justify-center"><FaStar className="text-amber-400" size={16} /></div>}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white font-semibold text-sm truncate">
+    <div className="px-4 space-y-4">
+      <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Artists</p>
+      <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
+        {artists.map(artist => (
+          <button
+            key={artist.artistWallet}
+            onClick={() => onSelect(artist)}
+            className="flex flex-col items-center gap-2 shrink-0 w-[68px] group"
+          >
+            <div className="relative">
+              <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-amber-500/60 shadow-[0_0_10px_rgba(245,158,11,0.25)] transition-all group-hover:scale-105">
+                {artist.pictureUrl
+                  ? <img src={artist.pictureUrl} alt="" className="w-14 h-14 object-cover" />
+                  : <div className="w-14 h-14 bg-amber-500/20 flex items-center justify-center">
+                      <FaStar className="text-amber-400" size={18} />
+                    </div>}
+              </div>
+              <div className="absolute -bottom-1 -right-1 bg-amber-500 text-black text-[9px] font-black rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+                <FaShoppingBag size={8} />
+              </div>
+            </div>
+            <p className="text-xs text-zinc-300 text-center line-clamp-2 leading-tight w-full group-hover:text-white transition-colors">
               {artist.displayName || shortenWallet(artist.artistWallet)}
             </p>
-            <p className="text-zinc-500 text-xs mt-0.5">
-              <FaShoppingBag size={9} className="inline mr-1 text-amber-500/60" />
-              {artist.itemCount} {artist.itemCount === 1 ? 'Item' : 'Items'}
-            </p>
-          </div>
-          <FaChevronLeft size={12} className="text-zinc-600 rotate-180 shrink-0" />
-        </button>
-      ))}
+          </button>
+        ))}
+      </div>
+      <p className="text-zinc-600 text-xs">Tippe auf einen Artist um seinen Shop zu öffnen.</p>
     </div>
   );
 }
