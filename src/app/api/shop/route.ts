@@ -29,11 +29,12 @@ export async function GET(req: NextRequest) {
   // Bereits gekaufte Items des Nutzers
   let purchasedIds: string[] = [];
   if (wallet) {
+    const itemIds = (items as Array<Record<string, unknown>>).map(i => String(i.id));
     const rows = await sql`
       SELECT item_id FROM shop_purchases
-      WHERE buyer_wallet = ${wallet} AND item_id = ANY(${items.map((i: { id: string }) => i.id)})
+      WHERE buyer_wallet = ${wallet} AND item_id = ANY(${itemIds})
     `;
-    purchasedIds = rows.map((r: { item_id: string }) => r.item_id);
+    purchasedIds = (rows as Array<Record<string, unknown>>).map(r => String(r.item_id));
   }
 
   return NextResponse.json(
