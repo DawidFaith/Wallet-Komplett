@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useUser } from '@clerk/nextjs';
 import { upload } from '@vercel/blob/client';
 import {
@@ -105,8 +106,8 @@ function ItemCard({
         </span>
         {/* Preis-Badge unten rechts */}
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm border border-amber-500/30 rounded-xl px-2.5 py-1">
-          <FaCoins size={10} className="text-amber-400" />
-          <span className="text-amber-300 font-bold text-xs">{item.priceCredits.toLocaleString('de-DE')}</span>
+          <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
+          <span className="text-amber-300 font-bold text-xs">{item.priceCredits.toLocaleString('de-DE')} Credits</span>
         </div>
       </div>
 
@@ -278,10 +279,11 @@ function ArtistShopView({
           {creditBalance !== null && creditBalance !== undefined && (
             <div className="shrink-0 flex flex-col items-end gap-0.5">
               <span className="text-zinc-500 text-[9px] uppercase tracking-widest">Guthaben</span>
-              <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/25 rounded-xl px-2.5 py-1">
-                <FaCoins size={9} className="text-amber-400" />
-                <span className="text-amber-300 font-bold text-sm">{creditBalance.toLocaleString('de-DE', { maximumFractionDigits: 2 })}</span>
-              </div>
+              <span className="flex items-center gap-1 text-amber-300 font-bold text-sm">
+                {creditBalance.toFixed(2)}
+                <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
+                Credits
+              </span>
             </div>
           )}
         </div>
@@ -785,18 +787,16 @@ export default function ShopTab() {
         {/* ── Credits-Balance ── */}
         {walletAddress && creditBalance !== null && (
           <div className="mx-4 mb-3 mt-1">
-            <div className="flex items-center justify-between bg-amber-500/[0.08] border border-amber-500/20 rounded-2xl px-4 py-3">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-amber-500/20 flex items-center justify-center">
-                  <FaCoins size={12} className="text-amber-400" />
+            <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3">
+                <div>
+                  <span className="text-zinc-400 text-sm">Dein Guthaben</span>
                 </div>
-                <span className="text-zinc-300 text-sm">Dein Credits-Guthaben</span>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-amber-300 font-black text-lg tabular-nums">
-                  {creditBalance.toLocaleString('de-DE', { maximumFractionDigits: 2 })}
+                <span className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
+                  {creditBalance.toFixed(2)}
+                  <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
+                  D.FAITH Credits
                 </span>
-                <span className="text-amber-500/70 text-xs font-semibold">Credits</span>
               </div>
             </div>
           </div>
