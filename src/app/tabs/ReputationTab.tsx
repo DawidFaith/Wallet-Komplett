@@ -109,10 +109,10 @@ function ArtistDetailView({
       {/* Künstler-Header + Meine Rep */}
       <div className="mx-4 bg-zinc-900/60 border border-white/[0.07] rounded-2xl p-4">
         <div className="flex items-center gap-4 mb-4">
-          <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 ring-2 ring-amber-500/30">
+          <div className="w-14 h-14 rounded-full shrink-0 ring-2 ring-amber-500/30">
             {entry.artistPicture
-              ? <img src={entry.artistPicture} alt="" className="w-14 h-14 object-cover" />
-              : <div className="w-14 h-14 bg-amber-500/20 flex items-center justify-center"><FaStar className="text-amber-400" size={20} /></div>}
+              ? <img src={entry.artistPicture} alt="" className="w-14 h-14 rounded-full object-cover" />
+              : <div className="w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center"><FaStar className="text-amber-400" size={20} /></div>}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-bold text-base truncate">
@@ -1308,14 +1308,14 @@ export default function ReputationTab() {
                   className="flex flex-col items-center gap-2 shrink-0 w-[68px] group"
                 >
                   <div className="relative">
-                    <div className={`w-14 h-14 rounded-full overflow-hidden ring-2 transition-all group-hover:scale-105 ${
+                    <div className={`w-14 h-14 rounded-full ring-2 transition-all group-hover:scale-105 ${
                       entry.reputation > 0
                         ? 'ring-amber-500/60 shadow-[0_0_10px_rgba(245,158,11,0.3)]'
                         : 'ring-white/10'
                     }`}>
                       {entry.artistPicture
-                        ? <img src={entry.artistPicture} alt="" className="w-14 h-14 object-cover" />
-                        : <div className="w-14 h-14 bg-amber-500/20 flex items-center justify-center">
+                        ? <img src={entry.artistPicture} alt="" className="w-14 h-14 rounded-full object-cover" />
+                        : <div className="w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center">
                             <FaStar className="text-amber-400" size={18} />
                           </div>}
                     </div>
