@@ -787,18 +787,35 @@ export default function ShopTab() {
         {/* ── Credits-Balance ── */}
         {walletAddress && creditBalance !== null && (
           <div className="mx-4 mb-3 mt-1">
-            <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3">
-                <div>
-                  <span className="text-zinc-400 text-sm">Dein Guthaben</span>
+            {isArtist ? (
+              <button
+                onClick={() => setMode('artist')}
+                className="w-full bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden active:opacity-80 transition-opacity"
+              >
+                <div className="flex items-center justify-between px-4 py-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-zinc-400 text-sm">Dein Guthaben</span>
+                    <span className="text-zinc-600 text-xs">→ Mein Shop</span>
+                  </div>
+                  <span className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
+                    {creditBalance.toFixed(2)}
+                    <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
+                    D.FAITH Credits
+                  </span>
                 </div>
-                <span className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
-                  {creditBalance.toFixed(2)}
-                  <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
-                  D.FAITH Credits
-                </span>
+              </button>
+            ) : (
+              <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3">
+                  <span className="text-zinc-400 text-sm">Dein Guthaben</span>
+                  <span className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
+                    {creditBalance.toFixed(2)}
+                    <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
+                    D.FAITH Credits
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
