@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { upload } from '@vercel/blob/client';
 import {
   FaChevronLeft, FaPlus, FaTimes, FaMusic, FaVideo, FaGem, FaStar,
   FaCoins, FaCheck, FaExternalLinkAlt, FaTrash, FaShoppingBag,
@@ -341,18 +342,20 @@ function MyShopPanel({ walletAddress }: { walletAddress: string }) {
     setUploading(true);
     setFormError('');
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('fileType', type);
-      fd.append('wallet', walletAddress);
-      const res = await fetch('/api/shop/upload', { method: 'POST', body: fd });
-      if (!res.ok) {
-        const err = await res.json();
-        setFormError(err.error ?? 'Upload fehlgeschlagen');
-        return;
-      }
-      const data = await res.json();
-      setUrl(data.url);
+      // Sicheren Dateinamen erzeugen – Artist-eigener Unterordner
+      const ext        = file.name.replace(/.*\./, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const timestamp  = Date.now();
+      const safeWallet = walletAddress.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 32);
+      const pathname   = `shop/${type === 'image' ? 'images' : 'content'}/${safeWallet}/${timestamp}.${ext}`;
+
+      const blob = await upload(pathname, file, {
+        access: 'public',
+        handleUploadUrl: '/api/shop/upload',
+        clientPayload: JSON.stringify({ fileType: type, wallet: walletAddress }),
+      });
+      setUrl(blob.url);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Upload fehlgeschlagen');
     } finally {
       setUploading(false);
     }
