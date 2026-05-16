@@ -14,7 +14,7 @@ import {
   FaMusic,
   FaGlobe,
   FaIdBadge,
-  FaTrophy,
+  FaStar,
   FaShoppingBag,
 } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
@@ -102,7 +102,7 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
             onClick={() => navigateToTab("reputation")}
             className="flex items-center"
           >
-            <FaTrophy
+            <FaStar
               size={20}
               className={`transition-colors ${
                 activeTab === "reputation" ? "text-amber-400" : "text-zinc-400"
