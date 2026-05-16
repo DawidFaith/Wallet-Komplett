@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FaKey, FaCoins, FaCheck } from 'react-icons/fa';
+import Image from 'next/image';
+import { FaKey, FaStar, FaCheck } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
 import { formatCredits } from '../utils';
@@ -84,9 +85,17 @@ export default function SecretVerifyModal({
       {quest && step !== 'success' && step !== 'error' && (
         <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
           <span className="text-zinc-400 text-xs">Belohnung</span>
-          <span className="text-yellow-400 font-bold text-sm flex items-center gap-1">
-            <FaCoins size={12} /> +{formatCredits(quest.rewardAmount)} DFAITH
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400 font-bold text-sm flex items-center gap-1">
+              <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3.5 h-3.5 rounded-full shrink-0" />
+              +{formatCredits(quest.rewardAmount)} D.FAITH
+            </span>
+            {(quest.reputationReward ?? 0) > 0 && (
+              <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
+                <FaStar size={10} /> +{quest?.reputationReward} REP
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -96,8 +105,16 @@ export default function SecretVerifyModal({
           <div className="bg-green-900/30 border border-green-700/40 rounded-xl p-6 text-center">
             <FaCheck size={32} className="text-green-400 mx-auto mb-3" />
             <p className="text-green-300 font-semibold text-lg">Code richtig!</p>
-            <div className="flex items-center justify-center gap-2 mt-2 text-yellow-400 font-bold text-xl">
-              <FaCoins size={16} /> +{formatCredits(rewardAmount)} DFAITH
+            <div className="flex flex-col items-center gap-1 mt-2">
+              <div className="flex items-center gap-1 text-amber-400 font-bold text-xl">
+                <Image src="/D.FAITH.png" alt="" width={16} height={16} className="w-4 h-4 rounded-full" />
+                +{formatCredits(rewardAmount)} D.FAITH
+              </div>
+              {(quest?.reputationReward ?? 0) > 0 && (
+                <div className="flex items-center gap-1 text-purple-300 font-bold text-sm">
+                  <FaStar size={10} /> +{quest?.reputationReward} REP
+                </div>
+              )}
             </div>
           </div>
           <button

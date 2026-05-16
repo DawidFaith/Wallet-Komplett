@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { FaCheck, FaSync, FaExternalLinkAlt, FaCoins, FaInfoCircle } from 'react-icons/fa';
+import Image from 'next/image';
+import { FaCheck, FaSync, FaExternalLinkAlt, FaStar, FaInfoCircle } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry, VerifyResult } from '../types';
 import { formatCredits } from '../utils';
@@ -28,9 +29,17 @@ export default function VerifyModal({ quest, loading, result, onVerify, onClose 
       {quest && !result?.success && (
         <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
           <span className="text-zinc-400 text-xs">Belohnung</span>
-          <span className="text-yellow-400 font-bold text-sm flex items-center gap-1">
-            <FaCoins size={12} /> +{formatCredits(quest.rewardAmount)} DFAITH
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400 font-bold text-sm flex items-center gap-1">
+              <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3.5 h-3.5 rounded-full shrink-0" />
+              +{formatCredits(quest.rewardAmount)} D.FAITH
+            </span>
+            {(quest.reputationReward ?? 0) > 0 && (
+              <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
+                <FaStar size={10} /> +{quest?.reputationReward} REP
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -54,10 +63,15 @@ export default function VerifyModal({ quest, loading, result, onVerify, onClose 
                 )}
               </div>
               <div className="bg-zinc-800 rounded-xl p-4 flex items-center gap-3">
-                <FaCoins size={24} className="text-yellow-400" />
+                <Image src="/D.FAITH.png" alt="" width={32} height={32} className="w-8 h-8 rounded-full shrink-0" />
                 <div>
-                  <p className="text-white font-bold text-lg">{formatCredits(result.rewardAmount)} DFAITH</p>
-                  <p className="text-zinc-400 text-xs">Zu deinem Dfaith Credits Guthaben hinzugefügt</p>
+                  <p className="text-white font-bold text-lg">{formatCredits(result.rewardAmount)} D.FAITH Credits</p>
+                  <p className="text-zinc-400 text-xs">Zu deinem D.FAITH Credits Guthaben hinzugefügt</p>
+                  {(quest?.reputationReward ?? 0) > 0 && (
+                    <p className="text-purple-300 text-xs font-medium flex items-center gap-1 mt-0.5">
+                      <FaStar size={9} /> +{quest?.reputationReward} Reputation
+                    </p>
+                  )}
                 </div>
               </div>
             </>

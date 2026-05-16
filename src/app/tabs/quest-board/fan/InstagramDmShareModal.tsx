@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import { FaInstagram, FaShareAlt, FaRedo, FaCheck, FaPaperPlane, FaStar } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
@@ -202,7 +203,7 @@ export default function InstagramDmShareModal({
           <div>
             <p className="font-semibold text-sm">{quest.videoTitle}</p>
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-xs text-zinc-500">Story Quest · {formatCredits(quest.rewardAmount)} DFAITH</p>
+              <p className="text-xs text-zinc-500 flex items-center gap-1">Story Quest · <Image src="/D.FAITH.png" alt="" width={10} height={10} className="w-2.5 h-2.5 rounded-full shrink-0" />{formatCredits(quest.rewardAmount)} D.FAITH</p>
               {(quest.reputationReward ?? 0) > 0 && (
                 <span className="flex items-center gap-0.5 text-xs text-yellow-400">
                   <FaStar size={9} /> +{quest.reputationReward} REP
@@ -347,9 +348,10 @@ export default function InstagramDmShareModal({
           <div className="text-center py-4 space-y-3">
             <div className="text-4xl">🎉</div>
             <p className="font-bold text-lg text-green-400">Quest abgeschlossen!</p>
-            <p className="text-sm text-zinc-400">
-              +{formatCredits(rewardAmount || quest.rewardAmount)} DFAITH Credits wurden gutgeschrieben.
-            </p>
+              <p className="text-sm text-zinc-400 flex items-center justify-center gap-1">
+                <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
+                +{formatCredits(rewardAmount || quest.rewardAmount)} D.FAITH Credits wurden gutgeschrieben.
+              </p>
             {(quest.reputationReward ?? 0) > 0 && (
               <p className="text-xs text-yellow-400 flex items-center justify-center gap-1">
                 <FaStar size={10} /> +{quest.reputationReward} Reputation
@@ -459,9 +461,10 @@ function StoryClaimSection({ token, walletAddress, rewardAmount, onSuccess, onCl
       <div className="text-center py-4 space-y-3">
         <div className="text-4xl">🎉</div>
         <p className="font-bold text-lg text-green-400">Quest abgeschlossen!</p>
-        <p className="text-sm text-zinc-400">
-          +{formatCredits(claimed)} DFAITH Credits wurden gutgeschrieben.
-        </p>
+          <p className="text-sm text-zinc-400 flex items-center justify-center gap-1">
+            <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
+            +{formatCredits(claimed)} D.FAITH Credits wurden gutgeschrieben.
+          </p>
         <button
           onClick={onClose}
           className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
