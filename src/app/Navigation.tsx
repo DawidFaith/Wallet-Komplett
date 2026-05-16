@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import {
@@ -16,6 +15,7 @@ import {
   FaGlobe,
   FaIdBadge,
   FaStar,
+  FaGem,
 } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 import { useState } from "react";
@@ -117,14 +117,11 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
             onClick={() => navigateToTab("shop")}
             className="flex items-center"
           >
-            <Image
-              src="/D.FAITH.png"
-              alt="Shop"
-              width={19}
-              height={19}
-              className={`rounded-full transition-opacity ${
-                activeTab === "shop" ? "opacity-100" : "opacity-50"
-              } hover:opacity-100`}
+            <FaGem
+              size={19}
+              className={`transition-colors ${
+                activeTab === "shop" ? "text-amber-400" : "text-zinc-400"
+              } hover:text-amber-400`}
             />
           </button>
         </li>
