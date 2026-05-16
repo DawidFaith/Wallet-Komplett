@@ -7,7 +7,7 @@ import { upload } from '@vercel/blob/client';
 import {
   FaChevronLeft, FaPlus, FaTimes, FaMusic, FaVideo, FaGem, FaStar,
   FaCoins, FaCheck, FaExternalLinkAlt, FaTrash, FaShoppingBag,
-  FaPlay, FaPause, FaDownload, FaBoxOpen, FaLock,
+  FaPlay, FaPause, FaDownload, FaBoxOpen, FaLock, FaChevronUp, FaChevronDown,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
 
@@ -616,14 +616,19 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
 function InventoryPanel({ walletAddress }: { walletAddress: string }) {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedArtistWallet, setSelectedArtistWallet] = useState<string | null>(null);
+  const [apiError, setApiError] = useState('');
+  const [expandedArtists, setExpandedArtists] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setLoading(true);
-    fetch(`/api/shop/inventory?wallet=${walletAddress}`)
-      .then(r => r.ok ? r.json() : [])
+    setApiError('');
+    fetch(`/api/shop/inventory?wallet=${encodeURIComponent(walletAddress)}`)
+      .then(async r => {
+        if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e?.error ?? `HTTP ${r.status}`); }
+        return r.json();
+      })
       .then((data: Array<Record<string, unknown>>) => {
-        setItems(data.map(i => ({
+        const mapped = data.map(i => ({
           id: String(i.id),
           artistWallet: String(i.artist_wallet),
           title: String(i.title),
@@ -634,85 +639,111 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
           purchasedAt: String(i.purchased_at ?? ''),
           artistName: i.artist_name ? String(i.artist_name) : null,
           artistPicture: i.artist_picture ? String(i.artist_picture) : null,
-        })));
+        }));
+        setItems(mapped);
+        // Alle Artists standardmäßig ausklappen
+        setExpandedArtists(new Set(mapped.map(it => it.artistWallet)));
       })
+      .catch(err => setApiError(err instanceof Error ? err.message : String(err)))
       .finally(() => setLoading(false));
   }, [walletAddress]);
 
-  // Unique artists aus Items
-  const artists = Array.from(
-    new Map(items.map(i => [i.artistWallet, { wallet: i.artistWallet, name: i.artistName, picture: i.artistPicture }])).values()
+  useEffect(() => { load(); }, [load]);
+
+  // Items nach Artist gruppieren
+  const groups = Array.from(
+    items.reduce((map, item) => {
+      if (!map.has(item.artistWallet)) {
+        map.set(item.artistWallet, { wallet: item.artistWallet, name: item.artistName, picture: item.artistPicture, items: [] });
+      }
+      map.get(item.artistWallet)!.items.push(item);
+      return map;
+    }, new Map<string, { wallet: string; name: string | null; picture: string | null; items: InventoryItem[] }>())
+    .values()
   );
 
-  const filtered = selectedArtistWallet
-    ? items.filter(i => i.artistWallet === selectedArtistWallet)
-    : items;
+  const toggleArtist = (wallet: string) => {
+    setExpandedArtists(prev => {
+      const next = new Set(prev);
+      if (next.has(wallet)) next.delete(wallet); else next.add(wallet);
+      return next;
+    });
+  };
 
   return (
     <div className="px-4 space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em]">Mein Inventar</p>
-        <span className="text-zinc-600 text-xs">{filtered.length} Item{filtered.length !== 1 ? 's' : ''}</span>
+        <span className="text-zinc-600 text-xs">{items.length} Item{items.length !== 1 ? 's' : ''}</span>
       </div>
+
+      {/* API-Fehler */}
+      {apiError && (
+        <div className="bg-red-900/20 border border-red-800/40 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+          <p className="text-red-300 text-xs">{apiError}</p>
+          <button onClick={load} className="text-red-300 hover:text-red-100 text-xs font-bold shrink-0">Erneut</button>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-12">
           <span className="w-6 h-6 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
         </div>
-      ) : items.length === 0 ? (
+      ) : items.length === 0 && !apiError ? (
         <div className="bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-10 text-center">
           <FaBoxOpen size={32} className="text-zinc-700 mx-auto mb-3" />
           <p className="text-zinc-400 text-sm font-semibold">Noch keine Käufe</p>
           <p className="text-zinc-600 text-xs mt-1">Hier erscheinen alle deine gekauften Inhalte.</p>
         </div>
       ) : (
-        <>
-          {/* Artist-Filter-Scroller */}
-          <div>
-            <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest mb-3">Künstler</p>
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
-              {/* Alle */}
+        <div className="space-y-6 pb-4">
+          {groups.map(group => (
+            <div key={group.wallet}>
+              {/* Artist-Sektionskopf */}
               <button
-                onClick={() => setSelectedArtistWallet(null)}
-                className="flex flex-col items-center gap-1.5 shrink-0 w-[60px] group"
+                onClick={() => toggleArtist(group.wallet)}
+                className="w-full flex items-center gap-3 mb-3 group"
               >
-                <div className={`w-12 h-12 rounded-full ring-2 transition-all group-hover:scale-105 flex items-center justify-center bg-zinc-800 ${
-                  selectedArtistWallet === null ? 'ring-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.3)]' : 'ring-white/20'
-                }`}>
-                  <FaShoppingBag size={16} className={selectedArtistWallet === null ? 'text-amber-400' : 'text-zinc-500'} />
-                </div>
-                <p className="text-[10px] text-center leading-tight w-full truncate text-zinc-400 group-hover:text-white transition-colors">Alle</p>
-              </button>
-
-              {artists.map(a => (
-                <button
-                  key={a.wallet}
-                  onClick={() => setSelectedArtistWallet(a.wallet === selectedArtistWallet ? null : a.wallet)}
-                  className="flex flex-col items-center gap-1.5 shrink-0 w-[60px] group"
-                >
-                  <div className={`w-12 h-12 rounded-full ring-2 transition-all group-hover:scale-105 ${
-                    selectedArtistWallet === a.wallet
-                      ? 'ring-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.3)]'
-                      : 'ring-white/20'
-                  }`}>
-                    {a.picture
-                      ? <img src={a.picture} alt="" className="w-12 h-12 rounded-full object-cover" />
-                      : <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
+                {/* Avatar */}
+                <div className="relative shrink-0">
+                  <div className="w-11 h-11 rounded-full ring-2 ring-amber-500/50 shadow-[0_0_12px_rgba(245,158,11,0.2)]">
+                    {group.picture
+                      ? <img src={group.picture} alt="" className="w-11 h-11 rounded-full object-cover" />
+                      : <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-500/30 to-zinc-800 flex items-center justify-center">
                           <FaStar className="text-amber-400" size={16} />
                         </div>}
                   </div>
-                  <p className="text-[10px] text-center leading-tight w-full line-clamp-2 text-zinc-400 group-hover:text-white transition-colors">
-                    {a.name || shortenWallet(a.wallet)}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
+                  <div className="absolute -bottom-1 -right-1 bg-amber-500 text-black text-[8px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow">
+                    {group.items.length}
+                  </div>
+                </div>
 
-          <div className="grid grid-cols-1 gap-3 pb-4">
-            {filtered.map(item => <InventoryItemCard key={item.id} item={item} />)}
-          </div>
-        </>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-white font-bold text-sm truncate">
+                    {group.name || shortenWallet(group.wallet)}
+                  </p>
+                  <p className="text-zinc-500 text-[10px]">
+                    {group.items.length} {group.items.length === 1 ? 'Item' : 'Items'} gekauft
+                  </p>
+                </div>
+
+                {/* Collapse-Pfeil */}
+                <div className="shrink-0 text-zinc-600 group-hover:text-zinc-400 transition-colors">
+                  {expandedArtists.has(group.wallet)
+                    ? <FaChevronUp size={11} />
+                    : <FaChevronDown size={11} />}
+                </div>
+              </button>
+
+              {/* Items dieser Gruppe */}
+              {expandedArtists.has(group.wallet) && (
+                <div className="space-y-3 pl-2 border-l-2 border-amber-500/20 ml-5">
+                  {group.items.map(item => <InventoryItemCard key={item.id} item={item} />)}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
