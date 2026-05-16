@@ -554,8 +554,8 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
         body: JSON.stringify({ artistWallet: walletAddress, levels: editLevels }),
       });
       if (res.ok) {
-        setLevels(editLevels);
         setEditing(false);
+        await loadData(); // Guthaben + Level neu laden (Rückerstattung sichtbar machen)
       } else {
         const d = await res.json();
         setSaveError(d.error || 'Fehler beim Speichern');

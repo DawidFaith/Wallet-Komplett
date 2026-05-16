@@ -1735,8 +1735,7 @@ export async function saveReputationLevels(
   }
 
   if (netCost > 0) {
-    const ok = await redeemDfaithCredits(wallet, netCost);
-    if (!ok) throw new Error(`Nicht genügend Guthaben. Benötigt: ${netCost} DFC`);
+    await redeemDfaithCredits(wallet, netCost); // wirft selbst wenn nicht genug Guthaben
   } else if (netCost < 0) {
     await addDfaithCredits(wallet, -netCost);
   }
