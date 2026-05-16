@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { FaInstagram, FaShareAlt, FaExternalLinkAlt, FaRedo, FaCheck, FaPaperPlane } from 'react-icons/fa';
+import { FaInstagram, FaShareAlt, FaRedo, FaCheck, FaPaperPlane } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
 import { formatCredits } from '../utils';
@@ -316,24 +316,11 @@ export default function InstagramDmShareModal({
             </div>
 
             <div className="bg-zinc-800/60 rounded-xl px-3 py-3 space-y-1">
-              <p className="font-semibold text-white text-xs">📩 Teil 2 – Link klicken</p>
+              <p className="font-semibold text-white text-xs">📩 Teil 2 – Auf DM-Link warten</p>
               <p className="text-xs text-zinc-400">
-                Klicke den Button unten um die Quest abzuschließen.
+                Der Artist sendet dir gleich einen Link per DM auf Instagram. Klicke den Link wenn du ihn erhältst, gib deinen Handle ein und die Quest wird abgeschlossen.
               </p>
             </div>
-
-            {/* Personalisierter Direkt-Link */}
-            {linkTemplate && instagramHandle && (
-              <a
-                href={linkTemplate.replace('{name}', encodeURIComponent(instagramHandle))}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full bg-pink-600 hover:bg-pink-500 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
-              >
-                <FaExternalLinkAlt size={12} />
-                Quest jetzt abschließen ↗
-              </a>
-            )}
 
 
 

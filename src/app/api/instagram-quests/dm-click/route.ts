@@ -32,6 +32,91 @@ import {
 
 export const maxDuration = 20;
 
+// ── Gemeinsame Quest-Abschluss-Logik ─────────────────────────────────────────
+async function processHandle(handle: string): Promise<
+  | { ok: true; rewardAmount: number; message: string; alreadyDone?: boolean }
+  | { ok: false; status: number; error: string }
+> {
+  const verif = await getInstagramDmVerificationByHandle(handle);
+
+  if (!verif) {
+    return { ok: false, status: 404, error: 'Keine aktive Quest für diesen Account gefunden. Bitte starte die Quest zuerst in der App.' };
+  }
+
+  if (new Date(verif.expiresAt) < new Date()) {
+    return { ok: false, status: 410, error: 'Dieser Link ist abgelaufen. Bitte starte die Quest neu.' };
+  }
+
+  if (!verif.storyVerified) {
+    return { ok: false, status: 400, error: 'Dein Story-Share wurde noch nicht bestätigt. Gehe zurück zur App und klicke "Share prüfen".' };
+  }
+
+  const alreadyDone = await hasWalletCompletedQuest(verif.walletAddress, verif.questId);
+  if (alreadyDone || verif.clickVerified) {
+    return { ok: true, alreadyDone: true, rewardAmount: 0, message: 'Diese Quest hast du bereits erfolgreich abgeschlossen.' };
+  }
+
+  const quest = await loadQuestDetail(verif.questId);
+  if (!quest) {
+    return { ok: false, status: 404, error: 'Quest nicht gefunden.' };
+  }
+
+  const profile = await getUserProfile(verif.walletAddress);
+
+  await markInstagramDmClickedByHandle(handle, verif.baselineShares);
+
+  const now = new Date().toISOString();
+  const completion: QuestCompletion = {
+    walletAddress: verif.walletAddress,
+    channelId: handle,
+    channelName: profile.instagramName ?? handle,
+    questId: verif.questId,
+    platform: 'instagram',
+    commentId: `dm_share:${handle}`,
+    commentText: `dm_share|handle:${handle}`,
+    rewardAmount: quest.rewardAmount,
+    rewardPaid: false,
+    completedAt: now,
+  };
+
+  await saveCompletion(completion);
+  await addDfaithCredits(verif.walletAddress, quest.rewardAmount);
+  await savePendingReward({ walletAddress: verif.walletAddress, amount: quest.rewardAmount, reason: `DM-Share Quest: ${quest.videoTitle}`, questId: verif.questId, createdAt: now });
+  await addUserXp(verif.walletAddress, Math.round(quest.rewardAmount / 10));
+  await addUserReputation(verif.walletAddress, quest.creatorWallet, quest.reputationReward);
+  await deleteInstagramDmVerification(verif.questId, verif.walletAddress);
+
+  return { ok: true, rewardAmount: quest.rewardAmount, message: `Quest abgeschlossen! +${quest.rewardAmount} DFAITH Credits gutgeschrieben.` };
+}
+
+// ── POST /api/instagram-quests/dm-click  (von /dm-quest Formular) ────────────
+export async function POST(req: NextRequest) {
+  let rawHandle: string;
+  try {
+    const body = await req.json();
+    rawHandle = body.handle ?? '';
+  } catch {
+    return NextResponse.json({ error: 'Ungültige Anfrage.' }, { status: 400 });
+  }
+
+  if (!rawHandle || typeof rawHandle !== 'string') {
+    return NextResponse.json({ error: 'Handle fehlt.' }, { status: 400 });
+  }
+
+  const handle = rawHandle.toLowerCase().replace(/^@/, '').trim();
+
+  try {
+    const result = await processHandle(handle);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
+    }
+    return NextResponse.json({ success: true, rewardAmount: result.rewardAmount, message: result.message, alreadyDone: result.alreadyDone ?? false });
+  } catch (err) {
+    console.error('[dm-click POST] Error:', err);
+    return NextResponse.json({ error: 'Ein Fehler ist aufgetreten.' }, { status: 500 });
+  }
+}
+
 async function fetchBaselineShares(
   webhookUrl: string,
   graphMediaId: string,
@@ -82,99 +167,44 @@ async function fetchBaselineShares(
   }
 }
 
+// ── GET /api/instagram-quests/dm-click?name=HANDLE  (Rückwärtskompatibilität) ─
 export async function GET(req: NextRequest) {
   const name = req.nextUrl.searchParams.get('name');
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://wallet-komplett.vercel.app').replace(/\/$/, '');
 
+  // Kein Handle im Link → auf /dm-quest umleiten
   if (!name) {
-    return new NextResponse(buildPage('Ungültiger Link', 'Kein Benutzername gefunden.', false), {
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-    });
+    return NextResponse.redirect(`${appUrl}/dm-quest`, { status: 302 });
   }
 
   const handle = decodeURIComponent(name).toLowerCase().replace(/^@/, '');
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://wallet-komplett.vercel.app').replace(/\/$/, '');
 
   try {
-    const verif = await getInstagramDmVerificationByHandle(handle);
+    const result = await processHandle(handle);
 
-    if (!verif) {
-      return new NextResponse(buildPage('Link ungültig', 'Keine aktive Quest für diesen Account gefunden. Bitte starte die Quest zuerst in der App.', false), {
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
-      });
-    }
-
-    if (new Date(verif.expiresAt) < new Date()) {
-      return new NextResponse(buildPage('Link abgelaufen', 'Dieser Link ist abgelaufen. Bitte starte die Quest neu.', false), {
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
-      });
-    }
-
-    // Teil 1 (Story-Share) muss zuerst abgeschlossen sein
-    if (!verif.storyVerified) {
+    if (!result.ok) {
       return new NextResponse(buildPage(
-        '⏳ Warte auf Share-Prüfung',
-        'Dein Story-Share wurde noch nicht bestätigt. Gehe zurück zur App und klicke "Share prüfen".',
+        result.status === 404 ? 'Kein aktiver Quest' : result.status === 410 ? 'Link abgelaufen' : 'Fehler',
+        result.error,
         false,
-        `${appUrl}/?tab=quests`,
-      ), {
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
-      });
+        result.status === 400 ? `${appUrl}/?tab=quests` : undefined,
+      ), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }
 
-    // Bereits abgeschlossen?
-    const alreadyDone = await hasWalletCompletedQuest(verif.walletAddress, verif.questId);
-    if (alreadyDone || verif.clickVerified) {
+    if (result.alreadyDone) {
       return new NextResponse(buildPage('Bereits abgeschlossen', 'Diese Quest hast du bereits erfolgreich abgeschlossen.', true, `${appUrl}/?tab=quests`), {
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
       });
     }
 
-    // ── Quest abschließen ─────────────────────────────────────────────────────
-    const quest = await loadQuestDetail(verif.questId);
-    if (!quest) {
-      return new NextResponse(buildPage('Quest nicht gefunden', 'Diese Quest existiert nicht mehr.', false), {
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
-      });
-    }
-
-    const profile = await getUserProfile(verif.walletAddress);
-
-    // Klick markieren (baseline_shares bleibt wie beim start gesetzt)
-    await markInstagramDmClickedByHandle(handle, verif.baselineShares);
-
-    const now = new Date().toISOString();
-    const completion: QuestCompletion = {
-      walletAddress: verif.walletAddress,
-      channelId: handle,
-      channelName: profile.instagramName ?? handle,
-      questId: verif.questId,
-      platform: 'instagram',
-      commentId: `dm_share:${handle}`,
-      commentText: `dm_share|handle:${handle}`,
-      rewardAmount: quest.rewardAmount,
-      rewardPaid: false,
-      completedAt: now,
-    };
-
-    await saveCompletion(completion);
-    await addDfaithCredits(verif.walletAddress, quest.rewardAmount);
-    await savePendingReward({ walletAddress: verif.walletAddress, amount: quest.rewardAmount, reason: `DM-Share Quest: ${quest.videoTitle}`, questId: verif.questId, createdAt: now });
-    await addUserXp(verif.walletAddress, Math.round(quest.rewardAmount / 10));
-    await addUserReputation(verif.walletAddress, quest.creatorWallet, quest.reputationReward);
-    await deleteInstagramDmVerification(verif.questId, verif.walletAddress);
-
-    const returnUrl = `${appUrl}/?tab=quests`;
-
     return new NextResponse(buildPage(
       '🎉 Quest abgeschlossen!',
-      `+${quest.rewardAmount} DFAITH Credits wurden gutgeschrieben. Beide Teile erfolgreich abgeschlossen!`,
+      `+${result.rewardAmount} DFAITH Credits wurden gutgeschrieben.`,
       true,
-      returnUrl,
-    ), {
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-    });
+      `${appUrl}/?tab=quests`,
+    ), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   } catch (err) {
-    console.error('[dm-click] Error:', err);
+    console.error('[dm-click GET] Error:', err);
     return new NextResponse(buildPage('Fehler', 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.', false), {
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });

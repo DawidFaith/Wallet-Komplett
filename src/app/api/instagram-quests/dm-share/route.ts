@@ -32,12 +32,12 @@ import { getDb } from '../../../lib/db';
 
 export const maxDuration = 30;
 
-// ─── Universeller Link-Template mit {name} als Platzhalter ───────────────────
-// Einmalig in Link DM eintragen – das Tool setzt {name} automatisch mit dem Handle
+// ─── Allgemeiner Quest-Link (kein {name} Platzhalter) ─────────────────────────
+// Artist trägt diesen Link in Instagram Link DM ein – alle User landen auf /dm-quest
 
 function buildLinkTemplate(): string {
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://wallet-komplett.vercel.app').replace(/\/$/, '');
-  return `${appUrl}/api/instagram-quests/dm-click?name={name}`;
+  return `${appUrl}/dm-quest`;
 }
 
 // ─── Make.com Shares-Abfrage (identisch zu like-verify) ──────────────────────
