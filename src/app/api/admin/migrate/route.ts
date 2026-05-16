@@ -145,6 +145,17 @@ export async function POST(req: NextRequest) {
       )
     `;
 
+    // Reputation-Snapshot zu Contest-Beginn (für Contest-Zeitraum-Ranking)
+    await sql`
+      CREATE TABLE IF NOT EXISTS reputation_contest_snapshots (
+        contest_id        TEXT    NOT NULL,
+        wallet_address    TEXT    NOT NULL,
+        reputation_at_start BIGINT NOT NULL DEFAULT 0,
+        PRIMARY KEY (contest_id, wallet_address)
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_rep_contest_snap_contest ON reputation_contest_snapshots(contest_id)`;
+
     await sql`
       CREATE TABLE IF NOT EXISTS reputation_reward_pool (
         artist_wallet TEXT        PRIMARY KEY,

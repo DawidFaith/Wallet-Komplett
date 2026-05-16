@@ -3,6 +3,7 @@ import {
   getActiveReputationContest,
   upsertReputationContest,
   distributeReputationContest,
+  getContestLeaderboard,
 } from '../../../lib/questDb';
 
 /** GET /api/reputation/contest?artistWallet=... */
@@ -14,7 +15,9 @@ export async function GET(req: NextRequest) {
   }
   try {
     const contest = await getActiveReputationContest(artistWallet);
-    return NextResponse.json(contest ?? null);
+    if (!contest) return NextResponse.json(null);
+    const contestLeaderboard = await getContestLeaderboard(contest.id, artistWallet, 50);
+    return NextResponse.json({ ...contest, contestLeaderboard });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });

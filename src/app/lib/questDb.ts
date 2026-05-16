@@ -1851,6 +1851,16 @@ export async function upsertReputationContest(
       VALUES (${contestId}, ${p.rank}, ${p.creditReward})
     `;
   }
+
+  // Aktuellen Ruf aller User dieses Artists als Startwert snapshoten
+  await sql`
+    INSERT INTO reputation_contest_snapshots (contest_id, wallet_address, reputation_at_start)
+    SELECT ${contestId}, wallet_address, reputation
+    FROM user_reputation
+    WHERE artist_wallet = ${wallet}
+    ON CONFLICT (contest_id, wallet_address) DO NOTHING
+  `;
+
   return contestId;
 }
 
@@ -1880,7 +1890,7 @@ export async function distributeReputationContest(
   if (prizes.length === 0) throw new Error('Keine Preise definiert');
 
   const maxRank = Math.max(...prizes.map(p => Number(p.rank)));
-  const leaderboard = await getReputationLeaderboard(artistWallet, maxRank);
+  const leaderboard = await getContestLeaderboard(contestId, artistWallet, maxRank);
 
   const results: { rank: number; walletAddress: string; credited: number }[] = [];
   for (const prize of prizes) {
@@ -2255,6 +2265,49 @@ export async function getReputationLeaderboard(
   const levels = await getReputationLevels(artistWallet);
   return rows.map((r, i) => {
     const reputation = Number(r.reputation);
+    const { level, levelName } = reputationToLevel(reputation, levels);
+    return {
+      rank: i + 1,
+      walletAddress: r.wallet_address as string,
+      displayName: r.display_name ?? null,
+      reputation,
+      level,
+      levelName,
+    };
+  });
+}
+
+/** Contest-Leaderboard: nur REP seit Contest-Start zählt */
+export async function getContestLeaderboard(
+  contestId: string,
+  artistWallet: string,
+  limit = 50,
+): Promise<ReputationLeaderboardEntry[]> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT
+      ur.wallet_address,
+      ur.reputation - COALESCE(s.reputation_at_start, 0) AS contest_rep,
+      COALESCE(
+        p.display_name,
+        p.instagram_name,
+        p.tiktok_name,
+        p.facebook_name,
+        yb.channel_name
+      ) AS display_name
+    FROM user_reputation ur
+    LEFT JOIN reputation_contest_snapshots s
+      ON s.contest_id = ${contestId} AND s.wallet_address = ur.wallet_address
+    LEFT JOIN user_profiles p  ON p.wallet_address  = ur.wallet_address
+    LEFT JOIN youtube_bindings yb ON yb.wallet_address = ur.wallet_address
+    WHERE ur.artist_wallet = ${artistWallet.toLowerCase()}
+      AND ur.reputation - COALESCE(s.reputation_at_start, 0) > 0
+    ORDER BY contest_rep DESC
+    LIMIT ${limit}
+  `;
+  const levels = await getReputationLevels(artistWallet);
+  return rows.map((r, i) => {
+    const reputation = Number(r.contest_rep);
     const { level, levelName } = reputationToLevel(reputation, levels);
     return {
       rank: i + 1,

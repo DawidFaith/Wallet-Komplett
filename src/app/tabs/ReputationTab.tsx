@@ -42,6 +42,7 @@ interface ReputationContest {
   distributed: boolean;
   createdAt: string;
   prizes: { rank: number; creditReward: number }[];
+  contestLeaderboard?: LeaderboardEntry[];
 }
 
 function ProgressBar({ progress }: { progress: number }) {
@@ -399,7 +400,8 @@ function ArtistDetailView({
                   </div>
                   <p className="text-zinc-400 text-[10px] font-semibold uppercase tracking-widest">Preise &amp; aktuelle Rangliste</p>
                   {contest.prizes.map(p => {
-                    const winner = leaderboard.find(lb => lb.rank === p.rank);
+                    const contestBoard = contest.contestLeaderboard ?? [];
+                    const winner = contestBoard.find(lb => lb.rank === p.rank);
                     return (
                       <div key={p.rank} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-zinc-800/50">
                         <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
@@ -422,7 +424,7 @@ function ArtistDetailView({
                                   {winner.walletAddress === walletAddress && <span className="text-amber-400 ml-1 text-xs">(Du)</span>}
                                 </p>
                               </div>
-                              <p className="text-zinc-500 text-xs">{winner.reputation.toLocaleString()} REP</p>
+                              <p className="text-zinc-500 text-xs">{winner.reputation.toLocaleString()} REP seit Contest-Start</p>
                             </>
                           ) : (
                             <p className="text-zinc-500 text-sm italic">Noch kein Teilnehmer</p>
