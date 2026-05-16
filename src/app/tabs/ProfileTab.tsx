@@ -321,77 +321,34 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
       <div className="bg-white/[0.06] rounded-2xl border border-white/[0.1] p-5 space-y-4">
         <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-1">Supporter</p>
 
-        {/* Avatar + Name + Dropdown */}
+        {/* Avatar + Name (Clerk-Profil) */}
         <div className="flex items-center gap-4">
-          {/* Avatar */}
           <div className="shrink-0">
-            {profileInfo.picture ? (
+            {_clerkUser?.imageUrl ? (
               <Image
-                src={profileInfo.picture}
-                alt={profileInfo.name}
+                src={_clerkUser.imageUrl}
+                alt="Profil"
                 width={64}
                 height={64}
                 unoptimized
-                className="w-16 h-16 rounded-full object-cover ring-2 ring-red-600/50"
+                className="w-16 h-16 rounded-full object-cover ring-2 ring-amber-500/40"
               />
             ) : (
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-600 to-yellow-500 flex items-center justify-center text-white font-bold text-2xl select-none">
-                {initials}
+              <div className="w-16 h-16 rounded-full bg-zinc-700 flex items-center justify-center text-white font-bold text-2xl select-none">
+                {(_clerkUser?.fullName ?? _clerkUser?.username ?? '?').slice(0, 2).toUpperCase()}
               </div>
             )}
           </div>
-
           <div className="flex-1 min-w-0">
-            {/* Name + Plattform-Dropdown */}
-            <div className="flex items-center gap-2 mb-1" ref={dropdownRef}>
-              <p className={`font-bold text-lg truncate ${noSocials ? 'text-zinc-500 italic' : 'text-white'}`}>{profileInfo.name}</p>
-              {linkedPlatforms.length > 0 && (
-                <div className="relative shrink-0">
-                  <button
-                    onClick={() => setDropdownOpen((o) => !o)}
-                    className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 bg-white/5 hover:bg-white/10 border border-white/[0.1] px-2 py-1 rounded-lg transition-colors"
-                  >
-                    {primaryPlatform && PLATFORM_META[primaryPlatform].icon}
-                    <FaChevronDown size={9} className={`transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  {dropdownOpen && (
-                    <div className="absolute left-0 top-full mt-1 z-50 bg-[#1a150a] border border-white/8 rounded-xl shadow-xl overflow-hidden min-w-[140px]">
-                      {linkedPlatforms.map((platform) => {
-                        const meta = PLATFORM_META[platform];
-                        const isActive = primaryPlatform === platform;
-                        return (
-                          <button
-                            key={platform}
-                            onClick={() => { setPrimaryPlatform(platform); setDropdownOpen(false); }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors ${isActive ? 'bg-amber-900/30 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
-                          >
-                            {meta.icon}
-                            <span className="font-medium">{meta.label}</span>
-                            {isActive && <FaCheck size={9} className="ml-auto text-green-400" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
+            <p className="font-bold text-lg text-white truncate">
+              {_clerkUser?.fullName ?? _clerkUser?.username ?? shortenAddress(account.address)}
+            </p>
+            <p className="text-zinc-500 text-xs truncate">{shortenAddress(account.address)}</p>
           </div>
         </div>
 
         {/* Divider */}
         <div className="border-t border-white/[0.1]" />
-
-        {/* Info-Banner wenn kein Social Account verbunden */}
-        {noSocials && (
-          <div className="flex items-start gap-3 bg-amber-950/20 border border-amber-800/25 rounded-xl px-4 py-3">
-            <FaInfoCircle size={14} className="text-amber-400 shrink-0 mt-0.5" />
-            <p className="text-amber-200/80 text-xs leading-relaxed">
-              Verbinde deine Social Media Profile, um deine Lieblings-Künstler zu unterstützen und Rewards zu verdienen.
-            </p>
-          </div>
-        )}
 
         {/* ── Artist-Info (nur wenn is_artist) ── */}
         {p?.isArtist && (
