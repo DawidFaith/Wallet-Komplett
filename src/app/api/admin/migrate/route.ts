@@ -226,6 +226,24 @@ export async function POST(req: NextRequest) {
     await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS story_token TEXT`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_quests_story_token ON quests(story_token) WHERE story_token IS NOT NULL`;
 
+    // ── Fix: Instagram video_id von ig_id auf graph_media_id korrigieren ─────
+    // Make.com lieferte bisher ig_id (z.B. 3773769977644749878) statt der Graph
+    // API ID (z.B. 18107291311629888). Shortcode wird aus video_url extrahiert.
+    await sql`
+      UPDATE quests q
+      SET video_id = m.graph_media_id,
+          updated_at = NOW()
+      FROM instagram_available_media m
+      WHERE q.platform = 'instagram'
+        AND q.video_id != m.graph_media_id
+        AND m.graph_media_id != ''
+        AND (
+          q.video_url LIKE '%/reel/' || m.shortcode || '/%'
+          OR q.video_url LIKE '%/p/' || m.shortcode || '/%'
+          OR q.video_url LIKE '%/' || m.shortcode || '/'
+        )
+    `;
+
     return NextResponse.json({ success: true, message: `Migration abgeschlossen (${(backfill as unknown as { count?: number }).count ?? backfill.length} neue Profile)` });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

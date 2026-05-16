@@ -115,33 +115,49 @@ async function fetchFromMake(): Promise<MakeVideoItem[] | null> {
 }
 
 export async function GET() {
+  const sql = getDb();
+
+  // DB-Mapping shortcode → graph_media_id (immer laden – Make.com liefert nur ig_id, nicht die Graph API ID)
+  let dbGraphIds: Map<string, string> = new Map();
+  try {
+    const rows = await sql`SELECT shortcode, graph_media_id FROM instagram_available_media`;
+    for (const row of rows) {
+      if (row.shortcode && row.graph_media_id) {
+        dbGraphIds.set(row.shortcode as string, row.graph_media_id as string);
+      }
+    }
+  } catch { /* DB-Fehler: Karte bleibt leer, weiter mit Make.com */ }
+
   // Live-Daten von Make.com holen
   const makeItems = await fetchFromMake();
 
   if (makeItems && makeItems.length > 0) {
-    const media = makeItems.map((item) => ({
-      shortcode: item.shortcode ?? item.id ?? item.ig_id ?? '',
-      // Graph API Media-ID bevorzugen (benötigt von /insights & /comments).
-      // ig_id ist die Legacy-ID und führt zu Fehlern bei Insights → Bug-Fix.
-      graph_media_id: item.id ?? item.ig_id ?? '',
-      ig_id: item.ig_id ?? '',
-      username: item.username ?? '',
-      caption: item.caption ?? '',
-      media_url: item.media_url ?? '',
-      thumbnail_url: item.thumbnail_url ?? item.media_url ?? '',
-      permalink: item.permalink ?? '',
-      posted_at: item.timestamp ?? null,
-      media_type: item.media_type ?? '',
-      media_product_type: item.media_product_type ?? '',
-      like_count: Number(item.like_count ?? 0),
-      comments_count: Number(item.comments_count ?? 0),
-      is_comment_enabled: item.is_comment_enabled ?? true,
-    }));
+    const media = makeItems.map((item) => {
+      const shortcode = item.shortcode ?? item.id ?? item.ig_id ?? '';
+      // DB-Graph-API-ID ist zuverlässiger als Make.com-Daten (die nur ig_id liefern).
+      // Reihenfolge: DB → item.id (Graph API) → leer (ig_id wird NICHT verwendet).
+      const graphMediaId = dbGraphIds.get(shortcode) || item.id || '';
+      return {
+        shortcode,
+        graph_media_id: graphMediaId,
+        ig_id: item.ig_id ?? '',
+        username: item.username ?? '',
+        caption: item.caption ?? '',
+        media_url: item.media_url ?? '',
+        thumbnail_url: item.thumbnail_url ?? item.media_url ?? '',
+        permalink: item.permalink ?? '',
+        posted_at: item.timestamp ?? null,
+        media_type: item.media_type ?? '',
+        media_product_type: item.media_product_type ?? '',
+        like_count: Number(item.like_count ?? 0),
+        comments_count: Number(item.comments_count ?? 0),
+        is_comment_enabled: item.is_comment_enabled ?? true,
+      };
+    });
     return NextResponse.json({ media, source: 'make' });
   }
 
   // Fallback: DB
-  const sql = getDb();
   try {
     const rows = await sql`
       SELECT shortcode, graph_media_id, caption, thumbnail_url, permalink, posted_at, saved_at
