@@ -30,32 +30,25 @@ export async function POST(req: NextRequest) {
   const wallet = walletAddress.toLowerCase();
   const sql = getDb();
 
-  // Alle pending Level-Rewards laden + atomar sperren (FOR UPDATE SKIP LOCKED)
+  // Atomar: nur Rows die noch 'pending' sind auf 'paid' setzen und zurückgeben.
+  // UPDATE ist von sich aus serialisiert – kein doppeltes Abholen möglich.
   const rows = await sql`
-    SELECT id, amount, reason
-    FROM pending_rewards
+    UPDATE pending_rewards
+    SET status = 'paid', paid_at = NOW()
     WHERE wallet_address = ${wallet}
       AND status = 'pending'
       AND reason LIKE 'level_reward:%'
-    FOR UPDATE SKIP LOCKED
+    RETURNING id, amount, reason
   `;
 
   if (rows.length === 0) {
     return NextResponse.json({ claimed: 0, rewards: [] });
   }
 
-  const ids = rows.map((r) => String(r.id));
   const total = rows.reduce((s, r) => s + Number(r.amount), 0);
 
-  // Credits gutschreiben
+  // Credits erst gutschreiben, nachdem die Rows als 'paid' markiert wurden
   await addDfaithCredits(wallet, total);
-
-  // Als bezahlt markieren
-  await sql`
-    UPDATE pending_rewards
-    SET status = 'paid', paid_at = NOW()
-    WHERE id = ANY(${ids}::int[])
-  `;
 
   const rewards = rows.map((r) => {
     const parts = String(r.reason).split(':');
