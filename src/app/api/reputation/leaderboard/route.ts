@@ -27,7 +27,8 @@ export async function GET(req: NextRequest) {
           u.firstName ??
           u.emailAddresses[0]?.emailAddress?.split('@')[0] ??
           null;
-        clerkData[u.id] = { name: name ?? u.id, imageUrl: u.imageUrl };
+        // Key als lowercase speichern damit er mit der DB-gespeicherten walletAddress übereinstimmt
+        clerkData[u.id.toLowerCase()] = { name: name ?? u.id, imageUrl: u.imageUrl };
       }
     }
 
