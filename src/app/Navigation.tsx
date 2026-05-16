@@ -15,7 +15,7 @@ import {
   FaGlobe,
   FaIdBadge,
   FaStar,
-  FaShoppingBag,
+  FaCrown,
 } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 import { useState } from "react";
@@ -117,7 +117,7 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
             onClick={() => navigateToTab("shop")}
             className="flex items-center"
           >
-            <FaShoppingBag
+            <FaCrown
               size={19}
               className={`transition-colors ${
                 activeTab === "shop" ? "text-emerald-400" : "text-zinc-400"
