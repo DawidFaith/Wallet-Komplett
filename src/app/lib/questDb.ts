@@ -2204,9 +2204,16 @@ export async function getReputationLeaderboard(
     SELECT
       ur.wallet_address,
       ur.reputation,
-      COALESCE(p.display_name, NULL) AS display_name
+      COALESCE(
+        p.display_name,
+        p.instagram_name,
+        p.tiktok_name,
+        p.facebook_name,
+        yb.channel_name
+      ) AS display_name
     FROM user_reputation ur
-    LEFT JOIN user_profiles p ON p.wallet_address = ur.wallet_address
+    LEFT JOIN user_profiles p  ON p.wallet_address  = ur.wallet_address
+    LEFT JOIN youtube_bindings yb ON yb.wallet_address = ur.wallet_address
     WHERE ur.artist_wallet = ${artistWallet.toLowerCase()}
     ORDER BY ur.reputation DESC
     LIMIT ${limit}

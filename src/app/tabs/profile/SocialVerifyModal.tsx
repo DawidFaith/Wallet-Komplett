@@ -180,6 +180,8 @@ export default function SocialVerifyModal({
       setName(data.name); setPicture(data.picture);
       setStep('success');
       onDone();
+      // Modal nach kurzem Erfolgs-Flash automatisch schließen
+      setTimeout(() => onClose(), 1800);
     } catch { setError('Netzwerkfehler'); }
     finally { setLoading(false); }
   };

@@ -776,8 +776,8 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
             : verifyModal === 'tiktok' ? (p?.tiktokPicture ?? null)
             : (p?.facebookPicture ?? null)
           }
-          onDone={() => loadProfile()}
-          onClose={() => setVerifyModal(null)}
+          onDone={() => { loadProfile(); }}
+          onClose={() => { setVerifyModal(null); loadProfile(); }}
         />
       )}
     </div>
