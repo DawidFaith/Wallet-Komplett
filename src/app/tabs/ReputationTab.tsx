@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useUser } from '@clerk/nextjs';
-import { FaTrophy, FaStar, FaChevronDown, FaChevronUp, FaChevronLeft, FaEdit, FaCheck, FaTimes, FaUsers, FaMedal, FaPlus } from 'react-icons/fa';
+import { FaTrophy, FaStar, FaChevronDown, FaChevronUp, FaChevronLeft, FaEdit, FaCheck, FaTimes, FaUsers, FaMedal, FaPlus, FaGift } from 'react-icons/fa';
 
 interface ReputationEntry {
   artistWallet: string;
@@ -73,6 +73,51 @@ function ArtistDetailView({
   const [contest, setContest] = useState<ReputationContest | null | false>(false); // false = nicht geladen
   const [loading, setLoading] = useState(true);
 
+  // Unclaimed Level-Up Rewards
+  const [unclaimedTotal, setUnclaimedTotal] = useState(0);
+  const [unclaimedRewards, setUnclaimedRewards] = useState<{id:string;levelNumber:number;levelName:string;amount:number}[]>([]);
+  const [claiming, setClaiming] = useState(false);
+  const [celebration, setCelebration] = useState<{total:number;rewards:{levelNumber:number;levelName:string;amount:number}[]} | null>(null);
+
+  const loadUnclaimed = useCallback(async () => {
+    if (!walletAddress) return;
+    try {
+      const res = await fetch(`/api/reputation/unclaimed?wallet=${walletAddress}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const filtered = (data.rewards as {id:string;artistWallet:string;levelNumber:number;levelName:string;amount:number}[])
+        .filter(r => r.artistWallet.toLowerCase() === entry.artistWallet.toLowerCase());
+      setUnclaimedRewards(filtered);
+      setUnclaimedTotal(filtered.reduce((s, r) => s + r.amount, 0));
+    } catch { /* ignore */ }
+  }, [walletAddress, entry.artistWallet]);
+
+  const handleClaim = async () => {
+    if (claiming || unclaimedTotal === 0) return;
+    setClaiming(true);
+    try {
+      const res = await fetch('/api/reputation/claim-level-rewards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const artistRewards = (data.rewards as {levelNumber:number;levelName:string;amount:number}[])
+          .filter((_r, _i) => {
+            // Alle claims dieser Artist (API gibt nur die von diesem wallet-address zurück)
+            return true;
+          });
+        if (data.claimed > 0) {
+          setCelebration({ total: data.claimed, rewards: artistRewards });
+        }
+        setUnclaimedRewards([]);
+        setUnclaimedTotal(0);
+      }
+    } catch { /* ignore */ }
+    finally { setClaiming(false); }
+  };
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -94,10 +139,84 @@ function ArtistDetailView({
     return () => { cancelled = true; };
   }, [entry.artistWallet]);
 
+  useEffect(() => { loadUnclaimed(); }, [loadUnclaimed]);
+
   const nextLevel = levels.find(l => l.levelNumber === entry.level + 1);
 
   return (
     <div className="space-y-4">
+      {/* Feier-Modal */}
+      {celebration && (
+        <div
+          className="fixed inset-0 z-[999] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setCelebration(null)}
+        >
+          {/* Sternen-Partikel (CSS) */}
+          <style>{`
+            @keyframes celebFlyUp {
+              0%   { transform: translateY(0) scale(1); opacity: 1; }
+              100% { transform: translateY(-180px) scale(0.3); opacity: 0; }
+            }
+            @keyframes celebPop {
+              0%   { transform: scale(0.3); opacity: 0; }
+              60%  { transform: scale(1.15); opacity: 1; }
+              100% { transform: scale(1); }
+            }
+            @keyframes celebGlow {
+              0%, 100% { text-shadow: 0 0 20px #f59e0b, 0 0 40px #f59e0b; }
+              50%       { text-shadow: 0 0 40px #fbbf24, 0 0 80px #fbbf24, 0 0 120px #fde68a; }
+            }
+            .celeb-star {
+              position: absolute;
+              animation: celebFlyUp 1.4s ease-out forwards;
+              font-size: 1.3rem;
+            }
+          `}</style>
+          {/* Partikel */}
+          {['⭐','✨','🌟','💫','⭐','✨','🌟','⭐','💫','✨'].map((s, i) => (
+            <span
+              key={i}
+              className="celeb-star"
+              style={{
+                left: `${10 + i * 9}%`,
+                bottom: `${20 + (i % 3) * 15}%`,
+                animationDelay: `${i * 0.1}s`,
+                animationDuration: `${1.2 + (i % 4) * 0.2}s`,
+              }}
+            >{s}</span>
+          ))}
+          <div
+            className="relative bg-zinc-900 border border-amber-500/40 rounded-3xl p-8 mx-6 text-center shadow-2xl"
+            style={{ animation: 'celebPop 0.5s ease-out forwards' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <p className="text-5xl mb-3">🎉</p>
+            <p
+              className="text-amber-300 font-black text-5xl mb-1"
+              style={{ animation: 'celebPop 0.6s ease-out forwards, celebGlow 2s ease-in-out infinite' }}
+            >
+              +{celebration.total}
+            </p>
+            <p className="text-amber-400 font-bold text-lg mb-4">D.FAITH Credits</p>
+            <div className="space-y-1.5 mb-6">
+              {celebration.rewards.map((r, i) => (
+                <div key={i} className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-1.5">
+                  <span className="text-amber-300 text-sm font-semibold">Level {r.levelNumber}</span>
+                  <span className="text-zinc-400 text-sm"> – {r.levelName}</span>
+                  <span className="text-amber-400 text-sm font-bold ml-2">+{r.amount}</span>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setCelebration(null)}
+              className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-8 py-3 rounded-2xl transition-colors text-sm"
+            >
+              Awesome! 🎊
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Zurück */}
       <button
         onClick={onBack}
@@ -153,6 +272,23 @@ function ArtistDetailView({
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Unclaimed Level-Up Rewards */}
+        {unclaimedTotal > 0 && (
+          <div className="mt-3 pt-3 border-t border-amber-500/20">
+            <button
+              onClick={handleClaim}
+              disabled={claiming}
+              className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-black font-bold py-3 px-4 rounded-xl transition-all active:scale-95 animate-pulse"
+            >
+              <FaGift size={16} />
+              {claiming ? 'Wird eingelöst…' : `🎁 ${unclaimedTotal} Credits abholen!`}
+            </button>
+            <p className="text-zinc-500 text-[10px] text-center mt-1.5">
+              {unclaimedRewards.length} Level-Up {unclaimedRewards.length === 1 ? 'Reward' : 'Rewards'} bereit
+            </p>
           </div>
         )}
       </div>

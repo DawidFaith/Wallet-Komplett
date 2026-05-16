@@ -1644,8 +1644,14 @@ export async function addUserReputation(
             RETURNING recipients_count
           `;
           if (updated.length > 0) {
-            // Budget wurde beim Speichern reserviert → direkt auszahlen
-            await addDfaithCredits(walletAddress, lvl.creditReward);
+            // Level-Up Reward zum manuellen Abholen speichern (User claimed selbst)
+            await savePendingReward({
+              walletAddress,
+              amount: lvl.creditReward,
+              reason: `level_reward:${artistWallet.toLowerCase()}:${lvl.levelNumber}:${lvl.levelName}`,
+              questId: null,
+              createdAt: new Date().toISOString(),
+            });
           }
         } catch {
           // Fehler überspringen
