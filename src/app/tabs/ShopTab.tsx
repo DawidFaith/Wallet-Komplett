@@ -517,6 +517,7 @@ interface InventoryItem {
   purchasedAt: string;
   artistName: string | null;
   artistPicture: string | null;
+  isActive: boolean;
 }
 
 function InventoryItemCard({ item }: { item: InventoryItem }) {
@@ -552,9 +553,15 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
         <span className={`absolute top-3 left-3 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border backdrop-blur-md ${TYPE_COLORS[item.type]}`}>
           <TypeIcon type={item.type} /> {TYPE_LABELS[item.type]}
         </span>
-        <span className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-900/70 border border-emerald-700/40 text-emerald-400 backdrop-blur-md">
-          <FaCheck size={8} /> Gekauft
-        </span>
+        {item.isActive ? (
+          <span className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-900/70 border border-emerald-700/40 text-emerald-400 backdrop-blur-md">
+            <FaCheck size={8} /> Gekauft
+          </span>
+        ) : (
+          <span className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-800/80 border border-zinc-600/40 text-zinc-400 backdrop-blur-md">
+            <FaCheck size={8} /> Gekauft · Nicht mehr im Shop
+          </span>
+        )}
       </div>
 
       <div className="p-4 space-y-3">
@@ -645,6 +652,7 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
           purchasedAt: String(i.purchased_at ?? ''),
           artistName: i.artist_name ? String(i.artist_name) : null,
           artistPicture: i.artist_picture ? String(i.artist_picture) : null,
+          isActive: Boolean(i.is_active),
         }));
         setItems(mapped);
         // Alle Artists standardmäßig ausklappen
