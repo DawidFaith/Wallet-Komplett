@@ -20,6 +20,7 @@ interface LeaderboardEntry {
   rank: number;
   walletAddress: string;
   displayName: string | null;
+  imageUrl?: string | null;
   reputation: number;
   level: number;
   levelName: string;
@@ -353,6 +354,9 @@ function ArtistDetailView({
                       }`}>
                         {lb.rank === 1 ? '🥇' : lb.rank === 2 ? '🥈' : lb.rank === 3 ? '🥉' : lb.rank}
                       </div>
+                      {lb.imageUrl
+                        ? <img src={lb.imageUrl} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                        : <div className="w-7 h-7 rounded-full bg-zinc-700 shrink-0" />}
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-medium truncate">
                           {lb.displayName || shortenWallet(lb.walletAddress)}
@@ -409,10 +413,15 @@ function ArtistDetailView({
                         <div className="flex-1 min-w-0">
                           {winner ? (
                             <>
-                              <p className="text-white text-sm font-medium truncate">
-                                {winner.displayName || shortenWallet(winner.walletAddress)}
-                                {winner.walletAddress === walletAddress && <span className="text-amber-400 ml-1 text-xs">(Du)</span>}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                {winner.imageUrl
+                                  ? <img src={winner.imageUrl} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                                  : <div className="w-6 h-6 rounded-full bg-zinc-700 shrink-0" />}
+                                <p className="text-white text-sm font-medium truncate">
+                                  {winner.displayName || shortenWallet(winner.walletAddress)}
+                                  {winner.walletAddress === walletAddress && <span className="text-amber-400 ml-1 text-xs">(Du)</span>}
+                                </p>
+                              </div>
                               <p className="text-zinc-500 text-xs">{winner.reputation.toLocaleString()} REP</p>
                             </>
                           ) : (

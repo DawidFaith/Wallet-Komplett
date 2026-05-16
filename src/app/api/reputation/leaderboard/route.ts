@@ -14,21 +14,27 @@ export async function GET(req: NextRequest) {
   try {
     const leaderboard = await getReputationLeaderboard(artistWallet, limit);
 
-    // Clerk-Namen für alle Einträge abrufen
+    // Clerk-Namen + Bilder für alle Einträge abrufen
     const ids = leaderboard.map((e) => e.walletAddress);
-    const clerkNames: Record<string, string> = {};
+    const clerkData: Record<string, { name: string; imageUrl: string }> = {};
     if (ids.length > 0) {
       const clerk = await clerkClient();
       const { data: users } = await clerk.users.getUserList({ userId: ids, limit: ids.length });
       for (const u of users) {
-        const name = u.fullName ?? u.username ?? null;
-        if (name) clerkNames[u.id] = name;
+        const name =
+          u.fullName ??
+          u.username ??
+          u.firstName ??
+          u.emailAddresses[0]?.emailAddress?.split('@')[0] ??
+          null;
+        clerkData[u.id] = { name: name ?? u.id, imageUrl: u.imageUrl };
       }
     }
 
     const enriched = leaderboard.map((e) => ({
       ...e,
-      displayName: clerkNames[e.walletAddress] ?? null,
+      displayName: clerkData[e.walletAddress]?.name ?? e.walletAddress,
+      imageUrl: clerkData[e.walletAddress]?.imageUrl ?? null,
     }));
 
     return NextResponse.json(enriched);
