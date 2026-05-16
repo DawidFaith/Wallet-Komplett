@@ -2156,9 +2156,11 @@ export async function getAllArtistsWithReputation(walletAddress: string): Promis
     SELECT
       p.wallet_address                AS artist_wallet,
       p.display_name,
-      p.instagram_name, p.instagram_picture,
-      p.tiktok_name,    p.tiktok_picture,
-      p.facebook_name,  p.facebook_picture,
+      p.display_platform,
+      p.instagram_handle, p.instagram_name, p.instagram_picture,
+      p.tiktok_handle,    p.tiktok_name,    p.tiktok_picture,
+      p.facebook_handle,  p.facebook_name,  p.facebook_picture,
+      yb.channel_id          AS youtube_channel_id,
       yb.channel_name        AS youtube_channel_name,
       yb.channel_thumbnail   AS youtube_channel_thumbnail,
       COALESCE(ur.reputation, 0) AS reputation
@@ -2178,18 +2180,34 @@ export async function getAllArtistsWithReputation(walletAddress: string): Promis
     const { level, levelName, nextLevelRep, progress } = reputationToLevel(reputation, levels);
     let artistName: string | null = (row.display_name as string | null) ?? null;
     let artistPicture: string | null = null;
-    if (row.youtube_channel_name) {
-      artistName ??= row.youtube_channel_name as string;
+    const dp = row.display_platform as string | null;
+    if (dp === 'youtube' && row.youtube_channel_id) {
+      artistName ??= row.youtube_channel_name as string ?? null;
       artistPicture = (row.youtube_channel_thumbnail as string | null) ?? null;
-    } else if (row.instagram_name) {
-      artistName ??= row.instagram_name as string;
+    } else if (dp === 'instagram' && row.instagram_handle) {
+      artistName ??= row.instagram_name as string ?? `@${row.instagram_handle}`;
       artistPicture = (row.instagram_picture as string | null) ?? null;
-    } else if (row.tiktok_name) {
-      artistName ??= row.tiktok_name as string;
+    } else if (dp === 'tiktok' && row.tiktok_handle) {
+      artistName ??= row.tiktok_name as string ?? `@${row.tiktok_handle}`;
       artistPicture = (row.tiktok_picture as string | null) ?? null;
-    } else if (row.facebook_name) {
-      artistName ??= row.facebook_name as string;
+    } else if (dp === 'facebook' && row.facebook_handle) {
+      artistName ??= row.facebook_name as string ?? `@${row.facebook_handle}`;
       artistPicture = (row.facebook_picture as string | null) ?? null;
+    } else {
+      // Fallback: erste verfügbare Plattform
+      if (row.youtube_channel_id) {
+        artistName ??= row.youtube_channel_name as string ?? null;
+        artistPicture = (row.youtube_channel_thumbnail as string | null) ?? null;
+      } else if (row.instagram_name) {
+        artistName ??= row.instagram_name as string;
+        artistPicture = (row.instagram_picture as string | null) ?? null;
+      } else if (row.tiktok_name) {
+        artistName ??= row.tiktok_name as string;
+        artistPicture = (row.tiktok_picture as string | null) ?? null;
+      } else if (row.facebook_name) {
+        artistName ??= row.facebook_name as string;
+        artistPicture = (row.facebook_picture as string | null) ?? null;
+      }
     }
     result.push({ artistWallet, reputation, level, levelName, nextLevelRep, progress, artistName, artistPicture });
   }
