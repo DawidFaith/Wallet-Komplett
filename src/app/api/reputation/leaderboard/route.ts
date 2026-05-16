@@ -15,22 +15,20 @@ export async function GET(req: NextRequest) {
     const leaderboard = await getReputationLeaderboard(artistWallet, limit);
 
     // Clerk-Namen für alle Einträge abrufen
-    const ids = leaderboard.map((e) => e.walletAddress).filter((id) => id.startsWith('user_'));
+    const ids = leaderboard.map((e) => e.walletAddress);
     const clerkNames: Record<string, string> = {};
     if (ids.length > 0) {
-      try {
-        const clerk = await clerkClient();
-        const { data: users } = await clerk.users.getUserList({ userId: ids, limit: ids.length });
-        for (const u of users) {
-          const name = u.fullName ?? u.username ?? null;
-          if (name) clerkNames[u.id] = name;
-        }
-      } catch { /* Clerk-Fehler ignorieren, Fallback auf displayName */ }
+      const clerk = await clerkClient();
+      const { data: users } = await clerk.users.getUserList({ userId: ids, limit: ids.length });
+      for (const u of users) {
+        const name = u.fullName ?? u.username ?? null;
+        if (name) clerkNames[u.id] = name;
+      }
     }
 
     const enriched = leaderboard.map((e) => ({
       ...e,
-      displayName: clerkNames[e.walletAddress] ?? e.displayName,
+      displayName: clerkNames[e.walletAddress] ?? null,
     }));
 
     return NextResponse.json(enriched);
