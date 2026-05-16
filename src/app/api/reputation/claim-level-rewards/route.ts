@@ -8,7 +8,7 @@ export const maxDuration = 20;
  * POST /api/reputation/claim-level-rewards
  * Body: { walletAddress: string }
  *
- * Alle pending Level-Up Rewards abholen:
+ * Alle pending Rewards abholen (Level-Up, Contest, Leaderboard):
  *  1. Pending Rows laden
  *  2. DFAITH Credits sofort gutschreiben
  *  3. Rows als 'paid' markieren
@@ -37,7 +37,11 @@ export async function POST(req: NextRequest) {
     SET status = 'paid', paid_at = NOW()
     WHERE wallet_address = ${wallet}
       AND status = 'pending'
-      AND reason LIKE 'level_reward:%'
+      AND (
+        reason LIKE 'level_reward:%'
+        OR reason LIKE 'contest_reward:%'
+        OR reason LIKE 'leaderboard_reward:%'
+      )
     RETURNING id, amount, reason
   `;
 
@@ -51,14 +55,17 @@ export async function POST(req: NextRequest) {
   await addDfaithCredits(wallet, total);
 
   const rewards = rows.map((r) => {
-    const parts = String(r.reason).split(':');
-    return {
-      id: String(r.id),
-      artistWallet: parts[1] ?? '',
-      levelNumber: Number(parts[2] ?? 0),
-      levelName: parts.slice(3).join(':'),
-      amount: Number(r.amount),
-    };
+    const reason = String(r.reason);
+    const parts = reason.split(':');
+    let type = 'level', artistWallet = '', levelNumber = 0, levelName = '';
+    if (reason.startsWith('level_reward:')) {
+      type = 'level'; artistWallet = parts[1] ?? ''; levelNumber = Number(parts[2] ?? 0); levelName = parts.slice(3).join(':');
+    } else if (reason.startsWith('contest_reward:')) {
+      type = 'contest'; artistWallet = parts[1] ?? ''; levelName = `🏆 Platz #${parts[3] ?? '?'} im Contest`;
+    } else if (reason.startsWith('leaderboard_reward:')) {
+      type = 'leaderboard'; artistWallet = parts[1] ?? ''; levelName = `🥇 Platz #${parts[2] ?? '?'} im Leaderboard`;
+    }
+    return { id: String(r.id), type, artistWallet, levelNumber, levelName, amount: Number(r.amount) };
   });
 
   return NextResponse.json({ claimed: total, rewards });

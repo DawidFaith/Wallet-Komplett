@@ -1899,11 +1899,17 @@ export async function distributeReputationContest(
     const winner = leaderboard.find(e => e.rank === rank);
     if (!winner || creditReward <= 0) continue;
     try {
-      // Credits wurden bereits beim Erstellen des Contests reserviert
-      await addDfaithCredits(winner.walletAddress, creditReward);
+      // Reward als einlösbar speichern (wie Level-Up Rewards)
+      await savePendingReward({
+        walletAddress: winner.walletAddress,
+        amount: creditReward,
+        reason: `contest_reward:${artistWallet.toLowerCase()}:${contestId}:${rank}`,
+        questId: null,
+        createdAt: new Date().toISOString(),
+      });
       results.push({ rank, walletAddress: winner.walletAddress, credited: creditReward });
     } catch {
-      // Fehler beim Übertragen – überspringen
+      // Fehler beim Speichern – überspringen
     }
   }
 
@@ -1952,7 +1958,13 @@ export async function distributeLeaderboardRewards(
     const winner = leaderboard.find(e => e.rank === prize.rank);
     if (!winner) continue;
     try {
-      await addDfaithCredits(winner.walletAddress, prize.creditReward);
+      await savePendingReward({
+        walletAddress: winner.walletAddress,
+        amount: prize.creditReward,
+        reason: `leaderboard_reward:${artistWallet.toLowerCase()}:${prize.rank}`,
+        questId: null,
+        createdAt: new Date().toISOString(),
+      });
       results.push({ rank: prize.rank, walletAddress: winner.walletAddress, credited: prize.creditReward });
       actuallySpent += prize.creditReward;
     } catch {

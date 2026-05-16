@@ -6,8 +6,11 @@ export const maxDuration = 10;
 /**
  * GET /api/reputation/unclaimed?wallet=0x...
  *
- * Gibt alle noch nicht abgeholten Level-Up Rewards einer Wallet zurück.
- * Reason-Format: level_reward:<artistWallet>:<levelNumber>:<levelName>
+ * Gibt alle noch nicht abgeholten Rewards einer Wallet zurück.
+ * Unterstützte Reason-Formate:
+ *   level_reward:<artistWallet>:<levelNumber>:<levelName>
+ *   contest_reward:<artistWallet>:<contestId>:<rank>
+ *   leaderboard_reward:<artistWallet>:<rank>
  */
 export async function GET(req: NextRequest) {
   const wallet = req.nextUrl.searchParams.get('wallet')?.toLowerCase();
@@ -19,18 +22,43 @@ export async function GET(req: NextRequest) {
     FROM pending_rewards
     WHERE wallet_address = ${wallet}
       AND status = 'pending'
-      AND reason LIKE 'level_reward:%'
+      AND (
+        reason LIKE 'level_reward:%'
+        OR reason LIKE 'contest_reward:%'
+        OR reason LIKE 'leaderboard_reward:%'
+      )
     ORDER BY created_at ASC
   `;
 
   const rewards = rows.map((r) => {
-    const parts = String(r.reason).split(':');
-    // parts: ['level_reward', artistWallet, levelNumber, ...levelName (may contain :)]
-    const artistWallet = parts[1] ?? '';
-    const levelNumber = Number(parts[2] ?? 0);
-    const levelName = parts.slice(3).join(':');
+    const reason = String(r.reason);
+    const parts = reason.split(':');
+
+    let type: 'level' | 'contest' | 'leaderboard' = 'level';
+    let artistWallet = '';
+    let levelNumber = 0;
+    let levelName = '';
+
+    if (reason.startsWith('level_reward:')) {
+      type = 'level';
+      artistWallet = parts[1] ?? '';
+      levelNumber = Number(parts[2] ?? 0);
+      levelName = parts.slice(3).join(':');
+    } else if (reason.startsWith('contest_reward:')) {
+      type = 'contest';
+      artistWallet = parts[1] ?? '';
+      const rank = Number(parts[3] ?? 0);
+      levelName = `🏆 Platz #${rank} im Contest`;
+    } else if (reason.startsWith('leaderboard_reward:')) {
+      type = 'leaderboard';
+      artistWallet = parts[1] ?? '';
+      const rank = Number(parts[2] ?? 0);
+      levelName = `🥇 Platz #${rank} im Leaderboard`;
+    }
+
     return {
       id: String(r.id),
+      type,
       artistWallet,
       levelNumber,
       levelName,

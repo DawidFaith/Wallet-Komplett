@@ -79,9 +79,9 @@ function ArtistDetailView({
   const [contest, setContest] = useState<ReputationContest | null | false>(false); // false = nicht geladen
   const [loading, setLoading] = useState(true);
 
-  // Unclaimed Level-Up Rewards
+  // Unclaimed Rewards (Level, Contest, Leaderboard)
   const [unclaimedTotal, setUnclaimedTotal] = useState(0);
-  const [unclaimedRewards, setUnclaimedRewards] = useState<{id:string;levelNumber:number;levelName:string;amount:number}[]>([]);
+  const [unclaimedRewards, setUnclaimedRewards] = useState<{id:string;type:string;levelNumber:number;levelName:string;amount:number}[]>([]);
   const [claiming, setClaiming] = useState(false);
   const [celebration, setCelebration] = useState<{total:number;rewards:{levelNumber:number;levelName:string;amount:number}[]} | null>(null);
 
@@ -91,7 +91,7 @@ function ArtistDetailView({
       const res = await fetch(`/api/reputation/unclaimed?wallet=${walletAddress}`);
       if (!res.ok) return;
       const data = await res.json();
-      const filtered = (data.rewards as {id:string;artistWallet:string;levelNumber:number;levelName:string;amount:number}[])
+      const filtered = (data.rewards as {id:string;type:string;artistWallet:string;levelNumber:number;levelName:string;amount:number}[])
         .filter(r => r.artistWallet.toLowerCase() === entry.artistWallet.toLowerCase());
       setUnclaimedRewards(filtered);
       setUnclaimedTotal(filtered.reduce((s, r) => s + r.amount, 0));
@@ -284,9 +284,20 @@ function ArtistDetailView({
           </div>
         )}
 
-        {/* Unclaimed Level-Up Rewards */}
+        {/* Unclaimed Rewards (Level, Contest, Leaderboard) */}
         {unclaimedTotal > 0 && (
-          <div className="mt-3 pt-3 border-t border-amber-500/20">
+          <div className="mt-3 pt-3 border-t border-amber-500/20 space-y-2">
+            {/* Auflistung nach Typ */}
+            {unclaimedRewards.some(r => r.type === 'contest' || r.type === 'leaderboard') && (
+              <div className="space-y-1">
+                {unclaimedRewards.filter(r => r.type === 'contest' || r.type === 'leaderboard').map((r, i) => (
+                  <div key={i} className="flex items-center justify-between bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-1.5">
+                    <span className="text-amber-200 text-xs font-semibold">{r.levelName}</span>
+                    <span className="text-amber-400 text-xs font-bold">+{r.amount} Credits</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <button
               onClick={handleClaim}
               disabled={claiming}
@@ -295,8 +306,12 @@ function ArtistDetailView({
               <FaGift size={16} />
               {claiming ? 'Wird eingelöst…' : `🎁 ${unclaimedTotal} Credits abholen!`}
             </button>
-            <p className="text-zinc-500 text-[10px] text-center mt-1.5">
-              {unclaimedRewards.length} Level-Up {unclaimedRewards.length === 1 ? 'Reward' : 'Rewards'} bereit
+            <p className="text-zinc-500 text-[10px] text-center">
+              {unclaimedRewards.filter(r => r.type === 'level').length > 0 && `${unclaimedRewards.filter(r => r.type === 'level').length} Level-Up`}
+              {unclaimedRewards.filter(r => r.type === 'level').length > 0 && unclaimedRewards.filter(r => r.type !== 'level').length > 0 && ' + '}
+              {unclaimedRewards.filter(r => r.type === 'contest').length > 0 && `${unclaimedRewards.filter(r => r.type === 'contest').length} Contest`}
+              {unclaimedRewards.filter(r => r.type === 'leaderboard').length > 0 && `${unclaimedRewards.filter(r => r.type === 'leaderboard').length > 0 && unclaimedRewards.filter(r => r.type === 'contest').length > 0 ? ' + ' : ''}${unclaimedRewards.filter(r => r.type === 'leaderboard').length} Leaderboard`}
+              {' '}{unclaimedRewards.length === 1 ? 'Reward' : 'Rewards'} bereit
             </p>
           </div>
         )}
