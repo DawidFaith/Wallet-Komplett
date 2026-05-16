@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { FaInstagram, FaShareAlt, FaRedo, FaCheck, FaPaperPlane } from 'react-icons/fa';
+import { FaInstagram, FaShareAlt, FaRedo, FaCheck, FaPaperPlane, FaStar } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
 import { formatCredits } from '../utils';
@@ -201,7 +201,14 @@ export default function InstagramDmShareModal({
           <FaInstagram size={20} className="text-pink-400 shrink-0" />
           <div>
             <p className="font-semibold text-sm">{quest.videoTitle}</p>
-            <p className="text-xs text-zinc-500">Story Quest · {formatCredits(quest.rewardAmount)} DFAITH</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-xs text-zinc-500">Story Quest · {formatCredits(quest.rewardAmount)} DFAITH</p>
+              {(quest.reputationReward ?? 0) > 0 && (
+                <span className="flex items-center gap-0.5 text-xs text-yellow-400">
+                  <FaStar size={9} /> +{quest.reputationReward} REP
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -343,6 +350,11 @@ export default function InstagramDmShareModal({
             <p className="text-sm text-zinc-400">
               +{formatCredits(rewardAmount || quest.rewardAmount)} DFAITH Credits wurden gutgeschrieben.
             </p>
+            {(quest.reputationReward ?? 0) > 0 && (
+              <p className="text-xs text-yellow-400 flex items-center justify-center gap-1">
+                <FaStar size={10} /> +{quest.reputationReward} Reputation
+              </p>
+            )}
             <button onClick={onClose} className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
               Schließen
             </button>
