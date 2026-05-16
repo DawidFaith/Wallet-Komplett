@@ -24,6 +24,7 @@ import {
   getUserProfile,
   loadQuestDetail,
   hasWalletCompletedQuest,
+  hasChannelCompletedQuest,
   upsertInstagramDmVerification,
   getInstagramDmVerification,
   markInstagramDmStoryVerified,
@@ -153,6 +154,10 @@ export async function POST(req: NextRequest) {
       const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
       if (alreadyDone) {
         return NextResponse.json({ error: 'Du hast diese Quest bereits abgeschlossen.' }, { status: 400 });
+      }
+      const handleDone = await hasChannelCompletedQuest(profile.instagramHandle, questId);
+      if (handleDone) {
+        return NextResponse.json({ error: 'Dieser Instagram-Account hat diese Quest bereits abgeschlossen.' }, { status: 409 });
       }
 
       const makeWebhookUrl = process.env.MAKE_INSTAGRAM_LIKE_WEBHOOK_URL;

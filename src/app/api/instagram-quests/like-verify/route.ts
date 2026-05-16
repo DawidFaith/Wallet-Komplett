@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   loadQuestDetail,
   hasWalletCompletedQuest,
+  hasChannelCompletedQuest,
   saveCompletion,
   addDfaithCredits,
   savePendingReward,

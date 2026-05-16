@@ -401,6 +401,21 @@ async function handlePost(req: NextRequest) {
       // Verwendete Mention löschen (einmalig nutzbar)
       await sql`DELETE FROM instagram_mentions WHERE id = ${rows[0].id}`;
 
+      // Duplikat-Check: selber Handle bereits einer anderen Wallet zugeordnet?
+      const igNormalized = walletAddress.toLowerCase();
+      const existingIg = await sql`
+        SELECT wallet_address FROM user_profiles
+        WHERE LOWER(instagram_handle) = ${cleanHandle.toLowerCase()}
+          AND wallet_address != ${igNormalized}
+        LIMIT 1
+      `;
+      if (existingIg.length > 0) {
+        return NextResponse.json(
+          { error: 'Dieser Instagram-Account ist bereits mit einer anderen Wallet verknüpft.' },
+          { status: 409 }
+        );
+      }
+
       // Profil-Daten für DB
       const profileForSave = await fetchInstagramProfileBrightData(cleanHandle);
       const profileName = profileForSave?.name ?? cleanHandle;
@@ -489,6 +504,23 @@ async function handlePost(req: NextRequest) {
 
     const name = profileName;
     const picture = profilePicture;
+
+    // Duplikat-Check: selber TikTok-Handle bereits einer anderen Wallet zugeordnet?
+    const ttNormalized = walletAddress.toLowerCase();
+    const { getDb: getTtDb } = await import('../../../lib/db');
+    const ttSql = getTtDb();
+    const existingTt = await ttSql`
+      SELECT wallet_address FROM user_profiles
+      WHERE LOWER(tiktok_handle) = ${cleanHandle.toLowerCase()}
+        AND wallet_address != ${ttNormalized}
+      LIMIT 1
+    `;
+    if (existingTt.length > 0) {
+      return NextResponse.json(
+        { error: 'Dieser TikTok-Account ist bereits mit einer anderen Wallet verknüpft.' },
+        { status: 409 }
+      );
+    }
 
     // Nur noch TikTok in diesem Branch (Facebook hat eigenen Mention-Flow oben)
     await upsertUserProfile(walletAddress, {

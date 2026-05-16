@@ -25,6 +25,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   loadQuestDetail,
   hasWalletCompletedQuest,
+  hasChannelCompletedQuest,
   saveCompletion,
   addDfaithCredits,
   savePendingReward,
@@ -151,6 +152,10 @@ export async function POST(req: NextRequest) {
     const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
     if (alreadyDone) {
       return NextResponse.json({ error: 'Du hast diesen Quest bereits abgeschlossen' }, { status: 409 });
+    }
+    const handleDone = await hasChannelCompletedQuest(profile.facebookHandle, questId);
+    if (handleDone) {
+      return NextResponse.json({ error: 'Dieser Facebook-Account hat diesen Quest bereits abgeschlossen.' }, { status: 409 });
     }
 
     // ── action: start ────────────────────────────────────────────────────────

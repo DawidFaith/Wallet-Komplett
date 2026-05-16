@@ -20,6 +20,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   loadQuestDetail,
   hasWalletCompletedQuest,
+  hasChannelCompletedQuest,
   saveCompletion,
   addDfaithCredits,
   savePendingReward,
@@ -86,11 +87,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 3. Doppelabschluss prüfen
+  // 3. Doppelabschluss prüfen (Wallet UND Instagram-Handle)
   const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
   if (alreadyDone) {
     return NextResponse.json(
       { error: 'Du hast diesen Quest bereits abgeschlossen' },
+      { status: 409 }
+    );
+  }
+  const handleDone = await hasChannelCompletedQuest(profile.instagramHandle, questId);
+  if (handleDone) {
+    return NextResponse.json(
+      { error: 'Dieser Instagram-Account hat diesen Quest bereits abgeschlossen.' },
       { status: 409 }
     );
   }
