@@ -363,10 +363,16 @@ export default function SocialVerifyModal({
                 <ol className="text-zinc-400 text-sm space-y-1 list-decimal list-inside">
                   {cfg.bioInstructions('').map((s, i) => <li key={i}>{s}</li>)}
                 </ol>
-                <div className="bg-zinc-900 rounded-lg px-3 py-2 flex items-center gap-2 border border-zinc-700">
+                <a
+                  href="https://www.instagram.com/dawidfaith/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-zinc-900 rounded-lg px-3 py-2 flex items-center gap-2 border border-zinc-700 hover:border-pink-500 transition-colors"
+                >
                   <FaInstagram size={14} className="text-pink-400 shrink-0" />
-                  <span className="text-pink-300 font-mono text-sm select-all">@dawidfaith</span>
-                </div>
+                  <span className="text-pink-300 font-mono text-sm">@dawidfaith</span>
+                  <span className="text-zinc-500 text-xs ml-auto">Profil öffnen ↗</span>
+                </a>
                 <p className="text-yellow-500 text-xs">⏳ Warte 1–2 Minuten nach dem Kommentieren, bevor du auf &quot;Verifizieren&quot; klickst.</p>
               </div>
               )}
