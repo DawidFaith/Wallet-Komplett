@@ -17,6 +17,7 @@ export interface QuestIndexEntry {
   videoUrl: string;
   description?: string;
   rewardAmount: number;
+  reputationReward?: number;
   maxCompletions: number;
   completions: number;
   isActive: boolean;

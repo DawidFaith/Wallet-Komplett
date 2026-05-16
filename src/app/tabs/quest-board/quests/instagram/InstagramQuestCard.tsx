@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { FaInstagram, FaClock, FaComment, FaHeart, FaBookmark, FaShareAlt } from 'react-icons/fa';
+import { FaInstagram, FaClock, FaComment, FaHeart, FaBookmark, FaShareAlt, FaStar } from 'react-icons/fa';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
 
@@ -48,12 +48,17 @@ export default function InstagramQuestCard({ quest, isCompleted, onComplete, rew
           <span className="text-white font-semibold text-sm line-clamp-2">{quest.videoTitle}</span>
         </div>
 
-        <div className="flex justify-between items-center text-xs text-zinc-400">
-          <span className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+          <span className="flex items-center gap-1 text-yellow-400 font-semibold">
             <Image src="/D.FAITH.png" alt={tokenLabel} width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(quest.rewardAmount)} {tokenLabel}
           </span>
+          {(quest.reputationReward ?? 0) > 0 && (
+            <span className="flex items-center gap-1 text-amber-300 font-semibold">
+              <FaStar size={9} /> +{quest.reputationReward} REP
+            </span>
+          )}
           {expiry && (
-            <span className="flex items-center gap-1 text-zinc-500">
+            <span className="flex items-center gap-1 text-zinc-500 ml-auto">
               <FaClock size={9} /> {expiry}
             </span>
           )}

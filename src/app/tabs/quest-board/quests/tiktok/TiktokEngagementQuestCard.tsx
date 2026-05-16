@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { FaClock, FaCheck } from 'react-icons/fa';
+import { FaClock, FaCheck, FaStar } from 'react-icons/fa';
 import { SiTiktok } from 'react-icons/si';
 import { FiThumbsUp, FiShare2, FiBookmark } from 'react-icons/fi';
 import type { QuestIndexEntry } from '../../types';
@@ -37,8 +37,15 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, onComple
           <div className="absolute top-2 left-2 bg-black/80 text-cyan-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
             <SiTiktok size={10} /> Engagement
           </div>
-          <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-            <Image src="/D.FAITH.png" alt={tokenLabel} width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(quest.rewardAmount)} {tokenLabel}
+          <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+            <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+              <Image src="/D.FAITH.png" alt={tokenLabel} width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(quest.rewardAmount)} {tokenLabel}
+            </div>
+            {(quest.reputationReward ?? 0) > 0 && (
+              <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                <FaStar size={9} /> +{quest.reputationReward} REP
+              </div>
+            )}
           </div>
           {expiry && (
             <div className="absolute bottom-2 left-2 bg-black/70 text-zinc-300 text-xs px-2 py-1 rounded-full flex items-center gap-1">

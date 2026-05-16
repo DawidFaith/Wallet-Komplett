@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { FaYoutube, FaTrophy, FaCheck, FaClock } from 'react-icons/fa';
+import { FaYoutube, FaTrophy, FaCheck, FaClock, FaStar } from 'react-icons/fa';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
 
@@ -33,8 +33,15 @@ export default function YoutubeQuestCard({ quest, isCompleted, onComplete, rewar
         <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
           <FaYoutube size={10} /> {quest.type === 'like' ? 'Like' : quest.type === 'secret' ? 'Secret' : 'Kommentar'}
         </div>
-        <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-          <Image src="/D.FAITH.png" alt={tokenLabel} width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(quest.rewardAmount)} {tokenLabel}
+        <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+          <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+            <Image src="/D.FAITH.png" alt={tokenLabel} width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(quest.rewardAmount)} {tokenLabel}
+          </div>
+          {(quest.reputationReward ?? 0) > 0 && (
+            <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+              <FaStar size={9} /> +{quest.reputationReward} REP
+            </div>
+          )}
         </div>
         {expiry && (
           <div className="absolute bottom-2 left-2 bg-black/70 text-zinc-300 text-xs px-2 py-1 rounded-full flex items-center gap-1">
