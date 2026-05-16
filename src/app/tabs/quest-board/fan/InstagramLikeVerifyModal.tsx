@@ -43,6 +43,7 @@ export default function InstagramLikeVerifyModal({
   const accentBg = isLike ? 'bg-pink-600 hover:bg-pink-500' : isRepost ? 'bg-blue-600 hover:bg-blue-500' : 'bg-yellow-500 hover:bg-yellow-400';
 
   const rewardPer = quest ? Math.round((quest.rewardAmount / 2) * 100) / 100 : 0;
+  const repPer = quest ? Math.round((quest.reputationReward ?? 0) / 2) : 0;
 
   const engagementActions = [
     { key: 'like', icon: <FiThumbsUp size={18} />, label: 'Like', color: 'text-pink-400', verified: likeVerified },
@@ -154,6 +155,11 @@ export default function InstagramLikeVerifyModal({
                 <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3.5 h-3.5 rounded-full shrink-0" />
                 +{formatCredits(rewardPer)} D.FAITH
               </span>
+              {repPer > 0 && (
+                <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
+                  <FaStar size={10} /> +{repPer} REP
+                </span>
+              )}
               <span className="text-zinc-600 text-xs">×2 max</span>
             </div>
           ) : (
@@ -213,6 +219,7 @@ export default function InstagramLikeVerifyModal({
                 <span className={verified ? 'text-green-400' : color}>{icon}</span>
                 <span className="text-white text-xs font-semibold">{label}</span>
                 <span className="text-amber-400 text-xs flex items-center gap-0.5"><Image src="/D.FAITH.png" alt="" width={10} height={10} className="w-2.5 h-2.5 rounded-full shrink-0" />+{rewardPer} D.FAITH</span>
+                {repPer > 0 && <span className="text-purple-300 text-xs flex items-center gap-0.5"><FaStar size={8} /> +{repPer} REP</span>}
                 {step === 'not_yet' && (
                   <span className={`text-xs ${verified ? 'text-green-400' : 'text-zinc-500'}`}>
                     {verified ? '✓' : '–'}
@@ -379,7 +386,10 @@ export default function InstagramLikeVerifyModal({
                 <span className={verified ? 'text-green-400' : 'text-zinc-500'}>{icon}</span>
                 <span className="text-white text-xs font-semibold">{label}</span>
                 {verified
-                  ? <span className="text-green-400 text-xs flex items-center gap-0.5">✓ <Image src="/D.FAITH.png" alt="" width={10} height={10} className="w-2.5 h-2.5 rounded-full shrink-0" />+{formatCredits(rewardPer)} D.FAITH</span>
+                  ? <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-green-400 text-xs flex items-center gap-0.5">✓ <Image src="/D.FAITH.png" alt="" width={10} height={10} className="w-2.5 h-2.5 rounded-full shrink-0" />+{formatCredits(rewardPer)} D.FAITH</span>
+                      {repPer > 0 && <span className="text-purple-300 text-xs flex items-center gap-0.5"><FaStar size={8} /> +{repPer} REP</span>}
+                    </div>
                   : <span className="text-zinc-500 text-xs">–</span>
                 }
               </div>
