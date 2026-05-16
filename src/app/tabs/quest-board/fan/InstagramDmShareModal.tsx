@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { FaInstagram, FaShareAlt, FaExternalLinkAlt, FaRedo, FaCheck, FaCopy } from 'react-icons/fa';
+import { FaInstagram, FaShareAlt, FaExternalLinkAlt, FaRedo, FaCheck, FaCopy, FaPaperPlane } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
 import { formatCredits } from '../utils';
@@ -271,7 +271,7 @@ export default function InstagramDmShareModal({
         {!storyClaimToken && (step === 'part1' || step === 'checking') && (
           <div className="space-y-3">
             <div className="bg-zinc-800/60 rounded-xl px-3 py-3 space-y-1">
-              <p className="font-semibold text-white text-xs">📸 Teil 1 – Story teilen</p>
+              <p className="font-semibold text-white text-xs flex items-center gap-1.5"><FaPaperPlane size={11} className="text-pink-400" /> Teil 1 – Story teilen</p>
               <p className="text-xs text-zinc-400">
                 Öffne den Beitrag auf Instagram und teile ihn in deiner Story.
                 {creatorHandle && (
