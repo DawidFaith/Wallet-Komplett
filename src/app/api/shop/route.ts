@@ -22,7 +22,8 @@ export async function GET(req: NextRequest) {
 
   const items = await sql`
     SELECT id, artist_wallet, title, description, type,
-           price_credits, price_tokens, content_url, image_url, is_active, created_at
+           price_credits, price_tokens, content_url, image_url, is_active, created_at,
+           required_level
     FROM shop_items
     WHERE artist_wallet = ${artistWallet} AND is_active = TRUE
     ORDER BY created_at DESC
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: 'Kein Body' }, { status: 400 });
 
-  const { wallet, title, description, type, priceCredits, priceTokens, contentUrl, imageUrl } = body as {
+  const { wallet, title, description, type, priceCredits, priceTokens, contentUrl, imageUrl, requiredLevel } = body as {
     wallet?: string;
     title?: string;
     description?: string;
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest) {
     priceTokens?: number | null;
     contentUrl?: string;
     imageUrl?: string;
+    requiredLevel?: number;
   };
 
   if (!wallet || !title || !type) {
@@ -84,7 +86,7 @@ export async function POST(req: NextRequest) {
   }
 
   const rows = await sql`
-    INSERT INTO shop_items (artist_wallet, title, description, type, price_credits, price_tokens, content_url, image_url)
+    INSERT INTO shop_items (artist_wallet, title, description, type, price_credits, price_tokens, content_url, image_url, required_level)
     VALUES (
       ${wallet.toLowerCase()},
       ${title.trim()},
@@ -93,9 +95,10 @@ export async function POST(req: NextRequest) {
       ${priceCredits},
       ${typeof priceTokens === 'number' && priceTokens > 0 ? priceTokens : null},
       ${contentUrl?.trim() ?? ''},
-      ${imageUrl?.trim() ?? ''}
+      ${imageUrl?.trim() ?? ''},
+      ${typeof requiredLevel === 'number' && requiredLevel > 0 ? requiredLevel : 0}
     )
-    RETURNING id, title, type, price_credits, price_tokens, is_active, created_at
+    RETURNING id, title, type, price_credits, price_tokens, is_active, created_at, required_level
   `;
 
   return NextResponse.json(rows[0], { status: 201 });

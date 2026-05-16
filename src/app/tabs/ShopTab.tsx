@@ -7,7 +7,7 @@ import { upload } from '@vercel/blob/client';
 import {
   FaChevronLeft, FaPlus, FaTimes, FaMusic, FaVideo, FaGem, FaStar,
   FaCoins, FaCheck, FaExternalLinkAlt, FaTrash, FaShoppingBag,
-  FaPlay, FaPause, FaDownload, FaBoxOpen,
+  FaPlay, FaPause, FaDownload, FaBoxOpen, FaLock,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
 
@@ -28,6 +28,7 @@ interface ShopItem {
   isActive: boolean;
   createdAt: string;
   purchased?: boolean;
+  requiredLevel: number;
 }
 
 interface ShopArtist {
@@ -75,17 +76,20 @@ function ItemCard({
   buying,
   walletAddress,
   artistRewardToken,
+  userLevel = 0,
 }: {
   item: ShopItem;
   onBuy: (item: ShopItem, paymentMethod: 'credits' | 'tokens') => void;
   buying: string | null;
   walletAddress: string | null;
   artistRewardToken?: string | null;
+  userLevel?: number;
 }) {
   const [payMethod, setPayMethod] = useState<'credits' | 'tokens'>('credits');
   const [previewPlaying, setPreviewPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const tokenLabel = artistRewardToken ?? 'D.FAITH';
+  const isLocked = item.requiredLevel > 0 && userLevel < item.requiredLevel;
 
   const togglePreview = () => {
     const audio = audioRef.current;
@@ -108,11 +112,11 @@ function ItemCard({
   };
 
   return (
-    <div className="bg-zinc-900 border border-white/[0.08] rounded-2xl overflow-hidden shadow-xl">
+    <div className={`bg-zinc-900 border rounded-2xl overflow-hidden shadow-xl transition-opacity ${isLocked ? 'border-zinc-700/40 opacity-80' : 'border-white/[0.08]'}`}>
       {/* Cover */}
       <div className="relative aspect-[16/7] overflow-hidden bg-zinc-800">
         {item.imageUrl ? (
-          <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+          <img src={item.imageUrl} alt={item.title} className={`w-full h-full object-cover ${isLocked ? 'grayscale' : ''}`} />
         ) : (
           <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
             <span className="opacity-20 scale-[3]"><TypeIcon type={item.type} /></span>
@@ -120,10 +124,30 @@ function ItemCard({
         )}
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent" />
+        {/* Lock-Overlay */}
+        {isLocked && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-[2px]">
+            <div className="w-10 h-10 rounded-full bg-zinc-800/90 border border-zinc-600/50 flex items-center justify-center mb-2">
+              <FaLock size={16} className="text-zinc-400" />
+            </div>
+            <p className="text-zinc-300 text-xs font-bold">Level {item.requiredLevel} erforderlich</p>
+            <p className="text-zinc-500 text-[10px] mt-0.5">Dein Level: {userLevel}</p>
+          </div>
+        )}
         {/* Typ-Badge oben links */}
         <span className={`absolute top-3 left-3 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border backdrop-blur-md ${TYPE_COLORS[item.type]}`}>
           <TypeIcon type={item.type} /> {TYPE_LABELS[item.type]}
         </span>
+        {/* Level-Badge oben rechts (nur wenn Level-Pflicht) */}
+        {item.requiredLevel > 0 && (
+          <span className={`absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border backdrop-blur-md ${
+            isLocked
+              ? 'bg-zinc-800/80 border-zinc-600/40 text-zinc-400'
+              : 'bg-amber-900/70 border-amber-600/40 text-amber-300'
+          }`}>
+            <FaStar size={7} /> Lvl {item.requiredLevel}+
+          </span>
+        )}
         {/* Preis-Badge unten rechts */}
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm border border-amber-500/30 rounded-xl px-2.5 py-1">
           <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
@@ -175,7 +199,15 @@ function ItemCard({
         )}
 
         {walletAddress ? (
-          item.purchased ? (
+          isLocked ? (
+            <div className="flex items-center gap-2.5 bg-zinc-800/60 border border-zinc-700/40 rounded-xl px-4 py-3">
+              <FaLock size={13} className="text-zinc-500 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-zinc-400 text-xs font-bold">Gesperrt – Level {item.requiredLevel} erforderlich</p>
+                <p className="text-zinc-600 text-[10px] mt-0.5">Sammle mehr Reputation um dieses Item freizuschalten.</p>
+              </div>
+            </div>
+          ) : item.purchased ? (
             <div className="flex gap-2">
               <div className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-900/30 border border-emerald-700/40 rounded-xl py-2.5 text-emerald-400 text-xs font-bold">
                 <FaCheck size={10} /> Bereits gekauft
@@ -234,7 +266,6 @@ function ItemCard({
 }
 
 // ─── Artist-Shop-Ansicht (Supporter) ─────────────────────────────────────────
-
 function ArtistShopView({
   artist,
   walletAddress,
@@ -253,6 +284,16 @@ function ArtistShopView({
   const [buying, setBuying] = useState<string | null>(null);
   const [buyResult, setBuyResult] = useState<{ itemId: string; contentUrl: string; type: string } | null>(null);
   const [buyError, setBuyError] = useState('');
+  const [userLevel, setUserLevel] = useState(0);
+
+  // User-Level für diesen Artist laden
+  useEffect(() => {
+    if (!walletAddress) return;
+    fetch(`/api/reputation?wallet=${walletAddress}&artistWallet=${artist.artistWallet}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.level !== undefined) setUserLevel(Number(data.level)); })
+      .catch(() => {});
+  }, [walletAddress, artist.artistWallet]);
 
   const loadItems = useCallback(async () => {
     setLoading(true);
@@ -275,6 +316,7 @@ function ArtistShopView({
         isActive: i.is_active as boolean,
         createdAt: i.created_at as string,
         purchased: i.purchased as boolean,
+        requiredLevel: Number(i.required_level ?? 0),
       })));
     }
     setLoading(false);
@@ -383,7 +425,7 @@ function ArtistShopView({
       ) : (
         <div className="px-4 grid grid-cols-1 gap-3">
           {items.map(item => (
-            <ItemCard key={item.id} item={item} onBuy={handleBuy} buying={buying} walletAddress={walletAddress} artistRewardToken={artist.rewardToken} />
+            <ItemCard key={item.id} item={item} onBuy={handleBuy} buying={buying} walletAddress={walletAddress} artistRewardToken={artist.rewardToken} userLevel={userLevel} />
           ))}
         </div>
       )}
@@ -627,6 +669,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
   const [fDesc, setFDesc] = useState('');
   const [fType, setFType] = useState<ItemType>('song');
   const [fPrice, setFPrice] = useState('0');
+  const [fRequiredLevel, setFRequiredLevel] = useState('0');
   const [fContent, setFContent] = useState('');
   const [fImage, setFImage] = useState('');
   const [uploadingContent, setUploadingContent] = useState(false);
@@ -674,6 +717,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
         imageUrl: i.image_url as string,
         isActive: i.is_active as boolean,
         createdAt: i.created_at as string,
+        requiredLevel: Number(i.required_level ?? 0),
       })));
     }
     setLoading(false);
@@ -683,7 +727,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
 
   const resetForm = () => {
     setFTitle(''); setFDesc(''); setFType('song'); setFPrice('0');
-    setFContent(''); setFImage(''); setFormError('');
+    setFRequiredLevel('0'); setFContent(''); setFImage(''); setFormError('');
     setShowForm(false);
   };
 
@@ -706,6 +750,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
           priceCredits: price,
           contentUrl: fContent,
           imageUrl: fImage,
+          requiredLevel: parseInt(fRequiredLevel, 10) || 0,
         }),
       });
       if (!res.ok) {
@@ -809,6 +854,26 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                 className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50"
               />
             </div>
+          </div>
+
+          {/* Mindest-Level */}
+          <div>
+            <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">
+              Mindest-Level <span className="text-zinc-600 normal-case">(0 = kein Level erforderlich)</span>
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={fRequiredLevel}
+              onChange={e => setFRequiredLevel(e.target.value)}
+              placeholder="0"
+              className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50"
+            />
+            {parseInt(fRequiredLevel, 10) > 0 && (
+              <p className="text-amber-400 text-[10px] mt-1 flex items-center gap-1">
+                <FaStar size={8} /> Nur Fans ab Level {fRequiredLevel} können dieses Item kaufen.
+              </p>
+            )}
           </div>
 
           {/* Content-Datei */}
@@ -916,6 +981,11 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                         <TypeIcon type={item.type} />
                         {TYPE_LABELS[item.type]}
                       </span>
+                      {item.requiredLevel > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-amber-900/40 border-amber-700/40 text-amber-400">
+                          <FaLock size={7} /> Lvl {item.requiredLevel}+
+                        </span>
+                      )}
                     </div>
                     <p className="text-white text-sm font-semibold mt-1 truncate">{item.title}</p>
                     {item.description && (

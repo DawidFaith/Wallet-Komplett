@@ -208,4 +208,7 @@ export const MIGRATION_SQL = `
     updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (artist_wallet, level_number)
   );
+
+  -- Shop: Mindest-Level-Anforderung pro Item (0 = kein Level erforderlich)
+  ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS required_level INTEGER NOT NULL DEFAULT 0;
 `;
