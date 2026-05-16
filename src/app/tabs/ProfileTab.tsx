@@ -449,6 +449,39 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                 {!p.artistType && !p.artistBio && (
                   <p className="text-zinc-400 text-xs italic">Klicke &bdquo;Bearbeiten&ldquo; um dein Artist-Profil auszufüllen</p>
                 )}
+                {/* Vorschau: welches Profilbild Fans sehen */}
+                {(() => {
+                  const dp = p.displayPlatform;
+                  let pic: string | null = null;
+                  let label = 'Kein Profilbild gewählt';
+                  let icon: React.ReactNode = null;
+                  if (dp === 'youtube' && p.youtubeVerified) {
+                    pic = p.youtubeChannelThumbnail ?? null;
+                    label = p.youtubeChannelName ?? 'YouTube';
+                    icon = <FaYoutube className="text-red-500" size={10} />;
+                  } else if (dp === 'instagram' && p.instagramHandle) {
+                    pic = p.instagramPicture ?? null;
+                    label = p.instagramName ?? `@${p.instagramHandle}`;
+                    icon = <FaInstagram className="text-pink-500" size={10} />;
+                  } else if (dp === 'tiktok' && p.tiktokHandle) {
+                    pic = p.tiktokPicture ?? null;
+                    label = p.tiktokName ?? `@${p.tiktokHandle}`;
+                    icon = <FaTiktok className="text-zinc-200" size={10} />;
+                  } else if (dp === 'facebook' && p.facebookHandle) {
+                    pic = p.facebookPicture ?? null;
+                    label = p.facebookName ?? `@${p.facebookHandle}`;
+                    icon = <FaFacebook className="text-blue-500" size={10} />;
+                  }
+                  return (
+                    <div className="pt-1.5 border-t border-white/[0.06] flex items-center gap-2">
+                      <p className="text-zinc-600 text-[10px] uppercase tracking-widest shrink-0">Öffentlich:</p>
+                      {pic
+                        ? <img src={pic} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                        : <div className="w-6 h-6 rounded-full bg-zinc-700 shrink-0" />}
+                      <span className="text-zinc-400 text-xs flex items-center gap-1">{icon} {label}</span>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
