@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
-import { FaTrophy, FaSync, FaLock, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaTrophy, FaSync, FaLock, FaChevronLeft, FaChevronRight, FaStar } from 'react-icons/fa';
 import CreditsBox from '../components/CreditsBox';
 import VerifyModal from './VerifyModal';
 import LikeVerifyModal from './LikeVerifyModal';
@@ -52,6 +52,10 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const [instagramDmShareToken, setInstagramDmShareToken] = useState<string | null>(null);
   const [facebookCommentQuest, setFacebookCommentQuest] = useState<QuestIndexEntry | null>(null);
   const [facebookLikeQuest, setFacebookLikeQuest] = useState<QuestIndexEntry | null>(null);
+
+  // Celebration nach Quest-Abschluss
+  const [celebration, setCelebration] = useState<{ amount: number; questTitle: string; reputationReward?: number } | null>(null);
+  const pendingCelebration = useRef<{ amount: number; questTitle: string; reputationReward?: number } | null>(null);
 
   const loadQuests = useCallback(async () => {
     setLoading(true);
@@ -406,7 +410,12 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         loading={verifyLoading}
         result={verifyResult}
         onVerify={handleVerify}
-        onClose={() => { setVerifyingQuest(null); setVerifyResult(null); }}
+        onClose={() => {
+          if (verifyResult?.success && verifyingQuest) {
+            setCelebration({ amount: verifyResult.rewardAmount ?? 0, questTitle: verifyingQuest.videoTitle, reputationReward: verifyingQuest.reputationReward });
+          }
+          setVerifyingQuest(null); setVerifyResult(null);
+        }}
       />
 
       {/* Verifizierungs-Modal (Like) */}
@@ -420,9 +429,13 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === likeVerifyQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
+            pendingCelebration.current = { amount, questTitle: likeVerifyQuest.videoTitle, reputationReward: likeVerifyQuest.reputationReward };
           }
         }}
-        onClose={() => setLikeVerifyQuest(null)}
+        onClose={() => {
+          if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
+          setLikeVerifyQuest(null);
+        }}
       />
 
       {/* Verifizierungs-Modal (Secret) */}
@@ -436,9 +449,13 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === secretVerifyQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
+            pendingCelebration.current = { amount, questTitle: secretVerifyQuest.videoTitle, reputationReward: secretVerifyQuest.reputationReward };
           }
         }}
-        onClose={() => setSecretVerifyQuest(null)}
+        onClose={() => {
+          if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
+          setSecretVerifyQuest(null);
+        }}
       />
 
       {/* Verifizierungs-Modal (TikTok Engagement) */}
@@ -452,9 +469,13 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === tiktokEngagementQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
+            pendingCelebration.current = { amount, questTitle: tiktokEngagementQuest.videoTitle, reputationReward: tiktokEngagementQuest.reputationReward };
           }
         }}
-        onClose={() => setTiktokEngagementQuest(null)}
+        onClose={() => {
+          if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
+          setTiktokEngagementQuest(null);
+        }}
       />
 
       {/* Verifizierungs-Modal (Instagram Like / Save) */}
@@ -468,10 +489,14 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === instagramLikeQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
+            pendingCelebration.current = { amount, questTitle: instagramLikeQuest.videoTitle, reputationReward: instagramLikeQuest.reputationReward };
           }
           // Modal NICHT schließen – onClose schließt nach dem Erfolgs-Screen
         }}
-        onClose={() => setInstagramLikeQuest(null)}
+        onClose={() => {
+          if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
+          setInstagramLikeQuest(null);
+        }}
       />
 
       {/* Verifizierungs-Modal (Instagram Kommentar) */}
@@ -485,9 +510,13 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === instagramCommentQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
+            pendingCelebration.current = { amount, questTitle: instagramCommentQuest.videoTitle, reputationReward: instagramCommentQuest.reputationReward };
           }
         }}
-        onClose={() => setInstagramCommentQuest(null)}
+        onClose={() => {
+          if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
+          setInstagramCommentQuest(null);
+        }}
       />
 
       {/* Verifizierungs-Modal (Facebook Kommentar) */}
@@ -501,9 +530,13 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === facebookCommentQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
+            pendingCelebration.current = { amount, questTitle: facebookCommentQuest.videoTitle, reputationReward: facebookCommentQuest.reputationReward };
           }
         }}
-        onClose={() => setFacebookCommentQuest(null)}
+        onClose={() => {
+          if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
+          setFacebookCommentQuest(null);
+        }}
       />
 
       {/* Verifizierungs-Modal (Facebook Like) */}
@@ -517,9 +550,13 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === facebookLikeQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
+            pendingCelebration.current = { amount, questTitle: facebookLikeQuest.videoTitle, reputationReward: facebookLikeQuest.reputationReward };
           }
         }}
-        onClose={() => setFacebookLikeQuest(null)}
+        onClose={() => {
+          if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
+          setFacebookLikeQuest(null);
+        }}
       />
 
       {/* Verifizierungs-Modal (Instagram DM-Share) */}
@@ -534,10 +571,84 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === instagramDmShareQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
+            pendingCelebration.current = { amount, questTitle: instagramDmShareQuest.videoTitle, reputationReward: instagramDmShareQuest.reputationReward };
           }
         }}
-        onClose={() => { setInstagramDmShareQuest(null); setInstagramDmShareToken(null); }}
+        onClose={() => {
+          if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
+          setInstagramDmShareQuest(null); setInstagramDmShareToken(null);
+        }}
       />
+
+      {/* ── Quest-Abschluss-Celebration ───────────────────────────────────── */}
+      {celebration && (
+        <div
+          className="fixed inset-0 z-[999] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setCelebration(null)}
+        >
+          <style>{`
+            @keyframes questCelebFlyUp {
+              0%   { transform: translateY(0) scale(1); opacity: 1; }
+              100% { transform: translateY(-180px) scale(0.3); opacity: 0; }
+            }
+            @keyframes questCelebPop {
+              0%   { transform: scale(0.3); opacity: 0; }
+              60%  { transform: scale(1.15); opacity: 1; }
+              100% { transform: scale(1); }
+            }
+            @keyframes questCelebGlow {
+              0%, 100% { text-shadow: 0 0 20px #f59e0b, 0 0 40px #f59e0b; }
+              50%       { text-shadow: 0 0 40px #fbbf24, 0 0 80px #fbbf24, 0 0 120px #fde68a; }
+            }
+            .quest-celeb-particle {
+              position: absolute;
+              animation: questCelebFlyUp 1.4s ease-out forwards;
+              font-size: 1.3rem;
+            }
+          `}</style>
+          {['⭐','✨','🎵','💫','🌟','✨','⭐','🎶','💫','✨'].map((s, i) => (
+            <span
+              key={i}
+              className="quest-celeb-particle"
+              style={{
+                left: `${10 + i * 9}%`,
+                bottom: `${20 + (i % 3) * 15}%`,
+                animationDelay: `${i * 0.1}s`,
+                animationDuration: `${1.2 + (i % 4) * 0.2}s`,
+              }}
+            >{s}</span>
+          ))}
+          <div
+            className="relative bg-zinc-900 border border-amber-500/40 rounded-3xl p-8 mx-6 text-center shadow-2xl max-w-sm w-full"
+            style={{ animation: 'questCelebPop 0.5s ease-out forwards' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <p className="text-5xl mb-3">🎉</p>
+            <p
+              className="text-amber-300 font-black text-5xl mb-1"
+              style={{ animation: 'questCelebPop 0.6s ease-out forwards, questCelebGlow 2s ease-in-out infinite' }}
+            >
+              +{formatCredits(celebration.amount)}
+            </p>
+            <p className="text-amber-400 font-bold text-lg mb-3">D.FAITH Credits</p>
+            {(celebration.reputationReward ?? 0) > 0 && (
+              <p className="text-purple-300 font-semibold text-sm mb-3 flex items-center justify-center gap-1">
+                <FaStar size={12} /> +{celebration.reputationReward} Reputation
+              </p>
+            )}
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 mb-6">
+              <p className="text-zinc-400 text-xs mb-0.5">Quest abgeschlossen</p>
+              <p className="text-white text-sm font-semibold line-clamp-2">{celebration.questTitle}</p>
+            </div>
+            <button
+              onClick={() => setCelebration(null)}
+              className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-8 py-3 rounded-2xl transition-colors text-sm"
+            >
+              Awesome! 🎊
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
