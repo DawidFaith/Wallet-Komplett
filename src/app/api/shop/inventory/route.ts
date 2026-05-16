@@ -31,7 +31,17 @@ export async function GET(req: NextRequest) {
       si.is_active,
       si.created_at,
       sp.purchased_at,
-      p.display_name AS artist_name,
+      COALESCE(
+        p.display_name,
+        CASE WHEN p.display_platform = 'youtube'   THEN yb.channel_name      ELSE NULL END,
+        CASE WHEN p.display_platform = 'instagram' THEN p.instagram_name     ELSE NULL END,
+        CASE WHEN p.display_platform = 'tiktok'    THEN p.tiktok_name        ELSE NULL END,
+        CASE WHEN p.display_platform = 'facebook'  THEN p.facebook_name      ELSE NULL END,
+        yb.channel_name,
+        p.instagram_name,
+        p.tiktok_name,
+        p.facebook_name
+      ) AS artist_name,
       COALESCE(
         CASE WHEN p.display_platform = 'youtube'    THEN yb.channel_thumbnail  ELSE NULL END,
         CASE WHEN p.display_platform = 'instagram'  THEN p.instagram_picture   ELSE NULL END,
