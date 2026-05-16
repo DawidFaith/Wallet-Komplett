@@ -272,17 +272,20 @@ function ArtistShopView({
   onBack,
   creditBalance,
   onPurchased,
+  onGoToInventory,
 }: {
   artist: ShopArtist;
   walletAddress: string | null;
   onBack: () => void;
   creditBalance?: number | null;
   onPurchased?: () => void;
+  onGoToInventory?: () => void;
 }) {
   const [items, setItems] = useState<ShopItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState<string | null>(null);
-  const [buyResult, setBuyResult] = useState<{ itemId: string; contentUrl: string; type: string } | null>(null);
+  const [buyResult, setBuyResult] = useState<{ itemId: string; contentUrl: string; type: string; title: string; paymentMethod: string } | null>(null);
+  const [buyCelebration, setBuyCelebration] = useState<{ title: string; type: ItemType; price: number; paymentMethod: string } | null>(null);
   const [buyError, setBuyError] = useState('');
   const [userLevel, setUserLevel] = useState(0);
 
@@ -340,7 +343,8 @@ function ArtistShopView({
         return;
       }
       const data = await res.json();
-      setBuyResult({ itemId: item.id, contentUrl: data.contentUrl, type: data.type });
+      setBuyResult({ itemId: item.id, contentUrl: data.contentUrl, type: data.type, title: item.title, paymentMethod });
+      setBuyCelebration({ title: item.title, type: item.type, price: item.priceCredits, paymentMethod });
       setItems(prev => prev.map(i => i.id === item.id ? { ...i, purchased: true } : i));
       onPurchased?.();
     } finally {
@@ -395,20 +399,81 @@ function ArtistShopView({
 
       {/* Kauf-Erfolg */}
       {buyResult && (
-        <div className="mx-4 bg-emerald-900/20 border border-emerald-700/40 rounded-xl px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-emerald-300 text-sm">
-            <FaCheck size={12} /> Kauf erfolgreich!
-          </div>
-          <div className="flex items-center gap-2">
-            {buyResult.contentUrl && (
-              <a href={buyResult.contentUrl} target="_blank" rel="noopener noreferrer"
-                className="text-emerald-400 hover:text-emerald-300 text-xs flex items-center gap-1">
-                <FaExternalLinkAlt size={9} /> Öffnen
-              </a>
-            )}
+        <div className="mx-4 bg-emerald-900/20 border border-emerald-700/40 rounded-xl px-4 py-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 text-emerald-300 text-sm font-semibold">
+              <FaCheck size={12} /> Kauf erfolgreich!
+            </div>
             <button onClick={() => setBuyResult(null)} className="text-zinc-500 hover:text-zinc-300">
               <FaTimes size={12} />
             </button>
+          </div>
+          <p className="text-zinc-400 text-xs mb-2">«{buyResult.title}» ist jetzt in deinem Inventar.</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setBuyResult(null); onGoToInventory?.(); }}
+              className="flex items-center gap-1.5 bg-emerald-700/40 hover:bg-emerald-700/60 border border-emerald-600/40 rounded-xl px-3 py-1.5 text-emerald-300 text-xs font-bold transition-colors"
+            >
+              <FaBoxOpen size={10} /> Zum Inventar
+            </button>
+            {buyResult.contentUrl && (
+              <a href={buyResult.contentUrl} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-3 py-1.5 text-zinc-300 text-xs font-semibold transition-colors">
+                <FaExternalLinkAlt size={9} /> Direkt öffnen
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Kauf-Celebration */}
+      {buyCelebration && (
+        <div
+          className="fixed inset-0 z-[999] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setBuyCelebration(null)}
+        >
+          <style>{`
+            @keyframes shopBuyFlyUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-160px) scale(0.3); opacity: 0; } }
+            @keyframes shopBuyPop { 0% { transform: scale(0.3); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
+            @keyframes shopBuyGlow { 0%,100% { text-shadow: 0 0 20px #10b981, 0 0 40px #10b981; } 50% { text-shadow: 0 0 40px #34d399, 0 0 80px #34d399; } }
+            .shop-buy-particle { position: absolute; animation: shopBuyFlyUp 1.4s ease-out forwards; font-size: 1.3rem; }
+          `}</style>
+          {['🎵','✨','🛍️','💫','🎶','✨','🎵','🌟','💎','✨'].map((s, i) => (
+            <span key={i} className="shop-buy-particle" style={{ left: `${8 + i * 9}%`, bottom: `${18 + (i % 3) * 16}%`, animationDelay: `${i * 0.1}s`, animationDuration: `${1.2 + (i % 4) * 0.2}s` }}>{s}</span>
+          ))}
+          <div
+            className="relative bg-zinc-900 border border-emerald-500/40 rounded-3xl p-8 mx-6 text-center shadow-2xl max-w-sm w-full"
+            style={{ animation: 'shopBuyPop 0.5s ease-out forwards' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <p className="text-5xl mb-3">{buyCelebration.type === 'song' ? '🎵' : buyCelebration.type === 'video' ? '🎬' : buyCelebration.type === 'nft' ? '💎' : '⭐'}</p>
+            <p
+              className="text-emerald-300 font-black text-3xl mb-1"
+              style={{ animation: 'shopBuyPop 0.6s ease-out forwards, shopBuyGlow 2s ease-in-out infinite' }}
+            >
+              Gekauft!
+            </p>
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2 mb-4 mt-3">
+              <p className="text-zinc-400 text-xs mb-0.5">{TYPE_LABELS[buyCelebration.type]}</p>
+              <p className="text-white text-sm font-semibold line-clamp-2">{buyCelebration.title}</p>
+            </div>
+            <p className="text-zinc-400 text-xs mb-5">
+              {buyCelebration.paymentMethod === 'tokens' ? '💠 Bezahlt mit Tokens' : `💰 ${buyCelebration.price.toLocaleString('de-DE')} Credits`}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setBuyCelebration(null); onGoToInventory?.(); }}
+                className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-2xl transition-colors text-sm"
+              >
+                <FaBoxOpen size={13} /> Zum Inventar
+              </button>
+              <button
+                onClick={() => setBuyCelebration(null)}
+                className="px-4 py-3 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-semibold transition-colors"
+              >
+                Weiter shoppen
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1194,6 +1259,7 @@ export default function ShopTab() {
             onBack={() => setSelectedArtist(null)}
             creditBalance={creditBalance}
             onPurchased={loadCredits}
+            onGoToInventory={() => { setMode('inventory'); setSelectedArtist(null); }}
           />
         ) : (
           /* ── Supporter: Artist-Liste ── */
