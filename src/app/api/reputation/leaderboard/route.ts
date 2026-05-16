@@ -14,21 +14,34 @@ export async function GET(req: NextRequest) {
   try {
     const leaderboard = await getReputationLeaderboard(artistWallet, limit);
 
-    // Clerk-Namen + Bilder für alle Einträge abrufen
+    // Clerk-Namen + Bilder für alle Einträge abrufen.
+    // DB speichert wallet_address als lowercase, Clerk-IDs können aber Großbuchstaben
+    // enthalten → getUserList({ userId: lowercaseIds }) findet nichts.
+    // Lösung: alle User paginiert laden und per lowercase-Vergleich matchen.
     const ids = leaderboard.map((e) => e.walletAddress);
     const clerkData: Record<string, { name: string; imageUrl: string }> = {};
     if (ids.length > 0) {
       const clerk = await clerkClient();
-      const { data: users } = await clerk.users.getUserList({ userId: ids, limit: ids.length });
-      for (const u of users) {
-        const name =
-          u.fullName ??
-          u.username ??
-          u.firstName ??
-          u.emailAddresses[0]?.emailAddress?.split('@')[0] ??
-          null;
-        // Key als lowercase speichern damit er mit der DB-gespeicherten walletAddress übereinstimmt
-        clerkData[u.id.toLowerCase()] = { name: name ?? u.id, imageUrl: u.imageUrl };
+      const idSet = new Set(ids);
+      let offset = 0;
+      const pageSize = 100;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data: batch, totalCount } = await clerk.users.getUserList({ limit: pageSize, offset });
+        for (const u of batch) {
+          const lcId = u.id.toLowerCase();
+          if (idSet.has(lcId)) {
+            const name =
+              u.fullName ??
+              u.username ??
+              u.firstName ??
+              u.emailAddresses[0]?.emailAddress?.split('@')[0] ??
+              null;
+            clerkData[lcId] = { name: name ?? u.id, imageUrl: u.imageUrl };
+          }
+        }
+        if (batch.length < pageSize || offset + batch.length >= totalCount) break;
+        offset += pageSize;
       }
     }
 
