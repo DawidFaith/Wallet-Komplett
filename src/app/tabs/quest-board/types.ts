@@ -45,6 +45,8 @@ export interface ClaimResult {
   success: boolean;
   message: string;
   txHash?: string;
+  /** true wenn der Einlösungsversuch als Betrug erkannt und der Account gesperrt wurde */
+  fraud?: boolean;
 }
 
 export type QuestBoardView = 'fan' | 'artist';

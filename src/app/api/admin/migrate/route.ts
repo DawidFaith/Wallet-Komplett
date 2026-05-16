@@ -227,6 +227,14 @@ export async function POST(req: NextRequest) {
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_shop_purchases_unique ON shop_purchases(buyer_wallet, item_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_shop_purchases_buyer ON shop_purchases(buyer_wallet)`;
 
+    // ── ATA Fraud Protection ──────────────────────────────────────────────────
+    // ata_first_sent_at: Zeitstempel des ersten ATA-Aufbaus durch uns
+    // ata_fraud_blocked: TRUE wenn User ATA gelöscht und erneut versucht einzulösen
+    // ata_fraud_blocked_at: Zeitstempel der Betrug-Erkennung
+    await sql`ALTER TABLE solana_accounts ADD COLUMN IF NOT EXISTS ata_first_sent_at TIMESTAMPTZ`;
+    await sql`ALTER TABLE solana_accounts ADD COLUMN IF NOT EXISTS ata_fraud_blocked BOOLEAN NOT NULL DEFAULT FALSE`;
+    await sql`ALTER TABLE solana_accounts ADD COLUMN IF NOT EXISTS ata_fraud_blocked_at TIMESTAMPTZ`;
+
     // ── price_tokens Spalte (falls noch nicht vorhanden) ─────────────────────
     await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS price_tokens NUMERIC(20,6)`;
 

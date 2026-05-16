@@ -202,6 +202,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       if (res.ok) {
         setClaimResult({ success: true, message: `${formatCredits(data.sentAmount)} ${tokenName} wurden an deine Wallet gesendet!`, txHash: data.txHash });
         setCredits(0);
+      } else if (res.status === 403) {
+        setClaimResult({ success: false, message: data.error, fraud: true });
       } else {
         setClaimResult({ success: false, message: data.error });
       }
@@ -263,7 +265,10 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
 
       {/* Claim-Ergebnis */}
       {claimResult && (
-        <div className={`rounded-2xl p-4 border ${claimResult.success ? 'bg-green-900/30 border-green-700/40' : 'bg-red-900/30 border-red-700/40'}`}>
+        <div className={`rounded-2xl p-4 border ${claimResult.success ? 'bg-green-900/30 border-green-700/40' : claimResult.fraud ? 'bg-red-950/60 border-red-600/60' : 'bg-red-900/30 border-red-700/40'}`}>
+          {claimResult.fraud && (
+            <p className="text-red-400 font-black text-xs uppercase tracking-widest mb-1">⛔ Einlösen gesperrt</p>
+          )}
           <p className={`font-semibold text-sm ${claimResult.success ? 'text-green-300' : 'text-red-300'}`}>
             {claimResult.message}
           </p>
@@ -272,7 +277,9 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               Transaktion auf BaseScan ansehen →
             </a>
           )}
-          <button onClick={() => setClaimResult(null)} className="text-zinc-500 text-xs mt-2 hover:text-zinc-300">Schließen</button>
+          {!claimResult.fraud && (
+            <button onClick={() => setClaimResult(null)} className="text-zinc-500 text-xs mt-2 hover:text-zinc-300">Schließen</button>
+          )}
         </div>
       )}
 
