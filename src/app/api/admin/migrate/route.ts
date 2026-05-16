@@ -219,6 +219,13 @@ export async function POST(req: NextRequest) {
     // ── price_tokens Spalte (falls noch nicht vorhanden) ─────────────────────
     await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS price_tokens NUMERIC(20,6)`;
 
+    // ── required_level Spalte (Level-Sperre für Shop-Items) ──────────────────
+    await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS required_level INTEGER NOT NULL DEFAULT 0`;
+
+    // ── story_token Spalte (Eindeutiger Token pro Story-Quest) ────────────────
+    await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS story_token TEXT`;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_quests_story_token ON quests(story_token) WHERE story_token IS NOT NULL`;
+
     return NextResponse.json({ success: true, message: `Migration abgeschlossen (${(backfill as unknown as { count?: number }).count ?? backfill.length} neue Profile)` });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -81,6 +81,7 @@ export interface QuestDetail extends QuestIndexEntry {
   description: string;
   updatedAt: string;
   secretCode?: string | null;
+  storyToken?: string | null;
 }
 
 export interface YouTubeBinding {
@@ -150,6 +151,7 @@ function rowToQuestDetail(row: any): QuestDetail {
       : null,
     creditsLocked: Number(row.credits_locked ?? 0),
     creditsRefunded: Boolean(row.credits_refunded ?? false),
+    storyToken: row.story_token ?? null,
   };
 }
 
@@ -203,19 +205,20 @@ export async function saveQuestDetail(quest: QuestDetail): Promise<void> {
   const creditsLocked = quest.creditsLocked ?? 0;
   const secretCode = quest.secretCode?.trim().toUpperCase() ?? null;
   const reputationReward = quest.reputationReward ?? 50;
+  const storyToken = quest.storyToken ?? null;
   await sql`
     INSERT INTO quests (
       id, platform, quest_type, creator_wallet,
       video_id, video_title, video_thumbnail, video_url,
       description, reward_amount, reputation_reward, max_completions,
       completions, is_active, expires_at, credits_locked, credits_refunded,
-      secret_code, created_at, updated_at
+      secret_code, story_token, created_at, updated_at
     ) VALUES (
       ${quest.id}, ${quest.platform}, ${quest.type}, ${quest.creatorWallet},
       ${quest.videoId}, ${quest.videoTitle}, ${quest.videoThumbnail}, ${quest.videoUrl},
       ${quest.description}, ${quest.rewardAmount}, ${reputationReward}, ${quest.maxCompletions},
       ${quest.completions}, ${quest.isActive}, ${expiresAt}, ${creditsLocked}, false,
-      ${secretCode}, ${quest.createdAt}, ${quest.updatedAt}
+      ${secretCode}, ${storyToken}, ${quest.createdAt}, ${quest.updatedAt}
     )
     ON CONFLICT (id) DO UPDATE SET
       video_title        = EXCLUDED.video_title,
@@ -227,6 +230,7 @@ export async function saveQuestDetail(quest: QuestDetail): Promise<void> {
       is_active          = EXCLUDED.is_active,
       expires_at         = EXCLUDED.expires_at,
       secret_code        = EXCLUDED.secret_code,
+      story_token        = EXCLUDED.story_token,
       updated_at         = NOW()
   `;
 }
@@ -236,6 +240,13 @@ export async function getQuestSecretCode(questId: string): Promise<string | null
   const sql = getDb();
   const rows = await sql`SELECT secret_code FROM quests WHERE id = ${questId} LIMIT 1`;
   return rows.length > 0 ? (rows[0].secret_code ?? null) : null;
+}
+
+/** Quest anhand des Story-Tokens laden */
+export async function getQuestByStoryToken(token: string): Promise<QuestDetail | null> {
+  const sql = getDb();
+  const rows = await sql`SELECT * FROM quests WHERE story_token = ${token} LIMIT 1`;
+  return rows.length > 0 ? rowToQuestDetail(rows[0]) : null;
 }
 
 /**

@@ -211,4 +211,8 @@ export const MIGRATION_SQL = `
 
   -- Shop: Mindest-Level-Anforderung pro Item (0 = kein Level erforderlich)
   ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS required_level INTEGER NOT NULL DEFAULT 0;
+
+  -- Instagram Story Quest: Eindeutiger Token pro Quest (für Story-Link)
+  ALTER TABLE quests ADD COLUMN IF NOT EXISTS story_token TEXT UNIQUE;
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_quests_story_token ON quests(story_token) WHERE story_token IS NOT NULL;
 `;

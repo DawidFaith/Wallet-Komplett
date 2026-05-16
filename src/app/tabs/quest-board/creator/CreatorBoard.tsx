@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { FaPlus, FaSync, FaTrophy, FaExternalLinkAlt, FaTimes, FaYoutube, FaInstagram, FaTiktok, FaFacebook } from 'react-icons/fa';
+import { FaPlus, FaSync, FaTrophy, FaExternalLinkAlt, FaTimes, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaCopy, FaCheck, FaLink } from 'react-icons/fa';
 import CreditsBox from '../components/CreditsBox';
 import DepositModal from './DepositModal';
 import CreateQuestModal from './CreateQuestModal';
@@ -166,6 +166,10 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                 <a href={quest.videoUrl} target="_blank" rel="noopener noreferrer" className="text-red-400 text-xs flex items-center gap-1 hover:underline">
                   <FaExternalLinkAlt size={10} /> Öffnen
                 </a>
+                {/* Story-Link für dm_share Quests */}
+                {(quest.type as string) === 'dm_share' && quest.storyToken && (
+                  <StoryLinkRow token={quest.storyToken} />
+                )}
                 <div className="flex items-center gap-3 text-xs text-zinc-400">
                   <span className="flex items-center gap-1">
                     <Image src="/D.FAITH.png" alt={tokenName} width={12} height={12} className="w-3 h-3 object-contain" />
@@ -227,6 +231,36 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         walletAddress={walletAddress}
         onDeposited={(amount) => setCreatorBalance((prev) => prev + amount)}
       />
+    </div>
+  );
+}
+
+// ─── StoryLinkRow ─────────────────────────────────────────────────────────────
+
+function StoryLinkRow({ token }: { token: string }) {
+  const [copied, setCopied] = useState(false);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de';
+  const link = `${appUrl}/api/instagram-quests/story-click?token=${token}`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="flex items-center gap-1 mt-1">
+      <FaLink size={9} className="text-pink-400 shrink-0" />
+      <span className="text-[10px] text-pink-300 truncate flex-1 font-mono max-w-[160px]" title={link}>
+        Story-Link
+      </span>
+      <button
+        onClick={handleCopy}
+        title={link}
+        className="text-zinc-500 hover:text-white transition-colors shrink-0"
+      >
+        {copied ? <FaCheck size={10} className="text-green-400" /> : <FaCopy size={10} />}
+      </button>
     </div>
   );
 }

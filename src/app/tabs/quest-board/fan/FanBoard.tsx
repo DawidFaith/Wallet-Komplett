@@ -49,6 +49,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const [instagramCommentQuest, setInstagramCommentQuest] = useState<QuestIndexEntry | null>(null);
   const [instagramLikeQuest, setInstagramLikeQuest] = useState<QuestIndexEntry | null>(null);
   const [instagramDmShareQuest, setInstagramDmShareQuest] = useState<QuestIndexEntry | null>(null);
+  const [instagramDmShareToken, setInstagramDmShareToken] = useState<string | null>(null);
   const [facebookCommentQuest, setFacebookCommentQuest] = useState<QuestIndexEntry | null>(null);
   const [facebookLikeQuest, setFacebookLikeQuest] = useState<QuestIndexEntry | null>(null);
 
@@ -60,11 +61,31 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         fetch(`/api/youtube-quests/creator-balance?wallet=${walletAddress}`),
       ]);
       const questsData = await questsRes.json();
-      setQuests(questsData.quests ?? []);
+      const loadedQuests: QuestIndexEntry[] = questsData.quests ?? [];
+      setQuests(loadedQuests);
       setCompletedIds(questsData.completedIds ?? []);
       if (balRes.ok) {
         const balData = await balRes.json();
         setCredits(balData.balance ?? 0);
+      }
+
+      // Auto-open story-claim modal wenn storyToken in URL vorhanden
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('storyToken');
+        if (token) {
+          const match = loadedQuests.find(
+            (q) => q.platform === 'instagram' && (q.type as string) === 'dm_share' && q.storyToken === token
+          );
+          if (match) {
+            setInstagramDmShareQuest(match);
+            setInstagramDmShareToken(token);
+            // Token aus URL entfernen (kein Neuladen)
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('storyToken');
+            window.history.replaceState(null, '', newUrl.toString());
+          }
+        }
       }
     } catch {
       // Fehler beim Laden
@@ -505,6 +526,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       <InstagramDmShareModal
         quest={instagramDmShareQuest}
         walletAddress={walletAddress}
+        storyClaimToken={instagramDmShareToken ?? undefined}
         onCompleted={(amount) => {
           if (instagramDmShareQuest) {
             setCompletedIds((prev) => [...prev, instagramDmShareQuest.id]);
@@ -514,7 +536,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             );
           }
         }}
-        onClose={() => setInstagramDmShareQuest(null)}
+        onClose={() => { setInstagramDmShareQuest(null); setInstagramDmShareToken(null); }}
       />
     </div>
   );

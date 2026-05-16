@@ -9,6 +9,8 @@ import { formatCredits } from '../utils';
 interface InstagramDmShareModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
+  /** Wenn vorhanden: Fan kam über den Story-Link → einfacher 1-Klick Claim-Flow */
+  storyClaimToken?: string;
   onCompleted: (rewardAmount: number) => void;
   onClose: () => void;
 }
@@ -26,6 +28,7 @@ type Step =
 export default function InstagramDmShareModal({
   quest,
   walletAddress,
+  storyClaimToken,
   onCompleted,
   onClose,
 }: InstagramDmShareModalProps) {
@@ -203,50 +206,69 @@ export default function InstagramDmShareModal({
           </div>
         </div>
 
-        {/* Zwei-Schritt Fortschritt */}
-        <div className="flex items-center gap-2 text-xs">
-          <StepBadge
-            num={1}
-            label="Story teilen"
-            done={['part2', 'success'].includes(step)}
-            active={['part1', 'starting', 'checking'].includes(step)}
+        {/* ── STORY-CLAIM FLOW (Token aus Story-Link) ── */}
+        {storyClaimToken && (
+          <StoryClaimSection
+            token={storyClaimToken}
+            walletAddress={walletAddress}
+            rewardAmount={quest.rewardAmount}
+            questTitle={quest.videoTitle}
+            onSuccess={(amount) => {
+              onCompleted(amount);
+            }}
+            onClose={onClose}
           />
-          <div className="flex-1 h-px bg-zinc-700" />
-          <StepBadge
-            num={2}
-            label="DM-Link klicken"
-            done={step === 'success'}
-            active={step === 'part2'}
-          />
-        </div>
-
-        {/* ── IDLE ── */}
-        {step === 'idle' && (
-          <div className="space-y-3">
-            <p className="text-sm text-zinc-400">
-              Teile diesen Beitrag in deiner Story (Teil 1). Nach der Bestätigung bekommst du einen Link per DM – klicke ihn (Teil 2) um die Belohnung zu erhalten.
-            </p>
-            <button
-              onClick={handleStart}
-              disabled={loading}
-              className="w-full bg-pink-600 hover:bg-pink-500 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
-            >
-              <FaShareAlt size={14} />
-              Quest starten
-            </button>
-          </div>
         )}
 
-        {/* ── STARTING ── */}
-        {step === 'starting' && (
-          <div className="text-center py-4">
-            <div className="animate-spin w-8 h-8 border-2 border-pink-500 border-t-transparent rounded-full mx-auto mb-3" />
-            <p className="text-sm text-zinc-400">Wird vorbereitet…</p>
-          </div>
+        {/* ── NORMALER ZWEI-SCHRITT FLOW ── */}
+        {!storyClaimToken && (
+          <>
+            {/* Zwei-Schritt Fortschritt */}
+            <div className="flex items-center gap-2 text-xs">
+              <StepBadge
+                num={1}
+                label="Story teilen"
+                done={['part2', 'success'].includes(step)}
+                active={['part1', 'starting', 'checking'].includes(step)}
+              />
+              <div className="flex-1 h-px bg-zinc-700" />
+              <StepBadge
+                num={2}
+                label="DM-Link klicken"
+                done={step === 'success'}
+                active={step === 'part2'}
+              />
+            </div>
+
+            {/* ── IDLE ── */}
+            {step === 'idle' && (
+              <div className="space-y-3">
+                <p className="text-sm text-zinc-400">
+                  Teile diesen Beitrag in deiner Story (Teil 1). Nach der Bestätigung bekommst du einen Link per DM – klicke ihn (Teil 2) um die Belohnung zu erhalten.
+                </p>
+                <button
+                  onClick={handleStart}
+                  disabled={loading}
+                  className="w-full bg-pink-600 hover:bg-pink-500 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                >
+                  <FaShareAlt size={14} />
+                  Quest starten
+                </button>
+              </div>
+            )}
+
+            {/* ── STARTING ── */}
+            {step === 'starting' && (
+              <div className="text-center py-4">
+                <div className="animate-spin w-8 h-8 border-2 border-pink-500 border-t-transparent rounded-full mx-auto mb-3" />
+                <p className="text-sm text-zinc-400">Wird vorbereitet…</p>
+              </div>
+            )}
+          </>
         )}
 
         {/* ── PART 1: Story teilen ── */}
-        {(step === 'part1' || step === 'checking') && (
+        {!storyClaimToken && (step === 'part1' || step === 'checking') && (
           <div className="space-y-3">
             <div className="bg-zinc-800/60 rounded-xl px-3 py-3 space-y-1">
               <p className="font-semibold text-white text-xs">📸 Teil 1 – Story teilen</p>
@@ -288,7 +310,7 @@ export default function InstagramDmShareModal({
         )}
 
         {/* ── PART 2: DM-Klick ── */}
-        {step === 'part2' && (
+        {!storyClaimToken && step === 'part2' && (
           <div className="space-y-3">
             <div className="bg-green-900/30 border border-green-600/40 rounded-xl px-3 py-2 text-xs text-green-300 flex items-center gap-2">
               <FaCheck size={10} /> Story-Share bestätigt!
@@ -334,7 +356,7 @@ export default function InstagramDmShareModal({
         )}
 
         {/* ── SUCCESS ── */}
-        {step === 'success' && (
+        {!storyClaimToken && step === 'success' && (
           <div className="text-center py-4 space-y-3">
             <div className="text-4xl">🎉</div>
             <p className="font-bold text-lg text-green-400">Quest abgeschlossen!</p>
@@ -348,7 +370,7 @@ export default function InstagramDmShareModal({
         )}
 
         {/* ── EXPIRED ── */}
-        {step === 'expired' && (
+        {!storyClaimToken && step === 'expired' && (
           <div className="space-y-3">
             <div className="bg-red-900/30 border border-red-600/40 rounded-xl px-3 py-2 text-xs text-red-300">
               ⏰ Zeit abgelaufen. Bitte starte die Quest neu.
@@ -364,7 +386,7 @@ export default function InstagramDmShareModal({
         )}
 
         {/* ── ERROR ── */}
-        {step === 'error' && (
+        {!storyClaimToken && step === 'error' && (
           <div className="space-y-3">
             <div className="bg-red-900/30 border border-red-600/40 rounded-xl px-3 py-2 text-xs text-red-300">
               {error}
@@ -376,7 +398,7 @@ export default function InstagramDmShareModal({
         )}
 
         {/* Inline-Fehler (nicht fatal) */}
-        {error && !['error', 'idle', 'expired', 'success'].includes(step) && (
+        {!storyClaimToken && error && !['error', 'idle', 'expired', 'success'].includes(step) && (
           <div className="bg-orange-900/30 border border-orange-600/40 rounded-xl px-3 py-2 text-xs text-orange-300">
             {error}
           </div>
@@ -396,6 +418,100 @@ function StepBadge({ num, label, done, active }: { num: number; label: string; d
         {done ? <FaCheck size={9} /> : num}
       </div>
       <span className="text-[10px] text-zinc-500 max-w-[60px] text-center leading-tight">{label}</span>
+    </div>
+  );
+}
+
+// ─── Story-Claim Abschnitt ─────────────────────────────────────────────────────
+
+interface StoryClaimSectionProps {
+  token: string;
+  walletAddress: string;
+  rewardAmount: number;
+  questTitle: string;
+  onSuccess: (amount: number) => void;
+  onClose: () => void;
+}
+
+function StoryClaimSection({ token, walletAddress, rewardAmount, onSuccess, onClose }: StoryClaimSectionProps) {
+  const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [claimed, setClaimed] = useState(0);
+
+  const handleClaim = async () => {
+    setState('loading');
+    setErrorMsg('');
+    try {
+      const res = await fetch('/api/instagram-quests/story-claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, walletAddress }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setClaimed(data.rewardAmount ?? rewardAmount);
+        setState('success');
+        onSuccess(data.rewardAmount ?? rewardAmount);
+      } else {
+        setErrorMsg(data.error ?? 'Fehler beim Einlösen');
+        setState('error');
+      }
+    } catch {
+      setErrorMsg('Netzwerkfehler. Bitte versuche es erneut.');
+      setState('error');
+    }
+  };
+
+  if (state === 'success') {
+    return (
+      <div className="text-center py-4 space-y-3">
+        <div className="text-4xl">🎉</div>
+        <p className="font-bold text-lg text-green-400">Quest abgeschlossen!</p>
+        <p className="text-sm text-zinc-400">
+          +{formatCredits(claimed)} DFAITH Credits wurden gutgeschrieben.
+        </p>
+        <button
+          onClick={onClose}
+          className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
+        >
+          Schließen
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="bg-zinc-800/60 rounded-xl px-3 py-3 space-y-1">
+        <p className="font-semibold text-white text-xs">🎁 Story-Link Belohnung</p>
+        <p className="text-xs text-zinc-400">
+          Du hast den Story-Link des Artists geklickt. Fordere jetzt deine Belohnung ein!
+        </p>
+      </div>
+
+      {state === 'error' && (
+        <div className="bg-red-900/30 border border-red-600/40 rounded-xl px-3 py-2 text-xs text-red-300">
+          {errorMsg}
+        </div>
+      )}
+
+      <button
+        onClick={state === 'loading' ? undefined : handleClaim}
+        disabled={state === 'loading'}
+        className="w-full bg-pink-600 hover:bg-pink-500 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+      >
+        {state === 'loading' ? (
+          <>
+            <div className="animate-spin w-3 h-3 border border-white border-t-transparent rounded-full" />
+            Einlösen…
+          </>
+        ) : (
+          <>
+            <FaCheck size={12} />
+            +{formatCredits(rewardAmount)} einlösen
+          </>
+        )}
+      </button>
     </div>
   );
 }

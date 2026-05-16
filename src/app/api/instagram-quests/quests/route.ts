@@ -117,6 +117,7 @@ export async function POST(req: NextRequest) {
     creditsLocked: totalBudget,
     creditsRefunded: false,
     reputationReward: Math.max(0, Math.round(Number(reputationReward) || 50)),
+    storyToken: type === 'dm_share' ? randomUUID() : null,
   };
 
   // Budget sperren (atomisch)
@@ -130,10 +131,16 @@ export async function POST(req: NextRequest) {
 
   await saveQuestDetail(quest);
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL ?? 'https://app.dawidfaith.de';
+  const storyLink = quest.storyToken
+    ? `${appUrl}/api/instagram-quests/story-click?token=${quest.storyToken}`
+    : null;
+
   return NextResponse.json({
     success: true,
     questId,
     questType: type,
-    message: `Instagram ${type === 'like' ? 'Like' : type === 'save' ? 'Save' : 'Comment'} Quest erstellt. Budget: ${totalBudget} DFAITH gesperrt.`,
+    storyLink,
+    message: `Instagram ${type === 'like' ? 'Like' : type === 'save' ? 'Save' : type === 'dm_share' ? 'Story Quest' : 'Comment'} Quest erstellt. Budget: ${totalBudget} DFAITH gesperrt.`,
   });
 }

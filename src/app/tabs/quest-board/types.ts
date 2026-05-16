@@ -22,6 +22,7 @@ export interface QuestIndexEntry {
   isActive: boolean;
   createdAt: string;
   expiresAt?: string | null;
+  storyToken?: string | null;
 }
 
 export interface YouTubeBinding {
