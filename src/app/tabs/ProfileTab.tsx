@@ -343,7 +343,6 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
             <p className="font-bold text-lg text-white truncate">
               {_clerkUser?.fullName ?? _clerkUser?.username ?? shortenAddress(account.address)}
             </p>
-            <p className="text-zinc-500 text-xs truncate">{shortenAddress(account.address)}</p>
           </div>
         </div>
 
