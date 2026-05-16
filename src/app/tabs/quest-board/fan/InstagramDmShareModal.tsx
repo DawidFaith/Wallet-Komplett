@@ -79,7 +79,7 @@ export default function InstagramDmShareModal({
       .then((data) => {
         if (data.started && !data.expired) {
           setExpiresAt(data.expiresAt ?? null);
-          setInstagramHandle('');
+          setInstagramHandle(data.instagramHandle ?? '');
           if (data.shareVerified && !data.clickVerified) {
             setLinkTemplate(data.linkTemplate ?? '');
             setStep('part2');
@@ -316,11 +316,24 @@ export default function InstagramDmShareModal({
             </div>
 
             <div className="bg-zinc-800/60 rounded-xl px-3 py-3 space-y-1">
-              <p className="font-semibold text-white text-xs">📩 Teil 2 – DM-Link klicken</p>
+              <p className="font-semibold text-white text-xs">📩 Teil 2 – Link klicken</p>
               <p className="text-xs text-zinc-400">
-                Du bekommst gleich einen Link per DM. Klicke ihn um die Quest abzuschließen.
+                Klicke den Button unten um die Quest abzuschließen.
               </p>
             </div>
+
+            {/* Personalisierter Direkt-Link */}
+            {linkTemplate && instagramHandle && (
+              <a
+                href={linkTemplate.replace('{name}', encodeURIComponent(instagramHandle))}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full bg-pink-600 hover:bg-pink-500 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
+              >
+                <FaExternalLinkAlt size={12} />
+                Quest jetzt abschließen ↗
+              </a>
+            )}
 
 
 

@@ -261,6 +261,7 @@ export async function POST(req: NextRequest) {
         expiresAt: verif.expiresAt,
         expired: new Date(verif.expiresAt) < new Date(),
         linkTemplate: verif.storyVerified ? linkTemplate : null,
+        instagramHandle: profile.instagramHandle,
       });
     }
 
