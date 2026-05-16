@@ -489,9 +489,15 @@ function ArtistShopView({
         </div>
       ) : (
         <div className="px-4 grid grid-cols-1 gap-3">
-          {items.map(item => (
-            <ItemCard key={item.id} item={item} onBuy={handleBuy} buying={buying} walletAddress={walletAddress} artistRewardToken={artist.rewardToken} userLevel={userLevel} />
-          ))}
+          {items.filter(item => !item.purchased).length === 0 ? (
+            <div className="bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
+              Alle Items wurden bereits von dir gekauft.
+            </div>
+          ) : (
+            items.filter(item => !item.purchased).map(item => (
+              <ItemCard key={item.id} item={item} onBuy={handleBuy} buying={buying} walletAddress={walletAddress} artistRewardToken={artist.rewardToken} userLevel={userLevel} />
+            ))
+          )}
         </div>
       )}
     </div>

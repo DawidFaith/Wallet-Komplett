@@ -32,10 +32,20 @@ export async function GET(req: NextRequest) {
       si.created_at,
       sp.purchased_at,
       p.display_name AS artist_name,
-      p.picture_url  AS artist_picture
+      COALESCE(
+        CASE WHEN p.display_platform = 'youtube'    THEN yb.channel_thumbnail  ELSE NULL END,
+        CASE WHEN p.display_platform = 'instagram'  THEN p.instagram_picture   ELSE NULL END,
+        CASE WHEN p.display_platform = 'tiktok'     THEN p.tiktok_picture      ELSE NULL END,
+        CASE WHEN p.display_platform = 'facebook'   THEN p.facebook_picture    ELSE NULL END,
+        yb.channel_thumbnail,
+        p.instagram_picture,
+        p.tiktok_picture,
+        p.facebook_picture
+      ) AS artist_picture
     FROM shop_purchases sp
     JOIN shop_items si ON si.id = sp.item_id
     LEFT JOIN user_profiles p ON LOWER(p.wallet_address) = LOWER(si.artist_wallet)
+    LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
     WHERE sp.buyer_wallet = ${wallet}
     ORDER BY sp.purchased_at DESC
   `;
