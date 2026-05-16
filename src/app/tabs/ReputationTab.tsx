@@ -61,10 +61,14 @@ const shortenWallet = (w: string) =>
 function ArtistDetailView({
   entry,
   walletAddress,
+  userImageUrl,
+  userName,
   onBack,
 }: {
   entry: ReputationEntry;
   walletAddress: string;
+  userImageUrl?: string | null;
+  userName?: string | null;
   onBack: () => void;
 }) {
   const [tab, setTab] = useState<'leaderboard' | 'contest'>('leaderboard');
@@ -225,17 +229,20 @@ function ArtistDetailView({
         <FaChevronLeft size={11} /> Alle Künstler
       </button>
 
-      {/* Künstler-Header + Meine Rep */}
+      {/* User-Profil + Meine Rep */}
       <div className="mx-4 bg-zinc-900/60 border border-white/[0.07] rounded-2xl p-4">
+        <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-semibold mb-3">
+          {entry.artistName || shortenWallet(entry.artistWallet)}
+        </p>
         <div className="flex items-center gap-4 mb-4">
           <div className="w-14 h-14 rounded-full shrink-0 ring-2 ring-amber-500/30">
-            {entry.artistPicture
-              ? <img src={entry.artistPicture} alt="" className="w-14 h-14 rounded-full object-cover" />
-              : <div className="w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center"><FaStar className="text-amber-400" size={20} /></div>}
+            {userImageUrl
+              ? <img src={userImageUrl} alt="" className="w-14 h-14 rounded-full object-cover" />
+              : <div className="w-14 h-14 rounded-full bg-zinc-700 flex items-center justify-center"><FaStar className="text-zinc-400" size={20} /></div>}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-bold text-base truncate">
-              {entry.artistName || shortenWallet(entry.artistWallet)}
+              {userName || shortenWallet(walletAddress)}
             </p>
             <p className="text-amber-400 text-sm font-medium">Lv.{entry.level} &ndash; {entry.levelName}</p>
           </div>
@@ -1369,6 +1376,8 @@ export default function ReputationTab() {
           <ArtistDetailView
             entry={selectedArtist}
             walletAddress={walletAddress}
+            userImageUrl={user?.imageUrl}
+            userName={user?.fullName ?? user?.username}
             onBack={() => setSelectedArtist(null)}
           />
         ) : supporterEntries.length === 0 ? (
