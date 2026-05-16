@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { FaInstagram, FaShareAlt, FaExternalLinkAlt, FaRedo, FaCheck, FaCopy, FaPaperPlane } from 'react-icons/fa';
+import { FaInstagram, FaShareAlt, FaExternalLinkAlt, FaRedo, FaCheck, FaPaperPlane } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
 import { formatCredits } from '../utils';
@@ -39,7 +39,6 @@ export default function InstagramDmShareModal({
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [rewardAmount, setRewardAmount] = useState(0);
   const [linkTemplate, setLinkTemplate] = useState('');
-  const [copied, setCopied] = useState(false);
   const [instagramHandle, setInstagramHandle] = useState('');
   const [creatorHandle, setCreatorHandle] = useState('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -323,26 +322,7 @@ export default function InstagramDmShareModal({
               </p>
             </div>
 
-            {/* Link-Template für Creator zum Kopieren */}
-            {linkTemplate && (
-              <div className="space-y-1">
-                <p className="text-[10px] text-zinc-500 uppercase tracking-wide">Link-Template (für Link DM konfiguriert)</p>
-                <div className="flex items-center gap-2 bg-zinc-800/80 border border-zinc-700 rounded-xl px-3 py-2">
-                  <span className="text-xs text-pink-300 truncate flex-1 font-mono">{linkTemplate}</span>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(linkTemplate);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
-                    }}
-                    className="shrink-0 text-zinc-400 hover:text-white transition-colors"
-                    title="Kopieren"
-                  >
-                    {copied ? <FaCheck size={12} className="text-green-400" /> : <FaCopy size={12} />}
-                  </button>
-                </div>
-              </div>
-            )}
+
 
             {expiresAt && (
               <p className="text-center text-xs text-zinc-500">Verläuft in {formatTime(secondsLeft)}</p>
