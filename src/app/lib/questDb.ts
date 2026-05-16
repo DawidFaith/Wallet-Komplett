@@ -1485,6 +1485,8 @@ export async function upsertUserProfile(
     `;
   }
   if (data.displayPlatform !== undefined) {
+    const sql = getDb();
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS display_platform TEXT`;
     await sql`
       UPDATE user_profiles SET display_platform = ${data.displayPlatform}, updated_at = NOW()
       WHERE wallet_address = ${walletAddress.toLowerCase()}

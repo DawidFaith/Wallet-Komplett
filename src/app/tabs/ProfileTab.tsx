@@ -236,7 +236,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
     } finally {
       setArtistSaving(false);
     }
-  }, [account?.address, artistTypeInput, artistBioInput, artistRewardTokenInput, loadProfile]);
+  }, [account?.address, artistTypeInput, artistBioInput, artistRewardTokenInput, artistDisplayPlatformInput, loadProfile]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
