@@ -199,18 +199,19 @@ function buildPage(title: string, message: string, success: boolean, returnUrl?:
     h1 { font-size: 1.5rem; margin: 0 0 12px; color: ${color}; }
     p { color: #a1a1aa; line-height: 1.6; margin: 0 0 24px; }
     .emoji { font-size: 3rem; margin-bottom: 16px; display: block; }
-    a { display: inline-block; background: #e1306c; color: #fff; padding: 12px 28px;
+    .btn { display: inline-block; background: #e1306c; color: #fff; padding: 12px 28px;
         border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.95rem; }
-    a:hover { background: #c2185b; }
+    .btn:hover { background: #c2185b; }
+    .hint { font-size: 0.78rem; color: #52525b; margin-top: 16px; }
   </style>
-  ${returnUrl ? `<meta http-equiv="refresh" content="3;url=${returnUrl}" />` : ''}
 </head>
 <body>
   <div class="card">
     <span class="emoji">${emoji}</span>
     <h1>${title}</h1>
     <p>${message}</p>
-    ${returnUrl ? `<a href="${returnUrl}">Zurück zur App →</a>` : ''}
+    ${returnUrl ? `<a class="btn" href="${returnUrl}">Zur App →</a>` : ''}
+    <p class="hint">Du kannst diese Seite auch einfach schließen.</p>
   </div>
 </body>
 </html>`;

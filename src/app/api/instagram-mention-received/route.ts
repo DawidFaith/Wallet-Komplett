@@ -47,11 +47,11 @@ export async function POST(req: NextRequest) {
     // Alte Einträge (> 2 Stunden) aufräumen
     await sql`DELETE FROM instagram_mentions WHERE received_at < NOW() - INTERVAL '2 hours'`;
 
-    // Neuen Kommentar-User speichern; bei erneuter Erwähnung Zeitstempel aktualisieren
+    // Neuen Kommentar-User speichern (upsert: selber User darf mehrfach kommentieren)
     await sql`
-      INSERT INTO instagram_mentions (comment_id, media_id, received_at)
-      VALUES (${username}, '', NOW())
-      ON CONFLICT (comment_id) DO UPDATE SET received_at = NOW()
+      INSERT INTO instagram_mentions (comment_id, media_id)
+      VALUES (${username}, '')
+      ON CONFLICT DO NOTHING
     `;
 
     return NextResponse.json({ ok: true });
