@@ -71,76 +71,82 @@ export async function POST(req: NextRequest) {
   const max = Math.max(1, Math.min(1000, Number(maxCompletions) || 10));
   const totalBudget = reward * max;
 
-  // Budget prüfen
-  const balance = await getDfaithCredits(creatorWallet.toLowerCase());
-  if (balance < totalBudget) {
-    return NextResponse.json(
-      { error: `Nicht genug DFAITH Credits. Benötigt: ${totalBudget}, Verfügbar: ${balance}` },
-      { status: 402 }
-    );
+  try {
+    // Budget prüfen
+    const balance = await getDfaithCredits(creatorWallet.toLowerCase());
+    if (balance < totalBudget) {
+      return NextResponse.json(
+        { error: `Nicht genug DFAITH Credits. Benötigt: ${totalBudget}, Verfügbar: ${balance}` },
+        { status: 402 }
+      );
+    }
+
+    // Ablaufzeit
+    let expiresAt: string | null = null;
+    if (durationHours && durationHours > 0) {
+      const expiry = new Date(Date.now() + durationHours * 3600 * 1000);
+      expiresAt = expiry.toISOString();
+    }
+
+    const now = new Date().toISOString();
+    const questId = randomUUID();
+
+    const quest: QuestDetail = {
+      id: questId,
+      platform: 'instagram',
+      type,
+      creatorWallet: creatorWallet.toLowerCase(),
+      videoId: mediaId,           // Instagram Media ID (pk) → wird an Make.com weitergegeben
+      videoTitle: videoTitle ?? 'Instagram Reel',
+      videoThumbnail: thumbnailUrl ?? '',
+      videoUrl: reelUrl,
+      description: description ?? (
+        type === 'like'       ? '❤️ Like dieses Instagram Reel!' :
+        type === 'save'       ? '🔖 Speichere dieses Instagram Reel!' :
+        type === 'engagement' ? '❤️🔖 Like und speichere dieses Instagram Reel!' :
+        type === 'repost'     ? '🔁 Reposte dieses Instagram Reel auf deinen Kanal!' :
+        type === 'dm_share'   ? '📩 Klicke den DM-Link und teile dieses Reel in deiner Story!' :
+                                '💬 Kommentiere dieses Instagram Reel!'
+      ),
+      rewardAmount: reward,
+      maxCompletions: max,
+      completions: 0,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+      expiresAt,
+      creditsLocked: totalBudget,
+      creditsRefunded: false,
+      reputationReward: Math.max(0, Math.round(Number(reputationReward) || 50)),
+      storyToken: type === 'dm_share' ? randomUUID() : null,
+    };
+
+    // Budget sperren (atomisch)
+    const locked = await lockQuestBudget(creatorWallet.toLowerCase(), totalBudget);
+    if (!locked) {
+      return NextResponse.json(
+        { error: 'Budget konnte nicht gesperrt werden. Bitte lade zuerst DFAITH Credits auf.' },
+        { status: 402 }
+      );
+    }
+
+    await saveQuestDetail(quest);
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL ?? 'https://app.dawidfaith.de';
+    const storyLink = quest.storyToken
+      ? `${appUrl}/api/instagram-quests/story-click?token=${quest.storyToken}`
+      : null;
+
+    return NextResponse.json({
+      success: true,
+      questId,
+      questType: type,
+      storyLink,
+      message: `Instagram ${type === 'like' ? 'Like' : type === 'save' ? 'Save' : type === 'dm_share' ? 'Story Quest' : 'Comment'} Quest erstellt. Budget: ${totalBudget} DFAITH gesperrt.`,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[instagram-quests POST]', message);
+    return NextResponse.json({ error: `Serverfehler: ${message}` }, { status: 500 });
   }
-
-  // Ablaufzeit
-  let expiresAt: string | null = null;
-  if (durationHours && durationHours > 0) {
-    const expiry = new Date(Date.now() + durationHours * 3600 * 1000);
-    expiresAt = expiry.toISOString();
-  }
-
-  const now = new Date().toISOString();
-  const questId = randomUUID();
-
-  const quest: QuestDetail = {
-    id: questId,
-    platform: 'instagram',
-    type,
-    creatorWallet: creatorWallet.toLowerCase(),
-    videoId: mediaId,           // Instagram Media ID (pk) → wird an Make.com weitergegeben
-    videoTitle: videoTitle ?? 'Instagram Reel',
-    videoThumbnail: thumbnailUrl ?? '',
-    videoUrl: reelUrl,
-    description: description ?? (
-      type === 'like'       ? '❤️ Like dieses Instagram Reel!' :
-      type === 'save'       ? '🔖 Speichere dieses Instagram Reel!' :
-      type === 'engagement' ? '❤️🔖 Like und speichere dieses Instagram Reel!' :
-      type === 'repost'     ? '🔁 Reposte dieses Instagram Reel auf deinen Kanal!' :
-      type === 'dm_share'   ? '📩 Klicke den DM-Link und teile dieses Reel in deiner Story!' :
-                              '💬 Kommentiere dieses Instagram Reel!'
-    ),
-    rewardAmount: reward,
-    maxCompletions: max,
-    completions: 0,
-    isActive: true,
-    createdAt: now,
-    updatedAt: now,
-    expiresAt,
-    creditsLocked: totalBudget,
-    creditsRefunded: false,
-    reputationReward: Math.max(0, Math.round(Number(reputationReward) || 50)),
-    storyToken: type === 'dm_share' ? randomUUID() : null,
-  };
-
-  // Budget sperren (atomisch)
-  const locked = await lockQuestBudget(creatorWallet.toLowerCase(), totalBudget);
-  if (!locked) {
-    return NextResponse.json(
-      { error: 'Budget konnte nicht gesperrt werden. Bitte lade zuerst DFAITH Credits auf.' },
-      { status: 402 }
-    );
-  }
-
-  await saveQuestDetail(quest);
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL ?? 'https://app.dawidfaith.de';
-  const storyLink = quest.storyToken
-    ? `${appUrl}/api/instagram-quests/story-click?token=${quest.storyToken}`
-    : null;
-
-  return NextResponse.json({
-    success: true,
-    questId,
-    questType: type,
-    storyLink,
-    message: `Instagram ${type === 'like' ? 'Like' : type === 'save' ? 'Save' : type === 'dm_share' ? 'Story Quest' : 'Comment'} Quest erstellt. Budget: ${totalBudget} DFAITH gesperrt.`,
-  });
 }
