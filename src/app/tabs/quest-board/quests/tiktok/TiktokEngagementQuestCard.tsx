@@ -68,7 +68,9 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, onComple
             <div key={label} className="bg-zinc-800 rounded-xl p-2 flex flex-col items-center gap-1">
               <span className={color}>{icon}</span>
               <span className="text-zinc-300 text-xs font-semibold">{label}</span>
-              <span className="text-yellow-400 text-xs">+{formatCredits(rewardPer)}</span>
+              <span className="text-yellow-400 text-xs flex items-center gap-0.5">
+                <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full" unoptimized /> +{formatCredits(rewardPer)}
+              </span>
             </div>
           ))}
         </div>

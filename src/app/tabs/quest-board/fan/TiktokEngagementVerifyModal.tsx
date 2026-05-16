@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { FaCoins, FaExternalLinkAlt, FaRedo, FaCheck } from 'react-icons/fa';
+import Image from 'next/image';
+import { FaExternalLinkAlt, FaRedo, FaCheck, FaStar } from 'react-icons/fa';
 import { FiThumbsUp, FiShare2, FiBookmark } from 'react-icons/fi';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
@@ -137,11 +138,16 @@ export default function TiktokEngagementVerifyModal({
       {quest && step !== 'error' && step !== 'expired' && (
         <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
           <span className="text-zinc-400 text-xs">Belohnung</span>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <span className="text-zinc-500 text-xs">pro Aktion:</span>
             <span className="text-yellow-400 font-bold text-sm flex items-center gap-1">
-              <FaCoins size={12} /> +{rewardPer} DFAITH
+              <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full" unoptimized /> +{rewardPer} D.FAITH
             </span>
+            {(quest.reputationReward ?? 0) > 0 && (
+              <span className="text-amber-300 font-bold text-sm flex items-center gap-1">
+                <FaStar size={10} /> +{Math.floor((quest.reputationReward ?? 0) / 3)} REP
+              </span>
+            )}
             <span className="text-zinc-600 text-xs">×3 max</span>
           </div>
         </div>
@@ -187,7 +193,9 @@ export default function TiktokEngagementVerifyModal({
               >
                 <span className={verified ? 'text-green-400' : color}>{icon}</span>
                 <span className="text-white text-xs font-semibold">{label}</span>
-                <span className="text-yellow-400 text-xs">+{rewardPer} DFAITH</span>
+                <span className="text-yellow-400 text-xs flex items-center gap-0.5">
+                  <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full" unoptimized /> +{rewardPer}
+                </span>
                 {step === 'not_yet' && (
                   <span className={`text-xs ${verified ? 'text-green-400' : 'text-zinc-500'}`}>
                     {verified ? '✓' : '–'}
@@ -258,11 +266,16 @@ export default function TiktokEngagementVerifyModal({
                 </div>
               ))}
             </div>
-            <div className="text-center">
+            <div className="text-center space-y-1">
               <p className="text-zinc-400 text-sm">Verdient:</p>
               <p className="text-yellow-400 text-2xl font-bold flex items-center justify-center gap-2">
-                <FaCoins /> {formatCredits(rewardAmount)} DFAITH
+                <Image src="/D.FAITH.png" alt="" width={24} height={24} className="w-6 h-6 rounded-full" unoptimized /> {formatCredits(rewardAmount)} D.FAITH
               </p>
+              {(quest?.reputationReward ?? 0) > 0 && (
+                <p className="text-amber-300 font-semibold text-sm flex items-center justify-center gap-1">
+                  <FaStar size={12} /> +{quest!.reputationReward} REP
+                </p>
+              )}
             </div>
           </div>
           <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl font-semibold">
