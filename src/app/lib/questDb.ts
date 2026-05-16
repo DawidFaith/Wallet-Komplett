@@ -1295,6 +1295,7 @@ export interface SocialProfile {
   artistBio: string | null;
   rewardToken: string | null;
   tokenMintAddress: string | null;
+  displayPlatform: string | null;
 }
 
 export interface AdminUserRow {
@@ -1336,6 +1337,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
       artistBio: null,
       rewardToken: null,
       tokenMintAddress: null,
+      displayPlatform: null,
     };
   }
   const r = rows[0];
@@ -1359,6 +1361,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
     artistBio: r.artist_bio ?? null,
     rewardToken: r.reward_token ?? null,
     tokenMintAddress: r.token_mint_address ?? null,
+    displayPlatform: r.display_platform ?? null,
   };
 }
 
@@ -1478,6 +1481,12 @@ export async function upsertUserProfile(
   if (data.tokenMintAddress !== undefined) {
     await sql`
       UPDATE user_profiles SET token_mint_address = ${data.tokenMintAddress}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+  if (data.displayPlatform !== undefined) {
+    await sql`
+      UPDATE user_profiles SET display_platform = ${data.displayPlatform}, updated_at = NOW()
       WHERE wallet_address = ${walletAddress.toLowerCase()}
     `;
   }

@@ -11,6 +11,7 @@ export async function GET(req: Request) {
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS artist_type TEXT`;
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS artist_bio TEXT`;
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS reward_token TEXT DEFAULT 'D.FAITH'`;
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS display_platform TEXT`;
 
     const rows = await sql`
       SELECT
@@ -19,6 +20,7 @@ export async function GET(req: Request) {
         p.artist_type,
         p.artist_bio,
         p.reward_token,
+        p.display_platform,
         p.instagram_handle,
         p.instagram_verified,
         p.instagram_name,
@@ -66,19 +68,36 @@ export async function GET(req: Request) {
     const artists = rows.map((r) => {
       let name: string | null = r.display_name ?? null;
       let picture: string | null = null;
+      const dp = r.display_platform as string | null;
 
-      if (r.youtube_channel_id) {
+      // Vom Artist gewählte Plattform hat Priorität
+      if (dp === 'youtube' && r.youtube_channel_id) {
         name ??= r.youtube_channel_name ?? null;
         picture = r.youtube_channel_thumbnail ?? null;
-      } else if (r.instagram_verified && r.instagram_handle) {
+      } else if (dp === 'instagram' && r.instagram_handle) {
         name ??= r.instagram_name ?? `@${r.instagram_handle}`;
         picture = r.instagram_picture ?? null;
-      } else if (r.tiktok_verified && r.tiktok_handle) {
+      } else if (dp === 'tiktok' && r.tiktok_handle) {
         name ??= r.tiktok_name ?? `@${r.tiktok_handle}`;
         picture = r.tiktok_picture ?? null;
-      } else if (r.facebook_verified && r.facebook_handle) {
+      } else if (dp === 'facebook' && r.facebook_handle) {
         name ??= r.facebook_name ?? `@${r.facebook_handle}`;
         picture = r.facebook_picture ?? null;
+      } else {
+        // Fallback: erste verfügbare Plattform
+        if (r.youtube_channel_id) {
+          name ??= r.youtube_channel_name ?? null;
+          picture = r.youtube_channel_thumbnail ?? null;
+        } else if (r.instagram_verified && r.instagram_handle) {
+          name ??= r.instagram_name ?? `@${r.instagram_handle}`;
+          picture = r.instagram_picture ?? null;
+        } else if (r.tiktok_verified && r.tiktok_handle) {
+          name ??= r.tiktok_name ?? `@${r.tiktok_handle}`;
+          picture = r.tiktok_picture ?? null;
+        } else if (r.facebook_verified && r.facebook_handle) {
+          name ??= r.facebook_name ?? `@${r.facebook_handle}`;
+          picture = r.facebook_picture ?? null;
+        }
       }
 
       return {

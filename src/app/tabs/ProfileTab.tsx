@@ -28,6 +28,7 @@ interface ProfileData {
     artistType: string | null;
     artistBio: string | null;
     rewardToken: string | null;
+    displayPlatform: string | null;
     instagramHandle: string | null;
     instagramVerified: boolean;
     instagramName: string | null;
@@ -124,6 +125,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
   const [artistTypeInput, setArtistTypeInput] = useState('');
   const [artistBioInput, setArtistBioInput] = useState('');
   const [artistRewardTokenInput, setArtistRewardTokenInput] = useState('');
+  const [artistDisplayPlatformInput, setArtistDisplayPlatformInput] = useState<string | null>(null);
 
   const [primaryPlatform, setPrimaryPlatformState] = useState<AnyPlatform | null>(null);
 
@@ -226,6 +228,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
           artistType: artistTypeInput.trim() || null,
           artistBio: artistBioInput.trim() || null,
           rewardToken: artistRewardTokenInput.trim() || null,
+          displayPlatform: artistDisplayPlatformInput,
         }),
       });
       setEditingArtist(false);
@@ -362,6 +365,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                     setArtistTypeInput(p.artistType ?? '');
                     setArtistBioInput(p.artistBio ?? '');
                     setArtistRewardTokenInput(p.rewardToken ?? 'D.FAITH');
+                    setArtistDisplayPlatformInput(p.displayPlatform ?? null);
                     setEditingArtist(true);
                   }}
                   className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 bg-white/5 hover:bg-white/10 border border-white/[0.1] px-2 py-1 rounded-lg transition-colors"
@@ -385,6 +389,37 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                   rows={3}
                   className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-500/50 transition-colors resize-none"
                 />
+                {/* Öffentliches Profil-Bild wählen */}
+                {(() => {
+                  const options: { key: string; icon: React.ReactNode; label: string; available: boolean }[] = [
+                    { key: 'youtube',   icon: <FaYoutube className="text-red-500" size={12} />,    label: 'YouTube',   available: !!(p?.youtubeVerified) },
+                    { key: 'instagram', icon: <FaInstagram className="text-pink-500" size={12} />, label: 'Instagram', available: !!(p?.instagramHandle) },
+                    { key: 'tiktok',    icon: <FaTiktok className="text-zinc-200" size={11} />,    label: 'TikTok',    available: !!(p?.tiktokHandle) },
+                    { key: 'facebook',  icon: <FaFacebook className="text-blue-500" size={12} />,  label: 'Facebook',  available: !!(p?.facebookHandle) },
+                  ].filter(o => o.available);
+                  if (options.length === 0) return null;
+                  return (
+                    <div>
+                      <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1.5">Angezeigtes Profil-Bild</p>
+                      <div className="flex gap-2 flex-wrap">
+                        {options.map(o => (
+                          <button
+                            key={o.key}
+                            type="button"
+                            onClick={() => setArtistDisplayPlatformInput(artistDisplayPlatformInput === o.key ? null : o.key)}
+                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                              artistDisplayPlatformInput === o.key
+                                ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                                : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10 hover:text-white'
+                            }`}
+                          >
+                            {o.icon} {o.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
                 <div className="flex gap-2 justify-end">
                   <button onClick={() => setEditingArtist(false)}
                   className="text-xs px-3 py-1.5 rounded-xl bg-white/5 border border-white/8 text-zinc-400 hover:bg-white/10 transition-colors">
