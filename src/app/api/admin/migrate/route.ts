@@ -200,6 +200,18 @@ export async function POST(req: NextRequest) {
 
     // ── Shop-Tabellen ────────────────────────────────────────────────────────
     await sql`
+      CREATE TABLE IF NOT EXISTS youtube_bindings (
+        wallet_address    TEXT        PRIMARY KEY,
+        channel_id        TEXT        UNIQUE NOT NULL,
+        channel_name      TEXT        NOT NULL,
+        channel_thumbnail TEXT        NOT NULL DEFAULT '',
+        verification_code TEXT        NOT NULL DEFAULT '',
+        verified_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_bindings_channel ON youtube_bindings(channel_id)`;
+
+    await sql`
       CREATE TABLE IF NOT EXISTS shop_items (
         id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
         artist_wallet  TEXT        NOT NULL,

@@ -10,10 +10,24 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const sql = getDb();
 
+  try {
   // Spalten sicherstellen (idempotent) – werden sonst von /api/admin/artists angelegt,
   // aber der Shop kann unabhängig davon aufgerufen werden.
   await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS display_platform TEXT`;
   await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS token_mint_address TEXT`;
+
+  // youtube_bindings ist in der Haupt-Migration nicht enthalten (nur in youtube-quests/setup-db).
+  // Sicherstellen dass sie existiert, damit der LEFT JOIN nicht fehlschlägt.
+  await sql`
+    CREATE TABLE IF NOT EXISTS youtube_bindings (
+      wallet_address    TEXT        PRIMARY KEY,
+      channel_id        TEXT        UNIQUE NOT NULL,
+      channel_name      TEXT        NOT NULL,
+      channel_thumbnail TEXT        NOT NULL DEFAULT '',
+      verification_code TEXT        NOT NULL DEFAULT '',
+      verified_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
 
   const rows = await sql`
     SELECT
@@ -87,4 +101,9 @@ export async function GET() {
   });
 
   return NextResponse.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[shop/artists] GET error:', message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

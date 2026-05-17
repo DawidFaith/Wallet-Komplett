@@ -1344,10 +1344,14 @@ function ArtistList({
 }) {
   const [artists, setArtists] = useState<ShopArtist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/shop/artists')
-      .then(r => r.ok ? r.json() : [])
+      .then(r => {
+        if (!r.ok) return r.json().then(e => { throw new Error(e?.error || `HTTP ${r.status}`); });
+        return r.json();
+      })
       .then((data: Record<string, unknown>[]) => setArtists(data.map(a => ({
         artistWallet: a.artist_wallet as string,
         displayName: a.display_name as string | null,
@@ -1355,6 +1359,7 @@ function ArtistList({
         itemCount: a.item_count as number,
         rewardToken: a.reward_token as string | null ?? null,
       }))))
+      .catch(e => setFetchError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
@@ -1369,7 +1374,9 @@ function ArtistList({
   if (artists.length === 0) {
     return (
       <div className="mx-4 bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
-        Noch keine Artists haben Items im Shop.
+        {fetchError
+          ? <span className="text-red-400">Fehler: {fetchError}</span>
+          : 'Noch keine Artists haben Items im Shop.'}
       </div>
     );
   }
