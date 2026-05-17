@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   FaYoutube, FaInstagram, FaTiktok, FaFacebook,
   FaCheck, FaTimes, FaSearch, FaShieldAlt, FaCoins, FaStar, FaSync, FaPaperPlane,
+  FaShoppingBag, FaEdit,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
 
@@ -219,7 +220,7 @@ export default function AdminPage() {
     return matchSearch && matchFilter;
   });
 
-  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop'>('users');
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState('');
   const [resetting, setResetting] = useState(false);
@@ -296,7 +297,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-0">
-        {(['users', 'credits', 'token'] as const).map((tab) => (
+        {(['users', 'credits', 'token', 'shop'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -306,7 +307,7 @@ export default function AdminPage() {
                 : 'text-zinc-500 border-transparent hover:text-zinc-300'
             }`}
           >
-            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : 'Token'}
+            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : 'Shop'}
           </button>
         ))}
       </div>
@@ -479,6 +480,11 @@ export default function AdminPage() {
           <SolanaDisableMintingSection secret={secret} />
           <SolanaDBMigrationSection secret={secret} />
         </>
+      )}
+
+      {/* ── Shop Tab ──────────────────────────────────────────────────────────── */}
+      {activeTab === 'shop' && (
+        <ShopManageSection secret={secret} artists={users.filter(u => u.isArtist)} />
       )}
     </div>
   );
@@ -1558,6 +1564,278 @@ function GrantCreditsSection({ secret, users }: { secret: string; users: AdminUs
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── ShopManageSection ─────────────────────────────────────────────────────────
+
+interface ShopItemAdmin {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  price_credits: number;
+  price_tokens: number | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+function ShopManageSection({
+  secret,
+  artists,
+}: {
+  secret: string;
+  artists: AdminUser[];
+}) {
+  const [selectedWallet, setSelectedWallet] = useState<string>('');
+  const [items, setItems] = useState<ShopItemAdmin[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
+  const [itemsError, setItemsError] = useState('');
+
+  // inline editing state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editCredits, setEditCredits] = useState('');
+  const [editTokens, setEditTokens] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
+
+  const loadItems = useCallback(async (wallet: string) => {
+    if (!wallet) return;
+    setLoadingItems(true);
+    setItemsError('');
+    setItems([]);
+    try {
+      const res = await fetch(
+        `/api/admin/shop-items?artistWallet=${encodeURIComponent(wallet)}`,
+        { headers: { 'x-admin-secret': secret } },
+      );
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      setItems(data as ShopItemAdmin[]);
+    } catch (e) {
+      setItemsError(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setLoadingItems(false);
+    }
+  }, [secret]);
+
+  const handleArtistSelect = (wallet: string) => {
+    setSelectedWallet(wallet);
+    setEditingId(null);
+    setSaveMsg('');
+    loadItems(wallet);
+  };
+
+  const startEdit = (item: ShopItemAdmin) => {
+    setEditingId(item.id);
+    setEditCredits(String(item.price_credits));
+    setEditTokens(item.price_tokens != null ? String(item.price_tokens) : '');
+    setSaveMsg('');
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setSaveMsg('');
+  };
+
+  const savePrice = async (itemId: string) => {
+    const credits = parseInt(editCredits, 10);
+    if (isNaN(credits) || credits < 0) {
+      setSaveMsg('Ungültiger Preis (Credits)');
+      return;
+    }
+    const tokensRaw = editTokens.trim();
+    const tokens = tokensRaw === '' ? null : parseFloat(tokensRaw);
+    if (tokensRaw !== '' && (isNaN(tokens!) || tokens! < 0)) {
+      setSaveMsg('Ungültiger Preis (Tokens)');
+      return;
+    }
+    setSaving(true);
+    setSaveMsg('');
+    try {
+      const res = await fetch('/api/admin/shop-items', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ itemId, priceCredits: credits, priceTokens: tokens }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setItems(prev =>
+        prev.map(i =>
+          i.id === itemId
+            ? { ...i, price_credits: credits, price_tokens: tokens }
+            : i,
+        ),
+      );
+      setEditingId(null);
+      setSaveMsg('✓ Preis gespeichert');
+      setTimeout(() => setSaveMsg(''), 3000);
+    } catch (e) {
+      setSaveMsg(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const TYPE_LABELS: Record<string, string> = {
+    song: 'Song', video: 'Video', nft: 'NFT', exclusive: 'Exklusiv',
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-white font-bold text-lg mb-1 flex items-center gap-2">
+          <FaShoppingBag size={16} className="text-amber-400" /> Shop-Items verwalten
+        </h2>
+        <p className="text-zinc-500 text-xs">Preise bestehender Shop-Items bearbeiten.</p>
+      </div>
+
+      {/* Artist auswählen */}
+      <div>
+        <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider block mb-2">
+          Artist auswählen
+        </label>
+        {artists.length === 0 ? (
+          <p className="text-zinc-600 text-sm">Noch keine Artists vorhanden.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {artists.map(a => (
+              <button
+                key={a.walletAddress}
+                onClick={() => handleArtistSelect(a.walletAddress)}
+                className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors border ${
+                  selectedWallet === a.walletAddress
+                    ? 'bg-amber-500 text-black border-amber-500'
+                    : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-amber-500/50 hover:text-white'
+                }`}
+              >
+                {a.displayName || a.youtubeChannelName || a.instagramHandle || a.tiktokHandle || a.facebookHandle || shortenAddress(a.walletAddress)}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Items */}
+      {selectedWallet && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-zinc-300 text-sm font-semibold">
+              Shop-Items
+              <span className="ml-2 text-zinc-500 font-normal">({items.length})</span>
+            </h3>
+            {saveMsg && (
+              <span className={`text-xs font-semibold ${saveMsg.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>
+                {saveMsg}
+              </span>
+            )}
+          </div>
+
+          {loadingItems && (
+            <div className="flex justify-center py-8">
+              <div className="w-6 h-6 border-2 border-zinc-600 border-t-amber-400 rounded-full animate-spin" />
+            </div>
+          )}
+          {itemsError && (
+            <div className="text-red-400 text-xs bg-red-900/20 border border-red-800/40 rounded-xl px-4 py-3">
+              {itemsError}
+            </div>
+          )}
+          {!loadingItems && !itemsError && items.length === 0 && (
+            <div className="text-zinc-600 text-sm text-center py-8 bg-zinc-900 rounded-xl border border-zinc-800">
+              Dieser Artist hat noch keine Shop-Items.
+            </div>
+          )}
+
+          {items.map(item => (
+            <div key={item.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-white font-semibold text-sm truncate">{item.title}</span>
+                    <span className="text-[10px] bg-zinc-800 text-zinc-400 rounded-full px-2 py-0.5 shrink-0">
+                      {TYPE_LABELS[item.type] ?? item.type}
+                    </span>
+                    {!item.is_active && (
+                      <span className="text-[10px] bg-red-900/40 text-red-400 rounded-full px-2 py-0.5 shrink-0">
+                        Inaktiv
+                      </span>
+                    )}
+                  </div>
+                  {item.description && (
+                    <p className="text-zinc-500 text-xs mt-1 line-clamp-1">{item.description}</p>
+                  )}
+                </div>
+
+                {editingId !== item.id && (
+                  <button
+                    onClick={() => startEdit(item)}
+                    className="shrink-0 flex items-center gap-1.5 text-xs text-zinc-400 hover:text-amber-400 transition-colors bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1.5 rounded-lg"
+                  >
+                    <FaEdit size={10} /> Preis
+                  </button>
+                )}
+              </div>
+
+              {editingId === item.id ? (
+                <div className="mt-3 flex flex-wrap items-end gap-3 pt-3 border-t border-zinc-800">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-zinc-500 text-[10px] uppercase tracking-wider">Credits</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editCredits}
+                      onChange={e => setEditCredits(e.target.value)}
+                      className="bg-zinc-800 border border-zinc-600 focus:border-amber-400 text-white text-sm rounded-lg px-3 py-1.5 w-28 outline-none transition-colors"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-zinc-500 text-[10px] uppercase tracking-wider">Tokens (opt.)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.000001"
+                      value={editTokens}
+                      onChange={e => setEditTokens(e.target.value)}
+                      placeholder="leer = keiner"
+                      className="bg-zinc-800 border border-zinc-600 focus:border-amber-400 text-white text-sm rounded-lg px-3 py-1.5 w-32 outline-none transition-colors placeholder-zinc-600"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <button
+                      onClick={() => savePrice(item.id)}
+                      disabled={saving}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-lg disabled:opacity-50 transition-colors"
+                    >
+                      {saving ? '…' : <><FaCheck size={10} /> Speichern</>}
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs rounded-lg transition-colors"
+                    >
+                      <FaTimes size={10} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-2 flex items-center gap-4 text-xs text-zinc-400">
+                  <span className="flex items-center gap-1">
+                    <FaCoins size={9} className="text-yellow-500" />
+                    {item.price_credits} Credits
+                  </span>
+                  {item.price_tokens != null && (
+                    <span className="flex items-center gap-1">
+                      <FaStar size={9} className="text-amber-400" />
+                      {item.price_tokens} Tokens
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

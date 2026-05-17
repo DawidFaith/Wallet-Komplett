@@ -10,6 +10,11 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const sql = getDb();
 
+  // Spalten sicherstellen (idempotent) – werden sonst von /api/admin/artists angelegt,
+  // aber der Shop kann unabhängig davon aufgerufen werden.
+  await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS display_platform TEXT`;
+  await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS token_mint_address TEXT`;
+
   const rows = await sql`
     SELECT
       p.wallet_address     AS artist_wallet,
