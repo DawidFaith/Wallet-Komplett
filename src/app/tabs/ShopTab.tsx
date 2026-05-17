@@ -7,7 +7,7 @@ import { upload } from '@vercel/blob/client';
 import {
   FaChevronLeft, FaPlus, FaTimes, FaMusic, FaVideo, FaGem, FaStar,
   FaCoins, FaCheck, FaExternalLinkAlt, FaTrash, FaShoppingBag,
-  FaPlay, FaPause, FaDownload, FaBoxOpen, FaLock, FaChevronUp, FaChevronDown,
+  FaPlay, FaPause, FaDownload, FaBoxOpen, FaLock, FaChevronUp, FaChevronDown, FaEdit,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
 
@@ -774,6 +774,17 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
   const [deleting, setDeleting] = useState<string | null>(null);
   const [formError, setFormError] = useState('');
 
+  // Edit-State (inline Bearbeitung bestehender Items)
+  type EditData = {
+    id: string; title: string; desc: string; type: ItemType;
+    price: string; tokens: string; level: string; content: string; image: string;
+  };
+  const [editData, setEditData] = useState<EditData | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [uploadingEditContent, setUploadingEditContent] = useState(false);
+  const [uploadingEditImage, setUploadingEditImage] = useState(false);
+
   // Formular-State
   const [fTitle, setFTitle] = useState('');
   const [fDesc, setFDesc] = useState('');
@@ -884,6 +895,90 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
     });
     setItems(prev => prev.filter(i => i.id !== itemId));
     setDeleting(null);
+  };
+
+  const startEdit = (item: ShopItem) => {
+    setEditData({
+      id: item.id,
+      title: item.title,
+      desc: item.description,
+      type: item.type,
+      price: String(item.priceCredits),
+      tokens: item.priceTokens != null ? String(item.priceTokens) : '',
+      level: String(item.requiredLevel),
+      content: item.contentUrl,
+      image: item.imageUrl,
+    });
+    setEditError('');
+  };
+
+  const cancelEdit = () => { setEditData(null); setEditError(''); };
+
+  const handleEditUpload = async (file: File, field: 'content' | 'image') => {
+    const setUploading = field === 'content' ? setUploadingEditContent : setUploadingEditImage;
+    setUploading(true);
+    setEditError('');
+    try {
+      const ext = file.name.replace(/.*\./, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const safeWallet = walletAddress.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 32);
+      const pathname = `shop/${field === 'image' ? 'images' : 'content'}/${safeWallet}/${Date.now()}.${ext}`;
+      const blob = await upload(pathname, file, {
+        access: 'public',
+        handleUploadUrl: '/api/shop/upload',
+        clientPayload: JSON.stringify({ fileType: field, wallet: walletAddress }),
+      });
+      setEditData(prev => prev ? { ...prev, [field === 'content' ? 'content' : 'image']: blob.url } : prev);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Upload fehlgeschlagen');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleEdit = async () => {
+    if (!editData) return;
+    if (!editData.title.trim()) { setEditError('Titel ist Pflicht'); return; }
+    const price = parseInt(editData.price, 10);
+    if (isNaN(price) || price < 0) { setEditError('Ungültiger Preis'); return; }
+    const tokensRaw = editData.tokens.trim();
+    const tokens = tokensRaw === '' ? null : parseFloat(tokensRaw);
+    if (tokensRaw !== '' && (isNaN(tokens!) || tokens! < 0)) { setEditError('Ungültiger Token-Preis'); return; }
+
+    setEditSaving(true);
+    setEditError('');
+    try {
+      const res = await fetch('/api/shop', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wallet: walletAddress,
+          itemId: editData.id,
+          title: editData.title,
+          description: editData.desc,
+          type: editData.type,
+          priceCredits: price,
+          priceTokens: tokens,
+          contentUrl: editData.content,
+          imageUrl: editData.image,
+          requiredLevel: parseInt(editData.level, 10) || 0,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        setEditError(err.error ?? 'Fehler beim Speichern');
+        return;
+      }
+      setItems(prev => prev.map(i =>
+        i.id === editData.id
+          ? { ...i, title: editData.title, description: editData.desc, type: editData.type,
+              priceCredits: price, priceTokens: tokens, contentUrl: editData.content,
+              imageUrl: editData.image, requiredLevel: parseInt(editData.level, 10) || 0 }
+          : i,
+      ));
+      setEditData(null);
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   return (
@@ -1080,43 +1175,156 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
         <div className="space-y-3">
           {items.map(item => (
             <div key={item.id} className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3 min-w-0">
-                  {item.imageUrl && (
-                    <img src={item.imageUrl} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" />
-                  )}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${TYPE_COLORS[item.type]}`}>
-                        <TypeIcon type={item.type} />
-                        {TYPE_LABELS[item.type]}
-                      </span>
-                      {item.requiredLevel > 0 && (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-amber-900/40 border-amber-700/40 text-amber-400">
-                          <FaLock size={7} /> Lvl {item.requiredLevel}+
-                        </span>
-                      )}
+              {editData?.id === item.id ? (
+                /* ── Inline-Edit-Formular ── */
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-white text-sm font-semibold">Item bearbeiten</p>
+                    <button onClick={cancelEdit} className="text-zinc-500 hover:text-zinc-300"><FaTimes size={13} /></button>
+                  </div>
+
+                  <div>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Titel *</label>
+                    <input value={editData.title} onChange={e => setEditData(d => d && { ...d, title: e.target.value })}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
+                  </div>
+
+                  <div>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Beschreibung</label>
+                    <textarea value={editData.desc} onChange={e => setEditData(d => d && { ...d, desc: e.target.value })}
+                      rows={2} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50 resize-none" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Typ</label>
+                      <select value={editData.type} onChange={e => setEditData(d => d && { ...d, type: e.target.value as ItemType })}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50">
+                        <option value="song">Song</option>
+                        <option value="video">Video</option>
+                        <option value="nft">NFT</option>
+                        <option value="exclusive">Exklusiv</option>
+                      </select>
                     </div>
-                    <p className="text-white text-sm font-semibold mt-1 truncate">{item.title}</p>
-                    {item.description && (
-                      <p className="text-zinc-500 text-xs mt-0.5 line-clamp-1">{item.description}</p>
-                    )}
-                    <p className="text-amber-400 text-xs mt-1 font-semibold flex items-center gap-1">
-                      <FaCoins size={9} /> {item.priceCredits.toLocaleString('de-DE')} {myTokenLabel} Credits / {myTokenLabel} Tokens
-                    </p>
+                    <div>
+                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Preis Credits *</label>
+                      <input type="number" min="0" value={editData.price}
+                        onChange={e => setEditData(d => d && { ...d, price: e.target.value })}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Token-Preis <span className="text-zinc-600 normal-case">(opt.)</span></label>
+                      <input type="number" min="0" step="0.000001" value={editData.tokens} placeholder="leer = keiner"
+                        onChange={e => setEditData(d => d && { ...d, tokens: e.target.value })}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50 placeholder:text-zinc-600" />
+                    </div>
+                    <div>
+                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Mindest-Level</label>
+                      <input type="number" min="0" value={editData.level}
+                        onChange={e => setEditData(d => d && { ...d, level: e.target.value })}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
+                    </div>
+                  </div>
+
+                  {/* Content-Datei */}
+                  <div>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Content-Datei</label>
+                    <div className="flex gap-2">
+                      <label className={`flex items-center gap-2 shrink-0 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
+                        uploadingEditContent ? 'bg-zinc-700 text-zinc-500 pointer-events-none' : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
+                      }`}>
+                        {uploadingEditContent ? <><span className="w-3 h-3 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" /> Lädt…</> : <><FaMusic size={11} /> Ändern</>}
+                        <input type="file" className="hidden" accept="audio/*,video/*,.pdf,.zip" disabled={uploadingEditContent}
+                          onChange={e => { const f = e.target.files?.[0]; if (f) handleEditUpload(f, 'content'); e.target.value = ''; }} />
+                      </label>
+                      <input value={editData.content} onChange={e => setEditData(d => d && { ...d, content: e.target.value })}
+                        placeholder="URL" className="flex-1 min-w-0 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-amber-500/50" />
+                    </div>
+                    {editData.content && <p className="text-emerald-400 text-[10px] mt-1 truncate">✓ {editData.content}</p>}
+                  </div>
+
+                  {/* Vorschaubild */}
+                  <div>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Vorschaubild</label>
+                    <div className="flex gap-2 items-start">
+                      <label className={`flex items-center gap-2 shrink-0 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
+                        uploadingEditImage ? 'bg-zinc-700 text-zinc-500 pointer-events-none' : 'bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 border border-violet-500/30'
+                      }`}>
+                        {uploadingEditImage ? <><span className="w-3 h-3 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" /> Lädt…</> : <><FaStar size={10} /> Bild</>}
+                        <input type="file" className="hidden" accept="image/*" disabled={uploadingEditImage}
+                          onChange={e => { const f = e.target.files?.[0]; if (f) handleEditUpload(f, 'image'); e.target.value = ''; }} />
+                      </label>
+                      <input value={editData.image} onChange={e => setEditData(d => d && { ...d, image: e.target.value })}
+                        placeholder="Bild-URL" className="flex-1 min-w-0 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-violet-500/50" />
+                    </div>
+                    {editData.image && <img src={editData.image} alt="Vorschau" className="mt-2 w-16 h-16 rounded-xl object-cover border border-white/10" />}
+                  </div>
+
+                  {editError && <p className="text-red-400 text-xs">{editError}</p>}
+
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={handleEdit} disabled={editSaving || uploadingEditContent || uploadingEditImage}
+                      className="flex-1 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold py-2.5 rounded-xl text-sm transition-colors">
+                      {editSaving ? <span className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : <><FaCheck size={11} /> Speichern</>}
+                    </button>
+                    <button onClick={cancelEdit} className="px-4 py-2.5 rounded-xl bg-zinc-800 text-zinc-300 text-sm hover:bg-zinc-700 transition-colors">
+                      Abbrechen
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  disabled={deleting === item.id}
-                  className="shrink-0 text-zinc-600 hover:text-red-400 disabled:opacity-40 transition-colors p-1"
-                >
-                  {deleting === item.id
-                    ? <span className="w-3.5 h-3.5 border border-red-400/30 border-t-red-400 rounded-full animate-spin block" />
-                    : <FaTrash size={12} />
-                  }
-                </button>
-              </div>
+              ) : (
+                /* ── Normale Item-Ansicht ── */
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 min-w-0">
+                    {item.imageUrl && (
+                      <img src={item.imageUrl} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                    )}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${TYPE_COLORS[item.type]}`}>
+                          <TypeIcon type={item.type} />
+                          {TYPE_LABELS[item.type]}
+                        </span>
+                        {item.requiredLevel > 0 && (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-amber-900/40 border-amber-700/40 text-amber-400">
+                            <FaLock size={7} /> Lvl {item.requiredLevel}+
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-white text-sm font-semibold mt-1 truncate">{item.title}</p>
+                      {item.description && (
+                        <p className="text-zinc-500 text-xs mt-0.5 line-clamp-1">{item.description}</p>
+                      )}
+                      <p className="text-amber-400 text-xs mt-1 font-semibold flex items-center gap-1">
+                        <FaCoins size={9} /> {item.priceCredits.toLocaleString('de-DE')} {myTokenLabel} Credits
+                        {item.priceTokens != null && <> · {item.priceTokens} {myTokenLabel} Tokens</>}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => startEdit(item)}
+                      className="text-zinc-500 hover:text-amber-400 transition-colors p-1"
+                      title="Bearbeiten"
+                    >
+                      <FaEdit size={12} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      disabled={deleting === item.id}
+                      className="text-zinc-600 hover:text-red-400 disabled:opacity-40 transition-colors p-1"
+                    >
+                      {deleting === item.id
+                        ? <span className="w-3.5 h-3.5 border border-red-400/30 border-t-red-400 rounded-full animate-spin block" />
+                        : <FaTrash size={12} />
+                      }
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -104,6 +104,62 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(rows[0], { status: 201 });
 }
 
+// ─── PATCH ────────────────────────────────────────────────────────────────────
+export async function PATCH(req: NextRequest) {
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Kein Body' }, { status: 400 });
+
+  const { wallet, itemId, title, description, type, priceCredits, priceTokens, contentUrl, imageUrl, requiredLevel } = body as {
+    wallet?: string;
+    itemId?: string;
+    title?: string;
+    description?: string;
+    type?: string;
+    priceCredits?: number;
+    priceTokens?: number | null;
+    contentUrl?: string;
+    imageUrl?: string;
+    requiredLevel?: number;
+  };
+
+  if (!wallet || !itemId) {
+    return NextResponse.json({ error: 'wallet und itemId erforderlich' }, { status: 400 });
+  }
+  if (type !== undefined && !['song', 'video', 'nft', 'exclusive'].includes(type)) {
+    return NextResponse.json({ error: 'Ungültiger Typ' }, { status: 400 });
+  }
+  if (priceCredits !== undefined && (typeof priceCredits !== 'number' || priceCredits < 0)) {
+    return NextResponse.json({ error: 'priceCredits muss >= 0 sein' }, { status: 400 });
+  }
+
+  const sql = getDb();
+
+  // Nur eigene Items bearbeiten
+  const rows = await sql`
+    UPDATE shop_items
+    SET
+      title          = COALESCE(${title?.trim() ?? null}, title),
+      description    = COALESCE(${description?.trim() ?? null}, description),
+      type           = COALESCE(${type ?? null}, type),
+      price_credits  = COALESCE(${priceCredits ?? null}, price_credits),
+      price_tokens   = CASE
+                         WHEN ${priceTokens !== undefined} THEN ${priceTokens ?? null}
+                         ELSE price_tokens
+                       END,
+      content_url    = COALESCE(${contentUrl?.trim() ?? null}, content_url),
+      image_url      = COALESCE(${imageUrl?.trim() ?? null}, image_url),
+      required_level = COALESCE(${requiredLevel ?? null}, required_level)
+    WHERE id = ${itemId} AND artist_wallet = ${wallet.toLowerCase()}
+    RETURNING id
+  `;
+
+  if (!rows.length) {
+    return NextResponse.json({ error: 'Item nicht gefunden oder keine Berechtigung' }, { status: 404 });
+  }
+
+  return NextResponse.json({ success: true });
+}
+
 // ─── DELETE ───────────────────────────────────────────────────────────────────
 export async function DELETE(req: NextRequest) {
   const body = await req.json().catch(() => null);
