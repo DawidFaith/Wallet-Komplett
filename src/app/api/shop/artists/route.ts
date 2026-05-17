@@ -6,11 +6,15 @@ import { NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+export const runtime = 'nodejs';
 
 export async function GET() {
   const sql = getDb();
 
   try {
+  console.log('[shop/artists] GET start');
   // Spalten sicherstellen (idempotent) – werden sonst von /api/admin/artists angelegt,
   // aber der Shop kann unabhängig davon aufgerufen werden.
   await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS display_platform TEXT`;
@@ -64,6 +68,8 @@ export async function GET() {
       yb.channel_id, yb.channel_name, yb.channel_thumbnail
     ORDER BY item_count DESC, p.display_name ASC
   `;
+
+  console.log('[shop/artists] rows:', rows.length, rows.map(r => r.artist_wallet));
 
   const result = rows.map((r) => {
     let pictureUrl: string | null = null;
