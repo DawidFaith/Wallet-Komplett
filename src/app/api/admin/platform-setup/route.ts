@@ -16,11 +16,14 @@ import { getIgAccountId } from '../../../lib/metaApi';
 const PLATFORM_WALLET = 'platform_dfaith_ecosystem';
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
-export async function POST(req: NextRequest) {
-  let body: { secret?: string };
-  try { body = await req.json(); } catch { return NextResponse.json({ error: 'Ungültiger Body' }, { status: 400 }); }
+function checkAuth(req: NextRequest): boolean {
+  const secret = req.headers.get('x-admin-secret');
+  const expected = process.env.MIGRATION_SECRET;
+  return !!expected && secret === expected;
+}
 
-  if (body.secret !== process.env.ADMIN_SECRET) {
+export async function POST(req: NextRequest) {
+  if (!checkAuth(req)) {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
 
@@ -114,8 +117,7 @@ export async function POST(req: NextRequest) {
 
 // GET: Aktuellen Status des Platform-Users abfragen
 export async function GET(req: NextRequest) {
-  const { searchParams } = req.nextUrl;
-  if (searchParams.get('secret') !== process.env.ADMIN_SECRET) {
+  if (!checkAuth(req)) {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
 

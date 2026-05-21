@@ -1585,7 +1585,9 @@ function PlatformSection({ secret }: { secret: string }) {
 
   const loadStatus = React.useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/platform-setup?secret=${encodeURIComponent(secret)}`);
+      const res = await fetch('/api/admin/platform-setup', {
+        headers: { 'x-admin-secret': secret },
+      });
       const data = await res.json();
       setStatus(data);
     } catch { setStatus(null); }
@@ -1593,7 +1595,9 @@ function PlatformSection({ secret }: { secret: string }) {
 
   const loadQuests = React.useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/platform-quests?secret=${encodeURIComponent(secret)}`);
+      const res = await fetch('/api/admin/platform-quests', {
+        headers: { 'x-admin-secret': secret },
+      });
       const data = await res.json();
       setQuests(data.quests ?? []);
     } catch { setQuests([]); }
@@ -1606,8 +1610,7 @@ function PlatformSection({ secret }: { secret: string }) {
     try {
       const res = await fetch('/api/admin/platform-setup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ secret }),
+        headers: { 'x-admin-secret': secret },
       });
       const data = await res.json();
       setMsg(res.ok ? '✅ Platform-User erfolgreich eingerichtet!' : `❌ ${data.error}`);
@@ -1621,8 +1624,8 @@ function PlatformSection({ secret }: { secret: string }) {
     try {
       const res = await fetch('/api/admin/platform-quests', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ secret, rewardAmount: 150, maxCompletions: 50 }),
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ rewardAmount: 150, maxCompletions: 50 }),
       });
       const data = await res.json();
       if (res.ok) {
