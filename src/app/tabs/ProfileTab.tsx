@@ -558,9 +558,9 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                   {(!igVerified || !fbVerified) && (
                     <div className="bg-amber-950/30 border border-amber-500/20 rounded-lg px-2.5 py-2 text-[10px] text-amber-400/80 space-y-1">
                       <p className="font-bold text-amber-400">⚠️ Voraussetzungen (einmalig):</p>
-                      <p>› <strong className="text-amber-300">Facebook Page erstellen</strong> — nur über eine Page bekommst du Zugang zur Meta Business Suite. Eine leere Page reicht.</p>
+                      <p>› <strong className="text-amber-300">Facebook Page erstellen</strong> — nur über eine Page bekommst du Zugang zur Meta Business Suite.</p>
                       <p>› Instagram muss ein <strong className="text-amber-300">Business- oder Creator-Konto</strong> sein (IG → Einstellungen → Konto → Zu Professional-Konto wechseln)</p>
-                      <p>› Instagram mit der Facebook Page verknüpfen (IG → Einstellungen → Verknüpfte Konten → Facebook)</p>
+                      <p>› <strong className="text-amber-300">IG und FB werden separat erteilt</strong> — du kannst nur Instagram, nur die Page, oder beides freischalten.</p>
                     </div>
                   )}
 
@@ -568,21 +568,18 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                   {(!igVerified || !fbVerified) && (
                     <ol className="text-zinc-500 text-[11px] space-y-1 pl-0">
                       {([
-                        <React.Fragment key={0}>Öffne <a href="https://business.facebook.com/settings/partners/add" target="_blank" rel="noopener noreferrer" className="text-violet-400 underline underline-offset-2 hover:text-violet-300">dein Meta Business Center → Partner hinzufügen</a> <span className="text-amber-500/80">(business.facebook.com — Zugang nur mit Facebook Page möglich)</span></React.Fragment>,
+                        <React.Fragment key={0}>Öffne <a href="https://business.facebook.com/settings/partners/add" target="_blank" rel="noopener noreferrer" className="text-violet-400 underline underline-offset-2 hover:text-violet-300">dein Meta Business Center → Partner hinzufügen</a></React.Fragment>,
                         <React.Fragment key={1}>Business-ID von D.Faith Ecosystem eingeben{metaBusinessId ? <span className="ml-1 font-mono text-white bg-white/10 px-1.5 py-0.5 rounded text-[10px]">{metaBusinessId}</span> : ''}</React.Fragment>,
                         <React.Fragment key={2}>Einem Partner <strong className="text-zinc-300">Zugriff auf deine Assets gestatten</strong> auswählen</React.Fragment>,
                         <React.Fragment key={3}>
-                          <span>Deine <strong className="text-zinc-300">Facebook Page</strong> auswählen <span className="text-amber-500/80">(nicht das IG-Konto direkt!)</span> — alle Berechtigungen aktivieren:
+                          <span>Assets einzeln zuweisen:
                             <ul className="mt-1 space-y-0.5 pl-1 text-zinc-600">
-                              <li className="flex gap-1.5 items-start"><span className="text-violet-500/70 shrink-0">›</span><span><span className="text-zinc-400">Inhalte</span> — Beiträge, <strong className="text-pink-400/80">Stories</strong> &amp; mehr</span></li>
-                              <li className="flex gap-1.5 items-start"><span className="text-violet-500/70 shrink-0">›</span><span><span className="text-zinc-400">Nachrichten</span> — DMs senden &amp; beantworten</span></li>
-                              <li className="flex gap-1.5 items-start"><span className="text-violet-500/70 shrink-0">›</span><span><span className="text-zinc-400">Community-Interaktionen</span> — Kommentare verwalten</span></li>
-                              <li className="flex gap-1.5 items-start"><span className="text-violet-500/70 shrink-0">›</span><span><span className="text-zinc-400">Werbeanzeigen</span> — Anzeigen erstellen &amp; verwalten</span></li>
-                              <li className="flex gap-1.5 items-start"><span className="text-violet-500/70 shrink-0">›</span><span><span className="text-zinc-400">Insights</span> — Performance einsehen</span></li>
+                              <li className="flex gap-1.5 items-start"><span className="text-pink-500/70 shrink-0">›</span><span><strong className="text-pink-300">Instagram-Konto</strong> auswählen → alle Berechtigungen aktivieren <span className="text-zinc-700">(für IG Quests)</span></span></li>
+                              <li className="flex gap-1.5 items-start"><span className="text-blue-500/70 shrink-0">›</span><span><strong className="text-blue-300">Facebook Page</strong> auswählen → alle Berechtigungen aktivieren <span className="text-zinc-700">(für FB Quests)</span></span></li>
                             </ul>
                           </span>
                         </React.Fragment>,
-                        <React.Fragment key={4}>Unten die beiden Buttons &bdquo;IG prüfen&ldquo; &amp; &bdquo;FB prüfen&ldquo; klicken &mdash; System-Zugriff wird automatisch eingerichtet</React.Fragment>,
+                        <React.Fragment key={4}>Unten die jeweiligen Buttons klicken &mdash; System-Zugriff wird automatisch eingerichtet</React.Fragment>,
                       ] as React.ReactNode[]).map((step, i) => (
                         <li key={i} className="flex gap-2"><span className="text-zinc-600 shrink-0 font-bold">{i + 1}.</span><span>{step}</span></li>
                       ))}
