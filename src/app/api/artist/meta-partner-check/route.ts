@@ -61,42 +61,9 @@ async function getSystemUserId(businessId: string): Promise<string | null> {
 }
 
 /**
- * Weist ein Instagram-Konto automatisch dem System-User zu,
- * damit der System-User-Token die Posts/Comments des Artists lesen kann.
- */
-async function assignIgToSystemUser(
-  businessId: string,
-  igAccountId: string,
-): Promise<{ ok: boolean; info: string }> {
-  const token = process.env.META_SYSTEM_USER_TOKEN;
-  if (!token) return { ok: false, info: 'Kein Token' };
-
-  const systemUserId = await getSystemUserId(businessId);
-  if (!systemUserId) return { ok: false, info: 'System-User-ID nicht gefunden' };
-
-  try {
-    const res = await fetch(
-      `${GRAPH}/${systemUserId}/assigned_instagram_accounts`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          instagram_account_id: igAccountId,
-          access: 'MANAGE',
-          access_token: token,
-        }),
-      },
-    );
-    const data = await res.json() as { success?: boolean; error?: { message: string } };
-    if (data.error) return { ok: false, info: data.error.message };
-    return { ok: data.success === true, info: data.success ? 'Automatisch zugewiesen' : 'Zuweisung unbekannt' };
-  } catch (e) {
-    return { ok: false, info: String(e) };
-  }
-}
-
-/**
- * Weist eine Facebook Page automatisch dem System-User zu.
+ * Weist eine Facebook Page (und damit auch das verknüpfte IG-Konto) automatisch
+ * dem System-User zu, damit der System-User-Token die Assets des Artists lesen kann.
+ * Korrekter Meta-Endpoint: POST /{pageId}/assigned_users
  */
 async function assignPageToSystemUser(
   businessId: string,
@@ -109,18 +76,16 @@ async function assignPageToSystemUser(
   if (!systemUserId) return { ok: false, info: 'System-User-ID nicht gefunden' };
 
   try {
-    const res = await fetch(
-      `${GRAPH}/${systemUserId}/assigned_pages`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          page_id: pageId,
-          access: 'MODERATE',
-          access_token: token,
-        }),
-      },
-    );
+    const params = new URLSearchParams({
+      user: systemUserId,
+      tasks: 'ADVERTISE,ANALYZE,MODERATE,CREATE_CONTENT,MESSAGING',
+      business: businessId,
+      access_token: token,
+    });
+    const res = await fetch(`${GRAPH}/${pageId}/assigned_users`, {
+      method: 'POST',
+      body: params,
+    });
     const data = await res.json() as { success?: boolean; error?: { message: string } };
     if (data.error) return { ok: false, info: data.error.message };
     return { ok: data.success === true, info: data.success ? 'Automatisch zugewiesen' : 'Zuweisung unbekannt' };
@@ -231,7 +196,13 @@ export async function POST(req: NextRequest) {
       );
       const isLinked = !!matchedPage;
 
-      if (isLinked) {
+      let autoAssignInfo = '';
+      if (isLinked && matchedPage) {
+        // Page dem System-User zuweisen (bringt auch IG-Zugriff via verknüpfte Page)
+        const assign = await assignPageToSystemUser(businessId, matchedPage.id);
+        autoAssignInfo = assign.ok
+          ? ' System-User-Zugriff automatisch eingerichtet.'
+          : ` (System-User-Zuweisung: ${assign.info})`;
         await sql`
           UPDATE user_profiles
           SET meta_ig_partner_verified = TRUE, updated_at = NOW()
@@ -244,7 +215,7 @@ export async function POST(req: NextRequest) {
         businessId,
         accessiblePages: pages.length,
         hint: isLinked
-          ? `✅ Instagram "@${handle}" über verknüpfte Facebook-Page gefunden!`
+          ? `✅ Instagram "@${handle}" über verknüpfte Facebook-Page gefunden!${autoAssignInfo}`
           : `❌ "@${handle}" nicht gefunden (${pages.length} Partner-Pages geprüft). Bitte sicherstellen, dass die Facebook-Page des Künstlers mit dem Instagram-Konto verbunden ist und als Partner hinzugefügt wurde.`,
       });
     }
