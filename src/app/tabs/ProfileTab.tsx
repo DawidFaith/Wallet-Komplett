@@ -121,10 +121,13 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
   }, [account?.address, selectedArtist?.walletAddress]);
   const [artistSaving, setArtistSaving] = useState(false);
   // Meta Business Partner
-  const [metaPartnerVerified, setMetaPartnerVerified] = useState(false);
+  const [metaIgVerified, setMetaIgVerified] = useState(false);
+  const [metaFbVerified, setMetaFbVerified] = useState(false);
   const [metaBusinessId, setMetaBusinessId] = useState<string | null>(null);
-  const [metaCheckLoading, setMetaCheckLoading] = useState(false);
-  const [metaCheckMsg, setMetaCheckMsg] = useState('');
+  const [metaIgLoading, setMetaIgLoading] = useState(false);
+  const [metaFbLoading, setMetaFbLoading] = useState(false);
+  const [metaIgMsg, setMetaIgMsg] = useState('');
+  const [metaFbMsg, setMetaFbMsg] = useState('');
   // Artist-Profil bearbeiten
   const [editingArtist, setEditingArtist] = useState(false);
   const [artistTypeInput, setArtistTypeInput] = useState('');
@@ -175,28 +178,33 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
       const res = await fetch(`/api/artist/meta-partner-check?wallet=${account.address}`);
       if (res.ok) {
         const d = await res.json();
-        setMetaPartnerVerified(d.verified ?? false);
+        setMetaIgVerified(d.igVerified ?? false);
+        setMetaFbVerified(d.fbVerified ?? false);
         if (d.businessId) setMetaBusinessId(d.businessId);
       }
     } catch { /* ignorieren */ }
   }, [account?.address]);
 
-  const handleMetaPartnerCheck = useCallback(async () => {
+  const handleMetaCheck = useCallback(async (type: 'instagram' | 'facebook') => {
     if (!account?.address) return;
-    setMetaCheckLoading(true);
-    setMetaCheckMsg('');
+    const setLoading = type === 'instagram' ? setMetaIgLoading : setMetaFbLoading;
+    const setMsg     = type === 'instagram' ? setMetaIgMsg     : setMetaFbMsg;
+    const setVerified = type === 'instagram' ? setMetaIgVerified : setMetaFbVerified;
+    setLoading(true);
+    setMsg('');
     try {
-      const res = await fetch(`/api/artist/meta-partner-check?wallet=${account.address}`, {
-        method: 'POST',
-      });
+      const res = await fetch(
+        `/api/artist/meta-partner-check?wallet=${account.address}&type=${type}`,
+        { method: 'POST' },
+      );
       const d = await res.json();
       if (d.businessId) setMetaBusinessId(d.businessId);
-      setMetaPartnerVerified(d.verified ?? false);
-      setMetaCheckMsg(d.hint ?? (d.error ? `❌ ${d.error}` : ''));
+      setVerified(d.verified ?? false);
+      setMsg(d.hint ?? (d.error ? `❌ ${d.error}` : ''));
     } catch {
-      setMetaCheckMsg('❌ Netzwerkfehler');
+      setMsg('❌ Netzwerkfehler');
     } finally {
-      setMetaCheckLoading(false);
+      setLoading(false);
     }
   }, [account?.address]);
 
@@ -522,67 +530,95 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
               </div>
             )}
 
-            {/* ── Meta Business Partner ─────────────────────────────── */}
-            <div className={`rounded-xl p-3 space-y-2.5 border ${metaPartnerVerified ? 'bg-green-950/30 border-green-500/20' : 'bg-[#0d1020]/60 border-white/[0.08]'}`}>
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] flex items-center gap-1.5" style={{ color: metaPartnerVerified ? '#86efac' : '#94a3b8' }}>
-                  <FaInstagram size={10} className="text-pink-400" />
-                  <FaFacebook size={10} className="text-blue-400" />
-                  Quest-Freischaltung
-                </p>
-                {metaPartnerVerified && (
-                  <span className="text-[10px] font-bold text-green-400 bg-green-400/10 border border-green-400/20 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <FaCheck size={7} /> Freigeschaltet
-                  </span>
-                )}
-              </div>
-
-              {metaPartnerVerified ? (
-                <p className="text-green-400/80 text-[11px] leading-relaxed">
-                  Dein Instagram-Konto ist als Meta Business Partner verknüpft. Du kannst jetzt Instagram- und Facebook-Quests auf deinen Posts erstellen.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-zinc-400 text-[11px] leading-relaxed">
-                    Verknüpfe dein Meta Business-Konto mit D.Faith Ecosystem, um Instagram & Facebook Quests zu erstellen.
-                  </p>
-                  <ol className="text-zinc-500 text-[11px] space-y-1 pl-0">
-                    {[
-                      <>Öffne <a href="https://business.facebook.com/settings/partners/add" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline underline-offset-2 hover:text-blue-300">Meta Business Center → Partner hinzufügen</a></>,
-                      <>Gib die Business-ID von D.Faith Ecosystem ein{metaBusinessId ? <span className="ml-1 font-mono text-white bg-white/10 px-1.5 py-0.5 rounded text-[10px]">{metaBusinessId}</span> : ' (wird nach Prüfung angezeigt)'}</>,
-                      <>Aktiviere den Zugriff auf dein <strong className="text-zinc-300">Instagram-Konto</strong></>,
-                      <>Klicke unten auf &ldquo;Partnerschaft prüfen&rdquo;</>,
-                    ].map((step, i) => (
-                      <li key={i} className="flex gap-2">
-                        <span className="text-zinc-600 shrink-0 font-bold">{i + 1}.</span>
-                        <span>{step}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-
-              <div className="flex items-center gap-2 flex-wrap pt-0.5">
-                <button
-                  onClick={handleMetaPartnerCheck}
-                  disabled={metaCheckLoading || !p?.instagramHandle}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-blue-300 font-semibold disabled:opacity-40 transition-colors"
-                >
-                  {metaCheckLoading ? (
-                    <span className="animate-spin inline-block w-3 h-3 border border-blue-300 border-t-transparent rounded-full" />
-                  ) : (
-                    <FaInfoCircle size={10} />
+            {/* ── Meta Quest-Freischaltung: Instagram ───────────────── */}
+            {(() => {
+              const verified = metaIgVerified;
+              const hasIg = !!p?.instagramHandle;
+              return (
+                <div className={`rounded-xl p-3 space-y-2 border ${verified ? 'bg-green-950/30 border-green-500/20' : 'bg-[#0d1020]/60 border-white/[0.08]'}`}>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] flex items-center gap-1.5 text-zinc-400">
+                      <FaInstagram size={10} className="text-pink-400" /> Instagram Quests
+                    </p>
+                    {verified
+                      ? <span className="text-[10px] font-bold text-green-400 bg-green-400/10 border border-green-400/20 px-2 py-0.5 rounded-full flex items-center gap-1"><FaCheck size={7} /> Freigeschaltet</span>
+                      : <span className="text-[10px] text-zinc-600 flex items-center gap-1"><FaLock size={8} /> Gesperrt</span>
+                    }
+                  </div>
+                  {!verified && (
+                    <ol className="text-zinc-500 text-[11px] space-y-1 pl-0">
+                      {([
+                        <React.Fragment key={0}>Öffne <a href="https://business.facebook.com/settings/partners/add" target="_blank" rel="noopener noreferrer" className="text-pink-400 underline underline-offset-2 hover:text-pink-300">Meta Business Center → Partner hinzufügen</a></React.Fragment>,
+                        <React.Fragment key={1}>Business-ID von D.Faith Ecosystem eingeben{metaBusinessId ? <span className="ml-1 font-mono text-white bg-white/10 px-1.5 py-0.5 rounded text-[10px]">{metaBusinessId}</span> : ''}</React.Fragment>,
+                        <React.Fragment key={2}>Zugriff auf dein <strong className="text-zinc-300">Instagram-Konto</strong> aktivieren</React.Fragment>,
+                        <React.Fragment key={3}>Unten auf &bdquo;Prüfen&ldquo; klicken &mdash; System-Zugriff wird automatisch eingerichtet</React.Fragment>,
+                      ] as React.ReactNode[]).map((step, i) => (
+                        <li key={i} className="flex gap-2"><span className="text-zinc-600 shrink-0 font-bold">{i + 1}.</span><span>{step}</span></li>
+                      ))}
+                    </ol>
                   )}
-                  {metaPartnerVerified ? 'Erneut prüfen' : 'Partnerschaft prüfen'}
-                </button>
-                {metaCheckMsg && (
-                  <span className="text-[11px] text-zinc-400 leading-relaxed flex-1">{metaCheckMsg}</span>
-                )}
-              </div>
-              {!p?.instagramHandle && (
-                <p className="text-amber-500/70 text-[10px]">⚠️ Verbinde zuerst dein Instagram-Konto (Plattformen unten)</p>
-              )}
-            </div>
+                  <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                    <button
+                      onClick={() => handleMetaCheck('instagram')}
+                      disabled={metaIgLoading || !hasIg}
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-pink-500/15 hover:bg-pink-500/25 border border-pink-500/25 text-pink-300 font-semibold disabled:opacity-40 transition-colors"
+                    >
+                      {metaIgLoading
+                        ? <span className="animate-spin inline-block w-3 h-3 border border-pink-300 border-t-transparent rounded-full" />
+                        : <FaInfoCircle size={10} />}
+                      {verified ? 'Erneut prüfen' : 'Prüfen'}
+                    </button>
+                    {metaIgMsg && <span className="text-[11px] text-zinc-400 flex-1 leading-relaxed">{metaIgMsg}</span>}
+                  </div>
+                  {!hasIg && <p className="text-amber-500/70 text-[10px]">⚠️ Verbinde zuerst dein Instagram-Konto</p>}
+                </div>
+              );
+            })()}
+
+            {/* ── Meta Quest-Freischaltung: Facebook ────────────────── */}
+            {(() => {
+              const verified = metaFbVerified;
+              const hasFb = !!p?.facebookHandle;
+              return (
+                <div className={`rounded-xl p-3 space-y-2 border ${verified ? 'bg-green-950/30 border-green-500/20' : 'bg-[#0d1020]/60 border-white/[0.08]'}`}>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] flex items-center gap-1.5 text-zinc-400">
+                      <FaFacebook size={10} className="text-blue-400" /> Facebook Quests
+                    </p>
+                    {verified
+                      ? <span className="text-[10px] font-bold text-green-400 bg-green-400/10 border border-green-400/20 px-2 py-0.5 rounded-full flex items-center gap-1"><FaCheck size={7} /> Freigeschaltet</span>
+                      : <span className="text-[10px] text-zinc-600 flex items-center gap-1"><FaLock size={8} /> Gesperrt</span>
+                    }
+                  </div>
+                  {!verified && (
+                    <ol className="text-zinc-500 text-[11px] space-y-1 pl-0">
+                      {([
+                        <React.Fragment key={0}>Öffne <a href="https://business.facebook.com/settings/partners/add" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline underline-offset-2 hover:text-blue-300">Meta Business Center → Partner hinzufügen</a></React.Fragment>,
+                        <React.Fragment key={1}>Business-ID von D.Faith Ecosystem eingeben{metaBusinessId ? <span className="ml-1 font-mono text-white bg-white/10 px-1.5 py-0.5 rounded text-[10px]">{metaBusinessId}</span> : ''}</React.Fragment>,
+                        <React.Fragment key={2}>Zugriff auf deine <strong className="text-zinc-300">Facebook Page</strong> aktivieren</React.Fragment>,
+                        <React.Fragment key={3}>Unten auf &bdquo;Prüfen&ldquo; klicken &mdash; System-Zugriff wird automatisch eingerichtet</React.Fragment>,
+                      ] as React.ReactNode[]).map((step, i) => (
+                        <li key={i} className="flex gap-2"><span className="text-zinc-600 shrink-0 font-bold">{i + 1}.</span><span>{step}</span></li>
+                      ))}
+                    </ol>
+                  )}
+                  <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                    <button
+                      onClick={() => handleMetaCheck('facebook')}
+                      disabled={metaFbLoading || !hasFb}
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 font-semibold disabled:opacity-40 transition-colors"
+                    >
+                      {metaFbLoading
+                        ? <span className="animate-spin inline-block w-3 h-3 border border-blue-300 border-t-transparent rounded-full" />
+                        : <FaInfoCircle size={10} />}
+                      {verified ? 'Erneut prüfen' : 'Prüfen'}
+                    </button>
+                    {metaFbMsg && <span className="text-[11px] text-zinc-400 flex-1 leading-relaxed">{metaFbMsg}</span>}
+                  </div>
+                  {!hasFb && <p className="text-amber-500/70 text-[10px]">⚠️ Verbinde zuerst dein Facebook-Konto</p>}
+                </div>
+              );
+            })()}
           </div>
         )}
 
