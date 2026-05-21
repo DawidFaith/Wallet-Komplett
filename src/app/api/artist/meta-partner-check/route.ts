@@ -14,9 +14,12 @@ import { getDb } from '../../../lib/db';
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
-/** D.Faith Ecosystem Business Manager ID aus der Page-ID ermitteln */
+/** D.Faith Ecosystem Business Manager ID – direkt aus Env oder via Page-API */
 let cachedBusinessId: string | null = null;
 async function getBusinessId(): Promise<string | null> {
+  // Priorität 1: direkt aus Env (zuverlässig, keine Permission nötig)
+  if (process.env.META_BUSINESS_ID) return process.env.META_BUSINESS_ID;
+
   if (cachedBusinessId) return cachedBusinessId;
   const token = process.env.META_SYSTEM_USER_TOKEN;
   const pageId = process.env.FACEBOOK_PAGE_ID;
