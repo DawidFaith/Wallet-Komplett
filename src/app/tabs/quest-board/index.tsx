@@ -44,6 +44,7 @@ interface ProfileResponse {
     instagramVerified?: boolean;
     tiktokVerified?: boolean;
     facebookVerified?: boolean;
+    metaFbPartnerVerified?: boolean;
     rewardToken?: string | null;
     isArtist?: boolean;
   };
@@ -73,7 +74,7 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
           youtube: !!p.youtubeVerified,
           instagram: !!p.instagramVerified,
           tiktok: !!p.tiktokVerified,
-          facebook: !!p.facebookVerified,
+          facebook: !!p.metaFbPartnerVerified || !!p.facebookVerified,
         });
         setMyRewardToken(p.rewardToken ?? null);
         setIsArtist(!!p.isArtist);

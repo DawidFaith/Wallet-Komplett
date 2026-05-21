@@ -1289,6 +1289,7 @@ export interface SocialProfile {
   facebookVerified: boolean;
   facebookName: string | null;
   facebookPicture: string | null;
+  metaFbPartnerVerified: boolean;
   youtubeChannelId: string | null;
   isArtist: boolean;
   artistType: string | null;
@@ -1331,6 +1332,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
       instagramHandle: null, instagramVerified: false, instagramName: null, instagramPicture: null,
       tiktokHandle: null, tiktokVerified: false, tiktokName: null, tiktokPicture: null,
       facebookHandle: null, facebookVerified: false, facebookName: null, facebookPicture: null,
+      metaFbPartnerVerified: false,
       youtubeChannelId: null,
       isArtist: false,
       artistType: null,
@@ -1355,6 +1357,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
     facebookVerified: Boolean(r.facebook_verified),
     facebookName: r.facebook_name ?? null,
     facebookPicture: r.facebook_picture ?? null,
+    metaFbPartnerVerified: Boolean(r.meta_fb_partner_verified),
     youtubeChannelId: r.youtube_channel_id ?? null,
     isArtist: Boolean(r.is_artist),
     artistType: r.artist_type ?? null,

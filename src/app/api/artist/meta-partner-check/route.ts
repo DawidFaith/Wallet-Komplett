@@ -221,9 +221,10 @@ export async function POST(req: NextRequest) {
       let autoAssignInfo = '';
       if (isLinked) {
         autoAssignInfo = ' System-User-Zugriff automatisch eingerichtet.';
+        // Gleiche Facebook Page → IG + FB gleichzeitig freischalten
         await sql`
           UPDATE user_profiles
-          SET meta_ig_partner_verified = TRUE, updated_at = NOW()
+          SET meta_ig_partner_verified = TRUE, meta_fb_partner_verified = TRUE, updated_at = NOW()
           WHERE wallet_address = ${wallet.toLowerCase()}
         `;
       }
