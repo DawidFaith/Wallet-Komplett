@@ -550,8 +550,9 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                       {([
                         <React.Fragment key={0}>Öffne <a href="https://business.facebook.com/settings/partners/add" target="_blank" rel="noopener noreferrer" className="text-pink-400 underline underline-offset-2 hover:text-pink-300">Meta Business Center → Partner hinzufügen</a></React.Fragment>,
                         <React.Fragment key={1}>Business-ID von D.Faith Ecosystem eingeben{metaBusinessId ? <span className="ml-1 font-mono text-white bg-white/10 px-1.5 py-0.5 rounded text-[10px]">{metaBusinessId}</span> : ''}</React.Fragment>,
-                        <React.Fragment key={2}>Zugriff auf dein <strong className="text-zinc-300">Instagram-Konto</strong> aktivieren</React.Fragment>,
-                        <React.Fragment key={3}>Unten auf &bdquo;Prüfen&ldquo; klicken &mdash; System-Zugriff wird automatisch eingerichtet</React.Fragment>,
+                        <React.Fragment key={2}>Einem Partner <strong className="text-zinc-300">Zugriff auf deine Assets gestatten</strong> auswählen</React.Fragment>,
+                        <React.Fragment key={3}>Zugriff auf dein <strong className="text-zinc-300">Instagram-Konto</strong> aktivieren</React.Fragment>,
+                        <React.Fragment key={4}>Unten auf &bdquo;Prüfen&ldquo; klicken &mdash; System-Zugriff wird automatisch eingerichtet</React.Fragment>,
                       ] as React.ReactNode[]).map((step, i) => (
                         <li key={i} className="flex gap-2"><span className="text-zinc-600 shrink-0 font-bold">{i + 1}.</span><span>{step}</span></li>
                       ))}
@@ -595,8 +596,9 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                       {([
                         <React.Fragment key={0}>Öffne <a href="https://business.facebook.com/settings/partners/add" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline underline-offset-2 hover:text-blue-300">Meta Business Center → Partner hinzufügen</a></React.Fragment>,
                         <React.Fragment key={1}>Business-ID von D.Faith Ecosystem eingeben{metaBusinessId ? <span className="ml-1 font-mono text-white bg-white/10 px-1.5 py-0.5 rounded text-[10px]">{metaBusinessId}</span> : ''}</React.Fragment>,
-                        <React.Fragment key={2}>Zugriff auf deine <strong className="text-zinc-300">Facebook Page</strong> aktivieren</React.Fragment>,
-                        <React.Fragment key={3}>Unten auf &bdquo;Prüfen&ldquo; klicken &mdash; System-Zugriff wird automatisch eingerichtet</React.Fragment>,
+                        <React.Fragment key={2}>Einem Partner <strong className="text-zinc-300">Zugriff auf deine Assets gestatten</strong> auswählen</React.Fragment>,
+                        <React.Fragment key={3}>Zugriff auf deine <strong className="text-zinc-300">Facebook Page</strong> aktivieren</React.Fragment>,
+                        <React.Fragment key={4}>Unten auf &bdquo;Prüfen&ldquo; klicken &mdash; System-Zugriff wird automatisch eingerichtet</React.Fragment>,
                       ] as React.ReactNode[]).map((step, i) => (
                         <li key={i} className="flex gap-2"><span className="text-zinc-600 shrink-0 font-bold">{i + 1}.</span><span>{step}</span></li>
                       ))}
