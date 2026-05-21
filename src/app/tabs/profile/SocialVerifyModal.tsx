@@ -351,9 +351,24 @@ export default function SocialVerifyModal({
               {/* Tag-Anleitung – Instagram */}
               {platform === 'instagram' && (
               <div className="bg-zinc-800 rounded-xl p-4 space-y-3">
+                <p className="text-pink-400 font-semibold text-sm">Dein Verifikationscode:</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 bg-zinc-900 text-yellow-300 font-mono text-sm px-3 py-2 rounded-lg border border-zinc-700 select-all">
+                    {preview.verificationCode}
+                  </code>
+                  <button
+                    onClick={copyCode}
+                    className="bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-2 rounded-lg transition-colors text-sm shrink-0"
+                  >
+                    {codeCopied ? <FaCheck className="text-green-400" /> : <FaCopy size={13} />}
+                  </button>
+                </div>
                 <p className="text-pink-400 font-semibold text-sm">So verifizierst du dich:</p>
                 <ol className="text-zinc-400 text-sm space-y-1 list-decimal list-inside">
-                  {cfg.bioInstructions(preview?.verificationCode ?? '').map((s, i) => <li key={i}>{s}</li>)}
+                  <li>Öffne die Instagram App</li>
+                  <li>Gehe auf einen Post von <strong className="text-zinc-300">@dfaith_ecosystem</strong></li>
+                  <li>Schreibe den Code oben als Kommentar</li>
+                  <li>Komm zurück und klicke auf „Verifizieren"</li>
                 </ol>
                 <a
                   href="https://www.instagram.com/dfaith_ecosystem/"
@@ -372,9 +387,24 @@ export default function SocialVerifyModal({
               {/* Facebook – zeigt Seiten-Link + Kommentar-Anweisung mit Code */}
               {platform === 'facebook' && (
               <div className="bg-zinc-800 rounded-xl p-4 space-y-3">
+                <p className="text-blue-400 font-semibold text-sm">Dein Verifikationscode:</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 bg-zinc-900 text-yellow-300 font-mono text-sm px-3 py-2 rounded-lg border border-zinc-700 select-all">
+                    {preview.verificationCode}
+                  </code>
+                  <button
+                    onClick={copyCode}
+                    className="bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-2 rounded-lg transition-colors text-sm shrink-0"
+                  >
+                    {codeCopied ? <FaCheck className="text-green-400" /> : <FaCopy size={13} />}
+                  </button>
+                </div>
                 <p className="text-blue-400 font-semibold text-sm">So verifizierst du dich:</p>
                 <ol className="text-zinc-400 text-sm space-y-1 list-decimal list-inside">
-                  {cfg.bioInstructions(preview?.verificationCode ?? '').map((s, i) => <li key={i}>{s}</li>)}
+                  <li>Öffne Facebook</li>
+                  <li>Gehe auf einen Post der <strong className="text-zinc-300">D.Faith Ecosystem Seite</strong></li>
+                  <li>Schreibe den Code oben als Kommentar</li>
+                  <li>Komm zurück und klicke auf „Verifizieren"</li>
                 </ol>
                 <a
                   href="https://www.facebook.com/profile.php?id=100094343861740"
