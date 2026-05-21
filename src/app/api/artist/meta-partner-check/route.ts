@@ -170,40 +170,57 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Instagram-Prüfung ─────────────────────────────────────────────────
-    // Instagram Partner-Konten werden über client_pages + instagram_business_account geprüft,
-    // da /instagram_accounts und /client_instagram_accounts für System-User-Tokens nicht verfügbar sind.
     if (type === 'instagram') {
       const handle = (rows[0].instagram_handle as string | null)?.toLowerCase().replace(/^@/, '');
       if (!handle) {
         return NextResponse.json({ error: 'Kein Instagram-Konto verknüpft', verified: false }, { status: 400 });
       }
 
-      const res = await fetch(
-        `${GRAPH}/${businessId}/client_pages?fields=id,name,instagram_business_account{id,username}&limit=200&access_token=${token}`,
+      // 1. Alle client_pages holen (nur id + name – funktioniert ohne Seitenrechte)
+      const pagesRes = await fetch(
+        `${GRAPH}/${businessId}/client_pages?fields=id,name&limit=200&access_token=${token}`,
         { cache: 'no-store' },
       );
-      const data = await res.json() as {
-        data?: Array<{ id: string; name: string; instagram_business_account?: { id: string; username: string } }>;
+      const pagesData = await pagesRes.json() as {
+        data?: Array<{ id: string; name: string }>;
         error?: { message: string };
       };
-      if (data.error) {
-        return NextResponse.json({ error: `Meta API: ${data.error.message}`, verified: false }, { status: 400 });
+      if (pagesData.error) {
+        return NextResponse.json({ error: `Meta API: ${pagesData.error.message}`, verified: false }, { status: 400 });
       }
 
-      const pages = data.data ?? [];
-      console.log(`[meta-partner-check IG] wallet=${wallet} handle=${handle} pages=${pages.length}`, JSON.stringify(pages.map(p => ({ id: p.id, name: p.name, ig: p.instagram_business_account?.username ?? null }))));
-      const matchedPage = pages.find(
-        (p) => p.instagram_business_account?.username?.toLowerCase() === handle,
+      const pages = pagesData.data ?? [];
+
+      // 2. Für jede Page: System-User zuweisen (damit Token Seiteninhalt lesen darf)
+      //    + anschließend instagram_business_account abfragen
+      const pagesWithIg = await Promise.all(
+        pages.map(async (p) => {
+          await assignPageToSystemUser(businessId, p.id);
+          try {
+            const igRes = await fetch(
+              `${GRAPH}/${p.id}?fields=instagram_business_account{id,username}&access_token=${token}`,
+              { cache: 'no-store' },
+            );
+            const igData = await igRes.json() as {
+              instagram_business_account?: { id: string; username: string };
+            };
+            return { ...p, ig: igData.instagram_business_account ?? null };
+          } catch {
+            return { ...p, ig: null };
+          }
+        }),
+      );
+
+      console.log(`[meta-partner-check IG] wallet=${wallet} handle=${handle} pages=${pagesWithIg.length}`, JSON.stringify(pagesWithIg.map(p => ({ id: p.id, name: p.name, ig: p.ig?.username ?? null }))));
+
+      const matchedPage = pagesWithIg.find(
+        (p) => p.ig?.username?.toLowerCase() === handle,
       );
       const isLinked = !!matchedPage;
 
       let autoAssignInfo = '';
-      if (isLinked && matchedPage) {
-        // Page dem System-User zuweisen (bringt auch IG-Zugriff via verknüpfte Page)
-        const assign = await assignPageToSystemUser(businessId, matchedPage.id);
-        autoAssignInfo = assign.ok
-          ? ' System-User-Zugriff automatisch eingerichtet.'
-          : ` (System-User-Zuweisung: ${assign.info})`;
+      if (isLinked) {
+        autoAssignInfo = ' System-User-Zugriff automatisch eingerichtet.';
         await sql`
           UPDATE user_profiles
           SET meta_ig_partner_verified = TRUE, updated_at = NOW()
@@ -215,11 +232,7 @@ export async function POST(req: NextRequest) {
         verified: isLinked,
         businessId,
         accessiblePages: pages.length,
-        debug: pages.map(p => ({
-          id: p.id,
-          name: p.name,
-          ig: p.instagram_business_account?.username ?? null,
-        })),
+        debug: pagesWithIg.map(p => ({ id: p.id, name: p.name, ig: p.ig?.username ?? null })),
         hint: isLinked
           ? `✅ Instagram "@${handle}" über verknüpfte Facebook-Page gefunden!${autoAssignInfo}`
           : `❌ "@${handle}" nicht gefunden (${pages.length} Partner-Pages geprüft). Wichtig: Im Meta Business Center die Facebook PAGE als Partner hinzufügen (nicht das Instagram-Konto direkt). Die Page muss mit dem Instagram-Konto verknüpft sein.`,
