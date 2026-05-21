@@ -265,15 +265,16 @@ export default function SocialVerifyModal({
                 {platform === 'instagram' ? (
                   <>
                     <p>1. Gib deinen Instagram-Handle ein</p>
-                    <p>2. Dein Profil wird geladen</p>
-                    <p>3. Kommentiere auf einem Post/Reel von @dawidfaith und tagge ihn</p>
+                    <p>2. Du bekommst deinen einzigartigen Verifizierungscode</p>
+                    <p>3. Kommentiere den Code auf einem Post von @dfaith_ecosystem</p>
                     <p>4. Klicke auf &quot;Verifizieren&quot;</p>
                   </>
                 ) : platform === 'facebook' ? (
                   <>
-                    <p>1. Gib deinen Facebook-Profilnamen (aus der URL) ein</p>
-                    <p>2. Kommentiere auf einem Post/Video von @dawidfaith und tagge ihn</p>
-                    <p>3. Klicke auf &quot;Verifizieren&quot;</p>
+                    <p>1. Gib deinen Facebook-Namen ein</p>
+                    <p>2. Du bekommst deinen einzigartigen Verifizierungscode</p>
+                    <p>3. Kommentiere den Code auf einem Post der D.Faith Ecosystem Seite</p>
+                    <p>4. Klicke auf &quot;Verifizieren&quot;</p>
                   </>
                 ) : (
                   <>
