@@ -368,7 +368,7 @@ export default function SocialVerifyModal({
                   <li>Öffne die Instagram App</li>
                   <li>Gehe auf einen Post von <strong className="text-zinc-300">@dfaith_ecosystem</strong></li>
                   <li>Schreibe den Code oben als Kommentar</li>
-                  <li>Komm zurück und klicke auf „Verifizieren"</li>
+                  <li>Komm zurück und klicke auf &bdquo;Verifizieren&ldquo;</li>
                 </ol>
                 <a
                   href="https://www.instagram.com/dfaith_ecosystem/"
@@ -404,7 +404,7 @@ export default function SocialVerifyModal({
                   <li>Öffne Facebook</li>
                   <li>Gehe auf einen Post der <strong className="text-zinc-300">D.Faith Ecosystem Seite</strong></li>
                   <li>Schreibe den Code oben als Kommentar</li>
-                  <li>Komm zurück und klicke auf „Verifizieren"</li>
+                  <li>Komm zurück und klicke auf &bdquo;Verifizieren&ldquo;</li>
                 </ol>
                 <a
                   href="https://www.facebook.com/profile.php?id=100094343861740"
