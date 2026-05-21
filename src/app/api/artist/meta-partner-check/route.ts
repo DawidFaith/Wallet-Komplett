@@ -191,6 +191,7 @@ export async function POST(req: NextRequest) {
       }
 
       const pages = data.data ?? [];
+      console.log(`[meta-partner-check IG] wallet=${wallet} handle=${handle} pages=${pages.length}`, JSON.stringify(pages.map(p => ({ id: p.id, name: p.name, ig: p.instagram_business_account?.username ?? null }))));
       const matchedPage = pages.find(
         (p) => p.instagram_business_account?.username?.toLowerCase() === handle,
       );

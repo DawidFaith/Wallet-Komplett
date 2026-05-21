@@ -198,6 +198,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
         { method: 'POST' },
       );
       const d = await res.json();
+      console.log('[meta-partner-check]', type, d);
       if (d.businessId) setMetaBusinessId(d.businessId);
       setVerified(d.verified ?? false);
       setMsg(d.hint ?? (d.error ? `❌ ${d.error}` : ''));
