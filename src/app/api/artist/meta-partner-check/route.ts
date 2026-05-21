@@ -205,6 +205,8 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Instagram-Prüfung ─────────────────────────────────────────────────
+    // Instagram Partner-Konten werden über client_pages + instagram_business_account geprüft,
+    // da /instagram_accounts und /client_instagram_accounts für System-User-Tokens nicht verfügbar sind.
     if (type === 'instagram') {
       const handle = (rows[0].instagram_handle as string | null)?.toLowerCase().replace(/^@/, '');
       if (!handle) {
@@ -212,28 +214,24 @@ export async function POST(req: NextRequest) {
       }
 
       const res = await fetch(
-        `${GRAPH}/${businessId}/instagram_accounts?fields=id,username&limit=200&access_token=${token}`,
+        `${GRAPH}/${businessId}/client_pages?fields=id,name,instagram_business_account{id,username}&limit=200&access_token=${token}`,
         { cache: 'no-store' },
       );
       const data = await res.json() as {
-        data?: Array<{ id: string; username: string }>;
+        data?: Array<{ id: string; name: string; instagram_business_account?: { id: string; username: string } }>;
         error?: { message: string };
       };
       if (data.error) {
         return NextResponse.json({ error: `Meta API: ${data.error.message}`, verified: false }, { status: 400 });
       }
 
-      const accounts = data.data ?? [];
-      const match = accounts.find((a) => a.username.toLowerCase() === handle);
-      const isLinked = !!match;
+      const pages = data.data ?? [];
+      const matchedPage = pages.find(
+        (p) => p.instagram_business_account?.username?.toLowerCase() === handle,
+      );
+      const isLinked = !!matchedPage;
 
-      let autoAssignInfo = '';
-      if (isLinked && match) {
-        // Automatisch dem System-User zuweisen – kein manueller Schritt nötig
-        const assign = await assignIgToSystemUser(businessId, match.id);
-        autoAssignInfo = assign.ok
-          ? ' System-User-Zugriff automatisch eingerichtet.'
-          : ` (System-User-Zuweisung: ${assign.info})`;
+      if (isLinked) {
         await sql`
           UPDATE user_profiles
           SET meta_ig_partner_verified = TRUE, updated_at = NOW()
@@ -244,10 +242,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         verified: isLinked,
         businessId,
-        accessibleAccounts: accounts.length,
+        accessiblePages: pages.length,
         hint: isLinked
-          ? `✅ Instagram "@${handle}" verknüpft!${autoAssignInfo}`
-          : `❌ "@${handle}" nicht gefunden (${accounts.length} erreichbare Konten). Bitte die Partnerschaft im Meta Business Center prüfen.`,
+          ? `✅ Instagram "@${handle}" über verknüpfte Facebook-Page gefunden!`
+          : `❌ "@${handle}" nicht gefunden (${pages.length} Partner-Pages geprüft). Bitte sicherstellen, dass die Facebook-Page des Künstlers mit dem Instagram-Konto verbunden ist und als Partner hinzugefügt wurde.`,
       });
     }
 
@@ -261,7 +259,7 @@ export async function POST(req: NextRequest) {
       }
 
       const res = await fetch(
-        `${GRAPH}/${businessId}/pages?fields=id,name,username&limit=200&access_token=${token}`,
+        `${GRAPH}/${businessId}/client_pages?fields=id,name,username&limit=200&access_token=${token}`,
         { cache: 'no-store' },
       );
       const data = await res.json() as {
