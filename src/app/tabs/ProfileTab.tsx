@@ -120,6 +120,11 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
       .catch(() => setRepData(null));
   }, [account?.address, selectedArtist?.walletAddress]);
   const [artistSaving, setArtistSaving] = useState(false);
+  // Meta Business Partner
+  const [metaPartnerVerified, setMetaPartnerVerified] = useState(false);
+  const [metaBusinessId, setMetaBusinessId] = useState<string | null>(null);
+  const [metaCheckLoading, setMetaCheckLoading] = useState(false);
+  const [metaCheckMsg, setMetaCheckMsg] = useState('');
   // Artist-Profil bearbeiten
   const [editingArtist, setEditingArtist] = useState(false);
   const [artistTypeInput, setArtistTypeInput] = useState('');
@@ -163,6 +168,37 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
       setLoading(false);
     }
   }, [account?.address, setPrimaryPlatform]);
+
+  const loadMetaPartnerStatus = useCallback(async () => {
+    if (!account?.address) return;
+    try {
+      const res = await fetch(`/api/artist/meta-partner-check?wallet=${account.address}`);
+      if (res.ok) {
+        const d = await res.json();
+        setMetaPartnerVerified(d.verified ?? false);
+        if (d.businessId) setMetaBusinessId(d.businessId);
+      }
+    } catch { /* ignorieren */ }
+  }, [account?.address]);
+
+  const handleMetaPartnerCheck = useCallback(async () => {
+    if (!account?.address) return;
+    setMetaCheckLoading(true);
+    setMetaCheckMsg('');
+    try {
+      const res = await fetch(`/api/artist/meta-partner-check?wallet=${account.address}`, {
+        method: 'POST',
+      });
+      const d = await res.json();
+      if (d.businessId) setMetaBusinessId(d.businessId);
+      setMetaPartnerVerified(d.verified ?? false);
+      setMetaCheckMsg(d.hint ?? (d.error ? `❌ ${d.error}` : ''));
+    } catch {
+      setMetaCheckMsg('❌ Netzwerkfehler');
+    } finally {
+      setMetaCheckLoading(false);
+    }
+  }, [account?.address]);
 
   const handleClaim = useCallback(async () => {
     if (!account?.address || !data || data.credits <= 0) return;
@@ -239,6 +275,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
   }, [account?.address, artistTypeInput, artistBioInput, artistRewardTokenInput, artistDisplayPlatformInput, loadProfile]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
+  useEffect(() => { loadMetaPartnerStatus(); }, [loadMetaPartnerStatus]);
 
   useEffect(() => {
     fetch(`/api/admin/artists${account?.address ? `?wallet=${account.address}` : ''}`)
@@ -484,6 +521,68 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                 })()}
               </div>
             )}
+
+            {/* ── Meta Business Partner ─────────────────────────────── */}
+            <div className={`rounded-xl p-3 space-y-2.5 border ${metaPartnerVerified ? 'bg-green-950/30 border-green-500/20' : 'bg-[#0d1020]/60 border-white/[0.08]'}`}>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] flex items-center gap-1.5" style={{ color: metaPartnerVerified ? '#86efac' : '#94a3b8' }}>
+                  <FaInstagram size={10} className="text-pink-400" />
+                  <FaFacebook size={10} className="text-blue-400" />
+                  Quest-Freischaltung
+                </p>
+                {metaPartnerVerified && (
+                  <span className="text-[10px] font-bold text-green-400 bg-green-400/10 border border-green-400/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <FaCheck size={7} /> Freigeschaltet
+                  </span>
+                )}
+              </div>
+
+              {metaPartnerVerified ? (
+                <p className="text-green-400/80 text-[11px] leading-relaxed">
+                  Dein Instagram-Konto ist als Meta Business Partner verknüpft. Du kannst jetzt Instagram- und Facebook-Quests auf deinen Posts erstellen.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-zinc-400 text-[11px] leading-relaxed">
+                    Verknüpfe dein Meta Business-Konto mit D.Faith Ecosystem, um Instagram & Facebook Quests zu erstellen.
+                  </p>
+                  <ol className="text-zinc-500 text-[11px] space-y-1 pl-0">
+                    {[
+                      <>Öffne <a href="https://business.facebook.com/settings/partners/add" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline underline-offset-2 hover:text-blue-300">Meta Business Center → Partner hinzufügen</a></>,
+                      <>Gib die Business-ID von D.Faith Ecosystem ein{metaBusinessId ? <span className="ml-1 font-mono text-white bg-white/10 px-1.5 py-0.5 rounded text-[10px]">{metaBusinessId}</span> : ' (wird nach Prüfung angezeigt)'}</>,
+                      <>Aktiviere den Zugriff auf dein <strong className="text-zinc-300">Instagram-Konto</strong></>,
+                      <>Klicke unten auf &ldquo;Partnerschaft prüfen&rdquo;</>,
+                    ].map((step, i) => (
+                      <li key={i} className="flex gap-2">
+                        <span className="text-zinc-600 shrink-0 font-bold">{i + 1}.</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                <button
+                  onClick={handleMetaPartnerCheck}
+                  disabled={metaCheckLoading || !p?.instagramHandle}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-blue-300 font-semibold disabled:opacity-40 transition-colors"
+                >
+                  {metaCheckLoading ? (
+                    <span className="animate-spin inline-block w-3 h-3 border border-blue-300 border-t-transparent rounded-full" />
+                  ) : (
+                    <FaInfoCircle size={10} />
+                  )}
+                  {metaPartnerVerified ? 'Erneut prüfen' : 'Partnerschaft prüfen'}
+                </button>
+                {metaCheckMsg && (
+                  <span className="text-[11px] text-zinc-400 leading-relaxed flex-1">{metaCheckMsg}</span>
+                )}
+              </div>
+              {!p?.instagramHandle && (
+                <p className="text-amber-500/70 text-[10px]">⚠️ Verbinde zuerst dein Instagram-Konto (Plattformen unten)</p>
+              )}
+            </div>
           </div>
         )}
 
