@@ -548,11 +548,11 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                   {!verified && (
                     <ol className="text-zinc-500 text-[11px] space-y-1 pl-0">
                       {([
-                        <React.Fragment key={0}>Öffne <a href="https://business.facebook.com/settings/partners/add" target="_blank" rel="noopener noreferrer" className="text-pink-400 underline underline-offset-2 hover:text-pink-300">Meta Business Center → Partner hinzufügen</a></React.Fragment>,
+                        <React.Fragment key={0}>Öffne <a href="https://business.facebook.com/settings/partners/add" target="_blank" rel="noopener noreferrer" className="text-pink-400 underline underline-offset-2 hover:text-pink-300">dein Meta Business Center → Partner hinzufügen</a> <span className="text-amber-500/80">(business.facebook.com — nicht die Instagram-App!)</span></React.Fragment>,
                         <React.Fragment key={1}>Business-ID von D.Faith Ecosystem eingeben{metaBusinessId ? <span className="ml-1 font-mono text-white bg-white/10 px-1.5 py-0.5 rounded text-[10px]">{metaBusinessId}</span> : ''}</React.Fragment>,
                         <React.Fragment key={2}>Einem Partner <strong className="text-zinc-300">Zugriff auf deine Assets gestatten</strong> auswählen</React.Fragment>,
                         <React.Fragment key={3}>
-                          <span>Dein <strong className="text-zinc-300">Instagram-Konto</strong> auswählen und alle Berechtigungen aktivieren:
+                          <span>Deine <strong className="text-zinc-300">Facebook Page</strong> auswählen <span className="text-amber-500/80">(nicht das Instagram-Konto direkt!)</span> — die Page muss mit deinem IG verknüpft sein. Alle Berechtigungen aktivieren:
                             <ul className="mt-1 space-y-0.5 pl-1 text-zinc-600">
                               <li className="flex gap-1.5 items-start"><span className="text-pink-500/70 shrink-0">›</span><span><span className="text-zinc-400">Inhalte</span> — Beiträge, <strong className="text-pink-400/80">Stories</strong> &amp; mehr erstellen/verwalten</span></li>
                               <li className="flex gap-1.5 items-start"><span className="text-pink-500/70 shrink-0">›</span><span><span className="text-zinc-400">Nachrichten</span> — Direktnachrichten senden &amp; beantworten</span></li>
@@ -604,10 +604,10 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                   {!verified && (
                     <ol className="text-zinc-500 text-[11px] space-y-1 pl-0">
                       {([
-                        <React.Fragment key={0}>Öffne <a href="https://business.facebook.com/settings/partners/add" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline underline-offset-2 hover:text-blue-300">Meta Business Center → Partner hinzufügen</a></React.Fragment>,
+                        <React.Fragment key={0}>Öffne <a href="https://business.facebook.com/settings/partners/add" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline underline-offset-2 hover:text-blue-300">dein Meta Business Center → Partner hinzufügen</a> <span className="text-amber-500/80">(business.facebook.com)</span></React.Fragment>,
                         <React.Fragment key={1}>Business-ID von D.Faith Ecosystem eingeben{metaBusinessId ? <span className="ml-1 font-mono text-white bg-white/10 px-1.5 py-0.5 rounded text-[10px]">{metaBusinessId}</span> : ''}</React.Fragment>,
                         <React.Fragment key={2}>Einem Partner <strong className="text-zinc-300">Zugriff auf deine Assets gestatten</strong> auswählen</React.Fragment>,
-                        <React.Fragment key={3}>Zugriff auf deine <strong className="text-zinc-300">Facebook Page</strong> aktivieren</React.Fragment>,
+                        <React.Fragment key={3}>Deine <strong className="text-zinc-300">Facebook Page</strong> auswählen und Berechtigungen aktivieren <span className="text-amber-500/80">(nicht die Facebook-Profilseite, sondern eine erstellte Page)</span></React.Fragment>,
                         <React.Fragment key={4}>Unten auf &bdquo;Prüfen&ldquo; klicken &mdash; System-Zugriff wird automatisch eingerichtet</React.Fragment>,
                       ] as React.ReactNode[]).map((step, i) => (
                         <li key={i} className="flex gap-2"><span className="text-zinc-600 shrink-0 font-bold">{i + 1}.</span><span>{step}</span></li>

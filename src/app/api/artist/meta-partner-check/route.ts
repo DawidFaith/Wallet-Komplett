@@ -216,7 +216,7 @@ export async function POST(req: NextRequest) {
         accessiblePages: pages.length,
         hint: isLinked
           ? `✅ Instagram "@${handle}" über verknüpfte Facebook-Page gefunden!${autoAssignInfo}`
-          : `❌ "@${handle}" nicht gefunden (${pages.length} Partner-Pages geprüft). Bitte sicherstellen, dass die Facebook-Page des Künstlers mit dem Instagram-Konto verbunden ist und als Partner hinzugefügt wurde.`,
+          : `❌ "@${handle}" nicht gefunden (${pages.length} Partner-Pages geprüft). Wichtig: Im Meta Business Center die Facebook PAGE als Partner hinzufügen (nicht das Instagram-Konto direkt). Die Page muss mit dem Instagram-Konto verknüpft sein.`,
       });
     }
 
