@@ -214,6 +214,11 @@ export async function POST(req: NextRequest) {
         verified: isLinked,
         businessId,
         accessiblePages: pages.length,
+        debug: pages.map(p => ({
+          id: p.id,
+          name: p.name,
+          ig: p.instagram_business_account?.username ?? null,
+        })),
         hint: isLinked
           ? `✅ Instagram "@${handle}" über verknüpfte Facebook-Page gefunden!${autoAssignInfo}`
           : `❌ "@${handle}" nicht gefunden (${pages.length} Partner-Pages geprüft). Wichtig: Im Meta Business Center die Facebook PAGE als Partner hinzufügen (nicht das Instagram-Konto direkt). Die Page muss mit dem Instagram-Konto verknüpft sein.`,
