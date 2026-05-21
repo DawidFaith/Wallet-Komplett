@@ -27,8 +27,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
 
-  const token = process.env.META_SYSTEM_USER_TOKEN;
-  const pageId = process.env.FACEBOOK_PAGE_ID;
+  try {
+    const token = process.env.META_SYSTEM_USER_TOKEN;
+    const pageId = process.env.FACEBOOK_PAGE_ID;
 
   // ── Meta API testen ────────────────────────────────────────────────────────
   let metaStatus: Record<string, unknown> = { ok: false };
@@ -71,9 +72,7 @@ export async function POST(req: NextRequest) {
       facebook_verified,
       facebook_name,
       reward_token,
-      dfaith_credits,
-      xp,
-      reputation
+      updated_at
     ) VALUES (
       ${PLATFORM_WALLET},
       TRUE,
@@ -86,9 +85,7 @@ export async function POST(req: NextRequest) {
       TRUE,
       'D.Faith Ecosystem',
       'D.FAITH',
-      0,
-      0,
-      0
+      NOW()
     )
     ON CONFLICT (wallet_address) DO UPDATE SET
       is_artist          = TRUE,
@@ -100,19 +97,24 @@ export async function POST(req: NextRequest) {
       facebook_handle    = 'dfaith_ecosystem',
       facebook_verified  = TRUE,
       facebook_name      = 'D.Faith Ecosystem',
-      reward_token       = 'D.FAITH'
+      reward_token       = 'D.FAITH',
+      updated_at         = NOW()
   `;
 
   // ── Profil laden zur Bestätigung ───────────────────────────────────────────
   const rows = await sql`SELECT * FROM user_profiles WHERE wallet_address = ${PLATFORM_WALLET} LIMIT 1`;
 
   return NextResponse.json({
-    success: true,
-    platformWallet: PLATFORM_WALLET,
-    igAccountId,
-    metaStatus,
-    profile: rows[0] ?? null,
-  });
+      success: true,
+      platformWallet: PLATFORM_WALLET,
+      igAccountId,
+      metaStatus,
+      profile: rows[0] ?? null,
+    });
+  } catch (err) {
+    console.error('[platform-setup POST]', err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }
 
 // GET: Aktuellen Status des Platform-Users abfragen
