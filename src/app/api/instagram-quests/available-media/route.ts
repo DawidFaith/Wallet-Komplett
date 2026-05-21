@@ -1,6 +1,6 @@
 /**
- * GET    /api/instagram-quests/available-media  → Holt aktuelle IG-Posts direkt via Meta Graph API
- *                                                  Fallback: gespeicherte Videos aus DB
+ * GET    /api/instagram-quests/available-media?wallet=...  → Posts des Artists (via Meta Business Partner)
+ *        /api/instagram-quests/available-media             → D.Faith-Platform Posts (Fallback)
  * POST   /api/instagram-quests/available-media  → Erzwingt DB-Aktualisierung aus Meta API
  * DELETE /api/instagram-quests/available-media?shortcode=xxx → Video aus DB entfernen
  */
@@ -9,7 +9,76 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 import { fetchPlatformIgMedia } from '../../../lib/metaApi';
 
-export async function GET() {
+const GRAPH = 'https://graph.facebook.com/v21.0';
+
+export async function GET(req: NextRequest) {
+  const wallet = req.nextUrl.searchParams.get('wallet')?.toLowerCase();
+
+  // ── Artist-spezifisch: IG-Posts über Meta Business Partner laden ──────────
+  if (wallet) {
+    const sql = getDb();
+    try {
+      const rows = await sql`
+        SELECT instagram_handle FROM user_profiles
+        WHERE wallet_address = ${wallet} LIMIT 1
+      `;
+      const handle = (rows[0]?.instagram_handle as string | null)?.toLowerCase().replace(/^@/, '');
+
+      const token = process.env.META_SYSTEM_USER_TOKEN;
+      const bizId = process.env.META_BUSINESS_ID;
+
+      if (handle && token && bizId) {
+        // Artist's IG-Konto via client_pages finden
+        const pagesRes = await fetch(
+          `${GRAPH}/${bizId}/client_pages?fields=id,name,instagram_business_account{id,username}&limit=200&access_token=${token}`,
+          { cache: 'no-store' },
+        );
+        const pagesData = await pagesRes.json() as {
+          data?: Array<{ id: string; name: string; instagram_business_account?: { id: string; username: string } }>;
+        };
+        const page = pagesData.data?.find(
+          (p) => p.instagram_business_account?.username?.toLowerCase() === handle,
+        );
+
+        if (page?.instagram_business_account?.id) {
+          const igId = page.instagram_business_account.id;
+          const mediaRes = await fetch(
+            `${GRAPH}/${igId}/media?fields=id,shortcode,caption,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count,media_type,media_product_type&limit=20&access_token=${token}`,
+            { cache: 'no-store' },
+          );
+          const mediaData = await mediaRes.json() as { data?: Array<Record<string, unknown>>; error?: { message: string } };
+          if (!mediaData.error && mediaData.data && mediaData.data.length > 0) {
+            const media = mediaData.data.map((item) => ({
+              shortcode: String(item.shortcode ?? item.id ?? ''),
+              graph_media_id: String(item.id ?? ''),
+              caption: String(item.caption ?? ''),
+              media_url: String(item.media_url ?? ''),
+              thumbnail_url: String(item.thumbnail_url ?? item.media_url ?? ''),
+              permalink: String(item.permalink ?? ''),
+              posted_at: item.timestamp ?? null,
+              media_type: String(item.media_type ?? ''),
+              media_product_type: String(item.media_product_type ?? ''),
+              like_count: Number(item.like_count ?? 0),
+              comments_count: Number(item.comments_count ?? 0),
+            }));
+            return NextResponse.json({ media, source: 'artist_meta_api' });
+          }
+          // IG-Konto gefunden aber noch keine Posts oder Fehler
+          if (page?.instagram_business_account?.id) {
+            return NextResponse.json({ media: [], source: 'artist_meta_api', hint: 'Kein Inhalt auf dem Artist-Konto gefunden.' });
+          }
+        }
+        // Artist hat noch keine Partnerschaft → leere Liste + Hinweis
+        return NextResponse.json({
+          media: [],
+          source: 'no_partner',
+          hint: 'Bitte zuerst die Instagram Partnerschaft im Profil aktivieren (Meta Business Partner).',
+        });
+      }
+    } catch { /* Fehler ignorieren, weiter mit D.Faith Fallback */ }
+  }
+
+  // ── Fallback: D.Faith-Platform Posts ─────────────────────────────────────
   const sql = getDb();
 
   // Live-Daten direkt von Meta Graph API holen

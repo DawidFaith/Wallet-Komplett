@@ -1,7 +1,8 @@
 /**
+ * GET /api/facebook-quests/available-media?wallet=...
+ *   → Posts der Artist-Facebook-Page (via Meta Business Partner)
  * GET /api/facebook-quests/available-media
- *   → Holt Live-Videos/Posts von Make.com (Szenario 9196702 – Facebook Video Data)
- *     Fallback: gespeicherte Videos aus DB
+ *   → D.Faith-Platform Posts (Fallback via Make.com / DB)
  *
  * DELETE /api/facebook-quests/available-media?postId=xxx
  *   → Video aus DB entfernen
@@ -9,6 +10,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
+
+const GRAPH = 'https://graph.facebook.com/v21.0';
 
 interface MakeFacebookVideoItem {
   id?: string;                  // Facebook Graph API Post-/Video-ID
@@ -114,7 +117,78 @@ async function fetchFromMake(): Promise<MakeFacebookVideoItem[] | null> {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const wallet = req.nextUrl.searchParams.get('wallet')?.toLowerCase();
+
+  // ── Artist-spezifisch: Posts der Artist-Facebook-Page ────────────────────
+  if (wallet) {
+    const sql = getDb();
+    try {
+      const rows = await sql`
+        SELECT facebook_handle, facebook_name FROM user_profiles
+        WHERE wallet_address = ${wallet} LIMIT 1
+      `;
+      const fbName   = (rows[0]?.facebook_name   as string | null)?.toLowerCase().trim();
+      const fbHandle = (rows[0]?.facebook_handle as string | null)?.toLowerCase().replace(/^@/, '').trim();
+
+      const token = process.env.META_SYSTEM_USER_TOKEN;
+      const bizId = process.env.META_BUSINESS_ID;
+
+      if (token && bizId && (fbName || fbHandle)) {
+        const pagesRes = await fetch(
+          `${GRAPH}/${bizId}/client_pages?fields=id,name,username&limit=200&access_token=${token}`,
+          { cache: 'no-store' },
+        );
+        const pagesData = await pagesRes.json() as {
+          data?: Array<{ id: string; name: string; username?: string }>;
+        };
+        const matchedPage = pagesData.data?.find((p) => {
+          const pName     = p.name?.toLowerCase().trim()     ?? '';
+          const pUsername = p.username?.toLowerCase().trim() ?? '';
+          return (
+            (fbName   && (pName === fbName   || pUsername === fbName))   ||
+            (fbHandle && (pName === fbHandle || pUsername === fbHandle))
+          );
+        });
+
+        if (matchedPage) {
+          const postsRes = await fetch(
+            `${GRAPH}/${matchedPage.id}/posts?fields=id,message,permalink_url,created_time,full_picture&limit=20&access_token=${token}`,
+            { cache: 'no-store' },
+          );
+          const postsData = await postsRes.json() as {
+            data?: Array<Record<string, unknown>>;
+            error?: { message: string };
+          };
+          if (!postsData.error && postsData.data && postsData.data.length > 0) {
+            const media = postsData.data.map((post) => ({
+              post_id:        String(post.id             ?? ''),
+              video_id:       '',
+              permalink:      String(post.permalink_url  ?? ''),
+              caption:        String(post.message        ?? ''),
+              thumbnail_url:  String(post.full_picture   ?? ''),
+              video_url:      '',
+              posted_at:      post.created_time ?? null,
+              media_type:     'post',
+              status_type:    '',
+              like_count:     0,
+              comments_count: 0,
+              shares_count:   0,
+            }));
+            return NextResponse.json({ media, source: 'artist_meta_api' });
+          }
+        }
+        // Artist hat noch keine Partnerschaft → leere Liste + Hinweis
+        return NextResponse.json({
+          media: [],
+          source: 'no_partner',
+          hint: 'Bitte zuerst die Facebook Partnerschaft im Profil aktivieren (Meta Business Partner).',
+        });
+      }
+    } catch { /* Fehler ignorieren, weiter mit D.Faith Fallback */ }
+  }
+
+  // ── Fallback: D.Faith-Platform Posts (Make.com / DB) ────────────────────
   const makeItems = await fetchFromMake();
 
   if (makeItems && makeItems.length > 0) {

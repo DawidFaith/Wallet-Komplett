@@ -121,7 +121,7 @@ export default function CreateQuestModal({
   const fetchAvailableFacebookMedia = async () => {
     setLoadingFacebookMedia(true);
     try {
-      const res = await fetch('/api/facebook-quests/available-media');
+      const res = await fetch(`/api/facebook-quests/available-media?wallet=${encodeURIComponent(walletAddress)}`);
       const data = await res.json();
       setAvailableFacebookMedia(data.media ?? []);
     } finally {
@@ -132,7 +132,7 @@ export default function CreateQuestModal({
   const fetchAvailableMedia = async () => {
     setLoadingMedia(true);
     try {
-      const res = await fetch('/api/instagram-quests/available-media');
+      const res = await fetch(`/api/instagram-quests/available-media?wallet=${encodeURIComponent(walletAddress)}`);
       const data = await res.json();
       setAvailableMedia(data.media ?? []);
     } finally {
