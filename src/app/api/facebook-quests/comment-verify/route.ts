@@ -1,18 +1,10 @@
 /**
  * POST /api/facebook-quests/comment-verify
  *
- * Verifiziert einen Facebook-Kommentar-Quest via Make.com Webhook.
- *
- * Flow:
- *   1. App sendet { walletAddress, questId }
- *   2. Wir laden Facebook-Handle aus user_profiles
- *   3. Wir rufen MAKE_FACEBOOK_COMMENT_WEBHOOK_URL auf
- *   4. Make.com prüft ob der Username in den Kommentaren des Posts vorkommt
- *   5. Make.com antwortet synchron mit { found: boolean }
- *   6. Bei Erfolg: Quest-Abschluss speichern + Credits vergeben
+ * Verifiziert einen Facebook-Kommentar-Quest direkt via Meta Graph API.
  *
  * Env-Variablen:
- *   MAKE_FACEBOOK_COMMENT_WEBHOOK_URL  – URL des Make.com Instant Webhook
+ *   META_SYSTEM_USER_TOKEN  – System User Token des dfaith_ecosystem
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -27,14 +19,14 @@ import {
   addUserReputation,
   getUserProfile,
 } from '../../../lib/questDb';
+import { findFacebookComment } from '../../../lib/metaApi';
 
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
-  const makeWebhookUrl = process.env.MAKE_FACEBOOK_COMMENT_WEBHOOK_URL;
-  if (!makeWebhookUrl) {
+  if (!process.env.META_SYSTEM_USER_TOKEN) {
     return NextResponse.json(
-      { error: 'MAKE_FACEBOOK_COMMENT_WEBHOOK_URL nicht konfiguriert' },
+      { error: 'META_SYSTEM_USER_TOKEN nicht konfiguriert' },
       { status: 500 }
     );
   }
@@ -102,38 +94,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 4. Make.com Webhook aufrufen – prüft ob username in den Kommentaren des Posts vorkommt
-  let makeResult: { found: boolean | string };
-  try {
-    const makeRes = await fetch(makeWebhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: profile.facebookHandle,
-        post_id: quest.videoId,
-        questId,
-      }),
-      signal: AbortSignal.timeout(25000),
-    });
-
-    if (!makeRes.ok) {
-      return NextResponse.json(
-        { error: 'Make.com Webhook Fehler', details: await makeRes.text() },
-        { status: 502 }
-      );
-    }
-
-    makeResult = await makeRes.json();
-  } catch (err) {
-    return NextResponse.json(
-      { error: `Make.com nicht erreichbar: ${err instanceof Error ? err.message : 'Timeout'}` },
-      { status: 502 }
-    );
-  }
+  // 4. Meta Graph API – prüft ob Kommentar im Facebook-Post existiert
+  const result = await findFacebookComment(quest.videoId, profile.facebookHandle);
 
   // 5. Ergebnis auswerten
-  const found = makeResult.found === true || makeResult.found === 'true';
-  if (!found) {
+  if (!result.found) {
     return NextResponse.json({
       notFound: true,
       message: `Kein Kommentar von ${profile.facebookHandle} gefunden. Stelle sicher, dass du unter dem Post kommentiert hast, und versuche es erneut.`,

@@ -220,7 +220,7 @@ export default function AdminPage() {
     return matchSearch && matchFilter;
   });
 
-  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform'>('users');
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState('');
   const [resetting, setResetting] = useState(false);
@@ -297,7 +297,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-0">
-        {(['users', 'credits', 'token', 'shop'] as const).map((tab) => (
+        {(['users', 'credits', 'token', 'shop', 'platform'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -307,7 +307,7 @@ export default function AdminPage() {
                 : 'text-zinc-500 border-transparent hover:text-zinc-300'
             }`}
           >
-            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : 'Shop'}
+            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : '⚡ Platform'}
           </button>
         ))}
       </div>
@@ -485,6 +485,11 @@ export default function AdminPage() {
       {/* ── Shop Tab ──────────────────────────────────────────────────────────── */}
       {activeTab === 'shop' && (
         <ShopManageSection secret={secret} artists={users.filter(u => u.isArtist)} />
+      )}
+
+      {/* ── Platform Tab ──────────────────────────────────────────────────────── */}
+      {activeTab === 'platform' && (
+        <PlatformSection secret={secret} />
       )}
     </div>
   );
@@ -1562,6 +1567,153 @@ function GrantCreditsSection({ secret, users }: { secret: string; users: AdminUs
                 </div>
               ))}
           </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── PlatformSection ─────────────────────────────────────────────────────────
+
+function PlatformSection({ secret }: { secret: string }) {
+  const [status, setStatus] = React.useState<Record<string, unknown> | null>(null);
+  const [loading, setLoading] = React.useState(false);
+  const [msg, setMsg] = React.useState('');
+  const [quests, setQuests] = React.useState<Array<Record<string, unknown>>>([]);
+  const [questsLoading, setQuestsLoading] = React.useState(false);
+  const [questMsg, setQuestMsg] = React.useState('');
+
+  const loadStatus = React.useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/platform-setup?secret=${encodeURIComponent(secret)}`);
+      const data = await res.json();
+      setStatus(data);
+    } catch { setStatus(null); }
+  }, [secret]);
+
+  const loadQuests = React.useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/platform-quests?secret=${encodeURIComponent(secret)}`);
+      const data = await res.json();
+      setQuests(data.quests ?? []);
+    } catch { setQuests([]); }
+  }, [secret]);
+
+  React.useEffect(() => { loadStatus(); loadQuests(); }, [loadStatus, loadQuests]);
+
+  const runSetup = async () => {
+    setLoading(true); setMsg('');
+    try {
+      const res = await fetch('/api/admin/platform-setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret }),
+      });
+      const data = await res.json();
+      setMsg(res.ok ? '✅ Platform-User erfolgreich eingerichtet!' : `❌ ${data.error}`);
+      if (res.ok) { await loadStatus(); await loadQuests(); }
+    } catch { setMsg('❌ Netzwerkfehler'); }
+    finally { setLoading(false); }
+  };
+
+  const createQuests = async () => {
+    setQuestsLoading(true); setQuestMsg('');
+    try {
+      const res = await fetch('/api/admin/platform-quests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret, rewardAmount: 150, maxCompletions: 50 }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setQuestMsg(`✅ ${data.created} Quests erstellt, ${data.skipped} übersprungen`);
+        await loadQuests();
+      } else {
+        setQuestMsg(`❌ ${data.error}`);
+      }
+    } catch { setQuestMsg('❌ Netzwerkfehler'); }
+    finally { setQuestsLoading(false); }
+  };
+
+  const isSetup = status && (status as { exists?: boolean }).exists;
+  const metaOk = status && (status as { metaTokenOk?: boolean }).metaTokenOk;
+  const igId = status && (status as { igAccountId?: string }).igAccountId;
+  const profile = status && (status as { profile?: Record<string, unknown> }).profile;
+
+  return (
+    <div className="space-y-6">
+      {/* ── Platform-User Status ─────────────────────────────────────────── */}
+      <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
+        <h2 className="text-lg font-bold text-white mb-4">⚡ Platform-User: dfaith_ecosystem</h2>
+
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <div className={`rounded-xl p-3 border ${isSetup ? 'bg-green-950 border-green-700' : 'bg-zinc-800 border-zinc-700'}`}>
+            <p className="text-xs text-zinc-400">Platform-Artist</p>
+            <p className={`font-bold ${isSetup ? 'text-green-400' : 'text-red-400'}`}>{isSetup ? '✅ Eingerichtet' : '❌ Fehlt'}</p>
+          </div>
+          <div className={`rounded-xl p-3 border ${metaOk ? 'bg-green-950 border-green-700' : 'bg-zinc-800 border-zinc-700'}`}>
+            <p className="text-xs text-zinc-400">Meta API Token</p>
+            <p className={`font-bold ${metaOk ? 'text-green-400' : 'text-red-400'}`}>{metaOk ? '✅ Aktiv' : '❌ Inaktiv'}</p>
+          </div>
+          <div className={`rounded-xl p-3 border ${igId ? 'bg-green-950 border-green-700' : 'bg-zinc-800 border-zinc-700'}`}>
+            <p className="text-xs text-zinc-400">IG Business Account</p>
+            <p className={`font-bold text-sm ${igId ? 'text-green-400' : 'text-zinc-500'}`}>{igId ? String(igId) : '–'}</p>
+          </div>
+          <div className="rounded-xl p-3 border bg-zinc-800 border-zinc-700">
+            <p className="text-xs text-zinc-400">IG Handle</p>
+            <p className="font-bold text-pink-400">
+              {profile ? String((profile as { instagram_handle?: string }).instagram_handle ?? '–') : '–'}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={runSetup}
+          disabled={loading}
+          className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
+        >
+          {loading ? 'Einrichten…' : isSetup ? '🔄 Platform-User aktualisieren' : '🚀 Platform-User einrichten'}
+        </button>
+        {msg && <p className="mt-3 text-sm text-center">{msg}</p>}
+      </div>
+
+      {/* ── Platform-Quests ──────────────────────────────────────────────── */}
+      <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
+        <h2 className="text-lg font-bold text-white mb-1">📱 Platform-Quests (Instagram)</h2>
+        <p className="text-zinc-500 text-sm mb-4">Erstellt automatisch bis zu 5 Comment-Quests aus den neuesten @dfaith_ecosystem Posts.</p>
+
+        <div className="flex gap-3 mb-4">
+          <button
+            onClick={createQuests}
+            disabled={questsLoading || !isSetup}
+            className="flex-1 bg-pink-700 hover:bg-pink-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
+          >
+            {questsLoading ? 'Erstelle…' : '✨ 5 Platform-Quests erstellen'}
+          </button>
+          <button onClick={loadQuests} className="bg-zinc-700 hover:bg-zinc-600 px-4 rounded-xl transition-colors">🔄</button>
+        </div>
+        {questMsg && <p className="mb-3 text-sm text-center">{questMsg}</p>}
+
+        {quests.length > 0 ? (
+          <div className="space-y-2">
+            {quests.map((q) => (
+              <div key={String(q.id)} className="bg-zinc-800 rounded-xl p-3 flex items-center gap-3">
+                {Boolean(q.video_thumbnail) && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={String(q.video_thumbnail)} alt="" className="w-12 h-12 object-cover rounded-lg shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-medium truncate">{String(q.video_title ?? '–')}</p>
+                  <p className="text-zinc-400 text-xs">{String(q.completions ?? 0)}/{String(q.max_completions ?? 0)} Abschlüsse · {String(q.reward_amount ?? 0)} Credits</p>
+                </div>
+                <span className={`text-xs px-2 py-1 rounded-full ${q.is_active ? 'bg-green-900 text-green-300' : 'bg-zinc-700 text-zinc-400'}`}>
+                  {q.is_active ? 'Aktiv' : 'Inaktiv'}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-zinc-600 text-sm text-center py-4">Noch keine Platform-Quests vorhanden.</p>
         )}
       </div>
     </div>

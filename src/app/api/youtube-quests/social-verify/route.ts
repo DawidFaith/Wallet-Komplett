@@ -16,6 +16,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getVerificationCode, upsertUserProfile, recordFingerprintVerification, getFingerprintWalletCount } from '../../../lib/questDb';
 import { getDb } from '../../../lib/db';
+import { findInstagramComment, fetchPlatformIgMedia, fetchPlatformFbPosts, findFacebookComment } from '../../../lib/metaApi';
 
 export const maxDuration = 30; // Vercel Pro: 30s für Bright Data Web Unlocker
 
@@ -346,23 +347,19 @@ async function handlePost(req: NextRequest) {
 
   // ── Preview ───────────────────────────────────────────────────────────────
   if (action === 'preview') {
-    // Instagram: via Bright Data Web Unlocker (~2–5s)
+    // Instagram: Profilvorschau – versuche inoffizielle API, BrightData optional
     if (p === 'instagram') {
-      if (!BRIGHTDATA_API_KEY) {
-        return NextResponse.json({ error: 'Instagram-Verifikation nicht konfiguriert.' }, { status: 500 });
+      let profileName = cleanHandle;
+      let profilePicture = `/api/avatar?platform=instagram&handle=${encodeURIComponent(cleanHandle)}`;
+      const quickProfile = await fetchInstagramProfile(cleanHandle);
+      if (quickProfile) {
+        profileName = quickProfile.name;
+        profilePicture = quickProfile.picture;
+      } else if (BRIGHTDATA_API_KEY) {
+        const bdProfile = await fetchInstagramProfileBrightData(cleanHandle);
+        if (bdProfile) { profileName = bdProfile.name; profilePicture = bdProfile.picture; }
       }
-      const profile = await fetchInstagramProfileBrightData(cleanHandle);
-      if (!profile) {
-        return NextResponse.json(
-          { error: `Instagram-Profil "@${cleanHandle}" konnte nicht geladen werden. Bitte erneut versuchen.` },
-          { status: 404 }
-        );
-      }
-      return NextResponse.json({
-        name: profile.name,
-        picture: profile.picture,
-        verificationCode,
-      });
+      return NextResponse.json({ name: profileName, picture: profilePicture, verificationCode });
     }
 
     const profile = await fetchProfile(p, cleanHandle);
@@ -375,34 +372,27 @@ async function handlePost(req: NextRequest) {
 
   // ── Verify ──────────────────────────────────────────────────────────────
   if (action === 'verify') {
-    // Instagram: Schritt 2 – DB nach gespeicherten Mentions abfragen
-    // Make.com (Szenario 9179868) hat beim Empfang der Erwähnung bereits
-    // POST /api/instagram-mention-received aufgerufen und den Eintrag gespeichert.
+    // Instagram: Schritt 2 – prüft Kommentar auf dfaith_ecosystem-Posts via Meta API
     if (p === 'instagram') {
-      const sql = getDb();
-
-      // Gibt es einen Kommentar von diesem Username aus den letzten 2 Stunden?
-      const rows = await sql`
-        SELECT id FROM instagram_mentions
-        WHERE comment_id = ${cleanHandle.toLowerCase()}
-          AND received_at > NOW() - INTERVAL '2 hours'
-        LIMIT 1
-      `;
-
-      const mentionFound = rows.length > 0;
+      const igMedia = await fetchPlatformIgMedia(5);
+      let mentionFound = false;
+      for (const item of igMedia) {
+        if (await findInstagramComment(item.id, cleanHandle, verificationCode)) {
+          mentionFound = true;
+          break;
+        }
+      }
 
       if (!mentionFound) {
         return NextResponse.json({
           notFound: true,
-          message: `Kein Kommentar von @${cleanHandle} gefunden. Instagram kann bis zu 2 Minuten brauchen – warte kurz und versuche es erneut.`,
+          message: `Code "${verificationCode}" nicht in einem Kommentar von @${cleanHandle} auf @dfaith_ecosystem gefunden. Kommentiere den Code auf einem Post von @dfaith_ecosystem und versuche es erneut.`,
         });
       }
 
-      // Verwendete Mention löschen (einmalig nutzbar)
-      await sql`DELETE FROM instagram_mentions WHERE id = ${rows[0].id}`;
-
       // Duplikat-Check: selber Handle bereits einer anderen Wallet zugeordnet?
       const igNormalized = walletAddress.toLowerCase();
+      const sql = getDb();
       const existingIg = await sql`
         SELECT wallet_address FROM user_profiles
         WHERE LOWER(instagram_handle) = ${cleanHandle.toLowerCase()}
@@ -416,10 +406,15 @@ async function handlePost(req: NextRequest) {
         );
       }
 
-      // Profil-Daten für DB
-      const profileForSave = await fetchInstagramProfileBrightData(cleanHandle);
-      const profileName = profileForSave?.name ?? cleanHandle;
-      const profilePicture = profileForSave?.picture ?? `/api/avatar?platform=instagram&handle=${encodeURIComponent(cleanHandle)}`;
+      // Profil-Daten für DB holen (optional, Fallback zu Handle)
+      let profileName = cleanHandle;
+      let profilePicture = `/api/avatar?platform=instagram&handle=${encodeURIComponent(cleanHandle)}`;
+      const quickProfile = await fetchInstagramProfile(cleanHandle);
+      if (quickProfile) { profileName = quickProfile.name; profilePicture = quickProfile.picture; }
+      else if (BRIGHTDATA_API_KEY) {
+        const bdProfile = await fetchInstagramProfileBrightData(cleanHandle);
+        if (bdProfile) { profileName = bdProfile.name; profilePicture = bdProfile.picture; }
+      }
 
       await upsertUserProfile(walletAddress, {
         instagramHandle: cleanHandle,
@@ -431,12 +426,12 @@ async function handlePost(req: NextRequest) {
       return NextResponse.json({ success: true, name: profileName, picture: profilePicture });
     }
 
-    // Facebook: Schritt 2 – Make.com fragt Kommentare des neuesten Posts ab
+    // Facebook: Schritt 2 – prüft Kommentar auf dfaith_ecosystem-Seite via Meta API
     if (p === 'facebook') {
       const sql = getDb();
+      const normalized = walletAddress.toLowerCase();
 
       // Duplikat-Check: selber Handle bereits einer anderen Wallet zugeordnet?
-      const normalized = walletAddress.toLowerCase();
       const existing = await sql`
         SELECT wallet_address FROM user_profiles
         WHERE facebook_handle = ${cleanHandle.toLowerCase()}
@@ -450,34 +445,34 @@ async function handlePost(req: NextRequest) {
         );
       }
 
-      const commentWebhook = process.env.MAKE_FACEBOOK_COMMENT_WEBHOOK_URL;
-      if (!commentWebhook) {
+      if (!process.env.META_SYSTEM_USER_TOKEN) {
         return NextResponse.json({ error: 'Facebook-Verifikation nicht konfiguriert.' }, { status: 500 });
       }
 
-      const makeRes = await fetch(commentWebhook, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: cleanHandle, post_id: postId ?? '' }),
-        signal: AbortSignal.timeout(15000),
-      });
-      const makeData = await makeRes.json().catch(() => ({})) as { found?: boolean };
+      // Neueste Facebook-Posts der dfaith_ecosystem-Seite prüfen
+      const postIds = await fetchPlatformFbPosts(5);
+      let fbResult: { found: boolean; fromName?: string } = { found: false };
+      for (const pid of postIds) {
+        const r = await findFacebookComment(pid, verificationCode);
+        if (r.found) { fbResult = r; break; }
+      }
 
-      if (!makeData.found) {
+      if (!fbResult.found) {
         return NextResponse.json({
           notFound: true,
-          message: `Kein Kommentar von ${cleanHandle} gefunden. Stelle sicher, dass du @dawidfaith im Kommentar getaggt hast und versuche es erneut.`,
+          message: `Code "${verificationCode}" nicht in einem Kommentar auf der D.Faith Ecosystem Facebook-Seite gefunden. Kommentiere den Code unter einem Post und versuche es erneut.`,
         });
       }
 
+      const fbDisplayName = fbResult.fromName ?? cleanHandle;
       await upsertUserProfile(walletAddress, {
-        facebookHandle: cleanHandle,
+        facebookHandle: fbDisplayName,
         facebookVerified: true,
-        facebookName: cleanHandle,
+        facebookName: fbDisplayName,
         facebookPicture: null,
       });
       if (fingerprint) await recordFingerprintVerification(fingerprint, walletAddress);
-      return NextResponse.json({ success: true, name: cleanHandle, picture: null });
+      return NextResponse.json({ success: true, name: fbDisplayName, picture: null });
     }
 
     // TikTok: synchron

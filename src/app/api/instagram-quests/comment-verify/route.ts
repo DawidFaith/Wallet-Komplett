@@ -1,19 +1,17 @@
 /**
  * POST /api/instagram-quests/comment-verify
  *
- * Verifiziert einen Instagram-Kommentar-Quest via Make.com Webhook.
+ * Verifiziert einen Instagram-Kommentar-Quest direkt via Meta Graph API.
  *
  * Flow:
  *   1. App sendet { walletAddress, questId }
  *   2. Wir laden Instagram-Handle aus user_profiles
- *   3. Wir rufen einen Make.com Webhook auf
- *   4. Make.com ruft die Instagram Graph API auf (mit Dawids Token)
- *      → GET /{mediaId}/comments → sucht Kommentar von diesem User mit dem Verifizierungscode
- *   5. Make.com antwortet synchron mit { found: boolean, commentId?: string }
- *   6. Bei Erfolg: Quest-Abschluss speichern + Credits vergeben
+ *   3. Wir rufen Meta Graph API auf: GET /{mediaId}/comments?fields=username
+ *   4. Suchen ob der Username in den Kommentaren vorkommt
+ *   5. Bei Erfolg: Quest-Abschluss speichern + Credits vergeben
  *
  * Env-Variablen:
- *   MAKE_INSTAGRAM_COMMENT_WEBHOOK_URL  – URL des Make.com Instant Webhook
+ *   META_SYSTEM_USER_TOKEN  – System User Token des dfaith_ecosystem
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -28,14 +26,14 @@ import {
   addUserReputation,
   getUserProfile,
 } from '../../../lib/questDb';
+import { findInstagramComment } from '../../../lib/metaApi';
 
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
-  const makeWebhookUrl = process.env.MAKE_INSTAGRAM_COMMENT_WEBHOOK_URL;
-  if (!makeWebhookUrl) {
+  if (!process.env.META_SYSTEM_USER_TOKEN) {
     return NextResponse.json(
-      { error: 'MAKE_INSTAGRAM_COMMENT_WEBHOOK_URL nicht konfiguriert' },
+      { error: 'META_SYSTEM_USER_TOKEN nicht konfiguriert' },
       { status: 500 }
     );
   }
@@ -103,50 +101,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 4. Make.com Webhook aufrufen – prüft ob username in den Kommentaren des Reels vorkommt
+  // 4. Meta Graph API – prüft ob username in den Kommentaren des Reels vorkommt
   const graphMediaId = quest.videoId;
+  const found = await findInstagramComment(graphMediaId, profile.instagramHandle);
 
-  let makeResult: { found: boolean | string; total?: number };
-  try {
-    const makeRes = await fetch(makeWebhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: profile.instagramHandle,
-        graphMediaId,
-        questId,
-      }),
-      signal: AbortSignal.timeout(25000),
-    });
-
-    if (!makeRes.ok) {
-      return NextResponse.json(
-        { error: 'Make.com Webhook Fehler', details: await makeRes.text() },
-        { status: 502 }
-      );
-    }
-
-    makeResult = await makeRes.json();
-  } catch (err: unknown) {
-    // Timeout = kein Kommentar mit passendem Username gefunden → Filter hat alles geblockt
-    const isTimeout = err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError');
-    if (isTimeout) {
-      return NextResponse.json(
-        { error: 'Kein Kommentar gefunden. Hinterlasse zuerst einen positiven Kommentar unter dem Reel mit deinem Instagram-Account @' + profile.instagramHandle },
-        { status: 404 }
-      );
-    }
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json(
-      { error: 'Make.com nicht erreichbar', details: msg },
-      { status: 502 }
-    );
-  }
-
-  const found = makeResult.found === true || makeResult.found === 'true';
   if (!found) {
     return NextResponse.json(
-      { error: 'Kein Kommentar gefunden. Hinterlasse zuerst einen positiven Kommentar unter dem Reel mit deinem Instagram-Account @' + profile.instagramHandle },
+      { error: `Kein Kommentar gefunden. Hinterlasse zuerst einen positiven Kommentar unter dem Reel mit deinem Instagram-Account @${profile.instagramHandle}` },
       { status: 404 }
     );
   }

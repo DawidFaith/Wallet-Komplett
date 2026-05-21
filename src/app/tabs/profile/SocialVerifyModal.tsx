@@ -16,13 +16,13 @@ const PLATFORM_CONFIG = {
     color: 'pink',
     handlePrefix: '@',
     placeholder: 'deinname',
-    bioInstructions: (_code: string) => [
+    bioInstructions: (code: string) => [
       'Öffne die Instagram App',
-      'Gehe auf ein Reel oder Post von @dawidfaith',
-      'Schreibe einen Kommentar und tagge @dawidfaith darin',
+      'Gehe auf einen Post von @dfaith_ecosystem (D.Faith Ecosystem)',
+      `Schreibe einen Kommentar mit genau diesem Code: ${code}`,
       'Komm zurück und klicke auf „Verifizieren"',
     ],
-    profileUrl: (handle: string) => `https://www.instagram.com/${handle}/`,
+    profileUrl: (_handle: string) => `https://www.instagram.com/dfaith_ecosystem/`,
   },
   tiktok: {
     icon: <FaTiktok size={20} className="text-zinc-100" />,
@@ -44,13 +44,13 @@ const PLATFORM_CONFIG = {
     color: 'blue',
     handlePrefix: '',
     placeholder: 'dein.name oder Profil-URL',
-    bioInstructions: (_code: string) => [
+    bioInstructions: (code: string) => [
       'Öffne Facebook',
-      'Gehe auf einen Post oder ein Video von @dawidfaith',
-      'Schreibe einen Kommentar und tagge @dawidfaith darin',
+      'Gehe auf einen Post der D.Faith Ecosystem Seite',
+      `Schreibe einen Kommentar mit genau diesem Code: ${code}`,
       'Komm zurück und klicke auf „Verifizieren"',
     ],
-    profileUrl: (handle: string) => `https://www.facebook.com/${handle}`,
+    profileUrl: (_handle: string) => `https://www.facebook.com/profile.php?id=100094343861740`,
   },
 };
 
@@ -120,7 +120,6 @@ export default function SocialVerifyModal({
   const [codeCopied, setCodeCopied] = useState(false);
   const [name, setName] = useState(currentName);
   const [picture, setPicture] = useState(currentPicture);
-  const [latestFbPost, setLatestFbPost] = useState<{ permalink: string; thumbnail: string; caption: string; post_id: string } | null>(null);
 
   const call = async (body: object) => {
     const res = await fetch('/api/youtube-quests/social-verify', {
@@ -141,21 +140,11 @@ export default function SocialVerifyModal({
     setLoading(true); setError('');
     try {
       if (platform === 'facebook') {
-        // Neuesten Facebook-Post direkt von Make holen (kein social-verify für Preview)
-        const mediaRes = await fetch('/api/facebook-quests/available-media');
-        const mediaData = await mediaRes.json();
-        const posts: Array<{ post_id: string; permalink: string; thumbnail_url: string; caption: string }> = mediaData.media ?? [];
-        if (posts.length > 0) {
-          setLatestFbPost({
-            permalink: posts[0].permalink,
-            thumbnail: posts[0].thumbnail_url,
-            caption: posts[0].caption,
-            post_id: posts[0].post_id,
-          });
-        }
-        const fakePreview = { name: handle.trim(), picture: '', verificationCode: '' };
-        setPreview(fakePreview);
-        savePreviewCache(handle.trim(), fakePreview);
+        // Facebook Preview: social-verify aufrufen für Verifizierungscode
+        const { ok, data } = await call({ handle: handle.trim(), action: 'preview' });
+        if (!ok) { setError(data.error ?? 'Fehler'); return; }
+        setPreview(data);
+        savePreviewCache(handle.trim(), data);
         setStep('instructions');
         return;
       }
@@ -172,7 +161,7 @@ export default function SocialVerifyModal({
     if (!preview) return;
     setLoading(true); setError('');
     try {
-      const extraBody = platform === 'facebook' && latestFbPost ? { postId: latestFbPost.post_id } : {};
+      const extraBody = {};
       const { ok, data } = await call({ handle: handle.trim(), action: 'verify', ...extraBody });
       if (!ok) { setError(data.error ?? 'Serverfehler'); return; }
       if (data.notFound) { setError(data.message); return; }
@@ -363,53 +352,40 @@ export default function SocialVerifyModal({
               <div className="bg-zinc-800 rounded-xl p-4 space-y-3">
                 <p className="text-pink-400 font-semibold text-sm">So verifizierst du dich:</p>
                 <ol className="text-zinc-400 text-sm space-y-1 list-decimal list-inside">
-                  {cfg.bioInstructions('').map((s, i) => <li key={i}>{s}</li>)}
+                  {cfg.bioInstructions(preview?.verificationCode ?? '').map((s, i) => <li key={i}>{s}</li>)}
                 </ol>
                 <a
-                  href="https://www.instagram.com/dawidfaith/"
+                  href="https://www.instagram.com/dfaith_ecosystem/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-zinc-900 rounded-lg px-3 py-2 flex items-center gap-2 border border-zinc-700 hover:border-pink-500 transition-colors"
                 >
                   <FaInstagram size={14} className="text-pink-400 shrink-0" />
-                  <span className="text-pink-300 font-mono text-sm">@dawidfaith</span>
+                  <span className="text-pink-300 font-mono text-sm">@dfaith_ecosystem</span>
                   <span className="text-zinc-500 text-xs ml-auto">Profil öffnen ↗</span>
                 </a>
-                <p className="text-yellow-500 text-xs">⏳ Warte 1–2 Minuten nach dem Kommentieren, bevor du auf &quot;Verifizieren&quot; klickst.</p>
+                <p className="text-yellow-500 text-xs">⏳ Warte kurz nach dem Kommentieren, bevor du auf &quot;Verifizieren&quot; klickst.</p>
               </div>
               )}
 
-              {/* Facebook – zeigt neuesten Post + Kommentar-Anweisung */}
+              {/* Facebook – zeigt Seiten-Link + Kommentar-Anweisung mit Code */}
               {platform === 'facebook' && (
               <div className="bg-zinc-800 rounded-xl p-4 space-y-3">
-                <p className="text-blue-400 font-semibold text-sm">Kommentiere auf diesem Post:</p>
-                {latestFbPost ? (
-                  <a
-                    href={latestFbPost.permalink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex gap-3 bg-zinc-900 rounded-xl p-3 border border-zinc-700 hover:border-blue-500 transition-colors"
-                  >
-                    {latestFbPost.thumbnail && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={latestFbPost.thumbnail} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-zinc-300 text-xs leading-relaxed line-clamp-3">{latestFbPost.caption || 'Neuester Post'}</p>
-                      <p className="text-blue-400 text-xs mt-1.5 font-semibold">Post öffnen ↗</p>
-                    </div>
-                  </a>
-                ) : (
-                  <p className="text-zinc-500 text-xs">Konnte neuesten Post nicht laden – gehe direkt zum Facebook-Profil von @dawidfaith.</p>
-                )}
+                <p className="text-blue-400 font-semibold text-sm">So verifizierst du dich:</p>
                 <ol className="text-zinc-400 text-sm space-y-1 list-decimal list-inside">
-                  {cfg.bioInstructions('').map((s, i) => <li key={i}>{s}</li>)}
+                  {cfg.bioInstructions(preview?.verificationCode ?? '').map((s, i) => <li key={i}>{s}</li>)}
                 </ol>
-                <div className="bg-zinc-900 rounded-lg px-3 py-2 flex items-center gap-2 border border-zinc-700">
+                <a
+                  href="https://www.facebook.com/profile.php?id=100094343861740"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-zinc-900 rounded-lg px-3 py-2 flex items-center gap-2 border border-zinc-700 hover:border-blue-500 transition-colors"
+                >
                   <FaFacebook size={14} className="text-blue-400 shrink-0" />
-                  <span className="text-blue-300 font-mono text-sm select-all">@dawidfaith</span>
-                </div>
-                <p className="text-yellow-500 text-xs">⏳ Warte 1–2 Minuten nach dem Kommentieren, bevor du auf &quot;Verifizieren&quot; klickst.</p>
+                  <span className="text-blue-300 font-mono text-sm">D.Faith Ecosystem</span>
+                  <span className="text-zinc-500 text-xs ml-auto">Seite öffnen ↗</span>
+                </a>
+                <p className="text-yellow-500 text-xs">⏳ Warte kurz nach dem Kommentieren, bevor du auf &quot;Verifizieren&quot; klickst.</p>
               </div>
               )}
 
