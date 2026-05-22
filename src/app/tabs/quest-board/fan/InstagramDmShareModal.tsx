@@ -21,6 +21,7 @@ type Step =
   | 'starting'     // Baseline wird geladen
   | 'part1'        // Story teilen, warten auf Share
   | 'checking'     // Share wird geprüft
+  | 'part2'        // Share erkannt, warte auf @-Tag Bestätigung
   | 'success'      // Quest komplett
   | 'expired'
   | 'error';
@@ -45,7 +46,7 @@ export default function InstagramDmShareModal({
 
   // Countdown Timer
   useEffect(() => {
-    if (step !== 'part1') {
+    if (step !== 'part1' && step !== 'part2') {
       if (intervalRef.current) clearInterval(intervalRef.current);
       return;
     }
@@ -80,9 +81,10 @@ export default function InstagramDmShareModal({
         if (data.started && !data.expired) {
           setExpiresAt(data.expiresAt ?? null);
           setInstagramHandle(data.instagramHandle ?? '');
-          if (data.shareVerified) {
-            // Bereits verifiziert aber noch nicht abgeschlossen → part1 anzeigen zum manuellen Prüfen
-            setStep('part1');
+          if (data.shareVerified && data.tagVerified) {
+            setStep('success');
+          } else if (data.shareVerified) {
+            setStep('part2');
           } else {
             setStep('part1');
           }
@@ -149,12 +151,14 @@ export default function InstagramDmShareModal({
       if (data.expired) {
         setStep('expired');
       } else if (data.success) {
-        // Quest direkt abgeschlossen
         setRewardAmount(data.rewardAmount ?? quest.rewardAmount);
         setStep('success');
         onCompleted(data.rewardAmount ?? quest.rewardAmount);
+      } else if (data.shareVerified && !data.tagVerified) {
+        // Schritt 1 done → warte auf @-Tag
+        setStep('part2');
       } else if (data.notYet) {
-        setError(data.message ?? 'Kein neuer Share erkannt. Teile den Beitrag in deiner Story und prüfe erneut.');
+        setError(data.message ?? 'Kein neuer Share erkannt.');
         setStep('part1');
       }
     } catch {
@@ -165,9 +169,9 @@ export default function InstagramDmShareModal({
     }
   }, [quest, walletAddress, onCompleted]);
 
-  // Poll ob Quest via Mention-Webhook abgeschlossen wurde (alle 5 Sek wenn in part1)
+  // Poll: wurde @-Tag per Webhook erkannt? (alle 5 Sek wenn in part2)
   useEffect(() => {
-    if (step !== 'part1' || !quest) return;
+    if (step !== 'part2' || !quest) return;
     const poll = setInterval(async () => {
       try {
         const res = await fetch('/api/instagram-quests/dm-share', {
@@ -176,7 +180,7 @@ export default function InstagramDmShareModal({
           body: JSON.stringify({ action: 'status', questId: quest.id, walletAddress }),
         });
         const data = await res.json();
-        if (data.alreadyCompleted || (data.shareVerified && data.clickVerified)) {
+        if (data.tagVerified || data.alreadyCompleted) {
           clearInterval(poll);
           setStep('success');
           onCompleted(quest.rewardAmount);
@@ -226,13 +230,20 @@ export default function InstagramDmShareModal({
         {/* ── NORMALER ZWEI-SCHRITT FLOW ── */}
         {!storyClaimToken && (
           <>
-            {/* Fortschritt */}
+            {/* Zwei-Schritt Fortschritt */}
             <div className="flex items-center gap-2 text-xs">
               <StepBadge
                 num={1}
-                label="Story teilen & @taggen"
-                done={step === 'success'}
+                label="Story teilen"
+                done={['part2', 'success'].includes(step)}
                 active={['part1', 'starting', 'checking'].includes(step)}
+              />
+              <div className="flex-1 h-px bg-zinc-700" />
+              <StepBadge
+                num={2}
+                label="@-Tag bestätigt"
+                done={step === 'success'}
+                active={step === 'part2'}
               />
             </div>
 
@@ -304,6 +315,28 @@ export default function InstagramDmShareModal({
         )}
 
 
+
+        {/* ── PART 2: Warte auf @-Tag Bestätigung ── */}
+        {!storyClaimToken && step === 'part2' && (
+          <div className="space-y-3">
+            <div className="bg-green-900/30 border border-green-600/40 rounded-xl px-3 py-2 text-xs text-green-300 flex items-center gap-2">
+              <FaCheck size={10} /> Schritt 1 abgeschlossen – Share erkannt!
+            </div>
+            <div className="bg-zinc-800/60 rounded-xl px-3 py-3 space-y-1">
+              <p className="font-semibold text-white text-xs flex items-center gap-1.5"><FaShareAlt size={11} className="text-pink-400" /> Schritt 2 – @-Tag in Story</p>
+              <p className="text-xs text-zinc-400">
+                Stelle sicher, dass du <span className="text-pink-400 font-semibold">@{creatorHandle || 'den Creator'}</span> in deiner Story markiert hast. Die Quest wird automatisch abgeschlossen sobald der Tag erkannt wird.
+              </p>
+            </div>
+            {expiresAt && (
+              <p className="text-center text-xs text-zinc-500">Verläuft in {formatTime(secondsLeft)}</p>
+            )}
+            <div className="flex items-center justify-center gap-2 text-xs text-zinc-500">
+              <div className="animate-spin w-3 h-3 border border-zinc-500 border-t-pink-500 rounded-full" />
+              Warte auf @-Tag Erkennung…
+            </div>
+          </div>
+        )}
 
         {/* ── SUCCESS ── */}
         {!storyClaimToken && step === 'success' && (

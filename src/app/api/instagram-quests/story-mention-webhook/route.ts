@@ -26,6 +26,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getInstagramDmVerificationByHandle,
   markInstagramDmStoryVerifiedByHandle,
+  markInstagramDmClickedByHandle,
   loadQuestDetail,
   getUserProfile,
   hasWalletCompletedQuest,
@@ -148,16 +149,23 @@ export async function POST(req: NextRequest) {
           console.log('[story-mention-webhook] Keine aktive Quest für:', username);
           continue;
         }
-        if (verif.storyVerified) {
-          console.log('[story-mention-webhook] Story bereits verifiziert für:', username);
+
+        if (verif.storyVerified && verif.clickVerified) {
+          console.log('[story-mention-webhook] Quest bereits komplett für:', username);
           continue;
         }
 
-        // Story als verifiziert markieren
-        await markInstagramDmStoryVerifiedByHandle(username);
-        console.log('[story-mention-webhook] story_verified gesetzt für:', username, '/ Quest:', verif.questId);
+        // @-Tag (Schritt 2) via click_verified setzen
+        await markInstagramDmClickedByHandle(username, verif.baselineShares);
+        console.log('[story-mention-webhook] @-Tag erkannt (click_verified) für:', username);
 
-        // Quest sofort abschließen — kein DM-Klick mehr nötig
+        // Nur abschließen wenn Schritt 1 (story_verified = Shares-Delta) bereits erledigt
+        if (!verif.storyVerified) {
+          console.log('[story-mention-webhook] Warte auf Share-Prüfung (Schritt 1) für:', username);
+          continue;
+        }
+
+        // Beide Schritte erledigt → Quest abschließen
         const alreadyDone = await hasWalletCompletedQuest(verif.walletAddress, verif.questId);
         if (!alreadyDone) {
           const quest = await loadQuestDetail(verif.questId);

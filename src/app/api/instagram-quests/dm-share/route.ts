@@ -71,6 +71,46 @@ async function fetchCurrentShares(graphMediaId: string): Promise<number> {
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
+// ─── Quest-Abschluss-Helper ───────────────────────────────────────────────────
+
+async function completeStoryQuest({
+  quest, questId, normalized, profile,
+}: {
+  quest: Awaited<ReturnType<typeof loadQuestDetail>>;
+  questId: string;
+  normalized: string;
+  profile: Awaited<ReturnType<typeof getUserProfile>>;
+}): Promise<NextResponse> {
+  if (!quest) return NextResponse.json({ error: 'Quest nicht gefunden' }, { status: 404 });
+  const handle = profile?.instagramHandle ?? normalized;
+  const now = new Date().toISOString();
+  const completion: QuestCompletion = {
+    questId,
+    walletAddress: normalized,
+    channelId: handle,
+    channelName: profile?.instagramName ?? handle,
+    platform: 'instagram',
+    commentId: `dm_share:${handle}`,
+    commentText: `dm_share|handle:${handle}`,
+    rewardAmount: quest.rewardAmount,
+    rewardPaid: false,
+    completedAt: now,
+  };
+  await saveCompletion(completion);
+  await addDfaithCredits(normalized, quest.rewardAmount);
+  await savePendingReward({ walletAddress: normalized, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId, createdAt: now });
+  await addUserXp(normalized, Math.round(quest.rewardAmount / 10));
+  await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
+  await deleteInstagramDmVerification(questId, normalized);
+  return NextResponse.json({
+    success: true,
+    shareVerified: true,
+    tagVerified: true,
+    rewardAmount: quest.rewardAmount,
+    message: `Quest abgeschlossen! +${quest.rewardAmount} DFAITH Credits gutgeschrieben.`,
+  });
+}
+
 export async function POST(req: NextRequest) {
   let body: { action?: string; walletAddress?: string; questId?: string };
   try {
@@ -168,45 +208,24 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ expired: true, shareVerified: verif.storyVerified, clickVerified: verif.clickVerified });
       }
 
-      // DM-Klick bereits abgeschlossen (Fallback)
-      if (verif.clickVerified) {
-        return NextResponse.json({ shareVerified: true, clickVerified: true, alreadyCompleted: true });
+      // Beide Schritte bereits erledigt → Quest abschließen
+      if (verif.clickVerified && verif.storyVerified) {
+        const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
+        if (alreadyDone) return NextResponse.json({ success: true, alreadyCompleted: true });
+        return await completeStoryQuest({ quest, questId, normalized, profile });
       }
 
-      // Story bereits verifiziert (z.B. via Mention-Webhook) → Quest sofort abschließen
+      // Schritt 1 (Share) bereits erkannt, warte auf @-Tag (Schritt 2)
       if (verif.storyVerified) {
-        const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
-        if (alreadyDone) {
-          return NextResponse.json({ success: true, alreadyCompleted: true, shareVerified: true });
-        }
-        const now = new Date().toISOString();
-        const completion: QuestCompletion = {
-          questId,
-          walletAddress: normalized,
-          channelId: profile.instagramHandle,
-          channelName: profile.instagramName ?? profile.instagramHandle,
-          platform: 'instagram',
-          commentId: `dm_share:${profile.instagramHandle}`,
-          commentText: `dm_share|handle:${profile.instagramHandle}`,
-          rewardAmount: quest.rewardAmount,
-          rewardPaid: false,
-          completedAt: now,
-        };
-        await saveCompletion(completion);
-        await addDfaithCredits(normalized, quest.rewardAmount);
-        await savePendingReward({ walletAddress: normalized, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId, createdAt: now });
-        await addUserXp(normalized, Math.round(quest.rewardAmount / 10));
-        await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
-        await deleteInstagramDmVerification(questId, normalized);
         return NextResponse.json({
-          success: true,
           shareVerified: true,
-          rewardAmount: quest.rewardAmount,
-          message: `Quest abgeschlossen! +${quest.rewardAmount} DFAITH Credits gutgeschrieben.`,
+          tagVerified: false,
+          expiresAt: verif.expiresAt,
+          message: `Share erkannt! Stelle sicher, dass du @${creatorHandle ?? 'den Creator'} in der Story markiert hast. Die Quest wird automatisch abgeschlossen sobald der Tag erkannt wird.`,
         });
       }
 
-      // Share-Delta prüfen
+      // Share-Delta prüfen (Schritt 1)
       const currentShares = await fetchCurrentShares(quest.videoId);
       if (currentShares <= verif.baselineShares) {
         return NextResponse.json({
@@ -219,35 +238,21 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // ── Share erkannt → story_verified + Quest sofort abschließen ────────
+      // ── Schritt 1 abgeschlossen: story_verified setzen ───────────────────
       await markInstagramDmStoryVerified(questId, normalized);
-      const alreadyDone2 = await hasWalletCompletedQuest(normalized, questId);
-      if (!alreadyDone2) {
-        const now = new Date().toISOString();
-        const completion: QuestCompletion = {
-          questId,
-          walletAddress: normalized,
-          channelId: profile.instagramHandle,
-          channelName: profile.instagramName ?? profile.instagramHandle,
-          platform: 'instagram',
-          commentId: `dm_share:${profile.instagramHandle}`,
-          commentText: `dm_share|handle:${profile.instagramHandle}`,
-          rewardAmount: quest.rewardAmount,
-          rewardPaid: false,
-          completedAt: now,
-        };
-        await saveCompletion(completion);
-        await addDfaithCredits(normalized, quest.rewardAmount);
-        await savePendingReward({ walletAddress: normalized, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId, createdAt: now });
-        await addUserXp(normalized, Math.round(quest.rewardAmount / 10));
-        await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
-        await deleteInstagramDmVerification(questId, normalized);
+
+      // Falls @-Tag (Schritt 2) per Webhook bereits früher ankam → direkt abschließen
+      if (verif.clickVerified) {
+        const alreadyDone2 = await hasWalletCompletedQuest(normalized, questId);
+        if (alreadyDone2) return NextResponse.json({ success: true, alreadyCompleted: true });
+        return await completeStoryQuest({ quest, questId, normalized, profile });
       }
+
       return NextResponse.json({
-        success: true,
         shareVerified: true,
-        rewardAmount: quest.rewardAmount,
-        message: `Quest abgeschlossen! +${quest.rewardAmount} DFAITH Credits gutgeschrieben.`,
+        tagVerified: false,
+        expiresAt: verif.expiresAt,
+        message: `Share erkannt! Stelle sicher, dass du @${creatorHandle ?? 'den Creator'} in der Story markiert hast. Die Quest wird automatisch abgeschlossen sobald der Tag erkannt wird.`,
       });
     }
 
@@ -258,10 +263,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         started: true,
         shareVerified: verif.storyVerified,
-        clickVerified: verif.clickVerified,
+        tagVerified: verif.clickVerified,
         expiresAt: verif.expiresAt,
         expired: new Date(verif.expiresAt) < new Date(),
-        linkTemplate: verif.storyVerified ? linkTemplate : null,
         instagramHandle: profile.instagramHandle,
       });
     }
