@@ -1,15 +1,11 @@
 /**
  * POST /api/instagram-quests/like-verify
  *
- * Verifiziert einen Instagram Like- oder Save-Quest via Make.com (Szenario 9179157).
+ * Verifiziert einen Instagram Like- oder Save-Quest via Meta Graph API.
  *
- * Flow (wie YouTube/TikTok):
- *   action: 'start' → Baseline-Stats via Make.com laden, 10-Min-Fenster öffnen
- *   action: 'check' → Aktuelle Stats via Make.com laden, Delta prüfen → Quest abschließen
- *
- * Make.com gibt zurück: { found, likes, saved, comments, shares, views, reach, total_interactions }
- *
- * Env: MAKE_INSTAGRAM_LIKE_WEBHOOK_URL
+ * Flow:
+ *   action: 'start' → Baseline-Stats via Graph API laden, 10-Min-Fenster öffnen
+ *   action: 'check' → Aktuelle Stats via Graph API laden, Delta prüfen → Quest abschließen
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -31,144 +27,22 @@ import {
 
 export const maxDuration = 30;
 
-interface MakeInsightsResult {
-  found: string;
+interface InsightsResult {
   likes: number;
   saved: number;
   comments: number;
   shares: number;
-  views: number;
   reach: number;
   total_interactions: number;
 }
 
-interface MakeMetric {
-  name: string;
-  values: Array<{ value: number }>;
-}
-interface MakeRawResponse {
-  // Format 1: HTTP-Modul → Graph API gibt { data: [...] } zurück
-  data?: MakeMetric[];
-  // Format 2: Array Aggregator → { metrics: [...] }
-  metrics?: MakeMetric[];
-  // Format 3: Legacy Flach-Format
-  found?: string;
-  likes?: number;
-  saved?: number;
-  comments?: number;
-  shares?: number;
-  views?: number;
-  reach?: number;
-  total_interactions?: number;
-}
-
-function parseInsightsResponse(raw: MakeRawResponse): MakeInsightsResult | null {
-  // Legacy Flach-Format
-  if (raw.found !== undefined) {
-    return {
-      found: String(raw.found),
-      likes: Number(raw.likes ?? 0),
-      saved: Number(raw.saved ?? 0),
-      comments: Number(raw.comments ?? 0),
-      shares: Number(raw.shares ?? 0),
-      views: Number(raw.views ?? 0),
-      reach: Number(raw.reach ?? 0),
-      total_interactions: Number(raw.total_interactions ?? 0),
-    };
-  }
-
-  // Array-Format (HTTP-Modul: data=[...] oder Aggregator: metrics=[...])
-  const arr = raw.data ?? raw.metrics;
-  if (!arr || !Array.isArray(arr)) return null;
-
-  const get = (...names: string[]) => {
-    for (const name of names) {
-      const m = arr.find((x) => x.name === name);
-      const v = Number(m?.values?.[0]?.value ?? 0);
-      if (v > 0) return v;
-    }
-    return 0;
-  };
-
-  return {
-    found: 'true',
-    likes: get('likes'),
-    saved: get('saved'),
-    comments: get('comments'),
-    shares: get('shares'),
-    views: get('video_views', 'plays', 'views'),
-    reach: get('reach'),
-    total_interactions: get('total_interactions'),
-  };
-}
-
-// Make.com Array Aggregator gibt kein gültiges JSON-Array zurück, sondern:
-// {"metrics": {obj1}, {obj2}, ...} → ungültiges JSON.
-// Fallback: Regex-Extraktion der name+value Paare direkt aus dem Text.
-function parseInsightsFromText(text: string): MakeInsightsResult | null {
-  const metrics: Record<string, number> = {};
-  const pattern = /"name":"([^"]+)"[^[]*"values":\[{"value":(\d+)/g;
-  let match;
-  while ((match = pattern.exec(text)) !== null) {
-    metrics[match[1]] = Number(match[2]);
-  }
-  if (Object.keys(metrics).length === 0) return null;
-
-  const get = (...names: string[]) => {
-    for (const n of names) if (metrics[n] !== undefined) return metrics[n];
-    return 0;
-  };
-  return {
-    found: 'true',
-    likes: get('likes'),
-    saved: get('saved'),
-    comments: get('comments'),
-    shares: get('shares'),
-    views: get('views', 'video_views', 'plays'),
-    reach: get('reach'),
-    total_interactions: get('total_interactions'),
-  };
-}
-
-async function fetchInsights(
-  webhookUrl: string,
-  graphMediaId: string,
-): Promise<MakeInsightsResult | null> {
-  // ── Primär: direkt via Meta Graph API ─────────────────────────────────────
-  const directResult = await fetchInsightsDirect(graphMediaId);
-  if (directResult) return directResult;
-
-  // ── Fallback: Make.com Webhook ─────────────────────────────────────────────
-  try {
-    const res = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ graphMediaId }),
-      signal: AbortSignal.timeout(25000),
-    });
-    const text = await res.text();
-    if (!text || text.trim() === '') return null;
-
-    try {
-      const raw: MakeRawResponse = JSON.parse(text);
-      const result = parseInsightsResponse(raw);
-      if (result) return result;
-    } catch { /* kein gültiges JSON */ }
-
-    return parseInsightsFromText(text);
-  } catch {
-    return null;
-  }
-}
-
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
-/** Direkte Meta Graph API Abfrage — kein Make.com nötig */
-async function fetchInsightsDirect(graphMediaId: string): Promise<MakeInsightsResult | null> {
+async function fetchInsights(graphMediaId: string): Promise<InsightsResult | null> {
   const token = process.env.META_SYSTEM_USER_TOKEN;
   if (!token) return null;
   try {
-    // 1. Basis-Metriken (like_count, comments_count)
+    // 1. Basis-Metriken
     const basicRes = await fetch(
       `${GRAPH}/${graphMediaId}?fields=like_count,comments_count&access_token=${token}`,
       { cache: 'no-store', signal: AbortSignal.timeout(10000) },
@@ -178,9 +52,12 @@ async function fetchInsightsDirect(graphMediaId: string): Promise<MakeInsightsRe
       comments_count?: number;
       error?: { message: string };
     };
-    if (basic.error) return null;
+    if (basic.error) {
+      console.error('[like-verify] Graph API Fehler:', basic.error.message);
+      return null;
+    }
 
-    // 2. Insights (saved, reach, total_interactions) — kann fehlen für Reels
+    // 2. Insights (saved, reach, total_interactions)
     let saved = 0, reach = 0, total_interactions = 0;
     try {
       const insRes = await fetch(
@@ -189,7 +66,7 @@ async function fetchInsightsDirect(graphMediaId: string): Promise<MakeInsightsRe
       );
       const ins = await insRes.json() as {
         data?: Array<{ name: string; values: Array<{ value: number }> }>;
-        error?: unknown;
+        error?: { message: string };
       };
       if (!ins.error && Array.isArray(ins.data)) {
         for (const m of ins.data) {
@@ -204,23 +81,20 @@ async function fetchInsightsDirect(graphMediaId: string): Promise<MakeInsightsRe
     const likes = basic.like_count ?? 0;
     const comments = basic.comments_count ?? 0;
     return {
-      found: 'true',
       likes,
       saved,
       comments,
       shares: 0,
-      views: 0,
       reach,
       total_interactions: total_interactions || likes + comments + saved,
     };
-  } catch {
+  } catch (e) {
+    console.error('[like-verify] fetchInsights Fehler:', e);
     return null;
   }
 }
 
 export async function POST(req: NextRequest) {
-  const makeWebhookUrl = process.env.MAKE_INSTAGRAM_LIKE_WEBHOOK_URL ?? '';
-  // Kein Hard-Fail mehr — direkter Graph API Fallback übernimmt
 
   let body: { action?: string; walletAddress?: string; questId?: string };
   try {
@@ -278,7 +152,7 @@ export async function POST(req: NextRequest) {
 
     // ── action: start ───────────────────────────────────────────────────────
     if (action === 'start') {
-      const stats = await fetchInsights(makeWebhookUrl, quest.videoId);
+      const stats = await fetchInsights(quest.videoId);
       if (!stats) {
         return NextResponse.json(
           { error: 'Instagram-Stats nicht abrufbar. Bitte erneut versuchen.' },
@@ -326,7 +200,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ expired: true });
       }
 
-      const current = await fetchInsights(makeWebhookUrl, quest.videoId);
+      const current = await fetchInsights(quest.videoId);
       if (!current) {
         return NextResponse.json(
           { error: 'Instagram-Stats nicht abrufbar. Bitte erneut versuchen.' },
