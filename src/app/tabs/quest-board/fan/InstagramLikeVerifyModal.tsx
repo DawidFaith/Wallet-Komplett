@@ -419,7 +419,7 @@ export default function InstagramLikeVerifyModal({
           <div className="bg-green-900/30 border border-green-700/40 rounded-xl p-4 text-center">
             <ActionIcon size={32} className={`${accentColor} mx-auto mb-2`} />
             <p className="text-green-300 font-semibold">
-              {isLike ? 'Like' : 'Speichern'} erfolgreich verifiziert!
+              {isLike ? 'Like' : isRepost ? 'Repost' : 'Speichern'} erfolgreich verifiziert!
             </p>
           </div>
           <div className="bg-zinc-800 rounded-xl p-4 flex items-center gap-3">
