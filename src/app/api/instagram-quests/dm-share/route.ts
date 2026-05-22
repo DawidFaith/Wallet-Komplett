@@ -48,7 +48,7 @@ function buildLinkTemplate(): string {
   return `${appUrl}/dm-quest`;
 }
 
-// ─── Meta Graph API — Shares-Abfrage ─────────────────────────────────────────
+// ─── Meta Graph API — Shares-Abfrage (identisch mit like-verify Repost-Logik) ─
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
@@ -56,15 +56,46 @@ async function fetchCurrentShares(graphMediaId: string): Promise<number> {
   const token = process.env.META_SYSTEM_USER_TOKEN;
   if (!token || !graphMediaId) return 0;
   try {
-    const res = await fetch(
-      `${GRAPH}/${graphMediaId}/insights?metric=shares&period=lifetime&access_token=${token}`,
-      { signal: AbortSignal.timeout(15000) },
+    // 1. Basis-Metriken
+    const basicRes = await fetch(
+      `${GRAPH}/${graphMediaId}?fields=like_count,comments_count&access_token=${token}`,
+      { cache: 'no-store', signal: AbortSignal.timeout(10000) },
     );
-    if (!res.ok) return 0;
-    const json = await res.json();
-    const item = (json?.data ?? []).find((d: { name: string }) => d.name === 'shares') as { values?: { value: number }[]; value?: number } | undefined;
-    return Number(item?.values?.[0]?.value ?? item?.value ?? 0);
-  } catch {
+    const basic = await basicRes.json() as {
+      like_count?: number;
+      comments_count?: number;
+      error?: { message: string };
+    };
+    if (basic.error) {
+      console.error('[dm-share] Graph API Fehler:', basic.error.message);
+      return 0;
+    }
+
+    // 2. total_interactions + saved (gleiche Metriken wie like-verify)
+    let saved = 0, totalInteractions = 0;
+    const insRes = await fetch(
+      `${GRAPH}/${graphMediaId}/insights?metric=saved,total_interactions&period=lifetime&access_token=${token}`,
+      { cache: 'no-store', signal: AbortSignal.timeout(10000) },
+    );
+    const ins = await insRes.json() as {
+      data?: Array<{ name: string; values: Array<{ value: number }> }>;
+      error?: { message: string };
+    };
+    if (!ins.error && Array.isArray(ins.data)) {
+      for (const m of ins.data) {
+        const v = Number(m.values?.[0]?.value ?? 0);
+        if (m.name === 'saved') saved = v;
+        else if (m.name === 'total_interactions') totalInteractions = v;
+      }
+    }
+
+    // Story-Shares = total_interactions − likes − comments − saved
+    // (gleiche Berechnung wie Repost in like-verify)
+    const likes = basic.like_count ?? 0;
+    const comments = basic.comments_count ?? 0;
+    return Math.max(0, totalInteractions - likes - comments - saved);
+  } catch (e) {
+    console.error('[dm-share] fetchCurrentShares Fehler:', e);
     return 0;
   }
 }
