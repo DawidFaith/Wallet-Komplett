@@ -1,22 +1,11 @@
 /**
  * POST /api/instagram-quests/dm-share
  *
- * Zweistufiger DM-Share-Quest – ABLAUF:
+ * Story Quest – der User erstellt eine Story und markiert den Artist (@-Tag).
+ * Verifizierung erfolgt ausschließlich via Meta Mentions-Webhook.
  *
- *  Teil 1 – SHARE   : User teilt Beitrag in seiner Story
- *                     → System prüft Share-Delta via MAKE_INSTAGRAM_LIKE_WEBHOOK_URL
- *  Teil 2 – DM-KLICK: Nach Share-Bestätigung sendet Link DM den universellen Link
- *                     → User klickt → /api/instagram-quests/dm-click?name=handle
- *                     → Quest wird auf dm-click Seite abgeschlossen
- *
- * action: 'start'
- *   Lädt Baseline-Shares, legt Verifikation an, gibt linkTemplate zurück
- *
- * action: 'check'
- *   Prüft Share-Delta. Bei Erfolg: gibt linkTemplate zurück (keine DM via Make.com)
- *
- * action: 'status'
- *   Gibt aktuellen Stand zurück inkl. linkTemplate wenn shareVerified
+ * action: 'start'  → Verifikation anlegen, creatorHandle zurückgeben
+ * action: 'status' → Aktuellen Stand zurückgeben (tagVerified = Quest abgeschlossen)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -27,7 +16,6 @@ import {
   hasChannelCompletedQuest,
   upsertInstagramDmVerification,
   getInstagramDmVerification,
-  markInstagramDmStoryVerified,
   saveCompletion,
   addDfaithCredits,
   savePendingReward,
@@ -36,57 +24,8 @@ import {
   deleteInstagramDmVerification,
   type QuestCompletion,
 } from '../../../lib/questDb';
-import { getDb } from '../../../lib/db';
 
 export const maxDuration = 30;
-
-// ─── Allgemeiner Quest-Link (kein {name} Platzhalter) ─────────────────────────
-// Artist trägt diesen Link in Instagram Link DM ein – alle User landen auf /dm-quest
-
-function buildLinkTemplate(): string {
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://wallet-komplett.vercel.app').replace(/\/$/, '');
-  return `${appUrl}/dm-quest`;
-}
-
-// ─── Meta Graph API — Shares-Abfrage via total_interactions − likes − comments − saved ─
-// Instagram "metric=shares" zählt keine Story-Shares für Reels.
-// Identische Logik wie like-verify Repost-Quest.
-
-const GRAPH = 'https://graph.facebook.com/v21.0';
-
-async function fetchCurrentShares(graphMediaId: string): Promise<number> {
-  const token = process.env.META_SYSTEM_USER_TOKEN;
-  if (!token || !graphMediaId) return 0;
-  try {
-    const [basicRes, insRes] = await Promise.all([
-      fetch(`${GRAPH}/${graphMediaId}?fields=like_count,comments_count&access_token=${token}`,
-        { cache: 'no-store', signal: AbortSignal.timeout(10000) }),
-      fetch(`${GRAPH}/${graphMediaId}/insights?metric=total_interactions,saved&period=lifetime&access_token=${token}`,
-        { cache: 'no-store', signal: AbortSignal.timeout(10000) }),
-    ]);
-    const basic = await basicRes.json() as { like_count?: number; comments_count?: number; error?: { message: string } };
-    const ins = await insRes.json() as { data?: Array<{ name: string; values: Array<{ value: number }> }>; error?: { message: string } };
-    if (basic.error) { console.error('[dm-share] Graph basic error:', basic.error.message); return 0; }
-    if (ins.error)   { console.error('[dm-share] Graph insights error:', ins.error.message); return 0; }
-
-    const likes    = basic.like_count ?? 0;
-    const comments = basic.comments_count ?? 0;
-    let saved = 0, totalInteractions = 0;
-    for (const m of ins.data ?? []) {
-      const v = Number(m.values?.[0]?.value ?? 0);
-      if (m.name === 'saved') saved = v;
-      if (m.name === 'total_interactions') totalInteractions = v;
-    }
-    const shares = Math.max(0, totalInteractions - likes - comments - saved);
-    console.log(`[dm-share] fetchCurrentShares mediaId:${graphMediaId} total_interactions:${totalInteractions} likes:${likes} comments:${comments} saved:${saved} → shares:${shares}`);
-    return shares;
-  } catch (e) {
-    console.error('[dm-share] fetchCurrentShares Exception:', e);
-    return 0;
-  }
-}
-
-// ─── Handler ──────────────────────────────────────────────────────────────────
 
 // ─── Quest-Abschluss-Helper ───────────────────────────────────────────────────
 
@@ -121,12 +60,13 @@ async function completeStoryQuest({
   await deleteInstagramDmVerification(questId, normalized);
   return NextResponse.json({
     success: true,
-    shareVerified: true,
     tagVerified: true,
     rewardAmount: quest.rewardAmount,
     message: `Quest abgeschlossen! +${quest.rewardAmount} DFAITH Credits gutgeschrieben.`,
   });
 }
+
+// ─── Handler ─────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   let body: { action?: string; walletAddress?: string; questId?: string };
@@ -142,7 +82,6 @@ export async function POST(req: NextRequest) {
   }
 
   const normalized = walletAddress.toLowerCase();
-  const linkTemplate = buildLinkTemplate();
 
   try {
     const [profile, quest] = await Promise.all([
@@ -166,11 +105,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Quest ist abgelaufen.' }, { status: 400 });
     }
 
-    // Creator-Handle für Mention-Hinweis laden
+    // Creator-Handle für Anleitung laden
     const creatorProfile = await getUserProfile(quest.creatorWallet);
     const creatorHandle = creatorProfile?.instagramHandle ?? null;
 
-    // ── START: Baseline-Shares laden, Verifikation anlegen ───────────────────
+    // ── START ─────────────────────────────────────────────────────────────────
     if (action === 'start') {
       const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
       if (alreadyDone) {
@@ -181,109 +120,42 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Dieser Instagram-Account hat diese Quest bereits abgeschlossen.' }, { status: 409 });
       }
 
-      const baselineShares = quest.videoId ? await fetchCurrentShares(quest.videoId) : 0;
-
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
-      // click_token muss UNIQUE sein → handle alleine kollidiert wenn der User
-      // mehrere DM-Share Quests parallel hat. Daher kombinieren mit questId.
       const clickToken = `${profile.instagramHandle.toLowerCase()}:${questId}`;
-
       await upsertInstagramDmVerification(questId, normalized, profile.instagramHandle, clickToken, expiresAt);
-      // Baseline direkt setzen ohne click_verified zu ändern
-      const sql = getDb();
-      await sql`
-        UPDATE instagram_dm_verifications
-        SET baseline_shares = ${baselineShares}
-        WHERE quest_id = ${questId} AND wallet_address = ${normalized}
-      `;
 
       return NextResponse.json({
         success: true,
         expiresAt,
-        baselineShares,
         videoUrl: quest.videoUrl,
         instagramHandle: profile.instagramHandle,
         creatorHandle,
-        linkTemplate,
-        message: 'Teile jetzt den Beitrag in deiner Story. Komm dann zurück und klicke "Share prüfen".',
-      });
-    }
-
-    // ── CHECK: Share-Delta prüfen ─────────────────────────────────────────────
-    if (action === 'check') {
-      const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
-      if (alreadyDone) {
-        return NextResponse.json({ error: 'Quest bereits abgeschlossen.' }, { status: 400 });
-      }
-
-      const verif = await getInstagramDmVerification(questId, normalized);
-      if (!verif) {
-        return NextResponse.json({ error: 'Quest nicht gestartet. Bitte zuerst starten.' }, { status: 400 });
-      }
-
-      if (new Date(verif.expiresAt) < new Date()) {
-        return NextResponse.json({ expired: true, shareVerified: verif.storyVerified, clickVerified: verif.clickVerified });
-      }
-
-      // Beide Schritte bereits erledigt → Quest abschließen
-      if (verif.clickVerified && verif.storyVerified) {
-        const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
-        if (alreadyDone) return NextResponse.json({ success: true, alreadyCompleted: true });
-        return await completeStoryQuest({ quest, questId, normalized, profile });
-      }
-
-      // Schritt 1 (Share) bereits erkannt, warte auf @-Tag (Schritt 2)
-      if (verif.storyVerified) {
-        return NextResponse.json({
-          shareVerified: true,
-          tagVerified: false,
-          expiresAt: verif.expiresAt,
-          message: `Share erkannt! Stelle sicher, dass du @${creatorHandle ?? 'den Creator'} in der Story markiert hast. Die Quest wird automatisch abgeschlossen sobald der Tag erkannt wird.`,
-        });
-      }
-
-      // Share-Delta prüfen (Schritt 1)
-      const currentShares = await fetchCurrentShares(quest.videoId);
-      if (currentShares <= verif.baselineShares) {
-        return NextResponse.json({
-          notYet: true,
-          shareVerified: false,
-          currentShares,
-          baselineShares: verif.baselineShares,
-          expiresAt: verif.expiresAt,
-          message: `Noch kein neuer Share erkannt (aktuell: ${currentShares}, Baseline: ${verif.baselineShares}). Teile den Beitrag in deiner Story und prüfe erneut.`,
-        });
-      }
-
-      // ── Schritt 1 abgeschlossen: story_verified setzen ───────────────────
-      await markInstagramDmStoryVerified(questId, normalized);
-
-      // Falls @-Tag (Schritt 2) per Webhook bereits früher ankam → direkt abschließen
-      if (verif.clickVerified) {
-        const alreadyDone2 = await hasWalletCompletedQuest(normalized, questId);
-        if (alreadyDone2) return NextResponse.json({ success: true, alreadyCompleted: true });
-        return await completeStoryQuest({ quest, questId, normalized, profile });
-      }
-
-      return NextResponse.json({
-        shareVerified: true,
-        tagVerified: false,
-        expiresAt: verif.expiresAt,
-        message: `Share erkannt! Stelle sicher, dass du @${creatorHandle ?? 'den Creator'} in der Story markiert hast. Die Quest wird automatisch abgeschlossen sobald der Tag erkannt wird.`,
+        message: `Erstelle jetzt eine Story und markiere @${creatorHandle ?? 'den Creator'} darin. Die Quest wird automatisch erkannt.`,
       });
     }
 
     // ── STATUS ────────────────────────────────────────────────────────────────
     if (action === 'status') {
+      const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
+      if (alreadyDone) return NextResponse.json({ alreadyCompleted: true, tagVerified: true });
+
       const verif = await getInstagramDmVerification(questId, normalized);
       if (!verif) return NextResponse.json({ started: false });
+
+      // click_verified = @-Tag per Webhook erkannt → Quest abschließen
+      if (verif.clickVerified) {
+        const done = await hasWalletCompletedQuest(normalized, questId);
+        if (!done) return await completeStoryQuest({ quest, questId, normalized, profile });
+        return NextResponse.json({ alreadyCompleted: true, tagVerified: true });
+      }
+
       return NextResponse.json({
         started: true,
-        shareVerified: verif.storyVerified,
-        tagVerified: verif.clickVerified,
+        tagVerified: false,
         expiresAt: verif.expiresAt,
         expired: new Date(verif.expiresAt) < new Date(),
         instagramHandle: profile.instagramHandle,
+        creatorHandle,
       });
     }
 

@@ -150,22 +150,14 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
-        if (verif.storyVerified && verif.clickVerified) {
+        if (verif.clickVerified) {
           console.log('[story-mention-webhook] Quest bereits komplett für:', username);
           continue;
         }
 
-        // @-Tag (Schritt 2) via click_verified setzen
+        // @-Tag erkannt → click_verified setzen und Quest sofort abschließen
         await markInstagramDmClickedByHandle(username, verif.baselineShares);
         console.log('[story-mention-webhook] @-Tag erkannt (click_verified) für:', username);
-
-        // Nur abschließen wenn Schritt 1 (story_verified = Shares-Delta) bereits erledigt
-        if (!verif.storyVerified) {
-          console.log('[story-mention-webhook] Warte auf Share-Prüfung (Schritt 1) für:', username);
-          continue;
-        }
-
-        // Beide Schritte erledigt → Quest abschließen
         const alreadyDone = await hasWalletCompletedQuest(verif.walletAddress, verif.questId);
         if (!alreadyDone) {
           const quest = await loadQuestDetail(verif.questId);
