@@ -559,10 +559,11 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                       {(!igVerified || !fbVerified) && (
                         <button
                           onClick={() => setMetaGuideOpen(o => !o)}
-                          className="text-zinc-500 hover:text-zinc-300 transition-colors p-0.5"
+                          className="flex items-center gap-1 text-[10px] font-semibold text-violet-400 hover:text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 px-2 py-0.5 rounded-full transition-colors"
                           title={metaGuideOpen ? 'Anleitung einklappen' : 'Anleitung anzeigen'}
                         >
-                          <FaChevronDown size={9} className={`transition-transform duration-200 ${metaGuideOpen ? 'rotate-180' : ''}`} />
+                          {metaGuideOpen ? 'Anleitung' : 'Anleitung'}
+                          <FaChevronDown size={7} className={`transition-transform duration-200 ${metaGuideOpen ? 'rotate-180' : ''}`} />
                         </button>
                       )}
                     </div>
