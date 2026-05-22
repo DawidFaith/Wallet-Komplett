@@ -26,6 +26,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getInstagramDmVerificationByHandle,
   markInstagramDmStoryVerifiedByHandle,
+  loadQuestDetail,
+  getUserProfile,
+  hasWalletCompletedQuest,
+  saveCompletion,
+  addDfaithCredits,
+  savePendingReward,
+  addUserXp,
+  addUserReputation,
+  deleteInstagramDmVerification,
+  type QuestCompletion,
 } from '../../../lib/questDb';
 
 export const maxDuration = 20;
@@ -143,9 +153,38 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
-        // Story als verifiziert markieren (Teil 1 abgeschlossen)
+        // Story als verifiziert markieren
         await markInstagramDmStoryVerifiedByHandle(username);
         console.log('[story-mention-webhook] story_verified gesetzt für:', username, '/ Quest:', verif.questId);
+
+        // Quest sofort abschließen — kein DM-Klick mehr nötig
+        const alreadyDone = await hasWalletCompletedQuest(verif.walletAddress, verif.questId);
+        if (!alreadyDone) {
+          const quest = await loadQuestDetail(verif.questId);
+          const profile = await getUserProfile(verif.walletAddress);
+          if (quest) {
+            const now = new Date().toISOString();
+            const completion: QuestCompletion = {
+              questId: verif.questId,
+              walletAddress: verif.walletAddress,
+              channelId: username,
+              channelName: profile?.instagramName ?? username,
+              platform: 'instagram',
+              commentId: `dm_share:${username}`,
+              commentText: `dm_share|handle:${username}`,
+              rewardAmount: quest.rewardAmount,
+              rewardPaid: false,
+              completedAt: now,
+            };
+            await saveCompletion(completion);
+            await addDfaithCredits(verif.walletAddress, quest.rewardAmount);
+            await savePendingReward({ walletAddress: verif.walletAddress, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId: verif.questId, createdAt: now });
+            await addUserXp(verif.walletAddress, Math.round(quest.rewardAmount / 10));
+            await addUserReputation(verif.walletAddress, quest.creatorWallet, quest.reputationReward);
+            await deleteInstagramDmVerification(verif.questId, verif.walletAddress);
+            console.log('[story-mention-webhook] Quest abgeschlossen für:', username, '+', quest.rewardAmount, 'Credits');
+          }
+        }
       } catch (err) {
         console.error('[story-mention-webhook] DB-Fehler für', username, err);
       }

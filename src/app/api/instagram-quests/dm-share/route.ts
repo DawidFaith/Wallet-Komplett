@@ -28,6 +28,13 @@ import {
   upsertInstagramDmVerification,
   getInstagramDmVerification,
   markInstagramDmStoryVerified,
+  saveCompletion,
+  addDfaithCredits,
+  savePendingReward,
+  addUserXp,
+  addUserReputation,
+  deleteInstagramDmVerification,
+  type QuestCompletion,
 } from '../../../lib/questDb';
 import { getDb } from '../../../lib/db';
 
@@ -161,19 +168,41 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ expired: true, shareVerified: verif.storyVerified, clickVerified: verif.clickVerified });
       }
 
-      // DM-Klick bereits abgeschlossen (über dm-click Seite)
+      // DM-Klick bereits abgeschlossen (Fallback)
       if (verif.clickVerified) {
-        return NextResponse.json({ shareVerified: true, clickVerified: true, alreadyCompleted: true, linkTemplate });
+        return NextResponse.json({ shareVerified: true, clickVerified: true, alreadyCompleted: true });
       }
 
-      // Share bereits verifiziert → warte auf DM-Klick
+      // Story bereits verifiziert (z.B. via Mention-Webhook) → Quest sofort abschließen
       if (verif.storyVerified) {
+        const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
+        if (alreadyDone) {
+          return NextResponse.json({ success: true, alreadyCompleted: true, shareVerified: true });
+        }
+        const now = new Date().toISOString();
+        const completion: QuestCompletion = {
+          questId,
+          walletAddress: normalized,
+          channelId: profile.instagramHandle,
+          channelName: profile.instagramName ?? profile.instagramHandle,
+          platform: 'instagram',
+          commentId: `dm_share:${profile.instagramHandle}`,
+          commentText: `dm_share|handle:${profile.instagramHandle}`,
+          rewardAmount: quest.rewardAmount,
+          rewardPaid: false,
+          completedAt: now,
+        };
+        await saveCompletion(completion);
+        await addDfaithCredits(normalized, quest.rewardAmount);
+        await savePendingReward({ walletAddress: normalized, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId, createdAt: now });
+        await addUserXp(normalized, Math.round(quest.rewardAmount / 10));
+        await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
+        await deleteInstagramDmVerification(questId, normalized);
         return NextResponse.json({
+          success: true,
           shareVerified: true,
-          clickVerified: false,
-          expiresAt: verif.expiresAt,
-          linkTemplate,
-          message: 'Story-Share bereits bestätigt. Warte auf den DM-Link und klicke ihn.',
+          rewardAmount: quest.rewardAmount,
+          message: `Quest abgeschlossen! +${quest.rewardAmount} DFAITH Credits gutgeschrieben.`,
         });
       }
 
@@ -183,7 +212,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           notYet: true,
           shareVerified: false,
-          clickVerified: false,
           currentShares,
           baselineShares: verif.baselineShares,
           expiresAt: verif.expiresAt,
@@ -191,15 +219,35 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // ── Share erkannt → story_verified markieren ──────────────────────────
+      // ── Share erkannt → story_verified + Quest sofort abschließen ────────
       await markInstagramDmStoryVerified(questId, normalized);
-
+      const alreadyDone2 = await hasWalletCompletedQuest(normalized, questId);
+      if (!alreadyDone2) {
+        const now = new Date().toISOString();
+        const completion: QuestCompletion = {
+          questId,
+          walletAddress: normalized,
+          channelId: profile.instagramHandle,
+          channelName: profile.instagramName ?? profile.instagramHandle,
+          platform: 'instagram',
+          commentId: `dm_share:${profile.instagramHandle}`,
+          commentText: `dm_share|handle:${profile.instagramHandle}`,
+          rewardAmount: quest.rewardAmount,
+          rewardPaid: false,
+          completedAt: now,
+        };
+        await saveCompletion(completion);
+        await addDfaithCredits(normalized, quest.rewardAmount);
+        await savePendingReward({ walletAddress: normalized, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId, createdAt: now });
+        await addUserXp(normalized, Math.round(quest.rewardAmount / 10));
+        await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
+        await deleteInstagramDmVerification(questId, normalized);
+      }
       return NextResponse.json({
+        success: true,
         shareVerified: true,
-        clickVerified: false,
-        expiresAt: verif.expiresAt,
-        linkTemplate,
-        message: 'Story-Share bestätigt! Du bekommst gleich einen DM-Link – klicke ihn um die Quest abzuschließen.',
+        rewardAmount: quest.rewardAmount,
+        message: `Quest abgeschlossen! +${quest.rewardAmount} DFAITH Credits gutgeschrieben.`,
       });
     }
 
