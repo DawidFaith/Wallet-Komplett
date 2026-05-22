@@ -1384,13 +1384,16 @@ function GrantCreditsSection({ secret, users }: { secret: string; users: AdminUs
   // Dropdown-Vorschläge aus User-Liste
   const [showSuggestions, setShowSuggestions] = useState(false);
   const query = walletInput.trim().toLowerCase();
-  const suggestions = query.length >= 2
-    ? users.filter((u) =>
+  const suggestions = query.length === 0
+    ? users.slice(0, 20)  // alle bis 20 wenn leer
+    : users.filter((u) =>
         u.walletAddress.toLowerCase().includes(query) ||
         (u.displayName ?? '').toLowerCase().includes(query) ||
-        (u.youtubeChannelName ?? '').toLowerCase().includes(query),
-      ).slice(0, 6)
-    : [];
+        (u.youtubeChannelName ?? '').toLowerCase().includes(query) ||
+        (u.instagramHandle ?? '').toLowerCase().includes(query) ||
+        (u.tiktokHandle ?? '').toLowerCase().includes(query) ||
+        (u.facebookHandle ?? '').toLowerCase().includes(query),
+      ).slice(0, 10);
 
   const handleGrant = async () => {
     setSuccessMsg(''); setErrorMsg('');
@@ -1444,22 +1447,39 @@ function GrantCreditsSection({ secret, users }: { secret: string; users: AdminUs
             className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2.5 text-sm font-mono outline-none focus:border-yellow-500 transition-colors"
           />
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute z-10 left-0 right-0 mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden shadow-xl">
-              {suggestions.map((u) => (
-                <button
-                  key={u.walletAddress}
-                  onMouseDown={() => { setWalletInput(u.walletAddress); setShowSuggestions(false); }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-zinc-700 transition-colors flex items-center gap-3"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium truncate">{u.displayName ?? u.youtubeChannelName ?? 'Unbekannt'}</p>
-                    <p className="text-zinc-500 text-xs font-mono truncate">{u.walletAddress.slice(0, 10)}…{u.walletAddress.slice(-6)}</p>
-                  </div>
-                  {u.credits > 0 && (
-                    <span className="text-yellow-500 text-xs shrink-0">{u.credits.toLocaleString()} Cr.</span>
-                  )}
-                </button>
-              ))}
+            <div className="absolute z-10 left-0 right-0 mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden shadow-xl max-h-72 overflow-y-auto">
+              {query.length === 0 && (
+                <p className="text-zinc-500 text-[10px] px-3 pt-2 pb-1">Alle Benutzer ({users.length})</p>
+              )}
+              {suggestions.map((u) => {
+                const handles = [
+                  u.instagramHandle && `@${u.instagramHandle}`,
+                  u.tiktokHandle && `@${u.tiktokHandle}`,
+                  u.facebookHandle && u.facebookHandle,
+                  u.youtubeChannelName && u.youtubeChannelName,
+                ].filter(Boolean).join(' · ');
+                const displayLabel = u.displayName ?? u.youtubeChannelName ?? u.instagramHandle ?? u.tiktokHandle ?? u.facebookHandle ?? u.walletAddress.slice(0, 10) + '…';
+                return (
+                  <button
+                    key={u.walletAddress}
+                    onMouseDown={() => { setWalletInput(u.walletAddress); setShowSuggestions(false); }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-zinc-700 transition-colors flex items-center gap-3 border-b border-zinc-700/50 last:border-0"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-white text-sm font-medium truncate">{displayLabel}</p>
+                        {u.isArtist && <span className="text-[9px] font-bold text-red-400 bg-red-900/30 px-1 py-0.5 rounded shrink-0">ARTIST</span>}
+                      </div>
+                      {handles && <p className="text-zinc-500 text-[10px] truncate mt-0.5">{handles}</p>}
+                      <p className="text-zinc-600 text-[10px] font-mono truncate">{u.walletAddress.slice(0, 12)}…{u.walletAddress.slice(-6)}</p>
+                    </div>
+                    <div className="text-right shrink-0 space-y-0.5">
+                      {u.credits > 0 && <p className="text-yellow-500 text-xs">{u.credits.toLocaleString()} Cr.</p>}
+                      <p className="text-zinc-600 text-[10px]">Lv.{u.level}</p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
