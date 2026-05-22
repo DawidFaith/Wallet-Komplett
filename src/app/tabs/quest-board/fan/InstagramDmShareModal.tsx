@@ -19,10 +19,9 @@ interface InstagramDmShareModalProps {
 type Step =
   | 'idle'         // Noch nicht gestartet
   | 'starting'     // Baseline wird geladen
-  | 'part1'        // Teil 1: Story teilen, warten auf Share
+  | 'part1'        // Story teilen, warten auf Share
   | 'checking'     // Share wird geprüft
-  | 'part2'        // Share OK, warten auf DM-Klick
-  | 'success'      // Quest komplett (über DM-Klick oder poll)
+  | 'success'      // Quest komplett
   | 'expired'
   | 'error';
 
@@ -46,7 +45,7 @@ export default function InstagramDmShareModal({
 
   // Countdown Timer
   useEffect(() => {
-    if (step !== 'part1' && step !== 'part2') {
+    if (step !== 'part1') {
       if (intervalRef.current) clearInterval(intervalRef.current);
       return;
     }
@@ -81,10 +80,10 @@ export default function InstagramDmShareModal({
         if (data.started && !data.expired) {
           setExpiresAt(data.expiresAt ?? null);
           setInstagramHandle(data.instagramHandle ?? '');
-          if (data.shareVerified && !data.clickVerified) {
-            setLinkTemplate(data.linkTemplate ?? '');
-            setStep('part2');
-          } else if (!data.shareVerified) {
+          if (data.shareVerified) {
+            // Bereits verifiziert aber noch nicht abgeschlossen → part1 anzeigen zum manuellen Prüfen
+            setStep('part1');
+          } else {
             setStep('part1');
           }
         }
@@ -149,14 +148,11 @@ export default function InstagramDmShareModal({
       }
       if (data.expired) {
         setStep('expired');
-      } else if (data.shareVerified && data.clickVerified) {
-        // Komplett abgeschlossen (über dm-click Seite bereits completed)
+      } else if (data.success) {
+        // Quest direkt abgeschlossen
+        setRewardAmount(data.rewardAmount ?? quest.rewardAmount);
         setStep('success');
-        onCompleted(quest.rewardAmount);
-      } else if (data.shareVerified) {
-        // Story OK → Link-Template anzeigen, warte auf DM-Klick
-        setLinkTemplate(data.linkTemplate ?? '');
-        setStep('part2');
+        onCompleted(data.rewardAmount ?? quest.rewardAmount);
       } else if (data.notYet) {
         setError(data.message ?? 'Kein neuer Share erkannt. Teile den Beitrag in deiner Story und prüfe erneut.');
         setStep('part1');
@@ -169,9 +165,9 @@ export default function InstagramDmShareModal({
     }
   }, [quest, walletAddress, onCompleted]);
 
-  // Poll ob DM-Klick erfolgt ist (alle 5 Sek wenn in part2)
+  // Poll ob Quest via Mention-Webhook abgeschlossen wurde (alle 5 Sek wenn in part1)
   useEffect(() => {
-    if (step !== 'part2' || !quest) return;
+    if (step !== 'part1' || !quest) return;
     const poll = setInterval(async () => {
       try {
         const res = await fetch('/api/instagram-quests/dm-share', {
@@ -180,7 +176,7 @@ export default function InstagramDmShareModal({
           body: JSON.stringify({ action: 'status', questId: quest.id, walletAddress }),
         });
         const data = await res.json();
-        if (data.clickVerified || data.alreadyCompleted) {
+        if (data.alreadyCompleted || (data.shareVerified && data.clickVerified)) {
           clearInterval(poll);
           setStep('success');
           onCompleted(quest.rewardAmount);
@@ -230,20 +226,13 @@ export default function InstagramDmShareModal({
         {/* ── NORMALER ZWEI-SCHRITT FLOW ── */}
         {!storyClaimToken && (
           <>
-            {/* Zwei-Schritt Fortschritt */}
+            {/* Fortschritt */}
             <div className="flex items-center gap-2 text-xs">
               <StepBadge
                 num={1}
-                label="Story teilen"
-                done={['part2', 'success'].includes(step)}
-                active={['part1', 'starting', 'checking'].includes(step)}
-              />
-              <div className="flex-1 h-px bg-zinc-700" />
-              <StepBadge
-                num={2}
-                label="DM-Link klicken"
+                label="Story teilen & @taggen"
                 done={step === 'success'}
-                active={step === 'part2'}
+                active={['part1', 'starting', 'checking'].includes(step)}
               />
             </div>
 
@@ -251,7 +240,7 @@ export default function InstagramDmShareModal({
             {step === 'idle' && (
               <div className="space-y-3">
                 <p className="text-sm text-zinc-400">
-                  Teile diesen Beitrag in deiner Story (Teil 1). Nach der Bestätigung bekommst du einen Link per DM – klicke ihn (Teil 2) um die Belohnung zu erhalten.
+                  Öffne den Beitrag auf Instagram, teile ihn in deiner Story und markiere dabei <span className="text-pink-400 font-semibold">@{creatorHandle || 'den Creator'}</span>. Sobald der Tag erkannt wird, wird die Quest automatisch abgeschlossen.
                 </p>
                 <button
                   onClick={handleStart}
@@ -280,12 +269,10 @@ export default function InstagramDmShareModal({
             <div className="bg-zinc-800/60 rounded-xl px-3 py-3 space-y-1">
               <p className="font-semibold text-white text-xs flex items-center gap-1.5"><FaPaperPlane size={11} className="text-pink-400" /> Teil 1 – Story teilen</p>
               <p className="text-xs text-zinc-400">
-                Öffne den Beitrag auf Instagram und teile ihn in deiner Story.
-                {creatorHandle && (
-                  <> Markiere dabei <span className="text-pink-400 font-semibold">@{creatorHandle}</span> in der Story.</>)}
+                Teile den Beitrag in deiner Story und markiere{creatorHandle ? <> <span className="text-pink-400 font-semibold">@{creatorHandle}</span></> : ' den Creator'} darin. Die Quest wird dann automatisch erkannt.
               </p>
-              <p className="text-xs text-zinc-400">
-                Komm dann zurück und klicke &quot;Share prüfen&quot;.
+              <p className="text-xs text-zinc-500">
+                Falls der Tag nicht automatisch erkannt wird, klicke &quot;Share prüfen&quot;.
               </p>
             </div>
 
@@ -316,32 +303,7 @@ export default function InstagramDmShareModal({
           </div>
         )}
 
-        {/* ── PART 2: DM-Klick ── */}
-        {!storyClaimToken && step === 'part2' && (
-          <div className="space-y-3">
-            <div className="bg-green-900/30 border border-green-600/40 rounded-xl px-3 py-2 text-xs text-green-300 flex items-center gap-2">
-              <FaCheck size={10} /> Story-Share bestätigt!
-            </div>
 
-            <div className="bg-zinc-800/60 rounded-xl px-3 py-3 space-y-1">
-              <p className="font-semibold text-white text-xs">📩 Teil 2 – Auf DM-Link warten</p>
-              <p className="text-xs text-zinc-400">
-                Der Artist sendet dir gleich einen Link per DM auf Instagram. Klicke den Link wenn du ihn erhältst, gib deinen Handle ein und die Quest wird abgeschlossen.
-              </p>
-            </div>
-
-
-
-            {expiresAt && (
-              <p className="text-center text-xs text-zinc-500">Verläuft in {formatTime(secondsLeft)}</p>
-            )}
-
-            <div className="flex items-center justify-center gap-2 text-xs text-zinc-500">
-              <div className="animate-spin w-3 h-3 border border-zinc-500 border-t-pink-500 rounded-full" />
-              Warte auf Klick…
-            </div>
-          </div>
-        )}
 
         {/* ── SUCCESS ── */}
         {!storyClaimToken && step === 'success' && (
