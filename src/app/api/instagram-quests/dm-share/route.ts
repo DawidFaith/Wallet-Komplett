@@ -48,7 +48,9 @@ function buildLinkTemplate(): string {
   return `${appUrl}/dm-quest`;
 }
 
-// ─── Meta Graph API — Shares-Abfrage via /insights?metric=shares ──────────────
+// ─── Meta Graph API — Shares-Abfrage via total_interactions − likes − comments − saved ─
+// Instagram "metric=shares" zählt keine Story-Shares für Reels.
+// Identische Logik wie like-verify Repost-Quest.
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
@@ -56,20 +58,28 @@ async function fetchCurrentShares(graphMediaId: string): Promise<number> {
   const token = process.env.META_SYSTEM_USER_TOKEN;
   if (!token || !graphMediaId) return 0;
   try {
-    const url = `${GRAPH}/${graphMediaId}/insights?metric=shares&period=lifetime&access_token=${token}`;
-    const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
-    const json = await res.json() as {
-      data?: Array<{ name: string; values: Array<{ value: number }> }>;
-      error?: { message: string; code: number };
-    };
-    if (json.error) {
-      console.error('[dm-share] Shares-API Fehler:', json.error.message, '(code:', json.error.code, ') für mediaId:', graphMediaId);
-      return 0;
+    const [basicRes, insRes] = await Promise.all([
+      fetch(`${GRAPH}/${graphMediaId}?fields=like_count,comments_count&access_token=${token}`,
+        { cache: 'no-store', signal: AbortSignal.timeout(10000) }),
+      fetch(`${GRAPH}/${graphMediaId}/insights?metric=total_interactions,saved&period=lifetime&access_token=${token}`,
+        { cache: 'no-store', signal: AbortSignal.timeout(10000) }),
+    ]);
+    const basic = await basicRes.json() as { like_count?: number; comments_count?: number; error?: { message: string } };
+    const ins = await insRes.json() as { data?: Array<{ name: string; values: Array<{ value: number }> }>; error?: { message: string } };
+    if (basic.error) { console.error('[dm-share] Graph basic error:', basic.error.message); return 0; }
+    if (ins.error)   { console.error('[dm-share] Graph insights error:', ins.error.message); return 0; }
+
+    const likes    = basic.like_count ?? 0;
+    const comments = basic.comments_count ?? 0;
+    let saved = 0, totalInteractions = 0;
+    for (const m of ins.data ?? []) {
+      const v = Number(m.values?.[0]?.value ?? 0);
+      if (m.name === 'saved') saved = v;
+      if (m.name === 'total_interactions') totalInteractions = v;
     }
-    const item = (json.data ?? []).find(d => d.name === 'shares');
-    const count = Number(item?.values?.[0]?.value ?? 0);
-    console.log('[dm-share] fetchCurrentShares mediaId:', graphMediaId, '→', count);
-    return count;
+    const shares = Math.max(0, totalInteractions - likes - comments - saved);
+    console.log(`[dm-share] fetchCurrentShares mediaId:${graphMediaId} total_interactions:${totalInteractions} likes:${likes} comments:${comments} saved:${saved} → shares:${shares}`);
+    return shares;
   } catch (e) {
     console.error('[dm-share] fetchCurrentShares Exception:', e);
     return 0;
