@@ -134,6 +134,11 @@ async function fetchInsights(
   webhookUrl: string,
   graphMediaId: string,
 ): Promise<MakeInsightsResult | null> {
+  // ── Primär: direkt via Meta Graph API ─────────────────────────────────────
+  const directResult = await fetchInsightsDirect(graphMediaId);
+  if (directResult) return directResult;
+
+  // ── Fallback: Make.com Webhook ─────────────────────────────────────────────
   try {
     const res = await fetch(webhookUrl, {
       method: 'POST',
@@ -144,30 +149,78 @@ async function fetchInsights(
     const text = await res.text();
     if (!text || text.trim() === '') return null;
 
-    // Versuch 1: Gültiges JSON parsen
     try {
       const raw: MakeRawResponse = JSON.parse(text);
       const result = parseInsightsResponse(raw);
       if (result) return result;
-    } catch {
-      // kein gültiges JSON → Fallback
-    }
+    } catch { /* kein gültiges JSON */ }
 
-    // Versuch 2: Regex-Extraktion (Make.com Array Aggregator Format)
     return parseInsightsFromText(text);
   } catch {
     return null;
   }
 }
 
-export async function POST(req: NextRequest) {
-  const makeWebhookUrl = process.env.MAKE_INSTAGRAM_LIKE_WEBHOOK_URL;
-  if (!makeWebhookUrl) {
-    return NextResponse.json(
-      { error: 'MAKE_INSTAGRAM_LIKE_WEBHOOK_URL nicht konfiguriert' },
-      { status: 500 }
+const GRAPH = 'https://graph.facebook.com/v21.0';
+
+/** Direkte Meta Graph API Abfrage — kein Make.com nötig */
+async function fetchInsightsDirect(graphMediaId: string): Promise<MakeInsightsResult | null> {
+  const token = process.env.META_SYSTEM_USER_TOKEN;
+  if (!token) return null;
+  try {
+    // 1. Basis-Metriken (like_count, comments_count)
+    const basicRes = await fetch(
+      `${GRAPH}/${graphMediaId}?fields=like_count,comments_count&access_token=${token}`,
+      { cache: 'no-store', signal: AbortSignal.timeout(10000) },
     );
+    const basic = await basicRes.json() as {
+      like_count?: number;
+      comments_count?: number;
+      error?: { message: string };
+    };
+    if (basic.error) return null;
+
+    // 2. Insights (saved, reach, total_interactions) — kann fehlen für Reels
+    let saved = 0, reach = 0, total_interactions = 0;
+    try {
+      const insRes = await fetch(
+        `${GRAPH}/${graphMediaId}/insights?metric=saved,reach,total_interactions&period=lifetime&access_token=${token}`,
+        { cache: 'no-store', signal: AbortSignal.timeout(10000) },
+      );
+      const ins = await insRes.json() as {
+        data?: Array<{ name: string; values: Array<{ value: number }> }>;
+        error?: unknown;
+      };
+      if (!ins.error && Array.isArray(ins.data)) {
+        for (const m of ins.data) {
+          const v = Number(m.values?.[0]?.value ?? 0);
+          if (m.name === 'saved') saved = v;
+          else if (m.name === 'reach') reach = v;
+          else if (m.name === 'total_interactions') total_interactions = v;
+        }
+      }
+    } catch { /* Insights optional */ }
+
+    const likes = basic.like_count ?? 0;
+    const comments = basic.comments_count ?? 0;
+    return {
+      found: 'true',
+      likes,
+      saved,
+      comments,
+      shares: 0,
+      views: 0,
+      reach,
+      total_interactions: total_interactions || likes + comments + saved,
+    };
+  } catch {
+    return null;
   }
+}
+
+export async function POST(req: NextRequest) {
+  const makeWebhookUrl = process.env.MAKE_INSTAGRAM_LIKE_WEBHOOK_URL ?? '';
+  // Kein Hard-Fail mehr — direkter Graph API Fallback übernimmt
 
   let body: { action?: string; walletAddress?: string; questId?: string };
   try {
