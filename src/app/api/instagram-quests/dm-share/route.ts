@@ -41,65 +41,22 @@ function buildLinkTemplate(): string {
   return `${appUrl}/dm-quest`;
 }
 
-// ─── Make.com Shares-Abfrage (identisch zu like-verify) ──────────────────────
+// ─── Meta Graph API — Shares-Abfrage ─────────────────────────────────────────
 
-/** Extrahiert die "shares"-Metrik aus einem Insights-Array (Instagram Graph API Format). */
-function extractSharesFromMetricsArray(arr: any[]): number | null {
-  for (const item of arr) {
-    if (item && typeof item === 'object' && item.name === 'shares') {
-      const v = item?.values?.[0]?.value;
-      const n = Number(v);
-      if (Number.isFinite(n)) return n;
-    }
-  }
-  return null;
-}
+const GRAPH = 'https://graph.facebook.com/v21.0';
 
-async function fetchCurrentShares(webhookUrl: string, graphMediaId: string): Promise<number> {
+async function fetchCurrentShares(graphMediaId: string): Promise<number> {
+  const token = process.env.META_SYSTEM_USER_TOKEN;
+  if (!token || !graphMediaId) return 0;
   try {
-    const res = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ graphMediaId }),
-      signal: AbortSignal.timeout(20000),
-    });
-    const text = await res.text();
-    if (!text) return 0;
-
-    // 1) Versuche reguläres JSON.parse
-    try {
-      const json = JSON.parse(text);
-      // Direktes Feld
-      if (typeof json?.shares === 'number') return json.shares;
-      // metrics: [...]
-      if (Array.isArray(json?.metrics)) {
-        const n = extractSharesFromMetricsArray(json.metrics);
-        if (n !== null) return n;
-      }
-      // data: [...] (klassisches Insights Format)
-      if (Array.isArray(json?.data)) {
-        const n = extractSharesFromMetricsArray(json.data);
-        if (n !== null) return n;
-      }
-      // Top-Level Array
-      if (Array.isArray(json)) {
-        const n = extractSharesFromMetricsArray(json);
-        if (n !== null) return n;
-      }
-    } catch {
-      // Make.com schickt manchmal ungültiges JSON (mehrere Keys mit gleichem Namen).
-      // Fallback: regex-basiert nach `"name":"shares" ... "value":N` suchen.
-    }
-
-    // 2) Robust-Fallback: Suche nach `"name":"shares"` Block und extrahiere ersten "value":N
-    const block = text.match(/"name"\s*:\s*"shares"[\s\S]{0,300}?"value"\s*:\s*(\d+)/);
-    if (block) return Number(block[1]);
-
-    // 3) Letzter Fallback: einfaches "shares":N (kein url-Substring)
-    const direct = text.match(/(?<!\/)"shares"\s*:\s*(\d+)/);
-    if (direct) return Number(direct[1]);
-
-    return 0;
+    const res = await fetch(
+      `${GRAPH}/${graphMediaId}/insights?metric=shares&period=lifetime&access_token=${token}`,
+      { signal: AbortSignal.timeout(15000) },
+    );
+    if (!res.ok) return 0;
+    const json = await res.json();
+    const item = (json?.data ?? []).find((d: { name: string }) => d.name === 'shares') as { values?: { value: number }[]; value?: number } | undefined;
+    return Number(item?.values?.[0]?.value ?? item?.value ?? 0);
   } catch {
     return 0;
   }
@@ -160,11 +117,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Dieser Instagram-Account hat diese Quest bereits abgeschlossen.' }, { status: 409 });
       }
 
-      const makeWebhookUrl = process.env.MAKE_INSTAGRAM_LIKE_WEBHOOK_URL;
-      let baselineShares = 0;
-      if (makeWebhookUrl && quest.videoId) {
-        baselineShares = await fetchCurrentShares(makeWebhookUrl, quest.videoId);
-      }
+      const baselineShares = quest.videoId ? await fetchCurrentShares(quest.videoId) : 0;
 
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
       // click_token muss UNIQUE sein → handle alleine kollidiert wenn der User
@@ -225,12 +178,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Share-Delta prüfen
-      const makeWebhookUrl = process.env.MAKE_INSTAGRAM_LIKE_WEBHOOK_URL;
-      if (!makeWebhookUrl) {
-        return NextResponse.json({ error: 'MAKE_INSTAGRAM_LIKE_WEBHOOK_URL nicht konfiguriert.' }, { status: 500 });
-      }
-
-      const currentShares = await fetchCurrentShares(makeWebhookUrl, quest.videoId);
+      const currentShares = await fetchCurrentShares(quest.videoId);
       if (currentShares <= verif.baselineShares) {
         return NextResponse.json({
           notYet: true,
