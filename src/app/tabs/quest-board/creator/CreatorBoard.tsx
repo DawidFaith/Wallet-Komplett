@@ -111,7 +111,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
   }, [loadCreatorQuests, loadCreatorBalance, walletAddress]);
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-5">
+    <div className="w-full max-w-2xl mx-auto px-4 space-y-5">
       {/* Credits Box */}
       <CreditsBox
         balance={creatorBalance}

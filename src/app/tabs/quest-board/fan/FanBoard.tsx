@@ -250,7 +250,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const facebookQuests = filteredQuests.filter((q) => q.platform === 'facebook' && !completedIds.includes(q.id));
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-5">
+    <div className="w-full max-w-2xl mx-auto px-4 space-y-5">
       {/* Credits Box mit Einlösen-Button */}
       <CreditsBox
         balance={credits}
