@@ -73,7 +73,7 @@ function ArtistSelector({ onSelect }: { onSelect: (artist: ArtistInfo) => void }
 
   return (
     <div className="space-y-4">
-      <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Artists wählen</p>
+      <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Artists</p>
       <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
         {artists.map(artist => (
           <button
@@ -166,20 +166,35 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
 
   if (!account?.address) {
     return (
-      <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center py-20 text-center px-4">
-        <FaTrophy size={48} className="text-yellow-400 mb-4 opacity-80" />
-        <h2 className="text-white text-xl font-bold mb-2">Quest Board</h2>
-        <p className="text-zinc-400 text-sm leading-relaxed">
-          Verbinde deine Wallet, um Quests abzuschließen und DFAITH Tokens zu verdienen.
-        </p>
+      <div className="w-full flex flex-col min-h-screen bg-[#0e0c0a] text-white pb-24">
+        <div className="max-w-2xl mx-auto w-full">
+          <div className="px-4 pt-6 pb-4">
+            <div className="flex items-center gap-3 pt-1">
+              <img src="/D.FAITH.png" alt="D.FAITH" className="w-10 h-10 rounded-full object-contain shrink-0" />
+              <div>
+                <h1 className="text-white font-bold text-xl tracking-wide">D.FAITH Ecosystem</h1>
+                <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">Quest Board · Missions</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-20">
+            <FaTrophy size={40} className="text-yellow-400 mb-4 opacity-80" />
+            <p className="text-white font-semibold">Quest Board</p>
+            <p className="text-zinc-400 text-sm mt-2">
+              Verbinde deine Wallet, um Quests abzuschließen und DFAITH Tokens zu verdienen.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!loaded) {
     return (
-      <div className="flex justify-center py-20">
-        <div className="border-4 border-red-500/30 border-t-red-500 rounded-full w-12 h-12 animate-spin" />
+      <div className="w-full flex flex-col min-h-screen bg-[#0e0c0a] text-white">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="border-4 border-red-500/30 border-t-red-500 rounded-full w-12 h-12 animate-spin" />
+        </div>
       </div>
     );
   }
@@ -187,38 +202,49 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
   const anyVerified = verified.youtube || verified.instagram || verified.tiktok || verified.facebook;
 
   return (
-    <div className="w-full px-4 pb-12">
-      <div className="max-w-2xl mx-auto space-y-4">
+    <div className="w-full flex flex-col min-h-screen bg-[#0e0c0a] text-white pb-24">
+      <div className="max-w-2xl mx-auto w-full">
 
-        {/* ─── Header: Titel + Fan/Artist Toggle ─── */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <FaTrophy size={22} className="text-yellow-400" />
-            <h1 className="text-white font-bold text-xl">Quest Board</h1>
+        {/* ─── Header ─── */}
+        <div className="px-4 pt-6 pb-4">
+          <div className="flex items-center gap-3 pt-1">
+            <img src="/D.FAITH.png" alt="D.FAITH" className="w-10 h-10 rounded-full object-contain shrink-0" />
+            <div>
+              <h1 className="text-white font-bold text-xl tracking-wide">D.FAITH Ecosystem</h1>
+              <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">
+                Quest Board · Missions
+              </p>
+            </div>
           </div>
-          {isArtist && (
-          <div className="flex bg-zinc-900 border border-zinc-800 rounded-xl p-1">
-            <button
-              onClick={() => setView('fan')}
-              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${view === 'fan' ? 'bg-red-600 text-white' : 'text-zinc-400 hover:text-white'}`}
-            >
-              Supporter
-            </button>
-            <button
-              onClick={() => setView('artist')}
-              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${view === 'artist' ? 'bg-red-600 text-white' : 'text-zinc-400 hover:text-white'}`}
-            >
-              Artist
-            </button>
-          </div>
-          )}
         </div>
+
+        {/* ─── Fan/Artist Toggle ─── */}
+        {isArtist && (
+          <div className="px-4 mb-4">
+            <div className="flex bg-zinc-900/70 rounded-xl p-1 border border-white/[0.07]">
+              <button
+                onClick={() => setView('fan')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${view === 'fan' ? 'bg-red-600 text-white shadow' : 'text-zinc-400 hover:text-white'}`}
+              >
+                <FaTrophy size={11} />
+                Supporter
+              </button>
+              <button
+                onClick={() => setView('artist')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${view === 'artist' ? 'bg-red-600 text-white shadow' : 'text-zinc-400 hover:text-white'}`}
+              >
+                <FaMusic size={11} />
+                Artist
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ─── Inhalt ─── */}
         {view === 'artist' ? (
           <CreatorBoard walletAddress={account.address} binding={binding} verified={verified} rewardToken={myRewardToken} />
         ) : !anyVerified ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center px-4 space-y-4">
+          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-16 space-y-4">
             <FaTrophy size={40} className="text-yellow-400 opacity-80" />
             <h2 className="text-white text-xl font-bold">Social-Konto verknüpfen</h2>
             <p className="text-zinc-400 text-sm leading-relaxed">
@@ -241,25 +267,27 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
           return (
             <>
               {/* Zurück-Button + Artist-Header */}
-              <button
-                onClick={() => {
-                  if (filterArtist && onClearArtist) onClearArtist();
-                  else setInternalFilterArtist(null);
-                }}
-                className="flex items-center gap-2 text-zinc-400 hover:text-white text-sm transition-colors"
-              >
-                <FaChevronLeft size={12} />
-                Alle Artists
-              </button>
-              <div className="flex items-center gap-3 bg-zinc-900/60 border border-white/[0.06] rounded-2xl px-4 py-3">
-                {activeArtist.picture
-                  ? <img src={activeArtist.picture} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-red-500/50" />
-                  : <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center ring-2 ring-red-500/30">
-                      <FaTrophy size={16} className="text-red-400" />
-                    </div>}
-                <div>
-                  <p className="text-white font-semibold text-sm">{activeArtist.name}</p>
-                  <p className="text-zinc-500 text-xs">{activeArtist.questCount} Ques{activeArtist.questCount !== 1 ? 'ts' : 't'}</p>
+              <div className="px-4 space-y-3">
+                <button
+                  onClick={() => {
+                    if (filterArtist && onClearArtist) onClearArtist();
+                    else setInternalFilterArtist(null);
+                  }}
+                  className="flex items-center gap-2 text-zinc-400 hover:text-white text-sm transition-colors"
+                >
+                  <FaChevronLeft size={12} />
+                  Alle Artists
+                </button>
+                <div className="flex items-center gap-3 bg-zinc-900/60 border border-white/[0.06] rounded-2xl px-4 py-3">
+                  {activeArtist.picture
+                    ? <img src={activeArtist.picture} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-red-500/50" />
+                    : <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center ring-2 ring-red-500/30">
+                        <FaTrophy size={16} className="text-red-400" />
+                      </div>}
+                  <div>
+                    <p className="text-white font-semibold text-sm">{activeArtist.name}</p>
+                    <p className="text-zinc-500 text-xs">{activeArtist.questCount} Ques{activeArtist.questCount !== 1 ? 'ts' : 't'}</p>
+                  </div>
                 </div>
               </div>
               {/* Fan Board */}
