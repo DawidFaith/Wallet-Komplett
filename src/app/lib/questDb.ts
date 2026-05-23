@@ -1306,15 +1306,31 @@ export async function getInstagramTesterStatus(handle: string): Promise<{ isTest
     if (rows.length === 0) return { isTester: false, inviteAccepted: false };
     return { isTester: true, inviteAccepted: Boolean(rows[0].invite_accepted) };
   } catch {
+    // invite_accepted-Spalte existiert noch nicht (Migration noch nicht ausgeführt)
+    // → prüfen ob der User überhaupt in der Whitelist ist, und falls ja: isTester=true, inviteAccepted=false
+    try {
+      const rows2 = await sql`
+        SELECT 1 FROM instagram_testers WHERE instagram_handle = ${handle.toLowerCase()} LIMIT 1
+      `;
+      if (rows2.length > 0) return { isTester: true, inviteAccepted: false };
+    } catch { /* Tabelle existiert nicht → kein Tester */ }
     return { isTester: false, inviteAccepted: false };
   }
 }
 
 export async function setInstagramTesterInviteAccepted(handle: string, accepted: boolean): Promise<void> {
   const sql = getDb();
-  await sql`
-    UPDATE instagram_testers SET invite_accepted = ${accepted} WHERE instagram_handle = ${handle.toLowerCase()}
-  `;
+  try {
+    await sql`
+      UPDATE instagram_testers SET invite_accepted = ${accepted} WHERE instagram_handle = ${handle.toLowerCase()}
+    `;
+  } catch {
+    // Spalte fehlt → Spalte anlegen, dann nochmal versuchen
+    await sql`ALTER TABLE instagram_testers ADD COLUMN IF NOT EXISTS invite_accepted BOOLEAN NOT NULL DEFAULT FALSE`;
+    await sql`
+      UPDATE instagram_testers SET invite_accepted = ${accepted} WHERE instagram_handle = ${handle.toLowerCase()}
+    `;
+  }
 }
 
 // ─── Instagram Tester Anfragen ────────────────────────────────────────────────

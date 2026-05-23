@@ -115,8 +115,24 @@ export async function POST(req: NextRequest) {
     if (action === 'confirm_invite') {
       const { isTester } = await getInstagramTesterStatus(profile.instagramHandle);
       if (!isTester) return NextResponse.json({ error: 'not_tester' }, { status: 403 });
+
+      // Optional: Meta API prüfen ob User in der Tester-Liste erscheint
+      let metaVerified = false;
+      const appId = process.env.FACEBOOK_APP_ID;
+      const token = process.env.META_SYSTEM_USER_TOKEN;
+      if (appId && token) {
+        try {
+          // Versuche Business-Discovery: wenn der IG-Account erreichbar ist, hat er akzeptiert
+          const igBusinessId = process.env.IG_BUSINESS_ACCOUNT_ID ?? '528116477058109';
+          const url = `https://graph.facebook.com/v21.0/${igBusinessId}?fields=business_discovery.fields(id,username)&username=${encodeURIComponent(profile.instagramHandle)}&access_token=${token}`;
+          const metaRes = await fetch(url, { signal: AbortSignal.timeout(8000) });
+          const metaData = await metaRes.json() as { business_discovery?: { id: string } };
+          if (metaData.business_discovery?.id) metaVerified = true;
+        } catch { /* Meta-Check schlägt fehl → manuelle Bestätigung gilt trotzdem */ }
+      }
+
       await setInstagramTesterInviteAccepted(profile.instagramHandle, true);
-      return NextResponse.json({ success: true, inviteAccepted: true });
+      return NextResponse.json({ success: true, inviteAccepted: true, metaVerified });
     }
 
     // ── START ─────────────────────────────────────────────────────────────────
