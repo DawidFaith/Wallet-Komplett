@@ -75,23 +75,45 @@ async function getUsernameFromMentionedMedia(igUserId: string, mediaId: string):
   }
 }
 
-// ── Username via Message-ID (messaging-Webhook / story_mention DM) ───────────
+// ── Username via Sender-IGSID (messaging-Webhook / story_mention DM) ────────
 
-async function getUsernameFromMessageId(igUserId: string, mid: string): Promise<string | null> {
+async function getUsernameFromSenderIgsid(igBusinessId: string, senderIgsid: string): Promise<string | null> {
   const token = process.env.META_SYSTEM_USER_TOKEN;
-  if (!token) return null;
+  if (!token) { console.error('[story-mention-webhook] META_SYSTEM_USER_TOKEN fehlt'); return null; }
+
+  // Versuch 1: Direkter IGSID-Lookup
   try {
-    const url = `${GRAPH}/${mid}?fields=from&access_token=${token}&user_id=${igUserId}`;
+    const url = `${GRAPH}/${senderIgsid}?fields=username,name&access_token=${token}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-    const json = await res.json() as { from?: { id: string; username?: string }; error?: { message: string } };
-    if (!res.ok || json.error) {
-      console.error(`[story-mention-webhook] message lookup Fehler mid=${mid}:`, json.error?.message ?? res.status);
+    const json = await res.json() as { username?: string; name?: string; error?: { message: string } };
+    if (res.ok && !json.error && json.username) {
+      console.log(`[story-mention-webhook] IGSID direkt: username=${json.username}`);
+      return json.username.toLowerCase().replace(/^@/, '');
+    }
+    console.log('[story-mention-webhook] IGSID direkt fehlgeschlagen:', json.error?.message ?? res.status);
+  } catch (e) {
+    console.error('[story-mention-webhook] IGSID direkt Exception:', e);
+  }
+
+  // Versuch 2: Conversations-API → participants
+  try {
+    const convUrl = `${GRAPH}/${igBusinessId}/conversations?platform=instagram&user_id=${senderIgsid}&fields=participants&access_token=${token}`;
+    const convRes = await fetch(convUrl, { signal: AbortSignal.timeout(10000) });
+    const convJson = await convRes.json() as {
+      data?: Array<{ participants?: { data: Array<{ id: string; username?: string }> } }>;
+      error?: { message: string };
+    };
+    if (!convRes.ok || convJson.error) {
+      console.error('[story-mention-webhook] conversations Fehler:', convJson.error?.message ?? convRes.status);
       return null;
     }
-    console.log(`[story-mention-webhook] message from:`, JSON.stringify(json.from));
-    return json.from?.username ? json.from.username.toLowerCase().replace(/^@/, '') : null;
+    const participants = convJson.data?.[0]?.participants?.data ?? [];
+    console.log('[story-mention-webhook] conversations participants:', JSON.stringify(participants));
+    const sender = participants.find(p => p.id !== igBusinessId && p.username);
+    if (sender?.username) return sender.username.toLowerCase().replace(/^@/, '');
+    return null;
   } catch (e) {
-    console.error(`[story-mention-webhook] message lookup Exception:`, e);
+    console.error('[story-mention-webhook] conversations Exception:', e);
     return null;
   }
 }
@@ -183,14 +205,11 @@ export async function POST(req: NextRequest) {
     for (const msg of entry.messaging ?? []) {
       const isStoryMention = msg.message?.attachments?.some(a => a.type === 'story_mention');
       if (!isStoryMention) continue;
-      const mid = msg.message?.mid;
-      if (!mid) {
-        console.log('[story-mention-webhook] messaging: kein mid');
-        continue;
-      }
-      const username = await getUsernameFromMessageId(entry.id, mid);
+      const senderIgsid = msg.sender.id;
+      console.log('[story-mention-webhook] messaging: story_mention von IGSID:', senderIgsid);
+      const username = await getUsernameFromSenderIgsid(entry.id, senderIgsid);
       if (!username) {
-        console.warn('[story-mention-webhook] messaging: kein Username für mid:', mid, 'sender.id:', msg.sender.id);
+        console.warn('[story-mention-webhook] messaging: kein Username für IGSID:', senderIgsid);
         continue;
       }
       await processStoryMention(username);
