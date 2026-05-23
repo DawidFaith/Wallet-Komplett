@@ -58,16 +58,19 @@ function verifySignature(body: string, signature: string | null, secret: string)
 
 async function getUsernameFromMentionedMedia(igUserId: string, mediaId: string): Promise<string | null> {
   const token = process.env.META_SYSTEM_USER_TOKEN;
-  if (!token) return null;
+  if (!token) { console.error('[story-mention-webhook] META_SYSTEM_USER_TOKEN fehlt'); return null; }
   try {
-    const res = await fetch(
-      `${GRAPH}/${igUserId}/mentioned_media?media_id=${encodeURIComponent(mediaId)}&fields=id,username,media_type&access_token=${token}`,
-      { signal: AbortSignal.timeout(10000) },
-    );
-    if (!res.ok) return null;
-    const json = await res.json() as { username?: string };
+    const url = `${GRAPH}/${igUserId}/mentioned_media?media_id=${encodeURIComponent(mediaId)}&fields=id,username,media_type&access_token=${token}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    const json = await res.json() as { username?: string; error?: { message: string; code: number } };
+    if (!res.ok || json.error) {
+      console.error(`[story-mention-webhook] mentioned_media Fehler igUserId=${igUserId} mediaId=${mediaId}:`, json.error?.message ?? res.status);
+      return null;
+    }
+    console.log(`[story-mention-webhook] mentioned_media Antwort igUserId=${igUserId}:`, JSON.stringify(json));
     return json.username ? json.username.toLowerCase().replace(/^@/, '') : null;
-  } catch {
+  } catch (e) {
+    console.error(`[story-mention-webhook] mentioned_media Exception igUserId=${igUserId}:`, e);
     return null;
   }
 }

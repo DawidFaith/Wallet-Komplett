@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
         videoUrl: quest.videoUrl,
         instagramHandle: profile.instagramHandle,
         creatorHandle,
-        message: `Erstelle jetzt eine Story und markiere @${creatorHandle ?? 'den Creator'} darin. Die Quest wird automatisch erkannt.`,
+        message: `Erstelle eine Story und markiere @${creatorHandle ?? 'den Creator'} darin. Die Quest wird automatisch erkannt.`,
       });
     }
 
