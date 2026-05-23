@@ -640,34 +640,34 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                 <button
                   onClick={() => handleMetaCheck('instagram')}
                   disabled={metaIgLoading || !hasIg}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border font-semibold text-sm transition-all disabled:opacity-40 ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border font-semibold text-xs transition-all disabled:opacity-40 ${
                     igVerified
                       ? 'bg-green-500/15 border-green-500/30 text-green-300 shadow-[0_0_12px_rgba(34,197,94,0.12)]'
                       : 'bg-gradient-to-br from-pink-500/10 to-purple-500/10 hover:from-pink-500/20 hover:to-purple-500/20 border-pink-500/25 text-pink-300 active:scale-95'
                   }`}
                 >
                   {metaIgLoading
-                    ? <span className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+                    ? <span className="animate-spin w-3 h-3 border-2 border-current border-t-transparent rounded-full" />
                     : igVerified
-                      ? <FaCheck size={13} className="text-green-400" />
-                      : <FaInstagram size={15} />
+                      ? <FaCheck size={10} className="text-green-400" />
+                      : <FaInstagram size={11} />
                   }
                   <span>{igVerified ? 'Instagram ✓' : 'Instagram prüfen'}</span>
                 </button>
                 <button
                   onClick={() => handleMetaCheck('facebook')}
                   disabled={metaFbLoading || !hasFb}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border font-semibold text-sm transition-all disabled:opacity-40 ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border font-semibold text-xs transition-all disabled:opacity-40 ${
                     fbVerified
                       ? 'bg-green-500/15 border-green-500/30 text-green-300 shadow-[0_0_12px_rgba(34,197,94,0.12)]'
                       : 'bg-gradient-to-br from-blue-500/10 to-blue-600/10 hover:from-blue-500/20 hover:to-blue-600/20 border-blue-500/25 text-blue-300 active:scale-95'
                   }`}
                 >
                   {metaFbLoading
-                    ? <span className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+                    ? <span className="animate-spin w-3 h-3 border-2 border-current border-t-transparent rounded-full" />
                     : fbVerified
-                      ? <FaCheck size={13} className="text-green-400" />
-                      : <FaFacebook size={15} />
+                      ? <FaCheck size={10} className="text-green-400" />
+                      : <FaFacebook size={11} />
                   }
                   <span>{fbVerified ? 'Facebook ✓' : 'Facebook prüfen'}</span>
                 </button>
