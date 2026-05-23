@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { FaTrophy, FaYoutube, FaInstagram, FaTiktok, FaFacebookF, FaCheck, FaMusic, FaTimes } from 'react-icons/fa';
+import { FaTrophy, FaYoutube, FaInstagram, FaTiktok, FaFacebookF, FaCheck, FaMusic, FaTimes, FaChevronLeft } from 'react-icons/fa';
 import Image from 'next/image';
 import FanBoard from './fan/FanBoard';
 import CreatorBoard from './creator/CreatorBoard';
@@ -35,6 +35,75 @@ interface QuestBoardProps {
   onClearArtist?: () => void;
 }
 
+// ─── Artist-Selektor ────────────────────────────────────────────────────────
+
+function ArtistSelector({ onSelect }: { onSelect: (artist: ArtistInfo) => void }) {
+  const [artists, setArtists] = useState<ArtistInfo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/artists')
+      .then(r => {
+        if (!r.ok) return r.json().then((e: { error?: string }) => { throw new Error(e?.error || `HTTP ${r.status}`); });
+        return r.json();
+      })
+      .then((data: { artists?: ArtistInfo[] }) => setArtists((data.artists ?? []).filter(a => a.questCount > 0)))
+      .catch((e: Error) => setFetchError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <span className="w-6 h-6 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (fetchError || artists.length === 0) {
+    return (
+      <div className="mx-4 bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
+        {fetchError
+          ? <span className="text-red-400">Fehler: {fetchError}</span>
+          : 'Noch keine Artists haben aktive Quests.'}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Artists wählen</p>
+      <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
+        {artists.map(artist => (
+          <button
+            key={artist.walletAddress}
+            onClick={() => onSelect(artist)}
+            className="flex flex-col items-center gap-2 shrink-0 w-[68px] group"
+          >
+            <div className="relative">
+              <div className="w-14 h-14 rounded-full ring-2 ring-red-500/60 shadow-[0_0_10px_rgba(239,68,68,0.25)] transition-all group-hover:scale-105">
+                {artist.picture
+                  ? <img src={artist.picture} alt="" className="w-14 h-14 rounded-full object-cover" />
+                  : <div className="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center">
+                      <FaTrophy className="text-red-400" size={18} />
+                    </div>}
+              </div>
+              <div className="absolute -bottom-1 -right-1 bg-red-500 text-white text-[9px] font-black rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+                <span className="text-[8px] font-bold">{artist.questCount}</span>
+              </div>
+            </div>
+            <p className="text-xs text-zinc-300 text-center line-clamp-2 leading-tight w-full group-hover:text-white transition-colors">
+              {artist.name}
+            </p>
+          </button>
+        ))}
+      </div>
+      <p className="text-zinc-600 text-xs">Tippe auf einen Artist um seine Quests zu sehen.</p>
+    </div>
+  );
+}
+
 interface ProfileResponse {
   profile?: {
     youtubeVerified?: boolean;
@@ -61,6 +130,7 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
   const [myRewardToken, setMyRewardToken] = useState<string | null>(null);
   const [isArtist, setIsArtist] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [internalFilterArtist, setInternalFilterArtist] = useState<ArtistInfo | null>(null);
 
   useEffect(() => {
     if (!account?.address) { setLoaded(false); return; }
@@ -162,17 +232,46 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
               <FaFacebookF size={18} className="text-blue-500" />
             </div>
           </div>
-        ) : (
-          <>
-            {/* Fan Board */}
-            <FanBoard
-              walletAddress={account.address}
-              verified={verified}
-              filterCreator={filterArtist?.walletAddress ?? undefined}
-              rewardToken={filterArtist?.rewardToken ?? null}
-            />
-          </>
-        )}
+        ) : (() => {
+          // Aktiver Artist: entweder per Prop (von Profil-Tab) oder intern gewählt
+          const activeArtist = filterArtist ?? internalFilterArtist;
+          if (!activeArtist) {
+            return <ArtistSelector onSelect={setInternalFilterArtist} />;
+          }
+          return (
+            <>
+              {/* Zurück-Button + Artist-Header */}
+              <button
+                onClick={() => {
+                  if (filterArtist && onClearArtist) onClearArtist();
+                  else setInternalFilterArtist(null);
+                }}
+                className="flex items-center gap-2 text-zinc-400 hover:text-white text-sm transition-colors"
+              >
+                <FaChevronLeft size={12} />
+                Alle Artists
+              </button>
+              <div className="flex items-center gap-3 bg-zinc-900/60 border border-white/[0.06] rounded-2xl px-4 py-3">
+                {activeArtist.picture
+                  ? <img src={activeArtist.picture} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-red-500/50" />
+                  : <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center ring-2 ring-red-500/30">
+                      <FaTrophy size={16} className="text-red-400" />
+                    </div>}
+                <div>
+                  <p className="text-white font-semibold text-sm">{activeArtist.name}</p>
+                  <p className="text-zinc-500 text-xs">{activeArtist.questCount} Ques{activeArtist.questCount !== 1 ? 'ts' : 't'}</p>
+                </div>
+              </div>
+              {/* Fan Board */}
+              <FanBoard
+                walletAddress={account.address}
+                verified={verified}
+                filterCreator={activeArtist.walletAddress}
+                rewardToken={activeArtist.rewardToken ?? null}
+              />
+            </>
+          );
+        })()}
 
       </div>
     </div>
