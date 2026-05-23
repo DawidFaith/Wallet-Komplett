@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
       id: string;
       changes?: Array<{
         field: string;
-        value?: { media_id?: string; comment_id?: string };
+        value?: { media_id?: string; comment_id?: string; post_id?: string; sender_id?: string };
       }>;
     }>;
   };
@@ -123,23 +123,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  // Nur Instagram-Events verarbeiten
-  if (payload.object !== 'instagram') {
+  // Payload-Struktur immer loggen (für Debugging)
+  console.log('[story-mention-webhook] Payload object:', payload.object,
+    '| fields:', JSON.stringify((payload.entry ?? []).flatMap(e => (e.changes ?? []).map(c => c.field))),
+    '| raw (500):', rawBody.slice(0, 500));
+
+  // Sowohl object=instagram (mentions) als auch object=page (mention) verarbeiten
+  if (payload.object !== 'instagram' && payload.object !== 'page') {
+    console.log('[story-mention-webhook] Unbekanntes object:', payload.object, '– ignoriert');
     return NextResponse.json({ ok: true });
   }
 
   for (const entry of payload.entry ?? []) {
     for (const change of entry.changes ?? []) {
-      // Nur "mentions"-Events (Story-Tags und Kommentar-Erwähnungen)
-      if (change.field !== 'mentions') continue;
+      // object=instagram: field=mentions | object=page: field=mention
+      if (change.field !== 'mentions' && change.field !== 'mention') continue;
 
-      const mediaId = change.value?.media_id;
-      if (!mediaId) continue;
+      // media_id kommt bei Instagram-mentions, post_id bei Page-mention
+      const mediaId = change.value?.media_id ?? change.value?.post_id;
+      if (!mediaId) {
+        console.log('[story-mention-webhook] Kein media_id/post_id in change.value:', JSON.stringify(change.value));
+        continue;
+      }
 
       // Username des Taggers per Graph API ermitteln
       const username = await getUsernameFromMentionedMedia(entry.id, mediaId);
       if (!username) {
-        console.warn('[story-mention-webhook] Kein Username für media_id:', mediaId);
+        console.warn('[story-mention-webhook] Kein Username für media_id:', mediaId, 'entry.id:', entry.id);
         continue;
       }
 
