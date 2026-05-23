@@ -50,7 +50,7 @@ const PLATFORM_CONFIG = {
       `Schreibe einen Kommentar mit genau diesem Code: ${code}`,
       'Komm zurück und klicke auf „Verifizieren"',
     ],
-    profileUrl: (_handle: string) => `https://www.facebook.com/profile.php?id=61590064953025`,
+    profileUrl: (_handle: string) => `https://www.facebook.com/1144846495374893`,
   },
 };
 
@@ -407,7 +407,7 @@ export default function SocialVerifyModal({
                   <li>Komm zurück und klicke auf &bdquo;Verifizieren&ldquo;</li>
                 </ol>
                 <a
-                  href="https://www.facebook.com/profile.php?id=61590064953025"
+                  href="https://www.facebook.com/1144846495374893"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-zinc-900 rounded-lg px-3 py-2 flex items-center gap-2 border border-zinc-700 hover:border-blue-500 transition-colors"

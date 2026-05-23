@@ -5,6 +5,28 @@
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
+// ─── Page Access Token holen (neue Facebook-Seiten erfordern Page Token) ─────
+let cachedPageToken: string | null = null;
+export async function getPageAccessToken(): Promise<string | null> {
+  if (cachedPageToken) return cachedPageToken;
+  const systemToken = process.env.META_SYSTEM_USER_TOKEN;
+  const pageId = process.env.FACEBOOK_PAGE_ID;
+  if (!systemToken || !pageId) return null;
+  try {
+    const res = await fetch(
+      `${GRAPH}/${pageId}?fields=access_token&access_token=${systemToken}`,
+      { cache: 'no-store' },
+    );
+    if (!res.ok) return null;
+    const data = await res.json() as { access_token?: string };
+    const token = data?.access_token ?? null;
+    if (token) cachedPageToken = token;
+    return token;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Kommentare auf Instagram-Media prüfen ────────────────────────────────────
 export async function findInstagramComment(
   mediaId: string,
@@ -46,7 +68,8 @@ export async function findFacebookComment(
   postId: string,
   requiredText: string,
 ): Promise<{ found: boolean; fromName?: string }> {
-  const token = process.env.META_SYSTEM_USER_TOKEN;
+  // Neue Facebook-Seiten benötigen Page Access Token (nicht System User Token)
+  const token = await getPageAccessToken() ?? process.env.META_SYSTEM_USER_TOKEN;
   if (!token) return { found: false };
 
   const cleanText = requiredText.toLowerCase();
@@ -143,9 +166,11 @@ export async function fetchPlatformIgMedia(limit = 20): Promise<IgMediaItem[]> {
 
 // ─── Neueste Facebook-Posts von dfaith_ecosystem Page abrufen ────────────────
 export async function fetchPlatformFbPosts(limit = 5): Promise<string[]> {
-  const token = process.env.META_SYSTEM_USER_TOKEN;
   const pageId = process.env.FACEBOOK_PAGE_ID;
-  if (!token || !pageId) return [];
+  if (!pageId) return [];
+  // Neue Facebook-Seiten benötigen Page Access Token
+  const token = await getPageAccessToken() ?? process.env.META_SYSTEM_USER_TOKEN;
+  if (!token) return [];
   try {
     const res = await fetch(
       `${GRAPH}/${pageId}/posts?fields=id&limit=${limit}&access_token=${token}`,
