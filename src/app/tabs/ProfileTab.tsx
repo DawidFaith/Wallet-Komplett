@@ -273,9 +273,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
           artistBio: artistBioInput.trim() || null,
           rewardToken: artistRewardTokenInput.trim() || null,
           displayPlatform: artistDisplayPlatformInput,
-          clerkImageUrl: (artistDisplayPlatformInput === 'clerk' || artistDisplayPlatformInput === null)
-            ? (_clerkUser?.imageUrl ?? null)
-            : null,
+          clerkImageUrl: _clerkUser?.imageUrl ?? null,
         }),
       });
       setEditingArtist(false);
