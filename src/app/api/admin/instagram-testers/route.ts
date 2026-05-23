@@ -17,11 +17,10 @@ import {
 import { sendTesterApprovedEmail } from '../../../lib/email';
 import { getDb } from '../../../lib/db';
 
-const ADMIN_SECRET = process.env.ADMIN_SECRET ?? '';
-
 function checkAuth(req: NextRequest): boolean {
-  const auth = req.headers.get('x-admin-secret');
-  return ADMIN_SECRET.length > 0 && auth === ADMIN_SECRET;
+  const secret = req.headers.get('x-admin-secret');
+  const expected = process.env.MIGRATION_SECRET;
+  return !!expected && secret === expected;
 }
 
 async function ensureTable() {
