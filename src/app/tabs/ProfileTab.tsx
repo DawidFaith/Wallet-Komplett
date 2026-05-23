@@ -6,10 +6,9 @@ import Image from 'next/image';
 import {
   FaInstagram, FaTiktok, FaFacebook, FaYoutube,
   FaCheck, FaCoins, FaStar, FaLock, FaPlus, FaChevronDown,
-  FaPen, FaMusic, FaTimes, FaInfoCircle, FaTrophy,
+  FaPen, FaMusic, FaTimes, FaInfoCircle, FaTrophy, FaTasks,
 } from 'react-icons/fa';import SocialVerifyModal from './profile/SocialVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
-import QuestBoardTab from './QuestBoardTab';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
 
 type SocialPlatform = 'instagram' | 'tiktok' | 'facebook';
@@ -103,7 +102,6 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
   const [unlinkPending, setUnlinkPending] = useState<AnyPlatform | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const questBoardRef = useRef<HTMLDivElement>(null);
   // YouTube: manage (already linked) vs. link-flow
   const [showYoutubeManage, setShowYoutubeManage] = useState(false);
   const [artists, setArtists] = useState<ArtistEntry[]>([]);
@@ -835,26 +833,25 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                 </div>
               )}
               {onNavigate && (
-                <button
-                  onClick={() => onNavigate('reputation')}
-                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs font-semibold transition-colors"
-                >
-                  <FaTrophy size={11} /> Zum Reputation-Tab
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => onNavigate('reputation')}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs font-semibold transition-colors"
+                  >
+                    <FaTrophy size={11} /> Reputation
+                  </button>
+                  {selectedArtist && selectedArtist.questCount > 0 && (
+                    <button
+                      onClick={() => onNavigate('quest-board')}
+                      className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs font-semibold transition-colors"
+                    >
+                      <FaTasks size={11} /> {selectedArtist.questCount} Quest{selectedArtist.questCount !== 1 ? 's' : ''}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           )}
-        </div>
-      )}
-
-      {/* ── Quest Board ────────────────────────────────────────── */}
-      {selectedArtist && (
-        <div ref={questBoardRef}>
-          <QuestBoardTab
-            language={_language}
-            filterArtist={selectedArtist}
-            onClearArtist={() => setSelectedArtist(null)}
-          />
         </div>
       )}
 
