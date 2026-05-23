@@ -220,7 +220,7 @@ export default function AdminPage() {
     return matchSearch && matchFilter;
   });
 
-  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'testers'>('users');
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState('');
   const [resetting, setResetting] = useState(false);
@@ -297,7 +297,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-0">
-        {(['users', 'credits', 'token', 'shop', 'platform'] as const).map((tab) => (
+        {(['users', 'credits', 'token', 'shop', 'platform', 'testers'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -307,7 +307,7 @@ export default function AdminPage() {
                 : 'text-zinc-500 border-transparent hover:text-zinc-300'
             }`}
           >
-            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : '⚡ Platform'}
+            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'testers' ? '📸 Testers' : '⚡ Platform'}
           </button>
         ))}
       </div>
@@ -490,6 +490,11 @@ export default function AdminPage() {
       {/* ── Platform Tab ──────────────────────────────────────────────────────── */}
       {activeTab === 'platform' && (
         <PlatformSection secret={secret} />
+      )}
+
+      {/* ── Testers Tab ───────────────────────────────────────────────────────── */}
+      {activeTab === 'testers' && (
+        <InstagramTestersSection secret={secret} />
       )}
     </div>
   );
@@ -2009,6 +2014,261 @@ function ShopManageSection({
               )}
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Instagram Testers Section ────────────────────────────────────────────────
+
+interface TesterRequest {
+  id: string;
+  instagramHandle: string;
+  email: string;
+  walletAddress: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  approvedAt: string | null;
+}
+
+interface TesterEntry {
+  instagramHandle: string;
+  notes: string;
+  addedAt: string;
+}
+
+function InstagramTestersSection({ secret }: { secret: string }) {
+  const [requests, setRequests] = useState<TesterRequest[]>([]);
+  const [testers, setTesters] = useState<TesterEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [acting, setActing] = useState<string | null>(null);
+  const [manualHandle, setManualHandle] = useState('');
+  const [manualNotes, setManualNotes] = useState('');
+  const [adding, setAdding] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setMsg('');
+    try {
+      const res = await fetch('/api/admin/instagram-testers', {
+        headers: { 'x-admin-secret': secret },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setRequests(data.requests ?? []);
+      setTesters(data.testers ?? []);
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setLoading(false);
+    }
+  }, [secret]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleApprove = async (id: string) => {
+    setActing(id);
+    setMsg('');
+    try {
+      const res = await fetch('/api/admin/instagram-testers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ id, action: 'approve' }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setMsg(`✅ @${data.handle} eingetragen + User-E-Mail gesendet`);
+      load();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setActing(null);
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    setActing(id);
+    try {
+      await fetch('/api/admin/instagram-testers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ id, action: 'reject' }),
+      });
+      load();
+    } finally {
+      setActing(null);
+    }
+  };
+
+  const handleRemove = async (handle: string) => {
+    if (!confirm(`@${handle} aus Whitelist entfernen?`)) return;
+    await fetch(`/api/admin/instagram-testers?handle=${encodeURIComponent(handle)}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-secret': secret },
+    });
+    load();
+  };
+
+  const handleManualAdd = async () => {
+    const h = manualHandle.trim().replace(/^@/, '');
+    if (!h) return;
+    setAdding(true);
+    try {
+      const res = await fetch('/api/admin/instagram-testers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ handle: h, notes: manualNotes }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setManualHandle('');
+      setManualNotes('');
+      load();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const pending = requests.filter(r => r.status === 'pending');
+  const processed = requests.filter(r => r.status !== 'pending');
+
+  return (
+    <div className="space-y-6">
+      {msg && (
+        <div className="bg-green-900/30 border border-green-700/40 text-green-300 text-sm px-4 py-3 rounded-xl">
+          {msg}
+        </div>
+      )}
+
+      {/* ── Offene Anfragen ── */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold text-white flex items-center gap-2">
+            📥 Offene Anfragen
+            {pending.length > 0 && (
+              <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">{pending.length}</span>
+            )}
+          </h3>
+          <button onClick={load} disabled={loading} className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+            {loading ? '…' : '↻ Aktualisieren'}
+          </button>
+        </div>
+
+        {pending.length === 0 ? (
+          <p className="text-sm text-zinc-500 text-center py-6">Keine offenen Anfragen</p>
+        ) : (
+          <div className="space-y-3">
+            {pending.map(r => (
+              <div key={r.id} className="bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-white text-sm">@{r.instagramHandle}</p>
+                    <p className="text-xs text-zinc-400">{r.email}</p>
+                    <p className="text-xs text-zinc-600 font-mono">{r.walletAddress.slice(0, 20)}…</p>
+                    <p className="text-xs text-zinc-600 mt-1">{new Date(r.createdAt).toLocaleString('de-DE')}</p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => handleApprove(r.id)}
+                      disabled={acting === r.id}
+                      className="px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors"
+                    >
+                      {acting === r.id ? '…' : '✓ Eingetragen'}
+                    </button>
+                    <button
+                      onClick={() => handleReject(r.id)}
+                      disabled={acting === r.id}
+                      className="px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 text-zinc-300 text-xs font-semibold rounded-lg transition-colors"
+                    >
+                      Ablehnen
+                    </button>
+                  </div>
+                </div>
+                <div className="text-xs text-yellow-400/80 bg-yellow-900/20 rounded-lg px-2 py-1.5">
+                  ⚠️ Zuerst @{r.instagramHandle} in der{' '}
+                  <a href="https://developers.facebook.com/apps/1466293431472871/roles/test-users/" target="_blank" rel="noopener noreferrer" className="underline">
+                    Meta Developer Console → Roles → Instagram Testers
+                  </a>{' '}
+                  eintragen, dann erst hier auf "Eingetragen" klicken.
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Manuelle Eintragung ── */}
+      <div>
+        <h3 className="font-bold text-white mb-3">➕ Manuell hinzufügen</h3>
+        <div className="flex gap-2">
+          <input
+            value={manualHandle}
+            onChange={e => setManualHandle(e.target.value)}
+            placeholder="@instagram_handle"
+            className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500"
+          />
+          <input
+            value={manualNotes}
+            onChange={e => setManualNotes(e.target.value)}
+            placeholder="Notiz (optional)"
+            className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500"
+          />
+          <button
+            onClick={handleManualAdd}
+            disabled={adding || !manualHandle.trim()}
+            className="px-4 py-2 bg-pink-700 hover:bg-pink-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+          >
+            {adding ? '…' : 'Hinzufügen'}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Aktive Whitelist ── */}
+      <div>
+        <h3 className="font-bold text-white mb-3">✅ Aktive Whitelist ({testers.length})</h3>
+        {testers.length === 0 ? (
+          <p className="text-sm text-zinc-500 text-center py-4">Keine Tester eingetragen</p>
+        ) : (
+          <div className="space-y-2">
+            {testers.map(t => (
+              <div key={t.instagramHandle} className="flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2">
+                <div>
+                  <span className="text-sm font-semibold text-white">@{t.instagramHandle}</span>
+                  {t.notes && <span className="ml-2 text-xs text-zinc-500">{t.notes}</span>}
+                  <span className="ml-2 text-xs text-zinc-600">{new Date(t.addedAt).toLocaleDateString('de-DE')}</span>
+                </div>
+                <button
+                  onClick={() => handleRemove(t.instagramHandle)}
+                  className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                >
+                  Entfernen
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Verarbeitete Anfragen ── */}
+      {processed.length > 0 && (
+        <div>
+          <h3 className="font-bold text-zinc-500 mb-2 text-sm">Verarbeitete Anfragen</h3>
+          <div className="space-y-1">
+            {processed.map(r => (
+              <div key={r.id} className="flex items-center gap-3 text-xs text-zinc-600 px-2">
+                <span className={r.status === 'approved' ? 'text-green-600' : 'text-red-600'}>
+                  {r.status === 'approved' ? '✓' : '✗'}
+                </span>
+                <span>@{r.instagramHandle}</span>
+                <span>{r.email}</span>
+                <span>{new Date(r.createdAt).toLocaleDateString('de-DE')}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

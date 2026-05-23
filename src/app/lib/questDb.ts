@@ -1291,6 +1291,76 @@ export async function listInstagramTesters(): Promise<Array<{ instagramHandle: s
   }));
 }
 
+// ─── Instagram Tester Anfragen ────────────────────────────────────────────────
+
+export interface InstagramTesterRequest {
+  id: string;
+  instagramHandle: string;
+  email: string;
+  walletAddress: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  approvedAt: string | null;
+}
+
+export async function upsertInstagramTesterRequest(
+  instagramHandle: string,
+  email: string,
+  walletAddress: string,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO instagram_tester_requests (instagram_handle, email, wallet_address)
+    VALUES (${instagramHandle.toLowerCase()}, ${email.toLowerCase()}, ${walletAddress.toLowerCase()})
+    ON CONFLICT (instagram_handle) WHERE status = 'pending'
+    DO UPDATE SET email = ${email.toLowerCase()}, wallet_address = ${walletAddress.toLowerCase()}, created_at = NOW()
+  `;
+}
+
+export async function listInstagramTesterRequests(status?: string): Promise<InstagramTesterRequest[]> {
+  const sql = getDb();
+  const rows = status
+    ? await sql`SELECT * FROM instagram_tester_requests WHERE status = ${status} ORDER BY created_at DESC`
+    : await sql`SELECT * FROM instagram_tester_requests ORDER BY created_at DESC`;
+  return rows.map((r: any) => ({
+    id: r.id,
+    instagramHandle: r.instagram_handle,
+    email: r.email,
+    walletAddress: r.wallet_address,
+    status: r.status,
+    createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : r.created_at,
+    approvedAt: r.approved_at ? (r.approved_at instanceof Date ? r.approved_at.toISOString() : r.approved_at) : null,
+  }));
+}
+
+export async function approveInstagramTesterRequest(id: string): Promise<InstagramTesterRequest | null> {
+  const sql = getDb();
+  const rows = await sql`
+    UPDATE instagram_tester_requests
+    SET status = 'approved', approved_at = NOW()
+    WHERE id = ${id} AND status = 'pending'
+    RETURNING *
+  `;
+  if (!rows.length) return null;
+  const r = rows[0];
+  // Auch in Whitelist eintragen
+  await addInstagramTester(r.instagram_handle, `Approved via request ${r.id}`);
+  return {
+    id: r.id,
+    instagramHandle: r.instagram_handle,
+    email: r.email,
+    walletAddress: r.wallet_address,
+    status: 'approved',
+    createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : r.created_at,
+    approvedAt: r.approved_at instanceof Date ? r.approved_at.toISOString() : r.approved_at,
+  };
+}
+
+export async function rejectInstagramTesterRequest(id: string): Promise<void> {
+  const sql = getDb();
+  await sql`UPDATE instagram_tester_requests SET status = 'rejected' WHERE id = ${id}`;
+}
+
 function rowToDmVerification(r: any): InstagramDmVerification {
   return {
     questId: r.quest_id,

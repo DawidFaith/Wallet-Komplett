@@ -1,7 +1,8 @@
 /**
- * GET  /api/admin/instagram-testers          → Alle Tester auflisten
- * POST /api/admin/instagram-testers          → Tester hinzufügen { handle, notes? }
- * DELETE /api/admin/instagram-testers?handle=xy → Tester entfernen
+ * GET    /api/admin/instagram-testers           → Whitelist + offene Requests
+ * POST   /api/admin/instagram-testers           → Tester manuell hinzufügen { handle, notes? }
+ * PATCH  /api/admin/instagram-testers           → Request genehmigen { id } → sendet User-E-Mail
+ * DELETE /api/admin/instagram-testers?handle=xy → Tester aus Whitelist entfernen
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -9,7 +10,11 @@ import {
   listInstagramTesters,
   addInstagramTester,
   removeInstagramTester,
+  listInstagramTesterRequests,
+  approveInstagramTesterRequest,
+  rejectInstagramTesterRequest,
 } from '../../../lib/questDb';
+import { sendTesterApprovedEmail } from '../../../lib/email';
 import { getDb } from '../../../lib/db';
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET ?? '';
@@ -19,20 +24,37 @@ function checkAuth(req: NextRequest): boolean {
   return ADMIN_SECRET.length > 0 && auth === ADMIN_SECRET;
 }
 
+async function ensureTable() {
+  const sql = getDb();
+  await sql`
+    CREATE TABLE IF NOT EXISTS instagram_testers (
+      instagram_handle  TEXT        PRIMARY KEY,
+      notes             TEXT        NOT NULL DEFAULT '',
+      added_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS instagram_tester_requests (
+      id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+      instagram_handle  TEXT        NOT NULL,
+      email             TEXT        NOT NULL,
+      wallet_address    TEXT        NOT NULL,
+      status            TEXT        NOT NULL DEFAULT 'pending',
+      created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      approved_at       TIMESTAMPTZ
+    )
+  `;
+}
+
 export async function GET(req: NextRequest) {
   if (!checkAuth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
-    // Tabelle anlegen falls noch nicht vorhanden (idempotent)
-    const sql = getDb();
-    await sql`
-      CREATE TABLE IF NOT EXISTS instagram_testers (
-        instagram_handle  TEXT        PRIMARY KEY,
-        notes             TEXT        NOT NULL DEFAULT '',
-        added_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `;
-    const testers = await listInstagramTesters();
-    return NextResponse.json({ testers });
+    await ensureTable();
+    const [testers, requests] = await Promise.all([
+      listInstagramTesters(),
+      listInstagramTesterRequests(),
+    ]);
+    return NextResponse.json({ testers, requests });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
@@ -51,6 +73,33 @@ export async function POST(req: NextRequest) {
   }
 }
 
+export async function PATCH(req: NextRequest) {
+  if (!checkAuth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const body = await req.json() as { id?: string; action?: 'approve' | 'reject' };
+    if (!body.id) return NextResponse.json({ error: 'id fehlt' }, { status: 400 });
+
+    if (body.action === 'reject') {
+      await rejectInstagramTesterRequest(body.id);
+      return NextResponse.json({ success: true, action: 'rejected' });
+    }
+
+    // Genehmigen (default)
+    const request = await approveInstagramTesterRequest(body.id);
+    if (!request) return NextResponse.json({ error: 'Antrag nicht gefunden oder bereits verarbeitet' }, { status: 404 });
+
+    // User-E-Mail senden (non-blocking)
+    sendTesterApprovedEmail({
+      toEmail: request.email,
+      instagramHandle: request.instagramHandle,
+    }).catch((e) => console.error('[admin/instagram-testers] User-Mail Fehler:', e));
+
+    return NextResponse.json({ success: true, action: 'approved', handle: request.instagramHandle });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   if (!checkAuth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
@@ -62,3 +111,4 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
+

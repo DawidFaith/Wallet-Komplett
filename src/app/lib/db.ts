@@ -222,4 +222,17 @@ export const MIGRATION_SQL = `
     notes             TEXT        NOT NULL DEFAULT '',
     added_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
+
+  -- Instagram Tester Anfragen (User beantragt Beta-Zugang)
+  CREATE TABLE IF NOT EXISTS instagram_tester_requests (
+    id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    instagram_handle  TEXT        NOT NULL,
+    email             TEXT        NOT NULL,
+    wallet_address    TEXT        NOT NULL,
+    status            TEXT        NOT NULL DEFAULT 'pending',   -- pending | approved | rejected
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    approved_at       TIMESTAMPTZ
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_tester_requests_handle ON instagram_tester_requests(instagram_handle) WHERE status = 'pending';
+  CREATE INDEX IF NOT EXISTS idx_tester_requests_status ON instagram_tester_requests(status, created_at DESC);
 `;
