@@ -75,6 +75,8 @@ export default function CreateQuestModal({
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [storyLink, setStoryLink] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
   // Instagram – verfügbare Videos aus DB
   const [availableMedia, setAvailableMedia] = useState<AvailableMediaItem[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
@@ -115,7 +117,7 @@ export default function CreateQuestModal({
     setSelectedMedia(null); setAvailableMedia([]); setLoadingMedia(false);
     setAvailableQuestMedia([]); setLoadingQuestMedia(false); setSelectedQuestMediaId(null);
     setAvailableFacebookMedia([]); setLoadingFacebookMedia(false); setSelectedFacebookMedia(null);
-    setError(''); setSuccess(false);
+    setError(''); setSuccess(false); setStoryLink(null); setLinkCopied(false);
   };
 
   const fetchAvailableFacebookMedia = async () => {
@@ -315,6 +317,7 @@ export default function CreateQuestModal({
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error); return; }
+      if (data.storyLink) setStoryLink(data.storyLink);
       setSuccess(true);
       onCreated();
     } catch {
@@ -333,6 +336,25 @@ export default function CreateQuestModal({
             <p className="text-green-300 font-semibold">Quest erfolgreich erstellt!</p>
             <p className="text-zinc-400 text-sm mt-1">Fans können jetzt deinen Quest sehen und abschließen.</p>
           </div>
+          {storyLink && (
+            <div className="bg-pink-900/20 border border-pink-700/40 rounded-xl p-4 space-y-2">
+              <p className="text-pink-300 font-semibold text-sm flex items-center gap-2">
+                <FaInstagram size={14} /> Instagram Link DM – diesen Link einfügen:
+              </p>
+              <p className="text-xs text-zinc-400">Füge diesen Link in dein Instagram &quot;Link DM&quot; ein. Er wird automatisch als DM gesendet wenn jemand auf deine Story antwortet.</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-2 text-xs text-zinc-300 font-mono break-all">
+                  {storyLink}
+                </code>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(storyLink); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); }}
+                  className="shrink-0 bg-pink-600 hover:bg-pink-500 text-white font-bold px-3 py-2 rounded-lg text-xs transition-colors"
+                >
+                  {linkCopied ? '✓ Kopiert' : 'Kopieren'}
+                </button>
+              </div>
+            </div>
+          )}
           <button onClick={handleClose} className="w-full bg-[#231e12] hover:bg-[#2d2615] text-white py-3 rounded-xl transition-colors font-semibold">Schließen</button>
         </div>
       ) : (

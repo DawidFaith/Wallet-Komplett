@@ -22,8 +22,6 @@ type Step =
   | 'waiting'        // Warte auf @-Tag per Webhook
   | 'ready'          // @-Tag erkannt → User muss Belohnung einlösen
   | 'success'        // Quest komplett
-  | 'not_tester'     // Noch nicht als Instagram-Tester eingetragen
-  | 'invite_pending' // Tester, aber Einladung noch nicht angenommen
   | 'expired'
   | 'error';
 
@@ -43,7 +41,6 @@ export default function InstagramDmShareModal({
   const [linkTemplate, setLinkTemplate] = useState('');
   const [instagramHandle, setInstagramHandle] = useState('');
   const [creatorHandle, setCreatorHandle] = useState('');
-  const [testerEmail, setTesterEmail] = useState('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Countdown Timer
@@ -80,11 +77,7 @@ export default function InstagramDmShareModal({
     })
       .then((r) => r.json())
       .then((data) => {
-        if (data.notTester) {
-          setStep('not_tester');
-        } else if (data.invitePending) {
-          setStep('invite_pending');
-        } else if (data.alreadyCompleted || data.tagVerified) {
+        if (data.alreadyCompleted || data.tagVerified) {
           setStep('success');
         } else if (data.readyToComplete) {
           setInstagramHandle(data.instagramHandle ?? '');
@@ -121,14 +114,6 @@ export default function InstagramDmShareModal({
       });
       const data = await res.json();
       if (!res.ok) {
-        if (data.error === 'not_tester') {
-          setStep('not_tester');
-          return;
-        }
-        if (data.error === 'invite_pending') {
-          setStep('invite_pending');
-          return;
-        }
         setError(data.error ?? 'Fehler beim Starten');
         setStep('error');
         return;
@@ -144,31 +129,6 @@ export default function InstagramDmShareModal({
       setLoading(false);
     }
   }, [quest, walletAddress]);
-
-  const handleConfirmInvite = useCallback(async () => {
-    if (!quest) return;
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch('/api/instagram-quests/dm-share', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'confirm_invite', questId: quest.id, walletAddress }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? 'Fehler beim Bestätigen');
-        return;
-      }
-      // Einladung bestätigt → Quest direkt starten
-      setStep('idle');
-      handleStart();
-    } catch {
-      setError('Netzwerkfehler. Bitte erneut versuchen.');
-    } finally {
-      setLoading(false);
-    }
-  }, [quest, walletAddress, handleStart]);
 
   const handleComplete = useCallback(async () => {
     if (!quest) return;
@@ -271,16 +231,21 @@ export default function InstagramDmShareModal({
             {/* ── IDLE ── */}
             {step === 'idle' && (
               <div className="space-y-3">
-                <p className="text-sm text-zinc-400">
-                  Öffne den Beitrag auf Instagram, teile ihn in deiner Story und markiere dabei <span className="text-pink-400 font-semibold">@{creatorHandle || 'den Creator'}</span>. Sobald der Tag erkannt wird, wird die Quest automatisch abgeschlossen.
-                </p>
+                <div className="bg-zinc-800/60 border border-zinc-700/40 rounded-xl px-3 py-3 space-y-2">
+                  <p className="text-sm font-semibold text-white flex items-center gap-2"><FaPaperPlane size={12} className="text-pink-400" /> So funktioniert die Story Quest:</p>
+                  <ol className="text-xs text-zinc-400 space-y-1 list-decimal list-inside">
+                    <li>Antworte auf die Story von <span className="text-pink-400 font-semibold">@{creatorHandle || 'dawidfaith'}</span> auf Instagram</li>
+                    <li>Du erhältst automatisch einen Link per DM</li>
+                    <li>Klicke den Link → Quest wird sofort bestätigt &amp; Belohnung gutgeschrieben</li>
+                  </ol>
+                </div>
                 <button
                   onClick={handleStart}
                   disabled={loading}
-                  className="w-full bg-pink-600 hover:bg-pink-500 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                  className="w-full bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-zinc-300 font-semibold py-2 rounded-xl text-xs transition-colors flex items-center justify-center gap-2"
                 >
-                  <FaShareAlt size={14} />
-                  Quest starten
+                  <FaRedo size={10} />
+                  Story bereits geteilt &amp; @-Tag gesetzt? Hier prüfen
                 </button>
               </div>
             )}
@@ -394,63 +359,10 @@ export default function InstagramDmShareModal({
         )}
 
         {/* ── INVITE PENDING ── */}
-        {!storyClaimToken && step === 'invite_pending' && (
-          <div className="space-y-3">
-            <div className="bg-blue-900/30 border border-blue-600/40 rounded-xl px-3 py-4 text-center space-y-2">
-              <p className="text-2xl">📩</p>
-              <p className="text-sm font-semibold text-blue-300">Instagram-Einladung annehmen</p>
-              <p className="text-xs text-zinc-400">
-                Du wurdest als Beta-Tester freigeschaltet! So nimmst du die Einladung an:
-              </p>
-              <div className="bg-zinc-800/60 rounded-lg px-3 py-2.5 text-left space-y-1.5 text-xs text-zinc-300">
-                <p className="font-semibold text-zinc-200">Option 1 – Benachrichtigung:</p>
-                <p>Öffne Instagram → tippe auf die 🔔 Glocke oben rechts → suche nach der Beta-Tester-Einladung von <span className="text-pink-400">@dawidfaith</span></p>
-                <div className="border-t border-zinc-700 pt-1.5">
-                  <p className="font-semibold text-zinc-200">Option 2 – Einstellungen:</p>
-                  <p>Instagram → Profil (unten rechts) → ☰ Menü → Einstellungen → Apps und Websites → <span className="text-blue-300">Einladungen</span></p>
-                </div>
-              </div>
-            </div>
-            {error && (
-              <div className="bg-red-900/30 border border-red-600/40 rounded-xl px-3 py-2 text-xs text-red-300">
-                {error}
-              </div>
-            )}
-            <button
-              onClick={handleConfirmInvite}
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-              ) : (
-                <><FaCheck size={12} /> Einladung angenommen – Quest starten</>
-              )}
-            </button>
-            <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-semibold py-2 rounded-xl text-sm transition-colors">
-              Später
-            </button>
-          </div>
-        )}
+        {/* (entfernt – ersetzt durch Link DM Konzept) */}
 
         {/* ── NOT TESTER ── */}
-        {!storyClaimToken && step === 'not_tester' && (
-          <div className="space-y-3">
-            <div className="bg-yellow-900/30 border border-yellow-600/40 rounded-xl px-3 py-4 text-center space-y-2">
-              <p className="text-2xl">⏳</p>
-              <p className="text-sm font-semibold text-yellow-300">Story Quest wird freigeschaltet</p>
-              <p className="text-xs text-zinc-400">
-                Story Quests sind aktuell im Beta-Modus. Dein Account wird innerhalb von 48h freigeschaltet.
-              </p>
-              <p className="text-xs text-zinc-400">
-                Danach erhältst du eine <span className="text-yellow-300">🔔 Instagram-Benachrichtigung</span> mit der Einladung. Tippe darauf, um sie anzunehmen.
-              </p>
-            </div>
-            <button onClick={onClose} className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
-              Alles klar
-            </button>
-          </div>
-        )}
+        {/* (entfernt – ersetzt durch Link DM Konzept) */}
 
         {/* ── ERROR ── */}
         {!storyClaimToken && step === 'error' && (

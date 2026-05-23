@@ -22,8 +22,6 @@ import {
   addUserXp,
   addUserReputation,
   deleteInstagramDmVerification,
-  getInstagramTesterStatus,
-  setInstagramTesterInviteAccepted,
   type QuestCompletion,
 } from '../../../lib/questDb';
 
@@ -111,47 +109,8 @@ export async function POST(req: NextRequest) {
     const creatorProfile = await getUserProfile(quest.creatorWallet);
     const creatorHandle = creatorProfile?.instagramHandle ?? null;
 
-    // ── CONFIRM_INVITE ────────────────────────────────────────────────────────
-    if (action === 'confirm_invite') {
-      const { isTester } = await getInstagramTesterStatus(profile.instagramHandle);
-      if (!isTester) return NextResponse.json({ error: 'not_tester' }, { status: 403 });
-
-      // Optional: Meta API prüfen ob User in der Tester-Liste erscheint
-      let metaVerified = false;
-      const appId = process.env.FACEBOOK_APP_ID;
-      const token = process.env.META_SYSTEM_USER_TOKEN;
-      if (appId && token) {
-        try {
-          // Versuche Business-Discovery: wenn der IG-Account erreichbar ist, hat er akzeptiert
-          const igBusinessId = process.env.IG_BUSINESS_ACCOUNT_ID ?? '528116477058109';
-          const url = `https://graph.facebook.com/v21.0/${igBusinessId}?fields=business_discovery.fields(id,username)&username=${encodeURIComponent(profile.instagramHandle)}&access_token=${token}`;
-          const metaRes = await fetch(url, { signal: AbortSignal.timeout(8000) });
-          const metaData = await metaRes.json() as { business_discovery?: { id: string } };
-          if (metaData.business_discovery?.id) metaVerified = true;
-        } catch { /* Meta-Check schlägt fehl → manuelle Bestätigung gilt trotzdem */ }
-      }
-
-      await setInstagramTesterInviteAccepted(profile.instagramHandle, true);
-      return NextResponse.json({ success: true, inviteAccepted: true, metaVerified });
-    }
-
     // ── START ─────────────────────────────────────────────────────────────────
     if (action === 'start') {
-      // Tester-Whitelist + Einladungsstatus prüfen (Development Mode)
-      const { isTester, inviteAccepted } = await getInstagramTesterStatus(profile.instagramHandle);
-      if (!isTester) {
-        return NextResponse.json({
-          error: 'not_tester',
-          message: 'Dein Instagram-Account ist noch nicht als Beta-Tester freigeschaltet.',
-        }, { status: 403 });
-      }
-      if (!inviteAccepted) {
-        return NextResponse.json({
-          error: 'invite_pending',
-          message: 'Bitte akzeptiere zuerst die Instagram-Einladung.',
-        }, { status: 403 });
-      }
-
       const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
       if (alreadyDone) {
         return NextResponse.json({ error: 'Du hast diese Quest bereits abgeschlossen.' }, { status: 400 });
@@ -177,15 +136,6 @@ export async function POST(req: NextRequest) {
 
     // ── STATUS ────────────────────────────────────────────────────────────────
     if (action === 'status') {
-      // Tester-Check auch im Status, um alte Einträge nicht durchzulassen
-      const { isTester: testerForStatus, inviteAccepted: inviteOk } = await getInstagramTesterStatus(profile.instagramHandle);
-      if (!testerForStatus) {
-        return NextResponse.json({ notTester: true, started: false });
-      }
-      if (!inviteOk) {
-        return NextResponse.json({ invitePending: true, started: false });
-      }
-
       const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
       if (alreadyDone) return NextResponse.json({ alreadyCompleted: true, tagVerified: true });
 

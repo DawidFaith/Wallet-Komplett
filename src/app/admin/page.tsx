@@ -55,9 +55,6 @@ export default function AdminPage() {
   const [editingSolana, setEditingSolana] = useState<string | null>(null);
   const [solanaInput, setSolanaInput] = useState('');
   const [savingSolana, setSavingSolana] = useState<string | null>(null);
-  const [testerHandles, setTesterHandles] = useState<Set<string>>(new Set());
-  const [inviteAcceptedHandles, setInviteAcceptedHandles] = useState<Set<string>>(new Set());
-  const [togglingTester, setTogglingTester] = useState<string | null>(null);
 
   // Passwort aus sessionStorage laden
   useEffect(() => {
@@ -205,66 +202,17 @@ export default function AdminPage() {
     }
   };
 
-  const fetchTesters = useCallback(async (s: string) => {
-    if (!s) return;
-    try {
-      const res = await fetch('/api/admin/instagram-testers', { headers: { 'x-admin-secret': s } });
-      if (!res.ok) return;
-      const data = await res.json();
-      setTesterHandles(new Set((data.testers ?? []).map((t: { instagramHandle: string }) => t.instagramHandle.toLowerCase())));
-      setInviteAcceptedHandles(new Set((data.testers ?? []).filter((t: { inviteAccepted: boolean }) => t.inviteAccepted).map((t: { instagramHandle: string }) => t.instagramHandle.toLowerCase())));
-    } catch { /* ignore */ }
+  const fetchTesters = useCallback(async (_s: string) => {
+    // Instagram-Tester-System entfernt
   }, []);
   useEffect(() => { if (secret) fetchTesters(secret); }, [secret, fetchTesters]);
 
-  const handleToggleStoryQuest = async (handle: string, isApproved: boolean) => {
-    setTogglingTester(handle.toLowerCase());
-    setError('');
-    try {
-      if (isApproved) {
-        const res = await fetch(`/api/admin/instagram-testers?handle=${encodeURIComponent(handle)}`, {
-          method: 'DELETE',
-          headers: { 'x-admin-secret': secret },
-        });
-        if (!res.ok) {
-          const d = await res.json().catch(() => ({}));
-          throw new Error(d.error ?? `HTTP ${res.status}`);
-        }
-      } else {
-        const res = await fetch('/api/admin/instagram-testers', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
-          body: JSON.stringify({ handle }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
-      }
-      // Immer frisch vom Server laden um sicherzustellen der Eintrag wirklich gespeichert wurde
-      await fetchTesters(secret);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Fehler beim Freischalten';
-      setError(msg);
-      // eslint-disable-next-line no-console
-      console.error('[Story freischalten]', msg, e);
-    } finally {
-      setTogglingTester(null);
-    }
+  const handleToggleStoryQuest = async (_handle: string, _isApproved: boolean) => {
+    // Tester-System entfernt
   };
 
-  const handleToggleInviteAccepted = async (handle: string, currentlyAccepted: boolean) => {
-    setError('');
-    try {
-      const res = await fetch('/api/admin/instagram-testers', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
-        body: JSON.stringify({ handle, action: currentlyAccepted ? 'revoke_invite' : 'accept_invite' }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
-      await fetchTesters(secret);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Fehler');
-    }
+  const handleToggleInviteAccepted = async (_handle: string, _currentlyAccepted: boolean) => {
+    // Tester-System entfernt
   };
 
   const filtered = users.filter((u) => {
@@ -525,11 +473,11 @@ export default function AdminPage() {
                   onSaveSolana={() => handleSaveSolana(user.walletAddress)}
                   onCancelSolana={() => setEditingSolana(null)}
                   savingSolana={savingSolana === user.walletAddress}
-                  isStoryQuestTester={testerHandles.has((user.instagramHandle ?? '').toLowerCase())}
-                  isInviteAccepted={inviteAcceptedHandles.has((user.instagramHandle ?? '').toLowerCase())}
-                  togglingStoryQuest={togglingTester === (user.instagramHandle ?? '').toLowerCase()}
-                  onToggleStoryQuest={() => user.instagramHandle && handleToggleStoryQuest(user.instagramHandle, testerHandles.has(user.instagramHandle.toLowerCase()))}
-                  onToggleInviteAccepted={() => user.instagramHandle && handleToggleInviteAccepted(user.instagramHandle, inviteAcceptedHandles.has(user.instagramHandle.toLowerCase()))}
+                  isStoryQuestTester={false}
+                  isInviteAccepted={false}
+                  togglingStoryQuest={false}
+                  onToggleStoryQuest={() => {}}
+                  onToggleInviteAccepted={() => {}}
                 />
               ))}
             </div>
@@ -1445,39 +1393,7 @@ function UserRow({
               {user.solanaAddress ? user.solanaAddress.slice(0, 8) + '…' + user.solanaAddress.slice(-6) : '— keine Wallet'}
             </button>
           )}
-        {user.instagramHandle && user.instagramVerified && (
-          <button
-            onClick={onToggleStoryQuest}
-            disabled={togglingStoryQuest}
-            title={isStoryQuestTester ? 'Story Quest deaktivieren' : 'Story Quest freischalten'}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              isStoryQuestTester
-                ? 'bg-pink-800/60 hover:bg-pink-900 text-pink-300 border border-pink-700/40'
-                : 'bg-zinc-800 hover:bg-pink-900/40 text-zinc-400 border border-zinc-700 hover:text-pink-300 hover:border-pink-700/40'
-            } disabled:opacity-50`}
-          >
-            {togglingStoryQuest ? (
-              <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
-            ) : isStoryQuestTester ? (
-              <><FaInstagram size={9} className="text-pink-400" /> Story ✓</>
-            ) : (
-              <><FaInstagram size={9} /> Story freischalten</>
-            )}
-          </button>
-        )}
-        {user.instagramHandle && user.instagramVerified && isStoryQuestTester && (
-          <button
-            onClick={onToggleInviteAccepted}
-            title={isInviteAccepted ? 'Einladung-Status zurücksetzen' : 'Einladung als angenommen markieren'}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              isInviteAccepted
-                ? 'bg-green-900/50 text-green-400 border border-green-700/40'
-                : 'bg-yellow-900/30 hover:bg-yellow-900/50 text-yellow-500 border border-yellow-700/40 hover:text-yellow-300'
-            }`}
-          >
-            {isInviteAccepted ? '📩 ✓' : '📩 ?'}
-          </button>
-        )}
+
         </div>
       </div>
     </div>
