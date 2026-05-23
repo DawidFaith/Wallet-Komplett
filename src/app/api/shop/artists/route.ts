@@ -82,7 +82,16 @@ export async function GET() {
       displayName ??= (r.youtube_channel_name as string | null) ?? null;
     } else if (dp === 'clerk') {
       pictureUrl = (r.clerk_image_url as string | null) ?? null;
-      displayName = (r.clerk_name as string | null) ?? displayName;
+      const clerkName = (r.clerk_name as string | null);
+      if (clerkName) {
+        displayName = clerkName;
+      } else {
+        // clerk_name noch nicht gespeichert – Social-Namen als Fallback
+        if (r.instagram_name) displayName = r.instagram_name as string;
+        else if (r.facebook_name) displayName = r.facebook_name as string;
+        else if (r.tiktok_name) displayName = r.tiktok_name as string;
+        else if (r.youtube_channel_name) displayName = r.youtube_channel_name as string;
+      }
     } else if (dp === 'instagram' && r.instagram_handle) {
       pictureUrl = (r.instagram_picture as string | null) ?? null;
       displayName ??= (r.instagram_name as string | null) ?? `@${r.instagram_handle}`;

@@ -79,8 +79,17 @@ export async function GET(req: Request) {
         name ??= r.youtube_channel_name ?? null;
         picture = r.youtube_channel_thumbnail ?? null;
       } else if (dp === 'clerk') {
-        name = (r.clerk_name as string | null) ?? name;
+        const clerkName = (r.clerk_name as string | null);
         picture = (r.clerk_image_url as string | null) ?? null;
+        if (clerkName) {
+          name = clerkName;
+        } else {
+          // clerk_name noch nicht gespeichert – Social-Namen als Fallback
+          if (r.instagram_verified && r.instagram_name) name = r.instagram_name as string;
+          else if (r.facebook_verified && r.facebook_name) name = r.facebook_name as string;
+          else if (r.tiktok_verified && r.tiktok_name) name = r.tiktok_name as string;
+          else if (r.youtube_channel_name) name = r.youtube_channel_name as string;
+        }
       } else if (dp === 'instagram' && r.instagram_handle) {
         name ??= r.instagram_name ?? `@${r.instagram_handle}`;
         picture = r.instagram_picture ?? null;
