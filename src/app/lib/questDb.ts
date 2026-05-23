@@ -1489,6 +1489,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
       tokenMintAddress: null,
       displayPlatform: null,
       clerkImageUrl: null,
+      clerkName: null,
     };
   }
   const r = rows[0];
@@ -1515,6 +1516,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
     tokenMintAddress: r.token_mint_address ?? null,
     displayPlatform: r.display_platform ?? null,
     clerkImageUrl: r.clerk_image_url ?? null,
+    clerkName: r.clerk_name ?? null,
   };
 }
 
