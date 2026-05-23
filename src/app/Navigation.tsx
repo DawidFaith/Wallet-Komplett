@@ -80,6 +80,62 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
             />
           </button>
         </li>
+        {/* Verbundene Plattformen Dropdown */}
+        <li className="relative flex items-center">
+          <button
+            title="Verbundene Plattformen"
+            onClick={() => { setOpen((v) => !v); setLangOpen(false); }}
+            className="flex items-center gap-1"
+            aria-haspopup="true"
+            aria-expanded={open}
+          >
+            <FaGlobe
+              size={19}
+              className={`transition-colors ${
+                ["reputation", "shop", "quest-board"].includes(activeTab)
+                  ? "text-amber-400"
+                  : "text-zinc-400"
+              } hover:text-amber-400`}
+            />
+            <FiChevronDown
+              size={13}
+              className={`transition-transform duration-300 ${
+                open ? "text-amber-400 rotate-180" : "text-zinc-400"
+              } hover:text-amber-400`}
+            />
+          </button>
+          {open && (
+            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 bg-[#231e12] rounded-lg shadow-xl flex flex-col z-50 min-w-[160px] border border-white/10 overflow-hidden">
+              <button
+                onClick={() => { navigateToTab("reputation"); setOpen(false); }}
+                className={`flex items-center gap-3 px-4 py-3 hover:bg-[#2d2515] w-full transition-colors duration-200 border-b border-white/10 ${
+                  activeTab === "reputation" ? "text-amber-400" : "text-zinc-300"
+                }`}
+              >
+                <FaStar size={15} className={activeTab === "reputation" ? "text-amber-400" : "text-zinc-400"} />
+                <span className="font-medium text-sm">Reputation</span>
+              </button>
+              <button
+                onClick={() => { navigateToTab("shop"); setOpen(false); }}
+                className={`flex items-center gap-3 px-4 py-3 hover:bg-[#2d2515] w-full transition-colors duration-200 border-b border-white/10 ${
+                  activeTab === "shop" ? "text-amber-400" : "text-zinc-300"
+                }`}
+              >
+                <FaTshirt size={15} className={activeTab === "shop" ? "text-amber-400" : "text-zinc-400"} />
+                <span className="font-medium text-sm">Shop</span>
+              </button>
+              <button
+                onClick={() => { navigateToTab("quest-board"); setOpen(false); }}
+                className={`flex items-center gap-3 px-4 py-3 hover:bg-[#2d2515] w-full transition-colors duration-200 ${
+                  activeTab === "quest-board" ? "text-red-400" : "text-zinc-300"
+                }`}
+              >
+                <FaTasks size={15} className={activeTab === "quest-board" ? "text-red-400" : "text-zinc-400"} />
+                <span className="font-medium text-sm">Quest Board</span>
+              </button>
+            </div>
+          )}
+        </li>
         {/* Solana Wallet */}
         <li>
           <button
@@ -92,51 +148,6 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
               className={`transition-colors ${
                 activeTab === "solana-wallet" ? "text-purple-400" : "text-zinc-400"
               } hover:text-purple-400`}
-            />
-          </button>
-        </li>
-        {/* Reputation */}
-        <li>
-          <button
-            title="Reputation"
-            onClick={() => navigateToTab("reputation")}
-            className="flex items-center"
-          >
-            <FaStar
-              size={20}
-              className={`transition-colors ${
-                activeTab === "reputation" ? "text-amber-400" : "text-zinc-400"
-              } hover:text-amber-400`}
-            />
-          </button>
-        </li>
-        {/* Shop */}
-        <li>
-          <button
-            title="Shop"
-            onClick={() => navigateToTab("shop")}
-            className="flex items-center"
-          >
-            <FaTshirt
-              size={19}
-              className={`transition-colors ${
-                activeTab === "shop" ? "text-amber-400" : "text-zinc-400"
-              } hover:text-amber-400`}
-            />
-          </button>
-        </li>
-        {/* Quest Board */}
-        <li>
-          <button
-            title="Quest Board"
-            onClick={() => navigateToTab("quest-board")}
-            className="flex items-center"
-          >
-            <FaTasks
-              size={19}
-              className={`transition-colors ${
-                activeTab === "quest-board" ? "text-red-400" : "text-zinc-400"
-              } hover:text-red-400`}
             />
           </button>
         </li>

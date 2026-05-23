@@ -671,7 +671,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
 
         {/* Soziale Profile – kompakte Icon-Reihe */}
         <div>
-          <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-3">Deine Plattformen</p>
+          <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-3">Verbundene Plattformen</p>
           <div className="flex gap-3 flex-wrap">
 
             <SocialChip
