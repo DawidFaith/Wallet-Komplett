@@ -17,12 +17,13 @@ interface InstagramDmShareModalProps {
 }
 
 type Step =
-  | 'idle'         // Noch nicht gestartet
-  | 'starting'     // Quest wird vorbereitet
-  | 'waiting'      // Warte auf @-Tag per Webhook
-  | 'ready'        // @-Tag erkannt → User muss Belohnung einlösen
-  | 'success'      // Quest komplett
-  | 'not_tester'   // Noch nicht als Instagram-Tester eingetragen
+  | 'idle'           // Noch nicht gestartet
+  | 'starting'       // Quest wird vorbereitet
+  | 'waiting'        // Warte auf @-Tag per Webhook
+  | 'ready'          // @-Tag erkannt → User muss Belohnung einlösen
+  | 'success'        // Quest komplett
+  | 'not_tester'     // Noch nicht als Instagram-Tester eingetragen
+  | 'invite_pending' // Tester, aber Einladung noch nicht angenommen
   | 'expired'
   | 'error';
 
@@ -81,6 +82,8 @@ export default function InstagramDmShareModal({
       .then((data) => {
         if (data.notTester) {
           setStep('not_tester');
+        } else if (data.invitePending) {
+          setStep('invite_pending');
         } else if (data.alreadyCompleted || data.tagVerified) {
           setStep('success');
         } else if (data.readyToComplete) {
@@ -122,6 +125,10 @@ export default function InstagramDmShareModal({
           setStep('not_tester');
           return;
         }
+        if (data.error === 'invite_pending') {
+          setStep('invite_pending');
+          return;
+        }
         setError(data.error ?? 'Fehler beim Starten');
         setStep('error');
         return;
@@ -137,6 +144,31 @@ export default function InstagramDmShareModal({
       setLoading(false);
     }
   }, [quest, walletAddress]);
+
+  const handleConfirmInvite = useCallback(async () => {
+    if (!quest) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/instagram-quests/dm-share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'confirm_invite', questId: quest.id, walletAddress }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? 'Fehler beim Bestätigen');
+        return;
+      }
+      // Einladung bestätigt → Quest direkt starten
+      setStep('idle');
+      handleStart();
+    } catch {
+      setError('Netzwerkfehler. Bitte erneut versuchen.');
+    } finally {
+      setLoading(false);
+    }
+  }, [quest, walletAddress, handleStart]);
 
   const handleComplete = useCallback(async () => {
     if (!quest) return;
@@ -357,6 +389,47 @@ export default function InstagramDmShareModal({
               className="w-full bg-pink-600 hover:bg-pink-500 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
             >
               Quest neu starten
+            </button>
+          </div>
+        )}
+
+        {/* ── INVITE PENDING ── */}
+        {!storyClaimToken && step === 'invite_pending' && (
+          <div className="space-y-3">
+            <div className="bg-blue-900/30 border border-blue-600/40 rounded-xl px-3 py-4 text-center space-y-2">
+              <p className="text-2xl">📩</p>
+              <p className="text-sm font-semibold text-blue-300">Instagram-Einladung annehmen</p>
+              <p className="text-xs text-zinc-400">
+                Du wurdest als Beta-Tester freigeschaltet! Akzeptiere jetzt die Einladung auf Instagram:
+              </p>
+              <a
+                href="https://www.instagram.com/accounts/manage_access/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 mt-1 px-3 py-1.5 bg-blue-700/40 hover:bg-blue-700/60 border border-blue-600/50 rounded-lg text-xs text-blue-300 hover:text-white transition-colors"
+              >
+                <FaInstagram size={11} />
+                Zu instagram.com/accounts/manage_access
+              </a>
+            </div>
+            {error && (
+              <div className="bg-red-900/30 border border-red-600/40 rounded-xl px-3 py-2 text-xs text-red-300">
+                {error}
+              </div>
+            )}
+            <button
+              onClick={handleConfirmInvite}
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+              ) : (
+                <><FaCheck size={12} /> Einladung angenommen – Quest starten</>
+              )}
+            </button>
+            <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-semibold py-2 rounded-xl text-sm transition-colors">
+              Später
             </button>
           </div>
         )}

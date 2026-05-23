@@ -56,6 +56,7 @@ export default function AdminPage() {
   const [solanaInput, setSolanaInput] = useState('');
   const [savingSolana, setSavingSolana] = useState<string | null>(null);
   const [testerHandles, setTesterHandles] = useState<Set<string>>(new Set());
+  const [inviteAcceptedHandles, setInviteAcceptedHandles] = useState<Set<string>>(new Set());
   const [togglingTester, setTogglingTester] = useState<string | null>(null);
 
   // Passwort aus sessionStorage laden
@@ -211,6 +212,7 @@ export default function AdminPage() {
       if (!res.ok) return;
       const data = await res.json();
       setTesterHandles(new Set((data.testers ?? []).map((t: { instagramHandle: string }) => t.instagramHandle.toLowerCase())));
+      setInviteAcceptedHandles(new Set((data.testers ?? []).filter((t: { inviteAccepted: boolean }) => t.inviteAccepted).map((t: { instagramHandle: string }) => t.instagramHandle.toLowerCase())));
     } catch { /* ignore */ }
   }, []);
   useEffect(() => { if (secret) fetchTesters(secret); }, [secret, fetchTesters]);
@@ -246,6 +248,22 @@ export default function AdminPage() {
       console.error('[Story freischalten]', msg, e);
     } finally {
       setTogglingTester(null);
+    }
+  };
+
+  const handleToggleInviteAccepted = async (handle: string, currentlyAccepted: boolean) => {
+    setError('');
+    try {
+      const res = await fetch('/api/admin/instagram-testers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ handle, action: currentlyAccepted ? 'revoke_invite' : 'accept_invite' }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+      await fetchTesters(secret);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler');
     }
   };
 
@@ -508,8 +526,10 @@ export default function AdminPage() {
                   onCancelSolana={() => setEditingSolana(null)}
                   savingSolana={savingSolana === user.walletAddress}
                   isStoryQuestTester={testerHandles.has((user.instagramHandle ?? '').toLowerCase())}
+                  isInviteAccepted={inviteAcceptedHandles.has((user.instagramHandle ?? '').toLowerCase())}
                   togglingStoryQuest={togglingTester === (user.instagramHandle ?? '').toLowerCase()}
                   onToggleStoryQuest={() => user.instagramHandle && handleToggleStoryQuest(user.instagramHandle, testerHandles.has(user.instagramHandle.toLowerCase()))}
+                  onToggleInviteAccepted={() => user.instagramHandle && handleToggleInviteAccepted(user.instagramHandle, inviteAcceptedHandles.has(user.instagramHandle.toLowerCase()))}
                 />
               ))}
             </div>
@@ -1210,8 +1230,10 @@ function UserRow({
   onCancelSolana,
   savingSolana,
   isStoryQuestTester,
+  isInviteAccepted,
   togglingStoryQuest,
   onToggleStoryQuest,
+  onToggleInviteAccepted,
 }: {
   user: AdminUser;
   toggling: boolean;
@@ -1238,8 +1260,10 @@ function UserRow({
   onCancelSolana: () => void;
   savingSolana: boolean;
   isStoryQuestTester: boolean;
+  isInviteAccepted: boolean;
   togglingStoryQuest: boolean;
   onToggleStoryQuest: () => void;
+  onToggleInviteAccepted: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -1439,6 +1463,19 @@ function UserRow({
             ) : (
               <><FaInstagram size={9} /> Story freischalten</>
             )}
+          </button>
+        )}
+        {user.instagramHandle && user.instagramVerified && isStoryQuestTester && (
+          <button
+            onClick={onToggleInviteAccepted}
+            title={isInviteAccepted ? 'Einladung-Status zurücksetzen' : 'Einladung als angenommen markieren'}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              isInviteAccepted
+                ? 'bg-green-900/50 text-green-400 border border-green-700/40'
+                : 'bg-yellow-900/30 hover:bg-yellow-900/50 text-yellow-500 border border-yellow-700/40 hover:text-yellow-300'
+            }`}
+          >
+            {isInviteAccepted ? '📩 ✓' : '📩 ?'}
           </button>
         )}
         </div>

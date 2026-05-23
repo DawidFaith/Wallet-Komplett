@@ -1286,14 +1286,35 @@ export async function removeInstagramTester(handle: string): Promise<void> {
   await sql`DELETE FROM instagram_testers WHERE instagram_handle = ${handle.toLowerCase()}`;
 }
 
-export async function listInstagramTesters(): Promise<Array<{ instagramHandle: string; notes: string; addedAt: string }>> {
+export async function listInstagramTesters(): Promise<Array<{ instagramHandle: string; notes: string; inviteAccepted: boolean; addedAt: string }>> {
   const sql = getDb();
-  const rows = await sql`SELECT instagram_handle, notes, added_at FROM instagram_testers ORDER BY added_at DESC`;
+  const rows = await sql`SELECT instagram_handle, notes, invite_accepted, added_at FROM instagram_testers ORDER BY added_at DESC`;
   return rows.map((r: any) => ({
     instagramHandle: r.instagram_handle,
     notes: r.notes,
+    inviteAccepted: Boolean(r.invite_accepted),
     addedAt: r.added_at instanceof Date ? r.added_at.toISOString() : r.added_at,
   }));
+}
+
+export async function getInstagramTesterStatus(handle: string): Promise<{ isTester: boolean; inviteAccepted: boolean }> {
+  const sql = getDb();
+  try {
+    const rows = await sql`
+      SELECT invite_accepted FROM instagram_testers WHERE instagram_handle = ${handle.toLowerCase()} LIMIT 1
+    `;
+    if (rows.length === 0) return { isTester: false, inviteAccepted: false };
+    return { isTester: true, inviteAccepted: Boolean(rows[0].invite_accepted) };
+  } catch {
+    return { isTester: false, inviteAccepted: false };
+  }
+}
+
+export async function setInstagramTesterInviteAccepted(handle: string, accepted: boolean): Promise<void> {
+  const sql = getDb();
+  await sql`
+    UPDATE instagram_testers SET invite_accepted = ${accepted} WHERE instagram_handle = ${handle.toLowerCase()}
+  `;
 }
 
 // ─── Instagram Tester Anfragen ────────────────────────────────────────────────

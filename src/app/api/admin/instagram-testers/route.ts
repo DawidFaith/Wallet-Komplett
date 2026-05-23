@@ -10,6 +10,7 @@ import {
   listInstagramTesters,
   addInstagramTester,
   removeInstagramTester,
+  setInstagramTesterInviteAccepted,
   listInstagramTesterRequests,
   approveInstagramTesterRequest,
   rejectInstagramTesterRequest,
@@ -29,9 +30,11 @@ async function ensureTable() {
     CREATE TABLE IF NOT EXISTS instagram_testers (
       instagram_handle  TEXT        PRIMARY KEY,
       notes             TEXT        NOT NULL DEFAULT '',
+      invite_accepted   BOOLEAN     NOT NULL DEFAULT FALSE,
       added_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
+  await sql`ALTER TABLE instagram_testers ADD COLUMN IF NOT EXISTS invite_accepted BOOLEAN NOT NULL DEFAULT FALSE`;
   await sql`
     CREATE TABLE IF NOT EXISTS instagram_tester_requests (
       id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -76,7 +79,16 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   if (!checkAuth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
-    const body = await req.json() as { id?: string; action?: 'approve' | 'reject' };
+    const body = await req.json() as { id?: string; handle?: string; action?: 'approve' | 'reject' | 'accept_invite' | 'revoke_invite' };
+
+    // Admin bestätigt dass User die Instagram-Einladung angenommen hat
+    if (body.action === 'accept_invite' || body.action === 'revoke_invite') {
+      const handle = body.handle?.trim().toLowerCase().replace(/^@/, '');
+      if (!handle) return NextResponse.json({ error: 'handle fehlt' }, { status: 400 });
+      await setInstagramTesterInviteAccepted(handle, body.action === 'accept_invite');
+      return NextResponse.json({ success: true, action: body.action, handle });
+    }
+
     if (!body.id) return NextResponse.json({ error: 'id fehlt' }, { status: 400 });
 
     if (body.action === 'reject') {

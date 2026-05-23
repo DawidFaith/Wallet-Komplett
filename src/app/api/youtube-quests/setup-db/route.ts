@@ -298,9 +298,11 @@ export async function POST(req: NextRequest) {
       CREATE TABLE IF NOT EXISTS instagram_testers (
         instagram_handle  TEXT        PRIMARY KEY,
         notes             TEXT        NOT NULL DEFAULT '',
+        invite_accepted   BOOLEAN     NOT NULL DEFAULT FALSE,
         added_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `;
+    await sql`ALTER TABLE instagram_testers ADD COLUMN IF NOT EXISTS invite_accepted BOOLEAN NOT NULL DEFAULT FALSE`;
 
     // ── Instagram Tester Anfragen ────────────────────────────────────────────
     await sql`

@@ -22,7 +22,8 @@ import {
   addUserXp,
   addUserReputation,
   deleteInstagramDmVerification,
-  isInstagramTester,
+  getInstagramTesterStatus,
+  setInstagramTesterInviteAccepted,
   type QuestCompletion,
 } from '../../../lib/questDb';
 
@@ -110,14 +111,28 @@ export async function POST(req: NextRequest) {
     const creatorProfile = await getUserProfile(quest.creatorWallet);
     const creatorHandle = creatorProfile?.instagramHandle ?? null;
 
+    // ── CONFIRM_INVITE ────────────────────────────────────────────────────────
+    if (action === 'confirm_invite') {
+      const { isTester } = await getInstagramTesterStatus(profile.instagramHandle);
+      if (!isTester) return NextResponse.json({ error: 'not_tester' }, { status: 403 });
+      await setInstagramTesterInviteAccepted(profile.instagramHandle, true);
+      return NextResponse.json({ success: true, inviteAccepted: true });
+    }
+
     // ── START ─────────────────────────────────────────────────────────────────
     if (action === 'start') {
-      // Tester-Whitelist prüfen (Development Mode)
-      const tester = await isInstagramTester(profile.instagramHandle);
-      if (!tester) {
+      // Tester-Whitelist + Einladungsstatus prüfen (Development Mode)
+      const { isTester, inviteAccepted } = await getInstagramTesterStatus(profile.instagramHandle);
+      if (!isTester) {
         return NextResponse.json({
           error: 'not_tester',
-          message: 'Dein Instagram-Account ist noch nicht als Beta-Tester freigeschaltet. Bitte wende dich an den Support.',
+          message: 'Dein Instagram-Account ist noch nicht als Beta-Tester freigeschaltet.',
+        }, { status: 403 });
+      }
+      if (!inviteAccepted) {
+        return NextResponse.json({
+          error: 'invite_pending',
+          message: 'Bitte akzeptiere zuerst die Instagram-Einladung.',
         }, { status: 403 });
       }
 
@@ -147,9 +162,12 @@ export async function POST(req: NextRequest) {
     // ── STATUS ────────────────────────────────────────────────────────────────
     if (action === 'status') {
       // Tester-Check auch im Status, um alte Einträge nicht durchzulassen
-      const testerForStatus = await isInstagramTester(profile.instagramHandle);
+      const { isTester: testerForStatus, inviteAccepted: inviteOk } = await getInstagramTesterStatus(profile.instagramHandle);
       if (!testerForStatus) {
         return NextResponse.json({ notTester: true, started: false });
+      }
+      if (!inviteOk) {
+        return NextResponse.json({ invitePending: true, started: false });
       }
 
       const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
