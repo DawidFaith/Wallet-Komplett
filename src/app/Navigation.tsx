@@ -15,6 +15,7 @@ import {
   FaGlobe,
   FaIdBadge,
   FaStar,
+  FaTasks,
 } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 import { useState } from "react";
@@ -121,6 +122,21 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
               className={`transition-colors ${
                 activeTab === "shop" ? "text-amber-400" : "text-zinc-400"
               } hover:text-amber-400`}
+            />
+          </button>
+        </li>
+        {/* Quest Board */}
+        <li>
+          <button
+            title="Quest Board"
+            onClick={() => navigateToTab("quest-board")}
+            className="flex items-center"
+          >
+            <FaTasks
+              size={19}
+              className={`transition-colors ${
+                activeTab === "quest-board" ? "text-red-400" : "text-zinc-400"
+              } hover:text-red-400`}
             />
           </button>
         </li>
