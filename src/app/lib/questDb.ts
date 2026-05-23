@@ -1257,6 +1257,40 @@ export async function deleteInstagramDmVerification(
   `;
 }
 
+// ─── Instagram Testers Whitelist ──────────────────────────────────────────────
+
+export async function isInstagramTester(handle: string): Promise<boolean> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT 1 FROM instagram_testers WHERE instagram_handle = ${handle.toLowerCase()} LIMIT 1
+  `;
+  return rows.length > 0;
+}
+
+export async function addInstagramTester(handle: string, notes = ''): Promise<void> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO instagram_testers (instagram_handle, notes)
+    VALUES (${handle.toLowerCase()}, ${notes})
+    ON CONFLICT (instagram_handle) DO UPDATE SET notes = ${notes}, added_at = NOW()
+  `;
+}
+
+export async function removeInstagramTester(handle: string): Promise<void> {
+  const sql = getDb();
+  await sql`DELETE FROM instagram_testers WHERE instagram_handle = ${handle.toLowerCase()}`;
+}
+
+export async function listInstagramTesters(): Promise<Array<{ instagramHandle: string; notes: string; addedAt: string }>> {
+  const sql = getDb();
+  const rows = await sql`SELECT instagram_handle, notes, added_at FROM instagram_testers ORDER BY added_at DESC`;
+  return rows.map((r: any) => ({
+    instagramHandle: r.instagram_handle,
+    notes: r.notes,
+    addedAt: r.added_at instanceof Date ? r.added_at.toISOString() : r.added_at,
+  }));
+}
+
 function rowToDmVerification(r: any): InstagramDmVerification {
   return {
     questId: r.quest_id,

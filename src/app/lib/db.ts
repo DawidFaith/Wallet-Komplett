@@ -215,4 +215,11 @@ export const MIGRATION_SQL = `
   -- Instagram Story Quest: Eindeutiger Token pro Quest (für Story-Link)
   ALTER TABLE quests ADD COLUMN IF NOT EXISTS story_token TEXT UNIQUE;
   CREATE UNIQUE INDEX IF NOT EXISTS idx_quests_story_token ON quests(story_token) WHERE story_token IS NOT NULL;
+
+  -- Instagram Testers Whitelist (Development Mode: nur eingetragene Tester können Story Quests machen)
+  CREATE TABLE IF NOT EXISTS instagram_testers (
+    instagram_handle  TEXT        PRIMARY KEY,
+    notes             TEXT        NOT NULL DEFAULT '',
+    added_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
 `;

@@ -22,6 +22,7 @@ import {
   addUserXp,
   addUserReputation,
   deleteInstagramDmVerification,
+  isInstagramTester,
   type QuestCompletion,
 } from '../../../lib/questDb';
 
@@ -111,6 +112,15 @@ export async function POST(req: NextRequest) {
 
     // ── START ─────────────────────────────────────────────────────────────────
     if (action === 'start') {
+      // Tester-Whitelist prüfen (Development Mode)
+      const tester = await isInstagramTester(profile.instagramHandle);
+      if (!tester) {
+        return NextResponse.json({
+          error: 'not_tester',
+          message: 'Dein Instagram-Account ist noch nicht als Beta-Tester freigeschaltet. Bitte wende dich an den Support.',
+        }, { status: 403 });
+      }
+
       const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
       if (alreadyDone) {
         return NextResponse.json({ error: 'Du hast diese Quest bereits abgeschlossen.' }, { status: 400 });

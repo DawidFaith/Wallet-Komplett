@@ -22,6 +22,7 @@ type Step =
   | 'waiting'      // Warte auf @-Tag per Webhook
   | 'ready'        // @-Tag erkannt → User muss Belohnung einlösen
   | 'success'      // Quest komplett
+  | 'not_tester'   // Noch nicht als Instagram-Tester eingetragen
   | 'expired'
   | 'error';
 
@@ -114,6 +115,10 @@ export default function InstagramDmShareModal({
       });
       const data = await res.json();
       if (!res.ok) {
+        if (data.error === 'not_tester') {
+          setStep('not_tester');
+          return;
+        }
         setError(data.error ?? 'Fehler beim Starten');
         setStep('error');
         return;
@@ -349,6 +354,37 @@ export default function InstagramDmShareModal({
               className="w-full bg-pink-600 hover:bg-pink-500 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
             >
               Quest neu starten
+            </button>
+          </div>
+        )}
+
+        {/* ── NOT TESTER ── */}
+        {!storyClaimToken && step === 'not_tester' && (
+          <div className="space-y-3">
+            <div className="bg-yellow-900/30 border border-yellow-600/40 rounded-xl px-3 py-3 space-y-2">
+              <p className="text-sm font-semibold text-yellow-300">⏳ Beta-Zugang erforderlich</p>
+              <p className="text-xs text-zinc-400">
+                Story Quests sind aktuell im Beta-Modus. Dein Instagram-Account muss zuerst von uns als Tester freigeschaltet werden.
+              </p>
+              <p className="text-xs text-zinc-500">
+                Danach erhältst du eine Einladung in deiner Instagram-App — bitte bestätige sie unter:
+              </p>
+              <a
+                href="https://www.instagram.com/accounts/manage_access/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs text-pink-400 underline underline-offset-2 hover:text-pink-300"
+              >
+                <FaInstagram size={11} />
+                instagram.com/accounts/manage_access
+              </a>
+            </div>
+            <p className="text-xs text-zinc-500 text-center">
+              Schreib uns deinen Instagram-Handle an{' '}
+              <span className="text-pink-400">@dfaith_ecosystem</span> und wir schalten dich frei.
+            </p>
+            <button onClick={onClose} className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
+              Schließen
             </button>
           </div>
         )}
