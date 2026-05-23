@@ -142,11 +142,16 @@ export async function POST(req: NextRequest) {
       const verif = await getInstagramDmVerification(questId, normalized);
       if (!verif) return NextResponse.json({ started: false });
 
-      // click_verified = @-Tag per Webhook erkannt → Quest abschließen
+      // click_verified = @-Tag per Webhook erkannt → User muss noch bestätigen
       if (verif.clickVerified) {
-        const done = await hasWalletCompletedQuest(normalized, questId);
-        if (!done) return await completeStoryQuest({ quest, questId, normalized, profile });
-        return NextResponse.json({ alreadyCompleted: true, tagVerified: true });
+        return NextResponse.json({
+          started: true,
+          readyToComplete: true,
+          tagVerified: false,
+          expiresAt: verif.expiresAt,
+          instagramHandle: profile.instagramHandle,
+          creatorHandle,
+        });
       }
 
       return NextResponse.json({
@@ -157,6 +162,20 @@ export async function POST(req: NextRequest) {
         instagramHandle: profile.instagramHandle,
         creatorHandle,
       });
+    }
+
+    // ── COMPLETE ──────────────────────────────────────────────────────────────
+    if (action === 'complete') {
+      const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
+      if (alreadyDone) return NextResponse.json({ alreadyCompleted: true, tagVerified: true });
+
+      const verif = await getInstagramDmVerification(questId, normalized);
+      if (!verif) return NextResponse.json({ error: 'Keine aktive Quest-Verifikation gefunden.' }, { status: 400 });
+      if (!verif.clickVerified) {
+        return NextResponse.json({ error: 'Story-Tag wurde noch nicht erkannt.' }, { status: 400 });
+      }
+
+      return await completeStoryQuest({ quest, questId, normalized, profile });
     }
 
     return NextResponse.json({ error: `Unbekannte action: ${action}` }, { status: 400 });

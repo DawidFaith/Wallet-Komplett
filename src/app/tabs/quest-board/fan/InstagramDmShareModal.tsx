@@ -20,6 +20,7 @@ type Step =
   | 'idle'         // Noch nicht gestartet
   | 'starting'     // Quest wird vorbereitet
   | 'waiting'      // Warte auf @-Tag per Webhook
+  | 'ready'        // @-Tag erkannt → User muss Belohnung einlösen
   | 'success'      // Quest komplett
   | 'expired'
   | 'error';
@@ -78,6 +79,10 @@ export default function InstagramDmShareModal({
       .then((data) => {
         if (data.alreadyCompleted || data.tagVerified) {
           setStep('success');
+        } else if (data.readyToComplete) {
+          setInstagramHandle(data.instagramHandle ?? '');
+          setCreatorHandle(data.creatorHandle ?? '');
+          setStep('ready');
         } else if (data.started && !data.expired) {
           setExpiresAt(data.expiresAt ?? null);
           setInstagramHandle(data.instagramHandle ?? '');
@@ -125,6 +130,31 @@ export default function InstagramDmShareModal({
     }
   }, [quest, walletAddress]);
 
+  const handleComplete = useCallback(async () => {
+    if (!quest) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/instagram-quests/dm-share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'complete', questId: quest.id, walletAddress }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? 'Fehler beim Abschließen');
+        return;
+      }
+      setRewardAmount(data.rewardAmount ?? quest.rewardAmount);
+      setStep('success');
+      onCompleted(data.rewardAmount ?? quest.rewardAmount);
+    } catch {
+      setError('Netzwerkfehler. Bitte erneut versuchen.');
+    } finally {
+      setLoading(false);
+    }
+  }, [quest, walletAddress, onCompleted]);
+
   // Poll: wurde @-Tag per Webhook erkannt? (alle 5 Sek wenn in waiting)
   useEffect(() => {
     if (step !== 'waiting' || !quest) return;
@@ -136,15 +166,17 @@ export default function InstagramDmShareModal({
           body: JSON.stringify({ action: 'status', questId: quest.id, walletAddress }),
         });
         const data = await res.json();
-        if (data.tagVerified || data.alreadyCompleted) {
+        if (data.readyToComplete) {
+          clearInterval(poll);
+          setStep('ready');
+        } else if (data.tagVerified || data.alreadyCompleted) {
           clearInterval(poll);
           setStep('success');
-          onCompleted(quest.rewardAmount);
         }
       } catch { /* ignore */ }
     }, 5000);
     return () => clearInterval(poll);
-  }, [step, quest, walletAddress, onCompleted]);
+  }, [step, quest, walletAddress]);
 
   if (!quest) return null;
 
@@ -252,6 +284,36 @@ export default function InstagramDmShareModal({
               <div className="animate-spin w-3 h-3 border border-zinc-500 border-t-pink-500 rounded-full" />
               Warte auf @-Tag Erkennung…
             </div>
+          </div>
+        )}
+
+        {/* ── READY: @-Tag erkannt, Belohnung einlösen ── */}
+        {!storyClaimToken && step === 'ready' && (
+          <div className="space-y-3">
+            <div className="bg-green-900/30 border border-green-600/40 rounded-xl px-3 py-3 space-y-1">
+              <p className="text-sm font-semibold text-green-400 flex items-center gap-2">
+                <FaCheck size={13} /> Story erkannt!
+              </p>
+              <p className="text-xs text-zinc-400">
+                Dein @-Tag wurde erkannt. Jetzt Belohnung einlösen.
+              </p>
+            </div>
+            {error && (
+              <div className="bg-red-900/30 border border-red-600/40 rounded-xl px-3 py-2 text-xs text-red-300">
+                {error}
+              </div>
+            )}
+            <button
+              onClick={handleComplete}
+              disabled={loading}
+              className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+              ) : (
+                <><FaStar size={14} /> Belohnung einlösen</>
+              )}
+            </button>
           </div>
         )}
 
