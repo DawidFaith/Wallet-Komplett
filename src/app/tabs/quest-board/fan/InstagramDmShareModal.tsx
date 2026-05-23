@@ -43,7 +43,6 @@ export default function InstagramDmShareModal({
   const [instagramHandle, setInstagramHandle] = useState('');
   const [creatorHandle, setCreatorHandle] = useState('');
   const [testerEmail, setTesterEmail] = useState('');
-  const [testerSubmitted, setTesterSubmitted] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Countdown Timer
@@ -363,80 +362,24 @@ export default function InstagramDmShareModal({
         {/* ── NOT TESTER ── */}
         {!storyClaimToken && step === 'not_tester' && (
           <div className="space-y-3">
-            <div className="bg-yellow-900/30 border border-yellow-600/40 rounded-xl px-3 py-3 space-y-2">
-              <p className="text-sm font-semibold text-yellow-300">⏳ Beta-Zugang erforderlich</p>
+            <div className="bg-yellow-900/30 border border-yellow-600/40 rounded-xl px-3 py-4 text-center space-y-2">
+              <p className="text-2xl">⏳</p>
+              <p className="text-sm font-semibold text-yellow-300">Story Quest wird freigeschaltet</p>
               <p className="text-xs text-zinc-400">
-                Story Quests sind aktuell im Beta-Modus. Trag deine E-Mail ein – wir schalten dich so schnell wie möglich frei und benachrichtigen dich.
+                Story Quests sind aktuell im Beta-Modus. Dein Account wird innerhalb von 48h freigeschaltet. Du erhältst danach eine Einladung in Instagram unter:
               </p>
+              <a
+                href="https://www.instagram.com/accounts/manage_access/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 text-xs text-pink-400 hover:text-pink-300 underline underline-offset-2"
+              >
+                <FaInstagram size={11} />
+                instagram.com/accounts/manage_access
+              </a>
             </div>
-
-            {testerSubmitted ? (
-              <div className="bg-green-900/30 border border-green-600/40 rounded-xl px-3 py-2 text-xs text-green-300">
-                ✓ Dein Antrag wurde gesendet! Du bekommst eine E-Mail sobald du freigeschaltet bist.
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <input
-                  type="email"
-                  value={testerEmail}
-                  onChange={e => setTesterEmail(e.target.value)}
-                  placeholder="deine@email.de"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500"
-                />
-                {error && (
-                  <div className="bg-red-900/30 border border-red-600/40 rounded-xl px-3 py-2 text-xs text-red-300">
-                    {error}
-                  </div>
-                )}
-                <button
-                  onClick={async () => {
-                    if (!testerEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testerEmail)) {
-                      setError('Bitte gib eine gültige E-Mail ein.');
-                      return;
-                    }
-                    setLoading(true);
-                    setError('');
-                    try {
-                      const res = await fetch('/api/instagram-quests/tester-request', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ walletAddress, email: testerEmail.trim() }),
-                      });
-                      const data = await res.json();
-                      if (!res.ok) { setError(data.error ?? 'Fehler'); return; }
-                      setTesterSubmitted(true);
-                    } catch {
-                      setError('Netzwerkfehler. Bitte erneut versuchen.');
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  disabled={loading || !testerEmail.trim()}
-                  className="w-full bg-yellow-700 hover:bg-yellow-600 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                  ) : (
-                    <><FaPaperPlane size={12} /> Freischaltung beantragen</>
-                  )}
-                </button>
-              </div>
-            )}
-
-            <p className="text-xs text-zinc-600 text-center">
-              Nach der Freischaltung erhältst du eine Einladung in Instagram:
-            </p>
-            <a
-              href="https://www.instagram.com/accounts/manage_access/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 text-xs text-pink-400 hover:text-pink-300 underline underline-offset-2"
-            >
-              <FaInstagram size={11} />
-              instagram.com/accounts/manage_access
-            </a>
-            <button onClick={onClose} className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2 rounded-xl text-sm transition-colors">
-              Schließen
+            <button onClick={onClose} className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
+              Alles klar
             </button>
           </div>
         )}

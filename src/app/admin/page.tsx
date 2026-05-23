@@ -55,6 +55,8 @@ export default function AdminPage() {
   const [editingSolana, setEditingSolana] = useState<string | null>(null);
   const [solanaInput, setSolanaInput] = useState('');
   const [savingSolana, setSavingSolana] = useState<string | null>(null);
+  const [testerHandles, setTesterHandles] = useState<Set<string>>(new Set());
+  const [togglingTester, setTogglingTester] = useState<string | null>(null);
 
   // Passwort aus sessionStorage laden
   useEffect(() => {
@@ -202,6 +204,41 @@ export default function AdminPage() {
     }
   };
 
+  const fetchTesters = useCallback(async (s: string) => {
+    if (!s) return;
+    try {
+      const res = await fetch('/api/admin/instagram-testers', { headers: { 'x-admin-secret': s } });
+      if (!res.ok) return;
+      const data = await res.json();
+      setTesterHandles(new Set((data.testers ?? []).map((t: { instagramHandle: string }) => t.instagramHandle.toLowerCase())));
+    } catch { /* ignore */ }
+  }, []);
+  useEffect(() => { if (secret) fetchTesters(secret); }, [secret, fetchTesters]);
+
+  const handleToggleStoryQuest = async (handle: string, isApproved: boolean) => {
+    setTogglingTester(handle.toLowerCase());
+    try {
+      if (isApproved) {
+        await fetch(`/api/admin/instagram-testers?handle=${encodeURIComponent(handle)}`, {
+          method: 'DELETE',
+          headers: { 'x-admin-secret': secret },
+        });
+        setTesterHandles(prev => { const n = new Set(prev); n.delete(handle.toLowerCase()); return n; });
+      } else {
+        const res = await fetch('/api/admin/instagram-testers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+          body: JSON.stringify({ instagramHandle: handle }),
+        });
+        if (res.ok) setTesterHandles(prev => new Set([...prev, handle.toLowerCase()]));
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setTogglingTester(null);
+    }
+  };
+
   const filtered = users.filter((u) => {
     const q = search.toLowerCase();
     const matchSearch =
@@ -221,7 +258,7 @@ export default function AdminPage() {
     return matchSearch && matchFilter;
   });
 
-  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'testers'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform'>('users');
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState('');
   const [resetting, setResetting] = useState(false);
@@ -298,7 +335,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-0">
-        {(['users', 'credits', 'token', 'shop', 'platform', 'testers'] as const).map((tab) => (
+        {(['users', 'credits', 'token', 'shop', 'platform'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -308,7 +345,7 @@ export default function AdminPage() {
                 : 'text-zinc-500 border-transparent hover:text-zinc-300'
             }`}
           >
-            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'testers' ? '📸 Testers' : '⚡ Platform'}
+            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : '⚡ Platform'}
           </button>
         ))}
       </div>
@@ -460,6 +497,9 @@ export default function AdminPage() {
                   onSaveSolana={() => handleSaveSolana(user.walletAddress)}
                   onCancelSolana={() => setEditingSolana(null)}
                   savingSolana={savingSolana === user.walletAddress}
+                  isStoryQuestTester={testerHandles.has((user.instagramHandle ?? '').toLowerCase())}
+                  togglingStoryQuest={togglingTester === (user.instagramHandle ?? '').toLowerCase()}
+                  onToggleStoryQuest={() => user.instagramHandle && handleToggleStoryQuest(user.instagramHandle, testerHandles.has(user.instagramHandle.toLowerCase()))}
                 />
               ))}
             </div>
@@ -491,11 +531,6 @@ export default function AdminPage() {
       {/* ── Platform Tab ──────────────────────────────────────────────────────── */}
       {activeTab === 'platform' && (
         <PlatformSection secret={secret} />
-      )}
-
-      {/* ── Testers Tab ───────────────────────────────────────────────────────── */}
-      {activeTab === 'testers' && (
-        <InstagramTestersSection secret={secret} />
       )}
     </div>
   );
@@ -1164,6 +1199,9 @@ function UserRow({
   onSaveSolana,
   onCancelSolana,
   savingSolana,
+  isStoryQuestTester,
+  togglingStoryQuest,
+  onToggleStoryQuest,
 }: {
   user: AdminUser;
   toggling: boolean;
@@ -1189,6 +1227,9 @@ function UserRow({
   onSaveSolana: () => void;
   onCancelSolana: () => void;
   savingSolana: boolean;
+  isStoryQuestTester: boolean;
+  togglingStoryQuest: boolean;
+  onToggleStoryQuest: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -1370,6 +1411,26 @@ function UserRow({
               {user.solanaAddress ? user.solanaAddress.slice(0, 8) + '…' + user.solanaAddress.slice(-6) : '— keine Wallet'}
             </button>
           )}
+        {user.instagramHandle && user.instagramVerified && (
+          <button
+            onClick={onToggleStoryQuest}
+            disabled={togglingStoryQuest}
+            title={isStoryQuestTester ? 'Story Quest deaktivieren' : 'Story Quest freischalten'}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              isStoryQuestTester
+                ? 'bg-pink-800/60 hover:bg-pink-900 text-pink-300 border border-pink-700/40'
+                : 'bg-zinc-800 hover:bg-pink-900/40 text-zinc-400 border border-zinc-700 hover:text-pink-300 hover:border-pink-700/40'
+            } disabled:opacity-50`}
+          >
+            {togglingStoryQuest ? (
+              <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+            ) : isStoryQuestTester ? (
+              <><FaInstagram size={9} className="text-pink-400" /> Story ✓</>
+            ) : (
+              <><FaInstagram size={9} /> Story freischalten</>
+            )}
+          </button>
+        )}
         </div>
       </div>
     </div>
