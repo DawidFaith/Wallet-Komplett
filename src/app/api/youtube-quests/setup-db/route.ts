@@ -289,9 +289,37 @@ export async function POST(req: NextRequest) {
     `;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_dm_verif_token ON instagram_dm_verifications(click_token)`;
 
+    // ── Story Token Spalte ───────────────────────────────────────────────────
+    await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS story_token TEXT`;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_quests_story_token ON quests(story_token) WHERE story_token IS NOT NULL`;
+
+    // ── Instagram Testers Whitelist ──────────────────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS instagram_testers (
+        instagram_handle  TEXT        PRIMARY KEY,
+        notes             TEXT        NOT NULL DEFAULT '',
+        added_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+
+    // ── Instagram Tester Anfragen ────────────────────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS instagram_tester_requests (
+        id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+        instagram_handle  TEXT        NOT NULL,
+        email             TEXT        NOT NULL,
+        wallet_address    TEXT        NOT NULL,
+        status            TEXT        NOT NULL DEFAULT 'pending',
+        created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        approved_at       TIMESTAMPTZ
+      )
+    `;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_tester_requests_handle ON instagram_tester_requests(instagram_handle) WHERE status = 'pending'`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_tester_requests_status ON instagram_tester_requests(status, created_at DESC)`;
+
     return NextResponse.json({
       success: true,
-      message: 'Alle Tabellen (inkl. dfaith_credits, expires_at, tiktok_engagement_verifications, instagram_like_verifications, device_fingerprints, instagram_mentions, instagram_dm_verifications) erstellt.',
+      message: 'Alle Tabellen (inkl. instagram_testers, instagram_tester_requests, story_token) erstellt.',
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

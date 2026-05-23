@@ -1261,10 +1261,15 @@ export async function deleteInstagramDmVerification(
 
 export async function isInstagramTester(handle: string): Promise<boolean> {
   const sql = getDb();
-  const rows = await sql`
-    SELECT 1 FROM instagram_testers WHERE instagram_handle = ${handle.toLowerCase()} LIMIT 1
-  `;
-  return rows.length > 0;
+  try {
+    const rows = await sql`
+      SELECT 1 FROM instagram_testers WHERE instagram_handle = ${handle.toLowerCase()} LIMIT 1
+    `;
+    return rows.length > 0;
+  } catch {
+    // Tabelle existiert noch nicht (Migration noch nicht ausgeführt) → als Nicht-Tester behandeln
+    return false;
+  }
 }
 
 export async function addInstagramTester(handle: string, notes = ''): Promise<void> {
