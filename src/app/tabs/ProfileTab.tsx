@@ -536,133 +536,6 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
               </div>
             )}
 
-            {/* ── Meta Quest-Freischaltung: Instagram + Facebook (kombiniert) ── */}
-            {(() => {
-              const bothVerified = metaIgVerified && metaFbVerified;
-              const igVerified = metaIgVerified;
-              const fbVerified = metaFbVerified;
-              const hasIg = !!p?.instagramHandle;
-              const hasFb = !!p?.facebookHandle;
-              return (
-                <div className={`rounded-xl border overflow-hidden transition-colors ${bothVerified ? 'bg-green-950/30 border-green-500/20' : 'bg-[#0d1020]/60 border-white/[0.08]'}`}>
-
-                  {/* ── Header ── */}
-                  <div className="flex items-center justify-between px-3 py-2.5">
-                    <p className="text-[10px] font-black uppercase tracking-[0.22em] flex items-center gap-1.5 text-zinc-400">
-                      <FaInstagram size={10} className="text-pink-400" />
-                      <span className="text-zinc-600">/</span>
-                      <FaFacebook size={10} className="text-blue-400" />
-                      Instagram &amp; Facebook Quests
-                    </p>
-                    <div className="flex items-center gap-2">
-                      {bothVerified
-                        ? <span className="text-[10px] font-bold text-green-400 bg-green-400/10 border border-green-400/20 px-2 py-0.5 rounded-full flex items-center gap-1"><FaCheck size={7} /> Freigeschaltet</span>
-                        : <span className="text-[10px] text-zinc-600 flex items-center gap-1"><FaLock size={8} /> Gesperrt</span>
-                      }
-                      {/* Anleitung ein-/ausklappen */}
-                      {(!igVerified || !fbVerified) && (
-                        <button
-                          onClick={() => setMetaGuideOpen(o => !o)}
-                          className="flex items-center gap-1 text-[10px] font-semibold text-violet-400 hover:text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 px-2 py-0.5 rounded-full transition-colors"
-                          title={metaGuideOpen ? 'Anleitung einklappen' : 'Anleitung anzeigen'}
-                        >
-                          {metaGuideOpen ? 'Anleitung' : 'Anleitung'}
-                          <FaChevronDown size={7} className={`transition-transform duration-200 ${metaGuideOpen ? 'rotate-180' : ''}`} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* ── Buttons nebeneinander ── */}
-                  <div className="px-3 pb-3 space-y-2">
-                    <div className="flex gap-2">
-                      {/* Instagram */}
-                      <button
-                        onClick={() => handleMetaCheck('instagram')}
-                        disabled={metaIgLoading || !hasIg}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border font-semibold text-xs transition-all disabled:opacity-40 ${
-                          igVerified
-                            ? 'bg-green-500/15 border-green-500/30 text-green-300 shadow-[0_0_12px_rgba(34,197,94,0.12)]'
-                            : 'bg-gradient-to-br from-pink-500/10 to-purple-500/10 hover:from-pink-500/20 hover:to-purple-500/20 border-pink-500/25 text-pink-300 active:scale-95'
-                        }`}
-                      >
-                        {metaIgLoading
-                          ? <span className="animate-spin w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full" />
-                          : igVerified
-                            ? <FaCheck size={11} className="text-green-400" />
-                            : <FaInstagram size={13} />
-                        }
-                        <span>{igVerified ? 'Instagram ✓' : 'Instagram prüfen'}</span>
-                      </button>
-
-                      {/* Facebook */}
-                      <button
-                        onClick={() => handleMetaCheck('facebook')}
-                        disabled={metaFbLoading || !hasFb}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border font-semibold text-xs transition-all disabled:opacity-40 ${
-                          fbVerified
-                            ? 'bg-green-500/15 border-green-500/30 text-green-300 shadow-[0_0_12px_rgba(34,197,94,0.12)]'
-                            : 'bg-gradient-to-br from-blue-500/10 to-blue-600/10 hover:from-blue-500/20 hover:to-blue-600/20 border-blue-500/25 text-blue-300 active:scale-95'
-                        }`}
-                      >
-                        {metaFbLoading
-                          ? <span className="animate-spin w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full" />
-                          : fbVerified
-                            ? <FaCheck size={11} className="text-green-400" />
-                            : <FaFacebook size={13} />
-                        }
-                        <span>{fbVerified ? 'Facebook ✓' : 'Facebook prüfen'}</span>
-                      </button>
-                    </div>
-
-                    {/* Fehlende Konten */}
-                    {(!hasIg || !hasFb) && (
-                      <div className="flex gap-2 text-[10px] text-amber-500/70">
-                        {!hasIg && <span className="flex-1 text-center">⚠️ Instagram verbinden</span>}
-                        {!hasFb && <span className="flex-1 text-center">⚠️ Facebook verbinden</span>}
-                      </div>
-                    )}
-
-                    {/* API-Rückmeldungen */}
-                    {(metaIgMsg && !igVerified) && <p className="text-[11px] text-zinc-400 leading-relaxed">{metaIgMsg}</p>}
-                    {(metaFbMsg && !fbVerified) && <p className="text-[11px] text-zinc-400 leading-relaxed">{metaFbMsg}</p>}
-                  </div>
-
-                  {/* ── Anleitung (eingeklappt) ── */}
-                  {(!igVerified || !fbVerified) && metaGuideOpen && (
-                    <div className="border-t border-white/[0.06] px-3 py-3 space-y-2.5">
-                      {/* Voraussetzungen */}
-                      <div className="bg-amber-950/30 border border-amber-500/20 rounded-lg px-2.5 py-2 text-[10px] text-amber-400/80 space-y-1">
-                        <p className="font-bold text-amber-400">⚠️ Voraussetzungen (einmalig):</p>
-                        <p>› <strong className="text-amber-300">Facebook Page erstellen</strong> — nur über eine Page bekommst du Zugang zur Meta Business Suite.</p>
-                        <p>› Instagram muss ein <strong className="text-amber-300">Business- oder Creator-Konto</strong> sein (IG → Einstellungen → Konto → Zu Professional-Konto wechseln)</p>
-                        <p>› <strong className="text-amber-300">IG und FB werden separat erteilt</strong> — du kannst nur Instagram, nur die Page, oder beides freischalten.</p>
-                      </div>
-
-                      {/* Schritte */}
-                      <ol className="text-zinc-500 text-[11px] space-y-1.5 pl-0">
-                        {([
-                          <React.Fragment key={0}>Öffne <a href="https://business.facebook.com/settings/partners/add" target="_blank" rel="noopener noreferrer" className="text-violet-400 underline underline-offset-2 hover:text-violet-300">dein Meta Business Center → Partner hinzufügen</a></React.Fragment>,
-                          <React.Fragment key={1}>Business-ID von D.Faith Ecosystem eingeben{metaBusinessId ? <span className="ml-1 font-mono text-white bg-white/10 px-1.5 py-0.5 rounded text-[10px]">{metaBusinessId}</span> : ''}</React.Fragment>,
-                          <React.Fragment key={2}>Einem Partner <strong className="text-zinc-300">Zugriff auf deine Assets gestatten</strong> auswählen</React.Fragment>,
-                          <React.Fragment key={3}>
-                            <span>Assets einzeln zuweisen:
-                              <ul className="mt-1 space-y-0.5 pl-1 text-zinc-600">
-                                <li className="flex gap-1.5 items-start"><span className="text-pink-500/70 shrink-0">›</span><span><strong className="text-pink-300">Instagram-Konto</strong> auswählen → alle Berechtigungen aktivieren <span className="text-zinc-700">(für IG Quests)</span></span></li>
-                                <li className="flex gap-1.5 items-start"><span className="text-blue-500/70 shrink-0">›</span><span><strong className="text-blue-300">Facebook Page</strong> auswählen → alle Berechtigungen aktivieren <span className="text-zinc-700">(für FB Quests)</span></span></li>
-                              </ul>
-                            </span>
-                          </React.Fragment>,
-                          <React.Fragment key={4}>Oben die jeweiligen Buttons klicken — System-Zugriff wird automatisch eingerichtet</React.Fragment>,
-                        ] as React.ReactNode[]).map((step, i) => (
-                          <li key={i} className="flex gap-2"><span className="text-zinc-600 shrink-0 font-bold">{i + 1}.</span><span>{step}</span></li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
           </div>
         )}
 
@@ -728,6 +601,119 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
 
           </div>
         </div>
+
+        {/* ── Instagram & Facebook Quests ── */}
+        {(p?.instagramHandle || p?.facebookHandle) && (() => {
+          const bothVerified = metaIgVerified && metaFbVerified;
+          const igVerified = metaIgVerified;
+          const fbVerified = metaFbVerified;
+          const hasIg = !!p?.instagramHandle;
+          const hasFb = !!p?.facebookHandle;
+          return (
+            <div className="space-y-3">
+              <div className="border-t border-white/[0.1]" />
+              <div className="flex items-center justify-between">
+                <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] flex items-center gap-2">
+                  <FaInstagram size={10} className="text-pink-400" />
+                  <FaFacebook size={10} className="text-blue-400" />
+                  Instagram & Facebook Quests
+                </p>
+                <div className="flex items-center gap-2">
+                  {bothVerified
+                    ? <span className="text-[10px] font-bold text-green-400 bg-green-400/10 border border-green-400/20 px-2 py-0.5 rounded-full flex items-center gap-1"><FaCheck size={7} /> Freigeschaltet</span>
+                    : <span className="text-[10px] text-zinc-600 flex items-center gap-1"><FaLock size={8} /> Gesperrt</span>
+                  }
+                  {(!igVerified || !fbVerified) && (
+                    <button
+                      onClick={() => setMetaGuideOpen(o => !o)}
+                      className="flex items-center gap-1 text-[10px] font-semibold text-violet-400 hover:text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 px-2 py-0.5 rounded-full transition-colors"
+                    >
+                      Anleitung
+                      <FaChevronDown size={7} className={`transition-transform duration-200 ${metaGuideOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Verify-Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleMetaCheck('instagram')}
+                  disabled={metaIgLoading || !hasIg}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border font-semibold text-sm transition-all disabled:opacity-40 ${
+                    igVerified
+                      ? 'bg-green-500/15 border-green-500/30 text-green-300 shadow-[0_0_12px_rgba(34,197,94,0.12)]'
+                      : 'bg-gradient-to-br from-pink-500/10 to-purple-500/10 hover:from-pink-500/20 hover:to-purple-500/20 border-pink-500/25 text-pink-300 active:scale-95'
+                  }`}
+                >
+                  {metaIgLoading
+                    ? <span className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+                    : igVerified
+                      ? <FaCheck size={13} className="text-green-400" />
+                      : <FaInstagram size={15} />
+                  }
+                  <span>{igVerified ? 'Instagram ✓' : 'Instagram prüfen'}</span>
+                </button>
+                <button
+                  onClick={() => handleMetaCheck('facebook')}
+                  disabled={metaFbLoading || !hasFb}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border font-semibold text-sm transition-all disabled:opacity-40 ${
+                    fbVerified
+                      ? 'bg-green-500/15 border-green-500/30 text-green-300 shadow-[0_0_12px_rgba(34,197,94,0.12)]'
+                      : 'bg-gradient-to-br from-blue-500/10 to-blue-600/10 hover:from-blue-500/20 hover:to-blue-600/20 border-blue-500/25 text-blue-300 active:scale-95'
+                  }`}
+                >
+                  {metaFbLoading
+                    ? <span className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+                    : fbVerified
+                      ? <FaCheck size={13} className="text-green-400" />
+                      : <FaFacebook size={15} />
+                  }
+                  <span>{fbVerified ? 'Facebook ✓' : 'Facebook prüfen'}</span>
+                </button>
+              </div>
+
+              {(!hasIg || !hasFb) && (
+                <div className="flex gap-2 text-[10px] text-amber-500/70">
+                  {!hasIg && <span className="flex-1 text-center">⚠️ Instagram verbinden</span>}
+                  {!hasFb && <span className="flex-1 text-center">⚠️ Facebook verbinden</span>}
+                </div>
+              )}
+              {(metaIgMsg && !igVerified) && <p className="text-[11px] text-zinc-400 leading-relaxed">{metaIgMsg}</p>}
+              {(metaFbMsg && !fbVerified) && <p className="text-[11px] text-zinc-400 leading-relaxed">{metaFbMsg}</p>}
+
+              {/* Anleitung */}
+              {(!igVerified || !fbVerified) && metaGuideOpen && (
+                <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-4 space-y-3">
+                  <div className="bg-amber-950/30 border border-amber-500/20 rounded-xl px-3 py-2.5 text-[10px] text-amber-400/80 space-y-1">
+                    <p className="font-bold text-amber-400">⚠️ Voraussetzungen (einmalig):</p>
+                    <p>› <strong className="text-amber-300">Facebook Page erstellen</strong> — nur über eine Page bekommst du Zugang zur Meta Business Suite.</p>
+                    <p>› Instagram muss ein <strong className="text-amber-300">Business- oder Creator-Konto</strong> sein (IG → Einstellungen → Konto → Zu Professional-Konto wechseln)</p>
+                    <p>› <strong className="text-amber-300">IG und FB werden separat erteilt</strong> — du kannst nur Instagram, nur die Page, oder beides freischalten.</p>
+                  </div>
+                  <ol className="text-zinc-500 text-[11px] space-y-1.5 pl-0">
+                    {([
+                      <React.Fragment key={0}>Öffne <a href="https://business.facebook.com/settings/partners/add" target="_blank" rel="noopener noreferrer" className="text-violet-400 underline underline-offset-2 hover:text-violet-300">dein Meta Business Center → Partner hinzufügen</a></React.Fragment>,
+                      <React.Fragment key={1}>Business-ID von D.Faith Ecosystem eingeben{metaBusinessId ? <span className="ml-1 font-mono text-white bg-white/10 px-1.5 py-0.5 rounded text-[10px]">{metaBusinessId}</span> : ''}</React.Fragment>,
+                      <React.Fragment key={2}>Einem Partner <strong className="text-zinc-300">Zugriff auf deine Assets gestatten</strong> auswählen</React.Fragment>,
+                      <React.Fragment key={3}>
+                        <span>Assets einzeln zuweisen:
+                          <ul className="mt-1 space-y-0.5 pl-1 text-zinc-600">
+                            <li className="flex gap-1.5 items-start"><span className="text-pink-500/70 shrink-0">›</span><span><strong className="text-pink-300">Instagram-Konto</strong> auswählen → alle Berechtigungen aktivieren <span className="text-zinc-700">(für IG Quests)</span></span></li>
+                            <li className="flex gap-1.5 items-start"><span className="text-blue-500/70 shrink-0">›</span><span><strong className="text-blue-300">Facebook Page</strong> auswählen → alle Berechtigungen aktivieren <span className="text-zinc-700">(für FB Quests)</span></span></li>
+                          </ul>
+                        </span>
+                      </React.Fragment>,
+                      <React.Fragment key={4}>Oben die jeweiligen Buttons klicken — System-Zugriff wird automatisch eingerichtet</React.Fragment>,
+                    ] as React.ReactNode[]).map((step, i) => (
+                      <li key={i} className="flex gap-2"><span className="text-zinc-600 shrink-0 font-bold">{i + 1}.</span><span>{step}</span></li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── ArtistBoard ────────────────────────────────────────── */}
