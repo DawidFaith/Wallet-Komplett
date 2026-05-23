@@ -107,6 +107,15 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
           {open && (
             <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 bg-[#231e12] rounded-lg shadow-xl flex flex-col z-50 min-w-[160px] border border-white/10 overflow-hidden">
               <button
+                onClick={() => { navigateToTab("quest-board"); setOpen(false); }}
+                className={`flex items-center gap-3 px-4 py-3 hover:bg-[#2d2515] w-full transition-colors duration-200 border-b border-white/10 ${
+                  activeTab === "quest-board" ? "text-red-400" : "text-zinc-300"
+                }`}
+              >
+                <FaTasks size={15} className={activeTab === "quest-board" ? "text-red-400" : "text-zinc-400"} />
+                <span className="font-medium text-sm">Quest Board</span>
+              </button>
+              <button
                 onClick={() => { navigateToTab("reputation"); setOpen(false); }}
                 className={`flex items-center gap-3 px-4 py-3 hover:bg-[#2d2515] w-full transition-colors duration-200 border-b border-white/10 ${
                   activeTab === "reputation" ? "text-amber-400" : "text-zinc-300"
@@ -117,21 +126,12 @@ export default function Navigation({ activeTab, setActiveTab, language = "de", s
               </button>
               <button
                 onClick={() => { navigateToTab("shop"); setOpen(false); }}
-                className={`flex items-center gap-3 px-4 py-3 hover:bg-[#2d2515] w-full transition-colors duration-200 border-b border-white/10 ${
+                className={`flex items-center gap-3 px-4 py-3 hover:bg-[#2d2515] w-full transition-colors duration-200 ${
                   activeTab === "shop" ? "text-amber-400" : "text-zinc-300"
                 }`}
               >
                 <FaTshirt size={15} className={activeTab === "shop" ? "text-amber-400" : "text-zinc-400"} />
                 <span className="font-medium text-sm">Shop</span>
-              </button>
-              <button
-                onClick={() => { navigateToTab("quest-board"); setOpen(false); }}
-                className={`flex items-center gap-3 px-4 py-3 hover:bg-[#2d2515] w-full transition-colors duration-200 ${
-                  activeTab === "quest-board" ? "text-red-400" : "text-zinc-300"
-                }`}
-              >
-                <FaTasks size={15} className={activeTab === "quest-board" ? "text-red-400" : "text-zinc-400"} />
-                <span className="font-medium text-sm">Quest Board</span>
               </button>
             </div>
           )}
