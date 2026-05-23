@@ -12,6 +12,7 @@ export async function GET(req: Request) {
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS artist_bio TEXT`;
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS reward_token TEXT DEFAULT 'D.FAITH'`;
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS display_platform TEXT`;
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS clerk_image_url TEXT`;
 
     const rows = await sql`
       SELECT
@@ -21,6 +22,7 @@ export async function GET(req: Request) {
         p.artist_bio,
         p.reward_token,
         p.display_platform,
+        p.clerk_image_url,
         p.instagram_handle,
         p.instagram_verified,
         p.instagram_name,
@@ -74,6 +76,8 @@ export async function GET(req: Request) {
       if (dp === 'youtube' && r.youtube_channel_id) {
         name ??= r.youtube_channel_name ?? null;
         picture = r.youtube_channel_thumbnail ?? null;
+      } else if (dp === 'clerk') {
+        picture = (r.clerk_image_url as string | null) ?? null;
       } else if (dp === 'instagram' && r.instagram_handle) {
         name ??= r.instagram_name ?? `@${r.instagram_handle}`;
         picture = r.instagram_picture ?? null;

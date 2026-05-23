@@ -17,6 +17,7 @@ export async function GET() {
   // Spalten sicherstellen (idempotent) – werden sonst von /api/admin/artists angelegt,
   // aber der Shop kann unabhängig davon aufgerufen werden.
   await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS display_platform TEXT`;
+  await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS clerk_image_url TEXT`;
   await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS token_mint_address TEXT`;
   await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS reward_token TEXT`;
   await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS instagram_name TEXT`;
@@ -49,6 +50,7 @@ export async function GET() {
       p.instagram_handle,  p.instagram_name,    p.instagram_picture,
       p.tiktok_handle,     p.tiktok_name,       p.tiktok_picture,
       p.facebook_handle,   p.facebook_name,     p.facebook_picture,
+      p.clerk_image_url,
       yb.channel_id        AS youtube_channel_id,
       yb.channel_name      AS youtube_channel_name,
       yb.channel_thumbnail AS youtube_channel_thumbnail,
@@ -60,6 +62,7 @@ export async function GET() {
     WHERE p.is_artist = TRUE
     GROUP BY
       p.wallet_address, p.display_name, p.display_platform,
+      p.clerk_image_url,
       p.reward_token, p.token_mint_address,
       p.instagram_handle, p.instagram_name, p.instagram_picture,
       p.tiktok_handle, p.tiktok_name, p.tiktok_picture,
@@ -75,6 +78,8 @@ export async function GET() {
     if (dp === 'youtube' && r.youtube_channel_id) {
       pictureUrl = (r.youtube_channel_thumbnail as string | null) ?? null;
       displayName ??= (r.youtube_channel_name as string | null) ?? null;
+    } else if (dp === 'clerk') {
+      pictureUrl = (r.clerk_image_url as string | null) ?? null;
     } else if (dp === 'instagram' && r.instagram_handle) {
       pictureUrl = (r.instagram_picture as string | null) ?? null;
       displayName ??= (r.instagram_name as string | null) ?? `@${r.instagram_handle}`;

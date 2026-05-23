@@ -1443,6 +1443,7 @@ export interface SocialProfile {
   rewardToken: string | null;
   tokenMintAddress: string | null;
   displayPlatform: string | null;
+  clerkImageUrl: string | null;
 }
 
 export interface AdminUserRow {
@@ -1486,6 +1487,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
       rewardToken: null,
       tokenMintAddress: null,
       displayPlatform: null,
+      clerkImageUrl: null,
     };
   }
   const r = rows[0];
@@ -1511,6 +1513,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
     rewardToken: r.reward_token ?? null,
     tokenMintAddress: r.token_mint_address ?? null,
     displayPlatform: r.display_platform ?? null,
+    clerkImageUrl: r.clerk_image_url ?? null,
   };
 }
 
@@ -1638,6 +1641,14 @@ export async function upsertUserProfile(
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS display_platform TEXT`;
     await sql`
       UPDATE user_profiles SET display_platform = ${data.displayPlatform}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+  if (data.clerkImageUrl !== undefined) {
+    const sql = getDb();
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS clerk_image_url TEXT`;
+    await sql`
+      UPDATE user_profiles SET clerk_image_url = ${data.clerkImageUrl}, updated_at = NOW()
       WHERE wallet_address = ${walletAddress.toLowerCase()}
     `;
   }

@@ -273,6 +273,9 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
           artistBio: artistBioInput.trim() || null,
           rewardToken: artistRewardTokenInput.trim() || null,
           displayPlatform: artistDisplayPlatformInput,
+          clerkImageUrl: (artistDisplayPlatformInput === 'clerk' || artistDisplayPlatformInput === null)
+            ? (_clerkUser?.imageUrl ?? null)
+            : null,
         }),
       });
       setEditingArtist(false);
@@ -280,7 +283,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
     } finally {
       setArtistSaving(false);
     }
-  }, [account?.address, artistTypeInput, artistBioInput, artistRewardTokenInput, artistDisplayPlatformInput, loadProfile]);
+  }, [account?.address, artistTypeInput, artistBioInput, artistRewardTokenInput, artistDisplayPlatformInput, _clerkUser?.imageUrl, loadProfile]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
   useEffect(() => { loadMetaPartnerStatus(); }, [loadMetaPartnerStatus]);
@@ -410,7 +413,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                     setArtistTypeInput(p.artistType ?? '');
                     setArtistBioInput(p.artistBio ?? '');
                     setArtistRewardTokenInput(p.rewardToken ?? 'D.FAITH');
-                    setArtistDisplayPlatformInput(p.displayPlatform ?? null);
+                    setArtistDisplayPlatformInput(p.displayPlatform ?? 'clerk');
                     setEditingArtist(true);
                   }}
                   className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 bg-white/5 hover:bg-white/10 border border-white/[0.1] px-2 py-1 rounded-lg transition-colors"
@@ -437,12 +440,12 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                 {/* Öffentliches Profil-Bild wählen */}
                 {(() => {
                   const options: { key: string; icon: React.ReactNode; label: string; available: boolean }[] = [
+                    { key: 'clerk',     icon: _clerkUser?.imageUrl ? <img src={_clerkUser.imageUrl} alt="" className="w-3 h-3 rounded-full object-cover" /> : <FaCoins className="text-zinc-300" size={11} />, label: 'Profilbild', available: true },
                     { key: 'youtube',   icon: <FaYoutube className="text-red-500" size={12} />,    label: 'YouTube',   available: !!(p?.youtubeVerified) },
                     { key: 'instagram', icon: <FaInstagram className="text-pink-500" size={12} />, label: 'Instagram', available: !!(p?.instagramHandle) },
                     { key: 'tiktok',    icon: <FaTiktok className="text-zinc-200" size={11} />,    label: 'TikTok',    available: !!(p?.tiktokHandle) },
                     { key: 'facebook',  icon: <FaFacebook className="text-blue-500" size={12} />,  label: 'Facebook',  available: !!(p?.facebookHandle) },
                   ].filter(o => o.available);
-                  if (options.length === 0) return null;
                   return (
                     <div>
                       <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1.5">Angezeigtes Profil-Bild</p>
@@ -451,7 +454,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                           <button
                             key={o.key}
                             type="button"
-                            onClick={() => setArtistDisplayPlatformInput(artistDisplayPlatformInput === o.key ? null : o.key)}
+                            onClick={() => setArtistDisplayPlatformInput(o.key)}
                             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
                               artistDisplayPlatformInput === o.key
                                 ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
@@ -498,9 +501,12 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                 {(() => {
                   const dp = p.displayPlatform;
                   let pic: string | null = null;
-                  let label = 'Kein Profilbild gewählt';
+                  let label = 'Profilbild (Clerk)';
                   let icon: React.ReactNode = null;
-                  if (dp === 'youtube' && p.youtubeVerified) {
+                  if (dp === 'clerk' || dp === null) {
+                    pic = _clerkUser?.imageUrl ?? null;
+                    label = _clerkUser?.fullName ?? _clerkUser?.username ?? 'Profilbild';
+                  } else if (dp === 'youtube' && p.youtubeVerified) {
                     pic = p.youtubeChannelThumbnail ?? null;
                     label = p.youtubeChannelName ?? 'YouTube';
                     icon = <FaYoutube className="text-red-500" size={10} />;
