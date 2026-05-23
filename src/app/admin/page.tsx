@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import {
   FaYoutube, FaInstagram, FaTiktok, FaFacebook,
   FaCheck, FaTimes, FaSearch, FaShieldAlt, FaCoins, FaStar, FaSync, FaPaperPlane,
@@ -749,7 +750,7 @@ function SolanaMintSection({ secret }: { secret: string }) {
             <label className="text-zinc-400 text-xs block mb-1">Token-Bild (wird auf Pinata IPFS hochgeladen)</label>
             <div className="flex items-center gap-3">
               {imagePreview && (
-                <img src={imagePreview} alt="Vorschau" className="w-14 h-14 rounded-xl object-cover border border-zinc-700 shrink-0" />
+                <Image src={imagePreview} alt="Vorschau" width={56} height={56} className="w-14 h-14 rounded-xl object-cover border border-zinc-700 shrink-0" unoptimized />
               )}
               <label className="flex-1 cursor-pointer bg-zinc-800 border border-zinc-700 border-dashed hover:border-purple-500 text-zinc-400 hover:text-purple-300 rounded-xl px-4 py-3 text-sm text-center transition-colors">
                 {imagePreview ? 'Anderes Bild wählen' : 'Bild auswählen (PNG, JPG, SVG)'}
@@ -1061,7 +1062,7 @@ function SolanaUpdateMetadataSection({ secret }: { secret: string }) {
             <label className="text-zinc-400 text-xs block mb-1">Token-Bild (wird auf Pinata IPFS hochgeladen)</label>
             <div className="flex items-center gap-3">
               {imagePreview && (
-                <img src={imagePreview} alt="Vorschau" className="w-14 h-14 rounded-xl object-cover border border-zinc-700 shrink-0" />
+                <Image src={imagePreview} alt="Vorschau" width={56} height={56} className="w-14 h-14 rounded-xl object-cover border border-zinc-700 shrink-0" unoptimized />
               )}
               <label className="flex-1 cursor-pointer bg-zinc-800 border border-zinc-700 border-dashed hover:border-blue-500 text-zinc-400 hover:text-blue-300 rounded-xl px-4 py-3 text-sm text-center transition-colors">
                 {imagePreview ? 'Anderes Bild wählen' : 'Bild auswählen (PNG, JPG, SVG)'}
@@ -2193,7 +2194,7 @@ function InstagramTestersSection({ secret }: { secret: string }) {
                   <a href="https://developers.facebook.com/apps/1466293431472871/roles/test-users/" target="_blank" rel="noopener noreferrer" className="underline">
                     Meta Developer Console → Roles → Instagram Testers
                   </a>{' '}
-                  eintragen, dann erst hier auf "Eingetragen" klicken.
+                  eintragen, dann erst hier auf &quot;Eingetragen&quot; klicken.
                 </div>
               </div>
             ))}
