@@ -1444,6 +1444,7 @@ export interface SocialProfile {
   tokenMintAddress: string | null;
   displayPlatform: string | null;
   clerkImageUrl: string | null;
+  clerkName: string | null;
 }
 
 export interface AdminUserRow {
@@ -1649,6 +1650,14 @@ export async function upsertUserProfile(
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS clerk_image_url TEXT`;
     await sql`
       UPDATE user_profiles SET clerk_image_url = ${data.clerkImageUrl}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+  if (data.clerkName !== undefined) {
+    const sql = getDb();
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS clerk_name TEXT`;
+    await sql`
+      UPDATE user_profiles SET clerk_name = ${data.clerkName}, updated_at = NOW()
       WHERE wallet_address = ${walletAddress.toLowerCase()}
     `;
   }
