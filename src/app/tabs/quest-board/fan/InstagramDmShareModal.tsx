@@ -400,17 +400,16 @@ export default function InstagramDmShareModal({
               <p className="text-2xl">📩</p>
               <p className="text-sm font-semibold text-blue-300">Instagram-Einladung annehmen</p>
               <p className="text-xs text-zinc-400">
-                Du wurdest als Beta-Tester freigeschaltet! Akzeptiere jetzt die Einladung auf Instagram:
+                Du wurdest als Beta-Tester freigeschaltet! So nimmst du die Einladung an:
               </p>
-              <a
-                href="https://www.instagram.com/accounts/manage_access/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-1.5 mt-1 px-3 py-1.5 bg-blue-700/40 hover:bg-blue-700/60 border border-blue-600/50 rounded-lg text-xs text-blue-300 hover:text-white transition-colors"
-              >
-                <FaInstagram size={11} />
-                Zu instagram.com/accounts/manage_access
-              </a>
+              <div className="bg-zinc-800/60 rounded-lg px-3 py-2.5 text-left space-y-1.5 text-xs text-zinc-300">
+                <p className="font-semibold text-zinc-200">Option 1 – Benachrichtigung:</p>
+                <p>Öffne Instagram → tippe auf die 🔔 Glocke oben rechts → suche nach der Beta-Tester-Einladung von <span className="text-pink-400">@dawidfaith</span></p>
+                <div className="border-t border-zinc-700 pt-1.5">
+                  <p className="font-semibold text-zinc-200">Option 2 – Einstellungen:</p>
+                  <p>Instagram → Profil (unten rechts) → ☰ Menü → Einstellungen → Apps und Websites → <span className="text-blue-300">Einladungen</span></p>
+                </div>
+              </div>
             </div>
             {error && (
               <div className="bg-red-900/30 border border-red-600/40 rounded-xl px-3 py-2 text-xs text-red-300">
@@ -441,17 +440,11 @@ export default function InstagramDmShareModal({
               <p className="text-2xl">⏳</p>
               <p className="text-sm font-semibold text-yellow-300">Story Quest wird freigeschaltet</p>
               <p className="text-xs text-zinc-400">
-                Story Quests sind aktuell im Beta-Modus. Dein Account wird innerhalb von 48h freigeschaltet. Du erhältst danach eine Einladung in Instagram unter:
+                Story Quests sind aktuell im Beta-Modus. Dein Account wird innerhalb von 48h freigeschaltet.
               </p>
-              <a
-                href="https://www.instagram.com/accounts/manage_access/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 text-xs text-pink-400 hover:text-pink-300 underline underline-offset-2"
-              >
-                <FaInstagram size={11} />
-                instagram.com/accounts/manage_access
-              </a>
+              <p className="text-xs text-zinc-400">
+                Danach erhältst du eine <span className="text-yellow-300">🔔 Instagram-Benachrichtigung</span> mit der Einladung. Tippe darauf, um sie anzunehmen.
+              </p>
             </div>
             <button onClick={onClose} className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
               Alles klar
