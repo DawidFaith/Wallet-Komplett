@@ -1,21 +1,21 @@
 /**
- * E-Mail Helfer via Resend (https://resend.com)
+ * E-Mail Helfer via Gmail + Nodemailer
  *
- * Erforderliche Env-Vars:
- *   RESEND_API_KEY  – API Key von resend.com
- *   RESEND_FROM     – Absender-Adresse (muss verifizierte Domain sein, z.B. noreply@dawidfaith.de)
- *   ADMIN_EMAIL     – Empfänger für Admin-Benachrichtigungen
+ * Verwendet dieselben Env-Vars wie die anderen Mailer im Projekt:
+ *   GMAIL_USER         – dawid.faith@gmail.com
+ *   GMAIL_APP_PASSWORD – Google App-Passwort
+ *   ADMIN_EMAIL        – Empfänger für Admin-Benachrichtigungen (optional, fällt auf GMAIL_USER zurück)
  */
 
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-function getResend() {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) return null;
-  return new Resend(key);
+function createTransporter() {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+  if (!user || !pass) return null;
+  return nodemailer.createTransport({ service: 'gmail', auth: { user, pass } });
 }
 
-const FROM = process.env.RESEND_FROM ?? 'D.FAITH <noreply@dawidfaith.de>';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de';
 
 /** Admin-Benachrichtigung: neuer Tester-Antrag eingegangen */
@@ -24,14 +24,15 @@ export async function sendTesterRequestAdminEmail(params: {
   email: string;
   walletAddress: string;
 }): Promise<void> {
-  const resend = getResend();
-  const adminEmail = process.env.ADMIN_EMAIL;
-  if (!resend || !adminEmail) {
-    console.log('[email] RESEND_API_KEY oder ADMIN_EMAIL fehlt – E-Mail übersprungen');
+  const transporter = createTransporter();
+  const gmailUser = process.env.GMAIL_USER;
+  const adminEmail = process.env.ADMIN_EMAIL ?? gmailUser;
+  if (!transporter || !adminEmail) {
+    console.log('[email] GMAIL_USER/GMAIL_APP_PASSWORD fehlt – E-Mail übersprungen');
     return;
   }
-  await resend.emails.send({
-    from: FROM,
+  await transporter.sendMail({
+    from: `"D.FAITH App" <${gmailUser}>`,
     to: adminEmail,
     subject: `[D.FAITH] Neuer Instagram Tester-Antrag: @${params.instagramHandle}`,
     html: `
@@ -60,14 +61,15 @@ export async function sendTesterApprovedEmail(params: {
   toEmail: string;
   instagramHandle: string;
 }): Promise<void> {
-  const resend = getResend();
-  if (!resend) {
-    console.log('[email] RESEND_API_KEY fehlt – User-E-Mail übersprungen');
+  const transporter = createTransporter();
+  const gmailUser = process.env.GMAIL_USER;
+  if (!transporter) {
+    console.log('[email] GMAIL_USER/GMAIL_APP_PASSWORD fehlt – User-E-Mail übersprungen');
     return;
   }
   const confirmUrl = 'https://www.instagram.com/accounts/manage_access/';
-  await resend.emails.send({
-    from: FROM,
+  await transporter.sendMail({
+    from: `"D.FAITH App" <${gmailUser}>`,
     to: params.toEmail,
     subject: `[D.FAITH] Du wurdest als Beta-Tester freigeschaltet! 🎉`,
     html: `
