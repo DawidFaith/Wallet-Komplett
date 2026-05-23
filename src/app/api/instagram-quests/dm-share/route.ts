@@ -146,6 +146,12 @@ export async function POST(req: NextRequest) {
 
     // ── STATUS ────────────────────────────────────────────────────────────────
     if (action === 'status') {
+      // Tester-Check auch im Status, um alte Einträge nicht durchzulassen
+      const testerForStatus = await isInstagramTester(profile.instagramHandle);
+      if (!testerForStatus) {
+        return NextResponse.json({ notTester: true, started: false });
+      }
+
       const alreadyDone = await hasWalletCompletedQuest(normalized, questId);
       if (alreadyDone) return NextResponse.json({ alreadyCompleted: true, tagVerified: true });
 

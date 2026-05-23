@@ -228,9 +228,11 @@ export default function AdminPage() {
         const res = await fetch('/api/admin/instagram-testers', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
-          body: JSON.stringify({ instagramHandle: handle }),
+          body: JSON.stringify({ handle }),
         });
-        if (res.ok) setTesterHandles(prev => new Set([...prev, handle.toLowerCase()]));
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? 'Fehler beim Freischalten');
+        setTesterHandles(prev => new Set([...prev, handle.toLowerCase()]));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Fehler');

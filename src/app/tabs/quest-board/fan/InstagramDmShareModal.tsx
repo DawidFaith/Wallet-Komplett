@@ -79,7 +79,9 @@ export default function InstagramDmShareModal({
     })
       .then((r) => r.json())
       .then((data) => {
-        if (data.alreadyCompleted || data.tagVerified) {
+        if (data.notTester) {
+          setStep('not_tester');
+        } else if (data.alreadyCompleted || data.tagVerified) {
           setStep('success');
         } else if (data.readyToComplete) {
           setInstagramHandle(data.instagramHandle ?? '');
