@@ -217,13 +217,17 @@ export default function AdminPage() {
 
   const handleToggleStoryQuest = async (handle: string, isApproved: boolean) => {
     setTogglingTester(handle.toLowerCase());
+    setError('');
     try {
       if (isApproved) {
-        await fetch(`/api/admin/instagram-testers?handle=${encodeURIComponent(handle)}`, {
+        const res = await fetch(`/api/admin/instagram-testers?handle=${encodeURIComponent(handle)}`, {
           method: 'DELETE',
           headers: { 'x-admin-secret': secret },
         });
-        setTesterHandles(prev => { const n = new Set(prev); n.delete(handle.toLowerCase()); return n; });
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          throw new Error(d.error ?? `HTTP ${res.status}`);
+        }
       } else {
         const res = await fetch('/api/admin/instagram-testers', {
           method: 'POST',
@@ -231,11 +235,15 @@ export default function AdminPage() {
           body: JSON.stringify({ handle }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? 'Fehler beim Freischalten');
-        setTesterHandles(prev => new Set([...prev, handle.toLowerCase()]));
+        if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
       }
+      // Immer frisch vom Server laden um sicherzustellen der Eintrag wirklich gespeichert wurde
+      await fetchTesters(secret);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Fehler');
+      const msg = e instanceof Error ? e.message : 'Fehler beim Freischalten';
+      setError(msg);
+      // eslint-disable-next-line no-console
+      console.error('[Story freischalten]', msg, e);
     } finally {
       setTogglingTester(null);
     }

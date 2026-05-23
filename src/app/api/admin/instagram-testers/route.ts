@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   if (!checkAuth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
+    await ensureTable();
     const body = await req.json() as { handle?: string; notes?: string };
     const handle = body.handle?.trim().toLowerCase().replace(/^@/, '');
     if (!handle) return NextResponse.json({ error: 'handle fehlt' }, { status: 400 });
