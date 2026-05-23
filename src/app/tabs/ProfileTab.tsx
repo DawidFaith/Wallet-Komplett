@@ -384,13 +384,13 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
               />
             ) : (
               <div className="w-16 h-16 rounded-full bg-zinc-700 flex items-center justify-center text-white font-bold text-2xl select-none">
-                {(_clerkUser?.fullName ?? _clerkUser?.username ?? '?').slice(0, 2).toUpperCase()}
+                {(_clerkUser?.fullName || [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') || _clerkUser?.username || '?').slice(0, 2).toUpperCase()}
               </div>
             )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-lg text-white truncate">
-              {_clerkUser?.fullName ?? _clerkUser?.username ?? shortenAddress(account.address)}
+              {_clerkUser?.fullName || [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') || _clerkUser?.username || shortenAddress(account.address)}
             </p>
           </div>
         </div>
@@ -503,7 +503,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                   let icon: React.ReactNode = null;
                   if (dp === 'clerk' || dp === null) {
                     pic = _clerkUser?.imageUrl ?? null;
-                    label = _clerkUser?.fullName ?? _clerkUser?.username ?? 'Profilbild';
+                    label = _clerkUser?.fullName || [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') || _clerkUser?.username || 'Profilbild';
                   } else if (dp === 'youtube' && p.youtubeVerified) {
                     pic = p.youtubeChannelThumbnail ?? null;
                     label = p.youtubeChannelName ?? 'YouTube';
