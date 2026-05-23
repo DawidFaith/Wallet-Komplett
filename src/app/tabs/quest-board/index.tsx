@@ -72,7 +72,7 @@ function ArtistSelector({ onSelect }: { onSelect: (artist: ArtistInfo) => void }
   }
 
   return (
-    <div className="space-y-4">
+    <div className="px-4 space-y-4">
       <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Artists</p>
       <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
         {artists.map(artist => (
