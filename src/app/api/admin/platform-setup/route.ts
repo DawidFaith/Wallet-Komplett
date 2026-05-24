@@ -6,10 +6,13 @@
  *   - Setzt is_artist = true, instagram_verified = true, facebook_verified = true
  *   - Testet META_SYSTEM_USER_TOKEN
  *
- * Body: { secret: string }
+ * PATCH /api/admin/platform-setup
+ *   - Aktualisiert das Profilbild des Platform-Kontos
+ *   - Body: multipart/form-data mit Feld "image" (Datei)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { put } from '@vercel/blob';
 import { getDb } from '../../../lib/db';
 import { getIgAccountId } from '../../../lib/metaApi';
 
@@ -145,4 +148,49 @@ export async function GET(req: NextRequest) {
     igAccountId,
     metaTokenOk: tokenOk,
   });
+}
+
+// PATCH: Profilbild des Platform-Kontos hochladen
+export async function PATCH(req: NextRequest) {
+  if (!checkAuth(req)) {
+    return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
+  }
+
+  try {
+    const formData = await req.formData();
+    const file = formData.get('image');
+    if (!file || !(file instanceof Blob)) {
+      return NextResponse.json({ error: 'Kein Bild übermittelt' }, { status: 400 });
+    }
+
+    const mimeType = file.type || 'image/png';
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(mimeType)) {
+      return NextResponse.json({ error: 'Ungültiges Bildformat (nur JPEG, PNG, WebP, GIF)' }, { status: 400 });
+    }
+
+    const ext = mimeType.split('/')[1].replace('jpeg', 'jpg');
+    const filename = `platform/dfaith-ecosystem-avatar.${ext}`;
+
+    const blob = await put(filename, file, {
+      access: 'public',
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: mimeType,
+    });
+
+    const sql = getDb();
+    await sql`
+      UPDATE user_profiles
+      SET
+        instagram_picture = ${blob.url},
+        clerk_image_url   = ${blob.url},
+        updated_at        = NOW()
+      WHERE wallet_address = ${PLATFORM_WALLET}
+    `;
+
+    return NextResponse.json({ success: true, url: blob.url });
+  } catch (err) {
+    console.error('[platform-setup PATCH]', err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }

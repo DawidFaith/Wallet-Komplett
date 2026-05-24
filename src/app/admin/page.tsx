@@ -1633,6 +1633,11 @@ function PlatformSection({ secret }: { secret: string }) {
   const [questsLoading, setQuestsLoading] = React.useState(false);
   const [questMsg, setQuestMsg] = React.useState('');
 
+  // ── Bild-Upload State ──────────────────────────────────────────────────────
+  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
+  const [imageFile, setImageFile] = React.useState<File | null>(null);
+  const [uploading, setUploading] = React.useState(false);
+  const [uploadMsg, setUploadMsg] = React.useState('');
   const loadStatus = React.useCallback(async () => {
     try {
       const res = await fetch('/api/admin/platform-setup', {
@@ -1654,6 +1659,41 @@ function PlatformSection({ secret }: { secret: string }) {
   }, [secret]);
 
   React.useEffect(() => { loadStatus(); loadQuests(); }, [loadStatus, loadQuests]);
+
+  // ── Bild-Upload Handler ────────────────────────────────────────────────────
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setUploadMsg('');
+    const reader = new FileReader();
+    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleImageUpload = async () => {
+    if (!imageFile) return;
+    setUploading(true);
+    setUploadMsg('');
+    try {
+      const form = new FormData();
+      form.append('image', imageFile);
+      const res = await fetch('/api/admin/platform-setup', {
+        method: 'PATCH',
+        headers: { 'x-admin-secret': secret },
+        body: form,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUploadMsg('✅ Bild erfolgreich hochgeladen!');
+        setImageFile(null);
+        await loadStatus();
+      } else {
+        setUploadMsg(`❌ ${data.error}`);
+      }
+    } catch { setUploadMsg('❌ Netzwerkfehler'); }
+    finally { setUploading(false); }
+  };
 
   const runSetup = async () => {
     setLoading(true); setMsg('');
@@ -1695,6 +1735,64 @@ function PlatformSection({ secret }: { secret: string }) {
 
   return (
     <div className="space-y-6">
+      {/* ── Profilbild hochladen ──────────────────────────────────────────── */}
+      <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
+        <h2 className="text-lg font-bold text-white mb-1">🖼️ Profilbild für Platform-Konto</h2>
+        <p className="text-zinc-500 text-sm mb-4">Dieses Bild erscheint als Icon beim Platform-Konto in der Künstler-Liste.</p>
+
+        <div className="flex items-start gap-4">
+          {/* Vorschau */}
+          <div className="shrink-0">
+            {(() => {
+              const currentPic = profile
+                ? String((profile as { instagram_picture?: string }).instagram_picture ?? '')
+                : '';
+              const src = imagePreview || (currentPic || null);
+              return src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={src} alt="Profilbild" className="w-20 h-20 rounded-full object-cover border-2 border-amber-500/50" />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center">
+                  <span className="text-zinc-500 text-3xl">👤</span>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Upload */}
+          <div className="flex-1 space-y-3">
+            <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-zinc-700 hover:border-amber-500/60 rounded-xl cursor-pointer transition-colors bg-zinc-800/50 hover:bg-zinc-800">
+              <span className="text-zinc-400 text-sm">
+                {imageFile ? imageFile.name : 'Bild auswählen (JPG, PNG, WebP)'}
+              </span>
+              <span className="text-zinc-600 text-xs mt-1">Max. 5 MB</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </label>
+
+            {uploadMsg && (
+              <p className={`text-sm ${uploadMsg.startsWith('✅') ? 'text-green-400' : 'text-red-400'}`}>
+                {uploadMsg}
+              </p>
+            )}
+
+            <button
+              onClick={handleImageUpload}
+              disabled={!imageFile || uploading}
+              className="w-full bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-black font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
+            >
+              {uploading
+                ? <><span className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" />Wird hochgeladen…</>
+                : '⬆️ Bild hochladen'}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* ── Platform-User Status ─────────────────────────────────────────── */}
       <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
         <h2 className="text-lg font-bold text-white mb-4">⚡ Platform-User: dfaith_ecosystem</h2>
