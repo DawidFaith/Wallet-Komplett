@@ -2350,9 +2350,11 @@ export async function getAllArtistsWithReputation(walletAddress: string): Promis
       p.wallet_address                AS artist_wallet,
       p.display_name,
       p.display_platform,
-      p.instagram_handle, p.instagram_name, p.instagram_picture,
-      p.tiktok_handle,    p.tiktok_name,    p.tiktok_picture,
-      p.facebook_handle,  p.facebook_name,  p.facebook_picture,
+      p.clerk_image_url,
+      p.clerk_name,
+      p.instagram_handle, p.instagram_verified, p.instagram_name, p.instagram_picture,
+      p.tiktok_handle,    p.tiktok_verified,    p.tiktok_name,    p.tiktok_picture,
+      p.facebook_handle,  p.facebook_verified,  p.facebook_name,  p.facebook_picture,
       yb.channel_id          AS youtube_channel_id,
       yb.channel_name        AS youtube_channel_name,
       yb.channel_thumbnail   AS youtube_channel_thumbnail,
@@ -2363,7 +2365,7 @@ export async function getAllArtistsWithReputation(walletAddress: string): Promis
       AND LOWER(ur.wallet_address) = ${walletAddress.toLowerCase()}
     LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
     WHERE p.is_artist = TRUE
-    ORDER BY COALESCE(ur.reputation, 0) DESC, p.display_name ASC
+    ORDER BY COALESCE(p.is_platform_user, FALSE) DESC, COALESCE(ur.reputation, 0) DESC, p.display_name ASC
   `;
   const result: UserArtistReputation[] = [];
   for (const row of rows) {
@@ -2377,6 +2379,17 @@ export async function getAllArtistsWithReputation(walletAddress: string): Promis
     if (dp === 'youtube' && row.youtube_channel_id) {
       artistName ??= row.youtube_channel_name as string ?? null;
       artistPicture = (row.youtube_channel_thumbnail as string | null) ?? null;
+    } else if (dp === 'clerk') {
+      artistPicture = (row.clerk_image_url as string | null) ?? null;
+      const clerkName = row.clerk_name as string | null;
+      if (clerkName) {
+        artistName = clerkName;
+      } else {
+        if (row.instagram_verified && row.instagram_name) artistName ??= row.instagram_name as string;
+        else if (row.facebook_verified && row.facebook_name) artistName ??= row.facebook_name as string;
+        else if (row.tiktok_verified && row.tiktok_name) artistName ??= row.tiktok_name as string;
+        else if (row.youtube_channel_name) artistName ??= row.youtube_channel_name as string;
+      }
     } else if (dp === 'instagram' && row.instagram_handle) {
       artistName ??= row.instagram_name as string ?? `@${row.instagram_handle}`;
       artistPicture = (row.instagram_picture as string | null) ?? null;
@@ -2391,14 +2404,14 @@ export async function getAllArtistsWithReputation(walletAddress: string): Promis
       if (row.youtube_channel_id) {
         artistName ??= row.youtube_channel_name as string ?? null;
         artistPicture = (row.youtube_channel_thumbnail as string | null) ?? null;
-      } else if (row.instagram_name) {
-        artistName ??= row.instagram_name as string;
+      } else if (row.instagram_verified && row.instagram_handle) {
+        artistName ??= row.instagram_name as string ?? `@${row.instagram_handle}`;
         artistPicture = (row.instagram_picture as string | null) ?? null;
-      } else if (row.tiktok_name) {
-        artistName ??= row.tiktok_name as string;
+      } else if (row.tiktok_verified && row.tiktok_handle) {
+        artistName ??= row.tiktok_name as string ?? `@${row.tiktok_handle}`;
         artistPicture = (row.tiktok_picture as string | null) ?? null;
-      } else if (row.facebook_name) {
-        artistName ??= row.facebook_name as string;
+      } else if (row.facebook_verified && row.facebook_handle) {
+        artistName ??= row.facebook_name as string ?? `@${row.facebook_handle}`;
         artistPicture = (row.facebook_picture as string | null) ?? null;
       }
     }
