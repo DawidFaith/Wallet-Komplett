@@ -146,6 +146,7 @@ export default function CreateQuestModal({
     setAvailableFacebookMedia([]); setLoadingFacebookMedia(false); setSelectedFacebookMedia(null);
     setError(''); setSuccess(false); setStoryLink(null); setLinkCopied(false);
     setStoryPreviewToken(null); setStoryPreviewLink(null); setLinkDmConfirmed(false); setPreviewLinkCopied(false);
+    localStorage.removeItem('dfaith_pending_story_token');
   };
 
   const fetchAvailableFacebookMedia = async () => {
@@ -584,8 +585,10 @@ export default function CreateQuestModal({
                   type="button"
                   onClick={() => {
                     setQuestType('dm_share');
-                    // Link sofort generieren
-                    const token = crypto.randomUUID();
+                    // Bestehenden Token aus localStorage laden oder neuen generieren
+                    const stored = localStorage.getItem('dfaith_pending_story_token');
+                    const token = stored ?? crypto.randomUUID();
+                    if (!stored) localStorage.setItem('dfaith_pending_story_token', token);
                     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de';
                     setStoryPreviewToken(token);
                     setStoryPreviewLink(`${appUrl}/api/instagram-quests/story-click?token=${token}`);
