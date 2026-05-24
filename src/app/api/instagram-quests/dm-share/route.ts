@@ -23,6 +23,7 @@ import {
   savePendingReward,
   addUserXp,
   addUserReputation,
+  payLevelBonus,
   deleteInstagramDmVerification,
   type QuestCompletion,
 } from '../../../lib/questDb';
@@ -56,6 +57,7 @@ async function completeStoryQuest({
   };
   await saveCompletion(completion);
   await addDfaithCredits(normalized, quest.rewardAmount);
+  const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount);
   await savePendingReward({ walletAddress: normalized, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId, createdAt: now });
   await addUserXp(normalized, Math.round(quest.rewardAmount / 10));
   await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
@@ -63,8 +65,9 @@ async function completeStoryQuest({
   return NextResponse.json({
     success: true,
     tagVerified: true,
-    rewardAmount: quest.rewardAmount,
-    message: `Quest abgeschlossen! +${quest.rewardAmount} DFAITH Credits gutgeschrieben.`,
+    rewardAmount: quest.rewardAmount + levelBonus,
+    levelBonus: levelBonus > 0 ? levelBonus : undefined,
+    message: `Quest abgeschlossen! +${quest.rewardAmount + levelBonus} DFAITH Credits gutgeschrieben.`,
   });
 }
 

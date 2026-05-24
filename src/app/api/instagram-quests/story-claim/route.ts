@@ -20,6 +20,7 @@ import {
   saveCompletion,
   addDfaithCredits,
   addUserReputation,
+  payLevelBonus,
   type QuestCompletion,
 } from '../../../lib/questDb';
 import { getDb } from '../../../lib/db';
@@ -87,6 +88,7 @@ export async function POST(req: NextRequest) {
   try {
     await saveCompletion(completion);
     await addDfaithCredits(wallet, quest.rewardAmount);
+    const levelBonus = await payLevelBonus(wallet, quest.creatorWallet, quest.rewardAmount);
     if ((quest.reputationReward ?? 0) > 0) {
       await addUserReputation(wallet, quest.creatorWallet, quest.reputationReward!);
     }
@@ -95,6 +97,13 @@ export async function POST(req: NextRequest) {
     // Falls kein DB-Trigger: manuell erhöhen
     const sql = getDb();
     await sql`UPDATE quests SET completions = completions + 1 WHERE id = ${quest.id} AND completions < max_completions`;
+
+    return NextResponse.json({
+      success: true,
+      rewardAmount: quest.rewardAmount + levelBonus,
+      levelBonus: levelBonus > 0 ? levelBonus : undefined,
+      message: `+${quest.rewardAmount + levelBonus} DFAITH Credits gutgeschrieben!`,
+    });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('unique') || msg.includes('duplicate')) {
@@ -102,10 +111,4 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ error: `Fehler beim Speichern: ${msg}` }, { status: 500 });
   }
-
-  return NextResponse.json({
-    success: true,
-    rewardAmount: quest.rewardAmount,
-    message: `+${quest.rewardAmount} DFAITH Credits gutgeschrieben!`,
-  });
 }

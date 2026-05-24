@@ -17,6 +17,7 @@ import {
   savePendingReward,
   addUserXp,
   addUserReputation,
+  payLevelBonus,
   getUserProfile,
 } from '../../../lib/questDb';
 import { findFacebookComment } from '../../../lib/metaApi';
@@ -122,6 +123,7 @@ export async function POST(req: NextRequest) {
 
   // 7. Credits gutschreiben
   await addDfaithCredits(normalized, quest.rewardAmount);
+  const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount);
   await savePendingReward({
     walletAddress: normalized,
     amount: quest.rewardAmount,
@@ -134,7 +136,8 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    rewardAmount: quest.rewardAmount,
-    message: `Quest abgeschlossen! +${quest.rewardAmount} DFAITH Credits`,
+    rewardAmount: quest.rewardAmount + levelBonus,
+    levelBonus: levelBonus > 0 ? levelBonus : undefined,
+    message: `Quest abgeschlossen! +${quest.rewardAmount + levelBonus} DFAITH Credits`,
   });
 }

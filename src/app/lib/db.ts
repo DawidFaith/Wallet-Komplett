@@ -209,6 +209,11 @@ export const MIGRATION_SQL = `
     PRIMARY KEY (artist_wallet, level_number)
   );
 
+  ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS credit_reward                INTEGER  NOT NULL DEFAULT 0;
+  ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS max_recipients               INTEGER  NOT NULL DEFAULT 0;
+  ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS recipients_count             INTEGER  NOT NULL DEFAULT 0;
+  ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS quest_reward_bonus_percent   SMALLINT NOT NULL DEFAULT 0;
+
   -- Shop: Mindest-Level-Anforderung pro Item (0 = kein Level erforderlich)
   ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS required_level INTEGER NOT NULL DEFAULT 0;
 

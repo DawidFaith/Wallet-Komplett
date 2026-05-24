@@ -33,6 +33,7 @@ interface ReputationLevel {
   prizeDescription: string;
   creditReward: number;
   maxRecipients: number;
+  questRewardBonusPercent: number;
 }
 
 interface ReputationContest {
@@ -464,16 +465,16 @@ function ArtistDetailView({
 
 // Artist: Verwaltungs-Panel
 const DEFAULT_LEVELS: ReputationLevel[] = [
-  { levelNumber:  1, levelName: 'Newcomer',  minReputation: 0,     prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  2, levelName: 'Follower',  minReputation: 50,    prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  3, levelName: 'Fan',       minReputation: 150,   prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  4, levelName: 'Supporter', minReputation: 350,   prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  5, levelName: 'Loyalist',  minReputation: 700,   prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  6, levelName: 'True Fan',  minReputation: 1200,  prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  7, levelName: 'Advocate',  minReputation: 2000,  prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  8, levelName: 'VIP',       minReputation: 3500,  prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  9, levelName: 'Elite',     minReputation: 6000,  prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber: 10, levelName: 'Legend',    minReputation: 10000, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  1, levelName: 'Newcomer',  minReputation: 0,     prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  2, levelName: 'Follower',  minReputation: 50,    prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  3, levelName: 'Fan',       minReputation: 150,   prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  4, levelName: 'Supporter', minReputation: 350,   prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  5, levelName: 'Loyalist',  minReputation: 700,   prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  6, levelName: 'True Fan',  minReputation: 1200,  prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  7, levelName: 'Advocate',  minReputation: 2000,  prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  8, levelName: 'VIP',       minReputation: 3500,  prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  9, levelName: 'Elite',     minReputation: 6000,  prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber: 10, levelName: 'Legend',    minReputation: 10000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
 ];
 
 function ArtistPanel({ walletAddress }: { walletAddress: string }) {
@@ -566,6 +567,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
       prizeDescription: '',
       creditReward: 0,
       maxRecipients: 0,
+      questRewardBonusPercent: 0,
     }]);
   };
 
@@ -792,6 +794,20 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       )}
                     </div>
                     <div>
+                      <label className="text-zinc-500 text-[10px] mb-0.5 block">Quest-Reward Bonus (%)</label>
+                      <div className="relative">
+                        <input
+                          type="number" min="0" max="100"
+                          className="w-full bg-zinc-700 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 pr-8"
+                          value={editLevels[idx].questRewardBonusPercent}
+                          onChange={e => { const u = [...editLevels]; u[idx] = { ...u[idx], questRewardBonusPercent: Number(e.target.value) }; setEditLevels(u); }}
+                          placeholder="0 = kein Bonus"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">%</span>
+                      </div>
+                      <p className="text-amber-400/70 text-[10px] mt-0.5">Prozentualer Bonus auf Quest-Rewards – aus deinem Guthaben</p>
+                    </div>
+                    <div>
                       <label className="text-zinc-500 text-[10px] mb-0.5 block">Reward-Beschreibung</label>
                       <input
                         className="w-full bg-zinc-700 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
@@ -814,6 +830,11 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                           <span className="inline-flex items-center gap-1 text-amber-300 text-xs font-semibold">
                             <Image src="/D.FAITH.png" alt="" width={10} height={10} className="w-2.5 h-2.5 rounded-full shrink-0" />
                             +{lvl.creditReward} D.FAITH Credits × {lvl.maxRecipients} Fans
+                          </span>
+                        )}
+                        {lvl.questRewardBonusPercent > 0 && (
+                          <span className="inline-flex items-center gap-1 text-green-400 text-xs font-semibold">
+                            ⚡ +{lvl.questRewardBonusPercent}% Quest-Bonus
                           </span>
                         )}
                       </div>

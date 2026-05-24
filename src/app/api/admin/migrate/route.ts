@@ -130,6 +130,7 @@ export async function POST(req: NextRequest) {
     await sql`ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS credit_reward INTEGER NOT NULL DEFAULT 0`;
     await sql`ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS max_recipients INTEGER NOT NULL DEFAULT 0`;
     await sql`ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS recipients_count INTEGER NOT NULL DEFAULT 0`;
+    await sql`ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS quest_reward_bonus_percent SMALLINT NOT NULL DEFAULT 0`;
 
     await sql`
       CREATE TABLE IF NOT EXISTS reputation_contests (

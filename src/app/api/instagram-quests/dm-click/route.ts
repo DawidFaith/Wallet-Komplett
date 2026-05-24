@@ -28,6 +28,7 @@ import {
   savePendingReward,
   addUserXp,
   addUserReputation,
+  payLevelBonus,
   deleteInstagramDmVerification,
   type QuestCompletion,
 } from '../../../lib/questDb';
@@ -80,12 +81,13 @@ async function processToken(token: string): Promise<
 
   await saveCompletion(completion);
   await addDfaithCredits(verif.walletAddress, quest.rewardAmount);
+  const levelBonus = await payLevelBonus(verif.walletAddress, quest.creatorWallet, quest.rewardAmount);
   await savePendingReward({ walletAddress: verif.walletAddress, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId: verif.questId, createdAt: now });
   await addUserXp(verif.walletAddress, Math.round(quest.rewardAmount / 10));
   await addUserReputation(verif.walletAddress, quest.creatorWallet, quest.reputationReward);
   await deleteInstagramDmVerification(verif.questId, verif.walletAddress);
 
-  return { ok: true, rewardAmount: quest.rewardAmount, questTitle: quest.videoTitle, message: `+${quest.rewardAmount} D.FAITH Credits wurden gutgeschrieben.` };
+  return { ok: true, rewardAmount: quest.rewardAmount + levelBonus, questTitle: quest.videoTitle, message: `+${quest.rewardAmount + levelBonus} D.FAITH Credits wurden gutgeschrieben.` };
 }
 
 // ── Rückwärtskompatibel: Abschluss via Handle (für POST / manuelle Trigger) ──

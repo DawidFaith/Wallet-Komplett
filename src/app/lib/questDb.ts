@@ -44,8 +44,9 @@ export interface ReputationLevel {
   levelName: string;
   minReputation: number;
   prizeDescription: string;
-  creditReward: number;   // D.FAITH Credits die beim Level-Up ausgezahlt werden
-  maxRecipients: number; // Wie viele Fans diesen Reward erhalten können (0 = kein Reward)
+  creditReward: number;            // D.FAITH Credits die beim Level-Up ausgezahlt werden
+  maxRecipients: number;           // Wie viele Fans diesen Reward erhalten können (0 = kein Reward)
+  questRewardBonusPercent: number; // Prozentualer Bonus auf Quest-Rewards für dieses Level (0 = kein Bonus)
 }
 
 export interface ReputationContest {
@@ -1782,16 +1783,16 @@ export async function setArtistStatus(walletAddress: string, isArtist: boolean):
 //   Super Fan    (~1000 REP/Mo) → Level 10 in ~3,5 Jahre  ← "Legend" ist erreichbar
 // ─────────────────────────────────────────────────────────────────────────────
 const DEFAULT_REPUTATION_LEVELS: ReputationLevel[] = [
-  { levelNumber:  1, levelName: 'Newcomer',  minReputation:      0, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  2, levelName: 'Follower',  minReputation:    200, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  3, levelName: 'Fan',       minReputation:    500, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  4, levelName: 'Supporter', minReputation:  1_000, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  5, levelName: 'Loyalist',  minReputation:  2_000, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  6, levelName: 'True Fan',  minReputation:  3_800, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  7, levelName: 'Advocate',  minReputation:  7_000, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  8, levelName: 'VIP',       minReputation: 13_000, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  9, levelName: 'Elite',     minReputation: 24_000, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber: 10, levelName: 'Legend',    minReputation: 45_000, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  1, levelName: 'Newcomer',  minReputation:      0, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  2, levelName: 'Follower',  minReputation:    200, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  3, levelName: 'Fan',       minReputation:    500, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  4, levelName: 'Supporter', minReputation:  1_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  5, levelName: 'Loyalist',  minReputation:  2_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  6, levelName: 'True Fan',  minReputation:  3_800, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  7, levelName: 'Advocate',  minReputation:  7_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  8, levelName: 'VIP',       minReputation: 13_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  9, levelName: 'Elite',     minReputation: 24_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber: 10, levelName: 'Legend',    minReputation: 45_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
 ];
 
 /** Reputation eines Users für einen Artist erhöhen + Level-Up Credits auszahlen */
@@ -1856,7 +1857,7 @@ export async function addUserReputation(
 export async function getReputationLevels(artistWallet: string): Promise<ReputationLevel[]> {
   const sql = getDb();
   const rows = await sql`
-    SELECT level_number, level_name, min_reputation, prize_description, credit_reward, max_recipients
+    SELECT level_number, level_name, min_reputation, prize_description, credit_reward, max_recipients, quest_reward_bonus_percent
     FROM reputation_levels
     WHERE artist_wallet = ${artistWallet.toLowerCase()}
     ORDER BY level_number ASC
@@ -1869,6 +1870,7 @@ export async function getReputationLevels(artistWallet: string): Promise<Reputat
     prizeDescription: String(r.prize_description ?? ''),
     creditReward: Number(r.credit_reward ?? 0),
     maxRecipients: Number(r.max_recipients ?? 0),
+    questRewardBonusPercent: Number(r.quest_reward_bonus_percent ?? 0),
   }));
 }
 
@@ -1940,22 +1942,78 @@ export async function saveReputationLevels(
 
   // Neue / geänderte Level per UPSERT einfügen (recipients_count beibehalten)
   for (const lvl of levels) {
-    const creditReward  = Math.max(0, Math.round(Number(lvl.creditReward)  || 0));
-    const maxRecipients = Math.max(0, Math.round(Number(lvl.maxRecipients) || 0));
+    const creditReward        = Math.max(0, Math.round(Number(lvl.creditReward)            || 0));
+    const maxRecipients       = Math.max(0, Math.round(Number(lvl.maxRecipients)           || 0));
+    const questBonusPercent   = Math.min(100, Math.max(0, Math.round(Number(lvl.questRewardBonusPercent) || 0)));
     await sql`
       INSERT INTO reputation_levels
-        (artist_wallet, level_number, level_name, min_reputation, prize_description, credit_reward, max_recipients, recipients_count, updated_at)
+        (artist_wallet, level_number, level_name, min_reputation, prize_description, credit_reward, max_recipients, recipients_count, quest_reward_bonus_percent, updated_at)
       VALUES
-        (${wallet}, ${lvl.levelNumber}, ${lvl.levelName}, ${lvl.minReputation}, ${lvl.prizeDescription}, ${creditReward}, ${maxRecipients}, 0, NOW())
+        (${wallet}, ${lvl.levelNumber}, ${lvl.levelName}, ${lvl.minReputation}, ${lvl.prizeDescription}, ${creditReward}, ${maxRecipients}, 0, ${questBonusPercent}, NOW())
       ON CONFLICT (artist_wallet, level_number) DO UPDATE SET
-        level_name        = EXCLUDED.level_name,
-        min_reputation    = EXCLUDED.min_reputation,
-        prize_description = EXCLUDED.prize_description,
-        credit_reward     = EXCLUDED.credit_reward,
-        max_recipients    = EXCLUDED.max_recipients,
-        updated_at        = EXCLUDED.updated_at
+        level_name                  = EXCLUDED.level_name,
+        min_reputation              = EXCLUDED.min_reputation,
+        prize_description           = EXCLUDED.prize_description,
+        credit_reward               = EXCLUDED.credit_reward,
+        max_recipients              = EXCLUDED.max_recipients,
+        quest_reward_bonus_percent  = EXCLUDED.quest_reward_bonus_percent,
+        updated_at                  = EXCLUDED.updated_at
     `;
   }
+}
+
+// ─── Level-Bonus bei Quest-Abschluss ─────────────────────────────────────────
+
+/**
+ * Prozentualen Level-Bonus auf einen Quest-Reward auszahlen.
+ * Der Bonus wird aus dem allgemeinen D.FAITH-Guthaben des Artists (creatorWallet) entnommen
+ * und dem Fan gutgeschrieben. Wenn der Artist nicht genug Guthaben hat, wird 0 zurückgegeben
+ * und kein Fehler geworfen (Basisreward wird trotzdem ausgezahlt).
+ *
+ * @returns Der tatsächlich ausgezahlte Bonusbetrag (0 wenn kein Bonus).
+ */
+export async function payLevelBonus(
+  fanWallet: string,
+  artistWallet: string,
+  baseReward: number,
+): Promise<number> {
+  if (baseReward <= 0) return 0;
+  const sql = getDb();
+
+  // Fan-Reputation für diesen Artist laden
+  const repRows = await sql`
+    SELECT reputation FROM user_reputation
+    WHERE wallet_address = ${fanWallet.toLowerCase()} AND artist_wallet = ${artistWallet.toLowerCase()}
+    LIMIT 1
+  `;
+  const reputation = repRows.length > 0 ? Number(repRows[0].reputation) : 0;
+
+  // Level-Konfiguration laden + aktuelles Level bestimmen
+  const levels = await getReputationLevels(artistWallet);
+  const sorted = [...levels].sort((a, b) => a.minReputation - b.minReputation);
+  let currentLevel: ReputationLevel = sorted[0];
+  for (const lvl of sorted) {
+    if (reputation >= lvl.minReputation) currentLevel = lvl;
+    else break;
+  }
+
+  const bonusPercent = currentLevel.questRewardBonusPercent ?? 0;
+  if (bonusPercent <= 0) return 0;
+
+  const bonus = Math.round(baseReward * bonusPercent / 100 * 100) / 100;
+  if (bonus <= 0) return 0;
+
+  // Atomisch vom Artist-Guthaben abziehen (schlägt still fehl wenn nicht genug Guthaben)
+  const deducted = await sql`
+    UPDATE dfaith_credits
+    SET balance = balance - ${bonus}, updated_at = NOW()
+    WHERE wallet_address = ${artistWallet.toLowerCase()} AND balance >= ${bonus}
+    RETURNING balance
+  `;
+  if (deducted.length === 0) return 0;
+
+  await addDfaithCredits(fanWallet, bonus);
+  return bonus;
 }
 
 // ─── Reputation Contest ────────────────────────────────────────────────────────

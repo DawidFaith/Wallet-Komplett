@@ -7,6 +7,7 @@ import {
   addDfaithCredits,
   addUserXp,
   addUserReputation,
+  payLevelBonus,
 } from '../../../lib/questDb';
 
 export async function POST(req: NextRequest) {
@@ -89,10 +90,11 @@ export async function POST(req: NextRequest) {
     });
 
     await addDfaithCredits(walletAddress, quest.rewardAmount);
+    const levelBonus = await payLevelBonus(walletAddress, quest.creatorWallet, quest.rewardAmount);
     await addUserXp(walletAddress, quest.rewardAmount * 10);
     await addUserReputation(walletAddress, quest.creatorWallet, quest.reputationReward);
 
-    return NextResponse.json({ success: true, rewardAmount: quest.rewardAmount });
+    return NextResponse.json({ success: true, rewardAmount: quest.rewardAmount + levelBonus, levelBonus: levelBonus > 0 ? levelBonus : undefined });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('[tiktok-secret-verify]', message);
