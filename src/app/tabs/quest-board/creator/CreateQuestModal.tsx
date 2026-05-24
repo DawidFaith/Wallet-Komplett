@@ -77,6 +77,11 @@ export default function CreateQuestModal({
   const [success, setSuccess] = useState(false);
   const [storyLink, setStoryLink] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  // dm_share: Token vor Quest-Erstellung generieren
+  const [storyPreviewToken, setStoryPreviewToken] = useState<string | null>(null);
+  const [storyPreviewLink, setStoryPreviewLink] = useState<string | null>(null);
+  const [linkDmConfirmed, setLinkDmConfirmed] = useState(false);
+  const [previewLinkCopied, setPreviewLinkCopied] = useState(false);
   // Instagram – verfügbare Videos aus DB
   const [availableMedia, setAvailableMedia] = useState<AvailableMediaItem[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
@@ -118,6 +123,7 @@ export default function CreateQuestModal({
     setAvailableQuestMedia([]); setLoadingQuestMedia(false); setSelectedQuestMediaId(null);
     setAvailableFacebookMedia([]); setLoadingFacebookMedia(false); setSelectedFacebookMedia(null);
     setError(''); setSuccess(false); setStoryLink(null); setLinkCopied(false);
+    setStoryPreviewToken(null); setStoryPreviewLink(null); setLinkDmConfirmed(false); setPreviewLinkCopied(false);
   };
 
   const fetchAvailableFacebookMedia = async () => {
@@ -271,7 +277,7 @@ export default function CreateQuestModal({
         ? {
             creatorWallet: walletAddress,
             reelUrl: selectedMedia!.permalink || `https://www.instagram.com/reel/${selectedMedia!.shortcode}/`,
-            mediaId: selectedMedia!.graph_media_id,   // echte Graph API ID → direkt für /comments
+            mediaId: selectedMedia!.graph_media_id,
             videoTitle: buildInstagramTitle(selectedMedia!),
             thumbnailUrl: selectedMedia!.thumbnail_url,
             description: finalDescription || `💬 Kommentiere dieses Instagram Reel!`,
@@ -280,6 +286,7 @@ export default function CreateQuestModal({
             maxCompletions: Number(maxParticipants),
             durationHours: finalDurationHours,
             questType,
+            storyToken: questType === 'dm_share' ? storyPreviewToken : undefined,
           }
         : platform === 'facebook'
         ? {
@@ -564,7 +571,15 @@ export default function CreateQuestModal({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setQuestType('dm_share')}
+                  onClick={() => {
+                    setQuestType('dm_share');
+                    // Link sofort generieren
+                    const token = crypto.randomUUID();
+                    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de';
+                    setStoryPreviewToken(token);
+                    setStoryPreviewLink(`${appUrl}/api/instagram-quests/story-click?token=${token}`);
+                    setLinkDmConfirmed(false);
+                  }}
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'dm_share'
                       ? 'bg-gradient-to-r from-purple-600 to-pink-600 border-purple-500 text-white'
@@ -580,7 +595,7 @@ export default function CreateQuestModal({
                   : questType === 'repost'
                   ? 'Fan muss das Reel auf seinen Kanal reposten. Delta aus total_interactions wird gemessen.'
                   : questType === 'dm_share'
-                  ? 'Fan teilt das Reel in seiner Story (Teil 1) und klickt den Link-DM-Link (Teil 2).'
+                  ? 'Fan teilt das Reel in seiner Story und markiert den Künstler. Du schickst ihm den Link per Instagram DM.'
                   : 'Make.com prüft via Instagram Graph API ob der Fan kommentiert hat.'}
               </p>
             </div>
@@ -632,6 +647,46 @@ export default function CreateQuestModal({
                   ? 'Fan gibt einen Code ein, der im Post / Video versteckt ist.'
                   : 'Make.com prüft ob der Fan unter dem Post kommentiert hat.'}
               </p>
+            </div>
+          )}
+
+          {/* dm_share: Link vorab anzeigen + Bestätigung */}
+          {platform === 'instagram' && questType === 'dm_share' && storyPreviewLink && (
+            <div className="bg-pink-950/40 border border-pink-700/50 rounded-xl p-4 space-y-3">
+              <p className="text-pink-300 font-semibold text-sm flex items-center gap-2">
+                <FaInstagram size={14} /> Schritt 1 – Link in Instagram Link DM einfügen
+              </p>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Füge diesen Link in dein Instagram <span className="text-white font-semibold">Link DM</span> ein.
+                Fans erhalten ihn automatisch wenn sie auf deine Story antworten.
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-2 text-[11px] text-zinc-300 font-mono break-all">
+                  {storyPreviewLink}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(storyPreviewLink);
+                    setPreviewLinkCopied(true);
+                    setTimeout(() => setPreviewLinkCopied(false), 2000);
+                  }}
+                  className="shrink-0 bg-pink-600 hover:bg-pink-500 text-white font-bold px-3 py-2 rounded-lg text-xs transition-colors"
+                >
+                  {previewLinkCopied ? <FaCheck size={12} /> : 'Kopieren'}
+                </button>
+              </div>
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={linkDmConfirmed}
+                  onChange={(e) => setLinkDmConfirmed(e.target.checked)}
+                  className="w-4 h-4 accent-pink-500 cursor-pointer"
+                />
+                <span className="text-sm text-zinc-300">
+                  Ich habe den Link in mein Instagram <span className="text-white font-semibold">Link DM</span> eingefügt
+                </span>
+              </label>
             </div>
           )}
 
@@ -1061,11 +1116,15 @@ export default function CreateQuestModal({
 
           <button
             type="submit"
-            disabled={creating}
+            disabled={creating || (platform === 'instagram' && questType === 'dm_share' && !linkDmConfirmed)}
             className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             {creating ? <FaSync className="animate-spin" /> : <FaPlus />}
-            {creating ? 'Erstelle Quest…' : `Quest veröffentlichen (${platform === 'tiktok' ? 'TikTok' : platform === 'instagram' ? 'Instagram' : 'YouTube'})`}
+            {creating
+              ? 'Erstelle Quest\u2026'
+              : platform === 'instagram' && questType === 'dm_share' && !linkDmConfirmed
+              ? 'Link DM best\u00e4tigen (Schritt 1 oben \u2191)'
+              : `Quest ver\u00f6ffentlichen (${platform === 'tiktok' ? 'TikTok' : platform === 'instagram' ? 'Instagram' : 'YouTube'})`}
           </button>
         </form>
       )}

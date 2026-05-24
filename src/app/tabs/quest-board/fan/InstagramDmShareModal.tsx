@@ -265,12 +265,12 @@ export default function InstagramDmShareModal({
                 <button
                   onClick={handleStart}
                   disabled={loading}
-                  className="w-full bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                  className="w-full bg-pink-600 hover:bg-pink-500 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
                   ) : (
-                    <><FaRedo size={11} /> Quest starten &amp; Belohnungs-Link erhalten</>
+                    <><FaRedo size={11} /> Quest starten</>
                   )}
                 </button>
               </div>
@@ -286,30 +286,42 @@ export default function InstagramDmShareModal({
           </>
         )}
 
-        {/* ── WAITING: Story geteilt → Belohnung einlösen ── */}
+        {/* ── WAITING: Anleitung durchführen, Künstler schickt Link ── */}
         {!storyClaimToken && step === 'waiting' && (
           <div className="space-y-3">
-            {/* Checklist */}
+            {/* Schritte-Checklist */}
             <div className="bg-zinc-800/60 border border-zinc-700/40 rounded-xl px-3 py-3 space-y-2">
               <p className="font-semibold text-white text-xs flex items-center gap-1.5">
-                <FaPaperPlane size={11} className="text-pink-400" /> So löst du die Belohnung ein:
+                <FaPaperPlane size={11} className="text-pink-400" /> Führe jetzt diese Schritte durch:
               </p>
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2 text-xs">
-                  <FaCheck size={9} className="text-green-400 shrink-0" />
-                  <span className="text-zinc-300">Beitrag als Story teilen</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <FaCheck size={9} className="text-green-400 shrink-0" />
+              <div className="space-y-2">
+                <div className="flex items-start gap-2 text-xs">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-pink-600 text-white flex items-center justify-center font-bold text-[10px]">1</span>
                   <span className="text-zinc-300">
-                    {creatorHandle
-                      ? <><span className="text-pink-400 font-semibold">@{creatorHandle}</span> in der Story markieren</>
-                      : 'Künstler in der Story markieren'}
+                    Öffne den Beitrag und teile ihn als <span className="text-pink-400 font-semibold">Instagram Story</span>
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="shrink-0 w-4 h-4 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-[9px]">3</span>
-                  <span className="text-zinc-300">Unten auf <span className="text-green-400 font-semibold">&apos;Belohnung einlösen&apos;</span> klicken</span>
+                <div className="flex items-start gap-2 text-xs">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-pink-600 text-white flex items-center justify-center font-bold text-[10px]">2</span>
+                  <span className="text-zinc-300">
+                    Markiere{' '}
+                    <span className="text-pink-400 font-semibold">
+                      {creatorHandle ? `@${creatorHandle}` : 'den Künstler'}
+                    </span>{' '}
+                    in deiner Story
+                  </span>
+                </div>
+                <div className="flex items-start gap-2 text-xs">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-[10px]">3</span>
+                  <span className="text-zinc-300">
+                    Warte — der Künstler schickt dir den <span className="text-purple-300 font-semibold">Bestätigungs-Link</span> per Instagram DM
+                  </span>
+                </div>
+                <div className="flex items-start gap-2 text-xs">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-[10px]">4</span>
+                  <span className="text-zinc-300">
+                    Klicke den Link in der DM → erhalte deine <span className="text-green-400 font-semibold">Belohnung</span>
+                  </span>
                 </div>
               </div>
             </div>
@@ -319,37 +331,20 @@ export default function InstagramDmShareModal({
                 href={quest.videoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 bg-zinc-700 hover:bg-zinc-600 rounded-xl px-3 py-2 text-xs text-zinc-300 transition-colors"
+                className="flex items-center justify-center gap-2 bg-pink-600 hover:bg-pink-500 rounded-xl px-3 py-2.5 text-sm text-white font-semibold transition-colors"
               >
-                <FaShareAlt size={11} />
+                <FaShareAlt size={13} />
                 Beitrag öffnen &amp; als Story teilen
               </a>
             )}
 
-            {/* Haupt-CTA: Belohnung einlösen */}
-            {dmLink ? (
-              <a
-                href={dmLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white font-bold py-3.5 rounded-xl text-sm transition-all"
-              >
-                <FaStar size={14} />
-                Belohnung einlösen
-              </a>
-            ) : (
-              <button
-                onClick={handleComplete}
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 disabled:opacity-40 text-white font-bold py-3.5 rounded-xl text-sm transition-all flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                ) : (
-                  <><FaStar size={14} /> Belohnung einlösen</>
-                )}
-              </button>
-            )}
+            {/* Warte-Hinweis */}
+            <div className="bg-purple-900/20 border border-purple-700/30 rounded-xl px-3 py-2.5 flex items-center gap-2">
+              <div className="animate-spin w-3 h-3 border border-purple-400 border-t-transparent rounded-full shrink-0" />
+              <p className="text-xs text-purple-300">
+                Der Künstler überprüft deine Story und schickt dir dann den Link.
+              </p>
+            </div>
 
             {expiresAt && (
               <p className="text-center text-xs text-zinc-500">Verfällt in {formatTime(secondsLeft)}</p>

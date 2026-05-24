@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
     maxCompletions?: number;
     durationHours?: number;
     questType?: string;
+    storyToken?: string;
   };
   try {
     body = await req.json();
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 });
   }
 
-  const { creatorWallet, reelUrl, mediaId, videoTitle, thumbnailUrl, description, rewardAmount, reputationReward, maxCompletions, durationHours, questType } = body;
+  const { creatorWallet, reelUrl, mediaId, videoTitle, thumbnailUrl, description, rewardAmount, reputationReward, maxCompletions, durationHours, questType, storyToken: providedStoryToken } = body;
 
   if (!creatorWallet || !reelUrl || !mediaId) {
     return NextResponse.json(
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
       creditsLocked: totalBudget,
       creditsRefunded: false,
       reputationReward: Math.max(0, Math.round(Number(reputationReward) || 50)),
-      storyToken: type === 'dm_share' ? randomUUID() : null,
+      storyToken: type === 'dm_share' ? (providedStoryToken ?? randomUUID()) : null,
     };
 
     // Budget sperren (atomisch)
