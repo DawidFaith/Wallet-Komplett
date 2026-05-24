@@ -65,6 +65,7 @@ export interface UserArtistReputation {
   levelName: string;
   nextLevelRep: number | null;   // null = höchstes Level erreicht
   progress: number;              // 0–100 %
+  questRewardBonusPercent: number;
   artistName?: string | null;
   artistPicture?: string | null;
 }
@@ -2498,7 +2499,9 @@ export async function getUserReputation(walletAddress: string, artistWallet: str
   const reputation = rows.length > 0 ? Number(rows[0].reputation) : 0;
   const levels = await getReputationLevels(artistWallet);
   const { level, levelName, nextLevelRep, progress } = reputationToLevel(reputation, levels);
-  return { artistWallet, reputation, level, levelName, nextLevelRep, progress };
+  const currentLevel = levels.find(l => l.levelNumber === level);
+  const questRewardBonusPercent = currentLevel?.questRewardBonusPercent ?? 0;
+  return { artistWallet, reputation, level, levelName, nextLevelRep, progress, questRewardBonusPercent };
 }
 
 /** Reputation-Leaderboard für einen Artist (Top 50) */

@@ -108,7 +108,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
   const [selectedArtist, setSelectedArtist] = useState<ArtistEntry | null>(null);
   const [claiming, setClaiming] = useState(false);
   const [claimModal, setClaimModal] = useState<{ sentAmount: number } | null>(null);
-  const [repData, setRepData] = useState<{ reputation: number; level: number; levelName: string; progress: number; nextLevelRep: number | null } | null>(null);
+  const [repData, setRepData] = useState<{ reputation: number; level: number; levelName: string; progress: number; nextLevelRep: number | null; questRewardBonusPercent: number } | null>(null);
   // Reputation des Users bei ausgewähltem Artist laden
   useEffect(() => {
     if (!account?.address || !selectedArtist) { setRepData(null); return; }
@@ -808,9 +808,14 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                 <div className="flex items-center gap-3 bg-amber-950/30 border border-amber-700/20 rounded-xl px-3 py-2">
                   <FaTrophy className="text-amber-400 shrink-0" size={14} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-amber-300 text-xs font-semibold">
-                      Lv.{repData.level} &ndash; {repData.levelName}
-                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-amber-300 text-xs font-semibold">
+                        Lv.{repData.level} &ndash; {repData.levelName}
+                      </p>
+                      {repData.questRewardBonusPercent > 0 && (
+                        <span className="text-green-400 text-[10px] font-semibold">⚡ +{repData.questRewardBonusPercent}% Quest-Bonus</span>
+                      )}
+                    </div>
                     <p className="text-zinc-500 text-[10px]">{repData.reputation.toLocaleString()} REP bei diesem Künstler</p>
                   </div>
                   {onNavigate && (

@@ -149,6 +149,7 @@ function ArtistDetailView({
   useEffect(() => { loadUnclaimed(); }, [loadUnclaimed]);
 
   const nextLevel = levels.find(l => l.levelNumber === entry.level + 1);
+  const currentLevel = levels.find(l => l.levelNumber === entry.level);
 
   return (
     <div className="space-y-4">
@@ -248,6 +249,9 @@ function ArtistDetailView({
               {userName || shortenWallet(walletAddress)}
             </p>
             <p className="text-amber-400 text-sm font-medium">Lv.{entry.level} &ndash; {entry.levelName}</p>
+            {currentLevel && currentLevel.questRewardBonusPercent > 0 && (
+              <p className="text-green-400 text-xs font-semibold mt-0.5">⚡ +{currentLevel.questRewardBonusPercent}% Quest-Bonus aktiv</p>
+            )}
           </div>
           <div className="text-right shrink-0">
             <p className="text-amber-300 font-bold text-xl">{entry.reputation.toLocaleString()}</p>
