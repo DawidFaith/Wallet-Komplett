@@ -12,10 +12,10 @@ export async function GET(req: NextRequest) {
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de').replace(/\/$/, '');
 
   if (!token || token.length < 10) {
-    return NextResponse.redirect(`${appUrl}/?tab=quests`, { status: 302 });
+    return NextResponse.redirect(`${appUrl}/home?tab=quest-board`, { status: 302 });
   }
 
-  // Redirect to app with storyToken in URL – app handles the claim flow
-  const target = `${appUrl}/?storyToken=${encodeURIComponent(token)}&tab=quests`;
+  // Direkt zu /home weiterleiten (geschützte Route → Clerk bewahrt URL bei Login)
+  const target = `${appUrl}/home?storyToken=${encodeURIComponent(token)}&tab=quest-board`;
   return NextResponse.redirect(target, { status: 302 });
 }
