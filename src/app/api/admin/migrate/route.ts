@@ -131,6 +131,24 @@ export async function POST(req: NextRequest) {
     await sql`ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS max_recipients INTEGER NOT NULL DEFAULT 0`;
     await sql`ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS recipients_count INTEGER NOT NULL DEFAULT 0`;
     await sql`ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS quest_reward_bonus_percent SMALLINT NOT NULL DEFAULT 0`;
+    // Standardwerte für bestehende Zeilen setzen (nur wenn noch 0)
+    await sql`
+      UPDATE reputation_levels
+      SET quest_reward_bonus_percent = CASE level_number
+        WHEN  1 THEN   0
+        WHEN  2 THEN   5
+        WHEN  3 THEN  10
+        WHEN  4 THEN  15
+        WHEN  5 THEN  20
+        WHEN  6 THEN  25
+        WHEN  7 THEN  35
+        WHEN  8 THEN  50
+        WHEN  9 THEN  75
+        WHEN 10 THEN 100
+        ELSE 0
+      END
+      WHERE quest_reward_bonus_percent = 0
+    `;
 
     await sql`
       CREATE TABLE IF NOT EXISTS reputation_contests (
