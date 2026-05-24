@@ -255,24 +255,27 @@ export default function InstagramDmShareModal({
                     href={quest.videoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 bg-pink-600 hover:bg-pink-500 rounded-xl px-3 py-2.5 text-sm text-white font-semibold transition-colors"
+                    onClick={handleStart}
+                    className="flex items-center justify-center gap-2 w-full bg-pink-600 hover:bg-pink-500 rounded-xl px-3 py-2.5 text-sm text-white font-semibold transition-colors"
                   >
                     <FaShareAlt size={13} />
-                    Beitrag öffnen &amp; als Story teilen
+                    Beitrag öffnen &amp; Quest starten
                   </a>
                 )}
 
-                <button
-                  onClick={handleStart}
-                  disabled={loading}
-                  className="w-full bg-pink-600 hover:bg-pink-500 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                  ) : (
-                    <><FaRedo size={11} /> Quest starten</>
-                  )}
-                </button>
+                {!quest.videoUrl && (
+                  <button
+                    onClick={handleStart}
+                    disabled={loading}
+                    className="w-full bg-pink-600 hover:bg-pink-500 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                    ) : (
+                      <><FaRedo size={11} /> Quest starten</>
+                    )}
+                  </button>
+                )}
               </div>
             )}
 

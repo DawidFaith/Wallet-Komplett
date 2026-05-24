@@ -61,7 +61,7 @@ export default function CreateQuestModal({
 }: CreateQuestModalProps) {
   const [description, setDescription] = useState('');
   const [rewardAmount, setRewardAmount] = useState('100');
-  const [reputationReward, setReputationReward] = useState('50');
+  const [reputationReward, setReputationReward] = useState('40'); // youtube+comment Default
   const [maxParticipants, setMaxParticipants] = useState('10');
   const [platform, setPlatform] = useState<'youtube' | 'tiktok' | 'instagram' | 'facebook'>(
     verified.youtube ? 'youtube' : verified.tiktok ? 'tiktok' : verified.instagram ? 'instagram' : verified.facebook ? 'facebook' : 'youtube'
@@ -82,6 +82,27 @@ export default function CreateQuestModal({
   const [storyPreviewLink, setStoryPreviewLink] = useState<string | null>(null);
   const [linkDmConfirmed, setLinkDmConfirmed] = useState(false);
   const [previewLinkCopied, setPreviewLinkCopied] = useState(false);
+
+  /** Empfohlener Reputations-Wert basierend auf Reichweiten-Analyse */
+  const recommendedRep = (
+    pt: typeof platform,
+    qt: typeof questType,
+  ): number => {
+    if (qt === 'dm_share')   return 120; // Story = höchste Reichweite, persönliche Empfehlung
+    if (qt === 'repost')     return 80;  // Permanenter Post, alle Follower sehen ihn
+    if (qt === 'engagement') return 60;  // Like+Save = starkes Algorithmus-Signal
+    if (qt === 'comment')    return 40;  // Sichtbar für andere, Algorithmus-Boost
+    if (qt === 'secret')     return 30;  // Kein Reach, aber tiefes Watch-Engagement
+    if (qt === 'like')       return pt === 'facebook' ? 25 : 20; // Reines Algo-Signal
+    if (qt === 'save')       return 35;
+    return 40;
+  };
+
+  // REP-Empfehlung automatisch anpassen wenn Quest-Typ oder Plattform wechselt
+  useEffect(() => {
+    setReputationReward(String(recommendedRep(platform, questType)));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questType, platform]);
   // Instagram – verfügbare Videos aus DB
   const [availableMedia, setAvailableMedia] = useState<AvailableMediaItem[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
@@ -118,6 +139,7 @@ export default function CreateQuestModal({
     setDescription(''); setRewardAmount('100'); setMaxParticipants('10');
     setPlatform('youtube'); setQuestType('comment'); setDurationHours('24');
     setCustomDurationValue('30'); setCustomDurationUnit('min');
+    setReputationReward(String(recommendedRep('youtube', 'comment')));
     setSecretCode('');
     setSelectedMedia(null); setAvailableMedia([]); setLoadingMedia(false);
     setAvailableQuestMedia([]); setLoadingQuestMedia(false); setSelectedQuestMediaId(null);
@@ -1066,7 +1088,12 @@ export default function CreateQuestModal({
 
           {/* Reputation Reward */}
           <div>
-            <label className="text-zinc-300 text-sm font-medium block mb-1.5">Reputation-Punkte pro Abschluss</label>
+            <label className="text-zinc-300 text-sm font-medium block mb-1.5">
+              Reputation-Punkte pro Abschluss
+              <span className="ml-2 text-xs text-yellow-500 font-normal">
+                ★ Empfohlen: {recommendedRep(platform, questType)} REP
+              </span>
+            </label>
             <div className="relative">
               <input
                 type="number"
@@ -1078,7 +1105,15 @@ export default function CreateQuestModal({
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">REP</span>
             </div>
-            <p className="text-zinc-600 text-xs mt-1">Wie viel Reputation deine Fans bei dir verdienen</p>
+            <p className="text-zinc-600 text-xs mt-1">
+              {questType === 'dm_share'   ? '📸 Story = höchste Reichweite — persönliche Empfehlung an alle Follower' :
+               questType === 'repost'     ? '🔁 Repost = permanenter Post im Profil, alle Follower sehen ihn' :
+               questType === 'engagement' ? '❤️🔖 Like+Save = starkes Algorithmus-Signal, steigert den Reach' :
+               questType === 'comment'    ? '💬 Kommentar = sichtbar für andere Fans, Algorithmus-Boost' :
+               questType === 'secret'     ? '🔑 Secret = kein externer Reach, aber tiefstes Watch-Engagement' :
+               questType === 'like'       ? '👍 Like = reines Algorithmus-Signal, für Follower unsichtbar' :
+               'Wie viel Reputation deine Fans bei dir verdienen'}
+            </p>
           </div>
 
           {/* Hinweis */}
