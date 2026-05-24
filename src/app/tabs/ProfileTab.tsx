@@ -404,7 +404,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] flex items-center gap-1.5">
-                <FaMusic size={10} className="text-amber-400" /> Artist-Profil
+                <FaMusic size={10} className="text-amber-400" /> Künstler-Profil
               </p>
               {!editingArtist && (
                 <button
@@ -494,7 +494,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                   <p className="text-zinc-400 text-xs italic">Noch keine Bio eingetragen</p>
                 )}
                 {!p.artistType && !p.artistBio && (
-                  <p className="text-zinc-400 text-xs italic">Klicke &bdquo;Bearbeiten&ldquo; um dein Artist-Profil auszufüllen</p>
+                  <p className="text-zinc-400 text-xs italic">Klicke &bdquo;Bearbeiten&ldquo; um dein Künstler-Profil auszufüllen</p>
                 )}
                 {/* Vorschau: welches Profilbild Fans sehen */}
                 {(() => {
@@ -718,7 +718,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
       {/* ── ArtistBoard ────────────────────────────────────────── */}
       {artists.length > 0 && (
         <div className="bg-white/[0.06] rounded-2xl border border-white/[0.1] p-5">
-          <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-4">Künstler</p>
+          <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-4">Verfügbare Künstler</p>
           <div className="flex gap-4 overflow-x-auto pt-2 pb-1 scrollbar-none">
             {artists.map((artist) => {
               const hasQuests = artist.questCount > 0;
@@ -811,7 +811,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                     <p className="text-amber-300 text-xs font-semibold">
                       Lv.{repData.level} &ndash; {repData.levelName}
                     </p>
-                    <p className="text-zinc-500 text-[10px]">{repData.reputation.toLocaleString()} REP bei diesem Artist</p>
+                    <p className="text-zinc-500 text-[10px]">{repData.reputation.toLocaleString()} REP bei diesem Künstler</p>
                   </div>
                   {onNavigate && (
                     <button
