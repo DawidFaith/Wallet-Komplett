@@ -601,8 +601,8 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
           </div>
         </div>
 
-        {/* ── Instagram & Facebook Quests ── */}
-        {(p?.instagramHandle || p?.facebookHandle) && (() => {
+        {/* ── Instagram & Facebook Quests ── nur für Künstler sichtbar */}
+        {p?.isArtist && (p?.instagramHandle || p?.facebookHandle) && (() => {
           const bothVerified = metaIgVerified && metaFbVerified;
           const igVerified = metaIgVerified;
           const fbVerified = metaFbVerified;
