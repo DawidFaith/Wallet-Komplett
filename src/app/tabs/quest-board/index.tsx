@@ -66,14 +66,14 @@ function ArtistSelector({ onSelect }: { onSelect: (artist: ArtistInfo) => void }
       <div className="mx-4 bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
         {fetchError
           ? <span className="text-red-400">Fehler: {fetchError}</span>
-          : 'Noch keine Artists haben aktive Quests.'}
+          : 'Noch keine Künstler haben aktive Quests.'}
       </div>
     );
   }
 
   return (
     <div className="px-4 space-y-4">
-      <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Artists</p>
+      <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Künstler</p>
       <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
         {artists.map(artist => (
           <button
@@ -99,7 +99,7 @@ function ArtistSelector({ onSelect }: { onSelect: (artist: ArtistInfo) => void }
           </button>
         ))}
       </div>
-      <p className="text-zinc-600 text-xs">Tippe auf einen Artist um seine Quests zu sehen.</p>
+      <p className="text-zinc-600 text-xs">Tippe auf einen Künstler um seine Quests zu sehen.</p>
     </div>
   );
 }
@@ -233,7 +233,7 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${view === 'artist' ? 'bg-red-600 text-white shadow' : 'text-zinc-400 hover:text-white'}`}
             >
               <FaMusic size={11} />
-              Artist
+              Künstler
             </button>
           </div>
         </div>
@@ -274,7 +274,7 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
                   className="flex items-center gap-2 text-zinc-400 hover:text-white text-sm transition-colors"
                 >
                   <FaChevronLeft size={12} />
-                  Alle Artists
+                  Alle Künstler
                 </button>
                 <div className="flex items-center gap-3 bg-zinc-900/60 border border-white/[0.06] rounded-2xl px-4 py-3">
                   {activeArtist.picture

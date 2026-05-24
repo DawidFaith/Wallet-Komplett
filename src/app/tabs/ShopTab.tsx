@@ -359,7 +359,7 @@ function ArtistShopView({
         onClick={onBack}
         className="flex items-center gap-2 text-zinc-400 hover:text-white text-sm transition-colors px-4 pt-2"
       >
-        <FaChevronLeft size={11} /> Alle Artists
+        <FaChevronLeft size={11} /> Alle Künstler
       </button>
 
       {/* Artist-Header */}
@@ -485,7 +485,7 @@ function ArtistShopView({
         </div>
       ) : items.length === 0 ? (
         <div className="mx-4 bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
-          Dieser Artist hat noch keine Items im Shop.
+          Dieser Künstler hat noch keine Items im Shop.
         </div>
       ) : (
         <div className="px-4 grid grid-cols-1 gap-3">
@@ -1376,14 +1376,14 @@ function ArtistList({
       <div className="mx-4 bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
         {fetchError
           ? <span className="text-red-400">Fehler: {fetchError}</span>
-          : 'Noch keine Artists haben Items im Shop.'}
+          : 'Noch keine Künstler haben Items im Shop.'}
       </div>
     );
   }
 
   return (
     <div className="px-4 space-y-4">
-      <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Artists</p>
+      <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Künstler</p>
       <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
         {artists.map(artist => (
           <button
@@ -1409,7 +1409,7 @@ function ArtistList({
           </button>
         ))}
       </div>
-      <p className="text-zinc-600 text-xs">Tippe auf einen Artist um seinen Shop zu öffnen.</p>
+      <p className="text-zinc-600 text-xs">Tippe auf einen Künstler um seinen Shop zu öffnen.</p>
     </div>
   );
 }

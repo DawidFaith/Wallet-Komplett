@@ -414,7 +414,7 @@ export default function AdminPage() {
                       : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white'
                   }`}
                 >
-                  {f === 'all' ? 'Alle' : f === 'artist' ? 'Artists' : 'Fans'}
+                  {f === 'all' ? 'Alle' : f === 'artist' ? 'Künstler' : 'Fans'}
                 </button>
               ))}
             </div>
@@ -427,7 +427,7 @@ export default function AdminPage() {
               <p className="text-white font-bold text-xl">{users.length}</p>
             </div>
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
-              <p className="text-zinc-500 text-xs mb-0.5">Artists</p>
+              <p className="text-zinc-500 text-xs mb-0.5">Künstler</p>
               <p className="text-red-400 font-bold text-xl">{users.filter((u) => u.isArtist).length}</p>
             </div>
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
@@ -1245,7 +1245,7 @@ function UserRow({
               : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
           }`}
         >
-          {user.isArtist ? 'Artist' : 'Fan'}
+          {user.isArtist ? 'Künstler' : 'Fan'}
         </div>
 
         <div className="min-w-0">
@@ -1321,9 +1321,9 @@ function UserRow({
           {toggling ? (
             <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
           ) : user.isArtist ? (
-            <><FaTimes size={10} /> Artist entfernen</>
+            <><FaTimes size={10} /> Künstler entfernen</>
           ) : (
-            <><FaCheck size={10} /> Als Artist setzen</>
+            <><FaCheck size={10} /> Als Künstler setzen</>
           )}
         </button>
         {user.isArtist && (
@@ -1498,7 +1498,7 @@ function GrantCreditsSection({ secret, users }: { secret: string; users: AdminUs
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <p className="text-white text-sm font-medium truncate">{displayLabel}</p>
-                        {u.isArtist && <span className="text-[9px] font-bold text-red-400 bg-red-900/30 px-1 py-0.5 rounded shrink-0">ARTIST</span>}
+                        {u.isArtist && <span className="text-[9px] font-bold text-red-400 bg-red-900/30 px-1 py-0.5 rounded shrink-0">KÜNSTLER</span>}
                       </div>
                       {handles && <p className="text-zinc-500 text-[10px] truncate mt-0.5">{handles}</p>}
                       <p className="text-zinc-600 text-[10px] font-mono truncate">{u.walletAddress.slice(0, 12)}…{u.walletAddress.slice(-6)}</p>
@@ -1588,9 +1588,9 @@ function GrantCreditsSection({ secret, users }: { secret: string; users: AdminUs
 
       {/* Übersicht Artists mit Credits */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-3">
-        <h3 className="text-zinc-400 text-xs font-semibold uppercase tracking-wide">Alle Artists – Credit-Guthaben</h3>
+        <h3 className="text-zinc-400 text-xs font-semibold uppercase tracking-wide">Alle Künstler – Credit-Guthaben</h3>
         {users.filter((u) => u.isArtist).length === 0 ? (
-          <p className="text-zinc-600 text-sm">Keine Artists geladen</p>
+          <p className="text-zinc-600 text-sm">Keine Künstler geladen</p>
         ) : (
           <div className="space-y-2">
             {users
@@ -1898,10 +1898,10 @@ function ShopManageSection({
       {/* Artist auswählen */}
       <div>
         <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider block mb-2">
-          Artist auswählen
+          Künstler auswählen
         </label>
         {artists.length === 0 ? (
-          <p className="text-zinc-600 text-sm">Noch keine Artists vorhanden.</p>
+          <p className="text-zinc-600 text-sm">Noch keine Künstler vorhanden.</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {artists.map(a => (

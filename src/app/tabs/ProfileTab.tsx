@@ -363,7 +363,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
         <img src="/D.FAITH.png" alt="D.FAITH" className="w-10 h-10 rounded-full object-contain shrink-0" />
         <div>
           <h1 className="text-white font-bold text-xl tracking-wide">D.FAITH Ecosystem</h1>
-          <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">Unterstütze Artists · Verdiene Rewards</p>
+          <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">Unterstütze Künstler · Verdiene Rewards</p>
         </div>
       </div>
 
@@ -718,7 +718,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
       {/* ── ArtistBoard ────────────────────────────────────────── */}
       {artists.length > 0 && (
         <div className="bg-white/[0.06] rounded-2xl border border-white/[0.1] p-5">
-          <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-4">Artists</p>
+          <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-4">Künstler</p>
           <div className="flex gap-4 overflow-x-auto pt-2 pb-1 scrollbar-none">
             {artists.map((artist) => {
               const hasQuests = artist.questCount > 0;

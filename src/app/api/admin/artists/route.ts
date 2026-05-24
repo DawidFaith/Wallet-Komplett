@@ -49,7 +49,7 @@ export async function GET(req: Request) {
       FROM user_profiles p
       LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
       WHERE p.is_artist = TRUE
-      ORDER BY p.updated_at DESC
+      ORDER BY COALESCE(p.is_platform_user, FALSE) DESC, p.updated_at DESC
     `;
 
     // Bereits abgeschlossene Quests des Supporters nachladen (mit creator_wallet)

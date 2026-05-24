@@ -740,7 +740,7 @@ export default function SolanaWalletTab() {
 
         {/* Artist Tokens */}
         <div className="flex items-center justify-between px-1 pt-1">
-          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">Artist Tokens</p>
+          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">Künstler Tokens</p>
         </div>
 
         {/* D.FAITH — wird immer angezeigt */}
@@ -767,8 +767,8 @@ export default function SolanaWalletTab() {
 
         {tokens.length === 0 && !loadingBal && (
           <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5 text-center space-y-1">
-            <p className="text-zinc-500 text-sm">Noch keine Artist Tokens</p>
-            <p className="text-zinc-600 text-xs">Schließe Quests ab, um Artist Tokens zu verdienen.</p>
+            <p className="text-zinc-500 text-sm">Noch keine Künstler Tokens</p>
+            <p className="text-zinc-600 text-xs">Schließe Quests ab, um Künstler Tokens zu verdienen.</p>
           </div>
         )}
       </div>
