@@ -2405,7 +2405,8 @@ export async function getUserReputationAll(walletAddress: string): Promise<UserA
     const reputation = Number(row.reputation);
     const levels = await getReputationLevels(artistWallet);
     const { level, levelName, nextLevelRep, progress } = reputationToLevel(reputation, levels);
-    result.push({ artistWallet, reputation, level, levelName, nextLevelRep, progress });
+    const questRewardBonusPercent = levels.find(l => l.levelNumber === level)?.questRewardBonusPercent ?? 0;
+    result.push({ artistWallet, reputation, level, levelName, nextLevelRep, progress, questRewardBonusPercent });
   }
   return result;
 }
@@ -2483,7 +2484,7 @@ export async function getAllArtistsWithReputation(walletAddress: string): Promis
         artistPicture = (row.facebook_picture as string | null) ?? null;
       }
     }
-    result.push({ artistWallet, reputation, level, levelName, nextLevelRep, progress, artistName, artistPicture });
+    result.push({ artistWallet, reputation, level, levelName, nextLevelRep, progress, questRewardBonusPercent: levels.find(l => l.levelNumber === level)?.questRewardBonusPercent ?? 0, artistName, artistPicture });
   }
   return result;
 }
