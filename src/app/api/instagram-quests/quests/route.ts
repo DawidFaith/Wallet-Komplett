@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
         type === 'save'       ? '🔖 Speichere dieses Instagram Reel!' :
         type === 'engagement' ? '❤️🔖 Like und speichere dieses Instagram Reel!' :
         type === 'repost'     ? '🔁 Reposte dieses Instagram Reel auf deinen Kanal!' :
-        type === 'dm_share'   ? '📩 Klicke den DM-Link und teile dieses Reel in deiner Story!' :
+        type === 'dm_share'   ? '� Teile diesen Beitrag als Instagram Story und markiere den Künstler in deiner Story. Du erhältst danach eine DM mit einem Button zum Quest-Abschluss.' :
                                 '💬 Kommentiere dieses Instagram Reel!'
       ),
       rewardAmount: reward,
