@@ -231,21 +231,72 @@ export default function InstagramDmShareModal({
             {/* ── IDLE ── */}
             {step === 'idle' && (
               <div className="space-y-3">
-                <div className="bg-zinc-800/60 border border-zinc-700/40 rounded-xl px-3 py-3 space-y-2">
-                  <p className="text-sm font-semibold text-white flex items-center gap-2"><FaPaperPlane size={12} className="text-pink-400" /> So funktioniert die Story Quest:</p>
-                  <ol className="text-xs text-zinc-400 space-y-1 list-decimal list-inside">
-                    <li>Antworte auf die Story von <span className="text-pink-400 font-semibold">@{creatorHandle || 'dawidfaith'}</span> auf Instagram</li>
-                    <li>Du erhältst automatisch einen Link per DM</li>
-                    <li>Klicke den Link → Quest wird sofort bestätigt &amp; Belohnung gutgeschrieben</li>
+                {/* Reward Preview */}
+                <div className="bg-gradient-to-r from-pink-600/20 to-purple-600/20 border border-pink-500/40 rounded-xl px-4 py-3 flex items-center justify-between">
+                  <span className="text-xs text-zinc-400">Belohnung</span>
+                  <span className="flex items-center gap-1.5 text-yellow-400 font-bold text-sm">
+                    <Image src="/D.FAITH.png" alt="" width={16} height={16} className="w-4 h-4 rounded-full" unoptimized />
+                    +{formatCredits(quest.rewardAmount)} D.FAITH
+                    {(quest.reputationReward ?? 0) > 0 && (
+                      <span className="text-amber-300 text-xs font-semibold ml-1 flex items-center gap-0.5">
+                        <FaStar size={9} /> +{quest.reputationReward} REP
+                      </span>
+                    )}
+                  </span>
+                </div>
+
+                {/* Instructions */}
+                <div className="bg-zinc-800/60 border border-zinc-700/40 rounded-xl px-3 py-3 space-y-2.5">
+                  <p className="text-sm font-semibold text-white flex items-center gap-2">
+                    <FaPaperPlane size={12} className="text-pink-400" /> So schließt du die Quest ab:
+                  </p>
+                  <ol className="space-y-2">
+                    <li className="flex items-start gap-2 text-xs">
+                      <span className="shrink-0 w-5 h-5 rounded-full bg-pink-600 text-white flex items-center justify-center font-bold text-[10px]">1</span>
+                      <span className="text-zinc-300">
+                        Öffne den Beitrag und teile ihn als <span className="text-pink-400 font-semibold">Instagram Story</span>
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2 text-xs">
+                      <span className="shrink-0 w-5 h-5 rounded-full bg-pink-600 text-white flex items-center justify-center font-bold text-[10px]">2</span>
+                      <span className="text-zinc-300">
+                        Markiere <span className="text-pink-400 font-semibold">@{creatorHandle || 'den Künstler'}</span> in deiner Story
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2 text-xs">
+                      <span className="shrink-0 w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-[10px]">3</span>
+                      <span className="text-zinc-300">
+                        Du erhältst eine <span className="text-purple-300 font-semibold">DM</span> mit einem Button zum Quest-Abschluss
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2 text-xs">
+                      <span className="shrink-0 w-5 h-5 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-[10px]">4</span>
+                      <span className="text-zinc-300">
+                        Klicke den Button → komme zurück &amp; sieh deine <span className="text-green-400 font-semibold">Belohnung</span>
+                      </span>
+                    </li>
                   </ol>
                 </div>
+
+                {quest.videoUrl && (
+                  <a
+                    href={quest.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 bg-pink-600 hover:bg-pink-500 rounded-xl px-3 py-2.5 text-sm text-white font-semibold transition-colors"
+                  >
+                    <FaShareAlt size={13} />
+                    Beitrag öffnen &amp; als Story teilen
+                  </a>
+                )}
+
                 <button
                   onClick={handleStart}
                   disabled={loading}
                   className="w-full bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-zinc-300 font-semibold py-2 rounded-xl text-xs transition-colors flex items-center justify-center gap-2"
                 >
                   <FaRedo size={10} />
-                  Story bereits geteilt &amp; @-Tag gesetzt? Hier prüfen
+                  Story bereits geteilt &amp; @-Tag gesetzt? Status prüfen
                 </button>
               </div>
             )}
@@ -263,10 +314,35 @@ export default function InstagramDmShareModal({
         {/* ── WAITING: Warte auf @-Tag ── */}
         {!storyClaimToken && step === 'waiting' && (
           <div className="space-y-3">
-            <div className="bg-zinc-800/60 rounded-xl px-3 py-3 space-y-2">
-              <p className="font-semibold text-white text-xs flex items-center gap-1.5"><FaPaperPlane size={11} className="text-pink-400" /> Story erstellen &amp; @-taggen</p>
-              <p className="text-xs text-zinc-400">
-                Erstelle eine Story und markiere{creatorHandle ? <> <span className="text-pink-400 font-semibold">@{creatorHandle}</span></> : ' den Creator'} darin. Die Quest wird automatisch abgeschlossen sobald der Tag erkannt wird.
+            {/* Checklist */}
+            <div className="bg-zinc-800/60 border border-zinc-700/40 rounded-xl px-3 py-3 space-y-2">
+              <p className="font-semibold text-white text-xs flex items-center gap-1.5">
+                <FaPaperPlane size={11} className="text-pink-400" /> Checkliste
+              </p>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-xs">
+                  <FaCheck size={9} className="text-green-400 shrink-0" />
+                  <span className="text-zinc-300">Beitrag als Story geteilt ✓</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <FaCheck size={9} className="text-green-400 shrink-0" />
+                  <span className="text-zinc-300">
+                    {creatorHandle
+                      ? <><span className="text-pink-400 font-semibold">@{creatorHandle}</span> in der Story markiert ✓</>  
+                      : 'Künstler in der Story markiert ✓'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* DM-Hinweis */}
+            <div className="bg-purple-900/30 border border-purple-500/40 rounded-xl px-3 py-3 space-y-1.5">
+              <p className="text-xs font-semibold text-purple-300 flex items-center gap-1.5">
+                <FaPaperPlane size={10} /> Warte auf deine DM
+              </p>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Du erhältst in Kürze eine <span className="text-purple-300 font-semibold">Direktnachricht</span> von uns auf Instagram mit einem Button zum Quest-Abschluss.
+                Klicke den Button → du kommst zurück auf diese Seite und siehst deine Belohnung.
               </p>
             </div>
 
@@ -275,10 +351,10 @@ export default function InstagramDmShareModal({
                 href={quest.videoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 bg-pink-600/20 border border-pink-600/40 hover:border-pink-500 rounded-xl px-3 py-2 text-sm text-pink-300 transition-colors"
+                className="flex items-center justify-center gap-2 bg-zinc-700 hover:bg-zinc-600 rounded-xl px-3 py-2 text-xs text-zinc-300 transition-colors"
               >
-                <FaShareAlt size={12} />
-                Beitrag auf Instagram öffnen
+                <FaShareAlt size={11} />
+                Beitrag nochmal öffnen
               </a>
             )}
 
@@ -286,8 +362,8 @@ export default function InstagramDmShareModal({
               <p className="text-center text-xs text-zinc-500">Verläuft in {formatTime(secondsLeft)}</p>
             )}
             <div className="flex items-center justify-center gap-2 text-xs text-zinc-500">
-              <div className="animate-spin w-3 h-3 border border-zinc-500 border-t-pink-500 rounded-full" />
-              Warte auf @-Tag Erkennung…
+              <div className="animate-spin w-3 h-3 border border-zinc-500 border-t-purple-500 rounded-full" />
+              Warte auf DM-Bestätigung…
             </div>
           </div>
         )}
@@ -324,18 +400,27 @@ export default function InstagramDmShareModal({
 
         {/* ── SUCCESS ── */}
         {!storyClaimToken && step === 'success' && (
-          <div className="text-center py-4 space-y-3">
-            <div className="text-4xl">🎉</div>
-            <p className="font-bold text-lg text-green-400">Quest abgeschlossen!</p>
-              <p className="text-sm text-zinc-400 flex items-center justify-center gap-1">
-                <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
-                +{formatCredits(rewardAmount || quest.rewardAmount)} D.FAITH Credits wurden gutgeschrieben.
-              </p>
-            {(quest.reputationReward ?? 0) > 0 && (
-              <p className="text-xs text-yellow-400 flex items-center justify-center gap-1">
-                <FaStar size={10} /> +{quest.reputationReward} Reputation
-              </p>
-            )}
+          <div className="text-center py-2 space-y-4">
+            <div className="text-5xl animate-bounce">🎉</div>
+            <p className="font-bold text-xl text-green-400">Quest abgeschlossen!</p>
+            <p className="text-xs text-zinc-400">Du hast den Beitrag als Story geteilt und den Künstler markiert.</p>
+
+            {/* Belohnungs-Box */}
+            <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/40 rounded-2xl px-4 py-4 space-y-2">
+              <p className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Deine Belohnung</p>
+              <div className="flex items-center justify-center gap-2">
+                <Image src="/D.FAITH.png" alt="D.FAITH" width={28} height={28} className="w-7 h-7 rounded-full" unoptimized />
+                <span className="text-3xl font-black text-yellow-400">+{formatCredits(rewardAmount || quest.rewardAmount)}</span>
+                <span className="text-lg font-bold text-yellow-300">D.FAITH</span>
+              </div>
+              {(quest.reputationReward ?? 0) > 0 && (
+                <div className="flex items-center justify-center gap-1 text-amber-300 text-sm font-semibold">
+                  <FaStar size={12} /> +{quest.reputationReward} Reputation
+                </div>
+              )}
+              <p className="text-xs text-green-400">✓ Credits wurden deinem Konto gutgeschrieben</p>
+            </div>
+
             <button onClick={onClose} className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
               Schließen
             </button>
@@ -443,13 +528,22 @@ function StoryClaimSection({ token, walletAddress, rewardAmount, onSuccess, onCl
 
   if (state === 'success') {
     return (
-      <div className="text-center py-4 space-y-3">
-        <div className="text-4xl">🎉</div>
-        <p className="font-bold text-lg text-green-400">Quest abgeschlossen!</p>
-          <p className="text-sm text-zinc-400 flex items-center justify-center gap-1">
-            <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
-            +{formatCredits(claimed)} D.FAITH Credits wurden gutgeschrieben.
-          </p>
+      <div className="text-center py-2 space-y-4">
+        <div className="text-5xl animate-bounce">🎉</div>
+        <p className="font-bold text-xl text-green-400">Quest abgeschlossen!</p>
+        <p className="text-xs text-zinc-400">Du hast den Beitrag als Story geteilt und den Künstler markiert.</p>
+
+        {/* Belohnungs-Box */}
+        <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/40 rounded-2xl px-4 py-4 space-y-2">
+          <p className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Deine Belohnung</p>
+          <div className="flex items-center justify-center gap-2">
+            <Image src="/D.FAITH.png" alt="D.FAITH" width={28} height={28} className="w-7 h-7 rounded-full" unoptimized />
+            <span className="text-3xl font-black text-yellow-400">+{formatCredits(claimed)}</span>
+            <span className="text-lg font-bold text-yellow-300">D.FAITH</span>
+          </div>
+          <p className="text-xs text-green-400">✓ Credits wurden deinem Konto gutgeschrieben</p>
+        </div>
+
         <button
           onClick={onClose}
           className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
@@ -462,10 +556,21 @@ function StoryClaimSection({ token, walletAddress, rewardAmount, onSuccess, onCl
 
   return (
     <div className="space-y-3">
-      <div className="bg-zinc-800/60 rounded-xl px-3 py-3 space-y-1">
-        <p className="font-semibold text-white text-xs">🎁 Story-Link Belohnung</p>
+      {/* Reward Preview */}
+      <div className="bg-gradient-to-r from-pink-600/20 to-purple-600/20 border border-pink-500/40 rounded-xl px-4 py-3 flex items-center justify-between">
+        <span className="text-xs text-zinc-400">Deine Belohnung</span>
+        <span className="flex items-center gap-1.5 text-yellow-400 font-bold text-sm">
+          <Image src="/D.FAITH.png" alt="" width={16} height={16} className="w-4 h-4 rounded-full" unoptimized />
+          +{formatCredits(rewardAmount)} D.FAITH
+        </span>
+      </div>
+
+      <div className="bg-zinc-800/60 border border-zinc-700/40 rounded-xl px-3 py-3 space-y-1">
+        <p className="font-semibold text-white text-xs flex items-center gap-1.5">
+          <FaCheck size={10} className="text-green-400" /> Du hast den DM-Button geklickt!
+        </p>
         <p className="text-xs text-zinc-400">
-          Du hast den Story-Link des Artists geklickt. Fordere jetzt deine Belohnung ein!
+          Deine Story wurde erkannt. Klicke unten, um deine Belohnung einzulösen.
         </p>
       </div>
 
@@ -478,7 +583,7 @@ function StoryClaimSection({ token, walletAddress, rewardAmount, onSuccess, onCl
       <button
         onClick={state === 'loading' ? undefined : handleClaim}
         disabled={state === 'loading'}
-        className="w-full bg-pink-600 hover:bg-pink-500 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+        className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-sm transition-all flex items-center justify-center gap-2"
       >
         {state === 'loading' ? (
           <>
@@ -487,8 +592,8 @@ function StoryClaimSection({ token, walletAddress, rewardAmount, onSuccess, onCl
           </>
         ) : (
           <>
-            <FaCheck size={12} />
-            +{formatCredits(rewardAmount)} einlösen
+            <FaStar size={13} />
+            +{formatCredits(rewardAmount)} D.FAITH einlösen
           </>
         )}
       </button>
