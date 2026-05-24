@@ -1772,17 +1772,26 @@ export async function setArtistStatus(walletAddress: string, isArtist: boolean):
 
 // ─── Reputation ───────────────────────────────────────────────────────────────
 
+// ─── Level-Skalierung ────────────────────────────────────────────────────────
+// Bewährtes Konzept: ~2× Verdopplung des Abstands pro Level (Discord/RPG-Muster).
+// Jede Schwelle ≈ doppelt so viel Gesamtrep wie die vorherige (exponentiell).
+//
+// Kalibriert auf die Quest-REP-Werte (Story=120, Repost=80, Comment=40, Like=20):
+//   Casual Fan   (~90 REP/Mo) → Level 5 in ~22 Monate
+//   Aktiver Fan  (~500 REP/Mo) → Level 7 in ~14 Monate, Level 10 in ~7,5 Jahre
+//   Super Fan    (~1000 REP/Mo) → Level 10 in ~3,5 Jahre  ← "Legend" ist erreichbar
+// ─────────────────────────────────────────────────────────────────────────────
 const DEFAULT_REPUTATION_LEVELS: ReputationLevel[] = [
-  { levelNumber:  1, levelName: 'Newcomer',       minReputation: 0,     prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  2, levelName: 'Follower',        minReputation: 50,    prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  3, levelName: 'Fan',             minReputation: 150,   prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  4, levelName: 'Supporter',       minReputation: 350,   prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  5, levelName: 'Loyalist',        minReputation: 700,   prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  6, levelName: 'True Fan',        minReputation: 1200,  prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  7, levelName: 'Advocate',        minReputation: 2000,  prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  8, levelName: 'VIP',             minReputation: 3500,  prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber:  9, levelName: 'Elite',           minReputation: 6000,  prizeDescription: '', creditReward: 0, maxRecipients: 0 },
-  { levelNumber: 10, levelName: 'Legend',          minReputation: 10000, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  1, levelName: 'Newcomer',  minReputation:      0, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  2, levelName: 'Follower',  minReputation:    200, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  3, levelName: 'Fan',       minReputation:    500, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  4, levelName: 'Supporter', minReputation:  1_000, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  5, levelName: 'Loyalist',  minReputation:  2_000, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  6, levelName: 'True Fan',  minReputation:  3_800, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  7, levelName: 'Advocate',  minReputation:  7_000, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  8, levelName: 'VIP',       minReputation: 13_000, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber:  9, levelName: 'Elite',     minReputation: 24_000, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
+  { levelNumber: 10, levelName: 'Legend',    minReputation: 45_000, prizeDescription: '', creditReward: 0, maxRecipients: 0 },
 ];
 
 /** Reputation eines Users für einen Artist erhöhen + Level-Up Credits auszahlen */
