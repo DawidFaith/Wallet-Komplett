@@ -465,16 +465,16 @@ function ArtistDetailView({
 
 // Artist: Verwaltungs-Panel
 const DEFAULT_LEVELS: ReputationLevel[] = [
-  { levelNumber:  1, levelName: 'Newcomer',  minReputation: 0,     prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
-  { levelNumber:  2, levelName: 'Follower',  minReputation: 50,    prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
-  { levelNumber:  3, levelName: 'Fan',       minReputation: 150,   prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
-  { levelNumber:  4, levelName: 'Supporter', minReputation: 350,   prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
-  { levelNumber:  5, levelName: 'Loyalist',  minReputation: 700,   prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
-  { levelNumber:  6, levelName: 'True Fan',  minReputation: 1200,  prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
-  { levelNumber:  7, levelName: 'Advocate',  minReputation: 2000,  prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
-  { levelNumber:  8, levelName: 'VIP',       minReputation: 3500,  prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
-  { levelNumber:  9, levelName: 'Elite',     minReputation: 6000,  prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
-  { levelNumber: 10, levelName: 'Legend',    minReputation: 10000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 0 },
+  { levelNumber:  1, levelName: 'Newcomer',  minReputation: 0,     prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent:   0 },
+  { levelNumber:  2, levelName: 'Follower',  minReputation: 50,    prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent:   5 },
+  { levelNumber:  3, levelName: 'Fan',       minReputation: 150,   prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent:  10 },
+  { levelNumber:  4, levelName: 'Supporter', minReputation: 350,   prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent:  15 },
+  { levelNumber:  5, levelName: 'Loyalist',  minReputation: 700,   prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent:  20 },
+  { levelNumber:  6, levelName: 'True Fan',  minReputation: 1200,  prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent:  25 },
+  { levelNumber:  7, levelName: 'Advocate',  minReputation: 2000,  prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent:  35 },
+  { levelNumber:  8, levelName: 'VIP',       minReputation: 3500,  prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent:  50 },
+  { levelNumber:  9, levelName: 'Elite',     minReputation: 6000,  prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent:  75 },
+  { levelNumber: 10, levelName: 'Legend',    minReputation: 10000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 100 },
 ];
 
 function ArtistPanel({ walletAddress }: { walletAddress: string }) {
