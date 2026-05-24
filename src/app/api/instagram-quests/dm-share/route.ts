@@ -1,13 +1,15 @@
 /**
  * POST /api/instagram-quests/dm-share
  *
- * Story Quest – der User erstellt eine Story und markiert den Artist (@-Tag).
- * Verifizierung erfolgt ausschließlich via Meta Mentions-Webhook.
+ * Story Quest – der User teilt den Beitrag als Instagram Story und markiert den Künstler.
+ * Verifizierung: Der UUID-Token-Link IS die Verifikation – kein Webhook, kein Make.com.
  *
- * action: 'start'  → Verifikation anlegen, creatorHandle zurückgeben
- * action: 'status' → Aktuellen Stand zurückgeben (tagVerified = Quest abgeschlossen)
+ * action: 'start'  → Token generieren, dmLink zurückgeben
+ * action: 'status' → Aktuellen Stand zurückgeben inkl. dmLink
+ * action: 'complete' → Direkt abschließen (für POST-Aufrufe)
  */
 
+import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   getUserProfile,
@@ -121,7 +123,10 @@ export async function POST(req: NextRequest) {
       }
 
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
-      const clickToken = `${profile.instagramHandle.toLowerCase()}:${questId}`;
+      // Universeller, opaker Token – wird im DM-Link verwendet
+      const clickToken = randomUUID();
+      const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de').replace(/\/$/, '');
+      const dmLink = `${appUrl}/api/instagram-quests/dm-click?token=${clickToken}`;
       await upsertInstagramDmVerification(questId, normalized, profile.instagramHandle, clickToken, expiresAt);
 
       return NextResponse.json({
@@ -130,7 +135,8 @@ export async function POST(req: NextRequest) {
         videoUrl: quest.videoUrl,
         instagramHandle: profile.instagramHandle,
         creatorHandle,
-        message: `Erstelle eine Story und markiere @${creatorHandle ?? 'den Creator'} darin. Die Quest wird automatisch erkannt.`,
+        dmLink,
+        message: `Teile den Beitrag als Story und markiere @${creatorHandle ?? 'den Künstler'}. Klicke dann auf 'Belohnung einlösen'.`,
       });
     }
 
@@ -142,25 +148,17 @@ export async function POST(req: NextRequest) {
       const verif = await getInstagramDmVerification(questId, normalized);
       if (!verif) return NextResponse.json({ started: false });
 
-      // click_verified = @-Tag per Webhook erkannt → User muss noch bestätigen
-      if (verif.clickVerified) {
-        return NextResponse.json({
-          started: true,
-          readyToComplete: true,
-          tagVerified: false,
-          expiresAt: verif.expiresAt,
-          instagramHandle: profile.instagramHandle,
-          creatorHandle,
-        });
-      }
+      const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de').replace(/\/$/, '');
+      const dmLink = `${appUrl}/api/instagram-quests/dm-click?token=${verif.clickToken}`;
 
       return NextResponse.json({
         started: true,
-        tagVerified: false,
+        tagVerified: verif.clickVerified,
         expiresAt: verif.expiresAt,
         expired: new Date(verif.expiresAt) < new Date(),
         instagramHandle: profile.instagramHandle,
         creatorHandle,
+        dmLink,
       });
     }
 
@@ -171,10 +169,8 @@ export async function POST(req: NextRequest) {
 
       const verif = await getInstagramDmVerification(questId, normalized);
       if (!verif) return NextResponse.json({ error: 'Keine aktive Quest-Verifikation gefunden.' }, { status: 400 });
-      if (!verif.clickVerified) {
-        return NextResponse.json({ error: 'Story-Tag wurde noch nicht erkannt.' }, { status: 400 });
-      }
 
+      // Token = Verifikation, kein clickVerified-Check nötig
       return await completeStoryQuest({ quest, questId, normalized, profile });
     }
 

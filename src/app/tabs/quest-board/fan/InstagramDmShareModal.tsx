@@ -39,6 +39,7 @@ export default function InstagramDmShareModal({
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [rewardAmount, setRewardAmount] = useState(0);
   const [linkTemplate, setLinkTemplate] = useState('');
+  const [dmLink, setDmLink] = useState('');
   const [instagramHandle, setInstagramHandle] = useState('');
   const [creatorHandle, setCreatorHandle] = useState('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -79,14 +80,11 @@ export default function InstagramDmShareModal({
       .then((data) => {
         if (data.alreadyCompleted || data.tagVerified) {
           setStep('success');
-        } else if (data.readyToComplete) {
-          setInstagramHandle(data.instagramHandle ?? '');
-          setCreatorHandle(data.creatorHandle ?? '');
-          setStep('ready');
         } else if (data.started && !data.expired) {
           setExpiresAt(data.expiresAt ?? null);
           setInstagramHandle(data.instagramHandle ?? '');
           setCreatorHandle(data.creatorHandle ?? '');
+          if (data.dmLink) setDmLink(data.dmLink);
           setStep('waiting');
         }
       })
@@ -121,6 +119,7 @@ export default function InstagramDmShareModal({
       setExpiresAt(data.expiresAt);
       setInstagramHandle(data.instagramHandle ?? '');
       setCreatorHandle(data.creatorHandle ?? '');
+      if (data.dmLink) setDmLink(data.dmLink);
       setStep('waiting');
     } catch {
       setError('Netzwerkfehler. Bitte erneut versuchen.');
@@ -155,28 +154,7 @@ export default function InstagramDmShareModal({
     }
   }, [quest, walletAddress, onCompleted]);
 
-  // Poll: wurde @-Tag per Webhook erkannt? (alle 5 Sek wenn in waiting)
-  useEffect(() => {
-    if (step !== 'waiting' || !quest) return;
-    const poll = setInterval(async () => {
-      try {
-        const res = await fetch('/api/instagram-quests/dm-share', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'status', questId: quest.id, walletAddress }),
-        });
-        const data = await res.json();
-        if (data.readyToComplete) {
-          clearInterval(poll);
-          setStep('ready');
-        } else if (data.tagVerified || data.alreadyCompleted) {
-          clearInterval(poll);
-          setStep('success');
-        }
-      } catch { /* ignore */ }
-    }, 5000);
-    return () => clearInterval(poll);
-  }, [step, quest, walletAddress]);
+  // (Polling entfernt – Link = Verifikation, kein Webhook-Check nötig)
 
   if (!quest) return null;
 
@@ -266,13 +244,7 @@ export default function InstagramDmShareModal({
                     <li className="flex items-start gap-2 text-xs">
                       <span className="shrink-0 w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-[10px]">3</span>
                       <span className="text-zinc-300">
-                        Du erhältst eine <span className="text-purple-300 font-semibold">DM</span> mit einem Button zum Quest-Abschluss
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2 text-xs">
-                      <span className="shrink-0 w-5 h-5 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-[10px]">4</span>
-                      <span className="text-zinc-300">
-                        Klicke den Button → komme zurück &amp; sieh deine <span className="text-green-400 font-semibold">Belohnung</span>
+                        Kehre zurück zur App und klicke auf <span className="text-green-400 font-semibold">'Belohnung einlösen'</span>
                       </span>
                     </li>
                   </ol>
@@ -293,10 +265,13 @@ export default function InstagramDmShareModal({
                 <button
                   onClick={handleStart}
                   disabled={loading}
-                  className="w-full bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-zinc-300 font-semibold py-2 rounded-xl text-xs transition-colors flex items-center justify-center gap-2"
+                  className="w-full bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
                 >
-                  <FaRedo size={10} />
-                  Story bereits geteilt &amp; @-Tag gesetzt? Status prüfen
+                  {loading ? (
+                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                  ) : (
+                    <><FaRedo size={11} /> Quest starten &amp; Belohnungs-Link erhalten</>
+                  )}
                 </button>
               </div>
             )}
@@ -311,39 +286,32 @@ export default function InstagramDmShareModal({
           </>
         )}
 
-        {/* ── WAITING: Warte auf @-Tag ── */}
+        {/* ── WAITING: Story geteilt → Belohnung einlösen ── */}
         {!storyClaimToken && step === 'waiting' && (
           <div className="space-y-3">
             {/* Checklist */}
             <div className="bg-zinc-800/60 border border-zinc-700/40 rounded-xl px-3 py-3 space-y-2">
               <p className="font-semibold text-white text-xs flex items-center gap-1.5">
-                <FaPaperPlane size={11} className="text-pink-400" /> Checkliste
+                <FaPaperPlane size={11} className="text-pink-400" /> So löst du die Belohnung ein:
               </p>
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 text-xs">
                   <FaCheck size={9} className="text-green-400 shrink-0" />
-                  <span className="text-zinc-300">Beitrag als Story geteilt ✓</span>
+                  <span className="text-zinc-300">Beitrag als Story teilen</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   <FaCheck size={9} className="text-green-400 shrink-0" />
                   <span className="text-zinc-300">
                     {creatorHandle
-                      ? <><span className="text-pink-400 font-semibold">@{creatorHandle}</span> in der Story markiert ✓</>  
-                      : 'Künstler in der Story markiert ✓'}
+                      ? <><span className="text-pink-400 font-semibold">@{creatorHandle}</span> in der Story markieren</>
+                      : 'Künstler in der Story markieren'}
                   </span>
                 </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="shrink-0 w-4 h-4 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-[9px]">3</span>
+                  <span className="text-zinc-300">Unten auf <span className="text-green-400 font-semibold">'Belohnung einlösen'</span> klicken</span>
+                </div>
               </div>
-            </div>
-
-            {/* DM-Hinweis */}
-            <div className="bg-purple-900/30 border border-purple-500/40 rounded-xl px-3 py-3 space-y-1.5">
-              <p className="text-xs font-semibold text-purple-300 flex items-center gap-1.5">
-                <FaPaperPlane size={10} /> Warte auf deine DM
-              </p>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Du erhältst in Kürze eine <span className="text-purple-300 font-semibold">Direktnachricht</span> von uns auf Instagram mit einem Button zum Quest-Abschluss.
-                Klicke den Button → du kommst zurück auf diese Seite und siehst deine Belohnung.
-              </p>
             </div>
 
             {quest.videoUrl && (
@@ -354,47 +322,38 @@ export default function InstagramDmShareModal({
                 className="flex items-center justify-center gap-2 bg-zinc-700 hover:bg-zinc-600 rounded-xl px-3 py-2 text-xs text-zinc-300 transition-colors"
               >
                 <FaShareAlt size={11} />
-                Beitrag nochmal öffnen
+                Beitrag öffnen &amp; als Story teilen
               </a>
             )}
 
-            {expiresAt && (
-              <p className="text-center text-xs text-zinc-500">Verläuft in {formatTime(secondsLeft)}</p>
+            {/* Haupt-CTA: Belohnung einlösen */}
+            {dmLink ? (
+              <a
+                href={dmLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white font-bold py-3.5 rounded-xl text-sm transition-all"
+              >
+                <FaStar size={14} />
+                Belohnung einlösen
+              </a>
+            ) : (
+              <button
+                onClick={handleComplete}
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 disabled:opacity-40 text-white font-bold py-3.5 rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                ) : (
+                  <><FaStar size={14} /> Belohnung einlösen</>
+                )}
+              </button>
             )}
-            <div className="flex items-center justify-center gap-2 text-xs text-zinc-500">
-              <div className="animate-spin w-3 h-3 border border-zinc-500 border-t-purple-500 rounded-full" />
-              Warte auf DM-Bestätigung…
-            </div>
-          </div>
-        )}
 
-        {/* ── READY: @-Tag erkannt, Belohnung einlösen ── */}
-        {!storyClaimToken && step === 'ready' && (
-          <div className="space-y-3">
-            <div className="bg-green-900/30 border border-green-600/40 rounded-xl px-3 py-3 space-y-1">
-              <p className="text-sm font-semibold text-green-400 flex items-center gap-2">
-                <FaCheck size={13} /> Story erkannt!
-              </p>
-              <p className="text-xs text-zinc-400">
-                Dein @-Tag wurde erkannt. Jetzt Belohnung einlösen.
-              </p>
-            </div>
-            {error && (
-              <div className="bg-red-900/30 border border-red-600/40 rounded-xl px-3 py-2 text-xs text-red-300">
-                {error}
-              </div>
+            {expiresAt && (
+              <p className="text-center text-xs text-zinc-500">Verfällt in {formatTime(secondsLeft)}</p>
             )}
-            <button
-              onClick={handleComplete}
-              disabled={loading}
-              className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-              ) : (
-                <><FaStar size={14} /> Belohnung einlösen</>
-              )}
-            </button>
           </div>
         )}
 

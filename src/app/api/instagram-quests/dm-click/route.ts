@@ -16,7 +16,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  getInstagramDmVerificationByToken,
   getInstagramDmVerificationByHandle,
+  markInstagramDmClicked,
   markInstagramDmClickedByHandle,
   loadQuestDetail,
   getUserProfile,
@@ -32,28 +34,24 @@ import {
 
 export const maxDuration = 20;
 
-// ── Gemeinsame Quest-Abschluss-Logik ─────────────────────────────────────────
-async function processHandle(handle: string): Promise<
-  | { ok: true; rewardAmount: number; message: string; alreadyDone?: boolean }
+// ── Quest-Abschluss-Logik via Token (universeller Link) ──────────────────────
+async function processToken(token: string): Promise<
+  | { ok: true; rewardAmount: number; questTitle: string; message: string; alreadyDone?: boolean }
   | { ok: false; status: number; error: string }
 > {
-  const verif = await getInstagramDmVerificationByHandle(handle);
+  const verif = await getInstagramDmVerificationByToken(token);
 
   if (!verif) {
-    return { ok: false, status: 404, error: 'Keine aktive Quest für diesen Account gefunden. Bitte starte die Quest zuerst in der App.' };
+    return { ok: false, status: 404, error: 'Dieser Link ist ungültig oder wurde bereits verwendet.' };
   }
 
   if (new Date(verif.expiresAt) < new Date()) {
     return { ok: false, status: 410, error: 'Dieser Link ist abgelaufen. Bitte starte die Quest neu.' };
   }
 
-  if (!verif.storyVerified) {
-    return { ok: false, status: 400, error: 'Dein Story-Share wurde noch nicht bestätigt. Gehe zurück zur App und klicke "Share prüfen".' };
-  }
-
   const alreadyDone = await hasWalletCompletedQuest(verif.walletAddress, verif.questId);
   if (alreadyDone || verif.clickVerified) {
-    return { ok: true, alreadyDone: true, rewardAmount: 0, message: 'Diese Quest hast du bereits erfolgreich abgeschlossen.' };
+    return { ok: true, alreadyDone: true, rewardAmount: 0, questTitle: '', message: 'Diese Quest hast du bereits erfolgreich abgeschlossen.' };
   }
 
   const quest = await loadQuestDetail(verif.questId);
@@ -62,8 +60,9 @@ async function processHandle(handle: string): Promise<
   }
 
   const profile = await getUserProfile(verif.walletAddress);
+  const handle = verif.instagramHandle;
 
-  await markInstagramDmClickedByHandle(handle, verif.baselineShares);
+  await markInstagramDmClicked(token, 0);
 
   const now = new Date().toISOString();
   const completion: QuestCompletion = {
@@ -81,12 +80,24 @@ async function processHandle(handle: string): Promise<
 
   await saveCompletion(completion);
   await addDfaithCredits(verif.walletAddress, quest.rewardAmount);
-  await savePendingReward({ walletAddress: verif.walletAddress, amount: quest.rewardAmount, reason: `DM-Share Quest: ${quest.videoTitle}`, questId: verif.questId, createdAt: now });
+  await savePendingReward({ walletAddress: verif.walletAddress, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId: verif.questId, createdAt: now });
   await addUserXp(verif.walletAddress, Math.round(quest.rewardAmount / 10));
   await addUserReputation(verif.walletAddress, quest.creatorWallet, quest.reputationReward);
   await deleteInstagramDmVerification(verif.questId, verif.walletAddress);
 
-  return { ok: true, rewardAmount: quest.rewardAmount, message: `Quest abgeschlossen! +${quest.rewardAmount} DFAITH Credits gutgeschrieben.` };
+  return { ok: true, rewardAmount: quest.rewardAmount, questTitle: quest.videoTitle, message: `+${quest.rewardAmount} D.FAITH Credits wurden gutgeschrieben.` };
+}
+
+// ── Rückwärtskompatibel: Abschluss via Handle (für POST / manuelle Trigger) ──
+async function processHandle(handle: string): Promise<
+  | { ok: true; rewardAmount: number; questTitle: string; message: string; alreadyDone?: boolean }
+  | { ok: false; status: number; error: string }
+> {
+  const verif = await getInstagramDmVerificationByHandle(handle);
+  if (!verif) {
+    return { ok: false, status: 404, error: 'Keine aktive Quest für diesen Account gefunden.' };
+  }
+  return processToken(verif.clickToken);
 }
 
 // ── POST /api/instagram-quests/dm-click  (von /dm-quest Formular) ────────────
@@ -167,48 +178,111 @@ async function fetchBaselineShares(
   }
 }
 
-// ── GET /api/instagram-quests/dm-click?name=HANDLE  (Rückwärtskompatibilität) ─
+// ── GET /api/instagram-quests/dm-click?token=UUID  (universeller DM-Link) ─────────────
 export async function GET(req: NextRequest) {
-  const name = req.nextUrl.searchParams.get('name');
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://wallet-komplett.vercel.app').replace(/\/$/, '');
+  const token  = req.nextUrl.searchParams.get('token');
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de').replace(/\/$/, '');
 
-  // Kein Handle im Link → auf /dm-quest umleiten
-  if (!name) {
-    return NextResponse.redirect(`${appUrl}/dm-quest`, { status: 302 });
+  if (!token) {
+    return new NextResponse(buildPage(
+      'Ungültiger Link',
+      'Dieser Link enthält keinen Token. Bitte öffne die App und starte die Quest erneut.',
+      false,
+      `${appUrl}/?tab=quests`,
+    ), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   }
 
-  const handle = decodeURIComponent(name).toLowerCase().replace(/^@/, '');
-
   try {
-    const result = await processHandle(handle);
+    const result = await processToken(token);
 
     if (!result.ok) {
       return new NextResponse(buildPage(
-        result.status === 404 ? 'Kein aktiver Quest' : result.status === 410 ? 'Link abgelaufen' : 'Fehler',
+        result.status === 410 ? 'Link abgelaufen' : 'Quest nicht gefunden',
         result.error,
         false,
-        result.status === 400 ? `${appUrl}/?tab=quests` : undefined,
+        `${appUrl}/?tab=quests`,
       ), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }
 
     if (result.alreadyDone) {
-      return new NextResponse(buildPage('Bereits abgeschlossen', 'Diese Quest hast du bereits erfolgreich abgeschlossen.', true, `${appUrl}/?tab=quests`), {
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
-      });
+      return new NextResponse(buildPage(
+        'Bereits abgeschlossen',
+        'Diese Quest hast du bereits abgeschlossen. Deine Belohnung ist schon gutgeschrieben.',
+        true,
+        `${appUrl}/?tab=quests`,
+      ), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }
 
-    return new NextResponse(buildPage(
-      '🎉 Quest abgeschlossen!',
-      `+${result.rewardAmount} DFAITH Credits wurden gutgeschrieben.`,
-      true,
+    return new NextResponse(buildRewardPage(
+      result.rewardAmount,
+      result.questTitle,
       `${appUrl}/?tab=quests`,
     ), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   } catch (err) {
     console.error('[dm-click GET] Error:', err);
-    return new NextResponse(buildPage('Fehler', 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.', false), {
+    return new NextResponse(buildPage('Fehler', 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.', false, `${appUrl}/?tab=quests`), {
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   }
+}
+
+// ── Große Belohnungs-Seite nach erfolgreichem Quest-Abschluss ────────────────────────
+function buildRewardPage(rewardAmount: number, questTitle: string, returnUrl: string): string {
+  return `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quest abgeschlossen!</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+           background: linear-gradient(135deg,#1a0533,#0f172a,#09090b);
+           color: #fff; display: flex; align-items: center; justify-content: center;
+           min-height: 100vh; padding: 20px; }
+    .card { background: #18181b; border: 1px solid #22c55e40;
+            border-radius: 20px; padding: 40px 28px; max-width: 380px; width: 100%; text-align: center;
+            box-shadow: 0 0 60px #22c55e20; }
+    .confetti { font-size: 4rem; margin-bottom: 12px; display: block;
+                animation: pop 0.5s ease-out; }
+    @keyframes pop { 0%{transform:scale(0);opacity:0} 80%{transform:scale(1.2)} 100%{transform:scale(1);opacity:1} }
+    .done { font-size: 1rem; color: #22c55e; font-weight: 700; letter-spacing: 0.05em;
+            text-transform: uppercase; margin-bottom: 20px; }
+    .reward-box { background: linear-gradient(135deg,#854d0e30,#a1620730);
+                  border: 1px solid #ca8a0460; border-radius: 14px;
+                  padding: 22px 20px; margin: 0 0 24px; }
+    .reward-label { font-size: 0.72rem; color: #78716c; text-transform: uppercase;
+                    letter-spacing: 0.08em; margin-bottom: 10px; }
+    .reward-amount { font-size: 3rem; font-weight: 900; color: #fbbf24;
+                     line-height: 1; margin-bottom: 4px; }
+    .reward-token  { font-size: 1.1rem; color: #fde68a; font-weight: 700; margin-bottom: 10px; }
+    .reward-check  { font-size: 0.8rem; color: #22c55e; }
+    .quest-title { font-size: 0.82rem; color: #71717a; margin-bottom: 24px;
+                   line-height: 1.4; max-height: 3em; overflow: hidden; }
+    .btn { display: block; background: linear-gradient(135deg,#e1306c,#c2185b);
+           color: #fff; padding: 14px; border-radius: 12px;
+           text-decoration: none; font-weight: 700; font-size: 1rem;
+           transition: opacity .2s; }
+    .btn:hover { opacity: 0.85; }
+    .hint { font-size: 0.75rem; color: #3f3f46; margin-top: 14px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="confetti">🎉</span>
+    <p class="done">✅ Story Quest abgeschlossen!</p>
+    <div class="reward-box">
+      <p class="reward-label">Deine Belohnung</p>
+      <p class="reward-amount">+${rewardAmount.toLocaleString('de-DE')}</p>
+      <p class="reward-token">D.FAITH Credits</p>
+      <p class="reward-check">✓ Wurde deinem Konto gutgeschrieben</p>
+    </div>
+    ${questTitle ? `<p class="quest-title">🎥 ${questTitle}</p>` : ''}
+    <a class="btn" href="${returnUrl}">🚀 Zur App →</a>
+    <p class="hint">Du kannst diese Seite auch einfach schließen.</p>
+  </div>
+</body>
+</html>`;
 }
 
 function buildPage(title: string, message: string, success: boolean, returnUrl?: string): string {
@@ -240,7 +314,7 @@ function buildPage(title: string, message: string, success: boolean, returnUrl?:
     <span class="emoji">${emoji}</span>
     <h1>${title}</h1>
     <p>${message}</p>
-    ${returnUrl ? `<a class="btn" href="${returnUrl}">Zur App →</a>` : ''}
+    ${returnUrl ? `<a class="btn" href="${returnUrl}">🚀 Zur App →</a>` : ''}
     <p class="hint">Du kannst diese Seite auch einfach schließen.</p>
   </div>
 </body>

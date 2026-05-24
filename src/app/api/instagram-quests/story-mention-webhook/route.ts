@@ -26,17 +26,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getInstagramDmVerificationByHandle,
   markInstagramDmStoryVerifiedByHandle,
-  markInstagramDmClickedByHandle,
-  loadQuestDetail,
-  getUserProfile,
-  hasWalletCompletedQuest,
-  saveCompletion,
-  addDfaithCredits,
-  savePendingReward,
-  addUserXp,
-  addUserReputation,
-  deleteInstagramDmVerification,
-  type QuestCompletion,
 } from '../../../lib/questDb';
 
 export const maxDuration = 20;
@@ -212,7 +201,8 @@ export async function POST(req: NextRequest) {
         console.warn('[story-mention-webhook] messaging: kein Username für IGSID:', senderIgsid);
         continue;
       }
-      await processStoryMention(username);
+      // IGSID mitgeben damit die DM direkt gesendet werden kann
+      await processStoryMention(username, senderIgsid);
     }
   }
 
@@ -221,8 +211,38 @@ export async function POST(req: NextRequest) {
 
 // ── Quest-Verarbeitung nach erkanntem Story-Tag ───────────────────────────────
 
-async function processStoryMention(username: string): Promise<void> {
+async function sendInstagramDm(recipientIgsid: string, text: string): Promise<void> {
+  const token    = process.env.META_SYSTEM_USER_TOKEN;
+  const pageId   = process.env.FACEBOOK_PAGE_ID;
+  if (!token || !pageId) { console.warn('[story-mention-webhook] META_SYSTEM_USER_TOKEN oder FACEBOOK_PAGE_ID fehlt – DM nicht gesendet'); return; }
+
+  // Instagram-Business-Account-ID holen
+  const pageRes  = await fetch(`${GRAPH}/${pageId}?fields=instagram_business_account&access_token=${token}`);
+  const pageJson = await pageRes.json() as { instagram_business_account?: { id?: string } };
+  const igBizId  = pageJson.instagram_business_account?.id;
+  if (!igBizId) { console.warn('[story-mention-webhook] Kein instagram_business_account gefunden'); return; }
+
+  const body = JSON.stringify({
+    recipient: { id: recipientIgsid },
+    message:   { text },
+  });
+  const res = await fetch(`${GRAPH}/${igBizId}/messages?access_token=${token}`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+    signal:  AbortSignal.timeout(10000),
+  });
+  const json = await res.json() as { message_id?: string; error?: { message: string } };
+  if (!res.ok || json.error) {
+    console.error('[story-mention-webhook] DM senden fehlgeschlagen:', json.error?.message ?? res.status);
+  } else {
+    console.log('[story-mention-webhook] DM gesendet, message_id:', json.message_id);
+  }
+}
+
+async function processStoryMention(username: string, senderIgsid?: string): Promise<void> {
   console.log('[story-mention-webhook] Story-Tag erkannt von:', username);
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de').replace(/\/$/, '');
   try {
     const verif = await getInstagramDmVerificationByHandle(username);
     if (!verif) {
@@ -233,33 +253,36 @@ async function processStoryMention(username: string): Promise<void> {
       console.log('[story-mention-webhook] Quest bereits komplett für:', username);
       return;
     }
-    await markInstagramDmClickedByHandle(username, verif.baselineShares);
-    console.log('[story-mention-webhook] click_verified gesetzt für:', username);
-    const alreadyDone = await hasWalletCompletedQuest(verif.walletAddress, verif.questId);
-    if (!alreadyDone) {
-      const quest = await loadQuestDetail(verif.questId);
-      const profile = await getUserProfile(verif.walletAddress);
-      if (quest) {
-        const now = new Date().toISOString();
-        const completion: QuestCompletion = {
-          questId: verif.questId,
-          walletAddress: verif.walletAddress,
-          channelId: username,
-          channelName: profile?.instagramName ?? username,
-          platform: 'instagram',
-          commentId: `dm_share:${username}`,
-          commentText: `dm_share|handle:${username}`,
-          rewardAmount: quest.rewardAmount,
-          rewardPaid: false,
-          completedAt: now,
-        };
-        await saveCompletion(completion);
-        await addDfaithCredits(verif.walletAddress, quest.rewardAmount);
-        await savePendingReward({ walletAddress: verif.walletAddress, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId: verif.questId, createdAt: now });
-        await addUserXp(verif.walletAddress, Math.round(quest.rewardAmount / 10));
-        await addUserReputation(verif.walletAddress, quest.creatorWallet, quest.reputationReward);
-        await deleteInstagramDmVerification(verif.questId, verif.walletAddress);
-        console.log('[story-mention-webhook] Quest abgeschlossen für:', username, '+', quest.rewardAmount, 'Credits');
+
+    // story_verified = TRUE setzen (Schritt 1: Story wurde erkannt)
+    await markInstagramDmStoryVerifiedByHandle(username);
+    console.log('[story-mention-webhook] story_verified gesetzt für:', username);
+
+    // DM mit Token-Link senden (wenn IGSID vorhanden)
+    const dmLink = `${appUrl}/api/instagram-quests/dm-click?token=${encodeURIComponent(verif.clickToken)}`;
+    const dmText = `🎉 Danke fürs Teilen! Klicke diesen Link um deinen Story Quest abzuschließen und deine Belohnung zu erhalten:\n${dmLink}`;
+
+    if (senderIgsid) {
+      await sendInstagramDm(senderIgsid, dmText);
+    } else {
+      // Fallback: IGSID via Conversations-API ermitteln
+      const pageId = process.env.FACEBOOK_PAGE_ID;
+      const metaToken = process.env.META_SYSTEM_USER_TOKEN;
+      if (pageId && metaToken) {
+        const pageRes = await fetch(`${GRAPH}/${pageId}?fields=instagram_business_account&access_token=${metaToken}`);
+        const pageJson = await pageRes.json() as { instagram_business_account?: { id?: string } };
+        const igBizId  = pageJson.instagram_business_account?.id;
+        if (igBizId) {
+          const convRes  = await fetch(`${GRAPH}/${igBizId}/conversations?platform=instagram&fields=participants&access_token=${metaToken}&limit=20`, { signal: AbortSignal.timeout(10000) });
+          const convJson = await convRes.json() as { data?: Array<{ participants?: { data: Array<{ id: string; username?: string }> } }> };
+          for (const conv of convJson.data ?? []) {
+            const match = (conv.participants?.data ?? []).find(p => p.username?.toLowerCase() === username && p.id !== igBizId);
+            if (match?.id) {
+              await sendInstagramDm(match.id, dmText);
+              break;
+            }
+          }
+        }
       }
     }
   } catch (err) {
