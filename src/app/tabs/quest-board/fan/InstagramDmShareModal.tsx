@@ -244,7 +244,7 @@ export default function InstagramDmShareModal({
                     <li className="flex items-start gap-2 text-xs">
                       <span className="shrink-0 w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-[10px]">3</span>
                       <span className="text-zinc-300">
-                        Kehre zurück zur App und klicke auf <span className="text-green-400 font-semibold">'Belohnung einlösen'</span>
+                        Kehre zurück zur App und klicke auf <span className="text-green-400 font-semibold">&apos;Belohnung einlösen&apos;</span>
                       </span>
                     </li>
                   </ol>
@@ -309,7 +309,7 @@ export default function InstagramDmShareModal({
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   <span className="shrink-0 w-4 h-4 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-[9px]">3</span>
-                  <span className="text-zinc-300">Unten auf <span className="text-green-400 font-semibold">'Belohnung einlösen'</span> klicken</span>
+                  <span className="text-zinc-300">Unten auf <span className="text-green-400 font-semibold">&apos;Belohnung einlösen&apos;</span> klicken</span>
                 </div>
               </div>
             </div>
