@@ -344,22 +344,11 @@ export default function CreateQuestModal({
             <p className="text-zinc-400 text-sm mt-1">Fans können jetzt deinen Quest sehen und abschließen.</p>
           </div>
           {storyLink && (
-            <div className="bg-pink-900/20 border border-pink-700/40 rounded-xl p-4 space-y-2">
-              <p className="text-pink-300 font-semibold text-sm flex items-center gap-2">
-                <FaInstagram size={14} /> Instagram Link DM – diesen Link einfügen:
+            <div className="bg-pink-900/20 border border-pink-700/40 rounded-xl p-3 flex items-center gap-2">
+              <FaCheck size={12} className="text-green-400 shrink-0" />
+              <p className="text-xs text-zinc-300">
+                Story Quest aktiv — dein Link DM ist bereits eingerichtet.
               </p>
-              <p className="text-xs text-zinc-400">Füge diesen Link in dein Instagram &quot;Link DM&quot; ein. Er wird automatisch als DM gesendet wenn jemand auf deine Story antwortet.</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-2 text-xs text-zinc-300 font-mono break-all">
-                  {storyLink}
-                </code>
-                <button
-                  onClick={() => { navigator.clipboard.writeText(storyLink); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); }}
-                  className="shrink-0 bg-pink-600 hover:bg-pink-500 text-white font-bold px-3 py-2 rounded-lg text-xs transition-colors"
-                >
-                  {linkCopied ? '✓ Kopiert' : 'Kopieren'}
-                </button>
-              </div>
             </div>
           )}
           <button onClick={handleClose} className="w-full bg-[#231e12] hover:bg-[#2d2615] text-white py-3 rounded-xl transition-colors font-semibold">Schließen</button>
