@@ -105,6 +105,7 @@ export async function GET(req: NextRequest) {
       await addUserReputation(verif.walletAddress, quest.creatorWallet, quest.reputationReward!);
     }
     await deleteInstagramDmVerification(quest.id, verif.walletAddress);
+    return html(buildRewardPage(quest.rewardAmount + levelBonus, quest.videoTitle, returnUrl));
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('unique') || msg.includes('duplicate')) {
@@ -112,8 +113,6 @@ export async function GET(req: NextRequest) {
     }
     return html(buildPage('Fehler', `Ein Fehler ist aufgetreten: ${msg}`, false, returnUrl));
   }
-
-  return html(buildRewardPage(quest.rewardAmount + levelBonus, quest.videoTitle, returnUrl));
 }
 
 // ── Hilfsfunktion ────────────────────────────────────────────────────────────
