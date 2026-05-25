@@ -5,10 +5,10 @@
  *
  * Strategie:
  *   Da die Facebook API für User-Kommentare kein `from` mehr liefert,
- *   bekommt jede Wallet pro Quest einen deterministisch gewählten,
- *   natürlich klingenden Kommentartext (`getQuestCommentText`).
- *   Der User muss genau diesen Text als Kommentar posten – wir matchen
- *   per `message.includes(text)` ⇒ eindeutige Zuordnung Wallet ↔ Kommentar.
+ *   bekommt jede Wallet pro Quest einen in der DB reservierten, eindeutigen
+ *   Kommentartext (`reserveQuestCommentSlot`).
+ *   Jeder Slot wird nur einmal vergeben → kein anderer User hat denselben Text.
+ *   Matching: `message.includes(commentText)` ⇒ eindeutige Zuordnung Wallet ↔ Kommentar.
  *
  * Body:
  *   { walletAddress, questId, action: 'preview' | 'verify' }
@@ -32,7 +32,8 @@ import {
   addUserReputation,
   payLevelBonus,
   getUserProfile,
-  getQuestCommentText,
+  reserveQuestCommentSlot,
+  getReservedQuestCommentSlot,
 } from '../../../lib/questDb';
 import { findFacebookComment } from '../../../lib/metaApi';
 
@@ -62,11 +63,17 @@ export async function POST(req: NextRequest) {
   }
 
   const normalized = walletAddress.toLowerCase();
-  const commentText = getQuestCommentText(normalized, questId);
 
-  // ── action: preview – liefert den zu postenden Kommentartext ─────────────
+  // ── action: preview – Slot in DB reservieren und Text zurückgeben ───────
   if (action === 'preview') {
-    return NextResponse.json({ commentText });
+    try {
+      const commentText = await reserveQuestCommentSlot(questId, normalized);
+      return NextResponse.json({ commentText });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[comment-verify] preview/reserve error:', msg);
+      return NextResponse.json({ error: 'Kommentar konnte nicht reserviert werden.' }, { status: 500 });
+    }
   }
 
   // 1. Profil prüfen – Facebook muss verknüpft + verifiziert sein
@@ -115,7 +122,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 4. Meta Graph API – sucht den exakten Kommentartext im Post
+  // 4. Reservierten Kommentartext aus DB holen
+  //    (falls preview noch nicht aufgerufen → Slot jetzt anlegen)
+  const commentText = await reserveQuestCommentSlot(questId, normalized);
+
+  // 5. Meta Graph API – sucht den exakten Kommentartext im Post
   const result = await findFacebookComment(quest.videoId, commentText, null);
 
   // 5. Ergebnis auswerten

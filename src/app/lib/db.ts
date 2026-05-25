@@ -239,4 +239,15 @@ export const MIGRATION_SQL = `
   );
   CREATE UNIQUE INDEX IF NOT EXISTS idx_tester_requests_handle ON instagram_tester_requests(instagram_handle) WHERE status = 'pending';
   CREATE INDEX IF NOT EXISTS idx_tester_requests_status ON instagram_tester_requests(status, created_at DESC);
+
+  -- Facebook Comment-Quest: reservierte Kommentarslots (1 Text pro wallet+quest, unique per quest)
+  CREATE TABLE IF NOT EXISTS facebook_comment_slots (
+    quest_id        TEXT        NOT NULL,
+    wallet_address  TEXT        NOT NULL,
+    slot_index      INTEGER     NOT NULL,
+    comment_text    TEXT        NOT NULL,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (quest_id, wallet_address)
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_fb_comment_slots_unique ON facebook_comment_slots(quest_id, slot_index);
 `;

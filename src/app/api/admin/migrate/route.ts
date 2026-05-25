@@ -302,6 +302,19 @@ export async function POST(req: NextRequest) {
         )
     `;
 
+    // ── Facebook Comment Slots ────────────────────────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS facebook_comment_slots (
+        quest_id        TEXT        NOT NULL,
+        wallet_address  TEXT        NOT NULL,
+        slot_index      INTEGER     NOT NULL,
+        comment_text    TEXT        NOT NULL,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (quest_id, wallet_address)
+      )
+    `;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_fb_comment_slots_unique ON facebook_comment_slots(quest_id, slot_index)`;
+
     return NextResponse.json({ success: true, message: `Migration abgeschlossen (${(backfill as unknown as { count?: number }).count ?? backfill.length} neue Profile)` });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
