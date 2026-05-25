@@ -18,7 +18,9 @@ import InstagramDmShareModal from './InstagramDmShareModal';
 import FacebookCommentVerifyModal from './FacebookCommentVerifyModal';
 import FacebookQuestCard from '../quests/facebook/FacebookQuestCard';
 import FacebookLikeVerifyModal from './FacebookLikeVerifyModal';
+import BundleCard from './BundleCard';
 import type { QuestIndexEntry, VerifiedPlatforms, VerifyResult, ClaimResult } from '../types';
+import type { QuestBundleWithItems } from '../../../lib/questDb';
 import { formatCredits } from '../utils';
 
 interface FanBoardProps {
@@ -54,6 +56,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const [instagramDmShareToken, setInstagramDmShareToken] = useState<string | null>(null);
   const [facebookCommentQuest, setFacebookCommentQuest] = useState<QuestIndexEntry | null>(null);
   const [facebookLikeQuest, setFacebookLikeQuest] = useState<QuestIndexEntry | null>(null);
+  const [bundles, setBundles] = useState<QuestBundleWithItems[]>([]);
+  const [bundlesLoading, setBundlesLoading] = useState(false);
 
   // Celebration nach Quest-Abschluss
   const [celebration, setCelebration] = useState<{ amount: number; questTitle: string; reputationReward?: number; levelBonus?: number } | null>(null);
@@ -109,7 +113,20 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
     }
   }, [walletAddress]);
 
-  useEffect(() => { loadQuests(); }, [loadQuests]);
+  const loadBundles = useCallback(async () => {
+    setBundlesLoading(true);
+    try {
+      const url = filterCreator
+        ? `/api/quest-bundles?wallet=${walletAddress}&creator=${filterCreator}`
+        : `/api/quest-bundles?wallet=${walletAddress}`;
+      const res  = await fetch(url);
+      const data = await res.json() as { bundles?: QuestBundleWithItems[] };
+      setBundles(data.bundles ?? []);
+    } catch { /* ignorieren */ }
+    finally { setBundlesLoading(false); }
+  }, [walletAddress, filterCreator]);
+
+  useEffect(() => { loadQuests(); loadBundles(); }, [loadQuests, loadBundles]);
 
   const handleVerify = async (questId: string) => {
     const quest = quests.find((q) => q.id === questId) ?? null;
@@ -419,6 +436,36 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                   ))}
                 </QuestCarousel>
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Bundle-Sektion ──────────────────────────────────────────────── */}
+      {(bundles.length > 0 || bundlesLoading) && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-white font-bold text-lg flex items-center gap-2">
+              🎯 Bundle Quests
+            </h2>
+            <button onClick={loadBundles} className="text-zinc-400 hover:text-white p-2 transition-colors">
+              <FaSync size={14} className={bundlesLoading ? 'animate-spin' : ''} />
+            </button>
+          </div>
+          {bundlesLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="border-4 border-purple-500/30 border-t-purple-500 rounded-full w-8 h-8 animate-spin" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {bundles.map((bundle) => (
+                <BundleCard
+                  key={bundle.id}
+                  bundle={bundle}
+                  fanWallet={walletAddress}
+                  onBonusClaimed={() => { loadBundles(); loadQuests(); }}
+                />
+              ))}
             </div>
           )}
         </div>

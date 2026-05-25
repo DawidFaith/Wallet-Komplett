@@ -315,6 +315,44 @@ export async function POST(req: NextRequest) {
     `;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_fb_comment_slots_unique ON facebook_comment_slots(quest_id, slot_index)`;
 
+    // ── Quest-Bundle-System ───────────────────────────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS quest_bundles (
+        id                      UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+        creator_wallet          TEXT          NOT NULL,
+        platform                TEXT          NOT NULL,
+        video_id                TEXT          NOT NULL DEFAULT '',
+        video_title             TEXT          NOT NULL DEFAULT '',
+        video_thumbnail         TEXT          NOT NULL DEFAULT '',
+        video_url               TEXT          NOT NULL DEFAULT '',
+        description             TEXT          NOT NULL DEFAULT '',
+        reward_pool_per_fan     NUMERIC(20,2) NOT NULL DEFAULT 0,
+        bundle_completion_bonus NUMERIC(20,2) NOT NULL DEFAULT 0,
+        bonus_budget_remaining  NUMERIC(20,2) NOT NULL DEFAULT 0,
+        max_participants        INTEGER       NOT NULL DEFAULT 10,
+        is_active               BOOLEAN       NOT NULL DEFAULT true,
+        expires_at              TIMESTAMPTZ,
+        created_at              TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+        updated_at              TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_quest_bundles_creator ON quest_bundles(creator_wallet)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_quest_bundles_active  ON quest_bundles(is_active, created_at DESC)`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS quest_bundle_completions (
+        bundle_id    UUID          NOT NULL,
+        fan_wallet   TEXT          NOT NULL,
+        bonus_paid   NUMERIC(20,2) NOT NULL DEFAULT 0,
+        completed_at TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (bundle_id, fan_wallet)
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_quest_bundle_comp_fan ON quest_bundle_completions(fan_wallet)`;
+
+    await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS bundle_id    UUID    REFERENCES quest_bundles(id)`;
+    await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS reach_weight INTEGER NOT NULL DEFAULT 0`;
+
     // ── DFAITH-Beträge: INTEGER → NUMERIC(20,2) ──────────────────────────────
     // sql.unsafe() funktioniert im Neon HTTP-Driver nicht → tagged template literals
     const typeChanges: Record<string, string> = {};

@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { FaPlus, FaSync, FaTrophy, FaExternalLinkAlt, FaTimes, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaCopy, FaCheck, FaLink } from 'react-icons/fa';
+import { FaPlus, FaSync, FaTrophy, FaExternalLinkAlt, FaTimes, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaCopy, FaCheck, FaLink, FaLayerGroup } from 'react-icons/fa';
 import CreditsBox from '../components/CreditsBox';
 import DepositModal from './DepositModal';
 import CreateQuestModal from './CreateQuestModal';
+import CreateBundleModal from './CreateBundleModal';
 import type { QuestIndexEntry, YouTubeBinding, VerifiedPlatforms, Platform, QuestType } from '../types';
+import type { QuestBundleWithItems } from '../../../lib/questDb';
 import { getProgressPercent, formatCredits } from '../utils';
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
@@ -43,6 +45,11 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showBundleModal, setShowBundleModal] = useState(false);
+  const [bundles, setBundles] = useState<QuestBundleWithItems[]>([]);
+  const [bundlesLoading, setBundlesLoading] = useState(false);
+  const [confirmCancelBundleId, setConfirmCancelBundleId] = useState<string | null>(null);
+  const [cancellingBundleId, setCancellingBundleId] = useState<string | null>(null);
   const [showDeposit, setShowDeposit] = useState(false);
   const [creatorBalance, setCreatorBalance] = useState(0);
   const [balanceLoading, setBalanceLoading] = useState(false);
@@ -74,6 +81,32 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
     } catch { /* ignorieren */ }
     finally { setLoading(false); }
   }, [walletAddress]);
+
+  const loadCreatorBundles = useCallback(async () => {
+    setBundlesLoading(true);
+    try {
+      const res  = await fetch(`/api/quest-bundles?wallet=${walletAddress}&creator=${walletAddress}`);
+      const data = await res.json() as { bundles?: QuestBundleWithItems[] };
+      setBundles(data.bundles ?? []);
+    } catch { /* ignorieren */ }
+    finally { setBundlesLoading(false); }
+  }, [walletAddress]);
+
+  const handleCancelBundle = useCallback(async (bundleId: string) => {
+    setCancellingBundleId(bundleId);
+    setConfirmCancelBundleId(null);
+    try {
+      const res = await fetch(`/api/quest-bundles/${bundleId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ creatorWallet: walletAddress }),
+      });
+      const data = await res.json() as { success?: boolean; error?: string };
+      if (!res.ok) { alert(data.error ?? 'Fehler beim Stornieren'); return; }
+      await Promise.all([loadCreatorBalance(), loadCreatorBundles()]);
+    } catch { alert('Netzwerkfehler'); }
+    finally { setCancellingBundleId(null); }
+  }, [walletAddress, loadCreatorBalance, loadCreatorBundles]);
 
   const handleCancel = useCallback(async (questId: string) => {
     setCancellingId(questId);
@@ -107,8 +140,9 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
     }).finally(() => {
       loadCreatorQuests();
       loadCreatorBalance();
+      loadCreatorBundles();
     });
-  }, [loadCreatorQuests, loadCreatorBalance, walletAddress]);
+  }, [loadCreatorQuests, loadCreatorBalance, loadCreatorBundles, walletAddress]);
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 space-y-5">
@@ -123,15 +157,23 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         refreshLoading={balanceLoading}
       />
 
-      {/* Header + Quest erstellen */}
+      {/* Header + Buttons */}
       <div className="flex items-center justify-between">
         <h2 className="text-white font-bold text-lg">Meine Quests</h2>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-red-600 hover:bg-red-500 text-white font-semibold px-4 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
-        >
-          <FaPlus size={12} /> Quest erstellen
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowBundleModal(true)}
+            className="bg-purple-700 hover:bg-purple-600 text-white font-semibold px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
+          >
+            <FaLayerGroup size={12} /> Bundle
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-red-600 hover:bg-red-500 text-white font-semibold px-4 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
+          >
+            <FaPlus size={12} /> Quest erstellen
+          </button>
+        </div>
       </div>
 
       {/* Quest-Liste */}
@@ -215,6 +257,83 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         </div>
       )}
 
+      {/* ── Bundle-Sektion ──────────────────────────────────────────────── */}
+      {(bundles.length > 0 || bundlesLoading) && (
+        <div className="space-y-3">
+          <h3 className="text-white font-bold flex items-center gap-2">
+            <FaLayerGroup className="text-purple-400" size={15} />
+            Meine Bundles
+          </h3>
+          {bundlesLoading ? (
+            <div className="flex justify-center py-6">
+              <div className="border-4 border-purple-500/30 border-t-purple-500 rounded-full w-8 h-8 animate-spin" />
+            </div>
+          ) : (
+            bundles.map((bundle) => (
+              <div key={bundle.id} className="bg-[#1a1228] rounded-2xl border border-purple-900/40 p-4 space-y-3">
+                {/* Bundle Header */}
+                <div className="flex gap-3 items-start">
+                  {bundle.videoThumbnail && (
+                    <div className="relative w-20 h-14 shrink-0 rounded-xl overflow-hidden">
+                      <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="bg-purple-900/50 border border-purple-700/50 rounded-lg px-2 py-0.5 text-xs text-purple-300 font-semibold flex items-center gap-1">
+                        <FaLayerGroup size={9} /> Bundle
+                      </span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs ${bundle.isActive ? 'bg-green-900/40 text-green-400' : 'bg-zinc-800 text-zinc-500'}`}>
+                        {bundle.isActive ? 'Aktiv' : 'Inaktiv'}
+                      </span>
+                    </div>
+                    <p className="text-white text-sm font-semibold line-clamp-1">{bundle.videoTitle}</p>
+                    <p className="text-zinc-500 text-xs mt-0.5">
+                      Pool: {bundle.rewardPoolPerFan.toFixed(2)} + {bundle.bundleCompletionBonus.toFixed(2)} Bonus · max {bundle.maxParticipants} Fans
+                    </p>
+                  </div>
+                </div>
+
+                {/* Items */}
+                <div className="grid grid-cols-2 gap-1.5">
+                  {bundle.items.map((item) => (
+                    <div key={item.questId} className="bg-purple-950/30 rounded-lg px-3 py-1.5 flex items-center justify-between">
+                      <span className="text-zinc-300 text-xs capitalize">{item.questType}</span>
+                      <span className="text-purple-300 text-xs font-mono">{item.rewardAmount.toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Stornieren */}
+                {bundle.isActive && (
+                  confirmCancelBundleId === bundle.id ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleCancelBundle(bundle.id)}
+                        disabled={cancellingBundleId === bundle.id}
+                        className="text-xs bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white px-3 py-1 rounded-lg transition-colors"
+                      >
+                        {cancellingBundleId === bundle.id ? '…' : 'Ja, stornieren'}
+                      </button>
+                      <button onClick={() => setConfirmCancelBundleId(null)} className="text-xs text-zinc-500 hover:text-zinc-300 px-2 py-1 rounded-lg">
+                        Abbrechen
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmCancelBundleId(bundle.id)}
+                      className="flex items-center gap-1 text-xs text-zinc-600 hover:text-red-400 transition-colors"
+                    >
+                      <FaTimes size={10} /> Bundle stornieren
+                    </button>
+                  )
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
       {/* Modals */}
       <CreateQuestModal
         open={showCreateModal}
@@ -223,6 +342,15 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         creatorBalance={creatorBalance}
         verified={verified}
         onCreated={() => { loadCreatorQuests(); loadCreatorBalance(); }}
+        onOpenDeposit={() => setShowDeposit(true)}
+      />
+      <CreateBundleModal
+        open={showBundleModal}
+        onClose={() => setShowBundleModal(false)}
+        walletAddress={walletAddress}
+        creatorBalance={creatorBalance}
+        verified={verified}
+        onCreated={() => { loadCreatorBundles(); loadCreatorBalance(); }}
         onOpenDeposit={() => setShowDeposit(true)}
       />
       <DepositModal
