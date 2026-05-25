@@ -316,26 +316,26 @@ export async function POST(req: NextRequest) {
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_fb_comment_slots_unique ON facebook_comment_slots(quest_id, slot_index)`;
 
     // ── DFAITH-Beträge: INTEGER → NUMERIC(20,2) ──────────────────────────────
+    // sql.unsafe() funktioniert im Neon HTTP-Driver nicht → tagged template literals
     const typeChanges: Record<string, string> = {};
-    const alterStatements: Array<{ key: string; sql: string }> = [
-      { key: 'dfaith_credits.balance',       sql: `ALTER TABLE dfaith_credits     ALTER COLUMN balance        TYPE NUMERIC(20,2) USING balance::numeric` },
-      { key: 'creator_balances.balance',     sql: `ALTER TABLE creator_balances   ALTER COLUMN balance        TYPE NUMERIC(20,2) USING balance::numeric` },
-      { key: 'creator_deposits.amount',      sql: `ALTER TABLE creator_deposits   ALTER COLUMN amount         TYPE NUMERIC(20,2) USING amount::numeric` },
-      { key: 'quests.reward_amount',         sql: `ALTER TABLE quests             ALTER COLUMN reward_amount  TYPE NUMERIC(20,2) USING reward_amount::numeric` },
-      { key: 'quests.credits_locked',        sql: `ALTER TABLE quests             ALTER COLUMN credits_locked TYPE NUMERIC(20,2) USING credits_locked::numeric` },
-      { key: 'quests.bonus_budget',          sql: `ALTER TABLE quests             ALTER COLUMN bonus_budget   TYPE NUMERIC(20,2) USING bonus_budget::numeric` },
-      { key: 'quest_completions.reward_amount', sql: `ALTER TABLE quest_completions  ALTER COLUMN reward_amount  TYPE NUMERIC(20,2) USING reward_amount::numeric` },
-      { key: 'pending_rewards.amount',       sql: `ALTER TABLE pending_rewards    ALTER COLUMN amount         TYPE NUMERIC(20,2) USING amount::numeric` },
-      { key: 'reputation_contests.credits_locked', sql: `ALTER TABLE reputation_contests ALTER COLUMN credits_locked TYPE NUMERIC(20,2) USING credits_locked::numeric` },
-    ];
-    for (const stmt of alterStatements) {
-      try {
-        await sql.unsafe(stmt.sql);
-        typeChanges[stmt.key] = 'ok';
-      } catch (e) {
-        typeChanges[stmt.key] = (e instanceof Error ? e.message : String(e));
-      }
-    }
+    const alter = async (key: string, fn: () => Promise<unknown>) => {
+      try { await fn(); typeChanges[key] = 'ok'; }
+      catch (e) { typeChanges[key] = (e instanceof Error ? e.message : String(e)).slice(0, 120); }
+    };
+    await alter('dfaith_credits.balance',         () => sql`ALTER TABLE dfaith_credits           ALTER COLUMN balance            TYPE NUMERIC(20,2) USING balance::numeric`);
+    await alter('creator_balances.balance',        () => sql`ALTER TABLE creator_balances         ALTER COLUMN balance            TYPE NUMERIC(20,2) USING balance::numeric`);
+    await alter('creator_deposits.amount',         () => sql`ALTER TABLE creator_deposits         ALTER COLUMN amount             TYPE NUMERIC(20,2) USING amount::numeric`);
+    await alter('quests.reward_amount',            () => sql`ALTER TABLE quests                   ALTER COLUMN reward_amount      TYPE NUMERIC(20,2) USING reward_amount::numeric`);
+    await alter('quests.credits_locked',           () => sql`ALTER TABLE quests                   ALTER COLUMN credits_locked     TYPE NUMERIC(20,2) USING credits_locked::numeric`);
+    await alter('quests.bonus_budget',             () => sql`ALTER TABLE quests                   ALTER COLUMN bonus_budget       TYPE NUMERIC(20,2) USING bonus_budget::numeric`);
+    await alter('quest_completions.reward_amount', () => sql`ALTER TABLE quest_completions        ALTER COLUMN reward_amount      TYPE NUMERIC(20,2) USING reward_amount::numeric`);
+    await alter('pending_rewards.amount',          () => sql`ALTER TABLE pending_rewards          ALTER COLUMN amount             TYPE NUMERIC(20,2) USING amount::numeric`);
+    await alter('reputation_contests.credits_locked', () => sql`ALTER TABLE reputation_contests   ALTER COLUMN credits_locked     TYPE NUMERIC(20,2) USING credits_locked::numeric`);
+    await alter('reputation_contest_prizes.credit_reward', () => sql`ALTER TABLE reputation_contest_prizes ALTER COLUMN credit_reward TYPE NUMERIC(20,2) USING credit_reward::numeric`);
+    await alter('reputation_levels.credit_reward', () => sql`ALTER TABLE reputation_levels        ALTER COLUMN credit_reward      TYPE NUMERIC(20,2) USING credit_reward::numeric`);
+    await alter('shop_items.price_credits',        () => sql`ALTER TABLE shop_items               ALTER COLUMN price_credits      TYPE NUMERIC(20,2) USING price_credits::numeric`);
+    await alter('shop_purchases.price_credits_paid', () => sql`ALTER TABLE shop_purchases         ALTER COLUMN price_credits_paid TYPE NUMERIC(20,2) USING price_credits_paid::numeric`);
+    await alter('leaderboard_quarterly_history.total_credited', () => sql`ALTER TABLE leaderboard_quarterly_history ALTER COLUMN total_credited TYPE NUMERIC(20,2) USING total_credited::numeric`);
 
     // Spaltentypen aus DB lesen zur Verifikation
     const colTypes = await sql`
@@ -349,7 +349,12 @@ export async function POST(req: NextRequest) {
           (table_name = 'quests'            AND column_name IN ('reward_amount','credits_locked','bonus_budget')) OR
           (table_name = 'quest_completions' AND column_name = 'reward_amount') OR
           (table_name = 'pending_rewards'   AND column_name = 'amount') OR
-          (table_name = 'reputation_contests' AND column_name = 'credits_locked')
+          (table_name = 'reputation_contests'       AND column_name = 'credits_locked') OR
+          (table_name = 'reputation_contest_prizes' AND column_name = 'credit_reward') OR
+          (table_name = 'reputation_levels'         AND column_name = 'credit_reward') OR
+          (table_name = 'shop_items'                AND column_name = 'price_credits') OR
+          (table_name = 'shop_purchases'            AND column_name = 'price_credits_paid') OR
+          (table_name = 'leaderboard_quarterly_history' AND column_name = 'total_credited')
         )
       ORDER BY table_name, column_name
     `;
