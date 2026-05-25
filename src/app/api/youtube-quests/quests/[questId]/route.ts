@@ -32,7 +32,8 @@ export async function DELETE(
     return NextResponse.json({ success: true, refund });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error('[quest DELETE]', message);
-    return NextResponse.json({ error: `Datenbankfehler: ${message}` }, { status: 500 });
+    const stack   = err instanceof Error ? err.stack : undefined;
+    console.error('[quest DELETE]', message, stack);
+    return NextResponse.json({ error: `Datenbankfehler: ${message}`, detail: stack }, { status: 500 });
   }
 }
