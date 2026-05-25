@@ -315,6 +315,18 @@ export async function POST(req: NextRequest) {
     `;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_fb_comment_slots_unique ON facebook_comment_slots(quest_id, slot_index)`;
 
+    // ── DFAITH-Beträge: INTEGER → NUMERIC(20,2) ──────────────────────────────
+    // DFAITH hat 2 Decimals. Bestehende INTEGER-Spalten müssen migriert werden,
+    // sonst werfen Stornos & Bonus-Buchungen "invalid input syntax for type integer".
+    await sql`ALTER TABLE dfaith_credits     ALTER COLUMN balance        TYPE NUMERIC(20,2) USING balance::numeric`;
+    await sql`ALTER TABLE creator_balances   ALTER COLUMN balance        TYPE NUMERIC(20,2) USING balance::numeric`;
+    await sql`ALTER TABLE creator_deposits   ALTER COLUMN amount         TYPE NUMERIC(20,2) USING amount::numeric`;
+    await sql`ALTER TABLE quests             ALTER COLUMN reward_amount  TYPE NUMERIC(20,2) USING reward_amount::numeric`;
+    await sql`ALTER TABLE quests             ALTER COLUMN credits_locked TYPE NUMERIC(20,2) USING credits_locked::numeric`;
+    await sql`ALTER TABLE quests             ALTER COLUMN bonus_budget   TYPE NUMERIC(20,2) USING bonus_budget::numeric`;
+    await sql`ALTER TABLE quest_completions  ALTER COLUMN reward_amount  TYPE NUMERIC(20,2) USING reward_amount::numeric`;
+    await sql`ALTER TABLE pending_rewards    ALTER COLUMN amount         TYPE NUMERIC(20,2) USING amount::numeric`;
+
     return NextResponse.json({ success: true, message: `Migration abgeschlossen (${(backfill as unknown as { count?: number }).count ?? backfill.length} neue Profile)` });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
