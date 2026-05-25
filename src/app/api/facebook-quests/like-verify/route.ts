@@ -1,24 +1,11 @@
 /**
  * POST /api/facebook-quests/like-verify
  *
- * Verifiziert einen Facebook Like-Quest via Make.com Webhook.
+ * Verifiziert einen Facebook Like-Quest via Meta Graph API.
  *
- * Flow (analog zu Instagram/TikTok Like-Verify):
- *   action: 'start' → Baseline-Like-Count via Make.com laden, 5-Min-Fenster öffnen
- *   action: 'check' → Aktuelle Like-Count via Make.com laden, Delta prüfen → Quest abschließen
- *
- * Make.com Webhook (MAKE_FACEBOOK_LIKE_WEBHOOK_URL) Request:
- *   { post_id: string }
- *
- * Make.com Response Body (Webhook-Response Modul, Content-Type: application/json):
- *   {
- *     "found": true,
- *     "likes": {{post.reactions.summary.total_count}},
- *     "comments": {{post.comments.summary.total_count}},
- *     "shares": {{ifempty(post.shares.count; 0)}}
- *   }
- *
- *   Mindestens das Feld `likes` (oder als Alternative `total_count`) muss vorhanden sein.
+ * Flow:
+ *   action: 'start' → Baseline-Reaktionsanzahl via Graph API laden, 10-Min-Fenster öffnen
+ *   action: 'check' → Aktuelle Reaktionsanzahl via Graph API prüfen → Quest abschließen
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -38,68 +25,11 @@ import {
   deleteFacebookLikeVerification,
   QuestCompletion,
 } from '../../../lib/questDb';
+import { fetchFacebookPostCounts } from '../../../lib/metaApi';
 
 export const maxDuration = 30;
 
-interface FacebookCounts {
-  likes: number;
-  comments: number;
-  shares: number;
-  total_interactions: number;
-}
-
-interface MakeRawResponse {
-  found?: boolean | string;
-  likes?: number | string;
-  reactions?: number | string;
-  total_count?: number | string;
-  comments?: number | string;
-  shares?: number | string;
-  total_interactions?: number | string;
-}
-
-function parseCounts(raw: MakeRawResponse | null): FacebookCounts | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const likes = Number(raw.likes ?? raw.reactions ?? raw.total_count ?? 0);
-  if (!Number.isFinite(likes)) return null;
-  const comments = Number(raw.comments ?? 0);
-  const shares = Number(raw.shares ?? 0);
-  const total_interactions = Number(raw.total_interactions ?? (likes + comments + shares));
-  return { likes, comments, shares, total_interactions };
-}
-
-async function fetchCounts(webhookUrl: string, postId: string): Promise<FacebookCounts | null> {
-  try {
-    const res = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ post_id: postId }),
-      signal: AbortSignal.timeout(25000),
-    });
-    const text = await res.text();
-    if (!text || !text.trim()) return null;
-    try {
-      const raw = JSON.parse(text) as MakeRawResponse;
-      return parseCounts(raw);
-    } catch {
-      // Fallback: Zahlen aus Text extrahieren
-      const m = text.match(/"likes"\s*:\s*(\d+)/i);
-      if (m) return parseCounts({ likes: Number(m[1]) });
-      return null;
-    }
-  } catch {
-    return null;
-  }
-}
-
 export async function POST(req: NextRequest) {
-  const makeWebhookUrl = process.env.MAKE_FACEBOOK_LIKE_WEBHOOK_URL;
-  if (!makeWebhookUrl) {
-    return NextResponse.json(
-      { error: 'MAKE_FACEBOOK_LIKE_WEBHOOK_URL nicht konfiguriert' },
-      { status: 500 }
-    );
-  }
 
   let body: { action?: string; walletAddress?: string; questId?: string };
   try {
@@ -161,7 +91,7 @@ export async function POST(req: NextRequest) {
 
     // ── action: start ────────────────────────────────────────────────────────
     if (action === 'start') {
-      const stats = await fetchCounts(makeWebhookUrl, quest.videoId);
+      const stats = await fetchFacebookPostCounts(quest.videoId);
       if (!stats) {
         return NextResponse.json(
           { error: 'Facebook-Stats nicht abrufbar. Bitte erneut versuchen.' },
@@ -192,7 +122,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ expired: true });
       }
 
-      const current = await fetchCounts(makeWebhookUrl, quest.videoId);
+      const current = await fetchFacebookPostCounts(quest.videoId);
       if (!current) {
         return NextResponse.json(
           { error: 'Facebook-Stats nicht abrufbar. Bitte erneut versuchen.' },

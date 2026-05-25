@@ -183,3 +183,31 @@ export async function fetchPlatformFbPosts(limit = 5): Promise<string[]> {
     return [];
   }
 }
+
+// ─── Reaktionen/Likes eines Facebook-Posts abrufen ───────────────────────────
+export interface FbPostCounts {
+  likes: number;
+  comments: number;
+  shares: number;
+}
+
+export async function fetchFacebookPostCounts(postId: string): Promise<FbPostCounts | null> {
+  const token = await getPageAccessToken() ?? process.env.META_SYSTEM_USER_TOKEN;
+  if (!token) return null;
+  try {
+    const url = `${GRAPH}/${postId}?fields=reactions.summary(true),comments.summary(true),shares&access_token=${token}`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const data = await res.json() as {
+      reactions?: { summary?: { total_count?: number } };
+      comments?: { summary?: { total_count?: number } };
+      shares?: { count?: number };
+    };
+    const likes = Number(data.reactions?.summary?.total_count ?? 0);
+    const comments = Number(data.comments?.summary?.total_count ?? 0);
+    const shares = Number(data.shares?.count ?? 0);
+    return { likes, comments, shares };
+  } catch {
+    return null;
+  }
+}
