@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaLayerGroup, FaTimes, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaPlus, FaTrash, FaCheck, FaInfoCircle } from 'react-icons/fa';
+import { FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaCheck, FaInfoCircle } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { Platform, QuestType } from '../types';
 
@@ -176,12 +176,11 @@ export default function CreateBundleModal({
 
   if (success) {
     return (
-      <Modal onClose={onClose}>
-        <div className="p-6 text-center space-y-4">
+      <Modal open={open} onClose={onClose} title="Bundle erstellt! 🎉">
+        <div className="text-center space-y-4">
           <div className="w-16 h-16 rounded-full bg-green-900/50 border border-green-700 flex items-center justify-center mx-auto">
             <FaCheck size={28} className="text-green-400" />
           </div>
-          <h2 className="text-white font-bold text-xl">Bundle erstellt! 🎉</h2>
           <p className="text-zinc-400 text-sm">
             Fans sehen jetzt dein Bundle und können alle Aufgaben abschließen, um den Gesamtreward zu verdienen.
           </p>
@@ -194,18 +193,8 @@ export default function CreateBundleModal({
   }
 
   return (
-    <Modal onClose={onClose}>
-      <div className="p-5 space-y-5 max-w-lg">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FaLayerGroup className="text-purple-400" size={18} />
-            <h2 className="text-white font-bold text-lg">Bundle Quest erstellen</h2>
-          </div>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
-            <FaTimes size={18} />
-          </button>
-        </div>
+    <Modal open={open} onClose={onClose} title="Bundle Quest erstellen">
+      <div className="space-y-5">
 
         {/* Schritt-Anzeige */}
         <div className="flex gap-2">
