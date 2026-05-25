@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
     await markInstagramDmClicked(verif.clickToken, 0);
     await saveCompletion(completion);
     await addDfaithCredits(verif.walletAddress, quest.rewardAmount);
-    const levelBonus = await payLevelBonus(verif.walletAddress, quest.creatorWallet, quest.rewardAmount);
+    const levelBonus = await payLevelBonus(verif.walletAddress, quest.creatorWallet, quest.rewardAmount, quest.id);
     await savePendingReward({ walletAddress: verif.walletAddress, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId: quest.id, createdAt: now });
     await addUserXp(verif.walletAddress, Math.round(quest.rewardAmount / 10));
     if ((quest.reputationReward ?? 0) > 0) {

@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     });
 
     await addDfaithCredits(walletAddress, quest.rewardAmount);
-    const levelBonus = await payLevelBonus(walletAddress, quest.creatorWallet, quest.rewardAmount);
+    const levelBonus = await payLevelBonus(walletAddress, quest.creatorWallet, quest.rewardAmount, quest.id);
     await addUserXp(walletAddress, quest.rewardAmount * 10);
     await addUserReputation(walletAddress, quest.creatorWallet, quest.reputationReward);
 

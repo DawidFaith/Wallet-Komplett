@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
     createdAt: new Date().toISOString(),
   });
   await addDfaithCredits(normalized, quest.rewardAmount);
-  const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount);
+  const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
   await addUserXp(normalized, 10);
   await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
 

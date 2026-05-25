@@ -421,7 +421,7 @@ export default function AdminPage() {
           </div>
 
           {/* Stats row */}
-          <div className="grid grid-cols-3 gap-3 mb-5">
+          <div className="grid grid-cols-3 gap-3 mb-3">
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
               <p className="text-zinc-500 text-xs mb-0.5">Gesamt</p>
               <p className="text-white font-bold text-xl">{users.length}</p>
@@ -434,6 +434,23 @@ export default function AdminPage() {
               <p className="text-zinc-500 text-xs mb-0.5">Fans</p>
               <p className="text-blue-400 font-bold text-xl">{users.filter((u) => !u.isArtist).length}</p>
             </div>
+          </div>
+          {/* Plattform-Nutzer */}
+          <div className="grid grid-cols-4 gap-2 mb-5">
+            {[
+              { label: 'YouTube', icon: <FaYoutube size={11} className="text-red-400" />, count: users.filter(u => u.youtubeChannelId).length },
+              { label: 'Instagram', icon: <FaInstagram size={11} className="text-pink-400" />, count: users.filter(u => u.instagramVerified).length },
+              { label: 'TikTok', icon: <FaTiktok size={11} className="text-cyan-400" />, count: users.filter(u => u.tiktokVerified).length },
+              { label: 'Facebook', icon: <FaFacebook size={11} className="text-blue-500" />, count: users.filter(u => u.facebookVerified).length },
+            ].map(({ label, icon, count }) => (
+              <div key={label} className="bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 flex items-center gap-2">
+                {icon}
+                <div>
+                  <p className="text-white font-bold text-sm leading-none">{count}</p>
+                  <p className="text-zinc-600 text-[10px] mt-0.5">{label}</p>
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Table */}

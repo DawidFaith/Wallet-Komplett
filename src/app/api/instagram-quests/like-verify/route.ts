@@ -244,7 +244,7 @@ export async function POST(req: NextRequest) {
         };
         await saveCompletion(completion);
         await addDfaithCredits(normalized, quest.rewardAmount);
-        const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount);
+        const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
         await savePendingReward({
           walletAddress: normalized,
           amount: quest.rewardAmount,
@@ -297,7 +297,7 @@ export async function POST(req: NextRequest) {
         };
         await saveCompletion(completion);
         await addDfaithCredits(normalized, earnedReward);
-        const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, earnedReward);
+        const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, earnedReward, quest.id);
         await savePendingReward({
           walletAddress: normalized,
           amount: earnedReward,
@@ -358,7 +358,7 @@ export async function POST(req: NextRequest) {
 
       await saveCompletion(completion);
       await addDfaithCredits(normalized, quest.rewardAmount);
-      const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount);
+      const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
       await savePendingReward({
         walletAddress: normalized,
         amount: quest.rewardAmount,

@@ -77,6 +77,12 @@ export default function CreateQuestModal({
   const [success, setSuccess] = useState(false);
   const [storyLink, setStoryLink] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  // Bonus-Budget
+  const [bonusEstimate, setBonusEstimate] = useState<{ estimatedBonusPercent: number; estimatedBonusBudget: number; fanCount: number } | null>(null);
+  const [lockBonusBudget, setLockBonusBudget] = useState(true);
+  const [bonusBudgetOverride, setBonusBudgetOverride] = useState<string>('');
+  // Teilnehmer-Empfehlung
+  const [participantEstimate, setParticipantEstimate] = useState<{ recommended: number; basis: string; totalAppUsers: number; platformUsers: number; engagementRate: number } | null>(null);
   // dm_share: Token vor Quest-Erstellung generieren
   const [storyPreviewToken, setStoryPreviewToken] = useState<string | null>(null);
   const [storyPreviewLink, setStoryPreviewLink] = useState<string | null>(null);
@@ -103,6 +109,38 @@ export default function CreateQuestModal({
     setReputationReward(String(recommendedRep(platform, questType)));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questType, platform]);
+
+  // Teilnehmer-Empfehlung laden wenn sich Plattform ändert
+  useEffect(() => {
+    if (!open) return;
+    fetch(`/api/reputation/participant-estimate?platform=${platform}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) setParticipantEstimate(data);
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [platform, open]);
+
+  // Bonus-Schätzung laden wenn sich rewardAmount oder maxParticipants ändern
+  useEffect(() => {
+    if (!walletAddress || !open) return;
+    const reward = Number(rewardAmount);
+    const max = Number(maxParticipants);
+    if (!reward || !max) { setBonusEstimate(null); return; }
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/reputation/bonus-estimate?artistWallet=${encodeURIComponent(walletAddress)}&rewardAmount=${reward}&maxCompletions=${max}`);
+        if (res.ok) {
+          const data = await res.json();
+          setBonusEstimate(data);
+          if (bonusBudgetOverride === '') setBonusBudgetOverride(String(data.estimatedBonusBudget));
+        }
+      } catch { /* ignorieren */ }
+    }, 600);
+    return () => clearTimeout(timeout);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rewardAmount, maxParticipants, walletAddress, open]);
   // Instagram – verfügbare Videos aus DB
   const [availableMedia, setAvailableMedia] = useState<AvailableMediaItem[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
@@ -146,6 +184,7 @@ export default function CreateQuestModal({
     setAvailableFacebookMedia([]); setLoadingFacebookMedia(false); setSelectedFacebookMedia(null);
     setError(''); setSuccess(false); setStoryLink(null); setLinkCopied(false);
     setStoryPreviewToken(null); setStoryPreviewLink(null); setLinkDmConfirmed(false); setPreviewLinkCopied(false);
+    setBonusEstimate(null); setLockBonusBudget(true); setBonusBudgetOverride('');
     localStorage.removeItem('dfaith_pending_story_token');
   };
 
@@ -296,6 +335,10 @@ export default function CreateQuestModal({
         return 'Facebook Post';
       };
 
+      const activeBonusBudget = lockBonusBudget
+        ? Math.max(0, Number(bonusBudgetOverride) || bonusEstimate?.estimatedBonusBudget || 0)
+        : 0;
+
       const body = platform === 'instagram'
         ? {
             creatorWallet: walletAddress,
@@ -310,6 +353,7 @@ export default function CreateQuestModal({
             durationHours: finalDurationHours,
             questType,
             storyToken: questType === 'dm_share' ? storyPreviewToken : undefined,
+            bonusBudget: activeBonusBudget || undefined,
           }
         : platform === 'facebook'
         ? {
@@ -325,6 +369,7 @@ export default function CreateQuestModal({
             durationHours: finalDurationHours,
             questType,
             secretCode: questType === 'secret' ? secretCode.trim() : undefined,
+            bonusBudget: activeBonusBudget || undefined,
           }
         : {
             creatorWallet: walletAddress,
@@ -338,6 +383,7 @@ export default function CreateQuestModal({
             questType,
             durationHours: finalDurationHours,
             secretCode: questType === 'secret' ? secretCode.trim() : undefined,
+            bonusBudget: activeBonusBudget || undefined,
           };
 
       const res = await fetch(apiEndpoint, {
@@ -1075,7 +1121,18 @@ export default function CreateQuestModal({
               </div>
             </div>
             <div>
-              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Maximale Teilnehmer</label>
+              <label className="text-zinc-300 text-sm font-medium block mb-1.5">
+                Maximale Teilnehmer
+                {participantEstimate && (
+                  <button
+                    type="button"
+                    onClick={() => setMaxParticipants(String(participantEstimate.recommended))}
+                    className="ml-2 text-xs text-blue-400 hover:text-blue-300 font-normal underline underline-offset-2"
+                  >
+                    ★ Empfohlen: {participantEstimate.recommended}
+                  </button>
+                )}
+              </label>
               <input
                 type="number"
                 value={maxParticipants}
@@ -1085,7 +1142,15 @@ export default function CreateQuestModal({
                 required
                 className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm"
               />
-              <p className="text-zinc-600 text-xs mt-1">Wie viele Fans mitmachen dürfen</p>
+              <p className="text-zinc-600 text-xs mt-1">
+                {participantEstimate
+                  ? participantEstimate.basis === 'platform_users'
+                    ? `Basis: ${participantEstimate.platformUsers} Plattform-Nutzer · ${participantEstimate.engagementRate}% Rate`
+                    : participantEstimate.basis === 'app_users'
+                    ? `Basis: ${participantEstimate.totalAppUsers} App-Nutzer · ${participantEstimate.engagementRate}% Rate`
+                    : 'Empfehlung für neue Plattform'
+                  : 'Wie viele Fans mitmachen dürfen'}
+              </p>
             </div>
           </div>
 
@@ -1137,7 +1202,73 @@ export default function CreateQuestModal({
               )}
             </div>
             <p className="text-zinc-600 text-xs">Wallet: <span className="text-zinc-400 font-mono">{shortenWallet(walletAddress)}</span></p>
+            {/* Kostenübersicht */}
+            {(() => {
+              const base = Number(rewardAmount) * Number(maxParticipants);
+              const bonus = lockBonusBudget ? Math.max(0, Number(bonusBudgetOverride) || bonusEstimate?.estimatedBonusBudget || 0) : 0;
+              const total = base + bonus;
+              return (
+                <div className="border-t border-amber-800/20 pt-2 space-y-0.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-zinc-500">Basis-Budget ({rewardAmount} × {maxParticipants})</span>
+                    <span className="text-amber-300 font-medium">{base.toFixed(0)} Credits</span>
+                  </div>
+                  {bonus > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-zinc-500">Bonus-Budget</span>
+                      <span className="text-green-400 font-medium">+{bonus.toFixed(0)} Credits</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-xs font-bold pt-0.5">
+                    <span className="text-zinc-400">Gesamt gesperrt</span>
+                    <span className={total > creatorBalance ? 'text-red-400' : 'text-amber-200'}>{total.toFixed(0)} Credits</span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
+
+          {/* Bonus-Budget */}
+          {bonusEstimate !== null && (
+            <div className="bg-green-950/30 border border-green-800/30 rounded-xl p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-green-400 text-[10px] font-bold uppercase tracking-widest">⚡ Bonus-Budget</p>
+                {bonusEstimate.fanCount > 0 && (
+                  <span className="text-zinc-500 text-[10px]">{bonusEstimate.fanCount} Fans analysiert</span>
+                )}
+              </div>
+              <p className="text-zinc-400 text-xs">
+                Ø {bonusEstimate.estimatedBonusPercent}% Bonus erwartet
+                {bonusEstimate.fanCount === 0 ? ' (keine Fans bisher → Neufan-Schätzung)' : ' (+1 Level Puffer)'}
+              </p>
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <div
+                  onClick={() => setLockBonusBudget(v => !v)}
+                  className={`w-9 h-5 rounded-full transition-colors flex items-center px-0.5 ${lockBonusBudget ? 'bg-green-500' : 'bg-zinc-600'}`}
+                >
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${lockBonusBudget ? 'translate-x-4' : 'translate-x-0'}`} />
+                </div>
+                <span className="text-xs text-zinc-300">Bonus-Budget sperren (empfohlen)</span>
+              </label>
+              {lockBonusBudget && (
+                <div className="relative">
+                  <input
+                    type="number" min="0"
+                    className="w-full bg-zinc-800 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-green-500 pr-16"
+                    value={bonusBudgetOverride}
+                    onChange={e => setBonusBudgetOverride(e.target.value)}
+                    placeholder={String(bonusEstimate.estimatedBonusBudget)}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">Credits</span>
+                </div>
+              )}
+              <p className="text-zinc-600 text-[10px]">
+                {lockBonusBudget
+                  ? 'Wird als Escrow gesperrt und bei Quest-Abschluss direkt an Fans ausgezahlt. Restbetrag wird zurückerstattet.'
+                  : 'Ohne Bonus-Budget wird der Bonus aus deinem freien Guthaben gezogen – keine Garantie.'}
+              </p>
+            </div>
+          )}
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
 

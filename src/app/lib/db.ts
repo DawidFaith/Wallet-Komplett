@@ -212,8 +212,7 @@ export const MIGRATION_SQL = `
   ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS credit_reward                INTEGER  NOT NULL DEFAULT 0;
   ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS max_recipients               INTEGER  NOT NULL DEFAULT 0;
   ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS recipients_count             INTEGER  NOT NULL DEFAULT 0;
-  ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS quest_reward_bonus_percent   SMALLINT NOT NULL DEFAULT 0;
-
+  ALTER TABLE reputation_levels ADD COLUMN IF NOT EXISTS quest_reward_bonus_percent   SMALLINT NOT NULL DEFAULT 0;  ALTER TABLE quests ADD COLUMN IF NOT EXISTS bonus_budget NUMERIC(20,2) NOT NULL DEFAULT 0;
   -- Shop: Mindest-Level-Anforderung pro Item (0 = kein Level erforderlich)
   ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS required_level INTEGER NOT NULL DEFAULT 0;
 

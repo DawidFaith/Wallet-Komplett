@@ -198,7 +198,7 @@ export async function POST(req: NextRequest) {
 
     await saveCompletion(completion);
     await addDfaithCredits(normalized, quest.rewardAmount);
-    const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount);
+    const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
     await addUserXp(normalized, quest.rewardAmount * 10);
     await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
     await deleteLikeVerification(questId, normalized);

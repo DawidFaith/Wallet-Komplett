@@ -123,6 +123,7 @@ export async function POST(req: NextRequest) {
     durationHours?: number;
     questType?: string;
     secretCode?: string;
+    bonusBudget?: number;
   };
   try {
     body = await req.json();
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 });
   }
 
-  const { creatorWallet, videoUrl, videoTitle, thumbnailUrl, description, rewardAmount, reputationReward, maxCompletions, durationHours, questType, secretCode } = body;
+  const { creatorWallet, videoUrl, videoTitle, thumbnailUrl, description, rewardAmount, reputationReward, maxCompletions, durationHours, questType, secretCode, bonusBudget } = body;
 
   if (!creatorWallet || !videoUrl) {
     return NextResponse.json(
@@ -205,14 +206,16 @@ export async function POST(req: NextRequest) {
 
   const rewardAmountNum = Math.round((Number(rewardAmount) || 100) * 100) / 100;
   const maxCompletionsNum = Number(maxCompletions) || 10;
-  const totalBudget = rewardAmountNum * maxCompletionsNum;
+  const baseBudget = rewardAmountNum * maxCompletionsNum;
+  const bonusBudgetNum = Math.max(0, Math.round((Number(bonusBudget) || 0) * 100) / 100);
+  const totalBudget = baseBudget + bonusBudgetNum;
 
   // Creator-Guthaben prüfen
   const creatorCredits = await getDfaithCredits(creatorWallet.toLowerCase());
   if (creatorCredits < totalBudget) {
     return NextResponse.json(
       {
-        error: `Nicht genug Credits. Du brauchst ${totalBudget} DFAITH (${rewardAmountNum} × ${maxCompletionsNum} Teilnehmer), hast aber nur ${creatorCredits}.`,
+        error: `Nicht genug Credits. Du brauchst ${totalBudget} DFAITH (${rewardAmountNum} × ${maxCompletionsNum} Teilnehmer + ${bonusBudgetNum} Bonus-Budget), hast aber nur ${creatorCredits}.`,
       },
       { status: 400 }
     );
@@ -262,10 +265,11 @@ export async function POST(req: NextRequest) {
     completions: 0,
     isActive: true,
     expiresAt,
-    creditsLocked: totalBudget,
+    creditsLocked: baseBudget,
     creditsRefunded: false,
     secretCode: finalQuestType === 'secret' ? (secretCode?.trim() ?? null) : null,
     reputationReward: Math.max(0, Math.round(Number(reputationReward) || 50)),
+    bonusBudget: bonusBudgetNum,
     createdAt: now,
     updatedAt: now,
   };

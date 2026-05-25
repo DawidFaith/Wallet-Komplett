@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
 
   // 7. Credits gutschreiben
   await addDfaithCredits(normalized, quest.rewardAmount);
-  const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount);
+  const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
   await savePendingReward({
     walletAddress: normalized,
     amount: quest.rewardAmount,

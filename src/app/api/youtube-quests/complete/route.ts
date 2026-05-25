@@ -202,7 +202,7 @@ export async function POST(req: NextRequest) {
   // Dfaith Credits dem Fan gutschreiben (aus dem beim Quest-Erstellen gesperrten Budget)
   await addDfaithCredits(normalized, quest.rewardAmount);
   // Level-Bonus aus Artist-Guthaben (0 wenn kein Bonus konfiguriert oder zu wenig Guthaben)
-  const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount);
+  const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
   // Reputation beim Artist erhöhen
   await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
   // XP gutschreiben (legacy)

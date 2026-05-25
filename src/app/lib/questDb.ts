@@ -35,6 +35,7 @@ export interface QuestIndexEntry {
   expiresAt?: string | null;
   creditsLocked: number;
   creditsRefunded: boolean;
+  bonusBudget: number;
 }
 
 // ─── Reputation-Typen ─────────────────────────────────────────────────────────
@@ -153,6 +154,7 @@ function rowToQuestDetail(row: any): QuestDetail {
       : null,
     creditsLocked: Number(row.credits_locked ?? 0),
     creditsRefunded: Boolean(row.credits_refunded ?? false),
+    bonusBudget: Number(row.bonus_budget ?? 0),
     storyToken: row.story_token ?? null,
   };
 }
@@ -205,6 +207,7 @@ export async function saveQuestDetail(quest: QuestDetail): Promise<void> {
   const sql = getDb();
   const expiresAt = quest.expiresAt ?? null;
   const creditsLocked = quest.creditsLocked ?? 0;
+  const bonusBudget = quest.bonusBudget ?? 0;
   const secretCode = quest.secretCode?.trim().toUpperCase() ?? null;
   const reputationReward = quest.reputationReward ?? 50;
   const storyToken = quest.storyToken ?? null;
@@ -214,13 +217,13 @@ export async function saveQuestDetail(quest: QuestDetail): Promise<void> {
       video_id, video_title, video_thumbnail, video_url,
       description, reward_amount, reputation_reward, max_completions,
       completions, is_active, expires_at, credits_locked, credits_refunded,
-      secret_code, story_token, created_at, updated_at
+      bonus_budget, secret_code, story_token, created_at, updated_at
     ) VALUES (
       ${quest.id}, ${quest.platform}, ${quest.type}, ${quest.creatorWallet},
       ${quest.videoId}, ${quest.videoTitle}, ${quest.videoThumbnail}, ${quest.videoUrl},
       ${quest.description}, ${quest.rewardAmount}, ${reputationReward}, ${quest.maxCompletions},
       ${quest.completions}, ${quest.isActive}, ${expiresAt}, ${creditsLocked}, false,
-      ${secretCode}, ${storyToken}, ${quest.createdAt}, ${quest.updatedAt}
+      ${bonusBudget}, ${secretCode}, ${storyToken}, ${quest.createdAt}, ${quest.updatedAt}
     )
     ON CONFLICT (id) DO UPDATE SET
       video_title        = EXCLUDED.video_title,
@@ -288,7 +291,7 @@ export async function refundExpiredQuests(
   const sql = getDb();
   // Quests die abgelaufen oder ausgeschöpft sind, aber noch nicht erstattet wurden
   const rows = await sql`
-    SELECT id, completions, max_completions, reward_amount, credits_locked
+    SELECT id, completions, max_completions, reward_amount, credits_locked, bonus_budget
     FROM quests
     WHERE creator_wallet = ${creatorWallet.toLowerCase()}
       AND credits_locked > 0
@@ -311,7 +314,8 @@ export async function refundExpiredQuests(
     `;
     const used = Number(sumRow?.total_paid ?? 0);
     const locked = Number(row.credits_locked);
-    const refundAmount = Math.max(0, locked - used);
+    const bonusBudgetRemaining = Number(row.bonus_budget ?? 0);
+    const refundAmount = Math.max(0, locked - used) + bonusBudgetRemaining;
 
     if (refundAmount > 0) {
       // Credits dem Creator zurückgeben
@@ -355,7 +359,7 @@ export async function cancelQuest(
   const sql = getDb();
 
   const rows = await sql`
-    SELECT creator_wallet, completions, reward_amount, credits_locked, credits_refunded, is_active
+    SELECT creator_wallet, completions, reward_amount, credits_locked, bonus_budget, credits_refunded, is_active
     FROM quests
     WHERE id = ${questId}
     LIMIT 1
@@ -370,7 +374,8 @@ export async function cancelQuest(
 
   const used = Number(row.completions) * Number(row.reward_amount);
   const locked = Number(row.credits_locked);
-  const refundAmount = Math.max(0, locked - used);
+  const bonusBudgetRemaining = Number(row.bonus_budget ?? 0);
+  const refundAmount = Math.max(0, locked - used) + bonusBudgetRemaining;
 
   if (refundAmount > 0) {
     await sql`
@@ -1977,6 +1982,7 @@ export async function payLevelBonus(
   fanWallet: string,
   artistWallet: string,
   baseReward: number,
+  questId?: string,
 ): Promise<number> {
   if (baseReward <= 0) return 0;
   const sql = getDb();
@@ -2004,7 +2010,21 @@ export async function payLevelBonus(
   const bonus = Math.round(baseReward * bonusPercent / 100 * 100) / 100;
   if (bonus <= 0) return 0;
 
-  // Atomisch vom Artist-Guthaben abziehen (schlägt still fehl wenn nicht genug Guthaben)
+  // Zuerst Quest-Bonus-Budget versuchen (wenn questId angegeben)
+  if (questId) {
+    const fromQuest = await sql`
+      UPDATE quests
+      SET bonus_budget = bonus_budget - ${bonus}, updated_at = NOW()
+      WHERE id = ${questId} AND bonus_budget >= ${bonus}
+      RETURNING bonus_budget
+    `;
+    if (fromQuest.length > 0) {
+      await addDfaithCredits(fanWallet, bonus);
+      return bonus;
+    }
+  }
+
+  // Fallback: vom allgemeinen Artist-Guthaben abziehen
   const deducted = await sql`
     UPDATE dfaith_credits
     SET balance = balance - ${bonus}, updated_at = NOW()

@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
     durationHours?: number;
     questType?: string;
     storyToken?: string;
+    bonusBudget?: number;
   };
   try {
     body = await req.json();
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 });
   }
 
-  const { creatorWallet, reelUrl, mediaId, videoTitle, thumbnailUrl, description, rewardAmount, reputationReward, maxCompletions, durationHours, questType, storyToken: providedStoryToken } = body;
+  const { creatorWallet, reelUrl, mediaId, videoTitle, thumbnailUrl, description, rewardAmount, reputationReward, maxCompletions, durationHours, questType, storyToken: providedStoryToken, bonusBudget } = body;
 
   if (!creatorWallet || !reelUrl || !mediaId) {
     return NextResponse.json(
@@ -70,7 +71,9 @@ export async function POST(req: NextRequest) {
 
   const reward = Math.round((Number(rewardAmount) || 100) * 100) / 100;
   const max = Math.max(1, Math.min(1000, Number(maxCompletions) || 10));
-  const totalBudget = reward * max;
+  const baseBudget = reward * max;
+  const bonusBudgetNum = Math.max(0, Math.round((Number(bonusBudget) || 0) * 100) / 100);
+  const totalBudget = baseBudget + bonusBudgetNum;
 
   try {
     // Budget prüfen
@@ -116,10 +119,11 @@ export async function POST(req: NextRequest) {
       createdAt: now,
       updatedAt: now,
       expiresAt,
-      creditsLocked: totalBudget,
+      creditsLocked: baseBudget,
       creditsRefunded: false,
       reputationReward: Math.max(0, Math.round(Number(reputationReward) || 50)),
       storyToken: type === 'dm_share' ? (providedStoryToken ?? randomUUID()) : null,
+      bonusBudget: bonusBudgetNum,
     };
 
     // Budget sperren (atomisch)
