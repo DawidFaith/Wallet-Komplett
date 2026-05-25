@@ -12,14 +12,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/app/lib/db';
 
-const PLATFORM_ENGAGEMENT_RATE: Record<string, number> = {
-  youtube:   0.15,
-  tiktok:    0.20,
-  instagram: 0.18,
-  facebook:  0.10,
-};
+// Puffer für Neuzugänge: +20% auf die aktuell verifizierten Nutzer
+const NEW_USER_BUFFER = 0.20;
 
-const NEW_USER_DEFAULT: Record<string, number> = {
+// Default für Plattformen ohne jegliche Nutzer
+const NEW_PLATFORM_DEFAULT: Record<string, number> = {
   youtube:   10,
   tiktok:    15,
   instagram: 12,
@@ -40,8 +37,7 @@ export async function GET(req: NextRequest) {
   const [totalRow] = await sql`SELECT COUNT(*)::int AS total_users FROM user_profiles`;
   const totalAppUsers: number = totalRow?.total_users ?? 0;
 
-  let platformUsersRow;
-  if (platform === 'youtube') {
+  let platformUsersRow;  if (platform === 'youtube') {
     [platformUsersRow] = await sql`SELECT COUNT(*)::int AS platform_users FROM youtube_bindings`;
   } else if (platform === 'instagram') {
     [platformUsersRow] = await sql`SELECT COUNT(*)::int AS platform_users FROM user_profiles WHERE instagram_handle IS NOT NULL AND instagram_verified = true`;
@@ -52,19 +48,17 @@ export async function GET(req: NextRequest) {
   }
   const platformUsers: number = platformUsersRow?.platform_users ?? 0;
 
-  const engagementRate = PLATFORM_ENGAGEMENT_RATE[platform] ?? 0.15;
-  const fallback = NEW_USER_DEFAULT[platform] ?? 10;
+  const fallback = NEW_PLATFORM_DEFAULT[platform] ?? 10;
 
   let recommended: number;
-  let basis: 'platform_users' | 'app_users' | 'default';
+  let basis: 'platform_users' | 'default';
 
-  if (platformUsers >= 5) {
-    recommended = Math.round(platformUsers * engagementRate);
+  if (platformUsers > 0) {
+    // Verifizierte Nutzer dieser Plattform = aktuelles Maximum + 20% Puffer für Neuzugänge
+    recommended = Math.round(platformUsers * (1 + NEW_USER_BUFFER));
     basis = 'platform_users';
-  } else if (totalAppUsers >= 10) {
-    recommended = Math.round(totalAppUsers * engagementRate);
-    basis = 'app_users';
   } else {
+    // Noch keine Nutzer auf dieser Plattform
     recommended = fallback;
     basis = 'default';
   }
@@ -76,7 +70,7 @@ export async function GET(req: NextRequest) {
     basis,
     totalAppUsers,
     platformUsers,
-    engagementRate: Math.round(engagementRate * 100),
+    newUserBuffer: Math.round(NEW_USER_BUFFER * 100),
     platform,
   });
 }

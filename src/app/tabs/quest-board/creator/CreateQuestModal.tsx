@@ -82,7 +82,7 @@ export default function CreateQuestModal({
   const [lockBonusBudget, setLockBonusBudget] = useState(true);
   const [bonusBudgetOverride, setBonusBudgetOverride] = useState<string>('');
   // Teilnehmer-Empfehlung
-  const [participantEstimate, setParticipantEstimate] = useState<{ recommended: number; basis: string; totalAppUsers: number; platformUsers: number; engagementRate: number } | null>(null);
+  const [participantEstimate, setParticipantEstimate] = useState<{ recommended: number; basis: string; totalAppUsers: number; platformUsers: number; newUserBuffer: number } | null>(null);
   // dm_share: Token vor Quest-Erstellung generieren
   const [storyPreviewToken, setStoryPreviewToken] = useState<string | null>(null);
   const [storyPreviewLink, setStoryPreviewLink] = useState<string | null>(null);
@@ -1145,10 +1145,8 @@ export default function CreateQuestModal({
               <p className="text-zinc-600 text-xs mt-1">
                 {participantEstimate
                   ? participantEstimate.basis === 'platform_users'
-                    ? `Basis: ${participantEstimate.platformUsers} Plattform-Nutzer · ${participantEstimate.engagementRate}% Rate`
-                    : participantEstimate.basis === 'app_users'
-                    ? `Basis: ${participantEstimate.totalAppUsers} App-Nutzer · ${participantEstimate.engagementRate}% Rate`
-                    : 'Empfehlung für neue Plattform'
+                    ? `${participantEstimate.platformUsers} verifizierte Nutzer + ${participantEstimate.newUserBuffer}% Neuzugänge`
+                    : 'Empfehlung für neue Plattform (noch keine Nutzer)'
                   : 'Wie viele Fans mitmachen dürfen'}
               </p>
             </div>
