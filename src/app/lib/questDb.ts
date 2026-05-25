@@ -2126,23 +2126,24 @@ export async function addUserReputation(
   amount: number,
 ): Promise<void> {
   const sql = getDb();
-  if (amount <= 0) return;
+  const rounded = Math.max(0, Math.round(amount));
+  if (rounded <= 0) return;
   // Alte Reputation + Level-Config laden
   const [repRows, levels] = await Promise.all([
     sql`SELECT reputation FROM user_reputation WHERE wallet_address = ${walletAddress.toLowerCase()} AND artist_wallet = ${artistWallet.toLowerCase()} LIMIT 1`,
     getReputationLevels(artistWallet),
   ]);
   const oldRep = repRows.length > 0 ? Number(repRows[0].reputation) : 0;
-  const newRep = oldRep + amount;
+  const newRep = oldRep + rounded;
   const oldLevel = reputationToLevel(oldRep, levels).level;
   const newLevel = reputationToLevel(newRep, levels).level;
 
   // Reputation updaten
   await sql`
     INSERT INTO user_reputation (wallet_address, artist_wallet, reputation, updated_at)
-    VALUES (${walletAddress.toLowerCase()}, ${artistWallet.toLowerCase()}, ${amount}, NOW())
+    VALUES (${walletAddress.toLowerCase()}, ${artistWallet.toLowerCase()}, ${rounded}, NOW())
     ON CONFLICT (wallet_address, artist_wallet) DO UPDATE SET
-      reputation = user_reputation.reputation + ${amount},
+      reputation = user_reputation.reputation + ${rounded},
       updated_at = NOW()
   `;
 
