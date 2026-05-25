@@ -28,9 +28,11 @@ interface FanBoardProps {
   filterCreator?: string;
   /** Token-Name des gefilterten Artists (z.B. "MYTOKEN") */
   rewardToken?: string | null;
+  /** Wird aufgerufen wenn ein Quest erfolgreich abgeschlossen wurde */
+  onQuestCompleted?: () => void;
 }
 
-export default function FanBoard({ walletAddress, verified, filterCreator, rewardToken }: FanBoardProps) {
+export default function FanBoard({ walletAddress, verified, filterCreator, rewardToken, onQuestCompleted }: FanBoardProps) {
   const tokenName = rewardToken ?? 'D.FAITH';
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
@@ -56,6 +58,15 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   // Celebration nach Quest-Abschluss
   const [celebration, setCelebration] = useState<{ amount: number; questTitle: string; reputationReward?: number } | null>(null);
   const pendingCelebration = useRef<{ amount: number; questTitle: string; reputationReward?: number } | null>(null);
+
+  // Eltern-Komponente über jeden neuen Quest-Abschluss informieren (für questCount-Badge)
+  const prevCompletedCount = useRef(0);
+  useEffect(() => {
+    if (completedIds.length > prevCompletedCount.current) {
+      onQuestCompleted?.();
+    }
+    prevCompletedCount.current = completedIds.length;
+  }, [completedIds, onQuestCompleted]);
 
   const loadQuests = useCallback(async () => {
     setLoading(true);

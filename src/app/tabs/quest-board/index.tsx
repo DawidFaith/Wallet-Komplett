@@ -296,6 +296,11 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
                 verified={verified}
                 filterCreator={activeArtist.walletAddress}
                 rewardToken={activeArtist.rewardToken ?? null}
+                onQuestCompleted={() => {
+                  setInternalFilterArtist((prev) =>
+                    prev ? { ...prev, questCount: Math.max(0, prev.questCount - 1) } : prev
+                  );
+                }}
               />
             </>
           );
