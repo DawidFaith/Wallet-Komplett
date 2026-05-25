@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { FaLayerGroup, FaCheck, FaTimes, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaExternalLinkAlt, FaGift } from 'react-icons/fa';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
@@ -46,6 +46,23 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed }: Bundle
   const [secretError, setSecretError] = useState('');
   const [copiedQuestId, setCopiedQuestId] = useState<string | null>(null);
 
+  // Story-Share Mehrschritt-Flow: 'idle' | 'copied' | 'claiming' | 'claimed'
+  const [storyProgress, setStoryProgress] = useState<Record<string, 'copied' | 'claiming' | 'claimed'>>({});
+  const [storyClaimError, setStoryClaimError] = useState<Record<string, string>>({});
+
+  // localStorage-Persist: beim Mount gespeicherte story_progress laden
+  useEffect(() => {
+    const restored: Record<string, 'copied'> = {};
+    bundle.items.forEach(item => {
+      if (item.questType === 'dm_share' && item.storyToken) {
+        const saved = localStorage.getItem('story_progress_' + item.questId);
+        if (saved === 'copied') restored[item.questId] = 'copied';
+      }
+    });
+    if (Object.keys(restored).length > 0) setStoryProgress(prev => ({ ...prev, ...restored }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bundle.id]);
+
   const handleSecretSubmit = async (e: React.FormEvent, questId: string) => {
     e.preventDefault();
     if (!secretCode.trim()) return;
@@ -72,7 +89,29 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed }: Bundle
   const handleCopyStoryLink = (questId: string, token: string) => {
     navigator.clipboard.writeText('https://app.dawidfaith.de/api/instagram-quests/story-click?token=' + token);
     setCopiedQuestId(questId);
+    localStorage.setItem('story_progress_' + questId, 'copied');
+    setStoryProgress(prev => ({ ...prev, [questId]: 'copied' }));
     setTimeout(() => setCopiedQuestId(null), 2000);
+  };
+
+  const handleStoryClaim = async (questId: string, token: string) => {
+    setStoryProgress(prev => ({ ...prev, [questId]: 'claiming' }));
+    setStoryClaimError(prev => ({ ...prev, [questId]: '' }));
+    try {
+      const res = await fetch('/api/instagram-quests/story-claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, walletAddress: fanWallet }),
+      });
+      const data = await res.json() as { success?: boolean; error?: string };
+      if (!res.ok || !data.success) throw new Error(data.error ?? 'Fehler beim Bestätigen');
+      localStorage.removeItem('story_progress_' + questId);
+      setStoryProgress(prev => ({ ...prev, [questId]: 'claimed' }));
+      onBonusClaimed();
+    } catch (err) {
+      setStoryClaimError(prev => ({ ...prev, [questId]: (err as Error).message }));
+      setStoryProgress(prev => ({ ...prev, [questId]: 'copied' }));
+    }
   };
 
   const ytVideoId = bundle.platform === 'youtube' && bundle.videoUrl
@@ -250,14 +289,48 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed }: Bundle
                 )
               )}
 
-              {item.questType === 'dm_share' && !done && !full && item.storyToken && (
-                <button
-                  onClick={() => handleCopyStoryLink(item.questId, item.storyToken!)}
-                  className="mt-1 ml-2 text-xs text-pink-400 hover:text-pink-300 transition-colors"
-                >
-                  {copiedQuestId === item.questId ? 'Link kopiert!' : 'Story-Link kopieren'}
-                </button>
-              )}
+              {item.questType === 'dm_share' && !done && !full && item.storyToken && (() => {
+                const sp = storyProgress[item.questId];
+                if (sp === 'copied' || sp === 'claiming') {
+                  return (
+                    <div className="mt-2 ml-2 space-y-1.5">
+                      <div className="bg-pink-950/40 border border-pink-700/40 rounded-lg p-2.5 text-xs text-pink-200/90 space-y-1">
+                        <p className="font-semibold text-pink-300">📋 Schritt 1 erledigt – Link kopiert!</p>
+                        <p>2️⃣ Öffne Instagram und füge den Link in deine Story ein.</p>
+                        <p>3️⃣ Veröffentliche die Story.</p>
+                        <p>4️⃣ Komm zurück und bestätige unten.</p>
+                      </div>
+                      {storyClaimError[item.questId] && (
+                        <p className="text-red-400 text-xs">{storyClaimError[item.questId]}</p>
+                      )}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleStoryClaim(item.questId, item.storyToken!)}
+                          disabled={sp === 'claiming'}
+                          className="flex-1 bg-pink-600/80 hover:bg-pink-500/80 disabled:opacity-50 text-white text-xs font-semibold py-2 px-3 rounded-lg transition-colors"
+                        >
+                          {sp === 'claiming' ? 'Wird bestätigt…' : '✅ Story wurde geteilt – bestätigen'}
+                        </button>
+                        <button
+                          onClick={() => handleCopyStoryLink(item.questId, item.storyToken!)}
+                          className="text-pink-400 hover:text-pink-300 text-xs px-2 py-1 rounded-lg border border-pink-700/40 transition-colors"
+                          title="Link erneut kopieren"
+                        >
+                          {copiedQuestId === item.questId ? '✓' : '🔗'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <button
+                    onClick={() => handleCopyStoryLink(item.questId, item.storyToken!)}
+                    className="mt-1 ml-2 text-xs text-pink-400 hover:text-pink-300 transition-colors"
+                  >
+                    {copiedQuestId === item.questId ? 'Link kopiert! ✓' : '1️⃣ Story-Link kopieren'}
+                  </button>
+                );
+              })()}
             </div>
           );
         })}
