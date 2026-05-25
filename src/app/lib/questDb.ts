@@ -547,6 +547,64 @@ export function getVerificationCode(walletAddress: string): string {
   return `DFAITH-${walletAddress.slice(2, 10).toUpperCase()}`;
 }
 
+// ─── Comment-Quest: natürlich klingender Kommentar pro Wallet+Quest ──────────
+//
+// Da die Facebook Graph API aus Datenschutzgründen für User-Kommentare
+// kein `from`-Feld zurückgibt, identifizieren wir den Kommentar des Users
+// über einen deterministisch gewählten Text aus einem festen Pool.
+// Pro (wallet, questId) wird IMMER derselbe Kommentar generiert, jeder
+// User bekommt aber einen anderen → Eindeutigkeit gegeben.
+
+const QUEST_COMMENT_POOL: ReadonlyArray<string> = [
+  'Mega Track, läuft bei mir auf Repeat! 🔥',
+  'Krass produziert, Respekt 🙌',
+  'Endlich neuer Sound von dir, was für ein Banger 💯',
+  'Hammer, geht direkt in meine Playlist 🎶',
+  'Das hier ist auf einem ganz anderen Level 🚀',
+  'Boah, dieser Drop! Ich bin geflasht 🤯',
+  'Genau die Vibes die ich gebraucht habe ✨',
+  'Nice, du legst echt jedes Mal eine Schippe drauf 💪',
+  'Banger! Kann nicht aufhören es zu hören 🎧',
+  'Sounddesign on point, Hut ab 👏',
+  'Das geht direkt rein, einfach stark 🔊',
+  'Feinste Arbeit, danke für die Musik 🙏',
+  'Was für eine Hook, bleibt sofort hängen 🎵',
+  'Mood gesetzt, Track läuft den ganzen Abend 🌙',
+  'Richtig richtig gut, weiter so! 🚀',
+  'Atmosphäre pur, gänsehaut pur ❄️',
+  'Production geht hart, gefällt mir extrem 🔥',
+  'Loop läuft seit Stunden, kann nicht aufhören 🔁',
+  'Das ist mein neuer Lieblingssong, fett! ❤️',
+  'Sound ist ein Träumchen, perfekt für die Late-Night-Vibes 🌌',
+  'Das ist Kunst, danke für die Inspiration 🎨',
+  'Vibes auf Maximum, top abgeliefert 👌',
+  'Diese Energie! Einfach nur stark 💥',
+  'Track ist sofort hängen geblieben, Glückwunsch 🎯',
+  'Du triffst genau meinen Geschmack, mehr davon 🙏',
+  'Sehr starke Nummer, läuft jetzt überall mit 📻',
+  'Pure Magie auf den Ohren, Hammer 🪄',
+  'Das ist Liebe auf die ersten Beats ❤️‍🔥',
+  'Definitiv on repeat heute, weiter so 🔁',
+  'Sehr atmosphärisch, du hast es einfach drauf 🎼',
+  'Sofort in die Lieblingsliste, top Sound 🌟',
+  'Was für eine Stimmung, ich fühl jeden Beat 🥁',
+];
+
+/**
+ * Liefert deterministisch einen Kommentartext für (wallet, questId).
+ * Wird sowohl im Backend (zum Matchen via `message.includes`) als auch
+ * im Frontend (zur Anzeige im Modal) verwendet.
+ */
+export function getQuestCommentText(walletAddress: string, questId: string): string {
+  const seed = `${walletAddress.toLowerCase()}::${questId}`;
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
+  }
+  const idx = Math.abs(hash) % QUEST_COMMENT_POOL.length;
+  return QUEST_COMMENT_POOL[idx];
+}
+
 // ─── Device Fingerprint Schutz ────────────────────────────────────────────────
 
 /**

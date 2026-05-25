@@ -1,7 +1,20 @@
 /**
  * POST /api/facebook-quests/comment-verify
  *
- * Verifiziert einen Facebook-Kommentar-Quest direkt via Meta Graph API.
+ * Verifiziert einen Facebook-Kommentar-Quest via Meta Graph API.
+ *
+ * Strategie:
+ *   Da die Facebook API für User-Kommentare kein `from` mehr liefert,
+ *   bekommt jede Wallet pro Quest einen deterministisch gewählten,
+ *   natürlich klingenden Kommentartext (`getQuestCommentText`).
+ *   Der User muss genau diesen Text als Kommentar posten – wir matchen
+ *   per `message.includes(text)` ⇒ eindeutige Zuordnung Wallet ↔ Kommentar.
+ *
+ * Body:
+ *   { walletAddress, questId, action: 'preview' | 'verify' }
+ *
+ * Antwort (preview): { commentText }
+ * Antwort (verify):  { success: true, rewardAmount } | { notFound: true, message }
  *
  * Env-Variablen:
  *   META_SYSTEM_USER_TOKEN  – System User Token des dfaith_ecosystem
@@ -19,6 +32,7 @@ import {
   addUserReputation,
   payLevelBonus,
   getUserProfile,
+  getQuestCommentText,
 } from '../../../lib/questDb';
 import { findFacebookComment } from '../../../lib/metaApi';
 
@@ -32,14 +46,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { walletAddress?: string; questId?: string };
+  let body: { walletAddress?: string; questId?: string; action?: 'preview' | 'verify' };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 });
   }
 
-  const { walletAddress, questId } = body;
+  const { walletAddress, questId, action = 'verify' } = body;
   if (!walletAddress || !questId) {
     return NextResponse.json(
       { error: 'walletAddress und questId sind erforderlich' },
@@ -48,6 +62,12 @@ export async function POST(req: NextRequest) {
   }
 
   const normalized = walletAddress.toLowerCase();
+  const commentText = getQuestCommentText(normalized, questId);
+
+  // ── action: preview – liefert den zu postenden Kommentartext ─────────────
+  if (action === 'preview') {
+    return NextResponse.json({ commentText });
+  }
 
   // 1. Profil prüfen – Facebook muss verknüpft + verifiziert sein
   const profile = await getUserProfile(normalized);
@@ -95,15 +115,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 4. Meta Graph API – prüft ob Kommentar im Facebook-Post existiert
-  // facebookHandle ist die Thirdweb-Wallet-ID, kein FB-Name → facebookName für Autor-Matching nutzen
-  const result = await findFacebookComment(quest.videoId, null, profile.facebookName);
+  // 4. Meta Graph API – sucht den exakten Kommentartext im Post
+  const result = await findFacebookComment(quest.videoId, commentText, null);
 
   // 5. Ergebnis auswerten
   if (!result.found) {
     return NextResponse.json({
       notFound: true,
-      message: `Kein Kommentar von ${profile.facebookHandle} gefunden. Stelle sicher, dass du unter dem Post kommentiert hast, und versuche es erneut.`,
+      commentText,
+      message: `Kein passender Kommentar gefunden. Stelle sicher, dass du genau diesen Text als Kommentar gepostet hast: "${commentText}"`,
     });
   }
 

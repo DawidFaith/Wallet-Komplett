@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { FaFacebookF, FaStar, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaFacebookF, FaStar, FaExternalLinkAlt, FaCopy, FaCheck } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry, VerifyResult } from '../types';
 import { formatCredits } from '../utils';
@@ -22,6 +22,38 @@ export default function FacebookCommentVerifyModal({
 }: FacebookCommentVerifyModalProps) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<VerifyResult | null>(null);
+  const [commentText, setCommentText] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  // Kommentartext vom Backend holen (deterministisch pro wallet+quest)
+  useEffect(() => {
+    if (!quest) {
+      setCommentText(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/facebook-quests/comment-verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ walletAddress, questId: quest.id, action: 'preview' }),
+        });
+        const data = await res.json();
+        if (!cancelled && res.ok && data.commentText) setCommentText(data.commentText);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [quest, walletAddress]);
+
+  const handleCopy = async () => {
+    if (!commentText) return;
+    try {
+      await navigator.clipboard.writeText(commentText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* ignore */ }
+  };
 
   const handleVerify = async () => {
     if (!quest) return;
@@ -31,7 +63,7 @@ export default function FacebookCommentVerifyModal({
       const res = await fetch('/api/facebook-quests/comment-verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress, questId: quest.id }),
+        body: JSON.stringify({ walletAddress, questId: quest.id, action: 'verify' }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -53,6 +85,7 @@ export default function FacebookCommentVerifyModal({
 
   const handleClose = () => {
     setResult(null);
+    setCopied(false);
     onClose();
   };
 
@@ -138,18 +171,50 @@ export default function FacebookCommentVerifyModal({
           )}
 
           {/* Anleitung */}
-          <div className="bg-zinc-800/60 rounded-xl p-4 space-y-2">
+          <div className="bg-zinc-800/60 rounded-xl p-4 space-y-3">
             <p className="text-zinc-300 text-sm font-semibold">So funktioniert&apos;s:</p>
             <ol className="space-y-1.5 text-zinc-400 text-sm">
-              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">1.</span>Öffne den Post über den Link oben</li>
-              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">2.</span>Schreibe einen Kommentar unter dem Post</li>
-              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">3.</span>Komm zurück und klicke &bdquo;Verifizieren&ldquo;</li>
+              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">1.</span>Kopiere den unten stehenden Kommentar</li>
+              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">2.</span>Öffne den Post über den Link oben</li>
+              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">3.</span>Füge den Kommentar dort exakt so ein und poste ihn</li>
+              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">4.</span>Komm zurück und klicke &bdquo;Verifizieren&ldquo;</li>
             </ol>
+          </div>
+
+          {/* Dein Kommentar */}
+          <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 border border-blue-700/40 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-blue-300 text-xs font-semibold uppercase tracking-wide">Dein Kommentar</span>
+              <span className="text-zinc-500 text-[10px]">individuell für dich generiert</span>
+            </div>
+            {commentText ? (
+              <>
+                <p className="text-white text-base font-medium leading-snug select-all">
+                  {commentText}
+                </p>
+                <button
+                  onClick={handleCopy}
+                  className="w-full bg-blue-600/80 hover:bg-blue-600 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  {copied ? (
+                    <><FaCheck size={12} /> Kopiert!</>
+                  ) : (
+                    <><FaCopy size={12} /> Kommentar kopieren</>
+                  )}
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center gap-2 text-zinc-400 text-sm py-2">
+                <div className="border-2 border-zinc-600 border-t-blue-400 rounded-full w-4 h-4 animate-spin" />
+                Kommentar wird geladen…
+              </div>
+            )}
           </div>
 
           <button
             onClick={handleVerify}
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+            disabled={!commentText}
+            className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             <FaFacebookF size={14} />
             Kommentar verifizieren
