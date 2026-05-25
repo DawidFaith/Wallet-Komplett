@@ -288,11 +288,12 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
   useEffect(() => { loadMetaPartnerStatus(); }, [loadMetaPartnerStatus]);
 
   useEffect(() => {
-    fetch(`/api/admin/artists${account?.address ? `?wallet=${account.address}` : ''}`)
+    if (!account?.address) return;
+    fetch(`/api/admin/artists?wallet=${account.address}`)
       .then((r) => r.ok ? r.json() : null)
       .then((d) => { if (d?.artists) setArtists(d.artists); })
       .catch(() => {});
-  }, []);
+  }, [account?.address]);
 
   // Dropdown bei Klick außen schließen
   useEffect(() => {
