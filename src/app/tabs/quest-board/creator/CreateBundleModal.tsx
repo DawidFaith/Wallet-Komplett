@@ -582,6 +582,12 @@ export default function CreateBundleModal({
                       <p className="text-purple-300 text-xs mt-2 ml-7">
                         → {((item.reachWeight / totalWeight) * 100).toFixed(0)}% des Reward-Pools
                       </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
             {/* Geheimcode festlegen (nur wenn 'secret'-Typ ausgewählt) */}
             {items.some((i) => i.questType === 'secret') && (
               <div className="bg-zinc-900/60 border border-yellow-800/40 rounded-xl p-3 space-y-2">
@@ -597,12 +603,6 @@ export default function CreateBundleModal({
                 />
               </div>
             )}
-
-                    )}
-                  </div>
-                );
-              })}
-            </div>
 
             <div className="flex gap-3">
               <button onClick={() => setStep(1)} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl py-3 font-semibold text-sm">
@@ -659,11 +659,7 @@ export default function CreateBundleModal({
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
                   className="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-purple-500"
-                />xs border-t border-zinc-700/50 pt-2 mt-1">
-                <span className="text-purple-400">⚡ Level-Bonus-Reserve (max. 100%)</span>
-                <span className="text-purple-300 font-mono">+{levelBonusReserve.toFixed(2)} D.FAITH</span>
-              </div>
-              <div className="flex items-center justify-between text-
+                />
               </div>
             </div>
 
@@ -685,6 +681,10 @@ export default function CreateBundleModal({
                   <span className="text-yellow-300 font-mono">+{bonusNum.toFixed(2)} D.FAITH</span>
                 </div>
               )}
+              <div className="flex items-center justify-between text-sm border-t border-zinc-700/50 pt-2 mt-1">
+                <span className="text-purple-400">⚡ Level-Bonus-Reserve (max. 100%)</span>
+                <span className="text-purple-300 font-mono">+{levelBonusReserve.toFixed(2)} D.FAITH</span>
+              </div>
               <div className="flex items-center justify-between text-sm border-t border-zinc-700/50 pt-2">
                 <span className="text-white font-semibold">Gesamt pro Fan</span>
                 <span className="text-green-400 font-mono font-bold">{(rewardNum + bonusNum).toFixed(2)} D.FAITH</span>
