@@ -39,6 +39,12 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed }: Bundle
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState('');
   const [justClaimed, setJustClaimed] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
+
+  // YouTube Video-ID aus URL extrahieren
+  const ytVideoId = bundle.platform === 'youtube' && bundle.videoUrl
+    ? (bundle.videoUrl.match(/shorts\/([a-zA-Z0-9_-]+)/)?.[1] ?? bundle.videoUrl.match(/[?&]v=([a-zA-Z0-9_-]+)/)?.[1] ?? null)
+    : null;
 
   const completedSet    = new Set<string>(bundle.fanCompletedTypes ?? []);
   const completedCount  = bundle.fanCompletedTypes?.length ?? 0;
@@ -76,10 +82,34 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed }: Bundle
     }`}>
       {/* Thumbnail + Meta */}
       <div className="relative">
-        {bundle.videoThumbnail ? (
-          <div className="relative w-full h-28">
+        {showVideo && ytVideoId ? (
+          <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+            <iframe
+              src={`https://www.youtube.com/embed/${ytVideoId}?autoplay=1`}
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+              className="absolute inset-0 w-full h-full"
+              title={bundle.videoTitle}
+            />
+            <button
+              onClick={() => setShowVideo(false)}
+              className="absolute top-2 right-2 z-10 bg-black/60 hover:bg-black/80 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs transition-all"
+            >×</button>
+          </div>
+        ) : bundle.videoThumbnail ? (
+          <div
+            className={`relative w-full h-28 ${ytVideoId ? 'cursor-pointer group' : ''}`}
+            onClick={() => ytVideoId && setShowVideo(true)}
+          >
             <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover opacity-60" />
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#1a1228]" />
+            {ytVideoId && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-11 h-11 rounded-full bg-red-600/80 group-hover:bg-red-500 flex items-center justify-center transition-all shadow-lg">
+                  <FaYoutube size={18} className="text-white" />
+                </div>
+              </div>
+            )}
           </div>
         ) : null}
         <div className={`px-4 ${bundle.videoThumbnail ? '-mt-12 relative z-10' : 'pt-4'} pb-0`}>

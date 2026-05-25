@@ -1,10 +1,33 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaCheck, FaInfoCircle } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaCheck, FaInfoCircle, FaSync } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { Platform, QuestType } from '../types';
-
+// ─── Media-Typen (für Video-Picker) ─────────────────────────────────────────
+interface AvailableQuestMediaItem {
+  video_id: string;
+  title: string;
+  thumbnail_url: string;
+  video_url: string;
+  created_at: string | null;
+}
+interface AvailableIgMediaItem {
+  shortcode: string;
+  graph_media_id: string;
+  caption: string;
+  thumbnail_url: string;
+  permalink: string;
+  posted_at: string | null;
+  media_type?: string;
+}
+interface AvailableFbMediaItem {
+  post_id: string;
+  permalink: string;
+  caption: string;
+  thumbnail_url: string;
+  posted_at: string | null;
+}
 // ─── Typen ────────────────────────────────────────────────────────────────────
 interface BundleItem {
   questType: QuestType;
@@ -79,12 +102,28 @@ export default function CreateBundleModal({
   const [error, setError]         = useState('');
   const [success, setSuccess]     = useState(false);
 
+  // Video-Thumbnail (aus Picker)
+  const [videoThumbnail, setVideoThumbnail] = useState('');
+
+  // Media-Picker
+  const [availableQuestMedia, setAvailableQuestMedia] = useState<AvailableQuestMediaItem[]>([]);
+  const [loadingQuestMedia, setLoadingQuestMedia]     = useState(false);
+  const [questMediaError, setQuestMediaError]         = useState('');
+  const [selectedQuestMediaId, setSelectedQuestMediaId] = useState<string | null>(null);
+  const [availableIgMedia, setAvailableIgMedia]       = useState<AvailableIgMediaItem[]>([]);
+  const [loadingIgMedia, setLoadingIgMedia]           = useState(false);
+  const [selectedIgShortcode, setSelectedIgShortcode] = useState<string | null>(null);
+  const [availableFbMedia, setAvailableFbMedia]       = useState<AvailableFbMediaItem[]>([]);
+  const [loadingFbMedia, setLoadingFbMedia]           = useState(false);
+  const [selectedFbPostId, setSelectedFbPostId]       = useState<string | null>(null);
+
   // Reset beim Öffnen
   useEffect(() => {
     if (!open) return;
     setStep(1);
     setVideoUrl('');
     setVideoTitle('');
+    setVideoThumbnail('');
     setDescription('');
     setMetaError('');
     setItems([]);
@@ -94,28 +133,63 @@ export default function CreateBundleModal({
     setDuration('72');
     setError('');
     setSuccess(false);
+    setSelectedQuestMediaId(null);
+    setSelectedIgShortcode(null);
+    setSelectedFbPostId(null);
+    setAvailableQuestMedia([]);
+    setAvailableIgMedia([]);
+    setAvailableFbMedia([]);
+    setQuestMediaError('');
   }, [open]);
 
-  // Auto-Fetch für YouTube
-  const handleFetchMeta = useCallback(async () => {
-    if (platform !== 'youtube' || !videoUrl.trim()) {
-      setStep(2);
-      return;
-    }
-    setFetchingMeta(true);
-    setMetaError('');
+  // Media laden wenn Plattform wechselt
+  useEffect(() => {
+    if (!open) return;
+    setSelectedQuestMediaId(null);
+    setSelectedIgShortcode(null);
+    setSelectedFbPostId(null);
+    setVideoUrl('');
+    setVideoTitle('');
+    setVideoThumbnail('');
+    if (platform === 'youtube' || platform === 'tiktok') fetchQuestMedia();
+    else if (platform === 'instagram') fetchIgMedia();
+    else if (platform === 'facebook') fetchFbMedia();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [platform, open]);
+
+  // Media-Fetch Funktionen
+  const fetchQuestMedia = async () => {
+    setLoadingQuestMedia(true);
+    setQuestMediaError('');
     try {
-      const res  = await fetch(`/api/youtube-quests/meta?url=${encodeURIComponent(videoUrl)}`);
-      const data = await res.json() as { title?: string; error?: string };
-      if (!res.ok || !data.title) throw new Error(data.error ?? 'Titel konnte nicht geladen werden');
-      setVideoTitle(data.title);
-      setStep(2);
-    } catch (e) {
-      setMetaError((e as Error).message);
-    } finally {
-      setFetchingMeta(false);
-    }
-  }, [platform, videoUrl]);
+      const endpoint = platform === 'youtube'
+        ? `/api/youtube-quests/available-media?wallet=${encodeURIComponent(walletAddress)}`
+        : `/api/tiktok-quests/available-media?wallet=${encodeURIComponent(walletAddress)}`;
+      const res  = await fetch(endpoint);
+      const data = await res.json().catch(() => ({})) as { media?: AvailableQuestMediaItem[]; error?: string };
+      if (!res.ok) { setQuestMediaError(data.error ?? 'Fehler beim Laden'); setAvailableQuestMedia([]); return; }
+      setAvailableQuestMedia(data.media ?? []);
+    } catch { setQuestMediaError('Netzwerkfehler'); setAvailableQuestMedia([]); }
+    finally { setLoadingQuestMedia(false); }
+  };
+
+  const fetchIgMedia = async () => {
+    setLoadingIgMedia(true);
+    try {
+      const res  = await fetch(`/api/instagram-quests/available-media?wallet=${encodeURIComponent(walletAddress)}`);
+      const data = await res.json() as { media?: AvailableIgMediaItem[] };
+      setAvailableIgMedia(data.media ?? []);
+    } finally { setLoadingIgMedia(false); }
+  };
+
+  const fetchFbMedia = async () => {
+    setLoadingFbMedia(true);
+    try {
+      const res  = await fetch(`/api/facebook-quests/available-media?wallet=${encodeURIComponent(walletAddress)}`);
+      const data = await res.json() as { media?: AvailableFbMediaItem[] };
+      setAvailableFbMedia(data.media ?? []);
+    } finally { setLoadingFbMedia(false); }
+  };
 
   const toggleType = (qt: QuestType) => {
     setItems((prev) =>
@@ -154,6 +228,7 @@ export default function CreateBundleModal({
           videoUrl:            videoUrl.trim(),
           videoTitle:          videoTitle.trim() || undefined,
           description:         description.trim(),
+          videoThumbnail:      videoThumbnail.trim() || undefined,
           rewardPoolPerFan:    rewardNum,
           bundleCompletionBonus: bonusNum,
           maxParticipants:     maxNum,
@@ -206,7 +281,7 @@ export default function CreateBundleModal({
         {/* ── Schritt 1: Plattform + Content ──────────────────────────────── */}
         {step === 1 && (
           <div className="space-y-4">
-            <p className="text-zinc-400 text-sm">Wähle Plattform und gib den Content-Link ein.</p>
+            <p className="text-zinc-400 text-sm">Wähle Plattform und dein Video für das Bundle.</p>
 
             {/* Plattform */}
             <div className="grid grid-cols-4 gap-2">
@@ -229,29 +304,192 @@ export default function CreateBundleModal({
               ))}
             </div>
 
-            {/* URL */}
-            <div className="space-y-1">
-              <label className="text-zinc-400 text-xs">
-                {platform === 'youtube' ? 'YouTube Shorts URL' : `${platform.charAt(0).toUpperCase() + platform.slice(1)}-Link / Post-URL`}
-              </label>
-              <input
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                placeholder={platform === 'youtube' ? 'https://youtube.com/shorts/...' : 'https://...'}
-                className="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-purple-500"
-              />
-            </div>
+            {/* ── Video-Picker YouTube / TikTok ── */}
+            {(platform === 'youtube' || platform === 'tiktok') && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">
+                    {platform === 'youtube' ? 'YouTube' : 'TikTok'}-Video auswählen
+                  </label>
+                  <button type="button" onClick={fetchQuestMedia} disabled={loadingQuestMedia}
+                    className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 disabled:opacity-50">
+                    <FaSync size={10} className={loadingQuestMedia ? 'animate-spin' : ''} /> Aktualisieren
+                  </button>
+                </div>
+                {loadingQuestMedia ? (
+                  <div className="text-center text-zinc-500 py-8 text-sm bg-zinc-900/40 rounded-xl">
+                    <FaSync size={16} className="animate-spin mx-auto mb-2" />
+                    Lade Videos…
+                  </div>
+                ) : availableQuestMedia.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
+                    {availableQuestMedia.map((item) => (
+                      <button
+                        key={item.video_id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedQuestMediaId(item.video_id);
+                          setVideoUrl(item.video_url);
+                          setVideoTitle(item.title);
+                          setVideoThumbnail(item.thumbnail_url);
+                        }}
+                        className={`text-left relative rounded-xl overflow-hidden border transition-all ${
+                          selectedQuestMediaId === item.video_id
+                            ? 'border-purple-500 ring-1 ring-purple-500/30'
+                            : 'border-zinc-700 hover:border-purple-400'
+                        }`}
+                      >
+                        {item.thumbnail_url ? (
+                          <img src={item.thumbnail_url} alt="" className="w-full h-24 object-cover" />
+                        ) : (
+                          <div className="w-full h-24 bg-zinc-900 flex items-center justify-center">
+                            {PLATFORM_ICONS[platform]}
+                          </div>
+                        )}
+                        <div className="p-2 bg-zinc-900/80">
+                          <p className="text-white text-xs font-semibold line-clamp-2 leading-tight">
+                            {item.title || `Video ${item.video_id.slice(0, 8)}`}
+                          </p>
+                          {item.created_at && (
+                            <p className="text-zinc-500 text-[11px] mt-0.5">
+                              {new Date(item.created_at).toLocaleDateString('de-DE')}
+                            </p>
+                          )}
+                        </div>
+                        {selectedQuestMediaId === item.video_id && (
+                          <div className="absolute inset-0 bg-purple-500/10 pointer-events-none flex items-end justify-end p-1">
+                            <span className="bg-purple-600 rounded-full p-0.5"><FaCheck size={8} className="text-white" /></span>
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-5 text-xs bg-zinc-900/40 rounded-xl border border-zinc-700/50 text-zinc-500">
+                    {questMediaError
+                      ? <span className="text-red-400">{questMediaError}</span>
+                      : <>Keine Videos gefunden. Prüfe ob dein {platform === 'youtube' ? 'YouTube-Kanal' : 'TikTok-Account'} verknüpft ist.</>
+                    }
+                  </div>
+                )}
+              </div>
+            )}
 
-            {/* Titel (für nicht-YouTube) */}
-            {platform !== 'youtube' && (
-              <div className="space-y-1">
-                <label className="text-zinc-400 text-xs">Titel / Bezeichnung</label>
-                <input
-                  value={videoTitle}
-                  onChange={(e) => setVideoTitle(e.target.value)}
-                  placeholder="z.B. Mein neuer Song"
-                  className="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-purple-500"
-                />
+            {/* ── Video-Picker Instagram ── */}
+            {platform === 'instagram' && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Instagram-Reel auswählen</label>
+                  <button type="button" onClick={fetchIgMedia} disabled={loadingIgMedia}
+                    className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 disabled:opacity-50">
+                    <FaSync size={10} className={loadingIgMedia ? 'animate-spin' : ''} /> Aktualisieren
+                  </button>
+                </div>
+                {loadingIgMedia ? (
+                  <div className="text-center text-zinc-500 py-8 text-sm bg-zinc-900/40 rounded-xl">
+                    <FaSync size={16} className="animate-spin mx-auto mb-2" />Lade Reels…
+                  </div>
+                ) : availableIgMedia.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto pr-1">
+                    {availableIgMedia.map((item) => (
+                      <button
+                        key={item.shortcode}
+                        type="button"
+                        onClick={() => {
+                          setSelectedIgShortcode(item.shortcode);
+                          const url   = item.permalink || `https://www.instagram.com/reel/${item.shortcode}/`;
+                          const title = (item.caption?.split(/[\n\r]/)[0].trim() || `Reel ${item.shortcode}`).slice(0, 100);
+                          setVideoUrl(url);
+                          setVideoTitle(title);
+                          setVideoThumbnail(item.thumbnail_url);
+                        }}
+                        className={`relative rounded-xl overflow-hidden border transition-all ${
+                          selectedIgShortcode === item.shortcode
+                            ? 'border-purple-500 ring-1 ring-purple-500/30'
+                            : 'border-zinc-700 hover:border-purple-400'
+                        }`}
+                      >
+                        {item.thumbnail_url ? (
+                          <img src={item.thumbnail_url} alt="" className="w-full h-20 object-cover" />
+                        ) : (
+                          <div className="w-full h-20 bg-zinc-900 flex items-center justify-center">
+                            {PLATFORM_ICONS.instagram}
+                          </div>
+                        )}
+                        {selectedIgShortcode === item.shortcode && (
+                          <div className="absolute inset-0 bg-purple-500/10 pointer-events-none flex items-end justify-end p-1">
+                            <span className="bg-purple-600 rounded-full p-0.5"><FaCheck size={8} className="text-white" /></span>
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-5 text-xs bg-zinc-900/40 rounded-xl border border-zinc-700/50 text-zinc-500">
+                    Keine Reels verfügbar. Auf &ldquo;Aktualisieren&rdquo; klicken.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Video-Picker Facebook ── */}
+            {platform === 'facebook' && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Facebook-Post auswählen</label>
+                  <button type="button" onClick={fetchFbMedia} disabled={loadingFbMedia}
+                    className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 disabled:opacity-50">
+                    <FaSync size={10} className={loadingFbMedia ? 'animate-spin' : ''} /> Aktualisieren
+                  </button>
+                </div>
+                {loadingFbMedia ? (
+                  <div className="text-center text-zinc-500 py-8 text-sm bg-zinc-900/40 rounded-xl">
+                    <FaSync size={16} className="animate-spin mx-auto mb-2" />Lade Posts…
+                  </div>
+                ) : availableFbMedia.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
+                    {availableFbMedia.map((item) => {
+                      const title = (item.caption?.split(/[\n\r]/)[0].trim() || item.post_id).slice(0, 80);
+                      return (
+                        <button
+                          key={item.post_id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedFbPostId(item.post_id);
+                            setVideoUrl(item.permalink);
+                            setVideoTitle(title);
+                            setVideoThumbnail(item.thumbnail_url);
+                          }}
+                          className={`relative rounded-xl overflow-hidden border transition-all text-left ${
+                            selectedFbPostId === item.post_id
+                              ? 'border-purple-500 ring-1 ring-purple-500/30'
+                              : 'border-zinc-700 hover:border-purple-400'
+                          }`}
+                        >
+                          {item.thumbnail_url ? (
+                            <img src={item.thumbnail_url} alt="" className="w-full h-24 object-cover" />
+                          ) : (
+                            <div className="w-full h-24 bg-zinc-900 flex items-center justify-center">
+                              {PLATFORM_ICONS.facebook}
+                            </div>
+                          )}
+                          <div className="p-2 bg-zinc-900/80">
+                            <p className="text-white text-xs font-semibold line-clamp-2 leading-tight">{title}</p>
+                          </div>
+                          {selectedFbPostId === item.post_id && (
+                            <div className="absolute inset-0 bg-purple-500/10 pointer-events-none flex items-end justify-end p-1">
+                              <span className="bg-purple-600 rounded-full p-0.5"><FaCheck size={8} className="text-white" /></span>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-5 text-xs bg-zinc-900/40 rounded-xl border border-zinc-700/50 text-zinc-500">
+                    Keine Posts verfügbar. Auf &ldquo;Aktualisieren&rdquo; klicken.
+                  </div>
+                )}
               </div>
             )}
 
@@ -267,14 +505,23 @@ export default function CreateBundleModal({
               />
             </div>
 
-            {metaError && <p className="text-red-400 text-sm">{metaError}</p>}
+            {/* Ausgewähltes Video als Vorschau */}
+            {videoUrl && videoTitle && (
+              <div className="flex items-center gap-3 bg-purple-900/20 border border-purple-700/40 rounded-xl px-3 py-2">
+                {videoThumbnail && (
+                  <img src={videoThumbnail} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                )}
+                <p className="text-purple-200 text-xs font-semibold line-clamp-2 flex-1">{videoTitle}</p>
+                <FaCheck size={12} className="text-purple-400 shrink-0" />
+              </div>
+            )}
 
             <button
-              onClick={handleFetchMeta}
-              disabled={!videoUrl.trim() || fetchingMeta}
+              onClick={() => setStep(2)}
+              disabled={!videoUrl.trim()}
               className="w-full bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-xl py-3 font-semibold text-sm transition-colors"
             >
-              {fetchingMeta ? 'Lädt...' : 'Weiter →'}
+              Weiter →
             </button>
           </div>
         )}
