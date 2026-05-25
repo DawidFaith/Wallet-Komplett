@@ -28,6 +28,8 @@ export async function createQuestBundle(
     maxParticipants: number;
     expiresAt: string | null;
     reputationReward?: number;
+    levelBonusBudget?: number;        // Gesamtes Budget für Level-Reputation-Boni (alle Quests, alle Teilnehmer)
+    secretCodes?: Record<string, string>; // Map: questType → geheimer Code (nur für 'secret'-Typ)
   },
   itemTypes: Array<{ questType: QuestType; reachWeight: number }>,
 ): Promise<string> {
@@ -63,19 +65,32 @@ export async function createQuestBundle(
     const creditsLocked = Math.round(rewardAmount * params.maxParticipants * 100) / 100;
     const reputationReward = params.reputationReward ?? Math.round(item.reachWeight * 20);
 
+    // Level-Bonus-Budget proportional verteilen
+    const questLevelBonusBudget = params.levelBonusBudget && totalWeight > 0
+      ? Math.round((item.reachWeight / totalWeight) * params.levelBonusBudget * 100) / 100
+      : 0;
+
+    // Secret Code (nur für 'secret'-Typ)
+    const secretCode = item.questType === 'secret'
+      ? ((params.secretCodes?.[item.questType] ?? '').trim().toUpperCase() || null)
+      : null;
+
+    // Story-Token (nur für 'dm_share'-Typ – für Fan-Sharing-Link)
+    const storyToken = item.questType === 'dm_share' ? crypto.randomUUID() : null;
+
     await sql`
       INSERT INTO quests (
         id, platform, quest_type, creator_wallet,
         video_id, video_title, video_thumbnail, video_url,
         description, reward_amount, reputation_reward, max_completions,
         completions, is_active, expires_at, credits_locked, credits_refunded,
-        bonus_budget, bundle_id, reach_weight, created_at, updated_at
+        bonus_budget, bundle_id, reach_weight, secret_code, story_token, created_at, updated_at
       ) VALUES (
         ${questId}, ${params.platform}, ${item.questType}, ${wallet},
         ${params.videoId}, ${params.videoTitle}, ${params.videoThumbnail}, ${params.videoUrl},
         ${params.description}, ${rewardAmount}, ${reputationReward}, ${params.maxParticipants},
         0, true, ${params.expiresAt ?? null}, ${creditsLocked}, false,
-        0, ${bundleId}, ${item.reachWeight}, ${now}, ${now}
+        ${questLevelBonusBudget}, ${bundleId}, ${item.reachWeight}, ${secretCode}, ${storyToken}, ${now}, ${now}
       )
     `;
   }
@@ -135,7 +150,7 @@ export async function getBundlesWithProgressForFan(
   const [questRows, completionRows, bonusRows, fanRepRows, levelRows] = await Promise.all([
     sql`
       SELECT id, bundle_id, quest_type, reach_weight, reward_amount,
-             reputation_reward, completions, max_completions, is_active
+             reputation_reward, completions, max_completions, is_active, story_token
       FROM quests
       WHERE bundle_id = ANY(${bundleIds}::uuid[])
       ORDER BY reach_weight DESC
@@ -199,6 +214,7 @@ export async function getBundlesWithProgressForFan(
         completions:       Number(q.completions),
         maxCompletions:    Number(q.max_completions),
         isActive:          q.is_active,
+        storyToken:        q.story_token ?? null,
       }));
 
     const fanCompletedTypes = items
@@ -239,7 +255,7 @@ export async function getBundlesForCreator(
   const bundleIds: string[] = bundleRows.map((r: any) => r.id as string);
   const questRows = await sql`
     SELECT id, bundle_id, quest_type, reach_weight, reward_amount,
-           reputation_reward, completions, max_completions, is_active
+           reputation_reward, completions, max_completions, is_active, story_token
     FROM quests
     WHERE bundle_id = ANY(${bundleIds}::uuid[])
     ORDER BY reach_weight DESC
@@ -257,6 +273,7 @@ export async function getBundlesForCreator(
         completions:       Number(q.completions),
         maxCompletions:    Number(q.max_completions),
         isActive:          q.is_active,
+        storyToken:        q.story_token ?? null,
       }));
     return { ...rowToBundle(bRow), items };
   });

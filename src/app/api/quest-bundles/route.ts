@@ -45,6 +45,10 @@ export async function POST(req: NextRequest) {
     // Für nicht-YouTube-Plattformen: manuelle Angaben
     videoTitle?: string;
     videoThumbnail?: string;
+    // Level-Bonus-Budget (vom Creator vorberechnet, max. 100%)
+    levelBonusBudget?: number;
+    // Geheim-Codes pro Quest-Typ (nur für 'secret')
+    secretCodes?: Record<string, string>;
   };
 
   try { body = await req.json(); }
@@ -55,6 +59,7 @@ export async function POST(req: NextRequest) {
     rewardPoolPerFan, bundleCompletionBonus, maxParticipants,
     durationHours, items,
     videoTitle: manualTitle, videoThumbnail: manualThumbnail,
+    levelBonusBudget, secretCodes,
   } = body;
 
   if (!creatorWallet || !platform || !videoUrl || !items?.length) {
@@ -79,14 +84,16 @@ export async function POST(req: NextRequest) {
   const poolNum    = Math.max(0.01, Math.round((Number(rewardPoolPerFan)      || 0) * 100) / 100);
   const bonusNum   = Math.max(0,    Math.round((Number(bundleCompletionBonus) || 0) * 100) / 100);
   const maxNum     = Math.max(1,    Math.round(Number(maxParticipants)       || 10));
+  // Level-Bonus-Reserve: vom Frontend übergeben oder Fallback 100 % des Reward-Pools
+  const levelBonus = Math.max(0, Math.round((Number(levelBonusBudget) || poolNum * maxNum) * 100) / 100);
 
-  const totalBudget = Math.round((poolNum * maxNum + bonusNum * maxNum) * 100) / 100;
+  const totalBudget = Math.round((poolNum * maxNum + bonusNum * maxNum + levelBonus) * 100) / 100;
 
   // Guthaben prüfen
   const credits = await getDfaithCredits(creatorWallet.toLowerCase());
   if (credits < totalBudget) {
     return NextResponse.json({
-      error: `Nicht genug Credits. Du brauchst ${totalBudget.toFixed(2)} D.FAITH (${poolNum.toFixed(2)} × ${maxNum} Teilnehmer + ${bonusNum.toFixed(2)} × ${maxNum} Bonus-Budget), hast aber nur ${credits.toFixed(2)}.`,
+      error: `Nicht genug Credits. Du brauchst ${totalBudget.toFixed(2)} D.FAITH (${poolNum.toFixed(2)} × ${maxNum} Reward + ${bonusNum.toFixed(2)} × ${maxNum} Bonus + ${levelBonus.toFixed(2)} Level-Bonus-Reserve), hast aber nur ${credits.toFixed(2)}.`,
     }, { status: 400 });
   }
 
@@ -155,6 +162,8 @@ export async function POST(req: NextRequest) {
         bundleCompletionBonus: bonusNum,
         maxParticipants: maxNum,
         expiresAt,
+        levelBonusBudget: levelBonus,
+        secretCodes: secretCodes ?? {},
       },
       items.map((i) => ({
         questType:   i.questType   as QuestType,

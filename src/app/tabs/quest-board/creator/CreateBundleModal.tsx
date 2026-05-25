@@ -97,6 +97,7 @@ export default function CreateBundleModal({
   const [bonus, setBonus]   = useState('2');
   const [maxP, setMaxP]     = useState('20');
   const [duration, setDuration] = useState('72');
+  const [secretCodes, setSecretCodes] = useState<Record<string, string>>({});
 
   const [creating, setCreating]   = useState(false);
   const [error, setError]         = useState('');
@@ -131,6 +132,7 @@ export default function CreateBundleModal({
     setBonus('2');
     setMaxP('20');
     setDuration('72');
+    setSecretCodes({});
     setError('');
     setSuccess(false);
     setSelectedQuestMediaId(null);
@@ -204,7 +206,9 @@ export default function CreateBundleModal({
   const bonusNum   = Math.max(0,    Number(bonus)    || 0);
   const maxNum     = Math.max(1,    Number(maxP)     || 10);
   const totalWeight = items.reduce((s, i) => s + i.reachWeight, 0);
-  const totalBudget = Math.round((rewardNum * maxNum + bonusNum * maxNum) * 100) / 100;
+  // Level-Bonus-Reserve: 100 % des Reward-Pools (maximale Default-Stufe)
+  const levelBonusReserve = Math.round(rewardNum * maxNum * 100) / 100;
+  const totalBudget = Math.round((rewardNum * maxNum + bonusNum * maxNum + levelBonusReserve) * 100) / 100;
   const hasEnough   = creatorBalance >= totalBudget;
 
   const handleCreate = async () => {
@@ -230,6 +234,8 @@ export default function CreateBundleModal({
           maxParticipants:     maxNum,
           durationHours:       Number(duration) || undefined,
           items:               items.map((i) => ({ questType: i.questType, reachWeight: i.reachWeight })),
+          levelBonusBudget:    levelBonusReserve,
+          secretCodes,
         }),
       });
       const data = await res.json() as { success?: boolean; error?: string };
@@ -576,6 +582,22 @@ export default function CreateBundleModal({
                       <p className="text-purple-300 text-xs mt-2 ml-7">
                         → {((item.reachWeight / totalWeight) * 100).toFixed(0)}% des Reward-Pools
                       </p>
+            {/* Geheimcode festlegen (nur wenn 'secret'-Typ ausgewählt) */}
+            {items.some((i) => i.questType === 'secret') && (
+              <div className="bg-zinc-900/60 border border-yellow-800/40 rounded-xl p-3 space-y-2">
+                <p className="text-yellow-300 text-xs font-semibold">🔑 Geheimcode festlegen</p>
+                <p className="text-zinc-400 text-xs">Fans müssen diesen Code eingeben, um den Geheimcode-Task abzuschließen.</p>
+                <input
+                  type="text"
+                  placeholder="z.B. DAWIDFAITH2025"
+                  value={secretCodes['secret'] ?? ''}
+                  onChange={(e) => setSecretCodes((prev) => ({ ...prev, secret: e.target.value.toUpperCase() }))}
+                  className="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-yellow-500 uppercase"
+                  maxLength={50}
+                />
+              </div>
+            )}
+
                     )}
                   </div>
                 );
@@ -637,7 +659,11 @@ export default function CreateBundleModal({
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
                   className="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-purple-500"
-                />
+                />xs border-t border-zinc-700/50 pt-2 mt-1">
+                <span className="text-purple-400">⚡ Level-Bonus-Reserve (max. 100%)</span>
+                <span className="text-purple-300 font-mono">+{levelBonusReserve.toFixed(2)} D.FAITH</span>
+              </div>
+              <div className="flex items-center justify-between text-
               </div>
             </div>
 

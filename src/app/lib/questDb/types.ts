@@ -156,6 +156,7 @@ export interface QuestBundleItem {
   completions: number;
   maxCompletions: number;
   isActive: boolean;
+  storyToken?: string | null; // Story-Token für dm_share-Tasks (zum Teilen als Link)
 }
 
 export interface QuestBundleWithItems extends QuestBundle {
