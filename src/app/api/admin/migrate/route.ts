@@ -287,15 +287,6 @@ export async function POST(req: NextRequest) {
     await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS story_token TEXT`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_quests_story_token ON quests(story_token) WHERE story_token IS NOT NULL`;
 
-    // ── story_token Backfill: bestehende dm_share Bundle-Quests ohne Token ────
-    await sql`
-      UPDATE quests
-      SET story_token = gen_random_uuid()::text
-      WHERE quest_type = 'dm_share'
-        AND bundle_id IS NOT NULL
-        AND story_token IS NULL
-    `;
-
     // ── Fix: Instagram video_id von ig_id auf graph_media_id korrigieren ─────
     // Make.com lieferte bisher ig_id (z.B. 3773769977644749878) statt der Graph
     // API ID (z.B. 18107291311629888). Shortcode wird aus video_url extrahiert.
@@ -364,6 +355,15 @@ export async function POST(req: NextRequest) {
 
     await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS bundle_id    UUID    REFERENCES quest_bundles(id)`;
     await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS reach_weight INTEGER NOT NULL DEFAULT 0`;
+
+    // ── story_token Backfill: bestehende dm_share Bundle-Quests ohne Token ────
+    await sql`
+      UPDATE quests
+      SET story_token = gen_random_uuid()::text
+      WHERE quest_type = 'dm_share'
+        AND bundle_id IS NOT NULL
+        AND story_token IS NULL
+    `;
 
     // ── DFAITH-Beträge: INTEGER → NUMERIC(20,2) ──────────────────────────────
     // sql.unsafe() funktioniert im Neon HTTP-Driver nicht → tagged template literals
