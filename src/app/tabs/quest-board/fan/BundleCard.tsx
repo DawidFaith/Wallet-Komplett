@@ -147,8 +147,10 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed }: Bundle
       {/* Task-Liste */}
       <div className="px-4 pt-3 space-y-1.5">
         {bundle.items.map((item) => {
-          const done = completedSet.has(item.questType);
-          const full = item.completions >= item.maxCompletions;
+          const done       = completedSet.has(item.questType);
+          const full       = item.completions >= item.maxCompletions;
+          const bonus      = bundle.fanBonusPercent ?? 0;
+          const effective  = bonus > 0 ? item.rewardAmount * (1 + bonus / 100) : item.rewardAmount;
           return (
             <div
               key={item.questId}
@@ -168,9 +170,15 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed }: Bundle
                 {full && !done && <span className="text-xs text-zinc-600">(voll)</span>}
               </div>
               <div className="flex items-center gap-2">
-                <span className={`text-xs font-mono ${done ? 'text-green-400' : 'text-purple-300'}`}>
-                  +{item.rewardAmount.toFixed(2)}
-                </span>
+                <div className="flex flex-col items-end gap-0.5">
+                  <span className={`text-xs font-mono ${done ? 'text-green-400' : 'text-purple-300'}`}>
+                    +{effective.toFixed(2)}
+                    {bonus > 0 && <span className="text-yellow-400/80 text-[10px] ml-0.5">(+{bonus}%)</span>}
+                  </span>
+                  {item.reputationReward > 0 && (
+                    <span className="text-[10px] text-amber-400/80">+{item.reputationReward} REP</span>
+                  )}
+                </div>
                 {done
                   ? <FaCheck size={10} className="text-green-400" />
                   : <FaTimes size={10} className="text-zinc-600" />

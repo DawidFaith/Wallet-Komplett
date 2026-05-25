@@ -199,10 +199,6 @@ export default function CreateBundleModal({
     );
   };
 
-  const updateWeight = (qt: QuestType, weight: number) => {
-    setItems((prev) => prev.map((i) => i.questType === qt ? { ...i, reachWeight: weight } : i));
-  };
-
   // Reward-Berechnung
   const rewardNum  = Math.max(0.01, Number(reward)  || 0);
   const bonusNum   = Math.max(0,    Number(bonus)    || 0);
@@ -530,14 +526,14 @@ export default function CreateBundleModal({
         {step === 2 && (
           <div className="space-y-4">
             <p className="text-zinc-400 text-sm">
-              Wähle die Aktionen für dein Bundle. Das <span className="text-purple-400 font-semibold">Reichweiten-Gewicht</span> bestimmt den Anteil am Gesamt-Reward.
+              Wähle die Aktionen für dein Bundle. Die <span className="text-purple-400 font-semibold">Algorythmus-Signalstärke</span> ist fest und bestimmt den Anteil am Gesamt-Reward.
             </p>
 
             {/* Tipp */}
             <div className="bg-blue-950/40 border border-blue-800/40 rounded-xl p-3 flex gap-2">
               <FaInfoCircle className="text-blue-400 mt-0.5 shrink-0" size={13} />
               <p className="text-blue-300 text-xs">
-                Höheres Gewicht = mehr Algorythmus-Signalstärke = größerer Token-Anteil. Story-Share hat standardmäßig den höchsten Wert.
+                Höhere Signalstärke = mehr Algorythmus-Signalwirkung = größerer Token-Anteil. Story-Share hat die höchste Wirkung.
               </p>
             </div>
 
@@ -562,19 +558,17 @@ export default function CreateBundleModal({
                         <span className="text-white text-sm font-semibold">{TYPE_LABELS[qt]}</span>
                       </button>
                       {selected && item && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-zinc-500 text-xs">Gewicht:</span>
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((w) => (
-                              <button
-                                key={w}
-                                onClick={() => updateWeight(qt, w)}
-                                className={`w-6 h-6 rounded text-xs font-bold transition-all ${item.reachWeight === w ? 'bg-purple-600 text-white' : 'bg-zinc-700 text-zinc-400 hover:bg-zinc-600'}`}
-                              >
-                                {w}
-                              </button>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-zinc-500 text-xs">Signalstärke:</span>
+                          <div className="flex gap-0.5">
+                            {[1, 2, 3, 4].map((i) => (
+                              <div
+                                key={i}
+                                className={`w-1.5 rounded-sm transition-all ${i <= item.reachWeight ? 'bg-purple-400 h-3.5' : 'bg-zinc-700 h-2.5 self-end'}`}
+                              />
                             ))}
                           </div>
+                          <span className="text-purple-300 text-xs font-bold">{item.reachWeight}</span>
                         </div>
                       )}
                     </div>

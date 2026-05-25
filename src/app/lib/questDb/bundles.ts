@@ -129,12 +129,13 @@ export async function getBundlesWithProgressForFan(
 
   if (bundleRows.length === 0) return [];
 
-  const bundleIds: string[] = bundleRows.map((r: any) => r.id as string);
+  const bundleIds: string[]      = bundleRows.map((r: any) => r.id as string);
+  const creatorWallets: string[] = [...new Set(bundleRows.map((r: any) => r.creator_wallet as string))];
 
-  const [questRows, completionRows, bonusRows] = await Promise.all([
+  const [questRows, completionRows, bonusRows, fanRepRows, levelRows] = await Promise.all([
     sql`
       SELECT id, bundle_id, quest_type, reach_weight, reward_amount,
-             completions, max_completions, is_active
+             reputation_reward, completions, max_completions, is_active
       FROM quests
       WHERE bundle_id = ANY(${bundleIds}::uuid[])
       ORDER BY reach_weight DESC
@@ -151,7 +152,37 @@ export async function getBundlesWithProgressForFan(
       WHERE fan_wallet = ${normalized}
         AND bundle_id = ANY(${bundleIds}::uuid[])
     `,
+    sql`
+      SELECT artist_wallet, reputation FROM user_reputation
+      WHERE wallet_address = ${normalized}
+        AND artist_wallet = ANY(${creatorWallets}::text[])
+    `,
+    sql`
+      SELECT artist_wallet, min_reputation, quest_reward_bonus_percent
+      FROM reputation_levels
+      WHERE artist_wallet = ANY(${creatorWallets}::text[])
+      ORDER BY min_reputation ASC
+    `,
   ]);
+
+  // Standard-Level-Bonuswerte (Fallback wenn kein Kreator eigene Level konfiguriert hat)
+  const DEFAULT_BONUS_LEVELS = [
+    { min:      0, bonus:   0 }, { min:    200, bonus:   5 }, { min:    500, bonus:  10 },
+    { min:  1_000, bonus:  15 }, { min:  2_000, bonus:  20 }, { min:  3_800, bonus:  25 },
+    { min:  7_000, bonus:  35 }, { min: 13_000, bonus:  50 }, { min: 24_000, bonus:  75 },
+    { min: 45_000, bonus: 100 },
+  ];
+
+  const fanRepByCreator = new Map<string, number>(
+    (fanRepRows as any[]).map((r) => [r.artist_wallet as string, Number(r.reputation)]),
+  );
+
+  const levelsByCreator = new Map<string, { min: number; bonus: number }[]>();
+  for (const r of levelRows as any[]) {
+    const w = r.artist_wallet as string;
+    if (!levelsByCreator.has(w)) levelsByCreator.set(w, []);
+    levelsByCreator.get(w)!.push({ min: Number(r.min_reputation), bonus: Number(r.quest_reward_bonus_percent ?? 0) });
+  }
 
   const completedQuestIds = new Set<string>((completionRows as any[]).map((r) => r.quest_id as string));
   const claimedBundleIds  = new Set<string>((bonusRows as any[]).map((r) => r.bundle_id as string));
@@ -160,13 +191,14 @@ export async function getBundlesWithProgressForFan(
     const items: QuestBundleItem[] = (questRows as any[])
       .filter((q) => q.bundle_id === bRow.id)
       .map((q) => ({
-        questId:        q.id,
-        questType:      q.quest_type as QuestType,
-        reachWeight:    Number(q.reach_weight),
-        rewardAmount:   Number(q.reward_amount),
-        completions:    Number(q.completions),
-        maxCompletions: Number(q.max_completions),
-        isActive:       q.is_active,
+        questId:           q.id,
+        questType:         q.quest_type as QuestType,
+        reachWeight:       Number(q.reach_weight),
+        rewardAmount:      Number(q.reward_amount),
+        reputationReward:  Number(q.reputation_reward ?? 0),
+        completions:       Number(q.completions),
+        maxCompletions:    Number(q.max_completions),
+        isActive:          q.is_active,
       }));
 
     const fanCompletedTypes = items
@@ -176,12 +208,17 @@ export async function getBundlesWithProgressForFan(
     const fanAllCompleted = items.length > 0 && items.every((item) => completedQuestIds.has(item.questId));
     const fanBonusClaimed = claimedBundleIds.has(bRow.id);
 
+    const rep         = fanRepByCreator.get(bRow.creator_wallet as string) ?? 0;
+    const levels      = levelsByCreator.get(bRow.creator_wallet as string) ?? DEFAULT_BONUS_LEVELS;
+    const fanBonusPercent = [...levels].sort((a, b) => b.min - a.min).find((l) => l.min <= rep)?.bonus ?? 0;
+
     return {
       ...rowToBundle(bRow),
       items,
       fanCompletedTypes,
       fanAllCompleted,
       fanBonusClaimed,
+      fanBonusPercent,
     };
   });
 }
@@ -202,7 +239,7 @@ export async function getBundlesForCreator(
   const bundleIds: string[] = bundleRows.map((r: any) => r.id as string);
   const questRows = await sql`
     SELECT id, bundle_id, quest_type, reach_weight, reward_amount,
-           completions, max_completions, is_active
+           reputation_reward, completions, max_completions, is_active
     FROM quests
     WHERE bundle_id = ANY(${bundleIds}::uuid[])
     ORDER BY reach_weight DESC
@@ -212,13 +249,14 @@ export async function getBundlesForCreator(
     const items: QuestBundleItem[] = (questRows as any[])
       .filter((q) => q.bundle_id === bRow.id)
       .map((q) => ({
-        questId:        q.id,
-        questType:      q.quest_type as QuestType,
-        reachWeight:    Number(q.reach_weight),
-        rewardAmount:   Number(q.reward_amount),
-        completions:    Number(q.completions),
-        maxCompletions: Number(q.max_completions),
-        isActive:       q.is_active,
+        questId:           q.id,
+        questType:         q.quest_type as QuestType,
+        reachWeight:       Number(q.reach_weight),
+        rewardAmount:      Number(q.reward_amount),
+        reputationReward:  Number(q.reputation_reward ?? 0),
+        completions:       Number(q.completions),
+        maxCompletions:    Number(q.max_completions),
+        isActive:          q.is_active,
       }));
     return { ...rowToBundle(bRow), items };
   });

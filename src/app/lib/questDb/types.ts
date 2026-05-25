@@ -152,6 +152,7 @@ export interface QuestBundleItem {
   questType: QuestType;
   reachWeight: number;
   rewardAmount: number;
+  reputationReward: number;  // Reputation-Punkte die der Fan für diesen Task bekommt
   completions: number;
   maxCompletions: number;
   isActive: boolean;
@@ -165,4 +166,6 @@ export interface QuestBundleWithItems extends QuestBundle {
   fanBonusClaimed?: boolean;
   /** Fan hat alle Tasks abgeschlossen (Bonus einlösbar) */
   fanAllCompleted?: boolean;
+  /** Level-Bonus-Prozentsatz des Fans für diesen Creator (0 = kein Bonus) */
+  fanBonusPercent?: number;
 }
