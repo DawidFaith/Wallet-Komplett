@@ -66,27 +66,52 @@ export async function findInstagramComment(
 // ─── Kommentare auf Facebook-Post prüfen ─────────────────────────────────────
 export async function findFacebookComment(
   postId: string,
-  requiredText: string,
+  requiredText: string | null,
+  fromName?: string | null,
 ): Promise<{ found: boolean; fromName?: string }> {
-  // Neue Facebook-Seiten benötigen Page Access Token (nicht System User Token)
-  const token = await getPageAccessToken() ?? process.env.META_SYSTEM_USER_TOKEN;
-  if (!token) return { found: false };
+  // Page-ID aus Post-ID extrahieren um das spezifische Page Access Token zu holen.
+  // Damit können Artist-Posts gelesen werden, nicht nur die dfaith-eigene Page.
+  const systemToken = process.env.META_SYSTEM_USER_TOKEN;
+  if (!systemToken) return { found: false };
 
-  const cleanText = requiredText.toLowerCase();
+  let token = systemToken;
+  const pageId = postId.includes('_') ? postId.split('_')[0] : null;
+  if (pageId) {
+    try {
+      const tokenRes = await fetch(
+        `${GRAPH}/${pageId}?fields=access_token&access_token=${systemToken}`,
+        { cache: 'no-store', signal: AbortSignal.timeout(8000) },
+      );
+      const tokenData = await tokenRes.json() as { access_token?: string };
+      if (tokenData.access_token) token = tokenData.access_token;
+    } catch { /* Fallback auf systemToken */ }
+  }
+
+  const cleanText = requiredText?.toLowerCase() ?? null;
+  const cleanName = fromName?.toLowerCase().trim() ?? null;
+
   let url: string | null =
     `${GRAPH}/${postId}/comments?fields=from{name,id},message&limit=200&access_token=${token}`;
 
   for (let page = 0; page < 5 && url; page++) {
-    let data: { data?: Array<{ from?: { name?: string; id?: string }; message?: string }>; paging?: { next?: string } };
+    let data: { data?: Array<{ from?: { name?: string; id?: string }; message?: string }>; paging?: { next?: string }; error?: { message: string } };
     try {
       const res = await fetch(url, { cache: 'no-store' });
-      if (!res.ok) break;
       data = await res.json();
     } catch {
       break;
     }
+    if (data.error) {
+      console.error('[findFacebookComment] Graph API Fehler:', data.error.message, '| postId:', postId);
+      break;
+    }
     for (const comment of data.data ?? []) {
-      if ((comment.message ?? '').toLowerCase().includes(cleanText)) {
+      const authorName = (comment.from?.name ?? '').toLowerCase().trim();
+      // Autor-Check (für comment-verify)
+      const authorMatch = cleanName ? authorName === cleanName : true;
+      // Textinhalt-Check (für social-verify / secret-code Quests)
+      const textMatch = cleanText ? (comment.message ?? '').toLowerCase().includes(cleanText) : true;
+      if (authorMatch && textMatch) {
         return { found: true, fromName: comment.from?.name ?? undefined };
       }
     }

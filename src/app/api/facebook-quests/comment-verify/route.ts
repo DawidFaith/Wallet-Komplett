@@ -96,7 +96,8 @@ export async function POST(req: NextRequest) {
   }
 
   // 4. Meta Graph API – prüft ob Kommentar im Facebook-Post existiert
-  const result = await findFacebookComment(quest.videoId, profile.facebookHandle);
+  // facebookHandle ist die Thirdweb-Wallet-ID, kein FB-Name → facebookName für Autor-Matching nutzen
+  const result = await findFacebookComment(quest.videoId, null, profile.facebookName);
 
   // 5. Ergebnis auswerten
   if (!result.found) {
