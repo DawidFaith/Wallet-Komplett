@@ -579,9 +579,15 @@ export default function CreateBundleModal({
                       )}
                     </div>
                     {selected && item && totalWeight > 0 && (
-                      <p className="text-purple-300 text-xs mt-2 ml-7">
-                        → {((item.reachWeight / totalWeight) * 100).toFixed(0)}% des Reward-Pools
-                      </p>
+                      <div className="flex items-center justify-between mt-2 ml-7">
+                        <p className="text-purple-300 text-xs">
+                          → {((item.reachWeight / totalWeight) * 100).toFixed(0)}% des Reward-Pools
+                        </p>
+                        <span className="text-amber-400 text-xs font-semibold">+{item.reachWeight * 20} REP</span>
+                      </div>
+                    )}
+                    {selected && qt === 'dm_share' && (
+                      <p className="text-blue-400/70 text-[11px] mt-1 ml-7">🔗 Story-Link wird nach Erstellung generiert</p>
                     )}
                   </div>
                 );
@@ -668,10 +674,14 @@ export default function CreateBundleModal({
               <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Reward-Aufschlüsselung pro Fan</p>
               {items.map((item) => {
                 const share = totalWeight > 0 ? (item.reachWeight / totalWeight) * rewardNum : 0;
+                const rep   = item.reachWeight * 20;
                 return (
                   <div key={item.questType} className="flex items-center justify-between text-sm">
                     <span className="text-zinc-300">{TYPE_ICONS[item.questType]} {TYPE_LABELS[item.questType]}</span>
-                    <span className="text-purple-300 font-mono">{share.toFixed(2)} D.FAITH</span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-amber-400 text-xs">+{rep} REP</span>
+                      <span className="text-purple-300 font-mono">{share.toFixed(2)} D.FAITH</span>
+                    </span>
                   </div>
                 );
               })}

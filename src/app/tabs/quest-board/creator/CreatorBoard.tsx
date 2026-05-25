@@ -297,9 +297,19 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                 {/* Items */}
                 <div className="grid grid-cols-2 gap-1.5">
                   {bundle.items.map((item) => (
-                    <div key={item.questId} className="bg-purple-950/30 rounded-lg px-3 py-1.5 flex items-center justify-between">
-                      <span className="text-zinc-300 text-xs capitalize">{item.questType}</span>
-                      <span className="text-purple-300 text-xs font-mono">{item.rewardAmount.toFixed(2)}</span>
+                    <div key={item.questId} className="bg-purple-950/30 rounded-lg px-3 py-1.5 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-zinc-300 text-xs capitalize">{item.questType}</span>
+                        <span className="flex items-center gap-1.5">
+                          {item.reputationReward > 0 && (
+                            <span className="text-amber-400 text-[10px]">+{item.reputationReward} REP</span>
+                          )}
+                          <span className="text-purple-300 text-xs font-mono">{item.rewardAmount.toFixed(2)}</span>
+                        </span>
+                      </div>
+                      {item.questType === 'dm_share' && item.storyToken && (
+                        <StoryLinkRow token={item.storyToken} />
+                      )}
                     </div>
                   ))}
                 </div>
