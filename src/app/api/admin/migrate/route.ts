@@ -316,18 +316,50 @@ export async function POST(req: NextRequest) {
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_fb_comment_slots_unique ON facebook_comment_slots(quest_id, slot_index)`;
 
     // ── DFAITH-Beträge: INTEGER → NUMERIC(20,2) ──────────────────────────────
-    // DFAITH hat 2 Decimals. Bestehende INTEGER-Spalten müssen migriert werden,
-    // sonst werfen Stornos & Bonus-Buchungen "invalid input syntax for type integer".
-    await sql`ALTER TABLE dfaith_credits     ALTER COLUMN balance        TYPE NUMERIC(20,2) USING balance::numeric`;
-    await sql`ALTER TABLE creator_balances   ALTER COLUMN balance        TYPE NUMERIC(20,2) USING balance::numeric`;
-    await sql`ALTER TABLE creator_deposits   ALTER COLUMN amount         TYPE NUMERIC(20,2) USING amount::numeric`;
-    await sql`ALTER TABLE quests             ALTER COLUMN reward_amount  TYPE NUMERIC(20,2) USING reward_amount::numeric`;
-    await sql`ALTER TABLE quests             ALTER COLUMN credits_locked TYPE NUMERIC(20,2) USING credits_locked::numeric`;
-    await sql`ALTER TABLE quests             ALTER COLUMN bonus_budget   TYPE NUMERIC(20,2) USING bonus_budget::numeric`;
-    await sql`ALTER TABLE quest_completions  ALTER COLUMN reward_amount  TYPE NUMERIC(20,2) USING reward_amount::numeric`;
-    await sql`ALTER TABLE pending_rewards    ALTER COLUMN amount         TYPE NUMERIC(20,2) USING amount::numeric`;
+    const typeChanges: Record<string, string> = {};
+    const alterStatements: Array<{ key: string; sql: string }> = [
+      { key: 'dfaith_credits.balance',       sql: `ALTER TABLE dfaith_credits     ALTER COLUMN balance        TYPE NUMERIC(20,2) USING balance::numeric` },
+      { key: 'creator_balances.balance',     sql: `ALTER TABLE creator_balances   ALTER COLUMN balance        TYPE NUMERIC(20,2) USING balance::numeric` },
+      { key: 'creator_deposits.amount',      sql: `ALTER TABLE creator_deposits   ALTER COLUMN amount         TYPE NUMERIC(20,2) USING amount::numeric` },
+      { key: 'quests.reward_amount',         sql: `ALTER TABLE quests             ALTER COLUMN reward_amount  TYPE NUMERIC(20,2) USING reward_amount::numeric` },
+      { key: 'quests.credits_locked',        sql: `ALTER TABLE quests             ALTER COLUMN credits_locked TYPE NUMERIC(20,2) USING credits_locked::numeric` },
+      { key: 'quests.bonus_budget',          sql: `ALTER TABLE quests             ALTER COLUMN bonus_budget   TYPE NUMERIC(20,2) USING bonus_budget::numeric` },
+      { key: 'quest_completions.reward_amount', sql: `ALTER TABLE quest_completions  ALTER COLUMN reward_amount  TYPE NUMERIC(20,2) USING reward_amount::numeric` },
+      { key: 'pending_rewards.amount',       sql: `ALTER TABLE pending_rewards    ALTER COLUMN amount         TYPE NUMERIC(20,2) USING amount::numeric` },
+      { key: 'reputation_contests.credits_locked', sql: `ALTER TABLE reputation_contests ALTER COLUMN credits_locked TYPE NUMERIC(20,2) USING credits_locked::numeric` },
+    ];
+    for (const stmt of alterStatements) {
+      try {
+        await sql.unsafe(stmt.sql);
+        typeChanges[stmt.key] = 'ok';
+      } catch (e) {
+        typeChanges[stmt.key] = (e instanceof Error ? e.message : String(e));
+      }
+    }
 
-    return NextResponse.json({ success: true, message: `Migration abgeschlossen (${(backfill as unknown as { count?: number }).count ?? backfill.length} neue Profile)` });
+    // Spaltentypen aus DB lesen zur Verifikation
+    const colTypes = await sql`
+      SELECT table_name, column_name, data_type, numeric_precision, numeric_scale
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND (
+          (table_name = 'dfaith_credits'    AND column_name = 'balance') OR
+          (table_name = 'creator_balances'  AND column_name = 'balance') OR
+          (table_name = 'creator_deposits'  AND column_name = 'amount') OR
+          (table_name = 'quests'            AND column_name IN ('reward_amount','credits_locked','bonus_budget')) OR
+          (table_name = 'quest_completions' AND column_name = 'reward_amount') OR
+          (table_name = 'pending_rewards'   AND column_name = 'amount') OR
+          (table_name = 'reputation_contests' AND column_name = 'credits_locked')
+        )
+      ORDER BY table_name, column_name
+    `;
+
+    return NextResponse.json({
+      success: true,
+      message: `Migration abgeschlossen (${(backfill as unknown as { count?: number }).count ?? backfill.length} neue Profile)`,
+      typeChanges,
+      columnTypes: colTypes,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
