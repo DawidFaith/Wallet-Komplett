@@ -192,13 +192,35 @@ export interface FbPostCounts {
 }
 
 export async function fetchFacebookPostCounts(postId: string): Promise<FbPostCounts | null> {
-  // META_SYSTEM_USER_TOKEN direkt verwenden (wie bei Instagram),
-  // damit auch Posts fremder Artist-Pages lesbar sind.
-  const token = process.env.META_SYSTEM_USER_TOKEN;
-  if (!token) {
+  const systemToken = process.env.META_SYSTEM_USER_TOKEN;
+  if (!systemToken) {
     console.error('[fetchFacebookPostCounts] META_SYSTEM_USER_TOKEN nicht gesetzt');
     return null;
   }
+
+  // Page-ID aus Post-ID extrahieren (Format: {pageId}_{postId})
+  // Damit holen wir das Page Access Token der jeweiligen Artist-Page,
+  // das pages_read_engagement hat – der System User Token allein reicht nicht.
+  const pageId = postId.includes('_') ? postId.split('_')[0] : null;
+  let token = systemToken;
+
+  if (pageId) {
+    try {
+      const tokenRes = await fetch(
+        `${GRAPH}/${pageId}?fields=access_token&access_token=${systemToken}`,
+        { cache: 'no-store', signal: AbortSignal.timeout(8000) },
+      );
+      const tokenData = await tokenRes.json() as { access_token?: string; error?: { message: string } };
+      if (tokenData.access_token) {
+        token = tokenData.access_token;
+      } else if (tokenData.error) {
+        console.error('[fetchFacebookPostCounts] Page-Token-Fehler:', tokenData.error.message);
+      }
+    } catch (e) {
+      console.error('[fetchFacebookPostCounts] Page-Token-Fetch fehlgeschlagen:', e);
+    }
+  }
+
   try {
     const url = `${GRAPH}/${postId}?fields=reactions.summary(true),comments.summary(true),shares&access_token=${token}`;
     const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
