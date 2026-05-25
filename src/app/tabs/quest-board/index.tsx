@@ -37,13 +37,13 @@ interface QuestBoardProps {
 
 // ─── Artist-Selektor ────────────────────────────────────────────────────────
 
-function ArtistSelector({ onSelect }: { onSelect: (artist: ArtistInfo) => void }) {
+function ArtistSelector({ onSelect, walletAddress }: { onSelect: (artist: ArtistInfo) => void; walletAddress?: string }) {
   const [artists, setArtists] = useState<ArtistInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/admin/artists')
+    fetch(walletAddress ? `/api/admin/artists?wallet=${walletAddress}` : '/api/admin/artists')
       .then(r => {
         if (!r.ok) return r.json().then((e: { error?: string }) => { throw new Error(e?.error || `HTTP ${r.status}`); });
         return r.json();
@@ -262,7 +262,7 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
           // Aktiver Artist: entweder per Prop (von Profil-Tab) oder intern gewählt
           const activeArtist = filterArtist ?? internalFilterArtist;
           if (!activeArtist) {
-            return <ArtistSelector onSelect={setInternalFilterArtist} />;
+            return <ArtistSelector onSelect={setInternalFilterArtist} walletAddress={account.address} />;
           }
           return (
             <>
