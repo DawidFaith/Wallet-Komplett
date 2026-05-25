@@ -81,6 +81,7 @@ export default function CreateQuestModal({
   const [bonusEstimate, setBonusEstimate] = useState<{ estimatedBonusPercent: number; estimatedBonusBudget: number; fanCount: number } | null>(null);
   const [lockBonusBudget, setLockBonusBudget] = useState(true);
   const [bonusBudgetOverride, setBonusBudgetOverride] = useState<string>('');
+  const [bonusBudgetManuallyEdited, setBonusBudgetManuallyEdited] = useState(false);
   // Teilnehmer-Empfehlung
   const [participantEstimate, setParticipantEstimate] = useState<{ recommended: number; basis: string; totalAppUsers: number; platformUsers: number; newUserBuffer: number } | null>(null);
   // dm_share: Token vor Quest-Erstellung generieren
@@ -127,6 +128,8 @@ export default function CreateQuestModal({
     if (!walletAddress || !open) return;
     const reward = Number(rewardAmount);
     const max = Number(maxParticipants);
+    // Bei Parameteränderung: manuelle Bearbeitung zurücksetzen → nächste Schätzung füllt wieder auto
+    setBonusBudgetManuallyEdited(false);
     if (!reward || !max) { setBonusEstimate(null); return; }
     const timeout = setTimeout(async () => {
       try {
@@ -134,7 +137,11 @@ export default function CreateQuestModal({
         if (res.ok) {
           const data = await res.json();
           setBonusEstimate(data);
-          if (bonusBudgetOverride === '') setBonusBudgetOverride(String(data.estimatedBonusBudget));
+          // Nur überschreiben wenn Nutzer nicht manuell editiert hat
+          setBonusBudgetOverride(prev => {
+            if (bonusBudgetManuallyEdited) return prev;
+            return String(data.estimatedBonusBudget);
+          });
         }
       } catch { /* ignorieren */ }
     }, 600);
@@ -184,7 +191,7 @@ export default function CreateQuestModal({
     setAvailableFacebookMedia([]); setLoadingFacebookMedia(false); setSelectedFacebookMedia(null);
     setError(''); setSuccess(false); setStoryLink(null); setLinkCopied(false);
     setStoryPreviewToken(null); setStoryPreviewLink(null); setLinkDmConfirmed(false); setPreviewLinkCopied(false);
-    setBonusEstimate(null); setLockBonusBudget(true); setBonusBudgetOverride('');
+    setBonusEstimate(null); setLockBonusBudget(true); setBonusBudgetOverride(''); setBonusBudgetManuallyEdited(false);
     localStorage.removeItem('dfaith_pending_story_token');
   };
 
@@ -1254,7 +1261,7 @@ export default function CreateQuestModal({
                     type="number" min="0"
                     className="w-full bg-zinc-800 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-green-500 pr-16"
                     value={bonusBudgetOverride}
-                    onChange={e => setBonusBudgetOverride(e.target.value)}
+                    onChange={e => { setBonusBudgetOverride(e.target.value); setBonusBudgetManuallyEdited(true); }}
                     placeholder={String(bonusEstimate.estimatedBonusBudget)}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">Credits</span>
