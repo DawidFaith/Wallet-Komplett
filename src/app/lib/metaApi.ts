@@ -90,8 +90,10 @@ export async function findFacebookComment(
   const cleanText = requiredText?.toLowerCase() ?? null;
   const cleanName = fromName?.toLowerCase().trim() ?? null;
 
+  // Hinweis: "from{name,id}" funktioniert nicht bei der neuen Facebook-Seiten-API.
+  // Stattdessen "from" ohne Unterfelder verwenden.
   let url: string | null =
-    `${GRAPH}/${postId}/comments?fields=from{name,id},message&limit=200&access_token=${token}`;
+    `${GRAPH}/${postId}/comments?fields=from,message&limit=200&access_token=${token}`;
 
   for (let page = 0; page < 5 && url; page++) {
     let data: { data?: Array<{ from?: { name?: string; id?: string }; message?: string }>; paging?: { next?: string }; error?: { message: string } };
