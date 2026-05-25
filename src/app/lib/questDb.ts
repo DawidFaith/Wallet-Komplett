@@ -377,7 +377,10 @@ export async function cancelQuest(
   const bonusBudgetRemaining = Number(row.bonus_budget ?? 0);
   const refundAmount = Math.max(0, locked - used) + bonusBudgetRemaining;
 
+  console.log('[cancelQuest] questId=%s refundAmount=%s (locked=%s used=%s bonus=%s)', questId, refundAmount, locked, used, bonusBudgetRemaining);
+
   if (refundAmount > 0) {
+    console.log('[cancelQuest] Writing to dfaith_credits:', creatorWallet, refundAmount);
     await sql`
       INSERT INTO dfaith_credits (wallet_address, balance, updated_at)
       VALUES (${creatorWallet.toLowerCase()}, ${refundAmount}, NOW())
@@ -385,6 +388,7 @@ export async function cancelQuest(
         balance    = dfaith_credits.balance + ${refundAmount},
         updated_at = NOW()
     `;
+    console.log('[cancelQuest] Writing to creator_balances:', creatorWallet, refundAmount);
     await sql`
       INSERT INTO creator_balances (wallet_address, balance, updated_at)
       VALUES (${creatorWallet.toLowerCase()}, ${refundAmount}, NOW())
