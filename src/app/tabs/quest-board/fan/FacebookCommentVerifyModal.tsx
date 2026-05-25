@@ -10,7 +10,7 @@ import { formatCredits } from '../utils';
 interface FacebookCommentVerifyModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
-  onCompleted: (rewardAmount: number) => void;
+  onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
 }
 
@@ -72,7 +72,7 @@ export default function FacebookCommentVerifyModal({
           message: `Quest abgeschlossen! +${formatCredits(data.rewardAmount)} DFAITH Credits`,
           rewardAmount: data.rewardAmount,
         });
-        onCompleted(data.rewardAmount);
+        onCompleted(data.rewardAmount, data.levelBonus);
       } else {
         setResult({ success: false, message: data.error ?? data.message ?? 'Fehler bei der Verifizierung' });
       }

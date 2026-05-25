@@ -10,7 +10,7 @@ import { formatCredits } from '../utils';
 interface InstagramCommentVerifyModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
-  onCompleted: (rewardAmount: number) => void;
+  onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
 }
 
@@ -40,7 +40,7 @@ export default function InstagramCommentVerifyModal({
           message: `Quest abgeschlossen! +${formatCredits(data.rewardAmount)} DFAITH Credits`,
           rewardAmount: data.rewardAmount,
         });
-        onCompleted(data.rewardAmount);
+        onCompleted(data.rewardAmount, data.levelBonus);
       } else {
         setResult({ success: false, message: data.error ?? 'Fehler bei der Verifizierung' });
       }

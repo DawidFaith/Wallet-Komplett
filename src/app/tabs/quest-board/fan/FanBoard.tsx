@@ -56,8 +56,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const [facebookLikeQuest, setFacebookLikeQuest] = useState<QuestIndexEntry | null>(null);
 
   // Celebration nach Quest-Abschluss
-  const [celebration, setCelebration] = useState<{ amount: number; questTitle: string; reputationReward?: number } | null>(null);
-  const pendingCelebration = useRef<{ amount: number; questTitle: string; reputationReward?: number } | null>(null);
+  const [celebration, setCelebration] = useState<{ amount: number; questTitle: string; reputationReward?: number; levelBonus?: number } | null>(null);
+  const pendingCelebration = useRef<{ amount: number; questTitle: string; reputationReward?: number; levelBonus?: number } | null>(null);
 
   // Eltern-Komponente über jeden neuen Quest-Abschluss informieren (für questCount-Badge)
   const prevCompletedCount = useRef(0);
@@ -137,9 +137,10 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       if (res.ok) {
         setVerifyResult({
           success: true,
-          message: `Quest abgeschlossen! +${formatCredits(data.rewardAmount)} ${tokenName} Credits`,
+          message: `Quest abgeschlossen! +${formatCredits(data.rewardAmount)} ${tokenName} Credits${data.levelBonus && data.levelBonus > 0 ? ` (⚡ inkl. Level-Bonus)` : ''}`,
           comment: data.comment?.text,
           rewardAmount: data.rewardAmount,
+          levelBonus: data.levelBonus,
         });
         setCompletedIds((prev) => [...prev, questId]);
         setCredits((prev) => prev + (data.rewardAmount ?? 0));
@@ -182,9 +183,10 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       if (res.ok && data.success) {
         setVerifyResult({
           success: true,
-          message: `Quest abgeschlossen! +${formatCredits(data.rewardAmount)} ${tokenName} Credits`,
+          message: `Quest abgeschlossen! +${formatCredits(data.rewardAmount)} ${tokenName} Credits${data.levelBonus && data.levelBonus > 0 ? ` (⚡ inkl. Level-Bonus)` : ''}`,
           comment: data.comment,
           rewardAmount: data.rewardAmount,
+          levelBonus: data.levelBonus,
         });
         setCompletedIds((prev) => [...prev, questId]);
         setCredits((prev) => prev + (data.rewardAmount ?? 0));
@@ -430,7 +432,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onVerify={handleVerify}
         onClose={() => {
           if (verifyResult?.success && verifyingQuest) {
-            setCelebration({ amount: verifyResult.rewardAmount ?? 0, questTitle: verifyingQuest.videoTitle, reputationReward: verifyingQuest.reputationReward });
+            setCelebration({ amount: verifyResult.rewardAmount ?? 0, questTitle: verifyingQuest.videoTitle, reputationReward: verifyingQuest.reputationReward, levelBonus: verifyResult.levelBonus });
           }
           setVerifyingQuest(null); setVerifyResult(null);
         }}
@@ -440,14 +442,14 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       <LikeVerifyModal
         quest={likeVerifyQuest}
         walletAddress={walletAddress}
-        onCompleted={(amount) => {
+        onCompleted={(amount, levelBonus) => {
           if (likeVerifyQuest) {
             setCompletedIds((prev) => [...prev, likeVerifyQuest.id]);
             setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === likeVerifyQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: likeVerifyQuest.videoTitle, reputationReward: likeVerifyQuest.reputationReward };
+            pendingCelebration.current = { amount, questTitle: likeVerifyQuest.videoTitle, reputationReward: likeVerifyQuest.reputationReward, levelBonus };
           }
         }}
         onClose={() => {
@@ -460,14 +462,14 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       <SecretVerifyModal
         quest={secretVerifyQuest}
         walletAddress={walletAddress}
-        onCompleted={(amount) => {
+        onCompleted={(amount, levelBonus) => {
           if (secretVerifyQuest) {
             setCompletedIds((prev) => [...prev, secretVerifyQuest.id]);
             setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === secretVerifyQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: secretVerifyQuest.videoTitle, reputationReward: secretVerifyQuest.reputationReward };
+            pendingCelebration.current = { amount, questTitle: secretVerifyQuest.videoTitle, reputationReward: secretVerifyQuest.reputationReward, levelBonus };
           }
         }}
         onClose={() => {
@@ -480,14 +482,14 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       <TiktokEngagementVerifyModal
         quest={tiktokEngagementQuest}
         walletAddress={walletAddress}
-        onCompleted={(amount) => {
+        onCompleted={(amount, levelBonus) => {
           if (tiktokEngagementQuest) {
             setCompletedIds((prev) => [...prev, tiktokEngagementQuest.id]);
             setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === tiktokEngagementQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: tiktokEngagementQuest.videoTitle, reputationReward: tiktokEngagementQuest.reputationReward };
+            pendingCelebration.current = { amount, questTitle: tiktokEngagementQuest.videoTitle, reputationReward: tiktokEngagementQuest.reputationReward, levelBonus };
           }
         }}
         onClose={() => {
@@ -500,14 +502,14 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       <InstagramLikeVerifyModal
         quest={instagramLikeQuest}
         walletAddress={walletAddress}
-        onCompleted={(amount) => {
+        onCompleted={(amount, levelBonus) => {
           if (instagramLikeQuest) {
             setCompletedIds((prev) => [...prev, instagramLikeQuest.id]);
             setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === instagramLikeQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: instagramLikeQuest.videoTitle, reputationReward: instagramLikeQuest.reputationReward };
+            pendingCelebration.current = { amount, questTitle: instagramLikeQuest.videoTitle, reputationReward: instagramLikeQuest.reputationReward, levelBonus };
           }
           // Modal NICHT schließen – onClose schließt nach dem Erfolgs-Screen
         }}
@@ -521,14 +523,14 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       <InstagramCommentVerifyModal
         quest={instagramCommentQuest}
         walletAddress={walletAddress}
-        onCompleted={(amount) => {
+        onCompleted={(amount, levelBonus) => {
           if (instagramCommentQuest) {
             setCompletedIds((prev) => [...prev, instagramCommentQuest.id]);
             setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === instagramCommentQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: instagramCommentQuest.videoTitle, reputationReward: instagramCommentQuest.reputationReward };
+            pendingCelebration.current = { amount, questTitle: instagramCommentQuest.videoTitle, reputationReward: instagramCommentQuest.reputationReward, levelBonus };
           }
         }}
         onClose={() => {
@@ -541,14 +543,14 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       <FacebookCommentVerifyModal
         quest={facebookCommentQuest}
         walletAddress={walletAddress}
-        onCompleted={(amount) => {
+        onCompleted={(amount, levelBonus) => {
           if (facebookCommentQuest) {
             setCompletedIds((prev) => [...prev, facebookCommentQuest.id]);
             setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === facebookCommentQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: facebookCommentQuest.videoTitle, reputationReward: facebookCommentQuest.reputationReward };
+            pendingCelebration.current = { amount, questTitle: facebookCommentQuest.videoTitle, reputationReward: facebookCommentQuest.reputationReward, levelBonus };
           }
         }}
         onClose={() => {
@@ -561,14 +563,14 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       <FacebookLikeVerifyModal
         quest={facebookLikeQuest}
         walletAddress={walletAddress}
-        onCompleted={(amount) => {
+        onCompleted={(amount, levelBonus) => {
           if (facebookLikeQuest) {
             setCompletedIds((prev) => [...prev, facebookLikeQuest.id]);
             setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === facebookLikeQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: facebookLikeQuest.videoTitle, reputationReward: facebookLikeQuest.reputationReward };
+            pendingCelebration.current = { amount, questTitle: facebookLikeQuest.videoTitle, reputationReward: facebookLikeQuest.reputationReward, levelBonus };
           }
         }}
         onClose={() => {
@@ -582,14 +584,14 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         quest={instagramDmShareQuest}
         walletAddress={walletAddress}
         storyClaimToken={instagramDmShareToken ?? undefined}
-        onCompleted={(amount) => {
+        onCompleted={(amount, levelBonus) => {
           if (instagramDmShareQuest) {
             setCompletedIds((prev) => [...prev, instagramDmShareQuest.id]);
             setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === instagramDmShareQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: instagramDmShareQuest.videoTitle, reputationReward: instagramDmShareQuest.reputationReward };
+            pendingCelebration.current = { amount, questTitle: instagramDmShareQuest.videoTitle, reputationReward: instagramDmShareQuest.reputationReward, levelBonus };
           }
         }}
         onClose={() => {
@@ -650,8 +652,13 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             </p>
             <p className="text-amber-400 font-bold text-lg mb-3">D.FAITH Credits</p>
             {(celebration.reputationReward ?? 0) > 0 && (
-              <p className="text-purple-300 font-semibold text-sm mb-3 flex items-center justify-center gap-1">
+              <p className="text-purple-300 font-semibold text-sm mb-2 flex items-center justify-center gap-1">
                 <FaStar size={12} /> +{celebration.reputationReward} Reputation
+              </p>
+            )}
+            {(celebration.levelBonus ?? 0) > 0 && (
+              <p className="text-green-400 font-semibold text-sm mb-3 flex items-center justify-center gap-1">
+                ⚡ +{celebration.levelBonus} Level-Bonus enthalten!
               </p>
             )}
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 mb-6">

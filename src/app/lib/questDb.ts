@@ -2344,17 +2344,34 @@ export async function payLevelBonus(
     }
   }
 
-  // Fallback: vom allgemeinen Artist-Guthaben abziehen
+  // Fallback 1: vom allgemeinen Artist-Guthaben abziehen
   const deducted = await sql`
     UPDATE dfaith_credits
     SET balance = balance - ${bonus}, updated_at = NOW()
     WHERE wallet_address = ${artistWallet.toLowerCase()} AND balance >= ${bonus}
     RETURNING balance
   `;
-  if (deducted.length === 0) return 0;
+  if (deducted.length > 0) {
+    await addDfaithCredits(fanWallet, bonus);
+    return bonus;
+  }
 
-  await addDfaithCredits(fanWallet, bonus);
-  return bonus;
+  // Fallback 2: aus dem Quest-Locked-Budget (Überschuss, der für verbleibende Abschlüsse nicht benötigt wird)
+  if (questId) {
+    const fromLocked = await sql`
+      UPDATE quests
+      SET credits_locked = credits_locked - ${bonus}, updated_at = NOW()
+      WHERE id = ${questId}
+        AND credits_locked - ${bonus} >= (max_completions - completions) * reward_amount
+      RETURNING credits_locked
+    `;
+    if (fromLocked.length > 0) {
+      await addDfaithCredits(fanWallet, bonus);
+      return bonus;
+    }
+  }
+
+  return 0;
 }
 
 // ─── Reputation Contest ────────────────────────────────────────────────────────

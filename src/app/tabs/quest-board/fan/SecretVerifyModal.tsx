@@ -10,7 +10,7 @@ import { formatCredits } from '../utils';
 interface SecretVerifyModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
-  onCompleted: (rewardAmount: number) => void;
+  onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
 }
 
@@ -64,7 +64,7 @@ export default function SecretVerifyModal({
       } else if (data.success) {
         setRewardAmount(data.rewardAmount);
         setStep('success');
-        onCompleted(data.rewardAmount);
+        onCompleted(data.rewardAmount, data.levelBonus);
       }
     } catch {
       setErrorMsg('Netzwerkfehler. Bitte versuche es erneut.');

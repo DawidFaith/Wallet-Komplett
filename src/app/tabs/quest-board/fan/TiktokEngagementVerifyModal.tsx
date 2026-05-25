@@ -11,7 +11,7 @@ import { formatCredits } from '../utils';
 interface TiktokEngagementVerifyModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
-  onCompleted: (rewardAmount: number) => void;
+  onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
 }
 
@@ -90,7 +90,7 @@ export default function TiktokEngagementVerifyModal({
             setSaveVerified(data.saveVerified);
             setRewardAmount(data.rewardAmount);
             setStep('success');
-            onCompleted(data.rewardAmount);
+            onCompleted(data.rewardAmount, data.levelBonus);
           }
         }
       } catch {

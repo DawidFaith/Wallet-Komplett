@@ -39,6 +39,7 @@ export interface VerifyResult {
   message: string;
   comment?: string;
   rewardAmount?: number;
+  levelBonus?: number;
 }
 
 export interface ClaimResult {

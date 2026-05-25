@@ -11,7 +11,7 @@ import { formatCredits } from '../utils';
 interface InstagramLikeVerifyModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
-  onCompleted: (rewardAmount: number) => void;
+  onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
 }
 
@@ -105,7 +105,7 @@ export default function InstagramLikeVerifyModal({
             if (data.saveVerified !== undefined) setSaveVerified(data.saveVerified);
             setRewardAmount(data.rewardAmount);
             setStep('success');
-            onCompleted(data.rewardAmount);
+            onCompleted(data.rewardAmount, data.levelBonus);
           }
         }
       } catch {

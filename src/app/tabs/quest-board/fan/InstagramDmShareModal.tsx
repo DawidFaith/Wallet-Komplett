@@ -12,7 +12,7 @@ interface InstagramDmShareModalProps {
   walletAddress: string;
   /** Wenn vorhanden: Fan kam über den Story-Link → einfacher 1-Klick Claim-Flow */
   storyClaimToken?: string;
-  onCompleted: (rewardAmount: number) => void;
+  onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
 }
 
@@ -146,7 +146,7 @@ export default function InstagramDmShareModal({
       }
       setRewardAmount(data.rewardAmount ?? quest.rewardAmount);
       setStep('success');
-      onCompleted(data.rewardAmount ?? quest.rewardAmount);
+      onCompleted(data.rewardAmount ?? quest.rewardAmount, data.levelBonus);
     } catch {
       setError('Netzwerkfehler. Bitte erneut versuchen.');
     } finally {
