@@ -24,8 +24,8 @@ const TYPE_LABELS: Record<QuestType, string> = {
 };
 
 const TYPE_ICONS: Record<QuestType, string> = {
-  comment: '\U0001f4ac', like: '\u2764\ufe0f', save: '\U0001f516', repost: '\U0001f501',
-  dm_share: '\U0001f4e4', engagement: '\U0001f3af', secret: '\U0001f511',
+  comment: '💬', like: '❤️', save: '🔖', repost: '🔁',
+  dm_share: '📤', engagement: '🎯', secret: '🔑',
 };
 
 interface BundleCardProps {

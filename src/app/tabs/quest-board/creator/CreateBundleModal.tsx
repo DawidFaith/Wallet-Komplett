@@ -55,7 +55,7 @@ const TYPE_ICONS: Record<QuestType, string> = {
 
 const PLATFORM_TYPES: Record<Platform, QuestType[]> = {
   youtube:   ['comment', 'like', 'secret'],
-  instagram: ['like', 'comment', 'save', 'repost', 'dm_share'],
+  instagram: ['like', 'comment', 'save', 'repost', 'dm_share', 'secret'],
   tiktok:    ['engagement', 'comment'],
   facebook:  ['like', 'comment'],
 };

@@ -1,6 +1,7 @@
 import { getDb } from '../db';
 import { cancelQuest } from './quests';
 import { addDfaithCredits } from './credits';
+import { addUserReputation } from './reputation';
 import type {
   Platform, QuestType, QuestIndexEntry, ReputationLevel, ReputationContest,
   UserArtistReputation, ReputationLeaderboardEntry, QuestDetail, YouTubeBinding,
@@ -307,13 +308,14 @@ export async function claimBundleCompletionBonus(
   if (bundleRows.length === 0) return { success: false, bonusAmount: 0, error: 'Bundle nicht gefunden' };
   const bundle = bundleRows[0];
 
-  // Alle Quest-IDs im Bundle laden
+  // Alle Quest-IDs + Reputation-Rewards im Bundle laden
   const questRows = await sql`
-    SELECT id FROM quests WHERE bundle_id = ${bundleId} AND is_active = true
+    SELECT id, reputation_reward FROM quests WHERE bundle_id = ${bundleId} AND is_active = true
   `;
   if (questRows.length === 0) return { success: false, bonusAmount: 0, error: 'Keine aktiven Quests im Bundle' };
 
   const questIds: string[] = questRows.map((r: any) => r.id as string);
+  const totalReputation = (questRows as any[]).reduce((s, r) => s + Number(r.reputation_reward ?? 0), 0);
 
   // Prüfen ob Fan alle Quests abgeschlossen hat
   const completedRows = await sql`
@@ -340,6 +342,11 @@ export async function claimBundleCompletionBonus(
       return { success: false, bonusAmount: 0, error: 'Bonus-Budget erschöpft' };
     }
     await addDfaithCredits(normalized, bonusAmount);
+  }
+
+  // Reputation für Bundle-Abschluss vergeben
+  if (totalReputation > 0) {
+    await addUserReputation(normalized, bundle.creator_wallet as string, totalReputation);
   }
 
   // Completion-Record anlegen
