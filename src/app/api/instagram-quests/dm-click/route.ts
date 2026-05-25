@@ -83,7 +83,7 @@ async function processToken(token: string): Promise<
   await addDfaithCredits(verif.walletAddress, quest.rewardAmount);
   const levelBonus = await payLevelBonus(verif.walletAddress, quest.creatorWallet, quest.rewardAmount, quest.id);
   await savePendingReward({ walletAddress: verif.walletAddress, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId: verif.questId, createdAt: now });
-  await addUserXp(verif.walletAddress, Math.round(quest.rewardAmount / 10));
+  await addUserXp(verif.walletAddress, quest.reputationReward);
   await addUserReputation(verif.walletAddress, quest.creatorWallet, quest.reputationReward);
   await deleteInstagramDmVerification(verif.questId, verif.walletAddress);
 

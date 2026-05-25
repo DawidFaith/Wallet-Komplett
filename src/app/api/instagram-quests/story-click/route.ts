@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
     await addDfaithCredits(verif.walletAddress, quest.rewardAmount);
     const levelBonus = await payLevelBonus(verif.walletAddress, quest.creatorWallet, quest.rewardAmount, quest.id);
     await savePendingReward({ walletAddress: verif.walletAddress, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId: quest.id, createdAt: now });
-    await addUserXp(verif.walletAddress, Math.round(quest.rewardAmount / 10));
+    await addUserXp(verif.walletAddress, quest.reputationReward);
     if ((quest.reputationReward ?? 0) > 0) {
       await addUserReputation(verif.walletAddress, quest.creatorWallet, quest.reputationReward!);
     }

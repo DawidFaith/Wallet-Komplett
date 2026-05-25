@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
       questId,
       createdAt: now,
     });
-    await addUserXp(normalized, quest.rewardAmount * 10);
+    await addUserXp(normalized, quest.reputationReward);
     await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
 
     return NextResponse.json({ success: true, rewardAmount: quest.rewardAmount + levelBonus, levelBonus: levelBonus > 0 ? levelBonus : undefined });

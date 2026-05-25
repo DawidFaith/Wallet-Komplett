@@ -2015,11 +2015,13 @@ export async function getUserXp(walletAddress: string): Promise<number> {
 
 export async function addUserXp(walletAddress: string, xp: number): Promise<void> {
   const sql = getDb();
+  const rounded = Math.max(0, Math.round(xp));
+  if (rounded === 0) return;
   await sql`
     INSERT INTO user_xp (wallet_address, xp, updated_at)
-    VALUES (${walletAddress.toLowerCase()}, ${xp}, NOW())
+    VALUES (${walletAddress.toLowerCase()}, ${rounded}, NOW())
     ON CONFLICT (wallet_address) DO UPDATE SET
-      xp         = user_xp.xp + ${xp},
+      xp         = user_xp.xp + ${rounded},
       updated_at = NOW()
   `;
 }
@@ -2124,6 +2126,7 @@ export async function addUserReputation(
   amount: number,
 ): Promise<void> {
   const sql = getDb();
+  if (amount <= 0) return;
   // Alte Reputation + Level-Config laden
   const [repRows, levels] = await Promise.all([
     sql`SELECT reputation FROM user_reputation WHERE wallet_address = ${walletAddress.toLowerCase()} AND artist_wallet = ${artistWallet.toLowerCase()} LIMIT 1`,

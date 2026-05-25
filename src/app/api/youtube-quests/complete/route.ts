@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
   // Reputation beim Artist erhöhen
   await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
   // XP gutschreiben (legacy)
-  await addUserXp(normalized, quest.rewardAmount * 10);
+  await addUserXp(normalized, quest.reputationReward);
 
   return NextResponse.json({
     success: true,

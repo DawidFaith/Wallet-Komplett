@@ -252,7 +252,7 @@ export async function POST(req: NextRequest) {
           questId,
           createdAt: now,
         });
-        await addUserXp(normalized, quest.rewardAmount);
+        await addUserXp(normalized, quest.reputationReward);
         await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
         await deleteInstagramLikeVerification(questId, normalized);
 
@@ -305,8 +305,8 @@ export async function POST(req: NextRequest) {
           questId,
           createdAt: now,
         });
-        await addUserXp(normalized, earnedReward);
-        await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
+        await addUserXp(normalized, verifiedCount < 2 ? Math.round(quest.reputationReward / 2) : quest.reputationReward);
+        await addUserReputation(normalized, quest.creatorWallet, verifiedCount < 2 ? Math.round(quest.reputationReward / 2) : quest.reputationReward);
 
         // Nicht verdiente Hälfte sofort an Creator zurückbuchen
         if (refundToCreator > 0) {
@@ -366,7 +366,7 @@ export async function POST(req: NextRequest) {
         questId,
         createdAt: now,
       });
-      await addUserXp(normalized, quest.rewardAmount);
+      await addUserXp(normalized, quest.reputationReward);
       await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
       await deleteInstagramLikeVerification(questId, normalized);
 

@@ -59,7 +59,7 @@ async function completeStoryQuest({
   await addDfaithCredits(normalized, quest.rewardAmount);
   const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
   await savePendingReward({ walletAddress: normalized, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId, createdAt: now });
-  await addUserXp(normalized, Math.round(quest.rewardAmount / 10));
+  await addUserXp(normalized, quest.reputationReward);
   await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
   await deleteInstagramDmVerification(questId, normalized);
   return NextResponse.json({
