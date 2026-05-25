@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
       expiresAt: null,
       creditsLocked: rewardAmount * maxCompletions,
       creditsRefunded: false,
+      bonusBudget: 0,
       createdAt: now,
       updatedAt: now,
     });
