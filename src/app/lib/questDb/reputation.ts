@@ -1,0 +1,857 @@
+import { getDb } from '../db';
+import { addDfaithCredits, redeemDfaithCredits, savePendingReward } from './credits';
+import type {
+  Platform, QuestType, QuestIndexEntry, ReputationLevel, ReputationContest,
+  UserArtistReputation, ReputationLeaderboardEntry, QuestDetail, YouTubeBinding,
+  QuestCompletion, QuestsByWalletEntry, PendingReward,
+  QuestBundle, QuestBundleItem, QuestBundleWithItems,
+} from "./types";
+
+// ─── Reputation ───────────────────────────────────────────────────────────────
+
+// ─── Level-Skalierung ────────────────────────────────────────────────────────
+// Bewährtes Konzept: ~2× Verdopplung des Abstands pro Level (Discord/RPG-Muster).
+// Jede Schwelle ≈ doppelt so viel Gesamtrep wie die vorherige (exponentiell).
+//
+// Kalibriert auf die Quest-REP-Werte (Story=120, Repost=80, Comment=40, Like=20):
+//   Casual Fan   (~90 REP/Mo) → Level 5 in ~22 Monate
+//   Aktiver Fan  (~500 REP/Mo) → Level 7 in ~14 Monate, Level 10 in ~7,5 Jahre
+//   Super Fan    (~1000 REP/Mo) → Level 10 in ~3,5 Jahre  ← "Legend" ist erreichbar
+// ─────────────────────────────────────────────────────────────────────────────
+const DEFAULT_REPUTATION_LEVELS: ReputationLevel[] = [
+  { levelNumber:  1, levelName: 'Newcomer',  minReputation:      0, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent:  0 },
+  { levelNumber:  2, levelName: 'Follower',  minReputation:    200, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent:  5 },
+  { levelNumber:  3, levelName: 'Fan',       minReputation:    500, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 10 },
+  { levelNumber:  4, levelName: 'Supporter', minReputation:  1_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 15 },
+  { levelNumber:  5, levelName: 'Loyalist',  minReputation:  2_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 20 },
+  { levelNumber:  6, levelName: 'True Fan',  minReputation:  3_800, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 25 },
+  { levelNumber:  7, levelName: 'Advocate',  minReputation:  7_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 35 },
+  { levelNumber:  8, levelName: 'VIP',       minReputation: 13_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 50 },
+  { levelNumber:  9, levelName: 'Elite',     minReputation: 24_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 75 },
+  { levelNumber: 10, levelName: 'Legend',    minReputation: 45_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 100 },
+];
+
+/** Reputation eines Users für einen Artist erhöhen + Level-Up Credits auszahlen */
+export async function addUserReputation(
+  walletAddress: string,
+  artistWallet: string,
+  amount: number,
+): Promise<void> {
+  const sql = getDb();
+  const rounded = Math.max(0, Math.round(amount));
+  if (rounded <= 0) return;
+  // Alte Reputation + Level-Config laden
+  const [repRows, levels] = await Promise.all([
+    sql`SELECT reputation FROM user_reputation WHERE wallet_address = ${walletAddress.toLowerCase()} AND artist_wallet = ${artistWallet.toLowerCase()} LIMIT 1`,
+    getReputationLevels(artistWallet),
+  ]);
+  const oldRep = repRows.length > 0 ? Number(repRows[0].reputation) : 0;
+  const newRep = oldRep + rounded;
+  const oldLevel = reputationToLevel(oldRep, levels).level;
+  const newLevel = reputationToLevel(newRep, levels).level;
+
+  // Reputation updaten
+  await sql`
+    INSERT INTO user_reputation (wallet_address, artist_wallet, reputation, updated_at)
+    VALUES (${walletAddress.toLowerCase()}, ${artistWallet.toLowerCase()}, ${rounded}, NOW())
+    ON CONFLICT (wallet_address, artist_wallet) DO UPDATE SET
+      reputation = user_reputation.reputation + ${rounded},
+      updated_at = NOW()
+  `;
+
+  // Level-Up: Credits für alle überschrittenen Level auszahlen
+  if (newLevel > oldLevel) {
+    for (const lvl of levels) {
+      if (lvl.levelNumber > oldLevel && lvl.levelNumber <= newLevel && lvl.creditReward > 0 && lvl.maxRecipients > 0) {
+        try {
+          // Freien Platz prüfen + Zähler atomar erhöhen
+          const updated = await sql`
+            UPDATE reputation_levels
+            SET recipients_count = recipients_count + 1, updated_at = NOW()
+            WHERE artist_wallet = ${artistWallet.toLowerCase()}
+              AND level_number = ${lvl.levelNumber}
+              AND recipients_count < max_recipients
+            RETURNING recipients_count
+          `;
+          if (updated.length > 0) {
+            // Level-Up Reward zum manuellen Abholen speichern (User claimed selbst)
+            await savePendingReward({
+              walletAddress,
+              amount: lvl.creditReward,
+              reason: `level_reward:${artistWallet.toLowerCase()}:${lvl.levelNumber}:${lvl.levelName}`,
+              questId: null,
+              createdAt: new Date().toISOString(),
+            });
+          }
+        } catch {
+          // Fehler überspringen
+        }
+      }
+    }
+  }
+}
+
+/** Reputation-Level-Konfiguration eines Artists laden (Fallback: Standardlevel) */
+export async function getReputationLevels(artistWallet: string): Promise<ReputationLevel[]> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT level_number, level_name, min_reputation, prize_description, credit_reward, max_recipients, quest_reward_bonus_percent
+    FROM reputation_levels
+    WHERE artist_wallet = ${artistWallet.toLowerCase()}
+    ORDER BY level_number ASC
+  `;
+  if (rows.length === 0) return DEFAULT_REPUTATION_LEVELS;
+  return rows.map((r) => ({
+    levelNumber: Number(r.level_number),
+    levelName: String(r.level_name),
+    minReputation: Number(r.min_reputation),
+    prizeDescription: String(r.prize_description ?? ''),
+    creditReward: Number(r.credit_reward ?? 0),
+    maxRecipients: Number(r.max_recipients ?? 0),
+    questRewardBonusPercent: Number(r.quest_reward_bonus_percent ?? 0),
+  }));
+}
+
+/** Level-Konfiguration eines Artists speichern – Credits für Rewards sofort reservieren */
+export async function saveReputationLevels(
+  artistWallet: string,
+  levels: ReputationLevel[],
+): Promise<void> {
+  const sql = getDb();
+  const wallet = artistWallet.toLowerCase();
+
+  // Alte Level laden (inkl. recipients_count zum Berechnen des noch verfügbaren Budgets)
+  const oldRows = await sql`
+    SELECT level_number, credit_reward, max_recipients, recipients_count
+    FROM reputation_levels
+    WHERE artist_wallet = ${wallet}
+  `;
+
+  type OldRow = { level_number: unknown; credit_reward: unknown; max_recipients: unknown; recipients_count: unknown };
+  const oldByLevel = new Map<number, OldRow>(
+    (oldRows as OldRow[]).map((r) => [Number(r.level_number), r])
+  );
+  const newLevelNums = new Set(levels.map((l) => l.levelNumber));
+
+  // Netto-Kosten berechnen (positiv = abziehen, negativ = rückerstatten)
+  let netCost = 0;
+
+  // Gelöschte Level rückerstatten
+  for (const [lvlNum, r] of oldByLevel) {
+    if (!newLevelNums.has(lvlNum)) {
+      const remaining = Math.max(
+        0,
+        (Number(r.max_recipients) - Number(r.recipients_count)) * Number(r.credit_reward),
+      );
+      netCost -= remaining;
+    }
+  }
+
+  // Neue / geänderte Level
+  for (const lvl of levels) {
+    const creditReward   = Math.max(0, Math.round(Number(lvl.creditReward)   || 0));
+    const maxRecipients  = Math.max(0, Math.round(Number(lvl.maxRecipients)  || 0));
+    const newTotal = creditReward * maxRecipients;
+
+    if (oldByLevel.has(lvl.levelNumber)) {
+      const old = oldByLevel.get(lvl.levelNumber)!;
+      const oldRemaining = Math.max(
+        0,
+        (Number(old.max_recipients) - Number(old.recipients_count)) * Number(old.credit_reward),
+      );
+      netCost += newTotal - oldRemaining;
+    } else {
+      netCost += newTotal;
+    }
+  }
+
+  if (netCost > 0) {
+    await redeemDfaithCredits(wallet, netCost); // wirft selbst wenn nicht genug Guthaben
+  } else if (netCost < 0) {
+    await addDfaithCredits(wallet, -netCost);
+  }
+
+  // Gelöschte Level entfernen
+  for (const [lvlNum] of oldByLevel) {
+    if (!newLevelNums.has(lvlNum)) {
+      await sql`DELETE FROM reputation_levels WHERE artist_wallet = ${wallet} AND level_number = ${lvlNum}`;
+    }
+  }
+
+  // Neue / geänderte Level per UPSERT einfügen (recipients_count beibehalten)
+  for (const lvl of levels) {
+    const creditReward        = Math.max(0, Math.round(Number(lvl.creditReward)            || 0));
+    const maxRecipients       = Math.max(0, Math.round(Number(lvl.maxRecipients)           || 0));
+    const questBonusPercent   = Math.min(100, Math.max(0, Math.round(Number(lvl.questRewardBonusPercent) || 0)));
+    await sql`
+      INSERT INTO reputation_levels
+        (artist_wallet, level_number, level_name, min_reputation, prize_description, credit_reward, max_recipients, recipients_count, quest_reward_bonus_percent, updated_at)
+      VALUES
+        (${wallet}, ${lvl.levelNumber}, ${lvl.levelName}, ${lvl.minReputation}, ${lvl.prizeDescription}, ${creditReward}, ${maxRecipients}, 0, ${questBonusPercent}, NOW())
+      ON CONFLICT (artist_wallet, level_number) DO UPDATE SET
+        level_name                  = EXCLUDED.level_name,
+        min_reputation              = EXCLUDED.min_reputation,
+        prize_description           = EXCLUDED.prize_description,
+        credit_reward               = EXCLUDED.credit_reward,
+        max_recipients              = EXCLUDED.max_recipients,
+        quest_reward_bonus_percent  = EXCLUDED.quest_reward_bonus_percent,
+        updated_at                  = EXCLUDED.updated_at
+    `;
+  }
+}
+
+// ─── Level-Bonus bei Quest-Abschluss ─────────────────────────────────────────
+
+/**
+ * Prozentualen Level-Bonus auf einen Quest-Reward auszahlen.
+ * Der Bonus wird aus dem allgemeinen D.FAITH-Guthaben des Artists (creatorWallet) entnommen
+ * und dem Fan gutgeschrieben. Wenn der Artist nicht genug Guthaben hat, wird 0 zurückgegeben
+ * und kein Fehler geworfen (Basisreward wird trotzdem ausgezahlt).
+ *
+ * @returns Der tatsächlich ausgezahlte Bonusbetrag (0 wenn kein Bonus).
+ */
+export async function payLevelBonus(
+  fanWallet: string,
+  artistWallet: string,
+  baseReward: number,
+  questId?: string,
+): Promise<number> {
+  if (baseReward <= 0) return 0;
+  const sql = getDb();
+
+  // Fan-Reputation für diesen Artist laden
+  const repRows = await sql`
+    SELECT reputation FROM user_reputation
+    WHERE wallet_address = ${fanWallet.toLowerCase()} AND artist_wallet = ${artistWallet.toLowerCase()}
+    LIMIT 1
+  `;
+  const reputation = repRows.length > 0 ? Number(repRows[0].reputation) : 0;
+
+  // Level-Konfiguration laden + aktuelles Level bestimmen
+  const levels = await getReputationLevels(artistWallet);
+  const sorted = [...levels].sort((a, b) => a.minReputation - b.minReputation);
+  let currentLevel: ReputationLevel = sorted[0];
+  for (const lvl of sorted) {
+    if (reputation >= lvl.minReputation) currentLevel = lvl;
+    else break;
+  }
+
+  const bonusPercent = currentLevel.questRewardBonusPercent ?? 0;
+  if (bonusPercent <= 0) return 0;
+
+  const bonus = Math.round(baseReward * bonusPercent / 100 * 100) / 100;
+  if (bonus <= 0) return 0;
+
+  // Zuerst Quest-Bonus-Budget versuchen (wenn questId angegeben)
+  if (questId) {
+    const fromQuest = await sql`
+      UPDATE quests
+      SET bonus_budget = bonus_budget - ${bonus}, updated_at = NOW()
+      WHERE id = ${questId} AND bonus_budget >= ${bonus}
+      RETURNING bonus_budget
+    `;
+    if (fromQuest.length > 0) {
+      await addDfaithCredits(fanWallet, bonus);
+      return bonus;
+    }
+  }
+
+  // Fallback 1: vom allgemeinen Artist-Guthaben abziehen
+  const deducted = await sql`
+    UPDATE dfaith_credits
+    SET balance = balance - ${bonus}, updated_at = NOW()
+    WHERE wallet_address = ${artistWallet.toLowerCase()} AND balance >= ${bonus}
+    RETURNING balance
+  `;
+  if (deducted.length > 0) {
+    await addDfaithCredits(fanWallet, bonus);
+    return bonus;
+  }
+
+  // Fallback 2: aus dem Quest-Locked-Budget (Überschuss, der für verbleibende Abschlüsse nicht benötigt wird)
+  if (questId) {
+    const fromLocked = await sql`
+      UPDATE quests
+      SET credits_locked = credits_locked - ${bonus}, updated_at = NOW()
+      WHERE id = ${questId}
+        AND credits_locked - ${bonus} >= (max_completions - completions) * reward_amount
+      RETURNING credits_locked
+    `;
+    if (fromLocked.length > 0) {
+      await addDfaithCredits(fanWallet, bonus);
+      return bonus;
+    }
+  }
+
+  return 0;
+}
+
+// ─── Reputation Contest ────────────────────────────────────────────────────────
+
+/** Aktiven Contest eines Artists laden */
+export async function getActiveReputationContest(artistWallet: string): Promise<ReputationContest | null> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT id, artist_wallet, end_date, distributed, created_at
+    FROM reputation_contests
+    WHERE artist_wallet = ${artistWallet.toLowerCase()}
+    ORDER BY created_at DESC
+    LIMIT 1
+  `;
+  if (rows.length === 0) return null;
+  const row = rows[0];
+  const prizes = await sql`
+    SELECT rank, credit_reward FROM reputation_contest_prizes
+    WHERE contest_id = ${row.id}
+    ORDER BY rank ASC
+  `;
+  return {
+    id: row.id as string,
+    artistWallet: row.artist_wallet as string,
+    endDate: row.end_date instanceof Date ? row.end_date.toISOString() : String(row.end_date),
+    distributed: Boolean(row.distributed),
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
+    prizes: prizes.map(p => ({ rank: Number(p.rank), creditReward: Number(p.credit_reward) })),
+  };
+}
+
+/** Contest erstellen / ersetzen */
+export async function upsertReputationContest(
+  artistWallet: string,
+  endDate: Date,
+  prizes: { rank: number; creditReward: number }[],
+): Promise<string> {
+  const sql = getDb();
+  const wallet = artistWallet.toLowerCase();
+
+  // Alten Contest laden – falls nicht verteilt, gesperrte Credits zurückbuchen
+  const oldContests = await sql`
+    SELECT id, credits_locked, distributed FROM reputation_contests
+    WHERE artist_wallet = ${wallet}
+    ORDER BY created_at DESC LIMIT 1
+  `;
+  if (oldContests.length > 0 && !oldContests[0].distributed) {
+    const refund = Number(oldContests[0].credits_locked ?? 0);
+    if (refund > 0) {
+      await addDfaithCredits(wallet, refund);
+    }
+  }
+  // Alten Contest löschen
+  await sql`DELETE FROM reputation_contests WHERE artist_wallet = ${wallet}`;
+
+  // Gesamtkosten berechnen und sofort abziehen
+  const validPrizes = prizes.filter(p => p.creditReward > 0);
+  const totalCost = validPrizes.reduce((sum, p) => sum + p.creditReward, 0);
+  if (totalCost > 0) {
+    const ok = await redeemDfaithCredits(wallet, totalCost);
+    if (!ok) throw new Error(`Nicht genügend Guthaben. Benötigt: ${totalCost} DFC`);
+  }
+
+  const rows = await sql`
+    INSERT INTO reputation_contests (artist_wallet, end_date, credits_locked)
+    VALUES (${wallet}, ${endDate}, ${totalCost})
+    RETURNING id
+  `;
+  const contestId = rows[0].id as string;
+  for (const p of validPrizes) {
+    await sql`
+      INSERT INTO reputation_contest_prizes (contest_id, rank, credit_reward)
+      VALUES (${contestId}, ${p.rank}, ${p.creditReward})
+    `;
+  }
+
+  // Aktuellen Ruf aller User dieses Artists als Startwert snapshoten
+  await sql`
+    INSERT INTO reputation_contest_snapshots (contest_id, wallet_address, reputation_at_start)
+    SELECT ${contestId}, wallet_address, reputation
+    FROM user_reputation
+    WHERE artist_wallet = ${wallet}
+    ON CONFLICT (contest_id, wallet_address) DO NOTHING
+  `;
+
+  return contestId;
+}
+
+/** Contest-Rewards verteilen: Credits vom Artist an Top-Fans */
+export async function distributeReputationContest(
+  contestId: string,
+  artistWallet: string,
+  force = false,
+): Promise<{ rank: number; walletAddress: string; credited: number }[]> {
+  const sql = getDb();
+  // Prüfen ob Contest existiert, undistributed und abgelaufen
+  const contestRows = await sql`
+    SELECT end_date, distributed FROM reputation_contests
+    WHERE id = ${contestId} AND artist_wallet = ${artistWallet.toLowerCase()}
+    LIMIT 1
+  `;
+  if (contestRows.length === 0) throw new Error('Contest nicht gefunden');
+  if (contestRows[0].distributed) throw new Error('Bereits verteilt');
+  const endDate = contestRows[0].end_date instanceof Date ? contestRows[0].end_date : new Date(contestRows[0].end_date as string);
+  if (!force && endDate > new Date()) throw new Error('Contest läuft noch');
+
+  const prizes = await sql`
+    SELECT rank, credit_reward FROM reputation_contest_prizes
+    WHERE contest_id = ${contestId}
+    ORDER BY rank ASC
+  `;
+  if (prizes.length === 0) throw new Error('Keine Preise definiert');
+
+  const maxRank = Math.max(...prizes.map(p => Number(p.rank)));
+  const leaderboard = await getContestLeaderboard(contestId, artistWallet, maxRank);
+
+  const results: { rank: number; walletAddress: string; credited: number }[] = [];
+  for (const prize of prizes) {
+    const rank = Number(prize.rank);
+    const creditReward = Number(prize.credit_reward);
+    const winner = leaderboard.find(e => e.rank === rank);
+    if (!winner || creditReward <= 0) continue;
+    try {
+      // Reward als einlösbar speichern (wie Level-Up Rewards)
+      await savePendingReward({
+        walletAddress: winner.walletAddress,
+        amount: creditReward,
+        reason: `contest_reward:${artistWallet.toLowerCase()}:${contestId}:${rank}`,
+        questId: null,
+        createdAt: new Date().toISOString(),
+      });
+      results.push({ rank, walletAddress: winner.walletAddress, credited: creditReward });
+    } catch {
+      // Fehler beim Speichern – überspringen
+    }
+  }
+
+  // Nicht vergebene Preise an Artist zurücküberweisen
+  const totalAwarded = results.reduce((sum, r) => sum + r.credited, 0);
+  const lockedRows = await sql`SELECT credits_locked FROM reputation_contests WHERE id = ${contestId}`;
+  const locked = Number(lockedRows[0]?.credits_locked ?? 0);
+  const refund = locked - totalAwarded;
+  if (refund > 0) {
+    await addDfaithCredits(artistWallet.toLowerCase(), refund);
+  }
+
+  await sql`UPDATE reputation_contests SET distributed = TRUE WHERE id = ${contestId}`;
+  return results;
+}
+
+/**
+ * Verteilt Leaderboard-Rewards sofort an die aktuellen Top-Fans.
+ * Zieht Credits vom Artist ab und fügt sie den Gewinnern hinzu.
+ */
+export async function distributeLeaderboardRewards(
+  artistWallet: string,
+  prizes: { rank: number; creditReward: number }[],
+): Promise<{ rank: number; walletAddress: string; credited: number }[]> {
+  const wallet = artistWallet.toLowerCase();
+  const total = prizes.reduce((sum, p) => sum + (p.creditReward || 0), 0);
+  if (total <= 0) throw new Error('Keine Credits definiert');
+
+  // Guthaben prüfen
+  const sql = getDb();
+  const balRows = await sql`SELECT balance FROM dfaith_credits WHERE wallet_address = ${wallet}`;
+  const balance = Number(balRows[0]?.balance ?? 0);
+  if (balance < total) throw new Error(`Nicht genug Credits (Guthaben: ${balance}, benötigt: ${total})`);
+
+  const maxRank = Math.max(...prizes.map(p => p.rank));
+  const leaderboard = await getReputationLeaderboard(artistWallet, maxRank);
+
+  // Credits vom Artist abziehen
+  await addDfaithCredits(wallet, -total);
+
+  const results: { rank: number; walletAddress: string; credited: number }[] = [];
+  let actuallySpent = 0;
+
+  for (const prize of prizes) {
+    if (prize.creditReward <= 0) continue;
+    const winner = leaderboard.find(e => e.rank === prize.rank);
+    if (!winner) continue;
+    try {
+      await savePendingReward({
+        walletAddress: winner.walletAddress,
+        amount: prize.creditReward,
+        reason: `leaderboard_reward:${artistWallet.toLowerCase()}:${prize.rank}`,
+        questId: null,
+        createdAt: new Date().toISOString(),
+      });
+      results.push({ rank: prize.rank, walletAddress: winner.walletAddress, credited: prize.creditReward });
+      actuallySpent += prize.creditReward;
+    } catch {
+      // Überspringen, Refund am Ende
+    }
+  }
+
+  // Nicht vergebene Preise zurückerstatten
+  const refund = total - actuallySpent;
+  if (refund > 0) {
+    await addDfaithCredits(wallet, refund);
+  }
+
+  return results;
+}
+
+/** Liefert Quartal-String + Start/End-Datum für ein Datum (default: heute) */
+export function getQuarterInfo(date: Date = new Date()): {
+  quarter: string;
+  start: Date;
+  end: Date;
+} {
+  const year = date.getFullYear();
+  const q = Math.floor(date.getMonth() / 3) + 1;
+  const startMonth = (q - 1) * 3;
+  const start = new Date(year, startMonth, 1);
+  const end = new Date(year, startMonth + 3, 0, 23, 59, 59, 999);
+  return { quarter: `${year}-Q${q}`, start, end };
+}
+
+/** Quartals-Reward-Konfiguration laden */
+export async function getLeaderboardQuarterlyConfig(
+  artistWallet: string,
+): Promise<{ prizes: { rank: number; creditReward: number }[] } | null> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT prizes FROM leaderboard_quarterly_config
+    WHERE artist_wallet = ${artistWallet.toLowerCase()}
+    LIMIT 1
+  `;
+  if (rows.length === 0) return null;
+  return { prizes: rows[0].prizes as { rank: number; creditReward: number }[] };
+}
+
+/** Quartals-Reward-Konfiguration speichern / aktualisieren */
+export async function upsertLeaderboardQuarterlyConfig(
+  artistWallet: string,
+  prizes: { rank: number; creditReward: number }[],
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO leaderboard_quarterly_config (id, artist_wallet, prizes, updated_at)
+    VALUES (gen_random_uuid()::text, ${artistWallet.toLowerCase()}, ${JSON.stringify(prizes)}::jsonb, NOW())
+    ON CONFLICT (artist_wallet) DO UPDATE
+      SET prizes = EXCLUDED.prizes, updated_at = NOW()
+  `;
+}
+
+/** Quartals-Historie laden */
+export async function getLeaderboardQuarterlyHistory(
+  artistWallet: string,
+): Promise<{ id: string; quarter: string; prizes: { rank: number; creditReward: number }[]; results: { rank: number; walletAddress: string; credited: number }[]; totalCredited: number; distributedAt: string }[]> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT id, quarter, prizes, results, total_credited, distributed_at
+    FROM leaderboard_quarterly_history
+    WHERE artist_wallet = ${artistWallet.toLowerCase()}
+    ORDER BY distributed_at DESC
+    LIMIT 20
+  `;
+  return rows.map(r => ({
+    id: r.id as string,
+    quarter: r.quarter as string,
+    prizes: r.prizes as { rank: number; creditReward: number }[],
+    results: r.results as { rank: number; walletAddress: string; credited: number }[],
+    totalCredited: Number(r.total_credited),
+    distributedAt: (r.distributed_at as Date).toISOString(),
+  }));
+}
+
+/**
+ * Quartals-Rewards verteilen.
+ * force = true: auch wenn Quartal noch nicht abgelaufen
+ */
+export async function distributeLeaderboardQuarterly(
+  artistWallet: string,
+  force = false,
+): Promise<{ quarter: string; distributed: { rank: number; walletAddress: string; credited: number }[] }> {
+  const wallet = artistWallet.toLowerCase();
+  const sql = getDb();
+  const { quarter, end } = getQuarterInfo();
+
+  if (!force && new Date() < end) {
+    throw new Error(`Quartal ${quarter} läuft noch bis ${end.toLocaleDateString('de-DE')}`);
+  }
+
+  // Bereits verteilt?
+  const already = await sql`
+    SELECT id FROM leaderboard_quarterly_history
+    WHERE artist_wallet = ${wallet} AND quarter = ${quarter}
+    LIMIT 1
+  `;
+  if (already.length > 0 && !force) {
+    throw new Error(`Quartal ${quarter} wurde bereits verteilt`);
+  }
+
+  const config = await getLeaderboardQuarterlyConfig(artistWallet);
+  if (!config || config.prizes.length === 0) throw new Error('Keine Konfiguration gefunden');
+
+  const validPrizes = config.prizes.filter(p => p.creditReward > 0);
+  if (validPrizes.length === 0) throw new Error('Keine Preise > 0 konfiguriert');
+
+  const total = validPrizes.reduce((s, p) => s + p.creditReward, 0);
+
+  // Guthaben prüfen
+  const balRows = await sql`SELECT balance FROM dfaith_credits WHERE wallet_address = ${wallet}`;
+  const balance = Number(balRows[0]?.balance ?? 0);
+  if (balance < total) throw new Error(`Nicht genug Credits (Guthaben: ${balance.toFixed(2)}, benötigt: ${total})`);
+
+  const maxRank = Math.max(...validPrizes.map(p => p.rank));
+  const leaderboard = await getReputationLeaderboard(artistWallet, maxRank);
+
+  await addDfaithCredits(wallet, -total);
+
+  const results: { rank: number; walletAddress: string; credited: number }[] = [];
+  let actuallySpent = 0;
+
+  for (const prize of validPrizes) {
+    const winner = leaderboard.find(e => e.rank === prize.rank);
+    if (!winner) continue;
+    try {
+      await addDfaithCredits(winner.walletAddress, prize.creditReward);
+      results.push({ rank: prize.rank, walletAddress: winner.walletAddress, credited: prize.creditReward });
+      actuallySpent += prize.creditReward;
+    } catch { /* überspringen */ }
+  }
+
+  // Refund nicht vergebener Preise
+  const refund = total - actuallySpent;
+  if (refund > 0) await addDfaithCredits(wallet, refund);
+
+  // Historie speichern (upsert für force-Fall)
+  await sql`
+    INSERT INTO leaderboard_quarterly_history
+      (id, artist_wallet, quarter, prizes, results, total_credited, distributed_at)
+    VALUES (
+      gen_random_uuid()::text,
+      ${wallet},
+      ${quarter},
+      ${JSON.stringify(config.prizes)}::jsonb,
+      ${JSON.stringify(results)}::jsonb,
+      ${actuallySpent},
+      NOW()
+    )
+    ON CONFLICT (artist_wallet, quarter) DO UPDATE
+      SET results = EXCLUDED.results,
+          total_credited = EXCLUDED.total_credited,
+          distributed_at = NOW()
+  `;
+
+  return { quarter, distributed: results };
+}
+
+/** Berechnet Level und Fortschritt basierend auf Reputation + Level-Config */
+export function reputationToLevel(
+  reputation: number,
+  levels: ReputationLevel[],
+): { level: number; levelName: string; nextLevelRep: number | null; progress: number } {
+  const sorted = [...levels].sort((a, b) => a.minReputation - b.minReputation);
+  let current = sorted[0];
+  for (const lvl of sorted) {
+    if (reputation >= lvl.minReputation) current = lvl;
+    else break;
+  }
+  const idx = sorted.indexOf(current);
+  const next = sorted[idx + 1] ?? null;
+  const progress = next
+    ? Math.min(100, Math.floor(((reputation - current.minReputation) / (next.minReputation - current.minReputation)) * 100))
+    : 100;
+  return {
+    level: current.levelNumber,
+    levelName: current.levelName,
+    nextLevelRep: next?.minReputation ?? null,
+    progress,
+  };
+}
+
+/** Reputation eines Users für alle Artists laden */
+export async function getUserReputationAll(walletAddress: string): Promise<UserArtistReputation[]> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT artist_wallet, reputation FROM user_reputation
+    WHERE wallet_address = ${walletAddress.toLowerCase()}
+    ORDER BY reputation DESC
+  `;
+  const result: UserArtistReputation[] = [];
+  for (const row of rows) {
+    const artistWallet = row.artist_wallet as string;
+    const reputation = Number(row.reputation);
+    const levels = await getReputationLevels(artistWallet);
+    const { level, levelName, nextLevelRep, progress } = reputationToLevel(reputation, levels);
+    const questRewardBonusPercent = levels.find(l => l.levelNumber === level)?.questRewardBonusPercent ?? 0;
+    result.push({ artistWallet, reputation, level, levelName, nextLevelRep, progress, questRewardBonusPercent });
+  }
+  return result;
+}
+
+/** Alle Artists mit der Reputation des Users (0 wenn noch keine vorhanden) */
+export async function getAllArtistsWithReputation(walletAddress: string): Promise<UserArtistReputation[]> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT
+      p.wallet_address                AS artist_wallet,
+      p.display_name,
+      p.display_platform,
+      p.clerk_image_url,
+      p.clerk_name,
+      p.instagram_handle, p.instagram_verified, p.instagram_name, p.instagram_picture,
+      p.tiktok_handle,    p.tiktok_verified,    p.tiktok_name,    p.tiktok_picture,
+      p.facebook_handle,  p.facebook_verified,  p.facebook_name,  p.facebook_picture,
+      yb.channel_id          AS youtube_channel_id,
+      yb.channel_name        AS youtube_channel_name,
+      yb.channel_thumbnail   AS youtube_channel_thumbnail,
+      COALESCE(ur.reputation, 0) AS reputation
+    FROM user_profiles p
+    LEFT JOIN user_reputation ur
+      ON  LOWER(ur.artist_wallet)  = LOWER(p.wallet_address)
+      AND LOWER(ur.wallet_address) = ${walletAddress.toLowerCase()}
+    LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
+    WHERE p.is_artist = TRUE
+    ORDER BY COALESCE(p.is_platform_user, FALSE) DESC, COALESCE(ur.reputation, 0) DESC, p.display_name ASC
+  `;
+  const result: UserArtistReputation[] = [];
+  for (const row of rows) {
+    const artistWallet = row.artist_wallet as string;
+    const reputation = Number(row.reputation);
+    const levels = await getReputationLevels(artistWallet);
+    const { level, levelName, nextLevelRep, progress } = reputationToLevel(reputation, levels);
+    let artistName: string | null = (row.display_name as string | null) ?? null;
+    let artistPicture: string | null = null;
+    const dp = row.display_platform as string | null;
+    if (dp === 'youtube' && row.youtube_channel_id) {
+      artistName ??= row.youtube_channel_name as string ?? null;
+      artistPicture = (row.youtube_channel_thumbnail as string | null) ?? null;
+    } else if (dp === 'clerk') {
+      artistPicture = (row.clerk_image_url as string | null) ?? null;
+      const clerkName = row.clerk_name as string | null;
+      if (clerkName) {
+        artistName = clerkName;
+      } else {
+        if (row.instagram_verified && row.instagram_name) artistName ??= row.instagram_name as string;
+        else if (row.facebook_verified && row.facebook_name) artistName ??= row.facebook_name as string;
+        else if (row.tiktok_verified && row.tiktok_name) artistName ??= row.tiktok_name as string;
+        else if (row.youtube_channel_name) artistName ??= row.youtube_channel_name as string;
+      }
+    } else if (dp === 'instagram' && row.instagram_handle) {
+      artistName ??= row.instagram_name as string ?? `@${row.instagram_handle}`;
+      artistPicture = (row.instagram_picture as string | null) ?? null;
+    } else if (dp === 'tiktok' && row.tiktok_handle) {
+      artistName ??= row.tiktok_name as string ?? `@${row.tiktok_handle}`;
+      artistPicture = (row.tiktok_picture as string | null) ?? null;
+    } else if (dp === 'facebook' && row.facebook_handle) {
+      artistName ??= row.facebook_name as string ?? `@${row.facebook_handle}`;
+      artistPicture = (row.facebook_picture as string | null) ?? null;
+    } else {
+      // Fallback: erste verfügbare Plattform
+      if (row.youtube_channel_id) {
+        artistName ??= row.youtube_channel_name as string ?? null;
+        artistPicture = (row.youtube_channel_thumbnail as string | null) ?? null;
+      } else if (row.instagram_verified && row.instagram_handle) {
+        artistName ??= row.instagram_name as string ?? `@${row.instagram_handle}`;
+        artistPicture = (row.instagram_picture as string | null) ?? null;
+      } else if (row.tiktok_verified && row.tiktok_handle) {
+        artistName ??= row.tiktok_name as string ?? `@${row.tiktok_handle}`;
+        artistPicture = (row.tiktok_picture as string | null) ?? null;
+      } else if (row.facebook_verified && row.facebook_handle) {
+        artistName ??= row.facebook_name as string ?? `@${row.facebook_handle}`;
+        artistPicture = (row.facebook_picture as string | null) ?? null;
+      }
+    }
+    result.push({ artistWallet, reputation, level, levelName, nextLevelRep, progress, questRewardBonusPercent: levels.find(l => l.levelNumber === level)?.questRewardBonusPercent ?? 0, artistName, artistPicture });
+  }
+  return result;
+}
+
+/** Reputation eines Users für einen Artist laden */
+export async function getUserReputation(walletAddress: string, artistWallet: string): Promise<UserArtistReputation> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT reputation FROM user_reputation
+    WHERE wallet_address = ${walletAddress.toLowerCase()} AND artist_wallet = ${artistWallet.toLowerCase()}
+    LIMIT 1
+  `;
+  const reputation = rows.length > 0 ? Number(rows[0].reputation) : 0;
+  const levels = await getReputationLevels(artistWallet);
+  const { level, levelName, nextLevelRep, progress } = reputationToLevel(reputation, levels);
+  const currentLevel = levels.find(l => l.levelNumber === level);
+  const questRewardBonusPercent = currentLevel?.questRewardBonusPercent ?? 0;
+  return { artistWallet, reputation, level, levelName, nextLevelRep, progress, questRewardBonusPercent };
+}
+
+/** Reputation-Leaderboard für einen Artist (Top 50) */
+export async function getReputationLeaderboard(
+  artistWallet: string,
+  limit = 50,
+): Promise<ReputationLeaderboardEntry[]> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT
+      ur.wallet_address,
+      ur.reputation,
+      COALESCE(
+        p.display_name,
+        p.instagram_name,
+        p.tiktok_name,
+        p.facebook_name,
+        yb.channel_name
+      ) AS display_name
+    FROM user_reputation ur
+    LEFT JOIN user_profiles p  ON p.wallet_address  = ur.wallet_address
+    LEFT JOIN youtube_bindings yb ON yb.wallet_address = ur.wallet_address
+    WHERE ur.artist_wallet = ${artistWallet.toLowerCase()}
+    ORDER BY ur.reputation DESC
+    LIMIT ${limit}
+  `;
+  const levels = await getReputationLevels(artistWallet);
+  return rows.map((r, i) => {
+    const reputation = Number(r.reputation);
+    const { level, levelName } = reputationToLevel(reputation, levels);
+    return {
+      rank: i + 1,
+      walletAddress: r.wallet_address as string,
+      displayName: r.display_name ?? null,
+      reputation,
+      level,
+      levelName,
+    };
+  });
+}
+
+/** Contest-Leaderboard: nur REP seit Contest-Start zählt */
+export async function getContestLeaderboard(
+  contestId: string,
+  artistWallet: string,
+  limit = 50,
+): Promise<ReputationLeaderboardEntry[]> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT
+      ur.wallet_address,
+      ur.reputation - COALESCE(s.reputation_at_start, 0) AS contest_rep,
+      COALESCE(
+        p.display_name,
+        p.instagram_name,
+        p.tiktok_name,
+        p.facebook_name,
+        yb.channel_name
+      ) AS display_name
+    FROM user_reputation ur
+    LEFT JOIN reputation_contest_snapshots s
+      ON s.contest_id = ${contestId} AND s.wallet_address = ur.wallet_address
+    LEFT JOIN user_profiles p  ON p.wallet_address  = ur.wallet_address
+    LEFT JOIN youtube_bindings yb ON yb.wallet_address = ur.wallet_address
+    WHERE ur.artist_wallet = ${artistWallet.toLowerCase()}
+      AND ur.reputation - COALESCE(s.reputation_at_start, 0) > 0
+    ORDER BY contest_rep DESC
+    LIMIT ${limit}
+  `;
+  const levels = await getReputationLevels(artistWallet);
+  return rows.map((r, i) => {
+    const reputation = Number(r.contest_rep);
+    const { level, levelName } = reputationToLevel(reputation, levels);
+    return {
+      rank: i + 1,
+      walletAddress: r.wallet_address as string,
+      displayName: r.display_name ?? null,
+      reputation,
+      level,
+      levelName,
+    };
+  });
+}
