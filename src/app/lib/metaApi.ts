@@ -192,22 +192,32 @@ export interface FbPostCounts {
 }
 
 export async function fetchFacebookPostCounts(postId: string): Promise<FbPostCounts | null> {
-  const token = await getPageAccessToken() ?? process.env.META_SYSTEM_USER_TOKEN;
-  if (!token) return null;
+  // META_SYSTEM_USER_TOKEN direkt verwenden (wie bei Instagram),
+  // damit auch Posts fremder Artist-Pages lesbar sind.
+  const token = process.env.META_SYSTEM_USER_TOKEN;
+  if (!token) {
+    console.error('[fetchFacebookPostCounts] META_SYSTEM_USER_TOKEN nicht gesetzt');
+    return null;
+  }
   try {
     const url = `${GRAPH}/${postId}?fields=reactions.summary(true),comments.summary(true),shares&access_token=${token}`;
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) return null;
+    const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
     const data = await res.json() as {
       reactions?: { summary?: { total_count?: number } };
       comments?: { summary?: { total_count?: number } };
       shares?: { count?: number };
+      error?: { message: string; code?: number };
     };
+    if (data.error) {
+      console.error('[fetchFacebookPostCounts] Graph API Fehler:', data.error.message, '| postId:', postId);
+      return null;
+    }
     const likes = Number(data.reactions?.summary?.total_count ?? 0);
     const comments = Number(data.comments?.summary?.total_count ?? 0);
     const shares = Number(data.shares?.count ?? 0);
     return { likes, comments, shares };
-  } catch {
+  } catch (e) {
+    console.error('[fetchFacebookPostCounts] Fetch-Fehler:', e);
     return null;
   }
 }

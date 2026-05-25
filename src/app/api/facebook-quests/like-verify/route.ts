@@ -93,6 +93,7 @@ export async function POST(req: NextRequest) {
     if (action === 'start') {
       const stats = await fetchFacebookPostCounts(quest.videoId);
       if (!stats) {
+        console.error('[facebook-like-verify] start: fetchFacebookPostCounts gab null zurück | videoId:', quest.videoId);
         return NextResponse.json(
           { error: 'Facebook-Stats nicht abrufbar. Bitte erneut versuchen.' },
           { status: 500 }
@@ -124,6 +125,7 @@ export async function POST(req: NextRequest) {
 
       const current = await fetchFacebookPostCounts(quest.videoId);
       if (!current) {
+        console.error('[facebook-like-verify] check: fetchFacebookPostCounts gab null zurück | videoId:', quest.videoId);
         return NextResponse.json(
           { error: 'Facebook-Stats nicht abrufbar. Bitte erneut versuchen.' },
           { status: 500 }
