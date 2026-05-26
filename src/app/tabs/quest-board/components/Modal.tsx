@@ -12,10 +12,15 @@ interface ModalProps {
 
 export default function Modal({ open, onClose, title, children }: ModalProps) {
   if (!open) return null;
+
+  const handleBackdropPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm pt-8"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onPointerDown={handleBackdropPointerDown}
     >
       <div className="bg-zinc-900 rounded-2xl w-full max-w-lg mx-4 max-h-[88vh] overflow-y-auto border border-zinc-700 shadow-2xl">
         <div className="flex items-center justify-between p-5 border-b border-zinc-700 sticky top-0 bg-zinc-900 z-10">
