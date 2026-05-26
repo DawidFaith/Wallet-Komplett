@@ -312,7 +312,7 @@ export default function InstagramLikeVerifyModal({
             <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-3">
               <p className="text-amber-300 text-xs font-semibold mb-1">⚠️ Hinweis</p>
               <p className="text-amber-200/80 text-xs">
-                Falls du das Reel bereits {isLike ? 'geliked' : 'gespeichert'} hast, mache das zuerst r\u00fcckg\u00e4ngig und f\u00fchre die Aktion dann neu aus.
+                Falls du das Reel bereits geliked oder gespeichert hast, mache die jeweilige Aktion zuerst r\u00fcckg\u00e4ngig und f\u00fchre sie dann neu aus.
                 Nur so kann die Verifizierung ein neues Delta erkennen.
               </p>
             </div>
