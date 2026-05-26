@@ -87,6 +87,7 @@ export default function CreateBundleModal({
     verified.youtube ? 'youtube' : verified.instagram ? 'instagram' : verified.tiktok ? 'tiktok' : verified.facebook ? 'facebook' : 'youtube',
   );
   const [videoUrl, setVideoUrl]       = useState('');
+  const [videoMediaId, setVideoMediaId] = useState(''); // Graph Media ID (Instagram/Facebook)
   const [videoTitle, setVideoTitle]   = useState('');
   const [description, setDescription] = useState('');
   const [fetchingMeta, setFetchingMeta] = useState(false);
@@ -226,6 +227,7 @@ export default function CreateBundleModal({
           creatorWallet:       walletAddress,
           platform,
           videoUrl:            videoUrl.trim(),
+          videoId:             videoMediaId.trim() || undefined,
           videoTitle:          videoTitle.trim() || undefined,
           description:         description.trim(),
           videoThumbnail:      videoThumbnail.trim() || undefined,
@@ -402,6 +404,7 @@ export default function CreateBundleModal({
                           const url   = item.permalink || `https://www.instagram.com/reel/${item.shortcode}/`;
                           const title = (item.caption?.split(/[\n\r]/)[0].trim() || `Reel ${item.shortcode}`).slice(0, 100);
                           setVideoUrl(url);
+                          setVideoMediaId(item.graph_media_id);
                           setVideoTitle(title);
                           setVideoThumbnail(item.thumbnail_url);
                         }}

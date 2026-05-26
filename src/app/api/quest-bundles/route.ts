@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
     // Für nicht-YouTube-Plattformen: manuelle Angaben
     videoTitle?: string;
     videoThumbnail?: string;
+    // Optionaler Graph Media ID (z.B. Instagram) – überschreibt die URL-Extraktion
+    videoId?: string;
     // Level-Bonus-Budget (vom Creator vorberechnet, max. 100%)
     levelBonusBudget?: number;
     // Geheim-Codes pro Quest-Typ (nur für 'secret')
@@ -59,6 +61,7 @@ export async function POST(req: NextRequest) {
     rewardPoolPerFan, bundleCompletionBonus, maxParticipants,
     durationHours, items,
     videoTitle: manualTitle, videoThumbnail: manualThumbnail,
+    videoId: providedVideoId,
     levelBonusBudget, secretCodes,
   } = body;
 
@@ -129,8 +132,12 @@ export async function POST(req: NextRequest) {
         ?? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
     }
   } else {
-    // Für andere Plattformen: videoId aus URL ableiten (best effort)
-    finalVideoId = videoUrl.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64) || crypto.randomUUID();
+    // Für andere Plattformen: Graph Media ID bevorzugen, sonst URL-Extraktion
+    if (providedVideoId?.trim()) {
+      finalVideoId = providedVideoId.trim();
+    } else {
+      finalVideoId = videoUrl.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64) || crypto.randomUUID();
+    }
     if (!finalTitle) {
       return NextResponse.json({ error: 'videoTitle ist für diese Plattform erforderlich' }, { status: 400 });
     }
