@@ -13,7 +13,7 @@ import type {
 
 /**
  * Bundle erstellen: Sperrt Gesamtbudget + legt quest_bundles + einzelne quests an.
- * Gibt die neue Bundle-ID zurück.
+ * Gibt die neue Bundle-ID sowie den Story-Token (falls dm_share enthalten) zurück.
  */
 export async function createQuestBundle(
   params: {
@@ -29,15 +29,16 @@ export async function createQuestBundle(
     maxParticipants: number;
     expiresAt: string | null;
     reputationReward?: number;
-    levelBonusBudget?: number;        // Gesamtes Budget für Level-Reputation-Boni (alle Quests, alle Teilnehmer)
-    secretCodes?: Record<string, string>; // Map: questType → geheimer Code (nur für 'secret'-Typ)
+    levelBonusBudget?: number;
+    secretCodes?: Record<string, string>;
   },
   itemTypes: Array<{ questType: QuestType; reachWeight: number }>,
-): Promise<string> {
+): Promise<{ bundleId: string; storyToken: string | null }> {
   const sql = getDb();
   const bundleId = crypto.randomUUID();
   const now = new Date().toISOString();
   const wallet = params.creatorWallet.toLowerCase();
+  let generatedStoryToken: string | null = null;
 
   const totalWeight = itemTypes.reduce((s, i) => s + i.reachWeight, 0);
   const bonusBudgetTotal = Math.round(params.bundleCompletionBonus * params.maxParticipants * 100) / 100;
@@ -78,6 +79,7 @@ export async function createQuestBundle(
 
     // Story-Token (nur für 'dm_share'-Typ – für Fan-Sharing-Link)
     const storyToken = item.questType === 'dm_share' ? crypto.randomUUID() : null;
+    if (storyToken) generatedStoryToken = storyToken;
 
     await sql`
       INSERT INTO quests (
@@ -96,7 +98,7 @@ export async function createQuestBundle(
     `;
   }
 
-  return bundleId;
+  return { bundleId, storyToken: generatedStoryToken };
 }
 
 function rowToBundle(row: any): QuestBundle {

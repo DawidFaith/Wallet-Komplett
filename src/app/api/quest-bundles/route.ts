@@ -156,7 +156,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const bundleId = await createQuestBundle(
+    const { bundleId, storyToken } = await createQuestBundle(
       {
         creatorWallet: creatorWallet.toLowerCase(),
         platform: platform as Platform,
@@ -178,7 +178,7 @@ export async function POST(req: NextRequest) {
       })),
     );
 
-    return NextResponse.json({ success: true, bundleId });
+    return NextResponse.json({ success: true, bundleId, storyToken: storyToken ?? null });
   } catch (e) {
     // Budget zurückerstatten wenn Bundle-Erstellung fehlschlägt
     const { addDfaithCredits } = await import('../../lib/questDb');

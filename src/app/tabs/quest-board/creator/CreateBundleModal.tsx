@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaCheck, FaInfoCircle, FaSync } from 'react-icons/fa';
+import { FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaCheck, FaInfoCircle, FaSync, FaHeart, FaComment, FaBookmark, FaShareAlt, FaPaperPlane, FaThumbsUp, FaKey, FaLink, FaCopy } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { Platform, QuestType } from '../types';
 // ─── Media-Typen (für Video-Picker) ─────────────────────────────────────────
@@ -49,8 +49,14 @@ const TYPE_LABELS: Record<QuestType, string>       = {
   repost: 'Repost', dm_share: 'Story-Share', engagement: 'Engagement', secret: 'Geheimcode',
 };
 
-const TYPE_ICONS: Record<QuestType, string> = {
-  comment: '💬', like: '❤️', save: '🔖', repost: '🔁', dm_share: '📤', engagement: '🎯', secret: '🔑',
+const TYPE_ICONS: Record<QuestType, React.ReactNode> = {
+  comment:    <FaComment    size={12} />,
+  like:       <FaHeart      size={12} />,
+  save:       <FaBookmark   size={12} />,
+  repost:     <FaShareAlt   size={12} />,
+  dm_share:   <FaPaperPlane size={12} />,
+  engagement: <FaThumbsUp   size={12} />,
+  secret:     <FaKey        size={12} />,
 };
 
 const PLATFORM_TYPES: Record<Platform, QuestType[]> = {
@@ -77,7 +83,7 @@ interface CreateBundleModalProps {
   onOpenDeposit: () => void;
 }
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 
 export default function CreateBundleModal({
   open, onClose, walletAddress, creatorBalance, verified, onCreated, onOpenDeposit,
@@ -102,7 +108,8 @@ export default function CreateBundleModal({
 
   const [creating, setCreating]   = useState(false);
   const [error, setError]         = useState('');
-  const [success, setSuccess]     = useState(false);
+  const [storyToken, setStoryToken] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   // Video-Thumbnail (aus Picker)
   const [videoThumbnail, setVideoThumbnail] = useState('');
@@ -119,11 +126,15 @@ export default function CreateBundleModal({
   const [loadingFbMedia, setLoadingFbMedia]           = useState(false);
   const [selectedFbPostId, setSelectedFbPostId]       = useState<string | null>(null);
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de';
+  const storyLink = storyToken ? `${appUrl}/api/instagram-quests/story-click?token=${storyToken}` : '';
+
   // Reset beim Öffnen
   useEffect(() => {
     if (!open) return;
     setStep(1);
     setVideoUrl('');
+    setVideoMediaId('');
     setVideoTitle('');
     setVideoThumbnail('');
     setDescription('');
@@ -135,7 +146,8 @@ export default function CreateBundleModal({
     setDuration('72');
     setSecretCodes({});
     setError('');
-    setSuccess(false);
+    setStoryToken(null);
+    setLinkCopied(false);
     setSelectedQuestMediaId(null);
     setSelectedIgShortcode(null);
     setSelectedFbPostId(null);
@@ -240,10 +252,15 @@ export default function CreateBundleModal({
           secretCodes,
         }),
       });
-      const data = await res.json() as { success?: boolean; error?: string };
+      const data = await res.json() as { success?: boolean; error?: string; storyToken?: string | null };
       if (!res.ok || !data.success) throw new Error(data.error ?? 'Unbekannter Fehler');
-      setSuccess(true);
       onCreated();
+      if (data.storyToken) {
+        setStoryToken(data.storyToken);
+        setStep(4);
+      } else {
+        setStep(4); // Erfolg-Screen auch ohne Story-Token
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -253,16 +270,47 @@ export default function CreateBundleModal({
 
   if (!open) return null;
 
-  if (success) {
+  // ── Schritt 4: Erfolg + optionaler Story-Link ────────────────────────────────
+  if (step === 4) {
     return (
       <Modal open={open} onClose={onClose} title="Bundle erstellt! 🎉">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-green-900/50 border border-green-700 flex items-center justify-center mx-auto">
-            <FaCheck size={28} className="text-green-400" />
+        <div className="space-y-4">
+          <div className="w-14 h-14 rounded-full bg-green-900/50 border border-green-700 flex items-center justify-center mx-auto">
+            <FaCheck size={24} className="text-green-400" />
           </div>
-          <p className="text-zinc-400 text-sm">
-            Fans sehen jetzt dein Bundle und können alle Aufgaben abschließen, um den Gesamtreward zu verdienen.
+          <p className="text-zinc-400 text-sm text-center">
+            Fans sehen jetzt dein Bundle und können alle Aufgaben abschließen.
           </p>
+
+          {storyLink && (
+            <div className="bg-pink-950/40 border border-pink-700/40 rounded-xl p-4 space-y-2">
+              <div className="flex items-center gap-2 mb-1">
+                <FaPaperPlane className="text-pink-400" size={13} />
+                <p className="text-pink-200 text-sm font-semibold">Story-Quest Link</p>
+              </div>
+              <p className="text-zinc-400 text-xs">
+                Teile diesen Link mit deinen Fans für den Story-Share Quest. Fans die ihn öffnen werden automatisch dem Quest zugewiesen.
+              </p>
+              <div className="flex items-center gap-2 bg-zinc-900/80 border border-zinc-700 rounded-lg px-3 py-2">
+                <FaLink size={10} className="text-pink-400 shrink-0" />
+                <span className="text-pink-300 text-xs font-mono truncate flex-1" title={storyLink}>
+                  {storyLink.replace(/^https?:\/\//, '')}
+                </span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(storyLink);
+                    setLinkCopied(true);
+                    setTimeout(() => setLinkCopied(false), 2000);
+                  }}
+                  className="shrink-0 bg-pink-700 hover:bg-pink-600 text-white rounded-lg px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                >
+                  {linkCopied ? <FaCheck size={10} /> : <FaCopy size={10} />}
+                  {linkCopied ? 'Kopiert!' : 'Kopieren'}
+                </button>
+              </div>
+            </div>
+          )}
+
           <button onClick={onClose} className="w-full bg-green-700 hover:bg-green-600 text-white rounded-xl py-3 font-semibold">
             Fertig
           </button>
@@ -277,7 +325,7 @@ export default function CreateBundleModal({
 
         {/* Schritt-Anzeige */}
         <div className="flex gap-2">
-          {([1, 2, 3] as Step[]).map((s) => (
+          {([1, 2, 3] as const).map((s) => (
             <div key={s} className={`flex-1 h-1 rounded-full ${step >= s ? 'bg-purple-500' : 'bg-zinc-700'}`} />
           ))}
         </div>
@@ -563,7 +611,7 @@ export default function CreateBundleModal({
                         <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selected ? 'bg-purple-600 border-purple-600' : 'border-zinc-600'}`}>
                           {selected && <FaCheck size={10} className="text-white" />}
                         </div>
-                        <span className="text-base">{TYPE_ICONS[qt]}</span>
+                        <span className="flex items-center text-zinc-300">{TYPE_ICONS[qt]}</span>
                         <span className="text-white text-sm font-semibold">{TYPE_LABELS[qt]}</span>
                       </button>
                       {selected && item && (
@@ -630,113 +678,89 @@ export default function CreateBundleModal({
 
         {/* ── Schritt 3: Reward + Budget ───────────────────────────────────── */}
         {step === 3 && (
-          <div className="space-y-4">
-            <p className="text-zinc-400 text-sm">Lege den Reward-Pool und die Teilnehmeranzahl fest.</p>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-zinc-400 text-xs">Reward-Pool pro Fan (D.FAITH)</label>
-                <input
-                  type="number" min="0.01" step="0.01"
-                  value={reward}
-                  onChange={(e) => setReward(e.target.value)}
-                  className="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-purple-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-zinc-400 text-xs">Abschluss-Bonus (D.FAITH)</label>
-                <input
-                  type="number" min="0" step="0.01"
-                  value={bonus}
-                  onChange={(e) => setBonus(e.target.value)}
-                  className="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-purple-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-zinc-400 text-xs">Max. Teilnehmer</label>
-                <input
-                  type="number" min="1"
-                  value={maxP}
-                  onChange={(e) => setMaxP(e.target.value)}
-                  className="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-purple-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-zinc-400 text-xs">Laufzeit (Stunden, 0 = unbegrenzt)</label>
-                <input
-                  type="number" min="0"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  className="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-purple-500"
-                />
-              </div>
+          <div className="space-y-3">
+            {/* 4 Felder kompakt */}
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: 'Reward/Fan (D.FAITH)', val: reward, set: setReward, min: '0.01', stp: '0.01' },
+                { label: 'Abschluss-Bonus', val: bonus, set: setBonus, min: '0', stp: '0.01' },
+                { label: 'Max. Teilnehmer', val: maxP, set: setMaxP, min: '1', stp: '1' },
+                { label: 'Laufzeit (h, 0=∞)', val: duration, set: setDuration, min: '0', stp: '1' },
+              ].map(({ label, val, set, min, stp }) => (
+                <div key={label} className="space-y-0.5">
+                  <label className="text-zinc-500 text-[11px]">{label}</label>
+                  <input
+                    type="number" min={min} step={stp}
+                    value={val}
+                    onChange={(e) => set(e.target.value)}
+                    className="w-full bg-zinc-800/60 border border-zinc-700 rounded-lg px-3 py-1.5 text-white text-sm outline-none focus:border-purple-500"
+                  />
+                </div>
+              ))}
             </div>
 
-            {/* Aufschlüsselung pro Typ */}
-            <div className="bg-zinc-900/60 border border-zinc-700/50 rounded-xl p-3 space-y-2">
-              <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Reward-Aufschlüsselung pro Fan</p>
+            {/* Reward-Aufschlüsselung kompakt */}
+            <div className="bg-zinc-900/60 border border-zinc-700/50 rounded-xl px-3 py-2 space-y-1">
+              <p className="text-zinc-500 text-[11px] font-semibold uppercase tracking-wider mb-1.5">Reward pro Fan</p>
               {items.map((item) => {
                 const share = totalWeight > 0 ? (item.reachWeight / totalWeight) * rewardNum : 0;
-                const rep   = item.reachWeight * 20;
                 return (
-                  <div key={item.questType} className="flex items-center justify-between text-sm">
-                    <span className="text-zinc-300">{TYPE_ICONS[item.questType]} {TYPE_LABELS[item.questType]}</span>
+                  <div key={item.questType} className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5 text-zinc-300">
+                      <span className="text-zinc-400">{TYPE_ICONS[item.questType]}</span>
+                      {TYPE_LABELS[item.questType]}
+                    </span>
                     <span className="flex items-center gap-2">
-                      <span className="text-amber-400 text-xs">+{rep} REP</span>
-                      <span className="text-purple-300 font-mono">{share.toFixed(2)} D.FAITH</span>
+                      <span className="text-amber-400">+{item.reachWeight * 20} REP</span>
+                      <span className="text-purple-300 font-mono">{share.toFixed(2)}</span>
                     </span>
                   </div>
                 );
               })}
               {bonusNum > 0 && (
-                <div className="flex items-center justify-between text-sm border-t border-zinc-700/50 pt-2 mt-1">
-                  <span className="text-yellow-300">🎁 Alles-abschließen Bonus</span>
-                  <span className="text-yellow-300 font-mono">+{bonusNum.toFixed(2)} D.FAITH</span>
+                <div className="flex items-center justify-between text-xs border-t border-zinc-700/50 pt-1 mt-0.5">
+                  <span className="text-yellow-300 flex items-center gap-1"><FaKey size={9} /> Alles-Bonus</span>
+                  <span className="text-yellow-300 font-mono">+{bonusNum.toFixed(2)}</span>
                 </div>
               )}
-              <div className="flex items-center justify-between text-sm border-t border-zinc-700/50 pt-2 mt-1">
-                <span className="text-purple-400">⚡ Level-Bonus-Reserve (max. 100%)</span>
-                <span className="text-purple-300 font-mono">+{levelBonusReserve.toFixed(2)} D.FAITH</span>
-              </div>
-              <div className="flex items-center justify-between text-sm border-t border-zinc-700/50 pt-2">
-                <span className="text-white font-semibold">Gesamt pro Fan</span>
+              <div className="flex items-center justify-between text-xs border-t border-zinc-700/50 pt-1 mt-0.5">
+                <span className="text-white font-semibold">Gesamt/Fan</span>
                 <span className="text-green-400 font-mono font-bold">{(rewardNum + bonusNum).toFixed(2)} D.FAITH</span>
               </div>
             </div>
 
             {/* Gesamtkosten */}
-            <div className={`rounded-xl p-3 border ${hasEnough ? 'bg-green-950/30 border-green-800/40' : 'bg-red-950/30 border-red-800/40'}`}>
-              <div className="flex items-center justify-between">
-                <span className="text-zinc-300 text-sm">Gesamtkosten (Budget sperren)</span>
-                <span className={`font-bold font-mono ${hasEnough ? 'text-green-400' : 'text-red-400'}`}>
+            <div className={`rounded-xl px-3 py-2.5 border flex items-center justify-between ${
+              hasEnough ? 'bg-green-950/30 border-green-800/40' : 'bg-red-950/30 border-red-800/40'
+            }`}>
+              <div>
+                <p className="text-zinc-400 text-xs">Budget sperren</p>
+                {!hasEnough && (
+                  <button onClick={onOpenDeposit} className="text-blue-400 text-xs hover:underline">Jetzt einzahlen →</button>
+                )}
+              </div>
+              <div className="text-right">
+                <p className={`font-bold font-mono text-sm ${hasEnough ? 'text-green-400' : 'text-red-400'}`}>
                   {totalBudget.toFixed(2)} D.FAITH
-                </span>
+                </p>
+                <p className={`text-xs font-mono ${hasEnough ? 'text-green-600' : 'text-red-400'}`}>
+                  Guthaben: {creatorBalance.toFixed(2)}
+                </p>
               </div>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-zinc-500 text-xs">Dein Guthaben</span>
-                <span className={`text-xs font-mono ${hasEnough ? 'text-green-500' : 'text-red-400'}`}>
-                  {creatorBalance.toFixed(2)} D.FAITH
-                </span>
-              </div>
-              {!hasEnough && (
-                <button onClick={onOpenDeposit} className="text-blue-400 text-xs mt-1 hover:underline">
-                  Jetzt einzahlen →
-                </button>
-              )}
             </div>
 
             {error && <p className="text-red-400 text-sm">{error}</p>}
 
             <div className="flex gap-3">
-              <button onClick={() => { setStep(2); setError(''); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl py-3 font-semibold text-sm">
+              <button onClick={() => { setStep(2); setError(''); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl py-2.5 font-semibold text-sm">
                 ← Zurück
               </button>
               <button
                 onClick={handleCreate}
                 disabled={creating || !hasEnough || items.length < 2}
-                className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-xl py-3 font-semibold text-sm transition-colors"
+                className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-xl py-2.5 font-semibold text-sm transition-colors"
               >
-                {creating ? 'Erstelle Bundle...' : '🎯 Bundle erstellen'}
+                {creating ? 'Erstelle...' : '🎯 Bundle erstellen'}
               </button>
             </div>
           </div>
