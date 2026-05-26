@@ -203,6 +203,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         setQuests((prev) =>
           prev.map((q) => q.id === questId ? { ...q, completions: q.completions + 1 } : q)
         );
+        loadBundles();
       } else {
         setVerifyResult({ success: false, message: data.error });
       }
@@ -249,6 +250,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         setQuests((prev) =>
           prev.map((q) => q.id === questId ? { ...q, completions: q.completions + 1 } : q)
         );
+        loadBundles();
       } else {
         setVerifyResult({ success: false, message: data.error ?? data.message });
       }
@@ -554,6 +556,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onClose={() => {
           if (verifyResult?.success && verifyingQuest) {
             setCelebration({ amount: verifyResult.rewardAmount ?? 0, questTitle: verifyingQuest.videoTitle, reputationReward: verifyingQuest.reputationReward, levelBonus: verifyResult.levelBonus });
+            loadBundles();
           }
           setVerifyingQuest(null); setVerifyResult(null);
         }}
@@ -572,6 +575,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               prev.map((q) => q.id === likeVerifyQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
             pendingCelebration.current = { amount, questTitle: likeVerifyQuest.videoTitle, reputationReward: likeVerifyQuest.reputationReward, levelBonus };
+            loadBundles();
           }
         }}
         onClose={() => {
@@ -593,6 +597,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               prev.map((q) => q.id === secretVerifyQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
             pendingCelebration.current = { amount, questTitle: secretVerifyQuest.videoTitle, reputationReward: secretVerifyQuest.reputationReward, levelBonus };
+            loadBundles();
           }
         }}
         onClose={() => {
@@ -614,6 +619,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               prev.map((q) => q.id === tiktokEngagementQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
             pendingCelebration.current = { amount, questTitle: tiktokEngagementQuest.videoTitle, reputationReward: tiktokEngagementQuest.reputationReward, levelBonus };
+            loadBundles();
           }
         }}
         onClose={() => {
@@ -635,6 +641,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               prev.map((q) => q.id === instagramLikeQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
             pendingCelebration.current = { amount, questTitle: instagramLikeQuest.videoTitle, reputationReward: instagramLikeQuest.reputationReward, levelBonus };
+            loadBundles();
           }
           // Modal NICHT schließen – onClose schließt nach dem Erfolgs-Screen
         }}
@@ -657,6 +664,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               prev.map((q) => q.id === instagramCommentQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
             pendingCelebration.current = { amount, questTitle: instagramCommentQuest.videoTitle, reputationReward: instagramCommentQuest.reputationReward, levelBonus };
+            loadBundles();
           }
         }}
         onClose={() => {
@@ -678,6 +686,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               prev.map((q) => q.id === facebookCommentQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
             pendingCelebration.current = { amount, questTitle: facebookCommentQuest.videoTitle, reputationReward: facebookCommentQuest.reputationReward, levelBonus };
+            loadBundles();
           }
         }}
         onClose={() => {
@@ -699,6 +708,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               prev.map((q) => q.id === facebookLikeQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
             pendingCelebration.current = { amount, questTitle: facebookLikeQuest.videoTitle, reputationReward: facebookLikeQuest.reputationReward, levelBonus };
+            loadBundles();
           }
         }}
         onClose={() => {

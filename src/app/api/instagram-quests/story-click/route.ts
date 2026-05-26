@@ -137,7 +137,7 @@ function buildFormPage(token: string, questTitle: string, appUrl: string): strin
            min-height: 100vh; padding: 20px; }
     .card { background: #18181b; border: 1px solid #e1306c50;
             border-radius: 20px; padding: 36px 28px; max-width: 380px; width: 100%; text-align: center; }
-    .logo { font-size: 3rem; margin-bottom: 8px; display: block; }
+    .logo { width: 64px; height: 64px; margin: 0 auto 12px; display: block; }
     h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: 6px; }
     .subtitle { font-size: 0.82rem; color: #a1a1aa; margin-bottom: 28px; line-height: 1.5; }
     .quest-title { background: #27272a; border-radius: 10px; padding: 10px 14px;
@@ -163,7 +163,21 @@ function buildFormPage(token: string, questTitle: string, appUrl: string): strin
 </head>
 <body>
   <div class="card">
-    <span class="logo">📸</span>
+    <svg class="logo" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Instagram">
+      <defs>
+        <radialGradient id="igGrad" cx="30%" cy="107%" r="150%">
+          <stop offset="0%" stop-color="#fdf497"/>
+          <stop offset="5%" stop-color="#fdf497"/>
+          <stop offset="45%" stop-color="#fd5949"/>
+          <stop offset="60%" stop-color="#d6249f"/>
+          <stop offset="90%" stop-color="#285AEB"/>
+        </radialGradient>
+      </defs>
+      <rect x="2" y="2" width="60" height="60" rx="16" ry="16" fill="url(#igGrad)"/>
+      <rect x="12" y="12" width="40" height="40" rx="11" ry="11" fill="none" stroke="#fff" stroke-width="3.5"/>
+      <circle cx="32" cy="32" r="9" fill="none" stroke="#fff" stroke-width="3.5"/>
+      <circle cx="46" cy="18" r="2.6" fill="#fff"/>
+    </svg>
     <h1>Story Quest einlösen</h1>
     <p class="subtitle">Gib deinen Instagram-Handle ein um deine Belohnung zu erhalten.</p>
     ${questTitle ? `<div class="quest-title">🎥 ${questTitle}</div>` : ''}

@@ -315,15 +315,14 @@ export default function InstagramLikeVerifyModal({
             </ol>
           </div>
 
-          {!isRepost && (
-            <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-3">
-              <p className="text-amber-300 text-xs font-semibold mb-1">⚠️ Hinweis</p>
-              <p className="text-amber-200/80 text-xs">
-                Falls du das Reel bereits geliked oder gespeichert hast, mache die jeweilige Aktion zuerst r\u00fcckg\u00e4ngig und f\u00fchre sie dann neu aus.
-                Nur so kann die Verifizierung ein neues Delta erkennen.
-              </p>
-            </div>
-          )}
+          <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-3">
+            <p className="text-amber-300 text-xs font-semibold mb-1">⚠️ Hinweis</p>
+            <p className="text-amber-200/80 text-xs">
+              {isRepost
+                ? 'Falls du das Reel bereits repostet hast, entferne den Repost zuerst und teile ihn dann erneut. Nur so kann die Verifizierung ein neues Delta erkennen.'
+                : 'Falls du das Reel bereits geliked oder gespeichert hast, mache die jeweilige Aktion zuerst rückgängig und führe sie dann neu aus. Nur so kann die Verifizierung ein neues Delta erkennen.'}
+            </p>
+          </div>
 
           {quest.videoUrl && (
             <a
