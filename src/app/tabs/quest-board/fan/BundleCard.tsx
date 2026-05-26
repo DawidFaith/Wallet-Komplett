@@ -66,11 +66,6 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
     }
   }, [startedKey]);
 
-  const [activeSecretQuestId, setActiveSecretQuestId] = useState<string | null>(null);
-  const [secretCode, setSecretCode] = useState('');
-  const [secretLoading, setSecretLoading] = useState(false);
-  const [secretError, setSecretError] = useState('');
-
   // Bundle-Item → QuestIndexEntry konvertieren (für Modal-Aufruf)
   const buildQuestEntry = (item: typeof bundle.items[number]): QuestIndexEntry => ({
     id:               item.questId,
@@ -90,29 +85,6 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
     expiresAt:        bundle.expiresAt ?? null,
     storyToken:       item.storyToken ?? null,
   });
-
-  const handleSecretSubmit = async (e: React.FormEvent, questId: string) => {
-    e.preventDefault();
-    if (!secretCode.trim()) return;
-    setSecretLoading(true);
-    setSecretError('');
-    try {
-      const res = await fetch('/api/' + bundle.platform + '-quests/secret-verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questId, walletAddress: fanWallet, code: secretCode.trim().toUpperCase() }),
-      });
-      const data = await res.json() as { success?: boolean; error?: string };
-      if (!res.ok || !data.success) throw new Error(data.error ?? 'Falscher Code');
-      setActiveSecretQuestId(null);
-      setSecretCode('');
-      onBonusClaimed();
-    } catch (err) {
-      setSecretError((err as Error).message);
-    } finally {
-      setSecretLoading(false);
-    }
-  };
 
   const ytVideoId = bundle.platform === 'youtube' && bundle.videoUrl
     ? (bundle.videoUrl.match(/shorts\/([a-zA-Z0-9_-]+)/)?.[1] ?? bundle.videoUrl.match(/[?&]v=([a-zA-Z0-9_-]+)/)?.[1] ?? null)
@@ -345,33 +317,11 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
                         <p className="text-zinc-400 text-xs">Aufgabe: <span className="text-zinc-300">🔑 Finde den geheimen Code und gib ihn ein!</span></p>
                         {full ? (
                           <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">Nicht mehr verfügbar</button>
-                        ) : activeSecretQuestId === item.questId ? (
-                          <form onSubmit={(e) => handleSecretSubmit(e, item.questId)} className="flex flex-col gap-2">
-                            <div className="flex gap-2">
-                              <input
-                                value={secretCode}
-                                onChange={(e) => setSecretCode(e.target.value)}
-                                placeholder="Code eingeben..."
-                                autoFocus
-                                className="flex-1 bg-zinc-800 border border-zinc-600 focus:border-yellow-500 rounded-lg px-3 py-2 text-white text-sm outline-none uppercase"
-                              />
-                              <button
-                                type="submit"
-                                disabled={secretLoading || !secretCode.trim()}
-                                className="bg-yellow-600 hover:bg-yellow-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white px-4 py-2 rounded-lg text-sm font-semibold"
-                              >{secretLoading ? '...' : 'OK'}</button>
-                              <button
-                                type="button"
-                                onClick={() => { setActiveSecretQuestId(null); setSecretCode(''); setSecretError(''); }}
-                                className="text-zinc-500 hover:text-zinc-300 px-2 text-sm"
-                              >✕</button>
-                            </div>
-                            {secretError && <p className="text-red-400 text-xs">{secretError}</p>}
-                          </form>
                         ) : (
                           <button
-                            onClick={() => { setActiveSecretQuestId(item.questId); setSecretCode(''); setSecretError(''); }}
-                            className="w-full bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                            onClick={() => onOpenQuest?.(entry)}
+                            disabled={!onOpenQuest}
+                            className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
                           >
                             <FaTrophy size={12} /> Starten
                           </button>
