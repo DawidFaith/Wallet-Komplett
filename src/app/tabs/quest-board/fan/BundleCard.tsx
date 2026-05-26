@@ -185,91 +185,86 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
         {/* Slide 0: Eingangstor */}
-        <div className="min-w-full snap-start">
-          {/* Thumbnail h-40 – identisch mit Quest-Karten */}
-          <div className={`relative h-40 ${ytVideoId ? 'cursor-pointer group' : ''}`} onClick={() => ytVideoId && !showVideo && setShowVideo(true)}>
-            {showVideo && ytVideoId ? (
-              <>
-                <iframe
-                  src={'https://www.youtube.com/embed/' + ytVideoId + '?autoplay=1'}
-                  allow="autoplay; encrypted-media"
-                  allowFullScreen
-                  className="absolute inset-0 w-full h-full"
-                  title={bundle.videoTitle}
-                />
-                <button
-                  onClick={(e) => { e.stopPropagation(); setShowVideo(false); }}
-                  className="absolute top-2 right-2 z-10 bg-black/60 hover:bg-black/80 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs transition-all"
-                >✕</button>
-              </>
-            ) : (
-              <>
-                {bundle.videoThumbnail
-                  ? <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
-                  : <div className="absolute inset-0 bg-gradient-to-br from-purple-900 to-violet-800" />
-                }
-                <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/70" />
-                {ytVideoId && (
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="w-12 h-12 rounded-full bg-red-600/80 flex items-center justify-center shadow-xl">
-                      <FaYoutube size={20} className="text-white" />
+        <div className="min-w-full snap-start px-4 pt-3 pb-4">
+          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden transition-all">
+            {/* Thumbnail h-40 – identisch mit Quest-Karten */}
+            <div className={`relative h-40 ${ytVideoId ? 'cursor-pointer group' : ''}`} onClick={() => ytVideoId && !showVideo && setShowVideo(true)}>
+              {showVideo && ytVideoId ? (
+                <>
+                  <iframe
+                    src={'https://www.youtube.com/embed/' + ytVideoId + '?autoplay=1'}
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full"
+                    title={bundle.videoTitle}
+                  />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowVideo(false); }}
+                    className="absolute top-2 right-2 z-10 bg-black/60 hover:bg-black/80 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs transition-all"
+                  >✕</button>
+                </>
+              ) : (
+                <>
+                  {bundle.videoThumbnail
+                    ? <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
+                    : <div className="absolute inset-0 bg-gradient-to-br from-purple-900 to-violet-800" />
+                  }
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/70" />
+                  {ytVideoId && (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="w-12 h-12 rounded-full bg-red-600/80 flex items-center justify-center shadow-xl">
+                        <FaYoutube size={20} className="text-white" />
+                      </div>
                     </div>
-                  </div>
-                )}
-              </>
-            )}
-            {!showVideo && (
-              <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
-                <span className="flex items-center gap-1 bg-purple-600/90 backdrop-blur-sm rounded-full px-2 py-0.5 text-xs text-white font-semibold">
-                  <FaLayerGroup size={9} /> Quest-Reihe
-                </span>
-                <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm rounded-full px-2 py-0.5 text-xs text-zinc-200">
-                  {PLATFORM_ICONS[bundle.platform]}
-                </span>
-              </div>
-            )}
-            {!showVideo && bundle.videoUrl && (
-              <a
-                href={bundle.videoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-sm rounded-full px-2 py-0.5 text-[11px] text-zinc-300 hover:text-white flex items-center gap-1 transition-colors"
-              >
-                <FaExternalLinkAlt size={9} /> Video
-              </a>
-            )}
-          </div>
-          {/* Body – gleiche Struktur wie Quest-Karten */}
-          <div className="p-4 space-y-3">
-            <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{bundle.videoTitle}</h3>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="bg-black/40 border border-purple-700/40 rounded-full px-2 py-0.5 text-xs text-purple-300 font-mono font-bold">
-                +{totalReward.toFixed(2)} D.FAITH
-              </span>
-              {totalRep > 0 && (
-                <span className="bg-black/40 border border-amber-700/40 rounded-full px-2 py-0.5 text-xs text-amber-300 font-bold flex items-center gap-1">
-                  <FaStar size={9} /> +{totalRep} REP
-                </span>
+                  )}
+                </>
               )}
-              <span className="bg-black/40 border border-yellow-700/40 rounded-full px-2 py-0.5 text-xs text-yellow-300 font-bold flex items-center gap-1">
-                <FaGift size={9} /> +{bundle.bundleCompletionBonus.toFixed(2)} Bonus
-              </span>
+              {!showVideo && (
+                <div className="absolute top-2 left-2 flex items-center gap-1 z-10">
+                  <span className="flex items-center gap-1 bg-purple-600/90 text-white text-xs font-bold px-2 py-1 rounded-full">
+                    <FaLayerGroup size={9} /> Quest-Reihe
+                  </span>
+                </div>
+              )}
+              {!showVideo && (
+                <div className="absolute top-2 right-2 flex flex-col items-end gap-1 z-10">
+                  <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                    <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="rounded-full" unoptimized />
+                    +{totalReward.toFixed(2)} D.FAITH
+                  </div>
+                  {totalRep > 0 && (
+                    <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                      <FaStar size={9} /> +{totalRep} REP
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {bundle.items.map((it) => (
-                <span key={it.questId} className="bg-zinc-800 border border-zinc-700/50 rounded-md px-2 py-0.5 text-[11px] text-zinc-300 flex items-center gap-1">
-                  <span>{TYPE_ICONS[it.questType]}</span>
-                  <span>{TYPE_LABELS[it.questType]}</span>
-                </span>
-              ))}
+            {/* Body – gleiche Struktur wie Quest-Karten: p-4 space-y-3 */}
+            <div className="p-4 space-y-3">
+              <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{bundle.videoTitle}</h3>
+              <div>
+                <div className="flex justify-between text-xs text-zinc-400 mb-1">
+                  <span>{completedCount} von {totalCount} Aufgaben erledigt</span>
+                  <span>{progressPercent}%</span>
+                </div>
+                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${bundle.fanAllCompleted ? 'bg-gradient-to-r from-green-500 to-emerald-400' : 'bg-gradient-to-r from-purple-600 to-violet-400'}`}
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+              <p className="text-zinc-400 text-xs">
+                Aufgabe: <span className="text-zinc-300">🎯 Schließe alle {totalCount} Quests ab und erhalte <strong className="text-yellow-400">+{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH Bonus</strong>!</span>
+              </p>
+              <button
+                onClick={handleStart}
+                className="w-full bg-gradient-to-r from-purple-600 to-violet-500 hover:from-purple-500 hover:to-violet-400 active:scale-[0.98] text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"
+              >
+                🚀 Quest-Reihe starten
+              </button>
             </div>
-            <button
-              onClick={handleStart}
-              className="w-full bg-gradient-to-r from-purple-600 to-violet-500 hover:from-purple-500 hover:to-violet-400 active:scale-[0.98] text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
-            >
-              🚀 Quest-Reihe starten
-            </button>
           </div>
         </div>
 
