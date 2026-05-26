@@ -13,16 +13,6 @@ const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
   facebook:  <FaFacebook  className="text-blue-500" size={12} />,
 };
 
-const TYPE_LABELS: Record<QuestType, string> = {
-  comment:    'Kommentieren',
-  like:       'Liken',
-  save:       'Speichern',
-  repost:     'Reposten',
-  dm_share:   'Story teilen',
-  engagement: 'Engagement',
-  secret:     'Geheimcode',
-};
-
 const TYPE_ICONS: Record<QuestType, React.ReactNode> = {
   comment:    <FaComment   size={12} />,
   like:       <FaHeart     size={12} />,
@@ -138,7 +128,8 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
 
   const totalReward = bundle.items.reduce((sum, it) => sum + it.rewardAmount, 0);
   const totalRep    = bundle.items.reduce((sum, it) => sum + (it.reputationReward ?? 0), 0);
-  const totalSlides = 1 + bundle.items.length;
+  const visibleItems = bundle.items.filter((item) => !completedSet.has(item.questType));
+  const totalSlides = 1 + visibleItems.length;
 
   const handleClaimBonus = async () => {
     setClaiming(true);
@@ -309,20 +300,11 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
         </div>
 
         {/* Slides 1..n: je ein Quest-Item als volle Karte */}
-        {bundle.items.map((item) => {
-          const done = completedSet.has(item.questType);
+        {visibleItems.map((item) => {
           const entry = buildQuestEntry(item);
           return (
             <div key={item.questId} className="min-w-full snap-start px-4 pt-3 pb-4">
-              {done ? (
-                <div className="flex items-center justify-between rounded-xl px-4 py-4 bg-green-950/40 border border-green-800/40">
-                  <div className="flex items-center gap-2 text-green-300">
-                    <span className="text-base">{TYPE_ICONS[item.questType]}</span>
-                    <span className="text-sm line-through">{TYPE_LABELS[item.questType]}</span>
-                  </div>
-                  <FaCheck size={14} className="text-green-400" />
-                </div>
-              ) : item.questType === 'secret' ? (
+              {item.questType === 'secret' ? (
                 (() => {
                   const full = item.completions >= item.maxCompletions;
                   const progress = Math.round((item.completions / Math.max(item.maxCompletions, 1)) * 100);

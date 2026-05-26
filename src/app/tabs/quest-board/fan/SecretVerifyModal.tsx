@@ -26,12 +26,14 @@ export default function SecretVerifyModal({
   const [step, setStep] = useState<Step>('input');
   const [loading, setLoading] = useState(false);
   const [rewardAmount, setRewardAmount] = useState(0);
+  const [levelBonus, setLevelBonus] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleClose = () => {
     setCode('');
     setStep('input');
     setLoading(false);
+    setLevelBonus(0);
     setErrorMsg('');
     onClose();
   };
@@ -63,6 +65,7 @@ export default function SecretVerifyModal({
         setStep('wrong');
       } else if (data.success) {
         setRewardAmount(data.rewardAmount);
+        setLevelBonus(data.levelBonus ?? 0);
         setStep('success');
         onCompleted(data.rewardAmount, data.levelBonus);
       }
@@ -102,7 +105,32 @@ export default function SecretVerifyModal({
       {/* ── Erfolg ─────────────────────────────────────────── */}
       {step === 'success' && (
         <div className="space-y-4">
+          <style>{`
+            @keyframes secretConfettiFloat {
+              0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+              100% { transform: translateY(-120px) rotate(240deg) scale(0.6); opacity: 0; }
+            }
+            .secret-confetti {
+              position: absolute;
+              animation: secretConfettiFloat 1.25s ease-out forwards;
+              pointer-events: none;
+              font-size: 1rem;
+            }
+          `}</style>
           <div className="bg-green-900/30 border border-green-700/40 rounded-xl p-6 text-center">
+            {['🎊', '✨', '🎉', '⭐', '💫', '🎊', '✨', '🎉'].map((icon, i) => (
+              <span
+                key={i}
+                className="secret-confetti"
+                style={{
+                  left: `${12 + i * 11}%`,
+                  bottom: `${8 + (i % 3) * 10}%`,
+                  animationDelay: `${i * 0.08}s`,
+                }}
+              >
+                {icon}
+              </span>
+            ))}
             <FaCheck size={32} className="text-green-400 mx-auto mb-3" />
             <p className="text-green-300 font-semibold text-lg">Code richtig!</p>
             <div className="flex flex-col items-center gap-1 mt-2">
@@ -113,6 +141,11 @@ export default function SecretVerifyModal({
               {(quest?.reputationReward ?? 0) > 0 && (
                 <div className="flex items-center gap-1 text-purple-300 font-bold text-sm">
                   <FaStar size={10} /> +{quest?.reputationReward} REP
+                </div>
+              )}
+              {levelBonus > 0 && (
+                <div className="text-green-300 text-xs font-semibold mt-1">
+                  Inklusive +{formatCredits(levelBonus)} D.FAITH Reputation-Level-Bonus
                 </div>
               )}
             </div>
@@ -144,6 +177,13 @@ export default function SecretVerifyModal({
       {/* ── Code-Eingabe / Falscher Code ───────────────────── */}
       {(step === 'input' || step === 'wrong') && quest && (
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="bg-blue-900/30 border border-blue-700/40 rounded-xl p-3">
+            <p className="text-blue-200 text-xs leading-relaxed">
+              <strong>Anleitung:</strong> Suche die versteckten Buchstaben im Reel und f\u00fchre sie in der richtigen Reihenfolge zusammen.
+              Sie ergeben ein Wort, das du als Geheimcode einreichst.
+            </p>
+          </div>
+
           <div className="bg-zinc-800 rounded-xl p-4 space-y-1">
             <p className="text-white text-sm font-semibold">{quest.videoTitle}</p>
             <p className="text-zinc-400 text-xs">
