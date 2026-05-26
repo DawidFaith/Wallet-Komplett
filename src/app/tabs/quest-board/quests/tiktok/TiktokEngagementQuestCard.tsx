@@ -25,15 +25,17 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, onComple
   return (
     <div className={`bg-zinc-900 rounded-2xl border border-cyan-800/40 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
       {/* Thumbnail */}
-      {quest.videoThumbnail && (
-        <div className="relative h-36">
-          <Image
-            src={quest.videoThumbnail}
-            alt={quest.videoTitle}
-            fill
-            unoptimized
-            className="object-cover"
-          />
+      <div className="relative h-40">
+        {quest.videoThumbnail
+          ? <Image
+              src={quest.videoThumbnail}
+              alt={quest.videoTitle}
+              fill
+              unoptimized
+              className="object-cover"
+            />
+          : <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/50 to-zinc-900" />
+        }
           <div className="absolute top-2 left-2 bg-black/80 text-cyan-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
             <SiTiktok size={10} /> Engagement
           </div>
@@ -53,7 +55,6 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, onComple
             </div>
           )}
         </div>
-      )}
 
       <div className="p-4 space-y-3">
         <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{quest.videoTitle}</h3>

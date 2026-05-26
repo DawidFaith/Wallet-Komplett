@@ -36,15 +36,16 @@ export default function FacebookQuestCard({ quest, isCompleted, onComplete, rewa
   return (
     <div className={`bg-zinc-900 rounded-2xl border border-blue-800/40 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
       {/* Thumbnail */}
-      {quest.videoThumbnail && (
-        <div className="relative w-full aspect-video overflow-hidden">
-          <img src={quest.videoThumbnail} alt={quest.videoTitle} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 to-transparent" />
-          <span className={`absolute top-2 left-2 ${badgeBg} text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1`}>
-            {badgeIcon} {badgeLabel}
-          </span>
-        </div>
-      )}
+      <div className="relative h-40 overflow-hidden">
+        {quest.videoThumbnail
+          ? <img src={quest.videoThumbnail} alt={quest.videoTitle} className="w-full h-full object-cover" />
+          : <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 to-zinc-900" />
+        }
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 to-transparent" />
+        <span className={`absolute top-2 left-2 ${badgeBg} text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1`}>
+          {badgeIcon} {badgeLabel}
+        </span>
+      </div>
       <div className="p-4 space-y-3">
         <div className="flex items-center gap-2">
           <FaFacebook size={16} className="text-blue-400" />
