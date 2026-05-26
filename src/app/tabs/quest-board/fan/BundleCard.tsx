@@ -314,30 +314,41 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
               ) : item.questType === 'secret' ? (
                 (() => {
                   const full = item.completions >= item.maxCompletions;
+                  const progress = Math.round((item.completions / Math.max(item.maxCompletions, 1)) * 100);
                   return (
-                    <div className={`bg-zinc-900 rounded-2xl border overflow-hidden ${full ? 'border-zinc-700 opacity-60' : 'border-zinc-800'}`}>
-                      {bundle.videoThumbnail && (
-                        <div className="relative h-40">
-                          <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
-                          <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70" />
-                          <div className="absolute top-2 left-2 bg-yellow-600/90 text-white text-xs font-bold px-2 py-1 rounded-full">
-                            🔑 Geheimcode
-                          </div>
-                          <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
-                            <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                              <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="rounded-full" unoptimized />
-                              +{item.rewardAmount.toFixed(2)} D.FAITH
-                            </div>
-                            {(item.reputationReward ?? 0) > 0 && (
-                              <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                                <FaStar size={9} /> +{item.reputationReward} REP
-                              </div>
-                            )}
-                          </div>
+                    <div className={`bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden transition-all ${full ? 'opacity-60' : ''}`}>
+                      <div className="relative h-40">
+                        {bundle.videoThumbnail
+                          ? <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
+                          : <div className="absolute inset-0 bg-gradient-to-br from-yellow-900/50 to-zinc-900" />
+                        }
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70" />
+                        <div className="absolute top-2 left-2 bg-yellow-600/90 text-white text-xs font-bold px-2 py-1 rounded-full">
+                          🔑 Geheimcode
                         </div>
-                      )}
+                        <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                          <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                            <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="rounded-full" unoptimized />
+                            +{item.rewardAmount.toFixed(2)} D.FAITH
+                          </div>
+                          {(item.reputationReward ?? 0) > 0 && (
+                            <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                              <FaStar size={9} /> +{item.reputationReward} REP
+                            </div>
+                          )}
+                        </div>
+                      </div>
                       <div className="p-4 space-y-3">
                         <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{bundle.videoTitle}</h3>
+                        <div>
+                          <div className="flex justify-between text-xs text-zinc-400 mb-1">
+                            <span>{item.completions} von {item.maxCompletions} Plätzen belegt</span>
+                            <span>{progress}%</span>
+                          </div>
+                          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-yellow-500 to-yellow-400 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+                          </div>
+                        </div>
                         <p className="text-zinc-400 text-xs">Aufgabe: <span className="text-zinc-300">🔑 Finde den geheimen Code und gib ihn ein!</span></p>
                         {full ? (
                           <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">Nicht mehr verfügbar</button>
@@ -379,30 +390,41 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
               ) : item.questType === 'dm_share' && item.storyToken && onOpenQuest ? (
                 (() => {
                   const full = item.completions >= item.maxCompletions;
+                  const progress = Math.round((item.completions / Math.max(item.maxCompletions, 1)) * 100);
                   return (
-                    <div className={`bg-zinc-900 rounded-2xl border overflow-hidden ${full ? 'border-zinc-700 opacity-60' : 'border-zinc-800'}`}>
-                      {bundle.videoThumbnail && (
-                        <div className="relative h-40">
-                          <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
-                          <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70" />
-                          <div className="absolute top-2 left-2 bg-pink-600/90 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                            <FaInstagram size={10} /> Story teilen
-                          </div>
-                          <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
-                            <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                              <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="rounded-full" unoptimized />
-                              +{item.rewardAmount.toFixed(2)} D.FAITH
-                            </div>
-                            {(item.reputationReward ?? 0) > 0 && (
-                              <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                                <FaStar size={9} /> +{item.reputationReward} REP
-                              </div>
-                            )}
-                          </div>
+                    <div className={`bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden transition-all ${full ? 'opacity-60' : ''}`}>
+                      <div className="relative h-40">
+                        {bundle.videoThumbnail
+                          ? <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
+                          : <div className="absolute inset-0 bg-gradient-to-br from-pink-900/50 to-zinc-900" />
+                        }
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70" />
+                        <div className="absolute top-2 left-2 bg-pink-600/90 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                          <FaInstagram size={10} /> Story teilen
                         </div>
-                      )}
+                        <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                          <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                            <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="rounded-full" unoptimized />
+                            +{item.rewardAmount.toFixed(2)} D.FAITH
+                          </div>
+                          {(item.reputationReward ?? 0) > 0 && (
+                            <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                              <FaStar size={9} /> +{item.reputationReward} REP
+                            </div>
+                          )}
+                        </div>
+                      </div>
                       <div className="p-4 space-y-3">
                         <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{bundle.videoTitle}</h3>
+                        <div>
+                          <div className="flex justify-between text-xs text-zinc-400 mb-1">
+                            <span>{item.completions} von {item.maxCompletions} Plätzen belegt</span>
+                            <span>{progress}%</span>
+                          </div>
+                          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-pink-500 to-rose-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+                          </div>
+                        </div>
                         <p className="text-zinc-400 text-xs">Aufgabe: <span className="text-zinc-300">📤 Teile dieses Video als Instagram Story und schick sie an unseren Account!</span></p>
                         {full ? (
                           <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">Nicht mehr verfügbar</button>
