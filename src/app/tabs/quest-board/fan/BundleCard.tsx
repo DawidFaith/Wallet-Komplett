@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { FaLayerGroup, FaCheck, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaExternalLinkAlt, FaGift } from 'react-icons/fa';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
@@ -44,18 +44,46 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
   const [justClaimed, setJustClaimed] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const [started, setStarted] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // „Gestartet“-Status pro Fan + Bundle in localStorage persistieren,
-  // damit der Teaser nach Reload nicht erneut erscheint wenn der Fan bereits losgelegt hat.
   const startedKey = 'bundle-started:' + bundle.id + ':' + fanWallet.toLowerCase();
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (window.localStorage.getItem(startedKey) === '1') setStarted(true);
   }, [startedKey]);
+
+  // Auto-scroll zu Slide 1 wenn Fan bereits gestartet hatte (nach Reload)
+  useEffect(() => {
+    if (!started) return;
+    const el = scrollRef.current;
+    if (!el || el.scrollLeft > 0) return;
+    const raf = requestAnimationFrame(() => {
+      if (scrollRef.current && scrollRef.current.scrollLeft === 0) {
+        scrollRef.current.scrollLeft = scrollRef.current.clientWidth;
+        setCurrentSlide(1);
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [started]);
+
   const handleStart = () => {
     setStarted(true);
     try { window.localStorage.setItem(startedKey, '1'); } catch { /* ignore */ }
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ left: scrollRef.current.clientWidth, behavior: 'smooth' });
+    }
   };
+
+  const handleScroll = useCallback(() => {
+    if (!scrollRef.current) return;
+    const idx = Math.round(scrollRef.current.scrollLeft / scrollRef.current.clientWidth);
+    setCurrentSlide(idx);
+    if (idx > 0) {
+      setStarted(true);
+      try { window.localStorage.setItem(startedKey, '1'); } catch { /* ignore */ }
+    }
+  }, [startedKey]);
 
   const [activeSecretQuestId, setActiveSecretQuestId] = useState<string | null>(null);
   const [secretCode, setSecretCode] = useState('');
@@ -117,10 +145,9 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
   const canClaimBonus    = bundle.fanAllCompleted && !bundle.fanBonusClaimed && !justClaimed && bundle.bundleCompletionBonus > 0;
   const bonusAlreadyDone = (bundle.fanBonusClaimed || justClaimed) && bundle.bundleCompletionBonus > 0;
 
-  // Teaser anzeigen wenn: noch nichts gestartet UND kein Fortschritt UND Bonus noch offen
-  const showTeaser = !started && completedCount === 0 && !bonusAlreadyDone;
   const totalReward = bundle.items.reduce((sum, it) => sum + it.rewardAmount, 0);
   const totalRep    = bundle.items.reduce((sum, it) => sum + (it.reputationReward ?? 0), 0);
+  const totalSlides = 1 + bundle.items.length;
 
   const handleClaimBonus = async () => {
     setClaiming(true);
@@ -148,6 +175,7 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
         ? 'bg-gradient-to-br from-[#1a1228] to-[#0d1a12] border-green-700/50'
         : 'bg-[#1a1228] border-purple-900/40'
     }`}>
+      {/* ─── Thumbnail / Video-Header ─── */}
       <div className="relative">
         {showVideo && ytVideoId ? (
           <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
@@ -197,9 +225,31 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
         </div>
       </div>
 
-      {showTeaser ? (
-        /* ─── Teaser: vor dem Start sieht der Fan nur die Übersicht ─── */
-        <div className="px-4 pt-3 pb-4 space-y-3">
+      {/* ─── Fortschrittsbalken (ab Slide 1 sichtbar) ─── */}
+      {currentSlide > 0 && (
+        <div className="px-4 pt-3">
+          <div className="flex items-center justify-between text-xs text-zinc-400 mb-1">
+            <span>{completedCount}/{totalCount} Aufgaben</span>
+            <span>{progressPercent}%</span>
+          </div>
+          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${bundle.fanAllCompleted ? 'bg-gradient-to-r from-green-500 to-emerald-400' : 'bg-gradient-to-r from-purple-600 to-violet-400'}`}
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ─── Horizontaler Swipe-Container ─── */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex overflow-x-auto snap-x snap-mandatory"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+      >
+        {/* Slide 0: Eingangstor / Teaser */}
+        <div className="min-w-full snap-start px-4 pt-3 pb-4 space-y-3">
           <div className="bg-gradient-to-br from-purple-900/40 to-violet-900/30 border border-purple-700/40 rounded-xl p-3 space-y-2">
             <div className="flex items-center gap-2">
               <FaLayerGroup className="text-purple-300" size={14} />
@@ -238,143 +288,139 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
             🚀 Jetzt Quest-Reihe starten
           </button>
         </div>
-      ) : (
-      <>
-      <div className="px-4 pt-3">
-        <div className="flex items-center justify-between text-xs text-zinc-400 mb-1">
-          <span>{completedCount}/{totalCount} Aufgaben</span>
-          <span>{progressPercent}%</span>
-        </div>
-        <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${bundle.fanAllCompleted ? 'bg-gradient-to-r from-green-500 to-emerald-400' : 'bg-gradient-to-r from-purple-600 to-violet-400'}`}
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
-      </div>
 
-      <div className="px-4 pt-3 space-y-3">
+        {/* Slides 1..n: je ein Quest-Item als volle Karte */}
         {bundle.items.map((item) => {
           const done = completedSet.has(item.questType);
           const entry = buildQuestEntry(item);
-
-          // Erledigte Items kompakt als "abgehakt"-Hinweis statt voller Karte
-          if (done) {
-            return (
-              <div
-                key={item.questId}
-                className="flex items-center justify-between rounded-xl px-3 py-2 bg-green-950/40 border border-green-800/40"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">{TYPE_ICONS[item.questType]}</span>
-                  <span className="text-sm text-green-300 line-through">{TYPE_LABELS[item.questType]}</span>
+          return (
+            <div key={item.questId} className="min-w-full snap-start px-4 pt-3 pb-4">
+              {done ? (
+                <div className="flex items-center justify-between rounded-xl px-4 py-4 bg-green-950/40 border border-green-800/40">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{TYPE_ICONS[item.questType]}</span>
+                    <span className="text-sm text-green-300 line-through">{TYPE_LABELS[item.questType]}</span>
+                  </div>
+                  <FaCheck size={14} className="text-green-400" />
                 </div>
-                <FaCheck size={12} className="text-green-400" />
-              </div>
-            );
-          }
-
-          // Secret-Quest weiterhin inline (kein passender QuestCard für Bundle-Kontext)
-          if (item.questType === 'secret') {
-            const full = item.completions >= item.maxCompletions;
-            if (full) return null;
-            return (
-              <div key={item.questId} className="rounded-xl border border-yellow-800/40 bg-yellow-950/20 p-3 space-y-2">
-                <div className="flex items-center gap-2">
-                  <span>🔑</span>
-                  <span className="text-sm text-yellow-200 font-semibold">Geheimcode eingeben</span>
-                  <span className="ml-auto text-xs text-yellow-400 font-mono">+{item.rewardAmount.toFixed(2)}</span>
-                </div>
-                {activeSecretQuestId === item.questId ? (
-                  <form onSubmit={(e) => handleSecretSubmit(e, item.questId)} className="flex flex-col gap-1">
-                    <div className="flex gap-2">
-                      <input
-                        value={secretCode}
-                        onChange={(e) => setSecretCode(e.target.value)}
-                        placeholder="Code eingeben..."
-                        autoFocus
-                        className="flex-1 bg-zinc-800 border border-zinc-600 focus:border-yellow-500 rounded-lg px-3 py-1.5 text-white text-sm outline-none uppercase"
-                      />
-                      <button
-                        type="submit"
-                        disabled={secretLoading || !secretCode.trim()}
-                        className="bg-yellow-600 hover:bg-yellow-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold"
-                      >{secretLoading ? '...' : 'OK'}</button>
-                      <button
-                        type="button"
-                        onClick={() => { setActiveSecretQuestId(null); setSecretCode(''); setSecretError(''); }}
-                        className="text-zinc-500 hover:text-zinc-300 px-2 py-1.5 text-sm"
-                      >X</button>
+              ) : item.questType === 'secret' ? (
+                (() => {
+                  const full = item.completions >= item.maxCompletions;
+                  if (full) return <div className="text-xs text-zinc-500 text-center py-4">Quest nicht mehr verfügbar</div>;
+                  return (
+                    <div className="rounded-xl border border-yellow-800/40 bg-yellow-950/20 p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span>🔑</span>
+                        <span className="text-sm text-yellow-200 font-semibold">Geheimcode eingeben</span>
+                        <span className="ml-auto text-xs text-yellow-400 font-mono">+{item.rewardAmount.toFixed(2)}</span>
+                      </div>
+                      {activeSecretQuestId === item.questId ? (
+                        <form onSubmit={(e) => handleSecretSubmit(e, item.questId)} className="flex flex-col gap-1">
+                          <div className="flex gap-2">
+                            <input
+                              value={secretCode}
+                              onChange={(e) => setSecretCode(e.target.value)}
+                              placeholder="Code eingeben..."
+                              autoFocus
+                              className="flex-1 bg-zinc-800 border border-zinc-600 focus:border-yellow-500 rounded-lg px-3 py-1.5 text-white text-sm outline-none uppercase"
+                            />
+                            <button
+                              type="submit"
+                              disabled={secretLoading || !secretCode.trim()}
+                              className="bg-yellow-600 hover:bg-yellow-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold"
+                            >{secretLoading ? '...' : 'OK'}</button>
+                            <button
+                              type="button"
+                              onClick={() => { setActiveSecretQuestId(null); setSecretCode(''); setSecretError(''); }}
+                              className="text-zinc-500 hover:text-zinc-300 px-2 py-1.5 text-sm"
+                            >X</button>
+                          </div>
+                          {secretError && <p className="text-red-400 text-xs">{secretError}</p>}
+                        </form>
+                      ) : (
+                        <button
+                          onClick={() => { setActiveSecretQuestId(item.questId); setSecretCode(''); setSecretError(''); }}
+                          className="w-full bg-yellow-700/70 hover:bg-yellow-600/70 text-white text-xs font-semibold py-2 rounded-lg"
+                        >Code eingeben</button>
+                      )}
                     </div>
-                    {secretError && <p className="text-red-400 text-xs">{secretError}</p>}
-                  </form>
-                ) : (
-                  <button
-                    onClick={() => { setActiveSecretQuestId(item.questId); setSecretCode(''); setSecretError(''); }}
-                    className="w-full bg-yellow-700/70 hover:bg-yellow-600/70 text-white text-xs font-semibold py-2 rounded-lg"
-                  >Code eingeben</button>
-                )}
-              </div>
-            );
-          }
-
-          // dm_share: dedizierter Start-Button öffnet das Story-Share-Modal
-          if (item.questType === 'dm_share' && item.storyToken && onOpenQuest) {
-            const full = item.completions >= item.maxCompletions;
-            if (full) return null;
-            return (
-              <button
-                key={item.questId}
-                onClick={() => onOpenQuest(entry)}
-                className="w-full bg-gradient-to-r from-pink-700/80 to-rose-600/80 hover:from-pink-600/80 hover:to-rose-500/80 text-white text-sm font-semibold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2"
-              >
-                📤 Story Quest starten <span className="text-pink-200 font-mono text-xs">+{item.rewardAmount.toFixed(2)}</span>
-              </button>
-            );
-          }
-
-          // Alle anderen Typen → echte QuestCard via Parent-Renderer
-          if (renderQuestCard) {
-            return <div key={item.questId}>{renderQuestCard(entry)}</div>;
-          }
-          return null;
+                  );
+                })()
+              ) : item.questType === 'dm_share' && item.storyToken && onOpenQuest ? (
+                (() => {
+                  const full = item.completions >= item.maxCompletions;
+                  if (full) return <div className="text-xs text-zinc-500 text-center py-4">Quest nicht mehr verfügbar</div>;
+                  return (
+                    <button
+                      onClick={() => onOpenQuest(entry)}
+                      className="w-full bg-gradient-to-r from-pink-700/80 to-rose-600/80 hover:from-pink-600/80 hover:to-rose-500/80 text-white text-sm font-semibold py-4 px-4 rounded-xl transition-all flex items-center justify-center gap-2"
+                    >
+                      📤 Story Quest starten <span className="text-pink-200 font-mono text-xs">+{item.rewardAmount.toFixed(2)}</span>
+                    </button>
+                  );
+                })()
+              ) : renderQuestCard ? (
+                renderQuestCard(entry)
+              ) : null}
+            </div>
+          );
         })}
       </div>
 
-      <div className="px-4 pt-3 pb-4">
-        {canClaimBonus ? (
-          <div className="space-y-2">
-            <div className="bg-yellow-950/40 border border-yellow-700/40 rounded-xl p-3 text-center">
-              <p className="text-yellow-300 text-sm font-semibold">Alle Aufgaben erledigt!</p>
-              <p className="text-yellow-400/80 text-xs mt-0.5">
-                +{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH Abschluss-Bonus wartet auf dich!
-              </p>
-            </div>
-            {claimError && <p className="text-red-400 text-xs text-center">{claimError}</p>}
-            <button
-              onClick={handleClaimBonus}
-              disabled={claiming}
-              className="w-full bg-gradient-to-r from-yellow-600 to-amber-500 hover:from-yellow-500 hover:to-amber-400 disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
-            >
-              <FaGift size={14} />
-              {claiming ? 'Einlösen...' : 'Bonus einlösen (+' + bundle.bundleCompletionBonus.toFixed(2) + ' D.FAITH)'}
-            </button>
-          </div>
-        ) : bonusAlreadyDone ? (
-          <div className="bg-green-950/30 border border-green-800/30 rounded-xl px-3 py-2 flex items-center gap-2">
-            <FaCheck size={12} className="text-green-400" />
-            <span className="text-green-400 text-xs font-semibold">
-              Bundle-Bonus bereits eingelöst (+{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH)
-            </span>
-          </div>
-        ) : bundle.bundleCompletionBonus > 0 ? (
-          <div className="bg-purple-950/20 border border-purple-800/20 rounded-xl px-3 py-2 flex items-center justify-between">
-            <span className="text-zinc-500 text-xs">Abschluss-Bonus</span>
-            <span className="text-purple-400 text-xs font-mono font-semibold">+{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH</span>
-          </div>
-        ) : null}
+      {/* ─── Dot-Navigation ─── */}
+      <div className="flex justify-center items-center gap-1.5 py-2">
+        {Array.from({ length: totalSlides }).map((_, i) => (
+          <button
+            key={i}
+            onClick={() => {
+              if (scrollRef.current) {
+                scrollRef.current.scrollTo({ left: i * scrollRef.current.clientWidth, behavior: 'smooth' });
+              }
+            }}
+            className={`rounded-full transition-all duration-300 ${
+              i === currentSlide
+                ? 'w-4 h-1.5 bg-purple-400'
+                : 'w-1.5 h-1.5 bg-zinc-600 hover:bg-zinc-400'
+            }`}
+          />
+        ))}
       </div>
-      </>
+
+      {/* ─── Bonus-Claim (immer unten sichtbar) ─── */}
+      {(canClaimBonus || bonusAlreadyDone || bundle.bundleCompletionBonus > 0) && (
+        <div className="px-4 pb-4">
+          {canClaimBonus ? (
+            <div className="space-y-2">
+              <div className="bg-yellow-950/40 border border-yellow-700/40 rounded-xl p-3 text-center">
+                <p className="text-yellow-300 text-sm font-semibold">Alle Aufgaben erledigt!</p>
+                <p className="text-yellow-400/80 text-xs mt-0.5">
+                  +{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH Abschluss-Bonus wartet auf dich!
+                </p>
+              </div>
+              {claimError && <p className="text-red-400 text-xs text-center">{claimError}</p>}
+              <button
+                onClick={handleClaimBonus}
+                disabled={claiming}
+                className="w-full bg-gradient-to-r from-yellow-600 to-amber-500 hover:from-yellow-500 hover:to-amber-400 disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
+              >
+                <FaGift size={14} />
+                {claiming ? 'Einlösen...' : 'Bonus einlösen (+' + bundle.bundleCompletionBonus.toFixed(2) + ' D.FAITH)'}
+              </button>
+            </div>
+          ) : bonusAlreadyDone ? (
+            <div className="bg-green-950/30 border border-green-800/30 rounded-xl px-3 py-2 flex items-center gap-2">
+              <FaCheck size={12} className="text-green-400" />
+              <span className="text-green-400 text-xs font-semibold">
+                Bundle-Bonus bereits eingelöst (+{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH)
+              </span>
+            </div>
+          ) : bundle.bundleCompletionBonus > 0 ? (
+            <div className="bg-purple-950/20 border border-purple-800/20 rounded-xl px-3 py-2 flex items-center justify-between">
+              <span className="text-zinc-500 text-xs">Abschluss-Bonus</span>
+              <span className="text-purple-400 text-xs font-mono font-semibold">+{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH</span>
+            </div>
+          ) : null}
+        </div>
       )}
     </div>
   );
