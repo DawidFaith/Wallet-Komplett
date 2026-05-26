@@ -1,7 +1,7 @@
 import { getDb } from '../db';
 import { cancelQuest } from './quests';
 import { addDfaithCredits } from './credits';
-import { addUserReputation } from './reputation';
+import { addUserReputation, DEFAULT_REPUTATION_LEVELS } from './reputation';
 import type {
   Platform, QuestType, QuestIndexEntry, ReputationLevel, ReputationContest,
   UserArtistReputation, ReputationLeaderboardEntry, QuestDetail, YouTubeBinding,
@@ -187,12 +187,11 @@ export async function getBundlesWithProgressForFan(
   ]);
 
   // Standard-Level-Bonuswerte (Fallback wenn kein Kreator eigene Level konfiguriert hat)
-  const DEFAULT_BONUS_LEVELS = [
-    { min:      0, bonus:   0 }, { min:    200, bonus:   5 }, { min:    500, bonus:  10 },
-    { min:  1_000, bonus:  15 }, { min:  2_000, bonus:  20 }, { min:  3_800, bonus:  25 },
-    { min:  7_000, bonus:  35 }, { min: 13_000, bonus:  50 }, { min: 24_000, bonus:  75 },
-    { min: 45_000, bonus: 100 },
-  ];
+  // Wird aus dem zentralen 100-Level-Default abgeleitet (1 % Bonus pro Level).
+  const DEFAULT_BONUS_LEVELS = DEFAULT_REPUTATION_LEVELS.map((l) => ({
+    min: l.minReputation,
+    bonus: l.questRewardBonusPercent,
+  }));
 
   const fanRepByCreator = new Map<string, number>(
     (fanRepRows as any[]).map((r) => [r.artist_wallet as string, Number(r.reputation)]),

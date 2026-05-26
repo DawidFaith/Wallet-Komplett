@@ -9,27 +9,48 @@ import type {
 
 // ─── Reputation ───────────────────────────────────────────────────────────────
 
-// ─── Level-Skalierung ────────────────────────────────────────────────────────
-// Bewährtes Konzept: ~2× Verdopplung des Abstands pro Level (Discord/RPG-Muster).
-// Jede Schwelle ≈ doppelt so viel Gesamtrep wie die vorherige (exponentiell).
+// ─── Level-Skalierung (100 Level, linearer Bonus) ────────────────────────────
+// Formel: minReputation(n) = 40 * (n - 1)^2
+// Bonus:  questRewardBonusPercent(n) = n - 1     (Level 1 = 0 %, Level 100 = 99 %)
 //
-// Kalibriert auf die Quest-REP-Werte (Story=120, Repost=80, Comment=40, Like=20):
-//   Casual Fan   (~90 REP/Mo) → Level 5 in ~22 Monate
-//   Aktiver Fan  (~500 REP/Mo) → Level 7 in ~14 Monate, Level 10 in ~7,5 Jahre
-//   Super Fan    (~1000 REP/Mo) → Level 10 in ~3,5 Jahre  ← "Legend" ist erreichbar
+// 10 Tiers à 10 Sub-Level (Newcomer 1 … Legend 10). Quadratische Kurve:
+// motivierend früh, realistisch fordernd zum Ende – Top-Tier in Jahren erreichbar.
+//
+//   Aktiver Fan (~300 REP/Tag, IG-only):
+//     L5  ≈    640 REP   →  ~2 Tage
+//     L10 ≈  3 240 REP   →  ~11 Tage
+//     L20 ≈ 14 440 REP   →  ~7 Wochen
+//     L25 ≈ 23 040 REP   →  ~2,5 Monate
+//     L50 ≈ 96 040 REP   →  ~10,7 Monate
+//     L75 ≈ 218 960 REP  →  ~2 Jahre
+//     L100 ≈ 392 040 REP →  ~3,6 Jahre
+//
+//   Super Fan (~1 000 REP/Tag, alle Plattformen):
+//     L50 in ~3 Monaten, L100 in ~13 Monaten
 // ─────────────────────────────────────────────────────────────────────────────
-const DEFAULT_REPUTATION_LEVELS: ReputationLevel[] = [
-  { levelNumber:  1, levelName: 'Newcomer',  minReputation:      0, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent:  0 },
-  { levelNumber:  2, levelName: 'Follower',  minReputation:    200, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent:  5 },
-  { levelNumber:  3, levelName: 'Fan',       minReputation:    500, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 10 },
-  { levelNumber:  4, levelName: 'Supporter', minReputation:  1_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 15 },
-  { levelNumber:  5, levelName: 'Loyalist',  minReputation:  2_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 20 },
-  { levelNumber:  6, levelName: 'True Fan',  minReputation:  3_800, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 25 },
-  { levelNumber:  7, levelName: 'Advocate',  minReputation:  7_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 35 },
-  { levelNumber:  8, levelName: 'VIP',       minReputation: 13_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 50 },
-  { levelNumber:  9, levelName: 'Elite',     minReputation: 24_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 75 },
-  { levelNumber: 10, levelName: 'Legend',    minReputation: 45_000, prizeDescription: '', creditReward: 0, maxRecipients: 0, questRewardBonusPercent: 100 },
+const LEVEL_TIER_NAMES = [
+  'Newcomer', 'Follower', 'Fan', 'Supporter', 'Loyalist',
+  'True Fan', 'Advocate', 'VIP', 'Elite', 'Legend',
 ];
+
+function buildDefaultReputationLevels(): ReputationLevel[] {
+  return Array.from({ length: 100 }, (_, i) => {
+    const levelNumber = i + 1;
+    const tier = LEVEL_TIER_NAMES[Math.floor(i / 10)];
+    const subLevel = (i % 10) + 1;
+    return {
+      levelNumber,
+      levelName: `${tier} ${subLevel}`,
+      minReputation: 40 * Math.pow(levelNumber - 1, 2),
+      prizeDescription: '',
+      creditReward: 0,
+      maxRecipients: 0,
+      questRewardBonusPercent: levelNumber - 1,
+    };
+  });
+}
+
+export const DEFAULT_REPUTATION_LEVELS: ReputationLevel[] = buildDefaultReputationLevels();
 
 /** Reputation eines Users für einen Artist erhöhen + Level-Up Credits auszahlen */
 export async function addUserReputation(
