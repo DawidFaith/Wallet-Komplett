@@ -186,7 +186,12 @@ export default function SecretVerifyModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="bg-blue-900/30 border border-blue-700/40 rounded-xl p-3">
             <p className="text-blue-200 text-xs leading-relaxed">
-              <strong>Anleitung:</strong> Suche die versteckten Buchstaben im Reel und f\u00fchre sie in der richtigen Reihenfolge zusammen.
+              <strong>Anleitung:</strong> Suche die versteckten Buchstaben im {
+                quest.platform === 'youtube' ? 'YouTube Short'
+                : quest.platform === 'tiktok' ? 'TikTok Video'
+                : quest.platform === 'facebook' ? 'Facebook Video'
+                : 'Reel'
+              } und führe sie in der richtigen Reihenfolge zusammen.
               Sie ergeben ein Wort, das du als Geheimcode einreichst.
             </p>
           </div>
