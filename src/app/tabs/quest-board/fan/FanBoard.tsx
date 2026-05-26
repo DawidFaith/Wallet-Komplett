@@ -316,90 +316,18 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         </div>
       )}
 
-      {/* Quest-Liste */}
-      {/* ── Bundle-Sektion (VOR der Quest-Liste, damit Fan zuerst Quest-Reihen sieht) ───── */}
-      {(bundles.length > 0 || bundlesLoading) && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-white font-bold text-lg flex items-center gap-2">
-              🎯 Quest-Reihen
-            </h2>
-            <button onClick={loadBundles} className="text-zinc-400 hover:text-white p-2 transition-colors">
-              <FaSync size={14} className={bundlesLoading ? 'animate-spin' : ''} />
-            </button>
-          </div>
-          {bundlesLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="border-4 border-purple-500/30 border-t-purple-500 rounded-full w-8 h-8 animate-spin" />
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {bundles.map((bundle) => (
-                <BundleCard
-                  key={bundle.id}
-                  bundle={bundle}
-                  fanWallet={walletAddress}
-                  onBonusClaimed={() => { loadBundles(); loadQuests(); }}
-                  renderQuestCard={(quest) => {
-                    const isCompleted = completedIds.includes(quest.id);
-                    if (quest.platform === 'youtube') {
-                      return <YoutubeQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleVerify} rewardTokenName={tokenName} />;
-                    }
-                    if (quest.platform === 'tiktok') {
-                      return quest.type === 'engagement'
-                        ? <TiktokEngagementQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleTikTokVerify} rewardTokenName={tokenName} />
-                        : <TiktokQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleTikTokVerify} rewardTokenName={tokenName} />;
-                    }
-                    if (quest.platform === 'instagram') {
-                      return <InstagramQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleInstagramVerify} rewardTokenName={tokenName} />;
-                    }
-                    if (quest.platform === 'facebook') {
-                      return <FacebookQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleFacebookVerify} rewardTokenName={tokenName} />;
-                    }
-                    return null;
-                  }}
-                  onOpenQuest={(quest) => {
-                    if (quest.platform === 'instagram' && (quest.type as string) === 'dm_share') {
-                      setInstagramDmShareQuest(quest);
-                    } else if (quest.platform === 'instagram') {
-                      if (quest.type === 'like' || quest.type === 'save' || (quest.type as string) === 'engagement' || (quest.type as string) === 'repost') {
-                        setInstagramLikeQuest(quest);
-                      } else {
-                        setInstagramCommentQuest(quest);
-                      }
-                    } else if (quest.platform === 'youtube') {
-                      if (quest.type === 'like') setLikeVerifyQuest(quest);
-                      else if (quest.type === 'secret') setSecretVerifyQuest(quest);
-                      else setVerifyingQuest(quest);
-                    } else if (quest.platform === 'tiktok') {
-                      if (quest.type === 'engagement') setTiktokEngagementQuest(quest);
-                      else if (quest.type === 'secret') setSecretVerifyQuest(quest);
-                      else setVerifyingQuest(quest);
-                    } else if (quest.platform === 'facebook') {
-                      if (quest.type === 'like') setFacebookLikeQuest(quest);
-                      else if (quest.type === 'secret') setSecretVerifyQuest(quest);
-                      else setFacebookCommentQuest(quest);
-                    }
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       <div className="flex items-center justify-between">
         <h2 className="text-white font-bold text-lg">Verfügbare Quests</h2>
-        <button onClick={loadQuests} className="text-zinc-400 hover:text-white p-2 transition-colors">
-          <FaSync size={14} className={loading ? 'animate-spin' : ''} />
+        <button onClick={() => { loadQuests(); loadBundles(); }} className="text-zinc-400 hover:text-white p-2 transition-colors">
+          <FaSync size={14} className={(loading || bundlesLoading) ? 'animate-spin' : ''} />
         </button>
       </div>
 
-      {loading ? (
+      {(loading || bundlesLoading) ? (
         <div className="flex justify-center py-12">
           <div className="border-4 border-red-500/30 border-t-red-500 rounded-full w-10 h-10 animate-spin" />
         </div>
-      ) : youtubeQuests.length === 0 && tiktokCommentQuests.length === 0 && tiktokEngagementQuests.length === 0 && instagramQuests.length === 0 && facebookQuests.length === 0 ? (
+      ) : bundles.length === 0 && youtubeQuests.length === 0 && tiktokCommentQuests.length === 0 && tiktokEngagementQuests.length === 0 && instagramQuests.length === 0 && facebookQuests.length === 0 ? (
         <div className="text-center py-12 text-zinc-500">
           <FaTrophy size={32} className="mx-auto mb-3 opacity-30" />
           <p>Alle Quests erledigt oder noch keine verfügbar.</p>
@@ -407,6 +335,58 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         </div>
       ) : (
         <div className="space-y-4">
+          {/* Quest-Reihen (Bundles) zuerst */}
+          {bundles.map((bundle) => (
+            <BundleCard
+              key={bundle.id}
+              bundle={bundle}
+              fanWallet={walletAddress}
+              onBonusClaimed={() => { loadBundles(); loadQuests(); }}
+              renderQuestCard={(quest) => {
+                const isCompleted = completedIds.includes(quest.id);
+                if (quest.platform === 'youtube') {
+                  return <YoutubeQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleVerify} rewardTokenName={tokenName} />;
+                }
+                if (quest.platform === 'tiktok') {
+                  return quest.type === 'engagement'
+                    ? <TiktokEngagementQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleTikTokVerify} rewardTokenName={tokenName} />
+                    : <TiktokQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleTikTokVerify} rewardTokenName={tokenName} />;
+                }
+                if (quest.platform === 'instagram') {
+                  return <InstagramQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleInstagramVerify} rewardTokenName={tokenName} />;
+                }
+                if (quest.platform === 'facebook') {
+                  return <FacebookQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleFacebookVerify} rewardTokenName={tokenName} />;
+                }
+                return null;
+              }}
+              onOpenQuest={(quest) => {
+                if (quest.platform === 'instagram' && (quest.type as string) === 'dm_share') {
+                  setInstagramDmShareQuest(quest);
+                } else if (quest.platform === 'instagram') {
+                  if (quest.type === 'like' || quest.type === 'save' || (quest.type as string) === 'engagement' || (quest.type as string) === 'repost') {
+                    setInstagramLikeQuest(quest);
+                  } else {
+                    setInstagramCommentQuest(quest);
+                  }
+                } else if (quest.platform === 'youtube') {
+                  if (quest.type === 'like') setLikeVerifyQuest(quest);
+                  else if (quest.type === 'secret') setSecretVerifyQuest(quest);
+                  else setVerifyingQuest(quest);
+                } else if (quest.platform === 'tiktok') {
+                  if (quest.type === 'engagement') setTiktokEngagementQuest(quest);
+                  else if (quest.type === 'secret') setSecretVerifyQuest(quest);
+                  else setVerifyingQuest(quest);
+                } else if (quest.platform === 'facebook') {
+                  if (quest.type === 'like') setFacebookLikeQuest(quest);
+                  else if (quest.type === 'secret') setSecretVerifyQuest(quest);
+                  else setFacebookCommentQuest(quest);
+                }
+              }}
+            />
+          ))}
+
+          {/* Einzelne Quest-Karten nach den Bundles */}
           {youtubeQuests.length > 0 && (
             <div className="relative">
               {!verified.youtube && (

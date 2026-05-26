@@ -175,56 +175,6 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
         ? 'bg-gradient-to-br from-[#1a1228] to-[#0d1a12] border-green-700/50'
         : 'bg-[#1a1228] border-purple-900/40'
     }`}>
-      {/* ─── Thumbnail / Video-Header ─── */}
-      <div className="relative">
-        {showVideo && ytVideoId ? (
-          <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-            <iframe
-              src={'https://www.youtube.com/embed/' + ytVideoId + '?autoplay=1'}
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-              className="absolute inset-0 w-full h-full"
-              title={bundle.videoTitle}
-            />
-            <button
-              onClick={() => setShowVideo(false)}
-              className="absolute top-2 right-2 z-10 bg-black/60 hover:bg-black/80 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs transition-all"
-            >x</button>
-          </div>
-        ) : bundle.videoThumbnail ? (
-          <div
-            className={`relative w-full h-28 ${ytVideoId ? 'cursor-pointer group' : ''}`}
-            onClick={() => ytVideoId && setShowVideo(true)}
-          >
-            <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover opacity-60" />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#1a1228]" />
-            {ytVideoId && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-11 h-11 rounded-full bg-red-600/80 group-hover:bg-red-500 flex items-center justify-center transition-all shadow-lg">
-                  <FaYoutube size={18} className="text-white" />
-                </div>
-              </div>
-            )}
-          </div>
-        ) : null}
-        <div className={`px-4 ${bundle.videoThumbnail ? '-mt-12 relative z-10' : 'pt-4'} pb-0`}>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="flex items-center gap-1 bg-purple-900/70 rounded-lg px-2 py-0.5 text-xs text-purple-300 font-semibold">
-              <FaLayerGroup size={9} /> Bundle
-            </span>
-            <span className="flex items-center gap-1 bg-black/40 rounded-lg px-2 py-0.5 text-xs text-zinc-400">
-              {PLATFORM_ICONS[bundle.platform]}
-            </span>
-            {bundle.videoUrl && (
-              <a href={bundle.videoUrl} target="_blank" rel="noopener noreferrer" className="ml-auto">
-                <FaExternalLinkAlt size={10} className="text-zinc-500 hover:text-white" />
-              </a>
-            )}
-          </div>
-          <p className="text-white font-bold text-sm line-clamp-1">{bundle.videoTitle}</p>
-        </div>
-      </div>
-
       {/* ─── Fortschrittsbalken (ab Slide 1 sichtbar) ─── */}
       {currentSlide > 0 && (
         <div className="px-4 pt-3">
@@ -248,45 +198,103 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
         className="flex overflow-x-auto snap-x snap-mandatory"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
-        {/* Slide 0: Eingangstor / Teaser */}
-        <div className="min-w-full snap-start px-4 pt-3 pb-4 space-y-3">
-          <div className="bg-gradient-to-br from-purple-900/40 to-violet-900/30 border border-purple-700/40 rounded-xl p-3 space-y-2">
-            <div className="flex items-center gap-2">
-              <FaLayerGroup className="text-purple-300" size={14} />
-              <p className="text-purple-200 font-bold text-sm">Quest-Reihe</p>
-            </div>
-            <p className="text-zinc-300 text-xs leading-relaxed">
-              Diese Quest-Reihe besteht aus <strong className="text-white">{totalCount} Aufgaben</strong>.
-              Schließe <strong className="text-white">alle</strong> ab und erhalte zusätzlich einen Abschluss-Bonus!
+        {/* Slide 0: Eingangstor / Hero */}
+        <div className="min-w-full snap-start">
+          {/* Hero-Bild mit Overlay */}
+          <div className={`relative h-52 ${ytVideoId ? 'cursor-pointer group' : ''}`} onClick={() => ytVideoId && !showVideo && setShowVideo(true)}>
+            {showVideo && ytVideoId ? (
+              <>
+                <iframe
+                  src={'https://www.youtube.com/embed/' + ytVideoId + '?autoplay=1'}
+                  allow="autoplay; encrypted-media"
+                  allowFullScreen
+                  className="absolute inset-0 w-full h-full"
+                  title={bundle.videoTitle}
+                />
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowVideo(false); }}
+                  className="absolute top-2 right-2 z-10 bg-black/60 hover:bg-black/80 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs transition-all"
+                >✕</button>
+              </>
+            ) : (
+              <>
+                {bundle.videoThumbnail
+                  ? <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
+                  : <div className="absolute inset-0 bg-gradient-to-br from-purple-900 to-violet-800" />
+                }
+                <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/30 to-black/85" />
+                {/* Play-Overlay für YouTube */}
+                {ytVideoId && (
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-14 h-14 rounded-full bg-red-600/80 flex items-center justify-center shadow-xl">
+                      <FaYoutube size={24} className="text-white" />
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+            {/* Top-Badges */}
+            {!showVideo && (
+              <div className="absolute top-3 left-3 flex items-center gap-2 z-10">
+                <span className="flex items-center gap-1 bg-purple-600/90 backdrop-blur-sm rounded-lg px-2.5 py-1 text-xs text-white font-semibold shadow">
+                  <FaLayerGroup size={10} /> Quest-Reihe
+                </span>
+                <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm rounded-lg px-2 py-1 text-xs text-zinc-200">
+                  {PLATFORM_ICONS[bundle.platform]}
+                </span>
+              </div>
+            )}
+            {!showVideo && bundle.videoUrl && (
+              <a
+                href={bundle.videoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="absolute top-3 right-3 z-10 bg-black/60 backdrop-blur-sm rounded-lg px-2 py-1 text-[11px] text-zinc-300 hover:text-white flex items-center gap-1 transition-colors"
+              >
+                <FaExternalLinkAlt size={9} /> Video
+              </a>
+            )}
+            {/* Bottom: Titel + Belohnungs-Badges */}
+            {!showVideo && (
+              <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 z-10">
+                <p className="text-white font-bold text-base line-clamp-2 mb-2 drop-shadow-md">{bundle.videoTitle}</p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="bg-purple-600/85 backdrop-blur-sm rounded-full px-2.5 py-0.5 text-xs text-white font-mono font-bold shadow">
+                    +{totalReward.toFixed(2)} D.FAITH
+                  </span>
+                  {totalRep > 0 && (
+                    <span className="bg-amber-500/85 backdrop-blur-sm rounded-full px-2.5 py-0.5 text-xs text-white font-bold flex items-center gap-1 shadow">
+                      <FaStar size={9} /> +{totalRep} REP
+                    </span>
+                  )}
+                  <span className="bg-yellow-500/85 backdrop-blur-sm rounded-full px-2.5 py-0.5 text-xs text-white font-bold flex items-center gap-1 shadow">
+                    <FaGift size={9} /> +{bundle.bundleCompletionBonus.toFixed(2)} Bonus
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+          {/* Body */}
+          <div className="px-4 pt-3 pb-4 space-y-3">
+            <p className="text-zinc-400 text-xs leading-relaxed">
+              <strong className="text-white">{totalCount} Aufgaben</strong> – schließe alle ab und sicher dir den Abschluss-Bonus!
             </p>
-            <div className="flex flex-wrap gap-1.5 pt-1">
+            <div className="flex flex-wrap gap-1.5">
               {bundle.items.map((it) => (
-                <span key={it.questId} className="bg-black/30 rounded-md px-2 py-0.5 text-[11px] text-zinc-300 flex items-center gap-1">
+                <span key={it.questId} className="bg-zinc-800 border border-zinc-700/50 rounded-md px-2 py-0.5 text-[11px] text-zinc-300 flex items-center gap-1">
                   <span>{TYPE_ICONS[it.questType]}</span>
                   <span>{TYPE_LABELS[it.questType]}</span>
                 </span>
               ))}
             </div>
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-purple-800/30">
-              <div className="bg-black/30 rounded-lg px-2 py-1.5">
-                <p className="text-[10px] text-zinc-500 uppercase tracking-wide">Quest-Belohnungen</p>
-                <p className="text-purple-300 font-mono text-sm font-bold">+{totalReward.toFixed(2)} D.FAITH</p>
-                {totalRep > 0 && <p className="text-amber-400/80 text-[10px]">+{totalRep} REP</p>}
-              </div>
-              <div className="bg-black/30 rounded-lg px-2 py-1.5">
-                <p className="text-[10px] text-zinc-500 uppercase tracking-wide">Abschluss-Bonus</p>
-                <p className="text-yellow-400 font-mono text-sm font-bold flex items-center gap-1">
-                  <FaGift size={10} />+{bundle.bundleCompletionBonus.toFixed(2)}
-                </p>
-              </div>
-            </div>
+            <button
+              onClick={handleStart}
+              className="w-full bg-gradient-to-r from-purple-600 to-violet-500 hover:from-purple-500 hover:to-violet-400 active:scale-[0.98] text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-900/40"
+            >
+              🚀 Quest-Reihe starten
+            </button>
           </div>
-          <button
-            onClick={handleStart}
-            className="w-full bg-gradient-to-r from-purple-600 to-violet-500 hover:from-purple-500 hover:to-violet-400 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-900/30"
-          >
-            🚀 Jetzt Quest-Reihe starten
-          </button>
         </div>
 
         {/* Slides 1..n: je ein Quest-Item als volle Karte */}
@@ -309,7 +317,7 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
                   return (
                     <div className={`bg-zinc-900 rounded-2xl border overflow-hidden ${full ? 'border-zinc-700 opacity-60' : 'border-zinc-800'}`}>
                       {bundle.videoThumbnail && (
-                        <div className="relative h-36">
+                        <div className="relative h-40">
                           <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
                           <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70" />
                           <div className="absolute top-2 left-2 bg-yellow-600/90 text-white text-xs font-bold px-2 py-1 rounded-full">
@@ -374,7 +382,7 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
                   return (
                     <div className={`bg-zinc-900 rounded-2xl border overflow-hidden ${full ? 'border-zinc-700 opacity-60' : 'border-zinc-800'}`}>
                       {bundle.videoThumbnail && (
-                        <div className="relative h-36">
+                        <div className="relative h-40">
                           <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
                           <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70" />
                           <div className="absolute top-2 left-2 bg-pink-600/90 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
