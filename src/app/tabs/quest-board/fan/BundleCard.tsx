@@ -343,7 +343,7 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
                         }
                         <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70" />
                         <div className="absolute top-2 left-2 bg-pink-600/90 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                          <FaInstagram size={10} /> Story teilen
+                          <FaShareAlt size={10} /> Story teilen
                         </div>
                         <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
                           <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">

@@ -249,6 +249,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
     if (!quest) return;
     if ((quest.type as string) === 'dm_share') {
       setInstagramDmShareQuest(quest);
+    } else if (quest.type === 'secret') {
+      setSecretVerifyQuest(quest);
     } else if (quest.type === 'like' || quest.type === 'save' || (quest.type as string) === 'engagement' || (quest.type as string) === 'repost') {
       setInstagramLikeQuest(quest);
     } else {
@@ -364,7 +366,9 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                 if (quest.platform === 'instagram' && (quest.type as string) === 'dm_share') {
                   setInstagramDmShareQuest(quest);
                 } else if (quest.platform === 'instagram') {
-                  if (quest.type === 'like' || quest.type === 'save' || (quest.type as string) === 'engagement' || (quest.type as string) === 'repost') {
+                  if (quest.type === 'secret') {
+                    setSecretVerifyQuest(quest);
+                  } else if (quest.type === 'like' || quest.type === 'save' || (quest.type as string) === 'engagement' || (quest.type as string) === 'repost') {
                     setInstagramLikeQuest(quest);
                   } else {
                     setInstagramCommentQuest(quest);
