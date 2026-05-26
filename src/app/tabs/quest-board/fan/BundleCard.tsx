@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import { FaLayerGroup, FaCheck, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaExternalLinkAlt, FaGift } from 'react-icons/fa';
+import { FaLayerGroup, FaCheck, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaExternalLinkAlt, FaGift, FaStar } from 'react-icons/fa';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
 import type { Platform, QuestType, QuestIndexEntry } from '../types';
 
@@ -306,57 +306,108 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
               ) : item.questType === 'secret' ? (
                 (() => {
                   const full = item.completions >= item.maxCompletions;
-                  if (full) return <div className="text-xs text-zinc-500 text-center py-4">Quest nicht mehr verfügbar</div>;
                   return (
-                    <div className="rounded-xl border border-yellow-800/40 bg-yellow-950/20 p-3 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span>🔑</span>
-                        <span className="text-sm text-yellow-200 font-semibold">Geheimcode eingeben</span>
-                        <span className="ml-auto text-xs text-yellow-400 font-mono">+{item.rewardAmount.toFixed(2)}</span>
-                      </div>
-                      {activeSecretQuestId === item.questId ? (
-                        <form onSubmit={(e) => handleSecretSubmit(e, item.questId)} className="flex flex-col gap-1">
-                          <div className="flex gap-2">
-                            <input
-                              value={secretCode}
-                              onChange={(e) => setSecretCode(e.target.value)}
-                              placeholder="Code eingeben..."
-                              autoFocus
-                              className="flex-1 bg-zinc-800 border border-zinc-600 focus:border-yellow-500 rounded-lg px-3 py-1.5 text-white text-sm outline-none uppercase"
-                            />
-                            <button
-                              type="submit"
-                              disabled={secretLoading || !secretCode.trim()}
-                              className="bg-yellow-600 hover:bg-yellow-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold"
-                            >{secretLoading ? '...' : 'OK'}</button>
-                            <button
-                              type="button"
-                              onClick={() => { setActiveSecretQuestId(null); setSecretCode(''); setSecretError(''); }}
-                              className="text-zinc-500 hover:text-zinc-300 px-2 py-1.5 text-sm"
-                            >X</button>
+                    <div className={`bg-zinc-900 rounded-2xl border overflow-hidden ${full ? 'border-zinc-700 opacity-60' : 'border-zinc-800'}`}>
+                      {bundle.videoThumbnail && (
+                        <div className="relative h-36">
+                          <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
+                          <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70" />
+                          <div className="absolute top-2 left-2 bg-yellow-600/90 text-white text-xs font-bold px-2 py-1 rounded-full">
+                            🔑 Geheimcode
                           </div>
-                          {secretError && <p className="text-red-400 text-xs">{secretError}</p>}
-                        </form>
-                      ) : (
-                        <button
-                          onClick={() => { setActiveSecretQuestId(item.questId); setSecretCode(''); setSecretError(''); }}
-                          className="w-full bg-yellow-700/70 hover:bg-yellow-600/70 text-white text-xs font-semibold py-2 rounded-lg"
-                        >Code eingeben</button>
+                          <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                            <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                              <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="rounded-full" unoptimized />
+                              +{item.rewardAmount.toFixed(2)} D.FAITH
+                            </div>
+                            {(item.reputationReward ?? 0) > 0 && (
+                              <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                                <FaStar size={9} /> +{item.reputationReward} REP
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       )}
+                      <div className="p-4 space-y-3">
+                        <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{bundle.videoTitle}</h3>
+                        <p className="text-zinc-400 text-xs">Aufgabe: <span className="text-zinc-300">🔑 Finde den geheimen Code und gib ihn ein!</span></p>
+                        {full ? (
+                          <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">Nicht mehr verfügbar</button>
+                        ) : activeSecretQuestId === item.questId ? (
+                          <form onSubmit={(e) => handleSecretSubmit(e, item.questId)} className="flex flex-col gap-2">
+                            <div className="flex gap-2">
+                              <input
+                                value={secretCode}
+                                onChange={(e) => setSecretCode(e.target.value)}
+                                placeholder="Code eingeben..."
+                                autoFocus
+                                className="flex-1 bg-zinc-800 border border-zinc-600 focus:border-yellow-500 rounded-lg px-3 py-2 text-white text-sm outline-none uppercase"
+                              />
+                              <button
+                                type="submit"
+                                disabled={secretLoading || !secretCode.trim()}
+                                className="bg-yellow-600 hover:bg-yellow-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white px-4 py-2 rounded-lg text-sm font-semibold"
+                              >{secretLoading ? '...' : 'OK'}</button>
+                              <button
+                                type="button"
+                                onClick={() => { setActiveSecretQuestId(null); setSecretCode(''); setSecretError(''); }}
+                                className="text-zinc-500 hover:text-zinc-300 px-2 text-sm"
+                              >✕</button>
+                            </div>
+                            {secretError && <p className="text-red-400 text-xs">{secretError}</p>}
+                          </form>
+                        ) : (
+                          <button
+                            onClick={() => { setActiveSecretQuestId(item.questId); setSecretCode(''); setSecretError(''); }}
+                            className="w-full bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                          >
+                            🔑 Code eingeben
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })()
               ) : item.questType === 'dm_share' && item.storyToken && onOpenQuest ? (
                 (() => {
                   const full = item.completions >= item.maxCompletions;
-                  if (full) return <div className="text-xs text-zinc-500 text-center py-4">Quest nicht mehr verfügbar</div>;
                   return (
-                    <button
-                      onClick={() => onOpenQuest(entry)}
-                      className="w-full bg-gradient-to-r from-pink-700/80 to-rose-600/80 hover:from-pink-600/80 hover:to-rose-500/80 text-white text-sm font-semibold py-4 px-4 rounded-xl transition-all flex items-center justify-center gap-2"
-                    >
-                      📤 Story Quest starten <span className="text-pink-200 font-mono text-xs">+{item.rewardAmount.toFixed(2)}</span>
-                    </button>
+                    <div className={`bg-zinc-900 rounded-2xl border overflow-hidden ${full ? 'border-zinc-700 opacity-60' : 'border-zinc-800'}`}>
+                      {bundle.videoThumbnail && (
+                        <div className="relative h-36">
+                          <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
+                          <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70" />
+                          <div className="absolute top-2 left-2 bg-pink-600/90 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                            <FaInstagram size={10} /> Story teilen
+                          </div>
+                          <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                            <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                              <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="rounded-full" unoptimized />
+                              +{item.rewardAmount.toFixed(2)} D.FAITH
+                            </div>
+                            {(item.reputationReward ?? 0) > 0 && (
+                              <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                                <FaStar size={9} /> +{item.reputationReward} REP
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      <div className="p-4 space-y-3">
+                        <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{bundle.videoTitle}</h3>
+                        <p className="text-zinc-400 text-xs">Aufgabe: <span className="text-zinc-300">📤 Teile dieses Video als Instagram Story und schick sie an unseren Account!</span></p>
+                        {full ? (
+                          <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">Nicht mehr verfügbar</button>
+                        ) : (
+                          <button
+                            onClick={() => onOpenQuest(entry)}
+                            className="w-full bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"
+                          >
+                            <FaInstagram size={13} /> Story Quest starten
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   );
                 })()
               ) : renderQuestCard ? (
