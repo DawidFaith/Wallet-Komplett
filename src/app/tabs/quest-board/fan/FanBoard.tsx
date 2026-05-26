@@ -270,9 +270,12 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
 
   // Quests nach Plattform und Typ gruppieren – ALLE anzeigen, gesperrte mit Lock
   // Optionaler filterCreator (lowercase wallet) für Artist-Selektion
-  const filteredQuests = filterCreator
+  // Bundle-Quests werden hier ausgeschlossen, weil sie innerhalb der BundleCard
+  // (Sektion "Quest-Reihen" weiter oben) erscheinen und sonst doppelt auftauchen würden.
+  const filteredQuests = (filterCreator
     ? quests.filter((q) => q.creatorWallet.toLowerCase() === filterCreator.toLowerCase())
-    : quests;
+    : quests
+  ).filter((q) => !q.bundleId);
   const youtubeQuests = filteredQuests.filter((q) => q.platform === 'youtube' && !completedIds.includes(q.id));
   const tiktokCommentQuests = filteredQuests.filter((q) => q.platform === 'tiktok' && q.type !== 'engagement' && !completedIds.includes(q.id));
   const tiktokEngagementQuests = filteredQuests.filter((q) => q.platform === 'tiktok' && q.type === 'engagement' && !completedIds.includes(q.id));

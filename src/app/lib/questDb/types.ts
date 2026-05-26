@@ -22,6 +22,7 @@ export interface QuestIndexEntry {
   creditsLocked: number;
   creditsRefunded: boolean;
   bonusBudget: number;
+  bundleId?: string | null;
 }
 
 // ─── Reputation-Typen ─────────────────────────────────────────────────────────

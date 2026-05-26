@@ -33,6 +33,7 @@ export function rowToQuestDetail(row: any): QuestDetail {
     creditsRefunded: Boolean(row.credits_refunded ?? false),
     bonusBudget: Number(row.bonus_budget ?? 0),
     storyToken: row.story_token ?? null,
+    bundleId: row.bundle_id ?? null,
   };
 }
 

@@ -24,6 +24,7 @@ export interface QuestIndexEntry {
   createdAt: string;
   expiresAt?: string | null;
   storyToken?: string | null;
+  bundleId?: string | null;
 }
 
 export interface YouTubeBinding {
