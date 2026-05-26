@@ -10,6 +10,7 @@ import { formatCredits } from '../utils';
 interface InstagramDmShareModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
+  levelBonusPercent?: number;
   /** Wenn vorhanden: Fan kam über den Story-Link → einfacher 1-Klick Claim-Flow */
   storyClaimToken?: string;
   onCompleted: (rewardAmount: number, levelBonus?: number) => void;
@@ -28,6 +29,7 @@ type Step =
 export default function InstagramDmShareModal({
   quest,
   walletAddress,
+  levelBonusPercent = 0,
   storyClaimToken,
   onCompleted,
   onClose,
@@ -43,6 +45,8 @@ export default function InstagramDmShareModal({
   const [instagramHandle, setInstagramHandle] = useState('');
   const [creatorHandle, setCreatorHandle] = useState('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
+  const displayReward = quest ? quest.rewardAmount + levelBonusAmount : 0;
 
   // Countdown Timer
   useEffect(() => {
@@ -144,15 +148,15 @@ export default function InstagramDmShareModal({
         setError(data.error ?? 'Fehler beim Abschließen');
         return;
       }
-      setRewardAmount(data.rewardAmount ?? quest.rewardAmount);
+      setRewardAmount(data.rewardAmount ?? displayReward);
       setStep('success');
-      onCompleted(data.rewardAmount ?? quest.rewardAmount, data.levelBonus);
+      onCompleted(data.rewardAmount ?? displayReward, data.levelBonus);
     } catch {
       setError('Netzwerkfehler. Bitte erneut versuchen.');
     } finally {
       setLoading(false);
     }
-  }, [quest, walletAddress, onCompleted]);
+  }, [quest, walletAddress, onCompleted, displayReward]);
 
   // (Polling entfernt – Link = Verifikation, kein Webhook-Check nötig)
 
@@ -169,7 +173,10 @@ export default function InstagramDmShareModal({
           <div>
             <p className="font-semibold text-sm">{quest.videoTitle}</p>
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-xs text-zinc-500 flex items-center gap-1">Story Quest · <Image src="/D.FAITH.png" alt="" width={10} height={10} className="w-2.5 h-2.5 rounded-full shrink-0" />{formatCredits(quest.rewardAmount)} D.FAITH</p>
+              <p className="text-xs text-zinc-500 flex items-center gap-1">Story Quest · <Image src="/D.FAITH.png" alt="" width={10} height={10} className="w-2.5 h-2.5 rounded-full shrink-0" />{formatCredits(displayReward)} D.FAITH</p>
+              {levelBonusPercent > 0 && (
+                <span className="text-[10px] text-green-300 font-semibold">inkl. +{levelBonusPercent}% Bonus</span>
+              )}
               {(quest.reputationReward ?? 0) > 0 && (
                 <span className="flex items-center gap-0.5 text-xs text-yellow-400">
                   <FaStar size={9} /> +{quest.reputationReward} REP
@@ -184,7 +191,7 @@ export default function InstagramDmShareModal({
           <StoryClaimSection
             token={storyClaimToken}
             walletAddress={walletAddress}
-            rewardAmount={quest.rewardAmount}
+            rewardAmount={displayReward}
             questTitle={quest.videoTitle}
             onSuccess={(amount) => {
               onCompleted(amount);
@@ -214,7 +221,7 @@ export default function InstagramDmShareModal({
                   <span className="text-xs text-zinc-400">Belohnung</span>
                   <span className="flex items-center gap-1.5 text-yellow-400 font-bold text-sm">
                     <Image src="/D.FAITH.png" alt="" width={16} height={16} className="w-4 h-4 rounded-full" unoptimized />
-                    +{formatCredits(quest.rewardAmount)} D.FAITH
+                    +{formatCredits(displayReward)} D.FAITH
                     {(quest.reputationReward ?? 0) > 0 && (
                       <span className="text-amber-300 text-xs font-semibold ml-1 flex items-center gap-0.5">
                         <FaStar size={9} /> +{quest.reputationReward} REP
@@ -367,7 +374,7 @@ export default function InstagramDmShareModal({
               <p className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Deine Belohnung</p>
               <div className="flex items-center justify-center gap-2">
                 <Image src="/D.FAITH.png" alt="D.FAITH" width={28} height={28} className="w-7 h-7 rounded-full" unoptimized />
-                <span className="text-3xl font-black text-yellow-400">+{formatCredits(rewardAmount || quest.rewardAmount)}</span>
+                <span className="text-3xl font-black text-yellow-400">+{formatCredits(rewardAmount || displayReward)}</span>
                 <span className="text-lg font-bold text-yellow-300">D.FAITH</span>
               </div>
               {(quest.reputationReward ?? 0) > 0 && (

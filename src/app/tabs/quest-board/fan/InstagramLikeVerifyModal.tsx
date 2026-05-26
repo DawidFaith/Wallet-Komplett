@@ -11,6 +11,7 @@ import { formatCredits } from '../utils';
 interface InstagramLikeVerifyModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
+  levelBonusPercent?: number;
   onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
 }
@@ -20,6 +21,7 @@ type Step = 'loading' | 'pending' | 'not_yet' | 'success' | 'expired' | 'error';
 export default function InstagramLikeVerifyModal({
   quest,
   walletAddress,
+  levelBonusPercent = 0,
   onCompleted,
   onClose,
 }: InstagramLikeVerifyModalProps) {
@@ -36,13 +38,15 @@ export default function InstagramLikeVerifyModal({
   const isEngagement = quest?.type === 'engagement';
   const isLike = quest?.type === 'like';
   const isRepost = quest?.type === 'repost';
+  const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
+  const displayReward = quest ? quest.rewardAmount + levelBonusAmount : 0;
 
   // For single-action quests (like / save / repost)
   const ActionIcon = isLike ? FiThumbsUp : isRepost ? FaShareAlt : FiBookmark;
   const accentColor = isLike ? 'text-pink-400' : isRepost ? 'text-blue-400' : 'text-yellow-400';
   const accentBg = isLike ? 'bg-pink-600 hover:bg-pink-500' : isRepost ? 'bg-blue-600 hover:bg-blue-500' : 'bg-yellow-500 hover:bg-yellow-400';
 
-  const rewardPer = quest ? Math.round((quest.rewardAmount / 2) * 100) / 100 : 0;
+  const rewardPer = quest ? Math.round((displayReward / 2) * 100) / 100 : 0;
   const repPer = quest ? Math.round((quest.reputationReward ?? 0) / 2) : 0;
 
   const engagementActions = [
@@ -166,8 +170,11 @@ export default function InstagramLikeVerifyModal({
             <div className="flex items-center gap-2">
               <span className="text-amber-400 font-bold text-sm flex items-center gap-1">
                 <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3.5 h-3.5 rounded-full shrink-0" />
-                +{formatCredits(quest.rewardAmount)} D.FAITH
+                +{formatCredits(displayReward)} D.FAITH
               </span>
+              {levelBonusPercent > 0 && (
+                <span className="text-green-300 font-bold text-[10px]">inkl. +{levelBonusPercent}% Bonus</span>
+              )}
               {(quest.reputationReward ?? 0) > 0 && (
                 <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
                   <FaStar size={10} /> +{quest?.reputationReward} REP

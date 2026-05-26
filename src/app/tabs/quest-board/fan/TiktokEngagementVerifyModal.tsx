@@ -11,6 +11,7 @@ import { formatCredits } from '../utils';
 interface TiktokEngagementVerifyModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
+  levelBonusPercent?: number;
   onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
 }
@@ -20,6 +21,7 @@ type Step = 'loading' | 'pending' | 'not_yet' | 'success' | 'expired' | 'error';
 export default function TiktokEngagementVerifyModal({
   quest,
   walletAddress,
+  levelBonusPercent = 0,
   onCompleted,
   onClose,
 }: TiktokEngagementVerifyModalProps) {
@@ -33,6 +35,8 @@ export default function TiktokEngagementVerifyModal({
   const [shareVerified, setShareVerified] = useState(false);
   const [saveVerified, setSaveVerified] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
+  const displayReward = quest ? quest.rewardAmount + levelBonusAmount : 0;
 
   useEffect(() => {
     if (step !== 'pending' && step !== 'not_yet') {
@@ -130,7 +134,7 @@ export default function TiktokEngagementVerifyModal({
     : step === 'error' ? '❌ Fehler'
     : '📲 Engagement verifizieren';
 
-  const rewardPer = quest ? Math.floor(quest.rewardAmount / 3) : 0;
+  const rewardPer = quest ? Math.round((displayReward / 3) * 100) / 100 : 0;
 
   return (
     <Modal open={!!quest} onClose={onClose} title={title}>
@@ -141,8 +145,11 @@ export default function TiktokEngagementVerifyModal({
           <div className="flex items-center gap-2.5">
             <span className="text-zinc-500 text-xs">pro Aktion:</span>
             <span className="text-yellow-400 font-bold text-sm flex items-center gap-1">
-              <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full" unoptimized /> +{rewardPer} D.FAITH
+              <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full" unoptimized /> +{formatCredits(rewardPer)} D.FAITH
             </span>
+            {levelBonusPercent > 0 && (
+              <span className="text-green-300 font-bold text-[10px]">inkl. +{levelBonusPercent}% Bonus</span>
+            )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-amber-300 font-bold text-sm flex items-center gap-1">
                 <FaStar size={10} /> +{Math.floor((quest.reputationReward ?? 0) / 3)} REP
@@ -194,7 +201,7 @@ export default function TiktokEngagementVerifyModal({
                 <span className={verified ? 'text-green-400' : color}>{icon}</span>
                 <span className="text-white text-xs font-semibold">{label}</span>
                 <span className="text-yellow-400 text-xs flex items-center gap-0.5">
-                  <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full" unoptimized /> +{rewardPer}
+                  <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full" unoptimized /> +{formatCredits(rewardPer)}
                 </span>
                 {step === 'not_yet' && (
                   <span className={`text-xs ${verified ? 'text-green-400' : 'text-zinc-500'}`}>

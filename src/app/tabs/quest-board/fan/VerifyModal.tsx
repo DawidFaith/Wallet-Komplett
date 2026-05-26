@@ -11,12 +11,15 @@ interface VerifyModalProps {
   quest: QuestIndexEntry | null;
   loading: boolean;
   result: VerifyResult | null;
+  levelBonusPercent?: number;
   onVerify: (questId: string) => void;
   onClose: () => void;
 }
 
-export default function VerifyModal({ quest, loading, result, onVerify, onClose }: VerifyModalProps) {
+export default function VerifyModal({ quest, loading, result, levelBonusPercent = 0, onVerify, onClose }: VerifyModalProps) {
   const isOpen = !!quest;
+  const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
+  const displayReward = quest ? quest.rewardAmount + levelBonusAmount : 0;
   const title = result
     ? result.success
       ? '🎉 Quest abgeschlossen!'
@@ -32,8 +35,11 @@ export default function VerifyModal({ quest, loading, result, onVerify, onClose 
           <div className="flex items-center gap-2">
             <span className="text-amber-400 font-bold text-sm flex items-center gap-1">
               <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3.5 h-3.5 rounded-full shrink-0" />
-              +{formatCredits(quest.rewardAmount)} D.FAITH
+              +{formatCredits(displayReward)} D.FAITH
             </span>
+            {levelBonusPercent > 0 && (
+              <span className="text-green-300 font-bold text-[10px]">inkl. +{levelBonusPercent}% Bonus</span>
+            )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
                 <FaStar size={10} /> +{quest?.reputationReward} REP

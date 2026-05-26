@@ -10,6 +10,7 @@ import { formatCredits } from '../utils';
 interface FacebookCommentVerifyModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
+  levelBonusPercent?: number;
   onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
 }
@@ -17,6 +18,7 @@ interface FacebookCommentVerifyModalProps {
 export default function FacebookCommentVerifyModal({
   quest,
   walletAddress,
+  levelBonusPercent = 0,
   onCompleted,
   onClose,
 }: FacebookCommentVerifyModalProps) {
@@ -24,6 +26,8 @@ export default function FacebookCommentVerifyModal({
   const [result, setResult] = useState<VerifyResult | null>(null);
   const [commentText, setCommentText] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
+  const displayReward = quest ? quest.rewardAmount + levelBonusAmount : 0;
 
   // Kommentartext vom Backend holen (deterministisch pro wallet+quest)
   useEffect(() => {
@@ -104,8 +108,11 @@ export default function FacebookCommentVerifyModal({
           <div className="flex items-center gap-2">
             <span className="text-amber-400 font-bold text-sm flex items-center gap-1">
               <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3.5 h-3.5 rounded-full shrink-0" />
-              +{formatCredits(quest.rewardAmount)} D.FAITH
+              +{formatCredits(displayReward)} D.FAITH
             </span>
+            {levelBonusPercent > 0 && (
+              <span className="text-green-300 font-bold text-[10px]">inkl. +{levelBonusPercent}% Bonus</span>
+            )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
                 <FaStar size={10} /> +{quest?.reputationReward} REP

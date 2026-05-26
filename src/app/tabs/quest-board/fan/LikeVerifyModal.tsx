@@ -10,6 +10,7 @@ import { formatCredits } from '../utils';
 interface LikeVerifyModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
+  levelBonusPercent?: number;
   onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
 }
@@ -19,6 +20,7 @@ type Step = 'loading' | 'await_like' | 'not_yet' | 'success' | 'expired' | 'erro
 export default function LikeVerifyModal({
   quest,
   walletAddress,
+  levelBonusPercent = 0,
   onCompleted,
   onClose,
 }: LikeVerifyModalProps) {
@@ -29,6 +31,8 @@ export default function LikeVerifyModal({
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
+  const displayReward = quest ? quest.rewardAmount + levelBonusAmount : 0;
 
   // Countdown aktualisieren
   useEffect(() => {
@@ -122,8 +126,11 @@ export default function LikeVerifyModal({
           <div className="flex items-center gap-2">
             <span className="text-amber-400 font-bold text-sm flex items-center gap-1">
               <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3.5 h-3.5 rounded-full shrink-0" />
-              +{formatCredits(quest.rewardAmount)} D.FAITH
+              +{formatCredits(displayReward)} D.FAITH
             </span>
+            {levelBonusPercent > 0 && (
+              <span className="text-green-300 font-bold text-[10px]">inkl. +{levelBonusPercent}% Bonus</span>
+            )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
                 <FaStar size={10} /> +{quest?.reputationReward} REP
