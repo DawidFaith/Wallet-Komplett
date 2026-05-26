@@ -13,13 +13,16 @@ interface FacebookQuestCardProps {
   isCompleted: boolean;
   onComplete: (questId: string) => void;
   rewardTokenName?: string | null;
+  levelBonusPercent?: number;
 }
 
-export default function FacebookQuestCard({ quest, isCompleted, onComplete, rewardTokenName }: FacebookQuestCardProps) {
+export default function FacebookQuestCard({ quest, isCompleted, onComplete, rewardTokenName, levelBonusPercent = 0 }: FacebookQuestCardProps) {
   const tokenLabel = rewardTokenName ?? 'D.FAITH';
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
   const expiry = formatExpiry(quest.expiresAt);
   const isFull = quest.completions >= quest.maxCompletions;
+  const levelBonusAmount = Math.round(quest.rewardAmount * levelBonusPercent) / 100;
+  const displayReward = quest.rewardAmount + levelBonusAmount;
 
   const isLike = quest.type === 'like';
   const isSecret = quest.type === 'secret';
@@ -54,8 +57,11 @@ export default function FacebookQuestCard({ quest, isCompleted, onComplete, rewa
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
           <span className="flex items-center gap-1 text-yellow-400 font-semibold">
-            <Image src="/D.FAITH.png" alt={tokenLabel} width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(quest.rewardAmount)} {tokenLabel}
+            <Image src="/D.FAITH.png" alt={tokenLabel} width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(displayReward)} {tokenLabel}
           </span>
+          {levelBonusPercent > 0 && (
+            <span className="text-green-300 font-semibold">inkl. +{levelBonusPercent}% Level-Bonus</span>
+          )}
           {(quest.reputationReward ?? 0) > 0 && (
             <span className="flex items-center gap-1 text-amber-300 font-semibold">
               <FaStar size={9} /> +{quest.reputationReward} REP

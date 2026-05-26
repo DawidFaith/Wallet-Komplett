@@ -26,6 +26,7 @@ const TYPE_ICONS: Record<QuestType, React.ReactNode> = {
 interface BundleCardProps {
   bundle: QuestBundleWithItems;
   fanWallet: string;
+  levelBonusPercent?: number;
   onBonusClaimed: () => void;
   /** Öffnet das passende Verifikations-Modal (z.B. InstagramDmShareModal) für eine Bundle-Quest */
   onOpenQuest?: (quest: QuestIndexEntry) => void;
@@ -33,7 +34,7 @@ interface BundleCardProps {
   renderQuestCard?: (quest: QuestIndexEntry) => React.ReactNode;
 }
 
-export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQuest, renderQuestCard }: BundleCardProps) {
+export default function BundleCard({ bundle, fanWallet, levelBonusPercent = 0, onBonusClaimed, onOpenQuest, renderQuestCard }: BundleCardProps) {
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState('');
   const [justClaimed, setJustClaimed] = useState(false);
@@ -98,7 +99,12 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
   const canClaimBonus    = bundle.fanAllCompleted && !bundle.fanBonusClaimed && !justClaimed && bundle.bundleCompletionBonus > 0;
   const bonusAlreadyDone = (bundle.fanBonusClaimed || justClaimed) && bundle.bundleCompletionBonus > 0;
 
-  const totalReward = bundle.items.reduce((sum, it) => sum + it.rewardAmount, 0);
+  const rewardWithBonus = (baseReward: number) => {
+    const bonus = Math.round(baseReward * levelBonusPercent) / 100;
+    return baseReward + bonus;
+  };
+
+  const totalReward = bundle.items.reduce((sum, it) => sum + rewardWithBonus(it.rewardAmount), 0);
   const totalRep    = bundle.items.reduce((sum, it) => sum + (it.reputationReward ?? 0), 0);
   const visibleItems = bundle.items.filter((item) => !completedSet.has(item.questType));
   const totalSlides = 1 + visibleItems.length;
@@ -200,6 +206,11 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
                     <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="rounded-full" unoptimized />
                     +{totalReward.toFixed(2)} D.FAITH
                   </div>
+                  {levelBonusPercent > 0 && (
+                    <div className="bg-black/70 text-green-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      inkl. +{levelBonusPercent}% Level-Bonus
+                    </div>
+                  )}
                   {totalRep > 0 && (
                     <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
                       <FaStar size={9} /> +{totalRep} REP
@@ -294,8 +305,13 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
                         <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
                           <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
                             <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="rounded-full" unoptimized />
-                            +{item.rewardAmount.toFixed(2)} D.FAITH
+                            +{rewardWithBonus(item.rewardAmount).toFixed(2)} D.FAITH
                           </div>
+                          {levelBonusPercent > 0 && (
+                            <div className="bg-black/70 text-green-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              inkl. +{levelBonusPercent}% Level-Bonus
+                            </div>
+                          )}
                           {(item.reputationReward ?? 0) > 0 && (
                             <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
                               <FaStar size={9} /> +{item.reputationReward} REP
@@ -348,8 +364,13 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
                         <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
                           <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
                             <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="rounded-full" unoptimized />
-                            +{item.rewardAmount.toFixed(2)} D.FAITH
+                            +{rewardWithBonus(item.rewardAmount).toFixed(2)} D.FAITH
                           </div>
+                          {levelBonusPercent > 0 && (
+                            <div className="bg-black/70 text-green-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              inkl. +{levelBonusPercent}% Level-Bonus
+                            </div>
+                          )}
                           {(item.reputationReward ?? 0) > 0 && (
                             <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
                               <FaStar size={9} /> +{item.reputationReward} REP
@@ -368,7 +389,13 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
                             <div className="h-full bg-gradient-to-r from-pink-500 to-rose-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
                           </div>
                         </div>
-                        <p className="text-zinc-400 text-xs">Aufgabe: <span className="text-zinc-300">📤 Teile dieses Video als Instagram Story und schick sie an unseren Account!</span></p>
+                        <p className="text-zinc-400 text-xs">
+                          Aufgabe:{' '}
+                          <span className="text-zinc-300 inline-flex items-center gap-1">
+                            <FaShareAlt size={10} className="text-pink-400" />
+                            Teile dieses Video als Instagram Story und schick sie an unseren Account!
+                          </span>
+                        </p>
                         {full ? (
                           <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">Nicht mehr verfügbar</button>
                         ) : (

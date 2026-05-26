@@ -58,6 +58,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const [facebookLikeQuest, setFacebookLikeQuest] = useState<QuestIndexEntry | null>(null);
   const [bundles, setBundles] = useState<QuestBundleWithItems[]>([]);
   const [bundlesLoading, setBundlesLoading] = useState(false);
+  const [bonusPercentByCreator, setBonusPercentByCreator] = useState<Record<string, number>>({});
 
   // Celebration nach Quest-Abschluss
   const [celebration, setCelebration] = useState<{ amount: number; questTitle: string; reputationReward?: number; levelBonus?: number } | null>(null);
@@ -127,6 +128,44 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   }, [walletAddress, filterCreator]);
 
   useEffect(() => { loadQuests(); loadBundles(); }, [loadQuests, loadBundles]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadBonusPercents = async () => {
+      const creatorWallets = Array.from(new Set([
+        ...quests.map((q) => q.creatorWallet.toLowerCase()),
+        ...bundles.map((b) => b.creatorWallet.toLowerCase()),
+      ]));
+
+      if (creatorWallets.length === 0) {
+        if (!cancelled) setBonusPercentByCreator({});
+        return;
+      }
+
+      const entries = await Promise.all(
+        creatorWallets.map(async (artistWallet) => {
+          try {
+            const res = await fetch(`/api/reputation?wallet=${walletAddress}&artistWallet=${artistWallet}`);
+            if (!res.ok) return [artistWallet, 0] as const;
+            const data = await res.json() as { questRewardBonusPercent?: number };
+            return [artistWallet, Math.max(0, Number(data.questRewardBonusPercent) || 0)] as const;
+          } catch {
+            return [artistWallet, 0] as const;
+          }
+        })
+      );
+
+      if (!cancelled) {
+        setBonusPercentByCreator(Object.fromEntries(entries));
+      }
+    };
+
+    loadBonusPercents();
+    return () => { cancelled = true; };
+  }, [walletAddress, quests, bundles]);
+
+  const getBonusPercent = (creatorWallet: string) => bonusPercentByCreator[creatorWallet.toLowerCase()] ?? 0;
 
   const handleVerify = async (questId: string) => {
     const quest = quests.find((q) => q.id === questId) ?? null;
@@ -343,22 +382,23 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               key={bundle.id}
               bundle={bundle}
               fanWallet={walletAddress}
+              levelBonusPercent={getBonusPercent(bundle.creatorWallet)}
               onBonusClaimed={() => { loadBundles(); loadQuests(); }}
               renderQuestCard={(quest) => {
                 const isCompleted = completedIds.includes(quest.id);
                 if (quest.platform === 'youtube') {
-                  return <YoutubeQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleVerify} rewardTokenName={tokenName} />;
+                  return <YoutubeQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleVerify} rewardTokenName={tokenName} levelBonusPercent={getBonusPercent(quest.creatorWallet)} />;
                 }
                 if (quest.platform === 'tiktok') {
                   return quest.type === 'engagement'
-                    ? <TiktokEngagementQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleTikTokVerify} rewardTokenName={tokenName} />
-                    : <TiktokQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleTikTokVerify} rewardTokenName={tokenName} />;
+                    ? <TiktokEngagementQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleTikTokVerify} rewardTokenName={tokenName} levelBonusPercent={getBonusPercent(quest.creatorWallet)} />
+                    : <TiktokQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleTikTokVerify} rewardTokenName={tokenName} levelBonusPercent={getBonusPercent(quest.creatorWallet)} />;
                 }
                 if (quest.platform === 'instagram') {
-                  return <InstagramQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleInstagramVerify} rewardTokenName={tokenName} />;
+                  return <InstagramQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleInstagramVerify} rewardTokenName={tokenName} levelBonusPercent={getBonusPercent(quest.creatorWallet)} />;
                 }
                 if (quest.platform === 'facebook') {
-                  return <FacebookQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleFacebookVerify} rewardTokenName={tokenName} />;
+                  return <FacebookQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleFacebookVerify} rewardTokenName={tokenName} levelBonusPercent={getBonusPercent(quest.creatorWallet)} />;
                 }
                 return null;
               }}
@@ -409,6 +449,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                       isCompleted={completedIds.includes(quest.id)}
                       onComplete={handleVerify}
                       rewardTokenName={tokenName}
+                      levelBonusPercent={getBonusPercent(quest.creatorWallet)}
                     />
                   ))}
                 </QuestCarousel>
@@ -433,6 +474,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                       isCompleted={completedIds.includes(quest.id)}
                       onComplete={handleTikTokVerify}
                       rewardTokenName={tokenName}
+                      levelBonusPercent={getBonusPercent(quest.creatorWallet)}
                     />
                   ))}
                   {tiktokEngagementQuests.map((quest) => (
@@ -442,6 +484,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                       isCompleted={completedIds.includes(quest.id)}
                       onComplete={handleTikTokVerify}
                       rewardTokenName={tokenName}
+                      levelBonusPercent={getBonusPercent(quest.creatorWallet)}
                     />
                   ))}
                 </QuestCarousel>
@@ -466,6 +509,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                       isCompleted={completedIds.includes(quest.id)}
                       onComplete={handleInstagramVerify}
                       rewardTokenName={tokenName}
+                      levelBonusPercent={getBonusPercent(quest.creatorWallet)}
                     />
                   ))}
                 </QuestCarousel>
@@ -490,6 +534,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                       isCompleted={completedIds.includes(quest.id)}
                       onComplete={handleFacebookVerify}
                       rewardTokenName={tokenName}
+                      levelBonusPercent={getBonusPercent(quest.creatorWallet)}
                     />
                   ))}
                 </QuestCarousel>

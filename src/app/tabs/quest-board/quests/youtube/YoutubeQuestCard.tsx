@@ -11,13 +11,16 @@ interface YoutubeQuestCardProps {
   isCompleted: boolean;
   onComplete: (questId: string) => void;
   rewardTokenName?: string | null;
+  levelBonusPercent?: number;
 }
 
-export default function YoutubeQuestCard({ quest, isCompleted, onComplete, rewardTokenName }: YoutubeQuestCardProps) {
+export default function YoutubeQuestCard({ quest, isCompleted, onComplete, rewardTokenName, levelBonusPercent = 0 }: YoutubeQuestCardProps) {
   const tokenLabel = rewardTokenName ?? 'D.FAITH';
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
   const isFull = quest.completions >= quest.maxCompletions;
   const expiry = formatExpiry(quest.expiresAt);
+  const levelBonusAmount = Math.round(quest.rewardAmount * levelBonusPercent) / 100;
+  const displayReward = quest.rewardAmount + levelBonusAmount;
 
   return (
     <div className={`bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
@@ -35,8 +38,13 @@ export default function YoutubeQuestCard({ quest, isCompleted, onComplete, rewar
         </div>
         <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
           <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-            <Image src="/D.FAITH.png" alt={tokenLabel} width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(quest.rewardAmount)} {tokenLabel}
+            <Image src="/D.FAITH.png" alt={tokenLabel} width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(displayReward)} {tokenLabel}
           </div>
+          {levelBonusPercent > 0 && (
+            <div className="bg-black/70 text-green-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              inkl. +{levelBonusPercent}% Level-Bonus
+            </div>
+          )}
           {(quest.reputationReward ?? 0) > 0 && (
             <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
               <FaStar size={9} /> +{quest.reputationReward} REP

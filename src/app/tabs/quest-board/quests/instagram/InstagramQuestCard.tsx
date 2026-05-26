@@ -11,6 +11,7 @@ interface InstagramQuestCardProps {
   isCompleted: boolean;
   onComplete: (questId: string) => void;
   rewardTokenName?: string | null;
+  levelBonusPercent?: number;
 }
 
 const QUEST_TYPE_CONFIG = {
@@ -22,12 +23,14 @@ const QUEST_TYPE_CONFIG = {
   dm_share:   { label: 'Story Quest',         icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-pink-600/90 to-purple-600/90',      btn: 'Story Quest starten' },
 } as const;
 
-export default function InstagramQuestCard({ quest, isCompleted, onComplete, rewardTokenName }: InstagramQuestCardProps) {
+export default function InstagramQuestCard({ quest, isCompleted, onComplete, rewardTokenName, levelBonusPercent = 0 }: InstagramQuestCardProps) {
   const tokenLabel = rewardTokenName ?? 'D.FAITH';
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
   const expiry = formatExpiry(quest.expiresAt);
   const isFull = quest.completions >= quest.maxCompletions;
   const typeConfig = QUEST_TYPE_CONFIG[quest.type as keyof typeof QUEST_TYPE_CONFIG] ?? QUEST_TYPE_CONFIG.comment;
+  const levelBonusAmount = Math.round(quest.rewardAmount * levelBonusPercent) / 100;
+  const displayReward = quest.rewardAmount + levelBonusAmount;
 
   return (
     <div className={`bg-zinc-900 rounded-2xl border border-pink-800/40 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
@@ -51,8 +54,11 @@ export default function InstagramQuestCard({ quest, isCompleted, onComplete, rew
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
           <span className="flex items-center gap-1 text-yellow-400 font-semibold">
-            <Image src="/D.FAITH.png" alt={tokenLabel} width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(quest.rewardAmount)} {tokenLabel}
+            <Image src="/D.FAITH.png" alt={tokenLabel} width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(displayReward)} {tokenLabel}
           </span>
+          {levelBonusPercent > 0 && (
+            <span className="text-green-300 font-semibold">inkl. +{levelBonusPercent}% Level-Bonus</span>
+          )}
           {(quest.reputationReward ?? 0) > 0 && (
             <span className="flex items-center gap-1 text-amber-300 font-semibold">
               <FaStar size={9} /> +{quest.reputationReward} REP
