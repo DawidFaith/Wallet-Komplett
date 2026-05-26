@@ -340,6 +340,24 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                   bundle={bundle}
                   fanWallet={walletAddress}
                   onBonusClaimed={() => { loadBundles(); loadQuests(); }}
+                  renderQuestCard={(quest) => {
+                    const isCompleted = completedIds.includes(quest.id);
+                    if (quest.platform === 'youtube') {
+                      return <YoutubeQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleVerify} rewardTokenName={tokenName} />;
+                    }
+                    if (quest.platform === 'tiktok') {
+                      return quest.type === 'engagement'
+                        ? <TiktokEngagementQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleTikTokVerify} rewardTokenName={tokenName} />
+                        : <TiktokQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleTikTokVerify} rewardTokenName={tokenName} />;
+                    }
+                    if (quest.platform === 'instagram') {
+                      return <InstagramQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleInstagramVerify} rewardTokenName={tokenName} />;
+                    }
+                    if (quest.platform === 'facebook') {
+                      return <FacebookQuestCard quest={quest} isCompleted={isCompleted} onComplete={handleFacebookVerify} rewardTokenName={tokenName} />;
+                    }
+                    return null;
+                  }}
                   onOpenQuest={(quest) => {
                     if (quest.platform === 'instagram' && (quest.type as string) === 'dm_share') {
                       setInstagramDmShareQuest(quest);

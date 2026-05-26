@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { FaLayerGroup, FaCheck, FaTimes, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaExternalLinkAlt, FaGift } from 'react-icons/fa';
+import { FaLayerGroup, FaCheck, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaExternalLinkAlt, FaGift } from 'react-icons/fa';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
 import type { Platform, QuestType, QuestIndexEntry } from '../types';
 
@@ -34,9 +34,11 @@ interface BundleCardProps {
   onBonusClaimed: () => void;
   /** Öffnet das passende Verifikations-Modal (z.B. InstagramDmShareModal) für eine Bundle-Quest */
   onOpenQuest?: (quest: QuestIndexEntry) => void;
+  /** Rendert die richtige Quest-Card für ein Item (vom Parent geliefert, damit Logik wie bei „Verfügbare Quests“ identisch ist) */
+  renderQuestCard?: (quest: QuestIndexEntry) => React.ReactNode;
 }
 
-export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQuest }: BundleCardProps) {
+export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQuest, renderQuestCard }: BundleCardProps) {
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState('');
   const [justClaimed, setJustClaimed] = useState(false);
@@ -251,48 +253,40 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
         </div>
       </div>
 
-      <div className="px-4 pt-3 space-y-1.5">
+      <div className="px-4 pt-3 space-y-3">
         {bundle.items.map((item) => {
-          const done      = completedSet.has(item.questType);
-          const full      = item.completions >= item.maxCompletions;
-          const bonus     = bundle.fanBonusPercent ?? 0;
-          const effective = bonus > 0 ? item.rewardAmount * (1 + bonus / 100) : item.rewardAmount;
-          return (
-            <div key={item.questId}>
-              <div className={`flex items-center justify-between rounded-xl px-3 py-2 transition-all ${
-                done
-                  ? 'bg-green-950/40 border border-green-800/40'
-                  : full
-                    ? 'bg-zinc-900/60 border border-zinc-800 opacity-50'
-                    : 'bg-purple-950/30 border border-purple-800/30'
-              }`}>
+          const done = completedSet.has(item.questType);
+          const entry = buildQuestEntry(item);
+
+          // Erledigte Items kompakt als "abgehakt"-Hinweis statt voller Karte
+          if (done) {
+            return (
+              <div
+                key={item.questId}
+                className="flex items-center justify-between rounded-xl px-3 py-2 bg-green-950/40 border border-green-800/40"
+              >
                 <div className="flex items-center gap-2">
                   <span className="text-sm">{TYPE_ICONS[item.questType]}</span>
-                  <span className={`text-sm ${done ? 'text-green-300 line-through' : full ? 'text-zinc-500' : 'text-zinc-200'}`}>
-                    {TYPE_LABELS[item.questType]}
-                  </span>
-                  {full && !done && <span className="text-xs text-zinc-600">(voll)</span>}
+                  <span className="text-sm text-green-300 line-through">{TYPE_LABELS[item.questType]}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex flex-col items-end gap-0.5">
-                    <span className={`text-xs font-mono ${done ? 'text-green-400' : 'text-purple-300'}`}>
-                      +{effective.toFixed(2)}
-                      {bonus > 0 && <span className="text-yellow-400/80 text-[10px] ml-0.5">(+{bonus}%)</span>}
-                    </span>
-                    {item.reputationReward > 0 && (
-                      <span className="text-[10px] text-amber-400/80">+{item.reputationReward} REP</span>
-                    )}
-                  </div>
-                  {done
-                    ? <FaCheck size={10} className="text-green-400" />
-                    : <FaTimes size={10} className="text-zinc-600" />
-                  }
-                </div>
+                <FaCheck size={12} className="text-green-400" />
               </div>
+            );
+          }
 
-              {item.questType === 'secret' && !done && !full && (
-                activeSecretQuestId === item.questId ? (
-                  <form onSubmit={(e) => handleSecretSubmit(e, item.questId)} className="mt-1.5 ml-2 flex flex-col gap-1">
+          // Secret-Quest weiterhin inline (kein passender QuestCard für Bundle-Kontext)
+          if (item.questType === 'secret') {
+            const full = item.completions >= item.maxCompletions;
+            if (full) return null;
+            return (
+              <div key={item.questId} className="rounded-xl border border-yellow-800/40 bg-yellow-950/20 p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span>🔑</span>
+                  <span className="text-sm text-yellow-200 font-semibold">Geheimcode eingeben</span>
+                  <span className="ml-auto text-xs text-yellow-400 font-mono">+{item.rewardAmount.toFixed(2)}</span>
+                </div>
+                {activeSecretQuestId === item.questId ? (
+                  <form onSubmit={(e) => handleSecretSubmit(e, item.questId)} className="flex flex-col gap-1">
                     <div className="flex gap-2">
                       <input
                         value={secretCode}
@@ -304,38 +298,46 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
                       <button
                         type="submit"
                         disabled={secretLoading || !secretCode.trim()}
-                        className="bg-yellow-600 hover:bg-yellow-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors"
-                      >
-                        {secretLoading ? '...' : 'OK'}
-                      </button>
+                        className="bg-yellow-600 hover:bg-yellow-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold"
+                      >{secretLoading ? '...' : 'OK'}</button>
                       <button
                         type="button"
                         onClick={() => { setActiveSecretQuestId(null); setSecretCode(''); setSecretError(''); }}
-                        className="text-zinc-500 hover:text-zinc-300 px-2 py-1.5 rounded-lg text-sm"
+                        className="text-zinc-500 hover:text-zinc-300 px-2 py-1.5 text-sm"
                       >X</button>
                     </div>
-                    {secretError && <p className="text-red-400 text-xs ml-1">{secretError}</p>}
+                    {secretError && <p className="text-red-400 text-xs">{secretError}</p>}
                   </form>
                 ) : (
                   <button
                     onClick={() => { setActiveSecretQuestId(item.questId); setSecretCode(''); setSecretError(''); }}
-                    className="mt-1 ml-2 text-xs text-yellow-400 hover:text-yellow-300 transition-colors"
-                  >
-                    Code eingeben
-                  </button>
-                )
-              )}
+                    className="w-full bg-yellow-700/70 hover:bg-yellow-600/70 text-white text-xs font-semibold py-2 rounded-lg"
+                  >Code eingeben</button>
+                )}
+              </div>
+            );
+          }
 
-              {item.questType === 'dm_share' && !done && !full && item.storyToken && onOpenQuest && (
-                <button
-                  onClick={() => onOpenQuest(buildQuestEntry(item))}
-                  className="mt-2 ml-2 w-[calc(100%-0.5rem)] bg-gradient-to-r from-pink-700/80 to-rose-600/80 hover:from-pink-600/80 hover:to-rose-500/80 text-white text-xs font-semibold py-2.5 px-4 rounded-xl transition-all"
-                >
-                  📤 Story Quest starten
-                </button>
-              )}
-            </div>
-          );
+          // dm_share: dedizierter Start-Button öffnet das Story-Share-Modal
+          if (item.questType === 'dm_share' && item.storyToken && onOpenQuest) {
+            const full = item.completions >= item.maxCompletions;
+            if (full) return null;
+            return (
+              <button
+                key={item.questId}
+                onClick={() => onOpenQuest(entry)}
+                className="w-full bg-gradient-to-r from-pink-700/80 to-rose-600/80 hover:from-pink-600/80 hover:to-rose-500/80 text-white text-sm font-semibold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2"
+              >
+                📤 Story Quest starten <span className="text-pink-200 font-mono text-xs">+{item.rewardAmount.toFixed(2)}</span>
+              </button>
+            );
+          }
+
+          // Alle anderen Typen → echte QuestCard via Parent-Renderer
+          if (renderQuestCard) {
+            return <div key={item.questId}>{renderQuestCard(entry)}</div>;
+          }
+          return null;
         })}
       </div>
 
