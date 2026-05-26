@@ -314,6 +314,59 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       )}
 
       {/* Quest-Liste */}
+      {/* ── Bundle-Sektion (VOR der Quest-Liste, damit Fan zuerst Quest-Reihen sieht) ───── */}
+      {(bundles.length > 0 || bundlesLoading) && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-white font-bold text-lg flex items-center gap-2">
+              🎯 Quest-Reihen
+            </h2>
+            <button onClick={loadBundles} className="text-zinc-400 hover:text-white p-2 transition-colors">
+              <FaSync size={14} className={bundlesLoading ? 'animate-spin' : ''} />
+            </button>
+          </div>
+          {bundlesLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="border-4 border-purple-500/30 border-t-purple-500 rounded-full w-8 h-8 animate-spin" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {bundles.map((bundle) => (
+                <BundleCard
+                  key={bundle.id}
+                  bundle={bundle}
+                  fanWallet={walletAddress}
+                  onBonusClaimed={() => { loadBundles(); loadQuests(); }}
+                  onOpenQuest={(quest) => {
+                    if (quest.platform === 'instagram' && (quest.type as string) === 'dm_share') {
+                      setInstagramDmShareQuest(quest);
+                    } else if (quest.platform === 'instagram') {
+                      if (quest.type === 'like' || quest.type === 'save' || (quest.type as string) === 'engagement' || (quest.type as string) === 'repost') {
+                        setInstagramLikeQuest(quest);
+                      } else {
+                        setInstagramCommentQuest(quest);
+                      }
+                    } else if (quest.platform === 'youtube') {
+                      if (quest.type === 'like') setLikeVerifyQuest(quest);
+                      else if (quest.type === 'secret') setSecretVerifyQuest(quest);
+                      else setVerifyingQuest(quest);
+                    } else if (quest.platform === 'tiktok') {
+                      if (quest.type === 'engagement') setTiktokEngagementQuest(quest);
+                      else if (quest.type === 'secret') setSecretVerifyQuest(quest);
+                      else setVerifyingQuest(quest);
+                    } else if (quest.platform === 'facebook') {
+                      if (quest.type === 'like') setFacebookLikeQuest(quest);
+                      else if (quest.type === 'secret') setSecretVerifyQuest(quest);
+                      else setFacebookCommentQuest(quest);
+                    }
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h2 className="text-white font-bold text-lg">Verfügbare Quests</h2>
         <button onClick={loadQuests} className="text-zinc-400 hover:text-white p-2 transition-colors">
@@ -436,60 +489,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                   ))}
                 </QuestCarousel>
               </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Bundle-Sektion ──────────────────────────────────────────────── */}
-      {(bundles.length > 0 || bundlesLoading) && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-white font-bold text-lg flex items-center gap-2">
-              🎯 Bundle Quests
-            </h2>
-            <button onClick={loadBundles} className="text-zinc-400 hover:text-white p-2 transition-colors">
-              <FaSync size={14} className={bundlesLoading ? 'animate-spin' : ''} />
-            </button>
-          </div>
-          {bundlesLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="border-4 border-purple-500/30 border-t-purple-500 rounded-full w-8 h-8 animate-spin" />
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {bundles.map((bundle) => (
-                <BundleCard
-                  key={bundle.id}
-                  bundle={bundle}
-                  fanWallet={walletAddress}
-                  onBonusClaimed={() => { loadBundles(); loadQuests(); }}
-                  onOpenQuest={(quest) => {
-                    // Routing identisch zur normalen Quest-Liste
-                    if (quest.platform === 'instagram' && (quest.type as string) === 'dm_share') {
-                      setInstagramDmShareQuest(quest);
-                    } else if (quest.platform === 'instagram') {
-                      if (quest.type === 'like' || quest.type === 'save' || (quest.type as string) === 'engagement' || (quest.type as string) === 'repost') {
-                        setInstagramLikeQuest(quest);
-                      } else {
-                        setInstagramCommentQuest(quest);
-                      }
-                    } else if (quest.platform === 'youtube') {
-                      if (quest.type === 'like') setLikeVerifyQuest(quest);
-                      else if (quest.type === 'secret') setSecretVerifyQuest(quest);
-                      else setVerifyingQuest(quest);
-                    } else if (quest.platform === 'tiktok') {
-                      if (quest.type === 'engagement') setTiktokEngagementQuest(quest);
-                      else if (quest.type === 'secret') setSecretVerifyQuest(quest);
-                      else setVerifyingQuest(quest);
-                    } else if (quest.platform === 'facebook') {
-                      if (quest.type === 'like') setFacebookLikeQuest(quest);
-                      else if (quest.type === 'secret') setSecretVerifyQuest(quest);
-                      else setFacebookCommentQuest(quest);
-                    }
-                  }}
-                />
-              ))}
             </div>
           )}
         </div>

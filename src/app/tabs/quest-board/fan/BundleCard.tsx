@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { FaLayerGroup, FaCheck, FaTimes, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaExternalLinkAlt, FaGift } from 'react-icons/fa';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
@@ -41,6 +41,19 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
   const [claimError, setClaimError] = useState('');
   const [justClaimed, setJustClaimed] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+  const [started, setStarted] = useState(false);
+
+  // „Gestartet“-Status pro Fan + Bundle in localStorage persistieren,
+  // damit der Teaser nach Reload nicht erneut erscheint wenn der Fan bereits losgelegt hat.
+  const startedKey = 'bundle-started:' + bundle.id + ':' + fanWallet.toLowerCase();
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.localStorage.getItem(startedKey) === '1') setStarted(true);
+  }, [startedKey]);
+  const handleStart = () => {
+    setStarted(true);
+    try { window.localStorage.setItem(startedKey, '1'); } catch { /* ignore */ }
+  };
 
   const [activeSecretQuestId, setActiveSecretQuestId] = useState<string | null>(null);
   const [secretCode, setSecretCode] = useState('');
@@ -101,6 +114,11 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
 
   const canClaimBonus    = bundle.fanAllCompleted && !bundle.fanBonusClaimed && !justClaimed && bundle.bundleCompletionBonus > 0;
   const bonusAlreadyDone = (bundle.fanBonusClaimed || justClaimed) && bundle.bundleCompletionBonus > 0;
+
+  // Teaser anzeigen wenn: noch nichts gestartet UND kein Fortschritt UND Bonus noch offen
+  const showTeaser = !started && completedCount === 0 && !bonusAlreadyDone;
+  const totalReward = bundle.items.reduce((sum, it) => sum + it.rewardAmount, 0);
+  const totalRep    = bundle.items.reduce((sum, it) => sum + (it.reputationReward ?? 0), 0);
 
   const handleClaimBonus = async () => {
     setClaiming(true);
@@ -177,6 +195,49 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
         </div>
       </div>
 
+      {showTeaser ? (
+        /* ─── Teaser: vor dem Start sieht der Fan nur die Übersicht ─── */
+        <div className="px-4 pt-3 pb-4 space-y-3">
+          <div className="bg-gradient-to-br from-purple-900/40 to-violet-900/30 border border-purple-700/40 rounded-xl p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <FaLayerGroup className="text-purple-300" size={14} />
+              <p className="text-purple-200 font-bold text-sm">Quest-Reihe</p>
+            </div>
+            <p className="text-zinc-300 text-xs leading-relaxed">
+              Diese Quest-Reihe besteht aus <strong className="text-white">{totalCount} Aufgaben</strong>.
+              Schließe <strong className="text-white">alle</strong> ab und erhalte zusätzlich einen Abschluss-Bonus!
+            </p>
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {bundle.items.map((it) => (
+                <span key={it.questId} className="bg-black/30 rounded-md px-2 py-0.5 text-[11px] text-zinc-300 flex items-center gap-1">
+                  <span>{TYPE_ICONS[it.questType]}</span>
+                  <span>{TYPE_LABELS[it.questType]}</span>
+                </span>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-purple-800/30">
+              <div className="bg-black/30 rounded-lg px-2 py-1.5">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wide">Quest-Belohnungen</p>
+                <p className="text-purple-300 font-mono text-sm font-bold">+{totalReward.toFixed(2)} D.FAITH</p>
+                {totalRep > 0 && <p className="text-amber-400/80 text-[10px]">+{totalRep} REP</p>}
+              </div>
+              <div className="bg-black/30 rounded-lg px-2 py-1.5">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wide">Abschluss-Bonus</p>
+                <p className="text-yellow-400 font-mono text-sm font-bold flex items-center gap-1">
+                  <FaGift size={10} />+{bundle.bundleCompletionBonus.toFixed(2)}
+                </p>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={handleStart}
+            className="w-full bg-gradient-to-r from-purple-600 to-violet-500 hover:from-purple-500 hover:to-violet-400 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-900/30"
+          >
+            🚀 Jetzt Quest-Reihe starten
+          </button>
+        </div>
+      ) : (
+      <>
       <div className="px-4 pt-3">
         <div className="flex items-center justify-between text-xs text-zinc-400 mb-1">
           <span>{completedCount}/{totalCount} Aufgaben</span>
@@ -311,6 +372,8 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
           </div>
         ) : null}
       </div>
+      </>
+      )}
     </div>
   );
 }
