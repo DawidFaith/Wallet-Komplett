@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import { FaLayerGroup, FaCheck, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaGift, FaStar, FaTrophy } from 'react-icons/fa';
+import { FaLayerGroup, FaCheck, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaGift, FaStar, FaTrophy, FaHeart, FaComment, FaBookmark, FaShareAlt, FaKey, FaThumbsUp, FaPaperPlane } from 'react-icons/fa';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
 import type { Platform, QuestType, QuestIndexEntry } from '../types';
 
@@ -23,9 +23,14 @@ const TYPE_LABELS: Record<QuestType, string> = {
   secret:     'Geheimcode',
 };
 
-const TYPE_ICONS: Record<QuestType, string> = {
-  comment: '💬', like: '❤️', save: '🔖', repost: '🔁',
-  dm_share: '📤', engagement: '🎯', secret: '🔑',
+const TYPE_ICONS: Record<QuestType, React.ReactNode> = {
+  comment:    <FaComment   size={12} />,
+  like:       <FaHeart     size={12} />,
+  save:       <FaBookmark  size={12} />,
+  repost:     <FaShareAlt  size={12} />,
+  dm_share:   <FaPaperPlane size={12} />,
+  engagement: <FaThumbsUp  size={12} />,
+  secret:     <FaKey       size={12} />,
 };
 
 interface BundleCardProps {
@@ -273,12 +278,12 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
                     const itDone = completedSet.has(it.questType);
                     return (
                       <React.Fragment key={it.questId}>
-                        <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm border-2 transition-all ${
+                        <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
                           itDone
                             ? 'bg-green-600/30 border-green-500 text-green-300'
-                            : 'bg-zinc-800 border-zinc-700 text-zinc-400'
+                            : 'bg-zinc-800 border-zinc-700 text-zinc-300'
                         }`}>
-                          {itDone ? <FaCheck size={10} /> : <span>{TYPE_ICONS[it.questType]}</span>}
+                          {itDone ? <FaCheck size={10} /> : TYPE_ICONS[it.questType]}
                         </div>
                         {idx < bundle.items.length - 1 && (
                           <div className={`h-0.5 w-2 shrink-0 ${itDone ? 'bg-green-500' : 'bg-zinc-700'}`} />
@@ -311,9 +316,9 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
             <div key={item.questId} className="min-w-full snap-start px-4 pt-3 pb-4">
               {done ? (
                 <div className="flex items-center justify-between rounded-xl px-4 py-4 bg-green-950/40 border border-green-800/40">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{TYPE_ICONS[item.questType]}</span>
-                    <span className="text-sm text-green-300 line-through">{TYPE_LABELS[item.questType]}</span>
+                  <div className="flex items-center gap-2 text-green-300">
+                    <span className="text-base">{TYPE_ICONS[item.questType]}</span>
+                    <span className="text-sm line-through">{TYPE_LABELS[item.questType]}</span>
                   </div>
                   <FaCheck size={14} className="text-green-400" />
                 </div>
