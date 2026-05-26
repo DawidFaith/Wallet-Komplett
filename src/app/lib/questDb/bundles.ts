@@ -31,6 +31,7 @@ export async function createQuestBundle(
     reputationReward?: number;
     levelBonusBudget?: number;
     secretCodes?: Record<string, string>;
+    storyToken?: string | null;
   },
   itemTypes: Array<{ questType: QuestType; reachWeight: number }>,
 ): Promise<{ bundleId: string; storyToken: string | null }> {
@@ -78,7 +79,9 @@ export async function createQuestBundle(
       : null;
 
     // Story-Token (nur für 'dm_share'-Typ – für Fan-Sharing-Link)
-    const storyToken = item.questType === 'dm_share' ? crypto.randomUUID() : null;
+    const storyToken = item.questType === 'dm_share'
+      ? (params.storyToken?.trim() || crypto.randomUUID())
+      : null;
     if (storyToken) generatedStoryToken = storyToken;
 
     await sql`

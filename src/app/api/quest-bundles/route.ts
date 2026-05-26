@@ -51,6 +51,8 @@ export async function POST(req: NextRequest) {
     levelBonusBudget?: number;
     // Geheim-Codes pro Quest-Typ (nur für 'secret')
     secretCodes?: Record<string, string>;
+    // Optionaler Story-Token für dm_share (vorher im Modal erzeugt)
+    storyToken?: string;
   };
 
   try { body = await req.json(); }
@@ -62,7 +64,7 @@ export async function POST(req: NextRequest) {
     durationHours, items,
     videoTitle: manualTitle, videoThumbnail: manualThumbnail,
     videoId: providedVideoId,
-    levelBonusBudget, secretCodes,
+    levelBonusBudget, secretCodes, storyToken,
   } = body;
 
   if (!creatorWallet || !platform || !videoUrl || !items?.length) {
@@ -156,7 +158,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { bundleId, storyToken } = await createQuestBundle(
+    const { bundleId, storyToken: createdStoryToken } = await createQuestBundle(
       {
         creatorWallet: creatorWallet.toLowerCase(),
         platform: platform as Platform,
@@ -171,6 +173,7 @@ export async function POST(req: NextRequest) {
         expiresAt,
         levelBonusBudget: levelBonus,
         secretCodes: secretCodes ?? {},
+        storyToken: storyToken?.trim() || null,
       },
       items.map((i) => ({
         questType:   i.questType   as QuestType,
@@ -178,7 +181,7 @@ export async function POST(req: NextRequest) {
       })),
     );
 
-    return NextResponse.json({ success: true, bundleId, storyToken: storyToken ?? null });
+    return NextResponse.json({ success: true, bundleId, storyToken: createdStoryToken ?? null });
   } catch (e) {
     // Budget zurückerstatten wenn Bundle-Erstellung fehlschlägt
     const { addDfaithCredits } = await import('../../lib/questDb');

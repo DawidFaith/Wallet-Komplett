@@ -219,6 +219,7 @@ export default function CreateBundleModal({
   const bonusNum   = Math.max(0,    Number(bonus)    || 0);
   const maxNum     = Math.max(1,    Number(maxP)     || 10);
   const totalWeight = items.reduce((s, i) => s + i.reachWeight, 0);
+  const hasDmShare = items.some((i) => i.questType === 'dm_share');
   // Level-Bonus-Reserve: 100 % des Reward-Pools (maximale Default-Stufe)
   const levelBonusReserve = Math.round(rewardNum * maxNum * 100) / 100;
   const totalBudget = Math.round((rewardNum * maxNum + bonusNum * maxNum + levelBonusReserve) * 100) / 100;
@@ -250,17 +251,13 @@ export default function CreateBundleModal({
           items:               items.map((i) => ({ questType: i.questType, reachWeight: i.reachWeight })),
           levelBonusBudget:    levelBonusReserve,
           secretCodes,
+          storyToken:          hasDmShare ? (storyToken ?? undefined) : undefined,
         }),
       });
-      const data = await res.json() as { success?: boolean; error?: string; storyToken?: string | null };
+      const data = await res.json() as { success?: boolean; error?: string };
       if (!res.ok || !data.success) throw new Error(data.error ?? 'Unbekannter Fehler');
       onCreated();
-      if (data.storyToken) {
-        setStoryToken(data.storyToken);
-        setStep(4);
-      } else {
-        setStep(4); // Erfolg-Screen auch ohne Story-Token
-      }
+      onClose();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -270,17 +267,16 @@ export default function CreateBundleModal({
 
   if (!open) return null;
 
-  // ── Schritt 4: Erfolg + optionaler Story-Link ────────────────────────────────
+  // ── Schritt 4: Story-Link teilen + final bestätigen ─────────────────────────
   if (step === 4) {
     return (
-      <Modal open={open} onClose={onClose} title="Bundle erstellt! 🎉">
+      <Modal open={open} onClose={onClose} title="Schritt 4: Story-Link teilen">
         <div className="space-y-4">
-          <div className="w-14 h-14 rounded-full bg-green-900/50 border border-green-700 flex items-center justify-center mx-auto">
-            <FaCheck size={24} className="text-green-400" />
+          <div className="bg-blue-950/40 border border-blue-800/40 rounded-xl p-3">
+            <p className="text-blue-300 text-xs">
+              1. Link kopieren und in deiner anderen Plattform einfügen. 2. Danach hier zurückkehren und bestätigen. Erst dann werden die Quests erstellt.
+            </p>
           </div>
-          <p className="text-zinc-400 text-sm text-center">
-            Fans sehen jetzt dein Bundle und können alle Aufgaben abschließen.
-          </p>
 
           {storyLink && (
             <div className="bg-pink-950/40 border border-pink-700/40 rounded-xl p-4 space-y-2">
@@ -289,13 +285,15 @@ export default function CreateBundleModal({
                 <p className="text-pink-200 text-sm font-semibold">Story-Quest Link</p>
               </div>
               <p className="text-zinc-400 text-xs">
-                Teile diesen Link mit deinen Fans für den Story-Share Quest. Fans die ihn öffnen werden automatisch dem Quest zugewiesen.
+                Diesen Link in Story/Bio/Kommentar einfügen. Nach der Bestätigung wird genau dieser Link aktiv.
               </p>
               <div className="flex items-center gap-2 bg-zinc-900/80 border border-zinc-700 rounded-lg px-3 py-2">
                 <FaLink size={10} className="text-pink-400 shrink-0" />
-                <span className="text-pink-300 text-xs font-mono truncate flex-1" title={storyLink}>
-                  {storyLink.replace(/^https?:\/\//, '')}
-                </span>
+                <input
+                  readOnly
+                  value={storyLink}
+                  className="flex-1 bg-transparent text-pink-300 text-xs font-mono outline-none"
+                />
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(storyLink);
@@ -311,9 +309,24 @@ export default function CreateBundleModal({
             </div>
           )}
 
-          <button onClick={onClose} className="w-full bg-green-700 hover:bg-green-600 text-white rounded-xl py-3 font-semibold">
-            Fertig
-          </button>
+          {!storyLink && (
+            <p className="text-red-400 text-xs">Story-Link konnte nicht vorbereitet werden. Bitte zurück und erneut versuchen.</p>
+          )}
+
+          {error && <p className="text-red-400 text-sm">{error}</p>}
+
+          <div className="flex gap-3">
+            <button onClick={() => { setStep(3); setError(''); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl py-2.5 font-semibold text-sm">
+              ← Zurück
+            </button>
+            <button
+              onClick={handleCreate}
+              disabled={creating || !hasEnough || !storyLink}
+              className="flex-1 bg-green-700 hover:bg-green-600 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-xl py-2.5 font-semibold text-sm transition-colors"
+            >
+              {creating ? 'Erstelle...' : 'Ich bin zurück - Quests jetzt erstellen'}
+            </button>
+          </div>
         </div>
       </Modal>
     );
@@ -325,7 +338,7 @@ export default function CreateBundleModal({
 
         {/* Schritt-Anzeige */}
         <div className="flex gap-2">
-          {([1, 2, 3] as const).map((s) => (
+          {(hasDmShare ? [1, 2, 3, 4] : [1, 2, 3]).map((s) => (
             <div key={s} className={`flex-1 h-1 rounded-full ${step >= s ? 'bg-purple-500' : 'bg-zinc-700'}`} />
           ))}
         </div>
@@ -638,7 +651,7 @@ export default function CreateBundleModal({
                       </div>
                     )}
                     {selected && qt === 'dm_share' && (
-                      <p className="text-blue-400/70 text-[11px] mt-1 ml-7">🔗 Story-Link wird nach Erstellung generiert</p>
+                      <p className="text-blue-400/70 text-[11px] mt-1 ml-7">🔗 Schritt 4: Link kopieren/einfügen, danach final bestätigen</p>
                     )}
                   </div>
                 );
@@ -756,11 +769,19 @@ export default function CreateBundleModal({
                 ← Zurück
               </button>
               <button
-                onClick={handleCreate}
+                onClick={() => {
+                  if (hasDmShare) {
+                    if (!storyToken) setStoryToken(crypto.randomUUID());
+                    setError('');
+                    setStep(4);
+                    return;
+                  }
+                  void handleCreate();
+                }}
                 disabled={creating || !hasEnough || items.length < 2}
                 className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-xl py-2.5 font-semibold text-sm transition-colors"
               >
-                {creating ? 'Erstelle...' : '🎯 Bundle erstellen'}
+                {creating ? 'Erstelle...' : hasDmShare ? 'Weiter zu Schritt 4 →' : '🎯 Bundle erstellen'}
               </button>
             </div>
           </div>
