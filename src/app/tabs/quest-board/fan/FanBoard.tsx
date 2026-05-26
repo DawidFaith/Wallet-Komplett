@@ -464,6 +464,30 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                   bundle={bundle}
                   fanWallet={walletAddress}
                   onBonusClaimed={() => { loadBundles(); loadQuests(); }}
+                  onOpenQuest={(quest) => {
+                    // Routing identisch zur normalen Quest-Liste
+                    if (quest.platform === 'instagram' && (quest.type as string) === 'dm_share') {
+                      setInstagramDmShareQuest(quest);
+                    } else if (quest.platform === 'instagram') {
+                      if (quest.type === 'like' || quest.type === 'save' || (quest.type as string) === 'engagement' || (quest.type as string) === 'repost') {
+                        setInstagramLikeQuest(quest);
+                      } else {
+                        setInstagramCommentQuest(quest);
+                      }
+                    } else if (quest.platform === 'youtube') {
+                      if (quest.type === 'like') setLikeVerifyQuest(quest);
+                      else if (quest.type === 'secret') setSecretVerifyQuest(quest);
+                      else setVerifyingQuest(quest);
+                    } else if (quest.platform === 'tiktok') {
+                      if (quest.type === 'engagement') setTiktokEngagementQuest(quest);
+                      else if (quest.type === 'secret') setSecretVerifyQuest(quest);
+                      else setVerifyingQuest(quest);
+                    } else if (quest.platform === 'facebook') {
+                      if (quest.type === 'like') setFacebookLikeQuest(quest);
+                      else if (quest.type === 'secret') setSecretVerifyQuest(quest);
+                      else setFacebookCommentQuest(quest);
+                    }
+                  }}
                 />
               ))}
             </div>
@@ -639,6 +663,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               prev.map((q) => q.id === instagramDmShareQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
             pendingCelebration.current = { amount, questTitle: instagramDmShareQuest.videoTitle, reputationReward: instagramDmShareQuest.reputationReward, levelBonus };
+            // Falls Bundle-Quest → Bundle-Liste aktualisieren
+            loadBundles();
           }
         }}
         onClose={() => {

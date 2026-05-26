@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { FaLayerGroup, FaCheck, FaTimes, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaExternalLinkAlt, FaGift } from 'react-icons/fa';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
-import type { Platform, QuestType } from '../types';
+import type { Platform, QuestType, QuestIndexEntry } from '../types';
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
   youtube:   <FaYoutube   className="text-red-500"  size={12} />,
@@ -32,9 +32,11 @@ interface BundleCardProps {
   bundle: QuestBundleWithItems;
   fanWallet: string;
   onBonusClaimed: () => void;
+  /** Öffnet das passende Verifikations-Modal (z.B. InstagramDmShareModal) für eine Bundle-Quest */
+  onOpenQuest?: (quest: QuestIndexEntry) => void;
 }
 
-export default function BundleCard({ bundle, fanWallet, onBonusClaimed }: BundleCardProps) {
+export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQuest }: BundleCardProps) {
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState('');
   const [justClaimed, setJustClaimed] = useState(false);
@@ -44,29 +46,26 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed }: Bundle
   const [secretCode, setSecretCode] = useState('');
   const [secretLoading, setSecretLoading] = useState(false);
   const [secretError, setSecretError] = useState('');
-  const [copiedQuestId, setCopiedQuestId] = useState<string | null>(null);
 
-  // Story-Share Mehrschritt-Flow: 'idle' | 'started' | 'copied' | 'claiming' | 'claimed'
-  const [storyProgress, setStoryProgress] = useState<Record<string, 'started' | 'copied' | 'claiming' | 'claimed'>>({}); 
-  const [storyClaimError, setStoryClaimError] = useState<Record<string, string>>({});
-
-  // localStorage-Persist: beim Mount gespeicherte story_progress laden
-  useEffect(() => {
-    const restored: Record<string, 'started' | 'copied'> = {};
-    bundle.items.forEach(item => {
-      if (item.questType === 'dm_share' && item.storyToken) {
-        const saved = localStorage.getItem('story_progress_' + item.questId);
-        if (saved === 'started' || saved === 'copied') restored[item.questId] = saved;
-      }
-    });
-    if (Object.keys(restored).length > 0) setStoryProgress(prev => ({ ...prev, ...restored }));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bundle.id]);
-
-  const handleStartStoryQuest = (questId: string) => {
-    localStorage.setItem('story_progress_' + questId, 'started');
-    setStoryProgress(prev => ({ ...prev, [questId]: 'started' }));
-  };
+  // Bundle-Item → QuestIndexEntry konvertieren (für Modal-Aufruf)
+  const buildQuestEntry = (item: typeof bundle.items[number]): QuestIndexEntry => ({
+    id:               item.questId,
+    platform:         bundle.platform,
+    type:             item.questType,
+    creatorWallet:    bundle.creatorWallet,
+    videoId:          bundle.videoId ?? '',
+    videoTitle:       bundle.videoTitle ?? '',
+    videoThumbnail:   bundle.videoThumbnail ?? '',
+    videoUrl:         bundle.videoUrl ?? '',
+    rewardAmount:     item.rewardAmount,
+    reputationReward: item.reputationReward,
+    maxCompletions:   item.maxCompletions,
+    completions:      item.completions,
+    isActive:         item.isActive,
+    createdAt:        bundle.createdAt ?? new Date().toISOString(),
+    expiresAt:        bundle.expiresAt ?? null,
+    storyToken:       item.storyToken ?? null,
+  });
 
   const handleSecretSubmit = async (e: React.FormEvent, questId: string) => {
     e.preventDefault();
@@ -88,34 +87,6 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed }: Bundle
       setSecretError((err as Error).message);
     } finally {
       setSecretLoading(false);
-    }
-  };
-
-  const handleCopyStoryLink = (questId: string, token: string) => {
-    navigator.clipboard.writeText('https://app.dawidfaith.de/api/instagram-quests/story-click?token=' + token);
-    setCopiedQuestId(questId);
-    localStorage.setItem('story_progress_' + questId, 'copied');
-    setStoryProgress(prev => ({ ...prev, [questId]: 'copied' }));
-    setTimeout(() => setCopiedQuestId(null), 2000);
-  };
-
-  const handleStoryClaim = async (questId: string, token: string) => {
-    setStoryProgress(prev => ({ ...prev, [questId]: 'claiming' }));
-    setStoryClaimError(prev => ({ ...prev, [questId]: '' }));
-    try {
-      const res = await fetch('/api/instagram-quests/story-claim', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, walletAddress: fanWallet }),
-      });
-      const data = await res.json() as { success?: boolean; error?: string };
-      if (!res.ok || !data.success) throw new Error(data.error ?? 'Fehler beim Bestätigen');
-      localStorage.removeItem('story_progress_' + questId);
-      setStoryProgress(prev => ({ ...prev, [questId]: 'claimed' }));
-      onBonusClaimed();
-    } catch (err) {
-      setStoryClaimError(prev => ({ ...prev, [questId]: (err as Error).message }));
-      setStoryProgress(prev => ({ ...prev, [questId]: 'copied' }));
     }
   };
 
@@ -294,85 +265,14 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed }: Bundle
                 )
               )}
 
-              {item.questType === 'dm_share' && !done && !full && item.storyToken && (() => {
-                const sp = storyProgress[item.questId];
-
-                // Noch nicht gestartet → prominenter Start-Button
-                if (!sp) {
-                  return (
-                    <button
-                      onClick={() => handleStartStoryQuest(item.questId)}
-                      className="mt-2 ml-2 w-[calc(100%-0.5rem)] bg-gradient-to-r from-pink-700/80 to-rose-600/80 hover:from-pink-600/80 hover:to-rose-500/80 text-white text-xs font-semibold py-2.5 px-4 rounded-xl transition-all"
-                    >
-                      📤 Quest starten
-                    </button>
-                  );
-                }
-
-                // Gestartet oder weiter → 4-Schritt-Panel
-                const linkCopied = sp === 'copied' || sp === 'claiming';
-                return (
-                  <div className="mt-2 ml-1 space-y-2">
-                    <div className="bg-pink-950/40 border border-pink-700/30 rounded-xl p-3 space-y-2 text-xs">
-                      {/* Schritt 1 */}
-                      <div className="flex items-start gap-2">
-                        <span className={`mt-0.5 w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold ${linkCopied ? 'bg-green-600 text-white' : 'bg-pink-700/60 text-pink-200'}`}>{linkCopied ? '✓' : '1'}</span>
-                        <div className="flex-1">
-                          <p className={`font-semibold ${linkCopied ? 'text-green-400 line-through' : 'text-pink-200'}`}>Story-Link kopieren</p>
-                          {!linkCopied && (
-                            <button
-                              onClick={() => handleCopyStoryLink(item.questId, item.storyToken!)}
-                              className="mt-1 bg-pink-600/70 hover:bg-pink-500/70 text-white px-3 py-1.5 rounded-lg font-semibold transition-colors"
-                            >
-                              {copiedQuestId === item.questId ? '✓ Kopiert!' : '🔗 Link kopieren'}
-                            </button>
-                          )}
-                          {linkCopied && (
-                            <button
-                              onClick={() => handleCopyStoryLink(item.questId, item.storyToken!)}
-                              className="mt-0.5 text-pink-400 hover:text-pink-300 transition-colors"
-                              title="Link erneut kopieren"
-                            >
-                              {copiedQuestId === item.questId ? '✓ Erneut kopiert' : '🔗 Link erneut kopieren'}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      {/* Schritt 2 */}
-                      <div className="flex items-start gap-2">
-                        <span className={`mt-0.5 w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold ${linkCopied ? 'bg-pink-700/60 text-pink-200' : 'bg-zinc-800 text-zinc-500'}`}>2</span>
-                        <p className={`${linkCopied ? 'text-pink-200' : 'text-zinc-500'}`}>Öffne Instagram und füge den Link in deine <strong>Story</strong> ein.</p>
-                      </div>
-                      {/* Schritt 3 */}
-                      <div className="flex items-start gap-2">
-                        <span className={`mt-0.5 w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold ${linkCopied ? 'bg-pink-700/60 text-pink-200' : 'bg-zinc-800 text-zinc-500'}`}>3</span>
-                        <p className={`${linkCopied ? 'text-pink-200' : 'text-zinc-500'}`}>Veröffentliche die Story. Du kannst die App danach schließen und später zurückkehren.</p>
-                      </div>
-                      {/* Schritt 4 */}
-                      <div className="flex items-start gap-2">
-                        <span className={`mt-0.5 w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold ${linkCopied ? 'bg-pink-700/60 text-pink-200' : 'bg-zinc-800 text-zinc-500'}`}>4</span>
-                        <div className="flex-1">
-                          <p className={`${linkCopied ? 'text-pink-200' : 'text-zinc-500'}`}>Zurückkehren und bestätigen.</p>
-                          {linkCopied && (
-                            <>
-                              {storyClaimError[item.questId] && (
-                                <p className="text-red-400 text-[10px] mt-1">{storyClaimError[item.questId]}</p>
-                              )}
-                              <button
-                                onClick={() => handleStoryClaim(item.questId, item.storyToken!)}
-                                disabled={sp === 'claiming'}
-                                className="mt-1.5 w-full bg-green-700/80 hover:bg-green-600/80 disabled:opacity-50 text-white font-semibold py-2 px-3 rounded-lg transition-colors"
-                              >
-                                {sp === 'claiming' ? 'Wird bestätigt…' : '✅ Story wurde geteilt – bestätigen'}
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+              {item.questType === 'dm_share' && !done && !full && item.storyToken && onOpenQuest && (
+                <button
+                  onClick={() => onOpenQuest(buildQuestEntry(item))}
+                  className="mt-2 ml-2 w-[calc(100%-0.5rem)] bg-gradient-to-r from-pink-700/80 to-rose-600/80 hover:from-pink-600/80 hover:to-rose-500/80 text-white text-xs font-semibold py-2.5 px-4 rounded-xl transition-all"
+                >
+                  📤 Story Quest starten
+                </button>
+              )}
             </div>
           );
         })}
