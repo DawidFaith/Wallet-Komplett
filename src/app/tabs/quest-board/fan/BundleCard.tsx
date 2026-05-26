@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import { FaLayerGroup, FaCheck, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaGift, FaStar, FaTrophy, FaHeart, FaComment, FaBookmark, FaShareAlt, FaKey, FaThumbsUp, FaPaperPlane } from 'react-icons/fa';
+import { FaLayerGroup, FaCheck, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaGift, FaStar, FaTrophy, FaHeart, FaComment, FaBookmark, FaShareAlt, FaKey, FaThumbsUp } from 'react-icons/fa';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
 import type { Platform, QuestType, QuestIndexEntry } from '../types';
 
@@ -18,7 +18,7 @@ const TYPE_ICONS: Record<QuestType, React.ReactNode> = {
   like:       <FaHeart     size={12} />,
   save:       <FaBookmark  size={12} />,
   repost:     <FaShareAlt  size={12} />,
-  dm_share:   <FaPaperPlane size={12} />,
+  dm_share:   <FaShareAlt  size={12} />,
   engagement: <FaThumbsUp  size={12} />,
   secret:     <FaKey       size={12} />,
 };
