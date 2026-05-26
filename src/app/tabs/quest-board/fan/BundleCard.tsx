@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import { FaLayerGroup, FaCheck, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaExternalLinkAlt, FaGift, FaStar } from 'react-icons/fa';
+import { FaLayerGroup, FaCheck, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaGift, FaStar, FaTrophy } from 'react-icons/fa';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
 import type { Platform, QuestType, QuestIndexEntry } from '../types';
 
@@ -186,7 +186,7 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
       >
         {/* Slide 0: Eingangstor */}
         <div className="min-w-full snap-start px-4 pt-3 pb-4">
-          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden transition-all">
+          <div className="bg-gradient-to-br from-zinc-900 via-purple-950/30 to-zinc-900 rounded-2xl border border-purple-700/50 overflow-hidden transition-all shadow-lg shadow-purple-900/20">
             {/* Thumbnail h-40 – identisch mit Quest-Karten */}
             <div className={`relative h-40 ${ytVideoId ? 'cursor-pointer group' : ''}`} onClick={() => ytVideoId && !showVideo && setShowVideo(true)}>
               {showVideo && ytVideoId ? (
@@ -209,20 +209,20 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
                     ? <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
                     : <div className="absolute inset-0 bg-gradient-to-br from-purple-900 to-violet-800" />
                   }
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/70" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/80" />
                   {ytVideoId && (
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="w-12 h-12 rounded-full bg-red-600/80 flex items-center justify-center shadow-xl">
-                        <FaYoutube size={20} className="text-white" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-90 group-hover:opacity-100 transition-opacity">
+                      <div className="w-14 h-14 rounded-full bg-red-600/90 group-hover:scale-110 flex items-center justify-center shadow-2xl transition-transform">
+                        <FaYoutube size={26} className="text-white" />
                       </div>
                     </div>
                   )}
                 </>
               )}
               {!showVideo && (
-                <div className="absolute top-2 left-2 flex items-center gap-1 z-10">
-                  <span className="flex items-center gap-1 bg-purple-600/90 text-white text-xs font-bold px-2 py-1 rounded-full">
-                    <FaLayerGroup size={9} /> Quest-Reihe
+                <div className="absolute top-2 left-2 z-10">
+                  <span className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-violet-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
+                    <FaLayerGroup size={10} /> Quest-Reihe
                   </span>
                 </div>
               )}
@@ -239,10 +239,20 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
                   )}
                 </div>
               )}
+              {/* Bonus-Highlight unten links auf dem Thumbnail */}
+              {!showVideo && bundle.bundleCompletionBonus > 0 && (
+                <div className="absolute bottom-2 left-2 z-10">
+                  <span className="flex items-center gap-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-black text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
+                    <FaGift size={10} /> +{bundle.bundleCompletionBonus.toFixed(2)} Bonus
+                  </span>
+                </div>
+              )}
             </div>
-            {/* Body – gleiche Struktur wie Quest-Karten: p-4 space-y-3 */}
+            {/* Body */}
             <div className="p-4 space-y-3">
               <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{bundle.videoTitle}</h3>
+
+              {/* Fortschritt */}
               <div>
                 <div className="flex justify-between text-xs text-zinc-400 mb-1">
                   <span>{completedCount} von {totalCount} Aufgaben erledigt</span>
@@ -255,14 +265,39 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
                   />
                 </div>
               </div>
+
+              {/* Quest-Vorschau – visualisiert Reihenfolge mit Status */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 flex-1 overflow-x-auto" style={{ scrollbarWidth: 'none' } as React.CSSProperties}>
+                  {bundle.items.map((it, idx) => {
+                    const itDone = completedSet.has(it.questType);
+                    return (
+                      <React.Fragment key={it.questId}>
+                        <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm border-2 transition-all ${
+                          itDone
+                            ? 'bg-green-600/30 border-green-500 text-green-300'
+                            : 'bg-zinc-800 border-zinc-700 text-zinc-400'
+                        }`}>
+                          {itDone ? <FaCheck size={10} /> : <span>{TYPE_ICONS[it.questType]}</span>}
+                        </div>
+                        {idx < bundle.items.length - 1 && (
+                          <div className={`h-0.5 w-2 shrink-0 ${itDone ? 'bg-green-500' : 'bg-zinc-700'}`} />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              </div>
+
               <p className="text-zinc-400 text-xs">
-                Aufgabe: <span className="text-zinc-300">🎯 Schließe alle {totalCount} Quests ab und erhalte <strong className="text-yellow-400">+{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH Bonus</strong>!</span>
+                Aufgabe: <span className="text-zinc-300">🎯 Schließe alle <strong className="text-white">{totalCount} Quests</strong> ab und sicher dir den <strong className="text-yellow-400">Abschluss-Bonus</strong>!</span>
               </p>
+
               <button
                 onClick={handleStart}
-                className="w-full bg-gradient-to-r from-purple-600 to-violet-500 hover:from-purple-500 hover:to-violet-400 active:scale-[0.98] text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-purple-600 to-violet-500 hover:from-purple-500 hover:to-violet-400 active:scale-[0.98] text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-purple-900/30"
               >
-                🚀 Quest-Reihe starten
+                <FaTrophy size={12} /> Starten
               </button>
             </div>
           </div>
@@ -349,9 +384,9 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
                         ) : (
                           <button
                             onClick={() => { setActiveSecretQuestId(item.questId); setSecretCode(''); setSecretError(''); }}
-                            className="w-full bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                            className="w-full bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
                           >
-                            🔑 Code eingeben
+                            <FaTrophy size={12} /> Starten
                           </button>
                         )}
                       </div>
@@ -404,7 +439,7 @@ export default function BundleCard({ bundle, fanWallet, onBonusClaimed, onOpenQu
                             onClick={() => onOpenQuest(entry)}
                             className="w-full bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"
                           >
-                            <FaInstagram size={13} /> Story Quest starten
+                            <FaTrophy size={12} /> Starten
                           </button>
                         )}
                       </div>
