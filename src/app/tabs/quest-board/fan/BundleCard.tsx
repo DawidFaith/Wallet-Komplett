@@ -123,7 +123,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
       const data = await res.json() as { success?: boolean; bonusAmount?: number; error?: string };
       if (!res.ok || !data.success) throw new Error(data.error ?? 'Fehler');
       setJustClaimed(true);
-      onBonusClaimed(data.bonusAmount ?? 0, bundle.title);
+      onBonusClaimed(data.bonusAmount ?? 0, bundle.videoTitle);
     } catch (e) {
       setClaimError((e as Error).message);
     } finally {
