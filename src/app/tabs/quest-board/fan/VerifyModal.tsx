@@ -2,7 +2,8 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { FaCheck, FaSync, FaExternalLinkAlt, FaStar, FaInfoCircle } from 'react-icons/fa';
+import { FaCheck, FaSync, FaExternalLinkAlt, FaStar, FaYoutube } from 'react-icons/fa';
+import { SiTiktok } from 'react-icons/si';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry, VerifyResult } from '../types';
 import { formatCredits } from '../utils';
@@ -20,6 +21,13 @@ export default function VerifyModal({ quest, loading, result, levelBonusPercent 
   const isOpen = !!quest;
   const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
   const displayReward = quest ? quest.rewardAmount + levelBonusAmount : 0;
+  
+  const isTikTok = quest?.platform === 'tiktok';
+  const PlatformIcon = isTikTok ? SiTiktok : FaYoutube;
+  const platformColor = isTikTok ? 'text-white' : 'text-red-500';
+  const highlightColor = isTikTok ? 'text-white' : 'text-red-400';
+  const platformName = isTikTok ? 'TikTok Video' : 'Short';
+  
   const title = result
     ? result.success
       ? '🎉 Quest abgeschlossen!'
@@ -95,33 +103,51 @@ export default function VerifyModal({ quest, loading, result, levelBonusPercent 
         </div>
       ) : quest ? (
         <div className="space-y-4">
-          <div className="bg-zinc-800 rounded-xl p-4 space-y-2">
-            <p className="text-white font-semibold text-sm">{quest.videoTitle}</p>
-            <div className="flex items-start gap-2 text-zinc-400 text-sm">
-              <FaInfoCircle className="mt-0.5 shrink-0 text-yellow-400" />
-              <div>
-                <p>So läuft die Verifizierung ab:</p>
-                <ol className="mt-1 space-y-1 list-decimal list-inside text-xs">
-                  <li>Öffne das Short und hinterlasse einen Kommentar</li>
-                  <li>Warte ca. 30 Sekunden bis YouTube gespeichert hat</li>
-                  <li>Klicke unten auf &quot;Jetzt verifizieren&quot;</li>
-                </ol>
-              </div>
-            </div>
+          {/* Video-Link */}
+          {quest.videoUrl && (
+            <a
+              href={quest.videoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl p-3 transition-colors"
+            >
+              <PlatformIcon size={20} className={`${platformColor} shrink-0`} />
+              <span className="text-white text-sm font-medium line-clamp-1 flex-1">{quest.videoTitle}</span>
+              <FaExternalLinkAlt size={12} className="text-zinc-500 shrink-0" />
+            </a>
+          )}
+
+          {/* Anleitung */}
+          <div className="bg-zinc-800/60 rounded-xl p-4 space-y-2">
+            <p className="text-white font-semibold text-sm">So funktioniert es:</p>
+            <ol className="space-y-2 text-zinc-400 text-sm">
+              <li className="flex gap-2">
+                <span className={`${highlightColor} font-bold shrink-0`}>1.</span>
+                Öffne das {platformName} oben
+              </li>
+              <li className="flex gap-2">
+                <span className={`${highlightColor} font-bold shrink-0`}>2.</span>
+                Hinterlasse einen positiven Kommentar mit deinem {isTikTok ? 'TikTok' : 'YouTube'}-Account
+              </li>
+              <li className="flex gap-2">
+                <span className={`${highlightColor} font-bold shrink-0`}>3.</span>
+                Klicke auf &bdquo;Jetzt verifizieren&ldquo;
+              </li>
+            </ol>
           </div>
-          <a
-            href={quest.videoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
-          >
-            <FaExternalLinkAlt size={13} /> Zum Short (kommentieren)
-          </a>
+
           <button
             onClick={() => onVerify(quest.id)}
-            className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
-            <FaCheck size={13} /> Jetzt verifizieren
+            <FaSync size={12} />
+            Jetzt verifizieren
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm py-2.5 rounded-xl transition-colors"
+          >
+            Abbrechen
           </button>
         </div>
       ) : null}

@@ -179,9 +179,13 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       setSecretVerifyQuest(quest);
       return;
     }
-    // Kommentar-Quest → bestehender Flow
+    // Kommentar-Quest → Anleitung zeigen
     setVerifyingQuest(quest);
     setVerifyResult(null);
+    setVerifyLoading(false);
+  };
+
+  const handleVerifyYoutubeComment = async (questId: string) => {
     setVerifyLoading(true);
     try {
       const res = await fetch('/api/youtube-quests/complete', {
@@ -226,9 +230,13 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       setSecretVerifyQuest(quest);
       return;
     }
-    // Kommentar-Quest
+    // Kommentar-Quest → Anleitung zeigen
     setVerifyingQuest(quest);
     setVerifyResult(null);
+    setVerifyLoading(false);
+  };
+
+  const handleVerifyTikTokComment = async (questId: string) => {
     setVerifyLoading(true);
     try {
       const res = await fetch('/api/tiktok-quests/complete', {
@@ -558,7 +566,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         loading={verifyLoading}
         result={verifyResult}
         levelBonusPercent={verifyingQuest ? getBonusPercent(verifyingQuest.creatorWallet) : 0}
-        onVerify={handleVerify}
+        onVerify={verifyingQuest?.platform === 'tiktok' ? handleVerifyTikTokComment : handleVerifyYoutubeComment}
         onClose={() => {
           if (verifyResult?.success && verifyingQuest) {
             setCelebration({ amount: verifyResult.rewardAmount ?? 0, questTitle: verifyingQuest.videoTitle, reputationReward: verifyingQuest.reputationReward, levelBonus: verifyResult.levelBonus });
