@@ -267,14 +267,25 @@ export default function CreateBundleModal({
 
   if (!open) return null;
 
-  // ── Schritt 4: Story-Link teilen + final bestätigen ─────────────────────────
+  // ── Schritt 4: LinkDM Story Mention einrichten + final bestätigen ───────────
   if (step === 4) {
     return (
-      <Modal open={open} onClose={onClose} title="Schritt 4: Story-Link teilen">
+      <Modal open={open} onClose={onClose} title="Schritt 4: LinkDM Story Mention einrichten">
         <div className="space-y-4">
-          <div className="bg-blue-950/40 border border-blue-800/40 rounded-xl p-3">
-            <p className="text-blue-300 text-xs">
-              1. Link kopieren und in deiner anderen Plattform einfügen. 2. Danach hier zurückkehren und bestätigen. Erst dann werden die Quests erstellt.
+          <div className="bg-blue-950/40 border border-blue-800/40 rounded-xl p-3 space-y-2">
+            <p className="text-blue-300 text-xs font-semibold">
+              So richtest du den Story-Quest Link in LinkDM ein:
+            </p>
+            <ol className="text-blue-200/90 text-xs space-y-1.5 list-decimal pl-4 leading-relaxed">
+              <li>Erstelle ein kostenloses Konto auf <span className="font-mono text-blue-100">app.linkdm.com</span> (falls noch nicht vorhanden).</li>
+              <li>Verbinde deinen Instagram-Account in LinkDM (Pflicht für Story Mention).</li>
+              <li>Öffne <span className="font-mono text-blue-100">app.linkdm.com/automation/mention</span> – führt dich direkt zu Story Mention.</li>
+              <li>Füge dort den Story-Quest Link ein und aktiviere die Automation.</li>
+              <li>Kehre hierher zurück und bestätige erst dann die Erstellung.</li>
+            </ol>
+            <p className="text-amber-300/80 text-[11px] mt-2 flex items-start gap-1.5">
+              <FaInfoCircle className="shrink-0 mt-0.5" size={10} />
+              <span>Der Link zu Story Mention funktioniert nur wenn du bereits eingeloggt bist. Registriere dich zuerst, dann öffne den Link.</span>
             </p>
           </div>
 
@@ -285,7 +296,7 @@ export default function CreateBundleModal({
                 <p className="text-pink-200 text-sm font-semibold">Story-Quest Link</p>
               </div>
               <p className="text-zinc-400 text-xs">
-                Diesen Link in Story/Bio/Kommentar einfügen. Nach der Bestätigung wird genau dieser Link aktiv.
+                Diesen Link in LinkDM unter Features → Story Mention einfügen. Nach der Bestätigung wird genau dieser Link aktiv.
               </p>
               <div className="flex items-center gap-2 bg-zinc-900/80 border border-zinc-700 rounded-lg px-3 py-2">
                 <FaLink size={10} className="text-pink-400 shrink-0" />
@@ -324,7 +335,7 @@ export default function CreateBundleModal({
               disabled={creating || !hasEnough || !storyLink}
               className="flex-1 bg-green-700 hover:bg-green-600 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-xl py-2.5 font-semibold text-sm transition-colors"
             >
-              {creating ? 'Erstelle...' : 'Ich bin zurück - Quests jetzt erstellen'}
+              {creating ? 'Erstelle...' : 'LinkDM eingerichtet – Quest-Reihe erstellen'}
             </button>
           </div>
         </div>
