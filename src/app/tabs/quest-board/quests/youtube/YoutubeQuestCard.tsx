@@ -9,12 +9,13 @@ import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
 interface YoutubeQuestCardProps {
   quest: QuestIndexEntry;
   isCompleted: boolean;
+  isVerified?: boolean;
   onComplete: (questId: string) => void;
   rewardTokenName?: string | null;
   levelBonusPercent?: number;
 }
 
-export default function YoutubeQuestCard({ quest, isCompleted, onComplete, rewardTokenName, levelBonusPercent = 0 }: YoutubeQuestCardProps) {
+export default function YoutubeQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0 }: YoutubeQuestCardProps) {
   const tokenLabel = rewardTokenName ?? 'D.FAITH';
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
   const isFull = quest.completions >= quest.maxCompletions;
@@ -90,7 +91,8 @@ export default function YoutubeQuestCard({ quest, isCompleted, onComplete, rewar
         ) : (
           <button
             onClick={() => onComplete(quest.id)}
-            className="w-full bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+            disabled={!isVerified}
+            className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             <FaTrophy size={12} /> Starten
           </button>

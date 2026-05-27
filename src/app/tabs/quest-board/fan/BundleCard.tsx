@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import { FaLayerGroup, FaCheck, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaGift, FaStar, FaTrophy, FaHeart, FaComment, FaBookmark, FaShareAlt, FaKey, FaThumbsUp } from 'react-icons/fa';
+import { FaLayerGroup, FaCheck, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaGift, FaStar, FaTrophy, FaHeart, FaComment, FaBookmark, FaShareAlt, FaKey, FaThumbsUp, FaLock } from 'react-icons/fa';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
-import type { Platform, QuestType, QuestIndexEntry } from '../types';
+import type { Platform, QuestType, QuestIndexEntry, VerifiedPlatforms } from '../types';
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
   youtube:   <FaYoutube   className="text-red-500"  size={12} />,
@@ -26,15 +26,16 @@ const TYPE_ICONS: Record<QuestType, React.ReactNode> = {
 interface BundleCardProps {
   bundle: QuestBundleWithItems;
   fanWallet: string;
+  verified: VerifiedPlatforms;
   levelBonusPercent?: number;
   onBonusClaimed: () => void;
   /** Öffnet das passende Verifikations-Modal (z.B. InstagramDmShareModal) für eine Bundle-Quest */
   onOpenQuest?: (quest: QuestIndexEntry) => void;
-  /** Rendert die richtige Quest-Card für ein Item (vom Parent geliefert, damit Logik wie bei „Verfügbare Quests“ identisch ist) */
+  /** Rendert die richtige Quest-Card für ein Item (vom Parent geliefert, damit Logik wie bei „Verfügbare Quests" identisch ist) */
   renderQuestCard?: (quest: QuestIndexEntry) => React.ReactNode;
 }
 
-export default function BundleCard({ bundle, fanWallet, levelBonusPercent = 0, onBonusClaimed, onOpenQuest, renderQuestCard }: BundleCardProps) {
+export default function BundleCard({ bundle, fanWallet, verified, levelBonusPercent = 0, onBonusClaimed, onOpenQuest, renderQuestCard }: BundleCardProps) {
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState('');
   const [justClaimed, setJustClaimed] = useState(false);
@@ -108,6 +109,7 @@ export default function BundleCard({ bundle, fanWallet, levelBonusPercent = 0, o
   const totalRep    = bundle.items.reduce((sum, it) => sum + (it.reputationReward ?? 0), 0);
   const visibleItems = bundle.items.filter((item) => !completedSet.has(item.questType));
   const totalSlides = 1 + visibleItems.length;
+  const isVerified = verified[bundle.platform];
 
   const handleClaimBonus = async () => {
     setClaiming(true);
@@ -130,11 +132,21 @@ export default function BundleCard({ bundle, fanWallet, levelBonusPercent = 0, o
   };
 
   return (
-    <div className={`rounded-2xl border overflow-hidden transition-all ${
+    <div className={`rounded-2xl border overflow-hidden transition-all relative ${
       bundle.fanAllCompleted
         ? 'bg-gradient-to-br from-[#1a1228] to-[#0d1a12] border-green-700/50'
         : 'bg-[#1a1228] border-purple-900/40'
     }`}>
+      {/* Lock-Overlay wenn Plattform nicht verifiziert */}
+      {!isVerified && (
+        <div className="absolute inset-0 z-20 rounded-2xl bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 border border-zinc-700/50">
+          <FaLock size={18} className="text-zinc-400" />
+          <p className="text-zinc-300 text-sm font-semibold">
+            {bundle.platform === 'youtube' ? 'YouTube' : bundle.platform === 'instagram' ? 'Instagram' : bundle.platform === 'tiktok' ? 'TikTok' : 'Facebook'} verknüpfen
+          </p>
+          <p className="text-zinc-500 text-xs">Verifiziere dein Konto im Profil</p>
+        </div>
+      )}
       {/* ─── Fortschrittsbalken (ab Slide 1 sichtbar) ─── */}
       {currentSlide > 0 && (
         <div className="px-4 pt-3">
@@ -274,7 +286,8 @@ export default function BundleCard({ bundle, fanWallet, levelBonusPercent = 0, o
 
               <button
                 onClick={handleStart}
-                className="w-full bg-gradient-to-r from-purple-600 to-violet-500 hover:from-purple-500 hover:to-violet-400 active:scale-[0.98] text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-purple-900/30"
+                disabled={!isVerified}
+                className="w-full bg-gradient-to-r from-purple-600 to-violet-500 hover:from-purple-500 hover:to-violet-400 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-purple-900/30"
               >
                 <FaTrophy size={12} /> Starten
               </button>
@@ -336,8 +349,8 @@ export default function BundleCard({ bundle, fanWallet, levelBonusPercent = 0, o
                         ) : (
                           <button
                             onClick={() => onOpenQuest?.(entry)}
-                            disabled={!onOpenQuest}
-                            className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                            disabled={!onOpenQuest || !isVerified}
+                            className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
                           >
                             <FaTrophy size={12} /> Starten
                           </button>
@@ -401,7 +414,8 @@ export default function BundleCard({ bundle, fanWallet, levelBonusPercent = 0, o
                         ) : (
                           <button
                             onClick={() => onOpenQuest(entry)}
-                            className="w-full bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"
+                            disabled={!isVerified}
+                            className="w-full bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"
                           >
                             <FaTrophy size={12} /> Starten
                           </button>

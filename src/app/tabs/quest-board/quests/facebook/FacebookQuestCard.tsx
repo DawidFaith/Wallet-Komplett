@@ -11,12 +11,13 @@ import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
 interface FacebookQuestCardProps {
   quest: QuestIndexEntry;
   isCompleted: boolean;
+  isVerified?: boolean;
   onComplete: (questId: string) => void;
   rewardTokenName?: string | null;
   levelBonusPercent?: number;
 }
 
-export default function FacebookQuestCard({ quest, isCompleted, onComplete, rewardTokenName, levelBonusPercent = 0 }: FacebookQuestCardProps) {
+export default function FacebookQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0 }: FacebookQuestCardProps) {
   const tokenLabel = rewardTokenName ?? 'D.FAITH';
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
   const expiry = formatExpiry(quest.expiresAt);
@@ -83,9 +84,9 @@ export default function FacebookQuestCard({ quest, isCompleted, onComplete, rewa
         <p className="text-zinc-500 text-xs">{quest.completions}/{quest.maxCompletions} abgeschlossen</p>
 
         <button
-          onClick={() => !isCompleted && !isFull && onComplete(quest.id)}
-          disabled={isCompleted || isFull}
-          className={`w-full ${isSecret ? 'bg-yellow-500 hover:bg-yellow-400 text-black' : 'bg-blue-600 hover:bg-blue-500 text-white'} disabled:opacity-40 text-sm font-semibold py-2.5 rounded-xl transition-colors`}
+          onClick={() => !isCompleted && !isFull && isVerified && onComplete(quest.id)}
+          disabled={isCompleted || isFull || !isVerified}
+          className={`w-full ${isSecret ? 'bg-yellow-500 hover:bg-yellow-400 text-black' : 'bg-blue-600 hover:bg-blue-500 text-white'} disabled:opacity-40 disabled:cursor-not-allowed text-sm font-semibold py-2.5 rounded-xl transition-colors`}
         >
           {buttonLabel}
         </button>

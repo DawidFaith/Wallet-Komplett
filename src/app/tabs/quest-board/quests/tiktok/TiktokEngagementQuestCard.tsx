@@ -11,12 +11,13 @@ import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
 interface TiktokEngagementQuestCardProps {
   quest: QuestIndexEntry;
   isCompleted: boolean;
+  isVerified?: boolean;
   onComplete: (questId: string) => void;
   rewardTokenName?: string | null;
   levelBonusPercent?: number;
 }
 
-export default function TiktokEngagementQuestCard({ quest, isCompleted, onComplete, rewardTokenName, levelBonusPercent = 0 }: TiktokEngagementQuestCardProps) {
+export default function TiktokEngagementQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0 }: TiktokEngagementQuestCardProps) {
   const tokenLabel = rewardTokenName ?? 'D.FAITH';
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
   const isFull = quest.completions >= quest.maxCompletions;
@@ -104,9 +105,9 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, onComple
           </button>
         ) : (
           <button
-            onClick={() => !isFull && onComplete(quest.id)}
-            disabled={isFull}
-            className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+            onClick={() => !isFull && isVerified && onComplete(quest.id)}
+            disabled={isFull || !isVerified}
+            className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             {isFull ? 'Voll' : <><FaCheck size={12} /> Starten</>}
           </button>

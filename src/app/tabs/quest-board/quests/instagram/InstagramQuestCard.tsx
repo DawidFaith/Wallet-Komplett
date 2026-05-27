@@ -9,6 +9,7 @@ import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
 interface InstagramQuestCardProps {
   quest: QuestIndexEntry;
   isCompleted: boolean;
+  isVerified?: boolean;
   onComplete: (questId: string) => void;
   rewardTokenName?: string | null;
   levelBonusPercent?: number;
@@ -23,7 +24,7 @@ const QUEST_TYPE_CONFIG = {
   dm_share:   { label: 'Story Quest',         icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-pink-600/90 to-purple-600/90',      btn: 'Story Quest starten' },
 } as const;
 
-export default function InstagramQuestCard({ quest, isCompleted, onComplete, rewardTokenName, levelBonusPercent = 0 }: InstagramQuestCardProps) {
+export default function InstagramQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0 }: InstagramQuestCardProps) {
   const tokenLabel = rewardTokenName ?? 'D.FAITH';
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
   const expiry = formatExpiry(quest.expiresAt);
@@ -80,9 +81,9 @@ export default function InstagramQuestCard({ quest, isCompleted, onComplete, rew
         <p className="text-zinc-500 text-xs">{quest.completions}/{quest.maxCompletions} abgeschlossen</p>
 
         <button
-          onClick={() => !isCompleted && !isFull && onComplete(quest.id)}
-          disabled={isCompleted || isFull}
-          className="w-full bg-pink-600 hover:bg-pink-500 disabled:opacity-40 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+          onClick={() => !isCompleted && !isFull && isVerified && onComplete(quest.id)}
+          disabled={isCompleted || isFull || !isVerified}
+          className="w-full bg-pink-600 hover:bg-pink-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
         >
           {isCompleted ? '✓ Erledigt' : isFull ? 'Ausgebucht' : 'Starten'}
         </button>
