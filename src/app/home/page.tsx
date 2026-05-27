@@ -24,13 +24,15 @@ function HomeContent() {
   const [language, setLanguage] = useState<SupportedLanguage>("de");
   const searchParams = useSearchParams();
 
-  // URL-Parameter für Tab laden
+  // URL-Parameter für Tab und Artist laden
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab");
     if (tabFromUrl) {
       setActiveTab(tabFromUrl);
     }
   }, [searchParams]);
+
+  const artistParam = searchParams.get("artist");
 
   return (
     <main className="min-h-screen flex flex-col bg-[#13120e]">
@@ -51,9 +53,9 @@ function HomeContent() {
         {activeTab === "tiktok" && <TiktokTab language={language} />}
         {activeTab === "facebook" && <FacebookTab language={language} />}
         {activeTab === "youtube" && <YoutubeTab language={language} />}
-        {activeTab === "quest-board" && <QuestBoardTab language={language} />}
+        {activeTab === "quest-board" && <QuestBoardTab language={language} artistWallet={artistParam} />}
         {activeTab === "solana-wallet" && <SolanaWalletTab />}
-        {activeTab === "reputation" && <ReputationTab />}
+        {activeTab === "reputation" && <ReputationTab artistWallet={artistParam} />}
         {activeTab === "shop" && <ShopTab />}
       </section>
     </main>

@@ -1359,7 +1359,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
 }
 
 // Main Tab
-export default function ReputationTab() {
+export default function ReputationTab({ artistWallet }: { artistWallet?: string | null }) {
   const { user } = useUser();
   const walletAddress = user?.id ?? '';
 
@@ -1383,6 +1383,13 @@ export default function ReputationTab() {
       .catch(() => setReputations([]))
       .finally(() => setLoading(false));
   }, [walletAddress]);
+
+  // Setze selectedArtist wenn artistWallet URL-Parameter vorhanden ist
+  useEffect(() => {
+    if (!artistWallet || reputations.length === 0) return;
+    const artist = reputations.find(r => r.artistWallet.toLowerCase() === artistWallet.toLowerCase());
+    if (artist) setSelectedArtist(artist);
+  }, [artistWallet, reputations]);
 
   const supporterEntries = reputations.filter(r => r.artistWallet !== walletAddress);
 

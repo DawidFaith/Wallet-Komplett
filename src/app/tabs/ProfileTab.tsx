@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
   FaInstagram, FaTiktok, FaFacebook, FaYoutube,
@@ -94,6 +95,7 @@ const PLATFORM_META: Record<AnyPlatform, { label: string; icon: React.ReactNode 
 
 export default function ProfileTab({ language: _language, onNavigate }: ProfileTabProps) {
   const { user: _clerkUser } = useUser();
+  const router = useRouter();
   const account = _clerkUser?.id ? { address: _clerkUser.id } : null;
   const [data, setData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -821,7 +823,13 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                   </div>
                   {onNavigate && (
                     <button
-                      onClick={() => onNavigate('reputation')}
+                      onClick={() => {
+                        if (selectedArtist) {
+                          router.push(`/home?tab=reputation&artist=${encodeURIComponent(selectedArtist.walletAddress)}`);
+                        } else {
+                          onNavigate('reputation');
+                        }
+                      }}
                       className="text-amber-400 hover:text-amber-300 text-xs font-semibold shrink-0 transition-colors"
                     >
                       Details →
@@ -832,14 +840,20 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
               {onNavigate && (
                 <div className="flex gap-2">
                   <button
-                    onClick={() => onNavigate('reputation')}
+                    onClick={() => {
+                      if (selectedArtist) {
+                        router.push(`/home?tab=reputation&artist=${encodeURIComponent(selectedArtist.walletAddress)}`);
+                      } else {
+                        onNavigate('reputation');
+                      }
+                    }}
                     className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs font-semibold transition-colors"
                   >
                     <FaTrophy size={11} /> Reputation
                   </button>
                   {selectedArtist && selectedArtist.questCount > 0 && (
                     <button
-                      onClick={() => onNavigate('quest-board')}
+                      onClick={() => router.push(`/home?tab=quest-board&artist=${encodeURIComponent(selectedArtist.walletAddress)}`)}
                       className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs font-semibold transition-colors"
                     >
                       <FaTasks size={11} /> {selectedArtist.questCount} Quest{selectedArtist.questCount !== 1 ? 's' : ''}

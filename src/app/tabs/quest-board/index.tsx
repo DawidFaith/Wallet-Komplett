@@ -31,6 +31,7 @@ interface ArtistInfo {
 
 interface QuestBoardProps {
   language: SupportedLanguage;
+  artistWallet?: string | null;
   filterArtist?: ArtistInfo | null;
   onClearArtist?: () => void;
 }
@@ -119,7 +120,7 @@ interface ProfileResponse {
   };
 }
 
-export default function QuestBoard({ language: _language, filterArtist, onClearArtist }: QuestBoardProps) {
+export default function QuestBoard({ language: _language, artistWallet, filterArtist, onClearArtist }: QuestBoardProps) {
   const { user: _clerkUser } = useUser();
   const account = _clerkUser?.id ? { address: _clerkUser.id } : null;
   const [view, setView] = useState<QuestBoardView>('fan');
@@ -131,6 +132,24 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
   const [isArtist, setIsArtist] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [internalFilterArtist, setInternalFilterArtist] = useState<ArtistInfo | null>(null);
+  const [loadingArtist, setLoadingArtist] = useState(false);
+
+  // Lade Artist-Daten wenn artistWallet URL-Parameter gesetzt ist
+  useEffect(() => {
+    if (!artistWallet || !account?.address) {
+      setInternalFilterArtist(null);
+      return;
+    }
+    setLoadingArtist(true);
+    fetch(`/api/admin/artists?wallet=${account.address}`)
+      .then(r => r.ok ? r.json() : { artists: [] })
+      .then((data: { artists?: ArtistInfo[] }) => {
+        const artist = (data.artists ?? []).find(a => a.walletAddress.toLowerCase() === artistWallet.toLowerCase());
+        if (artist) setInternalFilterArtist(artist);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingArtist(false));
+  }, [artistWallet, account?.address]);
 
   useEffect(() => {
     if (!account?.address) { setLoaded(false); return; }
@@ -189,7 +208,7 @@ export default function QuestBoard({ language: _language, filterArtist, onClearA
     );
   }
 
-  if (!loaded) {
+  if (!loaded || loadingArtist) {
     return (
       <div className="w-full flex flex-col min-h-screen bg-[#0e0c0a] text-white">
         <div className="flex-1 flex items-center justify-center">
