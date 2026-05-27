@@ -394,7 +394,11 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               fanWallet={walletAddress}
               verified={verified}
               levelBonusPercent={getBonusPercent(bundle.creatorWallet)}
-              onBonusClaimed={() => { loadBundles(); loadQuests(); }}
+              onBonusClaimed={(bonusAmount, bundleTitle) => { 
+                loadBundles(); 
+                loadQuests(); 
+                setCelebration({ amount: bonusAmount, questTitle: `🎁 ${bundleTitle} - Bonus`, reputationReward: 0, levelBonus: 0 });
+              }}
               renderQuestCard={(quest) => {
                 const isCompleted = completedIds.includes(quest.id);
                 if (quest.platform === 'youtube') {
@@ -569,9 +573,10 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onVerify={verifyingQuest?.platform === 'tiktok' ? handleVerifyTikTokComment : handleVerifyYoutubeComment}
         onClose={() => {
           if (verifyResult?.success && verifyingQuest) {
-            setCelebration({ amount: verifyResult.rewardAmount ?? 0, questTitle: verifyingQuest.videoTitle, reputationReward: verifyingQuest.reputationReward, levelBonus: verifyResult.levelBonus });
+            pendingCelebration.current = { amount: verifyResult.rewardAmount ?? 0, questTitle: verifyingQuest.videoTitle, reputationReward: verifyingQuest.reputationReward, levelBonus: verifyResult.levelBonus };
             loadBundles();
           }
+          if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
           setVerifyingQuest(null); setVerifyResult(null);
         }}
       />

@@ -28,7 +28,7 @@ interface BundleCardProps {
   fanWallet: string;
   verified: VerifiedPlatforms;
   levelBonusPercent?: number;
-  onBonusClaimed: () => void;
+  onBonusClaimed: (bonusAmount: number, bundleTitle: string) => void;
   /** Öffnet das passende Verifikations-Modal (z.B. InstagramDmShareModal) für eine Bundle-Quest */
   onOpenQuest?: (quest: QuestIndexEntry) => void;
   /** Rendert die richtige Quest-Card für ein Item (vom Parent geliefert, damit Logik wie bei „Verfügbare Quests" identisch ist) */
@@ -123,7 +123,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
       const data = await res.json() as { success?: boolean; bonusAmount?: number; error?: string };
       if (!res.ok || !data.success) throw new Error(data.error ?? 'Fehler');
       setJustClaimed(true);
-      onBonusClaimed();
+      onBonusClaimed(data.bonusAmount ?? 0, bundle.title);
     } catch (e) {
       setClaimError((e as Error).message);
     } finally {
