@@ -332,6 +332,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const tiktokEngagementQuests = filteredQuests.filter((q) => q.platform === 'tiktok' && q.type === 'engagement' && !completedIds.includes(q.id));
   const instagramQuests = filteredQuests.filter((q) => q.platform === 'instagram' && !completedIds.includes(q.id));
   const facebookQuests = filteredQuests.filter((q) => q.platform === 'facebook' && !completedIds.includes(q.id));
+  // Bundles ausblenden, wenn alle Quests abgeschlossen UND Bonus bereits eingelöst
+  const activeBundles = bundles.filter((b) => !(b.fanAllCompleted && b.fanBonusClaimed));
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 space-y-5">
@@ -378,7 +380,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         <div className="flex justify-center py-12">
           <div className="border-4 border-red-500/30 border-t-red-500 rounded-full w-10 h-10 animate-spin" />
         </div>
-      ) : bundles.length === 0 && youtubeQuests.length === 0 && tiktokCommentQuests.length === 0 && tiktokEngagementQuests.length === 0 && instagramQuests.length === 0 && facebookQuests.length === 0 ? (
+      ) : activeBundles.length === 0 && youtubeQuests.length === 0 && tiktokCommentQuests.length === 0 && tiktokEngagementQuests.length === 0 && instagramQuests.length === 0 && facebookQuests.length === 0 ? (
         <div className="text-center py-12 text-zinc-500">
           <FaTrophy size={32} className="mx-auto mb-3 opacity-30" />
           <p>Alle Quests erledigt oder noch keine verfügbar.</p>
@@ -387,7 +389,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       ) : (
         <div className="space-y-4">
           {/* Quest-Reihen (Bundles) zuerst */}
-          {bundles.map((bundle) => (
+          {activeBundles.map((bundle) => (
             <BundleCard
               key={bundle.id}
               bundle={bundle}
