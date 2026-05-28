@@ -353,13 +353,32 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                 Aufgabe: <span className="text-zinc-300">🎯 Schließe alle <strong className="text-white">{totalCount} Quests</strong> ab und sicher dir den <strong className="text-yellow-400">Abschluss-Bonus</strong>!</span>
               </p>
 
-              <button
-                onClick={handleStart}
-                disabled={!isVerified}
-                className={`w-full bg-gradient-to-r ${pc.button} active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md`}
-              >
-                <FaTrophy size={12} /> Starten
-              </button>
+              {canClaimBonus ? (
+                <>
+                  {claimError && <p className="text-red-400 text-xs text-center">{claimError}</p>}
+                  <button
+                    onClick={handleClaimBonus}
+                    disabled={claiming}
+                    className="w-full bg-gradient-to-r from-yellow-600 to-amber-500 hover:from-yellow-500 hover:to-amber-400 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-md"
+                  >
+                    <FaGift size={14} />
+                    {claiming ? 'Einlösen...' : 'Bonus einlösen (+' + bundle.bundleCompletionBonus.toFixed(2) + ' D.FAITH)'}
+                  </button>
+                </>
+              ) : bonusAlreadyDone ? (
+                <div className="w-full bg-green-950/30 border border-green-800/30 rounded-xl px-3 py-2.5 flex items-center justify-center gap-2">
+                  <FaCheck size={12} className="text-green-400" />
+                  <span className="text-green-400 text-sm font-semibold">Bundle-Bonus eingelöst (+{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH)</span>
+                </div>
+              ) : (
+                <button
+                  onClick={handleStart}
+                  disabled={!isVerified}
+                  className={`w-full bg-gradient-to-r ${pc.button} active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md`}
+                >
+                  <FaTrophy size={12} /> Starten
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -520,40 +539,13 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
         ))}
       </div>
 
-      {/* ─── Bonus-Claim (immer unten sichtbar) ─── */}
-      {(canClaimBonus || bonusAlreadyDone || bundle.bundleCompletionBonus > 0) && (
+      {/* ─── Bonus-Claim Info (nur wenn noch nicht alle abgeschlossen) ─── */}
+      {!canClaimBonus && !bonusAlreadyDone && bundle.bundleCompletionBonus > 0 && (
         <div className="px-4 pb-4">
-          {canClaimBonus ? (
-            <div className="space-y-2">
-              <div className="bg-yellow-950/40 border border-yellow-700/40 rounded-xl p-3 text-center">
-                <p className="text-yellow-300 text-sm font-semibold">Alle Aufgaben erledigt!</p>
-                <p className="text-yellow-400/80 text-xs mt-0.5">
-                  +{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH Abschluss-Bonus wartet auf dich!
-                </p>
-              </div>
-              {claimError && <p className="text-red-400 text-xs text-center">{claimError}</p>}
-              <button
-                onClick={handleClaimBonus}
-                disabled={claiming}
-                className="w-full bg-gradient-to-r from-yellow-600 to-amber-500 hover:from-yellow-500 hover:to-amber-400 disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
-              >
-                <FaGift size={14} />
-                {claiming ? 'Einlösen...' : 'Bonus einlösen (+' + bundle.bundleCompletionBonus.toFixed(2) + ' D.FAITH)'}
-              </button>
-            </div>
-          ) : bonusAlreadyDone ? (
-            <div className="bg-green-950/30 border border-green-800/30 rounded-xl px-3 py-2 flex items-center gap-2">
-              <FaCheck size={12} className="text-green-400" />
-              <span className="text-green-400 text-xs font-semibold">
-                Bundle-Bonus bereits eingelöst (+{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH)
-              </span>
-            </div>
-          ) : bundle.bundleCompletionBonus > 0 ? (
-            <div className="bg-purple-950/20 border border-purple-800/20 rounded-xl px-3 py-2 flex items-center justify-between">
-              <span className="text-zinc-500 text-xs">Abschluss-Bonus</span>
-              <span className="text-purple-400 text-xs font-mono font-semibold">+{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH</span>
-            </div>
-          ) : null}
+          <div className="bg-purple-950/20 border border-purple-800/20 rounded-xl px-3 py-2 flex items-center justify-between">
+            <span className="text-zinc-500 text-xs">Abschluss-Bonus</span>
+            <span className="text-purple-400 text-xs font-mono font-semibold">+{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH</span>
+          </div>
         </div>
       )}
     </div>

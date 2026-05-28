@@ -397,6 +397,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               verified={verified}
               levelBonusPercent={getBonusPercent(bundle.creatorWallet)}
               onBonusClaimed={(bonusAmount, bundleTitle) => { 
+                // Sofort aus der Liste entfernen (kein Flackern bis loadBundles fertig ist)
+                setBundles((prev) => prev.filter((b) => b.id !== bundle.id));
                 loadBundles(); 
                 loadQuests(); 
                 setCelebration({ amount: bonusAmount, questTitle: `🎁 ${bundleTitle} - Bonus`, reputationReward: 0, levelBonus: 0 });
