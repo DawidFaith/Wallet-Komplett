@@ -25,7 +25,7 @@ import {
   deleteFacebookLikeVerification,
   QuestCompletion,
 } from '../../../lib/questDb';
-import { fetchFacebookPostCounts, extractFacebookPostId } from '../../../lib/metaApi';
+import { fetchFacebookPostCounts, extractFacebookPostId, resolvePostIdFromUrl } from '../../../lib/metaApi';
 import { getDb } from '../../../lib/db';
 
 export const maxDuration = 30;
@@ -90,27 +90,44 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Dieser Facebook-Account hat diesen Quest bereits abgeschlossen.' }, { status: 409 });
     }
 
-    // Post-ID normalisieren (falls alte Quests fehlerhafte URLs als videoId haben)
+    // Post-ID auflösen – Facebook Graph API ist die zuverlässigste Quelle
     let postId = quest.videoId;
-    if (postId.includes('http') || postId.includes('/')) {
+    console.log('[like-verify] Original videoId:', postId, '| videoUrl:', quest.videoUrl);
+
+    // Schritt 1: Wenn videoId bereits korrekt (pageId_postId) → direkt verwenden
+    // Schritt 2: videoUrl per Graph API auflösen (zuverlässigste Methode)
+    // Schritt 3: Regex-Extraktion als Fallback
+    if (!postId.includes('_') || postId.includes('http') || postId.includes('/')) {
+      const url = quest.videoUrl || (postId.startsWith('http') ? postId : null);
+      if (url) {
+        const resolved = await resolvePostIdFromUrl(url);
+        if (resolved) {
+          postId = resolved;
+          console.log('[like-verify] Post-ID via Graph API aufgelöst:', postId);
+        }
+      }
+    }
+    // Fallback: Regex-Extraktion
+    if (!postId.includes('_') || postId.includes('http') || postId.includes('/')) {
       const extracted = extractFacebookPostId(postId) || (quest.videoUrl ? extractFacebookPostId(quest.videoUrl) : null);
       if (extracted) {
         postId = extracted;
-        console.log('[like-verify] Post-ID normalisiert:', postId);
+        console.log('[like-verify] Post-ID via Regex extrahiert:', postId);
       }
     }
 
-    // Creator's facebook_page_id für Token-Lookup laden (vermeidet Probe-Loop)
+    // Creator's facebook_page_id für Token-Lookup laden
     const sql = getDb();
     const creatorRows = await sql`SELECT facebook_page_id FROM user_profiles WHERE wallet_address = ${quest.creatorWallet.toLowerCase()} LIMIT 1`;
     const creatorFacebookPageId = (creatorRows[0]?.facebook_page_id as string | null) ?? null;
+    console.log('[like-verify] creatorFacebookPageId:', creatorFacebookPageId);
 
-    // Falls postId nur die numerische Post-ID ohne Page-ID ist (alte Bundles mit Permalink-Format),
-    // mit der bekannten Page-ID des Creators kombinieren
+    // Bare numerische Post-ID mit Page-ID kombinieren
     if (!postId.includes('_') && /^\d+$/.test(postId) && creatorFacebookPageId) {
       postId = `${creatorFacebookPageId}_${postId}`;
       console.log('[like-verify] Post-ID mit Page-ID kombiniert:', postId);
     }
+    console.log('[like-verify] Finale postId:', postId);
 
     // ── action: start ────────────────────────────────────────────────────────
     if (action === 'start') {

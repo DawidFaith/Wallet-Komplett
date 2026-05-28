@@ -5,17 +5,29 @@
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
-// ─── Facebook URL zu Post-ID konvertieren ─────────────────────────────────────
+// ─── Facebook Post-ID per Graph API aus URL auflösen ─────────────────────────
 /**
- * Extrahiert die Facebook Post-ID aus verschiedenen URL-Formaten.
- * Unterstützt:
- * - https://www.facebook.com/{pageId}/posts/{postId}
- * - https://facebook.com/{pageId}/posts/{postId}
- * - https://www.facebook.com/permalink.php?story_fbid={postId}&id={pageId}
- * - Direkte Post-ID (pageId_postId)
- * - Beschädigte URLs ohne Protokoll-Trenner
- * @returns Post-ID im Format "pageId_postId" oder null bei Fehler
+ * Löst eine Facebook-Permalink-URL über die Graph API zur echten Post-ID auf.
+ * Facebook kennt seine eigenen URLs am besten – zuverlässiger als jede Regex.
+ * GET /v21.0/?id={url}&fields=id → gibt { id: "pageId_postId" } zurück.
  */
+export async function resolvePostIdFromUrl(url: string): Promise<string | null> {
+  const token = process.env.META_SYSTEM_USER_TOKEN;
+  if (!token || !url.startsWith('http')) return null;
+  try {
+    const res = await fetch(
+      `${GRAPH}/?id=${encodeURIComponent(url)}&fields=id&access_token=${token}`,
+      { cache: 'no-store', signal: AbortSignal.timeout(8000) },
+    );
+    const data = await res.json() as { id?: string; error?: { message: string } };
+    if (data.error || !data.id) return null;
+    console.log('[resolvePostIdFromUrl] Graph API → postId:', data.id, 'für URL:', url);
+    return data.id;
+  } catch {
+    return null;
+  }
+}
+
 export function extractFacebookPostId(urlOrId: string): string | null {
   // Bereits im korrekten Format
   if (urlOrId.includes('_') && !urlOrId.includes('/') && !urlOrId.includes('http')) {
@@ -268,19 +280,22 @@ export async function findFacebookComment(
   if (!systemToken) return { found: false };
 
   const pageId = postId.includes('_') ? postId.split('_')[0] : null;
-  if (!pageId) return { found: false, allComments: [] };
+  // Fallback: accessiblePageId nutzen wenn kein pageId aus postId extrahierbar
+  const effectiveLookupId = accessiblePageId ?? pageId;
+  if (!effectiveLookupId) {
+    console.error('[findFacebookComment] Kein pageId aus postId und kein accessiblePageId – abbruch | postId:', postId);
+    return { found: false, allComments: [] };
+  }
+  console.log('[findFacebookComment] postId:', postId, '| pageId:', pageId, '| effectiveLookupId:', effectiveLookupId);
 
   // accessiblePageId: vom Creator-Profil bekannt (überspringt Probe-Loop)
-  const lookupId = accessiblePageId ?? pageId;
+  const lookupId = effectiveLookupId;
   let token = pageTokenCache.get(lookupId) ?? await getPageTokenByPageId(lookupId);
   if (!token) {
     // Fallback: Alle zugänglichen Page-Tokens durchprobieren.
-    // Facebook gibt Posts manchmal mit abweichender pageId zurück (neue Page-ID-Repräsentation),
-    // obwohl der Token einer anderen ID-Variante der gleichen Page gültig ist.
     console.log('[findFacebookComment] Primärer Token fehlgeschlagen – probiere alle me/accounts Tokens für postId:', postId);
     const allTokens = await getAllMeAccountTokens();
     for (const p of allTokens) {
-      // Kurzer Probe-Request: gibt es Kommentare mit diesem Token?
       try {
         const probeRes = await fetch(
           `${GRAPH}/${postId}/comments?fields=id&limit=1&access_token=${p.access_token}`,
@@ -288,9 +303,10 @@ export async function findFacebookComment(
         );
         const probeData = await probeRes.json() as { data?: unknown[]; error?: { message: string } };
         if (!probeData.error) {
-          console.log('[findFacebookComment] Funktionierender Token gefunden via me/accounts pageId:', p.id, '→ gecacht für pageId:', pageId);
+          console.log('[findFacebookComment] Funktionierender Token gefunden via me/accounts pageId:', p.id);
           token = p.access_token;
-          pageTokenCache.set(pageId, token); // für künftige Requests sofort verfügbar
+          pageTokenCache.set(lookupId, token);
+          if (pageId && pageId !== lookupId) pageTokenCache.set(pageId, token);
           break;
         }
       } catch { /* nächste probieren */ }

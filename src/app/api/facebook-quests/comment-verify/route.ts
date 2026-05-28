@@ -35,7 +35,7 @@ import {
   reserveQuestCommentSlot,
   getReservedQuestCommentSlot,
 } from '../../../lib/questDb';
-import { findFacebookComment, extractFacebookPostId } from '../../../lib/metaApi';
+import { findFacebookComment, extractFacebookPostId, resolvePostIdFromUrl } from '../../../lib/metaApi';
 import { getDb } from '../../../lib/db';
 
 export const maxDuration = 30;
@@ -127,39 +127,45 @@ export async function POST(req: NextRequest) {
   //    (falls preview noch nicht aufgerufen → Slot jetzt anlegen)
   const commentText = await reserveQuestCommentSlot(questId, normalized);
 
-  // 5. Post-ID normalisieren (falls alte Quests fehlerhafte URLs als videoId haben)
+  // 5. Post-ID auflösen
   let postId = quest.videoId;
-  if (postId.includes('http') || postId.includes('/')) {
-    // Versuche aus videoId zu extrahieren
-    const extracted = extractFacebookPostId(postId);
-    if (extracted) {
-      postId = extracted;
-      console.log('[comment-verify] Post-ID normalisiert:', postId);
-    } else if (quest.videoUrl) {
-      // Fallback: aus videoUrl extrahieren
-      const extractedFromUrl = extractFacebookPostId(quest.videoUrl);
-      if (extractedFromUrl) {
-        postId = extractedFromUrl;
-        console.log('[comment-verify] Post-ID aus URL extrahiert:', postId);
+  console.log('[comment-verify] Original videoId:', postId, '| videoUrl:', quest.videoUrl);
+
+  // Schritt 1: videoUrl per Graph API auflösen (zuverlässigste Methode)
+  if (!postId.includes('_') || postId.includes('http') || postId.includes('/')) {
+    const url = quest.videoUrl || (postId.startsWith('http') ? postId : null);
+    if (url) {
+      const resolved = await resolvePostIdFromUrl(url);
+      if (resolved) {
+        postId = resolved;
+        console.log('[comment-verify] Post-ID via Graph API aufgelöst:', postId);
       }
     }
   }
+  // Fallback: Regex-Extraktion
+  if (!postId.includes('_') || postId.includes('http') || postId.includes('/')) {
+    const extracted = extractFacebookPostId(postId) || (quest.videoUrl ? extractFacebookPostId(quest.videoUrl) : null);
+    if (extracted) {
+      postId = extracted;
+      console.log('[comment-verify] Post-ID via Regex extrahiert:', postId);
+    }
+  }
 
-  // 6. Meta Graph API – sucht den exakten Kommentartext im Post
-  // Creator-Profil laden um gespeicherte facebookPageId zu nutzen (kein Probe-Loop nötig)
+  // 6. Meta Graph API
   const sql = getDb();
   const creatorRows = await sql`
     SELECT facebook_page_id FROM user_profiles
     WHERE wallet_address = ${quest.creatorWallet.toLowerCase()} LIMIT 1
   `;
   const creatorFacebookPageId = (creatorRows[0]?.facebook_page_id as string | null) ?? null;
+  console.log('[comment-verify] creatorFacebookPageId:', creatorFacebookPageId);
 
-  // Falls postId nur die numerische Post-ID ohne Page-ID ist (alte Bundles mit Permalink-Format),
-  // mit der bekannten Page-ID des Creators kombinieren
+  // Bare numerische Post-ID mit Page-ID kombinieren
   if (!postId.includes('_') && /^\d+$/.test(postId) && creatorFacebookPageId) {
     postId = `${creatorFacebookPageId}_${postId}`;
     console.log('[comment-verify] Post-ID mit Page-ID kombiniert:', postId);
   }
+  console.log('[comment-verify] Finale postId:', postId);
 
   const result = await findFacebookComment(postId, commentText, null, creatorFacebookPageId);
 
