@@ -13,6 +13,70 @@ const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
   facebook:  <FaFacebook  className="text-blue-500" size={12} />,
 };
 
+const PLATFORM_NAMES: Record<Platform, string> = {
+  youtube:   'YouTube',
+  instagram: 'Instagram',
+  tiktok:    'TikTok',
+  facebook:  'Facebook',
+};
+
+const PLATFORM_CONFIG: Record<Platform, {
+  outerBorder: string;
+  innerBorder: string;
+  innerBg: string;
+  button: string;
+  progress: string;
+  dot: string;
+  badge: string;
+  badgeIcon: React.ReactNode;
+  lockText: string;
+}> = {
+  youtube: {
+    outerBorder:  'border-red-700/40',
+    innerBorder:  'border-red-700/50',
+    innerBg:      'from-zinc-900 via-red-950/30 to-zinc-900',
+    button:       'from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 shadow-red-900/30',
+    progress:     'from-red-500 to-rose-400',
+    dot:          'bg-red-400',
+    badge:        'bg-red-600/90',
+    badgeIcon:    <FaYoutube size={12} />,
+    lockText:     'YouTube verknüpfen',
+  },
+  instagram: {
+    outerBorder:  'border-pink-700/40',
+    innerBorder:  'border-pink-700/50',
+    innerBg:      'from-zinc-900 via-pink-950/30 to-zinc-900',
+    button:       'from-pink-600 to-violet-500 hover:from-pink-500 hover:to-violet-400 shadow-pink-900/30',
+    progress:     'from-pink-500 to-violet-400',
+    dot:          'bg-pink-400',
+    badge:        'bg-gradient-to-r from-pink-600 to-violet-600',
+    badgeIcon:    <FaInstagram size={12} />,
+    lockText:     'Instagram verknüpfen',
+  },
+  tiktok: {
+    outerBorder:  'border-cyan-700/40',
+    innerBorder:  'border-cyan-700/50',
+    innerBg:      'from-zinc-900 via-cyan-950/20 to-zinc-900',
+    button:       'from-cyan-600 to-teal-500 hover:from-cyan-500 hover:to-teal-400 shadow-cyan-900/30',
+    progress:     'from-cyan-500 to-teal-400',
+    dot:          'bg-cyan-400',
+    badge:        'bg-cyan-600/90',
+    badgeIcon:    <FaTiktok size={11} />,
+    lockText:     'TikTok verknüpfen',
+  },
+  facebook: {
+    outerBorder:  'border-blue-700/40',
+    innerBorder:  'border-blue-700/50',
+    innerBg:      'from-zinc-900 via-blue-950/30 to-zinc-900',
+    button:       'from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 shadow-blue-900/30',
+    progress:     'from-blue-500 to-blue-400',
+    dot:          'bg-blue-400',
+    badge:        'bg-blue-600/90',
+    badgeIcon:    <FaFacebook size={12} />,
+    lockText:     'Facebook verknüpfen',
+  },
+};
+
 const TYPE_ICONS: Record<QuestType, React.ReactNode> = {
   comment:    <FaComment   size={12} />,
   like:       <FaHeart     size={12} />,
@@ -110,6 +174,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
   const visibleItems = bundle.items.filter((item) => !completedSet.has(item.questType));
   const totalSlides = 1 + visibleItems.length;
   const isVerified = verified[bundle.platform];
+  const pc = PLATFORM_CONFIG[bundle.platform];
 
   const handleClaimBonus = async () => {
     setClaiming(true);
@@ -135,15 +200,13 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
     <div className={`rounded-2xl border overflow-hidden transition-all relative ${
       bundle.fanAllCompleted
         ? 'bg-gradient-to-br from-[#1a1228] to-[#0d1a12] border-green-700/50'
-        : 'bg-[#1a1228] border-purple-900/40'
+        : `bg-[#1a1228] ${pc.outerBorder}`
     }`}>
       {/* Lock-Overlay wenn Plattform nicht verifiziert */}
       {!isVerified && (
         <div className="absolute inset-0 z-20 rounded-2xl bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 border border-zinc-700/50">
           <FaLock size={18} className="text-zinc-400" />
-          <p className="text-zinc-300 text-sm font-semibold">
-            {bundle.platform === 'youtube' ? 'YouTube' : bundle.platform === 'instagram' ? 'Instagram' : bundle.platform === 'tiktok' ? 'TikTok' : 'Facebook'} verknüpfen
-          </p>
+          <p className="text-zinc-300 text-sm font-semibold">{pc.lockText}</p>
           <p className="text-zinc-500 text-xs">Verifiziere dein Konto im Profil</p>
         </div>
       )}
@@ -155,8 +218,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
             <span>{progressPercent}%</span>
           </div>
           <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${bundle.fanAllCompleted ? 'bg-gradient-to-r from-green-500 to-emerald-400' : 'bg-gradient-to-r from-purple-600 to-violet-400'}`}
+            <div className={`h-full rounded-full transition-all duration-500 ${bundle.fanAllCompleted ? 'bg-gradient-to-r from-green-500 to-emerald-400' : `bg-gradient-to-r ${pc.progress}`}`}
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -172,7 +234,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
       >
         {/* Slide 0: Eingangstor */}
         <div className="min-w-full snap-start px-4 pt-3 pb-4">
-          <div className="bg-gradient-to-br from-zinc-900 via-purple-950/30 to-zinc-900 rounded-2xl border border-purple-700/50 overflow-hidden transition-all shadow-lg shadow-purple-900/20">
+          <div className={`bg-gradient-to-br ${pc.innerBg} rounded-2xl border ${pc.innerBorder} overflow-hidden transition-all shadow-lg shadow-purple-900/20`}>
             {/* Thumbnail h-40 – identisch mit Quest-Karten */}
             <div className={`relative h-40 ${ytVideoId ? 'cursor-pointer group' : ''}`} onClick={() => ytVideoId && !showVideo && setShowVideo(true)}>
               {showVideo && ytVideoId ? (
@@ -206,9 +268,12 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                 </>
               )}
               {!showVideo && (
-                <div className="absolute top-2 left-2 z-10">
+                <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5">
                   <span className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-violet-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
                     <FaLayerGroup size={10} /> Quest-Reihe
+                  </span>
+                  <span className={`flex items-center gap-1 ${pc.badge} text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md`}>
+                    {pc.badgeIcon} {PLATFORM_NAMES[bundle.platform]}
                   </span>
                 </div>
               )}
@@ -251,7 +316,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                 </div>
                 <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${bundle.fanAllCompleted ? 'bg-gradient-to-r from-green-500 to-emerald-400' : 'bg-gradient-to-r from-purple-600 to-violet-400'}`}
+                    className={`h-full rounded-full transition-all duration-500 ${bundle.fanAllCompleted ? 'bg-gradient-to-r from-green-500 to-emerald-400' : `bg-gradient-to-r ${pc.progress}`}`}
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -287,7 +352,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
               <button
                 onClick={handleStart}
                 disabled={!isVerified}
-                className="w-full bg-gradient-to-r from-purple-600 to-violet-500 hover:from-purple-500 hover:to-violet-400 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-purple-900/30"
+                className={`w-full bg-gradient-to-r ${pc.button} active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md`}
               >
                 <FaTrophy size={12} /> Starten
               </button>
@@ -444,7 +509,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
             }}
             className={`rounded-full transition-all duration-300 ${
               i === currentSlide
-                ? 'w-4 h-1.5 bg-purple-400'
+                ? `w-4 h-1.5 ${pc.dot}`
                 : 'w-1.5 h-1.5 bg-zinc-600 hover:bg-zinc-400'
             }`}
           />
