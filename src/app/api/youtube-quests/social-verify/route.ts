@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getVerificationCode, upsertUserProfile, recordFingerprintVerification, getFingerprintWalletCount } from '../../../lib/questDb';
 import { getDb } from '../../../lib/db';
 import { findInstagramComment, fetchPlatformIgMedia, fetchPlatformFbPosts, findFacebookComment } from '../../../lib/metaApi';
+import { uploadProfileImageToBlob, extractOriginalImageUrl, fetchAndUploadFromUnavatar } from '../../../lib/profileImageStorage';
 
 export const maxDuration = 30; // Vercel Pro: 30s für Bright Data Web Unlocker
 
@@ -359,6 +360,11 @@ async function handlePost(req: NextRequest) {
         const bdProfile = await fetchInstagramProfileBrightData(cleanHandle);
         if (bdProfile) { profileName = bdProfile.name; profilePicture = bdProfile.picture; }
       }
+      
+      // Versuche Bild dauerhaft zu speichern
+      const blobUrl = await fetchAndUploadFromUnavatar('instagram', cleanHandle);
+      if (blobUrl) profilePicture = blobUrl;
+      
       return NextResponse.json({ name: profileName, picture: profilePicture, verificationCode });
     }
 
@@ -416,6 +422,10 @@ async function handlePost(req: NextRequest) {
         if (bdProfile) { profileName = bdProfile.name; profilePicture = bdProfile.picture; }
       }
 
+      // Bild dauerhaft auf Blob speichern
+      const blobUrl = await fetchAndUploadFromUnavatar('instagram', cleanHandle);
+      if (blobUrl) profilePicture = blobUrl;
+
       await upsertUserProfile(walletAddress, {
         instagramHandle: cleanHandle,
         instagramVerified: true,
@@ -465,11 +475,25 @@ async function handlePost(req: NextRequest) {
       }
 
       const fbDisplayName = fbResult.fromName ?? cleanHandle;
+      
+      // Facebook-Profilbild dauerhaft speichern
+      let fbPicture: string | null = null;
+      const fbProfile = await fetchFacebookProfile(cleanHandle);
+      if (fbProfile?.picture) {
+        const originalUrl = extractOriginalImageUrl(fbProfile.picture);
+        if (originalUrl) {
+          fbPicture = await uploadProfileImageToBlob(originalUrl, 'facebook', cleanHandle);
+        }
+        if (!fbPicture) {
+          fbPicture = await fetchAndUploadFromUnavatar('facebook', cleanHandle);
+        }
+      }
+      
       await upsertUserProfile(walletAddress, {
         facebookHandle: fbDisplayName,
         facebookVerified: true,
         facebookName: fbDisplayName,
-        facebookPicture: null,
+        facebookPicture: fbPicture,
       });
       if (fingerprint) await recordFingerprintVerification(fingerprint, walletAddress);
       return NextResponse.json({ success: true, name: fbDisplayName, picture: null });
@@ -517,12 +541,17 @@ async function handlePost(req: NextRequest) {
       );
     }
 
+    // Bild dauerhaft auf Blob speichern
+    let finalPicture = picture;
+    const tiktokBlobUrl = await fetchAndUploadFromUnavatar('tiktok', cleanHandle);
+    if (tiktokBlobUrl) finalPicture = tiktokBlobUrl;
+    
     // Nur noch TikTok in diesem Branch (Facebook hat eigenen Mention-Flow oben)
     await upsertUserProfile(walletAddress, {
       tiktokHandle: cleanHandle,
       tiktokVerified: verified,
       tiktokName: name,
-      tiktokPicture: picture,
+      tiktokPicture: finalPicture,
     });
     if (fingerprint) await recordFingerprintVerification(fingerprint, walletAddress);
     return NextResponse.json({ success: true, name, picture });

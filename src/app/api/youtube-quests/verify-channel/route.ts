@@ -6,6 +6,7 @@ import {
   deleteYouTubeBinding,
   getVerificationCode,
 } from '../../../lib/questDb';
+import { uploadProfileImageToBlob } from '../../../lib/profileImageStorage';
 
 const YT_API_KEY = process.env.YOUTUBE_DATA_API_KEY;
 
@@ -162,11 +163,18 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // Thumbnail dauerhaft auf Blob speichern
+      let finalThumbnail = channelThumbnail;
+      if (channelThumbnail) {
+        const blobUrl = await uploadProfileImageToBlob(channelThumbnail, 'youtube', channelId);
+        if (blobUrl) finalThumbnail = blobUrl;
+      }
+
       const binding = {
         walletAddress: normalized,
         channelId,
         channelName,
-        channelThumbnail,
+        channelThumbnail: finalThumbnail,
         verificationCode,
         verifiedAt: new Date().toISOString(),
       };

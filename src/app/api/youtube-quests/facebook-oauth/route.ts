@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { upsertUserProfile, getUserProfile } from '../../../lib/questDb';
+import { uploadProfileImageToBlob } from '../../../lib/profileImageStorage';
 
 /**
  * POST /api/youtube-quests/facebook-oauth
@@ -43,14 +44,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Bild dauerhaft auf Blob speichern
+    let finalPicture = picture ?? null;
+    if (picture) {
+      const blobUrl = await uploadProfileImageToBlob(picture, 'facebook', normalizedFbId);
+      if (blobUrl) finalPicture = blobUrl;
+    }
+
     await upsertUserProfile(normalized, {
       facebookHandle: normalizedFbId,
       facebookVerified: true,
       facebookName: name ?? null,
-      facebookPicture: picture ?? null,
+      facebookPicture: finalPicture,
     });
 
-    return NextResponse.json({ success: true, name, picture });
+    return NextResponse.json({ success: true, name, picture: finalPicture });
   } catch (err) {
     console.error('[facebook-oauth] Fehler:', err);
     return NextResponse.json({ error: 'Datenbankfehler' }, { status: 500 });
