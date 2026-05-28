@@ -270,7 +270,7 @@ export default function CreateBundleModal({
   // ── Schritt 4: LinkDM Story Mention einrichten + final bestätigen ───────────
   if (step === 4) {
     return (
-      <Modal open={open} onClose={onClose} title="Schritt 4: LinkDM Story Mention einrichten">
+      <Modal open={open} onClose={onClose} title="Schritt 4: LinkDM Story Mention einrichten" disableBackdropClose>
         <div className="space-y-4">
           <div className="bg-blue-950/40 border border-blue-800/40 rounded-xl p-3 space-y-2">
             <p className="text-blue-300 text-xs font-semibold">
@@ -344,7 +344,7 @@ export default function CreateBundleModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Bundle Quest erstellen">
+    <Modal open={open} onClose={onClose} title="Bundle Quest erstellen" disableBackdropClose>
       <div className="space-y-5">
 
         {/* Schritt-Anzeige */}

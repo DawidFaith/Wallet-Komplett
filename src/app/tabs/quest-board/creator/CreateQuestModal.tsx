@@ -411,7 +411,7 @@ export default function CreateQuestModal({
   };
 
   return (
-    <Modal open={open} onClose={handleClose} title="Neuen Quest erstellen">
+    <Modal open={open} onClose={handleClose} title="Neuen Quest erstellen" disableBackdropClose>
       {success ? (
         <div className="space-y-4">
           <div className="bg-green-900/30 border border-green-700/40 rounded-xl p-4 text-center">

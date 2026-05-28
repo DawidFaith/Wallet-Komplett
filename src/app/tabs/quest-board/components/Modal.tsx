@@ -8,13 +8,14 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  disableBackdropClose?: boolean;
 }
 
-export default function Modal({ open, onClose, title, children }: ModalProps) {
+export default function Modal({ open, onClose, title, children, disableBackdropClose }: ModalProps) {
   if (!open) return null;
 
   const handleBackdropPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) onClose();
+    if (!disableBackdropClose && e.target === e.currentTarget) onClose();
   };
 
   return (
