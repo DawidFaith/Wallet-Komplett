@@ -143,6 +143,7 @@ export async function GET(req: NextRequest) {
         const pagesData = await pagesRes.json() as {
           data?: Array<{ id: string; name: string; username?: string }>;
         };
+        console.log('[available-media] client_pages Ergebnis:', pagesData.data?.map(p => ({ id: p.id, name: p.name, username: p.username })));
         const matchedPage = pagesData.data?.find((p) => {
           const pName     = p.name?.toLowerCase().trim()     ?? '';
           const pUsername = p.username?.toLowerCase().trim() ?? '';
@@ -151,6 +152,7 @@ export async function GET(req: NextRequest) {
             (fbHandle && (pName === fbHandle || pUsername === fbHandle))
           );
         });
+        console.log('[available-media] matchedPage:', matchedPage ?? 'NICHT GEFUNDEN');
 
         if (matchedPage) {
           // Page Access Token über zentrale Funktion holen (alle Künstler sind Business Partner)

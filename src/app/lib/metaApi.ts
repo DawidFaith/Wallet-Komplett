@@ -151,6 +151,27 @@ export async function getPageTokenByPageId(pageId: string): Promise<string | nul
     console.error('[getPageTokenByPageId] client_pages Fetch-Fehler:', e);
   }
 
+  // /me/accounts: Pages auf denen der System User direkt als Admin eingetragen ist
+  try {
+    const res = await fetch(
+      `${GRAPH}/me/accounts?fields=id,access_token&limit=200&access_token=${systemToken}`,
+      { cache: 'no-store', signal: AbortSignal.timeout(10000) },
+    );
+    const data = await res.json() as { data?: Array<{ id: string; access_token?: string }>; error?: { message: string } };
+    if (data.error) {
+      console.error('[getPageTokenByPageId] /me/accounts Fehler:', data.error.message);
+    } else {
+      const match = data.data?.find((p) => p.id === pageId);
+      if (match?.access_token) {
+        console.log('[getPageTokenByPageId] Token via /me/accounts gefunden für pageId:', pageId);
+        return match.access_token;
+      }
+      console.log('[getPageTokenByPageId] pageId nicht in /me/accounts gefunden. Gefundene IDs:', data.data?.map(p => p.id));
+    }
+  } catch (e) {
+    console.error('[getPageTokenByPageId] /me/accounts Fetch-Fehler:', e);
+  }
+
   // Direkter Zugriff: System User wurde manuell als Page Admin hinzugefügt
   try {
     const res = await fetch(
