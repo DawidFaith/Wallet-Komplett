@@ -35,7 +35,7 @@ import {
   reserveQuestCommentSlot,
   getReservedQuestCommentSlot,
 } from '../../../lib/questDb';
-import { findFacebookComment } from '../../../lib/metaApi';
+import { findFacebookComment, extractFacebookPostId } from '../../../lib/metaApi';
 
 export const maxDuration = 30;
 
@@ -126,10 +126,28 @@ export async function POST(req: NextRequest) {
   //    (falls preview noch nicht aufgerufen → Slot jetzt anlegen)
   const commentText = await reserveQuestCommentSlot(questId, normalized);
 
-  // 5. Meta Graph API – sucht den exakten Kommentartext im Post
-  const result = await findFacebookComment(quest.videoId, commentText, null);
+  // 5. Post-ID normalisieren (falls alte Quests fehlerhafte URLs als videoId haben)
+  let postId = quest.videoId;
+  if (postId.includes('http') || postId.includes('/')) {
+    // Versuche aus videoId zu extrahieren
+    const extracted = extractFacebookPostId(postId);
+    if (extracted) {
+      postId = extracted;
+      console.log('[comment-verify] Post-ID normalisiert:', postId);
+    } else if (quest.videoUrl) {
+      // Fallback: aus videoUrl extrahieren
+      const extractedFromUrl = extractFacebookPostId(quest.videoUrl);
+      if (extractedFromUrl) {
+        postId = extractedFromUrl;
+        console.log('[comment-verify] Post-ID aus URL extrahiert:', postId);
+      }
+    }
+  }
 
-  // 5. Ergebnis auswerten
+  // 6. Meta Graph API – sucht den exakten Kommentartext im Post
+  const result = await findFacebookComment(postId, commentText, null);
+
+  // 7. Ergebnis auswerten
   if (!result.found) {
     console.log('[comment-verify] DEBUG - Gesuchter Text:', commentText);
     console.log('[comment-verify] DEBUG - Gefundene Kommentare:', result.allComments?.length ?? 0);
@@ -140,6 +158,7 @@ export async function POST(req: NextRequest) {
       commentText,
       message: `Kein passender Kommentar gefunden. Stelle sicher, dass du genau diesen Text als Kommentar gepostet hast: "${commentText}"`,
       debug: {
+        postId,
         totalComments: result.allComments?.length ?? 0,
         sampleComments: result.allComments?.slice(0, 3).map(c => ({
           from: c.from,
@@ -149,7 +168,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // 6. Quest-Abschluss speichern
+  // 8. Quest-Abschluss speichern
   const now = new Date().toISOString();
   await saveCompletion({
     questId,
@@ -164,7 +183,7 @@ export async function POST(req: NextRequest) {
     completedAt: now,
   });
 
-  // 7. Credits gutschreiben
+  // 9. Credits gutschreiben
   await addDfaithCredits(normalized, quest.rewardAmount);
   const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
   await savePendingReward({

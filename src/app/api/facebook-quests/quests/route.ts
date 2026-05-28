@@ -16,6 +16,7 @@ import {
   loadQuestIndex,
   QuestDetail,
 } from '../../../lib/questDb';
+import { extractFacebookPostId } from '../../../lib/metaApi';
 import { randomUUID } from 'crypto';
 
 // GET: Aktive Facebook-Quests
@@ -68,6 +69,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Facebook Post-ID extrahieren/validieren
+  const normalizedPostId = extractFacebookPostId(postId) || extractFacebookPostId(postUrl);
+  if (!normalizedPostId) {
+    return NextResponse.json(
+      { error: 'Ungültige Facebook URL oder Post-ID. Format sollte sein: https://www.facebook.com/{pageId}/posts/{postId} oder pageId_postId' },
+      { status: 400 }
+    );
+  }
+
   const type: 'comment' | 'like' | 'secret' = questType === 'like' || questType === 'secret' ? questType : 'comment';
 
   if (type === 'secret' && !secretCode?.trim()) {
@@ -110,7 +120,7 @@ export async function POST(req: NextRequest) {
     platform: 'facebook',
     type,
     creatorWallet: creatorWallet.toLowerCase(),
-    videoId: postId,            // Facebook Post-ID → wird an Make.com weitergegeben
+    videoId: normalizedPostId,  // Normalisierte Facebook Post-ID (pageId_postId)
     videoTitle: videoTitle ?? 'Facebook Post',
     videoThumbnail: thumbnailUrl ?? '',
     videoUrl: postUrl,

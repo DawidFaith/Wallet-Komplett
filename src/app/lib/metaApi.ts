@@ -5,6 +5,74 @@
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
+// ─── Facebook URL zu Post-ID konvertieren ─────────────────────────────────────
+/**
+ * Extrahiert die Facebook Post-ID aus verschiedenen URL-Formaten.
+ * Unterstützt:
+ * - https://www.facebook.com/{pageId}/posts/{postId}
+ * - https://facebook.com/{pageId}/posts/{postId}
+ * - https://www.facebook.com/permalink.php?story_fbid={postId}&id={pageId}
+ * - Direkte Post-ID (pageId_postId)
+ * - Beschädigte URLs ohne Protokoll-Trenner
+ * @returns Post-ID im Format "pageId_postId" oder null bei Fehler
+ */
+export function extractFacebookPostId(urlOrId: string): string | null {
+  // Bereits im korrekten Format
+  if (urlOrId.includes('_') && !urlOrId.includes('/') && !urlOrId.includes('http')) {
+    return urlOrId;
+  }
+
+  try {
+    // URL bereinigen (falls ohne Protokoll oder beschädigt)
+    let url = urlOrId;
+    if (!url.startsWith('http')) {
+      // Beschädigte URLs wie "httpswwwfacebookcom..." reparieren
+      if (url.startsWith('httpswww')) {
+        url = url.replace('httpswww', 'https://www.');
+      } else if (url.startsWith('https')) {
+        url = url.replace('https', 'https://');
+      } else if (url.startsWith('http')) {
+        url = url.replace('http', 'http://');
+      } else {
+        url = 'https://' + url;
+      }
+    }
+
+    const parsed = new URL(url);
+    
+    // Format: /pageId/posts/postId
+    const pathMatch = parsed.pathname.match(/\/(\d+)\/posts\/(\d+)/);
+    if (pathMatch) {
+      return `${pathMatch[1]}_${pathMatch[2]}`;
+    }
+
+    // Format: /permalink.php?story_fbid=postId&id=pageId
+    if (parsed.pathname.includes('permalink.php')) {
+      const storyFbid = parsed.searchParams.get('story_fbid');
+      const pageId = parsed.searchParams.get('id');
+      if (storyFbid && pageId) {
+        return `${pageId}_${storyFbid}`;
+      }
+    }
+
+    // Format: /watch/?v=videoId (für Videos)
+    if (parsed.pathname.includes('watch')) {
+      const videoId = parsed.searchParams.get('v');
+      if (videoId) {
+        return videoId; // Video-IDs sind standalone
+      }
+    }
+  } catch {
+    // URL-Parsing fehlgeschlagen - versuche Regex auf Rohstring
+    const directMatch = urlOrId.match(/(\d+)[\/\-_]posts[\/\-_](\d+)/);
+    if (directMatch) {
+      return `${directMatch[1]}_${directMatch[2]}`;
+    }
+  }
+
+  return null;
+}
+
 // ─── Page Access Token holen (neue Facebook-Seiten erfordern Page Token) ─────
 let cachedPageToken: string | null = null;
 export async function getPageAccessToken(): Promise<string | null> {

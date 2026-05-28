@@ -25,7 +25,7 @@ import {
   deleteFacebookLikeVerification,
   QuestCompletion,
 } from '../../../lib/questDb';
-import { fetchFacebookPostCounts } from '../../../lib/metaApi';
+import { fetchFacebookPostCounts, extractFacebookPostId } from '../../../lib/metaApi';
 
 export const maxDuration = 30;
 
@@ -89,18 +89,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Dieser Facebook-Account hat diesen Quest bereits abgeschlossen.' }, { status: 409 });
     }
 
+    // Post-ID normalisieren (falls alte Quests fehlerhafte URLs als videoId haben)
+    let postId = quest.videoId;
+    if (postId.includes('http') || postId.includes('/')) {
+      const extracted = extractFacebookPostId(postId) || (quest.videoUrl ? extractFacebookPostId(quest.videoUrl) : null);
+      if (extracted) {
+        postId = extracted;
+        console.log('[like-verify] Post-ID normalisiert:', postId);
+      }
+    }
+
     // ── action: start ────────────────────────────────────────────────────────
     if (action === 'start') {
-      const stats = await fetchFacebookPostCounts(quest.videoId);
+      const stats = await fetchFacebookPostCounts(postId);
       if (!stats) {
-        console.error('[facebook-like-verify] start: fetchFacebookPostCounts gab null zurück | videoId:', quest.videoId);
+        console.error('[facebook-like-verify] start: fetchFacebookPostCounts gab null zurück | videoId:', postId);
         return NextResponse.json(
           { error: 'Facebook-Stats nicht abrufbar. Bitte erneut versuchen.' },
           { status: 500 }
         );
       }
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 Minuten
-      await upsertFacebookLikeVerification(questId, normalized, quest.videoId, stats.likes, expiresAt);
+      await upsertFacebookLikeVerification(questId, normalized, postId, stats.likes, expiresAt);
       return NextResponse.json({
         step: 'pending',
         expiresAt,
@@ -123,9 +133,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ expired: true });
       }
 
-      const current = await fetchFacebookPostCounts(quest.videoId);
+      const current = await fetchFacebookPostCounts(postId);
       if (!current) {
-        console.error('[facebook-like-verify] check: fetchFacebookPostCounts gab null zurück | videoId:', quest.videoId);
+        console.error('[facebook-like-verify] check: fetchFacebookPostCounts gab null zurück | videoId:', postId);
         return NextResponse.json(
           { error: 'Facebook-Stats nicht abrufbar. Bitte erneut versuchen.' },
           { status: 500 }
