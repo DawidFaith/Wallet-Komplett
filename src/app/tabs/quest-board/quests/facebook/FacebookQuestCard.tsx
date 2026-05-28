@@ -38,58 +38,78 @@ export default function FacebookQuestCard({ quest, isCompleted, isVerified = tru
     : 'Starten';
 
   return (
-    <div className={`bg-zinc-900 rounded-2xl border border-blue-800/40 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
+    <div className={`bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
       {/* Thumbnail */}
-      <div className="relative h-40 overflow-hidden">
+      <div className="relative h-40">
         {quest.videoThumbnail
-          ? <img src={quest.videoThumbnail} alt={quest.videoTitle} className="w-full h-full object-cover" />
+          ? <Image src={quest.videoThumbnail} alt={quest.videoTitle} fill unoptimized className="object-cover" />
           : <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 to-zinc-900" />
         }
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 to-transparent" />
-        <span className={`absolute top-2 left-2 ${badgeBg} text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1`}>
-          {badgeIcon} {badgeLabel}
-        </span>
-      </div>
-      <div className="p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <FaFacebook size={16} className="text-blue-400" />
-          <span className="text-white font-semibold text-sm line-clamp-1">{quest.videoTitle}</span>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70" />
+        <div className={`absolute top-2 left-2 ${badgeBg} text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1`}>
+          <FaFacebook size={10} /> {badgeLabel}
         </div>
-
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-          <span className="flex items-center gap-1 text-yellow-400 font-semibold">
-            <Image src="/D.FAITH.png" alt={tokenLabel} width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(displayReward)} {tokenLabel}
-          </span>
+        <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+          <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+            <Image src="/D.FAITH.png" alt={tokenLabel} width={14} height={14} className="rounded-full" unoptimized />
+            +{formatCredits(displayReward)} {tokenLabel}
+          </div>
           {levelBonusPercent > 0 && (
-            <span className="text-green-300 font-semibold">inkl. +{levelBonusPercent}% Level-Bonus</span>
+            <div className="bg-black/70 text-green-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              inkl. +{levelBonusPercent}% Level-Bonus
+            </div>
           )}
           {(quest.reputationReward ?? 0) > 0 && (
-            <span className="flex items-center gap-1 text-amber-300 font-semibold">
+            <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
               <FaStar size={9} /> +{quest.reputationReward} REP
-            </span>
-          )}
-          {expiry && (
-            <span className="flex items-center gap-1 text-zinc-500 ml-auto">
-              <FaClock size={9} /> {expiry}
-            </span>
+            </div>
           )}
         </div>
+        {expiry && (
+          <div className="absolute bottom-2 left-2 bg-black/70 text-zinc-300 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+            <FaClock size={9} /> {expiry}
+          </div>
+        )}
+      </div>
 
-        <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"
-            style={{ width: `${progress}%` }}
-          />
+      <div className="p-4 space-y-3">
+        <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{quest.videoTitle}</h3>
+
+        {/* Fortschrittsbalken */}
+        <div>
+          <div className="flex justify-between text-xs text-zinc-400 mb-1">
+            <span>{quest.completions} von {quest.maxCompletions} Plätzen belegt</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
-        <p className="text-zinc-500 text-xs">{quest.completions}/{quest.maxCompletions} abgeschlossen</p>
 
-        <button
-          onClick={() => !isCompleted && !isFull && isVerified && onComplete(quest.id)}
-          disabled={isCompleted || isFull || !isVerified}
-          className={`w-full ${isSecret ? 'bg-yellow-500 hover:bg-yellow-400 text-black' : 'bg-blue-600 hover:bg-blue-500 text-white'} disabled:opacity-40 disabled:cursor-not-allowed text-sm font-semibold py-2.5 rounded-xl transition-colors`}
-        >
-          {buttonLabel}
-        </button>
+        <p className="text-zinc-400 text-xs">
+          Aufgabe: <span className="text-zinc-300">{quest.description || (isSecret ? '🔑 Finde den geheimen Code und gib ihn ein!' : isLike ? '👍 Like dieses Video!' : '💬 Schreibe einen positiven Kommentar!')}</span>
+        </p>
+
+        {isCompleted ? (
+          <button disabled className="w-full bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30">
+            <FaFacebook size={12} /> Erledigt
+          </button>
+        ) : isFull ? (
+          <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">
+            Voll
+          </button>
+        ) : (
+          <button
+            onClick={() => onComplete(quest.id)}
+            disabled={!isVerified}
+            className={`w-full ${isSecret ? 'bg-yellow-500 hover:bg-yellow-400 text-black' : 'bg-blue-600 hover:bg-blue-500 text-white'} disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2`}
+          >
+            <FaFacebook size={12} /> Starten
+          </button>
+        )}
       </div>
     </div>
   );

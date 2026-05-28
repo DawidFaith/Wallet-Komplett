@@ -298,135 +298,135 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
         {/* Slides 1..n: je ein Quest-Item als volle Karte */}
         {visibleItems.map((item) => {
           const entry = buildQuestEntry(item);
+          const full = item.completions >= item.maxCompletions;
+          const progress = Math.round((item.completions / Math.max(item.maxCompletions, 1)) * 100);
+          
+          // Quest-Typ-spezifische Konfiguration
+          const questConfig = (() => {
+            switch (item.questType) {
+              case 'secret':
+                return {
+                  badge: { icon: '🔑', label: 'Geheimcode', bg: 'bg-yellow-600/90' },
+                  description: '🔑 Finde den geheimen Code und gib ihn ein!',
+                  buttonColor: 'bg-yellow-500 hover:bg-yellow-400 text-black',
+                  progressColor: 'from-yellow-500 to-yellow-400',
+                  bgGradient: 'from-yellow-900/50',
+                };
+              case 'dm_share':
+                return {
+                  badge: { icon: <FaShareAlt size={10} />, label: 'Story teilen', bg: 'bg-pink-600/90' },
+                  description: <><FaShareAlt size={10} className="text-pink-400" /> Teile dieses Video als Instagram Story und schick sie an unseren Account!</>,
+                  buttonColor: 'bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white',
+                  progressColor: 'from-pink-500 to-rose-500',
+                  bgGradient: 'from-pink-900/50',
+                };
+              case 'like':
+                return {
+                  badge: { icon: <FaHeart size={10} />, label: 'Liken', bg: 'bg-red-600/90' },
+                  description: <><FaHeart size={10} className="text-red-400" /> Like dieses Video!</>,
+                  buttonColor: 'bg-gradient-to-r from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 text-white',
+                  progressColor: 'from-red-500 to-rose-500',
+                  bgGradient: 'from-red-900/50',
+                };
+              case 'comment':
+                return {
+                  badge: { icon: <FaComment size={10} />, label: 'Kommentieren', bg: 'bg-blue-600/90' },
+                  description: <><FaComment size={10} className="text-blue-400" /> Kommentiere dieses Video!</>,
+                  buttonColor: 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white',
+                  progressColor: 'from-blue-500 to-cyan-500',
+                  bgGradient: 'from-blue-900/50',
+                };
+              case 'save':
+                return {
+                  badge: { icon: <FaBookmark size={10} />, label: 'Speichern', bg: 'bg-indigo-600/90' },
+                  description: <><FaBookmark size={10} className="text-indigo-400" /> Speichere dieses Video!</>,
+                  buttonColor: 'bg-gradient-to-r from-indigo-600 to-purple-500 hover:from-indigo-500 hover:to-purple-400 text-white',
+                  progressColor: 'from-indigo-500 to-purple-500',
+                  bgGradient: 'from-indigo-900/50',
+                };
+              case 'repost':
+                return {
+                  badge: { icon: <FaShareAlt size={10} />, label: 'Reposten', bg: 'bg-green-600/90' },
+                  description: <><FaShareAlt size={10} className="text-green-400" /> Reposte dieses Video!</>,
+                  buttonColor: 'bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white',
+                  progressColor: 'from-green-500 to-emerald-500',
+                  bgGradient: 'from-green-900/50',
+                };
+              case 'engagement':
+                return {
+                  badge: { icon: <FaThumbsUp size={10} />, label: 'Engagement', bg: 'bg-purple-600/90' },
+                  description: <><FaThumbsUp size={10} className="text-purple-400" /> Führe das Engagement-Paket aus!</>,
+                  buttonColor: 'bg-gradient-to-r from-purple-600 to-violet-500 hover:from-purple-500 hover:to-violet-400 text-white',
+                  progressColor: 'from-purple-500 to-violet-500',
+                  bgGradient: 'from-purple-900/50',
+                };
+              default:
+                return {
+                  badge: { icon: <FaTrophy size={10} />, label: 'Quest', bg: 'bg-zinc-600/90' },
+                  description: 'Schließe diese Quest ab!',
+                  buttonColor: 'bg-gradient-to-r from-zinc-600 to-zinc-500 hover:from-zinc-500 hover:to-zinc-400 text-white',
+                  progressColor: 'from-zinc-500 to-zinc-400',
+                  bgGradient: 'from-zinc-900/50',
+                };
+            }
+          })();
+
           return (
             <div key={item.questId} className="min-w-full snap-start px-4 pt-3 pb-4">
-              {item.questType === 'secret' ? (
-                (() => {
-                  const full = item.completions >= item.maxCompletions;
-                  const progress = Math.round((item.completions / Math.max(item.maxCompletions, 1)) * 100);
-                  return (
-                    <div className={`bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden transition-all ${full ? 'opacity-60' : ''}`}>
-                      <div className="relative h-40">
-                        {bundle.videoThumbnail
-                          ? <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
-                          : <div className="absolute inset-0 bg-gradient-to-br from-yellow-900/50 to-zinc-900" />
-                        }
-                        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70" />
-                        <div className="absolute top-2 left-2 bg-yellow-600/90 text-white text-xs font-bold px-2 py-1 rounded-full">
-                          🔑 Geheimcode
-                        </div>
-                        <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
-                          <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                            <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="rounded-full" unoptimized />
-                            +{rewardWithBonus(item.rewardAmount).toFixed(2)} D.FAITH
-                          </div>
-                          {levelBonusPercent > 0 && (
-                            <div className="bg-black/70 text-green-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                              inkl. +{levelBonusPercent}% Level-Bonus
-                            </div>
-                          )}
-                          {(item.reputationReward ?? 0) > 0 && (
-                            <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                              <FaStar size={9} /> +{item.reputationReward} REP
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="p-4 space-y-3">
-                        <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{bundle.videoTitle}</h3>
-                        <div>
-                          <div className="flex justify-between text-xs text-zinc-400 mb-1">
-                            <span>{item.completions} von {item.maxCompletions} Plätzen belegt</span>
-                            <span>{progress}%</span>
-                          </div>
-                          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-yellow-500 to-yellow-400 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
-                          </div>
-                        </div>
-                        <p className="text-zinc-400 text-xs">Aufgabe: <span className="text-zinc-300">🔑 Finde den geheimen Code und gib ihn ein!</span></p>
-                        {full ? (
-                          <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">Nicht mehr verfügbar</button>
-                        ) : (
-                          <button
-                            onClick={() => onOpenQuest?.(entry)}
-                            disabled={!onOpenQuest || !isVerified}
-                            className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
-                          >
-                            <FaTrophy size={12} /> Starten
-                          </button>
-                        )}
-                      </div>
+              <div className={`bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden transition-all ${full ? 'opacity-60' : ''}`}>
+                <div className="relative h-40">
+                  {bundle.videoThumbnail
+                    ? <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
+                    : <div className={`absolute inset-0 bg-gradient-to-br ${questConfig.bgGradient} to-zinc-900`} />
+                  }
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70" />
+                  <div className={`absolute top-2 left-2 ${questConfig.badge.bg} text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1`}>
+                    {questConfig.badge.icon} {questConfig.badge.label}
+                  </div>
+                  <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                    <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                      <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="rounded-full" unoptimized />
+                      +{rewardWithBonus(item.rewardAmount).toFixed(2)} D.FAITH
                     </div>
-                  );
-                })()
-              ) : item.questType === 'dm_share' && item.storyToken && onOpenQuest ? (
-                (() => {
-                  const full = item.completions >= item.maxCompletions;
-                  const progress = Math.round((item.completions / Math.max(item.maxCompletions, 1)) * 100);
-                  return (
-                    <div className={`bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden transition-all ${full ? 'opacity-60' : ''}`}>
-                      <div className="relative h-40">
-                        {bundle.videoThumbnail
-                          ? <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
-                          : <div className="absolute inset-0 bg-gradient-to-br from-pink-900/50 to-zinc-900" />
-                        }
-                        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70" />
-                        <div className="absolute top-2 left-2 bg-pink-600/90 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                          <FaShareAlt size={10} /> Story teilen
-                        </div>
-                        <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
-                          <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                            <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="rounded-full" unoptimized />
-                            +{rewardWithBonus(item.rewardAmount).toFixed(2)} D.FAITH
-                          </div>
-                          {levelBonusPercent > 0 && (
-                            <div className="bg-black/70 text-green-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                              inkl. +{levelBonusPercent}% Level-Bonus
-                            </div>
-                          )}
-                          {(item.reputationReward ?? 0) > 0 && (
-                            <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                              <FaStar size={9} /> +{item.reputationReward} REP
-                            </div>
-                          )}
-                        </div>
+                    {levelBonusPercent > 0 && (
+                      <div className="bg-black/70 text-green-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        inkl. +{levelBonusPercent}% Level-Bonus
                       </div>
-                      <div className="p-4 space-y-3">
-                        <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{bundle.videoTitle}</h3>
-                        <div>
-                          <div className="flex justify-between text-xs text-zinc-400 mb-1">
-                            <span>{item.completions} von {item.maxCompletions} Plätzen belegt</span>
-                            <span>{progress}%</span>
-                          </div>
-                          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-pink-500 to-rose-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
-                          </div>
-                        </div>
-                        <p className="text-zinc-400 text-xs">
-                          Aufgabe:{' '}
-                          <span className="text-zinc-300 inline-flex items-center gap-1">
-                            <FaShareAlt size={10} className="text-pink-400" />
-                            Teile dieses Video als Instagram Story und schick sie an unseren Account!
-                          </span>
-                        </p>
-                        {full ? (
-                          <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">Nicht mehr verfügbar</button>
-                        ) : (
-                          <button
-                            onClick={() => onOpenQuest(entry)}
-                            disabled={!isVerified}
-                            className="w-full bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"
-                          >
-                            <FaTrophy size={12} /> Starten
-                          </button>
-                        )}
+                    )}
+                    {(item.reputationReward ?? 0) > 0 && (
+                      <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                        <FaStar size={9} /> +{item.reputationReward} REP
                       </div>
+                    )}
+                  </div>
+                </div>
+                <div className="p-4 space-y-3">
+                  <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{bundle.videoTitle}</h3>
+                  <div>
+                    <div className="flex justify-between text-xs text-zinc-400 mb-1">
+                      <span>{item.completions} von {item.maxCompletions} Plätzen belegt</span>
+                      <span>{progress}%</span>
                     </div>
-                  );
-                })()
-              ) : renderQuestCard ? (
-                renderQuestCard(entry)
-              ) : null}
+                    <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div className={`h-full bg-gradient-to-r ${questConfig.progressColor} rounded-full transition-all duration-500`} style={{ width: `${progress}%` }} />
+                    </div>
+                  </div>
+                  <p className="text-zinc-400 text-xs">
+                    Aufgabe: <span className="text-zinc-300 inline-flex items-center gap-1">{questConfig.description}</span>
+                  </p>
+                  {full ? (
+                    <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">Nicht mehr verfügbar</button>
+                  ) : (
+                    <button
+                      onClick={() => onOpenQuest?.(entry)}
+                      disabled={!onOpenQuest || !isVerified}
+                      className={`w-full ${questConfig.buttonColor} disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2`}
+                    >
+                      <FaTrophy size={12} /> Starten
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           );
         })}
