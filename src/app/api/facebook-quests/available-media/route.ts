@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 import { getPageTokenByPageId } from '../../../lib/metaApi';
+import { upsertUserProfile } from '../../../lib/questDb/profile';
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
@@ -157,6 +158,9 @@ export async function GET(req: NextRequest) {
         if (matchedPage) {
           // Page Access Token über zentrale Funktion holen (alle Künstler sind Business Partner)
           const pageToken = (await getPageTokenByPageId(matchedPage.id)) ?? token;
+
+          // Zugängliche Page-ID im Creator-Profil speichern (für Comment-Verify ohne Probe-Loop)
+          upsertUserProfile(wallet, { facebookPageId: matchedPage.id }).catch(() => {});
 
           const postsRes = await fetch(
             `${GRAPH}/${matchedPage.id}/posts?fields=id,message,permalink_url,created_time,full_picture&limit=20&access_token=${pageToken}`,

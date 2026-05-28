@@ -22,6 +22,7 @@ export interface SocialProfile {
   facebookVerified: boolean;
   facebookName: string | null;
   facebookPicture: string | null;
+  facebookPageId: string | null;
   metaFbPartnerVerified: boolean;
   youtubeChannelId: string | null;
   isArtist: boolean;
@@ -66,7 +67,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
       displayName: null,
       instagramHandle: null, instagramVerified: false, instagramName: null, instagramPicture: null,
       tiktokHandle: null, tiktokVerified: false, tiktokName: null, tiktokPicture: null,
-      facebookHandle: null, facebookVerified: false, facebookName: null, facebookPicture: null,
+      facebookHandle: null, facebookVerified: false, facebookName: null, facebookPicture: null, facebookPageId: null,
       metaFbPartnerVerified: false,
       youtubeChannelId: null,
       isArtist: false,
@@ -94,6 +95,7 @@ export async function getUserProfile(walletAddress: string): Promise<SocialProfi
     facebookVerified: Boolean(r.facebook_verified),
     facebookName: r.facebook_name ?? null,
     facebookPicture: r.facebook_picture ?? null,
+    facebookPageId: r.facebook_page_id ?? null,
     metaFbPartnerVerified: Boolean(r.meta_fb_partner_verified),
     youtubeChannelId: r.youtube_channel_id ?? null,
     isArtist: Boolean(r.is_artist),
@@ -199,6 +201,13 @@ export async function upsertUserProfile(
   if (data.facebookPicture !== undefined) {
     await sql`
       UPDATE user_profiles SET facebook_picture = ${data.facebookPicture}, updated_at = NOW()
+      WHERE wallet_address = ${walletAddress.toLowerCase()}
+    `;
+  }
+  if (data.facebookPageId !== undefined) {
+    await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS facebook_page_id TEXT`;
+    await sql`
+      UPDATE user_profiles SET facebook_page_id = ${data.facebookPageId}, updated_at = NOW()
       WHERE wallet_address = ${walletAddress.toLowerCase()}
     `;
   }

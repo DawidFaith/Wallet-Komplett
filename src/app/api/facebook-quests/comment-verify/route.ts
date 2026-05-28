@@ -36,6 +36,7 @@ import {
   getReservedQuestCommentSlot,
 } from '../../../lib/questDb';
 import { findFacebookComment, extractFacebookPostId } from '../../../lib/metaApi';
+import { getDb } from '../../../lib/db';
 
 export const maxDuration = 30;
 
@@ -145,7 +146,14 @@ export async function POST(req: NextRequest) {
   }
 
   // 6. Meta Graph API – sucht den exakten Kommentartext im Post
-  const result = await findFacebookComment(postId, commentText, null);
+  // Creator-Profil laden um gespeicherte facebookPageId zu nutzen (kein Probe-Loop nötig)
+  const sql = getDb();
+  const creatorRows = await sql`
+    SELECT facebook_page_id FROM user_profiles
+    WHERE wallet_address = ${quest.creatorWallet.toLowerCase()} LIMIT 1
+  `;
+  const creatorFacebookPageId = (creatorRows[0]?.facebook_page_id as string | null) ?? null;
+  const result = await findFacebookComment(postId, commentText, null, creatorFacebookPageId);
 
   // 7. Ergebnis auswerten
   if (!result.found) {

@@ -230,6 +230,9 @@ export async function findInstagramComment(
 }
 
 // ─── Kommentare auf Facebook-Post prüfen ─────────────────────────────────────
+/** Cache: postPageId → funktionierender Page-Token (überlebt Server-Restart nicht, aber genug für laufenden Betrieb) */
+const pageTokenCache = new Map<string, string>();
+
 /** Alle verfügbaren Page-Tokens aus /me/accounts holen (Fallback für Artist-Pages mit abweichender ID) */
 async function getAllMeAccountTokens(): Promise<Array<{ id: string; access_token: string }>> {
   const systemToken = process.env.META_SYSTEM_USER_TOKEN;
@@ -251,6 +254,7 @@ export async function findFacebookComment(
   postId: string,
   requiredText: string | null,
   fromName?: string | null,
+  accessiblePageId?: string | null,
 ): Promise<{ found: boolean; fromName?: string; allComments?: Array<{ from?: string; message: string }> }> {
   // Page-ID aus Post-ID extrahieren um das spezifische Page Access Token zu holen.
   // Damit können Artist-Posts gelesen werden, nicht nur die dfaith-eigene Page.
@@ -260,7 +264,9 @@ export async function findFacebookComment(
   const pageId = postId.includes('_') ? postId.split('_')[0] : null;
   if (!pageId) return { found: false, allComments: [] };
 
-  let token = await getPageTokenByPageId(pageId);
+  // accessiblePageId: vom Creator-Profil bekannt (überspringt Probe-Loop)
+  const lookupId = accessiblePageId ?? pageId;
+  let token = pageTokenCache.get(lookupId) ?? await getPageTokenByPageId(lookupId);
   if (!token) {
     // Fallback: Alle zugänglichen Page-Tokens durchprobieren.
     // Facebook gibt Posts manchmal mit abweichender pageId zurück (neue Page-ID-Repräsentation),
@@ -276,12 +282,15 @@ export async function findFacebookComment(
         );
         const probeData = await probeRes.json() as { data?: unknown[]; error?: { message: string } };
         if (!probeData.error) {
-          console.log('[findFacebookComment] Funktionierender Token gefunden via me/accounts pageId:', p.id);
+          console.log('[findFacebookComment] Funktionierender Token gefunden via me/accounts pageId:', p.id, '→ gecacht für pageId:', pageId);
           token = p.access_token;
+          pageTokenCache.set(pageId, token); // für künftige Requests sofort verfügbar
           break;
         }
       } catch { /* nächste probieren */ }
     }
+  } else if (!pageTokenCache.has(lookupId)) {
+    pageTokenCache.set(lookupId, token);
   }
   if (!token) {
     console.error('[findFacebookComment] Kein Token funktioniert für postId:', postId, '– Artist-Page nicht zugänglich');
