@@ -533,6 +533,7 @@ export default function CreateBundleModal({
                           type="button"
                           onClick={() => {
                             setSelectedFbPostId(item.post_id);
+                            setVideoMediaId(item.post_id); // Facebook Post-ID als videoId speichern
                             setVideoUrl(item.permalink);
                             setVideoTitle(title);
                             setVideoThumbnail(item.thumbnail_url);

@@ -40,10 +40,16 @@ export function extractFacebookPostId(urlOrId: string): string | null {
 
     const parsed = new URL(url);
     
-    // Format: /pageId/posts/postId
+    // Format: /pageId/posts/postId (pageId numerisch)
     const pathMatch = parsed.pathname.match(/\/(\d+)\/posts\/(\d+)/);
     if (pathMatch) {
       return `${pathMatch[1]}_${pathMatch[2]}`;
+    }
+
+    // Format: /username/posts/postId (username alphanumerisch, z.B. /dfaith/posts/12345)
+    const pathMatchUsername = parsed.pathname.match(/\/[\w.]+\/posts\/(\d+)/);
+    if (pathMatchUsername) {
+      return pathMatchUsername[1]; // nur postId – pageId muss extern hinzugefügt werden
     }
 
     // Format: /permalink.php?story_fbid=postId&id=pageId

@@ -105,6 +105,13 @@ export async function POST(req: NextRequest) {
     const creatorRows = await sql`SELECT facebook_page_id FROM user_profiles WHERE wallet_address = ${quest.creatorWallet.toLowerCase()} LIMIT 1`;
     const creatorFacebookPageId = (creatorRows[0]?.facebook_page_id as string | null) ?? null;
 
+    // Falls postId nur die numerische Post-ID ohne Page-ID ist (alte Bundles mit Permalink-Format),
+    // mit der bekannten Page-ID des Creators kombinieren
+    if (!postId.includes('_') && /^\d+$/.test(postId) && creatorFacebookPageId) {
+      postId = `${creatorFacebookPageId}_${postId}`;
+      console.log('[like-verify] Post-ID mit Page-ID kombiniert:', postId);
+    }
+
     // ── action: start ────────────────────────────────────────────────────────
     if (action === 'start') {
       const stats = await fetchFacebookPostCounts(postId, creatorFacebookPageId);

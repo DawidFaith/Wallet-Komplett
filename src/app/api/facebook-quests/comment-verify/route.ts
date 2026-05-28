@@ -153,6 +153,14 @@ export async function POST(req: NextRequest) {
     WHERE wallet_address = ${quest.creatorWallet.toLowerCase()} LIMIT 1
   `;
   const creatorFacebookPageId = (creatorRows[0]?.facebook_page_id as string | null) ?? null;
+
+  // Falls postId nur die numerische Post-ID ohne Page-ID ist (alte Bundles mit Permalink-Format),
+  // mit der bekannten Page-ID des Creators kombinieren
+  if (!postId.includes('_') && /^\d+$/.test(postId) && creatorFacebookPageId) {
+    postId = `${creatorFacebookPageId}_${postId}`;
+    console.log('[comment-verify] Post-ID mit Page-ID kombiniert:', postId);
+  }
+
   const result = await findFacebookComment(postId, commentText, null, creatorFacebookPageId);
 
   // 7. Ergebnis auswerten
