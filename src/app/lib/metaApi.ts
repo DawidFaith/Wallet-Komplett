@@ -451,7 +451,10 @@ export interface FbPostCounts {
   shares: number;
 }
 
-export async function fetchFacebookPostCounts(postId: string): Promise<FbPostCounts | null> {
+export async function fetchFacebookPostCounts(
+  postId: string,
+  accessiblePageId?: string | null,
+): Promise<FbPostCounts | null> {
   const systemToken = process.env.META_SYSTEM_USER_TOKEN;
   if (!systemToken) {
     console.error('[fetchFacebookPostCounts] META_SYSTEM_USER_TOKEN nicht gesetzt');
@@ -459,15 +462,36 @@ export async function fetchFacebookPostCounts(postId: string): Promise<FbPostCou
   }
 
   // Page-ID aus Post-ID extrahieren (Format: {pageId}_{postId})
-  // Damit holen wir das Page Access Token der jeweiligen Artist-Page,
-  // das pages_read_engagement hat – alle Künstler sind als Business Partner registriert.
   const pageId = postId.includes('_') ? postId.split('_')[0] : null;
-  let token = systemToken;
+  const lookupId = accessiblePageId ?? pageId;
+  let token: string = systemToken;
 
-  if (pageId) {
-    const pageToken = await getPageTokenByPageId(pageId);
-    if (pageToken) token = pageToken;
-    else console.warn('[fetchFacebookPostCounts] Kein Page Token für pageId:', pageId);
+  if (lookupId) {
+    const cached = pageTokenCache.get(lookupId);
+    const pageToken = cached ?? await getPageTokenByPageId(lookupId);
+    if (pageToken) {
+      token = pageToken;
+      if (!cached) pageTokenCache.set(lookupId, token);
+    } else {
+      // Probe-Loop: alle /me/accounts Tokens durchprobieren
+      console.log('[fetchFacebookPostCounts] Kein direkter Token – probiere me/accounts Tokens für postId:', postId);
+      const allTokens = await getAllMeAccountTokens();
+      for (const p of allTokens) {
+        try {
+          const probeRes = await fetch(
+            `${GRAPH}/${postId}?fields=id&access_token=${p.access_token}`,
+            { cache: 'no-store', signal: AbortSignal.timeout(8000) },
+          );
+          const probeData = await probeRes.json() as { id?: string; error?: { message: string } };
+          if (!probeData.error && probeData.id) {
+            console.log('[fetchFacebookPostCounts] Funktionierender Token via me/accounts pageId:', p.id);
+            token = p.access_token;
+            if (pageId) pageTokenCache.set(pageId, token);
+            break;
+          }
+        } catch { /* weiter */ }
+      }
+    }
   }
 
   try {

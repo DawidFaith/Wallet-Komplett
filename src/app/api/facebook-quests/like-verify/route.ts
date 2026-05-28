@@ -26,6 +26,7 @@ import {
   QuestCompletion,
 } from '../../../lib/questDb';
 import { fetchFacebookPostCounts, extractFacebookPostId } from '../../../lib/metaApi';
+import { getDb } from '../../../lib/db';
 
 export const maxDuration = 30;
 
@@ -99,9 +100,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Creator's facebook_page_id für Token-Lookup laden (vermeidet Probe-Loop)
+    const sql = getDb();
+    const creatorRows = await sql`SELECT facebook_page_id FROM user_profiles WHERE wallet_address = ${quest.creatorWallet.toLowerCase()} LIMIT 1`;
+    const creatorFacebookPageId = (creatorRows[0]?.facebook_page_id as string | null) ?? null;
+
     // ── action: start ────────────────────────────────────────────────────────
     if (action === 'start') {
-      const stats = await fetchFacebookPostCounts(postId);
+      const stats = await fetchFacebookPostCounts(postId, creatorFacebookPageId);
       if (!stats) {
         console.error('[facebook-like-verify] start: fetchFacebookPostCounts gab null zurück | videoId:', postId);
         return NextResponse.json(
@@ -133,7 +139,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ expired: true });
       }
 
-      const current = await fetchFacebookPostCounts(postId);
+      const current = await fetchFacebookPostCounts(postId, creatorFacebookPageId);
       if (!current) {
         console.error('[facebook-like-verify] check: fetchFacebookPostCounts gab null zurück | videoId:', postId);
         return NextResponse.json(
