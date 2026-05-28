@@ -269,11 +269,8 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
               )}
               {!showVideo && (
                 <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5">
-                  <span className={`flex items-center gap-1 ${pc.badge} text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md`}>
-                    {pc.badgeIcon} {PLATFORM_NAMES[bundle.platform]}
-                  </span>
-                  <span className={`flex items-center gap-1 ${pc.badge} text-white/90 text-xs font-semibold px-2.5 py-1 rounded-full shadow-md opacity-80`}>
-                    <FaLayerGroup size={10} /> Quest-Reihe
+                  <span className={`flex items-center gap-1.5 ${pc.badge} text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md`}>
+                    {pc.badgeIcon} Quest-Reihe
                   </span>
                 </div>
               )}

@@ -288,12 +288,9 @@ export async function reserveQuestCommentSlot(
 
   const poolSize = QUEST_COMMENT_POOL.length;
 
-  // Startpunkt per Wallet-Hash bestimmen → verschiedene Nutzer bekommen verschiedene Texte,
-  // auch wenn sie der erste Nutzer eines neuen Quests sind.
-  const walletHash = Math.abs(
-    normalized.split('').reduce((acc, c) => ((acc << 5) - acc + c.charCodeAt(0)) | 0, 0),
-  );
-  const preferredStart = walletHash % poolSize;
+  // Zufälligen Startpunkt wählen → jede Wallet bekommt beim ersten Aufruf einen zufälligen Kommentar.
+  // Bei weiteren Aufrufen wird der gespeicherte Slot aus der DB zurückgegeben (s.o.).
+  const preferredStart = Math.floor(Math.random() * poolSize);
 
   // Alle Slots ab dem Startpunkt (ringförmig) durchprobieren bis ein freier gefunden wird
   for (let offset = 0; offset < poolSize; offset++) {
