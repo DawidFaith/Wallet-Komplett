@@ -10,6 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
+import { getPageTokenByPageId } from '../../../lib/metaApi';
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
@@ -152,16 +153,8 @@ export async function GET(req: NextRequest) {
         });
 
         if (matchedPage) {
-          // Neue Facebook-Seiten erfordern Page Access Token (nicht System User Token)
-          let pageToken = token;
-          try {
-            const ptRes = await fetch(
-              `${GRAPH}/${matchedPage.id}?fields=access_token&access_token=${token}`,
-              { cache: 'no-store' },
-            );
-            const ptData = await ptRes.json() as { access_token?: string };
-            if (ptData.access_token) pageToken = ptData.access_token;
-          } catch { /* Fallback: system token */ }
+          // Page Access Token über zentrale Funktion holen (alle Künstler sind Business Partner)
+          const pageToken = (await getPageTokenByPageId(matchedPage.id)) ?? token;
 
           const postsRes = await fetch(
             `${GRAPH}/${matchedPage.id}/posts?fields=id,message,permalink_url,created_time,full_picture&limit=20&access_token=${pageToken}`,

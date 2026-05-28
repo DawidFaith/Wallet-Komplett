@@ -95,6 +95,43 @@ export async function getPageAccessToken(): Promise<string | null> {
   }
 }
 
+// ─── Page Access Token für eine beliebige Page holen (über Business Partner) ─
+/**
+ * Holt den Page Access Token für eine beliebige Artist-Page.
+ * Alle Künstler sind als Meta Business Partner registriert → System User Token
+ * hat Zugriff auf alle client_pages des Business.
+ */
+export async function getPageTokenByPageId(pageId: string): Promise<string | null> {
+  const systemToken = process.env.META_SYSTEM_USER_TOKEN;
+  if (!systemToken) return null;
+
+  // Zuerst: direkt über pageId?fields=access_token versuchen
+  try {
+    const res = await fetch(
+      `${GRAPH}/${pageId}?fields=access_token&access_token=${systemToken}`,
+      { cache: 'no-store', signal: AbortSignal.timeout(8000) },
+    );
+    const data = await res.json() as { access_token?: string; error?: { message: string } };
+    if (data.access_token) return data.access_token;
+  } catch { /* weiter */ }
+
+  // Fallback: Business client_pages durchsuchen
+  const bizId = process.env.META_BUSINESS_ID;
+  if (!bizId) return null;
+
+  try {
+    const res = await fetch(
+      `${GRAPH}/${bizId}/client_pages?fields=id,access_token&limit=200&access_token=${systemToken}`,
+      { cache: 'no-store', signal: AbortSignal.timeout(10000) },
+    );
+    const data = await res.json() as { data?: Array<{ id: string; access_token?: string }> };
+    const match = data.data?.find((p) => p.id === pageId);
+    if (match?.access_token) return match.access_token;
+  } catch { /* Fehler ignorieren */ }
+
+  return null;
+}
+
 // ─── Kommentare auf Instagram-Media prüfen ────────────────────────────────────
 export async function findInstagramComment(
   mediaId: string,
@@ -145,14 +182,13 @@ export async function findFacebookComment(
   let token = systemToken;
   const pageId = postId.includes('_') ? postId.split('_')[0] : null;
   if (pageId) {
-    try {
-      const tokenRes = await fetch(
-        `${GRAPH}/${pageId}?fields=access_token&access_token=${systemToken}`,
-        { cache: 'no-store', signal: AbortSignal.timeout(8000) },
-      );
-      const tokenData = await tokenRes.json() as { access_token?: string };
-      if (tokenData.access_token) token = tokenData.access_token;
-    } catch { /* Fallback auf systemToken */ }
+    const pageToken = await getPageTokenByPageId(pageId);
+    if (pageToken) {
+      token = pageToken;
+      console.log('[findFacebookComment] DEBUG - Page Token geholt für pageId:', pageId);
+    } else {
+      console.warn('[findFacebookComment] Kein Page Token für pageId:', pageId, '– nutze System Token');
+    }
   }
 
   const cleanText = requiredText?.toLowerCase().normalize('NFC') ?? null;
@@ -317,25 +353,14 @@ export async function fetchFacebookPostCounts(postId: string): Promise<FbPostCou
 
   // Page-ID aus Post-ID extrahieren (Format: {pageId}_{postId})
   // Damit holen wir das Page Access Token der jeweiligen Artist-Page,
-  // das pages_read_engagement hat – der System User Token allein reicht nicht.
+  // das pages_read_engagement hat – alle Künstler sind als Business Partner registriert.
   const pageId = postId.includes('_') ? postId.split('_')[0] : null;
   let token = systemToken;
 
   if (pageId) {
-    try {
-      const tokenRes = await fetch(
-        `${GRAPH}/${pageId}?fields=access_token&access_token=${systemToken}`,
-        { cache: 'no-store', signal: AbortSignal.timeout(8000) },
-      );
-      const tokenData = await tokenRes.json() as { access_token?: string; error?: { message: string } };
-      if (tokenData.access_token) {
-        token = tokenData.access_token;
-      } else if (tokenData.error) {
-        console.error('[fetchFacebookPostCounts] Page-Token-Fehler:', tokenData.error.message);
-      }
-    } catch (e) {
-      console.error('[fetchFacebookPostCounts] Page-Token-Fetch fehlgeschlagen:', e);
-    }
+    const pageToken = await getPageTokenByPageId(pageId);
+    if (pageToken) token = pageToken;
+    else console.warn('[fetchFacebookPostCounts] Kein Page Token für pageId:', pageId);
   }
 
   try {
