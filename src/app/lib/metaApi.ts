@@ -230,6 +230,23 @@ export async function findInstagramComment(
 }
 
 // ─── Kommentare auf Facebook-Post prüfen ─────────────────────────────────────
+/** Alle verfügbaren Page-Tokens aus /me/accounts holen (Fallback für Artist-Pages mit abweichender ID) */
+async function getAllMeAccountTokens(): Promise<Array<{ id: string; access_token: string }>> {
+  const systemToken = process.env.META_SYSTEM_USER_TOKEN;
+  if (!systemToken) return [];
+  try {
+    const res = await fetch(
+      `${GRAPH}/me/accounts?fields=id,access_token&limit=200&access_token=${systemToken}`,
+      { cache: 'no-store', signal: AbortSignal.timeout(10000) },
+    );
+    const data = await res.json() as { data?: Array<{ id: string; access_token?: string }>; error?: { message: string } };
+    if (data.error || !data.data) return [];
+    return data.data.filter(p => p.access_token) as Array<{ id: string; access_token: string }>;
+  } catch {
+    return [];
+  }
+}
+
 export async function findFacebookComment(
   postId: string,
   requiredText: string | null,
@@ -243,9 +260,31 @@ export async function findFacebookComment(
   const pageId = postId.includes('_') ? postId.split('_')[0] : null;
   if (!pageId) return { found: false, allComments: [] };
 
-  const token = await getPageTokenByPageId(pageId);
+  let token = await getPageTokenByPageId(pageId);
   if (!token) {
-    console.error('[findFacebookComment] Kein Page Token für pageId:', pageId, '– Artist-Page nicht in owned_pages/client_pages?');
+    // Fallback: Alle zugänglichen Page-Tokens durchprobieren.
+    // Facebook gibt Posts manchmal mit abweichender pageId zurück (neue Page-ID-Repräsentation),
+    // obwohl der Token einer anderen ID-Variante der gleichen Page gültig ist.
+    console.log('[findFacebookComment] Primärer Token fehlgeschlagen – probiere alle me/accounts Tokens für postId:', postId);
+    const allTokens = await getAllMeAccountTokens();
+    for (const p of allTokens) {
+      // Kurzer Probe-Request: gibt es Kommentare mit diesem Token?
+      try {
+        const probeRes = await fetch(
+          `${GRAPH}/${postId}/comments?fields=id&limit=1&access_token=${p.access_token}`,
+          { cache: 'no-store', signal: AbortSignal.timeout(8000) },
+        );
+        const probeData = await probeRes.json() as { data?: unknown[]; error?: { message: string } };
+        if (!probeData.error) {
+          console.log('[findFacebookComment] Funktionierender Token gefunden via me/accounts pageId:', p.id);
+          token = p.access_token;
+          break;
+        }
+      } catch { /* nächste probieren */ }
+    }
+  }
+  if (!token) {
+    console.error('[findFacebookComment] Kein Token funktioniert für postId:', postId, '– Artist-Page nicht zugänglich');
     return { found: false, allComments: [] };
   }
   console.log('[findFacebookComment] Page Token erfolgreich geholt für pageId:', pageId);
