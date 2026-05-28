@@ -325,7 +325,9 @@ async function handlePost(req: NextRequest) {
   const cleanHandle = handle.replace(/^@/, '').trim();
   const verificationCode = getVerificationCode(walletAddress);
 
-  // ── Fingerprint-Schutz: max. 2 verschiedene Wallets pro Gerät ─────────────
+  // ── Fingerprint-Schutz: TEMPORÄR DEAKTIVIERT FÜR TESTS ─────────────
+  // TODO: Wieder aktivieren nach Tests!
+  /*
   if (action === 'verify' && fingerprint) {
     const count = await getFingerprintWalletCount(fingerprint);
     const normalizedWallet = walletAddress.toLowerCase();
@@ -345,6 +347,7 @@ async function handlePost(req: NextRequest) {
       );
     }
   }
+  */
 
   // ── Preview ───────────────────────────────────────────────────────────────
   if (action === 'preview') {
