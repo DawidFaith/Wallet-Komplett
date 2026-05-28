@@ -151,6 +151,24 @@ export async function getPageTokenByPageId(pageId: string): Promise<string | nul
     console.error('[getPageTokenByPageId] client_pages Fetch-Fehler:', e);
   }
 
+  // Direkter Zugriff: System User wurde manuell als Page Admin hinzugefügt
+  try {
+    const res = await fetch(
+      `${GRAPH}/${pageId}?fields=access_token&access_token=${systemToken}`,
+      { cache: 'no-store', signal: AbortSignal.timeout(8000) },
+    );
+    const data = await res.json() as { access_token?: string; error?: { message: string } };
+    if (data.access_token) {
+      console.log('[getPageTokenByPageId] Token via direkten Page-Admin-Zugriff gefunden für pageId:', pageId);
+      return data.access_token;
+    }
+    if (data.error) {
+      console.error('[getPageTokenByPageId] Direkter Zugriff Fehler:', data.error.message, '– System User ist kein Page Admin für', pageId);
+    }
+  } catch (e) {
+    console.error('[getPageTokenByPageId] Direkter Zugriff Fetch-Fehler:', e);
+  }
+
   return null;
 }
 
