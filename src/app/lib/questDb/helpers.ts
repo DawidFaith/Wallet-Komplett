@@ -288,41 +288,37 @@ export async function reserveQuestCommentSlot(
 
   const poolSize = QUEST_COMMENT_POOL.length;
 
-  // Nächsten freien slot_index finden (MAX + 1, sicher gegen Race mit SKIP LOCKED)
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const nextSlotRes = await sql`
-      SELECT COALESCE(MAX(slot_index) + 1, 0) AS next_slot
-      FROM facebook_comment_slots
-      WHERE quest_id = ${questId}
-    `;
-    const nextSlot: number = Number(nextSlotRes[0].next_slot);
+  // Startpunkt per Wallet-Hash bestimmen → verschiedene Nutzer bekommen verschiedene Texte,
+  // auch wenn sie der erste Nutzer eines neuen Quests sind.
+  const walletHash = Math.abs(
+    normalized.split('').reduce((acc, c) => ((acc << 5) - acc + c.charCodeAt(0)) | 0, 0),
+  );
+  const preferredStart = walletHash % poolSize;
 
-    if (nextSlot >= poolSize) {
-      // Pool erschöpft → Hash-Fallback (Text wird evtl. doppelt vergeben, aber kein Fehler)
-      return getQuestCommentText(normalized, questId);
-    }
-
-    const text = QUEST_COMMENT_POOL[nextSlot];
+  // Alle Slots ab dem Startpunkt (ringförmig) durchprobieren bis ein freier gefunden wird
+  for (let offset = 0; offset < poolSize; offset++) {
+    const slotIndex = (preferredStart + offset) % poolSize;
+    const text = QUEST_COMMENT_POOL[slotIndex];
     try {
       await sql`
         INSERT INTO facebook_comment_slots (quest_id, wallet_address, slot_index, comment_text)
-        VALUES (${questId}, ${normalized}, ${nextSlot}, ${text})
+        VALUES (${questId}, ${normalized}, ${slotIndex}, ${text})
       `;
       return text;
     } catch {
-      // Unique-Verletzung (Race) → nochmal mit aktualisierten Werten
-      // Zuerst prüfen ob zwischenzeitlich unser wallet eingetragen wurde
+      // PRIMARY KEY- oder UNIQUE-Verletzung: entweder unser Wallet hat schon einen Slot
+      // (race mit eigenem Request) oder dieser slot_index ist durch ein anderes Wallet belegt
       const raceCheck = await sql`
         SELECT comment_text FROM facebook_comment_slots
         WHERE quest_id = ${questId} AND wallet_address = ${normalized}
         LIMIT 1
       `;
       if (raceCheck.length > 0) return raceCheck[0].comment_text as string;
-      // slot_index war belegt → Loop läuft weiter
+      // slot_index belegt → nächsten Slot versuchen (offset++ im Loop)
     }
   }
 
-  // Letzte Sicherheit
+  // Pool komplett belegt → Hash-Fallback (Text wird evtl. doppelt vergeben)
   return getQuestCommentText(normalized, questId);
 }
 
