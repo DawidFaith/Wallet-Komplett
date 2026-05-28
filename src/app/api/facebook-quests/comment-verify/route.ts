@@ -131,10 +131,21 @@ export async function POST(req: NextRequest) {
 
   // 5. Ergebnis auswerten
   if (!result.found) {
+    console.log('[comment-verify] DEBUG - Gesuchter Text:', commentText);
+    console.log('[comment-verify] DEBUG - Gefundene Kommentare:', result.allComments?.length ?? 0);
+    console.log('[comment-verify] DEBUG - Erste 5 Kommentare:', result.allComments?.slice(0, 5));
+    
     return NextResponse.json({
       notFound: true,
       commentText,
       message: `Kein passender Kommentar gefunden. Stelle sicher, dass du genau diesen Text als Kommentar gepostet hast: "${commentText}"`,
+      debug: {
+        totalComments: result.allComments?.length ?? 0,
+        sampleComments: result.allComments?.slice(0, 3).map(c => ({
+          from: c.from,
+          message: c.message.substring(0, 100)
+        }))
+      }
     });
   }
 

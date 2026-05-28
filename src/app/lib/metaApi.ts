@@ -68,7 +68,7 @@ export async function findFacebookComment(
   postId: string,
   requiredText: string | null,
   fromName?: string | null,
-): Promise<{ found: boolean; fromName?: string }> {
+): Promise<{ found: boolean; fromName?: string; allComments?: Array<{ from?: string; message: string }> }> {
   // Page-ID aus Post-ID extrahieren um das spezifische Page Access Token zu holen.
   // Damit können Artist-Posts gelesen werden, nicht nur die dfaith-eigene Page.
   const systemToken = process.env.META_SYSTEM_USER_TOKEN;
@@ -97,6 +97,8 @@ export async function findFacebookComment(
 
   console.log('[findFacebookComment] DEBUG - Suche nach:', { postId, requiredText, fromName, cleanText, cleanName });
 
+  const allComments: Array<{ from?: string; message: string }> = [];
+
   for (let page = 0; page < 5 && url; page++) {
     let data: { data?: Array<{ from?: { name?: string; id?: string }; message?: string }>; paging?: { next?: string }; error?: { message: string } };
     try {
@@ -113,6 +115,13 @@ export async function findFacebookComment(
     for (const comment of data.data ?? []) {
       const authorName = (comment.from?.name ?? '').toLowerCase().trim();
       const commentMessage = (comment.message ?? '').normalize('NFC');
+      
+      // Debug: Sammle alle Kommentare
+      allComments.push({
+        from: comment.from?.name ?? 'Unknown',
+        message: commentMessage
+      });
+      
       console.log('[findFacebookComment] DEBUG - Kommentar:', {
         authorName,
         message: commentMessage,
@@ -126,13 +135,13 @@ export async function findFacebookComment(
       const textMatch = cleanText ? commentMessage.toLowerCase().includes(cleanText) : true;
       if (authorMatch && textMatch) {
         console.log('[findFacebookComment] DEBUG - MATCH GEFUNDEN!', { authorName, fromName: comment.from?.name });
-        return { found: true, fromName: comment.from?.name ?? undefined };
+        return { found: true, fromName: comment.from?.name ?? undefined, allComments };
       }
     }
     url = data.paging?.next ?? null;
   }
   console.log('[findFacebookComment] DEBUG - Kein Match gefunden');
-  return { found: false };
+  return { found: false, allComments };
 }
 
 // ─── IG-Account-ID aus Facebook-Page ermitteln ───────────────────────────────
