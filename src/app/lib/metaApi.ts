@@ -20,7 +20,8 @@ export async function resolvePostIdFromUrl(url: string): Promise<string | null> 
       { cache: 'no-store', signal: AbortSignal.timeout(8000) },
     );
     const data = await res.json() as { id?: string; error?: { message: string } };
-    if (data.error || !data.id) return null;
+    // Wenn data.id eine URL ist, hat Facebook die URL nicht als Post erkannt → null
+    if (data.error || !data.id || data.id.startsWith('http')) return null;
     console.log('[resolvePostIdFromUrl] Graph API → postId:', data.id, 'für URL:', url);
     return data.id;
   } catch {
@@ -52,16 +53,28 @@ export function extractFacebookPostId(urlOrId: string): string | null {
 
     const parsed = new URL(url);
     
+    // Format: /reel/reelId oder /reels/reelId
+    const reelMatch = parsed.pathname.match(/\/reels?\/([\d]+)/);
+    if (reelMatch) {
+      return reelMatch[1]; // nur reelId – pageId wird extern kombiniert
+    }
+
+    // Format: /videos/reelId
+    const videoPathMatch = parsed.pathname.match(/\/videos\/([\d]+)/);
+    if (videoPathMatch) {
+      return videoPathMatch[1];
+    }
+
     // Format: /pageId/posts/postId (pageId numerisch)
     const pathMatch = parsed.pathname.match(/\/(\d+)\/posts\/(\d+)/);
     if (pathMatch) {
       return `${pathMatch[1]}_${pathMatch[2]}`;
     }
 
-    // Format: /username/posts/postId (username alphanumerisch, z.B. /dfaith/posts/12345)
+    // Format: /username/posts/postId (username alphanumerisch)
     const pathMatchUsername = parsed.pathname.match(/\/[\w.]+\/posts\/(\d+)/);
     if (pathMatchUsername) {
-      return pathMatchUsername[1]; // nur postId – pageId muss extern hinzugefügt werden
+      return pathMatchUsername[1];
     }
 
     // Format: /permalink.php?story_fbid=postId&id=pageId
@@ -73,12 +86,10 @@ export function extractFacebookPostId(urlOrId: string): string | null {
       }
     }
 
-    // Format: /watch/?v=videoId (für Videos)
+    // Format: /watch/?v=videoId
     if (parsed.pathname.includes('watch')) {
       const videoId = parsed.searchParams.get('v');
-      if (videoId) {
-        return videoId; // Video-IDs sind standalone
-      }
+      if (videoId) return videoId;
     }
   } catch {
     // URL-Parsing fehlgeschlagen - versuche Regex auf Rohstring
@@ -339,6 +350,15 @@ export async function findFacebookComment(
       data = await res.json();
     } catch {
       break;
+    }
+    // "from" Feld nicht verfügbar (z.B. bei Reels) – ohne "from" nochmal versuchen
+    if (data.error?.message?.includes('nonexisting field (from)')) {
+      console.log('[findFacebookComment] „from“ Feld nicht verfügbar – nur message abrufen');
+      url = url.replace('fields=from,message', 'fields=message');
+      try {
+        const res2 = await fetch(url, { cache: 'no-store' });
+        data = await res2.json();
+      } catch { break; }
     }
     if (data.error) {
       console.error('[findFacebookComment] Graph API Fehler:', data.error.message, '| postId:', postId);

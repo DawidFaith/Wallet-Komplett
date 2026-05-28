@@ -131,20 +131,19 @@ export async function POST(req: NextRequest) {
   let postId = quest.videoId;
   console.log('[comment-verify] Original videoId:', postId, '| videoUrl:', quest.videoUrl);
 
-  // Schritt 1: videoUrl per Graph API auflösen (zuverlässigste Methode)
-  if (!postId.includes('_') || postId.includes('http') || postId.includes('/')) {
-    const url = quest.videoUrl || (postId.startsWith('http') ? postId : null);
-    if (url) {
-      const resolved = await resolvePostIdFromUrl(url);
-      if (resolved) {
-        postId = resolved;
-        console.log('[comment-verify] Post-ID via Graph API aufgelöst:', postId);
-      }
+  // Schritt 1: videoUrl per Graph API auflösen
+  const urlForLookup = quest.videoUrl || (postId.startsWith('http') ? postId : null);
+  if (urlForLookup && (!postId.includes('_') || postId.includes('http') || postId.includes('/'))) {
+    const resolved = await resolvePostIdFromUrl(urlForLookup);
+    if (resolved) {
+      postId = resolved;
+      console.log('[comment-verify] Post-ID via Graph API aufgelöst:', postId);
     }
   }
-  // Fallback: Regex-Extraktion
+  // Schritt 2: Regex-Extraktion (deckt Reels /reel/ID, /posts/ID, etc.)
   if (!postId.includes('_') || postId.includes('http') || postId.includes('/')) {
-    const extracted = extractFacebookPostId(postId) || (quest.videoUrl ? extractFacebookPostId(quest.videoUrl) : null);
+    const rawUrl = quest.videoUrl || quest.videoId || '';
+    const extracted = extractFacebookPostId(rawUrl) || extractFacebookPostId(quest.videoId);
     if (extracted) {
       postId = extracted;
       console.log('[comment-verify] Post-ID via Regex extrahiert:', postId);
@@ -160,7 +159,7 @@ export async function POST(req: NextRequest) {
   const creatorFacebookPageId = (creatorRows[0]?.facebook_page_id as string | null) ?? null;
   console.log('[comment-verify] creatorFacebookPageId:', creatorFacebookPageId);
 
-  // Bare numerische Post-ID mit Page-ID kombinieren
+  // Bare numerische ID (Reel-ID, Post-ID ohne Page-Prefix) mit Page-ID kombinieren
   if (!postId.includes('_') && /^\d+$/.test(postId) && creatorFacebookPageId) {
     postId = `${creatorFacebookPageId}_${postId}`;
     console.log('[comment-verify] Post-ID mit Page-ID kombiniert:', postId);
