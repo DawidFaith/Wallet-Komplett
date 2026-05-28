@@ -87,13 +87,15 @@ export async function findFacebookComment(
     } catch { /* Fallback auf systemToken */ }
   }
 
-  const cleanText = requiredText?.toLowerCase() ?? null;
+  const cleanText = requiredText?.toLowerCase().normalize('NFC') ?? null;
   const cleanName = fromName?.toLowerCase().trim() ?? null;
 
   // Hinweis: "from{name,id}" funktioniert nicht bei der neuen Facebook-Seiten-API.
   // Stattdessen "from" ohne Unterfelder verwenden.
   let url: string | null =
     `${GRAPH}/${postId}/comments?fields=from,message&limit=200&access_token=${token}`;
+
+  console.log('[findFacebookComment] DEBUG - Suche nach:', { postId, requiredText, fromName, cleanText, cleanName });
 
   for (let page = 0; page < 5 && url; page++) {
     let data: { data?: Array<{ from?: { name?: string; id?: string }; message?: string }>; paging?: { next?: string }; error?: { message: string } };
@@ -107,18 +109,29 @@ export async function findFacebookComment(
       console.error('[findFacebookComment] Graph API Fehler:', data.error.message, '| postId:', postId);
       break;
     }
+    console.log(`[findFacebookComment] DEBUG - Page ${page}: Gefunden ${data.data?.length ?? 0} Kommentare`);
     for (const comment of data.data ?? []) {
       const authorName = (comment.from?.name ?? '').toLowerCase().trim();
+      const commentMessage = (comment.message ?? '').normalize('NFC');
+      console.log('[findFacebookComment] DEBUG - Kommentar:', {
+        authorName,
+        message: commentMessage,
+        messageLength: commentMessage.length,
+        cleanTextLength: cleanText?.length ?? 0,
+        includes: cleanText ? commentMessage.toLowerCase().includes(cleanText) : 'N/A'
+      });
       // Autor-Check (für comment-verify)
       const authorMatch = cleanName ? authorName === cleanName : true;
       // Textinhalt-Check (für social-verify / secret-code Quests)
-      const textMatch = cleanText ? (comment.message ?? '').toLowerCase().includes(cleanText) : true;
+      const textMatch = cleanText ? commentMessage.toLowerCase().includes(cleanText) : true;
       if (authorMatch && textMatch) {
+        console.log('[findFacebookComment] DEBUG - MATCH GEFUNDEN!', { authorName, fromName: comment.from?.name });
         return { found: true, fromName: comment.from?.name ?? undefined };
       }
     }
     url = data.paging?.next ?? null;
   }
+  console.log('[findFacebookComment] DEBUG - Kein Match gefunden');
   return { found: false };
 }
 
