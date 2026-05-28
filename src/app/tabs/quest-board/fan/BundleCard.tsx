@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import { FaLayerGroup, FaCheck, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaGift, FaStar, FaTrophy, FaHeart, FaComment, FaBookmark, FaShareAlt, FaKey, FaThumbsUp, FaLock } from 'react-icons/fa';
+import { FaLayerGroup, FaCheck, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaGift, FaStar, FaTrophy, FaHeart, FaComment, FaBookmark, FaShareAlt, FaKey, FaThumbsUp, FaLock, FaClock } from 'react-icons/fa';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
 import type { Platform, QuestType, QuestIndexEntry, VerifiedPlatforms } from '../types';
+import { formatExpiry } from '../utils';
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
   youtube:   <FaYoutube   className="text-red-500"  size={12} />,
@@ -300,6 +301,12 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                   </span>
                 </div>
               )}
+              {/* Timer unten rechts */}
+              {!showVideo && (() => { const exp = formatExpiry(bundle.expiresAt); return exp ? (
+                <div className="absolute bottom-2 right-2 z-10 bg-black/70 text-zinc-300 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                  <FaClock size={9} /> {exp}
+                </div>
+              ) : null; })()}
             </div>
             {/* Body */}
             <div className="p-4 space-y-3">
