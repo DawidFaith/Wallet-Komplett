@@ -95,39 +95,61 @@ export async function getPageAccessToken(): Promise<string | null> {
   }
 }
 
-// ─── Page Access Token für eine beliebige Page holen (über Business Partner) ─
+// ─── Page Access Token für eine Artist-Page holen (über Business) ─────────────
 /**
- * Holt den Page Access Token für eine beliebige Artist-Page.
- * Alle Künstler sind als Meta Business Partner registriert → System User Token
- * hat Zugriff auf alle client_pages des Business.
+ * Holt den Page Access Token für eine Artist-Page via META_BUSINESS_ID.
+ * Sucht sowohl in owned_pages (eigene Pages) als auch client_pages (Partner-Pages).
+ * Alle Künstler sind als System Admin registriert → Token muss hier abrufbar sein.
  */
 export async function getPageTokenByPageId(pageId: string): Promise<string | null> {
   const systemToken = process.env.META_SYSTEM_USER_TOKEN;
-  if (!systemToken) return null;
+  const bizId = process.env.META_BUSINESS_ID;
+  if (!systemToken || !bizId) {
+    console.error('[getPageTokenByPageId] META_SYSTEM_USER_TOKEN oder META_BUSINESS_ID nicht gesetzt');
+    return null;
+  }
 
-  // Zuerst: direkt über pageId?fields=access_token versuchen
+  // owned_pages: Pages die das Business selbst verwaltet
   try {
     const res = await fetch(
-      `${GRAPH}/${pageId}?fields=access_token&access_token=${systemToken}`,
-      { cache: 'no-store', signal: AbortSignal.timeout(8000) },
+      `${GRAPH}/${bizId}/owned_pages?fields=id,access_token&limit=200&access_token=${systemToken}`,
+      { cache: 'no-store', signal: AbortSignal.timeout(10000) },
     );
-    const data = await res.json() as { access_token?: string; error?: { message: string } };
-    if (data.access_token) return data.access_token;
-  } catch { /* weiter */ }
+    const data = await res.json() as { data?: Array<{ id: string; access_token?: string }>; error?: { message: string } };
+    if (data.error) {
+      console.error('[getPageTokenByPageId] owned_pages Fehler:', data.error.message);
+    } else {
+      const match = data.data?.find((p) => p.id === pageId);
+      if (match?.access_token) {
+        console.log('[getPageTokenByPageId] Token via owned_pages gefunden für pageId:', pageId);
+        return match.access_token;
+      }
+      console.log('[getPageTokenByPageId] pageId nicht in owned_pages gefunden. Gefundene IDs:', data.data?.map(p => p.id));
+    }
+  } catch (e) {
+    console.error('[getPageTokenByPageId] owned_pages Fetch-Fehler:', e);
+  }
 
-  // Fallback: Business client_pages durchsuchen
-  const bizId = process.env.META_BUSINESS_ID;
-  if (!bizId) return null;
-
+  // client_pages: Pages von Business-Partnern/Clients
   try {
     const res = await fetch(
       `${GRAPH}/${bizId}/client_pages?fields=id,access_token&limit=200&access_token=${systemToken}`,
       { cache: 'no-store', signal: AbortSignal.timeout(10000) },
     );
-    const data = await res.json() as { data?: Array<{ id: string; access_token?: string }> };
-    const match = data.data?.find((p) => p.id === pageId);
-    if (match?.access_token) return match.access_token;
-  } catch { /* Fehler ignorieren */ }
+    const data = await res.json() as { data?: Array<{ id: string; access_token?: string }>; error?: { message: string } };
+    if (data.error) {
+      console.error('[getPageTokenByPageId] client_pages Fehler:', data.error.message);
+    } else {
+      const match = data.data?.find((p) => p.id === pageId);
+      if (match?.access_token) {
+        console.log('[getPageTokenByPageId] Token via client_pages gefunden für pageId:', pageId);
+        return match.access_token;
+      }
+      console.log('[getPageTokenByPageId] pageId nicht in client_pages gefunden. Gefundene IDs:', data.data?.map(p => p.id));
+    }
+  } catch (e) {
+    console.error('[getPageTokenByPageId] client_pages Fetch-Fehler:', e);
+  }
 
   return null;
 }
@@ -179,17 +201,15 @@ export async function findFacebookComment(
   const systemToken = process.env.META_SYSTEM_USER_TOKEN;
   if (!systemToken) return { found: false };
 
-  let token = systemToken;
   const pageId = postId.includes('_') ? postId.split('_')[0] : null;
-  if (pageId) {
-    const pageToken = await getPageTokenByPageId(pageId);
-    if (pageToken) {
-      token = pageToken;
-      console.log('[findFacebookComment] DEBUG - Page Token geholt für pageId:', pageId);
-    } else {
-      console.warn('[findFacebookComment] Kein Page Token für pageId:', pageId, '– nutze System Token');
-    }
+  if (!pageId) return { found: false, allComments: [] };
+
+  const token = await getPageTokenByPageId(pageId);
+  if (!token) {
+    console.error('[findFacebookComment] Kein Page Token für pageId:', pageId, '– Artist-Page nicht in owned_pages/client_pages?');
+    return { found: false, allComments: [] };
   }
+  console.log('[findFacebookComment] Page Token erfolgreich geholt für pageId:', pageId);
 
   const cleanText = requiredText?.toLowerCase().normalize('NFC') ?? null;
   const cleanName = fromName?.toLowerCase().trim() ?? null;
