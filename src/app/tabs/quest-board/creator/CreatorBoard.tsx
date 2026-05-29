@@ -75,7 +75,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       const res = await fetch('/api/youtube-quests/quests');
       const data = await res.json();
       const mine = (data.quests ?? []).filter(
-        (q: QuestIndexEntry) => q.creatorWallet === walletAddress.toLowerCase()
+        (q: QuestIndexEntry) => q.creatorWallet === walletAddress.toLowerCase() && !q.bundleId
       );
       setQuests(mine);
     } catch { /* ignorieren */ }
@@ -262,7 +262,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         <div className="space-y-3">
           <h3 className="text-white font-bold flex items-center gap-2">
             <FaLayerGroup className="text-purple-400" size={15} />
-            Meine Bundles
+            Meine Quest Reihen
           </h3>
           {bundlesLoading ? (
             <div className="flex justify-center py-6">
