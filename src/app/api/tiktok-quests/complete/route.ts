@@ -48,32 +48,20 @@ async function findCommentByUser(
   for (let page = 0; page < 5; page++) {
     const data = await rapidGet(
       `/api/post/comments?videoId=${encodeURIComponent(videoId)}&count=100&cursor=${cursor}`
-    ) as { statusCode?: number; status_code?: number; comments?: { text?: string; user?: { unique_id?: string; uniqueId?: string } }[]; hasMore?: boolean; cursor?: number };
+    ) as { status_code?: number; comments?: { text?: string; user?: { unique_id?: string } }[]; has_more?: number | boolean; cursor?: number };
 
-    console.log(`[tiktok-complete] page=${page} cursor=${cursor} statusCode=${data.statusCode} status_code=${data.status_code} comments=${data.comments?.length ?? 'none'} hasMore=${data.hasMore}`);
-
-    // API gibt statusCode (camelCase) ODER status_code (snake_case) zurück
-    const statusOk = (data.statusCode ?? data.status_code) === 0;
-    if (!statusOk) {
-      console.log('[tiktok-complete] statusCode nicht 0, breche ab. Rohdaten-Keys:', Object.keys(data));
-      break;
-    }
+    if (data.status_code !== 0) break;
     const comments = data.comments ?? [];
     if (comments.length === 0) break;
 
-    console.log(`[tiktok-complete] Suche nach uniqueId="${uniqueId}" in ${comments.length} Kommentaren`);
-    console.log('[tiktok-complete] Ersten 3 User-Felder:', comments.slice(0, 3).map(c => c.user));
-
     for (const c of comments) {
-      // API nutzt unique_id oder uniqueId
-      const authorId = (c.user?.unique_id ?? (c.user as unknown as { uniqueId?: string })?.uniqueId ?? '');
-      console.log(`[tiktok-complete] Kommentar von "${authorId}": "${(c.text ?? '').substring(0, 40)}"`);
+      const authorId = c.user?.unique_id ?? '';
       if (authorId.toLowerCase() === uniqueId.toLowerCase()) {
         return { text: c.text ?? '' };
       }
     }
 
-    if (!data.hasMore) break;
+    if (!data.has_more) break;
     cursor = data.cursor ?? cursor + 100;
   }
   return null;
