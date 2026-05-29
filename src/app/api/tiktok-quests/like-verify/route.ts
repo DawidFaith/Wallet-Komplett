@@ -26,11 +26,21 @@ export const maxDuration = 30;
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 const RAPIDAPI_HOST = 'tiktok-api23.p.rapidapi.com';
 
+function extractVideoId(raw: string): string {
+  if (/^\d+$/.test(raw)) return raw;
+  const slashMatch = raw.match(/\/video\/(\d+)/);
+  if (slashMatch) return slashMatch[1];
+  const flatMatch = raw.match(/video(\d{10,})/i);
+  if (flatMatch) return flatMatch[1];
+  return raw;
+}
+
 async function fetchVideoStats(videoId: string): Promise<{ likes: number; shares: number; saves: number } | null> {
   if (!RAPIDAPI_KEY) return null;
+  const resolvedId = extractVideoId(videoId);
   try {
     const res = await fetch(
-      `https://${RAPIDAPI_HOST}/api/post/detail?videoId=${encodeURIComponent(videoId)}`,
+      `https://${RAPIDAPI_HOST}/api/post/detail?videoId=${encodeURIComponent(resolvedId)}`,
       {
         headers: { 'x-rapidapi-host': RAPIDAPI_HOST, 'x-rapidapi-key': RAPIDAPI_KEY },
         cache: 'no-store',
