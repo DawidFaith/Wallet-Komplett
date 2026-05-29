@@ -44,11 +44,14 @@ async function rapidGet(path: string): Promise<unknown> {
 
 // Extrahiert die numerische Video-ID aus einer TikTok-URL oder gibt den Wert direkt zurück
 function extractVideoId(videoIdOrUrl: string): string {
-  // Matches z.B. https://www.tiktok.com/@user/video/7576704350974643478
-  const match = videoIdOrUrl.match(/\/video\/(\d+)/);
-  if (match) return match[1];
-  // Nur Ziffern: bereits eine reine ID
+  // Bereits eine reine numerische ID
   if (/^\d+$/.test(videoIdOrUrl)) return videoIdOrUrl;
+  // Normale URL mit Slashes: https://www.tiktok.com/@user/video/1234567890
+  const slashMatch = videoIdOrUrl.match(/\/video\/(\d+)/);
+  if (slashMatch) return slashMatch[1];
+  // Gespeicherte URL ohne Sonderzeichen: httpswwwtiktokcom...video1234567890
+  const flatMatch = videoIdOrUrl.match(/video(\d{10,})/i);
+  if (flatMatch) return flatMatch[1];
   return videoIdOrUrl;
 }
 
