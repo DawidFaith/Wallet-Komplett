@@ -66,7 +66,7 @@ async function findCommentByUser(
       `/api/post/comments?videoId=${encodeURIComponent(videoId)}&count=100&cursor=${cursor}`
     ) as { status_code?: number; comments?: { text?: string; user?: { unique_id?: string } }[]; has_more?: number | boolean; cursor?: number };
 
-    console.log(`[tiktok-complete] page=${page} status_code=${data.status_code} comments=${data.comments?.length ?? 0} has_more=${data.has_more}`);
+    console.log(`[tiktok-complete] page=${page} status_code=${data.status_code} comments=${data.comments?.length ?? 0} total=${(data as Record<string,unknown>).total} has_more=${data.has_more} cursor=${data.cursor}`);
     if (data.status_code !== 0) break;
     const comments = data.comments ?? [];
     if (comments.length === 0) break;

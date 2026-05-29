@@ -22,9 +22,20 @@ export async function GET(req: NextRequest) {
 
   if (!quest) return NextResponse.json({ error: 'Quest nicht gefunden' }, { status: 404 });
 
+  // Video-ID normalisieren (gespeicherte Werte können URLs enthalten)
+  function extractVideoId(raw: string): string {
+    if (/^\d+$/.test(raw)) return raw;
+    const slashMatch = raw.match(/\/video\/(\d+)/);
+    if (slashMatch) return slashMatch[1];
+    const flatMatch = raw.match(/video(\d{10,})/i);
+    if (flatMatch) return flatMatch[1];
+    return raw;
+  }
+  const resolvedVideoId = extractVideoId(quest.videoId);
+
   // Kommentare von der API holen
   const res = await fetch(
-    `https://${RAPIDAPI_HOST}/api/post/comments?videoId=${encodeURIComponent(quest.videoId)}&count=20&cursor=0`,
+    `https://${RAPIDAPI_HOST}/api/post/comments?videoId=${encodeURIComponent(resolvedVideoId)}&count=20&cursor=0`,
     { headers: { 'x-rapidapi-host': RAPIDAPI_HOST, 'x-rapidapi-key': RAPIDAPI_KEY }, cache: 'no-store' }
   );
   const raw = await res.json() as Record<string, unknown>;
@@ -37,7 +48,8 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     quest: {
       id: quest.id,
-      videoId: quest.videoId,
+      videoId: resolvedVideoId,
+      videoIdRaw: quest.videoId,
       videoUrl: quest.videoUrl,
       platform: quest.platform,
       type: quest.type,
