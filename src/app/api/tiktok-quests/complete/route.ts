@@ -28,13 +28,16 @@ const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 const RAPIDAPI_HOST = 'tiktok-api23.p.rapidapi.com';
 
 async function rapidGet(path: string): Promise<unknown> {
-  const res = await fetch(`https://${RAPIDAPI_HOST}${path}`, {
+  const url = `https://${RAPIDAPI_HOST}${path}`;
+  console.log('[tiktok-complete] rapidGet:', url);
+  const res = await fetch(url, {
     headers: {
       'x-rapidapi-host': RAPIDAPI_HOST,
       'x-rapidapi-key': RAPIDAPI_KEY!,
     },
     cache: 'no-store',
   });
+  console.log('[tiktok-complete] HTTP status:', res.status);
   if (!res.ok) throw new Error(`RapidAPI HTTP ${res.status}`);
   return res.json();
 }
@@ -50,10 +53,12 @@ async function findCommentByUser(
       `/api/post/comments?videoId=${encodeURIComponent(videoId)}&count=100&cursor=${cursor}`
     ) as { status_code?: number; comments?: { text?: string; user?: { unique_id?: string } }[]; has_more?: number | boolean; cursor?: number };
 
+    console.log(`[tiktok-complete] page=${page} status_code=${data.status_code} comments=${data.comments?.length ?? 0} has_more=${data.has_more}`);
     if (data.status_code !== 0) break;
     const comments = data.comments ?? [];
     if (comments.length === 0) break;
 
+    console.log(`[tiktok-complete] Suche @${uniqueId} in ${comments.length} Kommentaren:`, comments.map(c => c.user?.unique_id));
     for (const c of comments) {
       const authorId = c.user?.unique_id ?? '';
       if (authorId.toLowerCase() === uniqueId.toLowerCase()) {
@@ -120,11 +125,14 @@ export async function POST(req: NextRequest) {
 
   // 4. Kommentar via RapidAPI suchen
   let foundComment: { text: string } | null = null;
+  console.log(`[tiktok-complete] Suche Kommentar: videoId="${quest.videoId}" tiktokHandle="${profile.tiktokHandle}" questId="${questId}"`);
   try {
     foundComment = await findCommentByUser(quest.videoId, profile.tiktokHandle);
-  } catch {
+  } catch (e) {
+    console.error('[tiktok-complete] API-Fehler:', e);
     return NextResponse.json({ error: 'TikTok API nicht erreichbar. Bitte später erneut versuchen.' }, { status: 502 });
   }
+  console.log('[tiktok-complete] foundComment:', foundComment);
 
   if (!foundComment) {
     return NextResponse.json({
