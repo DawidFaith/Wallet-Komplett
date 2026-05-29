@@ -42,6 +42,16 @@ async function rapidGet(path: string): Promise<unknown> {
   return res.json();
 }
 
+// Extrahiert die numerische Video-ID aus einer TikTok-URL oder gibt den Wert direkt zurück
+function extractVideoId(videoIdOrUrl: string): string {
+  // Matches z.B. https://www.tiktok.com/@user/video/7576704350974643478
+  const match = videoIdOrUrl.match(/\/video\/(\d+)/);
+  if (match) return match[1];
+  // Nur Ziffern: bereits eine reine ID
+  if (/^\d+$/.test(videoIdOrUrl)) return videoIdOrUrl;
+  return videoIdOrUrl;
+}
+
 // Kommentare paginiert durchsuchen (max. 5 Seiten = 500 Kommentare)
 async function findCommentByUser(
   videoId: string,
@@ -125,9 +135,10 @@ export async function POST(req: NextRequest) {
 
   // 4. Kommentar via RapidAPI suchen
   let foundComment: { text: string } | null = null;
-  console.log(`[tiktok-complete] Suche Kommentar: videoId="${quest.videoId}" tiktokHandle="${profile.tiktokHandle}" questId="${questId}"`);
+  const resolvedVideoId = extractVideoId(quest.videoId);
+  console.log(`[tiktok-complete] Suche Kommentar: videoId="${resolvedVideoId}" (raw="${quest.videoId}") tiktokHandle="${profile.tiktokHandle}" questId="${questId}"`);
   try {
-    foundComment = await findCommentByUser(quest.videoId, profile.tiktokHandle);
+    foundComment = await findCommentByUser(resolvedVideoId, profile.tiktokHandle);
   } catch (e) {
     console.error('[tiktok-complete] API-Fehler:', e);
     return NextResponse.json({ error: 'TikTok API nicht erreichbar. Bitte später erneut versuchen.' }, { status: 502 });
