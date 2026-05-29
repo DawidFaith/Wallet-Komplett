@@ -48,9 +48,9 @@ async function findCommentByUser(
   for (let page = 0; page < 5; page++) {
     const data = await rapidGet(
       `/api/post/comments?videoId=${encodeURIComponent(videoId)}&count=100&cursor=${cursor}`
-    ) as { status_code?: number; comments?: { text?: string; user?: { unique_id?: string } }[]; hasMore?: boolean; cursor?: number };
+    ) as { statusCode?: number; comments?: { text?: string; user?: { unique_id?: string } }[]; hasMore?: boolean; cursor?: number };
 
-    if (data.status_code !== 0) break;
+    if (data.statusCode !== 0) break;
     const comments = data.comments ?? [];
     if (comments.length === 0) break;
 
