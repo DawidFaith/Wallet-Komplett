@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loadQuestDetail, getUserProfile } from '../../../lib/questDb';
+import { loadQuestDetail, getUserProfile } from '../../lib/questDb';
 
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 const RAPIDAPI_HOST = 'tiktok-api23.p.rapidapi.com';
