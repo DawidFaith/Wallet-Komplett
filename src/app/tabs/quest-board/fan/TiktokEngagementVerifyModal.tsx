@@ -14,6 +14,8 @@ interface TiktokEngagementVerifyModalProps {
   levelBonusPercent?: number;
   onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
+  /** Wenn gesetzt, wird nur eine einzelne Aktion verifiziert (für like / save Quests) */
+  singleAction?: 'like' | 'save';
 }
 
 type Step = 'loading' | 'pending' | 'not_yet' | 'success' | 'expired' | 'error';
@@ -24,6 +26,7 @@ export default function TiktokEngagementVerifyModal({
   levelBonusPercent = 0,
   onCompleted,
   onClose,
+  singleAction,
 }: TiktokEngagementVerifyModalProps) {
   const [step, setStep] = useState<Step>('loading');
   const [loading, setLoading] = useState(false);
@@ -62,8 +65,13 @@ export default function TiktokEngagementVerifyModal({
       if (!quest) return;
       setLoading(true);
       setError('');
+      const endpoint = singleAction === 'like'
+        ? '/api/tiktok-quests/like-verify'
+        : singleAction === 'save'
+        ? '/api/tiktok-quests/save-verify'
+        : '/api/tiktok-quests/engagement-verify';
       try {
-        const res = await fetch('/api/tiktok-quests/engagement-verify', {
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action, questId: quest.id, walletAddress }),
@@ -128,13 +136,13 @@ export default function TiktokEngagementVerifyModal({
     { key: 'save', icon: <FiBookmark size={18} />, label: 'Speichern', color: 'text-yellow-400', verified: saveVerified },
   ];
 
-  const title =
-    step === 'success' ? '🎉 Engagement bestätigt!'
-    : step === 'expired' ? '⏰ Zeit abgelaufen'
-    : step === 'error' ? '❌ Fehler'
-    : '📲 Engagement verifizieren';
+  const title = singleAction === 'like'
+    ? (step === 'success' ? '🎉 Like bestätigt!' : step === 'expired' ? '⏰ Zeit abgelaufen' : step === 'error' ? '❌ Fehler' : '👍 Like verifizieren')
+    : singleAction === 'save'
+    ? (step === 'success' ? '🎉 Speichern bestätigt!' : step === 'expired' ? '⏰ Zeit abgelaufen' : step === 'error' ? '❌ Fehler' : '🔖 Speichern verifizieren')
+    : (step === 'success' ? '🎉 Engagement bestätigt!' : step === 'expired' ? '⏰ Zeit abgelaufen' : step === 'error' ? '❌ Fehler' : '📲 Engagement verifizieren');
 
-  const rewardPer = quest ? Math.round((displayReward / 3) * 100) / 100 : 0;
+  const rewardPer = quest ? Math.round((displayReward / (singleAction ? 1 : 3)) * 100) / 100 : 0;
 
   return (
     <Modal open={!!quest} onClose={onClose} title={title}>
@@ -143,7 +151,7 @@ export default function TiktokEngagementVerifyModal({
         <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
           <span className="text-zinc-400 text-xs">Belohnung</span>
           <div className="flex items-center gap-2.5">
-            <span className="text-zinc-500 text-xs">pro Aktion:</span>
+            {!singleAction && <span className="text-zinc-500 text-xs">pro Aktion:</span>}
             <span className="text-yellow-400 font-bold text-sm flex items-center gap-1">
               <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full" unoptimized /> +{formatCredits(rewardPer)} D.FAITH
             </span>
@@ -152,10 +160,10 @@ export default function TiktokEngagementVerifyModal({
             )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-amber-300 font-bold text-sm flex items-center gap-1">
-                <FaStar size={10} /> +{Math.floor((quest.reputationReward ?? 0) / 3)} REP
+                <FaStar size={10} /> +{Math.floor((quest.reputationReward ?? 0) / (singleAction ? 1 : 3))} REP
               </span>
             )}
-            <span className="text-zinc-600 text-xs">×3 max</span>
+            {!singleAction && <span className="text-zinc-600 text-xs">×3 max</span>}
           </div>
         </div>
       )}
@@ -188,33 +196,69 @@ export default function TiktokEngagementVerifyModal({
           )}
 
           {/* Aktionen */}
-          <div className="grid grid-cols-3 gap-2">
-            {actions.map(({ key, icon, label, color, verified }) => (
-              <div
-                key={key}
-                className={`rounded-xl p-3 flex flex-col items-center gap-2 border ${
-                  step === 'not_yet' && verified
-                    ? 'bg-green-900/30 border-green-700/40'
-                    : 'bg-zinc-800 border-zinc-700'
-                }`}
-              >
-                <span className={verified ? 'text-green-400' : color}>{icon}</span>
-                <span className="text-white text-xs font-semibold">{label}</span>
-                <span className="text-yellow-400 text-xs flex items-center gap-0.5">
-                  <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full" unoptimized /> +{formatCredits(rewardPer)}
-                </span>
-                {step === 'not_yet' && (
-                  <span className={`text-xs ${verified ? 'text-green-400' : 'text-zinc-500'}`}>
-                    {verified ? '✓' : '–'}
+          {singleAction ? (
+            // Einzelaktion-Anzeige
+            <div className="flex justify-center">
+              {actions
+                .filter(({ key }) => key === singleAction)
+                .map(({ key, icon, label, color, verified }) => (
+                  <div
+                    key={key}
+                    className={`rounded-xl p-5 flex flex-col items-center gap-3 border w-40 ${
+                      step === 'not_yet' && verified
+                        ? 'bg-green-900/30 border-green-700/40'
+                        : 'bg-zinc-800 border-zinc-700'
+                    }`}
+                  >
+                    <span className={`text-3xl ${verified ? 'text-green-400' : color}`}>{icon}</span>
+                    <span className="text-white text-sm font-semibold">{label}</span>
+                    <span className="text-yellow-400 text-sm flex items-center gap-1">
+                      <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full" unoptimized /> +{formatCredits(rewardPer)}
+                    </span>
+                    {step === 'not_yet' && (
+                      <span className={`text-sm ${verified ? 'text-green-400' : 'text-zinc-500'}`}>
+                        {verified ? '✓ Erkannt' : '– Nicht erkannt'}
+                      </span>
+                    )}
+                  </div>
+                ))}
+            </div>
+          ) : (
+            // Alle 3 Aktionen
+            <div className="grid grid-cols-3 gap-2">
+              {actions.map(({ key, icon, label, color, verified }) => (
+                <div
+                  key={key}
+                  className={`rounded-xl p-3 flex flex-col items-center gap-2 border ${
+                    step === 'not_yet' && verified
+                      ? 'bg-green-900/30 border-green-700/40'
+                      : 'bg-zinc-800 border-zinc-700'
+                  }`}
+                >
+                  <span className={verified ? 'text-green-400' : color}>{icon}</span>
+                  <span className="text-white text-xs font-semibold">{label}</span>
+                  <span className="text-yellow-400 text-xs flex items-center gap-0.5">
+                    <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full" unoptimized /> +{formatCredits(rewardPer)}
                   </span>
-                )}
-              </div>
-            ))}
-          </div>
+                  {step === 'not_yet' && (
+                    <span className={`text-xs ${verified ? 'text-green-400' : 'text-zinc-500'}`}>
+                      {verified ? '✓' : '–'}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="bg-zinc-800 rounded-xl p-3 space-y-1">
             <p className="text-white text-sm font-semibold">{quest.videoTitle}</p>
-            <p className="text-zinc-400 text-xs">Führe alle 3 Aktionen durch und klicke auf &bdquo;Prüfen&ldquo;.</p>
+            <p className="text-zinc-400 text-xs">
+              {singleAction === 'like'
+                ? 'Like das Video und klicke auf „Prüfen“.'
+                : singleAction === 'save'
+                ? 'Speichere das Video und klicke auf „Prüfen“.'
+                : 'Führe alle 3 Aktionen durch und klicke auf „Prüfen“.'}
+            </p>
           </div>
 
           <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-3">

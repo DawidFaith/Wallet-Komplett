@@ -50,6 +50,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const [likeVerifyQuest, setLikeVerifyQuest] = useState<QuestIndexEntry | null>(null);
   const [secretVerifyQuest, setSecretVerifyQuest] = useState<QuestIndexEntry | null>(null);
   const [tiktokEngagementQuest, setTiktokEngagementQuest] = useState<QuestIndexEntry | null>(null);
+  const [tiktokLikeQuest, setTiktokLikeQuest] = useState<QuestIndexEntry | null>(null);
+  const [tiktokSaveQuest, setTiktokSaveQuest] = useState<QuestIndexEntry | null>(null);
   const [instagramCommentQuest, setInstagramCommentQuest] = useState<QuestIndexEntry | null>(null);
   const [instagramLikeQuest, setInstagramLikeQuest] = useState<QuestIndexEntry | null>(null);
   const [instagramDmShareQuest, setInstagramDmShareQuest] = useState<QuestIndexEntry | null>(null);
@@ -223,6 +225,16 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
     // Engagement-Quest → eigener Verify-Modal
     if (quest?.type === 'engagement') {
       setTiktokEngagementQuest(quest);
+      return;
+    }
+    // Like-Quest → Like-Verify-Modal
+    if (quest?.type === 'like') {
+      setTiktokLikeQuest(quest);
+      return;
+    }
+    // Save-Quest → Save-Verify-Modal
+    if (quest?.type === 'save') {
+      setTiktokSaveQuest(quest);
       return;
     }
     // Secret-Quest → Code-Eingabe-Modal
@@ -438,6 +450,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                   else setVerifyingQuest(quest);
                 } else if (quest.platform === 'tiktok') {
                   if (quest.type === 'engagement') setTiktokEngagementQuest(quest);
+                  else if (quest.type === 'like') setTiktokLikeQuest(quest);
+                  else if (quest.type === 'save') setTiktokSaveQuest(quest);
                   else if (quest.type === 'secret') setSecretVerifyQuest(quest);
                   else setVerifyingQuest(quest);
                 } else if (quest.platform === 'facebook') {
@@ -648,6 +662,52 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onClose={() => {
           if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
           setTiktokEngagementQuest(null);
+        }}
+      />
+
+      {/* Verifizierungs-Modal (TikTok Like) */}
+      <TiktokEngagementVerifyModal
+        quest={tiktokLikeQuest}
+        walletAddress={walletAddress}
+        singleAction="like"
+        levelBonusPercent={tiktokLikeQuest ? getBonusPercent(tiktokLikeQuest.creatorWallet) : 0}
+        onCompleted={(amount, levelBonus) => {
+          if (tiktokLikeQuest) {
+            setCompletedIds((prev) => [...prev, tiktokLikeQuest.id]);
+            setCredits((prev) => prev + amount);
+            setQuests((prev) =>
+              prev.map((q) => q.id === tiktokLikeQuest.id ? { ...q, completions: q.completions + 1 } : q)
+            );
+            pendingCelebration.current = { amount, questTitle: tiktokLikeQuest.videoTitle, reputationReward: tiktokLikeQuest.reputationReward, levelBonus };
+            loadBundles();
+          }
+        }}
+        onClose={() => {
+          if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
+          setTiktokLikeQuest(null);
+        }}
+      />
+
+      {/* Verifizierungs-Modal (TikTok Save) */}
+      <TiktokEngagementVerifyModal
+        quest={tiktokSaveQuest}
+        walletAddress={walletAddress}
+        singleAction="save"
+        levelBonusPercent={tiktokSaveQuest ? getBonusPercent(tiktokSaveQuest.creatorWallet) : 0}
+        onCompleted={(amount, levelBonus) => {
+          if (tiktokSaveQuest) {
+            setCompletedIds((prev) => [...prev, tiktokSaveQuest.id]);
+            setCredits((prev) => prev + amount);
+            setQuests((prev) =>
+              prev.map((q) => q.id === tiktokSaveQuest.id ? { ...q, completions: q.completions + 1 } : q)
+            );
+            pendingCelebration.current = { amount, questTitle: tiktokSaveQuest.videoTitle, reputationReward: tiktokSaveQuest.reputationReward, levelBonus };
+            loadBundles();
+          }
+        }}
+        onClose={() => {
+          if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
+          setTiktokSaveQuest(null);
         }}
       />
 
