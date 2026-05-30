@@ -116,7 +116,7 @@ export default function CreateBundleModal({
   // Video-Thumbnail (aus Picker)
   const [videoThumbnail, setVideoThumbnail] = useState('');
 
-  // Platform-Nutzerzahl & max. Bonus-Prozentsatz für Level-Bonus-Reserve
+  // Platform-Nutzerzahl & aktueller max. Fan-Bonus-Prozentsatz für Level-Bonus-Reserve
   const [platformUserCount, setPlatformUserCount] = useState<number>(0);
   const [loadingPlatformUsers, setLoadingPlatformUsers] = useState(false);
   const [maxBonusPct, setMaxBonusPct] = useState<number>(0);
@@ -164,25 +164,19 @@ export default function CreateBundleModal({
     setQuestMediaError('');
     setPlatformUserCount(0);
     setMaxBonusPct(0);
-    // Maximalen Level-Bonus-Prozentsatz des Artists laden
-    fetch(`/api/reputation/levels?artistWallet=${encodeURIComponent(walletAddress)}`)
-      .then(r => r.json())
-      .then((data: Array<{ questRewardBonusPercent?: number }>) => {
-        const max = Array.isArray(data) ? data.reduce((m, l) => Math.max(m, Number(l.questRewardBonusPercent) || 0), 0) : 0;
-        setMaxBonusPct(max);
-      })
-      .catch(() => setMaxBonusPct(0));
-  }, [open, walletAddress]);
+  }, [open]);
 
   // Platform-Nutzerzahl laden
   const fetchPlatformUserCount = async (p: Platform) => {
     setLoadingPlatformUsers(true);
     try {
-      const res = await fetch(`/api/quest-bundles/platform-stats?platform=${p}`);
-      const data = await res.json() as { userCount?: number };
+      const res = await fetch(`/api/quest-bundles/platform-stats?platform=${p}&creatorWallet=${encodeURIComponent(walletAddress)}`);
+      const data = await res.json() as { userCount?: number; maxFanBonusPct?: number };
       setPlatformUserCount(data.userCount ?? 0);
+      setMaxBonusPct(data.maxFanBonusPct ?? 0);
     } catch {
       setPlatformUserCount(0);
+      setMaxBonusPct(0);
     } finally {
       setLoadingPlatformUsers(false);
     }

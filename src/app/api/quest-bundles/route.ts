@@ -5,7 +5,7 @@ import {
   getDfaithCredits,
   lockQuestBudget,
   getPlatformUserCount,
-  getReputationLevels,
+  getMaxFanBonusPct,
   DEFAULT_REACH_WEIGHTS,
   type Platform,
   type QuestType,
@@ -95,12 +95,12 @@ export async function POST(req: NextRequest) {
   // Abschluss-Bonus: unveräändert bonusNum × maxNum (jeder der max. Teilnehmer kann den Bonus bekommen)
   const abschlussBonusPool = Math.round(bonusNum * maxNum * 100) / 100;
 
-  // Level-Bonus-Reserve: rewardPool × min(maxTeilnehmer, Platform-Nutzer) × maxBonusPct / 100
+  // Level-Bonus-Reserve: rewardPool × min(maxTeilnehmer, Platform-Nutzer) × (aktuellerMaxFanBonus + 2) / 100
+  // Basis: höchster Bonus-Prozentsatz, den aktuell irgendein Fan dieses Creators hält (+2% Puffer für möglichen Level-Up)
   const platformUserCount = await getPlatformUserCount(platform as Platform);
   const effectiveParticipants = Math.min(maxNum, platformUserCount > 0 ? platformUserCount : maxNum);
-  const repLevels = await getReputationLevels(creatorWallet);
-  const maxBonusPct = repLevels.reduce((m, l) => Math.max(m, l.questRewardBonusPercent), 0);
-  const levelBonus = Math.round(poolNum * effectiveParticipants * (maxBonusPct + 2) / 100 * 100) / 100;
+  const maxFanBonusPct = await getMaxFanBonusPct(creatorWallet);
+  const levelBonus = Math.round(poolNum * effectiveParticipants * (maxFanBonusPct + 2) / 100 * 100) / 100;
 
   const totalBudget = Math.round((poolNum * maxNum + abschlussBonusPool + levelBonus) * 100) / 100;
 
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
   const credits = await getDfaithCredits(creatorWallet.toLowerCase());
   if (credits < totalBudget) {
     return NextResponse.json({
-      error: `Nicht genug Credits. Du brauchst ${totalBudget.toFixed(2)} D.FAITH (${poolNum.toFixed(2)} × ${maxNum} Reward + ${abschlussBonusPool.toFixed(2)} Abschluss-Bonus + ${levelBonus.toFixed(2)} Level-Bonus-Reserve [${effectiveParticipants} × ${maxBonusPct + 2}%]), hast aber nur ${credits.toFixed(2)}.`,
+      error: `Nicht genug Credits. Du brauchst ${totalBudget.toFixed(2)} D.FAITH (${poolNum.toFixed(2)} × ${maxNum} Reward + ${abschlussBonusPool.toFixed(2)} Abschluss-Bonus + ${levelBonus.toFixed(2)} Level-Bonus-Reserve [${effectiveParticipants} × ${maxFanBonusPct + 2}%]), hast aber nur ${credits.toFixed(2)}.`,
     }, { status: 400 });
   }
 
