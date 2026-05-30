@@ -125,6 +125,7 @@ export const DEFAULT_REACH_WEIGHTS: Record<QuestType, number> = {
   save:       2,  // Speichern = mittleres Signal
   repost:     3,  // Repost = starkes Signal
   dm_share:   4,  // Story-Share = höchste persönliche Reichweite
+  share:      4,  // TikTok-Share = starke Verbreitung
   engagement: 2,  // TikTok-Engagement-Paket
   secret:     2,  // Geheimcode = mittleres Signal
 };
