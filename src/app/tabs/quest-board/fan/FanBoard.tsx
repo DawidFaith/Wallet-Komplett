@@ -8,6 +8,7 @@ import VerifyModal from './VerifyModal';
 import LikeVerifyModal from './LikeVerifyModal';
 import SecretVerifyModal from './SecretVerifyModal';
 import TiktokEngagementVerifyModal from './TiktokEngagementVerifyModal';
+import TiktokShareVerifyModal from './TiktokShareVerifyModal';
 import YoutubeQuestCard from '../quests/youtube/YoutubeQuestCard';
 import TiktokQuestCard from '../quests/tiktok/TiktokQuestCard';
 import TiktokEngagementQuestCard from '../quests/tiktok/TiktokEngagementQuestCard';
@@ -52,6 +53,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const [tiktokEngagementQuest, setTiktokEngagementQuest] = useState<QuestIndexEntry | null>(null);
   const [tiktokLikeQuest, setTiktokLikeQuest] = useState<QuestIndexEntry | null>(null);
   const [tiktokSaveQuest, setTiktokSaveQuest] = useState<QuestIndexEntry | null>(null);
+  const [tiktokShareQuest, setTiktokShareQuest] = useState<QuestIndexEntry | null>(null);
   const [instagramCommentQuest, setInstagramCommentQuest] = useState<QuestIndexEntry | null>(null);
   const [instagramLikeQuest, setInstagramLikeQuest] = useState<QuestIndexEntry | null>(null);
   const [instagramDmShareQuest, setInstagramDmShareQuest] = useState<QuestIndexEntry | null>(null);
@@ -235,6 +237,11 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
     // Save-Quest → Save-Verify-Modal
     if (quest?.type === 'save') {
       setTiktokSaveQuest(quest);
+      return;
+    }
+    // Share-Quest → Share-Verify-Modal
+    if (quest?.type === 'share') {
+      setTiktokShareQuest(quest);
       return;
     }
     // Secret-Quest → Code-Eingabe-Modal
@@ -452,6 +459,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                   if (quest.type === 'engagement') setTiktokEngagementQuest(quest);
                   else if (quest.type === 'like') setTiktokLikeQuest(quest);
                   else if (quest.type === 'save') setTiktokSaveQuest(quest);
+                  else if (quest.type === 'share') setTiktokShareQuest(quest);
                   else if (quest.type === 'secret') setSecretVerifyQuest(quest);
                   else setVerifyingQuest(quest);
                 } else if (quest.platform === 'facebook') {
@@ -708,6 +716,28 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onClose={() => {
           if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
           setTiktokSaveQuest(null);
+        }}
+      />
+
+      {/* Verifizierungs-Modal (TikTok Share) */}
+      <TiktokShareVerifyModal
+        quest={tiktokShareQuest}
+        walletAddress={walletAddress}
+        levelBonusPercent={tiktokShareQuest ? getBonusPercent(tiktokShareQuest.creatorWallet) : 0}
+        onCompleted={(amount, levelBonus) => {
+          if (tiktokShareQuest) {
+            setCompletedIds((prev) => [...prev, tiktokShareQuest.id]);
+            setCredits((prev) => prev + amount);
+            setQuests((prev) =>
+              prev.map((q) => q.id === tiktokShareQuest.id ? { ...q, completions: q.completions + 1 } : q)
+            );
+            pendingCelebration.current = { amount, questTitle: tiktokShareQuest.videoTitle, reputationReward: tiktokShareQuest.reputationReward, levelBonus };
+            loadBundles();
+          }
+        }}
+        onClose={() => {
+          if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
+          setTiktokShareQuest(null);
         }}
       />
 

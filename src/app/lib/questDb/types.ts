@@ -1,7 +1,7 @@
 // ─── Typen ───────────────────────────────────────────────────────────────────
 
 export type Platform = 'youtube' | 'tiktok' | 'instagram' | 'facebook';
-export type QuestType = 'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost' | 'dm_share'; // erweiterbar: | 'subscribe'
+export type QuestType = 'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost' | 'dm_share' | 'share'; // erweiterbar: | 'subscribe'
 
 export interface QuestIndexEntry {
   id: string;

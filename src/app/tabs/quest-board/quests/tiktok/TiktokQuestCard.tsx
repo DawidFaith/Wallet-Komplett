@@ -36,7 +36,7 @@ export default function TiktokQuestCard({ quest, isCompleted, isVerified = true,
           className="object-cover"
         />
         <div className="absolute top-2 left-2 bg-cyan-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-          <SiTiktok size={10} /> {quest.type === 'secret' ? 'Secret' : quest.type === 'engagement' ? 'Engagement' : 'Kommentar'}
+          <SiTiktok size={10} /> {quest.type === 'secret' ? 'Secret' : quest.type === 'engagement' ? 'Engagement' : quest.type === 'like' ? 'Like' : quest.type === 'save' ? 'Speichern' : quest.type === 'share' ? 'Teilen' : 'Kommentar'}
         </div>
         <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
           <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
@@ -78,7 +78,7 @@ export default function TiktokQuestCard({ quest, isCompleted, isVerified = true,
         </div>
 
         <p className="text-zinc-400 text-xs">
-          Aufgabe: <span className="text-zinc-300">{quest.description || (quest.type === 'secret' ? '🔑 Finde den geheimen Code im Video und gib ihn ein!' : '💬 Schreibe einen positiven Kommentar unter dieses TikTok-Video!')}</span>
+          Aufgabe: <span className="text-zinc-300">{quest.description || (quest.type === 'secret' ? '🔑 Finde den geheimen Code im Video und gib ihn ein!' : quest.type === 'share' ? '🔁 Teile dieses TikTok-Video und beweise es mit deinem Originalsound!' : '💬 Schreibe einen positiven Kommentar unter dieses TikTok-Video!')}</span>
         </p>
 
         {isCompleted ? (
