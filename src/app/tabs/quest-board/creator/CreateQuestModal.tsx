@@ -66,7 +66,7 @@ export default function CreateQuestModal({
   const [platform, setPlatform] = useState<'youtube' | 'tiktok' | 'instagram' | 'facebook'>(
     verified.youtube ? 'youtube' : verified.tiktok ? 'tiktok' : verified.instagram ? 'instagram' : verified.facebook ? 'facebook' : 'youtube'
   );
-  const [questType, setQuestType] = useState<'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost' | 'dm_share'>('comment');
+  const [questType, setQuestType] = useState<'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost' | 'dm_share' | 'share'>('comment');
   const [secretCode, setSecretCode] = useState('');
   const [durationHours, setDurationHours] = useState('24');
   // freie Dauer-Eingabe
@@ -96,6 +96,7 @@ export default function CreateQuestModal({
     qt: typeof questType,
   ): number => {
     if (qt === 'dm_share')   return 120; // Story = höchste Reichweite, persönliche Empfehlung
+    if (qt === 'share')      return 100; // TikTok-Share = sehr hohe Reichweite
     if (qt === 'repost')     return 80;  // Permanenter Post, alle Follower sehen ihn
     if (qt === 'engagement') return 60;  // Like+Save = starkes Algorithmus-Signal
     if (qt === 'comment')    return 40;  // Sichtbar für andere, Algorithmus-Boost
@@ -291,6 +292,8 @@ export default function CreateQuestModal({
             ? '👍 Like, 🔄 Teile und 🔖 Speichere dieses TikTok-Video!'
             : questType === 'secret'
             ? '🔑 Finde den geheimen Code im TikTok-Video und gib ihn ein!'
+            : questType === 'share'
+            ? '🔁 Teile dieses TikTok-Video und beweise es mit deinem Originalton!'
             : '💬 Schreibe einen positiven Kommentar unter dieses TikTok-Video!'
           : platform === 'instagram'
           ? questType === 'engagement'
@@ -585,12 +588,25 @@ export default function CreateQuestModal({
                 >
                   <FaThumbsUp size={12} /><FaShareAlt size={12} /><FaBookmark size={12} /> Engagement
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setQuestType('share')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
+                    questType === 'share'
+                      ? 'bg-green-600 border-green-500 text-white'
+                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-green-600'
+                  }`}
+                >
+                  🔁 Teilen
+                </button>
               </div>
               <p className="text-zinc-500 text-xs mt-1">
                 {questType === 'engagement'
                   ? 'Fan muss liken, teilen und speichern. Jede Aktion = 1/3 des Rewards. Teilbelohnung möglich.'
                   : questType === 'secret'
                   ? 'Fan gibt einen Code ein, der im TikTok-Video versteckt ist. Kein API-Aufruf nötig.'
+                  : questType === 'share'
+                  ? 'Doppel-Verifizierung: Share-Count steigt + Originalton im Fan-Profil nachweisbar.'
                   : 'API prüft via Kommentare ob der Fan kommentiert hat.'}
               </p>
             </div>
