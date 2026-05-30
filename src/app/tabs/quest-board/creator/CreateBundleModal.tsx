@@ -64,7 +64,7 @@ const TYPE_ICONS: Record<QuestType, React.ReactNode> = {
 const PLATFORM_TYPES: Record<Platform, QuestType[]> = {
   youtube:   ['comment', 'like', 'secret'],
   instagram: ['like', 'comment', 'save', 'repost', 'dm_share', 'secret'],
-  tiktok:    ['like', 'save', 'comment', 'secret'],
+  tiktok:    ['like', 'save', 'comment', 'share', 'secret'],
   facebook:  ['like', 'comment', 'secret'],
 };
 
