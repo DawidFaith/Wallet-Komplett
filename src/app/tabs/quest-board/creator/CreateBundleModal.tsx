@@ -116,6 +116,10 @@ export default function CreateBundleModal({
   // Video-Thumbnail (aus Picker)
   const [videoThumbnail, setVideoThumbnail] = useState('');
 
+  // Platform-Nutzerzahl für Bonus-Budget-Berechnung
+  const [platformUserCount, setPlatformUserCount] = useState<number>(0);
+  const [loadingPlatformUsers, setLoadingPlatformUsers] = useState(false);
+
   // Media-Picker
   const [availableQuestMedia, setAvailableQuestMedia] = useState<AvailableQuestMediaItem[]>([]);
   const [loadingQuestMedia, setLoadingQuestMedia]     = useState(false);
@@ -157,7 +161,22 @@ export default function CreateBundleModal({
     setAvailableIgMedia([]);
     setAvailableFbMedia([]);
     setQuestMediaError('');
+    setPlatformUserCount(0);
   }, [open]);
+
+  // Platform-Nutzerzahl laden
+  const fetchPlatformUserCount = async (p: Platform) => {
+    setLoadingPlatformUsers(true);
+    try {
+      const res = await fetch(`/api/quest-bundles/platform-stats?platform=${p}`);
+      const data = await res.json() as { userCount?: number };
+      setPlatformUserCount(data.userCount ?? 0);
+    } catch {
+      setPlatformUserCount(0);
+    } finally {
+      setLoadingPlatformUsers(false);
+    }
+  };
 
   // Media laden wenn Plattform wechselt
   useEffect(() => {
@@ -171,6 +190,7 @@ export default function CreateBundleModal({
     if (platform === 'youtube' || platform === 'tiktok') fetchQuestMedia();
     else if (platform === 'instagram') fetchIgMedia();
     else if (platform === 'facebook') fetchFbMedia();
+    fetchPlatformUserCount(platform);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [platform, open]);
 
@@ -224,7 +244,11 @@ export default function CreateBundleModal({
   const hasDmShare = items.some((i) => i.questType === 'dm_share');
   // Level-Bonus-Reserve: 100 % des Reward-Pools (maximale Default-Stufe)
   const levelBonusReserve = Math.round(rewardNum * maxNum * 100) / 100;
-  const totalBudget = Math.round((rewardNum * maxNum + bonusNum * maxNum + levelBonusReserve) * 100) / 100;
+  // Bonus-Budget: min(maxTeilnehmer, Platform-Nutzer) × 1.02 Puffer
+  // Wenn noch keine Nutzerzahl geladen → Fallback auf maxNum
+  const effectiveBonusParticipants = platformUserCount > 0 ? Math.min(maxNum, platformUserCount) : maxNum;
+  const bonusBudgetLocked = Math.round(bonusNum * effectiveBonusParticipants * 1.02 * 100) / 100;
+  const totalBudget = Math.round((rewardNum * maxNum + bonusBudgetLocked + levelBonusReserve) * 100) / 100;
   const hasEnough   = creatorBalance >= totalBudget;
 
   const handleCreate = async () => {
@@ -757,22 +781,47 @@ export default function CreateBundleModal({
             </div>
 
             {/* Gesamtkosten */}
-            <div className={`rounded-xl px-3 py-2.5 border flex items-center justify-between ${
+            <div className={`rounded-xl px-3 py-2.5 border space-y-1 ${
               hasEnough ? 'bg-green-950/30 border-green-800/40' : 'bg-red-950/30 border-red-800/40'
             }`}>
-              <div>
+              <div className="flex items-center justify-between">
                 <p className="text-zinc-400 text-xs">Budget sperren</p>
                 {!hasEnough && (
                   <button onClick={onOpenDeposit} className="text-blue-400 text-xs hover:underline">Jetzt einzahlen →</button>
                 )}
               </div>
-              <div className="text-right">
-                <p className={`font-bold font-mono text-sm ${hasEnough ? 'text-green-400' : 'text-red-400'}`}>
-                  {totalBudget.toFixed(2)} D.FAITH
-                </p>
-                <p className={`text-xs font-mono ${hasEnough ? 'text-green-600' : 'text-red-400'}`}>
-                  Guthaben: {creatorBalance.toFixed(2)}
-                </p>
+              {/* Budget-Aufschlüsselung */}
+              <div className="space-y-0.5 text-xs text-zinc-500">
+                <div className="flex justify-between">
+                  <span>Rewards ({rewardNum.toFixed(2)} × {maxNum})</span>
+                  <span className="font-mono">{(rewardNum * maxNum).toFixed(2)}</span>
+                </div>
+                {bonusNum > 0 && (
+                  <div className="flex justify-between items-center gap-1">
+                    <span className="flex items-center gap-1">
+                      Bonus-Reserve
+                      {loadingPlatformUsers
+                        ? <span className="text-zinc-600">(lädt…)</span>
+                        : <span className="text-zinc-600">({effectiveBonusParticipants} Nutzer × 1.02)</span>
+                      }
+                    </span>
+                    <span className="font-mono">{bonusBudgetLocked.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span>Level-Bonus-Reserve (100 %)</span>
+                  <span className="font-mono">{levelBonusReserve.toFixed(2)}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between border-t border-white/[0.06] pt-1 mt-0.5">
+                <div>
+                  <p className={`font-bold font-mono text-sm ${hasEnough ? 'text-green-400' : 'text-red-400'}`}>
+                    {totalBudget.toFixed(2)} D.FAITH
+                  </p>
+                  <p className={`text-xs font-mono ${hasEnough ? 'text-green-600' : 'text-red-400'}`}>
+                    Guthaben: {creatorBalance.toFixed(2)}
+                  </p>
+                </div>
               </div>
             </div>
 

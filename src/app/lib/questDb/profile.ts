@@ -299,6 +299,28 @@ export async function addUserXp(walletAddress: string, xp: number): Promise<void
   `;
 }
 
+// ─── Platform-Nutzerzählung ───────────────────────────────────────────────────
+
+/**
+ * Gibt die Anzahl der verifizierten Nutzer für eine Plattform zurück.
+ * Wird für die Bonus-Budget-Berechnung beim Bundle-Erstellen verwendet.
+ */
+export async function getPlatformUserCount(platform: Platform): Promise<number> {
+  const sql = getDb();
+  let rows: { count: string | number }[];
+  if (platform === 'tiktok') {
+    rows = await sql`SELECT COUNT(*) AS count FROM user_profiles WHERE tiktok_verified = true` as any;
+  } else if (platform === 'instagram') {
+    rows = await sql`SELECT COUNT(*) AS count FROM user_profiles WHERE instagram_verified = true` as any;
+  } else if (platform === 'facebook') {
+    rows = await sql`SELECT COUNT(*) AS count FROM user_profiles WHERE facebook_verified = true` as any;
+  } else {
+    // youtube: Nutzer mit verknüpftem Channel
+    rows = await sql`SELECT COUNT(*) AS count FROM youtube_bindings` as any;
+  }
+  return rows.length > 0 ? Number(rows[0].count) : 0;
+}
+
 // ─── Admin ────────────────────────────────────────────────────────────────────
 
 export async function getAllUserProfiles(): Promise<AdminUserRow[]> {

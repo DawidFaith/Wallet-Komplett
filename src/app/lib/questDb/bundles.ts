@@ -32,6 +32,9 @@ export async function createQuestBundle(
     levelBonusBudget?: number;
     secretCodes?: Record<string, string>;
     storyToken?: string | null;
+    /** Gesperrtes Bonus-Budget (inkl. Puffer). Wenn angegeben, wird dieser Wert
+     *  statt bundleCompletionBonus × maxParticipants als bonus_budget_remaining gesetzt. */
+    bonusBudgetLocked?: number;
   },
   itemTypes: Array<{ questType: QuestType; reachWeight: number }>,
 ): Promise<{ bundleId: string; storyToken: string | null }> {
@@ -42,7 +45,11 @@ export async function createQuestBundle(
   let generatedStoryToken: string | null = null;
 
   const totalWeight = itemTypes.reduce((s, i) => s + i.reachWeight, 0);
-  const bonusBudgetTotal = Math.round(params.bundleCompletionBonus * params.maxParticipants * 100) / 100;
+  // Wenn ein explizit berechnetes Budget übergeben wurde (auf Basis Platform-Nutzer + 2 %),
+  // wird dieses verwendet – andernfalls Fallback auf maxParticipants.
+  const bonusBudgetTotal = params.bonusBudgetLocked != null
+    ? Math.round(params.bonusBudgetLocked * 100) / 100
+    : Math.round(params.bundleCompletionBonus * params.maxParticipants * 100) / 100;
 
   // Bundle-Datensatz anlegen
   await sql`
