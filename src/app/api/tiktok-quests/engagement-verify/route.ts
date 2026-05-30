@@ -130,6 +130,11 @@ export async function POST(req: NextRequest) {
 
     // ── action: start ────────────────────────────────────────────────────────
     if (action === 'start') {
+      // Bereits laufende Verifizierung? Timer nicht zurücksetzen.
+      const existing = await getTikTokEngagementVerification(questId, normalized);
+      if (existing && new Date(existing.expiresAt) > new Date()) {
+        return NextResponse.json({ step: 'pending', expiresAt: existing.expiresAt });
+      }
       const stats = await fetchVideoStats(quest.videoId);
       if (!stats) {
         return NextResponse.json(

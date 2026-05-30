@@ -153,6 +153,12 @@ export async function POST(req: NextRequest) {
 
     // ── START ────────────────────────────────────────────────────────────────
     if (action === 'start') {
+      // Bereits laufende Verifizierung? Timer nicht zurücksetzen.
+      const existing = await getTikTokEngagementVerification(questId, normalized);
+      if (existing && new Date(existing.expiresAt) > new Date()) {
+        const currentStats = await fetchVideoStats(resolvedVideoId);
+        return NextResponse.json({ step: 'pending', expiresAt: existing.expiresAt, musicId: currentStats?.musicId ?? '' });
+      }
       const stats = await fetchVideoStats(resolvedVideoId);
       if (!stats) {
         return NextResponse.json({ error: 'Video-Stats nicht abrufbar. Bitte erneut versuchen.' }, { status: 500 });
