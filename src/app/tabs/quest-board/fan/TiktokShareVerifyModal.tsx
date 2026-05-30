@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { FaExternalLinkAlt, FaRedo, FaStar } from 'react-icons/fa';
-import { FiShare2, FiMusic } from 'react-icons/fi';
+import { FiShare2 } from 'react-icons/fi';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
 import { formatCredits } from '../utils';
@@ -31,7 +31,6 @@ export default function TiktokShareVerifyModal({
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [shareVerified, setShareVerified] = useState(false);
-  const [soundVerified, setSoundVerified] = useState(false);
   const [rewardAmount, setRewardAmount] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -86,11 +85,9 @@ export default function TiktokShareVerifyModal({
           } else if (data.notYet) {
             setExpiresAt(data.expiresAt ?? expiresAt);
             setShareVerified(data.shareVerified ?? false);
-            setSoundVerified(data.soundVerified ?? false);
             setStep('not_yet');
           } else if (data.success) {
             setShareVerified(true);
-            setSoundVerified(true);
             setRewardAmount(data.rewardAmount);
             setStep('success');
             onCompleted(data.rewardAmount);
@@ -173,38 +170,37 @@ export default function TiktokShareVerifyModal({
             <p className="text-white font-semibold text-sm">So verifizierst du den Share:</p>
             <ol className="text-zinc-300 text-sm space-y-2 list-decimal list-inside">
               <li>Öffne das Video auf TikTok und tippe auf <strong>Teilen</strong></li>
-              <li>Wähle <strong>Repost</strong> oder teile es in deiner Story / als Video</li>
+              <li>Wähle <strong>Repost</strong> – falls du bereits repostet hast, entferne den Repost zuerst und teile erneut</li>
               <li>Komm zurück und tippe auf <strong>Prüfen</strong></li>
             </ol>
           </div>
 
           {/* Verifizierungsstatus */}
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { key: 'share', icon: <FiShare2 size={16} />, label: 'Share erkannt', color: 'text-purple-400', verified: shareVerified },
-              { key: 'sound', icon: <FiMusic size={16} />, label: 'Sound im Profil', color: 'text-cyan-400', verified: soundVerified },
-            ].map(({ key, icon, label, color, verified }) => (
-              <div
-                key={key}
-                className={`flex items-center gap-2 rounded-xl px-3 py-2.5 border transition-all ${
-                  verified
-                    ? 'bg-green-900/30 border-green-700/40 text-green-400'
-                    : 'bg-zinc-800 border-zinc-700 text-zinc-500'
-                }`}
-              >
-                <span className={verified ? 'text-green-400' : color}>{icon}</span>
-                <span className="text-xs font-medium">{label}</span>
-              </div>
-            ))}
+          <div className="flex gap-3">
+            <div
+              className={`flex items-center gap-2 rounded-xl px-3 py-2.5 border transition-all ${
+                shareVerified
+                  ? 'bg-green-900/30 border-green-700/40 text-green-400'
+                  : 'bg-zinc-800 border-zinc-700 text-zinc-500'
+              }`}
+            >
+              <FiShare2 size={16} className={shareVerified ? 'text-green-400' : 'text-purple-400'} />
+              <span className="text-xs font-medium">Share erkannt</span>
+            </div>
           </div>
 
           {step === 'not_yet' && (
-            <div className="bg-orange-900/30 border border-orange-700/40 rounded-xl p-3">
+            <div className="bg-orange-900/30 border border-orange-700/40 rounded-xl p-3 space-y-1">
               <p className="text-orange-300 text-sm">
                 {!shareVerified
                   ? 'Share noch nicht erkannt. Teile das Video und warte kurz.'
-                  : 'Share erkannt! Kein Video mit dem Originalsound in deinem Profil gefunden. Stelle sicher, dass du das Video als Repost geteilt hast.'}
+                  : 'Share erkannt! Verifizierung läuft…'}
               </p>
+              {!shareVerified && (
+                <p className="text-zinc-400 text-xs">
+                  Falls du das Video bereits repostet hast, entferne den Repost zuerst und teile ihn dann erneut. Nur so kann die Verifizierung ein neues Delta erkennen.
+                </p>
+              )}
             </div>
           )}
 

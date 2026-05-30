@@ -80,25 +80,16 @@ async function fetchSecUid(uniqueId: string): Promise<string | null> {
   } catch { return null; }
 }
 
-/** Letzte Posts des Users durchsuchen ob einer die gesuchte Music-ID enthält (max. 3 Seiten à 20) */
-async function findUserVideoWithMusic(secUid: string, musicId: string): Promise<boolean> {
-  let cursor = 0;
-  for (let page = 0; page < 3; page++) {
+/** Prüft ob der User das Video mit der gegebenen ID repostet hat */
+async function checkUserReposted(secUid: string, videoId: string): Promise<boolean> {
+  try {
+    // Repost-Feed liegt direkt auf Root-Ebene (nicht unter .data)
     const data = await rapidGet(
-      `/api/user/posts?secUid=${encodeURIComponent(secUid)}&count=20&cursor=${cursor}`
-    ) as { data?: { itemList?: { music?: { id?: string } }[]; hasMore?: boolean; cursor?: number } };
-
-    const items = data.data?.itemList ?? [];
-    if (items.length === 0) break;
-
-    for (const item of items) {
-      if (item.music?.id === musicId) return true;
-    }
-
-    if (!data.data?.hasMore) break;
-    cursor = data.data?.cursor ?? cursor + 20;
-  }
-  return false;
+      `/api/user/repost?secUid=${encodeURIComponent(secUid)}&count=20&cursor=0`
+    ) as { itemList?: { id?: string }[]; statusCode?: number };
+    const items = data.itemList ?? [];
+    return items.some((item) => item.id === videoId);
+  } catch { return false; }
 }
 
 // ─── Route Handler ────────────────────────────────────────────────────────────
@@ -156,17 +147,11 @@ export async function POST(req: NextRequest) {
       // Bereits laufende Verifizierung? Timer nicht zurücksetzen.
       const existing = await getTikTokEngagementVerification(questId, normalized);
       if (existing && new Date(existing.expiresAt) > new Date()) {
-        const currentStats = await fetchVideoStats(resolvedVideoId);
-        return NextResponse.json({ step: 'pending', expiresAt: existing.expiresAt, musicId: currentStats?.musicId ?? '' });
-      }
-      const stats = await fetchVideoStats(resolvedVideoId);
-      if (!stats) {
-        return NextResponse.json({ error: 'Video-Stats nicht abrufbar. Bitte erneut versuchen.' }, { status: 500 });
+        return NextResponse.json({ step: 'pending', expiresAt: existing.expiresAt });
       }
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-      // baselineLikes/Saves auf 0, wir nutzen shares
-      await upsertTikTokEngagementVerification(questId, normalized, resolvedVideoId, 0, stats.shares, 0, expiresAt);
-      return NextResponse.json({ step: 'pending', expiresAt, musicId: stats.musicId });
+      await upsertTikTokEngagementVerification(questId, normalized, resolvedVideoId, 0, 0, 0, expiresAt);
+      return NextResponse.json({ step: 'pending', expiresAt });
     }
 
     // ── CHECK ────────────────────────────────────────────────────────────────
@@ -180,43 +165,24 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ expired: true });
       }
 
-      // 1. Share-Count-Delta prüfen
-      const current = await fetchVideoStats(resolvedVideoId);
-      if (!current) {
-        return NextResponse.json({ error: 'Video-Stats nicht abrufbar. Bitte erneut versuchen.' }, { status: 500 });
+      // Repost direkt im Repost-Feed des Users prüfen
+      const secUid = await fetchSecUid(profile.tiktokHandle);
+      let repostVerified = false;
+      if (secUid) {
+        repostVerified = await checkUserReposted(secUid, resolvedVideoId);
       }
-      const shareVerified = current.shares > verification.baselineShares;
 
-      if (!shareVerified) {
+      if (!repostVerified) {
         return NextResponse.json({
           success: false,
           notYet: true,
           shareVerified: false,
-          soundVerified: false,
-          message: 'Share noch nicht erkannt. Teile das Video und prüfe erneut.',
+          message: 'Repost noch nicht erkannt. Teile das Video via Repost und prüfe erneut.',
           expiresAt: verification.expiresAt,
         });
       }
 
-      // 2. Sound-Match beim User prüfen
-      const secUid = await fetchSecUid(profile.tiktokHandle);
-      let soundVerified = false;
-      if (secUid && current.musicId) {
-        soundVerified = await findUserVideoWithMusic(secUid, current.musicId);
-      }
-
-      if (!soundVerified) {
-        return NextResponse.json({
-          success: false,
-          notYet: true,
-          shareVerified: true,
-          soundVerified: false,
-          message: 'Share erkannt, aber kein Video mit dem Originalsound in deinem Profil gefunden. Stelle sicher, dass du das Video geteilt (nicht nur geliked) hast.',
-          expiresAt: verification.expiresAt,
-        });
-      }
-
-      // Beide Checks bestanden → Abschluss speichern
+      // Repost bestätigt → Abschluss speichern
       const now = new Date().toISOString();
       const completion: QuestCompletion = {
         questId,
@@ -225,7 +191,7 @@ export async function POST(req: NextRequest) {
         channelName: profile.tiktokHandle,
         platform: 'tiktok',
         commentId: `tiktok-share-${normalized}-${questId}`,
-        commentText: `Share:true;Sound:${current.musicId}`,
+        commentText: `Repost:true`,
         rewardAmount: quest.rewardAmount,
         rewardPaid: false,
         completedAt: now,
