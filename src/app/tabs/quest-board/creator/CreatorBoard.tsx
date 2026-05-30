@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { FaPlus, FaSync, FaTrophy, FaExternalLinkAlt, FaTimes, FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaCopy, FaCheck, FaLink, FaLayerGroup } from 'react-icons/fa';
 import CreditsBox from '../components/CreditsBox';
 import DepositModal from './DepositModal';
-import CreateQuestModal from './CreateQuestModal';
 import CreateBundleModal from './CreateBundleModal';
 import type { QuestIndexEntry, YouTubeBinding, VerifiedPlatforms, Platform, QuestType } from '../types';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
@@ -45,7 +44,6 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
   const tokenName = rewardToken ?? 'D.FAITH';
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showBundleModal, setShowBundleModal] = useState(false);
   const [bundles, setBundles] = useState<QuestBundleWithItems[]>([]);
   const [bundlesLoading, setBundlesLoading] = useState(false);
@@ -164,13 +162,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         <div className="flex gap-2">
           <button
             onClick={() => setShowBundleModal(true)}
-            className="bg-purple-700 hover:bg-purple-600 text-white font-semibold px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
-          >
-            <FaLayerGroup size={12} /> Bundle
-          </button>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-red-600 hover:bg-red-500 text-white font-semibold px-4 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
+            className="bg-purple-700 hover:bg-purple-600 text-white font-semibold px-4 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
           >
             <FaPlus size={12} /> Quest erstellen
           </button>
@@ -350,15 +342,6 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       )}
 
       {/* Modals */}
-      <CreateQuestModal
-        open={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        walletAddress={walletAddress}
-        creatorBalance={creatorBalance}
-        verified={verified}
-        onCreated={() => { loadCreatorQuests(); loadCreatorBalance(); }}
-        onOpenDeposit={() => setShowDeposit(true)}
-      />
       <CreateBundleModal
         open={showBundleModal}
         onClose={() => setShowBundleModal(false)}

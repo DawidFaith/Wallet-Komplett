@@ -377,8 +377,15 @@ export default function CreateBundleModal({
     );
   }
 
+  const isBundle = items.length >= 2;
+  const modalTitle = step === 1
+    ? 'Quest erstellen'
+    : isBundle
+      ? 'Bundle Quest erstellen'
+      : 'Quest erstellen';
+
   return (
-    <Modal open={open} onClose={onClose} title="Bundle Quest erstellen" disableBackdropClose>
+    <Modal open={open} onClose={onClose} title={modalTitle} disableBackdropClose>
       <div className="space-y-5">
 
         {/* Schritt-Anzeige */}
@@ -642,7 +649,7 @@ export default function CreateBundleModal({
         {step === 2 && (
           <div className="space-y-4">
             <p className="text-zinc-400 text-sm">
-              Wähle die Aktionen für dein Bundle. Die <span className="text-purple-400 font-semibold">Algorythmus-Signalstärke</span> ist fest und bestimmt den Anteil am Gesamt-Reward.
+              Wähle eine oder mehrere Aktionen. Bei 2+ Typen entsteht ein <span className="text-purple-400 font-semibold">Bundle</span> – der Reward wird nach Algorythmus-Signalstärke aufgeteilt.
             </p>
 
             {/* Tipp */}
@@ -725,7 +732,7 @@ export default function CreateBundleModal({
                 ← Zurück
               </button>
               <button
-                onClick={() => items.length >= 2 ? setStep(3) : setError('Mindestens 2 Typen auswählen für ein Bundle')}
+                onClick={() => items.length >= 1 ? setStep(3) : setError('Mindestens einen Quest-Typ auswählen')}
                 className="flex-1 bg-purple-600 hover:bg-purple-500 text-white rounded-xl py-3 font-semibold text-sm"
               >
                 Weiter →
@@ -849,10 +856,10 @@ export default function CreateBundleModal({
                   }
                   void handleCreate();
                 }}
-                disabled={creating || !hasEnough || items.length < 2}
+                disabled={creating || !hasEnough || items.length < 1}
                 className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-xl py-2.5 font-semibold text-sm transition-colors"
               >
-                {creating ? 'Erstelle...' : hasDmShare ? 'Weiter zu Schritt 4 →' : '🎯 Bundle erstellen'}
+                {creating ? 'Erstelle...' : hasDmShare ? 'Weiter zu Schritt 4 →' : items.length >= 2 ? '🎯 Bundle erstellen' : '🎯 Quest erstellen'}
               </button>
             </div>
           </div>
