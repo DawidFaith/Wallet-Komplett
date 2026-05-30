@@ -242,7 +242,7 @@ export default function CreateBundleModal({
 
   // Reward-Berechnung
   const rewardNum  = Math.max(0.01, Number(reward)  || 0);
-  const bonusNum   = Math.max(0,    Number(bonus)    || 0);
+  const bonusNum   = items.length >= 2 ? Math.max(0, Number(bonus) || 0) : 0;
   const maxNum     = Math.max(1,    Number(maxP)     || 10);
   const totalWeight = items.reduce((s, i) => s + i.reachWeight, 0);
   const hasDmShare = items.some((i) => i.questType === 'dm_share');
@@ -748,18 +748,25 @@ export default function CreateBundleModal({
             {/* 4 Felder kompakt */}
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'Reward/Fan (D.FAITH)', val: reward, set: setReward, min: '0.01', stp: '0.01' },
-                { label: 'Abschluss-Bonus', val: bonus, set: setBonus, min: '0', stp: '0.01' },
-                { label: 'Max. Teilnehmer', val: maxP, set: setMaxP, min: '1', stp: '1' },
-                { label: 'Laufzeit (h, 0=∞)', val: duration, set: setDuration, min: '0', stp: '1' },
-              ].map(({ label, val, set, min, stp }) => (
+                { label: 'Reward/Fan (D.FAITH)', val: reward, set: setReward, min: '0.01', stp: '0.01', disabled: false },
+                { label: 'Abschluss-Bonus', val: bonus, set: setBonus, min: '0', stp: '0.01', disabled: items.length < 2 },
+                { label: 'Max. Teilnehmer', val: maxP, set: setMaxP, min: '1', stp: '1', disabled: false },
+                { label: 'Laufzeit (h, 0=∞)', val: duration, set: setDuration, min: '0', stp: '1', disabled: false },
+              ].map(({ label, val, set, min, stp, disabled }) => (
                 <div key={label} className="space-y-0.5">
-                  <label className="text-zinc-500 text-[11px]">{label}</label>
+                  <label className={`text-[11px] ${disabled ? 'text-zinc-600' : 'text-zinc-500'}`}>
+                    {label}{disabled ? ' (nur bei Bundle)' : ''}
+                  </label>
                   <input
                     type="number" min={min} step={stp}
-                    value={val}
-                    onChange={(e) => set(e.target.value)}
-                    className="w-full bg-zinc-800/60 border border-zinc-700 rounded-lg px-3 py-1.5 text-white text-sm outline-none focus:border-purple-500"
+                    value={disabled ? '0' : val}
+                    disabled={disabled}
+                    onChange={(e) => { if (!disabled) set(e.target.value); }}
+                    className={`w-full rounded-lg px-3 py-1.5 text-sm outline-none border ${
+                      disabled
+                        ? 'bg-zinc-900/40 border-zinc-800 text-zinc-600 cursor-not-allowed'
+                        : 'bg-zinc-800/60 border-zinc-700 text-white focus:border-purple-500'
+                    }`}
                   />
                 </div>
               ))}
