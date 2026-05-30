@@ -262,7 +262,7 @@ export default function QuestBoard({ language: _language, artistWallet, filterAr
         {/* ─── Inhalt ─── */}
         {view === 'artist' ? (
           <CreatorBoard walletAddress={account.address} binding={binding} verified={verified} rewardToken={myRewardToken} />
-        ) : !anyVerified ? (
+        ) : !anyVerified && !internalFilterArtist && !filterArtist ? (
           <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-16 space-y-4">
             <FaTrophy size={40} className="text-yellow-400 opacity-80" />
             <h2 className="text-white text-xl font-bold">Social-Konto verknüpfen</h2>

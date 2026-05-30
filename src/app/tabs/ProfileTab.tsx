@@ -109,6 +109,15 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
   const [artists, setArtists] = useState<ArtistEntry[]>([]);
   const [selectedArtist, setSelectedArtist] = useState<ArtistEntry | null>(null);
   const [claiming, setClaiming] = useState(false);
+  const PROFILE_RESTORE_KEY = 'dfaith_profile_restore';
+  // Hilfsfunktion: aktuellen State vor Navigation speichern
+  const saveStateForRestore = () => {
+    if (typeof window === 'undefined') return;
+    sessionStorage.setItem(PROFILE_RESTORE_KEY, JSON.stringify({
+      artistWallet: selectedArtist?.walletAddress ?? null,
+      scrollY: window.scrollY,
+    }));
+  };
   const [claimModal, setClaimModal] = useState<{ sentAmount: number } | null>(null);
   const [repData, setRepData] = useState<{ reputation: number; level: number; levelName: string; progress: number; nextLevelRep: number | null; questRewardBonusPercent: number } | null>(null);
   // Reputation des Users bei ausgewähltem Artist laden
@@ -293,7 +302,27 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
     if (!account?.address) return;
     fetch(`/api/admin/artists?wallet=${account.address}`)
       .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (d?.artists) setArtists(d.artists); })
+      .then((d) => {
+        if (!d?.artists) return;
+        setArtists(d.artists);
+        // Gespeicherten Artist und Scroll-Position wiederherstellen
+        if (typeof window === 'undefined') return;
+        const saved = sessionStorage.getItem('dfaith_profile_restore');
+        if (!saved) return;
+        try {
+          const { artistWallet, scrollY } = JSON.parse(saved) as { artistWallet: string | null; scrollY: number };
+          sessionStorage.removeItem('dfaith_profile_restore');
+          if (artistWallet) {
+            const found = (d.artists as ArtistEntry[]).find((a) => a.walletAddress === artistWallet);
+            if (found) {
+              setSelectedArtist(found);
+              setTimeout(() => window.scrollTo({ top: scrollY, behavior: 'instant' }), 120);
+              return;
+            }
+          }
+          if (scrollY > 0) setTimeout(() => window.scrollTo({ top: scrollY, behavior: 'instant' }), 120);
+        } catch {}
+      })
       .catch(() => {});
   }, [account?.address]);
 
@@ -825,6 +854,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                     <button
                       onClick={() => {
                         if (selectedArtist) {
+                          saveStateForRestore();
                           router.push(`/home?tab=reputation&artist=${encodeURIComponent(selectedArtist.walletAddress)}`);
                         } else {
                           onNavigate('reputation');
@@ -842,6 +872,7 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                   <button
                     onClick={() => {
                       if (selectedArtist) {
+                        saveStateForRestore();
                         router.push(`/home?tab=reputation&artist=${encodeURIComponent(selectedArtist.walletAddress)}`);
                       } else {
                         onNavigate('reputation');
@@ -853,8 +884,8 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                   </button>
                   {selectedArtist && selectedArtist.questCount > 0 && (
                     <button
-                      onClick={() => router.push(`/home?tab=quest-board&artist=${encodeURIComponent(selectedArtist.walletAddress)}`)}
-                      className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs font-semibold transition-colors"
+                      onClick={() => { saveStateForRestore(); router.push(`/home?tab=quest-board&artist=${encodeURIComponent(selectedArtist.walletAddress)}`); }}
+                      className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs font-semibold transition-colors"
                     >
                       <FaTasks size={11} /> {selectedArtist.questCount} Quest{selectedArtist.questCount !== 1 ? 's' : ''}
                     </button>
