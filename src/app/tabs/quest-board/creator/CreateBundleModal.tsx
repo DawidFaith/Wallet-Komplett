@@ -40,13 +40,14 @@ const DEFAULT_WEIGHTS: Record<QuestType, number> = {
   save:       2,
   repost:     3,
   dm_share:   4,
+  share:      4,
   engagement: 2,
   secret:     2,
 };
 
 const TYPE_LABELS: Record<QuestType, string>       = {
   comment: 'Kommentar', like: 'Like', save: 'Speichern',
-  repost: 'Repost', dm_share: 'Story-Share', engagement: 'Engagement', secret: 'Geheimcode',
+  repost: 'Repost', dm_share: 'Story-Share', share: 'Teilen', engagement: 'Engagement', secret: 'Geheimcode',
 };
 
 const TYPE_ICONS: Record<QuestType, React.ReactNode> = {
@@ -55,6 +56,7 @@ const TYPE_ICONS: Record<QuestType, React.ReactNode> = {
   save:       <FaBookmark   size={12} />,
   repost:     <FaShareAlt   size={12} />,
   dm_share:   <FaPaperPlane size={12} />,
+  share:      <FaShareAlt   size={12} />,
   engagement: <FaThumbsUp   size={12} />,
   secret:     <FaKey        size={12} />,
 };
