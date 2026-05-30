@@ -284,6 +284,10 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                       <span className="bg-purple-900/50 border border-purple-700/50 rounded-lg px-2 py-0.5 text-xs text-purple-300 font-semibold flex items-center gap-1">
                         <FaLayerGroup size={9} /> Bundle
                       </span>
+                      <span className="flex items-center gap-1 bg-[#231e12] rounded-lg px-2 py-0.5 text-xs font-medium">
+                        {PLATFORM_ICONS[bundle.platform]}
+                        <span className="text-zinc-300">{PLATFORM_LABELS[bundle.platform]}</span>
+                      </span>
                       <span className={`rounded-full px-2 py-0.5 text-xs ${bundle.isActive ? 'bg-green-900/40 text-green-400' : 'bg-zinc-800 text-zinc-500'}`}>
                         {bundle.isActive ? 'Aktiv' : 'Inaktiv'}
                       </span>
