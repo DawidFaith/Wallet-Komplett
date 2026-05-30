@@ -84,6 +84,7 @@ const TYPE_ICONS: Record<QuestType, React.ReactNode> = {
   save:       <FaBookmark  size={12} />,
   repost:     <FaShareAlt  size={12} />,
   dm_share:   <FaShareAlt  size={12} />,
+  share:      <FaShareAlt  size={12} />,
   engagement: <FaThumbsUp  size={12} />,
   secret:     <FaKey       size={12} />,
 };
