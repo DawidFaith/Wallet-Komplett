@@ -87,25 +87,29 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const poolNum    = Math.max(0.01, Math.round((Number(rewardPoolPerFan)      || 0) * 100) / 100);
-  const bonusNum   = Math.max(0,    Math.round((Number(bundleCompletionBonus) || 0) * 100) / 100);
-  const maxNum     = Math.max(1,    Math.round(Number(maxParticipants)       || 10));
-  // Level-Bonus-Reserve: vom Frontend übergeben oder Fallback 100 % des Reward-Pools
-  const levelBonus = Math.max(0, Math.round((Number(levelBonusBudget) || poolNum * maxNum) * 100) / 100);
+  const poolNum  = Math.max(0.01, Math.round((Number(rewardPoolPerFan)      || 0) * 100) / 100);
+  const bonusNum = Math.max(0,    Math.round((Number(bundleCompletionBonus) || 0) * 100) / 100);
+  const maxNum   = Math.max(1,    Math.round(Number(maxParticipants)       || 10));
 
-  // Bonus-Budget-Reserve: basierend auf verifizierten Platform-Nutzern + 2 % Puffer.
-  // min(maxParticipants, platformUserCount) stellt sicher, dass wir nicht mehr sperren als nötig.
+  // Abschluss-Bonus: unveräändert bonusNum × maxNum (jeder der max. Teilnehmer kann den Bonus bekommen)
+  const abschlussBonusPool = Math.round(bonusNum * maxNum * 100) / 100;
+
+  // Level-Bonus-Reserve: min(maxTeilnehmer, Platform-Nutzer) × 1.02 Puffer
   const platformUserCount = await getPlatformUserCount(platform as Platform);
-  const effectiveBonusParticipants = Math.min(maxNum, platformUserCount > 0 ? platformUserCount : maxNum);
-  const bonusBudgetLocked = Math.round(bonusNum * effectiveBonusParticipants * 1.02 * 100) / 100;
+  const effectiveParticipants = Math.min(maxNum, platformUserCount > 0 ? platformUserCount : maxNum);
+  const levelBonus = Math.max(0, Math.round(
+    (Number(levelBonusBudget) > 0
+      ? Number(levelBonusBudget)
+      : poolNum * effectiveParticipants * 1.02
+    ) * 100) / 100);
 
-  const totalBudget = Math.round((poolNum * maxNum + bonusBudgetLocked + levelBonus) * 100) / 100;
+  const totalBudget = Math.round((poolNum * maxNum + abschlussBonusPool + levelBonus) * 100) / 100;
 
   // Guthaben prüfen
   const credits = await getDfaithCredits(creatorWallet.toLowerCase());
   if (credits < totalBudget) {
     return NextResponse.json({
-      error: `Nicht genug Credits. Du brauchst ${totalBudget.toFixed(2)} D.FAITH (${poolNum.toFixed(2)} × ${maxNum} Reward + ${bonusBudgetLocked.toFixed(2)} Bonus-Reserve [${effectiveBonusParticipants} Nutzer × 1.02] + ${levelBonus.toFixed(2)} Level-Bonus-Reserve), hast aber nur ${credits.toFixed(2)}.`,
+      error: `Nicht genug Credits. Du brauchst ${totalBudget.toFixed(2)} D.FAITH (${poolNum.toFixed(2)} × ${maxNum} Reward + ${abschlussBonusPool.toFixed(2)} Abschluss-Bonus + ${levelBonus.toFixed(2)} Level-Bonus-Reserve [${effectiveParticipants} Nutzer × 1.02]), hast aber nur ${credits.toFixed(2)}.`,
     }, { status: 400 });
   }
 
@@ -181,7 +185,6 @@ export async function POST(req: NextRequest) {
         levelBonusBudget: levelBonus,
         secretCodes: secretCodes ?? {},
         storyToken: storyToken?.trim() || null,
-        bonusBudgetLocked,
       },
       items.map((i) => ({
         questType:   i.questType   as QuestType,

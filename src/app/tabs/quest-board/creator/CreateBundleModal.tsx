@@ -242,13 +242,14 @@ export default function CreateBundleModal({
   const maxNum     = Math.max(1,    Number(maxP)     || 10);
   const totalWeight = items.reduce((s, i) => s + i.reachWeight, 0);
   const hasDmShare = items.some((i) => i.questType === 'dm_share');
-  // Level-Bonus-Reserve: 100 % des Reward-Pools (maximale Default-Stufe)
-  const levelBonusReserve = Math.round(rewardNum * maxNum * 100) / 100;
-  // Bonus-Budget: min(maxTeilnehmer, Platform-Nutzer) × 1.02 Puffer
+  // Effektive Teilnehmeranzahl für Level-Bonus-Reserve: min(maxTeilnehmer, Platform-Nutzer) × 1.02
   // Wenn noch keine Nutzerzahl geladen → Fallback auf maxNum
   const effectiveBonusParticipants = platformUserCount > 0 ? Math.min(maxNum, platformUserCount) : maxNum;
-  const bonusBudgetLocked = Math.round(bonusNum * effectiveBonusParticipants * 1.02 * 100) / 100;
-  const totalBudget = Math.round((rewardNum * maxNum + bonusBudgetLocked + levelBonusReserve) * 100) / 100;
+  // Abschluss-Bonus: unverändert bonusNum × maxNum
+  const abschlussBonusPool = Math.round(bonusNum * maxNum * 100) / 100;
+  // Level-Bonus-Reserve: nach effectiveBonusParticipants × 1.02
+  const levelBonusReserve = Math.round(rewardNum * effectiveBonusParticipants * 1.02 * 100) / 100;
+  const totalBudget = Math.round((rewardNum * maxNum + abschlussBonusPool + levelBonusReserve) * 100) / 100;
   const hasEnough   = creatorBalance >= totalBudget;
 
   const handleCreate = async () => {
@@ -797,19 +798,19 @@ export default function CreateBundleModal({
                   <span className="font-mono">{(rewardNum * maxNum).toFixed(2)}</span>
                 </div>
                 {bonusNum > 0 && (
-                  <div className="flex justify-between items-center gap-1">
-                    <span className="flex items-center gap-1">
-                      Bonus-Reserve
-                      {loadingPlatformUsers
-                        ? <span className="text-zinc-600">(lädt…)</span>
-                        : <span className="text-zinc-600">({effectiveBonusParticipants} Nutzer × 1.02)</span>
-                      }
-                    </span>
-                    <span className="font-mono">{bonusBudgetLocked.toFixed(2)}</span>
+                  <div className="flex justify-between">
+                    <span>Abschluss-Bonus ({bonusNum.toFixed(2)} × {maxNum})</span>
+                    <span className="font-mono">{abschlussBonusPool.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span>Level-Bonus-Reserve (100 %)</span>
+                  <span className="flex items-center gap-1">
+                    Level-Bonus-Reserve
+                    {loadingPlatformUsers
+                      ? <span className="text-zinc-600">(lädt…)</span>
+                      : <span className="text-zinc-600">({effectiveBonusParticipants} Nutzer × 1.02)</span>
+                    }
+                  </span>
                   <span className="font-mono">{levelBonusReserve.toFixed(2)}</span>
                 </div>
               </div>
