@@ -30,6 +30,7 @@ const TYPE_LABELS: Record<QuestType, string> = {
   engagement: 'Engagement',
   repost:     'Repost',
   dm_share:   'Story Quest',
+  share:      'Teilen',
 };
 
 interface CreatorBoardProps {
