@@ -109,7 +109,6 @@ export default function TiktokShareVerifyModal({
       setError('');
       setExpiresAt(null);
       setShareVerified(false);
-      setSoundVerified(false);
       callApi('start');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
