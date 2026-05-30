@@ -332,6 +332,38 @@ export async function getMaxFanBonusPct(artistWallet: string): Promise<number> {
   return bonusPct;
 }
 
+/**
+ * Gibt die Bonus-Prozentsätze der Top-N Fans dieses Artists zurück (absteigende Reputation).
+ * Wird für die präzise Level-Bonus-Reserve-Berechnung beim Bundle-Erstellen verwendet:
+ *   reserve = Σ(rewardPerFan × bonusPct[fan] / 100) × 1.02
+ */
+export async function getTopFanBonusPcts(
+  artistWallet: string,
+  limit: number,
+): Promise<number[]> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT reputation FROM user_reputation
+    WHERE artist_wallet = ${artistWallet.toLowerCase()}
+    ORDER BY reputation DESC
+    LIMIT ${limit}
+  `;
+  if (rows.length === 0) return [];
+
+  const levels = await getReputationLevels(artistWallet);
+  const sorted = [...levels].sort((a, b) => a.minReputation - b.minReputation);
+
+  return (rows as { reputation: string | number }[]).map((r) => {
+    const rep = Number(r.reputation);
+    let bonusPct = 0;
+    for (const lvl of sorted) {
+      if (rep >= lvl.minReputation) bonusPct = lvl.questRewardBonusPercent;
+      else break;
+    }
+    return bonusPct;
+  });
+}
+
 // ─── Reputation Contest ────────────────────────────────────────────────────────
 
 /** Aktiven Contest eines Artists laden */
