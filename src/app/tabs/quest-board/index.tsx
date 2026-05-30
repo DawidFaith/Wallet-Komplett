@@ -57,7 +57,7 @@ function ArtistSelector({ onSelect, walletAddress }: { onSelect: (artist: Artist
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <span className="w-6 h-6 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
+        <span className="w-6 h-6 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
       </div>
     );
   }
@@ -66,7 +66,7 @@ function ArtistSelector({ onSelect, walletAddress }: { onSelect: (artist: Artist
     return (
       <div className="mx-4 bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
         {fetchError
-          ? <span className="text-red-400">Fehler: {fetchError}</span>
+          ? <span className="text-amber-400">Fehler: {fetchError}</span>
           : 'Noch keine Künstler haben aktive Quests.'}
       </div>
     );
@@ -83,14 +83,14 @@ function ArtistSelector({ onSelect, walletAddress }: { onSelect: (artist: Artist
             className="flex flex-col items-center gap-2 shrink-0 w-[68px] group"
           >
             <div className="relative">
-              <div className="w-14 h-14 rounded-full ring-2 ring-red-500/60 shadow-[0_0_10px_rgba(239,68,68,0.25)] transition-all group-hover:scale-105">
+              <div className="w-14 h-14 rounded-full ring-2 ring-amber-500/60 shadow-[0_0_10px_rgba(239,68,68,0.25)] transition-all group-hover:scale-105">
                 {artist.picture
                   ? <img src={artist.picture} alt="" className="w-14 h-14 rounded-full object-cover" />
-                  : <div className="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center">
-                      <FaTrophy className="text-red-400" size={18} />
+                  : <div className="w-14 h-14 rounded-full bg-amber-400/20 flex items-center justify-center">
+                      <FaTrophy className="text-amber-400" size={18} />
                     </div>}
               </div>
-              <div className="absolute -bottom-1 -right-1 bg-red-500 text-white text-[9px] font-black rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+              <div className="absolute -bottom-1 -right-1 bg-amber-400 text-white text-[9px] font-black rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
                 <span className="text-[8px] font-bold">{artist.questCount}</span>
               </div>
             </div>
@@ -212,7 +212,7 @@ export default function QuestBoard({ language: _language, artistWallet, filterAr
     return (
       <div className="w-full flex flex-col min-h-screen bg-[#0e0c0a] text-white">
         <div className="flex-1 flex items-center justify-center">
-          <div className="border-4 border-red-500/30 border-t-red-500 rounded-full w-12 h-12 animate-spin" />
+          <div className="border-4 border-amber-500/30 border-t-amber-500 rounded-full w-12 h-12 animate-spin" />
         </div>
       </div>
     );
@@ -243,14 +243,14 @@ export default function QuestBoard({ language: _language, artistWallet, filterAr
             <div className="flex bg-zinc-900/70 rounded-xl p-1 border border-white/[0.07]">
               <button
                 onClick={() => setView('fan')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${view === 'fan' ? 'bg-red-600 text-white shadow' : 'text-zinc-400 hover:text-white'}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${view === 'fan' ? 'bg-amber-500 text-white shadow' : 'text-zinc-400 hover:text-white'}`}
               >
                 <FaTrophy size={11} />
                 Supporter
               </button>
               <button
                 onClick={() => setView('artist')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${view === 'artist' ? 'bg-red-600 text-white shadow' : 'text-zinc-400 hover:text-white'}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${view === 'artist' ? 'bg-amber-500 text-white shadow' : 'text-zinc-400 hover:text-white'}`}
               >
                 <FaMusic size={11} />
                 Künstler
@@ -271,7 +271,7 @@ export default function QuestBoard({ language: _language, artistWallet, filterAr
               um passende Quests zu sehen.
             </p>
             <div className="flex items-center justify-center gap-4 text-zinc-500 pt-2">
-              <FaYoutube size={22} className="text-red-500" />
+              <FaYoutube size={22} className="text-amber-500" />
               <FaInstagram size={20} className="text-pink-500" />
               <FaTiktok size={18} className="text-cyan-400" />
               <FaFacebookF size={18} className="text-blue-500" />
@@ -299,9 +299,9 @@ export default function QuestBoard({ language: _language, artistWallet, filterAr
                 </button>
                 <div className="flex items-center gap-3 bg-zinc-900/60 border border-white/[0.06] rounded-2xl px-4 py-3">
                   {activeArtist.picture
-                    ? <img src={activeArtist.picture} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-red-500/50" />
-                    : <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center ring-2 ring-red-500/30">
-                        <FaTrophy size={16} className="text-red-400" />
+                    ? <img src={activeArtist.picture} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-amber-500/50" />
+                    : <div className="w-10 h-10 rounded-full bg-amber-400/20 flex items-center justify-center ring-2 ring-amber-500/30">
+                        <FaTrophy size={16} className="text-amber-400" />
                       </div>}
                   <div>
                     <p className="text-white font-semibold text-sm">{activeArtist.name}</p>

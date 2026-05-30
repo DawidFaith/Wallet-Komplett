@@ -148,8 +148,8 @@ export default function DepositModal({ open, onClose, walletAddress, onDeposited
 
       {step === 'error' && (
         <div className="space-y-4">
-          <div className="bg-red-900/30 border border-red-700/40 rounded-xl p-4">
-            <p className="text-red-300 text-sm">{errorMsg}</p>
+          <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-4">
+            <p className="text-amber-300 text-sm">{errorMsg}</p>
           </div>
           <div className="flex gap-2">
             <button onClick={() => setStep('form')} className="flex-1 bg-white/5 border border-white/[0.08] hover:bg-white/10 text-zinc-300 py-3 rounded-xl transition-colors font-semibold text-sm">Zurück</button>

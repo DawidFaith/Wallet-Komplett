@@ -24,8 +24,8 @@ export default function VerifyModal({ quest, loading, result, levelBonusPercent 
   
   const isTikTok = quest?.platform === 'tiktok';
   const PlatformIcon = isTikTok ? SiTiktok : FaYoutube;
-  const platformColor = isTikTok ? 'text-white' : 'text-red-500';
-  const highlightColor = isTikTok ? 'text-white' : 'text-red-400';
+  const platformColor = isTikTok ? 'text-white' : 'text-amber-500';
+  const highlightColor = isTikTok ? 'text-white' : 'text-amber-400';
   const platformName = isTikTok ? 'TikTok Video' : 'Short';
   
   const title = result
@@ -90,8 +90,8 @@ export default function VerifyModal({ quest, loading, result, levelBonusPercent 
               </div>
             </>
           ) : (
-            <div className="bg-red-900/30 border border-red-700/40 rounded-xl p-4">
-              <p className="text-red-300">{result.message}</p>
+            <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-4">
+              <p className="text-amber-300">{result.message}</p>
             </div>
           )}
           <button

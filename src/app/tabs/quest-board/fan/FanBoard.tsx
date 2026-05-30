@@ -370,11 +370,11 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
 
       {/* Claim-Ergebnis */}
       {claimResult && (
-        <div className={`rounded-2xl p-4 border ${claimResult.success ? 'bg-green-900/30 border-green-700/40' : claimResult.fraud ? 'bg-red-950/60 border-red-600/60' : 'bg-red-900/30 border-red-700/40'}`}>
+        <div className={`rounded-2xl p-4 border ${claimResult.success ? 'bg-green-900/30 border-green-700/40' : claimResult.fraud ? 'bg-amber-950/60 border-amber-600/60' : 'bg-amber-900/30 border-amber-700/40'}`}>
           {claimResult.fraud && (
-            <p className="text-red-400 font-black text-xs uppercase tracking-widest mb-1">⛔ Einlösen gesperrt</p>
+            <p className="text-amber-400 font-black text-xs uppercase tracking-widest mb-1">⛔ Einlösen gesperrt</p>
           )}
-          <p className={`font-semibold text-sm ${claimResult.success ? 'text-green-300' : 'text-red-300'}`}>
+          <p className={`font-semibold text-sm ${claimResult.success ? 'text-green-300' : 'text-amber-300'}`}>
             {claimResult.message}
           </p>
           {claimResult.txHash && (
@@ -397,7 +397,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
 
       {(loading || bundlesLoading) ? (
         <div className="flex justify-center py-12">
-          <div className="border-4 border-red-500/30 border-t-red-500 rounded-full w-10 h-10 animate-spin" />
+          <div className="border-4 border-amber-500/30 border-t-amber-500 rounded-full w-10 h-10 animate-spin" />
         </div>
       ) : activeBundles.length === 0 && youtubeQuests.length === 0 && tiktokCommentQuests.length === 0 && tiktokEngagementQuests.length === 0 && instagramQuests.length === 0 && facebookQuests.length === 0 ? (
         <div className="text-center py-12 text-zinc-500">

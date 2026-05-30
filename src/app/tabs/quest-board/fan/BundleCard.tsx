@@ -8,7 +8,7 @@ import type { Platform, QuestType, QuestIndexEntry, VerifiedPlatforms } from '..
 import { formatExpiry } from '../utils';
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
-  youtube:   <FaYoutube   className="text-red-500"  size={12} />,
+  youtube:   <FaYoutube   className="text-amber-500"  size={12} />,
   instagram: <FaInstagram className="text-pink-500" size={12} />,
   tiktok:    <FaTiktok    className="text-white"    size={11} />,
   facebook:  <FaFacebook  className="text-blue-500" size={12} />,
@@ -33,13 +33,13 @@ const PLATFORM_CONFIG: Record<Platform, {
   lockText: string;
 }> = {
   youtube: {
-    outerBorder:  'border-red-700/40',
-    innerBorder:  'border-red-700/50',
-    innerBg:      'from-zinc-900 via-red-950/30 to-zinc-900',
-    button:       'from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 shadow-red-900/30',
-    progress:     'from-red-500 to-rose-400',
-    dot:          'bg-red-400',
-    badge:        'bg-red-600/90',
+    outerBorder:  'border-amber-700/40',
+    innerBorder:  'border-amber-700/50',
+    innerBg:      'from-zinc-900 via-amber-950/30 to-zinc-900',
+    button:       'from-amber-600 to-rose-500 hover:from-amber-500 hover:to-rose-400 shadow-amber-900/30',
+    progress:     'from-amber-500 to-rose-400',
+    dot:          'bg-amber-300',
+    badge:        'bg-amber-500/90',
     badgeIcon:    <FaYoutube size={12} />,
     lockText:     'YouTube verknüpfen',
   },
@@ -262,7 +262,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                   <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/80" />
                   {ytVideoId && (
                     <div className="absolute inset-0 flex items-center justify-center opacity-90 group-hover:opacity-100 transition-opacity">
-                      <div className="w-14 h-14 rounded-full bg-red-600/90 group-hover:scale-110 flex items-center justify-center shadow-2xl transition-transform">
+                      <div className="w-14 h-14 rounded-full bg-amber-500/90 group-hover:scale-110 flex items-center justify-center shadow-2xl transition-transform">
                         <FaYoutube size={26} className="text-white" />
                       </div>
                     </div>
@@ -356,7 +356,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
 
               {canClaimBonus ? (
                 <>
-                  {claimError && <p className="text-red-400 text-xs text-center">{claimError}</p>}
+                  {claimError && <p className="text-amber-400 text-xs text-center">{claimError}</p>}
                   <button
                     onClick={handleClaimBonus}
                     disabled={claiming}
@@ -411,11 +411,11 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                 };
               case 'like':
                 return {
-                  badge: { icon: <FaHeart size={10} />, label: 'Liken', bg: 'bg-red-600/90' },
-                  description: <><FaHeart size={10} className="text-red-400" /> Like dieses Video!</>,
-                  buttonColor: 'bg-gradient-to-r from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 text-white',
-                  progressColor: 'from-red-500 to-rose-500',
-                  bgGradient: 'from-red-900/50',
+                  badge: { icon: <FaHeart size={10} />, label: 'Liken', bg: 'bg-amber-500/90' },
+                  description: <><FaHeart size={10} className="text-amber-400" /> Like dieses Video!</>,
+                  buttonColor: 'bg-gradient-to-r from-amber-600 to-rose-500 hover:from-amber-500 hover:to-rose-400 text-white',
+                  progressColor: 'from-amber-500 to-rose-500',
+                  bgGradient: 'from-amber-900/50',
                 };
               case 'comment':
                 return {

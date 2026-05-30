@@ -25,7 +25,7 @@ export default function Modal({ open, onClose, title, children, disableBackdropC
     >
       <div className="bg-zinc-900 rounded-2xl w-full max-w-lg mx-4 max-h-[88vh] overflow-y-auto border border-zinc-700 shadow-2xl">
         <div className="flex items-center justify-between p-5 border-b border-zinc-700 sticky top-0 bg-zinc-900 z-10">
-          <h3 className="font-bold text-lg text-red-400 truncate pr-4">{title}</h3>
+          <h3 className="font-bold text-lg text-amber-400 truncate pr-4">{title}</h3>
           <button onClick={onClose} className="text-zinc-400 hover:text-white p-1 transition-colors">
             <FaTimes size={16} />
           </button>

@@ -436,7 +436,7 @@ export default function CreateQuestModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Plattform-Auswahl */}
           <div>
-            <label className="text-zinc-300 text-sm font-medium block mb-1.5">Plattform <span className="text-red-400">*</span></label>
+            <label className="text-zinc-300 text-sm font-medium block mb-1.5">Plattform <span className="text-amber-400">*</span></label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -447,8 +447,8 @@ export default function CreateQuestModal({
                   !verified.youtube
                     ? 'bg-[#1a1710] border-white/[0.08] text-zinc-600 cursor-not-allowed opacity-50'
                     : platform === 'youtube'
-                    ? 'bg-red-600 border-red-500 text-white'
-                    : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-red-600'
+                    ? 'bg-amber-500 border-amber-500 text-white'
+                    : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-amber-600'
                 }`}
               >
                 <FaYoutube size={16} /> YouTube
@@ -504,15 +504,15 @@ export default function CreateQuestModal({
           {/* Quest-Typ – nur bei YouTube */}
           {platform === 'youtube' && (
             <div>
-              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Quest-Typ <span className="text-red-400">*</span></label>
+              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Quest-Typ <span className="text-amber-400">*</span></label>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setQuestType('comment')}
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'comment'
-                      ? 'bg-red-600 border-red-500 text-white'
-                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-red-600'
+                      ? 'bg-amber-500 border-amber-500 text-white'
+                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-amber-600'
                   }`}
                 >
                   💬 Kommentar
@@ -553,7 +553,7 @@ export default function CreateQuestModal({
           {/* Quest-Typ – nur bei TikTok */}
           {platform === 'tiktok' && (
             <div>
-              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Quest-Typ <span className="text-red-400">*</span></label>
+              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Quest-Typ <span className="text-amber-400">*</span></label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -615,7 +615,7 @@ export default function CreateQuestModal({
           {/* Quest-Typ – nur bei Instagram */}
           {platform === 'instagram' && (
             <div>
-              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Quest-Typ <span className="text-red-400">*</span></label>
+              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Quest-Typ <span className="text-amber-400">*</span></label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -633,8 +633,8 @@ export default function CreateQuestModal({
                   onClick={() => setQuestType('engagement')}
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                     questType === 'engagement'
-                      ? 'bg-gradient-to-r from-red-600 to-yellow-600 border-red-500 text-white'
-                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-red-600'
+                      ? 'bg-gradient-to-r from-amber-600 to-yellow-600 border-amber-500 text-white'
+                      : 'bg-[#231e12] border-white/[0.1] text-zinc-400 hover:border-amber-600'
                   }`}
                 >
                   ❤️🔖 Like &amp; Speichern
@@ -687,7 +687,7 @@ export default function CreateQuestModal({
           {/* Quest-Typ – nur bei Facebook */}
           {platform === 'facebook' && (
             <div>
-              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Quest-Typ <span className="text-red-400">*</span></label>
+              <label className="text-zinc-300 text-sm font-medium block mb-1.5">Quest-Typ <span className="text-amber-400">*</span></label>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
@@ -778,7 +778,7 @@ export default function CreateQuestModal({
             <div>
               <label className="text-zinc-300 text-sm font-medium block mb-1.5">
                 <FaKey className="inline mr-1 text-yellow-400" size={12} />
-                Geheimer Code <span className="text-red-400">*</span>
+                Geheimer Code <span className="text-amber-400">*</span>
               </label>
               <input
                 value={secretCode}
@@ -786,7 +786,7 @@ export default function CreateQuestModal({
                 placeholder="z.B. DFAITH oder W4LLET"
                 maxLength={50}
                 required
-                className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm placeholder-zinc-500 font-mono tracking-widest uppercase"
+                className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-amber-500 focus:outline-none text-sm placeholder-zinc-500 font-mono tracking-widest uppercase"
               />
               <p className="text-zinc-500 text-xs mt-1">
                 Groß-/Kleinschreibung egal – Fans müssen die Buchstaben nacheinander im Video finden und zusammensetzen.
@@ -796,12 +796,12 @@ export default function CreateQuestModal({
 
           {/* Dauer */}
           <div>
-            <label className="text-zinc-300 text-sm font-medium block mb-1.5">Dauer <span className="text-red-400">*</span></label>
+            <label className="text-zinc-300 text-sm font-medium block mb-1.5">Dauer <span className="text-amber-400">*</span></label>
             <div className="relative">
               <select
                 value={durationHours}
                 onChange={(e) => setDurationHours(e.target.value)}
-                className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm appearance-none cursor-pointer"
+                className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-amber-500 focus:outline-none text-sm appearance-none cursor-pointer"
               >
                 <option value="1">1 Stunde</option>
                 <option value="12">12 Stunden</option>
@@ -819,13 +819,13 @@ export default function CreateQuestModal({
                   value={customDurationValue}
                   onChange={(e) => setCustomDurationValue(e.target.value)}
                   min="1"
-                  className="flex-1 bg-[#231e12] text-white rounded-xl px-4 py-2.5 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm"
+                  className="flex-1 bg-[#231e12] text-white rounded-xl px-4 py-2.5 border border-white/[0.1] focus:border-amber-500 focus:outline-none text-sm"
                   placeholder="z.B. 30"
                 />
                 <select
                   value={customDurationUnit}
                   onChange={(e) => setCustomDurationUnit(e.target.value as 'min' | 'h' | 'd')}
-                  className="bg-[#231e12] text-white rounded-xl px-3 py-2.5 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm cursor-pointer"
+                  className="bg-[#231e12] text-white rounded-xl px-3 py-2.5 border border-white/[0.1] focus:border-amber-500 focus:outline-none text-sm cursor-pointer"
                 >
                   <option value="min">Minuten</option>
                   <option value="h">Stunden</option>
@@ -840,7 +840,7 @@ export default function CreateQuestModal({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-zinc-300 text-sm font-medium">
-                  Post auswählen <span className="text-red-400">*</span>
+                  Post auswählen <span className="text-amber-400">*</span>
                 </label>
                 <button type="button" onClick={fetchAvailableFacebookMedia} disabled={loadingFacebookMedia}
                   className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 disabled:opacity-50">
@@ -964,7 +964,7 @@ export default function CreateQuestModal({
               ) : (
                 <div className="text-center py-4 text-xs bg-[#231e12]/50 rounded-xl border border-white/[0.1]/50 text-zinc-500 mb-3">
                   {questMediaError ? (
-                    <span className="text-red-400">{questMediaError}</span>
+                    <span className="text-amber-400">{questMediaError}</span>
                   ) : (
                     <>Keine Videos gefunden. Prüfe, ob dein {platform === 'youtube' ? 'YouTube-Kanal' : 'TikTok-Account'} korrekt verknüpft ist.</>
                   )}
@@ -988,7 +988,7 @@ export default function CreateQuestModal({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-zinc-300 text-sm font-medium">
-                  Video auswählen <span className="text-red-400">*</span>
+                  Video auswählen <span className="text-amber-400">*</span>
                 </label>
                 <button type="button" onClick={fetchAvailableMedia} disabled={loadingMedia}
                   className="text-xs text-pink-400 hover:text-pink-300 flex items-center gap-1 disabled:opacity-50">
@@ -1091,7 +1091,7 @@ export default function CreateQuestModal({
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); handleDeleteMedia(item.shortcode); }}
-                          className="absolute top-1.5 right-1.5 bg-red-900/90 hover:bg-red-700 text-white rounded-full w-7 h-7 flex items-center justify-center transition-colors shadow-lg"
+                          className="absolute top-1.5 right-1.5 bg-amber-900/90 hover:bg-amber-600 text-white rounded-full w-7 h-7 flex items-center justify-center transition-colors shadow-lg"
                           title="Video entfernen"
                         >
                           <FaTrash size={11} />
@@ -1121,7 +1121,7 @@ export default function CreateQuestModal({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="💬 Schreibe einen positiven Kommentar unter diesen YouTube Short!"
               rows={2}
-              className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm placeholder-zinc-500 resize-none"
+              className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-amber-500 focus:outline-none text-sm placeholder-zinc-500 resize-none"
             />
             <p className="text-zinc-600 text-xs mt-1">Leer lassen → Standardnachricht wird verwendet ({platform === 'tiktok' ? 'TikTok-Kommentar' : 'YouTube-Kommentar/-Like/-Code'})</p>
           </div>
@@ -1138,7 +1138,7 @@ export default function CreateQuestModal({
                   min="0.01"
                   step="0.01"
                   required
-                  className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm pr-16"
+                  className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-amber-500 focus:outline-none text-sm pr-16"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">DFAITH</span>
               </div>
@@ -1163,7 +1163,7 @@ export default function CreateQuestModal({
                 min="1"
                 max="1000"
                 required
-                className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm"
+                className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-amber-500 focus:outline-none text-sm"
               />
               <p className="text-zinc-600 text-xs mt-1">
                 {participantEstimate
@@ -1190,7 +1190,7 @@ export default function CreateQuestModal({
                 onChange={(e) => setReputationReward(e.target.value)}
                 min="0"
                 step="1"
-                className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-red-500 focus:outline-none text-sm pr-12"
+                className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-amber-500 focus:outline-none text-sm pr-12"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">REP</span>
             </div>
@@ -1242,7 +1242,7 @@ export default function CreateQuestModal({
                   )}
                   <div className="flex justify-between text-xs font-bold pt-0.5">
                     <span className="text-zinc-400">Gesamt gesperrt</span>
-                    <span className={total > creatorBalance ? 'text-red-400' : 'text-amber-200'}>{total.toFixed(0)} Credits</span>
+                    <span className={total > creatorBalance ? 'text-amber-400' : 'text-amber-200'}>{total.toFixed(0)} Credits</span>
                   </div>
                 </div>
               );
@@ -1291,12 +1291,12 @@ export default function CreateQuestModal({
             </div>
           )}
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {error && <p className="text-amber-400 text-sm">{error}</p>}
 
           <button
             type="submit"
             disabled={creating || (platform === 'instagram' && questType === 'dm_share' && !linkDmConfirmed)}
-            className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             {creating ? <FaSync className="animate-spin" /> : <FaPlus />}
             {creating

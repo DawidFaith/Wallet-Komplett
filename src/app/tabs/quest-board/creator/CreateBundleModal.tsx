@@ -69,7 +69,7 @@ const PLATFORM_TYPES: Record<Platform, QuestType[]> = {
 };
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
-  youtube:   <FaYoutube   className="text-red-500"  size={14} />,
+  youtube:   <FaYoutube   className="text-amber-500"  size={14} />,
   instagram: <FaInstagram className="text-pink-500" size={14} />,
   tiktok:    <FaTiktok    className="text-white"    size={13} />,
   facebook:  <FaFacebook  className="text-blue-500" size={14} />,
@@ -355,10 +355,10 @@ export default function CreateBundleModal({
           )}
 
           {!storyLink && (
-            <p className="text-red-400 text-xs">Story-Link konnte nicht vorbereitet werden. Bitte zurück und erneut versuchen.</p>
+            <p className="text-amber-400 text-xs">Story-Link konnte nicht vorbereitet werden. Bitte zurück und erneut versuchen.</p>
           )}
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {error && <p className="text-amber-400 text-sm">{error}</p>}
 
           <div className="flex gap-3">
             <button onClick={() => { setStep(3); setError(''); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl py-2.5 font-semibold text-sm">
@@ -484,7 +484,7 @@ export default function CreateBundleModal({
                 ) : (
                   <div className="text-center py-5 text-xs bg-zinc-900/40 rounded-xl border border-zinc-700/50 text-zinc-500">
                     {questMediaError
-                      ? <span className="text-red-400">{questMediaError}</span>
+                      ? <span className="text-amber-400">{questMediaError}</span>
                       : <>Keine Videos gefunden. Prüfe ob dein {platform === 'youtube' ? 'YouTube-Kanal' : 'TikTok-Account'} verknüpft ist.</>
                     }
                   </div>
@@ -738,7 +738,7 @@ export default function CreateBundleModal({
                 Weiter →
               </button>
             </div>
-            {error && <p className="text-red-400 text-sm">{error}</p>}
+            {error && <p className="text-amber-400 text-sm">{error}</p>}
           </div>
         )}
 
@@ -804,7 +804,7 @@ export default function CreateBundleModal({
 
             {/* Gesamtkosten */}
             <div className={`rounded-xl px-3 py-2.5 border space-y-1 ${
-              hasEnough ? 'bg-green-950/30 border-green-800/40' : 'bg-red-950/30 border-red-800/40'
+              hasEnough ? 'bg-green-950/30 border-green-800/40' : 'bg-amber-950/30 border-amber-800/40'
             }`}>
               <div className="flex items-center justify-between">
                 <p className="text-zinc-400 text-xs">Budget sperren</p>
@@ -837,17 +837,17 @@ export default function CreateBundleModal({
               </div>
               <div className="flex items-center justify-between border-t border-white/[0.06] pt-1 mt-0.5">
                 <div>
-                  <p className={`font-bold font-mono text-sm ${hasEnough ? 'text-green-400' : 'text-red-400'}`}>
+                  <p className={`font-bold font-mono text-sm ${hasEnough ? 'text-green-400' : 'text-amber-400'}`}>
                     {totalBudget.toFixed(2)} D.FAITH
                   </p>
-                  <p className={`text-xs font-mono ${hasEnough ? 'text-green-600' : 'text-red-400'}`}>
+                  <p className={`text-xs font-mono ${hasEnough ? 'text-green-600' : 'text-amber-400'}`}>
                     Guthaben: {creatorBalance.toFixed(2)}
                   </p>
                 </div>
               </div>
             </div>
 
-            {error && <p className="text-red-400 text-sm">{error}</p>}
+            {error && <p className="text-amber-400 text-sm">{error}</p>}
 
             <div className="flex gap-3">
               <button onClick={() => { setStep(2); setError(''); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl py-2.5 font-semibold text-sm">

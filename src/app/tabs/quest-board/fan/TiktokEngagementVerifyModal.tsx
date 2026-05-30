@@ -180,9 +180,9 @@ export default function TiktokEngagementVerifyModal({
       {(step === 'pending' || step === 'not_yet') && quest && (
         <div className="space-y-4">
           {/* Timer */}
-          <div className={`rounded-xl p-4 text-center ${secondsLeft < 60 ? 'bg-red-900/30 border border-red-700/40' : 'bg-zinc-800'}`}>
+          <div className={`rounded-xl p-4 text-center ${secondsLeft < 60 ? 'bg-amber-900/30 border border-amber-700/40' : 'bg-zinc-800'}`}>
             <p className="text-zinc-400 text-sm mb-1">Verbleibende Zeit</p>
-            <p className={`text-3xl font-bold tabular-nums ${secondsLeft < 60 ? 'text-red-400' : 'text-cyan-400'}`}>
+            <p className={`text-3xl font-bold tabular-nums ${secondsLeft < 60 ? 'text-amber-400' : 'text-cyan-400'}`}>
               {formatTime(secondsLeft)}
             </p>
           </div>
@@ -338,8 +338,8 @@ export default function TiktokEngagementVerifyModal({
       {/* Expired */}
       {step === 'expired' && (
         <div className="space-y-4">
-          <div className="bg-red-900/30 border border-red-700/40 rounded-xl p-4 text-center">
-            <p className="text-red-300 font-semibold">Zeit abgelaufen</p>
+          <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-4 text-center">
+            <p className="text-amber-300 font-semibold">Zeit abgelaufen</p>
             <p className="text-zinc-400 text-sm mt-1">Die 10 Minuten sind um. Starte die Verifizierung neu.</p>
           </div>
           <button
@@ -355,8 +355,8 @@ export default function TiktokEngagementVerifyModal({
       {/* Error */}
       {step === 'error' && (
         <div className="space-y-4">
-          <div className="bg-red-900/30 border border-red-700/40 rounded-xl p-4">
-            <p className="text-red-300 text-sm">{error}</p>
+          <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-4">
+            <p className="text-amber-300 text-sm">{error}</p>
           </div>
           <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl font-semibold">
             Schließen

@@ -117,8 +117,8 @@ export default function InstagramCommentVerifyModal({
               </div>
             </>
           ) : (
-            <div className="bg-red-900/30 border border-red-700/40 rounded-xl p-4">
-              <p className="text-red-300">{result.message}</p>
+            <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-4">
+              <p className="text-amber-300">{result.message}</p>
             </div>
           )}
           <button

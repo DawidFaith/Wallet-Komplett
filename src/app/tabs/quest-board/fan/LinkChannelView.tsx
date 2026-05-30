@@ -77,7 +77,7 @@ export default function LinkChannelView({ walletAddress, onLinked }: LinkChannel
     <div className="w-full max-w-md mx-auto space-y-5">
       <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
         <div className="flex items-center gap-3 mb-4">
-          <FaYoutube size={28} className="text-red-500" />
+          <FaYoutube size={28} className="text-amber-500" />
           <div>
             <h2 className="font-bold text-white text-lg">YouTube Kanal verknüpfen</h2>
             <p className="text-zinc-400 text-sm">Einmalig – keine OAuth erforderlich</p>
@@ -97,14 +97,14 @@ export default function LinkChannelView({ walletAddress, onLinked }: LinkChannel
               value={channelInput}
               onChange={(e) => setChannelInput(e.target.value)}
               placeholder="@DeinHandle oder youtube.com/@Handle"
-              className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none placeholder-zinc-500"
+              className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-amber-500 focus:outline-none placeholder-zinc-500"
               onKeyDown={(e) => e.key === 'Enter' && handlePreview()}
             />
-            {error && <p className="text-red-400 text-sm">{error}</p>}
+            {error && <p className="text-amber-400 text-sm">{error}</p>}
             <button
               onClick={handlePreview}
               disabled={loading || !channelInput.trim()}
-              className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               {loading ? <FaSync className="animate-spin" /> : <FaChevronRight />}
               {loading ? 'Suche Kanal…' : 'Kanal laden'}
@@ -151,7 +151,7 @@ export default function LinkChannelView({ walletAddress, onLinked }: LinkChannel
                     href={`https://studio.youtube.com/channel/${preview.channelId}/editing/details`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-red-400 underline"
+                    className="text-amber-400 underline"
                   >
                     YouTube Studio → Kanal-Beschreibung
                   </a>
@@ -162,7 +162,7 @@ export default function LinkChannelView({ walletAddress, onLinked }: LinkChannel
               </ol>
             </div>
 
-            {error && <p className="text-red-400 text-sm">{error}</p>}
+            {error && <p className="text-amber-400 text-sm">{error}</p>}
 
             <div className="flex gap-2">
               <button

@@ -11,7 +11,7 @@ import type { QuestBundleWithItems } from '../../../lib/questDb';
 import { getProgressPercent, formatCredits } from '../utils';
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
-  youtube:   <FaYoutube   className="text-red-500"  size={13} />,
+  youtube:   <FaYoutube   className="text-amber-500"  size={13} />,
   instagram: <FaInstagram className="text-pink-500" size={13} />,
   tiktok:    <FaTiktok    className="text-white"    size={12} />,
   facebook:  <FaFacebook  className="text-blue-500" size={13} />,
@@ -172,7 +172,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       {/* Quest-Liste */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="border-4 border-red-500/30 border-t-red-500 rounded-full w-10 h-10 animate-spin" />
+          <div className="border-4 border-amber-500/30 border-t-amber-500 rounded-full w-10 h-10 animate-spin" />
         </div>
       ) : quests.length === 0 ? (
         <div className="text-center py-12 bg-[#1a1710] rounded-2xl border border-white/[0.08] text-zinc-500">
@@ -198,7 +198,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                   </span>
                 </div>
                 <p className="text-white text-sm font-semibold line-clamp-2">{quest.videoTitle}</p>
-                <a href={quest.videoUrl} target="_blank" rel="noopener noreferrer" className="text-red-400 text-xs flex items-center gap-1 hover:underline">
+                <a href={quest.videoUrl} target="_blank" rel="noopener noreferrer" className="text-amber-400 text-xs flex items-center gap-1 hover:underline">
                   <FaExternalLinkAlt size={10} /> Öffnen
                 </a>
                 {/* Story-Link für dm_share Quests */}
@@ -214,7 +214,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                 </div>
                 <div className="h-1.5 bg-[#231e12] rounded-full overflow-hidden w-full">
                   <div
-                    className="h-full bg-gradient-to-r from-red-500 to-yellow-500 rounded-full"
+                    className="h-full bg-gradient-to-r from-amber-500 to-yellow-500 rounded-full"
                     style={{ width: `${getProgressPercent(quest.completions, quest.maxCompletions)}%` }}
                   />
                 </div>
@@ -224,7 +224,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                     <button
                       onClick={() => handleCancel(quest.id)}
                       disabled={cancellingId === quest.id}
-                      className="text-xs bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white px-3 py-1 rounded-lg transition-colors"
+                      className="text-xs bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white px-3 py-1 rounded-lg transition-colors"
                     >
                       {cancellingId === quest.id ? '…' : 'Ja, stornieren'}
                     </button>
@@ -239,7 +239,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                   <button
                     onClick={() => setConfirmCancelId(quest.id)}
                     disabled={cancellingId === quest.id}
-                    className="flex items-center gap-1 text-xs text-zinc-600 hover:text-red-400 disabled:opacity-50 transition-colors pt-1"
+                    className="flex items-center gap-1 text-xs text-zinc-600 hover:text-amber-400 disabled:opacity-50 transition-colors pt-1"
                   >
                     <FaTimes size={10} /> Stornieren
                   </button>
@@ -318,7 +318,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                       <button
                         onClick={() => handleCancelBundle(bundle.id)}
                         disabled={cancellingBundleId === bundle.id}
-                        className="text-xs bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white px-3 py-1 rounded-lg transition-colors"
+                        className="text-xs bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white px-3 py-1 rounded-lg transition-colors"
                       >
                         {cancellingBundleId === bundle.id ? '…' : 'Ja, stornieren'}
                       </button>
@@ -329,7 +329,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                   ) : (
                     <button
                       onClick={() => setConfirmCancelBundleId(bundle.id)}
-                      className="flex items-center gap-1 text-xs text-zinc-600 hover:text-red-400 transition-colors"
+                      className="flex items-center gap-1 text-xs text-zinc-600 hover:text-amber-400 transition-colors"
                     >
                       <FaTimes size={10} /> Bundle stornieren
                     </button>

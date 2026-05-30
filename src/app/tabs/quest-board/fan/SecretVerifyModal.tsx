@@ -169,8 +169,8 @@ export default function SecretVerifyModal({
       {/* ── Fehler ─────────────────────────────────────────── */}
       {step === 'error' && (
         <div className="space-y-4">
-          <div className="bg-red-900/30 border border-red-700/40 rounded-xl p-4">
-            <p className="text-red-300 text-sm">{errorMsg}</p>
+          <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-4">
+            <p className="text-amber-300 text-sm">{errorMsg}</p>
           </div>
           <button
             onClick={handleClose}
@@ -235,7 +235,7 @@ export default function SecretVerifyModal({
             href={quest.videoUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
+            className="w-full bg-amber-500 hover:bg-amber-400 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
           >
             Zum Video (Code suchen) ↗
           </a>

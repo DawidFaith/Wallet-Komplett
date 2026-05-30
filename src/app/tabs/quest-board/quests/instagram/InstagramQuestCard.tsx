@@ -19,7 +19,7 @@ const QUEST_TYPE_CONFIG = {
   like:       { label: 'Like',             icon: <FaHeart size={8} />,    bg: 'bg-pink-600/90',                                          btn: 'Like verifizieren' },
   save:       { label: 'Speichern',        icon: <FaBookmark size={8} />, bg: 'bg-yellow-600/90',                                        btn: 'Speichern verifizieren' },
   comment:    { label: 'Kommentar',        icon: <FaComment size={8} />,  bg: 'bg-purple-600/90',                                        btn: 'Kommentar verifizieren' },
-  engagement: { label: 'Like & Speichern', icon: <FaHeart size={8} />,   bg: 'bg-gradient-to-r from-red-600/90 to-yellow-600/90',       btn: 'Engagement verifizieren' },
+  engagement: { label: 'Like & Speichern', icon: <FaHeart size={8} />,   bg: 'bg-gradient-to-r from-amber-600/90 to-yellow-600/90',       btn: 'Engagement verifizieren' },
   repost:     { label: 'Repost',           icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-blue-600/90 to-cyan-600/90',        btn: 'Repost verifizieren' },
   dm_share:   { label: 'Story Quest',         icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-pink-600/90 to-purple-600/90',      btn: 'Story Quest starten' },
 } as const;

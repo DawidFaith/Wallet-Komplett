@@ -394,7 +394,7 @@ export default function InstagramDmShareModal({
         {/* ── EXPIRED ── */}
         {!storyClaimToken && step === 'expired' && (
           <div className="space-y-3">
-            <div className="bg-red-900/30 border border-red-600/40 rounded-xl px-3 py-2 text-xs text-red-300">
+            <div className="bg-amber-900/30 border border-amber-600/40 rounded-xl px-3 py-2 text-xs text-amber-300">
               ⏰ Zeit abgelaufen. Bitte starte die Quest neu.
             </div>
             <button
@@ -416,7 +416,7 @@ export default function InstagramDmShareModal({
         {/* ── ERROR ── */}
         {!storyClaimToken && step === 'error' && (
           <div className="space-y-3">
-            <div className="bg-red-900/30 border border-red-600/40 rounded-xl px-3 py-2 text-xs text-red-300">
+            <div className="bg-amber-900/30 border border-amber-600/40 rounded-xl px-3 py-2 text-xs text-amber-300">
               {error}
             </div>
             <button onClick={() => setStep('idle')} className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
@@ -539,7 +539,7 @@ function StoryClaimSection({ token, walletAddress, rewardAmount, onSuccess, onCl
       </div>
 
       {state === 'error' && (
-        <div className="bg-red-900/30 border border-red-600/40 rounded-xl px-3 py-2 text-xs text-red-300">
+        <div className="bg-amber-900/30 border border-amber-600/40 rounded-xl px-3 py-2 text-xs text-amber-300">
           {errorMsg}
         </div>
       )}
