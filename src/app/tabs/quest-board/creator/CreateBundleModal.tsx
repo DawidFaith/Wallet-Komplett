@@ -116,9 +116,10 @@ export default function CreateBundleModal({
   // Video-Thumbnail (aus Picker)
   const [videoThumbnail, setVideoThumbnail] = useState('');
 
-  // Platform-Nutzerzahl für Bonus-Budget-Berechnung
+  // Platform-Nutzerzahl & max. Bonus-Prozentsatz für Level-Bonus-Reserve
   const [platformUserCount, setPlatformUserCount] = useState<number>(0);
   const [loadingPlatformUsers, setLoadingPlatformUsers] = useState(false);
+  const [maxBonusPct, setMaxBonusPct] = useState<number>(0);
 
   // Media-Picker
   const [availableQuestMedia, setAvailableQuestMedia] = useState<AvailableQuestMediaItem[]>([]);
@@ -162,7 +163,16 @@ export default function CreateBundleModal({
     setAvailableFbMedia([]);
     setQuestMediaError('');
     setPlatformUserCount(0);
-  }, [open]);
+    setMaxBonusPct(0);
+    // Maximalen Level-Bonus-Prozentsatz des Artists laden
+    fetch(`/api/reputation/levels?artistWallet=${encodeURIComponent(walletAddress)}`)
+      .then(r => r.json())
+      .then((data: Array<{ questRewardBonusPercent?: number }>) => {
+        const max = Array.isArray(data) ? data.reduce((m, l) => Math.max(m, Number(l.questRewardBonusPercent) || 0), 0) : 0;
+        setMaxBonusPct(max);
+      })
+      .catch(() => setMaxBonusPct(0));
+  }, [open, walletAddress]);
 
   // Platform-Nutzerzahl laden
   const fetchPlatformUserCount = async (p: Platform) => {
@@ -242,13 +252,14 @@ export default function CreateBundleModal({
   const maxNum     = Math.max(1,    Number(maxP)     || 10);
   const totalWeight = items.reduce((s, i) => s + i.reachWeight, 0);
   const hasDmShare = items.some((i) => i.questType === 'dm_share');
-  // Effektive Teilnehmeranzahl für Level-Bonus-Reserve: min(maxTeilnehmer, Platform-Nutzer) × 1.02
+  // Effektive Teilnehmeranzahl für Level-Bonus-Reserve: min(maxTeilnehmer, Platform-Nutzer)
   // Wenn noch keine Nutzerzahl geladen → Fallback auf maxNum
   const effectiveBonusParticipants = platformUserCount > 0 ? Math.min(maxNum, platformUserCount) : maxNum;
   // Abschluss-Bonus: unverändert bonusNum × maxNum
   const abschlussBonusPool = Math.round(bonusNum * maxNum * 100) / 100;
-  // Level-Bonus-Reserve: nach effectiveBonusParticipants × 1.02
-  const levelBonusReserve = Math.round(rewardNum * effectiveBonusParticipants * 1.02 * 100) / 100;
+  // Level-Bonus-Reserve: rewardNum × effectiveParticipants × (maxBonusPct + 2) / 100
+  // +2% Sicherheitspuffer: Fan kann durch andere Quests noch ein Level aufsteigen
+  const levelBonusReserve = Math.round(rewardNum * effectiveBonusParticipants * (maxBonusPct + 2) / 100 * 100) / 100;
   const totalBudget = Math.round((rewardNum * maxNum + abschlussBonusPool + levelBonusReserve) * 100) / 100;
   const hasEnough   = creatorBalance >= totalBudget;
 
@@ -808,7 +819,7 @@ export default function CreateBundleModal({
                     Level-Bonus-Reserve
                     {loadingPlatformUsers
                       ? <span className="text-zinc-600">(lädt…)</span>
-                      : <span className="text-zinc-600">({effectiveBonusParticipants} Nutzer × 1.02)</span>
+                      : <span className="text-zinc-600">({effectiveBonusParticipants} × {maxBonusPct + 2}%)</span>
                     }
                   </span>
                   <span className="font-mono">{levelBonusReserve.toFixed(2)}</span>

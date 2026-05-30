@@ -5,6 +5,7 @@ import {
   getDfaithCredits,
   lockQuestBudget,
   getPlatformUserCount,
+  getReputationLevels,
   DEFAULT_REACH_WEIGHTS,
   type Platform,
   type QuestType,
@@ -94,14 +95,12 @@ export async function POST(req: NextRequest) {
   // Abschluss-Bonus: unveräändert bonusNum × maxNum (jeder der max. Teilnehmer kann den Bonus bekommen)
   const abschlussBonusPool = Math.round(bonusNum * maxNum * 100) / 100;
 
-  // Level-Bonus-Reserve: min(maxTeilnehmer, Platform-Nutzer) × 1.02 Puffer
+  // Level-Bonus-Reserve: rewardPool × min(maxTeilnehmer, Platform-Nutzer) × maxBonusPct / 100
   const platformUserCount = await getPlatformUserCount(platform as Platform);
   const effectiveParticipants = Math.min(maxNum, platformUserCount > 0 ? platformUserCount : maxNum);
-  const levelBonus = Math.max(0, Math.round(
-    (Number(levelBonusBudget) > 0
-      ? Number(levelBonusBudget)
-      : poolNum * effectiveParticipants * 1.02
-    ) * 100) / 100);
+  const repLevels = await getReputationLevels(creatorWallet);
+  const maxBonusPct = repLevels.reduce((m, l) => Math.max(m, l.questRewardBonusPercent), 0);
+  const levelBonus = Math.round(poolNum * effectiveParticipants * (maxBonusPct + 2) / 100 * 100) / 100;
 
   const totalBudget = Math.round((poolNum * maxNum + abschlussBonusPool + levelBonus) * 100) / 100;
 
@@ -109,7 +108,7 @@ export async function POST(req: NextRequest) {
   const credits = await getDfaithCredits(creatorWallet.toLowerCase());
   if (credits < totalBudget) {
     return NextResponse.json({
-      error: `Nicht genug Credits. Du brauchst ${totalBudget.toFixed(2)} D.FAITH (${poolNum.toFixed(2)} × ${maxNum} Reward + ${abschlussBonusPool.toFixed(2)} Abschluss-Bonus + ${levelBonus.toFixed(2)} Level-Bonus-Reserve [${effectiveParticipants} Nutzer × 1.02]), hast aber nur ${credits.toFixed(2)}.`,
+      error: `Nicht genug Credits. Du brauchst ${totalBudget.toFixed(2)} D.FAITH (${poolNum.toFixed(2)} × ${maxNum} Reward + ${abschlussBonusPool.toFixed(2)} Abschluss-Bonus + ${levelBonus.toFixed(2)} Level-Bonus-Reserve [${effectiveParticipants} × ${maxBonusPct + 2}%]), hast aber nur ${credits.toFixed(2)}.`,
     }, { status: 400 });
   }
 
