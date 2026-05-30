@@ -449,6 +449,14 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                   progressColor: 'from-purple-500 to-violet-500',
                   bgGradient: 'from-purple-900/50',
                 };
+              case 'share':
+                return {
+                  badge: { icon: <FaShareAlt size={10} />, label: 'Repost', bg: 'bg-teal-600/90' },
+                  description: <><FaShareAlt size={10} className="text-teal-400" /> Reposte dieses Video auf TikTok!</>,
+                  buttonColor: 'bg-gradient-to-r from-teal-600 to-cyan-500 hover:from-teal-500 hover:to-cyan-400 text-white',
+                  progressColor: 'from-teal-500 to-cyan-500',
+                  bgGradient: 'from-teal-900/50',
+                };
               default:
                 return {
                   badge: { icon: <FaTrophy size={10} />, label: 'Quest', bg: 'bg-zinc-600/90' },

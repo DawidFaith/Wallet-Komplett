@@ -389,7 +389,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       )}
 
       <div className="flex items-center justify-between">
-        <h2 className="text-white font-bold text-lg">Verfügbare Quests</h2>
+        <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Verfügbare Quests</p>
         <button onClick={() => { loadQuests(); loadBundles(); }} className="text-zinc-400 hover:text-white p-2 transition-colors">
           <FaSync size={14} className={(loading || bundlesLoading) ? 'animate-spin' : ''} />
         </button>
@@ -408,6 +408,9 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       ) : (
         <div className="space-y-4">
           {/* Quest-Reihen (Bundles) zuerst */}
+          {activeBundles.length > 0 && (
+            <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Quest-Reihen</p>
+          )}
           {activeBundles.map((bundle) => (
             <BundleCard
               key={bundle.id}
@@ -473,6 +476,9 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
 
           {/* Einzelne Quest-Karten nach den Bundles */}
           {youtubeQuests.length > 0 && (
+            <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest pt-1">YouTube</p>
+          )}
+          {youtubeQuests.length > 0 && (
             <div className="relative">
               {!verified.youtube && (
                 <div className="absolute inset-0 z-10 rounded-2xl bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 border border-zinc-700/50">
@@ -497,6 +503,9 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                 </QuestCarousel>
               </div>
             </div>
+          )}
+          {(tiktokCommentQuests.length > 0 || tiktokEngagementQuests.length > 0) && (
+            <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest pt-1">TikTok</p>
           )}
           {(tiktokCommentQuests.length > 0 || tiktokEngagementQuests.length > 0) && (
             <div className="relative">
@@ -536,6 +545,9 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             </div>
           )}
           {instagramQuests.length > 0 && (
+            <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest pt-1">Instagram</p>
+          )}
+          {instagramQuests.length > 0 && (
             <div className="relative">
               {!verified.instagram && (
                 <div className="absolute inset-0 z-10 rounded-2xl bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 border border-zinc-700/50">
@@ -560,6 +572,9 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                 </QuestCarousel>
               </div>
             </div>
+          )}
+          {facebookQuests.length > 0 && (
+            <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest pt-1">Facebook</p>
           )}
           {facebookQuests.length > 0 && (
             <div className="relative">
