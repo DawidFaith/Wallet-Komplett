@@ -9,7 +9,7 @@ import CreatorBoard from './creator/CreatorBoard';
 import type { YouTubeBinding, QuestBoardView, VerifiedPlatforms } from './types';
 import type { SupportedLanguage } from '../../utils/deepLTranslation';
 
-interface ArtistInfo {
+export interface ArtistInfo {
   walletAddress: string;
   name: string;
   picture: string | null;

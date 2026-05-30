@@ -18,13 +18,16 @@ import SolanaWalletTab from "../tabs/SolanaWalletTab";
 import ReputationTab from "../tabs/ReputationTab";
 import ShopTab from "../tabs/ShopTab";
 import type { SupportedLanguage } from "../utils/deepLTranslation";
+import type { ArtistInfo } from "../tabs/quest-board/index";
 
 function HomeContent() {
   const [activeTab, setActiveTab] = useState("profile");
   const [language, setLanguage] = useState<SupportedLanguage>("de");
+  // Artist der direkt vom Profil-Tab zum Quest Board weitergeleitet wird
+  const [questArtist, setQuestArtist] = useState<ArtistInfo | null>(null);
   const searchParams = useSearchParams();
 
-  // URL-Parameter für Tab und Artist laden
+  // URL-Parameter für Tab und Artist laden (für Deep-Links)
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab");
     if (tabFromUrl) {
@@ -34,16 +37,27 @@ function HomeContent() {
 
   const artistParam = searchParams.get("artist");
 
+  // Wenn Tab manuell gewechselt wird, questArtist zurücksetzen
+  const handleTabChange = (tab: string) => {
+    if (tab !== "quest-board") setQuestArtist(null);
+    setActiveTab(tab);
+  };
+
+  const handleNavigateToArtistQuests = (artist: ArtistInfo) => {
+    setQuestArtist(artist);
+    setActiveTab("quest-board");
+  };
+
   return (
     <main className="min-h-screen flex flex-col bg-[#13120e]">
       <Navigation 
         activeTab={activeTab} 
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         language={language}
         setLanguage={setLanguage}
       />
       <section className="flex-1 flex flex-col items-center justify-center pt-24 pb-8">
-        {activeTab === "profile" && <ProfileTab language={language} onNavigate={setActiveTab} />}
+        {activeTab === "profile" && <ProfileTab language={language} onNavigate={handleTabChange} onNavigateToArtistQuests={handleNavigateToArtistQuests} />}
         {activeTab === "wallet" && <WalletTab language={language} />}
         {activeTab === "tokenomics" && <TokenomicsTab language={language} />}
         {activeTab === "merch" && <MerchTab language={language} />}
@@ -53,7 +67,7 @@ function HomeContent() {
         {activeTab === "tiktok" && <TiktokTab language={language} />}
         {activeTab === "facebook" && <FacebookTab language={language} />}
         {activeTab === "youtube" && <YoutubeTab language={language} />}
-        {activeTab === "quest-board" && <QuestBoardTab language={language} artistWallet={artistParam} />}
+        {activeTab === "quest-board" && <QuestBoardTab language={language} filterArtist={questArtist} onClearArtist={() => setQuestArtist(null)} artistWallet={artistParam} />}
         {activeTab === "solana-wallet" && <SolanaWalletTab />}
         {activeTab === "reputation" && <ReputationTab artistWallet={artistParam} />}
         {activeTab === "shop" && <ShopTab />}

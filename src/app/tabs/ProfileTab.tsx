@@ -78,6 +78,7 @@ interface ArtistEntry {
 interface ProfileTabProps {
   language: SupportedLanguage;
   onNavigate?: (tab: string) => void;
+  onNavigateToArtistQuests?: (artist: ArtistEntry) => void;
 }
 
 function shortenAddress(addr: string) {
@@ -93,7 +94,7 @@ const PLATFORM_META: Record<AnyPlatform, { label: string; icon: React.ReactNode 
   facebook:  { label: 'Facebook',  icon: <FaFacebook className="text-blue-500"  size={13} /> },
 };
 
-export default function ProfileTab({ language: _language, onNavigate }: ProfileTabProps) {
+export default function ProfileTab({ language: _language, onNavigate, onNavigateToArtistQuests }: ProfileTabProps) {
   const { user: _clerkUser } = useUser();
   const router = useRouter();
   const account = _clerkUser?.id ? { address: _clerkUser.id } : null;
@@ -884,7 +885,14 @@ export default function ProfileTab({ language: _language, onNavigate }: ProfileT
                   </button>
                   {selectedArtist && selectedArtist.questCount > 0 && (
                     <button
-                      onClick={() => { saveStateForRestore(); router.push(`/home?tab=quest-board&artist=${encodeURIComponent(selectedArtist.walletAddress)}`); }}
+                      onClick={() => {
+                        saveStateForRestore();
+                        if (onNavigateToArtistQuests) {
+                          onNavigateToArtistQuests(selectedArtist);
+                        } else {
+                          router.push(`/home?tab=quest-board&artist=${encodeURIComponent(selectedArtist.walletAddress)}`);
+                        }
+                      }}
                       className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs font-semibold transition-colors"
                     >
                       <FaTasks size={11} /> {selectedArtist.questCount} Quest{selectedArtist.questCount !== 1 ? 's' : ''}
