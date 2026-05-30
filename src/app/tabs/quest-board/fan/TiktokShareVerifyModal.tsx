@@ -238,16 +238,11 @@ export default function TiktokShareVerifyModal({
               +{formatCredits(rewardAmount + levelBonusAmount)} D.FAITH wurden gutgeschrieben
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { icon: <FiShare2 size={16} />, label: 'Share erkannt' },
-              { icon: <FiMusic size={16} />, label: 'Sound bestätigt' },
-            ].map(({ icon, label }) => (
-              <div key={label} className="flex items-center gap-2 rounded-xl px-3 py-2.5 bg-green-900/30 border border-green-700/40 text-green-400">
-                {icon}
-                <span className="text-xs font-medium">{label}</span>
-              </div>
-            ))}
+          <div className="flex justify-center">
+            <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-green-900/30 border border-green-700/40 text-green-400">
+              <FiShare2 size={16} />
+              <span className="text-xs font-medium">Repost erkannt</span>
+            </div>
           </div>
           <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold py-3 rounded-xl transition-colors">
             Schließen
