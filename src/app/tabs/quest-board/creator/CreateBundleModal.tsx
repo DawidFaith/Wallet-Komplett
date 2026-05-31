@@ -700,7 +700,7 @@ export default function CreateBundleModal({
                         <p className="text-purple-300 text-xs">
                           → {((item.reachWeight / totalWeight) * 100).toFixed(0)}% des Reward-Pools
                         </p>
-                        <span className="text-amber-400 text-xs font-semibold">+{item.reachWeight * 20} REP</span>
+                        <span className="text-amber-400 text-xs font-semibold">+{item.reachWeight * 8} REP</span>
                       </div>
                     )}
                     {selected && qt === 'dm_share' && (
@@ -784,7 +784,7 @@ export default function CreateBundleModal({
                       {TYPE_LABELS[item.questType]}
                     </span>
                     <span className="flex items-center gap-2">
-                      <span className="text-amber-400">+{item.reachWeight * 20} REP</span>
+                      <span className="text-amber-400">+{item.reachWeight * 8} REP</span>
                       <span className="text-purple-300 font-mono">{share.toFixed(2)}</span>
                     </span>
                   </div>

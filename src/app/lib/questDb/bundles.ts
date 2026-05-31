@@ -66,7 +66,7 @@ export async function createQuestBundle(
       ? Math.round((item.reachWeight / totalWeight) * params.rewardPoolPerFan * 100) / 100
       : 0;
     const creditsLocked = Math.round(rewardAmount * params.maxParticipants * 100) / 100;
-    const reputationReward = params.reputationReward ?? Math.round(item.reachWeight * 20);
+    const reputationReward = params.reputationReward ?? Math.round(item.reachWeight * 8);
 
     // Level-Bonus-Budget proportional verteilen
     const questLevelBonusBudget = params.levelBonusBudget && totalWeight > 0
