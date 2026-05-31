@@ -271,7 +271,7 @@ export default function QuestBoard({ language: _language, artistWallet, filterAr
               um passende Quests zu sehen.
             </p>
             <div className="flex items-center justify-center gap-4 text-zinc-500 pt-2">
-              <FaYoutube size={22} className="text-amber-500" />
+              <FaYoutube size={22} className="text-red-500" />
               <FaInstagram size={20} className="text-pink-500" />
               <FaTiktok size={18} className="text-cyan-400" />
               <FaFacebookF size={18} className="text-blue-500" />

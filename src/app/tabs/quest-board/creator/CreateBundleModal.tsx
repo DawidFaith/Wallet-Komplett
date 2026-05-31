@@ -69,7 +69,7 @@ const PLATFORM_TYPES: Record<Platform, QuestType[]> = {
 };
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
-  youtube:   <FaYoutube   className="text-amber-500"  size={14} />,
+  youtube:   <FaYoutube   className="text-red-500"  size={14} />,
   instagram: <FaInstagram className="text-pink-500" size={14} />,
   tiktok:    <FaTiktok    className="text-white"    size={13} />,
   facebook:  <FaFacebook  className="text-blue-500" size={14} />,

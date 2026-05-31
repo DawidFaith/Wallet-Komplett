@@ -77,7 +77,7 @@ export default function LinkChannelView({ walletAddress, onLinked }: LinkChannel
     <div className="w-full max-w-md mx-auto space-y-5">
       <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
         <div className="flex items-center gap-3 mb-4">
-          <FaYoutube size={28} className="text-amber-500" />
+          <FaYoutube size={28} className="text-red-500" />
           <div>
             <h2 className="font-bold text-white text-lg">YouTube Kanal verknüpfen</h2>
             <p className="text-zinc-400 text-sm">Einmalig – keine OAuth erforderlich</p>

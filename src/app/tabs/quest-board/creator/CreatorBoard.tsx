@@ -11,7 +11,7 @@ import type { QuestBundleWithItems } from '../../../lib/questDb';
 import { getProgressPercent, formatCredits } from '../utils';
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
-  youtube:   <FaYoutube   className="text-amber-500"  size={13} />,
+  youtube:   <FaYoutube   className="text-red-500"  size={13} />,
   instagram: <FaInstagram className="text-pink-500" size={13} />,
   tiktok:    <FaTiktok    className="text-white"    size={12} />,
   facebook:  <FaFacebook  className="text-blue-500" size={13} />,

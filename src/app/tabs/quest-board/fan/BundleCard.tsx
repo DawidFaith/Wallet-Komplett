@@ -8,7 +8,7 @@ import type { Platform, QuestType, QuestIndexEntry, VerifiedPlatforms } from '..
 import { formatExpiry } from '../utils';
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
-  youtube:   <FaYoutube   className="text-amber-500"  size={12} />,
+  youtube:   <FaYoutube   className="text-red-500"  size={12} />,
   instagram: <FaInstagram className="text-pink-500" size={12} />,
   tiktok:    <FaTiktok    className="text-white"    size={11} />,
   facebook:  <FaFacebook  className="text-blue-500" size={12} />,

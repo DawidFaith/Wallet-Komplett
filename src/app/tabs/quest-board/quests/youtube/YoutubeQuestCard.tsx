@@ -92,7 +92,7 @@ export default function YoutubeQuestCard({ quest, isCompleted, isVerified = true
           <button
             onClick={() => onComplete(quest.id)}
             disabled={!isVerified}
-            className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             <FaTrophy size={12} /> Starten
           </button>
