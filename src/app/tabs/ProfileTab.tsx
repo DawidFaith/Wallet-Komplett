@@ -679,7 +679,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                       ? <FaCheck size={10} className="text-green-400" />
                       : <FaInstagram size={11} />
                   }
-                  <span>{igVerified ? 'Instagram ✓' : 'Instagram prüfen'}</span>
+                  <span>{igVerified ? 'Instagram' : 'Instagram prüfen'}</span>
                 </button>
                 <button
                   onClick={() => handleMetaCheck('facebook')}
@@ -696,7 +696,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                       ? <FaCheck size={10} className="text-green-400" />
                       : <FaFacebook size={11} />
                   }
-                  <span>{fbVerified ? 'Facebook ✓' : 'Facebook prüfen'}</span>
+                  <span>{fbVerified ? 'Facebook' : 'Facebook prüfen'}</span>
                 </button>
               </div>
 
