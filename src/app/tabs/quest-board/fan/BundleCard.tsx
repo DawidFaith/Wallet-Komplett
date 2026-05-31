@@ -548,21 +548,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
         ))}
       </div>
 
-      {/* ─── Bonus-Claim Info (nur wenn noch nicht alle abgeschlossen) ─── */}
-      {!canClaimBonus && !bonusAlreadyDone && bundle.bundleCompletionBonus > 0 && (
-        <div className="px-4 pb-4">
-          <div className="bg-yellow-950/30 border border-yellow-700/30 rounded-xl px-3 py-2 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <FaGift size={11} className="text-yellow-400" />
-              <span className="text-yellow-300/80 text-xs font-semibold">Abschluss-Bonus</span>
-            </div>
-            <span className="flex items-center gap-1 text-yellow-400 text-xs font-mono font-bold">
-              <Image src="/D.FAITH.png" alt="D.FAITH" width={12} height={12} className="rounded-full" unoptimized />
-              +{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH
-            </span>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
