@@ -636,7 +636,6 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
 
         {/* ── Instagram & Facebook Quests ── nur für Künstler sichtbar */}
         {p?.isArtist && (p?.instagramHandle || p?.facebookHandle) && (() => {
-          const bothVerified = metaIgVerified && metaFbVerified;
           const igVerified = metaIgVerified;
           const fbVerified = metaFbVerified;
           const hasIg = !!p?.instagramHandle;
@@ -651,10 +650,6 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                   Instagram & Facebook Quests
                 </p>
                 <div className="flex items-center gap-2">
-                  {bothVerified
-                    ? <span className="text-[10px] font-bold text-green-400 bg-green-400/10 border border-green-400/20 px-2 py-0.5 rounded-full flex items-center gap-1"><FaCheck size={7} /> Freigeschaltet</span>
-                    : <span className="text-[10px] text-zinc-600 flex items-center gap-1"><FaLock size={8} /> Gesperrt</span>
-                  }
                   {(!igVerified || !fbVerified) && (
                     <button
                       onClick={() => setMetaGuideOpen(o => !o)}
@@ -674,7 +669,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                   disabled={metaIgLoading || !hasIg}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border font-semibold text-xs transition-all disabled:opacity-40 ${
                     igVerified
-                      ? 'bg-green-500/15 border-green-500/30 text-green-300 shadow-[0_0_12px_rgba(34,197,94,0.12)]'
+                      ? 'bg-[#231e12]/60 border-green-700/40 hover:border-green-500/60 text-white'
                       : 'bg-gradient-to-br from-pink-500/10 to-purple-500/10 hover:from-pink-500/20 hover:to-purple-500/20 border-pink-500/25 text-pink-300 active:scale-95'
                   }`}
                 >
@@ -691,7 +686,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                   disabled={metaFbLoading || !hasFb}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border font-semibold text-xs transition-all disabled:opacity-40 ${
                     fbVerified
-                      ? 'bg-green-500/15 border-green-500/30 text-green-300 shadow-[0_0_12px_rgba(34,197,94,0.12)]'
+                      ? 'bg-[#231e12]/60 border-green-700/40 hover:border-green-500/60 text-white'
                       : 'bg-gradient-to-br from-blue-500/10 to-blue-600/10 hover:from-blue-500/20 hover:to-blue-600/20 border-blue-500/25 text-blue-300 active:scale-95'
                   }`}
                 >
