@@ -20,6 +20,8 @@ import ShopTab from "../tabs/ShopTab";
 import type { SupportedLanguage } from "../utils/deepLTranslation";
 import type { ArtistInfo } from "../tabs/quest-board/index";
 
+const LAST_TAB_KEY = 'dfaith_last_tab';
+
 function HomeContent() {
   const [activeTab, setActiveTab] = useState("profile");
   const [language, setLanguage] = useState<SupportedLanguage>("de");
@@ -27,25 +29,30 @@ function HomeContent() {
   const [questArtist, setQuestArtist] = useState<ArtistInfo | null>(null);
   const searchParams = useSearchParams();
 
-  // URL-Parameter für Tab und Artist laden (für Deep-Links)
+  // Beim ersten Laden: gespeicherten Tab wiederherstellen (URL-Parameter hat Vorrang)
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab");
     if (tabFromUrl) {
       setActiveTab(tabFromUrl);
+      return;
     }
+    const saved = localStorage.getItem(LAST_TAB_KEY);
+    if (saved) setActiveTab(saved);
   }, [searchParams]);
 
   const artistParam = searchParams.get("artist");
 
-  // Wenn Tab manuell gewechselt wird, questArtist zurücksetzen
+  // Wenn Tab manuell gewechselt wird, questArtist zurücksetzen + Tab speichern
   const handleTabChange = (tab: string) => {
     if (tab !== "quest-board") setQuestArtist(null);
     setActiveTab(tab);
+    localStorage.setItem(LAST_TAB_KEY, tab);
   };
 
   const handleNavigateToArtistQuests = (artist: ArtistInfo) => {
     setQuestArtist(artist);
     setActiveTab("quest-board");
+    localStorage.setItem(LAST_TAB_KEY, "quest-board");
   };
 
   return (
