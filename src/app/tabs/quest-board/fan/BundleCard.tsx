@@ -236,7 +236,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
       >
         {/* Slide 0: Eingangstor */}
         <div className="min-w-full snap-start px-4 pt-3 pb-4">
-          <div className={`bg-gradient-to-br ${pc.innerBg} rounded-2xl border ${pc.innerBorder} overflow-hidden transition-all shadow-lg shadow-purple-900/20`}>
+          <div className={`bg-gradient-to-br ${pc.innerBg} rounded-2xl border ${pc.innerBorder} overflow-hidden transition-all shadow-lg shadow-amber-900/10`}>
             {/* Thumbnail h-40 – identisch mit Quest-Karten */}
             <div className={`relative h-40 ${ytVideoId ? 'cursor-pointer group' : ''}`} onClick={() => ytVideoId && !showVideo && setShowVideo(true)}>
               {showVideo && ytVideoId ? (
@@ -257,7 +257,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                 <>
                   {bundle.videoThumbnail
                     ? <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
-                    : <div className="absolute inset-0 bg-gradient-to-br from-purple-900 to-violet-800" />
+                    : <div className="absolute inset-0 bg-gradient-to-br from-amber-950 to-zinc-900" />
                   }
                   <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/80" />
                   {ytVideoId && (
@@ -551,9 +551,15 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
       {/* ─── Bonus-Claim Info (nur wenn noch nicht alle abgeschlossen) ─── */}
       {!canClaimBonus && !bonusAlreadyDone && bundle.bundleCompletionBonus > 0 && (
         <div className="px-4 pb-4">
-          <div className="bg-purple-950/20 border border-purple-800/20 rounded-xl px-3 py-2 flex items-center justify-between">
-            <span className="text-zinc-500 text-xs">Abschluss-Bonus</span>
-            <span className="text-purple-400 text-xs font-mono font-semibold">+{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH</span>
+          <div className="bg-yellow-950/30 border border-yellow-700/30 rounded-xl px-3 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <FaGift size={11} className="text-yellow-400" />
+              <span className="text-yellow-300/80 text-xs font-semibold">Abschluss-Bonus</span>
+            </div>
+            <span className="flex items-center gap-1 text-yellow-400 text-xs font-mono font-bold">
+              <Image src="/D.FAITH.png" alt="D.FAITH" width={12} height={12} className="rounded-full" unoptimized />
+              +{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH
+            </span>
           </div>
         </div>
       )}
