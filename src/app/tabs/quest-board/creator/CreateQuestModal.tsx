@@ -61,7 +61,7 @@ export default function CreateQuestModal({
 }: CreateQuestModalProps) {
   const [description, setDescription] = useState('');
   const [rewardAmount, setRewardAmount] = useState('100');
-  const [reputationReward, setReputationReward] = useState('40'); // youtube+comment Default
+  const [reputationReward, setReputationReward] = useState('16'); // youtube+comment Default
   const [maxParticipants, setMaxParticipants] = useState('10');
   const [platform, setPlatform] = useState<'youtube' | 'tiktok' | 'instagram' | 'facebook'>(
     verified.youtube ? 'youtube' : verified.tiktok ? 'tiktok' : verified.instagram ? 'instagram' : verified.facebook ? 'facebook' : 'youtube'
@@ -95,15 +95,15 @@ export default function CreateQuestModal({
     pt: typeof platform,
     qt: typeof questType,
   ): number => {
-    if (qt === 'dm_share')   return 120; // Story = höchste Reichweite, persönliche Empfehlung
-    if (qt === 'share')      return 100; // TikTok-Share = sehr hohe Reichweite
-    if (qt === 'repost')     return 80;  // Permanenter Post, alle Follower sehen ihn
-    if (qt === 'engagement') return 60;  // Like+Save = starkes Algorithmus-Signal
-    if (qt === 'comment')    return 40;  // Sichtbar für andere, Algorithmus-Boost
-    if (qt === 'secret')     return 30;  // Kein Reach, aber tiefes Watch-Engagement
-    if (qt === 'like')       return pt === 'facebook' ? 25 : 20; // Reines Algo-Signal
-    if (qt === 'save')       return 35;
-    return 40;
+    if (qt === 'dm_share')   return 48;  // Story = höchste Reichweite, persönliche Empfehlung
+    if (qt === 'share')      return 40;  // TikTok-Share = sehr hohe Reichweite
+    if (qt === 'repost')     return 32;  // Permanenter Post, alle Follower sehen ihn
+    if (qt === 'engagement') return 24;  // Like+Save = starkes Algorithmus-Signal
+    if (qt === 'comment')    return 16;  // Sichtbar für andere, Algorithmus-Boost
+    if (qt === 'secret')     return 12;  // Kein Reach, aber tiefes Watch-Engagement
+    if (qt === 'like')       return pt === 'facebook' ? 10 : 8; // Reines Algo-Signal
+    if (qt === 'save')       return 14;
+    return 16;
   };
 
   // REP-Empfehlung automatisch anpassen wenn Quest-Typ oder Plattform wechselt
@@ -358,7 +358,7 @@ export default function CreateQuestModal({
             thumbnailUrl: selectedMedia!.thumbnail_url,
             description: finalDescription || `💬 Kommentiere dieses Instagram Reel!`,
             rewardAmount: Number(rewardAmount),
-            reputationReward: Math.max(0, Number(reputationReward) || 50),
+            reputationReward: Math.max(0, Number(reputationReward) || 20),
             maxCompletions: Number(maxParticipants),
             durationHours: finalDurationHours,
             questType,
@@ -374,7 +374,7 @@ export default function CreateQuestModal({
             thumbnailUrl: selectedFacebookMedia!.thumbnail_url,
             description: finalDescription,
             rewardAmount: Number(rewardAmount),
-            reputationReward: Math.max(0, Number(reputationReward) || 50),
+            reputationReward: Math.max(0, Number(reputationReward) || 20),
             maxCompletions: Number(maxParticipants),
             durationHours: finalDurationHours,
             questType,
@@ -388,7 +388,7 @@ export default function CreateQuestModal({
           thumbnailUrl: selectedQuestMedia?.thumbnail_url ?? '',
             description: finalDescription,
             rewardAmount: Number(rewardAmount),
-            reputationReward: Math.max(0, Number(reputationReward) || 50),
+            reputationReward: Math.max(0, Number(reputationReward) || 20),
             maxCompletions: Number(maxParticipants),
             questType,
             durationHours: finalDurationHours,
