@@ -21,6 +21,7 @@ import type { SupportedLanguage } from "../utils/deepLTranslation";
 import type { ArtistInfo } from "../tabs/quest-board/index";
 
 const LAST_TAB_KEY = 'dfaith_last_tab';
+const LAST_ARTIST_KEY = 'dfaith_last_artist';
 
 function HomeContent() {
   const [activeTab, setActiveTab] = useState("profile");
@@ -29,7 +30,7 @@ function HomeContent() {
   const [questArtist, setQuestArtist] = useState<ArtistInfo | null>(null);
   const searchParams = useSearchParams();
 
-  // Beim ersten Laden: gespeicherten Tab wiederherstellen (URL-Parameter hat Vorrang)
+  // Beim ersten Laden: gespeicherten Tab + Artist wiederherstellen (URL-Parameter hat Vorrang)
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab");
     if (tabFromUrl) {
@@ -37,14 +38,25 @@ function HomeContent() {
       return;
     }
     const saved = localStorage.getItem(LAST_TAB_KEY);
-    if (saved) setActiveTab(saved);
+    if (saved) {
+      setActiveTab(saved);
+      if (saved === 'quest-board') {
+        const savedArtist = localStorage.getItem(LAST_ARTIST_KEY);
+        if (savedArtist) {
+          try { setQuestArtist(JSON.parse(savedArtist)); } catch {}
+        }
+      }
+    }
   }, [searchParams]);
 
   const artistParam = searchParams.get("artist");
 
   // Wenn Tab manuell gewechselt wird, questArtist zurücksetzen + Tab speichern
   const handleTabChange = (tab: string) => {
-    if (tab !== "quest-board") setQuestArtist(null);
+    if (tab !== "quest-board") {
+      setQuestArtist(null);
+      localStorage.removeItem(LAST_ARTIST_KEY);
+    }
     setActiveTab(tab);
     localStorage.setItem(LAST_TAB_KEY, tab);
   };
@@ -53,6 +65,7 @@ function HomeContent() {
     setQuestArtist(artist);
     setActiveTab("quest-board");
     localStorage.setItem(LAST_TAB_KEY, "quest-board");
+    localStorage.setItem(LAST_ARTIST_KEY, JSON.stringify(artist));
   };
 
   return (
