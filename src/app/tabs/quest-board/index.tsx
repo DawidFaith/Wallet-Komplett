@@ -83,16 +83,16 @@ function ArtistSelector({ onSelect, walletAddress }: { onSelect: (artist: Artist
             className="flex flex-col items-center gap-2 shrink-0 w-[68px] group"
           >
             <div className="relative">
-              <div className="w-14 h-14 rounded-full ring-2 ring-amber-500/60 shadow-[0_0_10px_rgba(239,68,68,0.25)] transition-all group-hover:scale-105">
+              <div className="w-14 h-14 rounded-full ring-2 ring-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)] transition-all group-hover:scale-105">
                 {artist.picture
                   ? <img src={artist.picture} alt="" className="w-14 h-14 rounded-full object-cover" />
                   : <div className="w-14 h-14 rounded-full bg-amber-400/20 flex items-center justify-center">
                       <FaTrophy className="text-amber-400" size={18} />
                     </div>}
               </div>
-              <div className="absolute -bottom-1 -right-1 bg-amber-400 text-white text-[9px] font-black rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
-                <span className="text-[8px] font-bold">{artist.questCount}</span>
-              </div>
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-amber-400 text-black text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-lg animate-pulse">
+                {artist.questCount}
+              </span>
             </div>
             <p className="text-xs text-zinc-300 text-center line-clamp-2 leading-tight w-full group-hover:text-white transition-colors">
               {artist.name}
