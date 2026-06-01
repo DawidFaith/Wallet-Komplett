@@ -23,12 +23,18 @@ export async function POST(req: NextRequest) {
             'creator_balances','youtube_bindings','tiktok_engagement_verifications',
             'facebook_like_verifications','instagram_like_verifications',
             'instagram_mentions','facebook_mentions','user_xp','dfaith_credits',
-            'solana_accounts','hedera_accounts','user_profiles'
+            'solana_accounts','hedera_accounts'
           ])
         LOOP
           EXECUTE 'TRUNCATE TABLE ' || quote_ident(t) || ' CASCADE';
         END LOOP;
       END $body$
+    `;
+
+    // user_profiles: alle User löschen, aber platform_dfaith_ecosystem behalten
+    await sql`
+      DELETE FROM user_profiles
+      WHERE wallet_address != 'platform_dfaith_ecosystem'
     `;
 
     return NextResponse.json({ success: true, message: 'Alle Daten gelöscht' });
