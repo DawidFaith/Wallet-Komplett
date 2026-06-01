@@ -169,7 +169,7 @@ export default function TiktokShareVerifyModal({
             <p className="text-white font-semibold text-sm">So verifizierst du den Share:</p>
             <ol className="text-zinc-300 text-sm space-y-2 list-decimal list-inside">
               <li>Öffne das Video auf TikTok und tippe auf <strong>Teilen</strong></li>
-              <li>Wähle <strong>Repost</strong> – falls du bereits repostet hast, entferne den Repost zuerst und teile erneut</li>
+              <li>Wähle <strong>Repost</strong> – falls du bereits repostet hast: entferne den Repost zuerst, kehre hierher zurück, starte den Quest neu und reposte dann erneut</li>
               <li>Komm zurück und tippe auf <strong>Prüfen</strong></li>
             </ol>
           </div>
@@ -197,7 +197,7 @@ export default function TiktokShareVerifyModal({
               </p>
               {!shareVerified && (
                 <p className="text-zinc-400 text-xs">
-                  Falls du das Video bereits repostet hast, entferne den Repost zuerst und teile ihn dann erneut. Nur so kann die Verifizierung ein neues Delta erkennen.
+                  Falls du das Video bereits repostet hast: entferne den Repost zuerst, kehre hierher zurück, starte den Quest neu und reposte es dann erneut.
                 </p>
               )}
             </div>

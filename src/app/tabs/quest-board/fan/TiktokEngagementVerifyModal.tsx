@@ -264,9 +264,8 @@ export default function TiktokEngagementVerifyModal({
           <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-3">
             <p className="text-amber-300 text-xs font-semibold mb-1">⚠️ Wichtiger Hinweis</p>
             <p className="text-amber-200/80 text-xs">
-              Falls du das Video bereits vorher geliked, geteilt oder gespeichert hast, musst du diese Aktionen
-              <span className="font-semibold"> zuerst rückgängig machen</span> und sie dann neu durchführen –
-              nur so kann die Verifizierung einen Anstieg erkennen.
+              Falls du das Video bereits vorher geliked, geteilt oder gespeichert hast: mache diese Aktionen zuerst rückgängig,
+              <span className="font-semibold"> kehre hierher zurück, starte den Quest neu</span> und führe die Aktionen dann erneut durch.
             </p>
           </div>
 

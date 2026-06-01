@@ -168,7 +168,7 @@ export default function LikeVerifyModal({
 
           <div className="bg-blue-900/30 border border-blue-700/40 rounded-xl p-3">
             <p className="text-blue-200 text-xs">
-              <strong>Hinweis:</strong> Hast du das Video bereits geliked? Dann entferne den Like zuerst, kehre zurück und like es erneut – nur so kann die Verifizierung einen neuen Like erkennen.
+              <strong>Hinweis:</strong> Hast du das Video bereits geliked? Dann entferne den Like zuerst, kehre hierher zurück, starte den Quest neu und like es dann erneut.
             </p>
           </div>
 

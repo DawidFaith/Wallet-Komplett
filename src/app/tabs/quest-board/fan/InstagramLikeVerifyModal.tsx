@@ -239,8 +239,7 @@ export default function InstagramLikeVerifyModal({
           <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-3">
             <p className="text-amber-300 text-xs font-semibold mb-1">⚠️ Hinweis</p>
             <p className="text-amber-200/80 text-xs">
-              Falls du das Reel bereits geliked oder gespeichert hast, mache dies zuerst rückgängig und dann
-              erneut – nur so wird ein Delta erkannt.
+              Falls du das Reel bereits geliked oder gespeichert hast: entferne die Aktion zuerst, kehre hierher zurück, starte den Quest neu und führe die Aktion dann erneut durch.
             </p>
           </div>
 
@@ -319,8 +318,8 @@ export default function InstagramLikeVerifyModal({
             <p className="text-amber-300 text-xs font-semibold mb-1">⚠️ Hinweis</p>
             <p className="text-amber-200/80 text-xs">
               {isRepost
-                ? 'Falls du das Reel bereits repostet hast, entferne den Repost zuerst und teile ihn dann erneut. Nur so kann die Verifizierung ein neues Delta erkennen.'
-                : 'Falls du das Reel bereits geliked oder gespeichert hast, mache die jeweilige Aktion zuerst rückgängig und führe sie dann neu aus. Nur so kann die Verifizierung ein neues Delta erkennen.'}
+                ? 'Falls du das Reel bereits repostet hast: entferne den Repost zuerst, kehre hierher zurück, starte den Quest neu und reposte es dann erneut.'
+                : 'Falls du das Reel bereits geliked oder gespeichert hast: entferne die Aktion zuerst, kehre hierher zurück, starte den Quest neu und führe die Aktion dann erneut durch.'}
             </p>
           </div>
 

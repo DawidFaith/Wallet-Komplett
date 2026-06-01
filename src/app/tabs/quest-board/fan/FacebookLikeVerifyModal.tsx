@@ -181,7 +181,7 @@ export default function FacebookLikeVerifyModal({
           <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-3">
             <p className="text-amber-300 text-xs font-semibold mb-1">⚠️ Hinweis</p>
             <p className="text-amber-200/80 text-xs">
-              Falls du den Post bereits geliked hast, entferne den Like zuerst und like ihn dann erneut – nur so wird ein Delta erkannt.
+              Falls du den Post bereits geliked hast: entferne den Like zuerst, kehre hierher zurück, starte den Quest neu und like ihn dann erneut.
             </p>
           </div>
 
