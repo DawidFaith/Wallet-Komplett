@@ -85,7 +85,7 @@ function ArtistSelector({ onSelect, walletAddress }: { onSelect: (artist: Artist
             <div className="relative">
               <div className="w-14 h-14 rounded-full ring-2 ring-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)] transition-all group-hover:scale-105">
                 {artist.picture
-                  ? <img src={artist.picture} alt="" className="w-14 h-14 rounded-full object-cover" />
+                  ? <Image src={artist.picture} alt="" width={56} height={56} className="w-14 h-14 rounded-full object-cover" />
                   : <div className="w-14 h-14 rounded-full bg-amber-400/20 flex items-center justify-center">
                       <FaTrophy className="text-amber-400" size={18} />
                     </div>}
@@ -189,7 +189,7 @@ export default function QuestBoard({ language: _language, artistWallet, filterAr
         <div className="max-w-2xl mx-auto w-full">
           <div className="px-4 pt-6 pb-4">
             <div className="flex items-center gap-3 pt-1">
-              <img src="/D.FAITH.png" alt="D.FAITH" className="w-10 h-10 rounded-full object-contain shrink-0" />
+              <Image src="/D.FAITH.png" alt="D.FAITH" width={40} height={40} className="w-10 h-10 rounded-full object-contain shrink-0" />
               <div>
                 <h1 className="text-white font-bold text-xl tracking-wide">D.FAITH Ecosystem</h1>
                 <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">Quest Board · Missions</p>
@@ -227,7 +227,7 @@ export default function QuestBoard({ language: _language, artistWallet, filterAr
         {/* ─── Header ─── */}
         <div className="px-4 pt-6 pb-4">
           <div className="flex items-center gap-3 pt-1">
-            <img src="/D.FAITH.png" alt="D.FAITH" className="w-10 h-10 rounded-full object-contain shrink-0" />
+            <Image src="/D.FAITH.png" alt="D.FAITH" width={40} height={40} className="w-10 h-10 rounded-full object-contain shrink-0" />
             <div>
               <h1 className="text-white font-bold text-xl tracking-wide">D.FAITH Ecosystem</h1>
               <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">
@@ -299,7 +299,7 @@ export default function QuestBoard({ language: _language, artistWallet, filterAr
                 </button>
                 <div className="flex items-center gap-3 bg-zinc-900/60 border border-white/[0.06] rounded-2xl px-4 py-3">
                   {activeArtist.picture
-                    ? <img src={activeArtist.picture} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-amber-500/50" />
+                    ? <Image src={activeArtist.picture} alt="" width={40} height={40} className="w-10 h-10 rounded-full object-cover ring-2 ring-amber-500/50" />
                     : <div className="w-10 h-10 rounded-full bg-amber-400/20 flex items-center justify-center ring-2 ring-amber-500/30">
                         <FaTrophy size={16} className="text-amber-400" />
                       </div>}
