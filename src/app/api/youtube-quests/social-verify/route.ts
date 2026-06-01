@@ -505,13 +505,20 @@ async function handlePost(req: NextRequest) {
     // TikTok: synchron
     const freshProfile = await fetchProfile(p, cleanHandle);
 
-    const bio = freshProfile?.bio ?? '';
-    const profileName = freshProfile?.name ?? cleanHandle;
-    const profilePicture = freshProfile?.picture ?? `https://unavatar.io/${p}/${cleanHandle}`;
+    if (!freshProfile) {
+      return NextResponse.json(
+        { error: `Profil von @${cleanHandle} konnte nicht abgerufen werden. TikTok blockiert gerade den Zugriff – bitte versuche es in 1–2 Minuten erneut.` },
+        { status: 400 }
+      );
+    }
+
+    const bio = freshProfile.bio ?? '';
+    const profileName = freshProfile.name ?? cleanHandle;
+    const profilePicture = freshProfile.picture ?? `https://unavatar.io/${p}/${cleanHandle}`;
 
     if (!bio) {
       return NextResponse.json(
-        { error: `Bio von @${cleanHandle} konnte nicht gelesen werden. TikTok blockiert gerade den Zugriff – bitte versuche es in 1–2 Minuten erneut.` },
+        { error: `Deine TikTok-Bio von @${cleanHandle} ist leer. Bitte füge den Verifizierungscode in deine Bio ein und versuche es erneut.` },
         { status: 400 }
       );
     }
