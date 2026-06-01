@@ -2,6 +2,7 @@
 
 import { useUser, SignInButton, SignUpButton } from '@clerk/nextjs';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { FaMusic, FaCheckCircle, FaChevronRight, FaFire } from 'react-icons/fa';
@@ -154,7 +155,7 @@ export default function LandingPage() {
                 {artists.slice(0, 8).map((a) => (
                   <div key={a.walletAddress} className="relative flex flex-col items-center gap-1 cursor-default">
                     {a.picture ? (
-                      <img src={a.picture} alt={a.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                      <Image src={a.picture} alt={a.name} width={40} height={40} className="w-10 h-10 rounded-full object-cover shrink-0" />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                         <FaMusic size={11} className="text-zinc-600" />
@@ -329,7 +330,7 @@ export default function LandingPage() {
                   {artists.slice(0, 8).map((a) => (
                     <div key={a.walletAddress} className="relative flex flex-col items-center gap-1.5 cursor-default">
                       {a.picture ? (
-                        <img src={a.picture} alt={a.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                        <Image src={a.picture} alt={a.name} width={40} height={40} className="w-10 h-10 rounded-full object-cover shrink-0" />
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                           <FaMusic size={11} className="text-zinc-600" />

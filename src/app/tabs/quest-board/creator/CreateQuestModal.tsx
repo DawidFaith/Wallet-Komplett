@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { FaPlus, FaSync, FaCheck, FaCommentAlt, FaClock, FaKey, FaTiktok, FaYoutube, FaInstagram, FaFacebookF, FaThumbsUp, FaBookmark, FaShareAlt, FaTrash } from 'react-icons/fa';
 import Modal from '../components/Modal';
@@ -196,7 +196,7 @@ export default function CreateQuestModal({
     localStorage.removeItem('dfaith_pending_story_token');
   };
 
-  const fetchAvailableFacebookMedia = async () => {
+  const fetchAvailableFacebookMedia = useCallback(async () => {
     setLoadingFacebookMedia(true);
     try {
       const res = await fetch(`/api/facebook-quests/available-media?wallet=${encodeURIComponent(walletAddress)}`);
@@ -205,9 +205,9 @@ export default function CreateQuestModal({
     } finally {
       setLoadingFacebookMedia(false);
     }
-  };
+  }, [walletAddress]);
 
-  const fetchAvailableMedia = async () => {
+  const fetchAvailableMedia = useCallback(async () => {
     setLoadingMedia(true);
     try {
       const res = await fetch(`/api/instagram-quests/available-media?wallet=${encodeURIComponent(walletAddress)}`);
@@ -216,9 +216,9 @@ export default function CreateQuestModal({
     } finally {
       setLoadingMedia(false);
     }
-  };
+  }, [walletAddress]);
 
-  const fetchAvailableQuestMedia = async () => {
+  const fetchAvailableQuestMedia = useCallback(async () => {
     if (!walletAddress) return;
     setLoadingQuestMedia(true);
     setQuestMediaError('');
@@ -244,7 +244,7 @@ export default function CreateQuestModal({
     } finally {
       setLoadingQuestMedia(false);
     }
-  };
+  }, [walletAddress, platform, selectedQuestMediaId]);
 
 
 
