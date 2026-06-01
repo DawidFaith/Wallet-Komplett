@@ -75,7 +75,7 @@ function ArtistSelector({ onSelect, walletAddress }: { onSelect: (artist: Artist
   return (
     <div className="px-4 space-y-4">
       <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Künstler</p>
-      <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
+      <div className="flex gap-4 overflow-x-auto pt-2 pb-2 scrollbar-none">
         {artists.map(artist => (
           <button
             key={artist.walletAddress}
