@@ -3,15 +3,6 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Navigation from "../Navigation";
-import WalletTab from "../tabs/WalletTab";
-import TokenomicsTab from "../tabs/TokenomicsTab";
-import MerchTab from "../tabs/MerchTab";
-import StreamTab from "../tabs/StreamTab";
-import LiveTab from "../tabs/LiveTab";
-import InstagramTab from "../tabs/InstagramTab";
-import TiktokTab from "../tabs/TiktokTab";
-import FacebookTab from "../tabs/FacebookTab";
-import YoutubeTab from "../tabs/YoutubeTab";
 import QuestBoardTab from "../tabs/QuestBoardTab";
 import ProfileTab from "../tabs/ProfileTab";
 import SolanaWalletTab from "../tabs/SolanaWalletTab";
@@ -78,15 +69,6 @@ function HomeContent() {
       />
       <section className="flex-1 flex flex-col items-center justify-center pt-24 pb-8">
         {activeTab === "profile" && <ProfileTab language={language} onNavigate={handleTabChange} onNavigateToArtistQuests={handleNavigateToArtistQuests} />}
-        {activeTab === "wallet" && <WalletTab language={language} />}
-        {activeTab === "tokenomics" && <TokenomicsTab language={language} />}
-        {activeTab === "merch" && <MerchTab language={language} />}
-        {activeTab === "stream" && <StreamTab language={language} />}
-        {activeTab === "live" && <LiveTab language={language} />}
-        {activeTab === "instagram" && <InstagramTab language={language} />}
-        {activeTab === "tiktok" && <TiktokTab language={language} />}
-        {activeTab === "facebook" && <FacebookTab language={language} />}
-        {activeTab === "youtube" && <YoutubeTab language={language} />}
         {activeTab === "quest-board" && <QuestBoardTab language={language} filterArtist={questArtist} onClearArtist={() => setQuestArtist(null)} artistWallet={artistParam} />}
         {activeTab === "solana-wallet" && <SolanaWalletTab />}
         {activeTab === "reputation" && <ReputationTab artistWallet={artistParam} />}

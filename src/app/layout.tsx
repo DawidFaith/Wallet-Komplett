@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Orbitron, Pirata_One } from "next/font/google";
 import "./globals.css";
-import { ThirdwebProvider } from "thirdweb/react";
 import { ClerkProvider } from "@clerk/nextjs";
 import QueryProvider from "./QueryProvider";
 
@@ -37,10 +36,8 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="de" className="bg-[#13120e]">
           <body className={`${inter.className} ${orbitron.variable} ${pirataOne.variable} bg-[#13120e]`}>
-          <ThirdwebProvider>
             <QueryProvider>{children}</QueryProvider>
-          </ThirdwebProvider>
-        </body>
+          </body>
       </html>
     </ClerkProvider>
   );
