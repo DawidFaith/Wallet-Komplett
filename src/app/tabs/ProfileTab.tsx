@@ -123,7 +123,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
   const [repData, setRepData] = useState<{ reputation: number; level: number; levelName: string; progress: number; nextLevelRep: number | null; questRewardBonusPercent: number } | null>(null);
   // Reputation des Users bei ausgewähltem Artist laden
   useEffect(() => {
-    if (!account?.address || !selectedArtist) { setRepData(null); return; }
+    if (!account?.address || !selectedArtist?.walletAddress) { setRepData(null); return; }
     fetch(`/api/reputation?wallet=${account.address}&artistWallet=${selectedArtist.walletAddress}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => setRepData(d && !d.error ? d : null))
@@ -294,7 +294,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
     } finally {
       setArtistSaving(false);
     }
-  }, [account?.address, artistTypeInput, artistBioInput, artistRewardTokenInput, artistDisplayPlatformInput, _clerkUser?.imageUrl, loadProfile]);
+  }, [account?.address, artistTypeInput, artistBioInput, artistRewardTokenInput, artistDisplayPlatformInput, _clerkUser?.imageUrl, _clerkUser?.fullName, _clerkUser?.firstName, _clerkUser?.lastName, _clerkUser?.username, loadProfile]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
   useEffect(() => { loadMetaPartnerStatus(); }, [loadMetaPartnerStatus]);
@@ -393,7 +393,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
 
       {/* ── Page Title ─────────────────────────────────────────── */}
       <div className="flex items-center gap-3 pt-1">
-        <img src="/D.FAITH.png" alt="D.FAITH" className="w-10 h-10 rounded-full object-contain shrink-0" />
+        <Image src="/D.FAITH.png" alt="D.FAITH" width={40} height={40} className="w-10 h-10 rounded-full object-contain shrink-0" />
         <div>
           <h1 className="text-white font-bold text-xl tracking-wide">D.FAITH Ecosystem</h1>
           <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">Unterstütze Künstler · Verdiene Rewards</p>
@@ -472,7 +472,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                 {/* Öffentliches Profil-Bild wählen */}
                 {(() => {
                   const options: { key: string; icon: React.ReactNode; label: string; available: boolean }[] = [
-                    { key: 'clerk',     icon: _clerkUser?.imageUrl ? <img src={_clerkUser.imageUrl} alt="" className="w-3 h-3 rounded-full object-cover" /> : <FaCoins className="text-zinc-300" size={11} />, label: 'Profilbild', available: true },
+                    { key: 'clerk',     icon: _clerkUser?.imageUrl ? <Image src={_clerkUser.imageUrl} alt="" width={12} height={12} className="w-3 h-3 rounded-full object-cover" /> : <FaCoins className="text-zinc-300" size={11} />, label: 'Profilbild', available: true },
                     { key: 'youtube',   icon: <FaYoutube className="text-red-500" size={12} />,    label: 'YouTube',   available: !!(p?.youtubeVerified) },
                     { key: 'instagram', icon: <FaInstagram className="text-pink-500" size={12} />, label: 'Instagram', available: !!(p?.instagramHandle) },
                     { key: 'tiktok',    icon: <FaTiktok className="text-zinc-200" size={11} />,    label: 'TikTok',    available: !!(p?.tiktokHandle) },
@@ -559,7 +559,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                     <div className="pt-1.5 border-t border-white/[0.06] flex items-center gap-2">
                       <p className="text-zinc-600 text-[10px] uppercase tracking-widest shrink-0">Öffentlich:</p>
                       {pic
-                        ? <img src={pic} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                        ? <Image src={pic} alt="" width={24} height={24} className="w-6 h-6 rounded-full object-cover shrink-0" />
                         : <div className="w-6 h-6 rounded-full bg-zinc-700 shrink-0" />}
                       <span className="text-zinc-400 text-xs flex items-center gap-1">{icon} {label}</span>
                     </div>

@@ -265,7 +265,7 @@ export default function CreateQuestModal({
     if (platform === 'facebook' && open) {
       fetchAvailableFacebookMedia();
     }
-  }, [platform, open, walletAddress]);
+  }, [platform, open, walletAddress, fetchAvailableFacebookMedia, fetchAvailableMedia, fetchAvailableQuestMedia]);
 
   const handleClose = () => { reset(); onClose(); };
 
@@ -876,7 +876,7 @@ export default function CreateQuestModal({
                         }`}
                       >
                         {item.thumbnail_url ? (
-                          <img src={item.thumbnail_url} alt="" className="w-full h-28 object-cover" />
+                          <div className="relative w-full h-28"><Image src={item.thumbnail_url} alt="" fill className="object-cover" /></div>
                         ) : (
                           <div className="w-full h-28 bg-[#2d2615] flex items-center justify-center">
                             <FaFacebookF size={24} className="text-zinc-500" />
@@ -942,7 +942,7 @@ export default function CreateQuestModal({
                       }`}
                     >
                       {item.thumbnail_url ? (
-                        <img src={item.thumbnail_url} alt="" className="w-full h-24 object-cover" />
+                        <div className="relative w-full h-24"><Image src={item.thumbnail_url} alt="" fill className="object-cover" /></div>
                       ) : (
                         <div className="w-full h-24 bg-[#2d2615] flex items-center justify-center">
                           {platform === 'youtube' ? <FaYoutube size={22} className="text-zinc-500" /> : <FaTiktok size={20} className="text-zinc-500" />}
@@ -1034,7 +1034,7 @@ export default function CreateQuestModal({
                       >
                         {/* Thumbnail */}
                         {item.thumbnail_url ? (
-                          <img src={item.thumbnail_url} alt="" className="w-full h-32 object-cover" />
+                          <div className="relative w-full h-32"><Image src={item.thumbnail_url} alt="" fill className="object-cover" /></div>
                         ) : (
                           <div className="w-full h-32 bg-[#2d2615] flex items-center justify-center">
                             <FaInstagram size={28} className="text-zinc-500" />

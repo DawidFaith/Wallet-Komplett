@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaCheck, FaInfoCircle, FaSync, FaHeart, FaComment, FaBookmark, FaShareAlt, FaPaperPlane, FaThumbsUp, FaKey, FaLink, FaCopy } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { Platform, QuestType } from '../types';
@@ -457,7 +458,7 @@ export default function CreateBundleModal({
                         }`}
                       >
                         {item.thumbnail_url ? (
-                          <img src={item.thumbnail_url} alt="" className="w-full h-24 object-cover" />
+                          <div className="relative w-full h-24"><Image src={item.thumbnail_url} alt="" fill className="object-cover" /></div>
                         ) : (
                           <div className="w-full h-24 bg-zinc-900 flex items-center justify-center">
                             {PLATFORM_ICONS[platform]}
@@ -528,7 +529,7 @@ export default function CreateBundleModal({
                         }`}
                       >
                         {item.thumbnail_url ? (
-                          <img src={item.thumbnail_url} alt="" className="w-full h-20 object-cover" />
+                          <div className="relative w-full h-20"><Image src={item.thumbnail_url} alt="" fill className="object-cover" /></div>
                         ) : (
                           <div className="w-full h-20 bg-zinc-900 flex items-center justify-center">
                             {PLATFORM_ICONS.instagram}
@@ -586,7 +587,7 @@ export default function CreateBundleModal({
                           }`}
                         >
                           {item.thumbnail_url ? (
-                            <img src={item.thumbnail_url} alt="" className="w-full h-24 object-cover" />
+                            <div className="relative w-full h-24"><Image src={item.thumbnail_url} alt="" fill className="object-cover" /></div>
                           ) : (
                             <div className="w-full h-24 bg-zinc-900 flex items-center justify-center">
                               {PLATFORM_ICONS.facebook}
@@ -628,7 +629,7 @@ export default function CreateBundleModal({
             {videoUrl && videoTitle && (
               <div className="flex items-center gap-3 bg-purple-900/20 border border-purple-700/40 rounded-xl px-3 py-2">
                 {videoThumbnail && (
-                  <img src={videoThumbnail} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                  <Image src={videoThumbnail} alt="" width={48} height={48} className="w-12 h-12 rounded-lg object-cover shrink-0" />
                 )}
                 <p className="text-purple-200 text-xs font-semibold line-clamp-2 flex-1">{videoTitle}</p>
                 <FaCheck size={12} className="text-purple-400 shrink-0" />

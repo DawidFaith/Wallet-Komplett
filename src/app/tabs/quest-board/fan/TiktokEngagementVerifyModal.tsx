@@ -112,7 +112,7 @@ export default function TiktokEngagementVerifyModal({
         setLoading(false);
       }
     },
-    [quest, walletAddress, expiresAt, onCompleted]
+    [quest, walletAddress, expiresAt, onCompleted, singleAction]
   );
 
   useEffect(() => {

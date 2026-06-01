@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
+import Image from 'next/image';
 import {
   FaCopy, FaCheckCircle, FaSync, FaPaperPlane, FaExternalLinkAlt,
   FaKey, FaEye, FaEyeSlash, FaSpinner, FaExchangeAlt,
@@ -533,7 +534,7 @@ export default function SolanaWalletTab() {
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
         <div>
           <div className="flex items-center gap-2">
-            <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 rounded-full object-contain" />
+            <Image src="/D.FAITH.png" alt="D.FAITH" width={32} height={32} className="w-8 h-8 rounded-full object-contain" />
             <h2 className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</h2>
           </div>
           <p className="text-zinc-400 text-[10px] tracking-widest uppercase font-semibold mt-0.5 ml-10">Solana Wallet</p>
@@ -542,7 +543,7 @@ export default function SolanaWalletTab() {
           <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center overflow-hidden">
             {!isLoaded
               ? <FaSpinner size={28} className="animate-spin text-amber-400" />
-              : <img src="/D.FAITH.png" alt="D.FAITH" className="w-16 h-16 object-contain" />}
+              : <Image src="/D.FAITH.png" alt="D.FAITH" width={64} height={64} className="w-16 h-16 object-contain" />}
           </div>
           <div className="space-y-1">
             <p className="text-white font-semibold">Anmelden um fortzufahren</p>
@@ -565,7 +566,7 @@ export default function SolanaWalletTab() {
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
         <div>
           <div className="flex items-center gap-2">
-            <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 rounded-full object-contain" />
+            <Image src="/D.FAITH.png" alt="D.FAITH" width={32} height={32} className="w-8 h-8 rounded-full object-contain" />
             <h2 className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</h2>
           </div>
           <p className="text-zinc-400 text-[10px] tracking-widest uppercase font-semibold mt-0.5 ml-10">Solana Wallet</p>
@@ -585,7 +586,7 @@ export default function SolanaWalletTab() {
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-4">
         <div>
           <div className="flex items-center gap-2">
-            <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 rounded-full object-contain" />
+            <Image src="/D.FAITH.png" alt="D.FAITH" width={32} height={32} className="w-8 h-8 rounded-full object-contain" />
             <h2 className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</h2>
           </div>
           <p className="text-zinc-400 text-[10px] tracking-widest uppercase font-semibold mt-0.5 ml-10">Solana Wallet</p>
@@ -644,7 +645,7 @@ export default function SolanaWalletTab() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <img src="/D.FAITH.png" alt="D.FAITH" className="w-8 h-8 rounded-full object-contain" />
+            <Image src="/D.FAITH.png" alt="D.FAITH" width={32} height={32} className="w-8 h-8 rounded-full object-contain" />
             <span className="text-white font-bold text-sm tracking-widest uppercase">D.FAITH Ecosystem</span>
           </div>
           <p className="text-zinc-400 text-[10px] tracking-widest uppercase font-semibold mt-0.5 ml-10">Solana Wallet</p>
@@ -938,7 +939,7 @@ export default function SolanaWalletTab() {
               {actionModal === 'receive' && (
                 <div className="space-y-4">
                   <div className="bg-[#231e12]/50 border border-white/[0.1] rounded-2xl p-4 text-center space-y-3">
-                    <img src={receiveQrUrl} alt="SOL Receive QR" className="w-48 h-48 rounded-xl mx-auto bg-white p-2" />
+                    <Image src={receiveQrUrl} alt="SOL Receive QR" width={192} height={192} className="w-48 h-48 rounded-xl mx-auto bg-white p-2" />
                     <p className="text-zinc-400 text-xs">Scanne den QR Code oder kopiere die Adresse.</p>
                     <p className="text-white font-mono text-xs break-all bg-[#231e12] rounded-xl p-3">{solanaAddr}</p>
                     <button onClick={() => handleCopy(solanaAddr!)}

@@ -52,7 +52,7 @@ function ArtistSelector({ onSelect, walletAddress }: { onSelect: (artist: Artist
       .then((data: { artists?: ArtistInfo[] }) => setArtists((data.artists ?? []).filter(a => a.questCount > 0)))
       .catch((e: Error) => setFetchError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [walletAddress]);
 
   if (loading) {
     return (

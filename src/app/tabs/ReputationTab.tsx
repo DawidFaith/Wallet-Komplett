@@ -241,7 +241,7 @@ function ArtistDetailView({
         <div className="flex items-center gap-4 mb-4">
           <div className="w-14 h-14 rounded-full shrink-0 ring-2 ring-amber-500/30">
             {userImageUrl
-              ? <img src={userImageUrl} alt="" className="w-14 h-14 rounded-full object-cover" />
+              ? <Image src={userImageUrl} alt="" width={56} height={56} className="w-14 h-14 rounded-full object-cover" />
               : <div className="w-14 h-14 rounded-full bg-zinc-700 flex items-center justify-center"><FaStar className="text-zinc-400" size={20} /></div>}
           </div>
           <div className="flex-1 min-w-0">
@@ -376,7 +376,7 @@ function ArtistDetailView({
                         {lb.rank === 1 ? '🥇' : lb.rank === 2 ? '🥈' : lb.rank === 3 ? '🥉' : lb.rank}
                       </div>
                       {lb.imageUrl
-                        ? <img src={lb.imageUrl} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                        ? <Image src={lb.imageUrl} alt="" width={28} height={28} className="w-7 h-7 rounded-full object-cover shrink-0" />
                         : <div className="w-7 h-7 rounded-full bg-zinc-700 shrink-0" />}
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-medium truncate">
@@ -437,7 +437,7 @@ function ArtistDetailView({
                             <>
                               <div className="flex items-center gap-2">
                                 {winner.imageUrl
-                                  ? <img src={winner.imageUrl} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                                  ? <Image src={winner.imageUrl} alt="" width={24} height={24} className="w-6 h-6 rounded-full object-cover shrink-0" />
                                   : <div className="w-6 h-6 rounded-full bg-zinc-700 shrink-0" />}
                                 <p className="text-white text-sm font-medium truncate">
                                   {winner.displayName || shortenWallet(winner.walletAddress)}
@@ -1398,7 +1398,7 @@ export default function ReputationTab({ artistWallet }: { artistWallet?: string 
       <div className="max-w-2xl mx-auto w-full">
       <div className="px-4 pt-6 pb-4">
         <div className="flex items-center gap-3 pt-1">
-          <img src="/D.FAITH.png" alt="D.FAITH" className="w-10 h-10 rounded-full object-contain shrink-0" />
+          <Image src="/D.FAITH.png" alt="D.FAITH" width={40} height={40} className="w-10 h-10 rounded-full object-contain shrink-0" />
           <div>
             <h1 className="text-white font-bold text-xl tracking-wide">D.FAITH Ecosystem</h1>
             <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">
@@ -1471,7 +1471,7 @@ export default function ReputationTab({ artistWallet }: { artistWallet?: string 
                         : 'ring-white/25'
                     }`}>
                       {entry.artistPicture
-                        ? <img src={entry.artistPicture} alt="" className="w-14 h-14 rounded-full object-cover" />
+                        ? <Image src={entry.artistPicture} alt="" width={56} height={56} className="w-14 h-14 rounded-full object-cover" />
                         : <div className="w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center">
                             <FaStar className="text-amber-400" size={18} />
                           </div>}

@@ -116,7 +116,7 @@ function ItemCard({
       {/* Cover */}
       <div className="relative aspect-[16/7] overflow-hidden bg-zinc-800">
         {item.imageUrl ? (
-          <img src={item.imageUrl} alt={item.title} className={`w-full h-full object-cover ${isLocked ? 'grayscale' : ''}`} />
+          <Image src={item.imageUrl} alt={item.title} fill className={`object-cover ${isLocked ? 'grayscale' : ''}`} />
         ) : (
           <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
             <span className="opacity-20 scale-[3]"><TypeIcon type={item.type} /></span>
@@ -367,7 +367,7 @@ function ArtistShopView({
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-full shrink-0 ring-2 ring-amber-500/40 shadow-[0_0_14px_rgba(245,158,11,0.2)]">
             {artist.pictureUrl
-              ? <img src={artist.pictureUrl} alt="" className="w-14 h-14 rounded-full object-cover" />
+              ? <Image src={artist.pictureUrl} alt="" width={56} height={56} className="w-14 h-14 rounded-full object-cover" />
               : <div className="w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center"><FaStar className="text-amber-400" size={20} /></div>}
           </div>
           <div className="flex-1 min-w-0">
@@ -543,7 +543,7 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
       {/* Cover */}
       <div className="relative aspect-[16/7] overflow-hidden bg-zinc-800">
         {item.imageUrl ? (
-          <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+          <Image src={item.imageUrl} alt={item.title} fill className="object-cover" />
         ) : (
           <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
             <span className="opacity-20 scale-[3]"><TypeIcon type={item.type} /></span>
@@ -573,7 +573,7 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
           {item.artistName && (
             <div className="flex items-center gap-1.5 shrink-0">
               {item.artistPicture
-                ? <img src={item.artistPicture} alt="" className="w-5 h-5 rounded-full object-cover" />
+                ? <Image src={item.artistPicture} alt="" width={20} height={20} className="w-5 h-5 rounded-full object-cover" />
                 : <div className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center"><FaStar size={8} className="text-amber-400" /></div>}
               <span className="text-zinc-400 text-xs truncate max-w-[80px]">{item.artistName}</span>
             </div>
@@ -722,7 +722,7 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
                 <div className="relative shrink-0">
                   <div className="w-11 h-11 rounded-full ring-2 ring-amber-500/50 shadow-[0_0_12px_rgba(245,158,11,0.2)]">
                     {group.picture
-                      ? <img src={group.picture} alt="" className="w-11 h-11 rounded-full object-cover" />
+                      ? <Image src={group.picture} alt="" width={44} height={44} className="w-11 h-11 rounded-full object-cover" />
                       : <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-500/30 to-zinc-800 flex items-center justify-center">
                           <FaStar className="text-amber-400" size={16} />
                         </div>}
@@ -1139,7 +1139,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
               />
             </div>
             {fImage && (
-              <img src={fImage} alt="Vorschau" className="mt-2 w-20 h-20 rounded-xl object-cover border border-white/10" />
+              <Image src={fImage} alt="Vorschau" width={80} height={80} className="mt-2 w-20 h-20 rounded-xl object-cover border border-white/10" />
             )}
           </div>
 
@@ -1260,7 +1260,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                       <input value={editData.image} onChange={e => setEditData(d => d && { ...d, image: e.target.value })}
                         placeholder="Bild-URL" className="flex-1 min-w-0 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-violet-500/50" />
                     </div>
-                    {editData.image && <img src={editData.image} alt="Vorschau" className="mt-2 w-16 h-16 rounded-xl object-cover border border-white/10" />}
+                    {editData.image && <Image src={editData.image} alt="Vorschau" width={64} height={64} className="mt-2 w-16 h-16 rounded-xl object-cover border border-white/10" />}
                   </div>
 
                   {editError && <p className="text-red-400 text-xs">{editError}</p>}
@@ -1280,7 +1280,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
                     {item.imageUrl && (
-                      <img src={item.imageUrl} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                      <Image src={item.imageUrl} alt="" width={48} height={48} className="w-12 h-12 rounded-xl object-cover shrink-0" />
                     )}
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -1394,7 +1394,7 @@ function ArtistList({
             <div className="relative">
               <div className="w-14 h-14 rounded-full ring-2 ring-amber-500/60 shadow-[0_0_10px_rgba(245,158,11,0.25)] transition-all group-hover:scale-105">
                 {artist.pictureUrl
-                  ? <img src={artist.pictureUrl} alt="" className="w-14 h-14 rounded-full object-cover" />
+                  ? <Image src={artist.pictureUrl} alt="" width={56} height={56} className="w-14 h-14 rounded-full object-cover" />
                   : <div className="w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center">
                       <FaStar className="text-amber-400" size={18} />
                     </div>}
@@ -1456,7 +1456,7 @@ export default function ShopTab() {
         {/* ── Header ── */}
         <div className="px-4 pt-6 pb-2">
           <div className="flex items-center gap-3 pt-1">
-            <img src="/D.FAITH.png" alt="D.FAITH" className="w-10 h-10 rounded-full object-contain shrink-0" />
+            <Image src="/D.FAITH.png" alt="D.FAITH" width={40} height={40} className="w-10 h-10 rounded-full object-contain shrink-0" />
             <div>
               <h1 className="text-white font-bold text-xl tracking-wide">D.FAITH Ecosystem</h1>
               <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">
