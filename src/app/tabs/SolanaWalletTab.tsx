@@ -10,7 +10,6 @@ import {
   FaTimes, FaLock, FaUnlock, FaChartLine, FaInfoCircle,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
-import Image from 'next/image';
 import SwapWidget from './wallet/SwapWidget';
 
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
