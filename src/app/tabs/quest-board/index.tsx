@@ -243,16 +243,16 @@ export default function QuestBoard({ language: _language, artistWallet, filterAr
             <div className="flex bg-zinc-900/70 rounded-xl p-1 border border-white/[0.07]">
               <button
                 onClick={() => setView('fan')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${view === 'fan' ? 'bg-amber-500 text-white shadow' : 'text-zinc-400 hover:text-white'}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${view === 'fan' ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'}`}
               >
-                <FaTrophy size={11} />
+                <FaTrophy size={13} />
                 Supporter
               </button>
               <button
                 onClick={() => setView('artist')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${view === 'artist' ? 'bg-amber-500 text-white shadow' : 'text-zinc-400 hover:text-white'}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${view === 'artist' ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'}`}
               >
-                <FaMusic size={11} />
+                <FaMusic size={13} />
                 Künstler
               </button>
             </div>
