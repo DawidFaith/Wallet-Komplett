@@ -4,7 +4,6 @@ import { useUser, SignInButton, SignUpButton } from '@clerk/nextjs';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { FaMusic, FaCheckCircle, FaChevronRight, FaFire } from 'react-icons/fa';
 
 interface Artist {
