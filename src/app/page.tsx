@@ -67,16 +67,18 @@ export default function LandingPage() {
   const totalQuests = artists.reduce((s, a) => s + (a.questCount || 0), 0);
 
   const fanFeatures = [
-    { n: '01', title: 'Social verknüpfen', desc: 'Verbinde Instagram, TikTok, YouTube & Facebook für maximale Rewards.' },
-    { n: '02', title: 'Quests erfüllen', desc: 'Absolviere Aufgaben deines Künstlers und erhalte echte Token direkt in dein Wallet.' },
-    { n: '03', title: 'Exklusive Vorteile', desc: 'Frühzugang zu Songs, limitiertem Merch und mehr für aktive Supporter.' },
-    { n: '04', title: 'Leaderboard & XP', desc: 'Sammle Punkte, steige auf und löse sie gegen Belohnungen ein.' },
+    { n: '01', title: 'Social verknüpfen', desc: 'Verbinde Instagram, TikTok, YouTube & Facebook — alle Accounts an einem Ort.' },
+    { n: '02', title: 'Quests erfüllen', desc: 'Like, kommentiere, teile oder folge — und erhalte echte Solana Token direkt ins Wallet.' },
+    { n: '03', title: 'Solana Wallet', desc: 'Dein persönliches Solana Wallet wird automatisch erstellt — kein Setup, keine App nötig.' },
+    { n: '04', title: 'Reputation & Leaderboard', desc: 'Baue deine Reputation auf, steige im Ranking auf und erhalte Belohnungen für treue Unterstützung.' },
+    { n: '05', title: 'Shop & Drops', desc: 'Schalte exklusive Inhalte, Tracks und limitierte Drops im Shop frei.' },
   ];
 
   const artistFeatures = [
-    { n: '01', title: 'Eigene Wallet & Token', desc: 'Dein eigenes Solana Wallet und Token für deine Community.' },
-    { n: '02', title: 'Quest System', desc: 'Erstelle eigene Aufgaben mit individuellen Rewards für deine Fans.' },
-    { n: '03', title: 'Merch & Content Drops', desc: 'Exklusive Drops nur für deine aktivsten Supporter.' },
+    { n: '01', title: 'Eigene Wallet & Token', desc: 'Dein persönliches Solana Wallet und Token — vollständig in der Plattform integriert.' },
+    { n: '02', title: 'Quest System', desc: 'Erstelle Quests auf Instagram, TikTok, YouTube und Facebook mit individuellen Token-Rewards.' },
+    { n: '03', title: 'Quest Bundles', desc: 'Bündle mehrere Quests zu einer Kampagne und maximiere deine Reichweite.' },
+    { n: '04', title: 'Shop-System', desc: 'Stelle exklusive Inhalte und limitierte Drops bereit — nur für deine aktivsten Supporter.' },
   ];
 
   return (
@@ -358,7 +360,7 @@ export default function LandingPage() {
 
             <div className="mb-2">
               <p className="text-[10px] font-black tracking-[0.4em] uppercase text-zinc-700 mb-2">
-                Web3 · Musik · Community
+                Solana · Musik · Community
               </p>
               <p className="text-[1.45rem] font-black text-white leading-snug">
                 Werde Teil der<br />
