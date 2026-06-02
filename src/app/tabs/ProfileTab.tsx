@@ -288,6 +288,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
           displayPlatform: artistDisplayPlatformInput,
           clerkImageUrl: _clerkUser?.imageUrl ?? null,
           clerkName: artistDisplayNameInput.trim() || _clerkUser?.fullName || [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') || _clerkUser?.username || null,
+          displayName: artistDisplayNameInput.trim() || _clerkUser?.fullName || [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') || _clerkUser?.username || null,
         }),
       });
       setEditingArtist(false);
@@ -419,13 +420,13 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
               />
             ) : (
               <div className="w-16 h-16 rounded-full bg-zinc-700 flex items-center justify-center text-white font-bold text-2xl select-none">
-                {(_clerkUser?.fullName || [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') || _clerkUser?.username || '?').slice(0, 2).toUpperCase()}
+                {(p?.displayName || _clerkUser?.fullName || [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') || _clerkUser?.username || '?').slice(0, 2).toUpperCase()}
               </div>
             )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-lg text-white truncate">
-              {_clerkUser?.fullName || [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') || _clerkUser?.username || shortenAddress(account.address)}
+              {p?.displayName || _clerkUser?.fullName || [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') || _clerkUser?.username || shortenAddress(account.address)}
             </p>
           </div>
         </div>
