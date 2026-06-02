@@ -67,18 +67,16 @@ export default function LandingPage() {
   const totalQuests = artists.reduce((s, a) => s + (a.questCount || 0), 0);
 
   const fanFeatures = [
-    { n: '01', title: 'Social verknüpfen', desc: 'Verbinde Instagram, TikTok, YouTube & Facebook — alle Accounts an einem Ort.' },
-    { n: '02', title: 'Quests erfüllen', desc: 'Like, kommentiere, teile oder folge — und erhalte echte Solana Token direkt ins Wallet.' },
-    { n: '03', title: 'Solana Wallet', desc: 'Dein persönliches Solana Wallet wird automatisch erstellt — kein Setup, keine App nötig.' },
-    { n: '04', title: 'Reputation & Leaderboard', desc: 'Baue deine Reputation auf, steige im Ranking auf und erhalte Belohnungen für treue Unterstützung.' },
-    { n: '05', title: 'Shop & Drops', desc: 'Schalte exklusive Inhalte, Tracks und limitierte Drops im Shop frei.' },
+    { n: '01', title: 'Verdiene D.FAITH Token', desc: 'Like, teile, kommentiere — und erhalte echte D.FAITH Token für jeden Support. Dein Einsatz hat ab sofort echten Wert.' },
+    { n: '02', title: 'Werde zum echten Insider', desc: 'Tausche deine Token gegen exklusive Tracks, limitierte Drops und Frühzugänge — nur für aktive Supporter.' },
+    { n: '03', title: 'Zeig, wie loyal du bist', desc: 'Kletter im Leaderboard nach oben und lass dich von deinen Lieblingskünstlern entdecken.' },
   ];
 
   const artistFeatures = [
-    { n: '01', title: 'Eigene Wallet & Token', desc: 'Dein persönliches Solana Wallet und Token — vollständig in der Plattform integriert.' },
-    { n: '02', title: 'Quest System', desc: 'Erstelle Quests auf Instagram, TikTok, YouTube und Facebook mit individuellen Token-Rewards.' },
-    { n: '03', title: 'Quest Bundles', desc: 'Bündle mehrere Quests zu einer Kampagne und maximiere deine Reichweite.' },
-    { n: '04', title: 'Shop-System', desc: 'Stelle exklusive Inhalte und limitierte Drops bereit — nur für deine aktivsten Supporter.' },
+    { n: '01', title: 'Deine Fans promoten dich', desc: 'Erstelle Aufgaben auf Instagram, TikTok, YouTube & Facebook — deine Fans werden aktiv und deine Reichweite wächst.' },
+    { n: '02', title: 'Dein eigener Artist-Token', desc: 'Starte mit D.FAITH Token oder erstelle deinen eigenen Token — und baue deine Community auf ein echtes Fundament.' },
+    { n: '03', title: 'Alles in einer Plattform', desc: 'Quests, Bundles und Kampagnen für alle Plattformen — übersichtlich in einem Dashboard.' },
+    { n: '04', title: 'Exklusivität als Währung', desc: 'Nur deine treuesten Fans bekommen Zugang zum Shop — das schafft echten Anreiz, aktiv zu bleiben.' },
   ];
 
   return (
