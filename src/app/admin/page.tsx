@@ -238,6 +238,9 @@ export default function AdminPage() {
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState('');
   const [resetting, setResetting] = useState(false);
+  const [repResetArtist, setRepResetArtist] = useState('');
+  const [repResetting, setRepResetting] = useState(false);
+  const [repResetMsg, setRepResetMsg] = useState('');
 
   // ── Login Screen ────────────────────────────────────────────────────────────
   if (!secret) {
@@ -388,6 +391,54 @@ export default function AdminPage() {
               className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-900/60 hover:bg-red-800 text-red-300 disabled:opacity-50 transition-colors border border-red-800/40"
             >
               {resetting ? '…' : 'Full Reset'}
+            </button>
+          </div>
+
+          {/* Reputation Reset */}
+          <div className="flex items-center gap-3 mb-4 p-3 bg-zinc-900 border border-zinc-800 rounded-xl">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-zinc-400 mb-2">Reputation eines Künstlers bei allen Fans auf 0 zurücksetzen</p>
+              <select
+                value={repResetArtist}
+                onChange={(e) => { setRepResetArtist(e.target.value); setRepResetMsg(''); }}
+                className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-1.5 text-xs outline-none focus:border-red-500 transition-colors"
+              >
+                <option value="">— Künstler auswählen —</option>
+                {users.filter(u => u.isArtist).map(u => (
+                  <option key={u.walletAddress} value={u.walletAddress}>
+                    {u.displayName || u.walletAddress.slice(0, 10) + '…'}
+                  </option>
+                ))}
+              </select>
+              {repResetMsg && <p className="text-xs mt-1.5 text-amber-400">{repResetMsg}</p>}
+            </div>
+            <button
+              onClick={async () => {
+                if (!repResetArtist) return;
+                const artist = users.find(u => u.walletAddress === repResetArtist);
+                if (!confirm(`Reputation von ALLEN Fans bei "${artist?.displayName || repResetArtist}" auf 0 zurücksetzen?`)) return;
+                setRepResetting(true);
+                setRepResetMsg('');
+                try {
+                  const res = await fetch('/api/admin/reset-reputation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+                    body: JSON.stringify({ artistWallet: repResetArtist }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error);
+                  setRepResetMsg(`✓ ${data.deleted} Einträge gelöscht`);
+                  setRepResetArtist('');
+                } catch (e) {
+                  setRepResetMsg(e instanceof Error ? e.message : 'Fehler');
+                } finally {
+                  setRepResetting(false);
+                }
+              }}
+              disabled={repResetting || !repResetArtist}
+              className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-orange-900/60 hover:bg-orange-800 text-orange-300 disabled:opacity-40 transition-colors border border-orange-800/40"
+            >
+              {repResetting ? '…' : 'Reputation Reset'}
             </button>
           </div>
 
