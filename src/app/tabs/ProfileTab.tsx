@@ -141,6 +141,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
   const [metaFbMsg, setMetaFbMsg] = useState('');
   // Artist-Profil bearbeiten
   const [editingArtist, setEditingArtist] = useState(false);
+  const [artistDisplayNameInput, setArtistDisplayNameInput] = useState('');
   const [artistTypeInput, setArtistTypeInput] = useState('');
   const [artistBioInput, setArtistBioInput] = useState('');
   const [artistRewardTokenInput, setArtistRewardTokenInput] = useState('');
@@ -286,7 +287,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
           rewardToken: artistRewardTokenInput.trim() || null,
           displayPlatform: artistDisplayPlatformInput,
           clerkImageUrl: _clerkUser?.imageUrl ?? null,
-          clerkName: _clerkUser?.fullName || [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') || _clerkUser?.username || null,
+          clerkName: artistDisplayNameInput.trim() || _clerkUser?.fullName || [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') || _clerkUser?.username || null,
         }),
       });
       setEditingArtist(false);
@@ -294,7 +295,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
     } finally {
       setArtistSaving(false);
     }
-  }, [account?.address, artistTypeInput, artistBioInput, artistRewardTokenInput, artistDisplayPlatformInput, _clerkUser?.imageUrl, _clerkUser?.fullName, _clerkUser?.firstName, _clerkUser?.lastName, _clerkUser?.username, loadProfile]);
+  }, [account?.address, artistDisplayNameInput, artistTypeInput, artistBioInput, artistRewardTokenInput, artistDisplayPlatformInput, _clerkUser?.imageUrl, _clerkUser?.fullName, _clerkUser?.firstName, _clerkUser?.lastName, _clerkUser?.username, loadProfile]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
   useEffect(() => { loadMetaPartnerStatus(); }, [loadMetaPartnerStatus]);
@@ -442,6 +443,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
               {!editingArtist && (
                 <button
                   onClick={() => {
+                    setArtistDisplayNameInput(p.displayName ?? _clerkUser?.fullName ?? [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') ?? _clerkUser?.username ?? '');
                     setArtistTypeInput(p.artistType ?? '');
                     setArtistBioInput(p.artistBio ?? '');
                     setArtistRewardTokenInput(p.rewardToken ?? 'D.FAITH');
@@ -456,6 +458,12 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
             </div>
             {editingArtist ? (
               <div className="space-y-2">
+                <input
+                  value={artistDisplayNameInput}
+                  onChange={(e) => setArtistDisplayNameInput(e.target.value)}
+                  placeholder="Anzeigename (z.B. D.FAITH, Dawid Faith…)"
+                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-500/50 transition-colors"
+                />
                 <input
                   value={artistTypeInput}
                   onChange={(e) => setArtistTypeInput(e.target.value)}

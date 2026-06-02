@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
             'creator_balances','youtube_bindings','tiktok_engagement_verifications',
             'facebook_like_verifications','instagram_like_verifications',
             'instagram_mentions','facebook_mentions','user_xp','dfaith_credits',
-            'solana_accounts','hedera_accounts'
+            'user_reputation','solana_accounts','hedera_accounts'
           ])
         LOOP
           EXECUTE 'TRUNCATE TABLE ' || quote_ident(t) || ' CASCADE';
