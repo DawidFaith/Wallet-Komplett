@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       DELETE FROM user_reputation
       WHERE artist_wallet = ${artistWallet.toLowerCase()}
     `;
-    return NextResponse.json({ success: true, deleted: result.count });
+    return NextResponse.json({ success: true, deleted: result.length });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
