@@ -72,7 +72,7 @@ function HomeContent() {
         {activeTab === "quest-board" && <QuestBoardTab language={language} filterArtist={questArtist} onClearArtist={() => setQuestArtist(null)} artistWallet={artistParam} />}
         {activeTab === "solana-wallet" && <SolanaWalletTab />}
         {activeTab === "reputation" && <ReputationTab artistWallet={artistParam} />}
-        {activeTab === "shop" && <ShopTab />}
+        {activeTab === "shop" && <ShopTab initialArtistWallet={artistParam} />}
       </section>
     </main>
   );

@@ -1422,7 +1422,7 @@ function ArtistList({
 
 // ─── Haupt-Komponente ────────────────────────────────────────────────────────
 
-export default function ShopTab() {
+export default function ShopTab({ initialArtistWallet }: { initialArtistWallet?: string | null }) {
   const { user, isLoaded } = useUser();
   const walletAddress = user?.id ?? null;
 
@@ -1430,6 +1430,28 @@ export default function ShopTab() {
   const [isArtist, setIsArtist] = useState(false);
   const [myRewardToken, setMyRewardToken] = useState<string | null>(null);
   const [selectedArtist, setSelectedArtist] = useState<ShopArtist | null>(null);
+
+  // Direkt einen Artist öffnen wenn initialArtistWallet gesetzt ist
+  useEffect(() => {
+    if (!initialArtistWallet) return;
+    fetch('/api/shop/artists')
+      .then(r => r.ok ? r.json() : [])
+      .then((data: Record<string, unknown>[]) => {
+        const found = data.find(a =>
+          (a.artist_wallet as string)?.toLowerCase() === initialArtistWallet.toLowerCase()
+        );
+        if (found) {
+          setSelectedArtist({
+            artistWallet: found.artist_wallet as string,
+            displayName: found.display_name as string | null,
+            pictureUrl: found.picture_url as string | null,
+            itemCount: found.item_count as number,
+            rewardToken: (found.reward_token as string | null) ?? null,
+          });
+        }
+      })
+      .catch(() => {});
+  }, [initialArtistWallet]);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
 
   const loadCredits = useCallback(async () => {
