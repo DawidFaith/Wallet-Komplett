@@ -45,7 +45,12 @@ export async function GET(req: Request) {
           WHERE LOWER(q.creator_wallet) = LOWER(p.wallet_address)
             AND q.is_active = TRUE
             AND (q.expires_at IS NULL OR q.expires_at > NOW())
-        ), 0) AS quest_count
+        ), 0) AS quest_count,
+        COALESCE((
+          SELECT COUNT(*) FROM shop_items si
+          WHERE LOWER(si.artist_wallet) = LOWER(p.wallet_address)
+            AND si.is_active = TRUE
+        ), 0) AS shop_item_count
       FROM user_profiles p
       LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
       WHERE p.is_artist = TRUE
@@ -124,6 +129,7 @@ export async function GET(req: Request) {
         artistBio: r.artist_bio ?? null,
         rewardToken: r.reward_token ?? 'D.FAITH',
         questCount: Math.max(0, Number(r.quest_count) - (completedByCreator[(r.wallet_address as string).toLowerCase()] ?? 0)),
+        shopItemCount: Number(r.shop_item_count),
         socials: {
           youtubeChannelId: r.youtube_channel_id ?? null,
           youtubeChannelName: r.youtube_channel_name ?? null,

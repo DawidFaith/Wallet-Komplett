@@ -7,7 +7,7 @@ import Image from 'next/image';
 import {
   FaInstagram, FaTiktok, FaFacebook, FaYoutube,
   FaCheck, FaCoins, FaStar, FaLock, FaPlus, FaChevronDown,
-  FaPen, FaMusic, FaTimes, FaInfoCircle, FaTrophy, FaTasks,
+  FaPen, FaMusic, FaTimes, FaInfoCircle, FaTrophy, FaTasks, FaShoppingBag,
 } from 'react-icons/fa';import SocialVerifyModal from './profile/SocialVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
@@ -56,6 +56,7 @@ interface ArtistEntry {
   artistBio: string | null;
   rewardToken: string | null;
   questCount: number;
+  shopItemCount: number;
   socials: {
     youtubeChannelId: string | null;
     youtubeChannelName: string | null;
@@ -872,6 +873,25 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                   )}
                 </div>
               )}
+              {/* Shop-Info bei diesem Artist */}
+              {selectedArtist && selectedArtist.shopItemCount > 0 && (
+                <div className="flex items-center gap-3 bg-amber-950/30 border border-amber-700/20 rounded-xl px-3 py-2">
+                  <FaShoppingBag className="text-amber-400 shrink-0" size={14} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-amber-300 text-xs font-semibold">Shop verfügbar</p>
+                    <p className="text-zinc-500 text-[10px]">{selectedArtist.shopItemCount} {selectedArtist.shopItemCount === 1 ? 'Artikel' : 'Artikel'} erhältlich</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      saveStateForRestore();
+                      router.push(`/home?tab=shop&artist=${encodeURIComponent(selectedArtist.walletAddress)}`);
+                    }}
+                    className="text-amber-400 hover:text-amber-300 text-xs font-semibold shrink-0 transition-colors"
+                  >
+                    Öffnen →
+                  </button>
+                </div>
+              )}
               {onNavigate && (
                 <div className="flex gap-2">
                   <button
@@ -900,6 +920,17 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                       className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs font-semibold transition-colors"
                     >
                       <FaTasks size={11} /> {selectedArtist.questCount} Quest{selectedArtist.questCount !== 1 ? 's' : ''}
+                    </button>
+                  )}
+                  {selectedArtist && selectedArtist.shopItemCount > 0 && (
+                    <button
+                      onClick={() => {
+                        saveStateForRestore();
+                        router.push(`/home?tab=shop&artist=${encodeURIComponent(selectedArtist.walletAddress)}`);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs font-semibold transition-colors"
+                    >
+                      <FaShoppingBag size={11} /> {selectedArtist.shopItemCount} {selectedArtist.shopItemCount === 1 ? 'Artikel' : 'Artikel'}
                     </button>
                   )}
                 </div>
