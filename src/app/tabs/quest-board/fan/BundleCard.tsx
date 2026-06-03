@@ -470,17 +470,29 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
 
           return (
             <div key={item.questId} className="min-w-full snap-start px-4 pt-3 pb-4">
-              <div className={`bg-zinc-900 rounded-2xl border ${pc.outerBorder} overflow-hidden transition-all ${full ? 'opacity-60' : ''}`}>
-                <div className={`h-1 bg-gradient-to-r ${pc.progress}`} />
-                <div className="relative h-40">
-                  {bundle.videoThumbnail
-                    ? <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
-                    : <div className={`absolute inset-0 bg-gradient-to-br ${questConfig.bgGradient} to-zinc-900`} />
-                  }
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70" />
-                  <div className={`absolute top-2 left-2 ${questConfig.badge.bg} text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1`}>
-                    {questConfig.badge.icon} {questConfig.badge.label}
+              <div className={`group relative flex flex-col rounded-xl overflow-hidden bg-[#181818] transition-all duration-200 ${full ? 'opacity-60' : 'hover:bg-[#242424]'}`}>
+                {/* Platform-farbiger Top-Streifen */}
+                <div className={`h-1 bg-gradient-to-r ${pc.progress} shrink-0`} />
+
+                {/* Quadratisches Thumbnail – Blur-Hintergrund + object-contain (wie Shop-Karte) */}
+                <div className="relative w-full aspect-square overflow-hidden">
+                  {bundle.videoThumbnail ? (
+                    <>
+                      <Image src={bundle.videoThumbnail} alt="" fill unoptimized className="object-cover scale-110 blur-xl opacity-40" />
+                      <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-contain" />
+                    </>
+                  ) : (
+                    <div className={`absolute inset-0 bg-gradient-to-br ${questConfig.bgGradient} to-zinc-900 flex items-center justify-center`}>
+                      <span className="text-5xl opacity-20">{questConfig.badge.icon}</span>
+                    </div>
+                  )}
+
+                  {/* Quest-Typ Badge – oben links */}
+                  <div className={`absolute top-2 left-2 ${pc.badge} text-white text-[11px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-md`}>
+                    {pc.badgeIcon} {questConfig.badge.label}
                   </div>
+
+                  {/* Reward – oben rechts */}
                   <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
                     <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
                       <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="rounded-full" unoptimized />
@@ -488,37 +500,47 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                     </div>
                     {levelBonusPercent > 0 && (
                       <div className="bg-black/70 text-green-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        inkl. +{levelBonusPercent}% Level-Bonus
+                        +{levelBonusPercent}% Bonus
                       </div>
                     )}
                     {(item.reputationReward ?? 0) > 0 && (
-                      <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                        <FaStar size={9} /> +{item.reputationReward} REP
+                      <div className="bg-black/70 text-amber-300 text-[11px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                        <FaStar size={8} /> +{item.reputationReward} REP
                       </div>
                     )}
                   </div>
                 </div>
-                <div className="p-4 space-y-3">
-                  <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{bundle.videoTitle}</h3>
-                  <div>
-                    <div className="flex justify-between text-xs text-zinc-400 mb-1">
-                      <span>{item.completions} von {item.maxCompletions} Plätzen belegt</span>
+
+                {/* Text-Bereich */}
+                <div className="px-3 pt-2.5 pb-1 flex flex-col gap-1">
+                  <p className="text-white font-bold text-sm leading-snug line-clamp-1">{bundle.videoTitle}</p>
+                  <p className="text-zinc-400 text-[11px] leading-relaxed line-clamp-2 min-h-[2.2em] inline-flex items-center gap-1 flex-wrap">
+                    {questConfig.description}
+                  </p>
+
+                  {/* Fortschrittsbalken */}
+                  <div className="mt-1">
+                    <div className="flex justify-between text-[10px] text-zinc-500 mb-1">
+                      <span>{item.completions}/{item.maxCompletions} Plätze</span>
                       <span>{progress}%</span>
                     </div>
-                    <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
                       <div className={`h-full bg-gradient-to-r ${pc.progress} rounded-full transition-all duration-500`} style={{ width: `${progress}%` }} />
                     </div>
                   </div>
-                  <p className="text-zinc-400 text-xs">
-                    Aufgabe: <span className="text-zinc-300 inline-flex items-center gap-1">{questConfig.description}</span>
-                  </p>
+                </div>
+
+                {/* Button */}
+                <div className="px-3 pb-3 pt-1.5">
                   {full ? (
-                    <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">Nicht mehr verfügbar</button>
+                    <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">
+                      Nicht mehr verfügbar
+                    </button>
                   ) : (
                     <button
                       onClick={() => onOpenQuest?.(entry)}
                       disabled={!onOpenQuest || !isVerified}
-                      className={`w-full bg-gradient-to-r ${pc.button} disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2`}
+                      className={`w-full bg-gradient-to-r ${pc.button} active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md`}
                     >
                       <FaTrophy size={12} /> Starten
                     </button>
