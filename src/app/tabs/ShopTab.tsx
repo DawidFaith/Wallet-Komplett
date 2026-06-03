@@ -148,7 +148,7 @@ function ItemCard({
             />
             <button
               onClick={e => { e.stopPropagation(); togglePreview(); }}
-              className={`absolute bottom-2 right-2 w-10 h-10 rounded-full bg-[#1DB954] flex items-center justify-center shadow-xl transition-all duration-200 ${
+              className={`absolute bottom-2 right-2 w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center shadow-xl transition-all duration-200 ${
                 previewPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0'
               }`}
             >
@@ -171,7 +171,7 @@ function ItemCard({
         {/* Fortschrittsbalken (aktiver Preview) */}
         {previewPlaying && (
           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-black/30">
-            <div className="h-full bg-[#1DB954] rounded-full" style={{ width: '100%', transition: 'width 30s linear', animationFillMode: 'forwards' }} />
+            <div className="h-full bg-amber-400 rounded-full" style={{ width: '100%', transition: 'width 30s linear', animationFillMode: 'forwards' }} />
           </div>
         )}
       </div>
@@ -208,7 +208,7 @@ function ItemCard({
             </div>
           ) : item.purchased ? (
             <div className="flex gap-1.5">
-              <div className="flex-1 flex items-center justify-center gap-1 bg-[#1DB954]/10 border border-[#1DB954]/30 rounded-lg py-2 text-[#1DB954] text-[11px] font-bold">
+              <div className="flex-1 flex items-center justify-center gap-1 bg-amber-400/10 border border-amber-400/30 rounded-lg py-2 text-amber-400 text-[11px] font-bold">
                 <FaCheck size={9} /> Gekauft
               </div>
               {item.contentUrl && (
@@ -225,7 +225,7 @@ function ItemCard({
                 <button
                   onClick={() => setPayMethod('credits')}
                   className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-md text-[10px] font-bold transition-all ${
-                    payMethod === 'credits' ? 'bg-[#1DB954] text-black' : 'text-zinc-500 hover:text-zinc-300'
+                    payMethod === 'credits' ? 'bg-amber-400 text-black' : 'text-zinc-500 hover:text-zinc-300'
                   }`}
                 >
                   <FaCoins size={8} /> Credits
@@ -246,7 +246,7 @@ function ItemCard({
                 className={`w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-bold disabled:opacity-50 transition-all active:scale-[0.98] ${
                   payMethod === 'tokens'
                     ? 'bg-violet-600 hover:bg-violet-500 text-white'
-                    : 'bg-[#1DB954] hover:bg-[#1ed760] text-black'
+                    : 'bg-amber-400 hover:bg-amber-300 text-black'
                 }`}
               >
                 {buying === item.id
