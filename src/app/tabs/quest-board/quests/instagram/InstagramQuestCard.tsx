@@ -34,7 +34,7 @@ export default function InstagramQuestCard({ quest, isCompleted, isVerified = tr
   const displayReward = quest.rewardAmount + levelBonusAmount;
 
   return (
-    <div className={`bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
+    <div className={`bg-zinc-900 rounded-2xl border border-pink-900/60 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
       {/* Thumbnail */}
       <div className="relative h-40">
         {quest.videoThumbnail
@@ -77,7 +77,7 @@ export default function InstagramQuestCard({ quest, isCompleted, isVerified = tr
             <span>{quest.completions} von {quest.maxCompletions} Plätzen belegt</span>
             <span>{progress}%</span>
           </div>
-          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-pink-950/60 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-pink-500 to-purple-500 rounded-full transition-all duration-500"
               style={{ width: `${progress}%` }}

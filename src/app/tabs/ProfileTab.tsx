@@ -80,6 +80,7 @@ interface ProfileTabProps {
   language: SupportedLanguage;
   onNavigate?: (tab: string) => void;
   onNavigateToArtistQuests?: (artist: ArtistEntry) => void;
+  onNavigateToArtistShop?: (artistWallet: string) => void;
 }
 
 function shortenAddress(addr: string) {
@@ -95,7 +96,7 @@ const PLATFORM_META: Record<AnyPlatform, { label: string; icon: React.ReactNode 
   facebook:  { label: 'Facebook',  icon: <FaFacebook className="text-blue-500"  size={13} /> },
 };
 
-export default function ProfileTab({ language: _language, onNavigate, onNavigateToArtistQuests }: ProfileTabProps) {
+export default function ProfileTab({ language: _language, onNavigate, onNavigateToArtistQuests, onNavigateToArtistShop }: ProfileTabProps) {
   const { user: _clerkUser } = useUser();
   const router = useRouter();
   const account = _clerkUser?.id ? { address: _clerkUser.id } : null;
@@ -883,8 +884,9 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                   </div>
                   <button
                     onClick={() => {
-                      saveStateForRestore();
-                      router.push(`/home?tab=shop&artist=${encodeURIComponent(selectedArtist.walletAddress)}`);
+                      if (onNavigateToArtistShop) {
+                        onNavigateToArtistShop(selectedArtist.walletAddress);
+                      }
                     }}
                     className="text-amber-400 hover:text-amber-300 text-xs font-semibold shrink-0 transition-colors"
                   >
@@ -925,8 +927,9 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                   {selectedArtist && selectedArtist.shopItemCount > 0 && (
                     <button
                       onClick={() => {
-                        saveStateForRestore();
-                        router.push(`/home?tab=shop&artist=${encodeURIComponent(selectedArtist.walletAddress)}`);
+                        if (onNavigateToArtistShop) {
+                          onNavigateToArtistShop(selectedArtist.walletAddress);
+                        }
                       }}
                       className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs font-semibold transition-colors"
                     >

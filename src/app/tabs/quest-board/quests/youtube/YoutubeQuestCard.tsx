@@ -24,7 +24,7 @@ export default function YoutubeQuestCard({ quest, isCompleted, isVerified = true
   const displayReward = quest.rewardAmount + levelBonusAmount;
 
   return (
-    <div className={`bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
+    <div className={`bg-zinc-900 rounded-2xl border border-red-900/60 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
       {/* Thumbnail */}
       <div className="relative h-40">
         <Image
@@ -68,7 +68,7 @@ export default function YoutubeQuestCard({ quest, isCompleted, isVerified = true
             <span>{quest.completions} von {quest.maxCompletions} Plätzen belegt</span>
             <span>{progress}%</span>
           </div>
-          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-red-950/60 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-red-500 to-yellow-500 rounded-full transition-all duration-500"
               style={{ width: `${progress}%` }}

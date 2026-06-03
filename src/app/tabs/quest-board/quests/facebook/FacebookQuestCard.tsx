@@ -38,7 +38,7 @@ export default function FacebookQuestCard({ quest, isCompleted, isVerified = tru
     : 'Starten';
 
   return (
-    <div className={`bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
+    <div className={`bg-zinc-900 rounded-2xl border border-blue-900/60 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
       {/* Thumbnail */}
       <div className="relative h-40">
         {quest.videoThumbnail
@@ -81,7 +81,7 @@ export default function FacebookQuestCard({ quest, isCompleted, isVerified = tru
             <span>{quest.completions} von {quest.maxCompletions} Plätzen belegt</span>
             <span>{progress}%</span>
           </div>
-          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-blue-950/60 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500"
               style={{ width: `${progress}%` }}

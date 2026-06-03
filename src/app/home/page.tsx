@@ -19,6 +19,7 @@ function HomeContent() {
   const [language, setLanguage] = useState<SupportedLanguage>("de");
   // Artist der direkt vom Profil-Tab zum Quest Board weitergeleitet wird
   const [questArtist, setQuestArtist] = useState<ArtistInfo | null>(null);
+  const [shopArtistWallet, setShopArtistWallet] = useState<string | null>(null);
   const searchParams = useSearchParams();
 
   // Beim ersten Laden: gespeicherten Tab + Artist wiederherstellen (URL-Parameter hat Vorrang)
@@ -59,6 +60,12 @@ function HomeContent() {
     localStorage.setItem(LAST_ARTIST_KEY, JSON.stringify(artist));
   };
 
+  const handleNavigateToArtistShop = (artistWallet: string) => {
+    setShopArtistWallet(artistWallet);
+    setActiveTab("shop");
+    localStorage.setItem(LAST_TAB_KEY, "shop");
+  };
+
   return (
     <main className="min-h-screen flex flex-col bg-[#13120e]">
       <Navigation 
@@ -68,11 +75,11 @@ function HomeContent() {
         setLanguage={setLanguage}
       />
       <section className="flex-1 flex flex-col items-center justify-center pt-24 pb-8">
-        {activeTab === "profile" && <ProfileTab language={language} onNavigate={handleTabChange} onNavigateToArtistQuests={handleNavigateToArtistQuests} />}
+        {activeTab === "profile" && <ProfileTab language={language} onNavigate={handleTabChange} onNavigateToArtistQuests={handleNavigateToArtistQuests} onNavigateToArtistShop={handleNavigateToArtistShop} />}
         {activeTab === "quest-board" && <QuestBoardTab language={language} filterArtist={questArtist} onClearArtist={() => setQuestArtist(null)} artistWallet={artistParam} />}
         {activeTab === "solana-wallet" && <SolanaWalletTab />}
         {activeTab === "reputation" && <ReputationTab artistWallet={artistParam} />}
-        {activeTab === "shop" && <ShopTab initialArtistWallet={artistParam} />}
+        {activeTab === "shop" && <ShopTab initialArtistWallet={shopArtistWallet ?? artistParam} />}
       </section>
     </main>
   );
