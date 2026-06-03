@@ -199,34 +199,15 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
   };
 
   return (
-    <div className={`rounded-2xl border overflow-hidden transition-all relative ${
-      bundle.fanAllCompleted
-        ? 'bg-gradient-to-br from-[#1a1228] to-[#0d1a12] border-green-700/50'
-        : `bg-[#1a1228] ${pc.outerBorder}`
-    }`}>
+    <div className="relative">
       {/* Lock-Overlay wenn Plattform nicht verifiziert */}
       {!isVerified && (
-        <div className="absolute inset-0 z-20 rounded-2xl bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 border border-zinc-700/50">
+        <div className="absolute inset-0 z-20 rounded-xl bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 border border-zinc-700/50">
           <FaLock size={18} className="text-zinc-400" />
           <p className="text-zinc-300 text-sm font-semibold">{pc.lockText}</p>
           <p className="text-zinc-500 text-xs">Verifiziere dein Konto im Profil</p>
         </div>
       )}
-      {/* ─── Fortschrittsbalken (ab Slide 1 sichtbar) ─── */}
-      {currentSlide > 0 && (
-        <div className="px-4 pt-3">
-          <div className="flex items-center justify-between text-xs text-zinc-400 mb-1">
-            <span>{completedCount}/{totalCount} Aufgaben</span>
-            <span>{progressPercent}%</span>
-          </div>
-          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-            <div className={`h-full rounded-full transition-all duration-500 ${bundle.fanAllCompleted ? 'bg-gradient-to-r from-green-500 to-emerald-400' : `bg-gradient-to-r ${pc.progress}`}`}
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-        </div>
-      )}
-
       {/* ─── Horizontaler Swipe-Container ─── */}
       <div
         ref={scrollRef}
@@ -236,9 +217,15 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
       >
         {/* Slide 0: Eingangstor */}
         <div className="min-w-full snap-start px-4 pt-3 pb-4">
-          <div className={`bg-gradient-to-br ${pc.innerBg} rounded-2xl border ${pc.innerBorder} overflow-hidden transition-all shadow-lg shadow-amber-900/10`}>
-            {/* Thumbnail h-40 – identisch mit Quest-Karten */}
-            <div className={`relative h-40 ${ytVideoId ? 'cursor-pointer group' : ''}`} onClick={() => ytVideoId && !showVideo && setShowVideo(true)}>
+          <div className={`group relative flex flex-col rounded-xl overflow-hidden bg-[#181818] transition-all duration-200 ${bundle.fanAllCompleted ? 'ring-1 ring-green-700/50' : 'hover:bg-[#242424]'}`}>
+            {/* Platform-farbiger Top-Streifen */}
+            <div className={`h-1 shrink-0 ${bundle.fanAllCompleted ? 'bg-gradient-to-r from-green-500 to-emerald-400' : `bg-gradient-to-r ${pc.progress}`}`} />
+
+            {/* Quadratisches Thumbnail – Blur + object-contain */}
+            <div
+              className={`relative w-full aspect-square overflow-hidden ${ytVideoId ? 'cursor-pointer' : ''}`}
+              onClick={() => ytVideoId && !showVideo && setShowVideo(true)}
+            >
               {showVideo && ytVideoId ? (
                 <>
                   <iframe
@@ -255,13 +242,16 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                 </>
               ) : (
                 <>
-                  {bundle.videoThumbnail
-                    ? <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
-                    : <div className="absolute inset-0 bg-gradient-to-br from-amber-950 to-zinc-900" />
-                  }
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/80" />
+                  {bundle.videoThumbnail ? (
+                    <>
+                      <Image src={bundle.videoThumbnail} alt="" fill unoptimized className="object-cover scale-110 blur-xl opacity-40" />
+                      <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-contain" />
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-950 to-zinc-900" />
+                  )}
                   {ytVideoId && (
-                    <div className="absolute inset-0 flex items-center justify-center opacity-90 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-14 h-14 rounded-full bg-red-600/90 group-hover:scale-110 flex items-center justify-center shadow-2xl transition-transform">
                         <FaYoutube size={26} className="text-white" />
                       </div>
@@ -269,13 +259,17 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                   )}
                 </>
               )}
+
+              {/* Badge oben links */}
               {!showVideo && (
-                <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5">
-                  <span className={`flex items-center gap-1.5 ${pc.badge} text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md`}>
+                <div className="absolute top-2 left-2 z-10">
+                  <span className={`flex items-center gap-1.5 ${pc.badge} text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md`}>
                     {pc.badgeIcon} Quest-Reihe
                   </span>
                 </div>
               )}
+
+              {/* Rewards oben rechts */}
               {!showVideo && (
                 <div className="absolute top-2 right-2 flex flex-col items-end gap-1 z-10">
                   <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
@@ -284,24 +278,26 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                   </div>
                   {levelBonusPercent > 0 && (
                     <div className="bg-black/70 text-green-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      inkl. +{levelBonusPercent}% Level-Bonus
+                      +{levelBonusPercent}% Bonus
                     </div>
                   )}
                   {totalRep > 0 && (
-                    <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                      <FaStar size={9} /> +{totalRep} REP
+                    <div className="bg-black/70 text-amber-300 text-[11px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                      <FaStar size={8} /> +{totalRep} REP
                     </div>
                   )}
                 </div>
               )}
-              {/* Bonus-Highlight unten links auf dem Thumbnail */}
+
+              {/* Bundle-Bonus unten links */}
               {!showVideo && bundle.bundleCompletionBonus > 0 && (
                 <div className="absolute bottom-2 left-2 z-10">
-                  <span className="flex items-center gap-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-black text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
-                    <FaGift size={10} /> +{bundle.bundleCompletionBonus.toFixed(2)} Bonus
+                  <span className="flex items-center gap-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-black text-[11px] font-bold px-2 py-1 rounded-full shadow-md">
+                    <FaGift size={9} /> +{bundle.bundleCompletionBonus.toFixed(2)} Bonus
                   </span>
                 </div>
               )}
+
               {/* Timer unten rechts */}
               {!showVideo && (() => { const exp = formatExpiry(bundle.expiresAt); return exp ? (
                 <div className="absolute bottom-2 right-2 z-10 bg-black/70 text-zinc-300 text-xs px-2 py-1 rounded-full flex items-center gap-1">
@@ -309,67 +305,63 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                 </div>
               ) : null; })()}
             </div>
-            {/* Body */}
-            <div className="p-4 space-y-3">
-              <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{bundle.videoTitle}</h3>
 
-              {/* Fortschritt */}
-              <div>
-                <div className="flex justify-between text-xs text-zinc-400 mb-1">
-                  <span>{completedCount} von {totalCount} Aufgaben erledigt</span>
-                  <span>{progressPercent}%</span>
-                </div>
-                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+            {/* Text-Bereich */}
+            <div className="px-3 pt-2.5 pb-1 flex flex-col gap-1">
+              <p className="text-white font-bold text-sm leading-snug line-clamp-1">{bundle.videoTitle}</p>
+              <p className="text-zinc-400 text-[11px] leading-relaxed">
+                🎯 Alle <strong className="text-white">{totalCount} Quests</strong> abschließen → <strong className="text-yellow-400">Abschluss-Bonus</strong>!
+              </p>
+
+              {/* Quest-Typ Dots */}
+              <div className="flex items-center gap-1.5 mt-0.5 overflow-x-auto" style={{ scrollbarWidth: 'none' } as React.CSSProperties}>
+                {bundle.items.map((it, idx) => {
+                  const itDone = completedSet.has(it.questType);
+                  return (
+                    <React.Fragment key={it.questId}>
+                      <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all ${
+                        itDone ? 'bg-green-600/30 border-green-500 text-green-300' : 'bg-zinc-800 border-zinc-700 text-zinc-300'
+                      }`}>
+                        {itDone ? <FaCheck size={9} /> : TYPE_ICONS[it.questType]}
+                      </div>
+                      {idx < bundle.items.length - 1 && (
+                        <div className={`h-0.5 w-2 shrink-0 ${itDone ? 'bg-green-500' : 'bg-zinc-700'}`} />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+                <span className="text-zinc-500 text-[10px] ml-1">{completedCount}/{totalCount}</span>
+              </div>
+
+              {/* Fortschrittsbalken */}
+              <div className="mt-1">
+                <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${bundle.fanAllCompleted ? 'bg-gradient-to-r from-green-500 to-emerald-400' : `bg-gradient-to-r ${pc.progress}`}`}
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Quest-Vorschau – visualisiert Reihenfolge mit Status */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 flex-1 overflow-x-auto" style={{ scrollbarWidth: 'none' } as React.CSSProperties}>
-                  {bundle.items.map((it, idx) => {
-                    const itDone = completedSet.has(it.questType);
-                    return (
-                      <React.Fragment key={it.questId}>
-                        <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
-                          itDone
-                            ? 'bg-green-600/30 border-green-500 text-green-300'
-                            : 'bg-zinc-800 border-zinc-700 text-zinc-300'
-                        }`}>
-                          {itDone ? <FaCheck size={10} /> : TYPE_ICONS[it.questType]}
-                        </div>
-                        {idx < bundle.items.length - 1 && (
-                          <div className={`h-0.5 w-2 shrink-0 ${itDone ? 'bg-green-500' : 'bg-zinc-700'}`} />
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <p className="text-zinc-400 text-xs">
-                Aufgabe: <span className="text-zinc-300">🎯 Schließe alle <strong className="text-white">{totalCount} Quests</strong> ab und sicher dir den <strong className="text-yellow-400">Abschluss-Bonus</strong>!</span>
-              </p>
-
+            {/* Button */}
+            <div className="px-3 pb-3 pt-1.5">
               {canClaimBonus ? (
                 <>
-                  {claimError && <p className="text-amber-400 text-xs text-center">{claimError}</p>}
+                  {claimError && <p className="text-amber-400 text-xs text-center mb-1">{claimError}</p>}
                   <button
                     onClick={handleClaimBonus}
                     disabled={claiming}
-                    className="w-full bg-gradient-to-r from-yellow-600 to-amber-500 hover:from-yellow-500 hover:to-amber-400 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-md"
+                    className="w-full bg-gradient-to-r from-yellow-600 to-amber-500 hover:from-yellow-500 hover:to-amber-400 disabled:opacity-50 active:scale-[0.98] text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-md"
                   >
-                    <FaGift size={14} />
+                    <FaGift size={13} />
                     {claiming ? 'Einlösen...' : 'Bonus einlösen (+' + bundle.bundleCompletionBonus.toFixed(2) + ' D.FAITH)'}
                   </button>
                 </>
               ) : bonusAlreadyDone ? (
                 <div className="w-full bg-green-950/30 border border-green-800/30 rounded-xl px-3 py-2.5 flex items-center justify-center gap-2">
                   <FaCheck size={12} className="text-green-400" />
-                  <span className="text-green-400 text-sm font-semibold">Bundle-Bonus eingelöst (+{bundle.bundleCompletionBonus.toFixed(2)} D.FAITH)</span>
+                  <span className="text-green-400 text-sm font-semibold">Bundle-Bonus eingelöst</span>
                 </div>
               ) : (
                 <button
