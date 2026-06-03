@@ -116,7 +116,12 @@ function ItemCard({
       {/* Cover */}
       <div className="relative aspect-[16/7] overflow-hidden bg-zinc-800">
         {item.imageUrl ? (
-          <Image src={item.imageUrl} alt={item.title} fill className={`object-cover ${isLocked ? 'grayscale' : ''}`} />
+          <>
+            {/* Blur-Hintergrund */}
+            <Image src={item.imageUrl} alt="" fill className={`object-cover scale-110 blur-xl opacity-60 ${isLocked ? 'grayscale' : ''}`} />
+            {/* Hauptbild */}
+            <Image src={item.imageUrl} alt={item.title} fill className={`object-contain ${isLocked ? 'grayscale' : ''}`} />
+          </>
         ) : (
           <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
             <span className="opacity-20 scale-[3]"><TypeIcon type={item.type} /></span>
@@ -543,7 +548,12 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
       {/* Cover */}
       <div className="relative aspect-[16/7] overflow-hidden bg-zinc-800">
         {item.imageUrl ? (
-          <Image src={item.imageUrl} alt={item.title} fill className="object-cover" />
+          <>
+            {/* Blur-Hintergrund */}
+            <Image src={item.imageUrl} alt="" fill className="object-cover scale-110 blur-xl opacity-60" />
+            {/* Hauptbild */}
+            <Image src={item.imageUrl} alt={item.title} fill className="object-contain" />
+          </>
         ) : (
           <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
             <span className="opacity-20 scale-[3]"><TypeIcon type={item.type} /></span>
