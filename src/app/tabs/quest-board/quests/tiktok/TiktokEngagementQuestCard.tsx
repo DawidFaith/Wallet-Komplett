@@ -27,7 +27,8 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, isVerifi
   const rewardPer = Math.round((displayReward / 3) * 100) / 100;
 
   return (
-    <div className={`bg-zinc-900 rounded-2xl border border-cyan-900/60 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
+    <div className={`bg-zinc-900 rounded-2xl border border-cyan-600/40 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
+      <div className="h-1 bg-gradient-to-r from-cyan-500 to-purple-500" />
       {/* Thumbnail */}
       <div className="relative h-40">
         {quest.videoThumbnail
@@ -91,7 +92,7 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, isVerifi
             <span>{quest.completions} / {quest.maxCompletions} Plätze</span>
             <span>{progress}%</span>
           </div>
-          <div className="h-1.5 bg-cyan-950/60 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-cyan-950 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full transition-all duration-500"
               style={{ width: `${progress}%` }}

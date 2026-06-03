@@ -30,7 +30,7 @@ export default function FacebookQuestCard({ quest, isCompleted, isVerified = tru
 
   const badgeIcon = isLike ? <FaThumbsUp size={8} /> : isSecret ? <FaKey size={8} /> : <FaComment size={8} />;
   const badgeLabel = isLike ? 'Like' : isSecret ? 'Secret' : 'Kommentar';
-  const badgeBg = isSecret ? 'bg-yellow-600/90' : 'bg-blue-600/90';
+  const badgeBg = 'bg-blue-600/90';
   const buttonLabel = isCompleted
     ? '✓ Erledigt'
     : isFull
@@ -38,7 +38,8 @@ export default function FacebookQuestCard({ quest, isCompleted, isVerified = tru
     : 'Starten';
 
   return (
-    <div className={`bg-zinc-900 rounded-2xl border border-blue-900/60 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
+    <div className={`bg-zinc-900 rounded-2xl border border-blue-600/40 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
+      <div className="h-1 bg-gradient-to-r from-blue-600 to-indigo-600" />
       {/* Thumbnail */}
       <div className="relative h-40">
         {quest.videoThumbnail
@@ -81,7 +82,7 @@ export default function FacebookQuestCard({ quest, isCompleted, isVerified = tru
             <span>{quest.completions} von {quest.maxCompletions} Plätzen belegt</span>
             <span>{progress}%</span>
           </div>
-          <div className="h-1.5 bg-blue-950/60 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-blue-950 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500"
               style={{ width: `${progress}%` }}

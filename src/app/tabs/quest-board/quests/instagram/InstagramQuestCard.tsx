@@ -16,12 +16,12 @@ interface InstagramQuestCardProps {
 }
 
 const QUEST_TYPE_CONFIG = {
-  like:       { label: 'Like',             icon: <FaHeart size={8} />,    bg: 'bg-pink-600/90',                                          btn: 'Like verifizieren' },
-  save:       { label: 'Speichern',        icon: <FaBookmark size={8} />, bg: 'bg-yellow-600/90',                                        btn: 'Speichern verifizieren' },
-  comment:    { label: 'Kommentar',        icon: <FaComment size={8} />,  bg: 'bg-purple-600/90',                                        btn: 'Kommentar verifizieren' },
-  engagement: { label: 'Like & Speichern', icon: <FaHeart size={8} />,   bg: 'bg-gradient-to-r from-amber-600/90 to-yellow-600/90',       btn: 'Engagement verifizieren' },
-  repost:     { label: 'Repost',           icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-blue-600/90 to-cyan-600/90',        btn: 'Repost verifizieren' },
-  dm_share:   { label: 'Story Quest',         icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-pink-600/90 to-purple-600/90',      btn: 'Story Quest starten' },
+  like:       { label: 'Like',             icon: <FaHeart size={8} />,    bg: 'bg-gradient-to-r from-pink-600 to-purple-600',  btn: 'Like verifizieren' },
+  save:       { label: 'Speichern',        icon: <FaBookmark size={8} />, bg: 'bg-gradient-to-r from-pink-600 to-purple-600',  btn: 'Speichern verifizieren' },
+  comment:    { label: 'Kommentar',        icon: <FaComment size={8} />,  bg: 'bg-gradient-to-r from-pink-600 to-purple-600',  btn: 'Kommentar verifizieren' },
+  engagement: { label: 'Like & Speichern', icon: <FaHeart size={8} />,   bg: 'bg-gradient-to-r from-pink-600 to-purple-600',  btn: 'Engagement verifizieren' },
+  repost:     { label: 'Repost',           icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-pink-600 to-purple-600',  btn: 'Repost verifizieren' },
+  dm_share:   { label: 'Story Quest',      icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-pink-600 to-purple-600',  btn: 'Story Quest starten' },
 } as const;
 
 export default function InstagramQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0 }: InstagramQuestCardProps) {
@@ -34,7 +34,8 @@ export default function InstagramQuestCard({ quest, isCompleted, isVerified = tr
   const displayReward = quest.rewardAmount + levelBonusAmount;
 
   return (
-    <div className={`bg-zinc-900 rounded-2xl border border-pink-900/60 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
+    <div className={`bg-zinc-900 rounded-2xl border border-pink-600/40 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
+      <div className="h-1 bg-gradient-to-r from-pink-600 to-purple-600" />
       {/* Thumbnail */}
       <div className="relative h-40">
         {quest.videoThumbnail
@@ -77,7 +78,7 @@ export default function InstagramQuestCard({ quest, isCompleted, isVerified = tr
             <span>{quest.completions} von {quest.maxCompletions} Plätzen belegt</span>
             <span>{progress}%</span>
           </div>
-          <div className="h-1.5 bg-pink-950/60 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-pink-950 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-pink-500 to-purple-500 rounded-full transition-all duration-500"
               style={{ width: `${progress}%` }}
