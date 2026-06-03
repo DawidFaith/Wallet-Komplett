@@ -112,64 +112,64 @@ function ItemCard({
   };
 
   return (
-    <div className={`bg-zinc-900 border rounded-2xl overflow-hidden shadow-xl transition-opacity ${isLocked ? 'border-zinc-700/40 opacity-80' : 'border-white/[0.08]'}`}>
-      {/* Cover */}
-      <div className="relative aspect-[16/7] overflow-hidden bg-zinc-800">
+    <div className={`group relative bg-zinc-900 border rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-amber-500/10 ${isLocked ? 'border-zinc-700/40 opacity-75' : 'border-white/[0.08] hover:border-white/[0.16]'}`}>
+      {/* Cover — Portrait */}
+      <div className="relative aspect-[3/4] overflow-hidden bg-zinc-800">
         {item.imageUrl ? (
           <>
-            {/* Blur-Hintergrund */}
-            <Image src={item.imageUrl} alt="" fill className={`object-cover scale-110 blur-xl opacity-60 ${isLocked ? 'grayscale' : ''}`} />
-            {/* Hauptbild */}
-            <Image src={item.imageUrl} alt={item.title} fill className={`object-contain ${isLocked ? 'grayscale' : ''}`} />
+            <Image src={item.imageUrl} alt="" fill className={`object-cover scale-110 blur-2xl opacity-50 ${isLocked ? 'grayscale' : ''}`} />
+            <Image src={item.imageUrl} alt={item.title} fill className={`object-contain transition-transform duration-500 group-hover:scale-[1.03] ${isLocked ? 'grayscale' : ''}`} />
           </>
         ) : (
           <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
-            <span className="opacity-20 scale-[3]"><TypeIcon type={item.type} /></span>
+            <span className="opacity-20 scale-[4]"><TypeIcon type={item.type} /></span>
           </div>
         )}
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent" />
-        {/* Lock-Overlay */}
-        {isLocked && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-[2px]">
-            <div className="w-10 h-10 rounded-full bg-zinc-800/90 border border-zinc-600/50 flex items-center justify-center mb-2">
-              <FaLock size={16} className="text-zinc-400" />
-            </div>
-            <p className="text-zinc-300 text-xs font-bold">Level {item.requiredLevel} erforderlich</p>
-            <p className="text-zinc-500 text-[10px] mt-0.5">Dein Level: {userLevel}</p>
-          </div>
-        )}
+
+        {/* Starkes Gradient unten für Text-Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+
         {/* Typ-Badge oben links */}
         <span className={`absolute top-3 left-3 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border backdrop-blur-md ${TYPE_COLORS[item.type]}`}>
           <TypeIcon type={item.type} /> {TYPE_LABELS[item.type]}
         </span>
-        {/* Level-Badge oben rechts (nur wenn Level-Pflicht) */}
+
+        {/* Level-Badge oben rechts */}
         {item.requiredLevel > 0 && (
           <span className={`absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border backdrop-blur-md ${
-            isLocked
-              ? 'bg-zinc-800/80 border-zinc-600/40 text-zinc-400'
-              : 'bg-amber-900/70 border-amber-600/40 text-amber-300'
+            isLocked ? 'bg-zinc-800/80 border-zinc-600/40 text-zinc-400' : 'bg-amber-900/70 border-amber-600/40 text-amber-300'
           }`}>
             <FaStar size={7} /> Lvl {item.requiredLevel}+
           </span>
         )}
-        {/* Preis-Badge unten rechts */}
-        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm border border-amber-500/30 rounded-xl px-2.5 py-1">
-          <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
-          <span className="text-amber-300 font-bold text-xs">{item.priceCredits.toLocaleString('de-DE')} {tokenLabel} Credits</span>
+
+        {/* Titel + Preis im Cover unten */}
+        <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pt-8">
+          <p className="text-white font-black text-base leading-snug drop-shadow-lg">{item.title}</p>
+          {item.description && (
+            <p className="text-zinc-400 text-[11px] leading-relaxed line-clamp-2 mt-0.5">{item.description}</p>
+          )}
+          <div className="flex items-center gap-1.5 mt-2">
+            <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
+            <span className="text-amber-300 font-bold text-xs">{item.priceCredits.toLocaleString('de-DE')} {tokenLabel}</span>
+          </div>
         </div>
+
+        {/* Lock-Overlay */}
+        {isLocked && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[2px]">
+            <div className="w-12 h-12 rounded-full bg-zinc-800/90 border border-zinc-600/50 flex items-center justify-center mb-2">
+              <FaLock size={18} className="text-zinc-400" />
+            </div>
+            <p className="text-zinc-200 text-xs font-bold">Level {item.requiredLevel} erforderlich</p>
+            <p className="text-zinc-500 text-[10px] mt-0.5">Dein Level: {userLevel}</p>
+          </div>
+        )}
       </div>
 
-      {/* Content */}
-      <div className="p-4 space-y-3">
-        <div>
-          <p className="text-white font-bold text-base leading-snug">{item.title}</p>
-          {item.description && (
-            <p className="text-zinc-400 text-xs leading-relaxed line-clamp-2 mt-1">{item.description}</p>
-          )}
-        </div>
-
-        {/* 30s Vorschau für Songs (nicht gekauft) */}
+      {/* Footer — nur Aktionen */}
+      <div className="p-3 space-y-2">
+        {/* 30s Vorschau für Songs */}
         {item.type === 'song' && item.contentUrl && !item.purchased && (
           <div className="flex items-center gap-2 bg-zinc-800/60 rounded-xl px-3 py-2">
             <audio
@@ -191,31 +191,27 @@ function ItemCard({
               {previewPlaying ? <FaPause size={9} className="text-black" /> : <FaPlay size={9} className="text-black ml-0.5" />}
             </button>
             <div className="flex-1 min-w-0">
-              <p className="text-zinc-300 text-xs font-medium truncate">Vorschau (30 Sek.)</p>
-              <div className="mt-1 h-1 bg-zinc-700 rounded-full overflow-hidden">
+              <p className="text-zinc-300 text-xs font-medium">30-Sek. Vorschau</p>
+              <div className="mt-1 h-0.5 bg-zinc-700 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-amber-500 rounded-full transition-all"
+                  className="h-full bg-amber-500 rounded-full"
                   style={{ width: previewPlaying ? '100%' : '0%', transition: previewPlaying ? 'width 30s linear' : 'none' }}
                 />
               </div>
             </div>
-            <span className="text-zinc-600 text-[10px] shrink-0">30s</span>
           </div>
         )}
 
         {walletAddress ? (
           isLocked ? (
-            <div className="flex items-center gap-2.5 bg-zinc-800/60 border border-zinc-700/40 rounded-xl px-4 py-3">
-              <FaLock size={13} className="text-zinc-500 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-zinc-400 text-xs font-bold">Gesperrt – Level {item.requiredLevel} erforderlich</p>
-                <p className="text-zinc-600 text-[10px] mt-0.5">Sammle mehr Reputation um dieses Item freizuschalten.</p>
-              </div>
+            <div className="flex items-center gap-2 bg-zinc-800/50 border border-zinc-700/30 rounded-xl px-3 py-2.5">
+              <FaLock size={11} className="text-zinc-600 shrink-0" />
+              <p className="text-zinc-500 text-xs">Reputation steigern um freizuschalten</p>
             </div>
           ) : item.purchased ? (
             <div className="flex gap-2">
               <div className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-900/30 border border-emerald-700/40 rounded-xl py-2.5 text-emerald-400 text-xs font-bold">
-                <FaCheck size={10} /> Bereits gekauft
+                <FaCheck size={10} /> Gekauft
               </div>
               {item.contentUrl && (
                 <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
@@ -233,7 +229,7 @@ function ItemCard({
                     payMethod === 'credits' ? 'bg-amber-500 text-black shadow-md' : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  <FaCoins size={10} /> {tokenLabel} Credits
+                  <FaCoins size={10} /> Credits
                 </button>
                 <button
                   onClick={() => setPayMethod('tokens')}
@@ -241,23 +237,23 @@ function ItemCard({
                     payMethod === 'tokens' ? 'bg-violet-600 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  <SiSolana size={10} /> {tokenLabel} Tokens
+                  <SiSolana size={10} /> Token
                 </button>
               </div>
               <button
                 onClick={() => onBuy(item, payMethod)}
                 disabled={buying === item.id}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold disabled:opacity-50 transition-colors ${
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold disabled:opacity-50 transition-all active:scale-[0.98] ${
                   payMethod === 'tokens'
-                    ? 'bg-violet-600 hover:bg-violet-500 text-white'
-                    : 'bg-amber-500 hover:bg-amber-400 text-black'
+                    ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-500/20'
+                    : 'bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/20'
                 }`}
               >
                 {buying === item.id
                   ? <span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
                   : payMethod === 'tokens'
-                    ? <><SiSolana size={13} /> Kaufen mit {tokenLabel} Tokens</>
-                    : <><FaCoins size={13} /> Kaufen mit {tokenLabel} Credits</>
+                    ? <><SiSolana size={13} /> Mit Token kaufen</>
+                    : <><FaCoins size={13} /> Mit Credits kaufen</>
                 }
               </button>
             </div>
@@ -493,7 +489,7 @@ function ArtistShopView({
           Dieser Künstler hat noch keine Items im Shop.
         </div>
       ) : (
-        <div className="px-4 grid grid-cols-1 gap-3">
+        <div className="px-4 grid grid-cols-2 gap-3">
           {items.filter(item => !item.purchased).length === 0 ? (
             <div className="bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
               Alle Items wurden bereits von dir gekauft.
