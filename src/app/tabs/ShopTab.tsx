@@ -112,66 +112,28 @@ function ItemCard({
   };
 
   return (
-    <div className={`group relative bg-zinc-900 border rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-amber-500/10 ${isLocked ? 'border-zinc-700/40 opacity-75' : 'border-white/[0.08] hover:border-white/[0.16]'}`}>
-      {/* Cover — Portrait */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-zinc-800">
+    <div className={`group relative flex flex-col rounded-xl overflow-hidden transition-all duration-200 cursor-pointer ${
+      isLocked
+        ? 'bg-[#181818] opacity-60'
+        : 'bg-[#181818] hover:bg-[#282828]'
+    }`}>
+
+      {/* ── Album-Art (quadratisch) ── */}
+      <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl m-3 mb-0" style={{ width: 'calc(100% - 1.5rem)' }}>
         {item.imageUrl ? (
           <>
-            <Image src={item.imageUrl} alt="" fill className={`object-cover scale-110 blur-2xl opacity-50 ${isLocked ? 'grayscale' : ''}`} />
-            <Image src={item.imageUrl} alt={item.title} fill className={`object-contain transition-transform duration-500 group-hover:scale-[1.03] ${isLocked ? 'grayscale' : ''}`} />
+            <Image src={item.imageUrl} alt="" fill className={`object-cover scale-110 blur-xl opacity-40 ${isLocked ? 'grayscale' : ''}`} />
+            <Image src={item.imageUrl} alt={item.title} fill className={`object-contain ${isLocked ? 'grayscale' : ''}`} />
           </>
         ) : (
           <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
-            <span className="opacity-20 scale-[4]"><TypeIcon type={item.type} /></span>
+            <span className="opacity-30 text-5xl"><TypeIcon type={item.type} /></span>
           </div>
         )}
 
-        {/* Starkes Gradient unten für Text-Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-
-        {/* Typ-Badge oben links */}
-        <span className={`absolute top-3 left-3 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border backdrop-blur-md ${TYPE_COLORS[item.type]}`}>
-          <TypeIcon type={item.type} /> {TYPE_LABELS[item.type]}
-        </span>
-
-        {/* Level-Badge oben rechts */}
-        {item.requiredLevel > 0 && (
-          <span className={`absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border backdrop-blur-md ${
-            isLocked ? 'bg-zinc-800/80 border-zinc-600/40 text-zinc-400' : 'bg-amber-900/70 border-amber-600/40 text-amber-300'
-          }`}>
-            <FaStar size={7} /> Lvl {item.requiredLevel}+
-          </span>
-        )}
-
-        {/* Titel + Preis im Cover unten */}
-        <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pt-8">
-          <p className="text-white font-black text-base leading-snug drop-shadow-lg">{item.title}</p>
-          {item.description && (
-            <p className="text-zinc-400 text-[11px] leading-relaxed line-clamp-2 mt-0.5">{item.description}</p>
-          )}
-          <div className="flex items-center gap-1.5 mt-2">
-            <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
-            <span className="text-amber-300 font-bold text-xs">{item.priceCredits.toLocaleString('de-DE')} {tokenLabel}</span>
-          </div>
-        </div>
-
-        {/* Lock-Overlay */}
-        {isLocked && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[2px]">
-            <div className="w-12 h-12 rounded-full bg-zinc-800/90 border border-zinc-600/50 flex items-center justify-center mb-2">
-              <FaLock size={18} className="text-zinc-400" />
-            </div>
-            <p className="text-zinc-200 text-xs font-bold">Level {item.requiredLevel} erforderlich</p>
-            <p className="text-zinc-500 text-[10px] mt-0.5">Dein Level: {userLevel}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Footer — nur Aktionen */}
-      <div className="p-3 space-y-2">
-        {/* 30s Vorschau für Songs */}
-        {item.type === 'song' && item.contentUrl && !item.purchased && (
-          <div className="flex items-center gap-2 bg-zinc-800/60 rounded-xl px-3 py-2">
+        {/* Play-Button Hover (nur wenn Song + Preview) */}
+        {item.type === 'song' && item.contentUrl && !item.purchased && !isLocked && (
+          <>
             <audio
               ref={audioRef}
               src={item.contentUrl}
@@ -185,81 +147,119 @@ function ItemCard({
               onEnded={() => setPreviewPlaying(false)}
             />
             <button
-              onClick={togglePreview}
-              className="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center shrink-0 hover:bg-amber-400 transition-colors"
+              onClick={e => { e.stopPropagation(); togglePreview(); }}
+              className={`absolute bottom-2 right-2 w-10 h-10 rounded-full bg-[#1DB954] flex items-center justify-center shadow-xl transition-all duration-200 ${
+                previewPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0'
+              }`}
             >
-              {previewPlaying ? <FaPause size={9} className="text-black" /> : <FaPlay size={9} className="text-black ml-0.5" />}
+              {previewPlaying
+                ? <FaPause size={12} className="text-black" />
+                : <FaPlay size={12} className="text-black ml-0.5" />
+              }
             </button>
-            <div className="flex-1 min-w-0">
-              <p className="text-zinc-300 text-xs font-medium">30-Sek. Vorschau</p>
-              <div className="mt-1 h-0.5 bg-zinc-700 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-amber-500 rounded-full"
-                  style={{ width: previewPlaying ? '100%' : '0%', transition: previewPlaying ? 'width 30s linear' : 'none' }}
-                />
-              </div>
-            </div>
+          </>
+        )}
+
+        {/* Lock-Overlay */}
+        {isLocked && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 backdrop-blur-[2px]">
+            <FaLock size={22} className="text-zinc-300 mb-2" />
+            <p className="text-white text-[11px] font-bold">Level {item.requiredLevel}</p>
           </div>
         )}
 
+        {/* Fortschrittsbalken (aktiver Preview) */}
+        {previewPlaying && (
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-black/30">
+            <div className="h-full bg-[#1DB954] rounded-full" style={{ width: '100%', transition: 'width 30s linear', animationFillMode: 'forwards' }} />
+          </div>
+        )}
+      </div>
+
+      {/* ── Textbereich ── */}
+      <div className="px-3 pt-3 pb-2 flex flex-col gap-0.5 flex-1">
+        <p className="text-white font-bold text-sm leading-snug line-clamp-1">{item.title}</p>
+        <p className="text-zinc-400 text-[11px] line-clamp-2 leading-relaxed min-h-[2em]">
+          {item.description || TYPE_LABELS[item.type]}
+        </p>
+
+        {/* Preis-Zeile */}
+        <div className="flex items-center gap-1.5 mt-1">
+          {item.requiredLevel > 0 && (
+            <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+              isLocked ? 'bg-zinc-700 text-zinc-400' : 'bg-amber-900/60 text-amber-400'
+            }`}>
+              <FaStar size={6} /> {item.requiredLevel}
+            </span>
+          )}
+          <span className={`text-[11px] font-semibold ${isLocked ? 'text-zinc-500' : 'text-zinc-300'}`}>
+            {item.priceCredits.toLocaleString('de-DE')} {tokenLabel}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Kauf-Bereich ── */}
+      <div className="px-3 pb-3 pt-1">
         {walletAddress ? (
           isLocked ? (
-            <div className="flex items-center gap-2 bg-zinc-800/50 border border-zinc-700/30 rounded-xl px-3 py-2.5">
-              <FaLock size={11} className="text-zinc-600 shrink-0" />
-              <p className="text-zinc-500 text-xs">Reputation steigern um freizuschalten</p>
+            <div className="flex items-center gap-1.5 py-2">
+              <FaLock size={9} className="text-zinc-600 shrink-0" />
+              <p className="text-zinc-600 text-[10px]">Level {item.requiredLevel} erforderlich</p>
             </div>
           ) : item.purchased ? (
-            <div className="flex gap-2">
-              <div className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-900/30 border border-emerald-700/40 rounded-xl py-2.5 text-emerald-400 text-xs font-bold">
-                <FaCheck size={10} /> Gekauft
+            <div className="flex gap-1.5">
+              <div className="flex-1 flex items-center justify-center gap-1 bg-[#1DB954]/10 border border-[#1DB954]/30 rounded-lg py-2 text-[#1DB954] text-[11px] font-bold">
+                <FaCheck size={9} /> Gekauft
               </div>
               {item.contentUrl && (
                 <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-4 py-2.5 text-zinc-300 text-xs font-semibold transition-colors">
-                  <FaExternalLinkAlt size={9} /> Öffnen
+                  className="flex items-center gap-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-zinc-400 hover:text-white text-[11px] font-semibold transition-colors">
+                  <FaExternalLinkAlt size={8} />
                 </a>
               )}
             </div>
           ) : (
-            <div className="space-y-2">
-              <div className="flex bg-zinc-800 rounded-xl p-0.5 border border-white/[0.06]">
+            <div className="space-y-1.5">
+              {/* Credits / Token Toggle */}
+              <div className="flex bg-black/40 rounded-lg p-0.5">
                 <button
                   onClick={() => setPayMethod('credits')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${
-                    payMethod === 'credits' ? 'bg-amber-500 text-black shadow-md' : 'text-zinc-400 hover:text-zinc-200'
+                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-md text-[10px] font-bold transition-all ${
+                    payMethod === 'credits' ? 'bg-[#1DB954] text-black' : 'text-zinc-500 hover:text-zinc-300'
                   }`}
                 >
-                  <FaCoins size={10} /> Credits
+                  <FaCoins size={8} /> Credits
                 </button>
                 <button
                   onClick={() => setPayMethod('tokens')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${
-                    payMethod === 'tokens' ? 'bg-violet-600 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-200'
+                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-md text-[10px] font-bold transition-all ${
+                    payMethod === 'tokens' ? 'bg-violet-600 text-white' : 'text-zinc-500 hover:text-zinc-300'
                   }`}
                 >
-                  <SiSolana size={10} /> Token
+                  <SiSolana size={8} /> Token
                 </button>
               </div>
+              {/* Kauf-Button */}
               <button
                 onClick={() => onBuy(item, payMethod)}
                 disabled={buying === item.id}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold disabled:opacity-50 transition-all active:scale-[0.98] ${
+                className={`w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-bold disabled:opacity-50 transition-all active:scale-[0.98] ${
                   payMethod === 'tokens'
-                    ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-500/20'
-                    : 'bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/20'
+                    ? 'bg-violet-600 hover:bg-violet-500 text-white'
+                    : 'bg-[#1DB954] hover:bg-[#1ed760] text-black'
                 }`}
               >
                 {buying === item.id
-                  ? <span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                  ? <span className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
                   : payMethod === 'tokens'
-                    ? <><SiSolana size={13} /> Mit Token kaufen</>
-                    : <><FaCoins size={13} /> Mit Credits kaufen</>
+                    ? <><SiSolana size={11} /> Kaufen</>
+                    : <><FaCoins size={11} /> Kaufen</>
                 }
               </button>
             </div>
           )
         ) : (
-          <p className="text-center text-zinc-600 text-xs py-2">Bitte einloggen zum Kaufen</p>
+          <p className="text-center text-zinc-600 text-[10px] py-1.5">Login zum Kaufen</p>
         )}
       </div>
     </div>
@@ -489,7 +489,7 @@ function ArtistShopView({
           Dieser Künstler hat noch keine Items im Shop.
         </div>
       ) : (
-        <div className="px-4 grid grid-cols-2 gap-3">
+        <div className="px-4 grid grid-cols-2 gap-2">
           {items.filter(item => !item.purchased).length === 0 ? (
             <div className="bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
               Alle Items wurden bereits von dir gekauft.
