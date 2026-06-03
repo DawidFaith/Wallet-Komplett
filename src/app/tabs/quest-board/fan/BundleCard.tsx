@@ -470,7 +470,8 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
 
           return (
             <div key={item.questId} className="min-w-full snap-start px-4 pt-3 pb-4">
-              <div className={`bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden transition-all ${full ? 'opacity-60' : ''}`}>
+              <div className={`bg-zinc-900 rounded-2xl border ${pc.outerBorder} overflow-hidden transition-all ${full ? 'opacity-60' : ''}`}>
+                <div className={`h-1 bg-gradient-to-r ${pc.progress}`} />
                 <div className="relative h-40">
                   {bundle.videoThumbnail
                     ? <Image src={bundle.videoThumbnail} alt={bundle.videoTitle} fill unoptimized className="object-cover" />
@@ -505,7 +506,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                       <span>{progress}%</span>
                     </div>
                     <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                      <div className={`h-full bg-gradient-to-r ${questConfig.progressColor} rounded-full transition-all duration-500`} style={{ width: `${progress}%` }} />
+                      <div className={`h-full bg-gradient-to-r ${pc.progress} rounded-full transition-all duration-500`} style={{ width: `${progress}%` }} />
                     </div>
                   </div>
                   <p className="text-zinc-400 text-xs">
@@ -517,7 +518,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                     <button
                       onClick={() => onOpenQuest?.(entry)}
                       disabled={!onOpenQuest || !isVerified}
-                      className={`w-full ${questConfig.buttonColor} disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2`}
+                      className={`w-full bg-gradient-to-r ${pc.button} disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2`}
                     >
                       <FaTrophy size={12} /> Starten
                     </button>
