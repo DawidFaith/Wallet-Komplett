@@ -199,7 +199,123 @@ const dict: Translations = {
     en: "We'll get back to you as soon as possible.",
     pl: 'Skontaktujemy się z Tobą jak najszybciej.',
   },
+  // ── Profile Tab ─────────────────────────────────────────────────────────────
 
+  'profile.title': {
+    de: 'Dein Profil',
+    en: 'Your Profile',
+    pl: 'Twój Profil',
+  },
+  'profile.connectWallet': {
+    de: 'Verbinde deine Wallet um dein Profil, Level und Quests zu sehen.',
+    en: 'Connect your wallet to see your profile, level and quests.',
+    pl: 'Połącz swój portfel, aby zobaczyć profil, poziom i questy.',
+  },
+  'profile.ecosystem': {
+    de: 'D.FAITH Ecosystem',
+    en: 'D.FAITH Ecosystem',
+    pl: 'D.FAITH Ecosystem',
+  },
+  'profile.subtitle': {
+    de: 'Unterstütze Künstler · Verdiene Rewards',
+    en: 'Support Artists · Earn Rewards',
+    pl: 'Wspieraj Artystów · Zdobywaj Nagrody',
+  },
+  'profile.supporter': {
+    de: 'Supporter',
+    en: 'Supporter',
+    pl: 'Wspierający',
+  },
+  'profile.artistProfile': {
+    de: 'Künstler-Profil',
+    en: 'Artist Profile',
+    pl: 'Profil Artysty',
+  },
+  'profile.connectedPlatforms': {
+    de: 'Verbundene Plattformen',
+    en: 'Connected Platforms',
+    pl: 'Połączone Platformy',
+  },
+  'profile.availableArtists': {
+    de: 'Verfügbare Künstler',
+    en: 'Available Artists',
+    pl: 'Dostępni Artyści',
+  },
+  'profile.rewardToken': {
+    de: 'Reward Token',
+    en: 'Reward Token',
+    pl: 'Token Nagród',
+  },
+  'profile.redeem': {
+    de: 'Einlösen',
+    en: 'Redeem',
+    pl: 'Odbierz',
+  },
+  'profile.shopAvailable': {
+    de: 'Shop verfügbar',
+    en: 'Shop available',
+    pl: 'Sklep dostępny',
+  },
+  'profile.items_one': {
+    de: 'Artikel erhältlich',
+    en: 'item available',
+    pl: 'artykuł dostępny',
+  },
+  'profile.items_other': {
+    de: 'Artikel erhältlich',
+    en: 'items available',
+    pl: 'artykuły dostępne',
+  },
+  'profile.open': {
+    de: 'Öffnen →',
+    en: 'Open →',
+    pl: 'Otwórz →',
+  },
+  'profile.details': {
+    de: 'Details →',
+    en: 'Details →',
+    pl: 'Szczegóły →',
+  },
+  'profile.reputation': {
+    de: 'Reputation',
+    en: 'Reputation',
+    pl: 'Reputacja',
+  },
+  'profile.quests': {
+    de: 'Quests',
+    en: 'Quests',
+    pl: 'Questy',
+  },
+  'profile.shop': {
+    de: 'Shop',
+    en: 'Shop',
+    pl: 'Sklep',
+  },
+  'profile.repAt': {
+    de: 'REP bei diesem Künstler',
+    en: 'REP with this artist',
+    pl: 'REP u tego artysty',
+  },
+  'profile.questBonus': {
+    de: 'Quest-Bonus',
+    en: 'Quest Bonus',
+    pl: 'Bonus Questów',
+  },
+  'profile.noBio': {
+    de: 'Noch keine Bio eingetragen',
+    en: 'No bio added yet',
+    pl: 'Brak opisu',
+  },
+  'profile.notConnected': {
+    de: 'Nicht verbunden',
+    en: 'Not connected',
+    pl: 'Niepołączony',
+  },
+  'profile.claimSuccess': {
+    de: 'Erfolgreich eingelöst!',
+    en: 'Successfully redeemed!',
+    pl: 'Pomyślnie odebrano!',
+  },
   // ── Navigation ──────────────────────────────────────────────────────────────
 
   'nav.questBoard': {

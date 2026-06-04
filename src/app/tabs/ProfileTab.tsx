@@ -11,6 +11,7 @@ import {
 } from 'react-icons/fa';import SocialVerifyModal from './profile/SocialVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
+import { t, type Lang } from '../utils/i18n';
 
 type SocialPlatform = 'instagram' | 'tiktok' | 'facebook';
 type AnyPlatform = SocialPlatform | 'youtube';
@@ -96,7 +97,8 @@ const PLATFORM_META: Record<AnyPlatform, { label: string; icon: React.ReactNode 
   facebook:  { label: 'Facebook',  icon: <FaFacebook className="text-blue-500"  size={13} /> },
 };
 
-export default function ProfileTab({ language: _language, onNavigate, onNavigateToArtistQuests, onNavigateToArtistShop }: ProfileTabProps) {
+export default function ProfileTab({ language = 'de', onNavigate, onNavigateToArtistQuests, onNavigateToArtistShop }: ProfileTabProps) {
+  const lang = language as Lang;
   const { user: _clerkUser } = useUser();
   const router = useRouter();
   const account = _clerkUser?.id ? { address: _clerkUser.id } : null;
@@ -348,9 +350,9 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
         <div className="w-20 h-20 rounded-full bg-[#231e12] border-2 border-white/[0.1] flex items-center justify-center mb-5">
           <FaLock size={28} className="text-zinc-500" />
         </div>
-        <h2 className="text-white text-xl font-bold mb-2">Dein Profil</h2>
+        <h2 className="text-white text-xl font-bold mb-2">{t('profile.title', lang)}</h2>
         <p className="text-zinc-400 text-sm leading-relaxed">
-          Verbinde deine Wallet um dein Profil, Level und Quests zu sehen.
+          {t('profile.connectWallet', lang)}
         </p>
       </div>
     );
@@ -399,14 +401,14 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
       <div className="flex items-center gap-3 pt-1">
         <Image src="/D.FAITH.png" alt="D.FAITH" width={40} height={40} className="w-10 h-10 rounded-full object-contain shrink-0" />
         <div>
-          <h1 className="text-white font-bold text-xl tracking-wide">D.FAITH Ecosystem</h1>
-          <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">Unterstütze Künstler · Verdiene Rewards</p>
+          <h1 className="text-white font-bold text-xl tracking-wide">{t('profile.ecosystem', lang)}</h1>
+          <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">{t('profile.subtitle', lang)}</p>
         </div>
       </div>
 
       {/* ── Supporter ─────────────────────────────────────────── */}
       <div className="bg-white/[0.06] rounded-2xl border border-white/[0.1] p-5 space-y-4">
-        <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-1">Supporter</p>
+        <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-1">{t('profile.supporter', lang)}</p>
 
         {/* Avatar + Name (Clerk-Profil) */}
         <div className="flex items-center gap-4">
@@ -441,7 +443,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] flex items-center gap-1.5">
-                <FaMusic size={10} className="text-amber-400" /> Künstler-Profil
+                <FaMusic size={10} className="text-amber-400" /> {t('profile.artistProfile', lang)}
               </p>
               {!editingArtist && (
                 <button
@@ -535,7 +537,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                 {p.artistBio ? (
                   <p className="text-zinc-400 text-xs leading-relaxed">{p.artistBio}</p>
                 ) : (
-                  <p className="text-zinc-400 text-xs italic">Noch keine Bio eingetragen</p>
+                  <p className="text-zinc-400 text-xs italic">{t('profile.noBio', lang)}</p>
                 )}
                 {!p.artistType && !p.artistBio && (
                   <p className="text-zinc-400 text-xs italic">Klicke &bdquo;Bearbeiten&ldquo; um dein Künstler-Profil auszufüllen</p>
@@ -587,7 +589,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
 
         {/* Soziale Profile – kompakte Icon-Reihe */}
         <div>
-          <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-3">Verbundene Plattformen</p>
+          <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-3">{t('profile.connectedPlatforms', lang)}</p>
           <div className="flex gap-3 flex-wrap">
 
             <SocialChip
@@ -757,7 +759,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
       {/* ── ArtistBoard ────────────────────────────────────────── */}
       {artists.length > 0 && (
         <div className="bg-white/[0.06] rounded-2xl border border-white/[0.1] p-5">
-          <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-4">Verfügbare Künstler</p>
+          <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-4">{t('profile.availableArtists', lang)}</p>
           <div className="flex gap-4 overflow-x-auto pt-2 pb-1 scrollbar-none">
             {artists.map((artist) => {
               const hasQuests = artist.questCount > 0;
@@ -825,7 +827,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                 <p className="text-zinc-400 text-xs leading-relaxed">{selectedArtist.artistBio}</p>
               )}
               <div className="flex items-center gap-2 text-xs px-1">
-                <span className="text-white font-bold tracking-wide">Reward Token</span>
+                <span className="text-white font-bold tracking-wide">{t('profile.rewardToken', lang)}</span>
                 <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
                 <span className="text-white font-bold tracking-wide">{selectedArtist.rewardToken ?? 'D.FAITH'}</span>
               </div>
@@ -839,7 +841,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                     disabled={claiming || (data?.credits ?? 0) <= 0}
                     className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold text-xs px-3 py-1 rounded-lg transition-colors"
                   >
-                    {claiming ? '…' : 'Einlösen'}
+                    {claiming ? '…' : t('profile.redeem', lang)}
                   </button>
                 </div>
               {/* Reputation bei diesem Artist */}
@@ -855,7 +857,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                         <span className="text-green-400 text-[10px] font-semibold">⚡ +{repData.questRewardBonusPercent}% Quest-Bonus</span>
                       )}
                     </div>
-                    <p className="text-zinc-500 text-[10px]">{repData.reputation.toLocaleString()} REP bei diesem Künstler</p>
+                    <p className="text-zinc-500 text-[10px]">{repData.reputation.toLocaleString()} {t('profile.repAt', lang)}</p>
                   </div>
                   {onNavigate && (
                     <button
@@ -869,7 +871,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                       }}
                       className="text-amber-400 hover:text-amber-300 text-xs font-semibold shrink-0 transition-colors"
                     >
-                      Details →
+                      {t('profile.details', lang)}
                     </button>
                   )}
                 </div>
@@ -879,8 +881,8 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                 <div className="flex items-center gap-3 bg-amber-950/30 border border-amber-700/20 rounded-xl px-3 py-2">
                   <FaShoppingBag className="text-amber-400 shrink-0" size={14} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-amber-300 text-xs font-semibold">Shop verfügbar</p>
-                    <p className="text-zinc-500 text-[10px]">{selectedArtist.shopItemCount} {selectedArtist.shopItemCount === 1 ? 'Artikel' : 'Artikel'} erhältlich</p>
+                    <p className="text-amber-300 text-xs font-semibold">{t('profile.shopAvailable', lang)}</p>
+                    <p className="text-zinc-500 text-[10px]">{selectedArtist.shopItemCount} {selectedArtist.shopItemCount === 1 ? t('profile.items_one', lang) : t('profile.items_other', lang)}</p>
                   </div>
                   <button
                     onClick={() => {
@@ -890,7 +892,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                     }}
                     className="text-amber-400 hover:text-amber-300 text-xs font-semibold shrink-0 transition-colors"
                   >
-                    Öffnen →
+                    {t('profile.open', lang)}
                   </button>
                 </div>
               )}
@@ -907,7 +909,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
                     }}
                     className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs font-semibold transition-colors"
                   >
-                    <FaTrophy size={11} /> Reputation
+                    <FaTrophy size={11} /> {t('profile.reputation', lang)}
                   </button>
                   {selectedArtist && selectedArtist.questCount > 0 && (
                     <button
@@ -1018,7 +1020,7 @@ export default function ProfileTab({ language: _language, onNavigate, onNavigate
             <div className="w-16 h-16 mx-auto">
               <Image src="/D.FAITH.png" alt="D.FAITH" width={64} height={64} className="w-16 h-16 object-contain" />
             </div>
-            <h3 className="text-white font-bold text-lg">Erfolgreich eingelöst!</h3>
+            <h3 className="text-white font-bold text-lg">{t('profile.claimSuccess', lang)}</h3>
             <p className="text-zinc-400 text-sm">Folgende Menge wurde an deine Wallet gesendet:</p>
             <div className="bg-yellow-900/30 border border-yellow-700/40 rounded-xl py-3 px-4 flex items-center justify-center gap-2">
               <Image src="/D.FAITH.png" alt="D.FAITH" width={28} height={28} className="w-7 h-7 object-contain" />
