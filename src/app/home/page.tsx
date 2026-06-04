@@ -10,28 +10,22 @@ import ReputationTab from "../tabs/ReputationTab";
 import ShopTab from "../tabs/ShopTab";
 import type { SupportedLanguage } from "../utils/deepLTranslation";
 import type { ArtistInfo } from "../tabs/quest-board/index";
+import { useLang, useSetLang } from "../components/LangContext";
 
 const LAST_TAB_KEY = 'dfaith_last_tab';
 const LAST_ARTIST_KEY = 'dfaith_last_artist';
-const LANG_KEY = 'dfaith_language';
 
 function HomeContent() {
   const [activeTab, setActiveTab] = useState("profile");
-  const [language, setLanguage] = useState<SupportedLanguage>("de");
+  const language = useLang() as SupportedLanguage;
+  const setLangCtx = useSetLang();
   // Artist der direkt vom Profil-Tab zum Quest Board weitergeleitet wird
   const [questArtist, setQuestArtist] = useState<ArtistInfo | null>(null);
   const [shopArtistWallet, setShopArtistWallet] = useState<string | null>(null);
   const searchParams = useSearchParams();
 
-  // Sprache aus localStorage laden
-  useEffect(() => {
-    const saved = localStorage.getItem(LANG_KEY) as SupportedLanguage | null;
-    if (saved && ['de', 'en', 'pl'].includes(saved)) setLanguage(saved);
-  }, []);
-
   const handleSetLanguage = (lang: SupportedLanguage) => {
-    setLanguage(lang);
-    localStorage.setItem(LANG_KEY, lang);
+    setLangCtx(lang);
   };
 
   // Beim ersten Laden: gespeicherten Tab + Artist wiederherstellen (URL-Parameter hat Vorrang)
