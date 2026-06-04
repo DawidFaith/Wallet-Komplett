@@ -116,23 +116,23 @@ export default function LikeVerifyModal({
 
   const title =
     step === 'success' ? t('verify.likeConfirmed', lang)
-    : step === 'expired' ? '⏰ Zeit abgelaufen'
-    : step === 'error' ? '❌ Fehler'
-    : '👍 Like verifizieren';
+    : step === 'expired' ? t('verify.expiredTitle', lang)
+    : step === 'error' ? t('verify.errorTitle', lang)
+    : t('verify.likeVerifyTitle', lang);
 
   return (
     <Modal open={!!quest} onClose={onClose} title={title}>
       {/* Reward-Banner */}
       {quest && step !== 'error' && step !== 'expired' && (
         <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
-          <span className="text-zinc-400 text-xs">Belohnung</span>
+          <span className="text-zinc-400 text-xs">{t('verify.rewardLabel', lang)}</span>
           <div className="flex items-center gap-2">
             <span className="text-amber-400 font-bold text-sm flex items-center gap-1">
               <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3.5 h-3.5 rounded-full shrink-0" />
               +{formatCredits(displayReward)} D.FAITH
             </span>
             {levelBonusPercent > 0 && (
-              <span className="text-green-300 font-bold text-[10px]">inkl. +{levelBonusPercent}% Bonus</span>
+              <span className="text-green-300 font-bold text-[10px]">{lang === 'en' ? `incl. +${levelBonusPercent}% Bonus` : lang === 'pl' ? `w tym +${levelBonusPercent}% Bonus` : `inkl. +${levelBonusPercent}% Bonus`}</span>
             )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
@@ -147,7 +147,7 @@ export default function LikeVerifyModal({
       {step === 'loading' && (
         <div className="flex flex-col items-center py-8 gap-4">
           <div className="border-4 border-yellow-500/30 border-t-yellow-500 rounded-full w-12 h-12 animate-spin" />
-          <p className="text-zinc-400 text-sm">Wird vorbereitet…</p>
+          <p className="text-zinc-400 text-sm">{t('verify.preparing', lang)}</p>
         </div>
       )}
 
@@ -155,7 +155,7 @@ export default function LikeVerifyModal({
       {(step === 'await_like' || step === 'not_yet') && quest && (
         <div className="space-y-4">
           <div className={`rounded-xl p-4 text-center ${secondsLeft < 60 ? 'bg-amber-900/30 border border-amber-700/40' : 'bg-zinc-800'}`}>
-            <p className="text-zinc-400 text-sm mb-1">Verbleibende Zeit</p>
+            <p className="text-zinc-400 text-sm mb-1">{t('verify.timeLeft', lang)}</p>
             <p className={`text-3xl font-bold tabular-nums ${secondsLeft < 60 ? 'text-amber-400' : 'text-yellow-400'}`}>
               {formatTime(secondsLeft)}
             </p>
@@ -189,7 +189,7 @@ export default function LikeVerifyModal({
             rel="noopener noreferrer"
             className="w-full bg-amber-500 hover:bg-amber-400 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
-            <FaExternalLinkAlt size={13} /> Zum Short (Liken)
+            <FaExternalLinkAlt size={13} /> {t('verify.toShort', lang)}
           </a>
           <button
             onClick={() => callApi('check-like')}
@@ -208,8 +208,8 @@ export default function LikeVerifyModal({
       {step === 'expired' && quest && (
         <div className="space-y-4">
           <div className="bg-zinc-800 rounded-xl p-4 text-center">
-            <p className="text-zinc-300 text-sm">Das 5-Minuten-Fenster ist abgelaufen.</p>
-            <p className="text-zinc-500 text-xs mt-1">Starte die Verifizierung neu.</p>
+            <p className="text-zinc-300 text-sm">{t('verify.expiredWindow', lang)}</p>
+            <p className="text-zinc-500 text-xs mt-1">{t('verify.expiredRestart', lang)}</p>
           </div>
           <button
             onClick={() => callApi('start')}
@@ -218,24 +218,20 @@ export default function LikeVerifyModal({
           >
             {loading
               ? <div className="border-2 border-black/30 border-t-black rounded-full w-4 h-4 animate-spin" />
-              : <><FaRedo size={13} /> Neu starten</>
+              : <><FaRedo size={13} /> {t('btn.restart', lang)}</>
             }
           </button>
-          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">
-            Schließen
-          </button>
+          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">{t('btn.close', lang)}</button>
         </div>
       )}
 
-      {/* ── Fehler ──────────────────────────────────────────── */}
+      {/* ── Fehler ─────────────────────────────────────────────────────── */}
       {step === 'error' && (
         <div className="space-y-4">
           <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-4">
             <p className="text-amber-300 text-sm">{error}</p>
           </div>
-          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">
-            Schließen
-          </button>
+          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">{t('btn.close', lang)}</button>
         </div>
       )}
 
@@ -244,23 +240,21 @@ export default function LikeVerifyModal({
         <div className="space-y-4">
           <div className="bg-green-900/30 border border-green-700/40 rounded-xl p-4 text-center">
             <FaThumbsUp size={32} className="text-yellow-400 mx-auto mb-2" />
-            <p className="text-green-300 font-semibold">Like erfolgreich verifiziert!</p>
+            <p className="text-green-300 font-semibold">{t('verify.likeSuccess', lang)}</p>
           </div>
           <div className="bg-zinc-800 rounded-xl p-4 flex items-center gap-3">
             <Image src="/D.FAITH.png" alt="" width={32} height={32} className="w-8 h-8 rounded-full shrink-0" />
             <div>
               <p className="text-white font-bold text-lg">{formatCredits(rewardAmount)} D.FAITH Credits</p>
-              <p className="text-zinc-400 text-xs">Zu deinem D.FAITH Credits Guthaben hinzugefügt</p>
+              <p className="text-zinc-400 text-xs">{t('verify.creditsAdded', lang)}</p>
               {(quest?.reputationReward ?? 0) > 0 && (
                 <p className="text-purple-300 text-xs font-medium flex items-center gap-1 mt-0.5">
-                  <FaStar size={9} /> +{quest?.reputationReward} Reputation
+                  <FaStar size={9} /> +{quest?.reputationReward} {t('verify.reputation', lang)}
                 </p>
               )}
             </div>
           </div>
-          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">
-            Schließen
-          </button>
+          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">{t('btn.close', lang)}</button>
         </div>
       )}
     </Modal>

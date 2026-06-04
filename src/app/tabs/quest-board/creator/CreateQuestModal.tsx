@@ -410,41 +410,41 @@ export default function CreateQuestModal({
       setSuccess(true);
       onCreated();
     } catch {
-      setError('Netzwerkfehler. Bitte versuche es erneut.');
+      setError(lang === 'en' ? 'Network error. Please try again.' : lang === 'pl' ? 'Błąd sieci. Spróbuj ponownie.' : 'Netzwerkfehler. Bitte versuche es erneut.');
     } finally {
       setCreating(false);
     }
   };
 
   return (
-    <Modal open={open} onClose={handleClose} title="Neuen Quest erstellen" disableBackdropClose>
+    <Modal open={open} onClose={handleClose} title={t('cq.title', lang)} disableBackdropClose>
       {success ? (
         <div className="space-y-4">
           <div className="bg-green-900/30 border border-green-700/40 rounded-xl p-4 text-center">
             <FaCheck size={28} className="text-green-400 mx-auto mb-2" />
-            <p className="text-green-300 font-semibold">Quest erfolgreich erstellt!</p>
-            <p className="text-zinc-400 text-sm mt-1">Fans können jetzt deinen Quest sehen und abschließen.</p>
+            <p className="text-green-300 font-semibold">{t('cq.successTitle', lang)}</p>
+            <p className="text-zinc-400 text-sm mt-1">{t('cq.successDesc', lang)}</p>
           </div>
           {storyLink && (
             <div className="bg-pink-900/20 border border-pink-700/40 rounded-xl p-3 flex items-center gap-2">
               <FaCheck size={12} className="text-green-400 shrink-0" />
               <p className="text-xs text-zinc-300">
-                Story Quest aktiv — dein Link DM ist bereits eingerichtet.
+                {t('cq.storyActive', lang)}
               </p>
             </div>
           )}
-          <button onClick={handleClose} className="w-full bg-[#231e12] hover:bg-[#2d2615] text-white py-3 rounded-xl transition-colors font-semibold">Schließen</button>
+          <button onClick={handleClose} className="w-full bg-[#231e12] hover:bg-[#2d2615] text-white py-3 rounded-xl transition-colors font-semibold">{t('btn.close', lang)}</button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Plattform-Auswahl */}
           <div>
-            <label className="text-zinc-300 text-sm font-medium block mb-1.5">Plattform <span className="text-amber-400">*</span></label>
+            <label className="text-zinc-300 text-sm font-medium block mb-1.5">{t('creator.platform', lang)} <span className="text-amber-400">*</span></label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 disabled={!verified.youtube}
-                title={verified.youtube ? '' : 'YouTube-Konto im Profil verknüpfen'}
+                title={verified.youtube ? '' : (lang === 'en' ? 'Link YouTube account in Profile' : lang === 'pl' ? 'Połącz konto YouTube w Profilu' : 'YouTube-Konto im Profil verknüpfen')}
                 onClick={() => { setPlatform('youtube'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); setSelectedFacebookMedia(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                   !verified.youtube
@@ -459,7 +459,7 @@ export default function CreateQuestModal({
               <button
                 type="button"
                 disabled={!verified.tiktok}
-                title={verified.tiktok ? '' : 'TikTok-Konto im Profil verknüpfen'}
+                title={verified.tiktok ? '' : (lang === 'en' ? 'Link TikTok account in Profile' : lang === 'pl' ? 'Połącz konto TikTok w Profilu' : 'TikTok-Konto im Profil verknüpfen')}
                 onClick={() => { setPlatform('tiktok'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); setSelectedFacebookMedia(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                   !verified.tiktok
@@ -474,7 +474,7 @@ export default function CreateQuestModal({
               <button
                 type="button"
                 disabled={!verified.instagram}
-                title={verified.instagram ? '' : 'Instagram-Konto im Profil verknüpfen'}
+                title={verified.instagram ? '' : (lang === 'en' ? 'Link Instagram account in Profile' : lang === 'pl' ? 'Połącz konto Instagram w Profilu' : 'Instagram-Konto im Profil verknüpfen')}
                 onClick={() => { setPlatform('instagram'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); setSelectedFacebookMedia(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                   !verified.instagram
@@ -489,7 +489,7 @@ export default function CreateQuestModal({
               <button
                 type="button"
                 disabled={!verified.facebook}
-                title={verified.facebook ? '' : 'Facebook-Konto im Profil verknüpfen'}
+                title={verified.facebook ? '' : (lang === 'en' ? 'Link Facebook account in Profile' : lang === 'pl' ? 'Połącz konto Facebook w Profilu' : 'Facebook-Konto im Profil verknüpfen')}
                 onClick={() => { setPlatform('facebook'); setQuestType('comment'); setSelectedMedia(null); setSelectedQuestMediaId(null); setSelectedFacebookMedia(null); }}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-colors ${
                   !verified.facebook

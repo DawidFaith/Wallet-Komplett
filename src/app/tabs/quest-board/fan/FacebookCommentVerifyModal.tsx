@@ -98,23 +98,23 @@ export default function FacebookCommentVerifyModal({
 
   const title = result
     ? result.success
-      ? '🎉 Quest abgeschlossen!'
-      : '❌ Fehler'
-    : 'Facebook Comment Quest';
+      ? t('verify.questDone', lang)
+      : t('verify.errorTitle', lang)
+    : t('verify.fbCommentTitle', lang);
 
   return (
     <Modal open={!!quest} onClose={handleClose} title={title}>
       {/* Reward-Banner */}
       {quest && !result?.success && (
         <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
-          <span className="text-zinc-400 text-xs">Belohnung</span>
+          <span className="text-zinc-400 text-xs">{t('verify.rewardLabel', lang)}</span>
           <div className="flex items-center gap-2">
             <span className="text-amber-400 font-bold text-sm flex items-center gap-1">
               <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3.5 h-3.5 rounded-full shrink-0" />
               +{formatCredits(displayReward)} D.FAITH
             </span>
             {levelBonusPercent > 0 && (
-              <span className="text-green-300 font-bold text-[10px]">inkl. +{levelBonusPercent}% Bonus</span>
+              <span className="text-green-300 font-bold text-[10px]">{lang === 'en' ? `incl. +${levelBonusPercent}% Bonus` : lang === 'pl' ? `w tym +${levelBonusPercent}% Bonus` : `inkl. +${levelBonusPercent}% Bonus`}</span>
             )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
@@ -143,10 +143,10 @@ export default function FacebookCommentVerifyModal({
                 <Image src="/D.FAITH.png" alt="" width={32} height={32} className="w-8 h-8 rounded-full shrink-0" />
                 <div>
                   <p className="text-white font-bold text-lg">{formatCredits(result.rewardAmount)} D.FAITH Credits</p>
-                  <p className="text-zinc-400 text-xs">Zu deinem D.FAITH Credits Guthaben hinzugefügt</p>
+                  <p className="text-zinc-400 text-xs">{t('verify.creditsAdded', lang)}</p>
                   {(quest?.reputationReward ?? 0) > 0 && (
                     <p className="text-purple-300 text-xs font-medium flex items-center gap-1 mt-0.5">
-                      <FaStar size={9} /> +{quest?.reputationReward} Reputation
+                      <FaStar size={9} /> +{quest?.reputationReward} {t('verify.reputation', lang)}
                     </p>
                   )}
                 </div>
@@ -161,7 +161,7 @@ export default function FacebookCommentVerifyModal({
             onClick={handleClose}
             className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold"
           >
-            Schließen
+            {t('btn.close', lang)}
           </button>
         </div>
       ) : (
@@ -182,20 +182,20 @@ export default function FacebookCommentVerifyModal({
 
           {/* Anleitung */}
           <div className="bg-zinc-800/60 rounded-xl p-4 space-y-3">
-            <p className="text-zinc-300 text-sm font-semibold">So funktioniert&apos;s:</p>
+            <p className="text-zinc-300 text-sm font-semibold">{t('verify.fbHowTitle', lang)}</p>
             <ol className="space-y-1.5 text-zinc-400 text-sm">
-              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">1.</span>Kopiere den unten stehenden Kommentar</li>
-              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">2.</span>Öffne den Post über den Link oben</li>
-              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">3.</span>Füge den Kommentar dort exakt so ein und poste ihn</li>
-              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">4.</span>Komm zurück und klicke &bdquo;Verifizieren&ldquo;</li>
+              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">1.</span>{t('verify.fbStep1', lang)}</li>
+              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">2.</span>{t('verify.fbStep2', lang)}</li>
+              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">3.</span>{t('verify.fbStep3', lang)}</li>
+              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">4.</span>{t('verify.fbStep4', lang)}</li>
             </ol>
           </div>
 
           {/* Dein Kommentar */}
           <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 border border-blue-700/40 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-blue-300 text-xs font-semibold uppercase tracking-wide">Dein Kommentar</span>
-              <span className="text-zinc-500 text-[10px]">individuell für dich generiert</span>
+              <span className="text-blue-300 text-xs font-semibold uppercase tracking-wide">{t('verify.yourComment', lang)}</span>
+              <span className="text-zinc-500 text-[10px]">{t('verify.individualComment', lang)}</span>
             </div>
             {commentText ? (
               <>
@@ -207,16 +207,16 @@ export default function FacebookCommentVerifyModal({
                   className="w-full bg-blue-600/80 hover:bg-blue-600 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   {copied ? (
-                    <><FaCheck size={12} /> Kopiert!</>
+                    <><FaCheck size={12} /> {t('btn.copied', lang)}</>
                   ) : (
-                    <><FaCopy size={12} /> Kommentar kopieren</>
+                    <><FaCopy size={12} /> {lang === 'en' ? 'Copy comment' : lang === 'pl' ? 'Kopiuj komentarz' : 'Kommentar kopieren'}</>
                   )}
                 </button>
               </>
             ) : (
               <div className="flex items-center gap-2 text-zinc-400 text-sm py-2">
                 <div className="border-2 border-zinc-600 border-t-blue-400 rounded-full w-4 h-4 animate-spin" />
-                Kommentar wird geladen…
+                  {lang === 'en' ? 'Loading comment…' : lang === 'pl' ? 'Ładowanie komentarza…' : 'Kommentar wird geladen…'}
               </div>
             )}
           </div>
@@ -227,7 +227,7 @@ export default function FacebookCommentVerifyModal({
             className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             <FaFacebookF size={14} />
-            Kommentar verifizieren
+            {t('btn.verify', lang)}
           </button>
         </div>
       )}

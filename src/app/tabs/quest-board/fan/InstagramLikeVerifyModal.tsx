@@ -116,7 +116,7 @@ export default function InstagramLikeVerifyModal({
           }
         }
       } catch {
-        setError('Netzwerkfehler. Bitte versuche es erneut.');
+      setError(lang === 'en' ? 'Network error. Please try again.' : lang === 'pl' ? 'Błąd sieci. Spróbuj ponownie.' : 'Netzwerkfehler. Bitte versuche es erneut.');
         setStep('error');
       } finally {
         setLoading(false);
@@ -142,11 +142,11 @@ export default function InstagramLikeVerifyModal({
   const title =
     step === 'success'
       ? isEngagement ? t('verify.engagementConfirmed', lang) : isRepost ? t('verify.repostConfirmed', lang) : t('verify.likeConfirmed', lang)
-    : step === 'expired' ? '⏰ Zeit abgelaufen'
-    : step === 'error'   ? '❌ Fehler'
-    : isEngagement ? '❤️🔖 Engagement verifizieren'
-    : isRepost ? '🔁 Repost verifizieren'
-    : `${isLike ? '❤️' : '🔖'} ${isLike ? 'Like' : 'Speichern'} verifizieren`;
+    : step === 'expired' ? t('verify.expiredTitle', lang)
+    : step === 'error'   ? t('verify.errorTitle', lang)
+    : isEngagement ? t('verify.engagementVerifyTitle', lang)
+    : isRepost ? t('verify.repostVerifyTitle', lang)
+    : `${isLike ? '❤️' : '🔖'} ${t(isLike ? 'verify.likeVerifyTitle' : 'verify.saveTitle', lang)}`;
 
   return (
     <Modal open={!!quest} onClose={onClose} title={title}>
@@ -154,10 +154,10 @@ export default function InstagramLikeVerifyModal({
       {/* ── Reward-Banner (überall sichtbar außer Fehler/Ablauf) ─────────────── */}
       {quest && step !== 'error' && step !== 'expired' && (
         <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
-          <span className="text-zinc-400 text-xs">Belohnung</span>
+          <span className="text-zinc-400 text-xs">{t('verify.rewardLabel', lang)}</span>
           {isEngagement ? (
             <div className="flex items-center gap-3">
-              <span className="text-zinc-500 text-xs">pro Aktion:</span>
+              <span className="text-zinc-500 text-xs">{t('verify.perAction', lang)}</span>
               <span className="text-amber-400 font-bold text-sm flex items-center gap-1">
                 <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3.5 h-3.5 rounded-full shrink-0" />
                 +{formatCredits(rewardPer)} D.FAITH
@@ -176,7 +176,7 @@ export default function InstagramLikeVerifyModal({
                 +{formatCredits(displayReward)} D.FAITH
               </span>
               {levelBonusPercent > 0 && (
-                <span className="text-green-300 font-bold text-[10px]">inkl. +{levelBonusPercent}% Bonus</span>
+                <span className="text-green-300 font-bold text-[10px]">{lang === 'en' ? `incl. +${levelBonusPercent}% Bonus` : lang === 'pl' ? `w tym +${levelBonusPercent}% Bonus` : `inkl. +${levelBonusPercent}% Bonus`}</span>
               )}
               {(quest.reputationReward ?? 0) > 0 && (
                 <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
@@ -192,7 +192,7 @@ export default function InstagramLikeVerifyModal({
       {step === 'loading' && (
         <div className="flex flex-col items-center py-8 gap-4">
           <div className="border-4 border-pink-500/30 border-t-pink-500 rounded-full w-12 h-12 animate-spin" />
-          <p className="text-zinc-400 text-sm">Baseline wird geladen…</p>
+          <p className="text-zinc-400 text-sm">{t('verify.baselineLoading', lang)}</p>
         </div>
       )}
 
@@ -201,7 +201,7 @@ export default function InstagramLikeVerifyModal({
         <div className="space-y-4">
           {/* Timer */}
           <div className={`rounded-xl p-4 text-center ${secondsLeft < 60 ? 'bg-amber-900/30 border border-amber-700/40' : 'bg-zinc-800'}`}>
-            <p className="text-zinc-400 text-sm mb-1">Verbleibende Zeit</p>
+            <p className="text-zinc-400 text-sm mb-1">{t('verify.timeLeft', lang)}</p>
             <p className={`text-3xl font-bold tabular-nums ${secondsLeft < 60 ? 'text-amber-400' : 'text-pink-400'}`}>
               {formatTime(secondsLeft)}
             </p>
@@ -270,7 +270,7 @@ export default function InstagramLikeVerifyModal({
             }
           </button>
           <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm py-2.5 rounded-xl transition-colors">
-            Abbrechen
+            {t('btn.cancel', lang)}
           </button>
         </div>
       )}
@@ -280,7 +280,7 @@ export default function InstagramLikeVerifyModal({
         <div className="space-y-4">
           {/* Timer */}
           <div className={`rounded-xl p-4 text-center ${secondsLeft < 60 ? 'bg-amber-900/30 border border-amber-700/40' : 'bg-zinc-800'}`}>
-            <p className="text-zinc-400 text-sm mb-1">Verbleibende Zeit</p>
+            <p className="text-zinc-400 text-sm mb-1">{t('verify.timeLeft', lang)}</p>
             <p className={`text-3xl font-bold tabular-nums ${secondsLeft < 60 ? 'text-amber-400' : accentColor}`}>
               {formatTime(secondsLeft)}
             </p>
@@ -288,14 +288,16 @@ export default function InstagramLikeVerifyModal({
 
           {step === 'not_yet' && (
             <div className="bg-orange-900/30 border border-orange-700/40 rounded-xl p-3">
-              <p className="text-orange-300 text-sm">Noch nicht erkannt. Warte kurz und versuche es erneut.</p>
+              <p className="text-orange-300 text-sm">
+              {lang === 'en' ? 'Not detected yet. Wait a moment and try again.' : lang === 'pl' ? 'Jeszcze nie wykryte. Poczekaj chwilę i spróbuj ponownie.' : 'Noch nicht erkannt. Warte kurz und versuche es erneut.'}
+            </p>
             </div>
           )}
 
           <div className="bg-zinc-800/60 rounded-xl p-4 space-y-2">
             <p className="text-white font-semibold text-sm flex items-center gap-2">
               <ActionIcon size={16} className={accentColor} />
-              So funktioniert es:
+              {t('verify.fbHowTitle', lang)}
             </p>
             <ol className="space-y-1 text-zinc-400 text-sm">
               <li className="flex gap-2">
@@ -305,10 +307,10 @@ export default function InstagramLikeVerifyModal({
               <li className="flex gap-2">
                 <span className={`${accentColor} font-bold shrink-0`}>2.</span>
                 {isLike
-                  ? 'Tippe auf das Herz um das Reel zu liken'
+                  ? (lang === 'en' ? 'Tap the heart to like the reel' : lang === 'pl' ? 'Stuknij serce, aby polubieć reel' : 'Tippe auf das Herz um das Reel zu liken')
                   : isRepost
-                  ? 'Tippe auf den Repost-Button (🔁) unter dem Reel'
-                  : 'Tippe auf das Lesezeichen-Symbol um das Reel zu speichern'}
+                  ? (lang === 'en' ? 'Tap the repost button (\uD83D\uDD01) below the reel' : lang === 'pl' ? 'Stuknij przycisk repostu (\uD83D\uDD01) pod reelem' : 'Tippe auf den Repost-Button (\uD83D\uDD01) unter dem Reel')
+                  : (lang === 'en' ? 'Tap the bookmark icon to save the reel' : lang === 'pl' ? 'Stuknij ikonę zakładki, aby zapisać reel' : 'Tippe auf das Lesezeichen-Symbol um das Reel zu speichern')}
               </li>
               <li className="flex gap-2">
                 <span className={`${accentColor} font-bold shrink-0`}>3.</span>
@@ -349,9 +351,7 @@ export default function InstagramLikeVerifyModal({
               : <><ActionIcon size={14} /> {isLike ? t('verify.likedSaved', lang) : isRepost ? t('verify.reposted', lang) : t('verify.saved', lang)}? – {t('verify.checkBtn', lang)}</>
             }
           </button>
-          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm py-2.5 rounded-xl transition-colors">
-            Abbrechen
-          </button>
+          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm py-2.5 rounded-xl transition-colors">{t('btn.cancel', lang)}</button>
         </div>
       )}
 
@@ -359,8 +359,8 @@ export default function InstagramLikeVerifyModal({
       {step === 'expired' && (
         <div className="space-y-4">
           <div className="bg-zinc-800 rounded-xl p-4 text-center">
-            <p className="text-zinc-300 text-sm">Das 10-Minuten-Fenster ist abgelaufen.</p>
-            <p className="text-zinc-500 text-xs mt-1">Starte die Verifizierung neu.</p>
+            <p className="text-zinc-300 text-sm">{t('verify.expiredWindow', lang).replace('5-Minuten', '10-Minuten')}</p>
+            <p className="text-zinc-500 text-xs mt-1">{t('verify.expiredRestart', lang)}</p>
           </div>
           <button
             onClick={() => callApi('start')}
@@ -369,12 +369,10 @@ export default function InstagramLikeVerifyModal({
           >
             {loading
               ? <div className="border-2 border-current/30 border-t-current rounded-full w-4 h-4 animate-spin" />
-              : <><FaRedo size={13} /> Neu starten</>
+              : <><FaRedo size={13} /> {t('btn.restart', lang)}</>
             }
           </button>
-          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">
-            Schließen
-          </button>
+          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">{t('btn.close', lang)}</button>
         </div>
       )}
 
@@ -384,9 +382,7 @@ export default function InstagramLikeVerifyModal({
           <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-4">
             <p className="text-amber-300 text-sm">{error}</p>
           </div>
-          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">
-            Schließen
-          </button>
+          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">{t('btn.close', lang)}</button>
         </div>
       )}
 
@@ -417,17 +413,15 @@ export default function InstagramLikeVerifyModal({
             <Image src="/D.FAITH.png" alt="" width={32} height={32} className="w-8 h-8 rounded-full shrink-0" />
             <div>
               <p className="text-white font-bold text-lg">{formatCredits(rewardAmount)} D.FAITH Credits</p>
-              <p className="text-zinc-400 text-xs">Zu deinem D.FAITH Credits Guthaben hinzugefügt</p>
+              <p className="text-zinc-400 text-xs">{t('verify.creditsAdded', lang)}</p>
               {(quest?.reputationReward ?? 0) > 0 && (
                 <p className="text-purple-300 text-xs font-medium flex items-center gap-1 mt-0.5">
-                  <FaStar size={9} /> +{quest?.reputationReward} Reputation
+                  <FaStar size={9} /> +{quest?.reputationReward} {t('verify.reputation', lang)}
                 </p>
               )}
             </div>
           </div>
-          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">
-            Schließen
-          </button>
+          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">{t('btn.close', lang)}</button>
         </div>
       )}
 
@@ -437,24 +431,22 @@ export default function InstagramLikeVerifyModal({
           <div className="bg-green-900/30 border border-green-700/40 rounded-xl p-4 text-center">
             <ActionIcon size={32} className={`${accentColor} mx-auto mb-2`} />
             <p className="text-green-300 font-semibold">
-              {isLike ? 'Like' : isRepost ? 'Repost' : 'Speichern'} erfolgreich verifiziert!
+              {isLike ? t('verify.likeSuccess', lang) : isRepost ? t('verify.shareConfirmed', lang) : t('verify.saveConfirmed', lang)}
             </p>
           </div>
           <div className="bg-zinc-800 rounded-xl p-4 flex items-center gap-3">
             <Image src="/D.FAITH.png" alt="" width={32} height={32} className="w-8 h-8 rounded-full shrink-0" />
             <div>
               <p className="text-white font-bold text-lg">{formatCredits(rewardAmount)} D.FAITH Credits</p>
-              <p className="text-zinc-400 text-xs">Zu deinem D.FAITH Credits Guthaben hinzugefügt</p>
+              <p className="text-zinc-400 text-xs">{t('verify.creditsAdded', lang)}</p>
               {(quest?.reputationReward ?? 0) > 0 && (
                 <p className="text-purple-300 text-xs font-medium flex items-center gap-1 mt-0.5">
-                  <FaStar size={9} /> +{quest?.reputationReward} Reputation
+                  <FaStar size={9} /> +{quest?.reputationReward} {t('verify.reputation', lang)}
                 </p>
               )}
             </div>
           </div>
-          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">
-            Schließen
-          </button>
+          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold">{t('btn.close', lang)}</button>
         </div>
       )}
     </Modal>

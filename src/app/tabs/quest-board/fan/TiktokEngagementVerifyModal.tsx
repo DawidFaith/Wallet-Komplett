@@ -142,8 +142,8 @@ export default function TiktokEngagementVerifyModal({
   const title = singleAction === 'like'
     ? (step === 'success' ? t('verify.likeConfirmed', lang) : step === 'expired' ? '⏰ Zeit abgelaufen' : step === 'error' ? '❌ Fehler' : '👍 Like verifizieren')
     : singleAction === 'save'
-    ? (step === 'success' ? '🎉 Speichern bestätigt!' : step === 'expired' ? '⏰ Zeit abgelaufen' : step === 'error' ? '❌ Fehler' : '🔖 Speichern verifizieren')
-    : (step === 'success' ? t('verify.engagementConfirmed', lang) : step === 'expired' ? '⏰ Zeit abgelaufen' : step === 'error' ? '❌ Fehler' : '📲 Engagement verifizieren');
+    ? (step === 'success' ? t('verify.saveConfirmed', lang) : step === 'expired' ? t('verify.expiredTitle', lang) : step === 'error' ? t('verify.errorTitle', lang) : t('verify.saveTitle', lang))
+    : (step === 'success' ? t('verify.engagementConfirmed', lang) : step === 'expired' ? t('verify.expiredTitle', lang) : step === 'error' ? t('verify.errorTitle', lang) : t('verify.ttEngagementTitle', lang));
 
   const rewardPer = quest ? Math.round((displayReward / (singleAction ? 1 : 3)) * 100) / 100 : 0;
 
@@ -152,14 +152,14 @@ export default function TiktokEngagementVerifyModal({
       {/* Reward-Banner */}
       {quest && step !== 'error' && step !== 'expired' && (
         <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
-          <span className="text-zinc-400 text-xs">Belohnung</span>
+          <span className="text-zinc-400 text-xs">{t('verify.rewardLabel', lang)}</span>
           <div className="flex items-center gap-2.5">
-            {!singleAction && <span className="text-zinc-500 text-xs">pro Aktion:</span>}
+            {!singleAction && <span className="text-zinc-500 text-xs">{t('verify.perAction', lang)}</span>}
             <span className="text-yellow-400 font-bold text-sm flex items-center gap-1">
               <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full" unoptimized /> +{formatCredits(rewardPer)} D.FAITH
             </span>
             {levelBonusPercent > 0 && (
-              <span className="text-green-300 font-bold text-[10px]">inkl. +{levelBonusPercent}% Bonus</span>
+              <span className="text-green-300 font-bold text-[10px]">{lang === 'en' ? `incl. +${levelBonusPercent}% Bonus` : lang === 'pl' ? `w tym +${levelBonusPercent}% Bonus` : `inkl. +${levelBonusPercent}% Bonus`}</span>
             )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-amber-300 font-bold text-sm flex items-center gap-1">
@@ -175,7 +175,7 @@ export default function TiktokEngagementVerifyModal({
       {step === 'loading' && (
         <div className="flex flex-col items-center py-8 gap-4">
           <div className="border-4 border-cyan-500/30 border-t-cyan-500 rounded-full w-12 h-12 animate-spin" />
-          <p className="text-zinc-400 text-sm">Baseline wird geladen…</p>
+          <p className="text-zinc-400 text-sm">{t('verify.baselineLoading', lang)}</p>
         </div>
       )}
 
@@ -184,7 +184,7 @@ export default function TiktokEngagementVerifyModal({
         <div className="space-y-4">
           {/* Timer */}
           <div className={`rounded-xl p-4 text-center ${secondsLeft < 60 ? 'bg-amber-900/30 border border-amber-700/40' : 'bg-zinc-800'}`}>
-            <p className="text-zinc-400 text-sm mb-1">Verbleibende Zeit</p>
+            <p className="text-zinc-400 text-sm mb-1">{t('verify.timeLeft', lang)}</p>
             <p className={`text-3xl font-bold tabular-nums ${secondsLeft < 60 ? 'text-amber-400' : 'text-cyan-400'}`}>
               {formatTime(secondsLeft)}
             </p>
@@ -220,7 +220,7 @@ export default function TiktokEngagementVerifyModal({
                     </span>
                     {step === 'not_yet' && (
                       <span className={`text-sm ${verified ? 'text-green-400' : 'text-zinc-500'}`}>
-                        {verified ? '✓ Erkannt' : '– Nicht erkannt'}
+                        {verified ? t('bc.detected', lang) : t('bc.notDetected', lang)}
                       </span>
                     )}
                   </div>
@@ -265,10 +265,9 @@ export default function TiktokEngagementVerifyModal({
           </div>
 
           <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-3">
-            <p className="text-amber-300 text-xs font-semibold mb-1">⚠️ Wichtiger Hinweis</p>
+            <p className="text-amber-300 text-xs font-semibold mb-1">⚠️ Hinweis</p>
             <p className="text-amber-200/80 text-xs">
-              Falls du das Video bereits vorher geliked, geteilt oder gespeichert hast: mache diese Aktionen zuerst rückgängig,
-              <span className="font-semibold"> kehre hierher zurück, starte den Quest neu</span> und führe die Aktionen dann erneut durch.
+              {lang === 'en' ? 'If you already liked, shared or saved this video: undo these actions first, return here, restart the quest and redo them.' : lang === 'pl' ? 'Jeśli wcześniej polubyłeś, udostępniłeś lub zapisałeś ten film: najpierw cofnij te akcje, wróć tutaj, uruchom quest od nowa i powtórz je.' : 'Falls du das Video bereits vorher geliked, geteilt oder gespeichert hast: mache diese Aktionen zuerst rükgängig, kehre hierher zurück, starte den Quest neu und führe die Aktionen dann erneut durch.'}
             </p>
           </div>
 
@@ -300,7 +299,7 @@ export default function TiktokEngagementVerifyModal({
       {step === 'success' && (
         <div className="space-y-4">
           <div className="bg-green-900/30 border border-green-700/40 rounded-xl p-4 space-y-3">
-            <p className="text-green-300 font-semibold text-center">Engagement bestätigt!</p>
+            <p className="text-green-300 font-semibold text-center">{t('verify.engagementConfirmed', lang)}</p>
             <div className="grid grid-cols-3 gap-2">
               {actions.map(({ key, icon, label, color, verified }) => (
                 <div
@@ -320,7 +319,7 @@ export default function TiktokEngagementVerifyModal({
               ))}
             </div>
             <div className="text-center space-y-1">
-              <p className="text-zinc-400 text-sm">Verdient:</p>
+              <p className="text-zinc-400 text-sm">{lang === 'en' ? 'Earned:' : lang === 'pl' ? 'Zarobiono:' : 'Verdient:'}</p>
               <p className="text-yellow-400 text-2xl font-bold flex items-center justify-center gap-2">
                 <Image src="/D.FAITH.png" alt="" width={24} height={24} className="w-6 h-6 rounded-full" unoptimized /> {formatCredits(rewardAmount)} D.FAITH
               </p>
@@ -331,9 +330,7 @@ export default function TiktokEngagementVerifyModal({
               )}
             </div>
           </div>
-          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl font-semibold">
-            Schließen
-          </button>
+          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl font-semibold">{t('btn.close', lang)}</button>
         </div>
       )}
 
@@ -341,15 +338,15 @@ export default function TiktokEngagementVerifyModal({
       {step === 'expired' && (
         <div className="space-y-4">
           <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-4 text-center">
-            <p className="text-amber-300 font-semibold">Zeit abgelaufen</p>
-            <p className="text-zinc-400 text-sm mt-1">Die 10 Minuten sind um. Starte die Verifizierung neu.</p>
+            <p className="text-amber-300 font-semibold">{t('verify.expiredTitle', lang)}</p>
+            <p className="text-zinc-400 text-sm mt-1">{t('verify.expiredWindow', lang).replace('5-Minuten', '10 Minuten').replace('Das ', '')} {t('verify.expiredRestart', lang)}</p>
           </div>
           <button
             onClick={() => callApi('start')}
             disabled={loading}
             className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2"
           >
-            <FaRedo size={13} /> Neu starten
+            <FaRedo size={13} /> {t('btn.restart', lang)}
           </button>
         </div>
       )}
@@ -360,9 +357,7 @@ export default function TiktokEngagementVerifyModal({
           <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-4">
             <p className="text-amber-300 text-sm">{error}</p>
           </div>
-          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl font-semibold">
-            Schließen
-          </button>
+          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl font-semibold">{t('btn.close', lang)}</button>
         </div>
       )}
     </Modal>

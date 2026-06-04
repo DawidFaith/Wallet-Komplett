@@ -77,7 +77,7 @@ export default function SecretVerifyModal({
         onCompleted(data.rewardAmount, data.levelBonus);
       }
     } catch {
-      setErrorMsg('Netzwerkfehler. Bitte versuche es erneut.');
+      setErrorMsg(lang === 'en' ? 'Network error. Please try again.' : lang === 'pl' ? 'Błąd sieci. Spróbuj ponownie.' : 'Netzwerkfehler. Bitte versuche es erneut.');
       setStep('error');
     } finally {
       setLoading(false);
@@ -85,23 +85,23 @@ export default function SecretVerifyModal({
   };
 
   const title =
-    step === 'success' ? '🎉 Code korrekt!'
-    : step === 'error' ? '❌ Fehler'
-    : '🔑 Secret-Quest';
+    step === 'success' ? t('verify.secretCorrect', lang)
+    : step === 'error' ? t('verify.errorTitle', lang)
+    : t('verify.secretTitle', lang);
 
   return (
     <Modal open={!!quest} onClose={handleClose} title={title}>
       {/* Reward-Banner */}
       {quest && step !== 'success' && step !== 'error' && (
         <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
-          <span className="text-zinc-400 text-xs">Belohnung</span>
+          <span className="text-zinc-400 text-xs">{t('verify.rewardLabel', lang)}</span>
           <div className="flex items-center gap-2">
             <span className="text-amber-400 font-bold text-sm flex items-center gap-1">
               <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3.5 h-3.5 rounded-full shrink-0" />
               +{formatCredits(displayReward)} D.FAITH
             </span>
             {levelBonusPercent > 0 && (
-              <span className="text-green-300 font-bold text-[10px]">inkl. +{levelBonusPercent}% Bonus</span>
+              <span className="text-green-300 font-bold text-[10px]">{lang === 'en' ? `incl. +${levelBonusPercent}% Bonus` : lang === 'pl' ? `w tym +${levelBonusPercent}% Bonus` : `inkl. +${levelBonusPercent}% Bonus`}</span>
             )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
@@ -142,7 +142,7 @@ export default function SecretVerifyModal({
               </span>
             ))}
             <FaCheck size={32} className="text-green-400 mx-auto mb-3" />
-            <p className="text-green-300 font-semibold text-lg">Code richtig!</p>
+            <p className="text-green-300 font-semibold text-lg">{t('verify.secretCodeRight', lang)}</p>
             <div className="flex flex-col items-center gap-1 mt-2">
               <div className="flex items-center gap-1 text-amber-400 font-bold text-xl">
                 <Image src="/D.FAITH.png" alt="" width={16} height={16} className="w-4 h-4 rounded-full" />
@@ -155,7 +155,7 @@ export default function SecretVerifyModal({
               )}
               {levelBonus > 0 && (
                 <div className="text-green-300 text-xs font-semibold mt-1">
-                  Inklusive +{formatCredits(levelBonus)} D.FAITH Reputation-Level-Bonus
+                  {t('verify.repBonus', lang).replace('{bonus}', formatCredits(levelBonus))}
                 </div>
               )}
             </div>
@@ -164,12 +164,12 @@ export default function SecretVerifyModal({
             onClick={handleClose}
             className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold"
           >
-            Schließen
+            {t('btn.close', lang)}
           </button>
         </div>
       )}
 
-      {/* ── Fehler ─────────────────────────────────────────── */}
+      {/* ── Fehler ──────────────────────────────────────────────── */}
       {step === 'error' && (
         <div className="space-y-4">
           <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-4">
@@ -179,7 +179,7 @@ export default function SecretVerifyModal({
             onClick={handleClose}
             className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold"
           >
-            Schließen
+            {t('btn.close', lang)}
           </button>
         </div>
       )}
@@ -189,13 +189,12 @@ export default function SecretVerifyModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="bg-blue-900/30 border border-blue-700/40 rounded-xl p-3">
             <p className="text-blue-200 text-xs leading-relaxed">
-              <strong>Anleitung:</strong> Suche die versteckten Buchstaben im {
+              {t('verify.secretInstruction', lang).replace('{platform}',
                 quest.platform === 'youtube' ? 'YouTube Short'
                 : quest.platform === 'tiktok' ? 'TikTok Video'
                 : quest.platform === 'facebook' ? 'Facebook Video'
                 : 'Reel'
-              } und führe sie in der richtigen Reihenfolge zusammen.
-              Sie ergeben ein Wort, das du als Geheimcode einreichst.
+              )}
             </p>
           </div>
 
@@ -218,19 +217,19 @@ export default function SecretVerifyModal({
           <div>
             <label className="text-zinc-300 text-sm font-medium block mb-1.5">
               <FaKey className="inline mr-1 text-yellow-400" size={12} />
-              Geheimer Code
+              {t('verify.secretInputLabel', lang)}
             </label>
             <input
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="CODE EINGEBEN"
+              placeholder={t('verify.secretInputPlaceholder', lang)}
               maxLength={50}
               required
               autoFocus
               className="w-full bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-yellow-500 focus:outline-none text-sm placeholder-zinc-500 font-mono tracking-widest text-center text-lg uppercase"
             />
             <p className="text-zinc-600 text-xs mt-1 text-center">
-              Groß-/Kleinschreibung spielt keine Rolle
+              {lang === 'en' ? 'Case does not matter' : lang === 'pl' ? 'Wielkość liter nie ma znaczenia' : 'Groß-/Kleinschreibung spielt keine Rolle'}
             </p>
           </div>
 
@@ -250,7 +249,7 @@ export default function SecretVerifyModal({
           >
             {loading
               ? <div className="border-2 border-black/30 border-t-black rounded-full w-4 h-4 animate-spin" />
-              : <><FaKey size={14} /> Code einreichen</>
+              : <><FaKey size={14} /> {t('verify.secretSubmit', lang)}</>
             }
           </button>
         </form>

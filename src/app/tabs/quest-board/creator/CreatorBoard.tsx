@@ -9,7 +9,7 @@ import CreateBundleModal from './CreateBundleModal';
 import type { QuestIndexEntry, YouTubeBinding, VerifiedPlatforms, Platform, QuestType } from '../types';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
 import { useLang } from '../../../components/LangContext';
-import { t } from '../../../utils/i18n';
+import { t, tFmt } from '../../../utils/i18n';
 import { getProgressPercent, formatCredits } from '../utils';
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
@@ -24,14 +24,14 @@ const PLATFORM_LABELS: Record<Platform, string> = {
 };
 
 const TYPE_LABELS: Record<QuestType, string> = {
-  comment:    'Kommentar',
-  like:       'Like',
-  save:       'Speichern',
-  secret:     'Geheimcode',
-  engagement: 'Engagement',
-  repost:     'Repost',
-  dm_share:   'Story Quest',
-  share:      'Teilen',
+  comment:    'comment',
+  like:       'like',
+  save:       'save',
+  secret:     'secret',
+  engagement: 'engagement',
+  repost:     'repost',
+  dm_share:   'dm_share',
+  share:      'share',
 };
 
 interface CreatorBoardProps {
@@ -104,9 +104,9 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         body: JSON.stringify({ creatorWallet: walletAddress }),
       });
       const data = await res.json() as { success?: boolean; error?: string };
-      if (!res.ok) { alert(data.error ?? 'Fehler beim Stornieren'); return; }
+      if (!res.ok) { alert(data.error ?? t('cb.cancelError', lang)); return; }
       await Promise.all([loadCreatorBalance(), loadCreatorBundles()]);
-    } catch { alert('Netzwerkfehler'); }
+    } catch { alert(t('cb.networkError', lang)); }
     finally { setCancellingBundleId(null); }
   }, [walletAddress, loadCreatorBalance, loadCreatorBundles]);
 
@@ -121,13 +121,13 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error ?? 'Fehler beim Stornieren');
+        alert(data.error ?? t('cb.cancelError', lang));
         return;
       }
       await loadCreatorBalance();
       await loadCreatorQuests();
     } catch {
-      alert('Netzwerkfehler beim Stornieren');
+      alert(t('cb.networkErrorCancel', lang));
     } finally {
       setCancellingId(null);
     }
@@ -152,8 +152,8 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       <CreditsBox
         balance={creatorBalance}
         tokenName={tokenName}
-        subtitle={creatorBalance > 0 ? `Verfügbar für Quest-Auszahlungen an Fans` : `Lade ${tokenName} auf um Quests zu finanzieren`}
-        secondaryLabel="Aufladen"
+        subtitle={creatorBalance > 0 ? t('cb.available', lang) : tFmt('cb.topUp', lang, { token: tokenName })}
+        secondaryLabel={t('cb.topUpBtn', lang)}
         onSecondary={() => setShowDeposit(true)}
         onRefresh={loadCreatorBalance}
         refreshLoading={balanceLoading}
@@ -161,13 +161,13 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
 
       {/* Header + Buttons */}
       <div className="flex items-center justify-between">
-        <h2 className="text-white font-bold text-lg">Meine Quests</h2>
+        <h2 className="text-white font-bold text-lg">{t('cb.myQuests', lang)}</h2>
         <div className="flex gap-2">
           <button
             onClick={() => setShowBundleModal(true)}
             className="bg-purple-700 hover:bg-purple-600 text-white font-semibold px-4 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
           >
-            <FaPlus size={12} /> Quest erstellen
+            <FaPlus size={12} /> {t('creator.createQuest', lang)}
           </button>
         </div>
       </div>
@@ -180,8 +180,8 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       ) : quests.length === 0 ? (
         <div className="text-center py-12 bg-[#1a1710] rounded-2xl border border-white/[0.08] text-zinc-500">
           <FaPlus size={32} className="mx-auto mb-3 opacity-30" />
-          <p>Noch keine Quests erstellt.</p>
-          <p className="text-sm mt-1">Erstelle deinen ersten Quest!</p>
+          <p>{t('cb.noQuests', lang)}</p>
+          <p className="text-sm mt-1">{t('cb.noQuestsHint', lang)}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -202,7 +202,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                 </div>
                 <p className="text-white text-sm font-semibold line-clamp-2">{quest.videoTitle}</p>
                 <a href={quest.videoUrl} target="_blank" rel="noopener noreferrer" className="text-amber-400 text-xs flex items-center gap-1 hover:underline">
-                  <FaExternalLinkAlt size={10} /> Öffnen
+                  <FaExternalLinkAlt size={10} /> {lang === 'en' ? 'Open' : lang === 'pl' ? 'Otwórz' : 'Öffnen'}
                 </a>
                 {/* Story-Link für dm_share Quests */}
                 {(quest.type as string) === 'dm_share' && quest.storyToken && (
@@ -229,13 +229,13 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                       disabled={cancellingId === quest.id}
                       className="text-xs bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white px-3 py-1 rounded-lg transition-colors"
                     >
-                      {cancellingId === quest.id ? '…' : 'Ja, stornieren'}
+                      {cancellingId === quest.id ? '…' : (lang === 'en' ? 'Yes, cancel' : lang === 'pl' ? 'Tak, anuluj' : 'Ja, stornieren')}
                     </button>
                     <button
                       onClick={() => setConfirmCancelId(null)}
                       className="text-xs text-zinc-500 hover:text-zinc-300 px-2 py-1 rounded-lg transition-colors"
                     >
-                      Abbrechen
+                      {t('btn.cancel', lang)}
                     </button>
                   </div>
                 ) : (
@@ -244,7 +244,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                     disabled={cancellingId === quest.id}
                     className="flex items-center gap-1 text-xs text-zinc-600 hover:text-amber-400 disabled:opacity-50 transition-colors pt-1"
                   >
-                    <FaTimes size={10} /> Stornieren
+                    <FaTimes size={10} /> {lang === 'en' ? 'Cancel quest' : lang === 'pl' ? 'Anuluj quest' : 'Stornieren'}
                   </button>
                 )}
               </div>
@@ -258,7 +258,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         <div className="space-y-3">
           <h3 className="text-white font-bold flex items-center gap-2">
             <FaLayerGroup className="text-purple-400" size={15} />
-            Meine Quest Reihen
+            {t('cb.myBundles', lang)}
           </h3>
           {bundlesLoading ? (
             <div className="flex justify-center py-6">
@@ -323,10 +323,10 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                         disabled={cancellingBundleId === bundle.id}
                         className="text-xs bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white px-3 py-1 rounded-lg transition-colors"
                       >
-                        {cancellingBundleId === bundle.id ? '…' : 'Ja, stornieren'}
+                        {cancellingBundleId === bundle.id ? '…' : (lang === 'en' ? 'Yes, cancel' : lang === 'pl' ? 'Tak, anuluj' : 'Ja, stornieren')}
                       </button>
                       <button onClick={() => setConfirmCancelBundleId(null)} className="text-xs text-zinc-500 hover:text-zinc-300 px-2 py-1 rounded-lg">
-                        Abbrechen
+                        {t('btn.cancel', lang)}
                       </button>
                     </div>
                   ) : (
@@ -334,7 +334,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                       onClick={() => setConfirmCancelBundleId(bundle.id)}
                       className="flex items-center gap-1 text-xs text-zinc-600 hover:text-amber-400 transition-colors"
                     >
-                      <FaTimes size={10} /> Bundle stornieren
+                      <FaTimes size={10} /> {lang === 'en' ? 'Cancel bundle' : lang === 'pl' ? 'Anuluj pakiet' : 'Bundle stornieren'}
                     </button>
                   )
                 )}

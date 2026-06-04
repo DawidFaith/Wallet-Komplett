@@ -148,7 +148,7 @@ export default function InstagramDmShareModal({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? 'Fehler beim Abschließen');
+        setError(lang === 'en' ? 'Error completing quest.' : lang === 'pl' ? 'Błąd podczas kończenia.' : 'Fehler beim Abschließen');
         return;
       }
       setRewardAmount(data.rewardAmount ?? displayReward);
@@ -236,26 +236,20 @@ export default function InstagramDmShareModal({
                 {/* Instructions */}
                 <div className="bg-zinc-800/60 border border-zinc-700/40 rounded-xl px-3 py-3 space-y-2.5">
                   <p className="text-sm font-semibold text-white flex items-center gap-2">
-                    <FaPaperPlane size={12} className="text-pink-400" /> So schließt du die Quest ab:
+                    <FaPaperPlane size={12} className="text-pink-400" /> {t('verify.dmHowTitle', lang)}
                   </p>
                   <ol className="space-y-2">
                     <li className="flex items-start gap-2 text-xs">
                       <span className="shrink-0 w-5 h-5 rounded-full bg-pink-600 text-white flex items-center justify-center font-bold text-[10px]">1</span>
-                      <span className="text-zinc-300">
-                        Öffne den Beitrag und teile ihn als <span className="text-pink-400 font-semibold">Instagram Story</span>
-                      </span>
+                      <span className="text-zinc-300" dangerouslySetInnerHTML={{ __html: t('verify.dmStep1claim', lang) }} />
                     </li>
                     <li className="flex items-start gap-2 text-xs">
                       <span className="shrink-0 w-5 h-5 rounded-full bg-pink-600 text-white flex items-center justify-center font-bold text-[10px]">2</span>
-                      <span className="text-zinc-300">
-                        Markiere <span className="text-pink-400 font-semibold">@{creatorHandle || 'den Künstler'}</span> in deiner Story
-                      </span>
+                      <span className="text-zinc-300" dangerouslySetInnerHTML={{ __html: t('verify.dmStep2claim', lang).replace('{handle}', creatorHandle ? `@${creatorHandle}` : (lang === 'en' ? 'the artist' : lang === 'pl' ? 'artyste' : 'den Künstler')) }} />
                     </li>
                     <li className="flex items-start gap-2 text-xs">
                       <span className="shrink-0 w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-[10px]">3</span>
-                      <span className="text-zinc-300">
-                        Kehre zurück zur App und klicke auf <span className="text-green-400 font-semibold">&apos;Belohnung einlösen&apos;</span>
-                      </span>
+                      <span className="text-zinc-300" dangerouslySetInnerHTML={{ __html: t('verify.dmStep3claim', lang) }} />
                     </li>
                   </ol>
                 </div>
@@ -282,7 +276,7 @@ export default function InstagramDmShareModal({
                     {loading ? (
                       <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
                     ) : (
-                      <><FaRedo size={11} /> Quest starten</>
+                      <><FaRedo size={11} /> {t('verify.questStart', lang)}</>
                     )}
                   </button>
                 )}
@@ -293,7 +287,7 @@ export default function InstagramDmShareModal({
             {step === 'starting' && (
               <div className="text-center py-4">
                 <div className="animate-spin w-8 h-8 border-2 border-pink-500 border-t-transparent rounded-full mx-auto mb-3" />
-                <p className="text-sm text-zinc-400">Wird vorbereitet…</p>
+                <p className="text-sm text-zinc-400">{t('verify.preparing', lang)}</p>
               </div>
             )}
           </>
@@ -305,36 +299,24 @@ export default function InstagramDmShareModal({
             {/* Schritte-Checklist */}
             <div className="bg-zinc-800/60 border border-zinc-700/40 rounded-xl px-3 py-3 space-y-2">
               <p className="font-semibold text-white text-xs flex items-center gap-1.5">
-                <FaPaperPlane size={11} className="text-pink-400" /> Führe jetzt diese Schritte durch:
+                <FaPaperPlane size={11} className="text-pink-400" /> {t('verify.dmStepsTitle', lang)}
               </p>
               <div className="space-y-2">
                 <div className="flex items-start gap-2 text-xs">
                   <span className="shrink-0 w-5 h-5 rounded-full bg-pink-600 text-white flex items-center justify-center font-bold text-[10px]">1</span>
-                  <span className="text-zinc-300">
-                    Öffne den Beitrag und teile ihn als <span className="text-pink-400 font-semibold">Instagram Story</span>
-                  </span>
+                  <span className="text-zinc-300" dangerouslySetInnerHTML={{ __html: t('verify.dmStep1wait', lang) }} />
                 </div>
                 <div className="flex items-start gap-2 text-xs">
                   <span className="shrink-0 w-5 h-5 rounded-full bg-pink-600 text-white flex items-center justify-center font-bold text-[10px]">2</span>
-                  <span className="text-zinc-300">
-                    Markiere{' '}
-                    <span className="text-pink-400 font-semibold">
-                      {creatorHandle ? `@${creatorHandle}` : 'den Künstler'}
-                    </span>{' '}
-                    in deiner Story
-                  </span>
+                  <span className="text-zinc-300" dangerouslySetInnerHTML={{ __html: t('verify.dmStep2wait', lang).replace('{handle}', creatorHandle ? `@${creatorHandle}` : (lang === 'en' ? 'the artist' : lang === 'pl' ? 'artyste' : 'den Künstler')) }} />
                 </div>
                 <div className="flex items-start gap-2 text-xs">
                   <span className="shrink-0 w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-[10px]">3</span>
-                  <span className="text-zinc-300">
-                    Warte — der Künstler schickt dir den <span className="text-purple-300 font-semibold">Bestätigungs-Link</span> per Instagram DM
-                  </span>
+                  <span className="text-zinc-300" dangerouslySetInnerHTML={{ __html: t('verify.dmStep3wait', lang) }} />
                 </div>
                 <div className="flex items-start gap-2 text-xs">
                   <span className="shrink-0 w-5 h-5 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-[10px]">4</span>
-                  <span className="text-zinc-300">
-                    Klicke den Link in der DM → erhalte deine <span className="text-green-400 font-semibold">Belohnung</span>
-                  </span>
+                  <span className="text-zinc-300" dangerouslySetInnerHTML={{ __html: t('verify.dmStep4wait', lang) }} />
                 </div>
               </div>
             </div>
@@ -360,7 +342,7 @@ export default function InstagramDmShareModal({
             </div>
 
             {expiresAt && (
-              <p className="text-center text-xs text-zinc-500">Verfällt in {formatTime(secondsLeft)}</p>
+              <p className="text-center text-xs text-zinc-500">{lang === 'en' ? `Expires in ${formatTime(secondsLeft)}` : lang === 'pl' ? `Wygaśnie za ${formatTime(secondsLeft)}` : `Verfällt in ${formatTime(secondsLeft)}`}</p>
             )}
           </div>
         )}
@@ -369,12 +351,12 @@ export default function InstagramDmShareModal({
         {!storyClaimToken && step === 'success' && (
           <div className="text-center py-2 space-y-4">
             <div className="text-5xl animate-bounce">🎉</div>
-            <p className="font-bold text-xl text-green-400">Quest abgeschlossen!</p>
-            <p className="text-xs text-zinc-400">Du hast den Beitrag als Story geteilt und den Künstler markiert.</p>
+            <p className="font-bold text-xl text-green-400">{t('verify.questDone', lang)}</p>
+            <p className="text-xs text-zinc-400">{t('verify.storyShared', lang)}</p>
 
             {/* Belohnungs-Box */}
             <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/40 rounded-2xl px-4 py-4 space-y-2">
-              <p className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Deine Belohnung</p>
+              <p className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">{t('verify.rewardLabel', lang)}</p>
               <div className="flex items-center justify-center gap-2">
                 <Image src="/D.FAITH.png" alt="D.FAITH" width={28} height={28} className="w-7 h-7 rounded-full" unoptimized />
                 <span className="text-3xl font-black text-yellow-400">+{formatCredits(rewardAmount || displayReward)}</span>
@@ -385,12 +367,10 @@ export default function InstagramDmShareModal({
                   <FaStar size={12} /> +{quest.reputationReward} Reputation
                 </div>
               )}
-              <p className="text-xs text-green-400">✓ Credits wurden deinem Konto gutgeschrieben</p>
+              <p className="text-xs text-green-400">✓ {t('verify.creditsAdded', lang)}</p>
             </div>
 
-            <button onClick={onClose} className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
-              Schließen
-            </button>
+            <button onClick={onClose} className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">{t('btn.close', lang)}</button>
           </div>
         )}
 
@@ -398,14 +378,14 @@ export default function InstagramDmShareModal({
         {!storyClaimToken && step === 'expired' && (
           <div className="space-y-3">
             <div className="bg-amber-900/30 border border-amber-600/40 rounded-xl px-3 py-2 text-xs text-amber-300">
-              ⏰ Zeit abgelaufen. Bitte starte die Quest neu.
+              {t('verify.expiredTitle', lang)} {lang === 'en' ? 'Please restart the quest.' : lang === 'pl' ? 'Uruchom quest od nowa.' : 'Bitte starte die Quest neu.'}
             </div>
             <button
               onClick={handleStart}
               disabled={loading}
               className="w-full bg-pink-600 hover:bg-pink-500 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
             >
-              Quest neu starten
+              {lang === 'en' ? 'Restart quest' : lang === 'pl' ? 'Uruchom ponownie' : 'Quest neu starten'}
             </button>
           </div>
         )}
@@ -489,7 +469,7 @@ function StoryClaimSection({ token, walletAddress, rewardAmount, onSuccess, onCl
         setState('error');
       }
     } catch {
-      setErrorMsg('Netzwerkfehler. Bitte versuche es erneut.');
+      setErrorMsg(lang === 'en' ? 'Network error. Please try again.' : lang === 'pl' ? 'Błąd sieci. Spróbuj ponownie.' : 'Netzwerkfehler. Bitte versuche es erneut.');
       setState('error');
     }
   };
@@ -498,25 +478,25 @@ function StoryClaimSection({ token, walletAddress, rewardAmount, onSuccess, onCl
     return (
       <div className="text-center py-2 space-y-4">
         <div className="text-5xl animate-bounce">🎉</div>
-        <p className="font-bold text-xl text-green-400">Quest abgeschlossen!</p>
-        <p className="text-xs text-zinc-400">Du hast den Beitrag als Story geteilt und den Künstler markiert.</p>
+        <p className="font-bold text-xl text-green-400">{t('verify.questDone', lang)}</p>
+        <p className="text-xs text-zinc-400">{t('verify.storyShared', lang)}</p>
 
         {/* Belohnungs-Box */}
         <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/40 rounded-2xl px-4 py-4 space-y-2">
-          <p className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Deine Belohnung</p>
+          <p className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">{t('verify.rewardLabel', lang)}</p>
           <div className="flex items-center justify-center gap-2">
             <Image src="/D.FAITH.png" alt="D.FAITH" width={28} height={28} className="w-7 h-7 rounded-full" unoptimized />
             <span className="text-3xl font-black text-yellow-400">+{formatCredits(claimed)}</span>
             <span className="text-lg font-bold text-yellow-300">D.FAITH</span>
           </div>
-          <p className="text-xs text-green-400">✓ Credits wurden deinem Konto gutgeschrieben</p>
+          <p className="text-xs text-green-400">✓ {t('verify.creditsAdded', lang)}</p>
         </div>
 
         <button
           onClick={onClose}
           className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
         >
-          Schließen
+          {t('btn.close', lang)}
         </button>
       </div>
     );
@@ -526,7 +506,7 @@ function StoryClaimSection({ token, walletAddress, rewardAmount, onSuccess, onCl
     <div className="space-y-3">
       {/* Reward Preview */}
       <div className="bg-gradient-to-r from-pink-600/20 to-purple-600/20 border border-pink-500/40 rounded-xl px-4 py-3 flex items-center justify-between">
-        <span className="text-xs text-zinc-400">Deine Belohnung</span>
+        <span className="text-xs text-zinc-400">{t('verify.rewardLabel', lang)}</span>
         <span className="flex items-center gap-1.5 text-yellow-400 font-bold text-sm">
           <Image src="/D.FAITH.png" alt="" width={16} height={16} className="w-4 h-4 rounded-full" unoptimized />
           +{formatCredits(rewardAmount)} D.FAITH
@@ -535,7 +515,7 @@ function StoryClaimSection({ token, walletAddress, rewardAmount, onSuccess, onCl
 
       <div className="bg-zinc-800/60 border border-zinc-700/40 rounded-xl px-3 py-3 space-y-1">
         <p className="font-semibold text-white text-xs flex items-center gap-1.5">
-          <FaCheck size={10} className="text-green-400" /> Du hast den DM-Button geklickt!
+          <FaCheck size={10} className="text-green-400" /> {t('verify.storyClaimDone', lang)}
         </p>
         <p className="text-xs text-zinc-400">
         {t('verify.storyFound', lang)}
@@ -556,12 +536,12 @@ function StoryClaimSection({ token, walletAddress, rewardAmount, onSuccess, onCl
         {state === 'loading' ? (
           <>
             <div className="animate-spin w-3 h-3 border border-white border-t-transparent rounded-full" />
-            Einlösen…
+            {lang === 'en' ? 'Redeeming…' : lang === 'pl' ? 'Odbieram…' : 'Einlösen…'}
           </>
         ) : (
           <>
             <FaStar size={13} />
-            +{formatCredits(rewardAmount)} D.FAITH einlösen
+            +{formatCredits(rewardAmount)} D.FAITH {lang === 'en' ? 'redeem' : lang === 'pl' ? 'odbierz' : 'einlösen'}
           </>
         )}
       </button>

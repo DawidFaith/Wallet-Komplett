@@ -376,18 +376,18 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       {claimResult && (
         <div className={`rounded-2xl p-4 border ${claimResult.success ? 'bg-green-900/30 border-green-700/40' : claimResult.fraud ? 'bg-amber-950/60 border-amber-600/60' : 'bg-amber-900/30 border-amber-700/40'}`}>
           {claimResult.fraud && (
-            <p className="text-amber-400 font-black text-xs uppercase tracking-widest mb-1">⛔ Einlösen gesperrt</p>
+            <p className="text-amber-400 font-black text-xs uppercase tracking-widest mb-1">{t('fan.claimBlocked', lang)}</p>
           )}
           <p className={`font-semibold text-sm ${claimResult.success ? 'text-green-300' : 'text-amber-300'}`}>
             {claimResult.message}
           </p>
           {claimResult.txHash && (
             <a href={`https://basescan.org/tx/${claimResult.txHash}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-xs underline mt-1 block">
-              Transaktion auf BaseScan ansehen →
+              {t('fan.txView', lang)}
             </a>
           )}
           {!claimResult.fraud && (
-            <button onClick={() => setClaimResult(null)} className="text-zinc-500 text-xs mt-2 hover:text-zinc-300">Schließen</button>
+            <button onClick={() => setClaimResult(null)} className="text-zinc-500 text-xs mt-2 hover:text-zinc-300">{t('btn.close', lang)}</button>
           )}
         </div>
       )}

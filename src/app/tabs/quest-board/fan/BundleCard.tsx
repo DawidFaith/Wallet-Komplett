@@ -7,6 +7,7 @@ import type { QuestBundleWithItems } from '../../../lib/questDb';
 import type { Platform, QuestType, QuestIndexEntry, VerifiedPlatforms } from '../types';
 import { formatExpiry } from '../utils';
 import { t, type Lang } from '../../../utils/i18n';
+import { useLang } from '../../../components/LangContext';
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
   youtube:   <FaYoutube   className="text-red-500"  size={12} />,
@@ -102,6 +103,7 @@ interface BundleCardProps {
   renderQuestCard?: (quest: QuestIndexEntry) => React.ReactNode;  language?: Lang;}
 
 export default function BundleCard({ bundle, fanWallet, verified, levelBonusPercent = 0, onBonusClaimed, onOpenQuest, renderQuestCard, language = 'de' }: BundleCardProps) {
+  const lang = useLang();
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState('');
   const [justClaimed, setJustClaimed] = useState(false);
@@ -178,6 +180,14 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
   const isVerified = verified[bundle.platform];
   const pc = PLATFORM_CONFIG[bundle.platform];
 
+  // Lock-Texte
+  const lockTexts: Record<string, string> = {
+    youtube:   t('bc.lockYT', lang),
+    instagram: t('bc.lockIG', lang),
+    tiktok:    t('bc.lockTT', lang),
+    facebook:  t('bc.lockFB', lang),
+  };
+
   const handleClaimBonus = async () => {
     setClaiming(true);
     setClaimError('');
@@ -204,7 +214,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
       {!isVerified && (
         <div className="absolute inset-0 z-20 rounded-xl bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 border border-zinc-700/50">
           <FaLock size={18} className="text-zinc-400" />
-          <p className="text-zinc-300 text-sm font-semibold">{t(`quest.lock.${bundle.platform}`, language)}</p>
+          <p className="text-zinc-300 text-sm font-semibold">{lockTexts[bundle.platform] ?? pc.lockText}</p>
           <p className="text-zinc-500 text-xs">{t('quest.connectPlatform', language)}</p>
         </div>
       )}
@@ -387,72 +397,72 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
             switch (item.questType) {
               case 'secret':
                 return {
-                  badge: { icon: '🔑', label: 'Geheimcode', bg: 'bg-yellow-600/90' },
-                  description: '🔑 Finde den geheimen Code und gib ihn ein!',
+                  badge: { icon: '🔑', label: t('bc.secretBadge', lang), bg: 'bg-yellow-600/90' },
+                  description: t('bc.secretDesc', lang),
                   buttonColor: 'bg-yellow-500 hover:bg-yellow-400 text-black',
                   progressColor: 'from-yellow-500 to-yellow-400',
                   bgGradient: 'from-yellow-900/50',
                 };
               case 'dm_share':
                 return {
-                  badge: { icon: <FaShareAlt size={10} />, label: 'Story teilen', bg: 'bg-pink-600/90' },
-                  description: <><FaShareAlt size={10} className="text-pink-400" /> Teile dieses Video als Instagram Story und schick sie an unseren Account!</>,
+                  badge: { icon: <FaShareAlt size={10} />, label: t('bc.storyBadge', lang), bg: 'bg-pink-600/90' },
+                  description: <><FaShareAlt size={10} className="text-pink-400" /> {t('bc.storyDesc', lang)}</>,
                   buttonColor: 'bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white',
                   progressColor: 'from-pink-500 to-rose-500',
                   bgGradient: 'from-pink-900/50',
                 };
               case 'like':
                 return {
-                  badge: { icon: <FaHeart size={10} />, label: 'Liken', bg: 'bg-amber-500/90' },
-                  description: <><FaHeart size={10} className="text-amber-400" /> Like dieses Video!</>,
+                  badge: { icon: <FaHeart size={10} />, label: t('bc.likeBadge', lang), bg: 'bg-amber-500/90' },
+                  description: <><FaHeart size={10} className="text-amber-400" /> {t('bc.likeDesc', lang)}</>,
                   buttonColor: 'bg-gradient-to-r from-amber-600 to-rose-500 hover:from-amber-500 hover:to-rose-400 text-white',
                   progressColor: 'from-amber-500 to-rose-500',
                   bgGradient: 'from-amber-900/50',
                 };
               case 'comment':
                 return {
-                  badge: { icon: <FaComment size={10} />, label: 'Kommentieren', bg: 'bg-blue-600/90' },
-                  description: <><FaComment size={10} className="text-blue-400" /> Kommentiere dieses Video!</>,
+                  badge: { icon: <FaComment size={10} />, label: t('bc.commentBadge', lang), bg: 'bg-blue-600/90' },
+                  description: <><FaComment size={10} className="text-blue-400" /> {t('bc.commentDesc', lang)}</>,
                   buttonColor: 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white',
                   progressColor: 'from-blue-500 to-cyan-500',
                   bgGradient: 'from-blue-900/50',
                 };
               case 'save':
                 return {
-                  badge: { icon: <FaBookmark size={10} />, label: 'Speichern', bg: 'bg-indigo-600/90' },
-                  description: <><FaBookmark size={10} className="text-indigo-400" /> Speichere dieses Video!</>,
+                  badge: { icon: <FaBookmark size={10} />, label: t('bc.saveBadge', lang), bg: 'bg-indigo-600/90' },
+                  description: <><FaBookmark size={10} className="text-indigo-400" /> {t('bc.saveDesc', lang)}</>,
                   buttonColor: 'bg-gradient-to-r from-indigo-600 to-purple-500 hover:from-indigo-500 hover:to-purple-400 text-white',
                   progressColor: 'from-indigo-500 to-purple-500',
                   bgGradient: 'from-indigo-900/50',
                 };
               case 'repost':
                 return {
-                  badge: { icon: <FaShareAlt size={10} />, label: 'Reposten', bg: 'bg-green-600/90' },
-                  description: <><FaShareAlt size={10} className="text-green-400" /> Reposte dieses Video!</>,
+                  badge: { icon: <FaShareAlt size={10} />, label: t('bc.repostBadge', lang), bg: 'bg-green-600/90' },
+                  description: <><FaShareAlt size={10} className="text-green-400" /> {t('bc.repostDesc', lang)}</>,
                   buttonColor: 'bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white',
                   progressColor: 'from-green-500 to-emerald-500',
                   bgGradient: 'from-green-900/50',
                 };
               case 'engagement':
                 return {
-                  badge: { icon: <FaThumbsUp size={10} />, label: 'Engagement', bg: 'bg-purple-600/90' },
-                  description: <><FaThumbsUp size={10} className="text-purple-400" /> Führe das Engagement-Paket aus!</>,
+                  badge: { icon: <FaThumbsUp size={10} />, label: t('bc.engagementBadge', lang), bg: 'bg-purple-600/90' },
+                  description: <><FaThumbsUp size={10} className="text-purple-400" /> {t('bc.engagementDesc', lang)}</>,
                   buttonColor: 'bg-gradient-to-r from-purple-600 to-violet-500 hover:from-purple-500 hover:to-violet-400 text-white',
                   progressColor: 'from-purple-500 to-violet-500',
                   bgGradient: 'from-purple-900/50',
                 };
               case 'share':
                 return {
-                  badge: { icon: <FaShareAlt size={10} />, label: 'Repost', bg: 'bg-teal-600/90' },
-                  description: <><FaShareAlt size={10} className="text-teal-400" /> Reposte dieses Video auf TikTok!</>,
+                  badge: { icon: <FaShareAlt size={10} />, label: t('bc.repostBadge', lang), bg: 'bg-teal-600/90' },
+                  description: <><FaShareAlt size={10} className="text-teal-400" /> {t('bc.repostTiktokDesc', lang)}</>,
                   buttonColor: 'bg-gradient-to-r from-teal-600 to-cyan-500 hover:from-teal-500 hover:to-cyan-400 text-white',
                   progressColor: 'from-teal-500 to-cyan-500',
                   bgGradient: 'from-teal-900/50',
                 };
               default:
                 return {
-                  badge: { icon: <FaTrophy size={10} />, label: 'Quest', bg: 'bg-zinc-600/90' },
-                  description: 'Schließe diese Quest ab!',
+                  badge: { icon: <FaTrophy size={10} />, label: t('bc.questBadge', lang), bg: 'bg-zinc-600/90' },
+                  description: t('bc.questDefault', lang),
                   buttonColor: 'bg-gradient-to-r from-zinc-600 to-zinc-500 hover:from-zinc-500 hover:to-zinc-400 text-white',
                   progressColor: 'from-zinc-500 to-zinc-400',
                   bgGradient: 'from-zinc-900/50',

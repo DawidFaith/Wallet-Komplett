@@ -120,24 +120,24 @@ export default function TiktokShareVerifyModal({
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
   const title =
-    step === 'success' ? '🎉 Share bestätigt!' :
-    step === 'expired' ? '⏰ Zeit abgelaufen' :
-    step === 'error'   ? '❌ Fehler' :
-    '🔁 Video teilen';
+    step === 'success' ? t('verify.shareConfirmed', lang) :
+    step === 'expired' ? t('verify.expiredTitle', lang) :
+    step === 'error'   ? t('verify.errorTitle', lang) :
+    t('verify.shareTitle', lang);
 
   return (
     <Modal open={!!quest} onClose={onClose} title={title}>
       {/* Reward-Banner */}
       {quest && step !== 'error' && step !== 'expired' && (
         <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
-          <span className="text-zinc-400 text-xs">Belohnung</span>
+          <span className="text-zinc-400 text-xs">{t('verify.rewardLabel', lang)}</span>
           <div className="flex items-center gap-2.5">
             <span className="text-yellow-400 font-bold text-sm flex items-center gap-1">
               <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full" unoptimized />
               +{formatCredits(displayReward)} D.FAITH
             </span>
             {levelBonusPercent > 0 && (
-              <span className="text-green-300 font-bold text-[10px]">inkl. +{levelBonusPercent}% Bonus</span>
+              <span className="text-green-300 font-bold text-[10px]">{lang === 'en' ? `incl. +${levelBonusPercent}% Bonus` : lang === 'pl' ? `w tym +${levelBonusPercent}% Bonus` : `inkl. +${levelBonusPercent}% Bonus`}</span>
             )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-amber-300 font-bold text-sm flex items-center gap-1">
@@ -152,7 +152,7 @@ export default function TiktokShareVerifyModal({
       {step === 'loading' && (
         <div className="flex flex-col items-center py-8 gap-4">
           <div className="border-4 border-cyan-500/30 border-t-cyan-500 rounded-full w-12 h-12 animate-spin" />
-          <p className="text-zinc-400 text-sm">Wird vorbereitet…</p>
+          <p className="text-zinc-400 text-sm">{t('verify.preparing', lang)}</p>
         </div>
       )}
 
@@ -161,7 +161,7 @@ export default function TiktokShareVerifyModal({
         <div className="space-y-4">
           {/* Timer */}
           <div className={`rounded-xl p-4 text-center ${secondsLeft < 60 ? 'bg-amber-900/30 border border-amber-700/40' : 'bg-zinc-800'}`}>
-            <p className="text-zinc-400 text-sm mb-1">Verbleibende Zeit</p>
+            <p className="text-zinc-400 text-sm mb-1">{t('verify.timeLeft', lang)}</p>
             <p className={`text-3xl font-bold tabular-nums ${secondsLeft < 60 ? 'text-amber-400' : 'text-cyan-400'}`}>
               {formatTime(secondsLeft)}
             </p>
@@ -169,9 +169,9 @@ export default function TiktokShareVerifyModal({
 
           {/* Anleitung */}
           <div className="bg-zinc-800/60 rounded-xl p-4 space-y-3">
-            <p className="text-white font-semibold text-sm">So verifizierst du den Share:</p>
+            <p className="text-white font-semibold text-sm">{t('verify.shareVerifyTitle', lang)}</p>
             <ol className="text-zinc-300 text-sm space-y-2 list-decimal list-inside">
-              <li>{lang === 'en' ? 'Open the video on TikTok and tap Share' : lang === 'pl' ? 'Otwórz film na TikTok i napu nij Udostępnij' : 'Öffne das Video auf TikTok und tippe auf Teilen'}</li>
+              <li>{lang === 'en' ? 'Open the video on TikTok and tap Share' : lang === 'pl' ? 'Otwórz film na TikTok i naciśnij Udostępnij' : 'Öffne das Video auf TikTok und tippe auf Teilen'}</li>
               <li>{t('verify.repostTiktok', lang)}</li>
               <li>{t('verify.comeTapCheck', lang)}</li>
             </ol>
@@ -187,7 +187,7 @@ export default function TiktokShareVerifyModal({
               }`}
             >
               <FiShare2 size={16} className={shareVerified ? 'text-green-400' : 'text-purple-400'} />
-              <span className="text-xs font-medium">Share erkannt</span>
+              <span className="text-xs font-medium">{t('verify.shareDetected', lang)}</span>
             </div>
           </div>
 
@@ -195,8 +195,8 @@ export default function TiktokShareVerifyModal({
             <div className="bg-orange-900/30 border border-orange-700/40 rounded-xl p-3 space-y-1">
               <p className="text-orange-300 text-sm">
                 {!shareVerified
-                  ? 'Share noch nicht erkannt. Teile das Video und warte kurz.'
-                  : lang === 'en' ? 'Share detected! Verifying...' : lang === 'pl' ? 'Udostępnienie wykryte! Weryfikacja...' : 'Share erkannt! Verifizierung läuft…'}
+                  ? t('verify.shareNotDetected', lang)
+                  : t('verify.shareDetectedStatus', lang)}
               </p>
               {!shareVerified && (
                 <p className="text-zinc-400 text-xs">
@@ -235,20 +235,18 @@ export default function TiktokShareVerifyModal({
       {step === 'success' && quest && (
         <div className="space-y-4">
           <div className="bg-green-900/30 border border-green-700/40 rounded-xl p-4 text-center">
-            <p className="text-green-300 font-bold text-lg mb-1">🎉 Share verifiziert!</p>
+            <p className="text-green-300 font-bold text-lg mb-1">{t('verify.shareConfirmed', lang)}</p>
             <p className="text-zinc-400 text-sm">
-              +{formatCredits(rewardAmount + levelBonusAmount)} D.FAITH wurden gutgeschrieben
+              +{formatCredits(rewardAmount + levelBonusAmount)} D.FAITH {lang === 'en' ? 'credited' : lang === 'pl' ? 'dodano' : 'wurden gutgeschrieben'}
             </p>
           </div>
           <div className="flex justify-center">
             <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-green-900/30 border border-green-700/40 text-green-400">
               <FiShare2 size={16} />
-              <span className="text-xs font-medium">Repost erkannt</span>
+              <span className="text-xs font-medium">{t('verify.shareDetected', lang)}</span>
             </div>
           </div>
-          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold py-3 rounded-xl transition-colors">
-            Schließen
-          </button>
+          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold py-3 rounded-xl transition-colors">{t('btn.close', lang)}</button>
         </div>
       )}
 
@@ -256,15 +254,15 @@ export default function TiktokShareVerifyModal({
       {step === 'expired' && (
         <div className="space-y-4">
           <div className="bg-zinc-800 rounded-xl p-4 text-center">
-            <p className="text-zinc-300 font-semibold mb-1">Zeit abgelaufen</p>
-            <p className="text-zinc-500 text-sm">Starte die Verifizierung neu.</p>
+            <p className="text-zinc-300 font-semibold mb-1">{t('verify.expiredTitle', lang)}</p>
+            <p className="text-zinc-500 text-sm">{t('verify.expiredRestart', lang)}</p>
           </div>
           <button
             onClick={() => callApi('start')}
             disabled={loading}
             className="w-full flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white text-sm font-semibold py-3 rounded-xl transition-colors"
           >
-            {loading ? <div className="border-2 border-white/30 border-t-white rounded-full w-4 h-4 animate-spin" /> : <><FaRedo size={12} /> Neu starten</>}
+            {loading ? <div className="border-2 border-white/30 border-t-white rounded-full w-4 h-4 animate-spin" /> : <><FaRedo size={12} /> {t('btn.restart', lang)}</>}
           </button>
         </div>
       )}
@@ -275,9 +273,7 @@ export default function TiktokShareVerifyModal({
           <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-4">
             <p className="text-amber-300 text-sm">{error}</p>
           </div>
-          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold py-3 rounded-xl transition-colors">
-            Schließen
-          </button>
+          <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold py-3 rounded-xl transition-colors">{t('btn.close', lang)}</button>
         </div>
       )}
     </Modal>
