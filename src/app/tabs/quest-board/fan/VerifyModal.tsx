@@ -7,6 +7,8 @@ import { SiTiktok } from 'react-icons/si';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry, VerifyResult } from '../types';
 import { formatCredits } from '../utils';
+import { useLang } from '../../../components/LangContext';
+import { t } from '../../../utils/i18n';
 
 interface VerifyModalProps {
   quest: QuestIndexEntry | null;
@@ -18,6 +20,7 @@ interface VerifyModalProps {
 }
 
 export default function VerifyModal({ quest, loading, result, levelBonusPercent = 0, onVerify, onClose }: VerifyModalProps) {
+  const lang = useLang();
   const isOpen = !!quest;
   const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
   const displayReward = quest ? quest.rewardAmount + levelBonusAmount : 0;
@@ -72,7 +75,7 @@ export default function VerifyModal({ quest, loading, result, levelBonusPercent 
                 <p className="text-green-300 font-semibold">{result.message}</p>
                 {result.comment && (
                   <p className="text-zinc-400 text-sm italic">
-                    Gefundener Kommentar: &bdquo;{result.comment}&ldquo;
+                    Gefundener Kommentar: »comment«
                   </p>
                 )}
               </div>
@@ -98,7 +101,7 @@ export default function VerifyModal({ quest, loading, result, levelBonusPercent 
             onClick={onClose}
             className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold"
           >
-            Schließen
+            {t('common.close', lang)}
           </button>
         </div>
       ) : quest ? (
@@ -123,7 +126,7 @@ export default function VerifyModal({ quest, loading, result, levelBonusPercent 
             <ol className="space-y-2 text-zinc-400 text-sm">
               <li className="flex gap-2">
                 <span className={`${highlightColor} font-bold shrink-0`}>1.</span>
-                Öffne das {platformName} oben
+                {t('verify.openPlatform', lang).replace('{platform}', platformName)}
               </li>
               <li className="flex gap-2">
                 <span className={`${highlightColor} font-bold shrink-0`}>2.</span>
@@ -147,7 +150,7 @@ export default function VerifyModal({ quest, loading, result, levelBonusPercent 
             onClick={onClose}
             className="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm py-2.5 rounded-xl transition-colors"
           >
-            Abbrechen
+            {t('common.cancel', lang)}
           </button>
         </div>
       ) : null}

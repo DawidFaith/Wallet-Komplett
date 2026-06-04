@@ -7,6 +7,8 @@ import { FiThumbsUp, FiBookmark } from 'react-icons/fi';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
 import { formatCredits } from '../utils';
+import { useLang } from '../../../components/LangContext';
+import { t } from '../../../utils/i18n';
 
 interface InstagramLikeVerifyModalProps {
   quest: QuestIndexEntry | null;
@@ -25,6 +27,7 @@ export default function InstagramLikeVerifyModal({
   onCompleted,
   onClose,
 }: InstagramLikeVerifyModalProps) {
+  const lang = useLang();
   const [step, setStep] = useState<Step>('loading');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -138,7 +141,7 @@ export default function InstagramLikeVerifyModal({
 
   const title =
     step === 'success'
-      ? isEngagement ? '🎉 Engagement bestätigt!' : isRepost ? '🎉 Repost bestätigt!' : `🎉 ${isLike ? 'Like' : 'Speichern'} bestätigt!`
+      ? isEngagement ? t('verify.engagementConfirmed', lang) : isRepost ? t('verify.repostConfirmed', lang) : t('verify.likeConfirmed', lang)
     : step === 'expired' ? '⏰ Zeit abgelaufen'
     : step === 'error'   ? '❌ Fehler'
     : isEngagement ? '❤️🔖 Engagement verifizieren'
@@ -207,7 +210,7 @@ export default function InstagramLikeVerifyModal({
           {step === 'not_yet' && (
             <div className="bg-orange-900/30 border border-orange-700/40 rounded-xl p-3">
               <p className="text-orange-300 text-sm">
-                Aktionen noch nicht erkannt. Instagram braucht manchmal kurz – warte etwas und prüfe erneut.
+                {t('verify.igNotFound', lang)}
               </p>
             </div>
           )}
@@ -239,7 +242,7 @@ export default function InstagramLikeVerifyModal({
           <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-3">
             <p className="text-amber-300 text-xs font-semibold mb-1">⚠️ Hinweis</p>
             <p className="text-amber-200/80 text-xs">
-              Falls du das Reel bereits geliked oder gespeichert hast: entferne die Aktion zuerst, kehre hierher zurück, starte den Quest neu und führe die Aktion dann erneut durch.
+              {t('verify.igHint', lang)}
             </p>
           </div>
 
@@ -263,7 +266,7 @@ export default function InstagramLikeVerifyModal({
           >
             {loading
               ? <div className="border-2 border-white/30 border-t-white rounded-full w-4 h-4 animate-spin" />
-              : <><FiThumbsUp size={14} /><FiBookmark size={14} /> Prüfen</>
+              : <><FiThumbsUp size={14} /><FiBookmark size={14} /> {t('verify.checkBtn', lang)}</>
             }
           </button>
           <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm py-2.5 rounded-xl transition-colors">
@@ -297,7 +300,7 @@ export default function InstagramLikeVerifyModal({
             <ol className="space-y-1 text-zinc-400 text-sm">
               <li className="flex gap-2">
                 <span className={`${accentColor} font-bold shrink-0`}>1.</span>
-                Öffne das Reel unten
+                {t('verify.openReelBelow', lang)}
               </li>
               <li className="flex gap-2">
                 <span className={`${accentColor} font-bold shrink-0`}>2.</span>
@@ -309,7 +312,7 @@ export default function InstagramLikeVerifyModal({
               </li>
               <li className="flex gap-2">
                 <span className={`${accentColor} font-bold shrink-0`}>3.</span>
-                Klicke auf &bdquo;Prüfen&ldquo;
+                {t('verify.clickVerify', lang)}
               </li>
             </ol>
           </div>
@@ -318,8 +321,8 @@ export default function InstagramLikeVerifyModal({
             <p className="text-amber-300 text-xs font-semibold mb-1">⚠️ Hinweis</p>
             <p className="text-amber-200/80 text-xs">
               {isRepost
-                ? 'Falls du das Reel bereits repostet hast: entferne den Repost zuerst, kehre hierher zurück, starte den Quest neu und reposte es dann erneut.'
-                : 'Falls du das Reel bereits geliked oder gespeichert hast: entferne die Aktion zuerst, kehre hierher zurück, starte den Quest neu und führe die Aktion dann erneut durch.'}
+                ? t('verify.repostHint', lang)
+                : t('verify.igHint', lang)}
             </p>
           </div>
 
@@ -343,7 +346,7 @@ export default function InstagramLikeVerifyModal({
           >
             {loading
               ? <div className="border-2 border-current/30 border-t-current rounded-full w-4 h-4 animate-spin" />
-              : <><ActionIcon size={14} /> {isLike ? 'geliked' : isRepost ? 'repostet' : 'gespeichert'}? – Prüfen</>
+              : <><ActionIcon size={14} /> {isLike ? t('verify.likedSaved', lang) : isRepost ? t('verify.reposted', lang) : t('verify.saved', lang)}? – {t('verify.checkBtn', lang)}</>
             }
           </button>
           <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm py-2.5 rounded-xl transition-colors">

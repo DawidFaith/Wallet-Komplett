@@ -3,6 +3,7 @@ import { Inter, Orbitron, Pirata_One } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import QueryProvider from "./QueryProvider";
+import { LangProvider } from "./components/LangContext";
 
 const inter = Inter({ subsets: ["latin"] });
 const orbitron = Orbitron({ 
@@ -36,7 +37,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="de" className="bg-[#13120e]">
           <body className={`${inter.className} ${orbitron.variable} ${pirataOne.variable} bg-[#13120e]`}>
-            <QueryProvider>{children}</QueryProvider>
+            <QueryProvider><LangProvider>{children}</LangProvider></QueryProvider>
           </body>
       </html>
     </ClerkProvider>

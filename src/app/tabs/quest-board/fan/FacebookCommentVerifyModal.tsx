@@ -6,6 +6,8 @@ import { FaFacebookF, FaStar, FaExternalLinkAlt, FaCopy, FaCheck } from 'react-i
 import Modal from '../components/Modal';
 import type { QuestIndexEntry, VerifyResult } from '../types';
 import { formatCredits } from '../utils';
+import { useLang } from '../../../components/LangContext';
+import { t } from '../../../utils/i18n';
 
 interface FacebookCommentVerifyModalProps {
   quest: QuestIndexEntry | null;
@@ -22,6 +24,7 @@ export default function FacebookCommentVerifyModal({
   onCompleted,
   onClose,
 }: FacebookCommentVerifyModalProps) {
+  const lang = useLang();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<VerifyResult | null>(null);
   const [commentText, setCommentText] = useState<string | null>(null);
@@ -126,7 +129,7 @@ export default function FacebookCommentVerifyModal({
         <div className="flex flex-col items-center py-8 gap-4">
           <div className="border-4 border-blue-500/30 border-t-blue-500 rounded-full w-12 h-12 animate-spin" />
           <p className="text-zinc-400 text-sm text-center">
-            Kommentare werden geprüft…
+            {t('verify.commentsChecking', lang)}
           </p>
         </div>
       ) : result ? (

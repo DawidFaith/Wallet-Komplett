@@ -7,6 +7,8 @@ import { FiThumbsUp } from 'react-icons/fi';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
 import { formatCredits } from '../utils';
+import { useLang } from '../../../components/LangContext';
+import { t } from '../../../utils/i18n';
 
 interface FacebookLikeVerifyModalProps {
   quest: QuestIndexEntry | null;
@@ -25,6 +27,7 @@ export default function FacebookLikeVerifyModal({
   onCompleted,
   onClose,
 }: FacebookLikeVerifyModalProps) {
+  const lang = useLang();
   const [step, setStep] = useState<Step>('loading');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -112,7 +115,7 @@ export default function FacebookLikeVerifyModal({
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
   const title =
-    step === 'success' ? '🎉 Like bestätigt!'
+    step === 'success' ? t('verify.likeConfirmed', lang)
     : step === 'expired' ? '⏰ Zeit abgelaufen'
     : step === 'error'   ? '❌ Fehler'
     : '👍 Like verifizieren';
@@ -181,7 +184,7 @@ export default function FacebookLikeVerifyModal({
           <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-3">
             <p className="text-amber-300 text-xs font-semibold mb-1">⚠️ Hinweis</p>
             <p className="text-amber-200/80 text-xs">
-              Falls du den Post bereits geliked hast: entferne den Like zuerst, kehre hierher zurück, starte den Quest neu und like ihn dann erneut.
+              {t('verify.likeHint', lang)}
             </p>
           </div>
 
@@ -205,7 +208,7 @@ export default function FacebookLikeVerifyModal({
           >
             {loading
               ? <div className="border-2 border-white/30 border-t-white rounded-full w-4 h-4 animate-spin" />
-              : <><FiThumbsUp size={14} /> geliked? – Prüfen</>
+              : <><FiThumbsUp size={14} /> {t('verify.likedSaved', lang)}? – {t('verify.checkBtn', lang)}</>
             }
           </button>
           <button onClick={onClose} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm py-2.5 rounded-xl transition-colors">

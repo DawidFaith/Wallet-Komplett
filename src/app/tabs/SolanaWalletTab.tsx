@@ -11,6 +11,8 @@ import {
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
 import SwapWidget from './wallet/SwapWidget';
+import { useLang } from '../components/LangContext';
+import { t } from '../utils/i18n';
 
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
 
@@ -130,6 +132,7 @@ function TokenDetailModal({
   onSend: (mode: SendMode) => void;
   onSwap: () => void;
 }) {
+  const lang = useLang();
   const isSol = 'type' in token && token.type === 'sol';
   const isDfaith = !isSol && (token as TokenEntry).mint === DFAITH_MINT;
 
@@ -153,20 +156,20 @@ function TokenDetailModal({
       .finally(() => setSupplyLoading(false));
   }, [isSol, token]);
 
-  const t = token as TokenEntry;
-  const name   = isSol ? 'Solana'  : t.name;
-  const symbol = isSol ? 'SOL'     : t.symbol;
-  const image  = isSol ? null      : t.image;
+  const tok = token as TokenEntry;
+  const name   = isSol ? 'Solana'  : tok.name;
+  const symbol = isSol ? 'SOL'     : tok.symbol;
+  const image  = isSol ? null      : tok.image;
   const price  = isSol
     ? (token as { solValueUsd: number | null }).solValueUsd
-    : t.unitPriceUsd ?? (t.valueUsd != null && t.balance > 0 ? t.valueUsd / t.balance : null);
+    : tok.unitPriceUsd ?? (tok.valueUsd != null && tok.balance > 0 ? tok.valueUsd / tok.balance : null);
   const change = isSol
     ? (token as { solChange24h: number | null }).solChange24h
-    : t.priceChange24h;
+    : tok.priceChange24h;
   const balance = isSol
     ? (token as { solBalance: number | null }).solBalance
-    : t.balance;
-  const mintAddress = isSol ? null : t.mint;
+    : tok.balance;
+  const mintAddress = isSol ? null : tok.mint;
 
   // GeckoTerminal-Embed (unterstützt Meteora, DLMM-Pools etc.)
   const DFAITH_POOL = '9Ei1AhVghZJxH1hsxP2rdakqBFN9sYsqH2hmTCgzC7yK';
@@ -274,7 +277,7 @@ function TokenDetailModal({
                   ? 'bg-amber-900/20 border border-amber-800/30 text-amber-400'
                   : 'bg-emerald-900/15 border border-emerald-800/25 text-emerald-400'}`}>
                 {mintingEnabled ? <FaUnlock size={10} /> : <FaLock size={10} />}
-                <span>{mintingEnabled ? 'Minting aktiv — weitere Token können erstellt werden' : 'Minting dauerhaft deaktiviert — feste Gesamtmenge'}</span>
+                <span>{mintingEnabled ? t('sol.mintingActive', lang) : t('sol.mintingDisabled', lang)}</span>
               </div>
             )}
 
@@ -342,7 +345,7 @@ function TokenDetailModal({
           {!isDfaith && (
             <div className="px-5 py-4 flex gap-3">
               <button
-                onClick={() => { onClose(); isSol ? onSend({ type: 'sol' }) : onSend({ type: 'token', mint: t.mint, symbol: t.symbol, max: t.balance }); }}
+                onClick={() => { onClose(); isSol ? onSend({ type: 'sol' }) : onSend({ type: 'token', mint: tok.mint, symbol: tok.symbol, max: tok.balance }); }}
                 className="flex-1 bg-amber-400 hover:bg-amber-300 text-black font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
                 <FaPaperPlane size={12} /> Senden
               </button>
@@ -364,6 +367,7 @@ function TokenDetailModal({
 export default function SolanaWalletTab() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { openSignIn, signOut } = useClerk();
+  const lang = useLang();
   const userId = user?.id ?? null;
   const connected = isLoaded && !!isSignedIn;
 
@@ -455,10 +459,10 @@ export default function SolanaWalletTab() {
   // ── Senden ────────────────────────────────────────────────────────────────
   const handleSend = async () => {
     setSendErr(''); setSendOk('');
-    if (!recipient.trim()) { setSendErr('Empfänger-Adresse eingeben'); return; }
+    if (!recipient.trim()) { setSendErr(t('sol.invalidRecipient', lang)); return; }
     const isSolMax = sendMode.type === 'sol' && sendAmt === 'max';
     const amt = parseFloat(sendAmt);
-    if (!isSolMax && (!isFinite(amt) || amt <= 0)) { setSendErr('Ungültiger Betrag'); return; }
+    if (!isSolMax && (!isFinite(amt) || amt <= 0)) { setSendErr(t('sol.invalidAmount', lang)); return; }
     setSending(true);
     try {
       if (sendMode.type === 'sol') {

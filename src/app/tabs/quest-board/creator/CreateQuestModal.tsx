@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { FaPlus, FaSync, FaCheck, FaCommentAlt, FaClock, FaKey, FaTiktok, FaYoutube, FaInstagram, FaFacebookF, FaThumbsUp, FaBookmark, FaShareAlt, FaTrash } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import { shortenWallet } from '../utils';
+import { useLang } from '../../../components/LangContext';
+import { t } from '../../../utils/i18n';
 
 interface AvailableFacebookMediaItem {
   post_id: string;
@@ -59,6 +61,7 @@ export default function CreateQuestModal({
   onCreated,
   onOpenDeposit,
 }: CreateQuestModalProps) {
+  const lang = useLang();
   const [description, setDescription] = useState('');
   const [rewardAmount, setRewardAmount] = useState('100');
   const [reputationReward, setReputationReward] = useState('16'); // youtube+comment Default
@@ -316,17 +319,17 @@ export default function CreateQuestModal({
 
       // Instagram: muss ein Video ausgewählt sein
       if (platform === 'instagram' && !selectedMedia) {
-        setError('Bitte erst ein Instagram Video auswählen.');
+        setError(lang === 'en' ? 'Please select an Instagram video first.' : lang === 'pl' ? 'Najpierw wybierz film na Instagramie.' : 'Bitte erst ein Instagram Video auswählen.');
         return;
       }
 
       if (platform === 'facebook' && !selectedFacebookMedia) {
-        setError('Bitte erst einen Facebook Post auswählen.');
+        setError(lang === 'en' ? 'Please select a Facebook post first.' : lang === 'pl' ? 'Najpierw wybierz post na Facebooku.' : 'Bitte erst einen Facebook Post auswählen.');
         return;
       }
 
       if ((platform === 'youtube' || platform === 'tiktok') && !selectedQuestMedia) {
-        setError(`Bitte zuerst ein ${platform === 'youtube' ? 'YouTube' : 'TikTok'}-Video aus der Liste auswählen.`);
+        setError(lang === 'en' ? `Please select a ${platform === 'youtube' ? 'YouTube' : 'TikTok'} video from the list first.` : lang === 'pl' ? `Najpierw wybierz film ${platform === 'youtube' ? 'YouTube' : 'TikTok'} z listy.` : `Bitte zuerst ein ${platform === 'youtube' ? 'YouTube' : 'TikTok'}-Video aus der Liste auswählen.`);
         return;
       }
 

@@ -7,6 +7,8 @@ import { FiThumbsUp, FiShare2, FiBookmark } from 'react-icons/fi';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
 import { formatCredits } from '../utils';
+import { useLang } from '../../../components/LangContext';
+import { t } from '../../../utils/i18n';
 
 interface TiktokEngagementVerifyModalProps {
   quest: QuestIndexEntry | null;
@@ -28,6 +30,7 @@ export default function TiktokEngagementVerifyModal({
   onClose,
   singleAction,
 }: TiktokEngagementVerifyModalProps) {
+  const lang = useLang();
   const [step, setStep] = useState<Step>('loading');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -137,10 +140,10 @@ export default function TiktokEngagementVerifyModal({
   ];
 
   const title = singleAction === 'like'
-    ? (step === 'success' ? '🎉 Like bestätigt!' : step === 'expired' ? '⏰ Zeit abgelaufen' : step === 'error' ? '❌ Fehler' : '👍 Like verifizieren')
+    ? (step === 'success' ? t('verify.likeConfirmed', lang) : step === 'expired' ? '⏰ Zeit abgelaufen' : step === 'error' ? '❌ Fehler' : '👍 Like verifizieren')
     : singleAction === 'save'
     ? (step === 'success' ? '🎉 Speichern bestätigt!' : step === 'expired' ? '⏰ Zeit abgelaufen' : step === 'error' ? '❌ Fehler' : '🔖 Speichern verifizieren')
-    : (step === 'success' ? '🎉 Engagement bestätigt!' : step === 'expired' ? '⏰ Zeit abgelaufen' : step === 'error' ? '❌ Fehler' : '📲 Engagement verifizieren');
+    : (step === 'success' ? t('verify.engagementConfirmed', lang) : step === 'expired' ? '⏰ Zeit abgelaufen' : step === 'error' ? '❌ Fehler' : '📲 Engagement verifizieren');
 
   const rewardPer = quest ? Math.round((displayReward / (singleAction ? 1 : 3)) * 100) / 100 : 0;
 
@@ -190,7 +193,7 @@ export default function TiktokEngagementVerifyModal({
           {step === 'not_yet' && (
             <div className="bg-orange-900/30 border border-orange-700/40 rounded-xl p-3">
               <p className="text-orange-300 text-sm">
-                Aktionen noch nicht erkannt. TikTok braucht manchmal kurz – warte etwas und prüfe erneut.
+                {t('verify.igNotFound', lang).replace('Instagram', 'TikTok')}
               </p>
             </div>
           )}
@@ -254,10 +257,10 @@ export default function TiktokEngagementVerifyModal({
             <p className="text-white text-sm font-semibold">{quest.videoTitle}</p>
             <p className="text-zinc-400 text-xs">
               {singleAction === 'like'
-                ? 'Like das Video und klicke auf „Prüfen“.'
+                ? lang === 'en' ? 'Like the video and click "Verify".' : lang === 'pl' ? 'Polub film i kliknij „Sprawdź“.' : 'Like das Video und klicke auf „Prüfen“.'
                 : singleAction === 'save'
-                ? 'Speichere das Video und klicke auf „Prüfen“.'
-                : 'Führe alle 3 Aktionen durch und klicke auf „Prüfen“.'}
+                ? lang === 'en' ? 'Save the video and click "Verify".' : lang === 'pl' ? 'Zapisz film i kliknij „Sprawdź“.' : 'Speichere das Video und klicke auf „Prüfen“.'
+                : lang === 'en' ? 'Perform all 3 actions and click "Verify".' : lang === 'pl' ? 'Wykonaj wszystkie 3 akcje i kliknij „Sprawdź“.' : 'Führe alle 3 Aktionen durch und klicke auf „Prüfen“.'}
             </p>
           </div>
 
@@ -275,7 +278,7 @@ export default function TiktokEngagementVerifyModal({
             rel="noopener noreferrer"
             className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
-            <FaExternalLinkAlt size={12} /> TikTok-Video öffnen
+            <FaExternalLinkAlt size={12} /> TikTok-Video {t('common.open', lang)}
           </a>
 
           <button
@@ -288,7 +291,7 @@ export default function TiktokEngagementVerifyModal({
             ) : (
               <FaRedo size={13} />
             )}
-            {loading ? 'Wird geprüft…' : 'Aktionen prüfen'}
+            {loading ? t('common.pleaseWait', lang) : lang === 'en' ? 'Verify actions' : lang === 'pl' ? 'Sprawdź akcje' : 'Aktionen prüfen'}
           </button>
         </div>
       )}

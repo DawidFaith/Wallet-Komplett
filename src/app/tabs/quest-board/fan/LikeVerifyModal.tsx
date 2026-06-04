@@ -6,6 +6,8 @@ import { FaThumbsUp, FaExternalLinkAlt, FaStar, FaRedo } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
 import { formatCredits } from '../utils';
+import { useLang } from '../../../components/LangContext';
+import { t } from '../../../utils/i18n';
 
 interface LikeVerifyModalProps {
   quest: QuestIndexEntry | null;
@@ -24,6 +26,7 @@ export default function LikeVerifyModal({
   onCompleted,
   onClose,
 }: LikeVerifyModalProps) {
+  const lang = useLang();
   const [step, setStep] = useState<Step>('loading');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -112,7 +115,7 @@ export default function LikeVerifyModal({
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
   const title =
-    step === 'success' ? '🎉 Like bestätigt!'
+    step === 'success' ? t('verify.likeConfirmed', lang)
     : step === 'expired' ? '⏰ Zeit abgelaufen'
     : step === 'error' ? '❌ Fehler'
     : '👍 Like verifizieren';
@@ -161,14 +164,14 @@ export default function LikeVerifyModal({
           {step === 'not_yet' && (
             <div className="bg-orange-900/30 border border-orange-700/40 rounded-xl p-3">
               <p className="text-orange-300 text-sm">
-                Like noch nicht erkannt. YouTube braucht manchmal einen Moment &ndash; kurz warten und erneut prüfen.
+                {t('verify.likeNotFound', lang)}
               </p>
             </div>
           )}
 
           <div className="bg-blue-900/30 border border-blue-700/40 rounded-xl p-3">
             <p className="text-blue-200 text-xs">
-              <strong>Hinweis:</strong> Hast du das Video bereits geliked? Dann entferne den Like zuerst, kehre hierher zurück, starte den Quest neu und like es dann erneut.
+              <strong>{t('common.noData', lang).replace('Keine Daten', 'Hinweis')}:</strong> {t('verify.likeHint', lang)}
             </p>
           </div>
 
@@ -176,7 +179,7 @@ export default function LikeVerifyModal({
             <p className="text-white text-sm font-semibold">{quest.videoTitle}</p>
             <p className="text-zinc-400 text-xs flex items-center gap-1">
               <FaThumbsUp className="text-yellow-400" size={11} />
-              Like das Video und klicke dann auf &bdquo;Geliked &ndash; Prüfen&ldquo;
+              {t('verify.likeVideo', lang)}
             </p>
           </div>
 
@@ -195,7 +198,7 @@ export default function LikeVerifyModal({
           >
             {loading
               ? <div className="border-2 border-black/30 border-t-black rounded-full w-4 h-4 animate-spin" />
-              : <><FaThumbsUp size={14} /> Geliked &ndash; Prüfen</>
+              : <><FaThumbsUp size={14} /> {t('verify.likedCheck', lang)}</>
             }
           </button>
         </div>

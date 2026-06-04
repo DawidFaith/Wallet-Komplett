@@ -19,6 +19,7 @@ import {
 } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 import { useState } from "react";
+import { useLang, useSetLang } from "./components/LangContext";
 
 type NavigationProps = {
   activeTab: string;
@@ -46,12 +47,14 @@ const languageNames = {
   pl: "Polski"
 };
 
-export default function Navigation({ activeTab, setActiveTab, language = "de", setLanguage }: NavigationProps) {
+export default function Navigation({ activeTab, setActiveTab, language: _language, setLanguage: _setLanguage }: NavigationProps) {
   const [open, setOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [activeSocial, setActiveSocial] = useState<"instagram" | "tiktok" | "facebook" | "youtube">("instagram");
   const router = useRouter();
   const pathname = usePathname();
+  const language = useLang();
+  const setLanguage = useSetLang();
 
   // Funktionen für Navigation
   const navigateToTab = (tab: string) => {

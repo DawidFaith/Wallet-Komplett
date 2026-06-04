@@ -24,6 +24,7 @@ import type { QuestIndexEntry, VerifiedPlatforms, VerifyResult, ClaimResult } fr
 import type { QuestBundleWithItems } from '../../../lib/questDb';
 import { formatCredits } from '../utils';
 import { t, type Lang } from '../../../utils/i18n';
+import { useLang } from '../../../components/LangContext';
 
 interface FanBoardProps {
   walletAddress: string;
@@ -38,6 +39,7 @@ interface FanBoardProps {
 }
 
 export default function FanBoard({ walletAddress, verified, filterCreator, rewardToken, onQuestCompleted, language = 'de' }: FanBoardProps) {
+  const lang = useLang();
   const tokenName = rewardToken ?? 'D.FAITH';
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
@@ -362,8 +364,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       <CreditsBox
         balance={credits}
         tokenName={tokenName}
-        subtitle={credits > 0 ? `Bereit zum Einlösen als echte ${tokenName}-Token` : 'Schließe Quests ab, um Credits zu verdienen'}
-        actionLabel="Einlösen"
+        subtitle={credits > 0 ? t('fan.credits', lang).replace('{token}', tokenName) : t('fan.noCredits', lang)}
+        actionLabel={t('fan.redeem', lang)}
         actionLoading={claiming}
         onAction={() => { setClaiming(true); handleClaim(); }}
         onRefresh={loadQuests}

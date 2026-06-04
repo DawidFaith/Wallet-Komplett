@@ -8,6 +8,8 @@ import DepositModal from './DepositModal';
 import CreateBundleModal from './CreateBundleModal';
 import type { QuestIndexEntry, YouTubeBinding, VerifiedPlatforms, Platform, QuestType } from '../types';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
+import { useLang } from '../../../components/LangContext';
+import { t } from '../../../utils/i18n';
 import { getProgressPercent, formatCredits } from '../utils';
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
@@ -41,6 +43,7 @@ interface CreatorBoardProps {
 }
 
 export default function CreatorBoard({ walletAddress, binding: _binding, verified, rewardToken }: CreatorBoardProps) {
+  const lang = useLang();
   const tokenName = rewardToken ?? 'D.FAITH';
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [loading, setLoading] = useState(true);

@@ -6,6 +6,8 @@ import { FaKey, FaStar, FaCheck } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
 import { formatCredits } from '../utils';
+import { useLang } from '../../../components/LangContext';
+import { t } from '../../../utils/i18n';
 
 interface SecretVerifyModalProps {
   quest: QuestIndexEntry | null;
@@ -24,6 +26,7 @@ export default function SecretVerifyModal({
   onCompleted,
   onClose,
 }: SecretVerifyModalProps) {
+  const lang = useLang();
   const [code, setCode] = useState('');
   const [step, setStep] = useState<Step>('input');
   const [loading, setLoading] = useState(false);

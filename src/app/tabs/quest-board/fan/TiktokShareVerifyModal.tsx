@@ -7,6 +7,8 @@ import { FiShare2 } from 'react-icons/fi';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
 import { formatCredits } from '../utils';
+import { useLang } from '../../../components/LangContext';
+import { t } from '../../../utils/i18n';
 
 interface TiktokShareVerifyModalProps {
   quest: QuestIndexEntry | null;
@@ -25,6 +27,7 @@ export default function TiktokShareVerifyModal({
   onCompleted,
   onClose,
 }: TiktokShareVerifyModalProps) {
+  const lang = useLang();
   const [step, setStep] = useState<Step>('loading');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -168,9 +171,9 @@ export default function TiktokShareVerifyModal({
           <div className="bg-zinc-800/60 rounded-xl p-4 space-y-3">
             <p className="text-white font-semibold text-sm">So verifizierst du den Share:</p>
             <ol className="text-zinc-300 text-sm space-y-2 list-decimal list-inside">
-              <li>Öffne das Video auf TikTok und tippe auf <strong>Teilen</strong></li>
-              <li>Wähle <strong>Repost</strong> – falls du bereits repostet hast: entferne den Repost zuerst, kehre hierher zurück, starte den Quest neu und reposte dann erneut</li>
-              <li>Komm zurück und tippe auf <strong>Prüfen</strong></li>
+              <li>{lang === 'en' ? 'Open the video on TikTok and tap Share' : lang === 'pl' ? 'Otwórz film na TikTok i napu nij Udostępnij' : 'Öffne das Video auf TikTok und tippe auf Teilen'}</li>
+              <li>{t('verify.repostTiktok', lang)}</li>
+              <li>{t('verify.comeTapCheck', lang)}</li>
             </ol>
           </div>
 
@@ -193,11 +196,11 @@ export default function TiktokShareVerifyModal({
               <p className="text-orange-300 text-sm">
                 {!shareVerified
                   ? 'Share noch nicht erkannt. Teile das Video und warte kurz.'
-                  : 'Share erkannt! Verifizierung läuft…'}
+                  : lang === 'en' ? 'Share detected! Verifying...' : lang === 'pl' ? 'Udostępnienie wykryte! Weryfikacja...' : 'Share erkannt! Verifizierung läuft…'}
               </p>
               {!shareVerified && (
                 <p className="text-zinc-400 text-xs">
-                  Falls du das Video bereits repostet hast: entferne den Repost zuerst, kehre hierher zurück, starte den Quest neu und reposte es dann erneut.
+                {t('verify.repostHint', lang)}
                 </p>
               )}
             </div>
@@ -211,7 +214,7 @@ export default function TiktokShareVerifyModal({
               rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold py-3 rounded-xl transition-colors"
             >
-              <FaExternalLinkAlt size={12} /> Video öffnen
+              <FaExternalLinkAlt size={12} /> {t('common.open', lang)}
             </a>
             <button
               onClick={() => callApi('check')}
@@ -221,7 +224,7 @@ export default function TiktokShareVerifyModal({
               {loading ? (
                 <div className="border-2 border-white/30 border-t-white rounded-full w-4 h-4 animate-spin" />
               ) : (
-                <><FaRedo size={12} /> Prüfen</>
+                <><FaRedo size={12} /> {t('verify.checkBtn', lang)}</>
               )}
             </button>
           </div>

@@ -4,6 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useUser } from '@clerk/nextjs';
 import { FaTrophy, FaStar, FaChevronDown, FaChevronUp, FaChevronLeft, FaEdit, FaCheck, FaTimes, FaUsers, FaMedal, FaPlus, FaGift } from 'react-icons/fa';
+import { useLang } from '../components/LangContext';
+import { t, tFmt } from '../utils/i18n';
 
 interface ReputationEntry {
   artistWallet: string;
@@ -74,6 +76,7 @@ function ArtistDetailView({
   userName?: string | null;
   onBack: () => void;
 }) {
+  const lang = useLang();
   const [tab, setTab] = useState<'leaderboard' | 'contest'>('leaderboard');
   const [levels, setLevels] = useState<ReputationLevel[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -230,7 +233,7 @@ function ArtistDetailView({
         onClick={onBack}
         className="flex items-center gap-2 text-zinc-400 hover:text-white text-sm transition-colors px-4 pt-2"
       >
-        <FaChevronLeft size={11} /> Alle Künstler
+        <FaChevronLeft size={11} /> {t('common.allArtists', lang)}
       </button>
 
       {/* User-Profil + Meine Rep */}
@@ -250,7 +253,7 @@ function ArtistDetailView({
             </p>
             <p className="text-amber-400 text-sm font-medium">Lv.{entry.level} &ndash; {entry.levelName}</p>
             {currentLevel && currentLevel.questRewardBonusPercent > 0 && (
-              <p className="text-green-400 text-xs font-semibold mt-0.5">⚡ +{currentLevel.questRewardBonusPercent}% Quest-Bonus aktiv</p>
+              <p className="text-green-400 text-xs font-semibold mt-0.5">⚡ +{currentLevel.questRewardBonusPercent}% {t('rep.questBonus', lang).replace('+{n}% ', '')}</p>
             )}
           </div>
           <div className="text-right shrink-0">
@@ -270,7 +273,7 @@ function ArtistDetailView({
         {nextLevel && (nextLevel.creditReward > 0 || nextLevel.prizeDescription) && (
           <div className="mt-3 pt-3 border-t border-white/[0.07]">
             <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-2 font-semibold">
-              Nächster Reward bei Lv.{nextLevel.levelNumber} &ndash; {nextLevel.levelName}
+              {tFmt('rep.nextRewardAt', lang, { n: String(nextLevel.levelNumber), name: nextLevel.levelName })}
             </p>
             <div className="flex gap-2 flex-wrap">
               {nextLevel.creditReward > 0 && (
@@ -309,7 +312,7 @@ function ArtistDetailView({
               className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-black font-bold py-3 px-4 rounded-xl transition-all active:scale-95 animate-pulse"
             >
               <FaGift size={16} />
-              {claiming ? 'Wird eingelöst…' : `🎁 ${unclaimedTotal} Credits abholen!`}
+              {claiming ? t('rep.claiming', lang) : `🎁 ${tFmt('rep.claimCredits', lang, { n: String(unclaimedTotal) })}`}
             </button>
             <p className="text-zinc-500 text-[10px] text-center">
               {unclaimedRewards.filter(r => r.type === 'level').length > 0 && `${unclaimedRewards.filter(r => r.type === 'level').length} Level-Up`}
@@ -359,7 +362,7 @@ function ArtistDetailView({
               {leaderboard.length === 0 ? (
                 <div className="px-4 py-8 text-center">
                   <FaUsers size={28} className="text-zinc-700 mx-auto mb-2" />
-                  <p className="text-zinc-500 text-sm">Noch keine Fans</p>
+                  <p className="text-zinc-500 text-sm">{t('rep.noArtists', lang)}</p>
                 </div>
               ) : (
                 <div className="p-4 space-y-1.5">
@@ -411,10 +414,10 @@ function ArtistDetailView({
                   }`}>
                     <p className="text-white font-semibold text-sm">
                       {contest.distributed
-                        ? '✅ Contest beendet'
+                        ? t('rep.contestEnded', lang)
                         : new Date(contest.endDate) <= new Date()
-                        ? '⏰ Contest läuft aus'
-                        : '🟢 Aktive Contest'}
+                        ? t('rep.contestExpiring', lang)
+                        : t('rep.contestRunning', lang)}
                     </p>
                     <p className="text-zinc-400 text-xs mt-0.5">Ende: {new Date(contest.endDate).toLocaleString('de-DE')}</p>
                   </div>
@@ -490,6 +493,7 @@ const DEFAULT_LEVELS: ReputationLevel[] = Array.from({ length: 100 }, (_, i) => 
 });
 
 function ArtistPanel({ walletAddress }: { walletAddress: string }) {
+  const lang = useLang();
   const [levels, setLevels] = useState<ReputationLevel[]>([]);
   const [editLevels, setEditLevels] = useState<ReputationLevel[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -863,7 +867,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                 onClick={addLevel}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-amber-500/40 text-amber-400 hover:border-amber-400 hover:bg-amber-500/5 text-xs font-medium transition-colors"
               >
-                <FaPlus size={10} /> Level hinzufügen
+                <FaPlus size={10} /> {t('rep.addLevel', lang)}
               </button>
             )}
             {editing && (() => {
@@ -935,7 +939,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                 }`}>
                   <div>
                     <p className="text-xs font-semibold text-white">
-                      {contest.distributed ? '✅ Contest beendet' : contestExpired ? '⏰ Contest abgelaufen – bereit zum Verteilen' : '🟢 Contest läuft'}
+                      {contest.distributed ? t('rep.contestEnded', lang) : contestExpired ? t('rep.contestExpired', lang) : t('rep.contestRunning', lang)}
                     </p>
                     <p className="text-zinc-400 text-[11px] mt-0.5">
                       Ende: {new Date(contest.endDate).toLocaleString('de-DE')}
@@ -1044,7 +1048,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                   onClick={() => setContestPrizes(prev => [...prev, { rank: prev.length + 1, creditReward: 0 }])}
                   className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 text-xs"
                 >
-                  <FaPlus size={9} /> Weiteren Platz hinzufügen
+                  <FaPlus size={9} /> {t('rep.addSlot', lang)}
                 </button>
                 {contestError && <p className="text-red-400 text-xs">{contestError}</p>}
                 {(() => {
@@ -1101,7 +1105,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
             {leaderboard.length === 0 ? (
               <div className="px-4 py-8 text-center">
                 <FaUsers size={28} className="text-zinc-700 mx-auto mb-3" />
-                <p className="text-zinc-500 text-sm">Noch keine Fans mit Reputation</p>
+                <p className="text-zinc-500 text-sm">{t('rep.noArtists', lang)}</p>
                 <p className="text-zinc-600 text-xs mt-1">Erstelle Quests, damit Fans Reputation verdienen können.</p>
               </div>
             ) : (
@@ -1165,7 +1169,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                     }`}>
                       <div>
                         <p className="text-xs font-semibold text-white">
-                          {alreadyDone ? `✅ ${quarterlyInfo.quarter} verteilt` : ended ? `⏰ ${quarterlyInfo.quarter} abgelaufen` : `🟢 ${quarterlyInfo.quarter} läuft`}
+                          {alreadyDone ? tFmt('rep.quarterDistributed', lang, { q: quarterlyInfo.quarter }) : ended ? tFmt('rep.quarterExpired', lang, { q: quarterlyInfo.quarter }) : tFmt('rep.quarterRunning', lang, { q: quarterlyInfo.quarter })}
                         </p>
                         <p className="text-zinc-400 text-[11px] mt-0.5">
                           {new Date(quarterlyInfo.start).toLocaleDateString('de-DE')} – {new Date(quarterlyInfo.end).toLocaleDateString('de-DE')}
@@ -1361,6 +1365,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
 // Main Tab
 export default function ReputationTab({ artistWallet }: { artistWallet?: string | null }) {
   const { user } = useUser();
+  const lang = useLang();
   const walletAddress = user?.id ?? '';
 
   const [mode, setMode] = useState<'supporter' | 'artist'>('supporter');
@@ -1449,9 +1454,9 @@ export default function ReputationTab({ artistWallet }: { artistWallet?: string 
         ) : supporterEntries.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-20">
             <FaStar size={40} className="text-zinc-700 mb-4" />
-            <p className="text-zinc-400 font-semibold">Keine Künstler gefunden</p>
+            <p className="text-zinc-400 font-semibold">{t('rep.noArtists', lang)}</p>
             <p className="text-zinc-600 text-sm mt-2">
-              Noch sind keine Künstler registriert.
+              {t('rep.noArtists', lang)}
             </p>
           </div>
         ) : (

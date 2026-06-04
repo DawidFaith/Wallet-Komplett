@@ -6,6 +6,8 @@ import { FaInstagram, FaCheck, FaSync, FaStar, FaExternalLinkAlt } from 'react-i
 import Modal from '../components/Modal';
 import type { QuestIndexEntry, VerifyResult } from '../types';
 import { formatCredits } from '../utils';
+import { useLang } from '../../../components/LangContext';
+import { t } from '../../../utils/i18n';
 
 interface InstagramCommentVerifyModalProps {
   quest: QuestIndexEntry | null;
@@ -22,6 +24,7 @@ export default function InstagramCommentVerifyModal({
   onCompleted,
   onClose,
 }: InstagramCommentVerifyModalProps) {
+  const lang = useLang();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<VerifyResult | null>(null);
   const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
@@ -93,7 +96,7 @@ export default function InstagramCommentVerifyModal({
         <div className="flex flex-col items-center py-8 gap-4">
           <div className="border-4 border-pink-500/30 border-t-pink-500 rounded-full w-12 h-12 animate-spin" />
           <p className="text-zinc-400 text-sm text-center">
-            Kommentare werden geprüft…
+            {t('verify.commentsChecking', lang)}
           </p>
         </div>
       ) : result ? (
@@ -150,7 +153,7 @@ export default function InstagramCommentVerifyModal({
             <ol className="space-y-2 text-zinc-400 text-sm">
               <li className="flex gap-2">
                 <span className="text-pink-400 font-bold shrink-0">1.</span>
-                Öffne das Reel oben
+                {t('verify.openReel', lang)}
               </li>
               <li className="flex gap-2">
                 <span className="text-pink-400 font-bold shrink-0">2.</span>

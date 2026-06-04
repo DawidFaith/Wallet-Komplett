@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaCheck, FaInfoCircle, FaSync, FaHeart, FaComment, FaBookmark, FaShareAlt, FaPaperPlane, FaThumbsUp, FaKey, FaLink, FaCopy } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { Platform, QuestType } from '../types';
+import { useLang } from '../../../components/LangContext';
+import { t } from '../../../utils/i18n';
 // ─── Media-Typen (für Video-Picker) ─────────────────────────────────────────
 interface AvailableQuestMediaItem {
   video_id: string;
@@ -91,6 +93,7 @@ type Step = 1 | 2 | 3 | 4;
 export default function CreateBundleModal({
   open, onClose, walletAddress, creatorBalance, verified, onCreated, onOpenDeposit,
 }: CreateBundleModalProps) {
+  const lang = useLang();
   const [step, setStep]       = useState<Step>(1);
   const [platform, setPlatform] = useState<Platform>(
     verified.youtube ? 'youtube' : verified.instagram ? 'instagram' : verified.tiktok ? 'tiktok' : verified.facebook ? 'facebook' : 'youtube',

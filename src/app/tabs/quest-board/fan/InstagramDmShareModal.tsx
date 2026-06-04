@@ -6,6 +6,8 @@ import { FaInstagram, FaShareAlt, FaRedo, FaCheck, FaPaperPlane, FaStar } from '
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
 import { formatCredits } from '../utils';
+import { useLang } from '../../../components/LangContext';
+import { t, tFmt } from '../../../utils/i18n';
 
 interface InstagramDmShareModalProps {
   quest: QuestIndexEntry | null;
@@ -34,6 +36,7 @@ export default function InstagramDmShareModal({
   onCompleted,
   onClose,
 }: InstagramDmShareModalProps) {
+  const lang = useLang();
   const [step, setStep] = useState<Step>('idle');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -266,7 +269,7 @@ export default function InstagramDmShareModal({
                     className="flex items-center justify-center gap-2 w-full bg-pink-600 hover:bg-pink-500 rounded-xl px-3 py-2.5 text-sm text-white font-semibold transition-colors"
                   >
                     <FaShareAlt size={13} />
-                    Beitrag öffnen &amp; Quest starten
+                    {t('verify.openPost', lang)}
                   </a>
                 )}
 
@@ -344,7 +347,7 @@ export default function InstagramDmShareModal({
                 className="flex items-center justify-center gap-2 bg-pink-600 hover:bg-pink-500 rounded-xl px-3 py-2.5 text-sm text-white font-semibold transition-colors"
               >
                 <FaShareAlt size={13} />
-                Beitrag öffnen &amp; als Story teilen
+                {t('verify.openPostShare', lang)}
               </a>
             )}
 
@@ -352,7 +355,7 @@ export default function InstagramDmShareModal({
             <div className="bg-purple-900/20 border border-purple-700/30 rounded-xl px-3 py-2.5 flex items-center gap-2">
               <div className="animate-spin w-3 h-3 border border-purple-400 border-t-transparent rounded-full shrink-0" />
               <p className="text-xs text-purple-300">
-                Der Künstler überprüft deine Story und schickt dir dann den Link.
+                {t('verify.artistChecks', lang)}
               </p>
             </div>
 
@@ -420,7 +423,7 @@ export default function InstagramDmShareModal({
               {error}
             </div>
             <button onClick={() => setStep('idle')} className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
-              Zurück
+              {t('verify.back', lang)}
             </button>
           </div>
         )}
@@ -462,6 +465,7 @@ interface StoryClaimSectionProps {
 }
 
 function StoryClaimSection({ token, walletAddress, rewardAmount, onSuccess, onClose }: StoryClaimSectionProps) {
+  const lang = useLang();
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const [claimed, setClaimed] = useState(0);
@@ -481,7 +485,7 @@ function StoryClaimSection({ token, walletAddress, rewardAmount, onSuccess, onCl
         setState('success');
         onSuccess(data.rewardAmount ?? rewardAmount);
       } else {
-        setErrorMsg(data.error ?? 'Fehler beim Einlösen');
+        setErrorMsg(data.error ?? lang === 'en' ? 'Error redeeming' : lang === 'pl' ? 'Błąd odbioru' : 'Fehler beim Einlösen');
         setState('error');
       }
     } catch {
@@ -534,7 +538,7 @@ function StoryClaimSection({ token, walletAddress, rewardAmount, onSuccess, onCl
           <FaCheck size={10} className="text-green-400" /> Du hast den DM-Button geklickt!
         </p>
         <p className="text-xs text-zinc-400">
-          Deine Story wurde erkannt. Klicke unten, um deine Belohnung einzulösen.
+        {t('verify.storyFound', lang)}
         </p>
       </div>
 

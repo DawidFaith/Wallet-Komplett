@@ -10,6 +10,8 @@ import {
   FaPlay, FaPause, FaDownload, FaBoxOpen, FaLock, FaChevronUp, FaChevronDown, FaEdit,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
+import { useLang } from '../components/LangContext';
+import { t, tFmt } from '../utils/i18n';
 
 // ─── Typen ───────────────────────────────────────────────────────────────────
 
@@ -282,6 +284,7 @@ function ArtistShopView({
   onPurchased?: () => void;
   onGoToInventory?: () => void;
 }) {
+  const lang = useLang();
   const [items, setItems] = useState<ShopItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState<string | null>(null);
@@ -360,7 +363,7 @@ function ArtistShopView({
         onClick={onBack}
         className="flex items-center gap-2 text-zinc-400 hover:text-white text-sm transition-colors px-4 pt-2"
       >
-        <FaChevronLeft size={11} /> Alle Künstler
+        <FaChevronLeft size={11} /> {t('common.allArtists', lang)}
       </button>
 
       {/* Artist-Header */}
@@ -420,7 +423,7 @@ function ArtistShopView({
             {buyResult.contentUrl && (
               <a href={buyResult.contentUrl} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-3 py-1.5 text-zinc-300 text-xs font-semibold transition-colors">
-                <FaExternalLinkAlt size={9} /> Direkt öffnen
+                <FaExternalLinkAlt size={9} /> {t('shop.openDirect', lang)}
               </a>
             )}
           </div>
@@ -486,7 +489,7 @@ function ArtistShopView({
         </div>
       ) : items.length === 0 ? (
         <div className="mx-4 bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
-          Dieser Künstler hat noch keine Items im Shop.
+          {t('shop.noItems', lang)}
         </div>
       ) : (
         <div className="px-4 grid grid-cols-2 gap-2">
@@ -522,6 +525,7 @@ interface InventoryItem {
 }
 
 function InventoryItemCard({ item }: { item: InventoryItem }) {
+  const lang = useLang();
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -624,7 +628,7 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
         {(item.type === 'nft' || item.type === 'exclusive') && item.contentUrl && (
           <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full bg-amber-900/20 hover:bg-amber-900/30 border border-amber-700/30 rounded-xl py-2.5 text-amber-300 text-xs font-semibold transition-colors">
-            <FaExternalLinkAlt size={10} /> Inhalt öffnen
+            <FaExternalLinkAlt size={10} /> {t('shop.openContent', lang)}
           </a>
         )}
       </div>
@@ -633,6 +637,7 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
 }
 
 function InventoryPanel({ walletAddress }: { walletAddress: string }) {
+  const lang = useLang();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState('');
@@ -712,7 +717,7 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
       ) : items.length === 0 && !apiError ? (
         <div className="bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-10 text-center">
           <FaBoxOpen size={32} className="text-zinc-700 mx-auto mb-3" />
-          <p className="text-zinc-400 text-sm font-semibold">Noch keine Käufe</p>
+          <p className="text-zinc-400 text-sm font-semibold">{t('common.noData', lang)}</p>
           <p className="text-zinc-600 text-xs mt-1">Hier erscheinen alle deine gekauften Inhalte.</p>
         </div>
       ) : (
@@ -772,6 +777,7 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
 // ─── Mein Shop (Artist-Modus) ─────────────────────────────────────────────────
 
 function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddress: string; creditBalance: number | null; rewardToken?: string | null }) {
+  const lang = useLang();
   const myTokenLabel = rewardToken ?? 'D.FAITH';
   const [items, setItems] = useState<ShopItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -861,9 +867,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
   const handleCreate = async () => {
     if (!fTitle.trim()) { setFormError('Titel ist Pflicht'); return; }
     const price = parseInt(fPrice, 10);
-    if (isNaN(price) || price < 0) { setFormError('Ungültiger Preis'); return; }
-
-    setSaving(true);
+    if (isNaN(price) || price < 0) { setFormError(t('shop.invalidPrice', lang)); return; }
     setFormError('');
     try {
       const res = await fetch('/api/shop', {
@@ -945,10 +949,10 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
     if (!editData) return;
     if (!editData.title.trim()) { setEditError('Titel ist Pflicht'); return; }
     const price = parseInt(editData.price, 10);
-    if (isNaN(price) || price < 0) { setEditError('Ungültiger Preis'); return; }
+    if (isNaN(price) || price < 0) { setEditError(t('shop.invalidPrice', lang)); return; }
     const tokensRaw = editData.tokens.trim();
     const tokens = tokensRaw === '' ? null : parseFloat(tokensRaw);
-    if (tokensRaw !== '' && (isNaN(tokens!) || tokens! < 0)) { setEditError('Ungültiger Token-Preis'); return; }
+    if (tokensRaw !== '' && (isNaN(tokens!) || tokens! < 0)) { setEditError(t('shop.invalidTokenPrice', lang)); return; }
 
     setEditSaving(true);
     setEditError('');
@@ -1082,7 +1086,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
             />
             {parseInt(fRequiredLevel, 10) > 0 && (
               <p className="text-amber-400 text-[10px] mt-1 flex items-center gap-1">
-                <FaStar size={8} /> Nur Fans ab Level {fRequiredLevel} können dieses Item kaufen.
+                <FaStar size={8} /> {tFmt('shop.levelRequired', lang, { n: fRequiredLevel })}
               </p>
             )}
           </div>
@@ -1348,6 +1352,7 @@ function ArtistList({
   walletAddress: string | null;
   onSelect: (artist: ShopArtist) => void;
 }) {
+  const lang = useLang();
   const [artists, setArtists] = useState<ShopArtist[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -1382,7 +1387,7 @@ function ArtistList({
       <div className="mx-4 bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
         {fetchError
           ? <span className="text-red-400">Fehler: {fetchError}</span>
-          : 'Noch keine Künstler haben Items im Shop.'}
+          : t('shop.noArtists', lang)}
       </div>
     );
   }
@@ -1424,6 +1429,7 @@ function ArtistList({
 
 export default function ShopTab({ initialArtistWallet }: { initialArtistWallet?: string | null }) {
   const { user, isLoaded } = useUser();
+  const lang = useLang();
   const walletAddress = user?.id ?? null;
 
   const [mode, setMode] = useState<'supporter' | 'inventory' | 'artist'>('supporter');
@@ -1531,7 +1537,7 @@ export default function ShopTab({ initialArtistWallet }: { initialArtistWallet?:
         {/* ── Nicht eingeloggt ── */}
         {!isLoaded || (!walletAddress && isLoaded) ? (
           <div className="mx-4 bg-white/[0.04] border border-white/[0.07] rounded-2xl p-6 text-center text-zinc-400 text-sm">
-            {!isLoaded ? 'Lädt…' : 'Bitte einloggen um den Shop zu nutzen.'}
+            {!isLoaded ? t('common.loading', lang) : t('shop.loginRequired', lang)}
           </div>
         ) : mode === 'artist' && isArtist ? (
           /* ── Artist: Mein Shop ── */
