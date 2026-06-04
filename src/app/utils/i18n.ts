@@ -826,7 +826,6 @@ const dict: Translations = {
   'btn.check': { de: 'Prüfen', en: 'Check', pl: 'Sprawdź' },
   'btn.restart': { de: 'Neu starten', en: 'Restart', pl: 'Uruchom ponownie' },
   'btn.verifying': { de: 'Verifiziere…', en: 'Verifying…', pl: 'Weryfikacja…' },
-  'btn.verify': { de: 'Verifizieren', en: 'Verify', pl: 'Weryfikuj' },
 
   // ── Deposit Modal ───────────────────────────────────────────────────────────
 
@@ -986,9 +985,6 @@ const dict: Translations = {
   'verify.storyClaimDone': { de: 'Du hast den DM-Button geklickt!', en: 'You clicked the DM button!', pl: 'Kliknąłeś przycisk DM!' },
   'verify.dmStep1claim': { de: 'Öffne den Beitrag und teile ihn als <span class="text-pink-400 font-semibold">Instagram Story</span>', en: 'Open the post and share it as an <span class="text-pink-400 font-semibold">Instagram Story</span>', pl: 'Otwórz post i udostępnij go jako <span class="text-pink-400 font-semibold">Instagram Story</span>' },
   'verify.dmStep2claim': { de: 'Markiere <span class="text-pink-400 font-semibold">{handle}</span> in deiner Story', en: 'Tag <span class="text-pink-400 font-semibold">{handle}</span> in your story', pl: 'Oznacz <span class="text-pink-400 font-semibold">{handle}</span> w swojej story' },
-  'verify.dmStep1wait': { de: 'Öffne den Beitrag und teile ihn als <span class="text-pink-400 font-semibold">Instagram Story</span>', en: 'Open the post and share it as an <span class="text-pink-400 font-semibold">Instagram Story</span>', pl: 'Otwórz post i udostępnij go jako <span class="text-pink-400 font-semibold">Instagram Story</span>' },
-  'verify.dmStep2wait': { de: 'Markiere <span class="text-pink-400 font-semibold">{handle}</span> in deiner Story', en: 'Tag <span class="text-pink-400 font-semibold">{handle}</span> in your story', pl: 'Oznacz <span class="text-pink-400 font-semibold">{handle}</span> w swojej story' },
-  'verify.dmStep3wait': { de: 'Warte — der Künstler schickt dir den <span class="text-purple-300 font-semibold">Bestätigungs-Link</span> per Instagram DM', en: 'Wait — the artist will send you the <span class="text-purple-300 font-semibold">confirmation link</span> via Instagram DM', pl: 'Poczekaj — artysta wyśle ci <span class="text-purple-300 font-semibold">link potwierdzający</span> przez Instagram DM' },
   'verify.dmStep4wait': { de: 'Klicke den Link in der DM → erhalte deine <span class="text-green-400 font-semibold">Belohnung</span>', en: 'Click the link in the DM → receive your <span class="text-green-400 font-semibold">reward</span>', pl: 'Kliknij link w DM → odbierz swoją <span class="text-green-400 font-semibold">nagrodę</span>' },
   'verify.secretInputLabel': { de: 'Geheimer Code', en: 'Secret Code', pl: 'Tajny Kod' },
   'verify.secretSubmit': { de: 'Code einreichen', en: 'Submit Code', pl: 'Wyślij Kod' },
