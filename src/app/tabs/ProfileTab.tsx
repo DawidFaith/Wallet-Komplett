@@ -12,6 +12,7 @@ import {
 import LinkChannelView from './quest-board/fan/LinkChannelView';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
 import { t, type Lang } from '../utils/i18n';
+import { useLang } from '../components/LangContext';
 
 type SocialPlatform = 'instagram' | 'tiktok' | 'facebook';
 type AnyPlatform = SocialPlatform | 'youtube';
@@ -219,7 +220,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
       setVerified(d.verified ?? false);
       setMsg(d.hint ?? (d.error ? `❌ ${d.error}` : ''));
     } catch {
-      setMsg('❌ Netzwerkfehler');
+      setMsg(t('profile.networkError', lang));
     } finally {
       setLoading(false);
     }
@@ -388,7 +389,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
           return { name: p.facebookName ?? `@${p.facebookHandle}`, picture: p.facebookPicture ?? null };
         break;
     }
-    return { name: 'Nicht verbunden', picture: null };
+    return { name: t('profile.notConnectedText', lang), picture: null };
   })();
 
   const noSocials = linkedPlatforms.length === 0;
@@ -457,7 +458,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                   }}
                   className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 bg-white/5 hover:bg-white/10 border border-white/[0.1] px-2 py-1 rounded-lg transition-colors"
                 >
-                  <FaPen size={9} /> Bearbeiten
+                  <FaPen size={9} /> {t('profile.edit', lang)}
                 </button>
               )}
             </div>
@@ -466,19 +467,19 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                 <input
                   value={artistDisplayNameInput}
                   onChange={(e) => setArtistDisplayNameInput(e.target.value)}
-                  placeholder="Anzeigename (z.B. D.FAITH, Dawid Faith…)"
+                  placeholder={t('profile.namePlaceholder', lang)}
                   className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-500/50 transition-colors"
                 />
                 <input
                   value={artistTypeInput}
                   onChange={(e) => setArtistTypeInput(e.target.value)}
-                  placeholder="Künstlertyp (z.B. Musiker, Rapper, DJ…)"
+                  placeholder={t('profile.artistTypePlaceholder', lang)}
                   className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-500/50 transition-colors"
                 />
                 <textarea
                   value={artistBioInput}
                   onChange={(e) => setArtistBioInput(e.target.value)}
-                  placeholder="Warum solltest du supported werden? (Bio)"
+                  placeholder={t('profile.bioPlaceholder', lang)}
                   rows={3}
                   className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-500/50 transition-colors resize-none"
                 />
@@ -493,7 +494,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                   ].filter(o => o.available);
                   return (
                     <div>
-                      <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1.5">Angezeigtes Profil-Bild</p>
+                      <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1.5">{t('profile.displayPicLabel', lang)}</p>
                       <div className="flex gap-2 flex-wrap">
                         {options.map(o => (
                           <button
@@ -516,14 +517,14 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                 <div className="flex gap-2 justify-end">
                   <button onClick={() => setEditingArtist(false)}
                   className="text-xs px-3 py-1.5 rounded-xl bg-white/5 border border-white/8 text-zinc-400 hover:bg-white/10 transition-colors">
-                    Abbrechen
+                    {t('btn.cancel', lang)}
                   </button>
                   <button
                     onClick={handleSaveArtistInfo}
                     disabled={artistSaving}
                     className="text-xs px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold disabled:opacity-50 transition-colors"
                   >
-                    {artistSaving ? 'Speichern…' : 'Speichern'}
+                    {artistSaving ? t('btn.saving', lang) : t('btn.save', lang)}
                   </button>
                 </div>
               </div>
@@ -540,7 +541,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                   <p className="text-zinc-400 text-xs italic">{t('profile.noBio', lang)}</p>
                 )}
                 {!p.artistType && !p.artistBio && (
-                  <p className="text-zinc-400 text-xs italic">Klicke &bdquo;Bearbeiten&ldquo; um dein Künstler-Profil auszufüllen</p>
+                  <p className="text-zinc-400 text-xs italic">{t('profile.editPrompt', lang)}</p>
                 )}
                 {/* Vorschau: welches Profilbild Fans sehen */}
                 {(() => {
@@ -570,7 +571,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                   }
                   return (
                     <div className="pt-1.5 border-t border-white/[0.06] flex items-center gap-2">
-                      <p className="text-zinc-600 text-[10px] uppercase tracking-widest shrink-0">Öffentlich:</p>
+                      <p className="text-zinc-600 text-[10px] uppercase tracking-widest shrink-0">{t('profile.publicLabel', lang)}</p>
                       {pic
                         ? <Image src={pic} alt="" width={24} height={24} className="w-6 h-6 rounded-full object-cover shrink-0" />
                         : <div className="w-6 h-6 rounded-full bg-zinc-700 shrink-0" />}
@@ -668,7 +669,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                       onClick={() => setMetaGuideOpen(o => !o)}
                       className="flex items-center gap-1 text-[10px] font-semibold text-violet-400 hover:text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 px-2 py-0.5 rounded-full transition-colors"
                     >
-                      Anleitung
+                      {t('profile.metaGuideTitle', lang)}
                       <FaChevronDown size={7} className={`transition-transform duration-200 ${metaGuideOpen ? 'rotate-180' : ''}`} />
                     </button>
                   )}
@@ -692,7 +693,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                       ? <FaCheck size={10} className="text-green-400" />
                       : <FaInstagram size={11} />
                   }
-                  <span>{igVerified ? 'Instagram' : 'Instagram prüfen'}</span>
+                  <span>{igVerified ? 'Instagram' : t('profile.igCheck', lang)}</span>
                 </button>
                 <button
                   onClick={() => handleMetaCheck('facebook')}
@@ -709,14 +710,14 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                       ? <FaCheck size={10} className="text-green-400" />
                       : <FaFacebook size={11} />
                   }
-                  <span>{fbVerified ? 'Facebook' : 'Facebook prüfen'}</span>
+                  <span>{fbVerified ? 'Facebook' : t('profile.fbCheck', lang)}</span>
                 </button>
               </div>
 
               {(!hasIg || !hasFb) && (
                 <div className="flex gap-2 text-[10px] text-amber-500/70">
-                  {!hasIg && <span className="flex-1 text-center">⚠️ Instagram verbinden</span>}
-                  {!hasFb && <span className="flex-1 text-center">⚠️ Facebook verbinden</span>}
+                  {!hasIg && <span className="flex-1 text-center">⚠️ {t('profile.igConnect', lang)}</span>}
+                  {!hasFb && <span className="flex-1 text-center">⚠️ {t('profile.fbConnect', lang)}</span>}
                 </div>
               )}
               {(metaIgMsg && !igVerified) && <p className="text-[11px] text-zinc-400 leading-relaxed">{metaIgMsg}</p>}
@@ -726,25 +727,25 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               {(!igVerified || !fbVerified) && metaGuideOpen && (
                 <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-4 space-y-3">
                   <div className="bg-amber-950/30 border border-amber-500/20 rounded-xl px-3 py-2.5 text-[10px] text-amber-400/80 space-y-1">
-                    <p className="font-bold text-amber-400">⚠️ Voraussetzungen (einmalig):</p>
-                    <p>› <strong className="text-amber-300">Facebook Page erstellen</strong> — nur über eine Page bekommst du Zugang zur Meta Business Suite.</p>
-                    <p>› Instagram muss ein <strong className="text-amber-300">Business- oder Creator-Konto</strong> sein (IG → Einstellungen → Konto → Zu Professional-Konto wechseln)</p>
-                    <p>› <strong className="text-amber-300">IG und FB werden separat erteilt</strong> — du kannst nur Instagram, nur die Page, oder beides freischalten.</p>
+                    <p className="font-bold text-amber-400">{t('profile.metaPrereqTitle', lang)}</p>
+                    <p>{t('profile.metaPrereq1', lang)}</p>
+                    <p>{t('profile.metaPrereq2', lang)}</p>
+                    <p>{t('profile.metaPrereq3', lang)}</p>
                   </div>
                   <ol className="text-zinc-500 text-[11px] space-y-1.5 pl-0">
                     {([
-                      <React.Fragment key={0}>Öffne <a href="https://business.facebook.com/settings/partners/add" target="_blank" rel="noopener noreferrer" className="text-violet-400 underline underline-offset-2 hover:text-violet-300">dein Meta Business Center → Partner hinzufügen</a></React.Fragment>,
-                      <React.Fragment key={1}>Business-ID von D.Faith Ecosystem eingeben{metaBusinessId ? <span className="ml-1 font-mono text-white bg-white/10 px-1.5 py-0.5 rounded text-[10px]">{metaBusinessId}</span> : ''}</React.Fragment>,
-                      <React.Fragment key={2}>Einem Partner <strong className="text-zinc-300">Zugriff auf deine Assets gestatten</strong> auswählen</React.Fragment>,
+                      <React.Fragment key={0}><a href="https://business.facebook.com/settings/partners/add" target="_blank" rel="noopener noreferrer" className="text-violet-400 underline underline-offset-2 hover:text-violet-300">{t('profile.metaStep1', lang)}</a></React.Fragment>,
+                      <React.Fragment key={1}>{t('profile.metaStep2', lang)}{metaBusinessId ? <span className="ml-1 font-mono text-white bg-white/10 px-1.5 py-0.5 rounded text-[10px]">{metaBusinessId}</span> : ''}</React.Fragment>,
+                      <React.Fragment key={2}>{t('profile.metaStep3', lang)}</React.Fragment>,
                       <React.Fragment key={3}>
-                        <span>Assets einzeln zuweisen:
+                        <span>{t('profile.metaAssetsLabel', lang)}
                           <ul className="mt-1 space-y-0.5 pl-1 text-zinc-600">
-                            <li className="flex gap-1.5 items-start"><span className="text-pink-500/70 shrink-0">›</span><span><strong className="text-pink-300">Instagram-Konto</strong> auswählen → alle Berechtigungen aktivieren <span className="text-zinc-700">(für IG Quests)</span></span></li>
-                            <li className="flex gap-1.5 items-start"><span className="text-blue-500/70 shrink-0">›</span><span><strong className="text-blue-300">Facebook Page</strong> auswählen → alle Berechtigungen aktivieren <span className="text-zinc-700">(für FB Quests)</span></span></li>
+                            <li className="flex gap-1.5 items-start"><span className="text-pink-500/70 shrink-0">›</span><span><strong className="text-pink-300">Instagram</strong> — {t('profile.metaStep4ig', lang)}</span></li>
+                            <li className="flex gap-1.5 items-start"><span className="text-blue-500/70 shrink-0">›</span><span><strong className="text-blue-300">Facebook</strong> — {t('profile.metaStep4fb', lang)}</span></li>
                           </ul>
                         </span>
                       </React.Fragment>,
-                      <React.Fragment key={4}>Oben die jeweiligen Buttons klicken — System-Zugriff wird automatisch eingerichtet</React.Fragment>,
+                      <React.Fragment key={4}>{t('profile.metaStep5', lang)}</React.Fragment>,
                     ] as React.ReactNode[]).map((step, i) => (
                       <li key={i} className="flex gap-2"><span className="text-zinc-600 shrink-0 font-bold">{i + 1}.</span><span>{step}</span></li>
                     ))}
@@ -935,7 +936,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                       }}
                       className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs font-semibold transition-colors"
                     >
-                      <FaShoppingBag size={11} /> {selectedArtist.shopItemCount} {selectedArtist.shopItemCount === 1 ? 'Artikel' : 'Artikel'}
+                      <FaShoppingBag size={11} /> {selectedArtist.shopItemCount} {selectedArtist.shopItemCount === 1 ? t('profile.items_one', lang) : t('profile.items_other', lang)}
                     </button>
                   )}
                 </div>
@@ -966,7 +967,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-white font-semibold text-sm truncate">{p.youtubeChannelName}</p>
-                <p className="text-green-400 text-xs flex items-center gap-1 mt-0.5"><FaCheck size={9} /> Verifiziert</p>
+                <p className="text-green-400 text-xs flex items-center gap-1 mt-0.5"><FaCheck size={9} /> {t('profile.verified', lang)}</p>
               </div>
             </div>
             {/* Buttons */}
@@ -975,14 +976,14 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                 onClick={() => { setShowYoutubeManage(false); setShowYoutubeModal(true); }}
                 className="flex-1 bg-white/5 border border-white/8 hover:bg-white/10 text-zinc-300 font-semibold text-sm py-2.5 rounded-xl transition-colors"
               >
-                Ändern
+                {t('btn.change', lang)}
               </button>
               <button
                 onClick={async () => { setShowYoutubeManage(false); await handleUnlinkYoutube(); }}
                 disabled={unlinkPending === 'youtube'}
                 className="flex-1 bg-red-900/30 hover:bg-red-900/60 text-red-400 font-semibold text-sm py-2.5 rounded-xl transition-colors disabled:opacity-40"
               >
-                {unlinkPending === 'youtube' ? '…' : 'Trennen'}
+                {unlinkPending === 'youtube' ? '…' : t('btn.disconnect', lang)}
               </button>
             </div>
           </div>
@@ -1021,7 +1022,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               <Image src="/D.FAITH.png" alt="D.FAITH" width={64} height={64} className="w-16 h-16 object-contain" />
             </div>
             <h3 className="text-white font-bold text-lg">{t('profile.claimSuccess', lang)}</h3>
-            <p className="text-zinc-400 text-sm">Folgende Menge wurde an deine Wallet gesendet:</p>
+            <p className="text-zinc-400 text-sm">{t('profile.claimSentText', lang)}</p>
             <div className="bg-yellow-900/30 border border-yellow-700/40 rounded-xl py-3 px-4 flex items-center justify-center gap-2">
               <Image src="/D.FAITH.png" alt="D.FAITH" width={28} height={28} className="w-7 h-7 object-contain" />
               <span className="text-yellow-300 font-bold text-2xl">{claimModal.sentAmount.toFixed(2)}</span>
@@ -1089,6 +1090,7 @@ function SocialChip({
   icon, label, name, handle, picture, verified, unlinkLoading, onAdd, onChange, onUnlink,
 }: SocialChipProps) {
   const [open, setOpen] = React.useState(false);
+  const lang = useLang() as Lang;
   const displayText = name ?? (handle ? `@${handle}` : null);
 
   if (!handle && !verified) {
@@ -1135,7 +1137,7 @@ function SocialChip({
               onClick={() => { setOpen(false); onChange(); }}
               className="flex-1 text-xs px-2 py-1.5 rounded-xl bg-white/5 border border-white/8 hover:bg-white/10 text-zinc-300 font-semibold transition-colors"
             >
-              Ändern
+              {t('btn.change', lang)}
             </button>
             {onUnlink && (
               <button
@@ -1143,7 +1145,7 @@ function SocialChip({
                 disabled={unlinkLoading}
                 className="flex-1 text-xs px-2 py-1.5 rounded-xl bg-red-900/30 hover:bg-red-900/60 text-red-400 font-semibold transition-colors disabled:opacity-40"
               >
-                {unlinkLoading ? '…' : 'Trennen'}
+                {unlinkLoading ? '…' : t('btn.disconnect', lang)}
               </button>
             )}
           </div>

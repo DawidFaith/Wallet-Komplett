@@ -316,6 +316,141 @@ const dict: Translations = {
     en: 'Successfully redeemed!',
     pl: 'Pomyślnie odebrano!',
   },
+  'profile.claimSentText': {
+    de: 'Folgende Menge wurde an deine Wallet gesendet:',
+    en: 'The following amount was sent to your wallet:',
+    pl: 'Następująca kwota została wysłana na twój portfel:',
+  },
+  'profile.edit': {
+    de: 'Bearbeiten',
+    en: 'Edit',
+    pl: 'Edytuj',
+  },
+  'profile.namePlaceholder': {
+    de: 'Anzeigename (z.B. D.FAITH, Dawid Faith…)',
+    en: 'Display name (e.g. D.FAITH, Dawid Faith…)',
+    pl: 'Wyświetlana nazwa (np. D.FAITH, Dawid Faith…)',
+  },
+  'profile.artistTypePlaceholder': {
+    de: 'Künstlertyp (z.B. Musiker, Rapper, DJ…)',
+    en: 'Artist type (e.g. Musician, Rapper, DJ…)',
+    pl: 'Typ artysty (np. Muzyk, Raper, DJ…)',
+  },
+  'profile.bioPlaceholder': {
+    de: 'Warum solltest du supported werden? (Bio)',
+    en: 'Why should you be supported? (Bio)',
+    pl: 'Dlaczego powinieneś być wspierany? (Bio)',
+  },
+  'profile.displayPicLabel': {
+    de: 'Angezeigtes Profil-Bild',
+    en: 'Displayed profile picture',
+    pl: 'Wyświetlane zdjęcie profilowe',
+  },
+  'profile.editPrompt': {
+    de: 'Klicke „Bearbeiten" um dein Künstler-Profil auszufüllen',
+    en: 'Click "Edit" to fill out your artist profile',
+    pl: 'Kliknij „Edytuj", aby uzupełnić swój profil artysty',
+  },
+  'profile.publicLabel': {
+    de: 'Öffentlich:',
+    en: 'Public:',
+    pl: 'Publiczne:',
+  },
+  'profile.notConnectedText': {
+    de: 'Nicht verbunden',
+    en: 'Not connected',
+    pl: 'Niepołączony',
+  },
+  'profile.igCheck': {
+    de: 'Instagram prüfen',
+    en: 'Check Instagram',
+    pl: 'Sprawdź Instagram',
+  },
+  'profile.fbCheck': {
+    de: 'Facebook prüfen',
+    en: 'Check Facebook',
+    pl: 'Sprawdź Facebook',
+  },
+  'profile.igConnect': {
+    de: 'Instagram verbinden',
+    en: 'Connect Instagram',
+    pl: 'Połącz Instagram',
+  },
+  'profile.fbConnect': {
+    de: 'Facebook verbinden',
+    en: 'Connect Facebook',
+    pl: 'Połącz Facebook',
+  },
+  'profile.verified': {
+    de: 'Verifiziert',
+    en: 'Verified',
+    pl: 'Zweryfikowano',
+  },
+  'profile.networkError': {
+    de: '❌ Netzwerkfehler',
+    en: '❌ Network error',
+    pl: '❌ Błąd sieci',
+  },
+  'profile.metaGuideTitle': {
+    de: 'Anleitung',
+    en: 'Setup guide',
+    pl: 'Instrukcja',
+  },
+  'profile.metaPrereqTitle': {
+    de: '⚠️ Voraussetzungen (einmalig):',
+    en: '⚠️ Requirements (one-time):',
+    pl: '⚠️ Wymagania (jednorazowo):',
+  },
+  'profile.metaPrereq1': {
+    de: '› Facebook Page erstellen — nur über eine Page bekommst du Zugang zur Meta Business Suite.',
+    en: '› Create a Facebook Page — you need a Page to access Meta Business Suite.',
+    pl: '› Utwórz stronę na Facebooku — tylko przez stronę uzyskasz dostęp do Meta Business Suite.',
+  },
+  'profile.metaPrereq2': {
+    de: '› Instagram muss ein Business- oder Creator-Konto sein (IG → Einstellungen → Konto → Zu Professional-Konto wechseln)',
+    en: '› Instagram must be a Business or Creator account (IG → Settings → Account → Switch to Professional)',
+    pl: '› Instagram musi być kontem Business lub Creator (IG → Ustawienia → Konto → Przejdź na konto profesjonalne)',
+  },
+  'profile.metaPrereq3': {
+    de: '› IG und FB werden separat erteilt — du kannst nur Instagram, nur die Page, oder beides freischalten.',
+    en: '› IG and FB are granted separately — you can unlock Instagram only, the Page only, or both.',
+    pl: '› IG i FB są przyznawane osobno — możesz odblokować tylko Instagram, tylko Stronę lub oba.',
+  },
+  'profile.metaStep1': {
+    de: 'Öffne dein Meta Business Center → Partner hinzufügen',
+    en: 'Open your Meta Business Center → Add Partner',
+    pl: 'Otwórz Meta Business Center → Dodaj partnera',
+  },
+  'profile.metaStep2': {
+    de: 'Business-ID von D.Faith Ecosystem eingeben',
+    en: 'Enter D.Faith Ecosystem Business ID',
+    pl: 'Wprowadź identyfikator firmy D.Faith Ecosystem',
+  },
+  'profile.metaStep3': {
+    de: 'Einem Partner Zugriff auf deine Assets gestatten auswählen',
+    en: 'Select "Grant a partner access to your assets"',
+    pl: 'Wybierz „Przyznaj partnerowi dostęp do swoich zasobów"',
+  },
+  'profile.metaStep4ig': {
+    de: 'Instagram-Konto auswählen → alle Berechtigungen aktivieren (für IG Quests)',
+    en: 'Select Instagram account → enable all permissions (for IG quests)',
+    pl: 'Wybierz konto Instagram → aktywuj wszystkie uprawnienia (dla questów IG)',
+  },
+  'profile.metaStep4fb': {
+    de: 'Facebook Page auswählen → alle Berechtigungen aktivieren (für FB Quests)',
+    en: 'Select Facebook Page → enable all permissions (for FB quests)',
+    pl: 'Wybierz stronę Facebook → aktywuj wszystkie uprawnienia (dla questów FB)',
+  },
+  'profile.metaStep5': {
+    de: 'Oben die jeweiligen Buttons klicken — System-Zugriff wird automatisch eingerichtet',
+    en: 'Click the respective buttons above — system access will be set up automatically',
+    pl: 'Kliknij odpowiednie przyciski powyżej — dostęp zostanie skonfigurowany automatycznie',
+  },
+  'profile.metaAssetsLabel': {
+    de: 'Assets einzeln zuweisen:',
+    en: 'Assign assets individually:',
+    pl: 'Przydziel zasoby osobno:',
+  },
   // ── Navigation ──────────────────────────────────────────────────────────────
 
   'nav.questBoard': {
@@ -380,6 +515,36 @@ const dict: Translations = {
     de: 'Einlösen…',
     en: 'Claiming…',
     pl: 'Odbieranie…',
+  },
+  'btn.cancel': {
+    de: 'Abbrechen',
+    en: 'Cancel',
+    pl: 'Anuluj',
+  },
+  'btn.save': {
+    de: 'Speichern',
+    en: 'Save',
+    pl: 'Zapisz',
+  },
+  'btn.saving': {
+    de: 'Speichern…',
+    en: 'Saving…',
+    pl: 'Zapisywanie…',
+  },
+  'btn.change': {
+    de: 'Ändern',
+    en: 'Change',
+    pl: 'Zmień',
+  },
+  'btn.disconnect': {
+    de: 'Trennen',
+    en: 'Disconnect',
+    pl: 'Odłącz',
+  },
+  'btn.edit': {
+    de: 'Bearbeiten',
+    en: 'Edit',
+    pl: 'Edytuj',
   },
 
   // ── Quest Board / FanBoard ──────────────────────────────────────────────────
