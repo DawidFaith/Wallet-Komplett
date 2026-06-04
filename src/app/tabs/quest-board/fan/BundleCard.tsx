@@ -6,6 +6,7 @@ import { FaLayerGroup, FaCheck, FaYoutube, FaInstagram, FaTiktok, FaFacebook, Fa
 import type { QuestBundleWithItems } from '../../../lib/questDb';
 import type { Platform, QuestType, QuestIndexEntry, VerifiedPlatforms } from '../types';
 import { formatExpiry } from '../utils';
+import { t, type Lang } from '../../../utils/i18n';
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
   youtube:   <FaYoutube   className="text-red-500"  size={12} />,
@@ -98,10 +99,9 @@ interface BundleCardProps {
   /** Öffnet das passende Verifikations-Modal (z.B. InstagramDmShareModal) für eine Bundle-Quest */
   onOpenQuest?: (quest: QuestIndexEntry) => void;
   /** Rendert die richtige Quest-Card für ein Item (vom Parent geliefert, damit Logik wie bei „Verfügbare Quests" identisch ist) */
-  renderQuestCard?: (quest: QuestIndexEntry) => React.ReactNode;
-}
+  renderQuestCard?: (quest: QuestIndexEntry) => React.ReactNode;  language?: Lang;}
 
-export default function BundleCard({ bundle, fanWallet, verified, levelBonusPercent = 0, onBonusClaimed, onOpenQuest, renderQuestCard }: BundleCardProps) {
+export default function BundleCard({ bundle, fanWallet, verified, levelBonusPercent = 0, onBonusClaimed, onOpenQuest, renderQuestCard, language = 'de' }: BundleCardProps) {
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState('');
   const [justClaimed, setJustClaimed] = useState(false);
@@ -204,8 +204,8 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
       {!isVerified && (
         <div className="absolute inset-0 z-20 rounded-xl bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 border border-zinc-700/50">
           <FaLock size={18} className="text-zinc-400" />
-          <p className="text-zinc-300 text-sm font-semibold">{pc.lockText}</p>
-          <p className="text-zinc-500 text-xs">Verifiziere dein Konto im Profil</p>
+          <p className="text-zinc-300 text-sm font-semibold">{t(`quest.lock.${bundle.platform}`, language)}</p>
+          <p className="text-zinc-500 text-xs">{t('quest.connectPlatform', language)}</p>
         </div>
       )}
       {/* ─── Horizontaler Swipe-Container ─── */}
@@ -264,7 +264,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
               {!showVideo && (
                 <div className="absolute top-2 left-2 z-10">
                   <span className={`flex items-center gap-1.5 ${pc.badge} text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md`}>
-                    {pc.badgeIcon} Quest-Reihe
+                    {pc.badgeIcon} {t('quest.seriesLabel', language)}
                   </span>
                 </div>
               )}
@@ -310,7 +310,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
             <div className="px-3 pt-2.5 pb-1 flex flex-col gap-1">
               <p className="text-white font-bold text-sm leading-snug line-clamp-1">{bundle.videoTitle}</p>
               <p className="text-zinc-400 text-[11px] leading-relaxed">
-                🎯 Alle <strong className="text-white">{totalCount} Quests</strong> abschließen → <strong className="text-yellow-400">Abschluss-Bonus</strong>!
+                🎯 {t('quest.allCompleteDesc', language).replace('{n}', String(totalCount))}
               </p>
 
               {/* Quest-Typ Dots */}
@@ -355,13 +355,13 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                     className="w-full bg-gradient-to-r from-yellow-600 to-amber-500 hover:from-yellow-500 hover:to-amber-400 disabled:opacity-50 active:scale-[0.98] text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-md"
                   >
                     <FaGift size={13} />
-                    {claiming ? 'Einlösen...' : 'Bonus einlösen (+' + bundle.bundleCompletionBonus.toFixed(2) + ' D.FAITH)'}
+                    {claiming ? t('btn.claiming', language) : `${t('btn.claimBonus', language)} (+${bundle.bundleCompletionBonus.toFixed(2)} D.FAITH)`}
                   </button>
                 </>
               ) : bonusAlreadyDone ? (
                 <div className="w-full bg-green-950/30 border border-green-800/30 rounded-xl px-3 py-2.5 flex items-center justify-center gap-2">
                   <FaCheck size={12} className="text-green-400" />
-                  <span className="text-green-400 text-sm font-semibold">Bundle-Bonus eingelöst</span>
+                  <span className="text-green-400 text-sm font-semibold">{t('btn.bonusClaimed', language)}</span>
                 </div>
               ) : (
                 <button
@@ -369,7 +369,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                   disabled={!isVerified}
                   className={`w-full bg-gradient-to-r ${pc.button} active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md`}
                 >
-                  <FaTrophy size={12} /> Starten
+                  <FaTrophy size={12} /> {t('btn.start', language)}
                 </button>
               )}
             </div>
@@ -526,7 +526,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                 <div className="px-3 pb-3 pt-1.5">
                   {full ? (
                     <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">
-                      Nicht mehr verfügbar
+                      {t('btn.unavailable', language)}
                     </button>
                   ) : (
                     <button
@@ -534,7 +534,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                       disabled={!onOpenQuest || !isVerified}
                       className={`w-full bg-gradient-to-r ${pc.button} active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md`}
                     >
-                      <FaTrophy size={12} /> Starten
+                      <FaTrophy size={12} /> {t('btn.start', language)}
                     </button>
                   )}
                 </div>

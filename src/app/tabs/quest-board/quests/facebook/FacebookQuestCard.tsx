@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { FaFacebook, FaClock, FaComment, FaThumbsUp, FaKey, FaStar } from 'react-icons/fa';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
+import { t, type Lang } from '../../../../utils/i18n';
 
 interface FacebookQuestCardProps {
   quest: QuestIndexEntry;
@@ -15,9 +16,10 @@ interface FacebookQuestCardProps {
   onComplete: (questId: string) => void;
   rewardTokenName?: string | null;
   levelBonusPercent?: number;
+  language?: Lang;
 }
 
-export default function FacebookQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0 }: FacebookQuestCardProps) {
+export default function FacebookQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0, language = 'de' }: FacebookQuestCardProps) {
   const tokenLabel = rewardTokenName ?? 'D.FAITH';
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
   const expiry = formatExpiry(quest.expiresAt);
@@ -96,19 +98,19 @@ export default function FacebookQuestCard({ quest, isCompleted, isVerified = tru
 
         {isCompleted ? (
           <button disabled className="w-full bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30">
-            <FaFacebook size={12} /> Erledigt
+            <FaFacebook size={12} /> {t('btn.done', language)}
           </button>
         ) : isFull ? (
           <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">
-            Voll
+            {t('btn.full', language)}
           </button>
         ) : (
           <button
             onClick={() => onComplete(quest.id)}
             disabled={!isVerified}
-            className={`w-full ${isSecret ? 'bg-yellow-500 hover:bg-yellow-400 text-black' : 'bg-blue-600 hover:bg-blue-500 text-white'} disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2`}
+            className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
-            <FaFacebook size={12} /> Starten
+            <FaFacebook size={12} /> {t('btn.start', language)}
           </button>
         )}
       </div>

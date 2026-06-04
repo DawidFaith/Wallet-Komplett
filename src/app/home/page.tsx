@@ -13,6 +13,7 @@ import type { ArtistInfo } from "../tabs/quest-board/index";
 
 const LAST_TAB_KEY = 'dfaith_last_tab';
 const LAST_ARTIST_KEY = 'dfaith_last_artist';
+const LANG_KEY = 'dfaith_language';
 
 function HomeContent() {
   const [activeTab, setActiveTab] = useState("profile");
@@ -21,6 +22,17 @@ function HomeContent() {
   const [questArtist, setQuestArtist] = useState<ArtistInfo | null>(null);
   const [shopArtistWallet, setShopArtistWallet] = useState<string | null>(null);
   const searchParams = useSearchParams();
+
+  // Sprache aus localStorage laden
+  useEffect(() => {
+    const saved = localStorage.getItem(LANG_KEY) as SupportedLanguage | null;
+    if (saved && ['de', 'en', 'pl'].includes(saved)) setLanguage(saved);
+  }, []);
+
+  const handleSetLanguage = (lang: SupportedLanguage) => {
+    setLanguage(lang);
+    localStorage.setItem(LANG_KEY, lang);
+  };
 
   // Beim ersten Laden: gespeicherten Tab + Artist wiederherstellen (URL-Parameter hat Vorrang)
   useEffect(() => {
@@ -72,7 +84,7 @@ function HomeContent() {
         activeTab={activeTab} 
         setActiveTab={handleTabChange}
         language={language}
-        setLanguage={setLanguage}
+        setLanguage={handleSetLanguage}
       />
       <section className="flex-1 flex flex-col items-center justify-center pt-24 pb-8">
         {activeTab === "profile" && <ProfileTab language={language} onNavigate={handleTabChange} onNavigateToArtistQuests={handleNavigateToArtistQuests} onNavigateToArtistShop={handleNavigateToArtistShop} />}

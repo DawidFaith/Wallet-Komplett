@@ -6,6 +6,7 @@ import { FaTrophy, FaCheck, FaClock, FaStar } from 'react-icons/fa';
 import { SiTiktok } from 'react-icons/si';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
+import { t, type Lang } from '../../../../utils/i18n';
 
 interface TiktokQuestCardProps {
   quest: QuestIndexEntry;
@@ -14,9 +15,10 @@ interface TiktokQuestCardProps {
   onComplete: (questId: string) => void;
   rewardTokenName?: string | null;
   levelBonusPercent?: number;
+  language?: Lang;
 }
 
-export default function TiktokQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0 }: TiktokQuestCardProps) {
+export default function TiktokQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0, language = 'de' }: TiktokQuestCardProps) {
   const tokenLabel = rewardTokenName ?? 'D.FAITH';
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
   const isFull = quest.completions >= quest.maxCompletions;
@@ -84,19 +86,19 @@ export default function TiktokQuestCard({ quest, isCompleted, isVerified = true,
 
         {isCompleted ? (
           <button disabled className="w-full bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30">
-            <FaCheck size={12} /> Erledigt
+          <FaCheck size={12} /> {t('btn.done', language)}
           </button>
         ) : isFull ? (
           <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">
-            Voll
+            {t('btn.full', language)}
           </button>
         ) : (
           <button
             onClick={() => onComplete(quest.id)}
             disabled={!isVerified}
-            className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
-            <FaTrophy size={12} /> Starten
+            <FaTrophy size={12} /> {t('btn.start', language)}
           </button>
         )}
       </div>

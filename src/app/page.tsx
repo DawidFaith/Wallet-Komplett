@@ -5,6 +5,11 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { FaMusic, FaCheckCircle, FaChevronRight, FaFire } from 'react-icons/fa';
+import { t, tFmt, tPlural, type Lang } from './utils/i18n';
+
+const LANG_KEY = 'dfaith_language';
+
+const languageFlags: Record<Lang, string> = { de: '🇩🇪', en: '🇺🇸', pl: '🇵🇱' };
 
 interface Artist {
   walletAddress: string;
@@ -22,6 +27,21 @@ export default function LandingPage() {
   const router = useRouter();
   const [tab, setTab] = useState<'fan' | 'artist'>('fan');
   const [applied, setApplied] = useState(false);
+  const [language, setLanguage] = useState<Lang>('de');
+  const [langOpen, setLangOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(LANG_KEY) as Lang | null;
+      if (saved && ['de', 'en', 'pl'].includes(saved)) setLanguage(saved);
+    }
+  }, []);
+
+  const handleSetLanguage = (l: Lang) => {
+    setLanguage(l);
+    setLangOpen(false);
+    if (typeof window !== 'undefined') localStorage.setItem(LANG_KEY, l);
+  };
   const [sending, setSending] = useState(false);
   const [artistName, setArtistName] = useState('');
   const [artistSocial, setArtistSocial] = useState('');
@@ -67,16 +87,16 @@ export default function LandingPage() {
   const totalQuests = artists.reduce((s, a) => s + (a.questCount || 0), 0);
 
   const fanFeatures = [
-    { n: '01', title: 'Verdiene D.FAITH Token', desc: 'Like, teile, kommentiere — und erhalte echte D.FAITH Token für jeden Support. Dein Einsatz hat ab sofort echten Wert.' },
-    { n: '02', title: 'Werde zum echten Insider', desc: 'Tausche deine Token gegen exklusive Tracks, limitierte Drops und Frühzugänge — nur für aktive Supporter.' },
-    { n: '03', title: 'Zeig, wie loyal du bist', desc: 'Kletter im Leaderboard nach oben und lass dich von deinen Lieblingskünstlern entdecken.' },
+    { n: '01', title: t('landing.fan.1.title', language), desc: t('landing.fan.1.desc', language) },
+    { n: '02', title: t('landing.fan.2.title', language), desc: t('landing.fan.2.desc', language) },
+    { n: '03', title: t('landing.fan.3.title', language), desc: t('landing.fan.3.desc', language) },
   ];
 
   const artistFeatures = [
-    { n: '01', title: 'Deine Fans promoten dich', desc: 'Erstelle Aufgaben auf Instagram, TikTok, YouTube & Facebook — deine Fans werden aktiv und deine Reichweite wächst.' },
-    { n: '02', title: 'Dein eigener Artist-Token', desc: 'Starte mit D.FAITH Token oder erstelle deinen eigenen Token — und baue deine Community auf ein echtes Fundament.' },
-    { n: '03', title: 'Alles in einer Plattform', desc: 'Quests, Bundles und Kampagnen für alle Plattformen — übersichtlich in einem Dashboard.' },
-    { n: '04', title: 'Exklusivität als Währung', desc: 'Nur deine treuesten Fans bekommen Zugang zum Shop — das schafft echten Anreiz, aktiv zu bleiben.' },
+    { n: '01', title: t('landing.artist.1.title', language), desc: t('landing.artist.1.desc', language) },
+    { n: '02', title: t('landing.artist.2.title', language), desc: t('landing.artist.2.desc', language) },
+    { n: '03', title: t('landing.artist.3.title', language), desc: t('landing.artist.3.desc', language) },
+    { n: '04', title: t('landing.artist.4.title', language), desc: t('landing.artist.4.desc', language) },
   ];
 
   return (
@@ -91,11 +111,39 @@ export default function LandingPage() {
             <div className="text-[9px] font-bold tracking-[0.25em] uppercase text-white/30 mt-px">Ecosystem</div>
           </div>
         </div>
-        <SignInButton mode="modal">
-          <button className="text-[11px] font-bold tracking-[0.2em] uppercase text-zinc-600 hover:text-amber-400 transition-colors">
-            Login
-          </button>
-        </SignInButton>
+        <div className="flex items-center gap-3">
+          {/* Sprachauswahl */}
+          <div className="relative">
+            <button
+              onClick={() => setLangOpen((v) => !v)}
+              className="text-lg leading-none"
+              title="Language / Sprache / Język"
+            >
+              {languageFlags[language]}
+            </button>
+            {langOpen && (
+              <div className="absolute right-0 top-full mt-2 bg-[#1a1815] rounded-lg border border-white/10 overflow-hidden z-50 min-w-[120px] shadow-xl">
+                {(['de', 'en', 'pl'] as Lang[]).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => handleSetLanguage(l)}
+                    className={`flex items-center gap-2 px-3 py-2.5 w-full text-sm hover:bg-white/5 transition-colors ${
+                      language === l ? 'text-amber-400' : 'text-zinc-300'
+                    }`}
+                  >
+                    <span>{languageFlags[l]}</span>
+                    <span className="font-medium">{l === 'de' ? 'Deutsch' : l === 'en' ? 'English' : 'Polski'}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <SignInButton mode="modal">
+            <button className="text-[11px] font-bold tracking-[0.2em] uppercase text-zinc-600 hover:text-amber-400 transition-colors">
+              {t('landing.login', language)}
+            </button>
+          </SignInButton>
+        </div>
       </nav>
 
       {/* ══════════════════════════════════════════════ */}
@@ -119,13 +167,13 @@ export default function LandingPage() {
         {/* Content */}
         <div className="flex flex-col flex-1 px-6 py-8">
           <h1 className="text-[2.6rem] font-black leading-[1.0] tracking-tight mb-5">
-            Sei dabei.<br />
-            Supporte deine<br />
-            <span className="text-amber-400">Künstler.</span><br />
-            Werde belohnt.
+            {t('landing.headline1', language)}<br />
+            {t('landing.headline2', language)}<br />
+            <span className="text-amber-400">{t('landing.headline3', language)}</span><br />
+            {t('landing.headline4', language)}
           </h1>
           <p className="text-sm text-zinc-500 leading-relaxed mb-1 max-w-sm">
-            Das D.FAITH Ecosystem verbindet Künstler und Fans — mit echten Belohnungen und echter Community.
+            {t('landing.sub', language)}
           </p>
           <p className="text-xs text-zinc-700 font-medium tracking-widest mb-8">— Dawid Faith</p>
 
@@ -133,7 +181,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-2 mb-6">
               <FaFire size={11} className="text-amber-400" />
               <span className="text-xs font-bold tracking-[0.2em] uppercase text-amber-400">
-                {stats.openQuests} {stats.openQuests === 1 ? 'Quest' : 'Quests'} verfügbar
+                {stats.openQuests} {tPlural('landing.questsAvailable_one', 'landing.questsAvailable_other', stats.openQuests, language)}
               </span>
             </div>
           )}
@@ -142,11 +190,11 @@ export default function LandingPage() {
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-500">Aktive Künstler</span>
+                <span className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-500">{t('landing.activeArtists', language)}</span>
                 {totalQuests > 0 && (
                   <>
                     <span className="text-zinc-800">·</span>
-                    <span className="text-[9px] font-black tracking-[0.2em] uppercase text-amber-500">{totalQuests} offen</span>
+                    <span className="text-[9px] font-black tracking-[0.2em] uppercase text-amber-500">{totalQuests} {t('landing.open', language)}</span>
                   </>
                 )}
               </div>
@@ -175,17 +223,17 @@ export default function LandingPage() {
           {/* Mobile Feature-Tabs */}
           <div className="mb-8">
             <div className="flex gap-6 border-b border-white/[0.07] mb-6">
-              {(['fan', 'artist'] as const).map((t) => (
+              {(['fan', 'artist'] as const).map((tabVal) => (
                 <button
-                  key={t}
-                  onClick={() => setTab(t)}
+                  key={tabVal}
+                  onClick={() => setTab(tabVal)}
                   className={`pb-3 text-[11px] font-black tracking-[0.25em] uppercase border-b-2 transition-all -mb-px ${
-                    tab === t
+                    tab === tabVal
                       ? 'border-amber-400 text-white'
                       : 'border-transparent text-zinc-600 hover:text-zinc-400'
                   }`}
                 >
-                  {t === 'fan' ? 'Für Fans' : 'Für Künstler'}
+                  {tabVal === 'fan' ? t('landing.forFans', language) : t('landing.forArtists', language)}
                 </button>
               ))}
             </div>
@@ -218,23 +266,23 @@ export default function LandingPage() {
                     <div className="space-y-2.5 pt-2">
                       <div>
                         <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
-                          Künstlername *
+                          {t('landing.form.nameLabel', language)}
                         </label>
                         <input
                           value={artistName}
                           onChange={(e) => setArtistName(e.target.value)}
-                          placeholder="Dein Name"
+                          placeholder={t('landing.form.namePlaceholder', language)}
                           className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-700 outline-none transition-colors"
                         />
                       </div>
                       <div>
                         <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
-                          Social Link
+                          {t('landing.form.socialLabel', language)}
                         </label>
                         <input
                           value={artistSocial}
                           onChange={(e) => setArtistSocial(e.target.value)}
-                          placeholder="instagram.com/…"
+                          placeholder={t('landing.form.socialPlaceholder', language)}
                           className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-700 outline-none transition-colors"
                         />
                       </div>
@@ -243,15 +291,15 @@ export default function LandingPage() {
                         disabled={!artistName.trim() || sending}
                         className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 disabled:opacity-20 disabled:cursor-not-allowed text-black font-black text-xs tracking-[0.1em] uppercase rounded-xl transition-colors flex items-center justify-center gap-2"
                       >
-                        {sending ? 'Sende…' : <>Interesse anmelden <FaChevronRight size={9} /></>}
+                        {sending ? t('landing.form.submitting', language) : <>{t('landing.form.submit', language)} <FaChevronRight size={9} /></>}
                       </button>
                     </div>
                   </div>
                 ) : (
                   <div className="py-10 text-center">
                     <FaCheckCircle size={30} className="text-amber-400 mx-auto mb-4" />
-                    <p className="font-black text-white mb-2">Danke, {artistName}!</p>
-                    <p className="text-zinc-600 text-sm">Wir melden uns so schnell wie möglich.</p>
+                    <p className="font-black text-white mb-2">{language === 'pl' ? `Dziękujemy, ${artistName}!` : language === 'en' ? `Thank you, ${artistName}!` : `Danke, ${artistName}!`}</p>
+                    <p className="text-zinc-600 text-sm">{t('landing.form.successSub', language)}</p>
                   </div>
                 )}
               </div>
@@ -262,12 +310,12 @@ export default function LandingPage() {
           <div className="mt-8 space-y-2.5">
             <SignUpButton mode="modal">
               <button className="w-full py-[14px] bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-black font-black text-sm tracking-[0.08em] uppercase rounded-2xl transition-all">
-                Jetzt Supporter werden
+                {t('landing.cta.signup', language)}
               </button>
             </SignUpButton>
             <SignInButton mode="modal">
               <button className="w-full py-3 text-zinc-600 hover:text-zinc-300 font-semibold text-[11px] tracking-[0.2em] uppercase transition-colors">
-                Bereits registriert? Einloggen
+                {t('landing.cta.login', language)}
               </button>
             </SignInButton>
           </div>
@@ -297,19 +345,19 @@ export default function LandingPage() {
               <div className="flex items-center gap-2 mb-5">
                 <FaFire size={10} className="text-amber-400" />
                 <span className="text-[10px] font-black tracking-[0.25em] uppercase text-amber-400">
-                  {stats.openQuests} Quests offen
+                  {stats.openQuests} {tPlural('landing.questsAvailable_one', 'landing.questsAvailable_other', stats.openQuests, language)}
                 </span>
               </div>
             )}
 
             <h1 className="text-[3.6rem] font-black leading-[0.95] tracking-tight mb-5">
-              Sei dabei.<br />
-              Supporte deine<br />
-              <span className="text-amber-400">Künstler.</span><br />
-              Werde belohnt.
+              {t('landing.headline1', language)}<br />
+              {t('landing.headline2', language)}<br />
+              <span className="text-amber-400">{t('landing.headline3', language)}</span><br />
+              {t('landing.headline4', language)}
             </h1>
             <p className="text-sm text-zinc-400 leading-relaxed mb-1 max-w-xs">
-              Das D.FAITH Ecosystem verbindet Künstler und Fans — mit echten Belohnungen und echter Community.
+              {t('landing.sub', language)}
             </p>
             <p className="text-xs text-zinc-600 font-medium tracking-widest mb-8">— Dawid Faith</p>
 
@@ -317,11 +365,11 @@ export default function LandingPage() {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-500">Aktive Künstler</span>
+                  <span className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-500">{t('landing.activeArtists', language)}</span>
                   {totalQuests > 0 && (
                     <>
                       <span className="text-zinc-800">·</span>
-                      <span className="text-[9px] font-black tracking-[0.2em] uppercase text-amber-500">{totalQuests} offen</span>
+                      <span className="text-[9px] font-black tracking-[0.2em] uppercase text-amber-500">{totalQuests} {t('landing.open', language)}</span>
                     </>
                   )}
                 </div>
@@ -367,17 +415,17 @@ export default function LandingPage() {
             </div>
 
             <div className="flex gap-6 border-b border-white/[0.07] mt-8 mb-7 pb-0">
-              {(['fan', 'artist'] as const).map((t) => (
+              {(['fan', 'artist'] as const).map((tabVal) => (
                 <button
-                  key={t}
-                  onClick={() => setTab(t)}
+                  key={tabVal}
+                  onClick={() => setTab(tabVal)}
                   className={`pb-3 text-[11px] font-black tracking-[0.25em] uppercase border-b-2 transition-all -mb-px ${
-                    tab === t
+                    tab === tabVal
                       ? 'border-amber-400 text-white'
                       : 'border-transparent text-zinc-600 hover:text-zinc-400'
                   }`}
                 >
-                  {t === 'fan' ? 'Für Fans' : 'Für Künstler'}
+                  {tabVal === 'fan' ? t('landing.forFans', language) : t('landing.forArtists', language)}
                 </button>
               ))}
             </div>
@@ -411,23 +459,23 @@ export default function LandingPage() {
                       <div className="space-y-2.5 pt-3">
                         <div>
                           <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
-                            Künstlername *
+                            {t('landing.form.nameLabel', language)}
                           </label>
                           <input
                             value={artistName}
                             onChange={(e) => setArtistName(e.target.value)}
-                            placeholder="Dein Name"
+                            placeholder={t('landing.form.namePlaceholder', language)}
                             className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-700 outline-none transition-colors"
                           />
                         </div>
                         <div>
                           <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
-                            Social Link
+                            {t('landing.form.socialLabel', language)}
                           </label>
                           <input
                             value={artistSocial}
                             onChange={(e) => setArtistSocial(e.target.value)}
-                            placeholder="instagram.com/…"
+                            placeholder={t('landing.form.socialPlaceholder', language)}
                             className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-700 outline-none transition-colors"
                           />
                         </div>
@@ -436,15 +484,15 @@ export default function LandingPage() {
                           disabled={!artistName.trim() || sending}
                           className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 disabled:opacity-20 disabled:cursor-not-allowed text-black font-black text-xs tracking-[0.1em] uppercase rounded-xl transition-colors flex items-center justify-center gap-2"
                         >
-                          {sending ? 'Sende…' : <>Interesse anmelden <FaChevronRight size={9} /></>}
+                          {sending ? t('landing.form.submitting', language) : <>{t('landing.form.submit', language)} <FaChevronRight size={9} /></>}
                         </button>
                       </div>
                     </div>
                   ) : (
                     <div className="py-14 text-center">
                       <FaCheckCircle size={30} className="text-amber-400 mx-auto mb-4" />
-                      <p className="font-black text-white mb-2">Danke, {artistName}!</p>
-                      <p className="text-zinc-600 text-sm">Wir melden uns so schnell wie möglich.</p>
+                      <p className="font-black text-white mb-2">{language === 'pl' ? `Dziękujemy, ${artistName}!` : language === 'en' ? `Thank you, ${artistName}!` : `Danke, ${artistName}!`}</p>
+                      <p className="text-zinc-600 text-sm">{t('landing.form.successSub', language)}</p>
                     </div>
                   )}
                 </div>
@@ -454,12 +502,12 @@ export default function LandingPage() {
             <div className="space-y-3 pt-10">
               <SignUpButton mode="modal">
                 <button className="w-full py-4 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-black font-black text-[13px] tracking-[0.1em] uppercase rounded-2xl transition-all shadow-[0_0_40px_rgba(251,191,36,0.15)]">
-                  Jetzt Supporter werden
+                  {t('landing.cta.signup', language)}
                 </button>
               </SignUpButton>
               <SignInButton mode="modal">
                 <button className="w-full py-3 border border-white/[0.06] hover:border-amber-400/20 text-zinc-600 hover:text-zinc-300 font-semibold text-[11px] tracking-[0.2em] uppercase transition-all rounded-xl">
-                  Bereits registriert? Einloggen
+                  {t('landing.cta.login', language)}
                 </button>
               </SignInButton>
             </div>

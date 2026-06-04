@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { FaInstagram, FaClock, FaComment, FaHeart, FaBookmark, FaShareAlt, FaStar } from 'react-icons/fa';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
+import { t, type Lang } from '../../../../utils/i18n';
 
 interface InstagramQuestCardProps {
   quest: QuestIndexEntry;
@@ -13,6 +14,7 @@ interface InstagramQuestCardProps {
   onComplete: (questId: string) => void;
   rewardTokenName?: string | null;
   levelBonusPercent?: number;
+  language?: Lang;
 }
 
 const QUEST_TYPE_CONFIG = {
@@ -24,7 +26,7 @@ const QUEST_TYPE_CONFIG = {
   dm_share:   { label: 'Story Quest',      icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-pink-600 to-purple-600',  btn: 'Story Quest starten' },
 } as const;
 
-export default function InstagramQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0 }: InstagramQuestCardProps) {
+export default function InstagramQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0, language = 'de' }: InstagramQuestCardProps) {
   const tokenLabel = rewardTokenName ?? 'D.FAITH';
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
   const expiry = formatExpiry(quest.expiresAt);
@@ -92,19 +94,19 @@ export default function InstagramQuestCard({ quest, isCompleted, isVerified = tr
 
         {isCompleted ? (
           <button disabled className="w-full bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30">
-            <FaInstagram size={12} /> Erledigt
+            <FaInstagram size={12} /> {t('btn.done', language)}
           </button>
         ) : isFull ? (
           <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">
-            Voll
+            {t('btn.full', language)}
           </button>
         ) : (
           <button
             onClick={() => onComplete(quest.id)}
             disabled={!isVerified}
-            className="w-full bg-pink-600 hover:bg-pink-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+            className={`w-full ${typeConfig.bg} text-white text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
           >
-            <FaInstagram size={12} /> Starten
+            <FaInstagram size={12} /> {t('btn.start', language)}
           </button>
         )}
       </div>

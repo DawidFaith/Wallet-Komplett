@@ -23,6 +23,7 @@ import BundleCard from './BundleCard';
 import type { QuestIndexEntry, VerifiedPlatforms, VerifyResult, ClaimResult } from '../types';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
 import { formatCredits } from '../utils';
+import { t, type Lang } from '../../../utils/i18n';
 
 interface FanBoardProps {
   walletAddress: string;
@@ -33,9 +34,10 @@ interface FanBoardProps {
   rewardToken?: string | null;
   /** Wird aufgerufen wenn ein Quest erfolgreich abgeschlossen wurde */
   onQuestCompleted?: () => void;
+  language?: Lang;
 }
 
-export default function FanBoard({ walletAddress, verified, filterCreator, rewardToken, onQuestCompleted }: FanBoardProps) {
+export default function FanBoard({ walletAddress, verified, filterCreator, rewardToken, onQuestCompleted, language = 'de' }: FanBoardProps) {
   const tokenName = rewardToken ?? 'D.FAITH';
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
@@ -389,7 +391,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       )}
 
       <div className="flex items-center justify-between">
-        <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Verfügbare Quests</p>
+        <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">{t('quest.available', language)}</p>
         <button onClick={() => { loadQuests(); loadBundles(); }} className="text-zinc-400 hover:text-white p-2 transition-colors">
           <FaSync size={14} className={(loading || bundlesLoading) ? 'animate-spin' : ''} />
         </button>
@@ -402,14 +404,13 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       ) : activeBundles.length === 0 && youtubeQuests.length === 0 && tiktokCommentQuests.length === 0 && tiktokEngagementQuests.length === 0 && instagramQuests.length === 0 && facebookQuests.length === 0 ? (
         <div className="text-center py-12 text-zinc-500">
           <FaTrophy size={32} className="mx-auto mb-3 opacity-30" />
-          <p>Alle Quests erledigt oder noch keine verfügbar.</p>
-          <p className="text-sm mt-1">Schau später wieder rein!</p>
+          <p>{t('quest.none', language)}</p>
         </div>
       ) : (
         <div className="space-y-4">
           {/* Quest-Reihen (Bundles) zuerst */}
           {activeBundles.length > 0 && (
-            <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Quest-Reihen</p>
+            <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">{t('quest.bundles', language)}</p>
           )}
           {activeBundles.map((bundle) => (
             <BundleCard
@@ -418,6 +419,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               fanWallet={walletAddress}
               verified={verified}
               levelBonusPercent={getBonusPercent(bundle.creatorWallet)}
+              language={language}
               onBonusClaimed={(bonusAmount, bundleTitle) => { 
                 // Sofort aus der Liste entfernen (kein Flackern bis loadBundles fertig ist)
                 setBundles((prev) => prev.filter((b) => b.id !== bundle.id));
@@ -428,18 +430,18 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               renderQuestCard={(quest) => {
                 const isCompleted = completedIds.includes(quest.id);
                 if (quest.platform === 'youtube') {
-                  return <YoutubeQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.youtube} onComplete={handleVerify} rewardTokenName={tokenName} levelBonusPercent={getBonusPercent(quest.creatorWallet)} />;
+                  return <YoutubeQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.youtube} onComplete={handleVerify} rewardTokenName={tokenName} levelBonusPercent={getBonusPercent(quest.creatorWallet)} language={language} />;
                 }
                 if (quest.platform === 'tiktok') {
                   return quest.type === 'engagement'
-                    ? <TiktokEngagementQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.tiktok} onComplete={handleTikTokVerify} rewardTokenName={tokenName} levelBonusPercent={getBonusPercent(quest.creatorWallet)} />
-                    : <TiktokQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.tiktok} onComplete={handleTikTokVerify} rewardTokenName={tokenName} levelBonusPercent={getBonusPercent(quest.creatorWallet)} />;
+                    ? <TiktokEngagementQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.tiktok} onComplete={handleTikTokVerify} rewardTokenName={tokenName} levelBonusPercent={getBonusPercent(quest.creatorWallet)} language={language} />
+                    : <TiktokQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.tiktok} onComplete={handleTikTokVerify} rewardTokenName={tokenName} levelBonusPercent={getBonusPercent(quest.creatorWallet)} language={language} />;
                 }
                 if (quest.platform === 'instagram') {
-                  return <InstagramQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.instagram} onComplete={handleInstagramVerify} rewardTokenName={tokenName} levelBonusPercent={getBonusPercent(quest.creatorWallet)} />;
+                  return <InstagramQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.instagram} onComplete={handleInstagramVerify} rewardTokenName={tokenName} levelBonusPercent={getBonusPercent(quest.creatorWallet)} language={language} />;
                 }
                 if (quest.platform === 'facebook') {
-                  return <FacebookQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.facebook} onComplete={handleFacebookVerify} rewardTokenName={tokenName} levelBonusPercent={getBonusPercent(quest.creatorWallet)} />;
+                  return <FacebookQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.facebook} onComplete={handleFacebookVerify} rewardTokenName={tokenName} levelBonusPercent={getBonusPercent(quest.creatorWallet)} language={language} />;
                 }
                 return null;
               }}
@@ -483,8 +485,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               {!verified.youtube && (
                 <div className="absolute inset-0 z-10 rounded-2xl bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 border border-zinc-700/50">
                   <FaLock size={18} className="text-zinc-400" />
-                  <p className="text-zinc-300 text-sm font-semibold">YouTube verknüpfen</p>
-                  <p className="text-zinc-500 text-xs">Verifiziere deinen YouTube-Kanal im Profil</p>
+                  <p className="text-zinc-300 text-sm font-semibold">{t('quest.lock.youtube', language)}</p>
+                  <p className="text-zinc-500 text-xs">{t('quest.connectPlatform', language)}</p>
                 </div>
               )}
               <div className={!verified.youtube ? 'pointer-events-none select-none' : ''}>
@@ -498,6 +500,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                       onComplete={handleVerify}
                       rewardTokenName={tokenName}
                       levelBonusPercent={getBonusPercent(quest.creatorWallet)}
+                      language={language}
                     />
                   ))}
                 </QuestCarousel>
@@ -512,8 +515,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               {!verified.tiktok && (
                 <div className="absolute inset-0 z-10 rounded-2xl bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 border border-zinc-700/50">
                   <FaLock size={18} className="text-zinc-400" />
-                  <p className="text-zinc-300 text-sm font-semibold">TikTok verknüpfen</p>
-                  <p className="text-zinc-500 text-xs">Verifiziere dein TikTok-Konto im Profil</p>
+                  <p className="text-zinc-300 text-sm font-semibold">{t('quest.lock.tiktok', language)}</p>
+                  <p className="text-zinc-500 text-xs">{t('quest.connectPlatform', language)}</p>
                 </div>
               )}
               <div className={!verified.tiktok ? 'pointer-events-none select-none' : ''}>
@@ -527,6 +530,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                       onComplete={handleTikTokVerify}
                       rewardTokenName={tokenName}
                       levelBonusPercent={getBonusPercent(quest.creatorWallet)}
+                      language={language}
                     />
                   ))}
                   {tiktokEngagementQuests.map((quest) => (
@@ -538,6 +542,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                       onComplete={handleTikTokVerify}
                       rewardTokenName={tokenName}
                       levelBonusPercent={getBonusPercent(quest.creatorWallet)}
+                      language={language}
                     />
                   ))}
                 </QuestCarousel>
@@ -552,8 +557,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               {!verified.instagram && (
                 <div className="absolute inset-0 z-10 rounded-2xl bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 border border-zinc-700/50">
                   <FaLock size={18} className="text-zinc-400" />
-                  <p className="text-zinc-300 text-sm font-semibold">Instagram verknüpfen</p>
-                  <p className="text-zinc-500 text-xs">Verifiziere dein Instagram-Konto im Profil</p>
+                  <p className="text-zinc-300 text-sm font-semibold">{t('quest.lock.instagram', language)}</p>
+                  <p className="text-zinc-500 text-xs">{t('quest.connectPlatform', language)}</p>
                 </div>
               )}
               <div className={!verified.instagram ? 'pointer-events-none select-none' : ''}>
@@ -567,6 +572,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                       onComplete={handleInstagramVerify}
                       rewardTokenName={tokenName}
                       levelBonusPercent={getBonusPercent(quest.creatorWallet)}
+                      language={language}
                     />
                   ))}
                 </QuestCarousel>
@@ -581,8 +587,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               {!verified.facebook && (
                 <div className="absolute inset-0 z-10 rounded-2xl bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 border border-zinc-700/50">
                   <FaLock size={18} className="text-zinc-400" />
-                  <p className="text-zinc-300 text-sm font-semibold">Facebook verknüpfen</p>
-                  <p className="text-zinc-500 text-xs">Verifiziere dein Facebook-Konto im Profil</p>
+                  <p className="text-zinc-300 text-sm font-semibold">{t('quest.lock.facebook', language)}</p>
+                  <p className="text-zinc-500 text-xs">{t('quest.connectPlatform', language)}</p>
                 </div>
               )}
               <div className={!verified.facebook ? 'pointer-events-none select-none' : ''}>
@@ -596,6 +602,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                       onComplete={handleFacebookVerify}
                       rewardTokenName={tokenName}
                       levelBonusPercent={getBonusPercent(quest.creatorWallet)}
+                      language={language}
                     />
                   ))}
                 </QuestCarousel>

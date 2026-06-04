@@ -120,7 +120,7 @@ interface ProfileResponse {
   };
 }
 
-export default function QuestBoard({ language: _language, artistWallet, filterArtist, onClearArtist }: QuestBoardProps) {
+export default function QuestBoard({ language, artistWallet, filterArtist, onClearArtist }: QuestBoardProps) {
   const { user: _clerkUser } = useUser();
   const account = _clerkUser?.id ? { address: _clerkUser.id } : null;
   const [view, setView] = useState<QuestBoardView>('fan');
@@ -315,6 +315,7 @@ export default function QuestBoard({ language: _language, artistWallet, filterAr
                 verified={verified}
                 filterCreator={activeArtist.walletAddress}
                 rewardToken={activeArtist.rewardToken ?? null}
+                language={language}
                 onQuestCompleted={() => {
                   setInternalFilterArtist((prev) =>
                     prev ? { ...prev, questCount: Math.max(0, prev.questCount - 1) } : prev

@@ -7,6 +7,7 @@ import { SiTiktok } from 'react-icons/si';
 import { FiThumbsUp, FiShare2, FiBookmark } from 'react-icons/fi';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
+import { t, type Lang } from '../../../../utils/i18n';
 
 interface TiktokEngagementQuestCardProps {
   quest: QuestIndexEntry;
@@ -15,9 +16,10 @@ interface TiktokEngagementQuestCardProps {
   onComplete: (questId: string) => void;
   rewardTokenName?: string | null;
   levelBonusPercent?: number;
+  language?: Lang;
 }
 
-export default function TiktokEngagementQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0 }: TiktokEngagementQuestCardProps) {
+export default function TiktokEngagementQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0, language = 'de' }: TiktokEngagementQuestCardProps) {
   const tokenLabel = rewardTokenName ?? 'D.FAITH';
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
   const isFull = quest.completions >= quest.maxCompletions;
@@ -102,7 +104,7 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, isVerifi
 
         {isCompleted ? (
           <button disabled className="w-full bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30">
-            <FaCheck size={12} /> Erledigt
+            <FaCheck size={12} /> {t('btn.done', language)}
           </button>
         ) : (
           <button
@@ -110,7 +112,7 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, isVerifi
             disabled={isFull || !isVerified}
             className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
-            {isFull ? 'Voll' : <><FaCheck size={12} /> Starten</>}
+            {isFull ? t('btn.full', language) : <><FaCheck size={12} /> {t('btn.start', language)}</>}
           </button>
         )}
       </div>
