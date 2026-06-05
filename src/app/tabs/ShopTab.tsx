@@ -90,6 +90,7 @@ function ItemCard({
   const [payMethod, setPayMethod] = useState<'credits' | 'tokens'>('credits');
   const [previewPlaying, setPreviewPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const lang = useLang();
   const tokenLabel = artistRewardToken ?? 'D.FAITH';
   const isLocked = item.requiredLevel > 0 && userLevel < item.requiredLevel;
 
@@ -211,7 +212,7 @@ function ItemCard({
           ) : item.purchased ? (
             <div className="flex gap-1.5">
               <div className="flex-1 flex items-center justify-center gap-1 bg-amber-400/10 border border-amber-400/30 rounded-lg py-2 text-amber-400 text-[11px] font-bold">
-                <FaCheck size={9} /> Gekauft
+                <FaCheck size={9} /> {t('shop.boughtBadge', lang)}
               </div>
               {item.contentUrl && (
                 <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
@@ -254,14 +255,14 @@ function ItemCard({
                 {buying === item.id
                   ? <span className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
                   : payMethod === 'tokens'
-                    ? <><SiSolana size={11} /> Kaufen</>
-                    : <><FaCoins size={11} /> Kaufen</>
+                    ? <><SiSolana size={11} /> {t('shop.btnBuy', lang)}</>
+                    : <><FaCoins size={11} /> {t('shop.btnBuy', lang)}</>
                 }
               </button>
             </div>
           )
         ) : (
-          <p className="text-center text-zinc-600 text-[10px] py-1.5">Login zum Kaufen</p>
+          <p className="text-center text-zinc-600 text-[10px] py-1.5">{t('shop.loginToBuy', lang)}</p>
         )}
       </div>
     </div>
@@ -343,7 +344,7 @@ function ArtistShopView({
       });
       if (!res.ok) {
         const err = await res.json();
-        setBuyError(err.error ?? 'Kauf fehlgeschlagen');
+        setBuyError(err.error ?? t('shop.buyFailed', lang));
         return;
       }
       const data = await res.json();
@@ -378,11 +379,11 @@ function ArtistShopView({
             <p className="text-white font-bold text-base truncate">
               {artist.displayName || shortenWallet(artist.artistWallet)}
             </p>
-            <p className="text-zinc-400 text-xs mt-0.5">{loading ? '…' : `${items.length} ${items.length === 1 ? 'Item' : 'Items'} im Shop`}</p>
+            <p className="text-zinc-400 text-xs mt-0.5">{loading ? '…' : `${items.length} ${items.length === 1 ? 'Item' : 'Items'} ${t('shop.inShop', lang)}`}</p>
           </div>
           {creditBalance !== null && creditBalance !== undefined && (
             <div className="shrink-0 flex flex-col items-end gap-0.5">
-              <span className="text-zinc-500 text-[9px] uppercase tracking-widest">Guthaben</span>
+              <span className="text-zinc-500 text-[9px] uppercase tracking-widest">{t('shop.creditBalance', lang)}</span>
               <span className="flex items-center gap-1 text-amber-300 font-bold text-sm">
                 {creditBalance.toFixed(2)}
                 <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
@@ -412,13 +413,13 @@ function ArtistShopView({
               <FaTimes size={12} />
             </button>
           </div>
-          <p className="text-zinc-400 text-xs mb-2">«{buyResult.title}» ist jetzt in deinem Inventar.</p>
+          <p className="text-zinc-400 text-xs mb-2">{tFmt('shop.addedToInventory', lang, { title: buyResult.title })}</p>
           <div className="flex gap-2">
             <button
               onClick={() => { setBuyResult(null); onGoToInventory?.(); }}
               className="flex items-center gap-1.5 bg-emerald-700/40 hover:bg-emerald-700/60 border border-emerald-600/40 rounded-xl px-3 py-1.5 text-emerald-300 text-xs font-bold transition-colors"
             >
-              <FaBoxOpen size={10} /> Zum Inventar
+              <FaBoxOpen size={10} /> {t('shop.toInventory', lang)}
             </button>
             {buyResult.contentUrl && (
               <a href={buyResult.contentUrl} target="_blank" rel="noopener noreferrer"
@@ -455,27 +456,27 @@ function ArtistShopView({
               className="text-emerald-300 font-black text-3xl mb-1"
               style={{ animation: 'shopBuyPop 0.6s ease-out forwards, shopBuyGlow 2s ease-in-out infinite' }}
             >
-              Gekauft!
+              {t('shop.buySuccess', lang)}
             </p>
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2 mb-4 mt-3">
               <p className="text-zinc-400 text-xs mb-0.5">{TYPE_LABELS[buyCelebration.type]}</p>
               <p className="text-white text-sm font-semibold line-clamp-2">{buyCelebration.title}</p>
             </div>
             <p className="text-zinc-400 text-xs mb-5">
-              {buyCelebration.paymentMethod === 'tokens' ? '💠 Bezahlt mit Tokens' : `💰 ${buyCelebration.price.toLocaleString('de-DE')} Credits`}
+              {buyCelebration.paymentMethod === 'tokens' ? t('shop.paidWithTokens', lang) : `💰 ${buyCelebration.price.toLocaleString('de-DE')} Credits`}
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => { setBuyCelebration(null); onGoToInventory?.(); }}
                 className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-2xl transition-colors text-sm"
               >
-                <FaBoxOpen size={13} /> Zum Inventar
+                <FaBoxOpen size={13} /> {t('shop.toInventory', lang)}
               </button>
               <button
                 onClick={() => setBuyCelebration(null)}
                 className="px-4 py-3 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-semibold transition-colors"
               >
-                Weiter shoppen
+                {t('shop.continueShopping', lang)}
               </button>
             </div>
           </div>
@@ -495,7 +496,7 @@ function ArtistShopView({
         <div className="px-4 grid grid-cols-2 gap-2">
           {items.filter(item => !item.purchased).length === 0 ? (
             <div className="bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
-              Alle Items wurden bereits von dir gekauft.
+              {t('shop.allBought', lang)}
             </div>
           ) : (
             items.filter(item => !item.purchased).map(item => (
@@ -565,11 +566,11 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
         </span>
         {item.isActive ? (
           <span className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-900/70 border border-emerald-700/40 text-emerald-400 backdrop-blur-md">
-            <FaCheck size={8} /> Gekauft
+            <FaCheck size={8} /> {t('shop.boughtBadge', lang)}
           </span>
         ) : (
           <span className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-800/80 border border-zinc-600/40 text-zinc-400 backdrop-blur-md">
-            <FaCheck size={8} /> Gekauft · Nicht mehr im Shop
+            <FaCheck size={8} /> {t('shop.boughtInactive', lang)}
           </span>
         )}
       </div>
@@ -603,7 +604,7 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
               </button>
               <div className="flex-1 min-w-0">
                 <p className="text-zinc-200 text-xs font-semibold truncate">{item.title}</p>
-                <p className="text-zinc-500 text-[10px]">Voller Song</p>
+                <p className="text-zinc-500 text-[10px]">{t('shop.fullSong', lang)}</p>
               </div>
             </div>
             <a
@@ -620,7 +621,7 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
         {item.type === 'video' && item.contentUrl && (
           <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full bg-red-900/20 hover:bg-red-900/30 border border-red-800/30 rounded-xl py-2.5 text-red-300 text-xs font-semibold transition-colors">
-            <FaVideo size={11} /> Video ansehen
+            <FaVideo size={11} /> {t('shop.watchVideo', lang)}
           </a>
         )}
 
@@ -698,7 +699,7 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
   return (
     <div className="px-4 space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em]">Mein Inventar</p>
+        <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em]">{t('shop.myInventory', lang)}</p>
         <span className="text-zinc-600 text-xs">{items.length} Item{items.length !== 1 ? 's' : ''}</span>
       </div>
 
@@ -706,7 +707,7 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
       {apiError && (
         <div className="bg-red-900/20 border border-red-800/40 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
           <p className="text-red-300 text-xs">{apiError}</p>
-          <button onClick={load} className="text-red-300 hover:text-red-100 text-xs font-bold shrink-0">Erneut</button>
+          <button onClick={load} className="text-red-300 hover:text-red-100 text-xs font-bold shrink-0">{t('shop.retry', lang)}</button>
         </div>
       )}
 
@@ -718,7 +719,7 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
         <div className="bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-10 text-center">
           <FaBoxOpen size={32} className="text-zinc-700 mx-auto mb-3" />
           <p className="text-zinc-400 text-sm font-semibold">{t('common.noData', lang)}</p>
-          <p className="text-zinc-600 text-xs mt-1">Hier erscheinen alle deine gekauften Inhalte.</p>
+          <p className="text-zinc-600 text-xs mt-1">{t('shop.inventoryEmpty', lang)}</p>
         </div>
       ) : (
         <div className="space-y-6 pb-4">
@@ -748,7 +749,7 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
                     {group.name || shortenWallet(group.wallet)}
                   </p>
                   <p className="text-zinc-500 text-[10px]">
-                    {group.items.length} {group.items.length === 1 ? 'Item' : 'Items'} gekauft
+                    {group.items.length} {group.items.length === 1 ? 'Item' : 'Items'} {t('shop.boughtBadge', lang)}
                   </p>
                 </div>
 
@@ -995,7 +996,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
     <div className="px-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em]">Mein Shop</p>
+        <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em]">{t('shop.myShop', lang)}</p>
         {creditBalance !== null && (
           <span className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
             {creditBalance.toFixed(2)}
@@ -1008,7 +1009,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
             onClick={() => setShowForm(true)}
             className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors"
           >
-            <FaPlus size={9} /> Neues Item
+            <FaPlus size={9} /> {t('shop.newItem', lang)}
           </button>
         )}
       </div>
@@ -1017,7 +1018,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
       {showForm && (
         <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl p-4 space-y-3">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-white text-sm font-semibold">Neues Item</p>
+            <p className="text-white text-sm font-semibold">{t('shop.newItemTitle', lang)}</p>
             <button onClick={resetForm} className="text-zinc-500 hover:text-zinc-300"><FaTimes size={13} /></button>
           </div>
 
@@ -1494,7 +1495,7 @@ export default function ShopTab({ initialArtistWallet }: { initialArtistWallet?:
             <div>
               <h1 className="text-white font-bold text-xl tracking-wide">D.FAITH Ecosystem</h1>
               <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">
-                Shop · Exklusive Inhalte
+                {t('shop.headerSubtitle', lang)}
               </p>
             </div>
           </div>
@@ -1518,7 +1519,7 @@ export default function ShopTab({ initialArtistWallet }: { initialArtistWallet?:
                   mode === 'inventory' ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'
                 }`}
               >
-                <FaBoxOpen size={11} /> Inventar
+                <FaBoxOpen size={11} /> {t('shop.tabInventory', lang)}
               </button>
               {isArtist && (
                 <button
@@ -1527,7 +1528,7 @@ export default function ShopTab({ initialArtistWallet }: { initialArtistWallet?:
                     mode === 'artist' ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'
                   }`}
                 >
-                  <FaPlus size={11} /> Mein Shop
+                  <FaPlus size={11} /> {t('shop.tabMyShop', lang)}
                 </button>
               )}
             </div>
