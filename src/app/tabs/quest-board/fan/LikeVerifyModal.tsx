@@ -170,8 +170,9 @@ export default function LikeVerifyModal({
           )}
 
           <div className="bg-blue-900/30 border border-blue-700/40 rounded-xl p-3">
+            <p className="text-blue-300 text-xs font-semibold mb-1">{t('verify.hintLabel', lang)}</p>
             <p className="text-blue-200 text-xs">
-              <strong>{t('common.noData', lang).replace('Keine Daten', 'Hinweis')}:</strong> {t('verify.likeHint', lang)}
+              {t('verify.likeHint', lang)}
             </p>
           </div>
 
