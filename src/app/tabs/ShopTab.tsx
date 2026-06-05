@@ -1047,7 +1047,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
           {/* Typ + Preise */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Typ *</label>
+              <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelType', lang)} *</label>
               <select
                 value={fType}
                 onChange={e => setFType(e.target.value as ItemType)}
@@ -1056,11 +1056,11 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                 <option value="song">Song</option>
                 <option value="video">Video</option>
                 <option value="nft">NFT</option>
-                <option value="exclusive">Exklusiv</option>
+                <option value="exclusive">{t('shop.exclusive', lang)}</option>
               </select>
             </div>
             <div>
-              <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Preis Credits *</label>
+              <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelPriceCredits', lang)} *</label>
               <input
                 type="number"
                 min="0"
@@ -1074,7 +1074,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
           {/* Mindest-Level */}
           <div>
             <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">
-              Mindest-Level <span className="text-zinc-600 normal-case">(0 = kein Level erforderlich)</span>
+              {t('shop.labelMinLevel', lang)} <span className="text-zinc-600 normal-case">({t('shop.noLevelRequired', lang)})</span>
             </label>
             <input
               type="number"
@@ -1093,7 +1093,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
 
           {/* Content-Datei */}
           <div>
-            <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Content-Datei (nach Kauf sichtbar) *</label>
+            <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelContentFile', lang)} *</label>
             <div className="flex gap-2">
               <label className={`flex items-center gap-2 shrink-0 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
                 uploadingContent
@@ -1114,7 +1114,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
               <input
                 value={fContent}
                 onChange={e => setFContent(e.target.value)}
-                placeholder="oder URL einfügen (https://…)"
+                placeholder={t('shop.urlPlaceholder', lang)}
                 className="flex-1 min-w-0 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-amber-500/50"
               />
             </div>
@@ -1123,7 +1123,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
 
           {/* Vorschaubild */}
           <div>
-            <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Vorschaubild (optional)</label>
+            <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelPreviewImage', lang)}</label>
             <div className="flex gap-2 items-start">
               <label className={`flex items-center gap-2 shrink-0 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
                 uploadingImage
@@ -1144,7 +1144,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
               <input
                 value={fImage}
                 onChange={e => setFImage(e.target.value)}
-                placeholder="oder Bild-URL"
+              placeholder={t('shop.imagePlaceholder', lang)}
                 className="flex-1 min-w-0 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-violet-500/50"
               />
             </div>
@@ -1163,10 +1163,10 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
               disabled={saving || uploadingContent || uploadingImage}
               className="flex-1 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold py-2.5 rounded-xl text-sm transition-colors"
             >
-              {saving ? <span className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : 'Item erstellen'}
+              {saving ? <span className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : t('shop.btnCreateItem', lang)}
             </button>
             <button onClick={resetForm} className="px-4 py-2.5 rounded-xl bg-zinc-800 text-zinc-300 text-sm hover:bg-zinc-700 transition-colors">
-              Abbrechen
+              {t('common.cancel', lang)}
             </button>
           </div>
         </div>
@@ -1179,7 +1179,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
         </div>
       ) : items.length === 0 ? (
         <div className="bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
-          Noch keine Items. Erstelle deinen ersten Shop-Eintrag!
+          {t('shop.noItemsCreate', lang)}
         </div>
       ) : (
         <div className="space-y-3">
@@ -1189,35 +1189,35 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                 /* ── Inline-Edit-Formular ── */
                 <div className="space-y-3">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-white text-sm font-semibold">Item bearbeiten</p>
+                    <p className="text-white text-sm font-semibold">{t('shop.editItemTitle', lang)}</p>
                     <button onClick={cancelEdit} className="text-zinc-500 hover:text-zinc-300"><FaTimes size={13} /></button>
                   </div>
 
                   <div>
-                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Titel *</label>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelTitle', lang)} *</label>
                     <input value={editData.title} onChange={e => setEditData(d => d && { ...d, title: e.target.value })}
                       className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
                   </div>
 
                   <div>
-                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Beschreibung</label>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelDesc', lang)}</label>
                     <textarea value={editData.desc} onChange={e => setEditData(d => d && { ...d, desc: e.target.value })}
                       rows={2} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50 resize-none" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Typ</label>
+                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelType', lang)}</label>
                       <select value={editData.type} onChange={e => setEditData(d => d && { ...d, type: e.target.value as ItemType })}
                         className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50">
                         <option value="song">Song</option>
                         <option value="video">Video</option>
                         <option value="nft">NFT</option>
-                        <option value="exclusive">Exklusiv</option>
+                        <option value="exclusive">{t('shop.exclusive', lang)}</option>
                       </select>
                     </div>
                     <div>
-                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Preis Credits *</label>
+                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelPriceCredits', lang)} *</label>
                       <input type="number" min="0" value={editData.price}
                         onChange={e => setEditData(d => d && { ...d, price: e.target.value })}
                         className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
@@ -1226,13 +1226,13 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Token-Preis <span className="text-zinc-600 normal-case">(opt.)</span></label>
-                      <input type="number" min="0" step="0.000001" value={editData.tokens} placeholder="leer = keiner"
+                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelTokenPrice', lang)} <span className="text-zinc-600 normal-case">(opt.)</span></label>
+                      <input type="number" min="0" step="0.000001" value={editData.tokens} placeholder={t('shop.tokenPriceOptional', lang)}
                         onChange={e => setEditData(d => d && { ...d, tokens: e.target.value })}
                         className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50 placeholder:text-zinc-600" />
                     </div>
                     <div>
-                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Mindest-Level</label>
+                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelMinLevel', lang)}</label>
                       <input type="number" min="0" value={editData.level}
                         onChange={e => setEditData(d => d && { ...d, level: e.target.value })}
                         className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
@@ -1241,7 +1241,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
 
                   {/* Content-Datei */}
                   <div>
-                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Content-Datei</label>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelContentFileEdit', lang)}</label>
                     <div className="flex gap-2">
                       <label className={`flex items-center gap-2 shrink-0 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
                         uploadingEditContent ? 'bg-zinc-700 text-zinc-500 pointer-events-none' : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
@@ -1258,7 +1258,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
 
                   {/* Vorschaubild */}
                   <div>
-                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Vorschaubild</label>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelPreviewImageEdit', lang)}</label>
                     <div className="flex gap-2 items-start">
                       <label className={`flex items-center gap-2 shrink-0 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
                         uploadingEditImage ? 'bg-zinc-700 text-zinc-500 pointer-events-none' : 'bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 border border-violet-500/30'
@@ -1278,10 +1278,10 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                   <div className="flex gap-2 pt-1">
                     <button onClick={handleEdit} disabled={editSaving || uploadingEditContent || uploadingEditImage}
                       className="flex-1 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold py-2.5 rounded-xl text-sm transition-colors">
-                      {editSaving ? <span className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : <><FaCheck size={11} /> Speichern</>}
+                      {editSaving ? <span className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : <><FaCheck size={11} /> {t('common.save', lang)}</>}
                     </button>
                     <button onClick={cancelEdit} className="px-4 py-2.5 rounded-xl bg-zinc-800 text-zinc-300 text-sm hover:bg-zinc-700 transition-colors">
-                      Abbrechen
+                      {t('common.cancel', lang)}
                     </button>
                   </div>
                 </div>

@@ -714,6 +714,23 @@ const dict: Translations = {
   'shop.btnImage': { de: 'Bild', en: 'Image', pl: 'Obraz' },
   'shop.artistsLabel': { de: 'Künstler', en: 'Artists', pl: 'Artyści' },
   'shop.tapArtistHint': { de: 'Tippe auf einen Künstler um seinen Shop zu öffnen.', en: 'Tap an artist to open their shop.', pl: 'Kliknij artystę, aby otworzyć jego sklep.' },
+  'shop.labelType': { de: 'Typ', en: 'Type', pl: 'Typ' },
+  'shop.labelPriceCredits': { de: 'Preis Credits', en: 'Price Credits', pl: 'Cena Kredytów' },
+  'shop.labelTokenPrice': { de: 'Token-Preis', en: 'Token Price', pl: 'Cena Tokenów' },
+  'shop.labelMinLevel': { de: 'Mindest-Level', en: 'Min. Level', pl: 'Min. Poziom' },
+  'shop.labelContentFile': { de: 'Content-Datei (nach Kauf sichtbar)', en: 'Content file (visible after purchase)', pl: 'Plik treści (widoczny po zakupie)' },
+  'shop.labelContentFileEdit': { de: 'Content-Datei', en: 'Content file', pl: 'Plik treści' },
+  'shop.labelPreviewImage': { de: 'Vorschaubild (optional)', en: 'Preview image (optional)', pl: 'Obraz podglądu (opcjonalnie)' },
+  'shop.labelPreviewImageEdit': { de: 'Vorschaubild', en: 'Preview image', pl: 'Obraz podglądu' },
+  'shop.labelTitle': { de: 'Titel', en: 'Title', pl: 'Tytuł' },
+  'shop.labelDesc': { de: 'Beschreibung', en: 'Description', pl: 'Opis' },
+  'shop.noLevelRequired': { de: '0 = kein Level erforderlich', en: '0 = no level required', pl: '0 = brak wymaganego poziomu' },
+  'shop.tokenPriceOptional': { de: 'leer = keiner', en: 'empty = none', pl: 'puste = brak' },
+  'shop.btnCreateItem': { de: 'Item erstellen', en: 'Create item', pl: 'Utwórz produkt' },
+  'shop.noItemsCreate': { de: 'Noch keine Items. Erstelle deinen ersten Shop-Eintrag!', en: 'No items yet. Create your first shop entry!', pl: 'Brak produktów. Utwórz swój pierwszy wpis w sklepie!' },
+  'shop.editItemTitle': { de: 'Item bearbeiten', en: 'Edit item', pl: 'Edytuj produkt' },
+  'shop.urlPlaceholder': { de: 'oder URL einfügen (https://…)', en: 'or paste URL (https://…)', pl: 'lub wklej URL (https://…)' },
+  'shop.imagePlaceholder': { de: 'oder Bild-URL', en: 'or image URL', pl: 'lub URL obrazu' },
 
   // ── Reputation ──────────────────────────────────────────────────────────────
 
