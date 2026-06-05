@@ -68,7 +68,7 @@ export default function YoutubeQuestCard({ quest, isCompleted, isVerified = true
         {/* Fortschrittsbalken */}
         <div>
           <div className="flex justify-between text-xs text-zinc-400 mb-1">
-            <span>{quest.completions} von {quest.maxCompletions} Plätzen belegt</span>
+            <span>{quest.completions} {t('quest.slotsOf', language)} {quest.maxCompletions} {t('quest.slots', language)}</span>
             <span>{progress}%</span>
           </div>
           <div className="h-1.5 bg-red-950 rounded-full overflow-hidden">

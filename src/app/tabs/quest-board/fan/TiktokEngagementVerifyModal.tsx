@@ -265,7 +265,7 @@ export default function TiktokEngagementVerifyModal({
           </div>
 
           <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-3">
-            <p className="text-amber-300 text-xs font-semibold mb-1">⚠️ Hinweis</p>
+            <p className="text-amber-300 text-xs font-semibold mb-1">{t('verify.hintLabel', lang)}</p>
             <p className="text-amber-200/80 text-xs">
               {lang === 'en' ? 'If you already liked, shared or saved this video: undo these actions first, return here, restart the quest and redo them.' : lang === 'pl' ? 'Jeśli wcześniej polubyłeś, udostępniłeś lub zapisałeś ten film: najpierw cofnij te akcje, wróć tutaj, uruchom quest od nowa i powtórz je.' : 'Falls du das Video bereits vorher geliked, geteilt oder gespeichert hast: mache diese Aktionen zuerst rükgängig, kehre hierher zurück, starte den Quest neu und führe die Aktionen dann erneut durch.'}
             </p>

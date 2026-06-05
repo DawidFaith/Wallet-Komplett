@@ -523,7 +523,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                   {/* Fortschrittsbalken */}
                   <div className="mt-1">
                     <div className="flex justify-between text-[10px] text-zinc-500 mb-1">
-                      <span>{item.completions}/{item.maxCompletions} Plätze</span>
+                      <span>{item.completions}/{item.maxCompletions} {t('quest.slots', lang)}</span>
                       <span>{progress}%</span>
                     </div>
                     <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">

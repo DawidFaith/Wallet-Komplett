@@ -182,7 +182,7 @@ export default function FacebookLikeVerifyModal({
           </div>
 
           <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-3">
-            <p className="text-amber-300 text-xs font-semibold mb-1">⚠️ Hinweis</p>
+            <p className="text-amber-300 text-xs font-semibold mb-1">{t('verify.hintLabel', lang)}</p>
             <p className="text-amber-200/80 text-xs">
               {t('verify.likeHint', lang)}
             </p>

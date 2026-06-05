@@ -239,7 +239,7 @@ export default function SecretVerifyModal({
             rel="noopener noreferrer"
             className="w-full bg-amber-500 hover:bg-amber-400 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
           >
-            Zum Video (Code suchen) ↗
+            {t('verify.toVideoFindCode', lang)}
           </a>
 
           <button

@@ -8,6 +8,8 @@ import FanBoard from './fan/FanBoard';
 import CreatorBoard from './creator/CreatorBoard';
 import type { YouTubeBinding, QuestBoardView, VerifiedPlatforms } from './types';
 import type { SupportedLanguage } from '../../utils/deepLTranslation';
+import { useLang } from '../../components/LangContext';
+import { t } from '../../utils/i18n';
 
 export interface ArtistInfo {
   walletAddress: string;
@@ -39,6 +41,7 @@ interface QuestBoardProps {
 // ─── Artist-Selektor ────────────────────────────────────────────────────────
 
 function ArtistSelector({ onSelect, walletAddress }: { onSelect: (artist: ArtistInfo) => void; walletAddress?: string }) {
+  const lang = useLang();
   const [artists, setArtists] = useState<ArtistInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -67,14 +70,14 @@ function ArtistSelector({ onSelect, walletAddress }: { onSelect: (artist: Artist
       <div className="mx-4 bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
         {fetchError
           ? <span className="text-amber-400">Fehler: {fetchError}</span>
-          : 'Noch keine Künstler haben aktive Quests.'}
+          : t('qb.noActiveQuests', lang)}
       </div>
     );
   }
 
   return (
     <div className="px-4 space-y-4">
-      <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Künstler</p>
+      <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">{t('qb.artistsLabel', lang)}</p>
       <div className="flex gap-4 overflow-x-auto pt-2 pb-2 scrollbar-none">
         {artists.map(artist => (
           <button
@@ -100,7 +103,7 @@ function ArtistSelector({ onSelect, walletAddress }: { onSelect: (artist: Artist
           </button>
         ))}
       </div>
-      <p className="text-zinc-600 text-xs">Tippe auf einen Künstler um seine Quests zu sehen.</p>
+      <p className="text-zinc-600 text-xs">{t('qb.tapArtistHint', lang)}</p>
     </div>
   );
 }
@@ -123,6 +126,7 @@ interface ProfileResponse {
 export default function QuestBoard({ language, artistWallet, filterArtist, onClearArtist }: QuestBoardProps) {
   const { user: _clerkUser } = useUser();
   const account = _clerkUser?.id ? { address: _clerkUser.id } : null;
+  const lang = useLang();
   const [view, setView] = useState<QuestBoardView>('fan');
   const [binding, setBinding] = useState<YouTubeBinding | null>(null);
   const [verified, setVerified] = useState<VerifiedPlatforms>({
@@ -253,7 +257,7 @@ export default function QuestBoard({ language, artistWallet, filterArtist, onCle
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${view === 'artist' ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'}`}
               >
                 <FaMusic size={13} />
-                Künstler
+                {t('qb.artistsLabel', lang)}
               </button>
             </div>
           </div>
@@ -295,7 +299,7 @@ export default function QuestBoard({ language, artistWallet, filterArtist, onCle
                   className="flex items-center gap-2 text-zinc-400 hover:text-white text-sm transition-colors"
                 >
                   <FaChevronLeft size={12} />
-                  Alle Künstler
+                  {t('qb.allArtists', lang)}
                 </button>
                 <div className="flex items-center gap-3 bg-zinc-900/60 border border-white/[0.06] rounded-2xl px-4 py-3">
                   {activeArtist.picture

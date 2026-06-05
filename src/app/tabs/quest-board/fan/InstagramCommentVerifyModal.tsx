@@ -74,7 +74,7 @@ export default function InstagramCommentVerifyModal({
       {/* Reward-Banner */}
       {quest && !result?.success && (
         <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
-          <span className="text-zinc-400 text-xs">Belohnung</span>
+          <span className="text-zinc-400 text-xs">{t('verify.rewardLabel', lang)}</span>
           <div className="flex items-center gap-2">
             <span className="text-amber-400 font-bold text-sm flex items-center gap-1">
               <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3.5 h-3.5 rounded-full shrink-0" />
@@ -128,7 +128,7 @@ export default function InstagramCommentVerifyModal({
             onClick={handleClose}
             className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl transition-colors font-semibold"
           >
-            Schließen
+            {t('common.close', lang)}
           </button>
         </div>
       ) : (
@@ -149,7 +149,7 @@ export default function InstagramCommentVerifyModal({
 
           {/* Anleitung */}
           <div className="bg-zinc-800/60 rounded-xl p-4 space-y-2">
-            <p className="text-white font-semibold text-sm">So funktioniert es:</p>
+            <p className="text-white font-semibold text-sm">{t('verify.fbHowTitle', lang)}</p>
             <ol className="space-y-2 text-zinc-400 text-sm">
               <li className="flex gap-2">
                 <span className="text-pink-400 font-bold shrink-0">1.</span>
@@ -157,11 +157,11 @@ export default function InstagramCommentVerifyModal({
               </li>
               <li className="flex gap-2">
                 <span className="text-pink-400 font-bold shrink-0">2.</span>
-                Hinterlasse einen positiven Kommentar mit deinem Instagram-Account
+                {t('verify.leaveCommentIG', lang)}
               </li>
               <li className="flex gap-2">
                 <span className="text-pink-400 font-bold shrink-0">3.</span>
-                Klicke auf &bdquo;Jetzt verifizieren&ldquo;
+                {t('verify.clickVerify', lang)}
               </li>
             </ol>
           </div>
@@ -171,13 +171,13 @@ export default function InstagramCommentVerifyModal({
             className="w-full bg-pink-600 hover:bg-pink-500 text-white text-sm font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             <FaSync size={12} />
-            Jetzt verifizieren
+            {t('btn.verify', lang)}
           </button>
           <button
             onClick={handleClose}
             className="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm py-2.5 rounded-xl transition-colors"
           >
-            Abbrechen
+            {t('common.cancel', lang)}
           </button>
         </div>
       )}

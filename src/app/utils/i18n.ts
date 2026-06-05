@@ -1114,6 +1114,17 @@ const dict: Translations = {
   'verify.dmStep4wait': { de: 'Klicke den Link in der DM → erhalte deine <span class="text-green-400 font-semibold">Belohnung</span>', en: 'Click the link in the DM → receive your <span class="text-green-400 font-semibold">reward</span>', pl: 'Kliknij link w DM → odbierz swoją <span class="text-green-400 font-semibold">nagrodę</span>' },
   'verify.secretInputLabel': { de: 'Geheimer Code', en: 'Secret Code', pl: 'Tajny Kod' },
   'verify.secretSubmit': { de: 'Code einreichen', en: 'Submit Code', pl: 'Wyślij Kod' },
+
+  // ── Quest Board – neue Keys ──────────────────────────────────────────────
+  'verify.hintLabel': { de: '⚠️ Hinweis', en: '⚠️ Note', pl: '⚠️ Uwaga' },
+  'verify.leaveCommentYT': { de: 'Hinterlasse einen positiven Kommentar mit deinem YouTube-Account', en: 'Leave a positive comment with your YouTube account', pl: 'Zostaw pozytywny komentarz ze swoim kontem YouTube' },
+  'verify.leaveCommentTT': { de: 'Hinterlasse einen positiven Kommentar mit deinem TikTok-Account', en: 'Leave a positive comment with your TikTok account', pl: 'Zostaw pozytywny komentarz ze swoim kontem TikTok' },
+  'verify.leaveCommentIG': { de: 'Hinterlasse einen positiven Kommentar mit deinem Instagram-Account', en: 'Leave a positive comment with your Instagram account', pl: 'Zostaw pozytywny komentarz ze swoim kontem Instagram' },
+  'verify.toVideoFindCode': { de: 'Zum Video (Code suchen) ↗', en: 'To video (find code) ↗', pl: 'Do wideo (znajdź kod) ↗' },
+  'qb.noActiveQuests': { de: 'Noch keine Künstler haben aktive Quests.', en: 'No artists have active quests yet.', pl: 'Żaden artysta nie ma aktywnych questów.' },
+  'qb.artistsLabel': { de: 'Künstler', en: 'Artists', pl: 'Artyści' },
+  'qb.tapArtistHint': { de: 'Tippe auf einen Künstler um seine Quests zu sehen.', en: 'Tap an artist to see their quests.', pl: 'Kliknij artystę, aby zobaczyć jego questy.' },
+  'qb.allArtists': { de: 'Alle Künstler', en: 'All Artists', pl: 'Wszyscy artyści' },
 };
 
 

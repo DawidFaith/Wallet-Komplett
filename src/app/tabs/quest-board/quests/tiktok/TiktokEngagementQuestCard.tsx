@@ -91,7 +91,7 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, isVerifi
         {/* Fortschrittsbalken */}
         <div>
           <div className="flex justify-between text-xs text-zinc-400 mb-1">
-            <span>{quest.completions} / {quest.maxCompletions} Plätze</span>
+            <span>{quest.completions} / {quest.maxCompletions} {t('quest.slots', language)}</span>
             <span>{progress}%</span>
           </div>
           <div className="h-1.5 bg-cyan-950 rounded-full overflow-hidden">
