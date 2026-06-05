@@ -12,7 +12,7 @@ import {
 import { SiSolana } from 'react-icons/si';
 import SwapWidget from './wallet/SwapWidget';
 import { useLang } from '../components/LangContext';
-import { t } from '../utils/i18n';
+import { t, tFmt } from '../utils/i18n';
 
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
 
@@ -261,7 +261,7 @@ function TokenDetailModal({
                   </p>
                   <p className="text-white text-sm font-semibold">
                     {supplyLoading
-                      ? <span className="text-zinc-500 text-xs">Lädt…</span>
+                      ? <span className="text-zinc-500 text-xs">{t('common.loading', lang)}</span>
                       : supply !== null
                       ? supply.toLocaleString('de-DE', { maximumFractionDigits: 0 })
                       : '—'}
@@ -549,14 +549,14 @@ export default function SolanaWalletTab() {
               : <Image src="/D.FAITH.png" alt="D.FAITH" width={64} height={64} className="w-16 h-16 object-contain" />}
           </div>
           <div className="space-y-1">
-            <p className="text-white font-semibold">Anmelden um fortzufahren</p>
-            <p className="text-zinc-400 text-sm">Dein Solana Wallet wird automatisch erstellt — kein Wallet-App nötig.</p>
+            <p className="text-white font-semibold">{t('sol.loginPrompt', lang)}</p>
+            <p className="text-zinc-400 text-sm">{t('sol.walletAutoCreated', lang)}</p>
           </div>
           <button onClick={() => openSignIn()} disabled={!isLoaded}
             className="w-full flex items-center justify-center gap-3 bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-black font-bold py-3.5 rounded-xl text-sm transition-colors tracking-wide">
             {!isLoaded
               ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              : 'Anmelden'}
+              : t('sol.loginBtn', lang)}
           </button>
         </div>
       </div>
@@ -674,7 +674,7 @@ export default function SolanaWalletTab() {
           style={{ background: 'radial-gradient(circle, #92400e, transparent)', transform: 'translate(-30%, 30%)' }} />
         <div className="relative z-10 space-y-5">
           <div>
-            <p className="text-amber-200/50 text-xs font-medium uppercase tracking-widest mb-1">Gesamtvermögen</p>
+            <p className="text-amber-200/50 text-xs font-medium uppercase tracking-widest mb-1">{t('sol.totalAssets', lang)}</p>
             <p className="text-white text-4xl font-bold tracking-tight">
               {loadingBal ? <span className="opacity-40">…</span> : hasPriceData ? totalValueLabel : '—'}
             </p>
@@ -720,7 +720,7 @@ export default function SolanaWalletTab() {
       {/* ── Assets ── */}
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1">
-          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">Vermögenswerte</p>
+          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">{t('sol.assets', lang)}</p>
           {loadingBal && <FaSpinner size={10} className="text-zinc-600 animate-spin" />}
         </div>
 
@@ -744,7 +744,7 @@ export default function SolanaWalletTab() {
 
         {/* Artist Tokens */}
         <div className="flex items-center justify-between px-1 pt-1">
-          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">Künstler Tokens</p>
+          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">{t('sol.artistTokens', lang)}</p>
         </div>
 
         {/* D.FAITH — wird immer angezeigt */}
@@ -771,8 +771,8 @@ export default function SolanaWalletTab() {
 
         {tokens.length === 0 && !loadingBal && (
           <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5 text-center space-y-1">
-            <p className="text-zinc-500 text-sm">Noch keine Künstler Tokens</p>
-            <p className="text-zinc-600 text-xs">Schließe Quests ab, um Künstler Tokens zu verdienen.</p>
+            <p className="text-zinc-500 text-sm">{t('sol.noArtistTokens', lang)}</p>
+            <p className="text-zinc-600 text-xs">{t('sol.noArtistTokensHint', lang)}</p>
           </div>
         )}
       </div>
@@ -794,7 +794,7 @@ export default function SolanaWalletTab() {
               <button onClick={handleExport} disabled={exportLoading}
                 className="w-full bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-40 text-zinc-300 font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2">
                 {exportLoading
-                  ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Lädt…</>
+                  ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t('common.loading', lang)}</>
                   : <><FaKey size={12} /> Private Key anzeigen</>}
               </button>
             ) : (
@@ -814,7 +814,7 @@ export default function SolanaWalletTab() {
                     {copied ? <><FaCheckCircle size={10} className="text-green-400" /> Kopiert</> : <><FaCopy size={10} /> Kopieren</>}
                   </button>
                 )}
-                <p className="text-yellow-500/80 text-xs">⚠ Diesen Key sicher speichern und nie teilen! BS58-Format für Phantom / Solflare.</p>
+                <p className="text-yellow-500/80 text-xs">{t('sol.privateKeyWarning', lang)}</p>
               </div>
             )}
           </div>
@@ -839,12 +839,12 @@ export default function SolanaWalletTab() {
           <div className="w-full sm:max-w-md max-h-[88vh] bg-[#1a150a] border border-white/8 rounded-t-2xl sm:rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-white/[0.1] flex items-center justify-between">
               <h3 className="text-amber-400 font-bold text-xs uppercase tracking-widest">
-                {actionModal === 'send' && `${sendLabel} senden`}
+                {actionModal === 'send' && tFmt('sol.modalSend', lang, { label: sendLabel })}
                 {actionModal === 'swap' && 'Token Swap'}
-                {actionModal === 'receive' && 'SOL empfangen'}
-                {actionModal === 'buy' && 'SOL kaufen'}
+                {actionModal === 'receive' && t('sol.modalReceive', lang)}
+                {actionModal === 'buy' && t('sol.modalBuy', lang)}
               </h3>
-              <button onClick={() => setActionModal(null)} className="text-zinc-600 hover:text-zinc-300 text-xs uppercase tracking-wide">Schließen</button>
+              <button onClick={() => setActionModal(null)} className="text-zinc-600 hover:text-zinc-300 text-xs uppercase tracking-wide">{t('common.close', lang)}</button>
             </div>
 
             <div className="overflow-y-auto max-h-[calc(88vh-56px)] p-4 bg-[#13120e]">
@@ -895,7 +895,7 @@ export default function SolanaWalletTab() {
                     )}
                   </div>
                   <div>
-                    <label className="text-zinc-400 text-xs block mb-1">Empfänger (Solana-Adresse)</label>
+                    <label className="text-zinc-400 text-xs block mb-1">{t('sol.labelRecipient', lang)}</label>
                     <input value={recipient} onChange={e => setRecipient(e.target.value)}
                       placeholder="Bs58-Adresse…"
                       className="w-full bg-[#231e12] border border-white/[0.1] text-white rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-zinc-500" />
@@ -908,7 +908,7 @@ export default function SolanaWalletTab() {
                     {sendAmt === 'max'
                       ? (
                         <div className="w-full bg-[#1f1609] border border-amber-700/50 text-amber-300/80 rounded-xl px-3 py-2 text-sm flex items-center justify-between">
-                          <span>Gesamte Balance (abzgl. Fee)</span>
+                          <span>{t('sol.fullBalanceMinusFee', lang)}</span>
                           <button onClick={() => setSendAmt('')} className="text-zinc-500 hover:text-white text-xs ml-2">✕</button>
                         </div>
                       ) : (
@@ -922,10 +922,10 @@ export default function SolanaWalletTab() {
                   <button onClick={handleSend} disabled={sending || !recipient.trim() || !sendAmt.trim()}
                     className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-black font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
                     {sending
-                      ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Wird gesendet…</>
+                      ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t('sol.sending', lang)}</>
                       : <><FaPaperPlane size={12} /> Senden</>}
                   </button>
-                  <p className="text-zinc-600 text-xs text-center">On-Chain · Kein Wallet-App nötig</p>
+                  <p className="text-zinc-600 text-xs text-center">{t('sol.onChainHint', lang)}</p>
                 </div>
               )}
 

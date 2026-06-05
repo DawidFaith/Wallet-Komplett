@@ -805,6 +805,22 @@ const dict: Translations = {
   'sol.recipient': { de: 'Empfänger', en: 'Recipient', pl: 'Odbiorca' },
   'sol.balance': { de: 'Guthaben', en: 'Balance', pl: 'Saldo' },
   'sol.wallet': { de: 'Wallet', en: 'Wallet', pl: 'Portfel' },
+  'sol.walletAutoCreated': { de: 'Dein Solana Wallet wird automatisch erstellt — kein Wallet-App nötig.', en: 'Your Solana wallet is created automatically — no wallet app needed.', pl: 'Twój portfel Solana jest tworzony automatycznie — żadna aplikacja portfela nie jest potrzebna.' },
+  'sol.loginBtn': { de: 'Anmelden', en: 'Sign in', pl: 'Zaloguj się' },
+  'sol.loginPrompt': { de: 'Anmelden um fortzufahren', en: 'Sign in to continue', pl: 'Zaloguj się, aby kontynuować' },
+  'sol.totalAssets': { de: 'Gesamtvermögen', en: 'Total Assets', pl: 'Całkowity Majątek' },
+  'sol.assets': { de: 'Vermögenswerte', en: 'Assets', pl: 'Aktywa' },
+  'sol.artistTokens': { de: 'Künstler Tokens', en: 'Artist Tokens', pl: 'Tokeny Artysty' },
+  'sol.noArtistTokens': { de: 'Noch keine Künstler Tokens', en: 'No artist tokens yet', pl: 'Brak tokenów artysty' },
+  'sol.noArtistTokensHint': { de: 'Schließe Quests ab, um Künstler Tokens zu verdienen.', en: 'Complete quests to earn artist tokens.', pl: 'Ukończ questy, aby zdobyć tokeny artysty.' },
+  'sol.privateKeyWarning': { de: '⚠ Diesen Key sicher speichern und nie teilen! BS58-Format für Phantom / Solflare.', en: '⚠ Save this key securely and never share it! BS58 format for Phantom / Solflare.', pl: '⚠ Zapisz ten klucz bezpiecznie i nigdy go nie udostępniaj! Format BS58 dla Phantom / Solflare.' },
+  'sol.labelRecipient': { de: 'Empfänger (Solana-Adresse)', en: 'Recipient (Solana address)', pl: 'Odbiorca (adres Solana)' },
+  'sol.fullBalanceMinusFee': { de: 'Gesamte Balance (abzgl. Fee)', en: 'Full balance (minus fee)', pl: 'Pełne saldo (minus opłata)' },
+  'sol.sending': { de: 'Wird gesendet…', en: 'Sending…', pl: 'Wysyłanie…' },
+  'sol.onChainHint': { de: 'On-Chain · Kein Wallet-App nötig', en: 'On-Chain · No wallet app needed', pl: 'On-Chain · Bez aplikacji portfela' },
+  'sol.modalSend': { de: '{label} senden', en: 'Send {label}', pl: 'Wyślij {label}' },
+  'sol.modalReceive': { de: 'SOL empfangen', en: 'Receive SOL', pl: 'Odbierz SOL' },
+  'sol.modalBuy': { de: 'SOL kaufen', en: 'Buy SOL', pl: 'Kup SOL' },
 
   // ── Verify Modals ────────────────────────────────────────────────────────────
 
