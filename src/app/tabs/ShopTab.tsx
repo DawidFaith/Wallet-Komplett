@@ -866,7 +866,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
   };
 
   const handleCreate = async () => {
-    if (!fTitle.trim()) { setFormError('Titel ist Pflicht'); return; }
+    if (!fTitle.trim()) { setFormError(lang === 'en' ? 'Title is required' : lang === 'pl' ? 'Tytuł jest wymagany' : 'Titel ist Pflicht'); return; }
     const price = parseInt(fPrice, 10);
     if (isNaN(price) || price < 0) { setFormError(t('shop.invalidPrice', lang)); return; }
     setFormError('');
@@ -948,7 +948,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
 
   const handleEdit = async () => {
     if (!editData) return;
-    if (!editData.title.trim()) { setEditError('Titel ist Pflicht'); return; }
+    if (!editData.title.trim()) { setEditError(lang === 'en' ? 'Title is required' : lang === 'pl' ? 'Tytuł jest wymagany' : 'Titel ist Pflicht'); return; }
     const price = parseInt(editData.price, 10);
     if (isNaN(price) || price < 0) { setEditError(t('shop.invalidPrice', lang)); return; }
     const tokensRaw = editData.tokens.trim();
@@ -1024,7 +1024,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
 
           {/* Titel */}
           <div>
-            <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Titel *</label>
+            <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelTitle', lang)} *</label>
             <input
               value={fTitle}
               onChange={e => setFTitle(e.target.value)}
@@ -1035,7 +1035,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
 
           {/* Beschreibung */}
           <div>
-            <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Beschreibung</label>
+            <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelDesc', lang)}</label>
             <textarea
               value={fDesc}
               onChange={e => setFDesc(e.target.value)}
