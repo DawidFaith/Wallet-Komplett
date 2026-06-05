@@ -707,6 +707,13 @@ const dict: Translations = {
   'shop.deleteItem': { de: 'Item löschen', en: 'Delete item', pl: 'Usuń produkt' },
   'shop.confirmDelete': { de: 'Item wirklich löschen?', en: 'Really delete item?', pl: 'Na pewno usunąć produkt?' },
   'shop.customDuration': { de: 'Eigene Dauer…', en: 'Custom duration…', pl: 'Własny czas…' },
+  'shop.descPlaceholder': { de: 'Was erhalten die Käufer?', en: 'What do buyers receive?', pl: 'Co otrzymają kupujący?' },
+  'shop.uploading': { de: 'Lädt…', en: 'Uploading…', pl: 'Przesyłanie…' },
+  'shop.btnUpload': { de: 'Hochladen', en: 'Upload', pl: 'Prześlij' },
+  'shop.btnChange': { de: 'Ändern', en: 'Change', pl: 'Zmień' },
+  'shop.btnImage': { de: 'Bild', en: 'Image', pl: 'Obraz' },
+  'shop.artistsLabel': { de: 'Künstler', en: 'Artists', pl: 'Artyści' },
+  'shop.tapArtistHint': { de: 'Tippe auf einen Künstler um seinen Shop zu öffnen.', en: 'Tap an artist to open their shop.', pl: 'Kliknij artystę, aby otworzyć jego sklep.' },
 
   // ── Reputation ──────────────────────────────────────────────────────────────
 

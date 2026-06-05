@@ -1039,7 +1039,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
               value={fDesc}
               onChange={e => setFDesc(e.target.value)}
               rows={2}
-              placeholder="Was erhalten die Käufer?"
+              placeholder={t('shop.descPlaceholder', lang)}
               className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-amber-500/50 resize-none"
             />
           </div>
@@ -1101,8 +1101,8 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                   : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
               }`}>
                 {uploadingContent
-                  ? <><span className="w-3 h-3 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" /> Lädt…</>
-                  : <><FaMusic size={11} /> Hochladen</>}
+                  ? <><span className="w-3 h-3 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" /> {t('shop.uploading', lang)}</>
+                  : <><FaMusic size={11} /> {t('shop.btnUpload', lang)}</>}
                 <input
                   type="file"
                   className="hidden"
@@ -1131,8 +1131,8 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                   : 'bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 border border-violet-500/30'
               }`}>
                 {uploadingImage
-                  ? <><span className="w-3 h-3 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" /> Lädt…</>
-                  : <><FaStar size={10} /> Bild</> }
+                  ? <><span className="w-3 h-3 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" /> {t('shop.uploading', lang)}</>
+                  : <><FaStar size={10} /> {t('shop.btnImage', lang)}</> }
                 <input
                   type="file"
                   className="hidden"
@@ -1246,7 +1246,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                       <label className={`flex items-center gap-2 shrink-0 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
                         uploadingEditContent ? 'bg-zinc-700 text-zinc-500 pointer-events-none' : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
                       }`}>
-                        {uploadingEditContent ? <><span className="w-3 h-3 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" /> Lädt…</> : <><FaMusic size={11} /> Ändern</>}
+                        {uploadingEditContent ? <><span className="w-3 h-3 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" /> {t('shop.uploading', lang)}</> : <><FaMusic size={11} /> {t('shop.btnChange', lang)}</>}
                         <input type="file" className="hidden" accept="audio/*,video/*,.pdf,.zip" disabled={uploadingEditContent}
                           onChange={e => { const f = e.target.files?.[0]; if (f) handleEditUpload(f, 'content'); e.target.value = ''; }} />
                       </label>
@@ -1263,7 +1263,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                       <label className={`flex items-center gap-2 shrink-0 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
                         uploadingEditImage ? 'bg-zinc-700 text-zinc-500 pointer-events-none' : 'bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 border border-violet-500/30'
                       }`}>
-                        {uploadingEditImage ? <><span className="w-3 h-3 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" /> Lädt…</> : <><FaStar size={10} /> Bild</>}
+                        {uploadingEditImage ? <><span className="w-3 h-3 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" /> {t('shop.uploading', lang)}</> : <><FaStar size={10} /> {t('shop.btnImage', lang)}</>}
                         <input type="file" className="hidden" accept="image/*" disabled={uploadingEditImage}
                           onChange={e => { const f = e.target.files?.[0]; if (f) handleEditUpload(f, 'image'); e.target.value = ''; }} />
                       </label>
@@ -1394,7 +1394,7 @@ function ArtistList({
 
   return (
     <div className="px-4 space-y-4">
-      <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">Künstler</p>
+      <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">{t('shop.artistsLabel', lang)}</p>
       <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
         {artists.map(artist => (
           <button
@@ -1420,7 +1420,7 @@ function ArtistList({
           </button>
         ))}
       </div>
-      <p className="text-zinc-600 text-xs">Tippe auf einen Künstler um seinen Shop zu öffnen.</p>
+      <p className="text-zinc-600 text-xs">{t('shop.tapArtistHint', lang)}</p>
     </div>
   );
 }
