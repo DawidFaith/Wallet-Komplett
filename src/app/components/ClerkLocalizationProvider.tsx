@@ -12,5 +12,5 @@ const localizationMap = {
 
 export function ClerkLocalizationProvider({ children }: { children: React.ReactNode }) {
   const lang = useLang();
-  return <ClerkProvider key={lang} localization={localizationMap[lang] as never}>{children}</ClerkProvider>;
+  return <ClerkProvider localization={localizationMap[lang] as never}>{children}</ClerkProvider>;
 }

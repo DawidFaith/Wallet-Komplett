@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { FaMusic, FaCheckCircle, FaChevronRight, FaFire } from 'react-icons/fa';
 import { t, tFmt, tPlural, type Lang } from './utils/i18n';
+import { useSetLang } from './components/LangContext';
 
 const LANG_KEY = 'dfaith_language';
 
@@ -25,6 +26,7 @@ interface EcosystemStats {
 export default function LandingPage() {
   const { isSignedIn, isLoaded } = useUser();
   const router = useRouter();
+  const setLangCtx = useSetLang();
   const [tab, setTab] = useState<'fan' | 'artist'>('fan');
   const [applied, setApplied] = useState(false);
   const [language, setLanguage] = useState<Lang>('de');
@@ -39,6 +41,7 @@ export default function LandingPage() {
 
   const handleSetLanguage = (l: Lang) => {
     setLanguage(l);
+    setLangCtx(l);
     setLangOpen(false);
     if (typeof window !== 'undefined') localStorage.setItem(LANG_KEY, l);
   };
