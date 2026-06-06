@@ -406,11 +406,11 @@ export default function LandingPage() {
 
             <div className="mb-2">
               <p className="text-[10px] font-black tracking-[0.4em] uppercase text-zinc-700 mb-2">
-                Solana · Musik · Community
+                {t('landing.tagline', language)}
               </p>
               <p className="text-[1.45rem] font-black text-white leading-snug">
-                Werde Teil der<br />
-                <span className="text-amber-400">Bewegung.</span>
+                {t('landing.movement', language).split('\n')[0]}<br />
+                <span className="text-amber-400">{t('landing.movement', language).split('\n')[1]}</span>
               </p>
             </div>
 

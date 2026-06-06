@@ -5,6 +5,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { deDE } from "@clerk/localizations";
 import QueryProvider from "./QueryProvider";
 import { LangProvider } from "./components/LangContext";
+import { ClerkLocalizationProvider } from "./components/ClerkLocalizationProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 const orbitron = Orbitron({ 
@@ -38,7 +39,13 @@ export default function RootLayout({
     <ClerkProvider localization={deDE as any}>
       <html lang="de" className="bg-[#13120e]">
           <body className={`${inter.className} ${orbitron.variable} ${pirataOne.variable} bg-[#13120e]`}>
-            <QueryProvider><LangProvider>{children}</LangProvider></QueryProvider>
+            <QueryProvider>
+              <LangProvider>
+                <ClerkLocalizationProvider>
+                  {children}
+                </ClerkLocalizationProvider>
+              </LangProvider>
+            </QueryProvider>
           </body>
       </html>
     </ClerkProvider>
