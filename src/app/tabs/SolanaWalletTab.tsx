@@ -231,7 +231,7 @@ function TokenDetailModal({
           <div className="px-5 py-4 space-y-3">
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-zinc-500 text-xs mb-0.5">Dein Guthaben</p>
+                <p className="text-zinc-500 text-xs mb-0.5">{t('sol.yourBalance', lang)}</p>
                 <p className="text-white text-2xl font-bold">
                   {balance !== null ? balance.toLocaleString('de-DE', { maximumFractionDigits: 4 }) : '—'} {symbol}
                 </p>
@@ -247,7 +247,7 @@ function TokenDetailModal({
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-white/[0.05] rounded-xl px-3 py-2.5">
                   <p className="text-zinc-500 text-[10px] uppercase tracking-wider mb-1 flex items-center gap-1">
-                    <FaChartLine size={8} /> Preis (ca.)
+                    <FaChartLine size={8} /> {t('sol.priceApprox', lang)}
                   </p>
                   <p className="text-white text-sm font-semibold">
                     {price != null
@@ -257,7 +257,7 @@ function TokenDetailModal({
                 </div>
                 <div className="bg-white/[0.05] rounded-xl px-3 py-2.5">
                   <p className="text-zinc-500 text-[10px] uppercase tracking-wider mb-1 flex items-center gap-1">
-                    <FaInfoCircle size={8} /> Max Supply
+                    <FaInfoCircle size={8} /> {t('sol.maxSupply', lang)}
                   </p>
                   <p className="text-white text-sm font-semibold">
                     {supplyLoading
@@ -284,11 +284,9 @@ function TokenDetailModal({
             {/* DFAITH Beschreibung */}
             {isDfaith && (
               <div className="bg-amber-950/20 border border-amber-800/20 rounded-xl px-4 py-3 space-y-2">
-                <p className="text-amber-300 text-xs font-bold uppercase tracking-wider">Was ist DFAITH?</p>
+                <p className="text-amber-300 text-xs font-bold uppercase tracking-wider">{t('sol.dfaithTitle', lang)}</p>
                 <p className="text-zinc-300 text-sm leading-relaxed">
-                  <strong className="text-amber-300">DFAITH</strong> ist der offizielle Token des Künstlers{' '}
-                  <strong className="text-amber-300">Dawid Faith</strong>. Als Halter erhältst du Zugang zu exklusiven Songs, 
-                  limitiertem Merch und weiteren besonderen Vorteilen innerhalb des D.FAITH Ecosystems.
+                  {t('sol.dfaithDesc', lang)}
                 </p>
                 {mintAddress && (
                   <a
@@ -296,7 +294,7 @@ function TokenDetailModal({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-amber-500 hover:text-amber-300 text-xs transition-colors">
-                    <FaExternalLinkAlt size={9} /> Auf Solscan ansehen
+                    <FaExternalLinkAlt size={9} /> {t('sol.viewOnSolscan', lang)}
                   </a>
                 )}
               </div>
@@ -319,7 +317,7 @@ function TokenDetailModal({
             <div className="px-5 pb-3">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
-                  <FaChartLine size={9} /> Preis-Chart
+                  <FaChartLine size={9} /> {t('sol.priceChart', lang)}
                 </p>
                 {dexscreenerLink && (
                   <a href={dexscreenerLink} target="_blank" rel="noopener noreferrer"
@@ -347,12 +345,12 @@ function TokenDetailModal({
               <button
                 onClick={() => { onClose(); isSol ? onSend({ type: 'sol' }) : onSend({ type: 'token', mint: tok.mint, symbol: tok.symbol, max: tok.balance }); }}
                 className="flex-1 bg-amber-400 hover:bg-amber-300 text-black font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
-                <FaPaperPlane size={12} /> Senden
+                <FaPaperPlane size={12} /> {t('sol.send', lang)}
               </button>
               <button
                 onClick={() => { onClose(); onSwap(); }}
                 className="flex-1 bg-white/[0.08] hover:bg-emerald-900/30 border border-white/[0.1] text-emerald-400 font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
-                <FaExchangeAlt size={12} /> Swap
+                <FaExchangeAlt size={12} /> {t('sol.swap', lang)}
               </button>
             </div>
           )}
@@ -576,8 +574,8 @@ export default function SolanaWalletTab() {
         </div>
         <div className="bg-white/[0.06] border border-white/[0.1] rounded-2xl p-8 text-center space-y-4">
           <FaSpinner size={28} className="animate-spin text-amber-400 mx-auto" />
-          <p className="text-white font-semibold">Wallet wird erstellt…</p>
-          <p className="text-zinc-400 text-sm">Einmalig, dauert ca. 5 Sekunden.</p>
+          <p className="text-white font-semibold">{t('sol.creatingWallet', lang)}</p>
+          <p className="text-zinc-400 text-sm">{t('sol.creatingHint', lang)}</p>
         </div>
       </div>
     );
@@ -595,7 +593,7 @@ export default function SolanaWalletTab() {
           <p className="text-zinc-400 text-[10px] tracking-widest uppercase font-semibold mt-0.5 ml-10">Solana Wallet</p>
         </div>
         <div className="bg-red-900/20 border border-red-800/40 rounded-2xl p-6 space-y-3">
-          <p className="text-red-300 font-semibold text-sm">Account-Erstellung fehlgeschlagen</p>
+          <p className="text-red-300 font-semibold text-sm">{t('sol.createError', lang)}</p>
           <p className="text-red-400 text-xs break-all">{createError}</p>
         </div>
       </div>
@@ -784,7 +782,7 @@ export default function SolanaWalletTab() {
           className="w-full flex items-center justify-between px-4 py-3 text-zinc-500 hover:text-amber-400 transition-colors">
           <div className="flex items-center gap-2">
             <FaKey size={12} />
-            <span className="text-sm font-semibold">Private Key exportieren</span>
+            <span className="text-sm font-semibold">{t('sol.exportKey', lang)}</span>
           </div>
           {panel === 'key' ? <FaChevronUp size={11} /> : <FaChevronDown size={11} />}
         </button>
@@ -795,7 +793,7 @@ export default function SolanaWalletTab() {
                 className="w-full bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-40 text-zinc-300 font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2">
                 {exportLoading
                   ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t('common.loading', lang)}</>
-                  : <><FaKey size={12} /> Private Key anzeigen</>}
+                  : <><FaKey size={12} /> {t('sol.showKey', lang)}</>}
               </button>
             ) : (
               <div className="space-y-2">
@@ -811,7 +809,7 @@ export default function SolanaWalletTab() {
                 {showKey && (
                   <button onClick={() => handleCopy(exportKey)}
                     className="w-full bg-[#2d2615] hover:bg-zinc-600 text-white text-xs font-semibold py-2 rounded-lg flex items-center justify-center gap-1">
-                    {copied ? <><FaCheckCircle size={10} className="text-green-400" /> Kopiert</> : <><FaCopy size={10} /> Kopieren</>}
+                    {copied ? <><FaCheckCircle size={10} className="text-green-400" /> {t('sol.copied', lang)}</> : <><FaCopy size={10} /> {t('sol.copy', lang)}</>}
                   </button>
                 )}
                 <p className="text-yellow-500/80 text-xs">{t('sol.privateKeyWarning', lang)}</p>
@@ -840,7 +838,7 @@ export default function SolanaWalletTab() {
             <div className="px-4 py-3 border-b border-white/[0.1] flex items-center justify-between">
               <h3 className="text-amber-400 font-bold text-xs uppercase tracking-widest">
                 {actionModal === 'send' && tFmt('sol.modalSend', lang, { label: sendLabel })}
-                {actionModal === 'swap' && 'Token Swap'}
+                {actionModal === 'swap' && t('sol.tokenSwap', lang)}
                 {actionModal === 'receive' && t('sol.modalReceive', lang)}
                 {actionModal === 'buy' && t('sol.modalBuy', lang)}
               </h3>
@@ -902,7 +900,7 @@ export default function SolanaWalletTab() {
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-zinc-400 text-xs">Betrag ({sendLabel})</label>
+                      <label className="text-zinc-400 text-xs">{tFmt('sol.amountLabel', lang, { label: sendLabel })}</label>
                       <button onClick={() => setSendAmt(sendMax)} className="text-zinc-400 hover:text-white text-xs font-semibold">MAX</button>
                     </div>
                     {sendAmt === 'max'
@@ -923,7 +921,7 @@ export default function SolanaWalletTab() {
                     className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-black font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
                     {sending
                       ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t('sol.sending', lang)}</>
-                      : <><FaPaperPlane size={12} /> Senden</>}
+                      : <><FaPaperPlane size={12} /> {t('sol.send', lang)}</>}
                   </button>
                   <p className="text-zinc-600 text-xs text-center">{t('sol.onChainHint', lang)}</p>
                 </div>
@@ -943,11 +941,11 @@ export default function SolanaWalletTab() {
                 <div className="space-y-4">
                   <div className="bg-[#231e12]/50 border border-white/[0.1] rounded-2xl p-4 text-center space-y-3">
                     <Image src={receiveQrUrl} alt="SOL Receive QR" width={192} height={192} className="w-48 h-48 rounded-xl mx-auto bg-white p-2" />
-                    <p className="text-zinc-400 text-xs">Scanne den QR Code oder kopiere die Adresse.</p>
+                    <p className="text-zinc-400 text-xs">{t('sol.receiveHint', lang)}</p>
                     <p className="text-white font-mono text-xs break-all bg-[#231e12] rounded-xl p-3">{solanaAddr}</p>
                     <button onClick={() => handleCopy(solanaAddr!)}
                       className="w-full bg-blue-700 hover:bg-blue-600 text-white text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2">
-                      {copied ? <><FaCheckCircle size={11} /> Kopiert</> : <><FaCopy size={11} /> Adresse kopieren</>}
+                      {copied ? <><FaCheckCircle size={11} /> {t('sol.copied', lang)}</> : <><FaCopy size={11} /> {t('sol.copyAddress', lang)}</>}
                     </button>
                   </div>
                 </div>
@@ -955,16 +953,16 @@ export default function SolanaWalletTab() {
 
               {actionModal === 'buy' && (
                 <div className="space-y-4">
-                  <p className="text-zinc-400 text-xs">Kaufe SOL direkt auf deine Wallet — per Karte, Bank oder Apple Pay.</p>
+                  <p className="text-zinc-400 text-xs">{t('sol.buyHint', lang)}</p>
                   <a
                     href={`https://buy.moonpay.com/?currencyCode=sol&walletAddress=${solanaAddr}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full bg-amber-400 hover:bg-amber-300 text-black font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
-                    <FaCreditCard size={14} /> Mit MoonPay kaufen
+                    <FaCreditCard size={14} /> {t('sol.buyWithMoonpay', lang)}
                   </a>
                   <div className="bg-[#231e12]/50 rounded-xl px-3 py-2">
-                    <p className="text-zinc-500 text-xs font-medium mb-0.5">Ziel-Adresse</p>
+                    <p className="text-zinc-500 text-xs font-medium mb-0.5">{t('sol.targetAddress', lang)}</p>
                     <p className="text-zinc-300 font-mono text-xs break-all">{solanaAddr}</p>
                   </div>
                 </div>
