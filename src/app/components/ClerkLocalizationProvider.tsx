@@ -12,6 +12,5 @@ const localizationMap = {
 
 export function ClerkLocalizationProvider({ children }: { children: React.ReactNode }) {
   const lang = useLang();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return <ClerkProvider localization={localizationMap[lang] as any}>{children}</ClerkProvider>;
+  return <ClerkProvider localization={localizationMap[lang] as never}>{children}</ClerkProvider>;
 }
