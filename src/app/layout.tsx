@@ -35,7 +35,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     <ClerkProvider localization={deDE as any}>
       <html lang="de" className="bg-[#13120e]">
           <body className={`${inter.className} ${orbitron.variable} ${pirataOne.variable} bg-[#13120e]`}>
