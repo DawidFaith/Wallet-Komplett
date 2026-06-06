@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Orbitron, Pirata_One } from "next/font/google";
 import "./globals.css";
-import { ClerkProvider } from "@clerk/nextjs";
-import { deDE } from "@clerk/localizations";
 import QueryProvider from "./QueryProvider";
 import { LangProvider } from "./components/LangContext";
 import { ClerkLocalizationProvider } from "./components/ClerkLocalizationProvider";
@@ -36,18 +34,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider localization={deDE as any}>
-      <html lang="de" className="bg-[#13120e]">
-          <body className={`${inter.className} ${orbitron.variable} ${pirataOne.variable} bg-[#13120e]`}>
-            <QueryProvider>
-              <LangProvider>
-                <ClerkLocalizationProvider>
-                  {children}
-                </ClerkLocalizationProvider>
-              </LangProvider>
-            </QueryProvider>
-          </body>
-      </html>
-    </ClerkProvider>
+    <html lang="de" className="bg-[#13120e]">
+        <body className={`${inter.className} ${orbitron.variable} ${pirataOne.variable} bg-[#13120e]`}>
+          <QueryProvider>
+            <LangProvider>
+              <ClerkLocalizationProvider>
+                {children}
+              </ClerkLocalizationProvider>
+            </LangProvider>
+          </QueryProvider>
+        </body>
+    </html>
   );
 }
