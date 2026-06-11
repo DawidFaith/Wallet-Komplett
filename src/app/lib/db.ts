@@ -250,4 +250,49 @@ export const MIGRATION_SQL = `
     PRIMARY KEY (quest_id, wallet_address)
   );
   CREATE UNIQUE INDEX IF NOT EXISTS idx_fb_comment_slots_unique ON facebook_comment_slots(quest_id, slot_index);
+
+  -- ── Collectibles System ──────────────────────────────────────────────────
+  -- Collectible-Kollektionen pro Künstler
+  CREATE TABLE IF NOT EXISTS collectible_collections (
+    id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    artist_wallet    TEXT        NOT NULL,
+    name             TEXT        NOT NULL,
+    description      TEXT        NOT NULL DEFAULT '',
+    image_url        TEXT        NOT NULL DEFAULT '',
+    is_active        BOOLEAN     NOT NULL DEFAULT TRUE,
+    -- Fusion-Wahrscheinlichkeiten (in Prozent, Summe = 100)
+    chance_common    SMALLINT    NOT NULL DEFAULT 50,
+    chance_uncommon  SMALLINT    NOT NULL DEFAULT 25,
+    chance_rare      SMALLINT    NOT NULL DEFAULT 15,
+    chance_epic      SMALLINT    NOT NULL DEFAULT 7,
+    chance_legendary SMALLINT    NOT NULL DEFAULT 2,
+    chance_mythic    SMALLINT    NOT NULL DEFAULT 1,
+    -- Boni die Collectibles dieses Künstlers verleihen können (artist-seitig konfigurierbar)
+    -- Diese gelten als Maximal-Werte; der tatsächliche Bonus hängt von der Seltenheit ab
+    max_rep_bonus_percent  SMALLINT NOT NULL DEFAULT 0,
+    max_shard_chance_bonus SMALLINT NOT NULL DEFAULT 0,
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+  CREATE INDEX IF NOT EXISTS idx_collectible_collections_artist ON collectible_collections(artist_wallet);
+
+  -- Shards: Fans sammeln Shards eines Künstlers
+  CREATE TABLE IF NOT EXISTS user_shards (
+    wallet_address TEXT        NOT NULL,
+    artist_wallet  TEXT        NOT NULL,
+    count          INTEGER     NOT NULL DEFAULT 0,
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (wallet_address, artist_wallet)
+  );
+  CREATE INDEX IF NOT EXISTS idx_user_shards_wallet ON user_shards(wallet_address);
+
+  -- Besessene Collectibles eines Fans
+  CREATE TABLE IF NOT EXISTS user_collectibles (
+    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    wallet_address  TEXT        NOT NULL,
+    collection_id   UUID        NOT NULL REFERENCES collectible_collections(id) ON DELETE CASCADE,
+    rarity          TEXT        NOT NULL CHECK (rarity IN ('common','uncommon','rare','epic','legendary','mythic')),
+    obtained_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+  CREATE INDEX IF NOT EXISTS idx_user_collectibles_wallet ON user_collectibles(wallet_address);
+  CREATE INDEX IF NOT EXISTS idx_user_collectibles_collection ON user_collectibles(collection_id, rarity);
 `;

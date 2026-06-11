@@ -1,0 +1,131 @@
+import { NextRequest, NextResponse } from 'next/server';
+import {
+  createCollectibleCollection,
+  getCollectionsByArtist,
+  getAllActiveCollections,
+  getUserShards,
+  getAllUserShards,
+  getUserCollectibles,
+  getUserCollectibleCountsByRarity,
+  getCollectiblesRepBonus,
+} from '../../lib/questDb/collectibles';
+
+export const dynamic = 'force-dynamic';
+
+/**
+ * GET /api/collectibles
+ * ?wallet=       → eigene Shards + Collectibles
+ * ?artistWallet= → Kollektionen eines Künstlers
+ * ?all=1         → alle aktiven Kollektionen (für Übersichtsseite)
+ */
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const wallet       = searchParams.get('wallet');
+  const artistWallet = searchParams.get('artistWallet');
+  const all          = searchParams.get('all');
+
+  try {
+    if (all === '1') {
+      const collections = await getAllActiveCollections();
+      return NextResponse.json({ collections });
+    }
+
+    if (artistWallet) {
+      const collections = await getCollectionsByArtist(artistWallet);
+      const result = await Promise.all(
+        collections.map(async (col) => {
+          const counts = wallet
+            ? await getUserCollectibleCountsByRarity(wallet.toLowerCase(), col.id)
+            : {};
+          const shards = wallet
+            ? await getUserShards(wallet.toLowerCase(), artistWallet.toLowerCase())
+            : 0;
+          return { collection: col, ownedByRarity: counts, shards };
+        }),
+      );
+      return NextResponse.json({ data: result });
+    }
+
+    if (wallet) {
+      const [shards, collectibles, repBonuses] = await Promise.all([
+        getAllUserShards(wallet.toLowerCase()),
+        getUserCollectibles(wallet.toLowerCase()),
+        // Rep-Bonus pro Artist aggregieren
+        (async () => {
+          const artistWallets = [...new Set(collectibles.map((c) => c.artistWallet).filter(Boolean) as string[])];
+          const bonuses: Record<string, number> = {};
+          await Promise.all(
+            artistWallets.map(async (aw) => {
+              bonuses[aw] = await getCollectiblesRepBonus(wallet.toLowerCase(), aw);
+            }),
+          );
+          return bonuses;
+        })(),
+      ]);
+      return NextResponse.json({ shards, collectibles, repBonuses });
+    }
+
+    return NextResponse.json({ error: 'wallet oder artistWallet fehlt' }, { status: 400 });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+  }
+}
+
+/**
+ * POST /api/collectibles
+ * Body: { artistWallet, name, description, imageUrl, chanceCommon, ... }
+ * → Neue Kollektion anlegen (nur Artist)
+ */
+export async function POST(req: NextRequest) {
+  let body: {
+    artistWallet?: string;
+    name?: string;
+    description?: string;
+    imageUrl?: string;
+    chanceCommon?: number;
+    chanceUncommon?: number;
+    chanceRare?: number;
+    chanceEpic?: number;
+    chanceLegendary?: number;
+    chanceMythic?: number;
+    maxRepBonusPercent?: number;
+    maxShardChanceBonus?: number;
+  };
+
+  try { body = await req.json(); }
+  catch { return NextResponse.json({ error: 'Ungültiger Request-Body' }, { status: 400 }); }
+
+  const { artistWallet, name } = body;
+  if (!artistWallet || !name?.trim()) {
+    return NextResponse.json({ error: 'artistWallet und name sind erforderlich' }, { status: 400 });
+  }
+
+  // Wahrscheinlichkeiten validieren (Summe muss 100 ergeben)
+  const chances = {
+    chanceCommon:    body.chanceCommon    ?? 50,
+    chanceUncommon:  body.chanceUncommon  ?? 25,
+    chanceRare:      body.chanceRare      ?? 15,
+    chanceEpic:      body.chanceEpic      ?? 7,
+    chanceLegendary: body.chanceLegendary ?? 2,
+    chanceMythic:    body.chanceMythic    ?? 1,
+  };
+  const total = Object.values(chances).reduce((s, v) => s + v, 0);
+  if (total !== 100) {
+    return NextResponse.json({ error: `Wahrscheinlichkeiten müssen zusammen 100 ergeben (aktuell: ${total})` }, { status: 400 });
+  }
+
+  try {
+    const id = await createCollectibleCollection({
+      artistWallet,
+      name: name.trim(),
+      description: body.description ?? '',
+      imageUrl: body.imageUrl ?? '',
+      ...chances,
+      maxRepBonusPercent: body.maxRepBonusPercent ?? 0,
+      maxShardChanceBonus: body.maxShardChanceBonus ?? 0,
+    });
+    return NextResponse.json({ id });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+  }
+}

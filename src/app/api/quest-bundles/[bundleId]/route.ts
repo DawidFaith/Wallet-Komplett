@@ -51,7 +51,7 @@ export async function POST(
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
-    return NextResponse.json({ success: true, bonusAmount: result.bonusAmount });
+    return NextResponse.json({ success: true, bonusAmount: result.bonusAmount, shardDropped: result.shardDropped ?? false });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error('[bundle claim-bonus]', msg);

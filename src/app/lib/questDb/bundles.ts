@@ -2,6 +2,7 @@ import { getDb } from '../db';
 import { cancelQuest } from './quests';
 import { addDfaithCredits } from './credits';
 import { addUserReputation, DEFAULT_REPUTATION_LEVELS } from './reputation';
+import { addShard, getCollectiblesShardBonus, getCollectionsByArtist } from './collectibles';
 import type {
   Platform, QuestType, QuestIndexEntry, ReputationLevel, ReputationContest,
   UserArtistReputation, ReputationLeaderboardEntry, QuestDetail, YouTubeBinding,
@@ -291,7 +292,7 @@ export async function getBundlesForCreator(
 export async function claimBundleCompletionBonus(
   bundleId: string,
   fanWallet: string,
-): Promise<{ success: boolean; bonusAmount: number; error?: string }> {
+): Promise<{ success: boolean; bonusAmount: number; error?: string; shardDropped?: boolean }> {
   const sql = getDb();
   const normalized = fanWallet.toLowerCase();
 
@@ -353,6 +354,23 @@ export async function claimBundleCompletionBonus(
     await addUserReputation(normalized, bundle.creator_wallet as string, totalReputation);
   }
 
+  // ── Shard-Drop (20% Basiswahrscheinlichkeit + Collectibles-Bonus) ──────────
+  // Nur wenn der Künstler mindestens eine aktive Kollektion hat
+  let shardDropped = false;
+  try {
+    const collections = await getCollectionsByArtist(bundle.creator_wallet as string);
+    if (collections.length > 0) {
+      const shardBonus = await getCollectiblesShardBonus(normalized, bundle.creator_wallet as string);
+      const shardChance = 20 + shardBonus; // Basis 20% + Collectibles-Bonus
+      if (Math.random() * 100 < shardChance) {
+        await addShard(normalized, bundle.creator_wallet as string, 1);
+        shardDropped = true;
+      }
+    }
+  } catch (_) {
+    // Shard-Drop ist optional – kein Fehler wenn es fehlschlägt
+  }
+
   // Completion-Record anlegen
   await sql`
     INSERT INTO quest_bundle_completions (bundle_id, fan_wallet, bonus_paid, completed_at)
@@ -360,7 +378,7 @@ export async function claimBundleCompletionBonus(
     ON CONFLICT DO NOTHING
   `;
 
-  return { success: true, bonusAmount };
+  return { success: true, bonusAmount, shardDropped };
 }
 
 /**

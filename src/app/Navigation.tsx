@@ -16,7 +16,9 @@ import {
   FaIdBadge,
   FaStar,
   FaTasks,
+  FaGem,
 } from "react-icons/fa";
+import { GiCrystalShine } from "react-icons/gi";
 import { FiChevronDown } from "react-icons/fi";
 import { useState } from "react";
 import { useLang, useSetLang } from "./components/LangContext";
@@ -95,7 +97,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
             <FaGlobe
               size={19}
               className={`transition-colors ${
-                ["reputation", "shop", "quest-board"].includes(activeTab)
+                ["reputation", "shop", "quest-board", "collectibles"].includes(activeTab)
                   ? "text-amber-400"
                   : "text-zinc-400"
               } hover:text-amber-400`}
@@ -129,12 +131,21 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
               </button>
               <button
                 onClick={() => { navigateToTab("shop"); setOpen(false); }}
-                className={`flex items-center gap-3 px-4 py-3 hover:bg-[#2d2515] w-full transition-colors duration-200 ${
+                className={`flex items-center gap-3 px-4 py-3 hover:bg-[#2d2515] w-full transition-colors duration-200 border-b border-white/10 ${
                   activeTab === "shop" ? "text-amber-400" : "text-zinc-300"
                 }`}
               >
                 <FaTshirt size={15} className={activeTab === "shop" ? "text-amber-400" : "text-zinc-400"} />
                 <span className="font-medium text-sm">Shop</span>
+              </button>
+              <button
+                onClick={() => { navigateToTab("collectibles"); setOpen(false); }}
+                className={`flex items-center gap-3 px-4 py-3 hover:bg-[#2d2515] w-full transition-colors duration-200 ${
+                  activeTab === "collectibles" ? "text-amber-400" : "text-zinc-300"
+                }`}
+              >
+                <GiCrystalShine size={15} className={activeTab === "collectibles" ? "text-amber-400" : "text-zinc-400"} />
+                <span className="font-medium text-sm">Collectibles</span>
               </button>
             </div>
           )}
