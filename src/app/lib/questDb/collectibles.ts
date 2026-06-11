@@ -314,9 +314,8 @@ export async function getCollectiblesRepBonus(
   artistWallet: string,
 ): Promise<number> {
   const sql = getDb();
-  // Alle Collectibles des Users für diesen Künstler laden
   const rows = await sql`
-    SELECT uc.rarity, cc.max_rep_bonus_percent
+    SELECT uc.rarity, uc.collection_id, cc.max_rep_bonus_percent
     FROM user_collectibles uc
     JOIN collectible_collections cc ON cc.id = uc.collection_id
     WHERE uc.wallet_address = ${walletAddress.toLowerCase()}
@@ -324,49 +323,51 @@ export async function getCollectiblesRepBonus(
   `;
   if (rows.length === 0) return 0;
 
-  // Bestes Collectible pro Seltenheit zählt (höchste Seltenheit dominiert)
-  let highestBonus = 0;
+  // Pro Kollektion: höchstes Collectible zählt → dann alle Kollektionen summieren
+  const bestPerCollection = new Map<string, number>();
   for (const row of rows) {
     const rarity = row.rarity as CollectibleRarity;
-    const maxBonus = Number(row.max_rep_bonus_percent);
-    const bonus = Math.round(maxBonus * RARITY_REP_MULTIPLIER[rarity]);
-    if (bonus > highestBonus) highestBonus = bonus;
+    const bonus = Math.round(Number(row.max_rep_bonus_percent) * RARITY_REP_MULTIPLIER[rarity]);
+    const collId = row.collection_id as string;
+    if (bonus > (bestPerCollection.get(collId) ?? 0)) bestPerCollection.set(collId, bonus);
   }
-  return highestBonus;
+  return Array.from(bestPerCollection.values()).reduce((sum, b) => sum + b, 0);
 }
 
-/** Aktiver Credits-Bonus in Prozent aus Collectibles für einen Künstler */
+/** Aktiver Credits-Bonus in Prozent – pro Kollektion bestes Collectible, dann summieren */
 export async function getCollectiblesCreditBonus(
   walletAddress: string,
   artistWallet: string,
 ): Promise<number> {
   const sql = getDb();
   const rows = await sql`
-    SELECT uc.rarity, cc.max_credit_bonus_percent
+    SELECT uc.rarity, uc.collection_id, cc.max_credit_bonus_percent
     FROM user_collectibles uc
     JOIN collectible_collections cc ON cc.id = uc.collection_id
     WHERE uc.wallet_address = ${walletAddress.toLowerCase()}
       AND cc.artist_wallet = ${artistWallet.toLowerCase()}
   `;
   if (rows.length === 0) return 0;
-  let highestBonus = 0;
+
+  // Pro Kollektion: höchstes Collectible zählt → dann alle Kollektionen summieren
+  const bestPerCollection = new Map<string, number>();
   for (const row of rows) {
     const rarity = row.rarity as CollectibleRarity;
-    const maxBonus = Number(row.max_credit_bonus_percent);
-    const bonus = Math.round(maxBonus * RARITY_CREDIT_MULTIPLIER[rarity]);
-    if (bonus > highestBonus) highestBonus = bonus;
+    const bonus = Math.round(Number(row.max_credit_bonus_percent) * RARITY_CREDIT_MULTIPLIER[rarity]);
+    const collId = row.collection_id as string;
+    if (bonus > (bestPerCollection.get(collId) ?? 0)) bestPerCollection.set(collId, bonus);
   }
-  return highestBonus;
+  return Array.from(bestPerCollection.values()).reduce((sum, b) => sum + b, 0);
 }
 
-/** Aktiver Shard-Chance-Bonus (addiert auf 20%) */
+/** Aktiver Shard-Chance-Bonus – pro Kollektion bestes Collectible, dann summieren */
 export async function getCollectiblesShardBonus(
   walletAddress: string,
   artistWallet: string,
 ): Promise<number> {
   const sql = getDb();
   const rows = await sql`
-    SELECT uc.rarity
+    SELECT uc.rarity, uc.collection_id
     FROM user_collectibles uc
     JOIN collectible_collections cc ON cc.id = uc.collection_id
     WHERE uc.wallet_address = ${walletAddress.toLowerCase()}
@@ -374,12 +375,14 @@ export async function getCollectiblesShardBonus(
   `;
   if (rows.length === 0) return 0;
 
-  let maxBonus = 0;
+  // Pro Kollektion: höchstes Collectible zählt → dann alle Kollektionen summieren
+  const bestPerCollection = new Map<string, number>();
   for (const row of rows) {
     const bonus = RARITY_SHARD_BONUS[row.rarity as CollectibleRarity];
-    if (bonus > maxBonus) maxBonus = bonus;
+    const collId = row.collection_id as string;
+    if (bonus > (bestPerCollection.get(collId) ?? 0)) bestPerCollection.set(collId, bonus);
   }
-  return maxBonus;
+  return Array.from(bestPerCollection.values()).reduce((sum, b) => sum + b, 0);
 }
 
 // ─── Hilfsfunktionen ─────────────────────────────────────────────────────────

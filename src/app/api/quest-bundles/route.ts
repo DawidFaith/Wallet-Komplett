@@ -6,6 +6,7 @@ import {
   lockQuestBudget,
   getPlatformUserCount,
   getTopFanBonusPcts,
+  getCollectionsByArtist,
   DEFAULT_REACH_WEIGHTS,
   type Platform,
   type QuestType,
@@ -92,8 +93,12 @@ export async function POST(req: NextRequest) {
   const bonusNum = Math.max(0,    Math.round((Number(bundleCompletionBonus) || 0) * 100) / 100);
   const maxNum   = Math.max(1,    Math.round(Number(maxParticipants)       || 10));
 
-  // Abschluss-Bonus: unveräändert bonusNum × maxNum (jeder der max. Teilnehmer kann den Bonus bekommen)
-  const abschlussBonusPool = Math.round(bonusNum * maxNum * 100) / 100;
+  // Abschluss-Bonus + Puffer für max. Collectibles-Credits-Bonus (Worst-Case: Mythic in allen Kollektionen)
+  const artistCollections = await getCollectionsByArtist(creatorWallet.toLowerCase());
+  const maxCollectibleCreditPct = artistCollections
+    .filter(c => c.isActive)
+    .reduce((sum, c) => sum + c.maxCreditBonusPercent, 0);
+  const abschlussBonusPool = Math.round(bonusNum * maxNum * (1 + maxCollectibleCreditPct / 100) * 100) / 100;
 
   // Level-Bonus-Reserve: Σ(rewardPerFan × bonusPct[fan] / 100) für die Top-N Fans × 1.02
   // N = min(maxTeilnehmer, Platform-Nutzer) — genau die Fans die den Quest erhalten könnten
@@ -108,8 +113,11 @@ export async function POST(req: NextRequest) {
   // Guthaben prüfen
   const credits = await getDfaithCredits(creatorWallet.toLowerCase());
   if (credits < totalBudget) {
+    const collectiblesNote = maxCollectibleCreditPct > 0
+      ? ` inkl. +${maxCollectibleCreditPct}% Collectibles-Puffer`
+      : '';
     return NextResponse.json({
-      error: `Nicht genug Credits. Du brauchst ${totalBudget.toFixed(2)} D.FAITH (${poolNum.toFixed(2)} × ${maxNum} Reward + ${abschlussBonusPool.toFixed(2)} Abschluss-Bonus + ${levelBonus.toFixed(2)} Level-Bonus-Reserve [Top ${effectiveParticipants} Fans × individuelle Level-Bonus% × 1.02]), hast aber nur ${credits.toFixed(2)}.`,
+      error: `Nicht genug Credits. Du brauchst ${totalBudget.toFixed(2)} D.FAITH (${poolNum.toFixed(2)} × ${maxNum} Reward + ${abschlussBonusPool.toFixed(2)} Abschluss-Bonus${collectiblesNote} + ${levelBonus.toFixed(2)} Level-Bonus-Reserve [Top ${effectiveParticipants} Fans × individuelle Level-Bonus% × 1.02]), hast aber nur ${credits.toFixed(2)}.`,
     }, { status: 400 });
   }
 

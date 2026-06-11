@@ -25,3 +25,4 @@ export * from './verifications';
 export * from './profile';
 export * from './reputation';
 export * from './bundles';
+export * from './collectibles';

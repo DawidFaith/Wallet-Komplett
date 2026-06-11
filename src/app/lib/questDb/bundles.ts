@@ -43,7 +43,15 @@ export async function createQuestBundle(
   let generatedStoryToken: string | null = null;
 
   const totalWeight = itemTypes.reduce((s, i) => s + i.reachWeight, 0);
-  const bonusBudgetTotal = Math.round(params.bundleCompletionBonus * params.maxParticipants * 100) / 100;
+
+  // Worst-case Bonus-Budget: Basis + max. möglicher Collectibles-Credits-Bonus (Summe aller aktiven Kollektionen)
+  const activeCollections = await getCollectionsByArtist(wallet);
+  const maxCollectibleCreditPct = activeCollections
+    .filter(c => c.isActive)
+    .reduce((sum, c) => sum + c.maxCreditBonusPercent, 0);
+  const bonusBudgetTotal = Math.round(
+    params.bundleCompletionBonus * params.maxParticipants * (1 + maxCollectibleCreditPct / 100) * 100,
+  ) / 100;
 
   // Bundle-Datensatz anlegen
   await sql`
@@ -335,22 +343,23 @@ export async function claimBundleCompletionBonus(
   const bonusAmount = Number(bundle.bundle_completion_bonus);
 
   if (bonusAmount > 0) {
-    // Bonus-Budget atomar abziehen
+    // Credits-Bonus aus Collectibles ZUERST berechnen (vor Budget-Abzug)
+    const creditBonusPct = await getCollectiblesCreditBonus(normalized, bundle.creator_wallet as string).catch(() => 0);
+    const finalBonus = creditBonusPct > 0
+      ? Math.round(bonusAmount * (1 + creditBonusPct / 100) * 100) / 100
+      : bonusAmount;
+
+    // Bonus-Budget atomar abziehen (kompletten finalen Bonus inkl. Collectibles)
     const deducted = await sql`
       UPDATE quest_bundles
-      SET bonus_budget_remaining = bonus_budget_remaining - ${bonusAmount},
+      SET bonus_budget_remaining = bonus_budget_remaining - ${finalBonus},
           updated_at = NOW()
-      WHERE id = ${bundleId} AND bonus_budget_remaining >= ${bonusAmount}
+      WHERE id = ${bundleId} AND bonus_budget_remaining >= ${finalBonus}
       RETURNING bonus_budget_remaining
     `;
     if (deducted.length === 0) {
       return { success: false, bonusAmount: 0, error: 'Bonus-Budget erschöpft' };
     }
-    // Credits-Bonus aus Collectibles berechnen
-    const creditBonusPct = await getCollectiblesCreditBonus(normalized, bundle.creator_wallet as string).catch(() => 0);
-    const finalBonus = creditBonusPct > 0
-      ? Math.round(bonusAmount * (1 + creditBonusPct / 100) * 100) / 100
-      : bonusAmount;
     await addDfaithCredits(normalized, finalBonus);
   }
 
