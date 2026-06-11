@@ -144,6 +144,48 @@ export async function createCollectibleCollection(params: {
   return id;
 }
 
+// ─── Kollektion aktualisieren ─────────────────────────────────────────────────
+
+export async function updateCollectibleCollection(
+  id: string,
+  artistWallet: string,
+  params: {
+    name?: string;
+    description?: string;
+    imageUrl?: string;
+    chanceCommon?: number;
+    chanceUncommon?: number;
+    chanceRare?: number;
+    chanceEpic?: number;
+    chanceLegendary?: number;
+    chanceMythic?: number;
+    maxRepBonusPercent?: number;
+    maxShardChanceBonus?: number;
+    maxCreditBonusPercent?: number;
+    primaryBonus?: BonusType;
+  }
+): Promise<boolean> {
+  const sql = getDb();
+  const result = await sql`
+    UPDATE collectible_collections SET
+      name                   = COALESCE(${params.name ?? null}, name),
+      description            = COALESCE(${params.description ?? null}, description),
+      image_url              = COALESCE(${params.imageUrl ?? null}, image_url),
+      chance_common          = COALESCE(${params.chanceCommon ?? null}, chance_common),
+      chance_uncommon        = COALESCE(${params.chanceUncommon ?? null}, chance_uncommon),
+      chance_rare            = COALESCE(${params.chanceRare ?? null}, chance_rare),
+      chance_epic            = COALESCE(${params.chanceEpic ?? null}, chance_epic),
+      chance_legendary       = COALESCE(${params.chanceLegendary ?? null}, chance_legendary),
+      chance_mythic          = COALESCE(${params.chanceMythic ?? null}, chance_mythic),
+      max_rep_bonus_percent  = COALESCE(${params.maxRepBonusPercent ?? null}, max_rep_bonus_percent),
+      max_shard_chance_bonus = COALESCE(${params.maxShardChanceBonus ?? null}, max_shard_chance_bonus),
+      max_credit_bonus_percent = COALESCE(${params.maxCreditBonusPercent ?? null}, max_credit_bonus_percent),
+      primary_bonus          = COALESCE(${params.primaryBonus ?? null}, primary_bonus)
+    WHERE id = ${id} AND artist_wallet = ${artistWallet.toLowerCase()}
+  `;
+  return (result.count ?? 0) > 0;
+}
+
 // ─── Kollektion laden ─────────────────────────────────────────────────────────
 export async function getCollectionsByArtist(artistWallet: string): Promise<CollectibleCollection[]> {
   const sql = getDb();

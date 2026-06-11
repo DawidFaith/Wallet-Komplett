@@ -67,10 +67,12 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const [bundles, setBundles] = useState<QuestBundleWithItems[]>([]);
   const [bundlesLoading, setBundlesLoading] = useState(false);
   const [bonusPercentByCreator, setBonusPercentByCreator] = useState<Record<string, number>>({});
+  const [creditBonusByCreator, setCreditBonusByCreator] = useState<Record<string, number>>({});
+  const [shardBonusByCreator, setShardBonusByCreator] = useState<Record<string, number>>({});
 
   // Celebration nach Quest-Abschluss
-  const [celebration, setCelebration] = useState<{ amount: number; questTitle: string; reputationReward?: number; levelBonus?: number } | null>(null);
-  const pendingCelebration = useRef<{ amount: number; questTitle: string; reputationReward?: number; levelBonus?: number } | null>(null);
+  const [celebration, setCelebration] = useState<{ amount: number; questTitle: string; reputationReward?: number; levelBonus?: number; shardDropped?: boolean } | null>(null);
+  const pendingCelebration = useRef<{ amount: number; questTitle: string; reputationReward?: number; levelBonus?: number; shardDropped?: boolean } | null>(null);
 
   // Eltern-Komponente über jeden neuen Quest-Abschluss informieren (für questCount-Badge)
   const prevCompletedCount = useRef(0);
@@ -172,6 +174,34 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
     loadBonusPercents();
     return () => { cancelled = true; };
   }, [walletAddress, quests, bundles]);
+
+  // Collectibles Credit/Shard-Boni pro Künstler laden
+  useEffect(() => {
+    if (!walletAddress || bundles.length === 0) return;
+    let cancelled = false;
+    const creatorWallets = [...new Set(bundles.map(b => b.creatorWallet.toLowerCase()))];
+    Promise.all(
+      creatorWallets.map(async (aw) => {
+        try {
+          const res = await fetch(`/api/collectibles?wallet=${walletAddress}&artistWallet=${aw}`);
+          if (!res.ok) return [aw, 0, 0] as const;
+          const data = await res.json() as { data?: { collection: { maxCreditBonusPercent?: number; maxShardChanceBonus?: number } }[] };
+          // Bestes Collectible-Kredit-Bonus aus allen Kollektionen nehmen
+          let maxCredit = 0, maxShard = 0;
+          for (const d of (data.data ?? [])) {
+            if ((d.collection.maxCreditBonusPercent ?? 0) > maxCredit) maxCredit = d.collection.maxCreditBonusPercent ?? 0;
+            if ((d.collection.maxShardChanceBonus ?? 0) > maxShard) maxShard = d.collection.maxShardChanceBonus ?? 0;
+          }
+          return [aw, maxCredit, maxShard] as const;
+        } catch { return [aw, 0, 0] as const; }
+      })
+    ).then(results => {
+      if (cancelled) return;
+      setCreditBonusByCreator(Object.fromEntries(results.map(([w, c]) => [w, c])));
+      setShardBonusByCreator(Object.fromEntries(results.map(([w, , s]) => [w, s])));
+    });
+    return () => { cancelled = true; };
+  }, [walletAddress, bundles]);
 
   const getBonusPercent = (creatorWallet: string) => bonusPercentByCreator[creatorWallet.toLowerCase()] ?? 0;
 
@@ -421,13 +451,15 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               fanWallet={walletAddress}
               verified={verified}
               levelBonusPercent={getBonusPercent(bundle.creatorWallet)}
+              creditBonusPct={creditBonusByCreator[bundle.creatorWallet.toLowerCase()] ?? 0}
+              shardBonusPct={shardBonusByCreator[bundle.creatorWallet.toLowerCase()] ?? 0}
               language={language}
-              onBonusClaimed={(bonusAmount, bundleTitle) => { 
+              onBonusClaimed={(bonusAmount, bundleTitle, shardDropped) => { 
                 // Sofort aus der Liste entfernen (kein Flackern bis loadBundles fertig ist)
                 setBundles((prev) => prev.filter((b) => b.id !== bundle.id));
                 loadBundles(); 
                 loadQuests(); 
-                setCelebration({ amount: bonusAmount, questTitle: `🎁 ${bundleTitle} - Bonus`, reputationReward: 0, levelBonus: 0 });
+                setCelebration({ amount: bonusAmount, questTitle: `🎁 ${bundleTitle} - Bonus`, reputationReward: 0, levelBonus: 0, shardDropped });
               }}
               renderQuestCard={(quest) => {
                 const isCompleted = completedIds.includes(quest.id);
@@ -937,6 +969,11 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             {(celebration.levelBonus ?? 0) > 0 && (
               <p className="text-green-400 font-semibold text-sm mb-3 flex items-center justify-center gap-1">
                 ⚡ +{celebration.levelBonus} Level-Bonus enthalten!
+              </p>
+            )}
+            {celebration.shardDropped && (
+              <p className="text-amber-300 font-bold text-sm mb-3 flex items-center justify-center gap-1.5 bg-amber-400/10 border border-amber-400/20 rounded-xl px-3 py-2">
+                ✨ +1 Shard erhalten! (Collectibles-Bonus)
               </p>
             )}
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 mb-6">

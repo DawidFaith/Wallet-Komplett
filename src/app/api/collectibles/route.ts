@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   createCollectibleCollection,
+  updateCollectibleCollection,
   getCollectionsByArtist,
   getAllActiveCollections,
   getUserShards,
@@ -126,6 +127,70 @@ export async function POST(req: NextRequest) {
       primaryBonus: (['rep', 'credits', 'shard'].includes(body.primaryBonus ?? '') ? body.primaryBonus : 'rep') as 'rep' | 'credits' | 'shard',
     });
     return NextResponse.json({ id });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+  }
+}
+
+/**
+ * PATCH /api/collectibles
+ * Body: { id, artistWallet, name?, description?, imageUrl?, chanceCommon?, ... }
+ * → Kollektion bearbeiten (nur der Besitzer)
+ */
+export async function PATCH(req: NextRequest) {
+  let body: {
+    id?: string;
+    artistWallet?: string;
+    name?: string;
+    description?: string;
+    imageUrl?: string;
+    chanceCommon?: number;
+    chanceUncommon?: number;
+    chanceRare?: number;
+    chanceEpic?: number;
+    chanceLegendary?: number;
+    chanceMythic?: number;
+    maxRepBonusPercent?: number;
+    maxShardChanceBonus?: number;
+    maxCreditBonusPercent?: number;
+    primaryBonus?: string;
+  };
+  try { body = await req.json(); }
+  catch { return NextResponse.json({ error: 'Ungültiger Request-Body' }, { status: 400 }); }
+
+  const { id, artistWallet } = body;
+  if (!id?.trim() || !artistWallet?.trim()) {
+    return NextResponse.json({ error: 'id und artistWallet sind erforderlich' }, { status: 400 });
+  }
+
+  // Wenn Chancen geändert werden, Summe prüfen
+  const hasChances = [body.chanceCommon, body.chanceUncommon, body.chanceRare, body.chanceEpic, body.chanceLegendary, body.chanceMythic].some(v => v !== undefined);
+  if (hasChances) {
+    const total = (body.chanceCommon ?? 0) + (body.chanceUncommon ?? 0) + (body.chanceRare ?? 0)
+      + (body.chanceEpic ?? 0) + (body.chanceLegendary ?? 0) + (body.chanceMythic ?? 0);
+    if (total !== 100) {
+      return NextResponse.json({ error: `Wahrscheinlichkeiten müssen 100 ergeben (aktuell: ${total})` }, { status: 400 });
+    }
+  }
+
+  try {
+    const updated = await updateCollectibleCollection(id.trim(), artistWallet.trim(), {
+      name:                  body.name,
+      description:           body.description,
+      imageUrl:              body.imageUrl,
+      chanceCommon:          body.chanceCommon,
+      chanceUncommon:        body.chanceUncommon,
+      chanceRare:            body.chanceRare,
+      chanceEpic:            body.chanceEpic,
+      chanceLegendary:       body.chanceLegendary,
+      chanceMythic:          body.chanceMythic,
+      maxRepBonusPercent:    body.maxRepBonusPercent,
+      maxShardChanceBonus:   body.maxShardChanceBonus,
+      maxCreditBonusPercent: body.maxCreditBonusPercent,
+      primaryBonus:          (['rep', 'credits', 'shard'].includes(body.primaryBonus ?? '') ? body.primaryBonus as 'rep' | 'credits' | 'shard' : undefined),
+    });
+    if (!updated) return NextResponse.json({ error: 'Kollektion nicht gefunden oder keine Berechtigung' }, { status: 403 });
+    return NextResponse.json({ success: true });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }

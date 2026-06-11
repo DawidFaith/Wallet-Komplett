@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useUser } from '@clerk/nextjs';
-import { FaGem, FaFire, FaChevronLeft, FaPlus, FaTimes, FaCheck, FaSync, FaImage } from 'react-icons/fa';
+import { FaGem, FaFire, FaChevronLeft, FaPlus, FaTimes, FaCheck, FaSync, FaImage, FaEdit } from 'react-icons/fa';
 import { GiCrystalShine, GiMagicSwirl } from 'react-icons/gi';
 import { upload } from '@vercel/blob/client';
 import { useLang } from '../components/LangContext';
@@ -411,13 +411,15 @@ function UpgradeModal({ collection, fromRarity, count, onClose, onUpgraded, wall
 
 // ─── Kollektion-Panel ─────────────────────────────────────────────────────────
 
-function CollectionPanel({ data, walletAddress, onRefresh }: {
+function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false }: {
   data: CollectionData;
   walletAddress: string;
   onRefresh: () => void;
+  isOwner?: boolean;
 }) {
   const [fuseOpen, setFuseOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState<CollectibleRarity | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   const { collection, ownedByRarity, shards } = data;
   const totalCollectibles = Object.values(ownedByRarity).reduce((s, v) => s + (v ?? 0), 0);
@@ -435,7 +437,18 @@ function CollectionPanel({ data, walletAddress, onRefresh }: {
           }
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-black text-white text-sm truncate">{collection.name}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-black text-white text-sm truncate flex-1">{collection.name}</p>
+            {isOwner && (
+              <button
+                onClick={() => setEditOpen(true)}
+                className="text-zinc-500 hover:text-amber-400 transition-colors p-1 shrink-0"
+                title="Kollektion bearbeiten"
+              >
+                <FaEdit size={13} />
+              </button>
+            )}
+          </div>
           {collection.description && (
             <p className="text-[11px] text-zinc-500 leading-relaxed mt-0.5 line-clamp-2">{collection.description}</p>
           )}
@@ -556,6 +569,217 @@ function CollectionPanel({ data, walletAddress, onRefresh }: {
           onUpgraded={() => { setUpgradeOpen(null); onRefresh(); }}
         />
       )}
+
+      {/* Edit Modal */}
+      {editOpen && isOwner && (
+        <EditCollectionForm
+          collection={collection}
+          artistWallet={walletAddress}
+          onClose={() => setEditOpen(false)}
+          onSaved={() => { setEditOpen(false); onRefresh(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Kollektion bearbeiten (Artist) ──────────────────────────────────────────
+
+function EditCollectionForm({ collection, artistWallet, onClose, onSaved }: {
+  collection: CollectibleCollection;
+  artistWallet: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [form, setForm] = useState({
+    name:                collection.name,
+    description:         collection.description ?? '',
+    imageUrl:            collection.imageUrl ?? '',
+    chanceCommon:        collection.chanceCommon,
+    chanceUncommon:      collection.chanceUncommon,
+    chanceRare:          collection.chanceRare,
+    chanceEpic:          collection.chanceEpic,
+    chanceLegendary:     collection.chanceLegendary,
+    chanceMythic:        collection.chanceMythic,
+    maxRepBonusPercent:  collection.maxRepBonusPercent,
+    maxShardChanceBonus: collection.maxShardChanceBonus ?? 0,
+    maxCreditBonusPercent: collection.maxCreditBonusPercent ?? 0,
+    primaryBonus:        (collection.primaryBonus ?? 'rep') as BonusType,
+  });
+
+  const total = form.chanceCommon + form.chanceUncommon + form.chanceRare + form.chanceEpic + form.chanceLegendary + form.chanceMythic;
+
+  const handleImageUpload = async (file: File) => {
+    setUploadingImage(true);
+    setError('');
+    try {
+      const blob = await upload(`collectibles/${artistWallet}/${Date.now()}-${file.name}`, file, {
+        access: 'public',
+        handleUploadUrl: '/api/collectibles/upload',
+        clientPayload: JSON.stringify({ wallet: artistWallet }),
+      });
+      setForm((f) => ({ ...f, imageUrl: blob.url }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Upload fehlgeschlagen');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim()) return;
+    if (total !== 100) { setError(`Wahrscheinlichkeiten müssen 100 ergeben (aktuell: ${total})`); return; }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/collectibles', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: collection.id, artistWallet, ...form }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Fehler beim Speichern');
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-[#1a1814] border border-amber-400/20 rounded-t-3xl p-5 w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <p className="font-black text-white text-sm flex items-center gap-2"><FaEdit className="text-amber-400" /> Kollektion bearbeiten</p>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white"><FaTimes size={14} /></button>
+        </div>
+
+        <div className="space-y-3">
+          {/* Name */}
+          <div>
+            <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-1">Name *</label>
+            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-amber-400/30" />
+          </div>
+          {/* Beschreibung */}
+          <div>
+            <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-1">Beschreibung</label>
+            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
+              rows={2}
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-amber-400/30 resize-none" />
+          </div>
+
+          {/* Bild */}
+          <div>
+            <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-1">Bild</label>
+            <div className="flex gap-2 items-center">
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={uploadingImage}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.08] rounded-lg text-xs text-zinc-400 hover:text-white transition-colors disabled:opacity-50"
+              >
+                <FaImage size={11} /> {uploadingImage ? 'Lädt...' : 'Neues Bild'}
+              </button>
+              {form.imageUrl && (
+                <Image src={form.imageUrl} alt="" width={36} height={36} className="w-9 h-9 rounded-lg object-cover border border-white/10" />
+              )}
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); }}
+              />
+            </div>
+          </div>
+
+          {/* Primärer Bonus */}
+          <div>
+            <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-1">Primärer Bonus (Slot 1)</label>
+            <div className="flex gap-2">
+              {(['rep', 'credits', 'shard'] as BonusType[]).map((b) => (
+                <button key={b} type="button"
+                  onClick={() => setForm({ ...form, primaryBonus: b })}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-colors ${form.primaryBonus === b ? 'bg-amber-500 text-black border-amber-500' : 'bg-white/[0.03] text-zinc-400 border-white/[0.08] hover:border-white/20'}`}>
+                  {b === 'rep' ? 'Rep' : b === 'credits' ? 'Credits' : 'Shard'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Wahrscheinlichkeiten */}
+          <div>
+            <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-1">
+              Wahrscheinlichkeiten (Summe: <span className={total === 100 ? 'text-green-400' : 'text-red-400'}>{total}</span>/100)
+            </label>
+            <div className="grid grid-cols-3 gap-1.5">
+              {([
+                ['common', 'Common'], ['uncommon', 'Uncommon'], ['rare', 'Rare'],
+                ['epic', 'Epic'], ['legendary', 'Legendary'], ['mythic', 'Mythic'],
+              ] as [keyof typeof form, string][]).map(([k, label]) => (
+                <div key={k}>
+                  <p className="text-[9px] text-zinc-600 mb-0.5">{label}</p>
+                  <input
+                    type="number" min={0} max={100}
+                    value={form[k] as number}
+                    onChange={(e) => setForm({ ...form, [k]: Number(e.target.value) })}
+                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1 text-xs text-white outline-none focus:border-amber-400/30"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bonus-Maximalwerte */}
+          <div>
+            <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-1">Maximale Boni (bei Mythic)</label>
+            <div className="grid grid-cols-3 gap-1.5">
+              <div>
+                <p className="text-[9px] text-zinc-600 mb-0.5">Rep % (max)</p>
+                <input type="number" min={0} value={form.maxRepBonusPercent}
+                  onChange={(e) => setForm({ ...form, maxRepBonusPercent: Number(e.target.value) })}
+                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1 text-xs text-white outline-none focus:border-amber-400/30" />
+              </div>
+              <div>
+                <p className="text-[9px] text-zinc-600 mb-0.5">Credits % (max)</p>
+                <input type="number" min={0} value={form.maxCreditBonusPercent}
+                  onChange={(e) => setForm({ ...form, maxCreditBonusPercent: Number(e.target.value) })}
+                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1 text-xs text-white outline-none focus:border-amber-400/30" />
+              </div>
+              <div>
+                <p className="text-[9px] text-zinc-600 mb-0.5">Shard-Chance (max)</p>
+                <input type="number" min={0} value={form.maxShardChanceBonus}
+                  onChange={(e) => setForm({ ...form, maxShardChanceBonus: Number(e.target.value) })}
+                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1 text-xs text-white outline-none focus:border-amber-400/30" />
+              </div>
+            </div>
+          </div>
+
+          {error && <p className="text-red-400 text-xs">{error}</p>}
+
+          <div className="flex gap-2 pt-1">
+            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-white/[0.04] text-zinc-400 text-sm font-semibold hover:bg-white/[0.08] transition-colors">
+              Abbrechen
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={loading || total !== 100}
+              className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-700 disabled:text-zinc-500 text-black font-bold text-sm flex items-center justify-center gap-1.5 transition-colors"
+            >
+              {loading ? <FaSync className="animate-spin" size={12} /> : <FaCheck size={12} />} Speichern
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1080,6 +1304,7 @@ export default function CollectiblesTab() {
                         data={data}
                         walletAddress={walletAddress}
                         onRefresh={loadMyCollections}
+                        isOwner={true}
                       />
                     ))}
                   </>

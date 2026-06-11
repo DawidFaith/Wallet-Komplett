@@ -96,13 +96,15 @@ interface BundleCardProps {
   fanWallet: string;
   verified: VerifiedPlatforms;
   levelBonusPercent?: number;
-  onBonusClaimed: (bonusAmount: number, bundleTitle: string) => void;
+  creditBonusPct?: number;
+  shardBonusPct?: number;
+  onBonusClaimed: (bonusAmount: number, bundleTitle: string, shardDropped?: boolean) => void;
   /** Öffnet das passende Verifikations-Modal (z.B. InstagramDmShareModal) für eine Bundle-Quest */
   onOpenQuest?: (quest: QuestIndexEntry) => void;
   /** Rendert die richtige Quest-Card für ein Item (vom Parent geliefert, damit Logik wie bei „Verfügbare Quests" identisch ist) */
   renderQuestCard?: (quest: QuestIndexEntry) => React.ReactNode;  language?: Lang;}
 
-export default function BundleCard({ bundle, fanWallet, verified, levelBonusPercent = 0, onBonusClaimed, onOpenQuest, renderQuestCard, language = 'de' }: BundleCardProps) {
+export default function BundleCard({ bundle, fanWallet, verified, levelBonusPercent = 0, creditBonusPct = 0, shardBonusPct = 0, onBonusClaimed, onOpenQuest, renderQuestCard, language = 'de' }: BundleCardProps) {
   const lang = useLang();
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState('');
@@ -197,10 +199,10 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fanWallet }),
       });
-      const data = await res.json() as { success?: boolean; bonusAmount?: number; error?: string };
+      const data = await res.json() as { success?: boolean; bonusAmount?: number; shardDropped?: boolean; error?: string };
       if (!res.ok || !data.success) throw new Error(data.error ?? 'Fehler');
       setJustClaimed(true);
-      onBonusClaimed(data.bonusAmount ?? 0, bundle.videoTitle);
+      onBonusClaimed(data.bonusAmount ?? 0, bundle.videoTitle, data.shardDropped ?? false);
     } catch (e) {
       setClaimError((e as Error).message);
     } finally {
@@ -356,6 +358,21 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
 
             {/* Button */}
             <div className="px-3 pb-3 pt-1.5">
+              {/* Collectibles-Bonus-Badges */}
+              {(creditBonusPct > 0 || shardBonusPct > 0) && (
+                <div className="flex gap-1.5 mb-2 flex-wrap">
+                  {creditBonusPct > 0 && (
+                    <span className="flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-bold px-2 py-0.5 rounded-full">
+                      💎 +{creditBonusPct}% Credits-Bonus
+                    </span>
+                  )}
+                  {shardBonusPct > 0 && (
+                    <span className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-bold px-2 py-0.5 rounded-full">
+                      ✨ +{shardBonusPct}% Shard-Chance
+                    </span>
+                  )}
+                </div>
+              )}
               {canClaimBonus ? (
                 <>
                   {claimError && <p className="text-amber-400 text-xs text-center mb-1">{claimError}</p>}
