@@ -627,48 +627,32 @@ export default function CollectiblesTab() {
   const [loading, setLoading] = useState(true);
   const [isArtist, setIsArtist] = useState(false);
 
-  // Überprüfe ob User ein Artist ist
-  useEffect(() => {
-    if (!walletAddress) return;
-    fetch(`/api/artist?wallet=${walletAddress}`)
-      .then((r) => r.json())
-      .then((d) => setIsArtist(!!d.isArtist))
-      .catch(() => {});
-  }, [walletAddress]);
-
-  // Alle Künstler mit Kollektionen laden
+  // Alle Künstler laden (unabhängig von Kollektionen) + isArtist prüfen
   const loadArtists = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/collectibles?all=1');
-      const data = await res.json();
-      // Einzigartige Künstler extrahieren
-      const artistMap = new Map<string, CollectibleArtist>();
-      for (const col of (data.collections ?? [])) {
-        if (!artistMap.has(col.artistWallet)) {
-          artistMap.set(col.artistWallet, {
-            artistWallet: col.artistWallet,
-            name: col.artistWallet,
-            picture: null,
-          });
-        }
-      }
-      // Namen + Bilder nachladen
-      const artistList = Array.from(artistMap.values());
-      const enriched = await Promise.all(artistList.map(async (a) => {
-        try {
-          const r = await fetch(`/api/admin/artists?wallet=${a.artistWallet}`);
-          const d = await r.json();
-          const found = d.artists?.[0];
-          return found ? { ...a, name: found.name, picture: found.picture } : a;
-        } catch { return a; }
+      // Alle Künstler aus Admin-API laden (hat Bilder + Namen)
+      const [artistsRes, shardsRes] = await Promise.all([
+        fetch('/api/admin/artists'),
+        walletAddress ? fetch(`/api/collectibles?wallet=${walletAddress}`) : Promise.resolve(null),
+      ]);
+      const artistsData = await artistsRes.json();
+      const allArtists: CollectibleArtist[] = (artistsData.artists ?? []).map((a: any) => ({
+        artistWallet: a.walletAddress,
+        name: a.name,
+        picture: a.picture ?? null,
       }));
-      setArtists(enriched);
+      setArtists(allArtists);
+
+      // Prüfen ob eingeloggter User ein Künstler ist
+      if (walletAddress) {
+        const isArt = allArtists.some((a) => a.artistWallet.toLowerCase() === walletAddress.toLowerCase());
+        setIsArtist(isArt);
+      }
 
       // Eigene Shards laden
-      if (walletAddress) {
-        const sr = await fetch(`/api/collectibles?wallet=${walletAddress}`);
-        const sd = await sr.json();
+      if (shardsRes) {
+        const sd = await shardsRes.json();
         const shardMap: Record<string, number> = {};
         for (const s of (sd.shards ?? [])) shardMap[s.artistWallet] = s.count;
         setMyShards(shardMap);
@@ -727,20 +711,37 @@ export default function CollectiblesTab() {
         </div>
       </div>
 
-      {/* Artist-Kollektion erstellen (nur für Artists) */}
-      {view === 'artist' && isArtist && selectedArtist?.artistWallet === walletAddress && (
-        <CreateCollectionForm
-          artistWallet={walletAddress}
-          onCreated={() => loadArtistCollections(walletAddress)}
-        />
-      )}
-
       {loading ? (
         <div className="flex justify-center py-12">
           <span className="w-7 h-7 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
         </div>
       ) : view === 'overview' ? (
         <>
+          {/* Artist-Sektion: eigene Kollektionen verwalten */}
+          {isArtist && (
+            <div className="mb-6">
+              <p className="text-[9px] font-black tracking-[0.35em] uppercase text-amber-400/60 mb-2">Meine Kollektionen</p>
+              <CreateCollectionForm
+                artistWallet={walletAddress}
+                onCreated={() => {
+                  loadArtists();
+                  // Direkt zur eigenen Artist-Ansicht wechseln
+                  const self = artists.find((a) => a.artistWallet.toLowerCase() === walletAddress.toLowerCase());
+                  if (self) handleSelectArtist(self);
+                }}
+              />
+              <button
+                onClick={() => {
+                  const self = artists.find((a) => a.artistWallet.toLowerCase() === walletAddress.toLowerCase());
+                  if (self) handleSelectArtist(self);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+              >
+                <GiCrystalShine size={12} className="text-amber-400/50" />
+                Meine Kollektionen anzeigen →
+              </button>
+            </div>
+          )}
           {/* Meine Shards Info */}
           {Object.keys(myShards).length > 0 && (
             <div className="bg-amber-400/5 border border-amber-400/10 rounded-xl p-3 mb-5">
@@ -801,10 +802,10 @@ export default function CollectiblesTab() {
         /* Künstler-Detail */
         <>
           {/* Artist kann eigene Kollektion erstellen */}
-          {isArtist && selectedArtist?.artistWallet === walletAddress && (
+          {isArtist && selectedArtist?.artistWallet.toLowerCase() === walletAddress.toLowerCase() && (
             <CreateCollectionForm
               artistWallet={walletAddress}
-              onCreated={() => loadArtistCollections(walletAddress)}
+              onCreated={() => selectedArtist && loadArtistCollections(selectedArtist.artistWallet)}
             />
           )}
 
