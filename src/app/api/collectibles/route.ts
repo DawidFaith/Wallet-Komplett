@@ -47,22 +47,19 @@ export async function GET(req: NextRequest) {
     }
 
     if (wallet) {
-      const [shards, collectibles, repBonuses] = await Promise.all([
+      const [shards, collectibles] = await Promise.all([
         getAllUserShards(wallet.toLowerCase()),
         getUserCollectibles(wallet.toLowerCase()),
-        // Rep-Bonus pro Artist aggregieren
-        (async () => {
-          const artistWallets = [...new Set(collectibles.map((c) => c.artistWallet).filter(Boolean) as string[])];
-          const bonuses: Record<string, number> = {};
-          await Promise.all(
-            artistWallets.map(async (aw) => {
-              bonuses[aw] = await getCollectiblesRepBonus(wallet.toLowerCase(), aw);
-            }),
-          );
-          return bonuses;
-        })(),
       ]);
-      return NextResponse.json({ shards, collectibles, repBonuses });
+      // Rep-Bonus pro Artist aggregieren (nach collectibles geladen)
+      const artistWallets = [...new Set(collectibles.map((c) => c.artistWallet).filter(Boolean) as string[])];
+      const bonuses: Record<string, number> = {};
+      await Promise.all(
+        artistWallets.map(async (aw) => {
+          bonuses[aw] = await getCollectiblesRepBonus(wallet.toLowerCase(), aw);
+        }),
+      );
+      return NextResponse.json({ shards, collectibles, repBonuses: bonuses });
     }
 
     return NextResponse.json({ error: 'wallet oder artistWallet fehlt' }, { status: 400 });
