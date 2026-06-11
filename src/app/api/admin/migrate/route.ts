@@ -409,6 +409,55 @@ export async function POST(req: NextRequest) {
       ORDER BY table_name, column_name
     `;
 
+    // ── Collectibles-System ───────────────────────────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS collectible_collections (
+        id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+        artist_wallet    TEXT        NOT NULL,
+        name             TEXT        NOT NULL,
+        description      TEXT        NOT NULL DEFAULT '',
+        image_url        TEXT        NOT NULL DEFAULT '',
+        is_active        BOOLEAN     NOT NULL DEFAULT TRUE,
+        chance_common    SMALLINT    NOT NULL DEFAULT 50,
+        chance_uncommon  SMALLINT    NOT NULL DEFAULT 25,
+        chance_rare      SMALLINT    NOT NULL DEFAULT 15,
+        chance_epic      SMALLINT    NOT NULL DEFAULT 7,
+        chance_legendary SMALLINT    NOT NULL DEFAULT 2,
+        chance_mythic    SMALLINT    NOT NULL DEFAULT 1,
+        max_rep_bonus_percent    SMALLINT NOT NULL DEFAULT 0,
+        max_shard_chance_bonus   SMALLINT NOT NULL DEFAULT 0,
+        max_credit_bonus_percent SMALLINT NOT NULL DEFAULT 0,
+        primary_bonus    TEXT        NOT NULL DEFAULT 'rep',
+        created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_collectible_collections_artist ON collectible_collections(artist_wallet)`;
+    await sql`ALTER TABLE collectible_collections ADD COLUMN IF NOT EXISTS max_credit_bonus_percent SMALLINT NOT NULL DEFAULT 0`;
+    await sql`ALTER TABLE collectible_collections ADD COLUMN IF NOT EXISTS primary_bonus TEXT NOT NULL DEFAULT 'rep'`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS user_shards (
+        wallet_address TEXT        NOT NULL,
+        artist_wallet  TEXT        NOT NULL,
+        count          INTEGER     NOT NULL DEFAULT 0,
+        updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (wallet_address, artist_wallet)
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_user_shards_wallet ON user_shards(wallet_address)`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS user_collectibles (
+        id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+        wallet_address TEXT        NOT NULL,
+        collection_id  UUID        NOT NULL REFERENCES collectible_collections(id) ON DELETE CASCADE,
+        rarity         TEXT        NOT NULL CHECK (rarity IN ('common','uncommon','rare','epic','legendary','mythic')),
+        obtained_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_user_collectibles_wallet     ON user_collectibles(wallet_address)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_user_collectibles_collection ON user_collectibles(collection_id)`;
+
     return NextResponse.json({
       success: true,
       message: `Migration abgeschlossen (${(backfill as unknown as { count?: number }).count ?? backfill.length} neue Profile)`,
