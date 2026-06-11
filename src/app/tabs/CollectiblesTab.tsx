@@ -12,6 +12,8 @@ import { useLang } from '../components/LangContext';
 
 type CollectibleRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic';
 
+type BonusType = 'rep' | 'credits' | 'shard';
+
 interface CollectibleCollection {
   id: string;
   artistWallet: string;
@@ -25,6 +27,9 @@ interface CollectibleCollection {
   chanceLegendary: number;
   chanceMythic: number;
   maxRepBonusPercent: number;
+  maxCreditBonusPercent?: number;
+  maxShardChanceBonus?: number;
+  primaryBonus: BonusType;
 }
 
 interface CollectionData {
@@ -50,29 +55,58 @@ const RARITY_CONFIG: Record<CollectibleRarity, {
   textColor: string;
   repMultiplier: number;
 }> = {
-  common:    { label: 'Common',    color: '#9ca3af', bg: 'bg-zinc-800',     border: 'border-zinc-500',   glow: '',                                    textColor: 'text-zinc-300',   repMultiplier: 0.05 },
-  uncommon:  { label: 'Uncommon',  color: '#4ade80', bg: 'bg-green-950/60', border: 'border-green-500',  glow: 'shadow-[0_0_12px_rgba(74,222,128,0.4)]', textColor: 'text-green-400',  repMultiplier: 0.12 },
-  rare:      { label: 'Rare',      color: '#60a5fa', bg: 'bg-blue-950/60',  border: 'border-blue-500',   glow: 'shadow-[0_0_14px_rgba(96,165,250,0.5)]', textColor: 'text-blue-400',   repMultiplier: 0.25 },
-  epic:      { label: 'Epic',      color: '#a78bfa', bg: 'bg-purple-950/60',border: 'border-purple-500', glow: 'shadow-[0_0_16px_rgba(167,139,250,0.6)]', textColor: 'text-purple-400', repMultiplier: 0.50 },
-  legendary: { label: 'Legendary', color: '#fbbf24', bg: 'bg-amber-950/60', border: 'border-amber-400',  glow: 'shadow-[0_0_20px_rgba(251,191,36,0.7)]',  textColor: 'text-amber-400',  repMultiplier: 0.75 },
-  mythic:    { label: 'Mythic',    color: '#f43f5e', bg: 'bg-rose-950/60',  border: 'border-rose-400',   glow: 'shadow-[0_0_24px_rgba(244,63,94,0.8)]',   textColor: 'text-rose-400',   repMultiplier: 1.0  },
+  common:    { label: 'Common',    color: '#9ca3af', bg: 'bg-zinc-800',     border: 'border-zinc-500',   glow: '',                                    textColor: 'text-zinc-300',   repMultiplier: 0.10 },
+  uncommon:  { label: 'Uncommon',  color: '#4ade80', bg: 'bg-green-950/60', border: 'border-green-500',  glow: 'shadow-[0_0_12px_rgba(74,222,128,0.4)]', textColor: 'text-green-400',  repMultiplier: 0.20 },
+  rare:      { label: 'Rare',      color: '#60a5fa', bg: 'bg-blue-950/60',  border: 'border-blue-500',   glow: 'shadow-[0_0_14px_rgba(96,165,250,0.5)]', textColor: 'text-blue-400',   repMultiplier: 0.35 },
+  epic:      { label: 'Epic',      color: '#a78bfa', bg: 'bg-purple-950/60',border: 'border-purple-500', glow: 'shadow-[0_0_16px_rgba(167,139,250,0.6)]', textColor: 'text-purple-400', repMultiplier: 0.55 },
+  legendary: { label: 'Legendary', color: '#fbbf24', bg: 'bg-amber-950/60', border: 'border-amber-400',  glow: 'shadow-[0_0_20px_rgba(251,191,36,0.7)]',  textColor: 'text-amber-400',  repMultiplier: 0.80 },
+  mythic:    { label: 'Mythic',    color: '#f43f5e', bg: 'bg-rose-950/60',  border: 'border-rose-400',   glow: 'shadow-[0_0_24px_rgba(244,63,94,0.8)]',   textColor: 'text-rose-400',   repMultiplier: 1.00 },
 };
 
 const RARITY_ORDER: CollectibleRarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
 
+// Bonus-Slot-Logik (spiegelt collectibles.ts wider, ohne DB)
+function getBonusSlots(primary: BonusType): [BonusType, BonusType, BonusType] {
+  const all: BonusType[] = ['rep', 'credits', 'shard'];
+  const others = all.filter(b => b !== primary) as [BonusType, BonusType];
+  return [primary, others[0], others[1]];
+}
+function getActiveSlotsCount(rarity: CollectibleRarity): 1 | 2 | 3 {
+  const idx = RARITY_ORDER.indexOf(rarity);
+  if (idx >= RARITY_ORDER.indexOf('mythic')) return 3;
+  if (idx >= RARITY_ORDER.indexOf('epic')) return 2;
+  return 1;
+}
+const BONUS_LABELS: Record<BonusType, string> = { rep: 'REP', credits: 'Credits', shard: 'Shard-Chance' };
+const BONUS_UNLOCK: Record<BonusType, string> = { rep: 'ab Common', credits: 'ab Epic', shard: 'ab Mythic' };
+
 // ─── Collectible Card ─────────────────────────────────────────────────────────
 
-function CollectibleCard({ rarity, count, imageUrl, name, maxRepBonus, maxCreditBonus }: {
+function CollectibleCard({ rarity, count, imageUrl, name, maxRepBonus, maxCreditBonus, maxShardBonus, primaryBonus }: {
   rarity: CollectibleRarity;
   count: number;
   imageUrl: string;
   name: string;
   maxRepBonus: number;
   maxCreditBonus: number;
+  maxShardBonus: number;
+  primaryBonus: BonusType;
 }) {
   const cfg = RARITY_CONFIG[rarity];
-  const repBonus = Math.round(maxRepBonus * cfg.repMultiplier);
-  const creditBonus = Math.round(maxCreditBonus * cfg.repMultiplier);
+  const slots = getBonusSlots(primaryBonus);
+  const activeCount = getActiveSlotsCount(rarity);
+
+  const bonusValues: Record<BonusType, number> = {
+    rep:     Math.round(maxRepBonus    * cfg.repMultiplier),
+    credits: Math.round(maxCreditBonus * cfg.repMultiplier),
+    shard:   Math.round(maxShardBonus  * cfg.repMultiplier),
+  };
+
+  const bonusColors: Record<BonusType, string> = {
+    rep:     'text-amber-400',
+    credits: 'text-green-400',
+    shard:   'text-blue-400',
+  };
 
   return (
     <div className={`relative flex flex-col items-center rounded-2xl border-2 ${cfg.border} ${cfg.bg} ${cfg.glow} p-3 w-[140px] shrink-0`}>
@@ -100,14 +134,23 @@ function CollectibleCard({ rarity, count, imageUrl, name, maxRepBonus, maxCredit
         {name}
       </span>
 
-      {/* Rep + Credits Bonus */}
-      <div className="flex flex-col items-center gap-0.5">
-        {repBonus > 0 && (
-          <span className="text-[9px] text-amber-400/80 font-semibold">+{repBonus}% REP</span>
-        )}
-        {creditBonus > 0 && (
-          <span className="text-[9px] text-green-400/80 font-semibold">+{creditBonus}% Credits</span>
-        )}
+      {/* Bonus-Slots: aktiv = farbig, gesperrt = grau mit Schloss */}
+      <div className="flex flex-col items-center gap-0.5 w-full">
+        {slots.map((bonusType, slotIdx) => {
+          const isActive = slotIdx < activeCount;
+          const value = bonusValues[bonusType];
+          return (
+            <span
+              key={bonusType}
+              className={`text-[9px] font-semibold flex items-center gap-0.5 ${
+                isActive ? bonusColors[bonusType] + '/90' : 'text-zinc-700'
+              }`}
+            >
+              {!isActive && <span className="text-[8px]">🔒</span>}
+              {isActive && value > 0 ? `+${value}% ${BONUS_LABELS[bonusType]}` : BONUS_LABELS[bonusType]}
+            </span>
+          );
+        })}
       </div>
     </div>
   );
@@ -427,7 +470,9 @@ function CollectionPanel({ data, walletAddress, onRefresh }: {
                 imageUrl={collection.imageUrl}
                 name={collection.name}
                 maxRepBonus={collection.maxRepBonusPercent}
-                maxCreditBonus={(collection as any).maxCreditBonusPercent ?? 0}
+                maxCreditBonus={collection.maxCreditBonusPercent ?? 0}
+                maxShardBonus={collection.maxShardChanceBonus ?? 0}
+                primaryBonus={collection.primaryBonus ?? 'rep'}
               />
             ))}
           </div>
@@ -499,6 +544,7 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
     chanceCommon: 50, chanceUncommon: 25, chanceRare: 15,
     chanceEpic: 7, chanceLegendary: 2, chanceMythic: 1,
     maxRepBonusPercent: 20, maxShardChanceBonus: 5, maxCreditBonusPercent: 10,
+    primaryBonus: 'rep' as BonusType,
   });
 
   const total = form.chanceCommon + form.chanceUncommon + form.chanceRare + form.chanceEpic + form.chanceLegendary + form.chanceMythic;
@@ -534,7 +580,7 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
       const data = await res.json();
       if (!data.id) throw new Error(data.error || 'Fehler');
       setOpen(false);
-      setForm({ name: '', description: '', imageUrl: '', chanceCommon: 50, chanceUncommon: 25, chanceRare: 15, chanceEpic: 7, chanceLegendary: 2, chanceMythic: 1, maxRepBonusPercent: 20, maxShardChanceBonus: 5, maxCreditBonusPercent: 10 });
+      setForm({ name: '', description: '', imageUrl: '', chanceCommon: 50, chanceUncommon: 25, chanceRare: 15, chanceEpic: 7, chanceLegendary: 2, chanceMythic: 1, maxRepBonusPercent: 20, maxShardChanceBonus: 5, maxCreditBonusPercent: 10, primaryBonus: 'rep' });
       onCreated();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Fehler');
@@ -630,6 +676,39 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Hauptbonus (Primär-Slot) */}
+        <div>
+          <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-2">
+            Hauptbonus (aktiv ab Common)
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {(['rep', 'credits', 'shard'] as BonusType[]).map((b) => {
+              const labels: Record<BonusType, string> = { rep: 'Reputation', credits: 'Credits', shard: 'Shard-Chance' };
+              const active = form.primaryBonus === b;
+              return (
+                <button
+                  key={b}
+                  type="button"
+                  onClick={() => setForm({ ...form, primaryBonus: b })}
+                  className={`py-2 rounded-lg text-[10px] font-black border transition-colors ${
+                    active
+                      ? 'bg-amber-400/15 border-amber-400/50 text-amber-300'
+                      : 'bg-white/[0.03] border-white/[0.08] text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  {labels[b]}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[9px] text-zinc-700 mt-1.5">
+            {(() => {
+              const slots = getBonusSlots(form.primaryBonus);
+              return `${BONUS_LABELS[slots[0]]} (Common+) → ${BONUS_LABELS[slots[1]]} (Epic+) → ${BONUS_LABELS[slots[2]]} (Mythic)`;
+            })()}
+          </p>
         </div>
 
         {/* Bonuswerte */}

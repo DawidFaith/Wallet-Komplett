@@ -43,6 +43,8 @@ export const RARITY_SHARD_BONUS: Record<CollectibleRarity, number> = {
   mythic: 25,
 };
 
+export type BonusType = 'rep' | 'credits' | 'shard';
+
 export interface CollectibleCollection {
   id: string;
   artistWallet: string;
@@ -59,7 +61,28 @@ export interface CollectibleCollection {
   maxRepBonusPercent: number;
   maxShardChanceBonus: number;
   maxCreditBonusPercent: number;
+  /** Welcher Bonus-Typ ist primär (ab Common aktiv). Die anderen schalten sich bei Epic und Mythic frei. */
+  primaryBonus: BonusType;
   createdAt: string;
+}
+
+/**
+ * Gibt die Bonus-Slot-Reihenfolge einer Kollektion zurück.
+ * Slot 0: ab Common, Slot 1: ab Epic, Slot 2: ab Mythic.
+ * Feste Priorität der nicht-primären Slots: rep > credits > shard.
+ */
+export function getBonusSlots(primaryBonus: BonusType): [BonusType, BonusType, BonusType] {
+  const all: BonusType[] = ['rep', 'credits', 'shard'];
+  const others = all.filter(b => b !== primaryBonus) as [BonusType, BonusType];
+  return [primaryBonus, others[0], others[1]];
+}
+
+/** Anzahl aktiver Bonus-Slots abhängig von der Seltenheit. */
+export function getActiveSlotsCount(rarity: CollectibleRarity): 1 | 2 | 3 {
+  const idx = RARITY_ORDER.indexOf(rarity);
+  if (idx >= RARITY_ORDER.indexOf('mythic')) return 3;
+  if (idx >= RARITY_ORDER.indexOf('epic')) return 2;
+  return 1;
 }
 
 export interface UserShard {
@@ -95,6 +118,7 @@ export async function createCollectibleCollection(params: {
   maxRepBonusPercent?: number;
   maxShardChanceBonus?: number;
   maxCreditBonusPercent?: number;
+  primaryBonus?: BonusType;
 }): Promise<string> {
   const sql = getDb();
   const id = crypto.randomUUID();
@@ -103,17 +127,18 @@ export async function createCollectibleCollection(params: {
     chanceCommon = 50, chanceUncommon = 25, chanceRare = 15,
     chanceEpic = 7, chanceLegendary = 2, chanceMythic = 1,
     maxRepBonusPercent = 0, maxShardChanceBonus = 0,
+    primaryBonus = 'rep',
   } = params;
 
   await sql`
     INSERT INTO collectible_collections (
       id, artist_wallet, name, description, image_url,
       chance_common, chance_uncommon, chance_rare, chance_epic, chance_legendary, chance_mythic,
-      max_rep_bonus_percent, max_shard_chance_bonus, max_credit_bonus_percent
+      max_rep_bonus_percent, max_shard_chance_bonus, max_credit_bonus_percent, primary_bonus
     ) VALUES (
       ${id}, ${artistWallet.toLowerCase()}, ${name}, ${description}, ${imageUrl},
       ${chanceCommon}, ${chanceUncommon}, ${chanceRare}, ${chanceEpic}, ${chanceLegendary}, ${chanceMythic},
-      ${maxRepBonusPercent}, ${maxShardChanceBonus}, ${params.maxCreditBonusPercent ?? 0}
+      ${maxRepBonusPercent}, ${maxShardChanceBonus}, ${params.maxCreditBonusPercent ?? 0}, ${primaryBonus}
     )
   `;
   return id;
@@ -315,74 +340,94 @@ export async function getCollectiblesRepBonus(
 ): Promise<number> {
   const sql = getDb();
   const rows = await sql`
-    SELECT uc.rarity, uc.collection_id, cc.max_rep_bonus_percent
+    SELECT uc.rarity, uc.collection_id, cc.max_rep_bonus_percent, cc.primary_bonus
     FROM user_collectibles uc
     JOIN collectible_collections cc ON cc.id = uc.collection_id
     WHERE uc.wallet_address = ${walletAddress.toLowerCase()}
       AND cc.artist_wallet = ${artistWallet.toLowerCase()}
+      AND cc.is_active = true
   `;
   if (rows.length === 0) return 0;
-
-  // Pro Kollektion: höchstes Collectible zählt → dann alle Kollektionen summieren
-  const bestPerCollection = new Map<string, number>();
-  for (const row of rows) {
-    const rarity = row.rarity as CollectibleRarity;
-    const bonus = Math.round(Number(row.max_rep_bonus_percent) * RARITY_REP_MULTIPLIER[rarity]);
-    const collId = row.collection_id as string;
-    if (bonus > (bestPerCollection.get(collId) ?? 0)) bestPerCollection.set(collId, bonus);
-  }
-  return Array.from(bestPerCollection.values()).reduce((sum, b) => sum + b, 0);
+  return calcBonus(rows, 'rep', (r) => ({
+    collId: r.collection_id as string,
+    rarity: r.rarity as CollectibleRarity,
+    value: Math.round(Number(r.max_rep_bonus_percent) * RARITY_REP_MULTIPLIER[r.rarity as CollectibleRarity]),
+    primaryBonus: r.primary_bonus as BonusType,
+  }));
 }
 
-/** Aktiver Credits-Bonus in Prozent – pro Kollektion bestes Collectible, dann summieren */
+/** Aktiver Credits-Bonus in Prozent – pro Kollektion bestes Collectible, Slot-Unlock beachten, dann summieren */
 export async function getCollectiblesCreditBonus(
   walletAddress: string,
   artistWallet: string,
 ): Promise<number> {
   const sql = getDb();
   const rows = await sql`
-    SELECT uc.rarity, uc.collection_id, cc.max_credit_bonus_percent
+    SELECT uc.rarity, uc.collection_id, cc.max_credit_bonus_percent, cc.primary_bonus
     FROM user_collectibles uc
     JOIN collectible_collections cc ON cc.id = uc.collection_id
     WHERE uc.wallet_address = ${walletAddress.toLowerCase()}
       AND cc.artist_wallet = ${artistWallet.toLowerCase()}
+      AND cc.is_active = true
   `;
   if (rows.length === 0) return 0;
-
-  // Pro Kollektion: höchstes Collectible zählt → dann alle Kollektionen summieren
-  const bestPerCollection = new Map<string, number>();
-  for (const row of rows) {
-    const rarity = row.rarity as CollectibleRarity;
-    const bonus = Math.round(Number(row.max_credit_bonus_percent) * RARITY_CREDIT_MULTIPLIER[rarity]);
-    const collId = row.collection_id as string;
-    if (bonus > (bestPerCollection.get(collId) ?? 0)) bestPerCollection.set(collId, bonus);
-  }
-  return Array.from(bestPerCollection.values()).reduce((sum, b) => sum + b, 0);
+  return calcBonus(rows, 'credits', (r) => ({
+    collId: r.collection_id as string,
+    rarity: r.rarity as CollectibleRarity,
+    value: Math.round(Number(r.max_credit_bonus_percent) * RARITY_CREDIT_MULTIPLIER[r.rarity as CollectibleRarity]),
+    primaryBonus: r.primary_bonus as BonusType,
+  }));
 }
 
-/** Aktiver Shard-Chance-Bonus – pro Kollektion bestes Collectible, dann summieren */
+/** Aktiver Shard-Chance-Bonus – pro Kollektion bestes Collectible, Slot-Unlock beachten, dann summieren */
 export async function getCollectiblesShardBonus(
   walletAddress: string,
   artistWallet: string,
 ): Promise<number> {
   const sql = getDb();
   const rows = await sql`
-    SELECT uc.rarity, uc.collection_id
+    SELECT uc.rarity, uc.collection_id, cc.max_shard_chance_bonus, cc.primary_bonus
     FROM user_collectibles uc
     JOIN collectible_collections cc ON cc.id = uc.collection_id
     WHERE uc.wallet_address = ${walletAddress.toLowerCase()}
       AND cc.artist_wallet = ${artistWallet.toLowerCase()}
+      AND cc.is_active = true
   `;
   if (rows.length === 0) return 0;
+  return calcBonus(rows, 'shard', (r) => ({
+    collId: r.collection_id as string,
+    rarity: r.rarity as CollectibleRarity,
+    value: RARITY_SHARD_BONUS[r.rarity as CollectibleRarity],
+    primaryBonus: r.primary_bonus as BonusType,
+  }));
+}
 
-  // Pro Kollektion: höchstes Collectible zählt → dann alle Kollektionen summieren
-  const bestPerCollection = new Map<string, number>();
+// ─── Interner Bonus-Kalkulator (Slot-Logik) ───────────────────────────────────
+function calcBonus(
+  rows: any[],
+  bonusType: BonusType,
+  mapper: (r: any) => { collId: string; rarity: CollectibleRarity; value: number; primaryBonus: BonusType },
+): number {
+  // Pro Kollektion: beste Seltenheit und höchsten Wert ermitteln
+  type CollData = { rarity: CollectibleRarity; value: number; primaryBonus: BonusType };
+  const bestPerColl = new Map<string, CollData>();
   for (const row of rows) {
-    const bonus = RARITY_SHARD_BONUS[row.rarity as CollectibleRarity];
-    const collId = row.collection_id as string;
-    if (bonus > (bestPerCollection.get(collId) ?? 0)) bestPerCollection.set(collId, bonus);
+    const mapped = mapper(row);
+    const existing = bestPerColl.get(mapped.collId);
+    if (!existing || RARITY_ORDER.indexOf(mapped.rarity) > RARITY_ORDER.indexOf(existing.rarity)) {
+      bestPerColl.set(mapped.collId, { rarity: mapped.rarity, value: mapped.value, primaryBonus: mapped.primaryBonus });
+    }
   }
-  return Array.from(bestPerCollection.values()).reduce((sum, b) => sum + b, 0);
+  let total = 0;
+  for (const { rarity, value, primaryBonus } of bestPerColl.values()) {
+    const slots = getBonusSlots(primaryBonus);
+    const activeCount = getActiveSlotsCount(rarity);
+    // Prüfen ob dieser Bonus-Typ in einem aktiven Slot liegt
+    if (slots.slice(0, activeCount).includes(bonusType)) {
+      total += value;
+    }
+  }
+  return total;
 }
 
 // ─── Hilfsfunktionen ─────────────────────────────────────────────────────────
@@ -422,6 +467,7 @@ function rowToCollection(r: any): CollectibleCollection {
     maxRepBonusPercent: Number(r.max_rep_bonus_percent),
     maxShardChanceBonus: Number(r.max_shard_chance_bonus),
     maxCreditBonusPercent: Number(r.max_credit_bonus_percent ?? 0),
+    primaryBonus: (r.primary_bonus ?? 'rep') as BonusType,
     createdAt: r.created_at,
   };
 }

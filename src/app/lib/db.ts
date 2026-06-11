@@ -272,8 +272,11 @@ export const MIGRATION_SQL = `
     max_rep_bonus_percent  SMALLINT NOT NULL DEFAULT 0,
     max_shard_chance_bonus SMALLINT NOT NULL DEFAULT 0,
     max_credit_bonus_percent SMALLINT NOT NULL DEFAULT 0,
+    -- Welcher Bonus-Typ ist primär (ab Common aktiv). Feste Reihenfolge: rep > credits > shard
+    primary_bonus    TEXT        NOT NULL DEFAULT 'rep',
     created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
+  ALTER TABLE collectible_collections ADD COLUMN IF NOT EXISTS primary_bonus TEXT NOT NULL DEFAULT 'rep';
   CREATE INDEX IF NOT EXISTS idx_collectible_collections_artist ON collectible_collections(artist_wallet);
 
   -- Shards: Fans sammeln Shards eines Künstlers

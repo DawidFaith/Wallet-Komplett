@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
     maxRepBonusPercent?: number;
     maxShardChanceBonus?: number;
     maxCreditBonusPercent?: number;
+    primaryBonus?: string;
   };
 
   try { body = await req.json(); }
@@ -122,6 +123,7 @@ export async function POST(req: NextRequest) {
       maxRepBonusPercent: body.maxRepBonusPercent ?? 0,
       maxShardChanceBonus: body.maxShardChanceBonus ?? 0,
       maxCreditBonusPercent: body.maxCreditBonusPercent ?? 0,
+      primaryBonus: (['rep', 'credits', 'shard'].includes(body.primaryBonus ?? '') ? body.primaryBonus : 'rep') as 'rep' | 'credits' | 'shard',
     });
     return NextResponse.json({ id });
   } catch (e) {
