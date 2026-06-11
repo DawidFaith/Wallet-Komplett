@@ -723,8 +723,8 @@ function EditCollectionForm({ collection, artistWallet, onClose, onSaved }: {
             </label>
             <div className="grid grid-cols-3 gap-1.5">
               {([
-                ['common', 'Common'], ['uncommon', 'Uncommon'], ['rare', 'Rare'],
-                ['epic', 'Epic'], ['legendary', 'Legendary'], ['mythic', 'Mythic'],
+                ['chanceCommon', 'Common'], ['chanceUncommon', 'Uncommon'], ['chanceRare', 'Rare'],
+                ['chanceEpic', 'Epic'], ['chanceLegendary', 'Legendary'], ['chanceMythic', 'Mythic'],
               ] as [keyof typeof form, string][]).map(([k, label]) => (
                 <div key={k}>
                   <p className="text-[9px] text-zinc-600 mb-0.5">{label}</p>
