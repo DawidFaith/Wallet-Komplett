@@ -271,6 +271,7 @@ export const MIGRATION_SQL = `
     -- Diese gelten als Maximal-Werte; der tatsächliche Bonus hängt von der Seltenheit ab
     max_rep_bonus_percent  SMALLINT NOT NULL DEFAULT 0,
     max_shard_chance_bonus SMALLINT NOT NULL DEFAULT 0,
+    max_credit_bonus_percent SMALLINT NOT NULL DEFAULT 0,
     created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
   CREATE INDEX IF NOT EXISTS idx_collectible_collections_artist ON collectible_collections(artist_wallet);

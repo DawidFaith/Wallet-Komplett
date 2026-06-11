@@ -2,7 +2,7 @@ import { getDb } from '../db';
 import { cancelQuest } from './quests';
 import { addDfaithCredits } from './credits';
 import { addUserReputation, DEFAULT_REPUTATION_LEVELS } from './reputation';
-import { addShard, getCollectiblesShardBonus, getCollectionsByArtist } from './collectibles';
+import { addShard, getCollectiblesShardBonus, getCollectionsByArtist, getCollectiblesCreditBonus } from './collectibles';
 import type {
   Platform, QuestType, QuestIndexEntry, ReputationLevel, ReputationContest,
   UserArtistReputation, ReputationLeaderboardEntry, QuestDetail, YouTubeBinding,
@@ -346,7 +346,12 @@ export async function claimBundleCompletionBonus(
     if (deducted.length === 0) {
       return { success: false, bonusAmount: 0, error: 'Bonus-Budget erschöpft' };
     }
-    await addDfaithCredits(normalized, bonusAmount);
+    // Credits-Bonus aus Collectibles berechnen
+    const creditBonusPct = await getCollectiblesCreditBonus(normalized, bundle.creator_wallet as string).catch(() => 0);
+    const finalBonus = creditBonusPct > 0
+      ? Math.round(bonusAmount * (1 + creditBonusPct / 100) * 100) / 100
+      : bonusAmount;
+    await addDfaithCredits(normalized, finalBonus);
   }
 
   // Reputation für Bundle-Abschluss vergeben

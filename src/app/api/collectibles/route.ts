@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
     chanceMythic?: number;
     maxRepBonusPercent?: number;
     maxShardChanceBonus?: number;
+    maxCreditBonusPercent?: number;
   };
 
   try { body = await req.json(); }
@@ -120,6 +121,7 @@ export async function POST(req: NextRequest) {
       ...chances,
       maxRepBonusPercent: body.maxRepBonusPercent ?? 0,
       maxShardChanceBonus: body.maxShardChanceBonus ?? 0,
+      maxCreditBonusPercent: body.maxCreditBonusPercent ?? 0,
     });
     return NextResponse.json({ id });
   } catch (e) {

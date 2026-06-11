@@ -15,12 +15,22 @@ export const RARITY_LABELS: Record<CollectibleRarity, string> = {
 
 // Rep-Bonus pro Seltenheit (Multiplikator auf den max_rep_bonus_percent der Kollektion)
 export const RARITY_REP_MULTIPLIER: Record<CollectibleRarity, number> = {
-  common: 0.05,
-  uncommon: 0.12,
-  rare: 0.25,
-  epic: 0.5,
-  legendary: 0.75,
-  mythic: 1.0,
+  common:    0.10,
+  uncommon:  0.20,
+  rare:      0.35,
+  epic:      0.55,
+  legendary: 0.80,
+  mythic:    1.00,
+};
+
+// Credits-Bonus pro Seltenheit (Multiplikator auf max_credit_bonus_percent)
+export const RARITY_CREDIT_MULTIPLIER: Record<CollectibleRarity, number> = {
+  common:    0.10,
+  uncommon:  0.20,
+  rare:      0.35,
+  epic:      0.55,
+  legendary: 0.80,
+  mythic:    1.00,
 };
 
 // Shard-Chance-Bonus pro Seltenheit (addiert auf die Basis-20%-Chance)
@@ -48,6 +58,7 @@ export interface CollectibleCollection {
   chanceMythic: number;
   maxRepBonusPercent: number;
   maxShardChanceBonus: number;
+  maxCreditBonusPercent: number;
   createdAt: string;
 }
 
@@ -83,6 +94,7 @@ export async function createCollectibleCollection(params: {
   chanceMythic?: number;
   maxRepBonusPercent?: number;
   maxShardChanceBonus?: number;
+  maxCreditBonusPercent?: number;
 }): Promise<string> {
   const sql = getDb();
   const id = crypto.randomUUID();
@@ -97,11 +109,11 @@ export async function createCollectibleCollection(params: {
     INSERT INTO collectible_collections (
       id, artist_wallet, name, description, image_url,
       chance_common, chance_uncommon, chance_rare, chance_epic, chance_legendary, chance_mythic,
-      max_rep_bonus_percent, max_shard_chance_bonus
+      max_rep_bonus_percent, max_shard_chance_bonus, max_credit_bonus_percent
     ) VALUES (
       ${id}, ${artistWallet.toLowerCase()}, ${name}, ${description}, ${imageUrl},
       ${chanceCommon}, ${chanceUncommon}, ${chanceRare}, ${chanceEpic}, ${chanceLegendary}, ${chanceMythic},
-      ${maxRepBonusPercent}, ${maxShardChanceBonus}
+      ${maxRepBonusPercent}, ${maxShardChanceBonus}, ${params.maxCreditBonusPercent ?? 0}
     )
   `;
   return id;
@@ -323,6 +335,30 @@ export async function getCollectiblesRepBonus(
   return highestBonus;
 }
 
+/** Aktiver Credits-Bonus in Prozent aus Collectibles für einen Künstler */
+export async function getCollectiblesCreditBonus(
+  walletAddress: string,
+  artistWallet: string,
+): Promise<number> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT uc.rarity, cc.max_credit_bonus_percent
+    FROM user_collectibles uc
+    JOIN collectible_collections cc ON cc.id = uc.collection_id
+    WHERE uc.wallet_address = ${walletAddress.toLowerCase()}
+      AND cc.artist_wallet = ${artistWallet.toLowerCase()}
+  `;
+  if (rows.length === 0) return 0;
+  let highestBonus = 0;
+  for (const row of rows) {
+    const rarity = row.rarity as CollectibleRarity;
+    const maxBonus = Number(row.max_credit_bonus_percent);
+    const bonus = Math.round(maxBonus * RARITY_CREDIT_MULTIPLIER[rarity]);
+    if (bonus > highestBonus) highestBonus = bonus;
+  }
+  return highestBonus;
+}
+
 /** Aktiver Shard-Chance-Bonus (addiert auf 20%) */
 export async function getCollectiblesShardBonus(
   walletAddress: string,
@@ -382,6 +418,7 @@ function rowToCollection(r: any): CollectibleCollection {
     chanceMythic: Number(r.chance_mythic),
     maxRepBonusPercent: Number(r.max_rep_bonus_percent),
     maxShardChanceBonus: Number(r.max_shard_chance_bonus),
+    maxCreditBonusPercent: Number(r.max_credit_bonus_percent ?? 0),
     createdAt: r.created_at,
   };
 }

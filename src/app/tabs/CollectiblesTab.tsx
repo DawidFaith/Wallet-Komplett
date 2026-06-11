@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useUser } from '@clerk/nextjs';
-import { FaGem, FaFire, FaChevronLeft, FaPlus, FaTimes, FaCheck, FaSync } from 'react-icons/fa';
+import { FaGem, FaFire, FaChevronLeft, FaPlus, FaTimes, FaCheck, FaSync, FaImage } from 'react-icons/fa';
 import { GiCrystalShine, GiMagicSwirl } from 'react-icons/gi';
+import { upload } from '@vercel/blob/client';
 import { useLang } from '../components/LangContext';
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
@@ -61,15 +62,17 @@ const RARITY_ORDER: CollectibleRarity[] = ['common', 'uncommon', 'rare', 'epic',
 
 // ─── Collectible Card ─────────────────────────────────────────────────────────
 
-function CollectibleCard({ rarity, count, imageUrl, name, maxRepBonus }: {
+function CollectibleCard({ rarity, count, imageUrl, name, maxRepBonus, maxCreditBonus }: {
   rarity: CollectibleRarity;
   count: number;
   imageUrl: string;
   name: string;
   maxRepBonus: number;
+  maxCreditBonus: number;
 }) {
   const cfg = RARITY_CONFIG[rarity];
   const repBonus = Math.round(maxRepBonus * cfg.repMultiplier);
+  const creditBonus = Math.round(maxCreditBonus * cfg.repMultiplier);
 
   return (
     <div className={`relative flex flex-col items-center rounded-2xl border-2 ${cfg.border} ${cfg.bg} ${cfg.glow} p-3 w-[140px] shrink-0`}>
@@ -97,10 +100,15 @@ function CollectibleCard({ rarity, count, imageUrl, name, maxRepBonus }: {
         {name}
       </span>
 
-      {/* Rep Bonus */}
-      {repBonus > 0 && (
-        <span className="text-[9px] text-amber-400/80 font-semibold">+{repBonus}% REP</span>
-      )}
+      {/* Rep + Credits Bonus */}
+      <div className="flex flex-col items-center gap-0.5">
+        {repBonus > 0 && (
+          <span className="text-[9px] text-amber-400/80 font-semibold">+{repBonus}% REP</span>
+        )}
+        {creditBonus > 0 && (
+          <span className="text-[9px] text-green-400/80 font-semibold">+{creditBonus}% Credits</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -419,6 +427,7 @@ function CollectionPanel({ data, walletAddress, onRefresh }: {
                 imageUrl={collection.imageUrl}
                 name={collection.name}
                 maxRepBonus={collection.maxRepBonusPercent}
+                maxCreditBonus={(collection as any).maxCreditBonusPercent ?? 0}
               />
             ))}
           </div>
@@ -483,14 +492,33 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: '', description: '', imageUrl: '',
     chanceCommon: 50, chanceUncommon: 25, chanceRare: 15,
     chanceEpic: 7, chanceLegendary: 2, chanceMythic: 1,
-    maxRepBonusPercent: 20, maxShardChanceBonus: 5,
+    maxRepBonusPercent: 20, maxShardChanceBonus: 5, maxCreditBonusPercent: 10,
   });
 
   const total = form.chanceCommon + form.chanceUncommon + form.chanceRare + form.chanceEpic + form.chanceLegendary + form.chanceMythic;
+
+  const handleImageUpload = async (file: File) => {
+    setUploadingImage(true);
+    setError('');
+    try {
+      const blob = await upload(`collectibles/${artistWallet}/${Date.now()}-${file.name}`, file, {
+        access: 'public',
+        handleUploadUrl: '/api/collectibles/upload',
+        clientPayload: JSON.stringify({ wallet: artistWallet }),
+      });
+      setForm((f) => ({ ...f, imageUrl: blob.url }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Upload fehlgeschlagen');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleCreate = async () => {
     if (!form.name.trim()) return;
@@ -506,7 +534,7 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
       const data = await res.json();
       if (!data.id) throw new Error(data.error || 'Fehler');
       setOpen(false);
-      setForm({ name: '', description: '', imageUrl: '', chanceCommon: 50, chanceUncommon: 25, chanceRare: 15, chanceEpic: 7, chanceLegendary: 2, chanceMythic: 1, maxRepBonusPercent: 20, maxShardChanceBonus: 5 });
+      setForm({ name: '', description: '', imageUrl: '', chanceCommon: 50, chanceUncommon: 25, chanceRare: 15, chanceEpic: 7, chanceLegendary: 2, chanceMythic: 1, maxRepBonusPercent: 20, maxShardChanceBonus: 5, maxCreditBonusPercent: 10 });
       onCreated();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Fehler');
@@ -546,11 +574,34 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
             rows={2} placeholder="Kurze Beschreibung..."
             className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-amber-400/30 resize-none" />
         </div>
+
+        {/* Bild-Upload */}
         <div>
-          <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-1">Bild-URL</label>
-          <input value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-            placeholder="https://..."
-            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-amber-400/30" />
+          <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-1">Kollektion-Bild</label>
+          <div className="flex gap-2 items-center">
+            <button
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={uploadingImage}
+              className="flex items-center gap-2 px-3 py-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] rounded-lg text-xs text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-50"
+            >
+              {uploadingImage ? <FaSync className="animate-spin" size={11} /> : <FaImage size={11} />}
+              {uploadingImage ? 'Lädt...' : 'Bild hochladen'}
+            </button>
+            {form.imageUrl && (
+              <div className="flex items-center gap-2">
+                <Image src={form.imageUrl} alt="" width={32} height={32} className="w-8 h-8 rounded-lg object-cover border border-white/10" />
+                <button onClick={() => setForm({ ...form, imageUrl: '' })} className="text-zinc-600 hover:text-red-400"><FaTimes size={10} /></button>
+              </div>
+            )}
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); }}
+            />
+          </div>
         </div>
 
         {/* Wahrscheinlichkeiten */}
@@ -582,19 +633,29 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
         </div>
 
         {/* Bonuswerte */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-1">Max REP-Bonus %</label>
-            <input type="number" min={0} max={100} value={form.maxRepBonusPercent}
-              onChange={(e) => setForm({ ...form, maxRepBonusPercent: Number(e.target.value) })}
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white outline-none" />
+        <div>
+          <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-2">Max-Boni (bei Mythic-Collectible)</label>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="text-[9px] text-zinc-600 block mb-1">REP %</label>
+              <input type="number" min={0} max={100} value={form.maxRepBonusPercent}
+                onChange={(e) => setForm({ ...form, maxRepBonusPercent: Number(e.target.value) })}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-2 text-sm text-white outline-none text-center" />
+            </div>
+            <div>
+              <label className="text-[9px] text-zinc-600 block mb-1">Credits %</label>
+              <input type="number" min={0} max={100} value={form.maxCreditBonusPercent}
+                onChange={(e) => setForm({ ...form, maxCreditBonusPercent: Number(e.target.value) })}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-2 text-sm text-white outline-none text-center" />
+            </div>
+            <div>
+              <label className="text-[9px] text-zinc-600 block mb-1">Shard %</label>
+              <input type="number" min={0} max={80} value={form.maxShardChanceBonus}
+                onChange={(e) => setForm({ ...form, maxShardChanceBonus: Number(e.target.value) })}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-2 text-sm text-white outline-none text-center" />
+            </div>
           </div>
-          <div>
-            <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-1">Shard-Chance Bonus %</label>
-            <input type="number" min={0} max={80} value={form.maxShardChanceBonus}
-              onChange={(e) => setForm({ ...form, maxShardChanceBonus: Number(e.target.value) })}
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white outline-none" />
-          </div>
+          <p className="text-[9px] text-zinc-700 mt-1.5">Common erhält z.B. 10% davon, Mythic 100%</p>
         </div>
 
         {total !== 100 && <p className="text-amber-400 text-xs">Summe muss 100 ergeben (aktuell: {total})</p>}
