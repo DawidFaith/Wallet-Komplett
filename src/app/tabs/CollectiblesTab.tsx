@@ -421,8 +421,6 @@ function CollectionPanel({ data, walletAddress, onRefresh }: {
 
   const { collection, ownedByRarity, shards } = data;
   const totalCollectibles = Object.values(ownedByRarity).reduce((s, v) => s + (v ?? 0), 0);
-
-  const ownedRarities = RARITY_ORDER.filter((r) => (ownedByRarity[r] ?? 0) > 0);
   const upgradableRarities = RARITY_ORDER
     .filter((r, i) => i < RARITY_ORDER.length - 1 && (ownedByRarity[r] ?? 0) >= 10);
 
@@ -447,37 +445,68 @@ function CollectionPanel({ data, walletAddress, onRefresh }: {
             </span>
             <span className="text-[10px] text-zinc-600">·</span>
             <span className="text-[10px] text-zinc-500">{shards} Shard{shards !== 1 ? 's' : ''}</span>
-            {collection.maxRepBonusPercent > 0 && (
-              <>
-                <span className="text-[10px] text-zinc-600">·</span>
-                <span className="text-[10px] text-green-400/80">bis +{collection.maxRepBonusPercent}% REP</span>
-              </>
-            )}
           </div>
         </div>
       </div>
 
-      {/* Owned Collectibles */}
-      {ownedRarities.length > 0 && (
-        <div className="mb-4">
-          <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-600 mb-3">Deine Collectibles</p>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
-            {ownedRarities.map((rarity) => (
-              <CollectibleCard
-                key={rarity}
-                rarity={rarity}
-                count={ownedByRarity[rarity] ?? 0}
-                imageUrl={collection.imageUrl}
-                name={collection.name}
-                maxRepBonus={collection.maxRepBonusPercent}
-                maxCreditBonus={collection.maxCreditBonusPercent ?? 0}
-                maxShardBonus={collection.maxShardChanceBonus ?? 0}
-                primaryBonus={collection.primaryBonus ?? 'rep'}
-              />
-            ))}
-          </div>
+      {/* Alle 6 Rarity-Karten: owned farbig, unowned gesperrt/grau */}
+      <div className="mb-4">
+        <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-600 mb-3">Alle Seltenheiten</p>
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+          {RARITY_ORDER.map((rarity) => {
+            const count = ownedByRarity[rarity] ?? 0;
+            const owned = count > 0;
+            if (owned) {
+              return (
+                <CollectibleCard
+                  key={rarity}
+                  rarity={rarity}
+                  count={count}
+                  imageUrl={collection.imageUrl}
+                  name={collection.name}
+                  maxRepBonus={collection.maxRepBonusPercent}
+                  maxCreditBonus={collection.maxCreditBonusPercent ?? 0}
+                  maxShardBonus={collection.maxShardChanceBonus ?? 0}
+                  primaryBonus={collection.primaryBonus ?? 'rep'}
+                />
+              );
+            }
+            // Gesperrte Karte
+            const cfg = RARITY_CONFIG[rarity];
+            const slots = getBonusSlots(collection.primaryBonus ?? 'rep');
+            const activeCount = getActiveSlotsCount(rarity);
+            const bonusMaxValues: Record<BonusType, number> = {
+              rep:     collection.maxRepBonusPercent,
+              credits: collection.maxCreditBonusPercent ?? 0,
+              shard:   collection.maxShardChanceBonus ?? 0,
+            };
+            return (
+              <div key={rarity} className="relative flex flex-col items-center rounded-2xl border-2 border-zinc-700/50 bg-zinc-900/40 p-3 w-[140px] shrink-0 opacity-50">
+                <span className="absolute -top-2 -right-2 min-w-[22px] h-[22px] rounded-full bg-zinc-800 text-zinc-500 text-[11px] font-black flex items-center justify-center px-1.5 z-10">
+                  🔒
+                </span>
+                <div className="w-20 h-20 rounded-xl border border-zinc-700/50 overflow-hidden mb-2 flex items-center justify-center bg-zinc-800/40">
+                  {collection.imageUrl
+                    ? <Image src={collection.imageUrl} alt={collection.name} width={80} height={80} className="w-full h-full object-cover grayscale" />
+                    : <GiCrystalShine size={36} className="text-zinc-600" />}
+                </div>
+                <span className={`text-[9px] font-black tracking-[0.3em] uppercase ${cfg.textColor} opacity-60 mb-0.5`}>{cfg.label}</span>
+                <span className="text-[11px] font-bold text-zinc-500 text-center line-clamp-2 leading-tight mb-1">{collection.name}</span>
+                <div className="flex flex-col items-center gap-0.5 w-full">
+                  {slots.slice(0, activeCount).map((bonusType) => {
+                    const val = Math.round(bonusMaxValues[bonusType] * cfg.repMultiplier);
+                    return val > 0 ? (
+                      <span key={bonusType} className="text-[9px] text-zinc-600 font-semibold">
+                        +{val}% {BONUS_LABELS[bonusType]}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      )}
+      </div>
 
       {/* Actions */}
       <div className="flex gap-2 flex-wrap">
@@ -757,21 +786,24 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
 export default function CollectiblesTab() {
   const { user } = useUser();
   const walletAddress = user?.id ?? '';
-  const lang = useLang();
 
-  const [view, setView] = useState<'overview' | 'artist'>('overview');
+  // Top-Level Tabs: supporter | artist
+  const [mainTab, setMainTab] = useState<'supporter' | 'artist'>('supporter');
+  // Supporter: overview | artist-detail
+  const [view, setView] = useState<'overview' | 'artistDetail'>('overview');
   const [selectedArtist, setSelectedArtist] = useState<CollectibleArtist | null>(null);
   const [artists, setArtists] = useState<CollectibleArtist[]>([]);
   const [artistCollections, setArtistCollections] = useState<CollectionData[]>([]);
   const [myShards, setMyShards] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [isArtist, setIsArtist] = useState(false);
+  // Artist-Tab: eigene Kollektionen
+  const [myCollections, setMyCollections] = useState<CollectionData[]>([]);
+  const [myCollLoading, setMyCollLoading] = useState(false);
 
-  // Alle Künstler laden (unabhängig von Kollektionen) + isArtist prüfen
   const loadArtists = useCallback(async () => {
     setLoading(true);
     try {
-      // Alle Künstler aus Admin-API laden (hat Bilder + Namen)
       const [artistsRes, shardsRes] = await Promise.all([
         fetch('/api/admin/artists'),
         walletAddress ? fetch(`/api/collectibles?wallet=${walletAddress}`) : Promise.resolve(null),
@@ -784,13 +816,10 @@ export default function CollectiblesTab() {
       }));
       setArtists(allArtists);
 
-      // Prüfen ob eingeloggter User ein Künstler ist
       if (walletAddress) {
         const isArt = allArtists.some((a) => a.artistWallet.toLowerCase() === walletAddress.toLowerCase());
         setIsArtist(isArt);
       }
-
-      // Eigene Shards laden
       if (shardsRes) {
         const sd = await shardsRes.json();
         const shardMap: Record<string, number> = {};
@@ -803,7 +832,6 @@ export default function CollectiblesTab() {
 
   useEffect(() => { loadArtists(); }, [loadArtists]);
 
-  // Künstler-Kollektionen laden
   const loadArtistCollections = useCallback(async (artistWallet: string) => {
     if (!walletAddress) return;
     setLoading(true);
@@ -815,11 +843,28 @@ export default function CollectiblesTab() {
     setLoading(false);
   }, [walletAddress]);
 
+  const loadMyCollections = useCallback(async () => {
+    if (!walletAddress || !isArtist) return;
+    setMyCollLoading(true);
+    try {
+      const res = await fetch(`/api/collectibles?artistWallet=${walletAddress}&wallet=${walletAddress}`);
+      const data = await res.json();
+      setMyCollections(data.data ?? []);
+    } catch (_) {}
+    setMyCollLoading(false);
+  }, [walletAddress, isArtist]);
+
+  useEffect(() => {
+    if (mainTab === 'artist' && isArtist) loadMyCollections();
+  }, [mainTab, isArtist, loadMyCollections]);
+
   const handleSelectArtist = (artist: CollectibleArtist) => {
     setSelectedArtist(artist);
-    setView('artist');
+    setView('artistDetail');
     loadArtistCollections(artist.artistWallet);
   };
+
+  const totalMyShards = Object.values(myShards).reduce((s, n) => s + n, 0);
 
   if (!walletAddress) {
     return (
@@ -831,145 +876,220 @@ export default function CollectiblesTab() {
   }
 
   return (
-    <div className="w-full max-w-lg mx-auto px-4 pb-8">
+    <div className="w-full max-w-lg mx-auto pb-8 space-y-4">
 
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        {view === 'artist' && (
-          <button onClick={() => setView('overview')} className="text-zinc-400 hover:text-white">
-            <FaChevronLeft size={16} />
+      {/* ── Header ───────────────────────────────────────────────────────────── */}
+      {view === 'artistDetail' ? (
+        <div className="px-4 pt-2 flex items-center gap-3">
+          <button onClick={() => setView('overview')} className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-sm transition-colors">
+            <FaChevronLeft size={11} /> Zurück
           </button>
-        )}
-        <div>
-          <h2 className="text-lg font-black text-white flex items-center gap-2">
-            <GiCrystalShine className="text-amber-400" />
-            Collectibles
-          </h2>
-          {view === 'artist' && selectedArtist && (
-            <p className="text-xs text-zinc-500">{selectedArtist.name}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-black text-base truncate">{selectedArtist?.name}</p>
+            <p className="text-zinc-500 text-xs">Collectibles</p>
+          </div>
+          {/* Shards als Guthaben */}
+          <div className="flex items-center gap-1.5 bg-amber-400/10 border border-amber-400/20 rounded-xl px-3 py-1.5">
+            <GiCrystalShine className="text-amber-400" size={14} />
+            <span className="text-amber-300 font-black text-sm">
+              {selectedArtist ? (myShards[selectedArtist.artistWallet] ?? 0) : 0}
+            </span>
+            <span className="text-amber-400/60 text-xs">Shards</span>
+          </div>
+        </div>
+      ) : (
+        <div className="px-4 pt-2 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-black text-white flex items-center gap-2">
+              <GiCrystalShine className="text-amber-400" />
+              Collectibles
+            </h2>
+          </div>
+          {/* Gesamt-Shards als Guthaben */}
+          {totalMyShards > 0 && (
+            <div className="flex items-center gap-1.5 bg-amber-400/10 border border-amber-400/20 rounded-xl px-3 py-1.5">
+              <GiCrystalShine className="text-amber-400" size={14} />
+              <span className="text-amber-300 font-black text-sm">{totalMyShards}</span>
+              <span className="text-amber-400/60 text-xs">Shards gesamt</span>
+            </div>
           )}
         </div>
-      </div>
+      )}
 
-      {loading ? (
+      {/* ── Tab-Auswahl: Supporter | Künstler ────────────────────────────────── */}
+      {view === 'overview' && (
+        <div className="mx-4 flex bg-zinc-900/60 rounded-xl p-1 border border-white/[0.07]">
+          <button
+            onClick={() => setMainTab('supporter')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
+              mainTab === 'supporter' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <FaGem size={11} /> Supporter
+          </button>
+          <button
+            onClick={() => setMainTab('artist')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
+              mainTab === 'artist' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <GiCrystalShine size={11} /> Künstler
+          </button>
+        </div>
+      )}
+
+      {/* ── Loading ───────────────────────────────────────────────────────────── */}
+      {loading && view !== 'artistDetail' ? (
         <div className="flex justify-center py-12">
           <span className="w-7 h-7 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
         </div>
-      ) : view === 'overview' ? (
-        <>
-          {/* Artist-Sektion: eigene Kollektionen verwalten */}
-          {isArtist && (
-            <div className="mb-6">
-              <p className="text-[9px] font-black tracking-[0.35em] uppercase text-amber-400/60 mb-2">Meine Kollektionen</p>
-              <CreateCollectionForm
-                artistWallet={walletAddress}
-                onCreated={() => {
-                  loadArtists();
-                  // Direkt zur eigenen Artist-Ansicht wechseln
-                  const self = artists.find((a) => a.artistWallet.toLowerCase() === walletAddress.toLowerCase());
-                  if (self) handleSelectArtist(self);
-                }}
-              />
-              <button
-                onClick={() => {
-                  const self = artists.find((a) => a.artistWallet.toLowerCase() === walletAddress.toLowerCase());
-                  if (self) handleSelectArtist(self);
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-              >
-                <GiCrystalShine size={12} className="text-amber-400/50" />
-                Meine Kollektionen anzeigen →
-              </button>
-            </div>
-          )}
-          {/* Meine Shards Info */}
-          {Object.keys(myShards).length > 0 && (
-            <div className="bg-amber-400/5 border border-amber-400/10 rounded-xl p-3 mb-5">
-              <p className="text-[10px] font-black tracking-[0.3em] uppercase text-amber-400/60 mb-2">Deine Shards</p>
-              <div className="flex gap-3 flex-wrap">
-                {Object.entries(myShards).map(([artistWallet, count]) => {
-                  const artist = artists.find((a) => a.artistWallet === artistWallet);
-                  return (
-                    <div key={artistWallet} className="flex items-center gap-1.5">
-                      <GiCrystalShine className="text-amber-400" size={12} />
-                      <span className="text-xs font-bold text-white">{count}</span>
-                      <span className="text-xs text-zinc-500">{artist?.name ?? '…'}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Künstler-Liste */}
-          {artists.length === 0 ? (
-            <div className="text-center py-16">
-              <GiCrystalShine className="text-zinc-800 mx-auto mb-3" size={48} />
-              <p className="text-zinc-600 text-sm">Noch keine Kollektionen verfügbar.</p>
-              <p className="text-zinc-700 text-xs mt-1">Schließe Quest-Bundles ab um Shards zu erhalten!</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-600">Kollektionen nach Künstler</p>
-              <div className="flex gap-4 overflow-x-auto pt-2 pb-2 scrollbar-none">
-                {artists.map((artist) => (
-                  <button
-                    key={artist.artistWallet}
-                    onClick={() => handleSelectArtist(artist)}
-                    className="flex flex-col items-center gap-2 shrink-0 w-[68px] group"
-                  >
-                    <div className="relative">
-                      <div className="w-14 h-14 rounded-full ring-2 ring-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)] transition-all group-hover:scale-105 overflow-hidden">
-                        {artist.picture
-                          ? <Image src={artist.picture} alt={artist.name} width={56} height={56} className="w-14 h-14 rounded-full object-cover" />
-                          : <div className="w-14 h-14 rounded-full bg-amber-400/20 flex items-center justify-center">
-                              <FaGem className="text-amber-400" size={18} />
-                            </div>
-                        }
-                      </div>
-                      {(myShards[artist.artistWallet] ?? 0) > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-amber-400 text-black text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-lg">
-                          <GiCrystalShine size={9} />
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-zinc-300 text-center line-clamp-2 leading-tight w-full group-hover:text-white transition-colors">
-                      {artist.name}
-                    </p>
-                  </button>
-                ))}
-              </div>
-              <p className="text-zinc-600 text-xs">Tippe auf einen Künstler um seine Kollektionen zu sehen</p>
-            </div>
-          )}
-        </>
       ) : (
-        /* Künstler-Detail */
-        <>
-          {/* Artist kann eigene Kollektion erstellen */}
-          {isArtist && selectedArtist?.artistWallet.toLowerCase() === walletAddress.toLowerCase() && (
-            <CreateCollectionForm
-              artistWallet={walletAddress}
-              onCreated={() => selectedArtist && loadArtistCollections(selectedArtist.artistWallet)}
-            />
-          )}
 
-          {artistCollections.length === 0 ? (
-            <div className="text-center py-12">
-              <GiCrystalShine className="text-zinc-800 mx-auto mb-3" size={40} />
-              <p className="text-zinc-600 text-sm">Noch keine Kollektion verfügbar.</p>
+        /* ── SUPPORTER TAB ─────────────────────────────────────────────────── */
+        mainTab === 'supporter' || view === 'artistDetail' ? (
+          view === 'overview' ? (
+            <div className="px-4 space-y-4">
+              {/* Shards-Guthaben pro Künstler */}
+              {Object.keys(myShards).length > 0 && (
+                <div className="bg-amber-400/5 border border-amber-400/10 rounded-2xl p-4">
+                  <p className="text-[9px] font-black tracking-[0.35em] uppercase text-amber-400/60 mb-3">Deine Shards</p>
+                  <div className="space-y-2">
+                    {Object.entries(myShards).map(([aw, count]) => {
+                      const artist = artists.find((a) => a.artistWallet === aw);
+                      return (
+                        <div key={aw} className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-white/10">
+                            {artist?.picture
+                              ? <Image src={artist.picture} alt="" width={28} height={28} className="w-7 h-7 object-cover" />
+                              : <div className="w-7 h-7 bg-zinc-700 rounded-full flex items-center justify-center"><FaGem size={10} className="text-zinc-400" /></div>}
+                          </div>
+                          <span className="text-zinc-300 text-xs flex-1 truncate">{artist?.name ?? '…'}</span>
+                          <div className="flex items-center gap-1">
+                            <GiCrystalShine className="text-amber-400" size={11} />
+                            <span className="text-amber-300 font-black text-sm">{count}</span>
+                          </div>
+                          {count >= 10 && (
+                            <span className="text-[9px] text-green-400 font-bold bg-green-400/10 px-1.5 py-0.5 rounded-full">Fusion!</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Künstler-Icons */}
+              {artists.length === 0 ? (
+                <div className="text-center py-16">
+                  <GiCrystalShine className="text-zinc-800 mx-auto mb-3" size={48} />
+                  <p className="text-zinc-600 text-sm">Noch keine Kollektionen verfügbar.</p>
+                  <p className="text-zinc-700 text-xs mt-1">Schließe Quest-Bundles ab um Shards zu erhalten!</p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-600">Künstler</p>
+                  <div className="flex gap-4 overflow-x-auto pt-1 pb-2 scrollbar-none">
+                    {artists.map((artist) => {
+                      const shardCount = myShards[artist.artistWallet] ?? 0;
+                      return (
+                        <button
+                          key={artist.artistWallet}
+                          onClick={() => handleSelectArtist(artist)}
+                          className="flex flex-col items-center gap-2 shrink-0 w-[72px] group"
+                        >
+                          <div className="relative">
+                            <div className="w-14 h-14 rounded-full ring-2 ring-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)] transition-all group-hover:scale-105 overflow-hidden">
+                              {artist.picture
+                                ? <Image src={artist.picture} alt={artist.name} width={56} height={56} className="w-14 h-14 rounded-full object-cover" />
+                                : <div className="w-14 h-14 rounded-full bg-amber-400/20 flex items-center justify-center">
+                                    <FaGem className="text-amber-400" size={18} />
+                                  </div>
+                              }
+                            </div>
+                          </div>
+                          <p className="text-xs text-zinc-300 text-center line-clamp-2 leading-tight w-full group-hover:text-white transition-colors">
+                            {artist.name}
+                          </p>
+                          {/* Shard-Anzahl unter dem Namen */}
+                          <div className="flex items-center gap-1">
+                            <GiCrystalShine className={shardCount > 0 ? 'text-amber-400' : 'text-zinc-700'} size={10} />
+                            <span className={`text-[10px] font-black ${shardCount > 0 ? 'text-amber-300' : 'text-zinc-600'}`}>
+                              {shardCount}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           ) : (
-            artistCollections.map((data) => (
-              <CollectionPanel
-                key={data.collection.id}
-                data={data}
-                walletAddress={walletAddress}
-                onRefresh={() => selectedArtist && loadArtistCollections(selectedArtist.artistWallet)}
-              />
-            ))
-          )}
-        </>
+            /* Artist-Detail (Supporter) */
+            <div className="px-4 space-y-3">
+              {loading ? (
+                <div className="flex justify-center py-12">
+                  <span className="w-7 h-7 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+                </div>
+              ) : artistCollections.length === 0 ? (
+                <div className="text-center py-12">
+                  <GiCrystalShine className="text-zinc-800 mx-auto mb-3" size={40} />
+                  <p className="text-zinc-600 text-sm">Noch keine Kollektion verfügbar.</p>
+                  <p className="text-zinc-700 text-xs mt-1">Schließe Quest-Bundles ab um Shards zu sammeln!</p>
+                </div>
+              ) : (
+                artistCollections.map((data) => (
+                  <CollectionPanel
+                    key={data.collection.id}
+                    data={data}
+                    walletAddress={walletAddress}
+                    onRefresh={() => selectedArtist && loadArtistCollections(selectedArtist.artistWallet)}
+                  />
+                ))
+              )}
+            </div>
+          )
+        ) : (
+
+          /* ── KÜNSTLER TAB ────────────────────────────────────────────────── */
+          <div className="px-4 space-y-4">
+            {!isArtist ? (
+              <div className="text-center py-16">
+                <GiCrystalShine className="text-zinc-800 mx-auto mb-3" size={48} />
+                <p className="text-zinc-500 text-sm">Nur verifizierte Künstler können Kollektionen erstellen.</p>
+              </div>
+            ) : (
+              <>
+                <CreateCollectionForm
+                  artistWallet={walletAddress}
+                  onCreated={() => { loadArtists(); loadMyCollections(); }}
+                />
+                {myCollLoading ? (
+                  <div className="flex justify-center py-8">
+                    <span className="w-6 h-6 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+                  </div>
+                ) : myCollections.length === 0 ? (
+                  <div className="text-center py-8">
+                    <GiCrystalShine className="text-zinc-800 mx-auto mb-2" size={32} />
+                    <p className="text-zinc-600 text-xs">Noch keine Kollektionen erstellt.</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-600">Meine Kollektionen</p>
+                    {myCollections.map((data) => (
+                      <CollectionPanel
+                        key={data.collection.id}
+                        data={data}
+                        walletAddress={walletAddress}
+                        onRefresh={loadMyCollections}
+                      />
+                    ))}
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        )
       )}
     </div>
   );
