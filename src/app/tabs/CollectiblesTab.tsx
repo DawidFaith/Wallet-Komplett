@@ -911,30 +911,35 @@ export default function CollectiblesTab() {
           ) : (
             <div className="space-y-3">
               <p className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-600">Kollektionen nach Künstler</p>
-              {artists.map((artist) => (
-                <button
-                  key={artist.artistWallet}
-                  onClick={() => handleSelectArtist(artist)}
-                  className="w-full flex items-center gap-3 p-3 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] rounded-xl transition-colors text-left"
-                >
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 shrink-0 flex items-center justify-center bg-zinc-800">
-                    {artist.picture
-                      ? <Image src={artist.picture} alt={artist.name} width={40} height={40} className="w-full h-full object-cover" />
-                      : <FaGem className="text-zinc-600" size={14} />
-                    }
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-white text-sm truncate">{artist.name}</p>
-                    {(myShards[artist.artistWallet] ?? 0) > 0 && (
-                      <p className="text-[10px] text-amber-400">
-                        <GiCrystalShine className="inline mr-1" size={9} />
-                        {myShards[artist.artistWallet]} Shard{myShards[artist.artistWallet] !== 1 ? 's' : ''}
-                      </p>
-                    )}
-                  </div>
-                  <span className="text-zinc-600 text-xs">›</span>
-                </button>
-              ))}
+              <div className="flex gap-4 overflow-x-auto pt-2 pb-2 scrollbar-none">
+                {artists.map((artist) => (
+                  <button
+                    key={artist.artistWallet}
+                    onClick={() => handleSelectArtist(artist)}
+                    className="flex flex-col items-center gap-2 shrink-0 w-[68px] group"
+                  >
+                    <div className="relative">
+                      <div className="w-14 h-14 rounded-full ring-2 ring-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)] transition-all group-hover:scale-105 overflow-hidden">
+                        {artist.picture
+                          ? <Image src={artist.picture} alt={artist.name} width={56} height={56} className="w-14 h-14 rounded-full object-cover" />
+                          : <div className="w-14 h-14 rounded-full bg-amber-400/20 flex items-center justify-center">
+                              <FaGem className="text-amber-400" size={18} />
+                            </div>
+                        }
+                      </div>
+                      {(myShards[artist.artistWallet] ?? 0) > 0 && (
+                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-amber-400 text-black text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-lg">
+                          <GiCrystalShine size={9} />
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-zinc-300 text-center line-clamp-2 leading-tight w-full group-hover:text-white transition-colors">
+                      {artist.name}
+                    </p>
+                  </button>
+                ))}
+              </div>
+              <p className="text-zinc-600 text-xs">Tippe auf einen Künstler um seine Kollektionen zu sehen</p>
             </div>
           )}
         </>
