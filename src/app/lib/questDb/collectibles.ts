@@ -182,8 +182,9 @@ export async function updateCollectibleCollection(
       max_credit_bonus_percent = COALESCE(${params.maxCreditBonusPercent ?? null}, max_credit_bonus_percent),
       primary_bonus          = COALESCE(${params.primaryBonus ?? null}, primary_bonus)
     WHERE id = ${id} AND artist_wallet = ${artistWallet.toLowerCase()}
+    RETURNING id
   `;
-  return (result.count ?? 0) > 0;
+  return result.length > 0;
 }
 
 // ─── Kollektion laden ─────────────────────────────────────────────────────────
