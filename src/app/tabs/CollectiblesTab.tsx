@@ -876,11 +876,27 @@ export default function CollectiblesTab() {
   }
 
   return (
-    <div className="w-full max-w-lg mx-auto pb-8 space-y-4">
+    <div className="w-full flex flex-col min-h-screen bg-[#0e0c0a] text-white pb-24">
+      <div className="max-w-2xl mx-auto w-full">
 
-      {/* ── Header ───────────────────────────────────────────────────────────── */}
-      {view === 'artistDetail' ? (
-        <div className="px-4 pt-2 flex items-center gap-3">
+      {/* ── D.FAITH Header ───────────────────────────────────────────────────── */}
+      {view !== 'artistDetail' && (
+        <div className="px-4 pt-6 pb-4">
+          <div className="flex items-center gap-3 pt-1">
+            <Image src="/D.FAITH.png" alt="D.FAITH" width={40} height={40} className="w-10 h-10 rounded-full object-contain shrink-0" />
+            <div>
+              <h1 className="text-white font-bold text-xl tracking-wide">D.FAITH Ecosystem</h1>
+              <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">
+                Collectibles · Shards
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Künstler-Detail Header ────────────────────────────────────────────── */}
+      {view === 'artistDetail' && (
+        <div className="px-4 pt-4 pb-3 flex items-center gap-3">
           <button onClick={() => setView('overview')} className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-sm transition-colors">
             <FaChevronLeft size={11} /> Zurück
           </button>
@@ -888,7 +904,6 @@ export default function CollectiblesTab() {
             <p className="text-white font-black text-base truncate">{selectedArtist?.name}</p>
             <p className="text-zinc-500 text-xs">Collectibles</p>
           </div>
-          {/* Shards als Guthaben */}
           <div className="flex items-center gap-1.5 bg-amber-400/10 border border-amber-400/20 rounded-xl px-3 py-1.5">
             <GiCrystalShine className="text-amber-400" size={14} />
             <span className="text-amber-300 font-black text-sm">
@@ -897,40 +912,23 @@ export default function CollectiblesTab() {
             <span className="text-amber-400/60 text-xs">Shards</span>
           </div>
         </div>
-      ) : (
-        <div className="px-4 pt-2 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-black text-white flex items-center gap-2">
-              <GiCrystalShine className="text-amber-400" />
-              Collectibles
-            </h2>
-          </div>
-          {/* Gesamt-Shards als Guthaben */}
-          {totalMyShards > 0 && (
-            <div className="flex items-center gap-1.5 bg-amber-400/10 border border-amber-400/20 rounded-xl px-3 py-1.5">
-              <GiCrystalShine className="text-amber-400" size={14} />
-              <span className="text-amber-300 font-black text-sm">{totalMyShards}</span>
-              <span className="text-amber-400/60 text-xs">Shards gesamt</span>
-            </div>
-          )}
-        </div>
       )}
 
       {/* ── Tab-Auswahl: Supporter | Künstler ────────────────────────────────── */}
       {view === 'overview' && (
-        <div className="mx-4 flex bg-zinc-900/60 rounded-xl p-1 border border-white/[0.07]">
+        <div className="mx-4 mb-2 flex bg-zinc-900/70 rounded-xl p-1 border border-white/[0.07]">
           <button
             onClick={() => setMainTab('supporter')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
-              mainTab === 'supporter' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-colors ${
+              mainTab === 'supporter' ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'
             }`}
           >
             <FaGem size={11} /> Supporter
           </button>
           <button
             onClick={() => setMainTab('artist')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
-              mainTab === 'artist' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-colors ${
+              mainTab === 'artist' ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'
             }`}
           >
             <GiCrystalShine size={11} /> Künstler
@@ -1091,6 +1089,7 @@ export default function CollectiblesTab() {
           </div>
         )
       )}
+      </div>
     </div>
   );
 }

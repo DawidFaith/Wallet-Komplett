@@ -8,6 +8,7 @@ import {
   FaShoppingBag, FaEdit,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
+import { GiCrystalShine } from 'react-icons/gi';
 
 interface AdminUser {
   walletAddress: string;
@@ -234,7 +235,7 @@ export default function AdminPage() {
     return matchSearch && matchFilter;
   });
 
-  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'collectibles'>('users');
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState('');
   const [resetting, setResetting] = useState(false);
@@ -314,7 +315,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-0">
-        {(['users', 'credits', 'token', 'shop', 'platform'] as const).map((tab) => (
+        {(['users', 'credits', 'token', 'shop', 'platform', 'collectibles'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -324,7 +325,7 @@ export default function AdminPage() {
                 : 'text-zinc-500 border-transparent hover:text-zinc-300'
             }`}
           >
-            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : '⚡ Platform'}
+            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'platform' ? '⚡ Platform' : '💎 Collectibles'}
           </button>
         ))}
       </div>
@@ -577,6 +578,11 @@ export default function AdminPage() {
       {/* ── Platform Tab ──────────────────────────────────────────────────────── */}
       {activeTab === 'platform' && (
         <PlatformSection secret={secret} />
+      )}
+
+      {/* ── Collectibles Tab ─────────────────────────────────────────────────── */}
+      {activeTab === 'collectibles' && (
+        <CollectiblesAdminSection secret={secret} users={users} />
       )}
     </div>
   );
@@ -2462,6 +2468,226 @@ function InstagramTestersSection({ secret }: { secret: string }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── CollectiblesAdminSection ─────────────────────────────────────────────────
+
+type CollectionInfo = {
+  id: string;
+  artistWallet: string;
+  name: string;
+  primaryBonus: string;
+};
+
+const ADMIN_RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'] as const;
+type AdminRarity = typeof ADMIN_RARITIES[number];
+
+function CollectiblesAdminSection({ secret, users }: { secret: string; users: AdminUser[] }) {
+  const [collections, setCollections] = useState<CollectionInfo[]>([]);
+  const [loadingCollections, setLoadingCollections] = useState(false);
+
+  useEffect(() => {
+    if (!secret) return;
+    setLoadingCollections(true);
+    fetch('/api/admin/collectibles', { headers: { 'x-admin-secret': secret } })
+      .then(r => r.json())
+      .then(d => setCollections(d.collections ?? []))
+      .catch(() => {})
+      .finally(() => setLoadingCollections(false));
+  }, [secret]);
+
+  // Shards
+  const [shardWallet, setShardWallet] = useState('');
+  const [shardArtistWallet, setShardArtistWallet] = useState('');
+  const [shardAmount, setShardAmount] = useState(10);
+  const [shardLoading, setShardLoading] = useState(false);
+  const [shardMsg, setShardMsg] = useState('');
+  const [shardSearch, setShardSearch] = useState('');
+  const [shardArtistSearch, setShardArtistSearch] = useState('');
+
+  const shardFilteredUsers = users.filter(u =>
+    !shardSearch || u.walletAddress.toLowerCase().includes(shardSearch.toLowerCase()) ||
+    (u.displayName ?? '').toLowerCase().includes(shardSearch.toLowerCase())
+  );
+  const artistUsers = users.filter(u => u.isArtist);
+  const shardFilteredArtists = artistUsers.filter(u =>
+    !shardArtistSearch || u.walletAddress.toLowerCase().includes(shardArtistSearch.toLowerCase()) ||
+    (u.displayName ?? '').toLowerCase().includes(shardArtistSearch.toLowerCase())
+  );
+
+  const handleGiveShards = async () => {
+    if (!shardWallet || !shardArtistWallet || shardAmount < 1) return;
+    setShardLoading(true);
+    setShardMsg('');
+    try {
+      const res = await fetch('/api/admin/collectibles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ action: 'shard', walletAddress: shardWallet, artistWallet: shardArtistWallet, amount: shardAmount }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Fehler');
+      setShardMsg(`✓ ${shardAmount} Shards vergeben. Neuer Stand: ${data.newCount}`);
+    } catch (e) {
+      setShardMsg(`✗ ${e instanceof Error ? e.message : 'Fehler'}`);
+    } finally {
+      setShardLoading(false);
+    }
+  };
+
+  // Collectibles
+  const [colWallet, setColWallet] = useState('');
+  const [colCollectionId, setColCollectionId] = useState('');
+  const [colRarity, setColRarity] = useState<AdminRarity>('common');
+  const [colLoading, setColLoading] = useState(false);
+  const [colMsg, setColMsg] = useState('');
+  const [colSearch, setColSearch] = useState('');
+
+  const colFilteredUsers = users.filter(u =>
+    !colSearch || u.walletAddress.toLowerCase().includes(colSearch.toLowerCase()) ||
+    (u.displayName ?? '').toLowerCase().includes(colSearch.toLowerCase())
+  );
+
+  const handleGiveCollectible = async () => {
+    if (!colWallet || !colCollectionId) return;
+    setColLoading(true);
+    setColMsg('');
+    try {
+      const res = await fetch('/api/admin/collectibles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ action: 'collectible', walletAddress: colWallet, collectionId: colCollectionId, rarity: colRarity }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Fehler');
+      setColMsg(`✓ Collectible (${colRarity}) vergeben. ID: ${data.id}`);
+    } catch (e) {
+      setColMsg(`✗ ${e instanceof Error ? e.message : 'Fehler'}`);
+    } finally {
+      setColLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Shards vergeben */}
+      <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-2xl p-6">
+        <h3 className="text-white font-bold text-base mb-4 flex items-center gap-2">
+          <GiCrystalShine className="text-amber-400" /> Shards vergeben
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-zinc-400 text-xs font-semibold mb-1.5">Empfänger (Wallet)</label>
+            <input
+              type="text" value={shardSearch}
+              onChange={e => { setShardSearch(e.target.value); setShardWallet(''); }}
+              placeholder="Name oder Wallet suchen…"
+              className="w-full bg-zinc-800/80 border border-zinc-700/50 rounded-xl px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-amber-500/50"
+            />
+            {shardSearch && !shardWallet && (
+              <div className="mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
+                {shardFilteredUsers.slice(0, 10).map(u => (
+                  <button key={u.walletAddress} onClick={() => { setShardWallet(u.walletAddress); setShardSearch(u.displayName ?? u.walletAddress); }}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-700 transition-colors flex items-center gap-2">
+                    <span className="text-white">{u.displayName ?? '–'}</span>
+                    <span className="text-zinc-500 text-xs">{u.walletAddress.slice(0, 10)}…</span>
+                  </button>
+                ))}
+                {shardFilteredUsers.length === 0 && <p className="px-3 py-2 text-zinc-600 text-xs">Keine Treffer</p>}
+              </div>
+            )}
+            {shardWallet && <p className="text-xs text-zinc-500 mt-1">{shardWallet}</p>}
+          </div>
+          <div>
+            <label className="block text-zinc-400 text-xs font-semibold mb-1.5">Künstler (Shard-Kontext)</label>
+            <input
+              type="text" value={shardArtistSearch}
+              onChange={e => { setShardArtistSearch(e.target.value); setShardArtistWallet(''); }}
+              placeholder="Künstler suchen…"
+              className="w-full bg-zinc-800/80 border border-zinc-700/50 rounded-xl px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-amber-500/50"
+            />
+            {shardArtistSearch && !shardArtistWallet && (
+              <div className="mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
+                {shardFilteredArtists.slice(0, 10).map(u => (
+                  <button key={u.walletAddress} onClick={() => { setShardArtistWallet(u.walletAddress); setShardArtistSearch(u.displayName ?? u.walletAddress); }}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-700 transition-colors flex items-center gap-2">
+                    <span className="text-white">{u.displayName ?? '–'}</span>
+                    <span className="text-zinc-500 text-xs">{u.walletAddress.slice(0, 10)}…</span>
+                  </button>
+                ))}
+                {shardFilteredArtists.length === 0 && <p className="px-3 py-2 text-zinc-600 text-xs">Keine Künstler</p>}
+              </div>
+            )}
+            {shardArtistWallet && <p className="text-xs text-zinc-500 mt-1">{shardArtistWallet}</p>}
+          </div>
+          <div>
+            <label className="block text-zinc-400 text-xs font-semibold mb-1.5">Anzahl Shards</label>
+            <input type="number" min={1} value={shardAmount} onChange={e => setShardAmount(Number(e.target.value))}
+              className="w-32 bg-zinc-800/80 border border-zinc-700/50 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-amber-500/50" />
+          </div>
+          <button onClick={handleGiveShards} disabled={shardLoading || !shardWallet || !shardArtistWallet || shardAmount < 1}
+            className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-700 disabled:text-zinc-500 text-black font-bold rounded-xl text-sm transition-colors">
+            {shardLoading ? <FaSync className="animate-spin" /> : <GiCrystalShine />} Shards vergeben
+          </button>
+          {shardMsg && <p className={`text-sm font-medium ${shardMsg.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>{shardMsg}</p>}
+        </div>
+      </div>
+
+      {/* Collectible vergeben */}
+      <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-2xl p-6">
+        <h3 className="text-white font-bold text-base mb-4 flex items-center gap-2">
+          <GiCrystalShine className="text-purple-400" /> Collectible direkt vergeben
+        </h3>
+        {loadingCollections && <p className="text-zinc-500 text-xs mb-3">Kollektionen laden…</p>}
+        <div className="space-y-4">
+          <div>
+            <label className="block text-zinc-400 text-xs font-semibold mb-1.5">Empfänger (Wallet)</label>
+            <input type="text" value={colSearch}
+              onChange={e => { setColSearch(e.target.value); setColWallet(''); }}
+              placeholder="Name oder Wallet suchen…"
+              className="w-full bg-zinc-800/80 border border-zinc-700/50 rounded-xl px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-purple-500/50"
+            />
+            {colSearch && !colWallet && (
+              <div className="mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
+                {colFilteredUsers.slice(0, 10).map(u => (
+                  <button key={u.walletAddress} onClick={() => { setColWallet(u.walletAddress); setColSearch(u.displayName ?? u.walletAddress); }}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-700 transition-colors flex items-center gap-2">
+                    <span className="text-white">{u.displayName ?? '–'}</span>
+                    <span className="text-zinc-500 text-xs">{u.walletAddress.slice(0, 10)}…</span>
+                  </button>
+                ))}
+                {colFilteredUsers.length === 0 && <p className="px-3 py-2 text-zinc-600 text-xs">Keine Treffer</p>}
+              </div>
+            )}
+            {colWallet && <p className="text-xs text-zinc-500 mt-1">{colWallet}</p>}
+          </div>
+          <div>
+            <label className="block text-zinc-400 text-xs font-semibold mb-1.5">Kollektion</label>
+            <select value={colCollectionId} onChange={e => setColCollectionId(e.target.value)}
+              className="w-full bg-zinc-800/80 border border-zinc-700/50 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-purple-500/50">
+              <option value="">– Bitte wählen –</option>
+              {collections.map(c => <option key={c.id} value={c.id}>{c.name} ({c.id.slice(0, 8)}…)</option>)}
+            </select>
+            {collections.length === 0 && !loadingCollections && (
+              <p className="text-zinc-600 text-xs mt-1">Keine Kollektionen – bitte erst eine erstellen.</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-zinc-400 text-xs font-semibold mb-1.5">Seltenheit</label>
+            <select value={colRarity} onChange={e => setColRarity(e.target.value as AdminRarity)}
+              className="w-full bg-zinc-800/80 border border-zinc-700/50 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-purple-500/50">
+              {ADMIN_RARITIES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+            </select>
+          </div>
+          <button onClick={handleGiveCollectible} disabled={colLoading || !colWallet || !colCollectionId}
+            className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-bold rounded-xl text-sm transition-colors">
+            {colLoading ? <FaSync className="animate-spin" /> : <GiCrystalShine />} Collectible vergeben
+          </button>
+          {colMsg && <p className={`text-sm font-medium ${colMsg.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>{colMsg}</p>}
+        </div>
+      </div>
     </div>
   );
 }
