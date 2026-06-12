@@ -41,7 +41,8 @@ export async function POST(req: NextRequest) {
     videoUrl?: string;
     description?: string;
     rewardPoolPerFan?: number;
-    bundleCompletionBonus?: number;
+    bundleCompletionBonus?: number;  // Legacy – nicht mehr genutzt
+    shardDropChance?: number;        // Shard-Drop-Wahrscheinlichkeit (0-100, Standard 20)
     maxParticipants?: number;
     durationHours?: number;
     items?: Array<{ questType: string; reachWeight: number }>;
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
 
   const {
     creatorWallet, platform, videoUrl, description,
-    rewardPoolPerFan, bundleCompletionBonus, maxParticipants,
+    rewardPoolPerFan, shardDropChance, maxParticipants,
     durationHours, items,
     videoTitle: manualTitle, videoThumbnail: manualThumbnail,
     videoId: providedVideoId,
@@ -89,16 +90,18 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const poolNum  = Math.max(0.01, Math.round((Number(rewardPoolPerFan)      || 0) * 100) / 100);
-  const bonusNum = Math.max(0,    Math.round((Number(bundleCompletionBonus) || 0) * 100) / 100);
-  const maxNum   = Math.max(1,    Math.round(Number(maxParticipants)       || 10));
+  const poolNum  = Math.max(0.01, Math.round((Number(rewardPoolPerFan) || 0) * 100) / 100);
+  const maxNum   = Math.max(1,    Math.round(Number(maxParticipants)   || 10));
+  const shardChanceNum = Math.max(0, Math.min(100, Math.round(Number(shardDropChance ?? 20))));
 
-  // Abschluss-Bonus + Puffer für max. Collectibles-Credits-Bonus (Worst-Case: Mythic in allen Kollektionen)
+  // Abschluss-Bonus-Pool entfällt (kein Token-Bonus mehr, nur Shard-Drop)
+  const abschlussBonusPool = 0;
+
+  // Collectibles-Credit-Puffer für Level-Bonus-Reserve berechnen
   const artistCollections = await getCollectionsByArtist(creatorWallet.toLowerCase());
   const maxCollectibleCreditPct = artistCollections
     .filter(c => c.isActive)
     .reduce((sum, c) => sum + c.maxCreditBonusPercent, 0);
-  const abschlussBonusPool = Math.round(bonusNum * maxNum * (1 + maxCollectibleCreditPct / 100) * 100) / 100;
 
   // Level-Bonus-Reserve: Σ(rewardPerFan × bonusPct[fan] / 100) für die Top-N Fans × 1.02
   // N = min(maxTeilnehmer, Platform-Nutzer) — genau die Fans die den Quest erhalten könnten
@@ -114,16 +117,13 @@ export async function POST(req: NextRequest) {
   const collectiblesBuffer = poolNum * maxCollectibleCreditPct / 100 * effectiveParticipants;
   const levelBonus = Math.round((bonusSum + collectiblesBuffer) * 1.02 * 100) / 100;
 
-  const totalBudget = Math.round((poolNum * maxNum + abschlussBonusPool + levelBonus) * 100) / 100;
+  const totalBudget = Math.round((poolNum * maxNum + levelBonus) * 100) / 100;
 
   // Guthaben prüfen
   const credits = await getDfaithCredits(creatorWallet.toLowerCase());
   if (credits < totalBudget) {
-    const collectiblesNote = maxCollectibleCreditPct > 0
-      ? ` inkl. +${maxCollectibleCreditPct}% Collectibles-Puffer`
-      : '';
     return NextResponse.json({
-      error: `Nicht genug Credits. Du brauchst ${totalBudget.toFixed(2)} D.FAITH (${poolNum.toFixed(2)} × ${maxNum} Reward + ${abschlussBonusPool.toFixed(2)} Abschluss-Bonus${collectiblesNote} + ${levelBonus.toFixed(2)} Level-Bonus-Reserve [${topPcts.length}/${effectiveParticipants} Fans bekannt, Rest ~+${fallbackPct}%${maxCollectibleCreditPct > 0 ? ` + Coll. +${maxCollectibleCreditPct}% × ${effectiveParticipants}` : ''} × 1.02]), hast aber nur ${credits.toFixed(2)}.`,
+      error: `Nicht genug Credits. Du brauchst ${totalBudget.toFixed(2)} D.FAITH (${poolNum.toFixed(2)} × ${maxNum} Reward + ${levelBonus.toFixed(2)} Level-Bonus-Reserve [${topPcts.length}/${effectiveParticipants} Fans bekannt, Rest ~+${fallbackPct}%${maxCollectibleCreditPct > 0 ? ` + Coll. +${maxCollectibleCreditPct}% × ${effectiveParticipants}` : ''} × 1.02]), hast aber nur ${credits.toFixed(2)}.`,
     }, { status: 400 });
   }
 
@@ -193,7 +193,7 @@ export async function POST(req: NextRequest) {
         videoUrl:      finalVideoUrl,
         description:   description?.trim() ?? '',
         rewardPoolPerFan: poolNum,
-        bundleCompletionBonus: bonusNum,
+        shardDropChance: shardChanceNum,
         maxParticipants: maxNum,
         expiresAt,
         levelBonusBudget: levelBonus,

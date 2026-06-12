@@ -458,6 +458,9 @@ export async function POST(req: NextRequest) {
     await sql`CREATE INDEX IF NOT EXISTS idx_user_collectibles_wallet     ON user_collectibles(wallet_address)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_user_collectibles_collection ON user_collectibles(collection_id)`;
 
+    // ── Bundle Shard-Drop-Chance (ersetzt Abschluss-Token-Bonus) ─────────────
+    await sql`ALTER TABLE quest_bundles ADD COLUMN IF NOT EXISTS shard_drop_chance SMALLINT NOT NULL DEFAULT 20`;
+
     return NextResponse.json({
       success: true,
       message: `Migration abgeschlossen (${(backfill as unknown as { count?: number }).count ?? backfill.length} neue Profile)`,

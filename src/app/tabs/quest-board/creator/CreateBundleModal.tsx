@@ -107,7 +107,7 @@ export default function CreateBundleModal({
 
   const [items, setItems]   = useState<BundleItem[]>([]);
   const [reward, setReward] = useState('10');
-  const [bonus, setBonus]   = useState('2');
+  const [shardChance, setShardChance] = useState('20');
   const [maxP, setMaxP]     = useState('20');
   const [duration, setDuration] = useState('72');
   const [secretCodes, setSecretCodes] = useState<Record<string, string>>({});
@@ -153,7 +153,7 @@ export default function CreateBundleModal({
     setMetaError('');
     setItems([]);
     setReward('10');
-    setBonus('2');
+    setShardChance('20');
     setMaxP('20');
     setDuration('72');
     setSecretCodes({});
@@ -250,15 +250,15 @@ export default function CreateBundleModal({
 
   // Reward-Berechnung
   const rewardNum  = Math.max(0.01, Number(reward)  || 0);
-  const bonusNum   = items.length >= 2 ? Math.max(0, Number(bonus) || 0) : 0;
+  const shardChanceNum = Math.max(0, Math.min(100, Math.round(Number(shardChance) || 20)));
   const maxNum     = Math.max(1,    Number(maxP)     || 10);
   const totalWeight = items.reduce((s, i) => s + i.reachWeight, 0);
   const hasDmShare = items.some((i) => i.questType === 'dm_share');
   // Effektive Teilnehmeranzahl für Level-Bonus-Reserve: min(maxTeilnehmer, Platform-Nutzer)
   // Wenn noch keine Nutzerzahl geladen → Fallback auf maxNum
   const effectiveBonusParticipants = platformUserCount > 0 ? Math.min(maxNum, platformUserCount) : maxNum;
-  // Abschluss-Bonus: unverändert bonusNum × maxNum
-  const abschlussBonusPool = Math.round(bonusNum * maxNum * 100) / 100;
+  // Abschluss-Bonus-Pool entfällt (kein Token-Bonus mehr)
+  const abschlussBonusPool = 0;
   // Level-Bonus-Reserve: echte Boni bekannter Fans; fehlende Teilnehmer → niedrigster bekannter Wert + 2%
   const lowestKnownPct = topFanBonusPcts.length > 0 ? topFanBonusPcts[topFanBonusPcts.length - 1] : 0;
   const fallbackPct = lowestKnownPct + 2;
@@ -267,7 +267,7 @@ export default function CreateBundleModal({
   ).reduce((s, v) => s + v, 0);
   const collectiblesBuffer = rewardNum * maxCollectibleCreditPct / 100 * effectiveBonusParticipants;
   const levelBonusReserve = Math.round((bonusSum + collectiblesBuffer) * 1.02 * 100) / 100;
-  const totalBudget = Math.round((rewardNum * maxNum + abschlussBonusPool + levelBonusReserve) * 100) / 100;
+  const totalBudget = Math.round((rewardNum * maxNum + levelBonusReserve) * 100) / 100;
   const hasEnough   = creatorBalance >= totalBudget;
 
   const handleCreate = async () => {
@@ -290,7 +290,7 @@ export default function CreateBundleModal({
           description:         description.trim(),
           videoThumbnail:      videoThumbnail.trim() || undefined,
           rewardPoolPerFan:    rewardNum,
-          bundleCompletionBonus: bonusNum,
+          shardDropChance:     shardChanceNum,
           maxParticipants:     maxNum,
           durationHours:       Number(duration) || undefined,
           items:               items.map((i) => ({ questType: i.questType, reachWeight: i.reachWeight })),
@@ -760,7 +760,7 @@ export default function CreateBundleModal({
             <div className="grid grid-cols-2 gap-2">
               {[
                 { label: 'Reward/Fan (D.FAITH)', val: reward, set: setReward, min: '0.01', stp: '0.01', disabled: false },
-                { label: 'Abschluss-Bonus', val: bonus, set: setBonus, min: '0', stp: '0.01', disabled: items.length < 2 },
+                { label: 'Shard-Drop-Chance (%)', val: shardChance, set: setShardChance, min: '0', stp: '1', disabled: items.length < 2 },
                 { label: 'Max. Teilnehmer', val: maxP, set: setMaxP, min: '1', stp: '1', disabled: false },
                 { label: 'Laufzeit (h, 0=∞)', val: duration, set: setDuration, min: '0', stp: '1', disabled: false },
               ].map(({ label, val, set, min, stp, disabled }) => (
@@ -801,15 +801,9 @@ export default function CreateBundleModal({
                   </div>
                 );
               })}
-              {bonusNum > 0 && (
-                <div className="flex items-center justify-between text-xs border-t border-zinc-700/50 pt-1 mt-0.5">
-                  <span className="text-yellow-300 flex items-center gap-1"><FaKey size={9} /> Alles-Bonus</span>
-                  <span className="text-yellow-300 font-mono">+{bonusNum.toFixed(2)}</span>
-                </div>
-              )}
               <div className="flex items-center justify-between text-xs border-t border-zinc-700/50 pt-1 mt-0.5">
                 <span className="text-white font-semibold">Gesamt/Fan</span>
-                <span className="text-green-400 font-mono font-bold">{(rewardNum + bonusNum).toFixed(2)} D.FAITH</span>
+                <span className="text-green-400 font-mono font-bold">{rewardNum.toFixed(2)} D.FAITH</span>
               </div>
             </div>
 
@@ -829,10 +823,10 @@ export default function CreateBundleModal({
                   <span>Rewards ({rewardNum.toFixed(2)} × {maxNum})</span>
                   <span className="font-mono">{(rewardNum * maxNum).toFixed(2)}</span>
                 </div>
-                {bonusNum > 0 && (
+                {items.length >= 2 && (
                   <div className="flex justify-between">
-                    <span>Abschluss-Bonus ({bonusNum.toFixed(2)} × {maxNum})</span>
-                    <span className="font-mono">{abschlussBonusPool.toFixed(2)}</span>
+                    <span className="flex items-center gap-1">✨ Shard-Drop-Chance beim Abschluss</span>
+                    <span className="font-mono text-amber-400">{shardChanceNum}%</span>
                   </div>
                 )}
                 <div className="flex justify-between">

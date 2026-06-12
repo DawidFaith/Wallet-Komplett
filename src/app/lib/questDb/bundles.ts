@@ -2,7 +2,7 @@ import { getDb } from '../db';
 import { cancelQuest } from './quests';
 import { addDfaithCredits } from './credits';
 import { addUserReputation, DEFAULT_REPUTATION_LEVELS } from './reputation';
-import { addShard, getCollectiblesShardBonus, getCollectionsByArtist, getCollectiblesCreditBonus } from './collectibles';
+import { addShard, getCollectiblesShardBonus, getCollectionsByArtist } from './collectibles';
 import type {
   Platform, QuestType, QuestIndexEntry, ReputationLevel, ReputationContest,
   UserArtistReputation, ReputationLeaderboardEntry, QuestDetail, YouTubeBinding,
@@ -26,7 +26,8 @@ export async function createQuestBundle(
     videoUrl: string;
     description: string;
     rewardPoolPerFan: number;
-    bundleCompletionBonus: number;
+    bundleCompletionBonus?: number;  // Legacy: nicht mehr genutzt
+    shardDropChance?: number;        // Shard-Drop-Wahrscheinlichkeit beim Abschluss (0-100, Standard 20)
     maxParticipants: number;
     expiresAt: string | null;
     reputationReward?: number;
@@ -43,27 +44,19 @@ export async function createQuestBundle(
   let generatedStoryToken: string | null = null;
 
   const totalWeight = itemTypes.reduce((s, i) => s + i.reachWeight, 0);
-
-  // Worst-case Bonus-Budget: Basis + max. möglicher Collectibles-Credits-Bonus (Summe aller aktiven Kollektionen)
-  const activeCollections = await getCollectionsByArtist(wallet);
-  const maxCollectibleCreditPct = activeCollections
-    .filter(c => c.isActive)
-    .reduce((sum, c) => sum + c.maxCreditBonusPercent, 0);
-  const bonusBudgetTotal = Math.round(
-    params.bundleCompletionBonus * params.maxParticipants * (1 + maxCollectibleCreditPct / 100) * 100,
-  ) / 100;
+  const shardDropChance = Math.max(0, Math.min(100, Math.round(params.shardDropChance ?? 20)));
 
   // Bundle-Datensatz anlegen
   await sql`
     INSERT INTO quest_bundles (
       id, creator_wallet, platform, video_id, video_title, video_thumbnail,
       video_url, description, reward_pool_per_fan, bundle_completion_bonus,
-      bonus_budget_remaining, max_participants, is_active, expires_at, created_at, updated_at
+      bonus_budget_remaining, shard_drop_chance, max_participants, is_active, expires_at, created_at, updated_at
     ) VALUES (
       ${bundleId}, ${wallet}, ${params.platform}, ${params.videoId},
       ${params.videoTitle}, ${params.videoThumbnail}, ${params.videoUrl},
-      ${params.description}, ${params.rewardPoolPerFan}, ${params.bundleCompletionBonus},
-      ${bonusBudgetTotal}, ${params.maxParticipants}, true,
+      ${params.description}, ${params.rewardPoolPerFan}, 0,
+      0, ${shardDropChance}, ${params.maxParticipants}, true,
       ${params.expiresAt ?? null}, ${now}, ${now}
     )
   `;
@@ -124,7 +117,8 @@ function rowToBundle(row: any): QuestBundle {
     videoUrl: row.video_url,
     description: row.description,
     rewardPoolPerFan: Number(row.reward_pool_per_fan),
-    bundleCompletionBonus: Number(row.bundle_completion_bonus),
+    bundleCompletionBonus: 0,
+    shardDropChance: Number(row.shard_drop_chance ?? 20),
     bonusBudgetRemaining: Number(row.bonus_budget_remaining),
     maxParticipants: Number(row.max_participants),
     isActive: row.is_active,
@@ -340,42 +334,22 @@ export async function claimBundleCompletionBonus(
     return { success: false, bonusAmount: 0, error: 'Noch nicht alle Bundle-Quests abgeschlossen' };
   }
 
-  const bonusAmount = Number(bundle.bundle_completion_bonus);
-
-  if (bonusAmount > 0) {
-    // Credits-Bonus aus Collectibles ZUERST berechnen (vor Budget-Abzug)
-    const creditBonusPct = await getCollectiblesCreditBonus(normalized, bundle.creator_wallet as string).catch(() => 0);
-    const finalBonus = creditBonusPct > 0
-      ? Math.round(bonusAmount * (1 + creditBonusPct / 100) * 100) / 100
-      : bonusAmount;
-
-    // Bonus-Budget atomar abziehen (kompletten finalen Bonus inkl. Collectibles)
-    const deducted = await sql`
-      UPDATE quest_bundles
-      SET bonus_budget_remaining = bonus_budget_remaining - ${finalBonus},
-          updated_at = NOW()
-      WHERE id = ${bundleId} AND bonus_budget_remaining >= ${finalBonus}
-      RETURNING bonus_budget_remaining
-    `;
-    if (deducted.length === 0) {
-      return { success: false, bonusAmount: 0, error: 'Bonus-Budget erschöpft' };
-    }
-    await addDfaithCredits(normalized, finalBonus);
-  }
+  const bonusAmount = 0; // Kein Token-Bonus mehr, nur Shard-Drop
 
   // Reputation für Bundle-Abschluss vergeben
   if (totalReputation > 0) {
     await addUserReputation(normalized, bundle.creator_wallet as string, totalReputation);
   }
 
-  // ── Shard-Drop (20% Basiswahrscheinlichkeit + Collectibles-Bonus) ──────────
-  // Nur wenn der Künstler mindestens eine aktive Kollektion hat
+  // ── Shard-Drop (konfigurierbare Wahrscheinlichkeit des Künstlers + Collectibles-Bonus) ──
+  // Shard-Drop-Chance aus Bundle-Einstellung (Standard 20%) + Collectibles-Bonus des Fans
   let shardDropped = false;
   try {
     const collections = await getCollectionsByArtist(bundle.creator_wallet as string);
     if (collections.length > 0) {
       const shardBonus = await getCollectiblesShardBonus(normalized, bundle.creator_wallet as string);
-      const shardChance = 20 + shardBonus; // Basis 20% + Collectibles-Bonus
+      const bundleShardChance = Number(bundle.shard_drop_chance ?? 20);
+      const shardChance = bundleShardChance + shardBonus; // Künstler-Einstellung + Collectibles-Bonus
       if (Math.random() * 100 < shardChance) {
         await addShard(normalized, bundle.creator_wallet as string, 1);
         shardDropped = true;
@@ -388,11 +362,11 @@ export async function claimBundleCompletionBonus(
   // Completion-Record anlegen
   await sql`
     INSERT INTO quest_bundle_completions (bundle_id, fan_wallet, bonus_paid, completed_at)
-    VALUES (${bundleId}, ${normalized}, ${bonusAmount}, NOW())
+    VALUES (${bundleId}, ${normalized}, 0, NOW())
     ON CONFLICT DO NOTHING
   `;
 
-  return { success: true, bonusAmount, shardDropped };
+  return { success: true, bonusAmount: 0, shardDropped };
 }
 
 /**

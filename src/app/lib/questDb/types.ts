@@ -140,7 +140,8 @@ export interface QuestBundle {
   videoUrl: string;
   description: string;
   rewardPoolPerFan: number;       // Pro Fan: Gesamtreward für einzelne Tasks (aufgeteilt nach Gewichten)
-  bundleCompletionBonus: number;  // Extra-Bonus wenn Fan ALLE Tasks abschließt
+  bundleCompletionBonus: number;  // Legacy: immer 0 (wird nicht mehr genutzt)
+  shardDropChance: number;        // Shard-Drop-Wahrscheinlichkeit beim Abschluss (0-100, Standard 20)
   bonusBudgetRemaining: number;   // Noch verfügbares Bonus-Budget
   maxParticipants: number;
   isActive: boolean;
@@ -165,9 +166,9 @@ export interface QuestBundleWithItems extends QuestBundle {
   items: QuestBundleItem[];
   /** Fan-Fortschritt: abgeschlossene Quest-Typen */
   fanCompletedTypes?: QuestType[];
-  /** Fan hat den Abschluss-Bonus bereits eingelöst */
+  /** Fan hat den Shard-Abschluss bereits ausgelöst */
   fanBonusClaimed?: boolean;
-  /** Fan hat alle Tasks abgeschlossen (Bonus einlösbar) */
+  /** Fan hat alle Tasks abgeschlossen (Shard-Versuch möglich) */
   fanAllCompleted?: boolean;
   /** Level-Bonus-Prozentsatz des Fans für diesen Creator (0 = kein Bonus) */
   fanBonusPercent?: number;

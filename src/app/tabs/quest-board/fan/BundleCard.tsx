@@ -168,8 +168,9 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
   const totalCount      = bundle.items.length;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
-  const canClaimBonus    = bundle.fanAllCompleted && !bundle.fanBonusClaimed && !justClaimed && bundle.bundleCompletionBonus > 0;
-  const bonusAlreadyDone = (bundle.fanBonusClaimed || justClaimed) && bundle.bundleCompletionBonus > 0;
+  const canClaimBonus    = bundle.fanAllCompleted && !bundle.fanBonusClaimed && !justClaimed;
+  const bonusAlreadyDone = bundle.fanBonusClaimed || justClaimed;
+  const shardDropChance  = bundle.shardDropChance ?? 20;
 
   const rewardWithBonus = (baseReward: number) => {
     const bonus = Math.round(baseReward * levelBonusPercent) / 100;
@@ -296,16 +297,16 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                     </div>
                   )}
                   <div className="bg-black/70 text-amber-300 text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                    ✨ {20 + shardBonusPct}% Shard{shardBonusPct > 0 && <span className="text-green-400 font-bold text-xs"> inkl. +{shardBonusPct}%</span>}
+                    ✨ {shardDropChance + shardBonusPct}% Shard{shardBonusPct > 0 && <span className="text-green-400 font-bold text-xs"> inkl. +{shardBonusPct}%</span>}
                   </div>
                 </div>
               )}
 
-              {/* Bundle-Bonus unten links */}
-              {!showVideo && bundle.bundleCompletionBonus > 0 && (
+              {/* Shard-Drop-Chance Badge unten links */}
+              {!showVideo && (
                 <div className="absolute bottom-2 left-2 z-10">
-                  <span className="flex items-center gap-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-black text-[11px] font-bold px-2 py-1 rounded-full shadow-md">
-                    <FaGift size={9} /> +{bundle.bundleCompletionBonus.toFixed(2)} Bonus
+                  <span className="flex items-center gap-1 bg-black/70 text-amber-300 text-[11px] font-bold px-2 py-1 rounded-full">
+                    ✨ {shardDropChance + shardBonusPct}% Shard-Chance{shardBonusPct > 0 && <span className="text-green-400"> inkl. +{shardBonusPct}%</span>}
                   </span>
                 </div>
               )}
@@ -365,10 +366,9 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                   <button
                     onClick={handleClaimBonus}
                     disabled={claiming}
-                    className="w-full bg-gradient-to-r from-yellow-600 to-amber-500 hover:from-yellow-500 hover:to-amber-400 disabled:opacity-50 active:scale-[0.98] text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-md"
+                    className="w-full bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 disabled:opacity-50 active:scale-[0.98] text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-md"
                   >
-                    <FaGift size={13} />
-                    {claiming ? t('btn.claiming', language) : `${t('btn.claimBonus', language)} (+${bundle.bundleCompletionBonus.toFixed(2)} D.FAITH)`}
+                    ✨ {claiming ? t('btn.claiming', language) : `Quest-Reihe abschließen (✨ ${shardDropChance + shardBonusPct}% Shard-Chance)`}
                   </button>
                 </>
               ) : bonusAlreadyDone ? (
