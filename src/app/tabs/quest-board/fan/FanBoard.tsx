@@ -72,8 +72,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const [repBonusByCreator, setRepBonusByCreator] = useState<Record<string, number>>({});
 
   // Celebration nach Quest-Abschluss
-  const [celebration, setCelebration] = useState<{ amount: number; questTitle: string; reputationReward?: number; levelBonus?: number; collectiblesBonus?: number; shardDropped?: boolean } | null>(null);
-  const pendingCelebration = useRef<{ amount: number; questTitle: string; reputationReward?: number; levelBonus?: number; collectiblesBonus?: number; shardDropped?: boolean } | null>(null);
+  const [celebration, setCelebration] = useState<{ amount: number; questTitle: string; reputationReward?: number; levelBonus?: number; collectiblesBonus?: number; shardDropped?: boolean; isBundleCompletion?: boolean } | null>(null);
+  const pendingCelebration = useRef<{ amount: number; questTitle: string; reputationReward?: number; levelBonus?: number; collectiblesBonus?: number; shardDropped?: boolean; isBundleCompletion?: boolean } | null>(null);
 
   // Eltern-Komponente über jeden neuen Quest-Abschluss informieren (für questCount-Badge)
   const prevCompletedCount = useRef(0);
@@ -526,7 +526,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                 setBundles((prev) => prev.filter((b) => b.id !== bundle.id));
                 loadBundles(); 
                 loadQuests(); 
-                setCelebration({ amount: bonusAmount, questTitle: `🎁 ${bundleTitle} - Bonus`, reputationReward: 0, levelBonus: 0, shardDropped });
+                setCelebration({ amount: 0, questTitle: bundleTitle, reputationReward: 0, levelBonus: 0, shardDropped, isBundleCompletion: true });
               }}
               renderQuestCard={(quest) => {
                 const isCompleted = completedIds.includes(quest.id);
@@ -1032,43 +1032,77 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             style={{ animation: 'questCelebPop 0.5s ease-out forwards' }}
             onClick={e => e.stopPropagation()}
           >
-            <p className="text-5xl mb-3">🎉</p>
-            <p
-              className="text-amber-300 font-black text-5xl mb-1"
-              style={{ animation: 'questCelebPop 0.6s ease-out forwards, questCelebGlow 2s ease-in-out infinite' }}
-            >
-              +{formatCredits(celebration.amount)}
-            </p>
-            <p className="text-amber-400 font-bold text-lg mb-3">D.FAITH Credits</p>
-            {(celebration.reputationReward ?? 0) > 0 && (
-              <p className="text-purple-300 font-semibold text-sm mb-2 flex items-center justify-center gap-1">
-                <FaStar size={12} /> +{celebration.reputationReward} Reputation
-              </p>
+            {celebration.isBundleCompletion ? (
+              /* ── Bundle-Abschluss-Ansicht ── */
+              <>
+                <p className="text-5xl mb-3">{celebration.shardDropped ? '💎' : '🎯'}</p>
+                <p
+                  className="font-black text-3xl mb-1"
+                  style={{
+                    color: celebration.shardDropped ? '#fbbf24' : '#a1a1aa',
+                    animation: celebration.shardDropped ? 'questCelebPop 0.6s ease-out forwards, questCelebGlow 2s ease-in-out infinite' : 'questCelebPop 0.6s ease-out forwards',
+                  }}
+                >
+                  {celebration.shardDropped ? 'Shard erhalten!' : 'Quest-Reihe geschafft!'}
+                </p>
+                {celebration.shardDropped ? (
+                  <div className="bg-amber-400/10 border border-amber-400/30 rounded-xl px-4 py-3 mb-4 mt-3">
+                    <p className="text-amber-300 font-bold text-base">✨ +1 Shard</p>
+                    <p className="text-zinc-400 text-xs mt-0.5">Direkt in deine Collectibles-Sammlung gutgeschrieben!</p>
+                  </div>
+                ) : (
+                  <div className="bg-zinc-800/60 border border-zinc-700/60 rounded-xl px-4 py-3 mb-4 mt-3">
+                    <p className="text-zinc-300 font-semibold text-sm">Diesmal kein Shard 🎲</p>
+                    <p className="text-zinc-500 text-xs mt-1 leading-relaxed">Deine Treue zählt! Jedes Abschließen einer Quest-Reihe erhöht deine Chancen für den nächsten Drop.</p>
+                  </div>
+                )}
+                <div className="bg-zinc-800/50 border border-zinc-700/40 rounded-xl px-3 py-2 mb-6">
+                  <p className="text-zinc-500 text-xs mb-0.5">Quest-Reihe abgeschlossen</p>
+                  <p className="text-white text-sm font-semibold line-clamp-2">{celebration.questTitle}</p>
+                </div>
+              </>
+            ) : (
+              /* ── Normaler Quest-Abschluss ── */
+              <>
+                <p className="text-5xl mb-3">🎉</p>
+                <p
+                  className="text-amber-300 font-black text-5xl mb-1"
+                  style={{ animation: 'questCelebPop 0.6s ease-out forwards, questCelebGlow 2s ease-in-out infinite' }}
+                >
+                  +{formatCredits(celebration.amount)}
+                </p>
+                <p className="text-amber-400 font-bold text-lg mb-3">D.FAITH Credits</p>
+                {(celebration.reputationReward ?? 0) > 0 && (
+                  <p className="text-purple-300 font-semibold text-sm mb-2 flex items-center justify-center gap-1">
+                    <FaStar size={12} /> +{celebration.reputationReward} Reputation
+                  </p>
+                )}
+                {(celebration.levelBonus ?? 0) > 0 && (
+                  <p className="text-green-400 font-semibold text-sm mb-1 flex items-center justify-center gap-1">
+                    ⚡ +{celebration.levelBonus} Level-Bonus enthalten!
+                  </p>
+                )}
+                {(celebration.collectiblesBonus ?? 0) > 0 && (
+                  <p className="text-blue-300 font-semibold text-sm mb-3 flex items-center justify-center gap-1">
+                    ✨ +{celebration.collectiblesBonus} Collectibles-Bonus enthalten!
+                  </p>
+                )}
+                {celebration.shardDropped && (
+                  <p className="text-amber-300 font-bold text-sm mb-3 flex items-center justify-center gap-1.5 bg-amber-400/10 border border-amber-400/20 rounded-xl px-3 py-2">
+                    ✨ +1 Shard erhalten!
+                  </p>
+                )}
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 mb-6">
+                  <p className="text-zinc-400 text-xs mb-0.5">Quest abgeschlossen</p>
+                  <p className="text-white text-sm font-semibold line-clamp-2">{celebration.questTitle}</p>
+                </div>
+              </>
             )}
-            {(celebration.levelBonus ?? 0) > 0 && (
-              <p className="text-green-400 font-semibold text-sm mb-1 flex items-center justify-center gap-1">
-                ⚡ +{celebration.levelBonus} Level-Bonus enthalten!
-              </p>
-            )}
-            {(celebration.collectiblesBonus ?? 0) > 0 && (
-              <p className="text-blue-300 font-semibold text-sm mb-3 flex items-center justify-center gap-1">
-                ✨ +{celebration.collectiblesBonus} Collectibles-Bonus enthalten!
-              </p>
-            )}
-            {celebration.shardDropped && (
-              <p className="text-amber-300 font-bold text-sm mb-3 flex items-center justify-center gap-1.5 bg-amber-400/10 border border-amber-400/20 rounded-xl px-3 py-2">
-                ✨ +1 Shard erhalten! (Collectibles-Bonus)
-              </p>
-            )}
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 mb-6">
-              <p className="text-zinc-400 text-xs mb-0.5">Quest abgeschlossen</p>
-              <p className="text-white text-sm font-semibold line-clamp-2">{celebration.questTitle}</p>
-            </div>
             <button
               onClick={() => setCelebration(null)}
               className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-8 py-3 rounded-2xl transition-colors text-sm"
             >
-              Awesome! 🎊
+              {celebration.isBundleCompletion && !celebration.shardDropped ? 'Weiter so! 💪' : 'Awesome! 🎊'}
             </button>
           </div>
         </div>
