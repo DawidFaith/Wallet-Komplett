@@ -521,6 +521,7 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
   const [upgradeOpen, setUpgradeOpen] = useState<CollectibleRarity | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [localShards, setLocalShards] = useState(data.shards);
+  const [selectedUpgradeRarity, setSelectedUpgradeRarity] = useState<CollectibleRarity | null>(null);
 
   // Shard-Zahl von außen (nach onRefresh) synchronisieren
   useEffect(() => { setLocalShards(data.shards); }, [data.shards]);
@@ -530,6 +531,15 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
   const totalCollectibles = Object.values(ownedByRarity).reduce((s, v) => s + (v ?? 0), 0);
   const upgradableRarities = RARITY_ORDER
     .filter((r, i) => i < RARITY_ORDER.length - 1 && (ownedByRarity[r] ?? 0) >= 10);
+
+  // Beste Rarity für Upgrade-Dropdown vorbelegen
+  const upgradeOptions = RARITY_ORDER.slice(0, -1).filter((r) => (ownedByRarity[r] ?? 0) > 0);
+  const defaultUpgradeRarity = upgradeOptions.length > 0
+    ? upgradeOptions.reduce((best, r) => (ownedByRarity[r] ?? 0) > (ownedByRarity[best] ?? 0) ? r : best)
+    : null;
+  const activeUpgradeRarity = (selectedUpgradeRarity && upgradeOptions.includes(selectedUpgradeRarity))
+    ? selectedUpgradeRarity
+    : defaultUpgradeRarity;
 
   return (
     <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4 mb-4">
@@ -621,31 +631,25 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
         </button>
 
         {/* Zusammenfassen: Dropdown + Button */}
-        {RARITY_ORDER.slice(0, -1).some((r) => (ownedByRarity[r] ?? 0) > 0) && (() => {
-          const upgradableOptions = RARITY_ORDER.slice(0, -1).filter((r) => (ownedByRarity[r] ?? 0) > 0);
-          const [selectedRarity, setSelectedRarity] = React.useState<CollectibleRarity>(
-            upgradableOptions.reduce((best, r) =>
-              (ownedByRarity[r] ?? 0) > (ownedByRarity[best] ?? 0) ? r : best
-            )
-          );
-          const count = ownedByRarity[selectedRarity] ?? 0;
+        {activeUpgradeRarity && (() => {
+          const count = ownedByRarity[activeUpgradeRarity] ?? 0;
           const canUpgrade = count >= 10;
-          const nextRarity = RARITY_ORDER[RARITY_ORDER.indexOf(selectedRarity) + 1];
+          const nextRarity = RARITY_ORDER[RARITY_ORDER.indexOf(activeUpgradeRarity) + 1];
           return (
             <div className="flex items-center gap-1.5">
               <select
-                value={selectedRarity}
-                onChange={(e) => setSelectedRarity(e.target.value as CollectibleRarity)}
+                value={activeUpgradeRarity}
+                onChange={(e) => setSelectedUpgradeRarity(e.target.value as CollectibleRarity)}
                 className="bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px] font-semibold rounded-xl px-2 py-2 outline-none focus:border-orange-500/50"
               >
-                {upgradableOptions.map((r) => (
+                {upgradeOptions.map((r) => (
                   <option key={r} value={r}>
                     {RARITY_CONFIG[r].label} ({ownedByRarity[r] ?? 0}/10)
                   </option>
                 ))}
               </select>
               <button
-                onClick={() => canUpgrade && setUpgradeOpen(selectedRarity)}
+                onClick={() => canUpgrade && setUpgradeOpen(activeUpgradeRarity)}
                 disabled={!canUpgrade}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black transition-colors ${
                   canUpgrade
