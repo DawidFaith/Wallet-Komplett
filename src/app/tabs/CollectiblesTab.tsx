@@ -610,13 +610,18 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
           Verschmelzen ({shards} Shard{shards !== 1 ? 's' : ''})
         </button>
 
-        {RARITY_ORDER.filter((r, i) => i < RARITY_ORDER.length - 1).map((rarity) => {
-          const count = ownedByRarity[rarity] ?? 0;
+        {(() => {
+          // Nächste upgradbare Rarity: bevorzuge die erste mit ≥10, sonst die erste mit >0
+          const upgradeRarity =
+            RARITY_ORDER.slice(0, -1).find((r) => (ownedByRarity[r] ?? 0) >= 10) ??
+            RARITY_ORDER.slice(0, -1).find((r) => (ownedByRarity[r] ?? 0) > 0);
+          if (!upgradeRarity) return null;
+          const count = ownedByRarity[upgradeRarity] ?? 0;
           const canUpgrade = count >= 10;
+          const nextRarity = RARITY_ORDER[RARITY_ORDER.indexOf(upgradeRarity) + 1];
           return (
             <button
-              key={rarity}
-              onClick={() => canUpgrade && setUpgradeOpen(rarity)}
+              onClick={() => canUpgrade && setUpgradeOpen(upgradeRarity)}
               disabled={!canUpgrade}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black transition-colors ${
                 canUpgrade
@@ -625,10 +630,10 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
               }`}
             >
               <FaFire size={10} />
-              10× {RARITY_CONFIG[rarity].label} → {RARITY_CONFIG[RARITY_ORDER[RARITY_ORDER.indexOf(rarity) + 1]].label} ({count}/10)
+              10× {RARITY_CONFIG[upgradeRarity].label} → {RARITY_CONFIG[nextRarity].label} ({count}/10)
             </button>
           );
-        })}
+        })()}
       </div>
 
       {/* Fusion Modal */}
