@@ -599,26 +599,36 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
       <div className="flex gap-2 flex-wrap">
         <button
           onClick={() => setFuseOpen(true)}
+          disabled={shards < 1}
           className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black transition-colors ${
             shards >= 1
               ? 'bg-amber-400/10 hover:bg-amber-400/20 text-amber-400 border border-amber-400/30'
-              : 'bg-white/[0.03] text-zinc-600 border border-white/[0.05] cursor-not-allowed'
+              : 'bg-white/[0.03] text-zinc-400 border border-white/[0.08] cursor-not-allowed'
           }`}
         >
           <GiMagicSwirl size={12} />
           Verschmelzen ({shards} Shard{shards !== 1 ? 's' : ''})
         </button>
 
-        {upgradableRarities.map((rarity) => (
-          <button
-            key={rarity}
-            onClick={() => setUpgradeOpen(rarity)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black transition-colors bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30`}
-          >
-            <FaFire size={10} />
-            10× {RARITY_CONFIG[rarity].label} upgraden
-          </button>
-        ))}
+        {RARITY_ORDER.filter((r, i) => i < RARITY_ORDER.length - 1).map((rarity) => {
+          const count = ownedByRarity[rarity] ?? 0;
+          const canUpgrade = count >= 10;
+          return (
+            <button
+              key={rarity}
+              onClick={() => canUpgrade && setUpgradeOpen(rarity)}
+              disabled={!canUpgrade}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black transition-colors ${
+                canUpgrade
+                  ? 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                  : 'bg-white/[0.03] text-zinc-400 border border-white/[0.08] cursor-not-allowed'
+              }`}
+            >
+              <FaFire size={10} />
+              10× {RARITY_CONFIG[rarity].label} → {RARITY_CONFIG[RARITY_ORDER[RARITY_ORDER.indexOf(rarity) + 1]].label} ({count}/10)
+            </button>
+          );
+        })}
       </div>
 
       {/* Fusion Modal */}
@@ -1281,7 +1291,7 @@ export default function CollectiblesTab() {
                             <p className="text-zinc-500 text-[10px] mt-0.5">Reputation</p>
                           </div>
                         </div>
-                        <p className="text-zinc-700 text-[10px] mt-2.5 leading-relaxed">
+                        <p className="text-zinc-300 text-[10px] mt-2.5 leading-relaxed">
                           Basiert auf deinen besten Collectibles je Kollektion. Wird automatisch auf Quest-Rewards angerechnet.
                         </p>
                       </div>
