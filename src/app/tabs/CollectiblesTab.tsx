@@ -249,59 +249,76 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
           0%   { transform: translate(0,0) scale(1); opacity: 1; }
           100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
         }
+        @keyframes fusionCelebUp {
+          0%   { transform: translateY(0) scale(1); opacity: 1; }
+          100% { transform: translateY(var(--ty)) scale(0.2); opacity: 0; }
+        }
         .fusion-shake { animation: fusionShake 0.9s ease-in-out; }
         .fusion-reveal { animation: fusionReveal 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards; }
         .fusion-glow   { animation: fusionGlow 1.5s ease-in-out infinite; }
-        .fusion-particle { animation: fusionParticle 0.8s ease-out forwards; }
+        .fusion-particle { animation: fusionCelebUp 1.5s ease-out forwards; }
       `}</style>
 
-      {/* Reveal-Overlay */}
+      {/* Reveal-Modal mit Konfetti */}
       {phase === 'reveal' && result && (
-        <div
-          className="absolute inset-0 flex flex-col items-center justify-center gap-6 z-10"
-          onClick={handleRevealClose}
-        >
-          {/* Partikel */}
-          {['✨','⭐','💎','🌟','✨','💫','⭐','✨'].map((s, i) => (
+        <div className="absolute inset-0 z-20 flex items-center justify-center" onClick={handleRevealClose}>
+          {/* Konfetti-Partikel */}
+          {['✨','⭐','💎','🌟','✨','💫','⭐','🎊','💎','✨'].map((s, i) => (
             <span
               key={i}
-              className="fusion-particle absolute text-2xl pointer-events-none"
+              className="fusion-particle absolute pointer-events-none"
               style={{
-                left: `${20 + i * 8}%`,
-                top: `${35 + (i % 3) * 10}%`,
-                '--tx': `${(i % 2 === 0 ? 1 : -1) * (30 + i * 15)}px`,
-                '--ty': `${-60 - i * 20}px`,
-                animationDelay: `${i * 0.07}s`,
+                left: `${8 + i * 9}%`,
+                bottom: `${18 + (i % 4) * 12}%`,
+                fontSize: '1.4rem',
+                animationDuration: `${1.2 + (i % 3) * 0.25}s`,
+                animationDelay: `${i * 0.06}s`,
+                '--tx': `${(i % 2 === 0 ? 1 : -1) * (20 + i * 8)}px`,
+                '--ty': `-${120 + i * 18}px`,
               } as React.CSSProperties}
             >{s}</span>
           ))}
 
-          <div className="fusion-reveal text-center">
-            <div
-              className="fusion-glow inline-flex flex-col items-center gap-3 p-8 rounded-3xl border-2 mx-4"
-              style={{
-                '--glow-color': RARITY_CONFIG[result].color,
-                backgroundColor: `${RARITY_CONFIG[result].color}18`,
-                borderColor: RARITY_CONFIG[result].color,
-              } as React.CSSProperties}
-            >
+          {/* Modal-Karte */}
+          <div
+            className="fusion-reveal relative bg-zinc-900 border-2 rounded-3xl p-7 mx-4 text-center shadow-2xl max-w-xs w-full fusion-glow"
+            style={{
+              '--glow-color': RARITY_CONFIG[result].color,
+              borderColor: RARITY_CONFIG[result].color,
+            } as React.CSSProperties}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Bild */}
+            <div className="flex justify-center mb-4">
               {collection.imageUrl ? (
-                <Image src={collection.imageUrl} alt={collection.name} width={100} height={100} className="w-24 h-24 rounded-2xl object-cover" />
+                <Image
+                  src={collection.imageUrl}
+                  alt={collection.name}
+                  width={96}
+                  height={96}
+                  className="w-24 h-24 rounded-2xl object-cover"
+                  style={{ outline: `3px solid ${RARITY_CONFIG[result].color}`, outlineOffset: '2px' }}
+                />
               ) : (
                 <GiCrystalShine size={80} style={{ color: RARITY_CONFIG[result].color }} />
               )}
-              <div>
-                <p className="text-white/60 text-xs uppercase tracking-widest mb-1">Du hast erhalten</p>
-                <p className="font-black text-3xl" style={{ color: RARITY_CONFIG[result].color }}>
-                  {RARITY_CONFIG[result].label}!
-                </p>
-                <p className="text-white/80 text-sm font-semibold mt-1">{collection.name}</p>
-              </div>
-
             </div>
-            <p className="text-white/40 text-xs mt-4">
-              {currentShards >= 1 ? 'Tippen um weiterzumachen' : 'Tippen um zu schließen'}
+
+            {/* Rarity-Label */}
+            <p className="text-white/50 text-[10px] uppercase tracking-[0.3em] font-bold mb-1">Collectible erhalten!</p>
+            <p className="font-black text-3xl mb-1" style={{ color: RARITY_CONFIG[result].color }}>
+              {RARITY_CONFIG[result].label}
             </p>
+            <p className="text-white/70 text-sm font-semibold mb-5">{collection.name}</p>
+
+            {/* Button */}
+            <button
+              onClick={handleRevealClose}
+              className="w-full py-3 rounded-2xl font-black text-sm text-black transition-all active:scale-95"
+              style={{ backgroundColor: RARITY_CONFIG[result].color }}
+            >
+              {currentShards >= 1 ? 'Nochmal verschmelzen! 🔮' : 'Awesome! 🎊'}
+            </button>
           </div>
         </div>
       )}
