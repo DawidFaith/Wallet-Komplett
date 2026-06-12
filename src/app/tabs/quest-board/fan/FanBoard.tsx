@@ -201,6 +201,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             }[];
           };
           // Effektiver Bonus: für jede Kollektion die beste besessene Rarity ermitteln und Multiplikator anwenden
+          // Slot-Logik: Slot 0 = primaryBonus (immer), Slot 1 = ab Epic, Slot 2 = ab Mythic
           let totalCredit = 0, maxShard = 0;
           for (const d of (data.data ?? [])) {
             const owned = Object.entries(d.ownedByRarity ?? {}).filter(([, c]) => c > 0).map(([r]) => r);
@@ -209,9 +210,20 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               RARITY_ORD.indexOf(r) > RARITY_ORD.indexOf(best) ? r : best
             );
             const mult = CREDIT_MULT[bestRarity] ?? 0;
-            totalCredit += Math.round((d.collection.maxCreditBonusPercent ?? 0) * mult);
-            const shardBonus = Math.round((d.collection.maxShardChanceBonus ?? 0) * mult);
-            if (shardBonus > maxShard) maxShard = shardBonus;
+            // Aktive Slots ermitteln (spiegelt collectibles.ts getBonusSlots/getActiveSlotsCount)
+            const primary = (d.collection.primaryBonus ?? 'rep') as string;
+            const others = (['rep', 'credits', 'shard'] as string[]).filter(b => b !== primary);
+            const slots = [primary, others[0], others[1]];
+            const activeCount = RARITY_ORD.indexOf(bestRarity) >= RARITY_ORD.indexOf('mythic') ? 3
+              : RARITY_ORD.indexOf(bestRarity) >= RARITY_ORD.indexOf('epic') ? 2 : 1;
+            const activeSlots = slots.slice(0, activeCount);
+            if (activeSlots.includes('credits')) {
+              totalCredit += Math.round((d.collection.maxCreditBonusPercent ?? 0) * mult);
+            }
+            if (activeSlots.includes('shard')) {
+              const shardBonus = Math.round((d.collection.maxShardChanceBonus ?? 0) * mult);
+              if (shardBonus > maxShard) maxShard = shardBonus;
+            }
           }
           return [aw, totalCredit, maxShard] as const;
         } catch { return [aw, 0, 0] as const; }
