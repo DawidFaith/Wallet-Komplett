@@ -526,6 +526,9 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
   const [editOpen, setEditOpen] = useState(false);
   const [localShards, setLocalShards] = useState(data.shards);
 
+  // Shard-Zahl von außen (nach onRefresh) synchronisieren
+  useEffect(() => { setLocalShards(data.shards); }, [data.shards]);
+
   const { collection, ownedByRarity } = data;
   const shards = localShards;
   const totalCollectibles = Object.values(ownedByRarity).reduce((s, v) => s + (v ?? 0), 0);
