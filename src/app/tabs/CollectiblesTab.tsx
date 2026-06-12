@@ -1320,7 +1320,7 @@ export default function CollectiblesTab() {
           ) : (
             /* Artist-Detail (Supporter) */
             <div className="px-4 space-y-3">
-              {loading ? (
+              {loading && artistCollections.length === 0 ? (
                 <div className="flex justify-center py-12">
                   <span className="w-7 h-7 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
                 </div>
