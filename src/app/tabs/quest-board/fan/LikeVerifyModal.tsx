@@ -89,9 +89,8 @@ export default function LikeVerifyModal({
             setExpiresAt(data.expiresAt ?? expiresAt);
             setStep('not_yet');
           } else if (data.success) {
-            setRewardAmount(data.rewardAmount);
-            setStep('success');
             onCompleted(data.rewardAmount, data.levelBonus);
+            onClose();
           }
         }
       } catch {
@@ -133,13 +132,11 @@ export default function LikeVerifyModal({
             <div className="flex items-center gap-1.5">
               <Image src="/D.FAITH.png" alt="" width={16} height={16} className="w-4 h-4 rounded-full shrink-0" />
               <span className="text-amber-400 font-bold text-base">+{formatCredits(displayReward)} D.FAITH</span>
-              {levelBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs">(+{levelBonusPercent}%)</span>}
             </div>
             {(quest.reputationReward ?? 0) > 0 && (
               <div className="flex items-center gap-1 shrink-0">
                 <FaStar size={10} className="text-purple-300 shrink-0" />
                 <span className="text-purple-300 font-bold text-sm">+{displayRep} REP</span>
-                {repBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs">(+{repBonusPercent}%)</span>}
               </div>
             )}
           </div>
@@ -251,12 +248,11 @@ export default function LikeVerifyModal({
             <div>
               <p className="text-white font-bold text-lg flex items-center gap-1.5">
                 {formatCredits(rewardAmount)} D.FAITH Credits
-                {levelBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs">(+{levelBonusPercent}%)</span>}
               </p>
               <p className="text-zinc-400 text-xs">{t('verify.creditsAdded', lang)}</p>
               {(quest?.reputationReward ?? 0) > 0 && (
                 <p className="text-purple-300 text-xs font-medium flex items-center gap-1 mt-0.5">
-                  <FaStar size={9} /> +{displayRep} {t('verify.reputation', lang)}{repBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs"> (+{repBonusPercent}%)</span>}
+                  <FaStar size={9} /> +{displayRep} {t('verify.reputation', lang)}
                 </p>
               )}
             </div>

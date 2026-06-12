@@ -154,9 +154,8 @@ export default function InstagramDmShareModal({
         setError(lang === 'en' ? 'Error completing quest.' : lang === 'pl' ? 'Błąd podczas kończenia.' : 'Fehler beim Abschließen');
         return;
       }
-      setRewardAmount(data.rewardAmount ?? displayReward);
-      setStep('success');
       onCompleted(data.rewardAmount ?? displayReward, data.levelBonus);
+      onClose();
     } catch {
       setError('Netzwerkfehler. Bitte erneut versuchen.');
     } finally {
@@ -180,12 +179,9 @@ export default function InstagramDmShareModal({
             <p className="font-semibold text-sm">{quest.videoTitle}</p>
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-xs text-zinc-500 flex items-center gap-1">Story Quest · <Image src="/D.FAITH.png" alt="" width={10} height={10} className="w-2.5 h-2.5 rounded-full shrink-0" />{formatCredits(displayReward)} D.FAITH</p>
-              {levelBonusPercent > 0 && (
-                <span className="text-yellow-400 font-bold text-xs">(+{levelBonusPercent}%)</span>
-              )}
               {(quest.reputationReward ?? 0) > 0 && (
                 <span className="flex items-center gap-0.5 text-xs text-yellow-400">
-                  <FaStar size={9} /> +{displayRep} REP{repBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs"> (+{repBonusPercent}%)</span>}
+                  <FaStar size={9} /> +{displayRep} REP
                 </span>
               )}
             </div>
@@ -201,6 +197,7 @@ export default function InstagramDmShareModal({
             questTitle={quest.videoTitle}
             onSuccess={(amount) => {
               onCompleted(amount);
+              onClose();
             }}
             onClose={onClose}
           />
@@ -230,7 +227,7 @@ export default function InstagramDmShareModal({
                     +{formatCredits(displayReward)} D.FAITH
                     {(quest.reputationReward ?? 0) > 0 && (
                       <span className="text-amber-300 text-xs font-semibold ml-1 flex items-center gap-0.5">
-                        <FaStar size={9} /> +{displayRep} REP{repBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs"> (+{repBonusPercent}%)</span>}
+                        <FaStar size={9} /> +{displayRep} REP
                       </span>
                     )}
                   </span>
@@ -367,7 +364,7 @@ export default function InstagramDmShareModal({
               </div>
               {(quest.reputationReward ?? 0) > 0 && (
                 <div className="flex items-center justify-center gap-1 text-amber-300 text-sm font-semibold">
-                  <FaStar size={12} /> +{displayRep} Reputation{repBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs"> (+{repBonusPercent}%)</span>}
+                  <FaStar size={12} /> +{displayRep} Reputation
                 </div>
               )}
               <p className="text-xs text-green-400">✓ {t('verify.creditsAdded', lang)}</p>

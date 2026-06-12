@@ -140,6 +140,21 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
 
   useEffect(() => { loadQuests(); loadBundles(); }, [loadQuests, loadBundles]);
 
+  // VerifyModal (YouTube/TikTok-Kommentar): Auto-Schließen + Konfetti bei Erfolg
+  useEffect(() => {
+    if (verifyResult?.success && verifyingQuest) {
+      setCelebration({
+        amount: verifyResult.rewardAmount ?? 0,
+        questTitle: verifyingQuest.videoTitle,
+        reputationReward: verifyingQuest.reputationReward,
+        levelBonus: verifyResult.levelBonus,
+      });
+      loadBundles();
+      setVerifyingQuest(null);
+      setVerifyResult(null);
+    }
+  }, [verifyResult]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     let cancelled = false;
 
@@ -706,11 +721,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         repBonusPercent={verifyingQuest ? getRepBonusPercent(verifyingQuest.creatorWallet) : 0}
         onVerify={verifyingQuest?.platform === 'tiktok' ? handleVerifyTikTokComment : handleVerifyYoutubeComment}
         onClose={() => {
-          if (verifyResult?.success && verifyingQuest) {
-            pendingCelebration.current = { amount: verifyResult.rewardAmount ?? 0, questTitle: verifyingQuest.videoTitle, reputationReward: verifyingQuest.reputationReward, levelBonus: verifyResult.levelBonus };
-            loadBundles();
-          }
-          if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
           setVerifyingQuest(null); setVerifyResult(null);
         }}
       />

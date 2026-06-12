@@ -74,10 +74,8 @@ export default function SecretVerifyModal({
       if (data.notYet) {
         setStep('wrong');
       } else if (data.success) {
-        setRewardAmount(data.rewardAmount);
-        setLevelBonus(data.levelBonus ?? 0);
-        setStep('success');
         onCompleted(data.rewardAmount, data.levelBonus);
+        handleClose();
       }
     } catch {
       setErrorMsg(lang === 'en' ? 'Network error. Please try again.' : lang === 'pl' ? 'Błąd sieci. Spróbuj ponownie.' : 'Netzwerkfehler. Bitte versuche es erneut.');
@@ -102,13 +100,11 @@ export default function SecretVerifyModal({
             <div className="flex items-center gap-1.5">
               <Image src="/D.FAITH.png" alt="" width={16} height={16} className="w-4 h-4 rounded-full shrink-0" />
               <span className="text-amber-400 font-bold text-base">+{formatCredits(displayReward)} D.FAITH</span>
-              {levelBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs">(+{levelBonusPercent}%)</span>}
             </div>
             {(quest.reputationReward ?? 0) > 0 && (
               <div className="flex items-center gap-1 shrink-0">
                 <FaStar size={10} className="text-purple-300 shrink-0" />
                 <span className="text-purple-300 font-bold text-sm">+{displayRep} REP</span>
-                {repBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs">(+{repBonusPercent}%)</span>}
               </div>
             )}
           </div>
@@ -153,7 +149,7 @@ export default function SecretVerifyModal({
               </div>
               {(quest?.reputationReward ?? 0) > 0 && (
                 <div className="flex items-center gap-1 text-purple-300 font-bold text-sm">
-                  <FaStar size={10} /> +{displayRep} REP{repBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs"> (+{repBonusPercent}%)</span>}
+                  <FaStar size={10} /> +{displayRep} REP
                 </div>
               )}
               {levelBonus > 0 && (

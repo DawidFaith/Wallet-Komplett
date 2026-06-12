@@ -45,12 +45,8 @@ export default function InstagramCommentVerifyModal({
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setResult({
-          success: true,
-          message: `Quest abgeschlossen! +${formatCredits(data.rewardAmount)} DFAITH Credits`,
-          rewardAmount: data.rewardAmount,
-        });
         onCompleted(data.rewardAmount, data.levelBonus);
+        handleClose();
       } else {
         setResult({ success: false, message: data.error ?? 'Fehler bei der Verifizierung' });
       }
@@ -82,13 +78,11 @@ export default function InstagramCommentVerifyModal({
             <div className="flex items-center gap-1.5">
               <Image src="/D.FAITH.png" alt="" width={16} height={16} className="w-4 h-4 rounded-full shrink-0" />
               <span className="text-amber-400 font-bold text-base">+{formatCredits(displayReward)} D.FAITH</span>
-              {levelBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs">(+{levelBonusPercent}%)</span>}
             </div>
             {(quest.reputationReward ?? 0) > 0 && (
               <div className="flex items-center gap-1 shrink-0">
                 <FaStar size={10} className="text-purple-300 shrink-0" />
                 <span className="text-purple-300 font-bold text-sm">+{displayRep} REP</span>
-                {repBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs">(+{repBonusPercent}%)</span>}
               </div>
             )}
           </div>

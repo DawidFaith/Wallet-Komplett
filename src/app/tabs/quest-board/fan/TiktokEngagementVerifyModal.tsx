@@ -104,11 +104,8 @@ export default function TiktokEngagementVerifyModal({
             setStep('not_yet');
           } else if (data.success) {
             setLikeVerified(data.likeVerified);
-            setShareVerified(data.shareVerified);
-            setSaveVerified(data.saveVerified);
-            setRewardAmount(data.rewardAmount);
-            setStep('success');
             onCompleted(data.rewardAmount, data.levelBonus);
+            onClose();
           }
         }
       } catch {
@@ -162,7 +159,6 @@ export default function TiktokEngagementVerifyModal({
             <div className="flex items-center gap-1.5">
               <Image src="/D.FAITH.png" alt="" width={16} height={16} className="w-4 h-4 rounded-full shrink-0" unoptimized />
               <span className="text-yellow-400 font-bold text-base">+{formatCredits(rewardPer)} D.FAITH</span>
-              {levelBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs">(+{levelBonusPercent}%)</span>}
               {!singleAction && <span className="text-zinc-600 text-xs">×3</span>}
             </div>
             {(quest.reputationReward ?? 0) > 0 && (
@@ -329,7 +325,7 @@ export default function TiktokEngagementVerifyModal({
               </p>
               {(quest?.reputationReward ?? 0) > 0 && (
                 <p className="text-amber-300 font-semibold text-sm flex items-center justify-center gap-1">
-                  <FaStar size={12} /> +{displayRep} REP{repBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs"> (+{repBonusPercent}%)</span>}
+                  <FaStar size={12} /> +{displayRep} REP
                 </p>
               )}
             </div>

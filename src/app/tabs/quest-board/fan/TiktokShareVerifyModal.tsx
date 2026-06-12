@@ -93,10 +93,8 @@ export default function TiktokShareVerifyModal({
             setShareVerified(data.shareVerified ?? false);
             setStep('not_yet');
           } else if (data.success) {
-            setShareVerified(true);
-            setRewardAmount(data.rewardAmount);
-            setStep('success');
-            onCompleted(data.rewardAmount);
+            onCompleted(data.rewardAmount, data.levelBonus);
+            onClose();
           }
         }
       } catch {
@@ -138,13 +136,11 @@ export default function TiktokShareVerifyModal({
             <div className="flex items-center gap-1.5">
               <Image src="/D.FAITH.png" alt="" width={16} height={16} className="w-4 h-4 rounded-full shrink-0" unoptimized />
               <span className="text-yellow-400 font-bold text-base">+{formatCredits(displayReward)} D.FAITH</span>
-              {levelBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs">(+{levelBonusPercent}%)</span>}
             </div>
             {(quest.reputationReward ?? 0) > 0 && (
               <div className="flex items-center gap-1 shrink-0">
                 <FaStar size={10} className="text-amber-300 shrink-0" />
                 <span className="text-amber-300 font-bold text-sm">+{displayRep} REP</span>
-                {repBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs">(+{repBonusPercent}%)</span>}
               </div>
             )}
           </div>
@@ -241,7 +237,6 @@ export default function TiktokShareVerifyModal({
             <p className="text-green-300 font-bold text-lg mb-1">{t('verify.shareConfirmed', lang)}</p>
             <p className="text-zinc-400 text-sm flex items-center justify-center gap-1.5">
               +{formatCredits(rewardAmount)} D.FAITH {lang === 'en' ? 'credited' : lang === 'pl' ? 'dodano' : 'wurden gutgeschrieben'}
-              {levelBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs">(+{levelBonusPercent}%)</span>}
             </p>
           </div>
           <div className="flex justify-center">
