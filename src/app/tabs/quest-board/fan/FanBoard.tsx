@@ -146,7 +146,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       setCelebration({
         amount: verifyResult.rewardAmount ?? 0,
         questTitle: verifyingQuest.videoTitle,
-        reputationReward: verifyingQuest.reputationReward,
+        reputationReward: getDisplayRep(verifyingQuest),
         levelBonus: verifyResult.levelBonus,
         collectiblesBonus: verifyResult.creditBonus,
       });
@@ -265,6 +265,9 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   };
   /** Collectibles REP-Bonus für Anzeige in Quest-Karten */
   const getRepBonusPercent = (creatorWallet: string) => repBonusByCreator[creatorWallet.toLowerCase()] ?? 0;
+  /** Reputation-Reward inkl. Collectibles-Rep-Bonus (für Konfetti-Anzeige) */
+  const getDisplayRep = (quest: QuestIndexEntry) =>
+    Math.round((quest.reputationReward ?? 0) * (1 + getRepBonusPercent(quest.creatorWallet) / 100));
 
   const handleVerify = async (questId: string) => {
     const quest = quests.find((q) => q.id === questId) ?? null;
@@ -741,7 +744,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === likeVerifyQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: likeVerifyQuest.videoTitle, reputationReward: likeVerifyQuest.reputationReward, levelBonus , collectiblesBonus: creditBonus };
+            pendingCelebration.current = { amount, questTitle: likeVerifyQuest.videoTitle, reputationReward: getDisplayRep(likeVerifyQuest), levelBonus , collectiblesBonus: creditBonus };
             loadBundles();
           }
         }}
@@ -764,7 +767,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === secretVerifyQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: secretVerifyQuest.videoTitle, reputationReward: secretVerifyQuest.reputationReward, levelBonus , collectiblesBonus: creditBonus };
+            pendingCelebration.current = { amount, questTitle: secretVerifyQuest.videoTitle, reputationReward: getDisplayRep(secretVerifyQuest), levelBonus , collectiblesBonus: creditBonus };
             loadBundles();
           }
         }}
@@ -787,7 +790,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === tiktokEngagementQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: tiktokEngagementQuest.videoTitle, reputationReward: tiktokEngagementQuest.reputationReward, levelBonus , collectiblesBonus: creditBonus };
+            pendingCelebration.current = { amount, questTitle: tiktokEngagementQuest.videoTitle, reputationReward: getDisplayRep(tiktokEngagementQuest), levelBonus , collectiblesBonus: creditBonus };
             loadBundles();
           }
         }}
@@ -811,7 +814,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === tiktokLikeQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: tiktokLikeQuest.videoTitle, reputationReward: tiktokLikeQuest.reputationReward, levelBonus , collectiblesBonus: creditBonus };
+            pendingCelebration.current = { amount, questTitle: tiktokLikeQuest.videoTitle, reputationReward: getDisplayRep(tiktokLikeQuest), levelBonus , collectiblesBonus: creditBonus };
             loadBundles();
           }
         }}
@@ -835,7 +838,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === tiktokSaveQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: tiktokSaveQuest.videoTitle, reputationReward: tiktokSaveQuest.reputationReward, levelBonus , collectiblesBonus: creditBonus };
+            pendingCelebration.current = { amount, questTitle: tiktokSaveQuest.videoTitle, reputationReward: getDisplayRep(tiktokSaveQuest), levelBonus , collectiblesBonus: creditBonus };
             loadBundles();
           }
         }}
@@ -858,7 +861,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === tiktokShareQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: tiktokShareQuest.videoTitle, reputationReward: tiktokShareQuest.reputationReward, levelBonus , collectiblesBonus: creditBonus };
+            pendingCelebration.current = { amount, questTitle: tiktokShareQuest.videoTitle, reputationReward: getDisplayRep(tiktokShareQuest), levelBonus , collectiblesBonus: creditBonus };
             loadBundles();
           }
         }}
@@ -881,7 +884,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === instagramLikeQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: instagramLikeQuest.videoTitle, reputationReward: instagramLikeQuest.reputationReward, levelBonus , collectiblesBonus: creditBonus };
+            pendingCelebration.current = { amount, questTitle: instagramLikeQuest.videoTitle, reputationReward: getDisplayRep(instagramLikeQuest), levelBonus , collectiblesBonus: creditBonus };
             loadBundles();
           }
           // Modal NICHT schließen – onClose schließt nach dem Erfolgs-Screen
@@ -905,7 +908,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === instagramCommentQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: instagramCommentQuest.videoTitle, reputationReward: instagramCommentQuest.reputationReward, levelBonus , collectiblesBonus: creditBonus };
+            pendingCelebration.current = { amount, questTitle: instagramCommentQuest.videoTitle, reputationReward: getDisplayRep(instagramCommentQuest), levelBonus , collectiblesBonus: creditBonus };
             loadBundles();
           }
         }}
@@ -928,7 +931,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === facebookCommentQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: facebookCommentQuest.videoTitle, reputationReward: facebookCommentQuest.reputationReward, levelBonus , collectiblesBonus: creditBonus };
+            pendingCelebration.current = { amount, questTitle: facebookCommentQuest.videoTitle, reputationReward: getDisplayRep(facebookCommentQuest), levelBonus , collectiblesBonus: creditBonus };
             loadBundles();
           }
         }}
@@ -951,7 +954,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === facebookLikeQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: facebookLikeQuest.videoTitle, reputationReward: facebookLikeQuest.reputationReward, levelBonus , collectiblesBonus: creditBonus };
+            pendingCelebration.current = { amount, questTitle: facebookLikeQuest.videoTitle, reputationReward: getDisplayRep(facebookLikeQuest), levelBonus , collectiblesBonus: creditBonus };
             loadBundles();
           }
         }}
@@ -975,7 +978,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             setQuests((prev) =>
               prev.map((q) => q.id === instagramDmShareQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
-            pendingCelebration.current = { amount, questTitle: instagramDmShareQuest.videoTitle, reputationReward: instagramDmShareQuest.reputationReward, levelBonus , collectiblesBonus: creditBonus };
+            pendingCelebration.current = { amount, questTitle: instagramDmShareQuest.videoTitle, reputationReward: getDisplayRep(instagramDmShareQuest), levelBonus , collectiblesBonus: creditBonus };
             // Falls Bundle-Quest → Bundle-Liste aktualisieren
             loadBundles();
           }

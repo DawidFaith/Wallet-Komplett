@@ -197,13 +197,6 @@ export default function SecretVerifyModal({
             </p>
           </div>
 
-          <div className="bg-zinc-800 rounded-xl p-4 space-y-1">
-            <p className="text-white text-sm font-semibold">{quest.videoTitle}</p>
-            <p className="text-zinc-400 text-xs">
-              {quest.description || '🔑 Finde den geheimen Code im Video und gib ihn ein!'}
-            </p>
-          </div>
-
           {step === 'wrong' && (
             <div className="bg-orange-900/30 border border-orange-700/40 rounded-xl p-3">
               <p className="text-orange-300 text-sm font-semibold">Falscher Code!</p>

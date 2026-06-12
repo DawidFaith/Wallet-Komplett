@@ -296,9 +296,6 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                       <FaStar size={8} /> +{totalRep} REP{repBonusPercent > 0 && <span className="text-green-400 font-bold text-xs"> inkl. {repBonusPercent}%</span>}
                     </div>
                   )}
-                  <div className="bg-black/70 text-amber-300 text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                    ✨ {shardDropChance + shardBonusPct}% Shard{shardBonusPct > 0 && <span className="text-green-400 font-bold text-xs"> inkl. +{shardBonusPct}%</span>}
-                  </div>
                 </div>
               )}
 

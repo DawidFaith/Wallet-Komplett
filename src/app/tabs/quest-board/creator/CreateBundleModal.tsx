@@ -743,7 +743,15 @@ export default function CreateBundleModal({
                 ← Zurück
               </button>
               <button
-                onClick={() => items.length >= 1 ? setStep(3) : setError('Mindestens einen Quest-Typ auswählen')}
+                onClick={() => {
+                  if (items.length < 1) { setError('Mindestens einen Quest-Typ auswählen'); return; }
+                  if (items.some((i) => i.questType === 'secret') && !secretCodes['secret']?.trim()) {
+                    setError('Bitte gib einen Geheimcode ein, bevor du fortfährst.');
+                    return;
+                  }
+                  setError('');
+                  setStep(3);
+                }}
                 className="flex-1 bg-purple-600 hover:bg-purple-500 text-white rounded-xl py-3 font-semibold text-sm"
               >
                 Weiter →
