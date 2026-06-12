@@ -15,15 +15,17 @@ interface VerifyModalProps {
   loading: boolean;
   result: VerifyResult | null;
   levelBonusPercent?: number;
+  repBonusPercent?: number;
   onVerify: (questId: string) => void;
   onClose: () => void;
 }
 
-export default function VerifyModal({ quest, loading, result, levelBonusPercent = 0, onVerify, onClose }: VerifyModalProps) {
+export default function VerifyModal({ quest, loading, result, levelBonusPercent = 0, repBonusPercent = 0, onVerify, onClose }: VerifyModalProps) {
   const lang = useLang();
   const isOpen = !!quest;
   const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
   const displayReward = quest ? quest.rewardAmount + levelBonusAmount : 0;
+  const displayRep = quest ? Math.round((quest.reputationReward ?? 0) * (1 + repBonusPercent / 100)) : 0;
   
   const isTikTok = quest?.platform === 'tiktok';
   const PlatformIcon = isTikTok ? SiTiktok : FaYoutube;
@@ -53,7 +55,7 @@ export default function VerifyModal({ quest, loading, result, levelBonusPercent 
             )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
-                <FaStar size={10} /> +{quest?.reputationReward} REP
+                <FaStar size={10} /> +{displayRep} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
               </span>
             )}
           </div>
@@ -86,7 +88,7 @@ export default function VerifyModal({ quest, loading, result, levelBonusPercent 
                   <p className="text-zinc-400 text-xs">Zu deinem D.FAITH Credits Guthaben hinzugefügt</p>
                   {(quest?.reputationReward ?? 0) > 0 && (
                     <p className="text-purple-300 text-xs font-medium flex items-center gap-1 mt-0.5">
-                      <FaStar size={9} /> +{quest?.reputationReward} Reputation
+                      <FaStar size={9} /> +{displayRep} Reputation{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
                     </p>
                   )}
                 </div>

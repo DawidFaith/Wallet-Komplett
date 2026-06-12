@@ -702,6 +702,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         loading={verifyLoading}
         result={verifyResult}
         levelBonusPercent={verifyingQuest ? getTotalBonusPercent(verifyingQuest.creatorWallet) : 0}
+        repBonusPercent={verifyingQuest ? getRepBonusPercent(verifyingQuest.creatorWallet) : 0}
         onVerify={verifyingQuest?.platform === 'tiktok' ? handleVerifyTikTokComment : handleVerifyYoutubeComment}
         onClose={() => {
           if (verifyResult?.success && verifyingQuest) {
