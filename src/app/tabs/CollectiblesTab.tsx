@@ -618,12 +618,12 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
                     : <GiCrystalShine size={36} className="text-zinc-600" />}
                 </div>
                 <span className={`text-[9px] font-black tracking-[0.3em] uppercase ${cfg.textColor} mb-0.5`}>{cfg.label}</span>
-                <span className="text-[11px] font-bold text-zinc-500 text-center line-clamp-2 leading-tight mb-1">0×</span>
+                <span className="text-[11px] font-bold text-zinc-500 text-center line-clamp-2 leading-tight mb-1">{collection.name}</span>
                 <div className="flex flex-col items-center gap-0.5 w-full">
                   {slots.slice(0, activeCount).map((bonusType) => {
                     const val = bonusValues[bonusType];
                     return val > 0 ? (
-                      <span key={bonusType} className={`text-[9px] font-semibold ${bonusColors[bonusType]}/60`}>
+                      <span key={bonusType} className="text-[9px] font-semibold text-white/60">
                         +{val}% {BONUS_LABELS[bonusType]}
                       </span>
                     ) : null;
