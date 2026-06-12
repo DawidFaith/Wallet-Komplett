@@ -105,8 +105,14 @@ export async function POST(req: NextRequest) {
   const platformUserCount = await getPlatformUserCount(platform as Platform);
   const effectiveParticipants = Math.min(maxNum, platformUserCount > 0 ? platformUserCount : maxNum);
   const topPcts = await getTopFanBonusPcts(creatorWallet, effectiveParticipants);
-  const bonusSum = topPcts.reduce((s, pct) => s + poolNum * pct / 100, 0);
-  const levelBonus = Math.round(bonusSum * 1.02 * 100) / 100;
+  // Fehlende Teilnehmer ohne Reputation → niedrigster bekannter Wert + 2%
+  const lowestKnownPct = topPcts.length > 0 ? topPcts[topPcts.length - 1] : 0;
+  const fallbackPct = lowestKnownPct + 2;
+  const bonusSum = Array.from({ length: effectiveParticipants }, (_, i) =>
+    poolNum * (topPcts[i] ?? fallbackPct) / 100
+  ).reduce((s, v) => s + v, 0);
+  const collectiblesBuffer = poolNum * maxCollectibleCreditPct / 100 * effectiveParticipants;
+  const levelBonus = Math.round((bonusSum + collectiblesBuffer) * 1.02 * 100) / 100;
 
   const totalBudget = Math.round((poolNum * maxNum + abschlussBonusPool + levelBonus) * 100) / 100;
 
@@ -117,7 +123,7 @@ export async function POST(req: NextRequest) {
       ? ` inkl. +${maxCollectibleCreditPct}% Collectibles-Puffer`
       : '';
     return NextResponse.json({
-      error: `Nicht genug Credits. Du brauchst ${totalBudget.toFixed(2)} D.FAITH (${poolNum.toFixed(2)} × ${maxNum} Reward + ${abschlussBonusPool.toFixed(2)} Abschluss-Bonus${collectiblesNote} + ${levelBonus.toFixed(2)} Level-Bonus-Reserve [Top ${effectiveParticipants} Fans × individuelle Level-Bonus% × 1.02]), hast aber nur ${credits.toFixed(2)}.`,
+      error: `Nicht genug Credits. Du brauchst ${totalBudget.toFixed(2)} D.FAITH (${poolNum.toFixed(2)} × ${maxNum} Reward + ${abschlussBonusPool.toFixed(2)} Abschluss-Bonus${collectiblesNote} + ${levelBonus.toFixed(2)} Level-Bonus-Reserve [${topPcts.length}/${effectiveParticipants} Fans bekannt, Rest ~+${fallbackPct}%${maxCollectibleCreditPct > 0 ? ` + Coll. +${maxCollectibleCreditPct}% × ${effectiveParticipants}` : ''} × 1.02]), hast aber nur ${credits.toFixed(2)}.`,
     }, { status: 400 });
   }
 

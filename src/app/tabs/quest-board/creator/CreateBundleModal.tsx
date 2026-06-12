@@ -124,6 +124,7 @@ export default function CreateBundleModal({
   const [platformUserCount, setPlatformUserCount] = useState<number>(0);
   const [loadingPlatformUsers, setLoadingPlatformUsers] = useState(false);
   const [topFanBonusPcts, setTopFanBonusPcts] = useState<number[]>([]);
+  const [maxCollectibleCreditPct, setMaxCollectibleCreditPct] = useState<number>(0);
 
   // Media-Picker
   const [availableQuestMedia, setAvailableQuestMedia] = useState<AvailableQuestMediaItem[]>([]);
@@ -168,6 +169,7 @@ export default function CreateBundleModal({
     setQuestMediaError('');
     setPlatformUserCount(0);
     setTopFanBonusPcts([]);
+    setMaxCollectibleCreditPct(0);
   }, [open]);
 
   // Platform-Nutzerzahl laden
@@ -175,12 +177,14 @@ export default function CreateBundleModal({
     setLoadingPlatformUsers(true);
     try {
       const res = await fetch(`/api/quest-bundles/platform-stats?platform=${p}&creatorWallet=${encodeURIComponent(walletAddress)}&limit=500`);
-      const data = await res.json() as { userCount?: number; topFanBonusPcts?: number[] };
+      const data = await res.json() as { userCount?: number; topFanBonusPcts?: number[]; maxCollectibleCreditPct?: number };
       setPlatformUserCount(data.userCount ?? 0);
       setTopFanBonusPcts(data.topFanBonusPcts ?? []);
+      setMaxCollectibleCreditPct(data.maxCollectibleCreditPct ?? 0);
     } catch {
       setPlatformUserCount(0);
       setTopFanBonusPcts([]);
+      setMaxCollectibleCreditPct(0);
     } finally {
       setLoadingPlatformUsers(false);
     }
@@ -255,11 +259,14 @@ export default function CreateBundleModal({
   const effectiveBonusParticipants = platformUserCount > 0 ? Math.min(maxNum, platformUserCount) : maxNum;
   // Abschluss-Bonus: unverändert bonusNum × maxNum
   const abschlussBonusPool = Math.round(bonusNum * maxNum * 100) / 100;
-  // Level-Bonus-Reserve: Σ(rewardNum × bonusPct[fan] / 100) für Top-N Fans × 1.02
-  // Wenn noch keine Fan-Daten geladen → 0 (kein Fan hat noch Reputation)
-  const topSlice = topFanBonusPcts.slice(0, effectiveBonusParticipants);
-  const bonusSum = topSlice.reduce((s, pct) => s + rewardNum * pct / 100, 0);
-  const levelBonusReserve = Math.round(bonusSum * 1.02 * 100) / 100;
+  // Level-Bonus-Reserve: echte Boni bekannter Fans; fehlende Teilnehmer → niedrigster bekannter Wert + 2%
+  const lowestKnownPct = topFanBonusPcts.length > 0 ? topFanBonusPcts[topFanBonusPcts.length - 1] : 0;
+  const fallbackPct = lowestKnownPct + 2;
+  const bonusSum = Array.from({ length: effectiveBonusParticipants }, (_, i) =>
+    rewardNum * (topFanBonusPcts[i] ?? fallbackPct) / 100
+  ).reduce((s, v) => s + v, 0);
+  const collectiblesBuffer = rewardNum * maxCollectibleCreditPct / 100 * effectiveBonusParticipants;
+  const levelBonusReserve = Math.round((bonusSum + collectiblesBuffer) * 1.02 * 100) / 100;
   const totalBudget = Math.round((rewardNum * maxNum + abschlussBonusPool + levelBonusReserve) * 100) / 100;
   const hasEnough   = creatorBalance >= totalBudget;
 
@@ -833,7 +840,13 @@ export default function CreateBundleModal({
                     Level-Bonus-Reserve
                     {loadingPlatformUsers
                       ? <span className="text-zinc-600">(lädt…)</span>
-                      : <span className="text-zinc-600">(Top {Math.min(effectiveBonusParticipants, topFanBonusPcts.length)} Fans × Level-Bonus × 1.02)</span>
+                      : <span className="text-zinc-600">
+                          ({topFanBonusPcts.length < effectiveBonusParticipants
+                            ? `${topFanBonusPcts.length}/${effectiveBonusParticipants} Fans bekannt, Rest ~+${fallbackPct}%`
+                            : `${effectiveBonusParticipants} Fans Rep-Bonus`}
+                          {maxCollectibleCreditPct > 0 && ` + Coll. +${maxCollectibleCreditPct}% ×${effectiveBonusParticipants}`}
+                          {' '}× 1.02)
+                        </span>
                     }
                   </span>
                   <span className="font-mono">{levelBonusReserve.toFixed(2)}</span>

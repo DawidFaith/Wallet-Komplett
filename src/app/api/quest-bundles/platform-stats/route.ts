@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPlatformUserCount, getTopFanBonusPcts } from '../../../lib/questDb';
+import { getPlatformUserCount, getTopFanBonusPcts, getCollectionsByArtist } from '../../../lib/questDb';
 import type { Platform } from '../../../lib/questDb';
 
 export const dynamic = 'force-dynamic';
@@ -19,11 +19,15 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [userCount, topFanBonusPcts] = await Promise.all([
+    const [userCount, topFanBonusPcts, artistCollections] = await Promise.all([
       getPlatformUserCount(platform),
       creatorWallet ? getTopFanBonusPcts(creatorWallet, limit) : Promise.resolve([] as number[]),
+      creatorWallet ? getCollectionsByArtist(creatorWallet.toLowerCase()) : Promise.resolve([]),
     ]);
-    return NextResponse.json({ platform, userCount, topFanBonusPcts });
+    const maxCollectibleCreditPct = (artistCollections as { isActive: boolean; maxCreditBonusPercent: number }[])
+      .filter(c => c.isActive)
+      .reduce((sum, c) => sum + c.maxCreditBonusPercent, 0);
+    return NextResponse.json({ platform, userCount, topFanBonusPcts, maxCollectibleCreditPct });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: msg }, { status: 500 });
