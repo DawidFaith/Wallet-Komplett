@@ -4,6 +4,16 @@ export type CollectibleRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legen
 
 export const RARITY_ORDER: CollectibleRarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
 
+/** Systemweit fixe Drop-Wahrscheinlichkeiten – nicht durch Künstler änderbar */
+export const FIXED_RARITY_CHANCES: Record<CollectibleRarity, number> = {
+  common:    48.9,
+  uncommon:  30.0,
+  rare:      15.0,
+  epic:       5.0,
+  legendary:  1.0,
+  mythic:     0.1,
+};
+
 export const RARITY_LABELS: Record<CollectibleRarity, string> = {
   common: 'Common',
   uncommon: 'Uncommon',
@@ -15,21 +25,21 @@ export const RARITY_LABELS: Record<CollectibleRarity, string> = {
 
 // Rep-Bonus pro Seltenheit (Multiplikator auf den max_rep_bonus_percent der Kollektion)
 export const RARITY_REP_MULTIPLIER: Record<CollectibleRarity, number> = {
-  common:    0.10,
-  uncommon:  0.20,
-  rare:      0.35,
-  epic:      0.55,
-  legendary: 0.80,
+  common:    0.04,
+  uncommon:  0.10,
+  rare:      0.22,
+  epic:      0.45,
+  legendary: 0.75,
   mythic:    1.00,
 };
 
 // Credits-Bonus pro Seltenheit (Multiplikator auf max_credit_bonus_percent)
 export const RARITY_CREDIT_MULTIPLIER: Record<CollectibleRarity, number> = {
-  common:    0.10,
-  uncommon:  0.20,
-  rare:      0.35,
-  epic:      0.55,
-  legendary: 0.80,
+  common:    0.04,
+  uncommon:  0.10,
+  rare:      0.22,
+  epic:      0.45,
+  legendary: 0.75,
   mythic:    1.00,
 };
 
@@ -475,19 +485,11 @@ function calcBonus(
 
 // ─── Hilfsfunktionen ─────────────────────────────────────────────────────────
 
-function rollRarity(collection: CollectibleCollection): CollectibleRarity {
+function rollRarity(_collection: CollectibleCollection): CollectibleRarity {
   const roll = Math.random() * 100;
   let cumulative = 0;
-  const chances: Array<{ rarity: CollectibleRarity; chance: number }> = [
-    { rarity: 'common', chance: collection.chanceCommon },
-    { rarity: 'uncommon', chance: collection.chanceUncommon },
-    { rarity: 'rare', chance: collection.chanceRare },
-    { rarity: 'epic', chance: collection.chanceEpic },
-    { rarity: 'legendary', chance: collection.chanceLegendary },
-    { rarity: 'mythic', chance: collection.chanceMythic },
-  ];
-  for (const { rarity, chance } of chances) {
-    cumulative += chance;
+  for (const rarity of RARITY_ORDER) {
+    cumulative += FIXED_RARITY_CHANCES[rarity];
     if (roll < cumulative) return rarity;
   }
   return 'common';

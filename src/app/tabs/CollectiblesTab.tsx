@@ -55,15 +55,25 @@ const RARITY_CONFIG: Record<CollectibleRarity, {
   textColor: string;
   repMultiplier: number;
 }> = {
-  common:    { label: 'Common',    color: '#9ca3af', bg: 'bg-zinc-800',     border: 'border-zinc-500',   glow: '',                                    textColor: 'text-zinc-300',   repMultiplier: 0.10 },
-  uncommon:  { label: 'Uncommon',  color: '#4ade80', bg: 'bg-green-950/60', border: 'border-green-500',  glow: 'shadow-[0_0_12px_rgba(74,222,128,0.4)]', textColor: 'text-green-400',  repMultiplier: 0.20 },
-  rare:      { label: 'Rare',      color: '#60a5fa', bg: 'bg-blue-950/60',  border: 'border-blue-500',   glow: 'shadow-[0_0_14px_rgba(96,165,250,0.5)]', textColor: 'text-blue-400',   repMultiplier: 0.35 },
-  epic:      { label: 'Epic',      color: '#a78bfa', bg: 'bg-purple-950/60',border: 'border-purple-500', glow: 'shadow-[0_0_16px_rgba(167,139,250,0.6)]', textColor: 'text-purple-400', repMultiplier: 0.55 },
-  legendary: { label: 'Legendary', color: '#fbbf24', bg: 'bg-amber-950/60', border: 'border-amber-400',  glow: 'shadow-[0_0_20px_rgba(251,191,36,0.7)]',  textColor: 'text-amber-400',  repMultiplier: 0.80 },
+  common:    { label: 'Common',    color: '#9ca3af', bg: 'bg-zinc-800',     border: 'border-zinc-500',   glow: '',                                    textColor: 'text-zinc-300',   repMultiplier: 0.04 },
+  uncommon:  { label: 'Uncommon',  color: '#4ade80', bg: 'bg-green-950/60', border: 'border-green-500',  glow: 'shadow-[0_0_12px_rgba(74,222,128,0.4)]', textColor: 'text-green-400',  repMultiplier: 0.10 },
+  rare:      { label: 'Rare',      color: '#60a5fa', bg: 'bg-blue-950/60',  border: 'border-blue-500',   glow: 'shadow-[0_0_14px_rgba(96,165,250,0.5)]', textColor: 'text-blue-400',   repMultiplier: 0.22 },
+  epic:      { label: 'Epic',      color: '#a78bfa', bg: 'bg-purple-950/60',border: 'border-purple-500', glow: 'shadow-[0_0_16px_rgba(167,139,250,0.6)]', textColor: 'text-purple-400', repMultiplier: 0.45 },
+  legendary: { label: 'Legendary', color: '#fbbf24', bg: 'bg-amber-950/60', border: 'border-amber-400',  glow: 'shadow-[0_0_20px_rgba(251,191,36,0.7)]',  textColor: 'text-amber-400',  repMultiplier: 0.75 },
   mythic:    { label: 'Mythic',    color: '#f43f5e', bg: 'bg-rose-950/60',  border: 'border-rose-400',   glow: 'shadow-[0_0_24px_rgba(244,63,94,0.8)]',   textColor: 'text-rose-400',   repMultiplier: 1.00 },
 };
 
 const RARITY_ORDER: CollectibleRarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
+
+/** Systemweit fixe Drop-Wahrscheinlichkeiten */
+const FIXED_RARITY_CHANCES: Record<CollectibleRarity, number> = {
+  common:    48.9,
+  uncommon:  30.0,
+  rare:      15.0,
+  epic:       5.0,
+  legendary:  1.0,
+  mythic:     0.1,
+};
 
 // Bonus-Slot-Logik (spiegelt collectibles.ts wider, ohne DB)
 function getBonusSlots(primary: BonusType): [BonusType, BonusType, BonusType] {
@@ -212,14 +222,10 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
     }
   };
 
-  const chances: Array<{ rarity: CollectibleRarity; chance: number }> = [
-    { rarity: 'common',    chance: collection.chanceCommon },
-    { rarity: 'uncommon',  chance: collection.chanceUncommon },
-    { rarity: 'rare',      chance: collection.chanceRare },
-    { rarity: 'epic',      chance: collection.chanceEpic },
-    { rarity: 'legendary', chance: collection.chanceLegendary },
-    { rarity: 'mythic',    chance: collection.chanceMythic },
-  ];
+  const chances: Array<{ rarity: CollectibleRarity; chance: number }> = RARITY_ORDER.map(rarity => ({
+    rarity,
+    chance: FIXED_RARITY_CHANCES[rarity],
+  }));
 
   const currentShards = phase === 'reveal' ? newShards : shards;
 
@@ -699,19 +705,11 @@ function EditCollectionForm({ collection, artistWallet, onClose, onSaved }: {
     name:                collection.name,
     description:         collection.description ?? '',
     imageUrl:            collection.imageUrl ?? '',
-    chanceCommon:        collection.chanceCommon,
-    chanceUncommon:      collection.chanceUncommon,
-    chanceRare:          collection.chanceRare,
-    chanceEpic:          collection.chanceEpic,
-    chanceLegendary:     collection.chanceLegendary,
-    chanceMythic:        collection.chanceMythic,
     maxRepBonusPercent:  collection.maxRepBonusPercent,
     maxShardChanceBonus: collection.maxShardChanceBonus ?? 0,
     maxCreditBonusPercent: collection.maxCreditBonusPercent ?? 0,
     primaryBonus:        (collection.primaryBonus ?? 'rep') as BonusType,
   });
-
-  const total = form.chanceCommon + form.chanceUncommon + form.chanceRare + form.chanceEpic + form.chanceLegendary + form.chanceMythic;
 
   const handleImageUpload = async (file: File) => {
     setUploadingImage(true);
@@ -732,7 +730,6 @@ function EditCollectionForm({ collection, artistWallet, onClose, onSaved }: {
 
   const handleSave = async () => {
     if (!form.name.trim()) return;
-    if (total !== 100) { setError(`Wahrscheinlichkeiten müssen 100 ergeben (aktuell: ${total})`); return; }
     setLoading(true);
     setError('');
     try {
@@ -816,28 +813,7 @@ function EditCollectionForm({ collection, artistWallet, onClose, onSaved }: {
             </div>
           </div>
 
-          {/* Wahrscheinlichkeiten */}
-          <div>
-            <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-1">
-              Wahrscheinlichkeiten (Summe: <span className={total === 100 ? 'text-green-400' : 'text-red-400'}>{total}</span>/100)
-            </label>
-            <div className="grid grid-cols-3 gap-1.5">
-              {([
-                ['chanceCommon', 'Common'], ['chanceUncommon', 'Uncommon'], ['chanceRare', 'Rare'],
-                ['chanceEpic', 'Epic'], ['chanceLegendary', 'Legendary'], ['chanceMythic', 'Mythic'],
-              ] as [keyof typeof form, string][]).map(([k, label]) => (
-                <div key={k}>
-                  <p className="text-[9px] text-zinc-600 mb-0.5">{label}</p>
-                  <input
-                    type="number" min={0} max={100}
-                    value={form[k] as number}
-                    onChange={(e) => setForm({ ...form, [k]: Number(e.target.value) })}
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1 text-xs text-white outline-none focus:border-amber-400/30"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Wahrscheinlichkeiten werden systemweit fix bestimmt */}
 
           {/* Bonus-Maximalwerte */}
           <div>
@@ -872,7 +848,7 @@ function EditCollectionForm({ collection, artistWallet, onClose, onSaved }: {
             </button>
             <button
               onClick={handleSave}
-              disabled={loading || total !== 100}
+              disabled={loading}
               className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-700 disabled:text-zinc-500 text-black font-bold text-sm flex items-center justify-center gap-1.5 transition-colors"
             >
               {loading ? <FaSync className="animate-spin" size={12} /> : <FaCheck size={12} />} Speichern
@@ -894,13 +870,9 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: '', description: '', imageUrl: '',
-    chanceCommon: 50, chanceUncommon: 25, chanceRare: 15,
-    chanceEpic: 7, chanceLegendary: 2, chanceMythic: 1,
     maxRepBonusPercent: 20, maxShardChanceBonus: 5, maxCreditBonusPercent: 10,
     primaryBonus: 'rep' as BonusType,
   });
-
-  const total = form.chanceCommon + form.chanceUncommon + form.chanceRare + form.chanceEpic + form.chanceLegendary + form.chanceMythic;
 
   const handleImageUpload = async (file: File) => {
     setUploadingImage(true);
@@ -921,7 +893,6 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
 
   const handleCreate = async () => {
     if (!form.name.trim()) return;
-    if (total !== 100) { setError(`Wahrscheinlichkeiten müssen 100 ergeben (aktuell: ${total})`); return; }
     setLoading(true);
     setError('');
     try {
@@ -933,7 +904,7 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
       const data = await res.json();
       if (!data.id) throw new Error(data.error || 'Fehler');
       setOpen(false);
-      setForm({ name: '', description: '', imageUrl: '', chanceCommon: 50, chanceUncommon: 25, chanceRare: 15, chanceEpic: 7, chanceLegendary: 2, chanceMythic: 1, maxRepBonusPercent: 20, maxShardChanceBonus: 5, maxCreditBonusPercent: 10, primaryBonus: 'rep' });
+      setForm({ name: '', description: '', imageUrl: '', maxRepBonusPercent: 20, maxShardChanceBonus: 5, maxCreditBonusPercent: 10, primaryBonus: 'rep' });
       onCreated();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Fehler');
@@ -942,16 +913,14 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
     }
   };
 
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-2 w-full p-3 bg-white/[0.03] hover:bg-white/[0.06] border border-dashed border-white/10 rounded-xl text-zinc-500 hover:text-zinc-300 transition-colors text-sm font-semibold mb-4"
-      >
-        <FaPlus size={12} /> Neue Kollektion erstellen
-      </button>
-    );
-  }
+  if (!open) return (
+    <button
+      onClick={() => setOpen(true)}
+      className="flex items-center gap-2 w-full p-3 bg-white/[0.03] hover:bg-white/[0.06] border border-dashed border-white/10 rounded-xl text-zinc-500 hover:text-zinc-300 transition-colors text-sm font-semibold mb-4"
+    >
+      <FaPlus size={12} /> Neue Kollektion erstellen
+    </button>
+  );
 
   return (
     <div className="bg-white/[0.03] border border-amber-400/20 rounded-2xl p-4 mb-4">
@@ -1003,33 +972,7 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
           </div>
         </div>
 
-        {/* Wahrscheinlichkeiten */}
-        <div>
-          <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-2">
-            Fusion-Wahrscheinlichkeiten ({total}/100)
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {([
-              { key: 'chanceCommon', rarity: 'common' as CollectibleRarity },
-              { key: 'chanceUncommon', rarity: 'uncommon' as CollectibleRarity },
-              { key: 'chanceRare', rarity: 'rare' as CollectibleRarity },
-              { key: 'chanceEpic', rarity: 'epic' as CollectibleRarity },
-              { key: 'chanceLegendary', rarity: 'legendary' as CollectibleRarity },
-              { key: 'chanceMythic', rarity: 'mythic' as CollectibleRarity },
-            ] as const).map(({ key, rarity }) => (
-              <div key={key} className="flex items-center gap-2">
-                <span className={`text-[10px] font-bold w-16 ${RARITY_CONFIG[rarity].textColor}`}>{RARITY_CONFIG[rarity].label}</span>
-                <input
-                  type="number" min={0} max={100}
-                  value={form[key]}
-                  onChange={(e) => setForm({ ...form, [key]: Math.max(0, Math.min(100, Number(e.target.value))) })}
-                  className="w-14 bg-white/[0.04] border border-white/[0.08] rounded px-2 py-1 text-xs text-white outline-none text-center"
-                />
-                <span className="text-[10px] text-zinc-600">%</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Wahrscheinlichkeiten werden systemweit fix bestimmt */}
 
         {/* Hauptbonus (Primär-Slot) */}
         <div>
@@ -1087,15 +1030,14 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
                 className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-2 text-sm text-white outline-none text-center" />
             </div>
           </div>
-          <p className="text-[9px] text-zinc-700 mt-1.5">Common erhält z.B. 10% davon, Mythic 100%</p>
+          <p className="text-[9px] text-zinc-700 mt-1.5">Common erhält z.B. 4% davon, Mythic 100%</p>
         </div>
 
-        {total !== 100 && <p className="text-amber-400 text-xs">Summe muss 100 ergeben (aktuell: {total})</p>}
         {error && <p className="text-red-400 text-xs">{error}</p>}
 
         <button
           onClick={handleCreate}
-          disabled={loading || total !== 100 || !form.name.trim()}
+          disabled={loading || !form.name.trim()}
           className="w-full py-3 bg-amber-400 hover:bg-amber-300 disabled:opacity-30 disabled:cursor-not-allowed text-black font-black text-sm rounded-xl transition-colors"
         >
           {loading ? 'Erstelle...' : 'Kollektion erstellen'}
