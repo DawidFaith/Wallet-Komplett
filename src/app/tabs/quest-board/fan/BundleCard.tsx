@@ -288,11 +288,16 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                 <div className="absolute top-2 right-2 flex flex-col items-end gap-1 z-10">
                   <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
                     <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="rounded-full" unoptimized />
-                    +{totalReward.toFixed(2)} D.FAITH{levelBonusPercent > 0 && <span className="text-green-300"> (+{levelBonusPercent}%)</span>}
+                    +{totalReward.toFixed(2)} D.FAITH{levelBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs"> (+{levelBonusPercent}%)</span>}
                   </div>
                   {totalRep > 0 && (
                     <div className="bg-black/70 text-amber-300 text-[11px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                      <FaStar size={8} /> +{totalRep} REP{repBonusPercent > 0 && <span className="text-green-300"> (+{repBonusPercent}%)</span>}
+                      <FaStar size={8} /> +{totalRep} REP{repBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs"> (+{repBonusPercent}%)</span>}
+                    </div>
+                  )}
+                  {shardBonusPct > 0 && (
+                    <div className="bg-black/70 text-amber-300 text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                      ✨ +{shardBonusPct}% Shard
                     </div>
                   )}
                 </div>
@@ -356,13 +361,6 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
             {/* Button */}
             <div className="px-3 pb-3 pt-1.5">
               {/* Collectibles-Bonus-Badges */}
-{shardBonusPct > 0 && (
-                <div className="flex gap-1.5 mb-2 flex-wrap">
-                  <span className="flex items-center gap-1 bg-amber-500/25 border border-amber-400/50 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
-                    ✨ +{shardBonusPct}% Shard-Chance
-                  </span>
-                </div>
-              )}
               {canClaimBonus ? (
                 <>
                   {claimError && <p className="text-amber-400 text-xs text-center mb-1">{claimError}</p>}
@@ -505,11 +503,11 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                   <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
                     <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
                       <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="rounded-full" unoptimized />
-                      +{rewardWithBonus(item.rewardAmount).toFixed(2)} D.FAITH{levelBonusPercent > 0 && <span className="text-green-300"> (+{levelBonusPercent}%)</span>}
+                      +{rewardWithBonus(item.rewardAmount).toFixed(2)} D.FAITH{levelBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs"> (+{levelBonusPercent}%)</span>}
                     </div>
                     {(item.reputationReward ?? 0) > 0 && (
                       <div className="bg-black/70 text-amber-300 text-[11px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                        <FaStar size={8} /> +{Math.round((item.reputationReward ?? 0) * (1 + repBonusPercent / 100))} REP{repBonusPercent > 0 && <span className="text-green-300"> (+{repBonusPercent}%)</span>}
+                        <FaStar size={8} /> +{Math.round((item.reputationReward ?? 0) * (1 + repBonusPercent / 100))} REP{repBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs"> (+{repBonusPercent}%)</span>}
                       </div>
                     )}
                   </div>

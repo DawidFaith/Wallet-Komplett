@@ -128,20 +128,20 @@ export default function FacebookLikeVerifyModal({
 
       {/* Reward-Banner */}
       {quest && step !== 'error' && step !== 'expired' && step !== 'success' && (
-        <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 mb-1">
-          <span className="text-zinc-400 text-xs">{t('verify.rewardLabel', lang)}</span>
-          <div className="flex items-center gap-2">
-            <span className="text-amber-400 font-bold text-sm flex items-center gap-1">
-              <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3.5 h-3.5 rounded-full shrink-0" />
-              +{formatCredits(displayReward)} D.FAITH
-            </span>
-            {levelBonusPercent > 0 && (
-              <span className="text-green-300 font-bold text-[10px]">(+{levelBonusPercent}%)</span>
-            )}
+        <div className="bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-3 mb-1">
+          <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-2">{t('verify.rewardLabel', lang)}</p>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <Image src="/D.FAITH.png" alt="" width={16} height={16} className="w-4 h-4 rounded-full shrink-0" />
+              <span className="text-amber-400 font-bold text-base">+{formatCredits(displayReward)} D.FAITH</span>
+              {levelBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs">(+{levelBonusPercent}%)</span>}
+            </div>
             {(quest.reputationReward ?? 0) > 0 && (
-              <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
-                <FaStar size={10} /> +{displayRep} REP{repBonusPercent > 0 && <span className="text-green-300"> (+{repBonusPercent}%)</span>}
-              </span>
+              <div className="flex items-center gap-1 shrink-0">
+                <FaStar size={10} className="text-purple-300 shrink-0" />
+                <span className="text-purple-300 font-bold text-sm">+{displayRep} REP</span>
+                {repBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs">(+{repBonusPercent}%)</span>}
+              </div>
             )}
           </div>
         </div>
