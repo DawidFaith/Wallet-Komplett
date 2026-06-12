@@ -297,10 +297,7 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
                 </p>
                 <p className="text-white/80 text-sm font-semibold mt-1">{collection.name}</p>
               </div>
-              <div className="flex items-center gap-1.5 bg-white/10 rounded-full px-3 py-1">
-                <GiCrystalShine className="text-amber-400" size={12} />
-                <span className="text-amber-300 text-xs font-bold">{currentShards} Shards übrig</span>
-              </div>
+
             </div>
             <p className="text-white/40 text-xs mt-4">
               {currentShards >= 1 ? 'Tippen um weiterzumachen' : 'Tippen um zu schließen'}
@@ -639,7 +636,7 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false }: {
           shards={shards}
           walletAddress={walletAddress}
           onClose={() => setFuseOpen(false)}
-          onFused={(_rarity, newShardsCount) => { setLocalShards(newShardsCount); setFuseOpen(false); onRefresh(); }}
+          onFused={(_rarity, newShardsCount) => { setLocalShards(newShardsCount); onRefresh(); }}
         />
       )}
 
@@ -1256,36 +1253,7 @@ export default function CollectiblesTab() {
         mainTab === 'supporter' || view === 'artistDetail' ? (
           view === 'overview' ? (
             <div className="px-4 space-y-4">
-              {/* Shards-Guthaben pro Künstler */}
-              {Object.keys(myShards).length > 0 && (
-                <div className="bg-amber-400/5 border border-amber-400/10 rounded-2xl p-4">
-                  <p className="text-[9px] font-black tracking-[0.35em] uppercase text-amber-400/60 mb-3">Deine Shards</p>
-                  <div className="space-y-2">
-                    {Object.entries(myShards).map(([aw, count]) => {
-                      const artist = artists.find((a) => a.artistWallet === aw);
-                      return (
-                        <div key={aw} className="flex items-center gap-3">
-                          <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-white/10">
-                            {artist?.picture
-                              ? <Image src={artist.picture} alt="" width={28} height={28} className="w-7 h-7 object-cover" />
-                              : <div className="w-7 h-7 bg-zinc-700 rounded-full flex items-center justify-center"><FaGem size={10} className="text-zinc-400" /></div>}
-                          </div>
-                          <span className="text-zinc-300 text-xs flex-1 truncate">{artist?.name ?? '…'}</span>
-                          <div className="flex items-center gap-1">
-                            <GiCrystalShine className="text-amber-400" size={11} />
-                            <span className="text-amber-300 font-black text-sm">{count}</span>
-                          </div>
-                          {count >= 10 && (
-                            <span className="text-[9px] text-green-400 font-bold bg-green-400/10 px-1.5 py-0.5 rounded-full">Fusion!</span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Künstler-Icons */}
+              {/* Künstler-Icons – sortiert nach Shard-Guthaben */}
               {artists.length === 0 ? (
                 <div className="text-center py-16">
                   <GiCrystalShine className="text-zinc-800 mx-auto mb-3" size={48} />
@@ -1296,7 +1264,7 @@ export default function CollectiblesTab() {
                 <>
                   <p className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-600">Künstler</p>
                   <div className="flex gap-4 overflow-x-auto pt-1 pb-2 scrollbar-none">
-                    {artists.map((artist) => {
+                    {[...artists].sort((a, b) => (myShards[b.artistWallet] ?? 0) - (myShards[a.artistWallet] ?? 0)).map((artist) => {
                       const shardCount = myShards[artist.artistWallet] ?? 0;
                       return (
                         <button
