@@ -227,11 +227,14 @@ export default function FacebookLikeVerifyModal({
           <div className="bg-zinc-800 rounded-xl p-4 flex items-center gap-3">
             <Image src="/D.FAITH.png" alt="" width={32} height={32} className="w-8 h-8 rounded-full shrink-0" />
             <div>
-              <p className="text-white font-bold text-lg">{formatCredits(rewardAmount)} D.FAITH Credits</p>
+              <p className="text-white font-bold text-lg flex items-center gap-1.5">
+                {formatCredits(rewardAmount)} D.FAITH Credits
+                {levelBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs">(+{levelBonusPercent}%)</span>}
+              </p>
               <p className="text-zinc-400 text-xs">{t('verify.creditsAdded', lang)}</p>
               {(quest?.reputationReward ?? 0) > 0 && (
                 <p className="text-purple-300 text-xs font-medium flex items-center gap-1 mt-0.5">
-                  <FaStar size={9} /> +{displayRep} {t('verify.reputation', lang)}
+                  <FaStar size={9} /> +{displayRep} {t('verify.reputation', lang)}{repBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs"> (+{repBonusPercent}%)</span>}
                 </p>
               )}
             </div>

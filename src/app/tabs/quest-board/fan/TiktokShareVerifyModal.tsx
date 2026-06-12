@@ -239,8 +239,9 @@ export default function TiktokShareVerifyModal({
         <div className="space-y-4">
           <div className="bg-green-900/30 border border-green-700/40 rounded-xl p-4 text-center">
             <p className="text-green-300 font-bold text-lg mb-1">{t('verify.shareConfirmed', lang)}</p>
-            <p className="text-zinc-400 text-sm">
-              +{formatCredits(rewardAmount + levelBonusAmount)} D.FAITH {lang === 'en' ? 'credited' : lang === 'pl' ? 'dodano' : 'wurden gutgeschrieben'}
+            <p className="text-zinc-400 text-sm flex items-center justify-center gap-1.5">
+              +{formatCredits(rewardAmount)} D.FAITH {lang === 'en' ? 'credited' : lang === 'pl' ? 'dodano' : 'wurden gutgeschrieben'}
+              {levelBonusPercent > 0 && <span className="text-yellow-400 font-bold text-xs">(+{levelBonusPercent}%)</span>}
             </p>
           </div>
           <div className="flex justify-center">
