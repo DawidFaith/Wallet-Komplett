@@ -98,13 +98,14 @@ interface BundleCardProps {
   levelBonusPercent?: number;
   creditBonusPct?: number;
   shardBonusPct?: number;
+  repBonusPercent?: number;
   onBonusClaimed: (bonusAmount: number, bundleTitle: string, shardDropped?: boolean) => void;
   /** Öffnet das passende Verifikations-Modal (z.B. InstagramDmShareModal) für eine Bundle-Quest */
   onOpenQuest?: (quest: QuestIndexEntry) => void;
   /** Rendert die richtige Quest-Card für ein Item (vom Parent geliefert, damit Logik wie bei „Verfügbare Quests" identisch ist) */
   renderQuestCard?: (quest: QuestIndexEntry) => React.ReactNode;  language?: Lang;}
 
-export default function BundleCard({ bundle, fanWallet, verified, levelBonusPercent = 0, creditBonusPct = 0, shardBonusPct = 0, onBonusClaimed, onOpenQuest, renderQuestCard, language = 'de' }: BundleCardProps) {
+export default function BundleCard({ bundle, fanWallet, verified, levelBonusPercent = 0, creditBonusPct = 0, shardBonusPct = 0, repBonusPercent = 0, onBonusClaimed, onOpenQuest, renderQuestCard, language = 'de' }: BundleCardProps) {
   const lang = useLang();
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState('');
@@ -176,7 +177,8 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
   };
 
   const totalReward = bundle.items.reduce((sum, it) => sum + rewardWithBonus(it.rewardAmount), 0);
-  const totalRep    = bundle.items.reduce((sum, it) => sum + (it.reputationReward ?? 0), 0);
+  const totalRepBase = bundle.items.reduce((sum, it) => sum + (it.reputationReward ?? 0), 0);
+  const totalRep = Math.round(totalRepBase * (1 + repBonusPercent / 100));
   const visibleItems = bundle.items.filter((item) => !completedSet.has(item.questType));
   const totalSlides = 1 + visibleItems.length;
   const isVerified = verified[bundle.platform];
@@ -295,7 +297,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                   )}
                   {totalRep > 0 && (
                     <div className="bg-black/70 text-amber-300 text-[11px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                      <FaStar size={8} /> +{totalRep} REP
+                      <FaStar size={8} /> +{totalRep} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
                     </div>
                   )}
                 </div>
@@ -359,18 +361,11 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
             {/* Button */}
             <div className="px-3 pb-3 pt-1.5">
               {/* Collectibles-Bonus-Badges */}
-              {(creditBonusPct > 0 || shardBonusPct > 0) && (
+              {shardBonusPct > 0 && (
                 <div className="flex gap-1.5 mb-2 flex-wrap">
-                  {creditBonusPct > 0 && (
-                    <span className="flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-bold px-2 py-0.5 rounded-full">
-                      💎 +{creditBonusPct}% Credits-Bonus
-                    </span>
-                  )}
-                  {shardBonusPct > 0 && (
-                    <span className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-bold px-2 py-0.5 rounded-full">
-                      ✨ +{shardBonusPct}% Shard-Chance
-                    </span>
-                  )}
+                  <span className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-bold px-2 py-0.5 rounded-full">
+                    ✨ +{shardBonusPct}% Shard-Chance
+                  </span>
                 </div>
               )}
               {canClaimBonus ? (
@@ -524,7 +519,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                     )}
                     {(item.reputationReward ?? 0) > 0 && (
                       <div className="bg-black/70 text-amber-300 text-[11px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                        <FaStar size={8} /> +{item.reputationReward} REP
+                        <FaStar size={8} /> +{Math.round((item.reputationReward ?? 0) * (1 + repBonusPercent / 100))} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
                       </div>
                     )}
                   </div>

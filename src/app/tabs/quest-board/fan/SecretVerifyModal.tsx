@@ -13,6 +13,7 @@ interface SecretVerifyModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
   levelBonusPercent?: number;
+  repBonusPercent?: number;
   onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
 }
@@ -23,6 +24,7 @@ export default function SecretVerifyModal({
   quest,
   walletAddress,
   levelBonusPercent = 0,
+  repBonusPercent = 0,
   onCompleted,
   onClose,
 }: SecretVerifyModalProps) {
@@ -34,6 +36,7 @@ export default function SecretVerifyModal({
   const [levelBonus, setLevelBonus] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
   const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
+  const displayRep = quest ? Math.round((quest.reputationReward ?? 0) * (1 + repBonusPercent / 100)) : 0;
   const displayReward = quest ? quest.rewardAmount + levelBonusAmount : 0;
 
   const handleClose = () => {
@@ -105,7 +108,7 @@ export default function SecretVerifyModal({
             )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
-                <FaStar size={10} /> +{quest?.reputationReward} REP
+                <FaStar size={10} /> +{displayRep} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
               </span>
             )}
           </div>
@@ -150,7 +153,7 @@ export default function SecretVerifyModal({
               </div>
               {(quest?.reputationReward ?? 0) > 0 && (
                 <div className="flex items-center gap-1 text-purple-300 font-bold text-sm">
-                  <FaStar size={10} /> +{quest?.reputationReward} REP
+                  <FaStar size={10} /> +{displayRep} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
                 </div>
               )}
               {levelBonus > 0 && (

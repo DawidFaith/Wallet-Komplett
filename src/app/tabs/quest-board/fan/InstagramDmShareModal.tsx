@@ -13,6 +13,7 @@ interface InstagramDmShareModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
   levelBonusPercent?: number;
+  repBonusPercent?: number;
   /** Wenn vorhanden: Fan kam über den Story-Link → einfacher 1-Klick Claim-Flow */
   storyClaimToken?: string;
   onCompleted: (rewardAmount: number, levelBonus?: number) => void;
@@ -32,6 +33,7 @@ export default function InstagramDmShareModal({
   quest,
   walletAddress,
   levelBonusPercent = 0,
+  repBonusPercent = 0,
   storyClaimToken,
   onCompleted,
   onClose,
@@ -49,6 +51,7 @@ export default function InstagramDmShareModal({
   const [creatorHandle, setCreatorHandle] = useState('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
+  const displayRep = quest ? Math.round((quest.reputationReward ?? 0) * (1 + repBonusPercent / 100)) : 0;
   const displayReward = quest ? quest.rewardAmount + levelBonusAmount : 0;
 
   // Countdown Timer
@@ -182,7 +185,7 @@ export default function InstagramDmShareModal({
               )}
               {(quest.reputationReward ?? 0) > 0 && (
                 <span className="flex items-center gap-0.5 text-xs text-yellow-400">
-                  <FaStar size={9} /> +{quest.reputationReward} REP
+                  <FaStar size={9} /> +{displayRep} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
                 </span>
               )}
             </div>
@@ -227,7 +230,7 @@ export default function InstagramDmShareModal({
                     +{formatCredits(displayReward)} D.FAITH
                     {(quest.reputationReward ?? 0) > 0 && (
                       <span className="text-amber-300 text-xs font-semibold ml-1 flex items-center gap-0.5">
-                        <FaStar size={9} /> +{quest.reputationReward} REP
+                        <FaStar size={9} /> +{displayRep} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
                       </span>
                     )}
                   </span>
@@ -364,7 +367,7 @@ export default function InstagramDmShareModal({
               </div>
               {(quest.reputationReward ?? 0) > 0 && (
                 <div className="flex items-center justify-center gap-1 text-amber-300 text-sm font-semibold">
-                  <FaStar size={12} /> +{quest.reputationReward} Reputation
+                  <FaStar size={12} /> +{displayRep} Reputation{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
                 </div>
               )}
               <p className="text-xs text-green-400">✓ {t('verify.creditsAdded', lang)}</p>

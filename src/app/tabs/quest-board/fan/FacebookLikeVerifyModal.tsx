@@ -14,6 +14,7 @@ interface FacebookLikeVerifyModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
   levelBonusPercent?: number;
+  repBonusPercent?: number;
   onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
 }
@@ -24,6 +25,7 @@ export default function FacebookLikeVerifyModal({
   quest,
   walletAddress,
   levelBonusPercent = 0,
+  repBonusPercent = 0,
   onCompleted,
   onClose,
 }: FacebookLikeVerifyModalProps) {
@@ -36,6 +38,7 @@ export default function FacebookLikeVerifyModal({
   const [rewardAmount, setRewardAmount] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
+  const displayRep = quest ? Math.round((quest.reputationReward ?? 0) * (1 + repBonusPercent / 100)) : 0;
   const displayReward = quest ? quest.rewardAmount + levelBonusAmount : 0;
 
   // Countdown
@@ -137,7 +140,7 @@ export default function FacebookLikeVerifyModal({
             )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
-                <FaStar size={10} /> +{quest?.reputationReward} REP
+                <FaStar size={10} /> +{displayRep} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
               </span>
             )}
           </div>
@@ -228,7 +231,7 @@ export default function FacebookLikeVerifyModal({
               <p className="text-zinc-400 text-xs">{t('verify.creditsAdded', lang)}</p>
               {(quest?.reputationReward ?? 0) > 0 && (
                 <p className="text-purple-300 text-xs font-medium flex items-center gap-1 mt-0.5">
-                  <FaStar size={9} /> +{quest?.reputationReward} {t('verify.reputation', lang)}
+                  <FaStar size={9} /> +{displayRep} {t('verify.reputation', lang)}
                 </p>
               )}
             </div>

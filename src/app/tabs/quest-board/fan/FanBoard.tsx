@@ -498,6 +498,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               levelBonusPercent={getTotalBonusPercent(bundle.creatorWallet)}
               creditBonusPct={creditBonusByCreator[bundle.creatorWallet.toLowerCase()] ?? 0}
               shardBonusPct={shardBonusByCreator[bundle.creatorWallet.toLowerCase()] ?? 0}
+              repBonusPercent={getRepBonusPercent(bundle.creatorWallet)}
               language={language}
               onBonusClaimed={(bonusAmount, bundleTitle, shardDropped) => { 
                 // Sofort aus der Liste entfernen (kein Flackern bis loadBundles fertig ist)
@@ -719,6 +720,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         quest={likeVerifyQuest}
         walletAddress={walletAddress}
         levelBonusPercent={likeVerifyQuest ? getTotalBonusPercent(likeVerifyQuest.creatorWallet) : 0}
+        repBonusPercent={likeVerifyQuest ? getRepBonusPercent(likeVerifyQuest.creatorWallet) : 0}
         onCompleted={(amount, levelBonus) => {
           if (likeVerifyQuest) {
             setCompletedIds((prev) => [...prev, likeVerifyQuest.id]);
@@ -741,6 +743,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         quest={secretVerifyQuest}
         walletAddress={walletAddress}
         levelBonusPercent={secretVerifyQuest ? getTotalBonusPercent(secretVerifyQuest.creatorWallet) : 0}
+        repBonusPercent={secretVerifyQuest ? getRepBonusPercent(secretVerifyQuest.creatorWallet) : 0}
         onCompleted={(amount, levelBonus) => {
           if (secretVerifyQuest) {
             setCompletedIds((prev) => [...prev, secretVerifyQuest.id]);
@@ -763,6 +766,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         quest={tiktokEngagementQuest}
         walletAddress={walletAddress}
         levelBonusPercent={tiktokEngagementQuest ? getTotalBonusPercent(tiktokEngagementQuest.creatorWallet) : 0}
+        repBonusPercent={tiktokEngagementQuest ? getRepBonusPercent(tiktokEngagementQuest.creatorWallet) : 0}
         onCompleted={(amount, levelBonus) => {
           if (tiktokEngagementQuest) {
             setCompletedIds((prev) => [...prev, tiktokEngagementQuest.id]);
@@ -786,6 +790,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         walletAddress={walletAddress}
         singleAction="like"
         levelBonusPercent={tiktokLikeQuest ? getTotalBonusPercent(tiktokLikeQuest.creatorWallet) : 0}
+        repBonusPercent={tiktokLikeQuest ? getRepBonusPercent(tiktokLikeQuest.creatorWallet) : 0}
         onCompleted={(amount, levelBonus) => {
           if (tiktokLikeQuest) {
             setCompletedIds((prev) => [...prev, tiktokLikeQuest.id]);
@@ -809,6 +814,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         walletAddress={walletAddress}
         singleAction="save"
         levelBonusPercent={tiktokSaveQuest ? getTotalBonusPercent(tiktokSaveQuest.creatorWallet) : 0}
+        repBonusPercent={tiktokSaveQuest ? getRepBonusPercent(tiktokSaveQuest.creatorWallet) : 0}
         onCompleted={(amount, levelBonus) => {
           if (tiktokSaveQuest) {
             setCompletedIds((prev) => [...prev, tiktokSaveQuest.id]);
@@ -831,6 +837,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         quest={tiktokShareQuest}
         walletAddress={walletAddress}
         levelBonusPercent={tiktokShareQuest ? getTotalBonusPercent(tiktokShareQuest.creatorWallet) : 0}
+        repBonusPercent={tiktokShareQuest ? getRepBonusPercent(tiktokShareQuest.creatorWallet) : 0}
         onCompleted={(amount, levelBonus) => {
           if (tiktokShareQuest) {
             setCompletedIds((prev) => [...prev, tiktokShareQuest.id]);
@@ -853,6 +860,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         quest={instagramLikeQuest}
         walletAddress={walletAddress}
         levelBonusPercent={instagramLikeQuest ? getTotalBonusPercent(instagramLikeQuest.creatorWallet) : 0}
+        repBonusPercent={instagramLikeQuest ? getRepBonusPercent(instagramLikeQuest.creatorWallet) : 0}
         onCompleted={(amount, levelBonus) => {
           if (instagramLikeQuest) {
             setCompletedIds((prev) => [...prev, instagramLikeQuest.id]);
@@ -876,6 +884,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         quest={instagramCommentQuest}
         walletAddress={walletAddress}
         levelBonusPercent={instagramCommentQuest ? getTotalBonusPercent(instagramCommentQuest.creatorWallet) : 0}
+        repBonusPercent={instagramCommentQuest ? getRepBonusPercent(instagramCommentQuest.creatorWallet) : 0}
         onCompleted={(amount, levelBonus) => {
           if (instagramCommentQuest) {
             setCompletedIds((prev) => [...prev, instagramCommentQuest.id]);
@@ -898,6 +907,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         quest={facebookCommentQuest}
         walletAddress={walletAddress}
         levelBonusPercent={facebookCommentQuest ? getTotalBonusPercent(facebookCommentQuest.creatorWallet) : 0}
+        repBonusPercent={facebookCommentQuest ? getRepBonusPercent(facebookCommentQuest.creatorWallet) : 0}
         onCompleted={(amount, levelBonus) => {
           if (facebookCommentQuest) {
             setCompletedIds((prev) => [...prev, facebookCommentQuest.id]);
@@ -920,6 +930,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         quest={facebookLikeQuest}
         walletAddress={walletAddress}
         levelBonusPercent={facebookLikeQuest ? getTotalBonusPercent(facebookLikeQuest.creatorWallet) : 0}
+        repBonusPercent={facebookLikeQuest ? getRepBonusPercent(facebookLikeQuest.creatorWallet) : 0}
         onCompleted={(amount, levelBonus) => {
           if (facebookLikeQuest) {
             setCompletedIds((prev) => [...prev, facebookLikeQuest.id]);
@@ -942,6 +953,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         quest={instagramDmShareQuest}
         walletAddress={walletAddress}
         levelBonusPercent={instagramDmShareQuest ? getTotalBonusPercent(instagramDmShareQuest.creatorWallet) : 0}
+        repBonusPercent={instagramDmShareQuest ? getRepBonusPercent(instagramDmShareQuest.creatorWallet) : 0}
         storyClaimToken={instagramDmShareToken ?? undefined}
         onCompleted={(amount, levelBonus) => {
           if (instagramDmShareQuest) {

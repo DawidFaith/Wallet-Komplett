@@ -13,6 +13,7 @@ interface InstagramCommentVerifyModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
   levelBonusPercent?: number;
+  repBonusPercent?: number;
   onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
 }
@@ -21,6 +22,7 @@ export default function InstagramCommentVerifyModal({
   quest,
   walletAddress,
   levelBonusPercent = 0,
+  repBonusPercent = 0,
   onCompleted,
   onClose,
 }: InstagramCommentVerifyModalProps) {
@@ -28,6 +30,7 @@ export default function InstagramCommentVerifyModal({
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<VerifyResult | null>(null);
   const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
+  const displayRep = quest ? Math.round((quest.reputationReward ?? 0) * (1 + repBonusPercent / 100)) : 0;
   const displayReward = quest ? quest.rewardAmount + levelBonusAmount : 0;
 
   const handleVerify = async () => {
@@ -85,7 +88,7 @@ export default function InstagramCommentVerifyModal({
             )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
-                <FaStar size={10} /> +{quest?.reputationReward} REP
+                <FaStar size={10} /> +{displayRep} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
               </span>
             )}
           </div>

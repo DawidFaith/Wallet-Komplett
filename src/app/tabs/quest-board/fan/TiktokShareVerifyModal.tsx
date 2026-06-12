@@ -14,6 +14,7 @@ interface TiktokShareVerifyModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
   levelBonusPercent?: number;
+  repBonusPercent?: number;
   onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
 }
@@ -24,6 +25,7 @@ export default function TiktokShareVerifyModal({
   quest,
   walletAddress,
   levelBonusPercent = 0,
+  repBonusPercent = 0,
   onCompleted,
   onClose,
 }: TiktokShareVerifyModalProps) {
@@ -38,6 +40,7 @@ export default function TiktokShareVerifyModal({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
+  const displayRep = quest ? Math.round((quest.reputationReward ?? 0) * (1 + repBonusPercent / 100)) : 0;
   const displayReward = quest ? quest.rewardAmount + levelBonusAmount : 0;
 
   // Countdown
@@ -141,7 +144,7 @@ export default function TiktokShareVerifyModal({
             )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-amber-300 font-bold text-sm flex items-center gap-1">
-                <FaStar size={10} /> +{quest.reputationReward} REP
+                <FaStar size={10} /> +{displayRep} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
               </span>
             )}
           </div>

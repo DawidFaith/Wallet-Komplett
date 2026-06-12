@@ -14,6 +14,7 @@ interface InstagramLikeVerifyModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
   levelBonusPercent?: number;
+  repBonusPercent?: number;
   onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
 }
@@ -24,6 +25,7 @@ export default function InstagramLikeVerifyModal({
   quest,
   walletAddress,
   levelBonusPercent = 0,
+  repBonusPercent = 0,
   onCompleted,
   onClose,
 }: InstagramLikeVerifyModalProps) {
@@ -42,6 +44,7 @@ export default function InstagramLikeVerifyModal({
   const isLike = quest?.type === 'like';
   const isRepost = quest?.type === 'repost';
   const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
+  const displayRep = quest ? Math.round((quest.reputationReward ?? 0) * (1 + repBonusPercent / 100)) : 0;
   const displayReward = quest ? quest.rewardAmount + levelBonusAmount : 0;
 
   // For single-action quests (like / save / repost)
@@ -50,7 +53,7 @@ export default function InstagramLikeVerifyModal({
   const accentBg = isLike ? 'bg-pink-600 hover:bg-pink-500' : isRepost ? 'bg-blue-600 hover:bg-blue-500' : 'bg-yellow-500 hover:bg-yellow-400';
 
   const rewardPer = quest ? Math.round((displayReward / 2) * 100) / 100 : 0;
-  const repPer = quest ? Math.round((quest.reputationReward ?? 0) / 2) : 0;
+  const repPer = quest ? Math.round(((quest.reputationReward ?? 0) / 2) * (1 + repBonusPercent / 100)) : 0;
 
   const engagementActions = [
     { key: 'like', icon: <FiThumbsUp size={18} />, label: 'Like', color: 'text-pink-400', verified: likeVerified },
@@ -180,7 +183,7 @@ export default function InstagramLikeVerifyModal({
               )}
               {(quest.reputationReward ?? 0) > 0 && (
                 <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
-                  <FaStar size={10} /> +{quest?.reputationReward} REP
+                  <FaStar size={10} /> +{displayRep} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
                 </span>
               )}
             </div>
@@ -416,7 +419,7 @@ export default function InstagramLikeVerifyModal({
               <p className="text-zinc-400 text-xs">{t('verify.creditsAdded', lang)}</p>
               {(quest?.reputationReward ?? 0) > 0 && (
                 <p className="text-purple-300 text-xs font-medium flex items-center gap-1 mt-0.5">
-                  <FaStar size={9} /> +{quest?.reputationReward} {t('verify.reputation', lang)}
+                  <FaStar size={9} /> +{displayRep} {t('verify.reputation', lang)}
                 </p>
               )}
             </div>
@@ -441,7 +444,7 @@ export default function InstagramLikeVerifyModal({
               <p className="text-zinc-400 text-xs">{t('verify.creditsAdded', lang)}</p>
               {(quest?.reputationReward ?? 0) > 0 && (
                 <p className="text-purple-300 text-xs font-medium flex items-center gap-1 mt-0.5">
-                  <FaStar size={9} /> +{quest?.reputationReward} {t('verify.reputation', lang)}
+                  <FaStar size={9} /> +{displayRep} {t('verify.reputation', lang)}
                 </p>
               )}
             </div>

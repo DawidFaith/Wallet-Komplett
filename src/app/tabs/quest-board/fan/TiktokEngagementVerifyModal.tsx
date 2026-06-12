@@ -14,6 +14,7 @@ interface TiktokEngagementVerifyModalProps {
   quest: QuestIndexEntry | null;
   walletAddress: string;
   levelBonusPercent?: number;
+  repBonusPercent?: number;
   onCompleted: (rewardAmount: number, levelBonus?: number) => void;
   onClose: () => void;
   /** Wenn gesetzt, wird nur eine einzelne Aktion verifiziert (für like / save Quests) */
@@ -26,6 +27,7 @@ export default function TiktokEngagementVerifyModal({
   quest,
   walletAddress,
   levelBonusPercent = 0,
+  repBonusPercent = 0,
   onCompleted,
   onClose,
   singleAction,
@@ -42,6 +44,7 @@ export default function TiktokEngagementVerifyModal({
   const [saveVerified, setSaveVerified] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const levelBonusAmount = quest ? Math.round(quest.rewardAmount * levelBonusPercent) / 100 : 0;
+  const displayRep = quest ? Math.round((quest.reputationReward ?? 0) * (1 + repBonusPercent / 100)) : 0;
   const displayReward = quest ? quest.rewardAmount + levelBonusAmount : 0;
 
   useEffect(() => {
@@ -325,7 +328,7 @@ export default function TiktokEngagementVerifyModal({
               </p>
               {(quest?.reputationReward ?? 0) > 0 && (
                 <p className="text-amber-300 font-semibold text-sm flex items-center justify-center gap-1">
-                  <FaStar size={12} /> +{quest!.reputationReward} REP
+                  <FaStar size={12} /> +{displayRep} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
                 </p>
               )}
             </div>
