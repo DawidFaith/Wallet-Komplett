@@ -177,9 +177,14 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
 
   // Collectibles Credit/Shard-Boni pro Künstler laden
   useEffect(() => {
-    if (!walletAddress || bundles.length === 0) return;
+    if (!walletAddress) return;
     let cancelled = false;
-    const creatorWallets = [...new Set(bundles.map(b => b.creatorWallet.toLowerCase()))];
+    const creatorWallets = [...new Set([
+      ...quests.map(q => q.creatorWallet.toLowerCase()),
+      ...bundles.map(b => b.creatorWallet.toLowerCase()),
+      ...(filterCreator ? [filterCreator.toLowerCase()] : []),
+    ])];
+    if (creatorWallets.length === 0) return;
     Promise.all(
       creatorWallets.map(async (aw) => {
         try {
@@ -201,7 +206,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       setShardBonusByCreator(Object.fromEntries(results.map(([w, , s]) => [w, s])));
     });
     return () => { cancelled = true; };
-  }, [walletAddress, bundles]);
+  }, [walletAddress, quests, bundles, filterCreator]);
 
   const getBonusPercent = (creatorWallet: string) => bonusPercentByCreator[creatorWallet.toLowerCase()] ?? 0;
 
@@ -421,6 +426,58 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
           )}
         </div>
       )}
+
+      {/* ── Collectibles-Bonus Übersicht ──────────────────────────────────── */}
+      {(() => {
+        const allWallets = [...new Set([
+          ...Object.keys(bonusPercentByCreator),
+          ...Object.keys(creditBonusByCreator),
+          ...Object.keys(shardBonusByCreator),
+        ])];
+        const relevant = filterCreator
+          ? [filterCreator.toLowerCase()]
+          : allWallets;
+        const withBonus = relevant.filter(w =>
+          (bonusPercentByCreator[w] ?? 0) > 0 ||
+          (creditBonusByCreator[w] ?? 0) > 0 ||
+          (shardBonusByCreator[w] ?? 0) > 0
+        );
+        if (withBonus.length === 0) return null;
+        return (
+          <div className="bg-white/[0.03] border border-amber-400/20 rounded-2xl p-4 space-y-3">
+            <p className="text-[10px] font-black tracking-widest uppercase text-amber-400/50">🎴 Deine aktiven Boni</p>
+            {withBonus.map((w) => {
+              const rep = bonusPercentByCreator[w] ?? 0;
+              const creditB = creditBonusByCreator[w] ?? 0;
+              const shardB = shardBonusByCreator[w] ?? 0;
+              return (
+                <div key={w}>
+                  {!filterCreator && (
+                    <p className="text-zinc-600 text-[10px] font-mono mb-1.5">{w.slice(0, 6)}…{w.slice(-4)}</p>
+                  )}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-white/[0.03] rounded-xl p-2.5 text-center">
+                      <p className={`font-black text-xl ${creditB > 0 ? 'text-amber-300' : 'text-zinc-700'}`}>+{creditB}%</p>
+                      <p className="text-zinc-500 text-[10px] mt-0.5">Credits</p>
+                    </div>
+                    <div className="bg-white/[0.03] rounded-xl p-2.5 text-center">
+                      <p className={`font-black text-xl ${shardB > 0 ? 'text-amber-300' : 'text-zinc-700'}`}>+{shardB}%</p>
+                      <p className="text-zinc-500 text-[10px] mt-0.5">Shard-Chance</p>
+                    </div>
+                    <div className="bg-white/[0.03] rounded-xl p-2.5 text-center">
+                      <p className={`font-black text-xl ${rep > 0 ? 'text-purple-300' : 'text-zinc-700'}`}>+{rep}%</p>
+                      <p className="text-zinc-500 text-[10px] mt-0.5">Reputation</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <p className="text-zinc-700 text-[10px] leading-relaxed">
+              Diese Boni werden automatisch auf jeden Quest-Reward angerechnet.
+            </p>
+          </div>
+        );
+      })()}
 
       <div className="flex items-center justify-between">
         <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">{t('quest.available', language)}</p>
