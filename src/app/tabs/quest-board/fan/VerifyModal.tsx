@@ -51,11 +51,11 @@ export default function VerifyModal({ quest, loading, result, levelBonusPercent 
               +{formatCredits(displayReward)} D.FAITH
             </span>
             {levelBonusPercent > 0 && (
-              <span className="text-green-300 font-bold text-[10px]">inkl. +{levelBonusPercent}% Bonus</span>
+              <span className="text-green-300 font-bold text-[10px]">(+{levelBonusPercent}%)</span>
             )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-purple-300 font-bold text-sm flex items-center gap-1">
-                <FaStar size={10} /> +{displayRep} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
+                <FaStar size={10} /> +{displayRep} REP{repBonusPercent > 0 && <span className="text-green-300"> (+{repBonusPercent}%)</span>}
               </span>
             )}
           </div>
@@ -88,7 +88,7 @@ export default function VerifyModal({ quest, loading, result, levelBonusPercent 
                   <p className="text-zinc-400 text-xs">Zu deinem D.FAITH Credits Guthaben hinzugefügt</p>
                   {(quest?.reputationReward ?? 0) > 0 && (
                     <p className="text-purple-300 text-xs font-medium flex items-center gap-1 mt-0.5">
-                      <FaStar size={9} /> +{displayRep} Reputation{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
+                      <FaStar size={9} /> +{displayRep} Reputation{repBonusPercent > 0 && <span className="text-green-300"> (+{repBonusPercent}%)</span>}
                     </p>
                   )}
                 </div>

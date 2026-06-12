@@ -45,16 +45,11 @@ export default function TiktokQuestCard({ quest, isCompleted, isVerified = true,
         </div>
         <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
           <div className="bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-            <Image src="/D.FAITH.png" alt={tokenLabel} width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(displayReward)} {tokenLabel}
+            <Image src="/D.FAITH.png" alt={tokenLabel} width={16} height={16} className="w-4 h-4 rounded-full" unoptimized /> {formatCredits(displayReward)} {tokenLabel}{levelBonusPercent > 0 && <span className="text-green-300"> (+{levelBonusPercent}%)</span>}
           </div>
-          {levelBonusPercent > 0 && (
-            <div className="bg-black/70 text-green-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
-              inkl. +{levelBonusPercent}% Level-Bonus
-            </div>
-          )}
           {(quest.reputationReward ?? 0) > 0 && (
             <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-              <FaStar size={9} /> +{displayRep} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
+              <FaStar size={9} /> +{displayRep} REP{repBonusPercent > 0 && <span className="text-green-300"> (+{repBonusPercent}%)</span>}
             </div>
           )}
         </div>

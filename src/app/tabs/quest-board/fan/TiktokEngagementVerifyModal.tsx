@@ -162,7 +162,7 @@ export default function TiktokEngagementVerifyModal({
               <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full" unoptimized /> +{formatCredits(rewardPer)} D.FAITH
             </span>
             {levelBonusPercent > 0 && (
-              <span className="text-green-300 font-bold text-[10px]">{lang === 'en' ? `incl. +${levelBonusPercent}% Bonus` : lang === 'pl' ? `w tym +${levelBonusPercent}% Bonus` : `inkl. +${levelBonusPercent}% Bonus`}</span>
+              <span className="text-green-300 font-bold text-[10px]">(+{levelBonusPercent}%)</span>
             )}
             {(quest.reputationReward ?? 0) > 0 && (
               <span className="text-amber-300 font-bold text-sm flex items-center gap-1">
@@ -328,7 +328,7 @@ export default function TiktokEngagementVerifyModal({
               </p>
               {(quest?.reputationReward ?? 0) > 0 && (
                 <p className="text-amber-300 font-semibold text-sm flex items-center justify-center gap-1">
-                  <FaStar size={12} /> +{displayRep} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
+                  <FaStar size={12} /> +{displayRep} REP{repBonusPercent > 0 && <span className="text-green-300"> (+{repBonusPercent}%)</span>}
                 </p>
               )}
             </div>
