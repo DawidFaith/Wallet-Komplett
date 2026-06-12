@@ -573,8 +573,7 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
           {RARITY_ORDER.map((rarity) => {
             const count = ownedByRarity[rarity] ?? 0;
-            const owned = count > 0;
-            if (owned) {
+            if (count > 0) {
               return (
                 <CollectibleCard
                   key={rarity}
@@ -589,14 +588,25 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
                 />
               );
             }
-            // Nicht besessen → ausblenden
-            return null;
+            // Nicht besessen → ausgegraut anzeigen
+            const cfg = RARITY_CONFIG[rarity];
+            return (
+              <div key={rarity} className="relative flex flex-col items-center rounded-2xl border-2 border-zinc-800 bg-zinc-900/30 p-3 w-[140px] shrink-0 opacity-40">
+                <div className="w-20 h-20 rounded-xl border border-zinc-800 overflow-hidden mb-2 flex items-center justify-center bg-zinc-800/40">
+                  {collection.imageUrl
+                    ? <Image src={collection.imageUrl} alt={collection.name} width={80} height={80} className="w-full h-full object-cover grayscale" />
+                    : <GiCrystalShine size={36} className="text-zinc-600" />}
+                </div>
+                <span className={`text-[9px] font-black tracking-[0.3em] uppercase ${cfg.textColor} mb-0.5`}>{cfg.label}</span>
+                <span className="text-[11px] font-bold text-zinc-500 text-center line-clamp-2 leading-tight">0×</span>
+              </div>
+            );
           })}
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap items-center">
         <button
           onClick={() => setFuseOpen(true)}
           disabled={shards < 1}
@@ -610,28 +620,43 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
           Verschmelzen ({shards} Shard{shards !== 1 ? 's' : ''})
         </button>
 
-        {(() => {
-          // Nächste upgradbare Rarity: bevorzuge die erste mit ≥10, sonst die erste mit >0
-          const upgradeRarity =
-            RARITY_ORDER.slice(0, -1).find((r) => (ownedByRarity[r] ?? 0) >= 10) ??
-            RARITY_ORDER.slice(0, -1).find((r) => (ownedByRarity[r] ?? 0) > 0);
-          if (!upgradeRarity) return null;
-          const count = ownedByRarity[upgradeRarity] ?? 0;
+        {/* Zusammenfassen: Dropdown + Button */}
+        {RARITY_ORDER.slice(0, -1).some((r) => (ownedByRarity[r] ?? 0) > 0) && (() => {
+          const upgradableOptions = RARITY_ORDER.slice(0, -1).filter((r) => (ownedByRarity[r] ?? 0) > 0);
+          const [selectedRarity, setSelectedRarity] = React.useState<CollectibleRarity>(
+            upgradableOptions.reduce((best, r) =>
+              (ownedByRarity[r] ?? 0) > (ownedByRarity[best] ?? 0) ? r : best
+            )
+          );
+          const count = ownedByRarity[selectedRarity] ?? 0;
           const canUpgrade = count >= 10;
-          const nextRarity = RARITY_ORDER[RARITY_ORDER.indexOf(upgradeRarity) + 1];
+          const nextRarity = RARITY_ORDER[RARITY_ORDER.indexOf(selectedRarity) + 1];
           return (
-            <button
-              onClick={() => canUpgrade && setUpgradeOpen(upgradeRarity)}
-              disabled={!canUpgrade}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black transition-colors ${
-                canUpgrade
-                  ? 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30'
-                  : 'bg-white/[0.03] text-zinc-400 border border-white/[0.08] cursor-not-allowed'
-              }`}
-            >
-              <FaFire size={10} />
-              10× {RARITY_CONFIG[upgradeRarity].label} → {RARITY_CONFIG[nextRarity].label} ({count}/10)
-            </button>
+            <div className="flex items-center gap-1.5">
+              <select
+                value={selectedRarity}
+                onChange={(e) => setSelectedRarity(e.target.value as CollectibleRarity)}
+                className="bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px] font-semibold rounded-xl px-2 py-2 outline-none focus:border-orange-500/50"
+              >
+                {upgradableOptions.map((r) => (
+                  <option key={r} value={r}>
+                    {RARITY_CONFIG[r].label} ({ownedByRarity[r] ?? 0}/10)
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => canUpgrade && setUpgradeOpen(selectedRarity)}
+                disabled={!canUpgrade}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black transition-colors ${
+                  canUpgrade
+                    ? 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                    : 'bg-white/[0.03] text-zinc-400 border border-white/[0.08] cursor-not-allowed'
+                }`}
+              >
+                <FaFire size={10} />
+                → {RARITY_CONFIG[nextRarity].label}
+              </button>
+            </div>
           );
         })()}
       </div>
