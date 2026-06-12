@@ -578,6 +578,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                       isVerified={verified.youtube}
                       onComplete={handleVerify}
                       rewardTokenName={tokenName}
+                      repBonusPercent={getRepBonusPercent(quest.creatorWallet)}
                       levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)}
                       language={language}
                     />
@@ -608,6 +609,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                       isVerified={verified.tiktok}
                       onComplete={handleTikTokVerify}
                       rewardTokenName={tokenName}
+                      repBonusPercent={getRepBonusPercent(quest.creatorWallet)}
                       levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)}
                       language={language}
                     />
@@ -620,6 +622,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                       isVerified={verified.tiktok}
                       onComplete={handleTikTokVerify}
                       rewardTokenName={tokenName}
+                      repBonusPercent={getRepBonusPercent(quest.creatorWallet)}
                       levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)}
                       language={language}
                     />
@@ -650,6 +653,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                       isVerified={verified.instagram}
                       onComplete={handleInstagramVerify}
                       rewardTokenName={tokenName}
+                      repBonusPercent={getRepBonusPercent(quest.creatorWallet)}
                       levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)}
                       language={language}
                     />
@@ -680,6 +684,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                       isVerified={verified.facebook}
                       onComplete={handleFacebookVerify}
                       rewardTokenName={tokenName}
+                      repBonusPercent={getRepBonusPercent(quest.creatorWallet)}
                       levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)}
                       language={language}
                     />
