@@ -144,22 +144,18 @@ function CollectibleCard({ rarity, count, imageUrl, name, maxRepBonus, maxCredit
         {name}
       </span>
 
-      {/* Bonus-Slots: aktiv = farbig, gesperrt = grau mit Schloss */}
+      {/* Nur aktive Bonus-Slots anzeigen */}
       <div className="flex flex-col items-center gap-0.5 w-full">
-        {slots.map((bonusType, slotIdx) => {
-          const isActive = slotIdx < activeCount;
+        {slots.slice(0, activeCount).map((bonusType) => {
           const value = bonusValues[bonusType];
-          return (
+          return value > 0 ? (
             <span
               key={bonusType}
-              className={`text-[9px] font-semibold flex items-center gap-0.5 ${
-                isActive ? bonusColors[bonusType] + '/90' : 'text-zinc-700'
-              }`}
+              className={`text-[9px] font-semibold flex items-center gap-0.5 ${bonusColors[bonusType]}/90`}
             >
-              {!isActive && <span className="text-[8px]">🔒</span>}
-              {isActive && value > 0 ? `+${value}% ${BONUS_LABELS[bonusType]}` : BONUS_LABELS[bonusType]}
+              +{value}% {BONUS_LABELS[bonusType]}
             </span>
-          );
+          ) : null;
         })}
       </div>
     </div>
@@ -353,13 +349,13 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
           )}
           <div>
             <p className="font-bold text-white text-sm">{collection.name}</p>
-            <p className="text-xs text-zinc-500">{currentShards} Shard{currentShards !== 1 ? 's' : ''} verfügbar</p>
+            <p className="text-xs text-zinc-300">{currentShards} Shard{currentShards !== 1 ? 's' : ''} verfügbar</p>
           </div>
         </div>
 
         {/* Wahrscheinlichkeiten */}
         <div className="space-y-1.5 mb-5">
-          <p className="text-[10px] font-black tracking-[0.3em] uppercase text-zinc-600 mb-2">Chancen</p>
+          <p className="text-[10px] font-black tracking-[0.3em] uppercase text-zinc-400 mb-2">Chancen</p>
           {chances.map(({ rarity, chance }) => {
             const cfg = RARITY_CONFIG[rarity];
             return (
@@ -368,7 +364,7 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
                 <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
                   <div className="h-full rounded-full" style={{ width: `${chance}%`, backgroundColor: cfg.color }} />
                 </div>
-                <span className="text-[10px] text-zinc-500 w-8 text-right">{chance}%</span>
+                <span className="text-[10px] text-zinc-300 w-8 text-right">{chance}%</span>
               </div>
             );
           })}
@@ -474,7 +470,7 @@ function UpgradeModal({ collection, fromRarity, count, onClose, onUpgraded, wall
         {error && <p className="text-red-400 text-xs mb-3">{error}</p>}
 
         <div className="mb-4">
-          <div className="flex justify-between text-[10px] text-zinc-600 mb-1">
+          <div className="flex justify-between text-[10px] text-zinc-400 mb-1">
             <span>{fromCfg.label} Collectibles</span>
             <span>{Math.min(count, 10)} / 10</span>
           </div>
@@ -559,21 +555,21 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
             )}
           </div>
           {collection.description && (
-            <p className="text-[11px] text-zinc-500 leading-relaxed mt-0.5 line-clamp-2">{collection.description}</p>
+            <p className="text-[11px] text-zinc-300 leading-relaxed mt-0.5 line-clamp-2">{collection.description}</p>
           )}
           <div className="flex items-center gap-3 mt-1.5 flex-wrap">
             <span className="text-[10px] text-amber-400/80 font-bold">
               {totalCollectibles} Collectible{totalCollectibles !== 1 ? 's' : ''}
             </span>
-            <span className="text-[10px] text-zinc-600">·</span>
-            <span className="text-[10px] text-zinc-500">{shards} Shard{shards !== 1 ? 's' : ''}</span>
+            <span className="text-[10px] text-zinc-400">·</span>
+            <span className="text-[10px] text-zinc-300">{shards} Shard{shards !== 1 ? 's' : ''}</span>
           </div>
         </div>
       </div>
 
       {/* Alle 6 Rarity-Karten: owned farbig, unowned gesperrt/grau */}
       <div className="mb-4">
-        <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-600 mb-3">Alle Seltenheiten</p>
+        <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-400 mb-3">Deine Karten</p>
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
           {RARITY_ORDER.map((rarity) => {
             const count = ownedByRarity[rarity] ?? 0;
@@ -593,39 +589,8 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
                 />
               );
             }
-            // Gesperrte Karte
-            const cfg = RARITY_CONFIG[rarity];
-            const slots = getBonusSlots(collection.primaryBonus ?? 'rep');
-            const activeCount = getActiveSlotsCount(rarity);
-            const bonusMaxValues: Record<BonusType, number> = {
-              rep:     collection.maxRepBonusPercent,
-              credits: collection.maxCreditBonusPercent ?? 0,
-              shard:   collection.maxShardChanceBonus ?? 0,
-            };
-            return (
-              <div key={rarity} className="relative flex flex-col items-center rounded-2xl border-2 border-zinc-700/50 bg-zinc-900/40 p-3 w-[140px] shrink-0 opacity-50">
-                <span className="absolute -top-2 -right-2 min-w-[22px] h-[22px] rounded-full bg-zinc-800 text-zinc-500 text-[11px] font-black flex items-center justify-center px-1.5 z-10">
-                  🔒
-                </span>
-                <div className="w-20 h-20 rounded-xl border border-zinc-700/50 overflow-hidden mb-2 flex items-center justify-center bg-zinc-800/40">
-                  {collection.imageUrl
-                    ? <Image src={collection.imageUrl} alt={collection.name} width={80} height={80} className="w-full h-full object-cover grayscale" />
-                    : <GiCrystalShine size={36} className="text-zinc-600" />}
-                </div>
-                <span className={`text-[9px] font-black tracking-[0.3em] uppercase ${cfg.textColor} opacity-60 mb-0.5`}>{cfg.label}</span>
-                <span className="text-[11px] font-bold text-zinc-500 text-center line-clamp-2 leading-tight mb-1">{collection.name}</span>
-                <div className="flex flex-col items-center gap-0.5 w-full">
-                  {slots.slice(0, activeCount).map((bonusType) => {
-                    const val = Math.round(bonusMaxValues[bonusType] * cfg.repMultiplier);
-                    return val > 0 ? (
-                      <span key={bonusType} className="text-[9px] text-zinc-600 font-semibold">
-                        +{val}% {BONUS_LABELS[bonusType]}
-                      </span>
-                    ) : null;
-                  })}
-                </div>
-              </div>
-            );
+            // Nicht besessen → ausblenden
+            return null;
           })}
         </div>
       </div>
