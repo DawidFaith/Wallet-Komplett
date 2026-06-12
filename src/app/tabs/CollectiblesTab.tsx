@@ -162,19 +162,22 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
   collection: CollectibleCollection;
   shards: number;
   onClose: () => void;
-  onFused: (rarity: CollectibleRarity) => void;
+  onFused: (rarity: CollectibleRarity, newShards: number) => void;
   walletAddress: string;
 }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CollectibleRarity | null>(null);
+  const [newShards, setNewShards] = useState(shards);
   const [error, setError] = useState('');
+  const [phase, setPhase] = useState<'idle' | 'shaking' | 'reveal'>('idle');
 
-  const canFuse = shards >= 10;
+  const canFuse = shards >= 1;
 
   const handleFuse = async () => {
-    if (!canFuse) return;
+    if (!canFuse || loading) return;
     setLoading(true);
     setError('');
+    setPhase('shaking');
     try {
       const res = await fetch('/api/collectibles/fuse', {
         method: 'POST',
@@ -183,12 +186,29 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Fusion fehlgeschlagen');
-      setResult(data.rarity as CollectibleRarity);
-      onFused(data.rarity as CollectibleRarity);
+      // Kurze Shake-Phase, dann Reveal
+      setTimeout(() => {
+        setResult(data.rarity as CollectibleRarity);
+        const updated = shards - 1;
+        setNewShards(updated);
+        setPhase('reveal');
+        onFused(data.rarity as CollectibleRarity, updated);
+      }, 900);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Fehler');
-    } finally {
+      setPhase('idle');
       setLoading(false);
+    }
+  };
+
+  const handleRevealClose = () => {
+    setResult(null);
+    setPhase('idle');
+    setLoading(false);
+    if (newShards >= 1) {
+      // Weiteres Verschmelzen möglich – Modal offen lassen, State zurücksetzen
+    } else {
+      onClose();
     }
   };
 
@@ -201,9 +221,99 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
     { rarity: 'mythic',    chance: collection.chanceMythic },
   ];
 
+  const currentShards = phase === 'reveal' ? newShards : shards;
+
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-[#1a1814] border border-white/10 rounded-2xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={phase === 'reveal' ? handleRevealClose : onClose}>
+      <style>{`
+        @keyframes fusionShake {
+          0%,100% { transform: rotate(0deg) scale(1); }
+          15% { transform: rotate(-8deg) scale(1.05); }
+          30% { transform: rotate(8deg) scale(1.08); }
+          45% { transform: rotate(-6deg) scale(1.06); }
+          60% { transform: rotate(6deg) scale(1.1); }
+          75% { transform: rotate(-4deg) scale(1.07); }
+          90% { transform: rotate(4deg) scale(1.05); }
+        }
+        @keyframes fusionReveal {
+          0%   { transform: scale(0.2) rotate(-15deg); opacity: 0; }
+          60%  { transform: scale(1.15) rotate(3deg); opacity: 1; }
+          80%  { transform: scale(0.95) rotate(-1deg); }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes fusionGlow {
+          0%,100% { box-shadow: 0 0 20px var(--glow-color), 0 0 40px var(--glow-color); }
+          50%      { box-shadow: 0 0 40px var(--glow-color), 0 0 80px var(--glow-color), 0 0 120px var(--glow-color); }
+        }
+        @keyframes fusionParticle {
+          0%   { transform: translate(0,0) scale(1); opacity: 1; }
+          100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+        .fusion-shake { animation: fusionShake 0.9s ease-in-out; }
+        .fusion-reveal { animation: fusionReveal 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+        .fusion-glow   { animation: fusionGlow 1.5s ease-in-out infinite; }
+        .fusion-particle { animation: fusionParticle 0.8s ease-out forwards; }
+      `}</style>
+
+      {/* Reveal-Overlay */}
+      {phase === 'reveal' && result && (
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center gap-6 z-10"
+          onClick={handleRevealClose}
+        >
+          {/* Partikel */}
+          {['✨','⭐','💎','🌟','✨','💫','⭐','✨'].map((s, i) => (
+            <span
+              key={i}
+              className="fusion-particle absolute text-2xl pointer-events-none"
+              style={{
+                left: `${20 + i * 8}%`,
+                top: `${35 + (i % 3) * 10}%`,
+                '--tx': `${(i % 2 === 0 ? 1 : -1) * (30 + i * 15)}px`,
+                '--ty': `${-60 - i * 20}px`,
+                animationDelay: `${i * 0.07}s`,
+              } as React.CSSProperties}
+            >{s}</span>
+          ))}
+
+          <div className="fusion-reveal text-center">
+            <div
+              className="fusion-glow inline-flex flex-col items-center gap-3 p-8 rounded-3xl border-2 mx-4"
+              style={{
+                '--glow-color': RARITY_CONFIG[result].color,
+                backgroundColor: `${RARITY_CONFIG[result].color}18`,
+                borderColor: RARITY_CONFIG[result].color,
+              } as React.CSSProperties}
+            >
+              {collection.imageUrl ? (
+                <Image src={collection.imageUrl} alt={collection.name} width={100} height={100} className="w-24 h-24 rounded-2xl object-cover" />
+              ) : (
+                <GiCrystalShine size={80} style={{ color: RARITY_CONFIG[result].color }} />
+              )}
+              <div>
+                <p className="text-white/60 text-xs uppercase tracking-widest mb-1">Du hast erhalten</p>
+                <p className="font-black text-3xl" style={{ color: RARITY_CONFIG[result].color }}>
+                  {RARITY_CONFIG[result].label}!
+                </p>
+                <p className="text-white/80 text-sm font-semibold mt-1">{collection.name}</p>
+              </div>
+              <div className="flex items-center gap-1.5 bg-white/10 rounded-full px-3 py-1">
+                <GiCrystalShine className="text-amber-400" size={12} />
+                <span className="text-amber-300 text-xs font-bold">{currentShards} Shards übrig</span>
+              </div>
+            </div>
+            <p className="text-white/40 text-xs mt-4">
+              {currentShards >= 1 ? 'Tippen um weiterzumachen' : 'Tippen um zu schließen'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Haupt-Modal */}
+      <div
+        className={`bg-[#1a1814] border border-white/10 rounded-2xl p-6 w-full max-w-sm transition-opacity ${phase === 'reveal' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-black text-white text-lg flex items-center gap-2">
             <GiMagicSwirl className="text-amber-400" />
@@ -212,8 +322,8 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
           <button onClick={onClose} className="text-zinc-500 hover:text-white"><FaTimes /></button>
         </div>
 
-        {/* Kollektion Info */}
-        <div className="flex items-center gap-3 mb-5 p-3 bg-white/[0.04] rounded-xl">
+        {/* Kollektion Info + Shake-Animation */}
+        <div className={`flex items-center gap-3 mb-5 p-3 bg-white/[0.04] rounded-xl ${phase === 'shaking' ? 'fusion-shake' : ''}`}>
           {collection.imageUrl ? (
             <Image src={collection.imageUrl} alt={collection.name} width={44} height={44} className="w-11 h-11 rounded-lg object-cover" />
           ) : (
@@ -223,7 +333,7 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
           )}
           <div>
             <p className="font-bold text-white text-sm">{collection.name}</p>
-            <p className="text-xs text-zinc-500">{shards} / 10 Shards</p>
+            <p className="text-xs text-zinc-500">{currentShards} Shard{currentShards !== 1 ? 's' : ''} verfügbar</p>
           </div>
         </div>
 
@@ -244,50 +354,23 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
           })}
         </div>
 
-        {/* Ergebnis */}
-        {result && (
-          <div className={`flex flex-col items-center gap-2 p-4 rounded-xl border ${RARITY_CONFIG[result].border} ${RARITY_CONFIG[result].bg} ${RARITY_CONFIG[result].glow} mb-4`}>
-            <GiCrystalShine size={40} style={{ color: RARITY_CONFIG[result].color }} />
-            <p className={`font-black text-lg ${RARITY_CONFIG[result].textColor}`}>{RARITY_CONFIG[result].label}!</p>
-            <p className="text-xs text-zinc-400">Du hast ein neues Collectible erhalten</p>
-          </div>
-        )}
-
         {error && <p className="text-red-400 text-xs mb-3">{error}</p>}
 
-        {/* Shard Progress */}
-        <div className="mb-4">
-          <div className="flex justify-between text-[10px] text-zinc-600 mb-1">
-            <span>Shards</span>
-            <span>{Math.min(shards, 10)} / 10</span>
-          </div>
-          <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-amber-400 rounded-full transition-all"
-              style={{ width: `${Math.min(shards / 10, 1) * 100}%` }}
-            />
-          </div>
-        </div>
-
         <button
-          onClick={result ? onClose : handleFuse}
+          onClick={handleFuse}
           disabled={!canFuse || loading}
           className={`w-full py-3.5 rounded-xl font-black text-sm tracking-wide transition-all flex items-center justify-center gap-2 ${
-            result
-              ? 'bg-green-500 text-black'
-              : canFuse
-                ? 'bg-amber-400 hover:bg-amber-300 text-black'
-                : 'bg-white/5 text-zinc-600 cursor-not-allowed'
+            canFuse
+              ? 'bg-amber-400 hover:bg-amber-300 active:scale-95 text-black'
+              : 'bg-white/5 text-zinc-600 cursor-not-allowed'
           }`}
         >
           {loading ? (
-            <FaSync className="animate-spin" />
-          ) : result ? (
-            <><FaCheck /> Fertig</>
+            <><GiMagicSwirl className="animate-spin" /> Verschmelze…</>
           ) : canFuse ? (
-            <><GiMagicSwirl /> 10 Shards verschmelzen</>
+            <><GiMagicSwirl /> 1 Shard verschmelzen</>
           ) : (
-            `Noch ${10 - shards} Shards fehlen`
+            'Keine Shards verfügbar'
           )}
         </button>
       </div>
@@ -420,8 +503,10 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false }: {
   const [fuseOpen, setFuseOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState<CollectibleRarity | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [localShards, setLocalShards] = useState(data.shards);
 
-  const { collection, ownedByRarity, shards } = data;
+  const { collection, ownedByRarity } = data;
+  const shards = localShards;
   const totalCollectibles = Object.values(ownedByRarity).reduce((s, v) => s + (v ?? 0), 0);
   const upgradableRarities = RARITY_ORDER
     .filter((r, i) => i < RARITY_ORDER.length - 1 && (ownedByRarity[r] ?? 0) >= 10);
@@ -526,13 +611,13 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false }: {
         <button
           onClick={() => setFuseOpen(true)}
           className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black transition-colors ${
-            shards >= 10
+            shards >= 1
               ? 'bg-amber-400/10 hover:bg-amber-400/20 text-amber-400 border border-amber-400/30'
               : 'bg-white/[0.03] text-zinc-600 border border-white/[0.05] cursor-not-allowed'
           }`}
         >
           <GiMagicSwirl size={12} />
-          Verschmelzen ({shards}/10 Shards)
+          Verschmelzen ({shards} Shard{shards !== 1 ? 's' : ''})
         </button>
 
         {upgradableRarities.map((rarity) => (
@@ -554,7 +639,7 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false }: {
           shards={shards}
           walletAddress={walletAddress}
           onClose={() => setFuseOpen(false)}
-          onFused={() => { setFuseOpen(false); onRefresh(); }}
+          onFused={(_rarity, newShardsCount) => { setLocalShards(newShardsCount); setFuseOpen(false); onRefresh(); }}
         />
       )}
 

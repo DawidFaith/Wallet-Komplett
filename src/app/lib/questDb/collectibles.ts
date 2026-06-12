@@ -265,7 +265,7 @@ export async function deductShards(walletAddress: string, artistWallet: string, 
   if (rows.length === 0) throw new Error('Nicht genug Shards');
 }
 
-// ─── Fusion: 10 Shards → 1 Collectible ───────────────────────────────────────
+// ─── Fusion: 1 Shard → 1 Collectible ─────────────────────────────────────────
 
 export async function fuseShards(
   walletAddress: string,
@@ -278,8 +278,8 @@ export async function fuseShards(
 
   const artistWallet = collection.artistWallet;
 
-  // 10 Shards abziehen
-  await deductShards(walletAddress, artistWallet, 10);
+  // 1 Shard abziehen
+  await deductShards(walletAddress, artistWallet, 1);
 
   // Seltenheit via RNG ermitteln
   const rarity = rollRarity(collection);
