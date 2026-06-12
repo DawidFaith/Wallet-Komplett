@@ -103,9 +103,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      rewardAmount: quest.rewardAmount + levelBonus,
+      rewardAmount: quest.rewardAmount + levelBonus + creditBonus,
       levelBonus: levelBonus > 0 ? levelBonus : undefined,
-      message: `+${quest.rewardAmount + levelBonus} DFAITH Credits gutgeschrieben!`,
+      creditBonus: creditBonus > 0 ? creditBonus : undefined,
+      message: `+${quest.rewardAmount + levelBonus + creditBonus} DFAITH Credits gutgeschrieben!`,
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

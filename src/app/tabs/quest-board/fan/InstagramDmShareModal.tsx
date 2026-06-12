@@ -16,7 +16,7 @@ interface InstagramDmShareModalProps {
   repBonusPercent?: number;
   /** Wenn vorhanden: Fan kam über den Story-Link → einfacher 1-Klick Claim-Flow */
   storyClaimToken?: string;
-  onCompleted: (rewardAmount: number, levelBonus?: number) => void;
+  onCompleted: (rewardAmount: number, levelBonus?: number, creditBonus?: number) => void;
   onClose: () => void;
 }
 
@@ -154,7 +154,7 @@ export default function InstagramDmShareModal({
         setError(lang === 'en' ? 'Error completing quest.' : lang === 'pl' ? 'Błąd podczas kończenia.' : 'Fehler beim Abschließen');
         return;
       }
-      onCompleted(data.rewardAmount ?? displayReward, data.levelBonus);
+      onCompleted(data.rewardAmount ?? displayReward, data.levelBonus, data.creditBonus);
       onClose();
     } catch {
       setError('Netzwerkfehler. Bitte erneut versuchen.');

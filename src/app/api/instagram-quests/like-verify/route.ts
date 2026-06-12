@@ -263,6 +263,7 @@ export async function POST(req: NextRequest) {
           success: true,
           rewardAmount: quest.rewardAmount + levelBonus + creditBonus,
           levelBonus: levelBonus > 0 ? levelBonus : undefined,
+          creditBonus: creditBonus > 0 ? creditBonus : undefined,
           message: `Quest abgeschlossen! Du hast das Reel geteilt. +${quest.rewardAmount + levelBonus + creditBonus} DFAITH Credits`,
         });
       }
@@ -323,6 +324,7 @@ export async function POST(req: NextRequest) {
           success: true,
           rewardAmount: earnedReward + levelBonus + creditBonus,
           levelBonus: levelBonus > 0 ? levelBonus : undefined,
+          creditBonus: creditBonus > 0 ? creditBonus : undefined,
           likeVerified,
           saveVerified,
           partial: verifiedCount < 2,
@@ -380,6 +382,7 @@ export async function POST(req: NextRequest) {
         success: true,
         rewardAmount: quest.rewardAmount + levelBonus + creditBonus,
         levelBonus: levelBonus > 0 ? levelBonus : undefined,
+        creditBonus: creditBonus > 0 ? creditBonus : undefined,
         message: `Quest abgeschlossen! Du hast das Reel ${actionDone}. +${quest.rewardAmount + levelBonus + creditBonus} DFAITH Credits`,
       });
     }

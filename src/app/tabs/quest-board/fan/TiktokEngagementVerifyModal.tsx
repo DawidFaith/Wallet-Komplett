@@ -15,7 +15,7 @@ interface TiktokEngagementVerifyModalProps {
   walletAddress: string;
   levelBonusPercent?: number;
   repBonusPercent?: number;
-  onCompleted: (rewardAmount: number, levelBonus?: number) => void;
+  onCompleted: (rewardAmount: number, levelBonus?: number, creditBonus?: number) => void;
   onClose: () => void;
   /** Wenn gesetzt, wird nur eine einzelne Aktion verifiziert (für like / save Quests) */
   singleAction?: 'like' | 'save';
@@ -104,7 +104,7 @@ export default function TiktokEngagementVerifyModal({
             setStep('not_yet');
           } else if (data.success) {
             setLikeVerified(data.likeVerified);
-            onCompleted(data.rewardAmount, data.levelBonus);
+            onCompleted(data.rewardAmount, data.levelBonus, data.creditBonus);
             onClose();
           }
         }

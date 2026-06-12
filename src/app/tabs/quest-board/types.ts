@@ -41,6 +41,7 @@ export interface VerifyResult {
   comment?: string;
   rewardAmount?: number;
   levelBonus?: number;
+  creditBonus?: number;
 }
 
 export interface ClaimResult {

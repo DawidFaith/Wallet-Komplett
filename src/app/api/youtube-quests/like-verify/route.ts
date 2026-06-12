@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
     await addUserReputationWithBonus(normalized, quest.creatorWallet, quest.reputationReward);
     await deleteLikeVerification(questId, normalized);
 
-    return NextResponse.json({ success: true, rewardAmount: quest.rewardAmount + levelBonus, levelBonus: levelBonus > 0 ? levelBonus : undefined });
+    return NextResponse.json({ success: true, rewardAmount: quest.rewardAmount + levelBonus + creditBonus, levelBonus: levelBonus > 0 ? levelBonus : undefined, creditBonus: creditBonus > 0 ? creditBonus : undefined });
   }
 
 

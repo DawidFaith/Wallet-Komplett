@@ -20,6 +20,7 @@ import {
   addUserReputation,
   addUserReputationWithBonus,
   payQuestCreditBonus,
+  payLevelBonus,
   QuestCompletion,
 } from '../../../lib/questDb';
 
@@ -171,6 +172,7 @@ export async function POST(req: NextRequest) {
         createdAt: now,
       });
       await addDfaithCredits(normalized, quest.rewardAmount);
+      const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, questId);
       const creditBonus = await payQuestCreditBonus(normalized, quest.creatorWallet, quest.rewardAmount, questId);
       await addUserXp(normalized, 5);
       await addUserReputationWithBonus(normalized, quest.creatorWallet, quest.reputationReward);
@@ -179,8 +181,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         saveVerified: true,
-        rewardAmount: quest.rewardAmount + creditBonus,
-        message: `Gespeichert verifiziert! Du erhältst ${quest.rewardAmount + creditBonus} DFAITH.`,
+        rewardAmount: quest.rewardAmount + levelBonus + creditBonus,
+        levelBonus: levelBonus > 0 ? levelBonus : undefined,
+        creditBonus: creditBonus > 0 ? creditBonus : undefined,
+        message: `Gespeichert verifiziert! Du erhältst ${quest.rewardAmount + levelBonus + creditBonus} DFAITH.`,
       });
     }
 

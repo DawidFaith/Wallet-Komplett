@@ -14,7 +14,7 @@ interface SecretVerifyModalProps {
   walletAddress: string;
   levelBonusPercent?: number;
   repBonusPercent?: number;
-  onCompleted: (rewardAmount: number, levelBonus?: number) => void;
+  onCompleted: (rewardAmount: number, levelBonus?: number, creditBonus?: number) => void;
   onClose: () => void;
 }
 
@@ -74,7 +74,7 @@ export default function SecretVerifyModal({
       if (data.notYet) {
         setStep('wrong');
       } else if (data.success) {
-        onCompleted(data.rewardAmount, data.levelBonus);
+        onCompleted(data.rewardAmount, data.levelBonus, data.creditBonus);
         handleClose();
       }
     } catch {

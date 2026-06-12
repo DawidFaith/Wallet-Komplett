@@ -15,7 +15,7 @@ interface FacebookLikeVerifyModalProps {
   walletAddress: string;
   levelBonusPercent?: number;
   repBonusPercent?: number;
-  onCompleted: (rewardAmount: number, levelBonus?: number) => void;
+  onCompleted: (rewardAmount: number, levelBonus?: number, creditBonus?: number) => void;
   onClose: () => void;
 }
 
@@ -90,7 +90,7 @@ export default function FacebookLikeVerifyModal({
             setExpiresAt(data.expiresAt ?? expiresAt);
             setStep('not_yet');
           } else if (data.success) {
-            onCompleted(data.rewardAmount, data.levelBonus);
+            onCompleted(data.rewardAmount, data.levelBonus, data.creditBonus);
             onClose();
           }
         }

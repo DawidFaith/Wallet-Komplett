@@ -210,15 +210,18 @@ export async function POST(req: NextRequest) {
       await addDfaithCredits(normalized, quest.rewardAmount);
       await addUserXp(normalized, 10);
       await addUserReputationWithBonus(normalized, quest.creatorWallet, quest.reputationReward);
-      await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, questId);
+      const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, questId);
+      const creditBonus = await payQuestCreditBonus(normalized, quest.creatorWallet, quest.rewardAmount, questId);
       await deleteTikTokEngagementVerification(questId, normalized);
 
       return NextResponse.json({
         success: true,
         shareVerified: true,
         soundVerified: true,
-        rewardAmount: quest.rewardAmount,
-        message: `Share verifiziert! Du erhältst ${quest.rewardAmount} DFAITH.`,
+        rewardAmount: quest.rewardAmount + levelBonus + creditBonus,
+        levelBonus: levelBonus > 0 ? levelBonus : undefined,
+        creditBonus: creditBonus > 0 ? creditBonus : undefined,
+        message: `Share verifiziert! Du erhältst ${quest.rewardAmount + levelBonus + creditBonus} DFAITH.`,
       });
     }
 

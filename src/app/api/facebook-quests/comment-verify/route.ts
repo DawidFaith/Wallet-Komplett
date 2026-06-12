@@ -222,8 +222,9 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    rewardAmount: quest.rewardAmount + levelBonus,
+    rewardAmount: quest.rewardAmount + levelBonus + creditBonus,
     levelBonus: levelBonus > 0 ? levelBonus : undefined,
-    message: `Quest abgeschlossen! +${quest.rewardAmount + levelBonus} DFAITH Credits`,
+    creditBonus: creditBonus > 0 ? creditBonus : undefined,
+    message: `Quest abgeschlossen! +${quest.rewardAmount + levelBonus + creditBonus} DFAITH Credits`,
   });
 }

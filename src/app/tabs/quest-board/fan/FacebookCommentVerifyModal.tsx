@@ -14,7 +14,7 @@ interface FacebookCommentVerifyModalProps {
   walletAddress: string;
   levelBonusPercent?: number;
   repBonusPercent?: number;
-  onCompleted: (rewardAmount: number, levelBonus?: number) => void;
+  onCompleted: (rewardAmount: number, levelBonus?: number, creditBonus?: number) => void;
   onClose: () => void;
 }
 
@@ -77,7 +77,7 @@ export default function FacebookCommentVerifyModal({
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        onCompleted(data.rewardAmount, data.levelBonus);
+        onCompleted(data.rewardAmount, data.levelBonus, data.creditBonus);
         handleClose();
       } else {
         setResult({ success: false, message: data.error ?? data.message ?? 'Fehler bei der Verifizierung' });

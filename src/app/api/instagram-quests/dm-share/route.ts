@@ -68,9 +68,10 @@ async function completeStoryQuest({
   return NextResponse.json({
     success: true,
     tagVerified: true,
-    rewardAmount: quest.rewardAmount + levelBonus,
+    rewardAmount: quest.rewardAmount + levelBonus + creditBonus,
     levelBonus: levelBonus > 0 ? levelBonus : undefined,
-    message: `Quest abgeschlossen! +${quest.rewardAmount + levelBonus} DFAITH Credits gutgeschrieben.`,
+    creditBonus: creditBonus > 0 ? creditBonus : undefined,
+    message: `Quest abgeschlossen! +${quest.rewardAmount + levelBonus + creditBonus} DFAITH Credits gutgeschrieben.`,
   });
 }
 

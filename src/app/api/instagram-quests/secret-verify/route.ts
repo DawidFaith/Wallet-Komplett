@@ -90,8 +90,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      rewardAmount: quest.rewardAmount + levelBonus,
+      rewardAmount: quest.rewardAmount + levelBonus + creditBonus,
       levelBonus: levelBonus > 0 ? levelBonus : undefined,
+      creditBonus: creditBonus > 0 ? creditBonus : undefined,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

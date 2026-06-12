@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
     await addUserXp(normalized, quest.reputationReward);
     await addUserReputationWithBonus(normalized, quest.creatorWallet, quest.reputationReward);
 
-    return NextResponse.json({ success: true, rewardAmount: quest.rewardAmount + levelBonus, levelBonus: levelBonus > 0 ? levelBonus : undefined });
+    return NextResponse.json({ success: true, rewardAmount: quest.rewardAmount + levelBonus + creditBonus, levelBonus: levelBonus > 0 ? levelBonus : undefined, creditBonus: creditBonus > 0 ? creditBonus : undefined });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('[facebook-secret-verify]', message);
