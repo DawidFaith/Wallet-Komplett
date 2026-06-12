@@ -491,11 +491,12 @@ function UpgradeModal({ collection, fromRarity, count, onClose, onUpgraded, wall
 
 // ─── Kollektion-Panel ─────────────────────────────────────────────────────────
 
-function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false }: {
+function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onShardsChanged }: {
   data: CollectionData;
   walletAddress: string;
   onRefresh: () => void;
   isOwner?: boolean;
+  onShardsChanged?: (newCount: number) => void;
 }) {
   const [fuseOpen, setFuseOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState<CollectibleRarity | null>(null);
@@ -636,7 +637,7 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false }: {
           shards={shards}
           walletAddress={walletAddress}
           onClose={() => setFuseOpen(false)}
-          onFused={(_rarity, newShardsCount) => { setLocalShards(newShardsCount); onRefresh(); }}
+          onFused={(_rarity, newShardsCount) => { setLocalShards(newShardsCount); onShardsChanged?.(newShardsCount); onRefresh(); }}
         />
       )}
 
@@ -1319,6 +1320,7 @@ export default function CollectiblesTab() {
                     data={data}
                     walletAddress={walletAddress}
                     onRefresh={() => selectedArtist && loadArtistCollections(selectedArtist.artistWallet)}
+                    onShardsChanged={(n) => selectedArtist && setMyShards((prev) => ({ ...prev, [selectedArtist.artistWallet]: n }))}
                   />
                 ))
               )}
