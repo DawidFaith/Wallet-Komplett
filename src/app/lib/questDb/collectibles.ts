@@ -434,6 +434,21 @@ export async function getCollectiblesCreditBonus(
 }
 
 /**
+ * Gibt den maximal möglichen Credit-Bonus-Prozentsatz für einen Artist zurück.
+ * Worst-Case: alle Fans haben Mythic (Multiplikator = 1.0 = 100 %).
+ * Wird beim Quest-Erstellen verwendet, um das Bonus-Budget vorab zu reservieren.
+ */
+export async function getMaxPossibleCreditBonusPct(artistWallet: string): Promise<number> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT max_credit_bonus_percent
+    FROM collectible_collections
+    WHERE artist_wallet = ${artistWallet.toLowerCase()} AND is_active = true
+  `;
+  return rows.reduce((sum, r) => sum + (Number(r.max_credit_bonus_percent) || 0), 0);
+}
+
+/**
  * Zahlt den Collectibles-Credit-Bonus für einen Quest-Abschluss aus.
  * Abgezogen von: 1) Quest-Bonus-Budget, 2) Artist-Guthaben.
  * Gibt 0 zurück wenn kein Guthaben vorhanden.

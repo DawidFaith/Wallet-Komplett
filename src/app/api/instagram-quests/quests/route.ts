@@ -14,6 +14,7 @@ import {
   loadCompletionsByWallet,
   loadQuestIndex,
   QuestDetail,
+  getMaxPossibleCreditBonusPct,
 } from '../../../lib/questDb';
 import { randomUUID } from 'crypto';
 
@@ -73,14 +74,18 @@ export async function POST(req: NextRequest) {
   const max = Math.max(1, Math.min(1000, Number(maxCompletions) || 10));
   const baseBudget = reward * max;
   const bonusBudgetNum = Math.max(0, Math.round((Number(bonusBudget) || 0) * 100) / 100);
-  const totalBudget = baseBudget + bonusBudgetNum;
+  // Collectibles-Reserve: Worst-Case (alle Fans mit Mythic) vorab sperren
+  const maxCollBonusPct = await getMaxPossibleCreditBonusPct(creatorWallet.toLowerCase()).catch(() => 0);
+  const collectiblesReserve = Math.ceil(reward * max * maxCollBonusPct / 100 * 100) / 100;
+  const bonusBudgetTotal = bonusBudgetNum + collectiblesReserve;
+  const totalBudget = baseBudget + bonusBudgetTotal;
 
   try {
     // Budget prüfen
     const balance = await getDfaithCredits(creatorWallet.toLowerCase());
     if (balance < totalBudget) {
       return NextResponse.json(
-        { error: `Nicht genug DFAITH Credits. Benötigt: ${totalBudget}, Verfügbar: ${balance}` },
+        { error: `Nicht genug DFAITH Credits. Benötigt: ${totalBudget} (inkl. ${collectiblesReserve} Collectibles-Reserve), Verfügbar: ${balance}` },
         { status: 402 }
       );
     }
@@ -123,7 +128,7 @@ export async function POST(req: NextRequest) {
       creditsRefunded: false,
       reputationReward: Math.max(0, Math.round(Number(reputationReward) || 50)),
       storyToken: type === 'dm_share' ? (providedStoryToken ?? randomUUID()) : null,
-      bonusBudget: bonusBudgetNum,
+      bonusBudget: bonusBudgetTotal,
     };
 
     // Budget sperren (atomisch)

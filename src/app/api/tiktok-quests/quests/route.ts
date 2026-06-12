@@ -13,6 +13,7 @@ import {
   saveQuestDetail,
   lockQuestBudget,
   getDfaithCredits,
+  getMaxPossibleCreditBonusPct,
   loadCompletionsByWallet,
   getUserProfile,
   QuestDetail,
@@ -208,14 +209,18 @@ export async function POST(req: NextRequest) {
   const maxCompletionsNum = Number(maxCompletions) || 10;
   const baseBudget = rewardAmountNum * maxCompletionsNum;
   const bonusBudgetNum = Math.max(0, Math.round((Number(bonusBudget) || 0) * 100) / 100);
-  const totalBudget = baseBudget + bonusBudgetNum;
+  // Collectibles-Reserve: Worst-Case (alle Fans mit Mythic) vorab sperren
+  const maxCollBonusPct = await getMaxPossibleCreditBonusPct(creatorWallet.toLowerCase()).catch(() => 0);
+  const collectiblesReserve = Math.ceil(rewardAmountNum * maxCompletionsNum * maxCollBonusPct / 100 * 100) / 100;
+  const bonusBudgetTotal = bonusBudgetNum + collectiblesReserve;
+  const totalBudget = baseBudget + bonusBudgetTotal;
 
   // Creator-Guthaben prüfen
   const creatorCredits = await getDfaithCredits(creatorWallet.toLowerCase());
   if (creatorCredits < totalBudget) {
     return NextResponse.json(
       {
-        error: `Nicht genug Credits. Du brauchst ${totalBudget} DFAITH (${rewardAmountNum} × ${maxCompletionsNum} Teilnehmer + ${bonusBudgetNum} Bonus-Budget), hast aber nur ${creatorCredits}.`,
+        error: `Nicht genug Credits. Du brauchst ${totalBudget} DFAITH (${rewardAmountNum} × ${maxCompletionsNum} Teilnehmer + ${bonusBudgetNum} Bonus-Budget + ${collectiblesReserve} Collectibles-Reserve), hast aber nur ${creatorCredits}.`,
       },
       { status: 400 }
     );
@@ -269,7 +274,7 @@ export async function POST(req: NextRequest) {
     creditsRefunded: false,
     secretCode: finalQuestType === 'secret' ? (secretCode?.trim() ?? null) : null,
     reputationReward: Math.max(0, Math.round(Number(reputationReward) || 50)),
-    bonusBudget: bonusBudgetNum,
+    bonusBudget: bonusBudgetTotal,
     createdAt: now,
     updatedAt: now,
   };
