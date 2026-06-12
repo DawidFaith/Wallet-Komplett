@@ -598,8 +598,18 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
                 />
               );
             }
-            // Nicht besessen → ausgegraut anzeigen
+            // Nicht besessen → ausgegraut mit Attributen anzeigen
             const cfg = RARITY_CONFIG[rarity];
+            const slots = getBonusSlots(collection.primaryBonus ?? 'rep');
+            const activeCount = getActiveSlotsCount(rarity);
+            const bonusValues: Record<BonusType, number> = {
+              rep:     Math.round(collection.maxRepBonusPercent    * cfg.repMultiplier),
+              credits: Math.round((collection.maxCreditBonusPercent ?? 0) * cfg.repMultiplier),
+              shard:   Math.round((collection.maxShardChanceBonus ?? 0)  * cfg.repMultiplier),
+            };
+            const bonusColors: Record<BonusType, string> = {
+              rep: 'text-amber-400', credits: 'text-green-400', shard: 'text-blue-400',
+            };
             return (
               <div key={rarity} className="relative flex flex-col items-center rounded-2xl border-2 border-zinc-800 bg-zinc-900/30 p-3 w-[140px] shrink-0 opacity-40">
                 <div className="w-20 h-20 rounded-xl border border-zinc-800 overflow-hidden mb-2 flex items-center justify-center bg-zinc-800/40">
@@ -608,7 +618,17 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
                     : <GiCrystalShine size={36} className="text-zinc-600" />}
                 </div>
                 <span className={`text-[9px] font-black tracking-[0.3em] uppercase ${cfg.textColor} mb-0.5`}>{cfg.label}</span>
-                <span className="text-[11px] font-bold text-zinc-500 text-center line-clamp-2 leading-tight">0×</span>
+                <span className="text-[11px] font-bold text-zinc-500 text-center line-clamp-2 leading-tight mb-1">0×</span>
+                <div className="flex flex-col items-center gap-0.5 w-full">
+                  {slots.slice(0, activeCount).map((bonusType) => {
+                    const val = bonusValues[bonusType];
+                    return val > 0 ? (
+                      <span key={bonusType} className={`text-[9px] font-semibold ${bonusColors[bonusType]}/60`}>
+                        +{val}% {BONUS_LABELS[bonusType]}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
               </div>
             );
           })}
