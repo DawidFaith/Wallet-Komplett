@@ -69,6 +69,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const [bonusPercentByCreator, setBonusPercentByCreator] = useState<Record<string, number>>({});
   const [creditBonusByCreator, setCreditBonusByCreator] = useState<Record<string, number>>({});
   const [shardBonusByCreator, setShardBonusByCreator] = useState<Record<string, number>>({});
+  const [repBonusByCreator, setRepBonusByCreator] = useState<Record<string, number>>({});
 
   // Celebration nach Quest-Abschluss
   const [celebration, setCelebration] = useState<{ amount: number; questTitle: string; reputationReward?: number; levelBonus?: number; shardDropped?: boolean } | null>(null);
@@ -196,13 +197,13 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
           if (!res.ok) return [aw, 0, 0] as const;
           const data = await res.json() as {
             data?: {
-              collection: { maxCreditBonusPercent?: number; maxShardChanceBonus?: number; primaryBonus?: string };
+              collection: { maxCreditBonusPercent?: number; maxShardChanceBonus?: number; maxRepBonusPercent?: number; primaryBonus?: string };
               ownedByRarity: Record<string, number>;
             }[];
           };
           // Effektiver Bonus: für jede Kollektion die beste besessene Rarity ermitteln und Multiplikator anwenden
           // Slot-Logik: Slot 0 = primaryBonus (immer), Slot 1 = ab Epic, Slot 2 = ab Mythic
-          let totalCredit = 0, maxShard = 0;
+          let totalCredit = 0, maxShard = 0, totalRep = 0;
           for (const d of (data.data ?? [])) {
             const owned = Object.entries(d.ownedByRarity ?? {}).filter(([, c]) => c > 0).map(([r]) => r);
             if (owned.length === 0) continue;
@@ -217,6 +218,9 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
             const activeCount = RARITY_ORD.indexOf(bestRarity) >= RARITY_ORD.indexOf('mythic') ? 3
               : RARITY_ORD.indexOf(bestRarity) >= RARITY_ORD.indexOf('epic') ? 2 : 1;
             const activeSlots = slots.slice(0, activeCount);
+            if (activeSlots.includes('rep')) {
+              totalRep += Math.round((d.collection.maxRepBonusPercent ?? 0) * mult);
+            }
             if (activeSlots.includes('credits')) {
               totalCredit += Math.round((d.collection.maxCreditBonusPercent ?? 0) * mult);
             }
@@ -225,13 +229,14 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               if (shardBonus > maxShard) maxShard = shardBonus;
             }
           }
-          return [aw, totalCredit, maxShard] as const;
+          return [aw, totalCredit, maxShard, totalRep] as const;
         } catch { return [aw, 0, 0] as const; }
       })
     ).then(results => {
       if (cancelled) return;
       setCreditBonusByCreator(Object.fromEntries(results.map(([w, c]) => [w, c])));
       setShardBonusByCreator(Object.fromEntries(results.map(([w, , s]) => [w, s])));
+      setRepBonusByCreator(Object.fromEntries(results.map(([w, , , r]) => [w, r ?? 0])));
     });
     return () => { cancelled = true; };
   }, [walletAddress, quests, bundles, filterCreator]);
@@ -242,6 +247,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
     const w = creatorWallet.toLowerCase();
     return (bonusPercentByCreator[w] ?? 0) + (creditBonusByCreator[w] ?? 0);
   };
+  /** Collectibles REP-Bonus für Anzeige in Quest-Karten */
+  const getRepBonusPercent = (creatorWallet: string) => repBonusByCreator[creatorWallet.toLowerCase()] ?? 0;
 
   const handleVerify = async (questId: string) => {
     const quest = quests.find((q) => q.id === questId) ?? null;
@@ -502,18 +509,18 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               renderQuestCard={(quest) => {
                 const isCompleted = completedIds.includes(quest.id);
                 if (quest.platform === 'youtube') {
-                  return <YoutubeQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.youtube} onComplete={handleVerify} rewardTokenName={tokenName} levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)} language={language} />;
+                  return <YoutubeQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.youtube} onComplete={handleVerify} rewardTokenName={tokenName} repBonusPercent={getRepBonusPercent(quest.creatorWallet)} levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)} language={language} />;
                 }
                 if (quest.platform === 'tiktok') {
                   return quest.type === 'engagement'
-                    ? <TiktokEngagementQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.tiktok} onComplete={handleTikTokVerify} rewardTokenName={tokenName} levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)} language={language} />
-                    : <TiktokQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.tiktok} onComplete={handleTikTokVerify} rewardTokenName={tokenName} levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)} language={language} />;
+                    ? <TiktokEngagementQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.tiktok} onComplete={handleTikTokVerify} rewardTokenName={tokenName} repBonusPercent={getRepBonusPercent(quest.creatorWallet)} levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)} language={language} />
+                    : <TiktokQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.tiktok} onComplete={handleTikTokVerify} rewardTokenName={tokenName} repBonusPercent={getRepBonusPercent(quest.creatorWallet)} levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)} language={language} />;
                 }
                 if (quest.platform === 'instagram') {
-                  return <InstagramQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.instagram} onComplete={handleInstagramVerify} rewardTokenName={tokenName} levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)} language={language} />;
+                  return <InstagramQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.instagram} onComplete={handleInstagramVerify} rewardTokenName={tokenName} repBonusPercent={getRepBonusPercent(quest.creatorWallet)} levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)} language={language} />;
                 }
                 if (quest.platform === 'facebook') {
-                  return <FacebookQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.facebook} onComplete={handleFacebookVerify} rewardTokenName={tokenName} levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)} language={language} />;
+                  return <FacebookQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.facebook} onComplete={handleFacebookVerify} rewardTokenName={tokenName} repBonusPercent={getRepBonusPercent(quest.creatorWallet)} levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)} language={language} />;
                 }
                 return null;
               }}

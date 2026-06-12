@@ -22,6 +22,7 @@ import {
   addDfaithCredits,
   addUserXp,
   addUserReputation,
+  addUserReputationWithBonus,
   payLevelBonus,
   payQuestCreditBonus,
   QuestCompletion,
@@ -208,7 +209,7 @@ export async function POST(req: NextRequest) {
       });
       await addDfaithCredits(normalized, quest.rewardAmount);
       await addUserXp(normalized, 10);
-      await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
+      await addUserReputationWithBonus(normalized, quest.creatorWallet, quest.reputationReward);
       await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, questId);
       await deleteTikTokEngagementVerification(questId, normalized);
 

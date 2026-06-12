@@ -14,6 +14,7 @@ interface InstagramQuestCardProps {
   onComplete: (questId: string) => void;
   rewardTokenName?: string | null;
   levelBonusPercent?: number;
+  repBonusPercent?: number;
   language?: Lang;
 }
 
@@ -26,7 +27,7 @@ const QUEST_TYPE_CONFIG = {
   dm_share:   { label: 'Story Quest',      icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-pink-600 to-purple-600',  btn: 'Story Quest starten' },
 } as const;
 
-export default function InstagramQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0, language = 'de' }: InstagramQuestCardProps) {
+export default function InstagramQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0, repBonusPercent = 0, language = 'de' }: InstagramQuestCardProps) {
   const tokenLabel = rewardTokenName ?? 'D.FAITH';
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
   const expiry = formatExpiry(quest.expiresAt);
@@ -34,6 +35,7 @@ export default function InstagramQuestCard({ quest, isCompleted, isVerified = tr
   const typeConfig = QUEST_TYPE_CONFIG[quest.type as keyof typeof QUEST_TYPE_CONFIG] ?? QUEST_TYPE_CONFIG.comment;
   const levelBonusAmount = Math.round(quest.rewardAmount * levelBonusPercent) / 100;
   const displayReward = quest.rewardAmount + levelBonusAmount;
+  const displayRep = Math.round((quest.reputationReward ?? 0) * (1 + repBonusPercent / 100));
 
   return (
     <div className={`bg-zinc-900 rounded-2xl border border-pink-600/40 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
@@ -60,7 +62,7 @@ export default function InstagramQuestCard({ quest, isCompleted, isVerified = tr
           )}
           {(quest.reputationReward ?? 0) > 0 && (
             <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-              <FaStar size={9} /> +{quest.reputationReward} REP
+              <FaStar size={9} /> +{displayRep} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
             </div>
           )}
         </div>

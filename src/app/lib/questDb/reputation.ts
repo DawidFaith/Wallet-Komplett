@@ -933,3 +933,20 @@ export async function getContestLeaderboard(
     };
   });
 }
+
+/**
+ * Vergabe von Reputation mit automatischem Collectibles-REP-Bonus.
+ * Ersatz für addUserReputation in allen Quest-Completion-Routen.
+ */
+export async function addUserReputationWithBonus(
+  walletAddress: string,
+  artistWallet: string,
+  baseAmount: number,
+): Promise<void> {
+  const { getCollectiblesRepBonus } = await import('./collectibles');
+  const repBonusPct = await getCollectiblesRepBonus(walletAddress, artistWallet).catch(() => 0);
+  const boosted = repBonusPct > 0
+    ? Math.round(baseAmount * (1 + repBonusPct / 100))
+    : baseAmount;
+  await addUserReputation(walletAddress, artistWallet, boosted);
+}

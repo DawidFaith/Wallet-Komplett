@@ -9,6 +9,7 @@ import {
   addDfaithCredits,
   addUserXp,
   addUserReputation,
+  addUserReputationWithBonus,
   payLevelBonus,
   payQuestCreditBonus,
   QuestCompletion,
@@ -206,7 +207,7 @@ export async function POST(req: NextRequest) {
   const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
   const creditBonus = await payQuestCreditBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
   // Reputation beim Artist erhöhen
-  await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
+  await addUserReputationWithBonus(normalized, quest.creatorWallet, quest.reputationReward);
   // XP gutschreiben (legacy)
   await addUserXp(normalized, quest.reputationReward);
 

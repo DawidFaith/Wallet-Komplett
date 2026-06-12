@@ -24,6 +24,7 @@ import {
   addDfaithCredits,
   addUserXp,
   addUserReputation,
+  addUserReputationWithBonus,
   QuestCompletion,
 } from '../../../lib/questDb';
 
@@ -218,7 +219,7 @@ export async function POST(req: NextRequest) {
       });
       await addDfaithCredits(normalized, earnedReward);
       await addUserXp(normalized, verifiedCount * 5);
-      await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
+      await addUserReputationWithBonus(normalized, quest.creatorWallet, quest.reputationReward);
       await deleteTikTokEngagementVerification(questId, normalized);
 
       return NextResponse.json({

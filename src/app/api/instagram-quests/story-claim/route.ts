@@ -20,6 +20,7 @@ import {
   saveCompletion,
   addDfaithCredits,
   addUserReputation,
+  addUserReputationWithBonus,
   payLevelBonus,
   payQuestCreditBonus,
   type QuestCompletion,
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
     const levelBonus = await payLevelBonus(wallet, quest.creatorWallet, quest.rewardAmount);
     const creditBonus = await payQuestCreditBonus(wallet, quest.creatorWallet, quest.rewardAmount, quest.id);
     if ((quest.reputationReward ?? 0) > 0) {
-      await addUserReputation(wallet, quest.creatorWallet, quest.reputationReward!);
+      await addUserReputationWithBonus(wallet, quest.creatorWallet, quest.reputationReward!);
     }
 
     // Completions-Zähler ist bereits durch saveCompletion (ON CONFLICT DO NOTHING + trigger) erhöht.

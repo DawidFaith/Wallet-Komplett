@@ -18,6 +18,7 @@ import {
   savePendingReward,
   addUserXp,
   addUserReputation,
+  addUserReputationWithBonus,
   payLevelBonus,
   payQuestCreditBonus,
   getUserProfile,
@@ -255,7 +256,7 @@ export async function POST(req: NextRequest) {
           createdAt: now,
         });
         await addUserXp(normalized, quest.reputationReward);
-        await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
+        await addUserReputationWithBonus(normalized, quest.creatorWallet, quest.reputationReward);
         await deleteInstagramLikeVerification(questId, normalized);
 
         return NextResponse.json({
@@ -309,7 +310,7 @@ export async function POST(req: NextRequest) {
           createdAt: now,
         });
         await addUserXp(normalized, verifiedCount < 2 ? Math.round(quest.reputationReward / 2) : quest.reputationReward);
-        await addUserReputation(normalized, quest.creatorWallet, verifiedCount < 2 ? Math.round(quest.reputationReward / 2) : quest.reputationReward);
+        await addUserReputationWithBonus(normalized, quest.creatorWallet, verifiedCount < 2 ? Math.round(quest.reputationReward / 2) : quest.reputationReward);
 
         // Nicht verdiente Hälfte sofort an Creator zurückbuchen
         if (refundToCreator > 0) {
@@ -371,7 +372,7 @@ export async function POST(req: NextRequest) {
         createdAt: now,
       });
       await addUserXp(normalized, quest.reputationReward);
-      await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
+      await addUserReputationWithBonus(normalized, quest.creatorWallet, quest.reputationReward);
       await deleteInstagramLikeVerification(questId, normalized);
 
       const actionDone = quest.type === 'like' ? 'geliked' : 'gespeichert';

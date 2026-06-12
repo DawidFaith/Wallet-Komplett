@@ -23,6 +23,7 @@ import {
   savePendingReward,
   addUserXp,
   addUserReputation,
+  addUserReputationWithBonus,
   payLevelBonus,
   payQuestCreditBonus,
   deleteInstagramDmVerification,
@@ -62,7 +63,7 @@ async function completeStoryQuest({
   const creditBonus = await payQuestCreditBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
   await savePendingReward({ walletAddress: normalized, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId, createdAt: now });
   await addUserXp(normalized, quest.reputationReward);
-  await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
+  await addUserReputationWithBonus(normalized, quest.creatorWallet, quest.reputationReward);
   await deleteInstagramDmVerification(questId, normalized);
   return NextResponse.json({
     success: true,

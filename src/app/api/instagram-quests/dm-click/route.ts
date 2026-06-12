@@ -28,6 +28,7 @@ import {
   savePendingReward,
   addUserXp,
   addUserReputation,
+  addUserReputationWithBonus,
   payLevelBonus,
   payQuestCreditBonus,
   deleteInstagramDmVerification,
@@ -86,7 +87,7 @@ async function processToken(token: string): Promise<
   const creditBonus = await payQuestCreditBonus(verif.walletAddress, quest.creatorWallet, quest.rewardAmount, quest.id);
   await savePendingReward({ walletAddress: verif.walletAddress, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId: verif.questId, createdAt: now });
   await addUserXp(verif.walletAddress, quest.reputationReward);
-  await addUserReputation(verif.walletAddress, quest.creatorWallet, quest.reputationReward);
+  await addUserReputationWithBonus(verif.walletAddress, quest.creatorWallet, quest.reputationReward);
   await deleteInstagramDmVerification(verif.questId, verif.walletAddress);
 
   return { ok: true, rewardAmount: quest.rewardAmount + levelBonus, questTitle: quest.videoTitle, message: `+${quest.rewardAmount + levelBonus} D.FAITH Credits wurden gutgeschrieben.` };

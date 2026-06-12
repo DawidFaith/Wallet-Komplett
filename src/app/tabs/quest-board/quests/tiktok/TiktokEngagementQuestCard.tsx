@@ -16,10 +16,11 @@ interface TiktokEngagementQuestCardProps {
   onComplete: (questId: string) => void;
   rewardTokenName?: string | null;
   levelBonusPercent?: number;
+  repBonusPercent?: number;
   language?: Lang;
 }
 
-export default function TiktokEngagementQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0, language = 'de' }: TiktokEngagementQuestCardProps) {
+export default function TiktokEngagementQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0, repBonusPercent = 0, language = 'de' }: TiktokEngagementQuestCardProps) {
   const tokenLabel = rewardTokenName ?? 'D.FAITH';
   const progress = getProgressPercent(quest.completions, quest.maxCompletions);
   const isFull = quest.completions >= quest.maxCompletions;
@@ -27,6 +28,7 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, isVerifi
   const levelBonusAmount = Math.round(quest.rewardAmount * levelBonusPercent) / 100;
   const displayReward = quest.rewardAmount + levelBonusAmount;
   const rewardPer = Math.round((displayReward / 3) * 100) / 100;
+  const displayRep = Math.round((quest.reputationReward ?? 0) * (1 + repBonusPercent / 100));
 
   return (
     <div className={`bg-zinc-900 rounded-2xl border border-cyan-600/40 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
@@ -57,7 +59,7 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, isVerifi
             )}
             {(quest.reputationReward ?? 0) > 0 && (
               <div className="bg-black/70 text-amber-300 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                <FaStar size={9} /> +{quest.reputationReward} REP
+                <FaStar size={9} /> +{displayRep} REP{repBonusPercent > 0 && ` (+${repBonusPercent}%)`}
               </div>
             )}
           </div>

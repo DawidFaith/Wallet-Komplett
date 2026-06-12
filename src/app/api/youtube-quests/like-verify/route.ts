@@ -12,6 +12,7 @@ import {
   addDfaithCredits,
   addUserXp,
   addUserReputation,
+  addUserReputationWithBonus,
   payLevelBonus,
   payQuestCreditBonus,
   QuestCompletion,
@@ -202,7 +203,7 @@ export async function POST(req: NextRequest) {
     const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
     const creditBonus = await payQuestCreditBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
     await addUserXp(normalized, quest.reputationReward);
-    await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
+    await addUserReputationWithBonus(normalized, quest.creatorWallet, quest.reputationReward);
     await deleteLikeVerification(questId, normalized);
 
     return NextResponse.json({ success: true, rewardAmount: quest.rewardAmount + levelBonus, levelBonus: levelBonus > 0 ? levelBonus : undefined });

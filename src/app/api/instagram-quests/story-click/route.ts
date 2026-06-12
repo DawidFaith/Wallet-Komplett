@@ -18,6 +18,7 @@ import {
   saveCompletion,
   addDfaithCredits,
   addUserReputation,
+  addUserReputationWithBonus,
   addUserXp,
   savePendingReward,
   payLevelBonus,
@@ -104,7 +105,7 @@ export async function GET(req: NextRequest) {
     await savePendingReward({ walletAddress: verif.walletAddress, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId: quest.id, createdAt: now });
     await addUserXp(verif.walletAddress, quest.reputationReward);
     if ((quest.reputationReward ?? 0) > 0) {
-      await addUserReputation(verif.walletAddress, quest.creatorWallet, quest.reputationReward!);
+      await addUserReputationWithBonus(verif.walletAddress, quest.creatorWallet, quest.reputationReward!);
     }
     await deleteInstagramDmVerification(quest.id, verif.walletAddress);
     return html(buildRewardPage(quest.rewardAmount + levelBonus, quest.videoTitle, returnUrl));

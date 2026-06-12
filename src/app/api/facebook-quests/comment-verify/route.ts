@@ -30,6 +30,7 @@ import {
   savePendingReward,
   addUserXp,
   addUserReputation,
+  addUserReputationWithBonus,
   payLevelBonus,
   payQuestCreditBonus,
   getUserProfile,
@@ -217,7 +218,7 @@ export async function POST(req: NextRequest) {
     createdAt: now,
   });
   await addUserXp(normalized, quest.reputationReward);
-  await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
+  await addUserReputationWithBonus(normalized, quest.creatorWallet, quest.reputationReward);
 
   return NextResponse.json({
     success: true,

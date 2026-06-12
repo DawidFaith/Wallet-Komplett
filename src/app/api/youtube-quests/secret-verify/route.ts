@@ -7,6 +7,7 @@ import {
   addDfaithCredits,
   addUserXp,
   addUserReputation,
+  addUserReputationWithBonus,
   payLevelBonus,
   payQuestCreditBonus,
 } from '../../../lib/questDb';
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
     const levelBonus = await payLevelBonus(walletAddress, quest.creatorWallet, quest.rewardAmount, quest.id);
     const creditBonus = await payQuestCreditBonus(walletAddress, quest.creatorWallet, quest.rewardAmount, quest.id);
     await addUserXp(walletAddress, quest.reputationReward);
-    await addUserReputation(walletAddress, quest.creatorWallet, quest.reputationReward);
+    await addUserReputationWithBonus(walletAddress, quest.creatorWallet, quest.reputationReward);
 
     return NextResponse.json({ success: true, rewardAmount: quest.rewardAmount + levelBonus, levelBonus: levelBonus > 0 ? levelBonus : undefined });
   } catch (err) {
