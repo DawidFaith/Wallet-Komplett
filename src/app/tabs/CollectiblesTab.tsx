@@ -1273,15 +1273,63 @@ export default function CollectiblesTab() {
                   <p className="text-zinc-700 text-xs mt-1">Schließe Quest-Bundles ab um Shards zu sammeln!</p>
                 </div>
               ) : (
-                artistCollections.map((data) => (
-                  <CollectionPanel
-                    key={data.collection.id}
-                    data={data}
-                    walletAddress={walletAddress}
-                    onRefresh={() => selectedArtist && loadArtistCollections(selectedArtist.artistWallet)}
-                    onShardsChanged={(n) => selectedArtist && setMyShards((prev) => ({ ...prev, [selectedArtist.artistWallet]: n }))}
-                  />
-                ))
+                <>
+                  {/* ── Aktive Boni-Übersicht ───────────────────────────────── */}
+                  {(() => {
+                    // Tatsächliche Boni berechnen: höchste Rarity je Kollektion bestimmt den Multiplikator
+                    let totalRep = 0, totalCredits = 0, totalShard = 0;
+                    for (const d of artistCollections) {
+                      const { collection, ownedByRarity } = d;
+                      // Höchste besessene Rarity finden
+                      const ownedRarities = RARITY_ORDER.filter(r => (ownedByRarity[r] ?? 0) > 0);
+                      if (ownedRarities.length === 0) continue;
+                      const bestRarity = ownedRarities[ownedRarities.length - 1];
+                      const mult = RARITY_CONFIG[bestRarity].repMultiplier;
+                      const slots = getBonusSlots(collection.primaryBonus ?? 'rep');
+                      const activeCount = getActiveSlotsCount(bestRarity);
+                      // Nur aktive Slots (je nach Rarity) zählen
+                      for (let i = 0; i < activeCount; i++) {
+                        const bonusType = slots[i];
+                        if (bonusType === 'rep')     totalRep     += Math.round((collection.maxRepBonusPercent ?? 0)    * mult);
+                        if (bonusType === 'credits') totalCredits += Math.round((collection.maxCreditBonusPercent ?? 0) * mult);
+                        if (bonusType === 'shard')   totalShard   += Math.round((collection.maxShardChanceBonus ?? 0)   * mult);
+                      }
+                    }
+                    if (totalRep === 0 && totalCredits === 0 && totalShard === 0) return null;
+                    return (
+                      <div className="bg-white/[0.03] border border-amber-400/20 rounded-2xl p-4">
+                        <p className="text-[9px] font-black tracking-[0.3em] uppercase text-amber-400/50 mb-3">✨ Deine aktiven Boni</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-white/[0.03] rounded-xl p-3 text-center">
+                            <p className={`font-black text-2xl ${totalCredits > 0 ? 'text-amber-300' : 'text-zinc-700'}`}>+{totalCredits}%</p>
+                            <p className="text-zinc-500 text-[10px] mt-0.5">Credits</p>
+                          </div>
+                          <div className="bg-white/[0.03] rounded-xl p-3 text-center">
+                            <p className={`font-black text-2xl ${totalShard > 0 ? 'text-blue-300' : 'text-zinc-700'}`}>+{totalShard}%</p>
+                            <p className="text-zinc-500 text-[10px] mt-0.5">Shard-Chance</p>
+                          </div>
+                          <div className="bg-white/[0.03] rounded-xl p-3 text-center">
+                            <p className={`font-black text-2xl ${totalRep > 0 ? 'text-purple-300' : 'text-zinc-700'}`}>+{totalRep}%</p>
+                            <p className="text-zinc-500 text-[10px] mt-0.5">Reputation</p>
+                          </div>
+                        </div>
+                        <p className="text-zinc-700 text-[10px] mt-2.5 leading-relaxed">
+                          Basiert auf deinen besten Collectibles je Kollektion. Wird automatisch auf Quest-Rewards angerechnet.
+                        </p>
+                      </div>
+                    );
+                  })()}
+
+                  {artistCollections.map((data) => (
+                    <CollectionPanel
+                      key={data.collection.id}
+                      data={data}
+                      walletAddress={walletAddress}
+                      onRefresh={() => selectedArtist && loadArtistCollections(selectedArtist.artistWallet)}
+                      onShardsChanged={(n) => selectedArtist && setMyShards((prev) => ({ ...prev, [selectedArtist.artistWallet]: n }))}
+                    />
+                  ))}
+                </>
               )}
             </div>
           )
