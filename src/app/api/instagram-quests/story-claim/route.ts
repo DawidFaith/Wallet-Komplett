@@ -21,6 +21,7 @@ import {
   addDfaithCredits,
   addUserReputation,
   payLevelBonus,
+  payQuestCreditBonus,
   type QuestCompletion,
 } from '../../../lib/questDb';
 import { getDb } from '../../../lib/db';
@@ -89,6 +90,7 @@ export async function POST(req: NextRequest) {
     await saveCompletion(completion);
     await addDfaithCredits(wallet, quest.rewardAmount);
     const levelBonus = await payLevelBonus(wallet, quest.creatorWallet, quest.rewardAmount);
+    const creditBonus = await payQuestCreditBonus(wallet, quest.creatorWallet, quest.rewardAmount, quest.id);
     if ((quest.reputationReward ?? 0) > 0) {
       await addUserReputation(wallet, quest.creatorWallet, quest.reputationReward!);
     }

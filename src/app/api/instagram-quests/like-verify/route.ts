@@ -19,6 +19,7 @@ import {
   addUserXp,
   addUserReputation,
   payLevelBonus,
+  payQuestCreditBonus,
   getUserProfile,
   upsertInstagramLikeVerification,
   getInstagramLikeVerification,
@@ -245,6 +246,7 @@ export async function POST(req: NextRequest) {
         await saveCompletion(completion);
         await addDfaithCredits(normalized, quest.rewardAmount);
         const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
+        const creditBonus = await payQuestCreditBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
         await savePendingReward({
           walletAddress: normalized,
           amount: quest.rewardAmount,
@@ -258,9 +260,9 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          rewardAmount: quest.rewardAmount + levelBonus,
+          rewardAmount: quest.rewardAmount + levelBonus + creditBonus,
           levelBonus: levelBonus > 0 ? levelBonus : undefined,
-          message: `Quest abgeschlossen! Du hast das Reel geteilt. +${quest.rewardAmount + levelBonus} DFAITH Credits`,
+          message: `Quest abgeschlossen! Du hast das Reel geteilt. +${quest.rewardAmount + levelBonus + creditBonus} DFAITH Credits`,
         });
       }
 
@@ -298,6 +300,7 @@ export async function POST(req: NextRequest) {
         await saveCompletion(completion);
         await addDfaithCredits(normalized, earnedReward);
         const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, earnedReward, quest.id);
+        const creditBonus = await payQuestCreditBonus(normalized, quest.creatorWallet, earnedReward, quest.id);
         await savePendingReward({
           walletAddress: normalized,
           amount: earnedReward,
@@ -317,14 +320,14 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          rewardAmount: earnedReward + levelBonus,
+          rewardAmount: earnedReward + levelBonus + creditBonus,
           levelBonus: levelBonus > 0 ? levelBonus : undefined,
           likeVerified,
           saveVerified,
           partial: verifiedCount < 2,
           message: verifiedCount < 2
-            ? `Teilbelohnung: +${earnedReward + levelBonus} DFAITH Credits (${verifiedCount}/2 Aktionen erkannt)`
-            : `Quest abgeschlossen! Like & Speichern erkannt. +${earnedReward + levelBonus} DFAITH Credits`,
+            ? `Teilbelohnung: +${earnedReward + levelBonus + creditBonus} DFAITH Credits (${verifiedCount}/2 Aktionen erkannt)`
+            : `Quest abgeschlossen! Like & Speichern erkannt. +${earnedReward + levelBonus + creditBonus} DFAITH Credits`,
         });
       }
 
@@ -359,6 +362,7 @@ export async function POST(req: NextRequest) {
       await saveCompletion(completion);
       await addDfaithCredits(normalized, quest.rewardAmount);
       const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
+      const creditBonus = await payQuestCreditBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
       await savePendingReward({
         walletAddress: normalized,
         amount: quest.rewardAmount,
@@ -373,9 +377,9 @@ export async function POST(req: NextRequest) {
       const actionDone = quest.type === 'like' ? 'geliked' : 'gespeichert';
       return NextResponse.json({
         success: true,
-        rewardAmount: quest.rewardAmount + levelBonus,
+        rewardAmount: quest.rewardAmount + levelBonus + creditBonus,
         levelBonus: levelBonus > 0 ? levelBonus : undefined,
-        message: `Quest abgeschlossen! Du hast das Reel ${actionDone}. +${quest.rewardAmount + levelBonus} DFAITH Credits`,
+        message: `Quest abgeschlossen! Du hast das Reel ${actionDone}. +${quest.rewardAmount + levelBonus + creditBonus} DFAITH Credits`,
       });
     }
 

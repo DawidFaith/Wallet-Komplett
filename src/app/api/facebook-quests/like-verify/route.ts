@@ -19,6 +19,7 @@ import {
   addUserXp,
   addUserReputation,
   payLevelBonus,
+  payQuestCreditBonus,
   getUserProfile,
   upsertFacebookLikeVerification,
   getFacebookLikeVerification,
@@ -197,6 +198,7 @@ export async function POST(req: NextRequest) {
       await saveCompletion(completion);
       await addDfaithCredits(normalized, quest.rewardAmount);
       const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
+      const creditBonus = await payQuestCreditBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
       await savePendingReward({
         walletAddress: normalized,
         amount: quest.rewardAmount,

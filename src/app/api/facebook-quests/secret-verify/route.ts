@@ -16,6 +16,7 @@ import {
   addUserXp,
   addUserReputation,
   payLevelBonus,
+  payQuestCreditBonus,
 } from '../../../lib/questDb';
 
 export async function POST(req: NextRequest) {
@@ -91,6 +92,7 @@ export async function POST(req: NextRequest) {
     });
     await addDfaithCredits(normalized, quest.rewardAmount);
     const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
+    const creditBonus = await payQuestCreditBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
     await savePendingReward({
       walletAddress: normalized,
       amount: quest.rewardAmount,

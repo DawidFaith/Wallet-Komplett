@@ -10,6 +10,7 @@ import {
   addUserXp,
   addUserReputation,
   payLevelBonus,
+  payQuestCreditBonus,
   QuestCompletion,
 } from '../../../lib/questDb';
 
@@ -203,6 +204,7 @@ export async function POST(req: NextRequest) {
   await addDfaithCredits(normalized, quest.rewardAmount);
   // Level-Bonus aus Artist-Guthaben (0 wenn kein Bonus konfiguriert oder zu wenig Guthaben)
   const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
+  const creditBonus = await payQuestCreditBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
   // Reputation beim Artist erhöhen
   await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
   // XP gutschreiben (legacy)
@@ -211,8 +213,9 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     success: true,
     comment: { text: foundComment.text, publishedAt: foundComment.publishedAt },
-    rewardAmount: quest.rewardAmount + levelBonus,
+    rewardAmount: quest.rewardAmount + levelBonus + creditBonus,
     levelBonus: levelBonus > 0 ? levelBonus : undefined,
+    creditBonus: creditBonus > 0 ? creditBonus : undefined,
     channelName: binding.channelName,
   });
 }

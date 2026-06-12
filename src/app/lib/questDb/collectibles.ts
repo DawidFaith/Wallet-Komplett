@@ -1,4 +1,5 @@
 import { getDb } from '../db';
+import { addDfaithCredits } from './credits';
 
 export type CollectibleRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic';
 
@@ -430,6 +431,41 @@ export async function getCollectiblesCreditBonus(
     value: Math.round(Number(r.max_credit_bonus_percent) * RARITY_CREDIT_MULTIPLIER[r.rarity as CollectibleRarity]),
     primaryBonus: r.primary_bonus as BonusType,
   }));
+}
+
+/**
+ * Zahlt den Collectibles-Credit-Bonus für einen Quest-Abschluss aus.
+ * Abgezogen von: 1) Quest-Bonus-Budget, 2) Artist-Guthaben.
+ * Gibt 0 zurück wenn kein Guthaben vorhanden.
+ */
+export async function payQuestCreditBonus(
+  fanWallet: string,
+  artistWallet: string,
+  baseReward: number,
+  questId?: string,
+): Promise<number> {
+  const creditBonusPct = await getCollectiblesCreditBonus(fanWallet, artistWallet).catch(() => 0);
+  if (creditBonusPct <= 0) return 0;
+  const bonus = Math.round(baseReward * creditBonusPct / 100 * 100) / 100;
+  if (bonus <= 0) return 0;
+  const sql = getDb();
+  // 1) Quest-Bonus-Budget
+  if (questId) {
+    const fromQuest = await sql`
+      UPDATE quests SET bonus_budget = bonus_budget - ${bonus}, updated_at = NOW()
+      WHERE id = ${questId} AND bonus_budget >= ${bonus}
+      RETURNING bonus_budget
+    `;
+    if (fromQuest.length > 0) { await addDfaithCredits(fanWallet, bonus); return bonus; }
+  }
+  // 2) Artist-Guthaben
+  const deducted = await sql`
+    UPDATE dfaith_credits SET balance = balance - ${bonus}, updated_at = NOW()
+    WHERE wallet_address = ${artistWallet.toLowerCase()} AND balance >= ${bonus}
+    RETURNING balance
+  `;
+  if (deducted.length > 0) { await addDfaithCredits(fanWallet, bonus); return bonus; }
+  return 0;
 }
 
 /** Aktiver Shard-Chance-Bonus – pro Kollektion bestes Collectible, Slot-Unlock beachten, dann summieren */

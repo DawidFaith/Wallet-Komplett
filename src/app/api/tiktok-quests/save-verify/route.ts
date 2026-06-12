@@ -18,6 +18,7 @@ import {
   addDfaithCredits,
   addUserXp,
   addUserReputation,
+  payQuestCreditBonus,
   QuestCompletion,
 } from '../../../lib/questDb';
 
@@ -169,6 +170,7 @@ export async function POST(req: NextRequest) {
         createdAt: now,
       });
       await addDfaithCredits(normalized, quest.rewardAmount);
+      const creditBonus = await payQuestCreditBonus(normalized, quest.creatorWallet, quest.rewardAmount, questId);
       await addUserXp(normalized, 5);
       await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);
       await deleteTikTokEngagementVerification(questId, normalized);
@@ -176,8 +178,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         saveVerified: true,
-        rewardAmount: quest.rewardAmount,
-        message: `Gespeichert verifiziert! Du erhältst ${quest.rewardAmount} DFAITH.`,
+        rewardAmount: quest.rewardAmount + creditBonus,
+        message: `Gespeichert verifiziert! Du erhältst ${quest.rewardAmount + creditBonus} DFAITH.`,
       });
     }
 

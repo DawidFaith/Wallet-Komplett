@@ -24,6 +24,7 @@ import {
   addUserXp,
   addUserReputation,
   payLevelBonus,
+  payQuestCreditBonus,
   deleteInstagramDmVerification,
   type QuestCompletion,
 } from '../../../lib/questDb';
@@ -58,6 +59,7 @@ async function completeStoryQuest({
   await saveCompletion(completion);
   await addDfaithCredits(normalized, quest.rewardAmount);
   const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
+  const creditBonus = await payQuestCreditBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
   await savePendingReward({ walletAddress: normalized, amount: quest.rewardAmount, reason: `Story Quest: ${quest.videoTitle}`, questId, createdAt: now });
   await addUserXp(normalized, quest.reputationReward);
   await addUserReputation(normalized, quest.creatorWallet, quest.reputationReward);

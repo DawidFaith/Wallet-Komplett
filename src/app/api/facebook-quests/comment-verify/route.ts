@@ -31,6 +31,7 @@ import {
   addUserXp,
   addUserReputation,
   payLevelBonus,
+  payQuestCreditBonus,
   getUserProfile,
   reserveQuestCommentSlot,
   getReservedQuestCommentSlot,
@@ -207,6 +208,7 @@ export async function POST(req: NextRequest) {
   // 9. Credits gutschreiben
   await addDfaithCredits(normalized, quest.rewardAmount);
   const levelBonus = await payLevelBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
+  const creditBonus = await payQuestCreditBonus(normalized, quest.creatorWallet, quest.rewardAmount, quest.id);
   await savePendingReward({
     walletAddress: normalized,
     amount: quest.rewardAmount,

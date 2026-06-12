@@ -23,6 +23,7 @@ import {
   addUserXp,
   addUserReputation,
   payLevelBonus,
+  payQuestCreditBonus,
   QuestCompletion,
 } from '../../../lib/questDb';
 
