@@ -146,8 +146,9 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
   const loadReferralStats = useCallback(async () => {
     if (!account?.address) return;
     setReferralStatsLoading(true);
-    // cache: no-store → immer frische Daten aus der DB
-    fetch(`/api/referral/stats?wallet=${encodeURIComponent(account.address)}`, { cache: 'no-store' })
+    // Timestamp als Cache-Buster → verhindert jede Art von HTTP-Caching
+    const url = `/api/referral/stats?wallet=${encodeURIComponent(account.address)}&_t=${Date.now()}`;
+    fetch(url, { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(d => setReferralStats(d && !d.error ? d : null))
       .catch(() => setReferralStats(null))
@@ -286,6 +287,9 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
       if (!res.ok) throw new Error(d.error ?? 'Fehler');
       if (d.total > 0) {
         setReferralClaimMsg(tFmt('ref.claimSuccess', lang, { amount: d.total.toFixed(2) }));
+        // Sofort den claimableCount auf 0 setzen damit der Button verschwindet
+        setReferralStats(prev => prev ? { ...prev, claimableCount: 0, claimableAmount: 0 } : prev);
+        // Dann frische Daten laden
         await loadReferralStats();
         await loadProfile();
       } else {
@@ -821,7 +825,12 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               return (
                 <button
                   key={artist.walletAddress}
-                  onClick={() => setSelectedArtist(isSelected ? null : artist)}
+                  onClick={() => {
+                    const next = isSelected ? null : artist;
+                    setSelectedArtist(next);
+                    // Bei Platform-Karte sofort Stats refreshen (Trigger-Level könnte geändert worden sein)
+                    if (next?.isPlatformUser) loadReferralStats();
+                  }}
                   className="flex flex-col items-center gap-2 shrink-0 w-16 group"
                 >
                   <div className="relative">
