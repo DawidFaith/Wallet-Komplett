@@ -26,6 +26,11 @@ async function ensureTables(sql: ReturnType<typeof getDb>) {
       updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
+  // Spalten nachrüsten falls Tabelle in älterer Version ohne sie erstellt wurde
+  await sql`ALTER TABLE referral_config ADD COLUMN IF NOT EXISTS trigger_level      INT           NOT NULL DEFAULT 10`;
+  await sql`ALTER TABLE referral_config ADD COLUMN IF NOT EXISTS max_referrals_paid INT           NOT NULL DEFAULT 100`;
+  await sql`ALTER TABLE referral_config ADD COLUMN IF NOT EXISTS is_active          BOOLEAN       NOT NULL DEFAULT TRUE`;
+  await sql`ALTER TABLE referral_config ADD COLUMN IF NOT EXISTS updated_at         TIMESTAMPTZ   NOT NULL DEFAULT NOW()`;
   await sql`
     INSERT INTO referral_config (id) VALUES ('default')
     ON CONFLICT (id) DO NOTHING
@@ -87,16 +92,19 @@ export async function POST(req: NextRequest) {
   const level = Math.max(1, Math.min(100, Math.round(Number(body.triggerLevel ?? 10))));
   const active = body.isActive !== false;
 
+  // UPSERT statt reinem UPDATE – stellt sicher dass der Row auch wirklich existiert
   await sql`
-    UPDATE referral_config
-    SET
-      reward_per_referral = ${reward},
-      max_referrals_paid  = ${maxPaid},
-      trigger_level       = ${level},
-      is_active           = ${active},
-      updated_at          = NOW()
-    WHERE id = 'default'
+    INSERT INTO referral_config (id, reward_per_referral, max_referrals_paid, trigger_level, is_active, updated_at)
+    VALUES ('default', ${reward}, ${maxPaid}, ${level}, ${active}, NOW())
+    ON CONFLICT (id) DO UPDATE SET
+      reward_per_referral = EXCLUDED.reward_per_referral,
+      max_referrals_paid  = EXCLUDED.max_referrals_paid,
+      trigger_level       = EXCLUDED.trigger_level,
+      is_active           = EXCLUDED.is_active,
+      updated_at          = EXCLUDED.updated_at
   `;
 
-  return NextResponse.json({ success: true });
+  // Gespeicherten Wert direkt zurückgeben zur Verifikation
+  const saved = await sql`SELECT * FROM referral_config WHERE id = 'default' LIMIT 1`;
+  return NextResponse.json({ success: true, saved: saved[0] ?? null });
 }

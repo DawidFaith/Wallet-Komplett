@@ -36,6 +36,11 @@ export async function GET(req: NextRequest) {
         updated_at          TIMESTAMPTZ   NOT NULL DEFAULT NOW()
       )
     `;
+    // Spalten nachrüsten falls Tabelle in älterer Version ohne sie erstellt wurde
+    await sql`ALTER TABLE referral_config ADD COLUMN IF NOT EXISTS trigger_level      INT           NOT NULL DEFAULT 10`;
+    await sql`ALTER TABLE referral_config ADD COLUMN IF NOT EXISTS max_referrals_paid INT           NOT NULL DEFAULT 100`;
+    await sql`ALTER TABLE referral_config ADD COLUMN IF NOT EXISTS is_active          BOOLEAN       NOT NULL DEFAULT TRUE`;
+    await sql`ALTER TABLE referral_config ADD COLUMN IF NOT EXISTS updated_at         TIMESTAMPTZ   NOT NULL DEFAULT NOW()`;
     await sql`INSERT INTO referral_config (id) VALUES ('default') ON CONFLICT (id) DO NOTHING`;
     const [stats, config] = await Promise.all([
       sql`
@@ -50,7 +55,7 @@ export async function GET(req: NextRequest) {
       sql`
         SELECT reward_per_referral, max_referrals_paid, trigger_level, is_active
         FROM referral_config WHERE id = 'default' LIMIT 1
-      `.catch(() => []),
+      `,
     ]);
 
     return NextResponse.json({
