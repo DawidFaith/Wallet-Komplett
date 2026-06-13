@@ -2117,7 +2117,14 @@ function ReferralSection({ secret, users }: { secret: string; users: AdminUser[]
         }),
       });
       if (!r.ok) throw new Error(await r.text());
-      setMsg('Gespeichert ✓');
+      const d = await r.json().catch(() => null);
+      const savedLevel = d?.saved?.trigger_level;
+      const savedReward = d?.saved?.reward_per_referral;
+      setMsg(
+        savedLevel != null
+          ? `Gespeichert ✓ (DB: Trigger-Level ${savedLevel}, Reward ${savedReward})`
+          : 'Gespeichert ✓',
+      );
       await load();
     } catch (e) {
       setMsg(`Fehler: ${e instanceof Error ? e.message : String(e)}`);
