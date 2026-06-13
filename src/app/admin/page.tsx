@@ -47,6 +47,7 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
   const [filterArtist, setFilterArtist] = useState<'all' | 'artist' | 'fan'>('all');
   const [toggling, setToggling] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [editingRewardToken, setEditingRewardToken] = useState<string | null>(null);
   const [rewardTokenInput, setRewardTokenInput] = useState('');
   const [savingRewardToken, setSavingRewardToken] = useState<string | null>(null);
@@ -178,6 +179,23 @@ export default function AdminPage() {
       setError(e instanceof Error ? e.message : 'Fehler beim Speichern');
     } finally {
       setSavingTokenMint(null);
+    }
+  };
+
+  const handleDeleteUser = async (walletAddress: string) => {
+    if (!confirm(`Account unwiderruflich löschen?\n\n${walletAddress}\n\nDies löscht Profil, Solana-Wallet, Reputation und Referrals.`)) return;
+    setDeleting(walletAddress);
+    try {
+      const res = await fetch(`/api/admin/users?walletAddress=${encodeURIComponent(walletAddress)}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-secret': secret },
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setUsers(prev => prev.filter(u => u.walletAddress !== walletAddress));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler beim Löschen');
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -547,6 +565,8 @@ export default function AdminPage() {
                   togglingStoryQuest={false}
                   onToggleStoryQuest={() => {}}
                   onToggleInviteAccepted={() => {}}
+                  deleting={deleting === user.walletAddress}
+                  onDelete={() => handleDeleteUser(user.walletAddress)}
                 />
               ))}
             </div>
@@ -1261,6 +1281,8 @@ function UserRow({
   togglingStoryQuest,
   onToggleStoryQuest,
   onToggleInviteAccepted,
+  deleting,
+  onDelete,
 }: {
   user: AdminUser;
   toggling: boolean;
@@ -1291,6 +1313,8 @@ function UserRow({
   togglingStoryQuest: boolean;
   onToggleStoryQuest: () => void;
   onToggleInviteAccepted: () => void;
+  deleting: boolean;
+  onDelete: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -1474,6 +1498,18 @@ function UserRow({
           )}
 
         </div>
+        {/* Löschen-Button */}
+        <button
+          onClick={onDelete}
+          disabled={deleting}
+          className="mt-1 flex items-center gap-1 text-xs text-red-700 hover:text-red-400 transition-colors disabled:opacity-50"
+          title="Account löschen"
+        >
+          {deleting
+            ? <span className="w-3 h-3 border border-red-500 border-t-transparent rounded-full animate-spin" />
+            : <FaTimes size={9} />}
+          {deleting ? 'Lösche…' : 'Account löschen'}
+        </button>
       </div>
     </div>
   );

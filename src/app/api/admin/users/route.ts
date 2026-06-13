@@ -64,3 +64,27 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  if (!checkAuth(req)) {
+    return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
+  }
+  const { searchParams } = new URL(req.url);
+  const walletAddress = searchParams.get('walletAddress')?.toLowerCase();
+  if (!walletAddress) {
+    return NextResponse.json({ error: 'walletAddress erforderlich' }, { status: 400 });
+  }
+  const sql = getDb();
+  try {
+    // Alle verknüpften Daten löschen
+    await sql`DELETE FROM solana_accounts    WHERE wallet_address = ${walletAddress}`;
+    await sql`DELETE FROM user_reputation    WHERE wallet_address = ${walletAddress}`;
+    await sql`DELETE FROM user_referrals     WHERE referrer_wallet = ${walletAddress} OR referred_wallet = ${walletAddress}`;
+    await sql`DELETE FROM pending_rewards    WHERE wallet_address = ${walletAddress}`.catch(() => {});
+    await sql`DELETE FROM user_profiles      WHERE wallet_address = ${walletAddress}`;
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
