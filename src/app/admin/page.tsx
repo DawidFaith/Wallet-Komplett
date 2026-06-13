@@ -607,7 +607,7 @@ export default function AdminPage() {
 
       {/* ── Referral Tab ─────────────────────────────────────────────────────── */}
       {activeTab === 'referral' && (
-        <ReferralSection secret={secret} />
+        <ReferralSection secret={secret} users={users} />
       )}
     </div>
   );
@@ -2013,7 +2013,7 @@ interface ReferralEntry {
   reward_amount: number | null;
 }
 
-function ReferralSection({ secret }: { secret: string }) {
+function ReferralSection({ secret, users }: { secret: string; users: AdminUser[] }) {
   const [config, setConfig] = useState<ReferralConfig | null>(null);
   const [stats, setStats] = useState<ReferralStats | null>(null);
   const [entries, setEntries] = useState<ReferralEntry[]>([]);
@@ -2021,6 +2021,44 @@ function ReferralSection({ secret }: { secret: string }) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+
+  // ── Reputation vergeben ──
+  const [repWallet, setRepWallet] = useState('');
+  const [repArtistWallet, setRepArtistWallet] = useState('');
+  const [repAmount, setRepAmount] = useState('100');
+  const [repGranting, setRepGranting] = useState(false);
+  const [repMsg, setRepMsg] = useState('');
+  const [repShowSuggestions, setRepShowSuggestions] = useState(false);
+  const [repArtistShowSuggestions, setRepArtistShowSuggestions] = useState(false);
+  const repSuggestions = (repWallet.trim().length === 0 ? users.slice(0, 20) : users.filter(u =>
+    u.walletAddress.toLowerCase().includes(repWallet.trim().toLowerCase()) || (u.displayName ?? '').toLowerCase().includes(repWallet.trim().toLowerCase())
+  )).slice(0, 8);
+  const repArtistSuggestions = (repArtistWallet.trim().length === 0 ? users.filter(u => u.isArtist).slice(0, 20) : users.filter(u =>
+    u.isArtist && (u.walletAddress.toLowerCase().includes(repArtistWallet.trim().toLowerCase()) || (u.displayName ?? '').toLowerCase().includes(repArtistWallet.trim().toLowerCase()))
+  )).slice(0, 8);
+
+  const handleGrantReputation = async () => {
+    setRepMsg('');
+    if (!repWallet.trim() || !repArtistWallet.trim()) { setRepMsg('Beide Felder ausfüllen'); return; }
+    const amt = Number(repAmount);
+    if (!isFinite(amt) || amt <= 0) { setRepMsg('Ungültiger Betrag'); return; }
+    setRepGranting(true);
+    try {
+      const r = await fetch('/api/admin/grant-reputation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ walletAddress: repWallet.trim(), artistWallet: repArtistWallet.trim(), amount: amt }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? 'Fehler');
+      setRepMsg(`✓ +${amt} REP → jetzt ${d.reputation} REP (Level ${d.level} – ${d.levelName})`);
+      await loadEntries();
+    } catch (e) {
+      setRepMsg(`Fehler: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setRepGranting(false);
+    }
+  };
 
   const [reward, setReward] = useState('');
   const [maxPaid, setMaxPaid] = useState('');
@@ -2219,6 +2257,83 @@ function ReferralSection({ secret }: { secret: string }) {
             </table>
           </div>
         )}
+      </div>
+
+      {/* ── Reputation manuell vergeben ── */}
+      <div className="bg-zinc-900 border border-violet-800/40 rounded-2xl p-6 space-y-4">
+        <h3 className="text-white font-bold text-base">🎯 Reputation vergeben (Test)</h3>
+        <p className="text-zinc-400 text-xs">Vergib manuell Reputation an einen User bei einem Artist — löst bei Erreichen des Trigger-Levels den Referral-Reward aus.</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* User-Wallet */}
+          <div className="relative">
+            <label className="text-zinc-400 text-xs block mb-1">User (Eingeladener)</label>
+            <input
+              value={repWallet}
+              onChange={e => { setRepWallet(e.target.value); setRepShowSuggestions(true); }}
+              onFocus={() => setRepShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setRepShowSuggestions(false), 150)}
+              placeholder="Wallet-Adresse oder Name…"
+              className="bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-xs w-full"
+            />
+            {repShowSuggestions && repSuggestions.length > 0 && (
+              <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden shadow-lg max-h-48 overflow-y-auto">
+                {repSuggestions.map(u => (
+                  <button key={u.walletAddress} onMouseDown={() => { setRepWallet(u.walletAddress); setRepShowSuggestions(false); }}
+                    className="w-full text-left px-3 py-2 text-xs hover:bg-zinc-700 text-zinc-200 flex items-center gap-2">
+                    <span className="font-semibold truncate">{u.displayName ?? u.walletAddress.slice(0, 14) + '…'}</span>
+                    <span className="text-zinc-500 truncate">{u.walletAddress.slice(0, 12)}…</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Artist-Wallet */}
+          <div className="relative">
+            <label className="text-zinc-400 text-xs block mb-1">Artist</label>
+            <input
+              value={repArtistWallet}
+              onChange={e => { setRepArtistWallet(e.target.value); setRepArtistShowSuggestions(true); }}
+              onFocus={() => setRepArtistShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setRepArtistShowSuggestions(false), 150)}
+              placeholder="Artist-Wallet oder Name…"
+              className="bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-xs w-full"
+            />
+            {repArtistShowSuggestions && repArtistSuggestions.length > 0 && (
+              <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden shadow-lg max-h-48 overflow-y-auto">
+                {repArtistSuggestions.map(u => (
+                  <button key={u.walletAddress} onMouseDown={() => { setRepArtistWallet(u.walletAddress); setRepArtistShowSuggestions(false); }}
+                    className="w-full text-left px-3 py-2 text-xs hover:bg-zinc-700 text-zinc-200 flex items-center gap-2">
+                    <span className="font-semibold truncate">{u.displayName ?? u.walletAddress.slice(0, 14) + '…'}</span>
+                    <span className="text-zinc-500 truncate">{u.walletAddress.slice(0, 12)}…</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Betrag */}
+          <div>
+            <label className="text-zinc-400 text-xs block mb-1">Reputation-Punkte</label>
+            <input
+              type="number" min="1" step="1"
+              value={repAmount}
+              onChange={e => setRepAmount(e.target.value)}
+              className="bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-xs w-full"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleGrantReputation}
+            disabled={repGranting}
+            className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-bold px-5 py-2 rounded-xl text-sm transition-colors">
+            {repGranting ? 'Vergebe…' : '+ Reputation vergeben'}
+          </button>
+          {repMsg && <span className={`text-xs ${repMsg.startsWith('Fehler') ? 'text-red-400' : 'text-emerald-400'}`}>{repMsg}</span>}
+        </div>
       </div>
     </div>
   );

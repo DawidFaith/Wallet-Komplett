@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 function checkAuth(req: NextRequest): boolean {
   const secret = req.headers.get('x-admin-secret');
