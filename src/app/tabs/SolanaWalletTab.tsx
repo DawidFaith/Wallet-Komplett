@@ -425,14 +425,28 @@ export default function SolanaWalletTab() {
         const check = await fetch(`/api/solana/create-account?walletAddress=${encodeURIComponent(userId!)}`);
         const checkData = await check.json();
         if (cancelled) return;
+
+        // Referral-Code aus localStorage — unabhängig ob Wallet neu oder bereits vorhanden
+        const referralCode = typeof window !== 'undefined' ? localStorage.getItem('dfaith_referral') : null;
+
         if (checkData.solanaAddress) {
           setSolanaAddr(checkData.solanaAddress);
+          // Referral für neue Wallets speichern (Fallback falls Webhook zu langsam war)
+          // createdAt wird vom Clerk-User-Objekt nicht direkt hier verfügbar sein,
+          // daher: nur wenn Wallet gerade eben via Webhook erstellt wurde (< 2 Min.)
+          if (referralCode && userId && checkData.createdRecently) {
+            fetch('/api/referral', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ referrerWallet: referralCode, referredWallet: userId }),
+            }).then(r => {
+              if (r.ok && typeof window !== 'undefined') localStorage.removeItem('dfaith_referral');
+            }).catch(() => {});
+          }
           return;
         }
         setCreating(true);
         setCreateError('');
-        // Referral-Code aus localStorage lesen
-        const referralCode = typeof window !== 'undefined' ? localStorage.getItem('dfaith_referral') : null;
         const res = await fetch('/api/solana/create-account', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

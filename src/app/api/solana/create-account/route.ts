@@ -21,10 +21,12 @@ export async function GET(req: Request) {
 
     const sql = getDb();
     const rows = await sql`
-      SELECT solana_address FROM solana_accounts WHERE wallet_address = ${walletAddress}
+      SELECT solana_address, created_at FROM solana_accounts WHERE wallet_address = ${walletAddress}
     `;
     if (rows.length > 0) {
-      return NextResponse.json({ solanaAddress: rows[0].solana_address });
+      const createdAt = new Date(rows[0].created_at as string).getTime();
+      const createdRecently = (Date.now() - createdAt) < 2 * 60 * 1000; // < 2 Minuten
+      return NextResponse.json({ solanaAddress: rows[0].solana_address, createdRecently });
     }
     return NextResponse.json({ solanaAddress: null });
   } catch (e) {

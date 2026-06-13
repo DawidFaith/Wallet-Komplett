@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import Navigation from "../Navigation";
 import QuestBoardTab from "../tabs/QuestBoardTab";
 import ProfileTab from "../tabs/ProfileTab";
@@ -20,6 +21,7 @@ function HomeContent() {
   const [activeTab, setActiveTab] = useState("profile");
   const language = useLang() as SupportedLanguage;
   const setLangCtx = useSetLang();
+  const { user } = useUser();
   // Artist der direkt vom Profil-Tab zum Quest Board weitergeleitet wird
   const [questArtist, setQuestArtist] = useState<ArtistInfo | null>(null);
   const [shopArtistWallet, setShopArtistWallet] = useState<string | null>(null);
@@ -28,6 +30,28 @@ function HomeContent() {
   const handleSetLanguage = (lang: SupportedLanguage) => {
     setLangCtx(lang);
   };
+
+  // Referral-Code aus localStorage speichern — nur für neue Konten (max. 10 Min. alt)
+  useEffect(() => {
+    if (!user?.id) return;
+    const referralCode = typeof window !== 'undefined' ? localStorage.getItem('dfaith_referral') : null;
+    if (!referralCode || referralCode === user.id.toLowerCase()) return;
+    // Konto-Alter prüfen: nur innerhalb von 10 Minuten nach Registrierung
+    const createdAt = user.createdAt ? new Date(user.createdAt).getTime() : 0;
+    const ageMs = Date.now() - createdAt;
+    if (ageMs > 10 * 60 * 1000) {
+      // Bestandskunde — Referral-Code verwerfen
+      if (typeof window !== 'undefined') localStorage.removeItem('dfaith_referral');
+      return;
+    }
+    fetch('/api/referral', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ referrerWallet: referralCode, referredWallet: user.id }),
+    }).then(r => {
+      if (r.ok && typeof window !== 'undefined') localStorage.removeItem('dfaith_referral');
+    }).catch(() => {});
+  }, [user?.id]);
 
   // Beim ersten Laden: gespeicherten Tab + Artist wiederherstellen (URL-Parameter hat Vorrang)
   useEffect(() => {
