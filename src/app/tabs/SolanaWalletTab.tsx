@@ -431,16 +431,15 @@ export default function SolanaWalletTab() {
 
         if (checkData.solanaAddress) {
           setSolanaAddr(checkData.solanaAddress);
-          // Referral für neue Wallets speichern (Fallback falls Webhook zu langsam war)
-          // createdAt wird vom Clerk-User-Objekt nicht direkt hier verfügbar sein,
-          // daher: nur wenn Wallet gerade eben via Webhook erstellt wurde (< 2 Min.)
-          if (referralCode && userId && checkData.createdRecently) {
+          // Referral-Fallback: immer versuchen zu speichern wenn Code im localStorage
+          // (home/page.tsx sollte ihn bereits gespeichert haben, ON CONFLICT DO NOTHING verhindert Duplikate)
+          if (referralCode && userId) {
             fetch('/api/referral', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ referrerWallet: referralCode, referredWallet: userId }),
             }).then(r => {
-              if (r.ok && typeof window !== 'undefined') localStorage.removeItem('dfaith_referral');
+              if ((r.ok || r.status === 400) && typeof window !== 'undefined') localStorage.removeItem('dfaith_referral');
             }).catch(() => {});
           }
           return;
@@ -455,8 +454,18 @@ export default function SolanaWalletTab() {
         const data = await res.json();
         if (cancelled) return;
         if (!res.ok) throw new Error(data.error ?? 'Fehler beim Erstellen des Accounts');
-        // Referral-Code nach Verwendung löschen
-        if (referralCode && typeof window !== 'undefined') localStorage.removeItem('dfaith_referral');
+        // Referral auch direkt via /api/referral speichern (zusätzlich zu referredBy im POST-Body)
+        if (referralCode && userId) {
+          fetch('/api/referral', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ referrerWallet: referralCode, referredWallet: userId }),
+          }).then(r => {
+            if ((r.ok || r.status === 400) && typeof window !== 'undefined') localStorage.removeItem('dfaith_referral');
+          }).catch(() => {});
+        } else if (typeof window !== 'undefined') {
+          localStorage.removeItem('dfaith_referral');
+        }
         setSolanaAddr(data.solanaAddress);
       } catch (e) {
         if (!cancelled) setCreateError(e instanceof Error ? e.message : 'Unbekannter Fehler');

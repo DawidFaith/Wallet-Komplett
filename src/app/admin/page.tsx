@@ -2003,9 +2003,21 @@ interface ReferralStats {
   pending_trigger: number;
 }
 
+interface ReferralEntry {
+  id: number;
+  referrer_wallet: string;
+  referred_wallet: string;
+  created_at: string;
+  triggered_at: string | null;
+  reward_paid: boolean;
+  reward_amount: number | null;
+}
+
 function ReferralSection({ secret }: { secret: string }) {
   const [config, setConfig] = useState<ReferralConfig | null>(null);
   const [stats, setStats] = useState<ReferralStats | null>(null);
+  const [entries, setEntries] = useState<ReferralEntry[]>([]);
+  const [entriesLoading, setEntriesLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
@@ -2037,7 +2049,20 @@ function ReferralSection({ secret }: { secret: string }) {
     }
   }, [secret]);
 
-  useEffect(() => { load(); }, [load]);
+  const loadEntries = useCallback(async () => {
+    setEntriesLoading(true);
+    try {
+      const r = await fetch('/api/admin/referrals', { headers: { 'x-admin-secret': secret } });
+      const d = await r.json();
+      setEntries(Array.isArray(d.referrals) ? d.referrals : []);
+    } catch {
+      setEntries([]);
+    } finally {
+      setEntriesLoading(false);
+    }
+  }, [secret]);
+
+  useEffect(() => { load(); loadEntries(); }, [load, loadEntries]);
 
   const save = async () => {
     setSaving(true);
@@ -2152,6 +2177,49 @@ function ReferralSection({ secret }: { secret: string }) {
           </div>
         </div>
       )}
+
+      {/* Referral-Einträge Tabelle */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-bold text-base">🗂 Alle Referral-Einträge ({entries.length})</h3>
+          <button onClick={loadEntries} disabled={entriesLoading}
+            className="text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 rounded-lg px-3 py-1 transition-colors">
+            {entriesLoading ? 'Lädt…' : '↺ Aktualisieren'}
+          </button>
+        </div>
+        {entriesLoading ? (
+          <div className="text-zinc-500 text-sm">Lade…</div>
+        ) : entries.length === 0 ? (
+          <div className="text-zinc-500 text-sm italic">Keine Einträge vorhanden</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead>
+                <tr className="text-zinc-500 border-b border-zinc-800">
+                  <th className="pb-2 pr-3">ID</th>
+                  <th className="pb-2 pr-3">Referrer (Einlader)</th>
+                  <th className="pb-2 pr-3">Referred (Eingeladen)</th>
+                  <th className="pb-2 pr-3">Erstellt</th>
+                  <th className="pb-2 pr-3">Triggered</th>
+                  <th className="pb-2">Bezahlt</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map(e => (
+                  <tr key={e.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
+                    <td className="py-1.5 pr-3 text-zinc-500">{e.id}</td>
+                    <td className="py-1.5 pr-3 font-mono text-amber-300 max-w-[160px] truncate" title={e.referrer_wallet}>{e.referrer_wallet}</td>
+                    <td className="py-1.5 pr-3 font-mono text-sky-300 max-w-[160px] truncate" title={e.referred_wallet}>{e.referred_wallet}</td>
+                    <td className="py-1.5 pr-3 text-zinc-400">{new Date(e.created_at).toLocaleDateString('de-DE')}</td>
+                    <td className="py-1.5 pr-3">{e.triggered_at ? <span className="text-emerald-400">{new Date(e.triggered_at).toLocaleDateString('de-DE')}</span> : <span className="text-zinc-600">–</span>}</td>
+                    <td className="py-1.5">{e.reward_paid ? <span className="text-emerald-400 font-bold">✓</span> : <span className="text-zinc-600">–</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
