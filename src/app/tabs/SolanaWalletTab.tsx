@@ -431,14 +431,18 @@ export default function SolanaWalletTab() {
         }
         setCreating(true);
         setCreateError('');
+        // Referral-Code aus localStorage lesen
+        const referralCode = typeof window !== 'undefined' ? localStorage.getItem('dfaith_referral') : null;
         const res = await fetch('/api/solana/create-account', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ walletAddress: userId }),
+          body: JSON.stringify({ walletAddress: userId, referredBy: referralCode ?? undefined }),
         });
         const data = await res.json();
         if (cancelled) return;
         if (!res.ok) throw new Error(data.error ?? 'Fehler beim Erstellen des Accounts');
+        // Referral-Code nach Verwendung löschen
+        if (referralCode && typeof window !== 'undefined') localStorage.removeItem('dfaith_referral');
         setSolanaAddr(data.solanaAddress);
       } catch (e) {
         if (!cancelled) setCreateError(e instanceof Error ? e.message : 'Unbekannter Fehler');

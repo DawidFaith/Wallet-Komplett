@@ -1107,7 +1107,9 @@ export default function CollectiblesTab() {
         walletAddress ? fetch(`/api/collectibles?wallet=${walletAddress}`) : Promise.resolve(null),
       ]);
       const artistsData = await artistsRes.json();
-      const allArtists: CollectibleArtist[] = (artistsData.artists ?? []).map((a: any) => ({
+      const allArtists: CollectibleArtist[] = (artistsData.artists ?? [])
+        .filter((a: any) => !a.isPlatformUser)
+        .map((a: any) => ({
         artistWallet: a.walletAddress,
         name: a.name,
         picture: a.picture ?? null,

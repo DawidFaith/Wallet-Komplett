@@ -61,7 +61,7 @@ export async function GET() {
     LEFT JOIN shop_items si
       ON LOWER(si.artist_wallet) = LOWER(p.wallet_address) AND si.is_active = TRUE
     LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
-    WHERE p.is_artist = TRUE
+    WHERE p.is_artist = TRUE AND COALESCE(p.is_platform_user, FALSE) = FALSE
     GROUP BY
       p.wallet_address, p.display_name, p.display_platform,
       p.clerk_image_url, p.clerk_name,

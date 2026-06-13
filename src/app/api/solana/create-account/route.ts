@@ -36,6 +36,7 @@ export async function POST(req: Request) {
   try {
   const body = await req.json().catch(() => ({}));
   const walletAddress = (body.walletAddress as string | undefined)?.toLowerCase();
+  const referredBy = (body.referredBy as string | undefined)?.toLowerCase().trim() || null;
   if (!walletAddress) return NextResponse.json({ error: 'walletAddress fehlt' }, { status: 400 });
 
   const sql = getDb();
@@ -64,6 +65,28 @@ export async function POST(req: Request) {
 
   // User-Profil anlegen damit User im Admin Panel erscheint
   await upsertUserProfile(walletAddress, {});
+
+  // Referral speichern (falls vorhanden und nicht Selbst-Referral)
+  if (referredBy && referredBy !== walletAddress) {
+    try {
+      await sql`
+        CREATE TABLE IF NOT EXISTS user_referrals (
+          id               SERIAL      PRIMARY KEY,
+          referrer_wallet  TEXT        NOT NULL,
+          referred_wallet  TEXT        NOT NULL UNIQUE,
+          created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          triggered_at     TIMESTAMPTZ,
+          reward_paid      BOOLEAN     NOT NULL DEFAULT FALSE,
+          reward_amount    DECIMAL(10,2)
+        )
+      `;
+      await sql`
+        INSERT INTO user_referrals (referrer_wallet, referred_wallet)
+        VALUES (${referredBy}, ${walletAddress})
+        ON CONFLICT (referred_wallet) DO NOTHING
+      `;
+    } catch { /* Fehler beim Referral-Speichern nicht fatal */ }
+  }
 
   return NextResponse.json({ solanaAddress: newAddress });
   } catch (e) {

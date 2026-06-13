@@ -235,7 +235,7 @@ export default function AdminPage() {
     return matchSearch && matchFilter;
   });
 
-  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'collectibles'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'collectibles' | 'referral'>('users');
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState('');
   const [resetting, setResetting] = useState(false);
@@ -315,7 +315,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-0">
-        {(['users', 'credits', 'token', 'shop', 'platform', 'collectibles'] as const).map((tab) => (
+        {(['users', 'credits', 'token', 'shop', 'platform', 'collectibles', 'referral'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -325,7 +325,7 @@ export default function AdminPage() {
                 : 'text-zinc-500 border-transparent hover:text-zinc-300'
             }`}
           >
-            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'platform' ? '⚡ Platform' : '💎 Collectibles'}
+            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'platform' ? '⚡ Platform' : tab === 'collectibles' ? '💎 Collectibles' : '🔗 Referral'}
           </button>
         ))}
       </div>
@@ -583,6 +583,11 @@ export default function AdminPage() {
       {/* ── Collectibles Tab ─────────────────────────────────────────────────── */}
       {activeTab === 'collectibles' && (
         <CollectiblesAdminSection secret={secret} users={users} />
+      )}
+
+      {/* ── Referral Tab ─────────────────────────────────────────────────────── */}
+      {activeTab === 'referral' && (
+        <ReferralSection secret={secret} />
       )}
     </div>
   );
@@ -1941,6 +1946,176 @@ function PlatformSection({ secret }: { secret: string }) {
           <p className="text-zinc-600 text-sm text-center py-4">Noch keine Platform-Quests vorhanden.</p>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── ReferralSection ──────────────────────────────────────────────────────────
+
+interface ReferralConfig {
+  reward_per_referral: number;
+  max_referrals_paid: number;
+  trigger_level: number;
+  is_active: boolean;
+  updated_at: string;
+}
+
+interface ReferralStats {
+  total_referrals: number;
+  paid_referrals: number;
+  total_paid_out: number;
+  pending_trigger: number;
+}
+
+function ReferralSection({ secret }: { secret: string }) {
+  const [config, setConfig] = useState<ReferralConfig | null>(null);
+  const [stats, setStats] = useState<ReferralStats | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  const [reward, setReward] = useState('');
+  const [maxPaid, setMaxPaid] = useState('');
+  const [triggerLevel, setTriggerLevel] = useState('');
+  const [isActive, setIsActive] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await fetch('/api/admin/referral-config?stats=1', {
+        headers: { 'x-admin-secret': secret },
+      });
+      const d = await r.json();
+      if (d.config) {
+        setConfig(d.config);
+        setReward(String(d.config.reward_per_referral));
+        setMaxPaid(String(d.config.max_referrals_paid));
+        setTriggerLevel(String(d.config.trigger_level));
+        setIsActive(Boolean(d.config.is_active));
+      }
+      if (d.stats) setStats(d.stats);
+    } catch {
+      setMsg('Fehler beim Laden');
+    } finally {
+      setLoading(false);
+    }
+  }, [secret]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const save = async () => {
+    setSaving(true);
+    setMsg('');
+    try {
+      const r = await fetch('/api/admin/referral-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({
+          rewardPerReferral: parseFloat(reward),
+          maxReferralsPaid: parseInt(maxPaid, 10),
+          triggerLevel: parseInt(triggerLevel, 10),
+          isActive,
+        }),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      setMsg('Gespeichert ✓');
+      await load();
+    } catch (e) {
+      setMsg(`Fehler: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+        <h2 className="text-white font-bold text-lg mb-1">🔗 Referral-Konfiguration</h2>
+        <p className="text-zinc-400 text-sm mb-6">Nutzer erhalten einen Referral-Link. Wenn der Eingeladene Level {config?.trigger_level ?? 10} erreicht, bekommt der Referrer einen Credits-Bonus.</p>
+
+        {loading ? (
+          <div className="text-zinc-500 text-sm">Lade…</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block mb-1">Reward pro Referral (D.FAITH Credits)</label>
+              <input
+                type="number" min="0" step="0.01"
+                value={reward}
+                onChange={e => setReward(e.target.value)}
+                className="bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm w-full"
+              />
+            </div>
+            <div>
+              <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block mb-1">Max. bezahlte Referrals pro Referrer</label>
+              <input
+                type="number" min="1" step="1"
+                value={maxPaid}
+                onChange={e => setMaxPaid(e.target.value)}
+                className="bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm w-full"
+              />
+            </div>
+            <div>
+              <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block mb-1">Trigger-Level (Eingeladener erreicht…)</label>
+              <input
+                type="number" min="1" max="100" step="1"
+                value={triggerLevel}
+                onChange={e => setTriggerLevel(e.target.value)}
+                className="bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm w-full"
+              />
+            </div>
+            <div className="flex items-center gap-3 mt-5">
+              <button
+                onClick={() => setIsActive(!isActive)}
+                className={`relative inline-flex items-center w-11 h-6 rounded-full transition-colors ${
+                  isActive ? 'bg-emerald-500' : 'bg-zinc-600'
+                }`}>
+                <span className={`absolute w-4 h-4 bg-white rounded-full transition-transform ${
+                  isActive ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+              <span className={`text-sm font-semibold ${isActive ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                {isActive ? 'Aktiv' : 'Deaktiviert'}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 mt-5">
+          <button
+            onClick={save}
+            disabled={saving || loading}
+            className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold px-5 py-2 rounded-xl text-sm transition-colors">
+            {saving ? 'Speichere…' : 'Speichern'}
+          </button>
+          {msg && <span className={`text-sm ${msg.startsWith('Fehler') ? 'text-red-400' : 'text-emerald-400'}`}>{msg}</span>}
+        </div>
+      </div>
+
+      {/* Statistiken */}
+      {stats && (
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+          <h3 className="text-white font-bold text-base mb-4">📊 Referral-Statistiken</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-zinc-800 rounded-xl p-4 text-center">
+              <p className="text-2xl font-bold text-white">{stats.total_referrals}</p>
+              <p className="text-zinc-400 text-xs mt-1">Gesamt Referrals</p>
+            </div>
+            <div className="bg-zinc-800 rounded-xl p-4 text-center">
+              <p className="text-2xl font-bold text-emerald-400">{stats.paid_referrals}</p>
+              <p className="text-zinc-400 text-xs mt-1">Bezahlte Rewards</p>
+            </div>
+            <div className="bg-zinc-800 rounded-xl p-4 text-center">
+              <p className="text-2xl font-bold text-amber-400">{Number(stats.total_paid_out).toFixed(2)}</p>
+              <p className="text-zinc-400 text-xs mt-1">Credits ausgezahlt</p>
+            </div>
+            <div className="bg-zinc-800 rounded-xl p-4 text-center">
+              <p className="text-2xl font-bold text-blue-400">{stats.pending_trigger}</p>
+              <p className="text-zinc-400 text-xs mt-1">Offen (Trigger ausgelöst)</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

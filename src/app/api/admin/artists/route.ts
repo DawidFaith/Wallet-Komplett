@@ -25,6 +25,7 @@ export async function GET(req: Request) {
         p.display_platform,
         p.clerk_image_url,
         p.clerk_name,
+        COALESCE(p.is_platform_user, FALSE) AS is_platform_user,
         p.instagram_handle,
         p.instagram_verified,
         p.instagram_name,
@@ -130,6 +131,7 @@ export async function GET(req: Request) {
         rewardToken: r.reward_token ?? 'D.FAITH',
         questCount: Math.max(0, Number(r.quest_count) - (completedByCreator[(r.wallet_address as string).toLowerCase()] ?? 0)),
         shopItemCount: Number(r.shop_item_count),
+        isPlatformUser: Boolean(r.is_platform_user),
         socials: {
           youtubeChannelId: r.youtube_channel_id ?? null,
           youtubeChannelName: r.youtube_channel_name ?? null,

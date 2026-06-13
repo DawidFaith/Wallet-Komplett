@@ -55,6 +55,17 @@ export default function LandingPage() {
     if (isLoaded && isSignedIn) router.replace('/home');
   }, [isLoaded, isSignedIn, router]);
 
+  // ?ref= Referral-Code aus URL in localStorage speichern
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get('ref');
+      if (ref && ref.trim()) {
+        localStorage.setItem('dfaith_referral', ref.trim().toLowerCase());
+      }
+    }
+  }, []);
+
   useEffect(() => {
     fetch('/api/admin/artists')
       .then((r) => r.json())

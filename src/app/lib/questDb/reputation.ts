@@ -109,6 +109,63 @@ export async function addUserReputation(
         }
       }
     }
+
+    // Referral-Reward: beim erstmaligen Überschreiten des trigger_level
+    // prüfen wir artistübergreifend (höchstes Level des Users zählt)
+    try {
+      // Referral-Konfiguration laden
+      const cfgRows = await sql`
+        SELECT reward_per_referral, max_referrals_paid, trigger_level, is_active
+        FROM referral_config WHERE id = 'default' LIMIT 1
+      `;
+      const cfg = cfgRows[0];
+      if (cfg && cfg.is_active && newLevel >= Number(cfg.trigger_level) && oldLevel < Number(cfg.trigger_level)) {
+        // Sicherstellen dass kein anderer Artist diesen User bereits zum Trigger gebracht hat
+        // → globales Gesamt-Level berechnen (höchstes Level über alle Artists)
+        const allRep = await sql`
+          SELECT r.reputation, rl.level_number
+          FROM user_reputation r
+          JOIN reputation_levels rl ON rl.artist_wallet = r.artist_wallet
+            AND rl.min_reputation <= r.reputation
+          WHERE r.wallet_address = ${walletAddress.toLowerCase()}
+          ORDER BY rl.level_number DESC
+          LIMIT 1
+        `;
+        const globalTopLevel = allRep.length > 0 ? Number(allRep[0].level_number) : newLevel;
+
+        if (globalTopLevel >= Number(cfg.trigger_level)) {
+          // Referral-Eintrag suchen (referred_wallet = dieser User)
+          const refRows = await sql`
+            SELECT id, referrer_wallet, reward_paid FROM user_referrals
+            WHERE referred_wallet = ${walletAddress.toLowerCase()} AND reward_paid = FALSE
+            LIMIT 1
+          `;
+          if (refRows.length > 0) {
+            const ref = refRows[0];
+            const referrerWallet = ref.referrer_wallet as string;
+            // Prüfen ob Referrer max_referrals_paid nicht überschritten hat
+            const paidCount = await sql`
+              SELECT COUNT(*)::int AS cnt FROM user_referrals
+              WHERE referrer_wallet = ${referrerWallet} AND reward_paid = TRUE
+            `;
+            const paid = Number(paidCount[0]?.cnt ?? 0);
+            if (paid < Number(cfg.max_referrals_paid)) {
+              const rewardAmt = Number(cfg.reward_per_referral);
+              // Reward auszahlen
+              await addDfaithCredits(referrerWallet, rewardAmt);
+              // Als bezahlt markieren
+              await sql`
+                UPDATE user_referrals
+                SET reward_paid = TRUE, reward_amount = ${rewardAmt}, triggered_at = NOW()
+                WHERE id = ${ref.id as number}
+              `;
+            }
+          }
+        }
+      }
+    } catch {
+      // Referral-Fehler dürfen die Quest-Completion nicht blockieren
+    }
   }
 }
 
@@ -780,8 +837,8 @@ export async function getAllArtistsWithReputation(walletAddress: string): Promis
       ON  LOWER(ur.artist_wallet)  = LOWER(p.wallet_address)
       AND LOWER(ur.wallet_address) = ${walletAddress.toLowerCase()}
     LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
-    WHERE p.is_artist = TRUE
-    ORDER BY COALESCE(p.is_platform_user, FALSE) DESC, COALESCE(ur.reputation, 0) DESC, p.display_name ASC
+    WHERE p.is_artist = TRUE AND COALESCE(p.is_platform_user, FALSE) = FALSE
+    ORDER BY COALESCE(ur.reputation, 0) DESC, p.display_name ASC
   `;
   const result: UserArtistReputation[] = [];
   for (const row of rows) {
