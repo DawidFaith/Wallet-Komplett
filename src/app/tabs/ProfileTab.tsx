@@ -8,6 +8,7 @@ import {
   FaInstagram, FaTiktok, FaFacebook, FaYoutube,
   FaCheck, FaCoins, FaStar, FaLock, FaPlus, FaChevronDown,
   FaPen, FaMusic, FaTimes, FaInfoCircle, FaTrophy, FaTasks, FaShoppingBag,
+  FaCopy, FaUserFriends,
 } from 'react-icons/fa';import SocialVerifyModal from './profile/SocialVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
@@ -59,6 +60,7 @@ interface ArtistEntry {
   rewardToken: string | null;
   questCount: number;
   shopItemCount: number;
+  isPlatformUser?: boolean;
   socials: {
     youtubeChannelId: string | null;
     youtubeChannelName: string | null;
@@ -128,12 +130,26 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
   const [repData, setRepData] = useState<{ reputation: number; level: number; levelName: string; progress: number; nextLevelRep: number | null; questRewardBonusPercent: number } | null>(null);
   // Reputation des Users bei ausgewähltem Artist laden
   useEffect(() => {
-    if (!account?.address || !selectedArtist?.walletAddress) { setRepData(null); return; }
+    if (!account?.address || !selectedArtist?.walletAddress || selectedArtist.isPlatformUser) { setRepData(null); return; }
     fetch(`/api/reputation?wallet=${account.address}&artistWallet=${selectedArtist.walletAddress}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => setRepData(d && !d.error ? d : null))
       .catch(() => setRepData(null));
-  }, [account?.address, selectedArtist?.walletAddress]);
+  }, [account?.address, selectedArtist?.walletAddress, selectedArtist?.isPlatformUser]);
+
+  // Referral-Statistiken laden (nur wenn Platform-Card offen)
+  const [referralStats, setReferralStats] = useState<{ totalInvited: number; paidReferrals: number; triggerLevel: number; rewardPerReferral: number; isActive: boolean } | null>(null);
+  const [referralStatsLoading, setReferralStatsLoading] = useState(false);
+  const [referralCopied, setReferralCopied] = useState(false);
+  useEffect(() => {
+    if (!account?.address || !selectedArtist?.isPlatformUser) { setReferralStats(null); return; }
+    setReferralStatsLoading(true);
+    fetch(`/api/referral/stats?wallet=${encodeURIComponent(account.address)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setReferralStats(d && !d.error ? d : null))
+      .catch(() => setReferralStats(null))
+      .finally(() => setReferralStatsLoading(false));
+  }, [account?.address, selectedArtist?.isPlatformUser]);
   const [artistSaving, setArtistSaving] = useState(false);
   // Meta Business Partner
   const [metaIgVerified, setMetaIgVerified] = useState(false);
@@ -786,9 +802,9 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                         {artist.name.slice(0, 2).toUpperCase()}
                       </div>
                     )}
-                    {hasQuests && (
+                    {(artist.isPlatformUser || hasQuests) && (
                       <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-amber-400 text-black text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-lg animate-pulse">
-                        {artist.questCount}
+                        {artist.isPlatformUser ? '1' : artist.questCount}
                       </span>
                     )}
                   </div>
@@ -845,8 +861,61 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                     {claiming ? '…' : t('profile.redeem', lang)}
                   </button>
                 </div>
+
+              {/* ── Referral-Sektion (nur Platform-Card) ── */}
+              {selectedArtist.isPlatformUser && (
+                <div className="border-t border-white/[0.08] pt-3 space-y-3">
+                  <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.24em] flex items-center gap-1.5">
+                    <FaUserFriends size={11} /> Freunde einladen
+                  </p>
+                  {/* Einladungslink */}
+                  <div className="flex items-center gap-2 bg-zinc-800/60 border border-white/[0.08] rounded-xl px-3 py-2">
+                    <p className="text-zinc-400 text-[10px] flex-1 truncate font-mono">
+                      {typeof window !== 'undefined' ? `${window.location.origin}/?ref=${account?.address ?? ''}` : `/?ref=${account?.address ?? ''}`}
+                    </p>
+                    <button
+                      onClick={() => {
+                        if (typeof window === 'undefined') return;
+                        const link = `${window.location.origin}/?ref=${account?.address ?? ''}`;
+                        navigator.clipboard.writeText(link).then(() => {
+                          setReferralCopied(true);
+                          setTimeout(() => setReferralCopied(false), 2500);
+                        }).catch(() => {});
+                      }}
+                      className="text-amber-400 hover:text-amber-300 transition-colors shrink-0 text-xs font-bold flex items-center gap-1"
+                    >
+                      {referralCopied
+                        ? <><FaCheck size={10} /> Kopiert!</>
+                        : <><FaCopy size={10} /> Kopieren</>}
+                    </button>
+                  </div>
+                  {/* Statistiken */}
+                  {referralStatsLoading ? (
+                    <p className="text-zinc-600 text-xs">Lade…</p>
+                  ) : referralStats ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-zinc-800/50 rounded-xl p-3 text-center">
+                          <p className="text-white font-bold text-xl">{referralStats.totalInvited}</p>
+                          <p className="text-zinc-500 text-[10px] mt-0.5">Eingeladen</p>
+                        </div>
+                        <div className="bg-zinc-800/50 rounded-xl p-3 text-center">
+                          <p className="text-emerald-400 font-bold text-xl">{referralStats.paidReferrals}</p>
+                          <p className="text-zinc-500 text-[10px] mt-0.5">Level {referralStats.triggerLevel} erreicht 🎉</p>
+                        </div>
+                      </div>
+                      {referralStats.isActive && (
+                        <p className="text-zinc-600 text-[10px] text-center">
+                          +{referralStats.rewardPerReferral} Credits pro Einladung die Level {referralStats.triggerLevel} erreicht
+                        </p>
+                      )}
+                    </>
+                  ) : null}
+                </div>
+              )}
+
               {/* Reputation bei diesem Artist */}
-              {repData && (
+              {!selectedArtist.isPlatformUser && repData && (
                 <div className="flex items-center gap-3 bg-amber-950/30 border border-amber-700/20 rounded-xl px-3 py-2">
                   <FaTrophy className="text-amber-400 shrink-0" size={14} />
                   <div className="flex-1 min-w-0">
@@ -878,7 +947,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                 </div>
               )}
               {/* Shop-Info bei diesem Artist */}
-              {selectedArtist && selectedArtist.shopItemCount > 0 && (
+              {!selectedArtist.isPlatformUser && selectedArtist.shopItemCount > 0 && (
                 <div className="flex items-center gap-3 bg-amber-950/30 border border-amber-700/20 rounded-xl px-3 py-2">
                   <FaShoppingBag className="text-amber-400 shrink-0" size={14} />
                   <div className="flex-1 min-w-0">
@@ -897,7 +966,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                   </button>
                 </div>
               )}
-              {onNavigate && (
+              {!selectedArtist.isPlatformUser && onNavigate && (
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
