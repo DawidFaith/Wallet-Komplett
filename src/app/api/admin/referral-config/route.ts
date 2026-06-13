@@ -55,12 +55,6 @@ export async function GET(req: NextRequest) {
   await ensureTables(sql);
   const { searchParams } = new URL(req.url);
 
-  // Diagnose: alle Zeilen + Anzahl ausgeben
-  if (searchParams.get('debug') === '1') {
-    const allRows = await sql`SELECT *, ctid::text AS _ctid FROM referral_config ORDER BY updated_at DESC`;
-    return NextResponse.json({ rowCount: allRows.length, rows: allRows });
-  }
-
   if (searchParams.get('stats') === '1') {
     const [config, stats] = await Promise.all([
       sql`SELECT * FROM referral_config WHERE id = 'default' LIMIT 1`,
