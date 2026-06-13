@@ -152,10 +152,11 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
       .catch(() => setReferralStats(null))
       .finally(() => setReferralStatsLoading(false));
   }, [account?.address]);
+  // Stats immer laden sobald account.address verfügbar (nicht erst wenn Platform-Karte offen)
   useEffect(() => {
-    if (!account?.address || !selectedArtist?.isPlatformUser) { setReferralStats(null); return; }
+    if (!account?.address) { setReferralStats(null); return; }
     loadReferralStats();
-  }, [account?.address, selectedArtist?.isPlatformUser, loadReferralStats]);
+  }, [account?.address, loadReferralStats]);
   const [artistSaving, setArtistSaving] = useState(false);
   // Meta Business Partner
   const [metaIgVerified, setMetaIgVerified] = useState(false);
@@ -898,9 +899,19 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               {/* ── Referral-Sektion (nur Platform-Card) ── */}
               {selectedArtist.isPlatformUser && (
                 <div className="border-t border-white/[0.08] pt-3 space-y-3">
-                  <p className="text-white text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                    <FaUserFriends size={13} className="text-amber-400" /> {t('ref.sectionTitle', lang)}
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-white text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                      <FaUserFriends size={13} className="text-amber-400" /> {t('ref.sectionTitle', lang)}
+                    </p>
+                    <button
+                      onClick={() => loadReferralStats()}
+                      disabled={referralStatsLoading}
+                      title={`Wallet: ${account?.address ?? '?'}`}
+                      className="text-zinc-500 hover:text-zinc-300 disabled:opacity-40 transition-colors text-[11px] px-1.5 py-0.5 rounded"
+                    >
+                      {referralStatsLoading ? '…' : '↺'}
+                    </button>
+                  </div>
 
                   {/* Info-Text */}
                   {referralStats?.isActive && (

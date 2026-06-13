@@ -62,6 +62,7 @@ export async function GET(req: NextRequest) {
       rewardPerReferral: Number(config[0]?.reward_per_referral ?? 10),
       maxReferralsPaid:  Number(config[0]?.max_referrals_paid  ?? 100),
       isActive:          Boolean(config[0]?.is_active ?? true),
+      _walletQueried:    wallet, // Debug: zum Vergleich mit DB-Einträgen
     });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
