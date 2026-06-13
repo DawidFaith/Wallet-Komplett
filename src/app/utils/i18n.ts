@@ -451,6 +451,79 @@ const dict: Translations = {
     en: 'Assign assets individually:',
     pl: 'Przydziel zasoby osobno:',
   },
+
+  // ── Referral ─────────────────────────────────────────────────────────────────
+  'ref.sectionTitle': {
+    de: 'Freunde einladen & Credits verdienen',
+    en: 'Invite friends & earn credits',
+    pl: 'Zapraszaj znajomych i zarabiaj kredyty',
+  },
+  'ref.infoTextPre': {
+    de: 'Teile deinen Link. Sobald jemand über deinen Link beitritt und',
+    en: 'Share your link. Once someone joins via your link and reaches',
+    pl: 'Udostępnij swój link. Gdy ktoś dołączy przez Twój link i osiągnie',
+  },
+  'ref.infoTextMid': {
+    de: 'erreicht, kannst du',
+    en: 'you can claim',
+    pl: 'możesz odebrać',
+  },
+  'ref.infoTextPost': {
+    de: 'abholen.',
+    en: '.',
+    pl: '.',
+  },
+  'ref.yourLink': {
+    de: 'Dein Einladungslink',
+    en: 'Your invitation link',
+    pl: 'Twój link zaproszenia',
+  },
+  'ref.copy': {
+    de: 'Kopieren',
+    en: 'Copy',
+    pl: 'Kopiuj',
+  },
+  'ref.copied': {
+    de: 'Kopiert!',
+    en: 'Copied!',
+    pl: 'Skopiowano!',
+  },
+  'ref.loading': {
+    de: 'Lade…',
+    en: 'Loading…',
+    pl: 'Ładowanie…',
+  },
+  'ref.statInvited': {
+    de: 'Eingeladen',
+    en: 'Invited',
+    pl: 'Zaproszonych',
+  },
+  'ref.statPaid': {
+    de: 'Bereits ausgezahlt',
+    en: 'Already paid out',
+    pl: 'Już wypłacono',
+  },
+  'ref.rewardsReady': {
+    de: '{n} Reward{s} abholbereit',
+    en: '{n} reward{s} ready to claim',
+    pl: '{n} nagroda{s} gotowa do odbioru',
+  },
+  'ref.claimBtn': {
+    de: 'Abholen',
+    en: 'Claim',
+    pl: 'Odbierz',
+  },
+  'ref.claimSuccess': {
+    de: '+{amount} D.FAITH Credits erhalten! 🎉',
+    en: '+{amount} D.FAITH Credits received! 🎉',
+    pl: 'Otrzymano +{amount} D.FAITH Credits! 🎉',
+  },
+  'ref.claimNone': {
+    de: 'Nichts abholbereit',
+    en: 'Nothing to claim',
+    pl: 'Brak nagród do odbioru',
+  },
+
   // ── Navigation ──────────────────────────────────────────────────────────────
 
   'nav.questBoard': {

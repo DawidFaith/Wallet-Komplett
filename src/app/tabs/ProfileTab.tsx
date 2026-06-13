@@ -12,7 +12,7 @@ import {
 } from 'react-icons/fa';import SocialVerifyModal from './profile/SocialVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
-import { t, type Lang } from '../utils/i18n';
+import { t, tFmt, type Lang } from '../utils/i18n';
 import { useLang } from '../components/LangContext';
 
 type SocialPlatform = 'instagram' | 'tiktok' | 'facebook';
@@ -281,11 +281,11 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
       const d = await res.json();
       if (!res.ok) throw new Error(d.error ?? 'Fehler');
       if (d.total > 0) {
-        setReferralClaimMsg(`+${d.total.toFixed(2)} D.FAITH Credits erhalten! 🎉`);
+        setReferralClaimMsg(tFmt('ref.claimSuccess', lang, { amount: d.total.toFixed(2) }));
         await loadReferralStats();
         await loadProfile();
       } else {
-        setReferralClaimMsg('Nichts abholen');
+        setReferralClaimMsg(t('ref.claimNone', lang));
       }
       setTimeout(() => setReferralClaimMsg(''), 4000);
     } catch (e) {
@@ -899,19 +899,23 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               {selectedArtist.isPlatformUser && (
                 <div className="border-t border-white/[0.08] pt-3 space-y-3">
                   <p className="text-white text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                    <FaUserFriends size={13} className="text-amber-400" /> Freunde einladen & Credits verdienen
+                    <FaUserFriends size={13} className="text-amber-400" /> {t('ref.sectionTitle', lang)}
                   </p>
 
                   {/* Info-Text */}
                   {referralStats?.isActive && (
                     <p className="text-zinc-300 text-xs leading-relaxed">
-                      Teile deinen Link. Sobald jemand über deinen Link beitritt und <span className="text-amber-300 font-bold">Level {referralStats.triggerLevel}</span> erreicht, kannst du <span className="text-amber-300 font-bold">+{referralStats.rewardPerReferral} Credits</span> abholen.
+                      {t('ref.infoTextPre', lang)}{' '}
+                      <span className="text-amber-300 font-bold">Level {referralStats.triggerLevel}</span>
+                      {' '}{t('ref.infoTextMid', lang)}{' '}
+                      <span className="text-amber-300 font-bold">+{referralStats.rewardPerReferral} Credits</span>
+                      {' '}{t('ref.infoTextPost', lang)}
                     </p>
                   )}
 
                   {/* Einladungslink */}
                   <div>
-                    <p className="text-zinc-400 text-[10px] font-semibold uppercase tracking-wider mb-1">Dein Einladungslink</p>
+                    <p className="text-zinc-400 text-[10px] font-semibold uppercase tracking-wider mb-1">{t('ref.yourLink', lang)}</p>
                     <div className="flex items-center gap-2 bg-zinc-800 border border-white/[0.12] rounded-xl px-3 py-2.5">
                       <p className="text-zinc-300 text-[11px] flex-1 truncate font-mono">
                         {typeof window !== 'undefined' ? `${window.location.origin}/?ref=${account?.address ?? ''}` : `/?ref=${account?.address ?? ''}`}
@@ -932,25 +936,25 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                         }`}
                       >
                         {referralCopied
-                          ? <><FaCheck size={10} /> Kopiert!</>
-                          : <><FaCopy size={10} /> Kopieren</>}
+                          ? <><FaCheck size={10} /> {t('ref.copied', lang)}</>
+                          : <><FaCopy size={10} /> {t('ref.copy', lang)}</>}
                       </button>
                     </div>
                   </div>
 
                   {/* Statistiken */}
                   {referralStatsLoading ? (
-                    <p className="text-zinc-400 text-xs">Lade…</p>
+                    <p className="text-zinc-400 text-xs">{t('ref.loading', lang)}</p>
                   ) : referralStats ? (
                     <>
                       <div className="grid grid-cols-2 gap-2">
                         <div className="bg-zinc-800 border border-white/[0.08] rounded-xl p-3 text-center">
                           <p className="text-white font-bold text-2xl">{referralStats.totalInvited}</p>
-                          <p className="text-zinc-400 text-[11px] mt-0.5 font-medium">Eingeladen</p>
+                          <p className="text-zinc-400 text-[11px] mt-0.5 font-medium">{t('ref.statInvited', lang)}</p>
                         </div>
                         <div className="bg-zinc-800 border border-white/[0.08] rounded-xl p-3 text-center">
                           <p className="text-emerald-400 font-bold text-2xl">{referralStats.paidReferrals}</p>
-                          <p className="text-zinc-400 text-[11px] mt-0.5 font-medium">Bereits ausgezahlt</p>
+                          <p className="text-zinc-400 text-[11px] mt-0.5 font-medium">{t('ref.statPaid', lang)}</p>
                         </div>
                       </div>
 
@@ -959,7 +963,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                         <div className="bg-amber-950/40 border border-amber-500/30 rounded-xl p-3 space-y-2">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-amber-300 font-bold text-sm">{referralStats.claimableCount} Reward{referralStats.claimableCount !== 1 ? 's' : ''} abholbereit</p>
+                              <p className="text-amber-300 font-bold text-sm">{tFmt('ref.rewardsReady', lang, { n: String(referralStats.claimableCount), s: referralStats.claimableCount !== 1 ? 's' : '' })}</p>
                               <p className="text-amber-400/80 text-[11px] mt-0.5">+{referralStats.claimableAmount.toFixed(2)} D.FAITH Credits</p>
                             </div>
                             <button
@@ -967,7 +971,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                               disabled={referralClaiming}
                               className="bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-black font-black text-xs px-4 py-2 rounded-xl transition-colors"
                             >
-                              {referralClaiming ? '…' : 'Abholen'}
+                              {referralClaiming ? '…' : t('ref.claimBtn', lang)}
                             </button>
                           </div>
                           {referralClaimMsg && (
