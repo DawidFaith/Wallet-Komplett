@@ -146,16 +146,19 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
   const loadReferralStats = useCallback(async () => {
     if (!account?.address) return;
     setReferralStatsLoading(true);
-    fetch(`/api/referral/stats?wallet=${encodeURIComponent(account.address)}`)
+    // cache: no-store → immer frische Daten aus der DB
+    fetch(`/api/referral/stats?wallet=${encodeURIComponent(account.address)}`, { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(d => setReferralStats(d && !d.error ? d : null))
       .catch(() => setReferralStats(null))
       .finally(() => setReferralStatsLoading(false));
   }, [account?.address]);
-  // Stats immer laden sobald account.address verfügbar (nicht erst wenn Platform-Karte offen)
+  // Stats laden sobald account.address verfügbar + alle 60s auto-refresh
   useEffect(() => {
     if (!account?.address) { setReferralStats(null); return; }
     loadReferralStats();
+    const interval = setInterval(loadReferralStats, 60_000);
+    return () => clearInterval(interval);
   }, [account?.address, loadReferralStats]);
   const [artistSaving, setArtistSaving] = useState(false);
   // Meta Business Partner

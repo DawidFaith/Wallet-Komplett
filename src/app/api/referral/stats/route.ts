@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
           COALESCE(SUM(reward_amount) FILTER (WHERE triggered_at IS NOT NULL AND reward_paid = FALSE), 0)::numeric AS claimable_amount,
           COUNT(*) FILTER (WHERE triggered_at IS NOT NULL AND reward_paid = FALSE)::int AS claimable_count
         FROM user_referrals
-        WHERE referrer_wallet = ${wallet}
+        WHERE LOWER(TRIM(referrer_wallet)) = LOWER(TRIM(${wallet}))
       `.catch(() => [{ total_invited: 0, paid_referrals: 0, claimable_amount: 0, claimable_count: 0 }]),
       sql`
         SELECT reward_per_referral, max_referrals_paid, trigger_level, is_active
