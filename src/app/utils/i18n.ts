@@ -516,6 +516,11 @@ const dict: Translations = {
     en: 'Claiming…',
     pl: 'Odbieranie…',
   },
+  'btn.completeSeriesLabel': {
+    de: 'Quest-Reihe abschließen (✨ {pct}% Shard-Chance)',
+    en: 'Complete quest series (✨ {pct}% Shard chance)',
+    pl: 'Ukończ serię questów (✨ {pct}% szansa na Shard)',
+  },
   'btn.cancel': {
     de: 'Abbrechen',
     en: 'Cancel',

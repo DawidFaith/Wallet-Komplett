@@ -6,7 +6,7 @@ import { FaLayerGroup, FaCheck, FaYoutube, FaInstagram, FaTiktok, FaFacebook, Fa
 import type { QuestBundleWithItems } from '../../../lib/questDb';
 import type { Platform, QuestType, QuestIndexEntry, VerifiedPlatforms } from '../types';
 import { formatExpiry } from '../utils';
-import { t, type Lang } from '../../../utils/i18n';
+import { t, tFmt, type Lang } from '../../../utils/i18n';
 import { useLang } from '../../../components/LangContext';
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
@@ -365,7 +365,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
                     disabled={claiming}
                     className="w-full bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 disabled:opacity-50 active:scale-[0.98] text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-md"
                   >
-                    ✨ {claiming ? t('btn.claiming', language) : `Quest-Reihe abschließen (✨ ${shardDropChance + shardBonusPct}% Shard-Chance)`}
+                    ✨ {claiming ? t('btn.claiming', language) : tFmt('btn.completeSeriesLabel', language, { pct: String(shardDropChance + shardBonusPct) })}
                   </button>
                 </>
               ) : bonusAlreadyDone ? (
