@@ -6,7 +6,8 @@ import { FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaCheck, FaInfoCircle, Fa
 import Modal from '../components/Modal';
 import type { Platform, QuestType } from '../types';
 import { useLang } from '../../../components/LangContext';
-import { t } from '../../../utils/i18n';
+import { t, tFmt } from '../../../utils/i18n';
+import type { Lang } from '../../../utils/i18n';
 // ─── Media-Typen (für Video-Picker) ─────────────────────────────────────────
 interface AvailableQuestMediaItem {
   video_id: string;
@@ -48,10 +49,11 @@ const DEFAULT_WEIGHTS: Record<QuestType, number> = {
   secret:     2,
 };
 
-const TYPE_LABELS: Record<QuestType, string>       = {
-  comment: 'Kommentar', like: 'Like', save: 'Speichern',
-  repost: 'Repost', dm_share: 'Story-Share', share: 'Teilen', engagement: 'Engagement', secret: 'Geheimcode',
+const TYPE_LABEL_KEYS: Record<QuestType, string> = {
+  comment: 'qt.comment', like: 'qt.like', save: 'qt.save',
+  repost: 'qt.repost', dm_share: 'qt.dmShare', share: 'qt.share', engagement: 'qt.engagement', secret: 'qt.secret',
 };
+function getTypeLabel(qt: QuestType, lang: Lang) { return t(TYPE_LABEL_KEYS[qt], lang); }
 
 const TYPE_ICONS: Record<QuestType, React.ReactNode> = {
   comment:    <FaComment    size={12} />,
@@ -271,9 +273,9 @@ export default function CreateBundleModal({
   const hasEnough   = creatorBalance >= totalBudget;
 
   const handleCreate = async () => {
-    if (!items.length) { setError('Mindestens einen Quest-Typ auswählen'); return; }
-    if (!videoUrl.trim()) { setError('URL/Link fehlt'); return; }
-    if (platform !== 'youtube' && !videoTitle.trim()) { setError('Titel fehlt'); return; }
+    if (!items.length) { setError(t('cb.errSelectType', lang)); return; }
+    if (!videoUrl.trim()) { setError(t('cb.errUrlMissing', lang)); return; }
+    if (platform !== 'youtube' && !videoTitle.trim()) { setError(t('cb.errTitleMissing', lang)); return; }
 
     setCreating(true);
     setError('');
@@ -315,22 +317,22 @@ export default function CreateBundleModal({
   // ── Schritt 4: LinkDM Story Mention einrichten + final bestätigen ───────────
   if (step === 4) {
     return (
-      <Modal open={open} onClose={onClose} title="Schritt 4: LinkDM Story Mention einrichten" disableBackdropClose>
+      <Modal open={open} onClose={onClose} title={t('cb.step4Title', lang)} disableBackdropClose>
         <div className="space-y-4">
           <div className="bg-blue-950/40 border border-blue-800/40 rounded-xl p-3 space-y-2">
             <p className="text-blue-300 text-xs font-semibold">
-              So richtest du den Story-Quest Link in LinkDM ein:
+              {t('cb.linkdmHowTo', lang)}
             </p>
             <ol className="text-blue-200/90 text-xs space-y-1.5 list-decimal pl-4 leading-relaxed">
-              <li>Erstelle ein kostenloses Konto auf <span className="font-mono text-blue-100">app.linkdm.com</span> (falls noch nicht vorhanden).</li>
-              <li>Verbinde deinen Instagram-Account in LinkDM (Pflicht für Story Mention).</li>
-              <li>Öffne <span className="font-mono text-blue-100">app.linkdm.com/automation/mention</span> – führt dich direkt zu Story Mention.</li>
-              <li>Füge dort den Story-Quest Link ein und aktiviere die Automation.</li>
-              <li>Kehre hierher zurück und bestätige erst dann die Erstellung.</li>
+              <li>{t('cb.linkdmStep1', lang)}</li>
+              <li>{t('cb.linkdmStep2', lang)}</li>
+              <li>{t('cb.linkdmStep3', lang).split('app.linkdm.com/automation/mention').map((part, i) => i === 0 ? <React.Fragment key={i}>{part}<span className="font-mono text-blue-100">app.linkdm.com/automation/mention</span></React.Fragment> : <React.Fragment key={i}>{part}</React.Fragment>)}</li>
+              <li>{t('cb.linkdmStep4', lang)}</li>
+              <li>{t('cb.linkdmStep5', lang)}</li>
             </ol>
             <p className="text-amber-300/80 text-[11px] mt-2 flex items-start gap-1.5">
               <FaInfoCircle className="shrink-0 mt-0.5" size={10} />
-              <span>Der Link zu Story Mention funktioniert nur wenn du bereits eingeloggt bist. Registriere dich zuerst, dann öffne den Link.</span>
+              <span>{t('cb.linkdmNote', lang)}</span>
             </p>
           </div>
 
@@ -338,11 +340,11 @@ export default function CreateBundleModal({
             <div className="bg-pink-950/40 border border-pink-700/40 rounded-xl p-4 space-y-2">
               <div className="flex items-center gap-2 mb-1">
                 <FaPaperPlane className="text-pink-400" size={13} />
-                <p className="text-pink-200 text-sm font-semibold">Story-Quest Link</p>
-              </div>
-              <p className="text-zinc-400 text-xs">
-                Diesen Link in LinkDM unter Features → Story Mention einfügen. Nach der Bestätigung wird genau dieser Link aktiv.
-              </p>
+                <p className="text-pink-200 text-sm font-semibold">{t('cb.storyLinkTitle', lang)}</p>
+            </div>
+            <p className="text-zinc-400 text-xs">
+              {t('cb.storyLinkDesc', lang)}
+            </p>
               <div className="flex items-center gap-2 bg-zinc-900/80 border border-zinc-700 rounded-lg px-3 py-2">
                 <FaLink size={10} className="text-pink-400 shrink-0" />
                 <input
@@ -359,28 +361,28 @@ export default function CreateBundleModal({
                   className="shrink-0 bg-pink-700 hover:bg-pink-600 text-white rounded-lg px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors"
                 >
                   {linkCopied ? <FaCheck size={10} /> : <FaCopy size={10} />}
-                  {linkCopied ? 'Kopiert!' : 'Kopieren'}
+                  {linkCopied ? t('cb.copied', lang) : t('cb.copy', lang)}
                 </button>
               </div>
             </div>
           )}
 
           {!storyLink && (
-            <p className="text-amber-400 text-xs">Story-Link konnte nicht vorbereitet werden. Bitte zurück und erneut versuchen.</p>
+            <p className="text-amber-400 text-xs">{t('cb.storyLinkError', lang)}</p>
           )}
 
           {error && <p className="text-amber-400 text-sm">{error}</p>}
 
           <div className="flex gap-3">
             <button onClick={() => { setStep(3); setError(''); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl py-2.5 font-semibold text-sm">
-              ← Zurück
+              {t('cb.back', lang)}
             </button>
             <button
               onClick={handleCreate}
               disabled={creating || !hasEnough || !storyLink}
               className="flex-1 bg-green-700 hover:bg-green-600 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-xl py-2.5 font-semibold text-sm transition-colors"
             >
-              {creating ? 'Erstelle...' : 'LinkDM eingerichtet – Quest-Reihe erstellen'}
+              {creating ? t('cb.creating', lang) : t('cb.confirmCreate', lang)}
             </button>
           </div>
         </div>
@@ -390,10 +392,10 @@ export default function CreateBundleModal({
 
   const isBundle = items.length >= 2;
   const modalTitle = step === 1
-    ? 'Quest erstellen'
+    ? t('cb.modalTitle', lang)
     : isBundle
-      ? 'Bundle Quest erstellen'
-      : 'Quest erstellen';
+      ? t('cb.modalTitleBundle', lang)
+      : t('cb.modalTitle', lang);
 
   return (
     <Modal open={open} onClose={onClose} title={modalTitle} disableBackdropClose>
@@ -409,7 +411,7 @@ export default function CreateBundleModal({
         {/* ── Schritt 1: Plattform + Content ──────────────────────────────── */}
         {step === 1 && (
           <div className="space-y-4">
-            <p className="text-zinc-400 text-sm">Wähle Plattform und dein Video für das Bundle.</p>
+            <p className="text-zinc-400 text-sm">{t('cb.step1Hint', lang)}</p>
 
             {/* Plattform */}
             <div className="grid grid-cols-4 gap-2">
@@ -437,17 +439,17 @@ export default function CreateBundleModal({
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">
-                    {platform === 'youtube' ? 'YouTube' : 'TikTok'}-Video auswählen
+                    {t(platform === 'youtube' ? 'cb.selectYtVideo' : 'cb.selectTtVideo', lang)}
                   </label>
                   <button type="button" onClick={fetchQuestMedia} disabled={loadingQuestMedia}
                     className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 disabled:opacity-50">
-                    <FaSync size={10} className={loadingQuestMedia ? 'animate-spin' : ''} /> Aktualisieren
+                    <FaSync size={10} className={loadingQuestMedia ? 'animate-spin' : ''} /> {t('cb.refresh', lang)}
                   </button>
                 </div>
                 {loadingQuestMedia ? (
                   <div className="text-center text-zinc-500 py-8 text-sm bg-zinc-900/40 rounded-xl">
                     <FaSync size={16} className="animate-spin mx-auto mb-2" />
-                    Lade Videos…
+                    {t('cb.loadingVideos', lang)}
                   </div>
                 ) : availableQuestMedia.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
@@ -496,7 +498,7 @@ export default function CreateBundleModal({
                   <div className="text-center py-5 text-xs bg-zinc-900/40 rounded-xl border border-zinc-700/50 text-zinc-500">
                     {questMediaError
                       ? <span className="text-amber-400">{questMediaError}</span>
-                      : <>Keine Videos gefunden. Prüfe ob dein {platform === 'youtube' ? 'YouTube-Kanal' : 'TikTok-Account'} verknüpft ist.</>
+                      : <>{t(platform === 'youtube' ? 'cb.noYtVideos' : 'cb.noTtVideos', lang)}</>
                     }
                   </div>
                 )}
@@ -507,15 +509,15 @@ export default function CreateBundleModal({
             {platform === 'instagram' && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Instagram-Reel auswählen</label>
+                  <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">{t('cb.selectIgReel', lang)}</label>
                   <button type="button" onClick={fetchIgMedia} disabled={loadingIgMedia}
                     className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 disabled:opacity-50">
-                    <FaSync size={10} className={loadingIgMedia ? 'animate-spin' : ''} /> Aktualisieren
+                    <FaSync size={10} className={loadingIgMedia ? 'animate-spin' : ''} /> {t('cb.refresh', lang)}
                   </button>
                 </div>
                 {loadingIgMedia ? (
                   <div className="text-center text-zinc-500 py-8 text-sm bg-zinc-900/40 rounded-xl">
-                    <FaSync size={16} className="animate-spin mx-auto mb-2" />Lade Reels…
+                    <FaSync size={16} className="animate-spin mx-auto mb-2" />{t('cb.loadingReels', lang)}
                   </div>
                 ) : availableIgMedia.length > 0 ? (
                   <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto pr-1">
@@ -555,7 +557,7 @@ export default function CreateBundleModal({
                   </div>
                 ) : (
                   <div className="text-center py-5 text-xs bg-zinc-900/40 rounded-xl border border-zinc-700/50 text-zinc-500">
-                    Keine Reels verfügbar. Auf &ldquo;Aktualisieren&rdquo; klicken.
+                    {t('cb.noReels', lang)}
                   </div>
                 )}
               </div>
@@ -565,15 +567,15 @@ export default function CreateBundleModal({
             {platform === 'facebook' && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Facebook-Post auswählen</label>
+                  <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">{t('cb.selectFbPost', lang)}</label>
                   <button type="button" onClick={fetchFbMedia} disabled={loadingFbMedia}
                     className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 disabled:opacity-50">
-                    <FaSync size={10} className={loadingFbMedia ? 'animate-spin' : ''} /> Aktualisieren
+                    <FaSync size={10} className={loadingFbMedia ? 'animate-spin' : ''} /> {t('cb.refresh', lang)}
                   </button>
                 </div>
                 {loadingFbMedia ? (
                   <div className="text-center text-zinc-500 py-8 text-sm bg-zinc-900/40 rounded-xl">
-                    <FaSync size={16} className="animate-spin mx-auto mb-2" />Lade Posts…
+                    <FaSync size={16} className="animate-spin mx-auto mb-2" />{t('cb.loadingPosts', lang)}
                   </div>
                 ) : availableFbMedia.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
@@ -617,7 +619,7 @@ export default function CreateBundleModal({
                   </div>
                 ) : (
                   <div className="text-center py-5 text-xs bg-zinc-900/40 rounded-xl border border-zinc-700/50 text-zinc-500">
-                    Keine Posts verfügbar. Auf &ldquo;Aktualisieren&rdquo; klicken.
+                    {t('cb.noPosts', lang)}
                   </div>
                 )}
               </div>
@@ -625,12 +627,12 @@ export default function CreateBundleModal({
 
             {/* Beschreibung */}
             <div className="space-y-1">
-              <label className="text-zinc-400 text-xs">Beschreibung (optional)</label>
+              <label className="text-zinc-400 text-xs">{t('cb.descLabel', lang)}</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={2}
-                placeholder="Worum geht es in diesem Bundle?"
+                placeholder={t('cb.descPlaceholder', lang)}
                 className="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-purple-500 resize-none"
               />
             </div>
@@ -651,7 +653,7 @@ export default function CreateBundleModal({
               disabled={!videoUrl.trim()}
               className="w-full bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-xl py-3 font-semibold text-sm transition-colors"
             >
-              Weiter →
+              {t('cb.next', lang)}
             </button>
           </div>
         )}
@@ -660,14 +662,14 @@ export default function CreateBundleModal({
         {step === 2 && (
           <div className="space-y-4">
             <p className="text-zinc-400 text-sm">
-              Wähle eine oder mehrere Aktionen. Bei 2+ Typen entsteht ein <span className="text-purple-400 font-semibold">Bundle</span> – der Reward wird nach Algorythmus-Signalstärke aufgeteilt.
+              {t('cb.step2Hint', lang)}
             </p>
 
             {/* Tipp */}
             <div className="bg-blue-950/40 border border-blue-800/40 rounded-xl p-3 flex gap-2">
               <FaInfoCircle className="text-blue-400 mt-0.5 shrink-0" size={13} />
               <p className="text-blue-300 text-xs">
-                Höhere Signalstärke = mehr Algorythmus-Signalwirkung = größerer Token-Anteil. Story-Share hat die höchste Wirkung.
+                {t('cb.tipText', lang)}
               </p>
             </div>
 
@@ -689,11 +691,11 @@ export default function CreateBundleModal({
                           {selected && <FaCheck size={10} className="text-white" />}
                         </div>
                         <span className="flex items-center text-zinc-300">{TYPE_ICONS[qt]}</span>
-                        <span className="text-white text-sm font-semibold">{TYPE_LABELS[qt]}</span>
+                        <span className="text-white text-sm font-semibold">{getTypeLabel(qt, lang)}</span>
                       </button>
                       {selected && item && (
                         <div className="flex items-center gap-1.5">
-                          <span className="text-zinc-500 text-xs">Signalstärke:</span>
+                          <span className="text-zinc-500 text-xs">{t('cb.signalStrength', lang)}</span>
                           <div className="flex gap-0.5">
                             {[1, 2, 3, 4].map((i) => (
                               <div
@@ -709,13 +711,13 @@ export default function CreateBundleModal({
                     {selected && item && totalWeight > 0 && (
                       <div className="flex items-center justify-between mt-2 ml-7">
                         <p className="text-purple-300 text-xs">
-                          → {((item.reachWeight / totalWeight) * 100).toFixed(0)}% des Reward-Pools
+                          {tFmt('cb.rewardPoolShare', lang, { n: ((item.reachWeight / totalWeight) * 100).toFixed(0) })}
                         </p>
                         <span className="text-amber-400 text-xs font-semibold">+{item.reachWeight * 8} REP</span>
                       </div>
                     )}
                     {selected && qt === 'dm_share' && (
-                      <p className="text-blue-400/70 text-[11px] mt-1 ml-7">🔗 Schritt 4: Link kopieren/einfügen, danach final bestätigen</p>
+                      <p className="text-blue-400/70 text-[11px] mt-1 ml-7">{t('cb.dmShareStep4Hint', lang)}</p>
                     )}
                   </div>
                 );
@@ -725,11 +727,11 @@ export default function CreateBundleModal({
             {/* Geheimcode festlegen (nur wenn 'secret'-Typ ausgewählt) */}
             {items.some((i) => i.questType === 'secret') && (
               <div className="bg-zinc-900/60 border border-yellow-800/40 rounded-xl p-3 space-y-2">
-                <p className="text-yellow-300 text-xs font-semibold">🔑 Geheimcode festlegen</p>
-                <p className="text-zinc-400 text-xs">Fans müssen diesen Code eingeben, um den Geheimcode-Task abzuschließen.</p>
+                <p className="text-yellow-300 text-xs font-semibold">{t('cb.secretCodeTitle', lang)}</p>
+                <p className="text-zinc-400 text-xs">{t('cb.secretCodeDesc', lang)}</p>
                 <input
                   type="text"
-                  placeholder="z.B. DAWIDFAITH2025"
+                  placeholder={t('cb.secretCodePh', lang)}
                   value={secretCodes['secret'] ?? ''}
                   onChange={(e) => setSecretCodes((prev) => ({ ...prev, secret: e.target.value.toUpperCase() }))}
                   className="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-yellow-500 uppercase"
@@ -740,13 +742,13 @@ export default function CreateBundleModal({
 
             <div className="flex gap-3">
               <button onClick={() => setStep(1)} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl py-3 font-semibold text-sm">
-                ← Zurück
+                {t('cb.back', lang)}
               </button>
               <button
                 onClick={() => {
-                  if (items.length < 1) { setError('Mindestens einen Quest-Typ auswählen'); return; }
+                  if (items.length < 1) { setError(t('cb.errSelectType', lang)); return; }
                   if (items.some((i) => i.questType === 'secret') && !secretCodes['secret']?.trim()) {
-                    setError('Bitte gib einen Geheimcode ein, bevor du fortfährst.');
+                    setError(t('cb.errSecretCode', lang));
                     return;
                   }
                   setError('');
@@ -754,7 +756,7 @@ export default function CreateBundleModal({
                 }}
                 className="flex-1 bg-purple-600 hover:bg-purple-500 text-white rounded-xl py-3 font-semibold text-sm"
               >
-                Weiter →
+                {t('cb.next', lang)}
               </button>
             </div>
             {error && <p className="text-amber-400 text-sm">{error}</p>}
@@ -767,14 +769,14 @@ export default function CreateBundleModal({
             {/* 4 Felder kompakt */}
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'Reward/Fan (D.FAITH)', val: reward, set: setReward, min: '0.01', stp: '0.01', disabled: false },
-                { label: 'Shard-Drop-Chance (%)', val: shardChance, set: setShardChance, min: '0', stp: '1', disabled: items.length < 2 },
-                { label: 'Max. Teilnehmer', val: maxP, set: setMaxP, min: '1', stp: '1', disabled: false },
-                { label: 'Laufzeit (h, 0=∞)', val: duration, set: setDuration, min: '0', stp: '1', disabled: false },
+                { label: t('cb.rewardFanLabel', lang), val: reward, set: setReward, min: '0.01', stp: '0.01', disabled: false },
+                { label: t('cb.shardChanceLabel', lang), val: shardChance, set: setShardChance, min: '0', stp: '1', disabled: items.length < 2 },
+                { label: t('cb.maxParticipants', lang), val: maxP, set: setMaxP, min: '1', stp: '1', disabled: false },
+                { label: t('cb.durationLabel', lang), val: duration, set: setDuration, min: '0', stp: '1', disabled: false },
               ].map(({ label, val, set, min, stp, disabled }) => (
                 <div key={label} className="space-y-0.5">
                   <label className={`text-[11px] ${disabled ? 'text-zinc-600' : 'text-zinc-500'}`}>
-                    {label}{disabled ? ' (nur bei Bundle)' : ''}
+                    {label}{disabled ? ` ${t('cb.bundleOnly', lang)}` : ''}
                   </label>
                   <input
                     type="number" min={min} step={stp}
@@ -793,14 +795,14 @@ export default function CreateBundleModal({
 
             {/* Reward-Aufschlüsselung kompakt */}
             <div className="bg-zinc-900/60 border border-zinc-700/50 rounded-xl px-3 py-2 space-y-1">
-              <p className="text-zinc-500 text-[11px] font-semibold uppercase tracking-wider mb-1.5">Reward pro Fan</p>
+              <p className="text-zinc-500 text-[11px] font-semibold uppercase tracking-wider mb-1.5">{t('cb.rewardPerFan', lang)}</p>
               {items.map((item) => {
                 const share = totalWeight > 0 ? (item.reachWeight / totalWeight) * rewardNum : 0;
                 return (
                   <div key={item.questType} className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-1.5 text-zinc-300">
                       <span className="text-zinc-400">{TYPE_ICONS[item.questType]}</span>
-                      {TYPE_LABELS[item.questType]}
+                      {getTypeLabel(item.questType, lang)}
                     </span>
                     <span className="flex items-center gap-2">
                       <span className="text-amber-400">+{item.reachWeight * 8} REP</span>
@@ -810,7 +812,7 @@ export default function CreateBundleModal({
                 );
               })}
               <div className="flex items-center justify-between text-xs border-t border-zinc-700/50 pt-1 mt-0.5">
-                <span className="text-white font-semibold">Gesamt/Fan</span>
+                <span className="text-white font-semibold">{t('cb.totalPerFan', lang)}</span>
                 <span className="text-green-400 font-mono font-bold">{rewardNum.toFixed(2)} D.FAITH</span>
               </div>
             </div>
@@ -820,32 +822,32 @@ export default function CreateBundleModal({
               hasEnough ? 'bg-green-950/30 border-green-800/40' : 'bg-amber-950/30 border-amber-800/40'
             }`}>
               <div className="flex items-center justify-between">
-                <p className="text-zinc-400 text-xs">Budget sperren</p>
+                <p className="text-zinc-400 text-xs">{t('cb.budgetLock', lang)}</p>
                 {!hasEnough && (
-                  <button onClick={onOpenDeposit} className="text-blue-400 text-xs hover:underline">Jetzt einzahlen →</button>
+                  <button onClick={onOpenDeposit} className="text-blue-400 text-xs hover:underline">{t('cb.depositNow', lang)}</button>
                 )}
               </div>
               {/* Budget-Aufschlüsselung */}
               <div className="space-y-0.5 text-xs text-zinc-500">
                 <div className="flex justify-between">
-                  <span>Rewards ({rewardNum.toFixed(2)} × {maxNum})</span>
+                  <span>{t('cb.rewards', lang)} ({rewardNum.toFixed(2)} × {maxNum})</span>
                   <span className="font-mono">{(rewardNum * maxNum).toFixed(2)}</span>
                 </div>
                 {items.length >= 2 && (
                   <div className="flex justify-between">
-                    <span className="flex items-center gap-1">✨ Shard-Drop-Chance beim Abschluss</span>
+                    <span className="flex items-center gap-1">{t('cb.shardDropBudget', lang)}</span>
                     <span className="font-mono text-amber-400">{shardChanceNum}%</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="flex items-center gap-1">
-                    Level-Bonus-Reserve
+                    {t('cb.levelBonusReserve', lang)}
                     {loadingPlatformUsers
-                      ? <span className="text-zinc-600">(lädt…)</span>
+                      ? <span className="text-zinc-600">{t('cb.levelBonusLoading', lang)}</span>
                       : <span className="text-zinc-600">
                           ({topFanBonusPcts.length < effectiveBonusParticipants
-                            ? `${topFanBonusPcts.length}/${effectiveBonusParticipants} Fans bekannt, Rest ~+${fallbackPct}%`
-                            : `${effectiveBonusParticipants} Fans Rep-Bonus`}
+                            ? tFmt('cb.fanKnownRest', lang, { known: String(topFanBonusPcts.length), total: String(effectiveBonusParticipants), pct: String(fallbackPct) })
+                            : tFmt('cb.fanRepBonus', lang, { n: String(effectiveBonusParticipants) })}
                           {maxCollectibleCreditPct > 0 && ` + Coll. +${maxCollectibleCreditPct}% ×${effectiveBonusParticipants}`}
                           {' '}× 1.02)
                         </span>
@@ -860,7 +862,7 @@ export default function CreateBundleModal({
                     {totalBudget.toFixed(2)} D.FAITH
                   </p>
                   <p className={`text-xs font-mono ${hasEnough ? 'text-green-600' : 'text-amber-400'}`}>
-                    Guthaben: {creatorBalance.toFixed(2)}
+                    {t('cb.balanceLabel', lang)} {creatorBalance.toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -870,7 +872,7 @@ export default function CreateBundleModal({
 
             <div className="flex gap-3">
               <button onClick={() => { setStep(2); setError(''); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl py-2.5 font-semibold text-sm">
-                ← Zurück
+                {t('cb.back', lang)}
               </button>
               <button
                 onClick={() => {
@@ -885,7 +887,7 @@ export default function CreateBundleModal({
                 disabled={creating || !hasEnough || items.length < 1}
                 className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-xl py-2.5 font-semibold text-sm transition-colors"
               >
-                {creating ? 'Erstelle...' : hasDmShare ? 'Weiter zu Schritt 4 →' : items.length >= 2 ? '🎯 Bundle erstellen' : '🎯 Quest erstellen'}
+                {creating ? t('cb.creating', lang) : hasDmShare ? t('cb.toStep4', lang) : items.length >= 2 ? t('cb.createBundle', lang) : t('cb.createQuestBtn', lang)}
               </button>
             </div>
           </div>
