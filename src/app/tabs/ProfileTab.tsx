@@ -148,11 +148,15 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
     setReferralStatsLoading(true);
     // Timestamp als Cache-Buster → verhindert jede Art von HTTP-Caching
     const url = `/api/referral/stats?wallet=${encodeURIComponent(account.address)}&_t=${Date.now()}`;
-    fetch(url, { cache: 'no-store' })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => setReferralStats(d && !d.error ? d : null))
-      .catch(() => setReferralStats(null))
-      .finally(() => setReferralStatsLoading(false));
+    try {
+      const r = await fetch(url, { cache: 'no-store' });
+      const d = r.ok ? await r.json() : null;
+      setReferralStats(d && !d.error ? d : null);
+    } catch {
+      setReferralStats(null);
+    } finally {
+      setReferralStatsLoading(false);
+    }
   }, [account?.address]);
   // Stats laden sobald account.address verfügbar + alle 60s auto-refresh
   useEffect(() => {
@@ -287,8 +291,13 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
       if (!res.ok) throw new Error(d.error ?? 'Fehler');
       if (d.total > 0) {
         setReferralClaimMsg(tFmt('ref.claimSuccess', lang, { amount: d.total.toFixed(2) }));
-        // Sofort den claimableCount auf 0 setzen damit der Button verschwindet
-        setReferralStats(prev => prev ? { ...prev, claimableCount: 0, claimableAmount: 0 } : prev);
+        // Sofort den claimableCount auf 0 setzen damit der Button verschwindet + paidReferrals erhöhen
+        setReferralStats(prev => prev ? {
+          ...prev,
+          claimableCount: 0,
+          claimableAmount: 0,
+          paidReferrals: prev.paidReferrals + (d.claimed ?? 0),
+        } : prev);
         // Dann frische Daten laden
         await loadReferralStats();
         await loadProfile();
