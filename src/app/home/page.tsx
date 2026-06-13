@@ -31,25 +31,20 @@ function HomeContent() {
     setLangCtx(lang);
   };
 
-  // Referral-Code aus localStorage speichern — nur für neue Konten (max. 10 Min. alt)
+  // Referral-Code aus localStorage speichern — nur für neue Konten (UNIQUE-Constraint verhindert Doppelungen)
   useEffect(() => {
     if (!user?.id) return;
     const referralCode = typeof window !== 'undefined' ? localStorage.getItem('dfaith_referral') : null;
     if (!referralCode || referralCode === user.id.toLowerCase()) return;
-    // Konto-Alter prüfen: nur innerhalb von 10 Minuten nach Registrierung
-    const createdAt = user.createdAt ? new Date(user.createdAt).getTime() : 0;
-    const ageMs = Date.now() - createdAt;
-    if (ageMs > 10 * 60 * 1000) {
-      // Bestandskunde — Referral-Code verwerfen
-      if (typeof window !== 'undefined') localStorage.removeItem('dfaith_referral');
-      return;
-    }
     fetch('/api/referral', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ referrerWallet: referralCode, referredWallet: user.id }),
     }).then(r => {
-      if (r.ok && typeof window !== 'undefined') localStorage.removeItem('dfaith_referral');
+      // Bei Erfolg (gespeichert) oder 400 (Selbst-Referral) localStorage löschen
+      if ((r.ok || r.status === 400) && typeof window !== 'undefined') {
+        localStorage.removeItem('dfaith_referral');
+      }
     }).catch(() => {});
   }, [user?.id]);
 

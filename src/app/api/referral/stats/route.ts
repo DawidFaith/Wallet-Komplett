@@ -14,6 +14,29 @@ export async function GET(req: NextRequest) {
 
   const sql = getDb();
   try {
+    // Tabellen anlegen falls noch nicht vorhanden
+    await sql`
+      CREATE TABLE IF NOT EXISTS user_referrals (
+        id               SERIAL      PRIMARY KEY,
+        referrer_wallet  TEXT        NOT NULL,
+        referred_wallet  TEXT        NOT NULL UNIQUE,
+        created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        triggered_at     TIMESTAMPTZ,
+        reward_paid      BOOLEAN     NOT NULL DEFAULT FALSE,
+        reward_amount    DECIMAL(10,2)
+      )
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS referral_config (
+        id                  TEXT          PRIMARY KEY DEFAULT 'default',
+        reward_per_referral DECIMAL(10,2) NOT NULL DEFAULT 10.0,
+        max_referrals_paid  INT           NOT NULL DEFAULT 100,
+        trigger_level       INT           NOT NULL DEFAULT 10,
+        is_active           BOOLEAN       NOT NULL DEFAULT TRUE,
+        updated_at          TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`INSERT INTO referral_config (id) VALUES ('default') ON CONFLICT (id) DO NOTHING`;
     const [stats, config] = await Promise.all([
       sql`
         SELECT
