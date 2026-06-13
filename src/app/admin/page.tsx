@@ -2051,7 +2051,8 @@ function ReferralSection({ secret, users }: { secret: string; users: AdminUser[]
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error ?? 'Fehler');
-      setRepMsg(`✓ +${amt} REP → jetzt ${d.reputation} REP (Level ${d.level} – ${d.levelName})`);
+      const triggered = d.referralTriggered ? ' ✅ Referral-Trigger ausgelöst!' : '';
+      setRepMsg(`✓ +${amt} REP → jetzt ${d.reputation} REP (Level ${d.level} – ${d.levelName})${triggered}`);
       await loadEntries();
     } catch (e) {
       setRepMsg(`Fehler: ${e instanceof Error ? e.message : String(e)}`);

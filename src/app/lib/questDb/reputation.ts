@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from 'next/cache';
 import { getDb } from '../db';
 import { addDfaithCredits, redeemDfaithCredits, savePendingReward } from './credits';
 import type {
@@ -58,6 +59,7 @@ export async function addUserReputation(
   artistWallet: string,
   amount: number,
 ): Promise<void> {
+  noStore(); // alle DB-Reads hier immer frisch (kein Next.js Fetch-Cache)
   const sql = getDb();
   const rounded = Math.max(0, Math.round(amount));
   if (rounded <= 0) return;
@@ -119,25 +121,16 @@ export async function addUserReputation(
         FROM referral_config WHERE id = 'default' LIMIT 1
       `;
       const cfg = cfgRows[0];
-      if (cfg && cfg.is_active && newLevel >= Number(cfg.trigger_level) && oldLevel < Number(cfg.trigger_level)) {
-        // Sicherstellen dass kein anderer Artist diesen User bereits zum Trigger gebracht hat
-        // → globales Gesamt-Level berechnen (höchstes Level über alle Artists)
-        const allRep = await sql`
-          SELECT r.reputation, rl.level_number
-          FROM user_reputation r
-          JOIN reputation_levels rl ON rl.artist_wallet = r.artist_wallet
-            AND rl.min_reputation <= r.reputation
-          WHERE r.wallet_address = ${walletAddress.toLowerCase()}
-          ORDER BY rl.level_number DESC
-          LIMIT 1
-        `;
-        const globalTopLevel = allRep.length > 0 ? Number(allRep[0].level_number) : newLevel;
-
-        if (globalTopLevel >= Number(cfg.trigger_level)) {
-          // Referral-Eintrag suchen (referred_wallet = dieser User)
+      // Trigger: User hat trigger_level erreicht (oder war schon drüber) UND Referral noch nicht ausgelöst
+      // Bedingung OHNE oldLevel-Check, damit auch nachträglich bei bereits überschrittenem Level getriggert wird.
+      // Das UPDATE mit AND triggered_at IS NULL verhindert Doppel-Trigger.
+      if (cfg && Boolean(cfg.is_active) && newLevel >= Number(cfg.trigger_level)) {
+          // Referral-Eintrag suchen (referred_wallet = dieser User, noch nicht getriggert)
           const refRows = await sql`
-            SELECT id, referrer_wallet, reward_paid FROM user_referrals
-            WHERE referred_wallet = ${walletAddress.toLowerCase()} AND reward_paid = FALSE
+            SELECT id, referrer_wallet FROM user_referrals
+            WHERE referred_wallet = ${walletAddress.toLowerCase()}
+              AND reward_paid = FALSE
+              AND triggered_at IS NULL
             LIMIT 1
           `;
           if (refRows.length > 0) {
@@ -151,7 +144,7 @@ export async function addUserReputation(
             const paid = Number(paidCount[0]?.cnt ?? 0);
             if (paid < Number(cfg.max_referrals_paid)) {
               const rewardAmt = Number(cfg.reward_per_referral);
-              // Nur triggered_at setzen — Reward wird vom User manuell abgeholt
+              // triggered_at setzen — Reward wird vom User manuell abgeholt
               await sql`
                 UPDATE user_referrals
                 SET reward_amount = ${rewardAmt}, triggered_at = NOW()
@@ -159,10 +152,10 @@ export async function addUserReputation(
               `;
             }
           }
-        }
       }
-    } catch {
+    } catch (refErr) {
       // Referral-Fehler dürfen die Quest-Completion nicht blockieren
+      console.error('[addUserReputation] Referral-Trigger-Fehler:', refErr);
     }
   }
 }

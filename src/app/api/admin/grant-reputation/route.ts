@@ -7,8 +7,11 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { addUserReputation, getUserReputation } from '../../../lib/questDb';
+import { getDb } from '../../../lib/db';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+export const revalidate = 0;
 
 export async function POST(req: NextRequest) {
   const secret = req.headers.get('x-admin-secret');
@@ -33,7 +36,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'amount muss > 0 sein' }, { status: 400 });
   }
 
+  // Referral-Status vor dem Grant merken
+  const sql = getDb();
+  const beforeRows = await sql`
+    SELECT id, triggered_at FROM user_referrals
+    WHERE referred_wallet = ${walletAddress.toLowerCase()} AND triggered_at IS NULL
+    LIMIT 1
+  `.catch(() => []);
+
   await addUserReputation(walletAddress, artistWallet, amount);
+
+  // Prüfen ob Trigger während des Grants ausgelöst wurde
+  const afterRows = beforeRows.length > 0
+    ? await sql`
+        SELECT triggered_at FROM user_referrals
+        WHERE id = ${beforeRows[0].id as number}
+        LIMIT 1
+      `.catch(() => [])
+    : [];
+  const referralTriggered = afterRows.length > 0 && afterRows[0].triggered_at != null;
 
   const newRep = await getUserReputation(walletAddress, artistWallet);
   return NextResponse.json({
@@ -41,5 +62,6 @@ export async function POST(req: NextRequest) {
     reputation: newRep.reputation,
     level: newRep.level,
     levelName: newRep.levelName,
+    referralTriggered,
   });
 }
