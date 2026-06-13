@@ -151,13 +151,11 @@ export async function addUserReputation(
             const paid = Number(paidCount[0]?.cnt ?? 0);
             if (paid < Number(cfg.max_referrals_paid)) {
               const rewardAmt = Number(cfg.reward_per_referral);
-              // Reward auszahlen
-              await addDfaithCredits(referrerWallet, rewardAmt);
-              // Als bezahlt markieren
+              // Nur triggered_at setzen — Reward wird vom User manuell abgeholt
               await sql`
                 UPDATE user_referrals
-                SET reward_paid = TRUE, reward_amount = ${rewardAmt}, triggered_at = NOW()
-                WHERE id = ${ref.id as number}
+                SET reward_amount = ${rewardAmt}, triggered_at = NOW()
+                WHERE id = ${ref.id as number} AND triggered_at IS NULL
               `;
             }
           }

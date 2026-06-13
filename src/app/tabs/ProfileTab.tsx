@@ -138,18 +138,24 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
   }, [account?.address, selectedArtist?.walletAddress, selectedArtist?.isPlatformUser]);
 
   // Referral-Statistiken laden (nur wenn Platform-Card offen)
-  const [referralStats, setReferralStats] = useState<{ totalInvited: number; paidReferrals: number; triggerLevel: number; rewardPerReferral: number; isActive: boolean } | null>(null);
+  const [referralStats, setReferralStats] = useState<{ totalInvited: number; paidReferrals: number; claimableAmount: number; claimableCount: number; triggerLevel: number; rewardPerReferral: number; isActive: boolean } | null>(null);
   const [referralStatsLoading, setReferralStatsLoading] = useState(false);
   const [referralCopied, setReferralCopied] = useState(false);
-  useEffect(() => {
-    if (!account?.address || !selectedArtist?.isPlatformUser) { setReferralStats(null); return; }
+  const [referralClaiming, setReferralClaiming] = useState(false);
+  const [referralClaimMsg, setReferralClaimMsg] = useState('');
+  const loadReferralStats = useCallback(async () => {
+    if (!account?.address) return;
     setReferralStatsLoading(true);
     fetch(`/api/referral/stats?wallet=${encodeURIComponent(account.address)}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => setReferralStats(d && !d.error ? d : null))
       .catch(() => setReferralStats(null))
       .finally(() => setReferralStatsLoading(false));
-  }, [account?.address, selectedArtist?.isPlatformUser]);
+  }, [account?.address]);
+  useEffect(() => {
+    if (!account?.address || !selectedArtist?.isPlatformUser) { setReferralStats(null); return; }
+    loadReferralStats();
+  }, [account?.address, selectedArtist?.isPlatformUser, loadReferralStats]);
   const [artistSaving, setArtistSaving] = useState(false);
   // Meta Business Partner
   const [metaIgVerified, setMetaIgVerified] = useState(false);
@@ -261,6 +267,33 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
       setClaiming(false);
     }
   }, [account?.address, data, loadProfile]);
+
+  const handleReferralClaim = useCallback(async () => {
+    if (!account?.address || referralClaiming) return;
+    setReferralClaiming(true);
+    setReferralClaimMsg('');
+    try {
+      const res = await fetch('/api/referral/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: account.address }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? 'Fehler');
+      if (d.total > 0) {
+        setReferralClaimMsg(`+${d.total.toFixed(2)} D.FAITH Credits erhalten! 🎉`);
+        await loadReferralStats();
+        await loadProfile();
+      } else {
+        setReferralClaimMsg('Nichts abholen');
+      }
+      setTimeout(() => setReferralClaimMsg(''), 4000);
+    } catch (e) {
+      setReferralClaimMsg(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setReferralClaiming(false);
+    }
+  }, [account?.address, referralClaiming, loadReferralStats, loadProfile]);
 
   const handleUnlink = useCallback(async (platform: SocialPlatform) => {
     if (!account?.address) return;
@@ -804,7 +837,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                     )}
                     {(artist.isPlatformUser || hasQuests) && (
                       <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-amber-400 text-black text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-lg animate-pulse">
-                        {artist.isPlatformUser ? '1' : artist.questCount}
+                        {artist.isPlatformUser ? <FaUserFriends size={9} /> : artist.questCount}
                       </span>
                     )}
                   </div>
@@ -865,50 +898,89 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               {/* ── Referral-Sektion (nur Platform-Card) ── */}
               {selectedArtist.isPlatformUser && (
                 <div className="border-t border-white/[0.08] pt-3 space-y-3">
-                  <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.24em] flex items-center gap-1.5">
-                    <FaUserFriends size={11} /> Freunde einladen
+                  <p className="text-white text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                    <FaUserFriends size={13} className="text-amber-400" /> Freunde einladen & Credits verdienen
                   </p>
-                  {/* Einladungslink */}
-                  <div className="flex items-center gap-2 bg-zinc-800/60 border border-white/[0.08] rounded-xl px-3 py-2">
-                    <p className="text-zinc-400 text-[10px] flex-1 truncate font-mono">
-                      {typeof window !== 'undefined' ? `${window.location.origin}/?ref=${account?.address ?? ''}` : `/?ref=${account?.address ?? ''}`}
+
+                  {/* Info-Text */}
+                  {referralStats?.isActive && (
+                    <p className="text-zinc-300 text-xs leading-relaxed">
+                      Teile deinen Link. Sobald jemand über deinen Link beitritt und <span className="text-amber-300 font-bold">Level {referralStats.triggerLevel}</span> erreicht, kannst du <span className="text-amber-300 font-bold">+{referralStats.rewardPerReferral} Credits</span> abholen.
                     </p>
-                    <button
-                      onClick={() => {
-                        if (typeof window === 'undefined') return;
-                        const link = `${window.location.origin}/?ref=${account?.address ?? ''}`;
-                        navigator.clipboard.writeText(link).then(() => {
-                          setReferralCopied(true);
-                          setTimeout(() => setReferralCopied(false), 2500);
-                        }).catch(() => {});
-                      }}
-                      className="text-amber-400 hover:text-amber-300 transition-colors shrink-0 text-xs font-bold flex items-center gap-1"
-                    >
-                      {referralCopied
-                        ? <><FaCheck size={10} /> Kopiert!</>
-                        : <><FaCopy size={10} /> Kopieren</>}
-                    </button>
+                  )}
+
+                  {/* Einladungslink */}
+                  <div>
+                    <p className="text-zinc-400 text-[10px] font-semibold uppercase tracking-wider mb-1">Dein Einladungslink</p>
+                    <div className="flex items-center gap-2 bg-zinc-800 border border-white/[0.12] rounded-xl px-3 py-2.5">
+                      <p className="text-zinc-300 text-[11px] flex-1 truncate font-mono">
+                        {typeof window !== 'undefined' ? `${window.location.origin}/?ref=${account?.address ?? ''}` : `/?ref=${account?.address ?? ''}`}
+                      </p>
+                      <button
+                        onClick={() => {
+                          if (typeof window === 'undefined') return;
+                          const link = `${window.location.origin}/?ref=${account?.address ?? ''}`;
+                          navigator.clipboard.writeText(link).then(() => {
+                            setReferralCopied(true);
+                            setTimeout(() => setReferralCopied(false), 2500);
+                          }).catch(() => {});
+                        }}
+                        className={`shrink-0 text-xs font-bold flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-colors ${
+                          referralCopied
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-amber-500 hover:bg-amber-400 text-black'
+                        }`}
+                      >
+                        {referralCopied
+                          ? <><FaCheck size={10} /> Kopiert!</>
+                          : <><FaCopy size={10} /> Kopieren</>}
+                      </button>
+                    </div>
                   </div>
+
                   {/* Statistiken */}
                   {referralStatsLoading ? (
-                    <p className="text-zinc-600 text-xs">Lade…</p>
+                    <p className="text-zinc-400 text-xs">Lade…</p>
                   ) : referralStats ? (
                     <>
                       <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-zinc-800/50 rounded-xl p-3 text-center">
-                          <p className="text-white font-bold text-xl">{referralStats.totalInvited}</p>
-                          <p className="text-zinc-500 text-[10px] mt-0.5">Eingeladen</p>
+                        <div className="bg-zinc-800 border border-white/[0.08] rounded-xl p-3 text-center">
+                          <p className="text-white font-bold text-2xl">{referralStats.totalInvited}</p>
+                          <p className="text-zinc-400 text-[11px] mt-0.5 font-medium">Eingeladen</p>
                         </div>
-                        <div className="bg-zinc-800/50 rounded-xl p-3 text-center">
-                          <p className="text-emerald-400 font-bold text-xl">{referralStats.paidReferrals}</p>
-                          <p className="text-zinc-500 text-[10px] mt-0.5">Level {referralStats.triggerLevel} erreicht 🎉</p>
+                        <div className="bg-zinc-800 border border-white/[0.08] rounded-xl p-3 text-center">
+                          <p className="text-emerald-400 font-bold text-2xl">{referralStats.paidReferrals}</p>
+                          <p className="text-zinc-400 text-[11px] mt-0.5 font-medium">Bereits ausgezahlt</p>
                         </div>
                       </div>
-                      {referralStats.isActive && (
-                        <p className="text-zinc-600 text-[10px] text-center">
-                          +{referralStats.rewardPerReferral} Credits pro Einladung die Level {referralStats.triggerLevel} erreicht
-                        </p>
-                      )}
+
+                      {/* Abholen-Button */}
+                      {referralStats.claimableCount > 0 ? (
+                        <div className="bg-amber-950/40 border border-amber-500/30 rounded-xl p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-amber-300 font-bold text-sm">{referralStats.claimableCount} Reward{referralStats.claimableCount !== 1 ? 's' : ''} abholbereit</p>
+                              <p className="text-amber-400/80 text-[11px] mt-0.5">+{referralStats.claimableAmount.toFixed(2)} D.FAITH Credits</p>
+                            </div>
+                            <button
+                              onClick={handleReferralClaim}
+                              disabled={referralClaiming}
+                              className="bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-black font-black text-xs px-4 py-2 rounded-xl transition-colors"
+                            >
+                              {referralClaiming ? '…' : 'Abholen'}
+                            </button>
+                          </div>
+                          {referralClaimMsg && (
+                            <p className={`text-xs font-semibold ${
+                              referralClaimMsg.includes('🎉') ? 'text-emerald-400' : 'text-red-400'
+                            }`}>{referralClaimMsg}</p>
+                          )}
+                        </div>
+                      ) : referralClaimMsg ? (
+                        <p className={`text-xs font-semibold ${
+                          referralClaimMsg.includes('🎉') ? 'text-emerald-400' : 'text-zinc-400'
+                        }`}>{referralClaimMsg}</p>
+                      ) : null}
                     </>
                   ) : null}
                 </div>
