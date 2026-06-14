@@ -14,24 +14,26 @@ const PLATFORM_LABELS: Record<string, string> = {
   amazon_music:  'Amazon Music',
   deezer:        'Deezer',
   tidal:         'Tidal',
-  other:         'Andere',
 };
+function getPlatformLabel(platform: string, lang: string): string {
+  return PLATFORM_LABELS[platform] ?? t('sq.platformOther', lang as 'de' | 'en' | 'pl');
+}
+
+function getStatusLabel(status: string, lang: string): string {
+  const labels: Record<string, Record<string, string>> = {
+    enrollment: { de: '🎟️ Anmeldung offen', en: '🎟️ Enrollment open', pl: '🎟️ Rejestracja otwarta' },
+    active:     { de: '🚀 Aktiv',           en: '🚀 Active',            pl: '🚀 Aktywny' },
+    completed:  { de: '✅ Abgeschlossen',   en: '✅ Completed',        pl: '✅ Zakończono' },
+    expired:    { de: '⌛ Abgelaufen',       en: '⌛ Expired',          pl: '⌛ Wygasł' },
+    cancelled:  { de: '🚫 Storniert',       en: '🚫 Cancelled',       pl: '🚫 Anulowano' },
+  };
+  return labels[status]?.[lang] ?? labels[status]?.['de'] ?? status;
+}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('de-DE', {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   });
-}
-
-function deriveLabel(status: StreamingQuest['status'] | 'cancelled'): string {
-  const m: Record<string, string> = {
-    enrollment: '🎟️ Anmeldung offen',
-    active:     '🚀 Aktiv',
-    completed:  '✅ Abgeschlossen',
-    expired:    '⌛ Abgelaufen',
-    cancelled:  '🚫 Storniert',
-  };
-  return m[status] ?? status;
 }
 
 // ─── Update/Confirm-Dialog ───────────────────────────────────────────────────
@@ -65,7 +67,7 @@ function UpdateDialog({ questId, creatorWallet, currentStreams, isConfirm = fals
       );
       setImgUrl(blob.url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload fehlgeschlagen');
+      setError(err instanceof Error ? err.message : t('sq.uploadFailed', lang));
     } finally { setUploading(false); }
   };
 
@@ -211,8 +213,8 @@ export default function StreamingQuestManageCard({ quest, creatorWallet, onRefre
       const res = await fetch(`/api/streaming-quests/${quest.id}?wallet=${encodeURIComponent(creatorWallet)}`, { method: 'DELETE' });
       if (res.ok) { onRemove(); return; }
       const d = await res.json();
-      alert(d.error ?? 'Fehler beim Löschen');
-    } catch { alert('Fehler beim Löschen'); }
+      alert(d.error ?? t('sq.deleteError', lang));
+    } catch { alert(t('sq.deleteError', lang)); }
     finally { setDeleting(false); }
   };
 
@@ -227,8 +229,8 @@ export default function StreamingQuestManageCard({ quest, creatorWallet, onRefre
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap gap-1.5 mb-1">
-              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-400 border border-gray-600/30">{PLATFORM_LABELS[quest.platform] ?? quest.platform}</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-400 border border-gray-600/30">{deriveLabel(quest.status as StreamingQuest['status'])}</span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-400 border border-gray-600/30">{getPlatformLabel(quest.platform, lang)}</span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-400 border border-gray-600/30">{getStatusLabel(quest.status as string, lang)}</span>
             </div>
             <h3 className="text-sm font-bold text-white truncate">{quest.title}</h3>
           </div>
@@ -237,7 +239,7 @@ export default function StreamingQuestManageCard({ quest, creatorWallet, onRefre
             <button
               onClick={handleDelete}
               disabled={deleting}
-              title="Quest löschen"
+              title={t('sq.deleteQuest', lang)}
               className="text-gray-600 hover:text-red-400 transition-colors flex-shrink-0 mt-1 disabled:opacity-50"
             >
               <FaTrash size={13} />

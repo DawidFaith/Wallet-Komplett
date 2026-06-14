@@ -1449,6 +1449,14 @@ const dict: Translations = {
   'sq.cancelConfirmBtn': { de: 'Ja, stornieren', en: 'Yes, cancel', pl: 'Tak, anuluj' },
   'sq.cancelling':       { de: 'Wird storniert…', en: 'Cancelling…', pl: 'Anulowanie…' },
   'sq.cancelledInfo':    { de: 'Quest wurde storniert – Guthaben zurückerstattet', en: 'Quest was cancelled – credits refunded', pl: 'Quest został anulowany – środki zwrócone' },
+  'sq.claimSuccessTitle': { de: 'Belohnung erhalten!',     en: 'Reward received!',        pl: 'Nagroda odebrana!' },
+  'sq.shardReceived':     { de: 'Shard erhalten!',          en: 'Shard received!',         pl: 'Otrzymano shard!' },
+  'sq.minLevelRequired':  { de: 'Mindestlevel {level} erforderlich', en: 'Minimum level {level} required', pl: 'Wymagany poziom {level}' },
+  'sq.claimSubHint':      { de: 'D.FAITH + ggf. Shard',    en: 'D.FAITH + possible Shard', pl: 'D.FAITH + ewentualny Shard' },
+  'sq.deleteQuest':       { de: 'Quest löschen',            en: 'Delete quest',            pl: 'Usuń quest' },
+  'sq.deleteError':       { de: 'Fehler beim Löschen',      en: 'Error deleting quest',    pl: 'Błąd usuwania' },
+  'sq.uploadFailed':      { de: 'Upload fehlgeschlagen',    en: 'Upload failed',           pl: 'Błąd przesyłania' },
+  'sq.platformOther':     { de: 'Andere',                   en: 'Other',                   pl: 'Inne' },
 };
 
 

@@ -567,7 +567,7 @@ export default function CreateBundleModal({
                       }`}
                     >
                       <Icon size={16} style={isSelected ? { color: p.color } : {}} />
-                      {p.label}
+                      {p.value === 'other' ? t('sq.platformOther', lang) : p.label}
                     </button>
                   );
                 })}

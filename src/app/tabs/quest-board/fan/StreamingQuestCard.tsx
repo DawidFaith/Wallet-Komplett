@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { FaTimes, FaUsers, FaCheckCircle, FaClock, FaChartLine, FaImages, FaTrophy, FaStar, FaGift, FaShieldAlt } from 'react-icons/fa';
 import { SiSpotify, SiApplemusic, SiYoutubemusic, SiAmazonmusic, SiTidal } from 'react-icons/si';
-import { t } from '../../../utils/i18n';
+import { t, tFmt } from '../../../utils/i18n';
 import { useLang } from '../../../components/LangContext';
 import type { IconType } from 'react-icons';
 
@@ -138,16 +138,17 @@ function timeLeft(iso: string, lang: string): string {
 // ─── Erfolgs-Banner ────────────────────────────────────────────────────────────
 interface ClaimSuccessProps { reward: number; rep: number; shardDropped: boolean; onDone: () => void; }
 function ClaimSuccess({ reward, rep, shardDropped, onDone }: ClaimSuccessProps) {
+  const lang = useLang();
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center pb-10 pointer-events-none">
       <div className="pointer-events-auto bg-zinc-900 border border-green-600/50 rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4 text-center">
         <div className="text-4xl mb-3">🎉</div>
-        <h3 className="text-white font-bold text-lg mb-1">Belohnung erhalten!</h3>
+        <h3 className="text-white font-bold text-lg mb-1">{t('sq.claimSuccessTitle', lang)}</h3>
         <p className="text-green-400 font-semibold text-base">+{reward.toLocaleString()} D.FAITH</p>
         {rep > 0 && <p className="text-amber-400 text-sm mt-0.5">+{rep} Reputation</p>}
         {shardDropped && (
           <p className="text-purple-300 text-sm mt-0.5 flex items-center justify-center gap-1">
-            <FaStar size={12} /> Shard erhalten!
+            <FaStar size={12} /> {t('sq.shardReceived', lang)}
           </p>
         )}
         <button onClick={onDone} className="mt-4 px-6 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold text-sm transition-colors">OK</button>
@@ -297,7 +298,7 @@ function StreamingQuestDetailModal({ quest, walletAddress, onClose, onJoined, on
           {/* Level-Hinweis */}
           {canJoin && quest.min_level > 1 && (
             <div className="bg-amber-900/20 border border-amber-700/30 rounded-xl px-3 py-2 text-xs text-amber-400 flex items-center gap-2">
-              <FaShieldAlt size={11} /> Mindestlevel {quest.min_level} erforderlich
+              <FaShieldAlt size={11} /> {tFmt('sq.minLevelRequired', lang, { level: String(quest.min_level) })}
             </div>
           )}
           {/* Updates */}
@@ -354,7 +355,7 @@ function StreamingQuestDetailModal({ quest, walletAddress, onClose, onJoined, on
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-bold disabled:opacity-50 transition-opacity flex items-center justify-center gap-2">
                 <FaGift size={14} /> {claiming ? t('sq.claiming', lang) : t('sq.claimBtn', lang)}
               </button>
-              <p className="text-center text-xs text-zinc-500">{quest.reward_per_participant.toLocaleString()} D.FAITH + ggf. Shard</p>
+              <p className="text-center text-xs text-zinc-500">{quest.reward_per_participant.toLocaleString()} {t('sq.claimSubHint', lang)}</p>
             </div>
           )}
           {quest.has_joined && quest.status !== 'completed' && (
