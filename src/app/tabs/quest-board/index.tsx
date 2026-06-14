@@ -269,10 +269,9 @@ export default function QuestBoard({ language, artistWallet, filterArtist, onCle
         ) : !anyVerified && !internalFilterArtist && !filterArtist ? (
           <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-16 space-y-4">
             <FaTrophy size={40} className="text-yellow-400 opacity-80" />
-            <h2 className="text-white text-xl font-bold">Social-Konto verknüpfen</h2>
+            <h2 className="text-white text-xl font-bold">{t('quest.connectTitle', lang)}</h2>
             <p className="text-zinc-400 text-sm leading-relaxed">
-              Verknüpfe mindestens eines deiner Social-Media-Konten in deinem Profil,
-              um passende Quests zu sehen.
+              {t('quest.connectDesc', lang)}
             </p>
             <div className="flex items-center justify-center gap-4 text-zinc-500 pt-2">
               <FaYoutube size={22} className="text-red-500" />

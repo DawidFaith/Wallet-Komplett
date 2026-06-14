@@ -677,6 +677,16 @@ const dict: Translations = {
     en: 'Verify your account in Profile',
     pl: 'Zweryfikuj konto w Profilu',
   },
+  'quest.connectTitle': {
+    de: 'Social-Konto verknüpfen',
+    en: 'Connect Social Account',
+    pl: 'Połącz konto społecznościowe',
+  },
+  'quest.connectDesc': {
+    de: 'Verknüpfe mindestens eines deiner Social-Media-Konten in deinem Profil, um passende Quests zu sehen.',
+    en: 'Connect at least one of your social media accounts in your profile to see matching quests.',
+    pl: 'Połącz co najmniej jedno konto w mediach społecznościowych w swoim profilu, aby zobaczyć pasujące questy.',
+  },
   'quest.allCompleteDesc': {
     de: 'Alle {n} Quests abschließen → Abschluss-Bonus!',
     en: 'Complete all {n} quests → Completion Bonus!',
