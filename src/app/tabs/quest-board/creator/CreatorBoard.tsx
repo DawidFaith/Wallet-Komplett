@@ -62,9 +62,8 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   // Streaming Quests
-  const [streamingQuests, setStreamingQuests]       = useState<StreamingQuest[]>([]);
-  const [streamingLoading, setStreamingLoading]     = useState(false);
-  const [showStreamingModal, setShowStreamingModal] = useState(false);
+  const [streamingQuests, setStreamingQuests]   = useState<StreamingQuest[]>([]);
+  const [streamingLoading, setStreamingLoading] = useState(false); // kept for future use, creation is now in CreateBundleModal
 
   const loadCreatorBalance = useCallback(async () => {
     setBalanceLoading(true);
@@ -369,12 +368,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
           <h3 className="text-white font-bold flex items-center gap-2">
             🎵 {t('sq.sectionTitle', lang)}
           </h3>
-          <button
-            onClick={() => setShowStreamingModal(true)}
-            className="bg-purple-800/60 hover:bg-purple-700/60 border border-purple-600/40 text-white font-semibold px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 text-xs"
-          >
-            <FaPlus size={10} /> {t('sq.createBtn', lang)}
-          </button>
+
         </div>
         {streamingLoading ? (
           <div className="flex justify-center py-6">
@@ -403,7 +397,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         walletAddress={walletAddress}
         creatorBalance={creatorBalance}
         verified={verified}
-        onCreated={() => { loadCreatorBundles(); loadCreatorBalance(); }}
+        onCreated={() => { loadCreatorBundles(); loadCreatorBalance(); loadStreamingQuests(); }}
         onOpenDeposit={() => setShowDeposit(true)}
       />
       <DepositModal
@@ -412,13 +406,6 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         walletAddress={walletAddress}
         onDeposited={(amount) => setCreatorBalance((prev) => prev + amount)}
       />
-      {showStreamingModal && (
-        <CreateStreamingQuestModal
-          creatorWallet={walletAddress}
-          onClose={() => setShowStreamingModal(false)}
-          onCreated={loadStreamingQuests}
-        />
-      )}
     </div>
   );
 }

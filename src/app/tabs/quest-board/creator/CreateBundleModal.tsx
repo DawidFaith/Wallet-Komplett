@@ -8,6 +8,18 @@ import type { Platform, QuestType } from '../types';
 import { useLang } from '../../../components/LangContext';
 import { t, tFmt } from '../../../utils/i18n';
 import type { Lang } from '../../../utils/i18n';
+import { upload } from '@vercel/blob/client';
+import { FaMusic, FaCamera } from 'react-icons/fa';
+
+const STREAMING_PLATFORMS = [
+  { value: 'spotify',       label: 'Spotify' },
+  { value: 'apple_music',   label: 'Apple Music' },
+  { value: 'youtube_music', label: 'YouTube Music' },
+  { value: 'amazon_music',  label: 'Amazon Music' },
+  { value: 'deezer',        label: 'Deezer' },
+  { value: 'tidal',         label: 'Tidal' },
+  { value: 'other',         label: 'Andere' },
+] as const;
 // ─── Media-Typen (für Video-Picker) ─────────────────────────────────────────
 interface AvailableQuestMediaItem {
   video_id: string;
@@ -96,6 +108,23 @@ export default function CreateBundleModal({
   open, onClose, walletAddress, creatorBalance, verified, onCreated, onOpenDeposit,
 }: CreateBundleModalProps) {
   const lang = useLang();
+
+  // ── Quest-Typ-Wähler ────────────────────────────────────────────────────────
+  const [questMode, setQuestMode] = useState<'social' | 'streaming' | null>(null);
+
+  // ── Streaming-Quest-Formular-State ───────────────────────────────────────────
+  const [sqTitle, setSqTitle]               = useState('');
+  const [sqDesc, setSqDesc]                 = useState('');
+  const [sqPlatform, setSqPlatform]         = useState('spotify');
+  const [sqTargetStreams, setSqTargetStreams] = useState(10000);
+  const [sqRewardPer, setSqRewardPer]       = useState(100);
+  const [sqMaxPart, setSqMaxPart]           = useState(50);
+  const [sqRepReward, setSqRepReward]       = useState(0);
+  const [sqEnrollHours, setSqEnrollHours]   = useState(48);
+  const [sqDeadlineHours, setSqDeadlineHours] = useState(240);
+  const [sqCreating, setSqCreating]         = useState(false);
+  const [sqError, setSqError]               = useState<string | null>(null);
+
   const [step, setStep]       = useState<Step>(1);
   const [platform, setPlatform] = useState<Platform>(
     verified.youtube ? 'youtube' : verified.instagram ? 'instagram' : verified.tiktok ? 'tiktok' : verified.facebook ? 'facebook' : 'youtube',
@@ -146,6 +175,11 @@ export default function CreateBundleModal({
   // Reset beim Öffnen
   useEffect(() => {
     if (!open) return;
+    setQuestMode(null);
+    setSqTitle(''); setSqDesc(''); setSqPlatform('spotify');
+    setSqTargetStreams(10000); setSqRewardPer(100); setSqMaxPart(50);
+    setSqRepReward(0); setSqEnrollHours(48); setSqDeadlineHours(240);
+    setSqCreating(false); setSqError(null);
     setStep(1);
     setVideoUrl('');
     setVideoMediaId('');
@@ -173,6 +207,39 @@ export default function CreateBundleModal({
     setTopFanBonusPcts([]);
     setMaxCollectibleCreditPct(0);
   }, [open]);
+
+  // ── Streaming Quest erstellen ─────────────────────────────────────────────
+  const handleCreateStreamingQuest = async () => {
+    if (!sqTitle.trim()) { setSqError(t('sq.errorTitle', lang)); return; }
+    if (sqDeadlineHours <= sqEnrollHours) { setSqError(t('sq.errorDeadline', lang)); return; }
+    setSqCreating(true); setSqError(null);
+    try {
+      const res = await fetch('/api/streaming-quests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          creatorWallet: walletAddress,
+          title: sqTitle.trim(),
+          description: sqDesc.trim() || undefined,
+          platform: sqPlatform,
+          targetStreams: sqTargetStreams,
+          rewardPerParticipant: sqRewardPer,
+          maxParticipants: sqMaxPart,
+          reputationReward: sqRepReward,
+          enrollmentHours: sqEnrollHours,
+          deadlineHours: sqDeadlineHours,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Fehler');
+      onCreated();
+      onClose();
+    } catch (err) {
+      setSqError(err instanceof Error ? err.message : 'Fehler');
+    } finally {
+      setSqCreating(false);
+    }
+  };
 
   // Platform-Nutzerzahl laden
   const fetchPlatformUserCount = async (p: Platform) => {
@@ -391,15 +458,193 @@ export default function CreateBundleModal({
   }
 
   const isBundle = items.length >= 2;
-  const modalTitle = step === 1
-    ? t('cb.modalTitle', lang)
-    : isBundle
-      ? t('cb.modalTitleBundle', lang)
-      : t('cb.modalTitle', lang);
+  const modalTitle = questMode === 'streaming'
+    ? t('sq.createTitle', lang)
+    : questMode === null
+      ? t('creator.createQuest', lang)
+      : step === 1
+        ? t('cb.modalTitle', lang)
+        : isBundle
+          ? t('cb.modalTitleBundle', lang)
+          : t('cb.modalTitle', lang);
 
   return (
     <Modal open={open} onClose={onClose} title={modalTitle} disableBackdropClose>
       <div className="space-y-5">
+
+        {/* ── Typ-Wähler ────────────────────────────────────────────────── */}
+        {questMode === null && (
+          <div className="space-y-3">
+            <p className="text-zinc-400 text-sm">{t('cb.chooseTypeHint', lang)}</p>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Social Quest */}
+              <button
+                onClick={() => setQuestMode('social')}
+                className="rounded-2xl border border-purple-600/40 bg-purple-900/20 hover:bg-purple-900/40 transition-colors p-5 flex flex-col items-center gap-3 text-left group"
+              >
+                <span className="text-3xl">📱</span>
+                <div>
+                  <p className="text-white font-bold text-sm group-hover:text-purple-300 transition-colors">{t('cb.typesSocial', lang)}</p>
+                  <p className="text-zinc-500 text-xs mt-0.5">{t('cb.typesSocialHint', lang)}</p>
+                </div>
+              </button>
+              {/* Streaming Milestone */}
+              <button
+                onClick={() => setQuestMode('streaming')}
+                className="rounded-2xl border border-green-600/40 bg-green-900/20 hover:bg-green-900/40 transition-colors p-5 flex flex-col items-center gap-3 text-left group"
+              >
+                <span className="text-3xl">🎵</span>
+                <div>
+                  <p className="text-white font-bold text-sm group-hover:text-green-300 transition-colors">{t('cb.typeStreaming', lang)}</p>
+                  <p className="text-zinc-500 text-xs mt-0.5">{t('cb.typeStreamingHint', lang)}</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Streaming Milestone Formular ─────────────────────────────── */}
+        {questMode === 'streaming' && (
+          <div className="space-y-4">
+            <button onClick={() => setQuestMode(null)} className="text-xs text-zinc-500 hover:text-zinc-300 flex items-center gap-1 transition-colors">
+              ← {t('btn.back', lang)}
+            </button>
+
+            {/* Titel */}
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">{t('sq.labelTitle', lang)}</label>
+              <input
+                type="text"
+                value={sqTitle}
+                onChange={e => setSqTitle(e.target.value)}
+                placeholder={t('sq.placeholderTitle', lang)}
+                maxLength={100}
+                className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+              />
+            </div>
+
+            {/* Beschreibung */}
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">{t('sq.labelDesc', lang)}</label>
+              <textarea
+                value={sqDesc}
+                onChange={e => setSqDesc(e.target.value)}
+                rows={2}
+                placeholder={t('sq.placeholderDesc', lang)}
+                maxLength={300}
+                className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 resize-none"
+              />
+            </div>
+
+            {/* Plattform */}
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">{t('sq.labelPlatform', lang)}</label>
+              <select
+                value={sqPlatform}
+                onChange={e => setSqPlatform(e.target.value)}
+                className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+              >
+                {STREAMING_PLATFORMS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+            </div>
+
+            {/* Stream-Ziel */}
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">{t('sq.labelTarget', lang)}</label>
+              <input
+                type="number"
+                value={sqTargetStreams}
+                onChange={e => setSqTargetStreams(Math.max(1, parseInt(e.target.value) || 1))}
+                min={1}
+                className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+              />
+            </div>
+
+            {/* Belohnungen */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">{t('sq.labelRewardPer', lang)}</label>
+                <input
+                  type="number"
+                  value={sqRewardPer}
+                  onChange={e => setSqRewardPer(Math.max(0, parseFloat(e.target.value) || 0))}
+                  min={0} step={10}
+                  className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">{t('sq.labelMaxPart', lang)}</label>
+                <input
+                  type="number"
+                  value={sqMaxPart}
+                  onChange={e => setSqMaxPart(Math.max(1, parseInt(e.target.value) || 1))}
+                  min={1}
+                  className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+            </div>
+
+            {/* REP-Bonus */}
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">{t('sq.labelRepReward', lang)}</label>
+              <input
+                type="number"
+                value={sqRepReward}
+                onChange={e => setSqRepReward(Math.max(0, parseInt(e.target.value) || 0))}
+                min={0} step={5}
+                className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+              />
+            </div>
+
+            {/* Zeitfenster */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">{t('sq.labelEnrollHours', lang)}</label>
+                <input
+                  type="number"
+                  value={sqEnrollHours}
+                  onChange={e => setSqEnrollHours(Math.max(1, parseInt(e.target.value) || 1))}
+                  min={1} max={168}
+                  className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                />
+                <p className="text-xs text-zinc-600 mt-1">{t('sq.hintEnrollHours', lang)}</p>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">{t('sq.labelDeadlineHours', lang)}</label>
+                <input
+                  type="number"
+                  value={sqDeadlineHours}
+                  onChange={e => setSqDeadlineHours(Math.max(sqEnrollHours + 1, parseInt(e.target.value) || sqEnrollHours + 1))}
+                  min={sqEnrollHours + 1} max={720}
+                  className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                />
+                <p className="text-xs text-zinc-600 mt-1">{t('sq.hintDeadlineHours', lang)}</p>
+              </div>
+            </div>
+
+            {/* Budget-Info */}
+            <div className="rounded-lg bg-purple-900/30 border border-purple-500/30 p-3 text-sm">
+              <p className="text-purple-300">
+                {t('sq.budgetInfo', lang)}: <span className="font-bold text-white">{(sqRewardPer * sqMaxPart).toLocaleString()} D.FAITH</span>
+              </p>
+              <p className="text-zinc-500 text-xs mt-1">{t('sq.budgetHint', lang)}</p>
+            </div>
+
+            {sqError && <p className="text-red-400 text-sm bg-red-900/20 rounded-lg px-3 py-2">{sqError}</p>}
+
+            <button
+              onClick={handleCreateStreamingQuest}
+              disabled={sqCreating}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {sqCreating ? t('sq.creating', lang) : t('sq.createBtn', lang)}
+            </button>
+          </div>
+        )}
+
+        {/* ── Social Quest (bisherige Steps) ───────────────────────────── */}
+        {questMode === 'social' && (
+          <>
 
         {/* Schritt-Anzeige */}
         <div className="flex gap-2">
@@ -891,6 +1136,8 @@ export default function CreateBundleModal({
               </button>
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
     </Modal>
