@@ -6,6 +6,9 @@ import { FaPlus, FaSync, FaTrophy, FaExternalLinkAlt, FaTimes, FaYoutube, FaInst
 import CreditsBox from '../components/CreditsBox';
 import DepositModal from './DepositModal';
 import CreateBundleModal from './CreateBundleModal';
+import CreateStreamingQuestModal from './CreateStreamingQuestModal';
+import StreamingQuestManageCard from './StreamingQuestManageCard';
+import type { StreamingQuest } from '../fan/StreamingQuestCard';
 import type { QuestIndexEntry, YouTubeBinding, VerifiedPlatforms, Platform, QuestType } from '../types';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
 import { useLang } from '../../../components/LangContext';
@@ -58,6 +61,11 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
+  // Streaming Quests
+  const [streamingQuests, setStreamingQuests]       = useState<StreamingQuest[]>([]);
+  const [streamingLoading, setStreamingLoading]     = useState(false);
+  const [showStreamingModal, setShowStreamingModal] = useState(false);
+
   const loadCreatorBalance = useCallback(async () => {
     setBalanceLoading(true);
     try {
@@ -92,6 +100,16 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       setBundles(data.bundles ?? []);
     } catch { /* ignorieren */ }
     finally { setBundlesLoading(false); }
+  }, [walletAddress]);
+
+  const loadStreamingQuests = useCallback(async () => {
+    setStreamingLoading(true);
+    try {
+      const res  = await fetch(`/api/streaming-quests?creatorWallet=${walletAddress}`, { cache: 'no-store' });
+      const data = await res.json() as { quests?: StreamingQuest[] };
+      setStreamingQuests(data.quests ?? []);
+    } catch { /* ignorieren */ }
+    finally { setStreamingLoading(false); }
   }, [walletAddress]);
 
   const handleCancelBundle = useCallback(async (bundleId: string) => {
@@ -143,8 +161,9 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       loadCreatorQuests();
       loadCreatorBalance();
       loadCreatorBundles();
+      loadStreamingQuests();
     });
-  }, [loadCreatorQuests, loadCreatorBalance, loadCreatorBundles, walletAddress]);
+  }, [loadCreatorQuests, loadCreatorBalance, loadCreatorBundles, loadStreamingQuests, walletAddress]);
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 space-y-5">
@@ -344,6 +363,39 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         </div>
       )}
 
+      {/* ── Streaming Quests ────────────────────────────────────────────── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-white font-bold flex items-center gap-2">
+            🎵 {t('sq.sectionTitle', lang)}
+          </h3>
+          <button
+            onClick={() => setShowStreamingModal(true)}
+            className="bg-purple-800/60 hover:bg-purple-700/60 border border-purple-600/40 text-white font-semibold px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 text-xs"
+          >
+            <FaPlus size={10} /> {t('sq.createBtn', lang)}
+          </button>
+        </div>
+        {streamingLoading ? (
+          <div className="flex justify-center py-6">
+            <div className="border-4 border-purple-500/30 border-t-purple-500 rounded-full w-7 h-7 animate-spin" />
+          </div>
+        ) : streamingQuests.length === 0 ? (
+          <p className="text-sm text-gray-600 py-3 text-center">{t('sq.noQuests', lang)}</p>
+        ) : (
+          <div className="space-y-3">
+            {streamingQuests.map(q => (
+              <StreamingQuestManageCard
+                key={q.id}
+                quest={q as StreamingQuest & { participant_count: number; paid_count?: number }}
+                creatorWallet={walletAddress}
+                onRefresh={loadStreamingQuests}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Modals */}
       <CreateBundleModal
         open={showBundleModal}
@@ -360,6 +412,13 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         walletAddress={walletAddress}
         onDeposited={(amount) => setCreatorBalance((prev) => prev + amount)}
       />
+      {showStreamingModal && (
+        <CreateStreamingQuestModal
+          creatorWallet={walletAddress}
+          onClose={() => setShowStreamingModal(false)}
+          onCreated={loadStreamingQuests}
+        />
+      )}
     </div>
   );
 }

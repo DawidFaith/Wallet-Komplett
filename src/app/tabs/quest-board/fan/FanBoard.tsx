@@ -20,6 +20,7 @@ import FacebookCommentVerifyModal from './FacebookCommentVerifyModal';
 import FacebookQuestCard from '../quests/facebook/FacebookQuestCard';
 import FacebookLikeVerifyModal from './FacebookLikeVerifyModal';
 import BundleCard from './BundleCard';
+import StreamingQuestCard, { type StreamingQuest } from './StreamingQuestCard';
 import type { QuestIndexEntry, VerifiedPlatforms, VerifyResult, ClaimResult } from '../types';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
 import { formatCredits } from '../utils';
@@ -66,6 +67,8 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const [facebookLikeQuest, setFacebookLikeQuest] = useState<QuestIndexEntry | null>(null);
   const [bundles, setBundles] = useState<QuestBundleWithItems[]>([]);
   const [bundlesLoading, setBundlesLoading] = useState(false);
+  const [streamingQuests, setStreamingQuests] = useState<StreamingQuest[]>([]);
+  const [streamingLoading, setStreamingLoading] = useState(false);
   const [bonusPercentByCreator, setBonusPercentByCreator] = useState<Record<string, number>>({});
   const [creditBonusByCreator, setCreditBonusByCreator] = useState<Record<string, number>>({});
   const [shardBonusByCreator, setShardBonusByCreator] = useState<Record<string, number>>({});
@@ -138,7 +141,19 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
     finally { setBundlesLoading(false); }
   }, [walletAddress, filterCreator]);
 
-  useEffect(() => { loadQuests(); loadBundles(); }, [loadQuests, loadBundles]);
+  const loadStreamingQuests = useCallback(async () => {
+    setStreamingLoading(true);
+    try {
+      const res  = await fetch(`/api/streaming-quests?fanWallet=${walletAddress}`, { cache: 'no-store' });
+      const data = await res.json() as { quests?: StreamingQuest[] };
+      // Nur nicht-expired anzeigen
+      const active = (data.quests ?? []).filter(q => q.status !== 'expired');
+      setStreamingQuests(active);
+    } catch { /* ignorieren */ }
+    finally { setStreamingLoading(false); }
+  }, [walletAddress]);
+
+  useEffect(() => { loadQuests(); loadBundles(); loadStreamingQuests(); }, [loadQuests, loadBundles, loadStreamingQuests]);
 
   // VerifyModal (YouTube/TikTok-Kommentar): Auto-Schließen + Konfetti bei Erfolg
   useEffect(() => {
@@ -713,6 +728,31 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                   ))}
                 </QuestCarousel>
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Streaming Milestone Quests ───────────────────────────────────── */}
+      {(streamingLoading || streamingQuests.length > 0) && (
+        <div className="space-y-3">
+          <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest flex items-center gap-1.5">
+            🎵 {t('sq.sectionTitle', lang)}
+          </p>
+          {streamingLoading ? (
+            <div className="flex justify-center py-4">
+              <div className="border-4 border-purple-500/30 border-t-purple-500 rounded-full w-7 h-7 animate-spin" />
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {streamingQuests.map(q => (
+                <StreamingQuestCard
+                  key={q.id}
+                  quest={q}
+                  walletAddress={walletAddress}
+                  onJoined={loadStreamingQuests}
+                />
+              ))}
             </div>
           )}
         </div>
