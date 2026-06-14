@@ -12,7 +12,9 @@ export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 export const revalidate = 0;
 
-function deriveStatus(row: { status: string; enrollment_ends_at: string; deadline: string }) {
+type QuestRow = { status: string; enrollment_ends_at: string; deadline: string; [key: string]: unknown };
+
+function deriveStatus(row: QuestRow) {
   if (row.status === 'completed') return 'completed';
   const now = Date.now();
   if (now > new Date(row.deadline).getTime()) return 'expired';
@@ -20,9 +22,9 @@ function deriveStatus(row: { status: string; enrollment_ends_at: string; deadlin
   return 'enrollment';
 }
 
-async function getQuest(sql: ReturnType<typeof getDb>, id: string) {
+async function getQuest(sql: ReturnType<typeof getDb>, id: string): Promise<QuestRow | null> {
   const rows = await sql`SELECT * FROM streaming_quests WHERE id = ${id} LIMIT 1`;
-  return rows[0] ?? null;
+  return (rows[0] as QuestRow) ?? null;
 }
 
 export async function GET(
