@@ -278,3 +278,4 @@ export async function DELETE(
   await sql`DELETE FROM streaming_quests             WHERE id       = ${params.id}`;
 
   return NextResponse.json({ success: true });
+}
