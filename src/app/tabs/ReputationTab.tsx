@@ -1462,6 +1462,23 @@ export default function ReputationTab({ artistWallet }: { artistWallet?: string 
         ) : (
           <div className="px-4 space-y-4">
             <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">{t('rep.artistsLabel', lang)}</p>
+
+            {/* Info-Banner */}
+            <div className="bg-amber-400/[0.06] border border-amber-400/20 rounded-2xl p-4 flex gap-3 items-start">
+              <div className="shrink-0 w-9 h-9 rounded-xl bg-amber-400/15 flex items-center justify-center">
+                <FaStar className="text-amber-400" size={16} />
+              </div>
+              <div>
+                <p className="text-amber-300 font-black text-sm mb-1">Was ist Reputation?</p>
+                <p className="text-zinc-300 text-[11px] leading-relaxed">
+                  Reputation zeigt, wie aktiv du ein Fan eines Künstlers bist. Du sammelst REP-Punkte, indem du Quests abschließt – z. B. Posts liken, kommentieren oder teilen.
+                </p>
+                <p className="text-zinc-400 text-[11px] leading-relaxed mt-1.5">
+                  <span className="text-amber-400 font-semibold">Wozu brauche ich REP?</span> Je mehr REP du hast, desto höher dein Level. Höhere Level schalten Boni frei: mehr Credits pro Quest, exklusive Rewards und einen höheren Rang im Leaderboard des Künstlers.
+                </p>
+              </div>
+            </div>
+
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
               {supporterEntries.map(entry => (
                 <button
