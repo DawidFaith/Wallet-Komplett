@@ -1424,6 +1424,10 @@ const dict: Translations = {
   'sq.completedInfo':    { de: 'Abgeschlossen · {count} Teilnehmer ausgezahlt', en: 'Completed · {count} participants paid', pl: 'Ukończono · {count} uczestników wypłacono' },
   'sq.expiredInfo':      { de: 'Quest ist abgelaufen – kein Reward ausgezahlt', en: 'Quest expired – no reward paid', pl: 'Quest wygasł – brak wypłaty nagrody' },
   'sq.antiSybilHint':    { de: 'Du brauchst mindestens eine verknüpfte Social-Plattform (YouTube, Instagram, TikTok oder Facebook) um teilzunehmen.', en: 'You need at least one connected social platform (YouTube, Instagram, TikTok or Facebook) to participate.', pl: 'Potrzebujesz co najmniej jednej połączonej platformy społecznościowej (YouTube, Instagram, TikTok lub Facebook), aby uczestniczyć.' },
+  'sq.claimBtn':         { de: 'Belohnung abholen', en: 'Claim Reward', pl: 'Odbierz nagrodę' },
+  'sq.claiming':         { de: 'Wird abgeholt…', en: 'Claiming…', pl: 'Odbieranie…' },
+  'sq.labelShardChance': { de: 'Shard-Drop Chance (%)', en: 'Shard Drop Chance (%)', pl: 'Szansa na Shard (%)' },
+  'sq.hintShardChance':  { de: 'Wahrscheinlichkeit, dass Teilnehmer beim Abholen einen Shard erhalten (0–100)', en: 'Probability that participants receive a shard when claiming (0–100)', pl: 'Prawdopodobieństwo otrzymania Shard przez uczestników przy odbiorze (0–100)' },
 };
 
 

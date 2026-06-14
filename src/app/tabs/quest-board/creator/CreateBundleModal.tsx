@@ -122,6 +122,7 @@ export default function CreateBundleModal({
   const [sqRepReward, setSqRepReward]       = useState(0);
   const [sqEnrollHours, setSqEnrollHours]   = useState(48);
   const [sqDeadlineHours, setSqDeadlineHours] = useState(240);
+  const [sqShardChance, setSqShardChance]   = useState(20);
   const [sqCreating, setSqCreating]         = useState(false);
   const [sqError, setSqError]               = useState<string | null>(null);
 
@@ -179,7 +180,7 @@ export default function CreateBundleModal({
     setSqTitle(''); setSqDesc(''); setSqPlatform('spotify');
     setSqTargetStreams(10000); setSqRewardPer(100); setSqMaxPart(50);
     setSqRepReward(0); setSqEnrollHours(48); setSqDeadlineHours(240);
-    setSqCreating(false); setSqError(null);
+    setSqShardChance(20); setSqCreating(false); setSqError(null);
     setStep(1);
     setVideoUrl('');
     setVideoMediaId('');
@@ -228,6 +229,7 @@ export default function CreateBundleModal({
           reputationReward: sqRepReward,
           enrollmentHours: sqEnrollHours,
           deadlineHours: sqDeadlineHours,
+          shardDropChance: sqShardChance,
         }),
       });
       const data = await res.json();
@@ -594,6 +596,19 @@ export default function CreateBundleModal({
                 min={0} step={5}
                 className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
               />
+            </div>
+
+            {/* Shard-Chance */}
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">{t('sq.labelShardChance', lang)}</label>
+              <input
+                type="number"
+                value={sqShardChance}
+                onChange={e => setSqShardChance(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
+                min={0} max={100} step={5}
+                className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+              />
+              <p className="text-xs text-zinc-600 mt-1">{t('sq.hintShardChance', lang)}</p>
             </div>
 
             {/* Zeitfenster */}

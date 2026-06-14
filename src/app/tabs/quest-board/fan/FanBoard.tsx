@@ -744,13 +744,14 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               <div className="border-4 border-purple-500/30 border-t-purple-500 rounded-full w-7 h-7 animate-spin" />
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-4">
               {streamingQuests.map(q => (
                 <StreamingQuestCard
                   key={q.id}
                   quest={q}
                   walletAddress={walletAddress}
                   onJoined={loadStreamingQuests}
+                  onClaimed={() => setStreamingQuests(prev => prev.filter(x => x.id !== q.id))}
                 />
               ))}
             </div>

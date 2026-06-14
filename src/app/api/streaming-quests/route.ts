@@ -52,6 +52,8 @@ async function ensureTables(sql: ReturnType<typeof getDb>) {
       posted_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
+  // Neue Spalte nachträglich hinzufügen (idempotent)
+  await sql`ALTER TABLE streaming_quests ADD COLUMN IF NOT EXISTS shard_drop_chance INT NOT NULL DEFAULT 20`;
 }
 
 /** Status aus Zeitstempeln ableiten (Serverless hat keinen Background-Job) */
@@ -96,8 +98,11 @@ export async function GET(req: NextRequest) {
           EXISTS(
             SELECT 1 FROM streaming_quest_participants sqp2
             WHERE sqp2.quest_id = sq.id AND sqp2.wallet_address = ${fanWallet}
-          ) AS has_joined
-        ` : sql`FALSE AS has_joined`}
+          ) AS has_joined,
+          COALESCE((SELECT reward_paid FROM streaming_quest_participants sqp3
+            WHERE sqp3.quest_id = sq.id AND sqp3.wallet_address = ${fanWallet} LIMIT 1
+          ), FALSE) AS reward_paid
+        ` : sql`FALSE AS has_joined, FALSE AS reward_paid`}
       FROM streaming_quests sq
       ORDER BY sq.created_at DESC
     `;
@@ -113,6 +118,8 @@ export async function GET(req: NextRequest) {
     participant_count: Number(r.participant_count ?? 0),
     paid_count: Number(r.paid_count ?? 0),
     has_joined: Boolean(r.has_joined),
+    reward_paid: Boolean(r.reward_paid),
+    shard_drop_chance: Number(r.shard_drop_chance ?? 20),
   }));
 
   return NextResponse.json({ quests });
@@ -130,6 +137,7 @@ export async function POST(req: NextRequest) {
     reputationReward?: number;
     enrollmentHours?: number;  // wie viele Stunden Anmeldefenster
     deadlineHours?: number;    // wie viele Stunden bis Deadline (ab jetzt)
+    shardDropChance?: number;  // Shard-Drop-Wahrscheinlichkeit 0-100
   };
 
   const creatorWallet = body.creatorWallet?.toLowerCase().trim();
@@ -143,6 +151,7 @@ export async function POST(req: NextRequest) {
   const reputationReward     = Math.max(0, Math.round(Number(body.reputationReward ?? 0)));
   const enrollmentHours      = Math.max(1, Math.min(168, Number(body.enrollmentHours ?? 24)));
   const deadlineHours        = Math.max(enrollmentHours + 1, Math.min(720, Number(body.deadlineHours ?? 168)));
+  const shardDropChance      = Math.max(0, Math.min(100, Math.round(Number(body.shardDropChance ?? 20))));
 
   const totalBudget = rewardPerParticipant * maxParticipants;
 
@@ -168,11 +177,11 @@ export async function POST(req: NextRequest) {
     INSERT INTO streaming_quests (
       creator_wallet, title, description, platform,
       target_streams, reward_per_participant, max_participants,
-      reputation_reward, enrollment_ends_at, deadline, status
+      reputation_reward, enrollment_ends_at, deadline, status, shard_drop_chance
     ) VALUES (
       ${creatorWallet}, ${body.title.trim()}, ${body.description?.trim() ?? null}, ${platform},
       ${targetStreams}, ${rewardPerParticipant}, ${maxParticipants},
-      ${reputationReward}, ${enrollmentEndsAt}, ${deadlineAt}, 'enrollment'
+      ${reputationReward}, ${enrollmentEndsAt}, ${deadlineAt}, 'enrollment', ${shardDropChance}
     )
     RETURNING id
   `;

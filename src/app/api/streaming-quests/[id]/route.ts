@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 import { addDfaithCredits, addUserReputation } from '../../../lib/questDb';
+import { addShard, getCollectiblesShardBonus } from '../../../lib/questDb/collectibles';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -118,7 +119,7 @@ export async function POST(
     return NextResponse.json({ success: true });
   }
 
-  // ── CONFIRM (Artist bestätigt Ziel erreicht) ──────────────────────────────────
+  // ── CONFIRM (Artist bestätigt Ziel erreicht – kein Auto-Payout) ───────────────
   if (action === 'confirm') {
     const wallet = (body.wallet as string)?.toLowerCase().trim();
     if (wallet !== (quest.creator_wallet as string).toLowerCase()) {
@@ -133,7 +134,7 @@ export async function POST(
     const screenshotUrl  = (body.screenshotUrl as string) ?? null;
     const finalStreams    = Math.max(0, Math.round(Number(body.streamsCount ?? quest.current_streams)));
 
-    // Als completed markieren
+    // Nur als completed markieren – Fans müssen selbst claimen
     await sql`
       UPDATE streaming_quests
       SET status = 'completed', confirmed_at = NOW(), proof_url = ${screenshotUrl},
@@ -141,7 +142,6 @@ export async function POST(
       WHERE id = ${params.id}
     `;
 
-    // Letztes Update einfügen falls screenshot mitgegeben
     if (screenshotUrl) {
       await sql`
         INSERT INTO streaming_quest_updates (quest_id, streams_count, screenshot_url, note)
@@ -149,38 +149,64 @@ export async function POST(
       `;
     }
 
-    // Alle Teilnehmer laden und Rewards auszahlen
-    const participants = await sql`
-      SELECT wallet_address FROM streaming_quest_participants
-      WHERE quest_id = ${params.id} AND reward_paid = FALSE
+    const participantCount = await sql`
+      SELECT COUNT(*)::int AS cnt FROM streaming_quest_participants WHERE quest_id = ${params.id}
     `;
+    return NextResponse.json({ success: true, participantCount: Number(participantCount[0].cnt) });
+  }
+
+  // ── CLAIM (Fan holt seine Belohnung ab) ──────────────────────────────────────
+  if (action === 'claim') {
+    const wallet = (body.wallet as string)?.toLowerCase().trim();
+    if (!wallet) return NextResponse.json({ error: 'wallet required' }, { status: 400 });
+    if (status !== 'completed') {
+      return NextResponse.json({ error: 'Quest noch nicht abgeschlossen' }, { status: 400 });
+    }
+
+    // Teilnahme & reward_paid prüfen
+    const partRows = await sql`
+      SELECT reward_paid FROM streaming_quest_participants
+      WHERE quest_id = ${params.id} AND wallet_address = ${wallet} LIMIT 1
+    `;
+    if (partRows.length === 0) {
+      return NextResponse.json({ error: 'Du hast nicht an diesem Quest teilgenommen' }, { status: 400 });
+    }
+    if (partRows[0].reward_paid) {
+      return NextResponse.json({ error: 'Belohnung bereits abgeholt' }, { status: 400 });
+    }
 
     const rewardPerParticipant = Number(quest.reward_per_participant);
     const repReward            = Number(quest.reputation_reward);
     const creatorWallet        = quest.creator_wallet as string;
+    const shardDropChance      = Number(quest.shard_drop_chance ?? 20);
 
-    let paidCount = 0;
-    for (const p of participants) {
-      const fanWallet = p.wallet_address as string;
-      try {
-        if (rewardPerParticipant > 0) {
-          await addDfaithCredits(fanWallet, rewardPerParticipant);
-        }
-        if (repReward > 0) {
-          await addUserReputation(fanWallet, creatorWallet, repReward);
-        }
-        await sql`
-          UPDATE streaming_quest_participants
-          SET reward_paid = TRUE
-          WHERE quest_id = ${params.id} AND wallet_address = ${fanWallet}
-        `;
-        paidCount++;
-      } catch {
-        // einzelner Fehler überspringen
-      }
+    if (rewardPerParticipant > 0) {
+      await addDfaithCredits(wallet, rewardPerParticipant);
+    }
+    if (repReward > 0) {
+      await addUserReputation(wallet, creatorWallet, repReward);
     }
 
-    return NextResponse.json({ success: true, paidCount });
+    // Shard-Drop (Chance = Quest-Einstellung + Collectibles-Bonus)
+    let shardDropped = false;
+    try {
+      const collectiblesBonus = await getCollectiblesShardBonus(wallet, creatorWallet);
+      const totalChance = shardDropChance + collectiblesBonus;
+      if (totalChance > 0 && Math.random() * 100 < totalChance) {
+        await addShard(wallet, creatorWallet, 1);
+        shardDropped = true;
+      }
+    } catch {
+      // Shard-Drop ist optional
+    }
+
+    await sql`
+      UPDATE streaming_quest_participants
+      SET reward_paid = TRUE
+      WHERE quest_id = ${params.id} AND wallet_address = ${wallet}
+    `;
+
+    return NextResponse.json({ success: true, shardDropped, reward: rewardPerParticipant, rep: repReward });
   }
 
   return NextResponse.json({ error: 'Unbekannte Aktion' }, { status: 400 });
