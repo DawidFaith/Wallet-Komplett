@@ -14,6 +14,27 @@ export async function GET(req: Request) {
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS display_platform TEXT`;
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS clerk_image_url TEXT`;
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS clerk_name TEXT`;
+    // Streaming-Quests-Tabelle sicherstellen (falls noch nicht angelegt)
+    await sql`
+      CREATE TABLE IF NOT EXISTS streaming_quests (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        creator_wallet TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        platform TEXT NOT NULL DEFAULT 'spotify',
+        target_streams INT NOT NULL DEFAULT 1000,
+        current_streams INT NOT NULL DEFAULT 0,
+        reward_per_participant DECIMAL(10,2) NOT NULL DEFAULT 0,
+        max_participants INT NOT NULL DEFAULT 100,
+        reputation_reward INT NOT NULL DEFAULT 0,
+        enrollment_ends_at TIMESTAMPTZ NOT NULL,
+        deadline TIMESTAMPTZ NOT NULL,
+        status TEXT NOT NULL DEFAULT 'enrollment',
+        confirmed_at TIMESTAMPTZ,
+        proof_url TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
 
     const rows = await sql`
       SELECT
@@ -47,6 +68,12 @@ export async function GET(req: Request) {
             AND q.is_active = TRUE
             AND (q.expires_at IS NULL OR q.expires_at > NOW())
         ), 0) AS quest_count,
+        COALESCE((
+          SELECT COUNT(*) FROM streaming_quests sq
+          WHERE LOWER(sq.creator_wallet) = LOWER(p.wallet_address)
+            AND sq.status IN ('enrollment', 'active')
+            AND sq.deadline > NOW()
+        ), 0) AS streaming_quest_count,
         COALESCE((
           SELECT COUNT(*) FROM shop_items si
           WHERE LOWER(si.artist_wallet) = LOWER(p.wallet_address)
@@ -129,7 +156,7 @@ export async function GET(req: Request) {
         artistType: r.artist_type ?? null,
         artistBio: r.artist_bio ?? null,
         rewardToken: r.reward_token ?? 'D.FAITH',
-        questCount: Math.max(0, Number(r.quest_count) - (completedByCreator[(r.wallet_address as string).toLowerCase()] ?? 0)),
+        questCount: Math.max(0, Number(r.quest_count) + Number(r.streaming_quest_count ?? 0) - (completedByCreator[(r.wallet_address as string).toLowerCase()] ?? 0)),
         shopItemCount: Number(r.shop_item_count),
         isPlatformUser: Boolean(r.is_platform_user),
         socials: {
