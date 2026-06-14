@@ -19,7 +19,7 @@ export interface StreamingQuest {
   shard_drop_chance: number;
   enrollment_ends_at: string;
   deadline: string;
-  status: 'enrollment' | 'active' | 'completed' | 'expired';
+  status: 'enrollment' | 'active' | 'completed' | 'expired' | 'cancelled';
   confirmed_at?: string;
   proof_url?: string;
   created_at: string;
