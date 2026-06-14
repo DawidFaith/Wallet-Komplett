@@ -384,6 +384,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                 quest={q as StreamingQuest & { participant_count: number; paid_count?: number }}
                 creatorWallet={walletAddress}
                 onRefresh={loadStreamingQuests}
+                onRemove={() => setStreamingQuests(prev => prev.filter(x => x.id !== q.id))}
               />
             ))}
           </div>

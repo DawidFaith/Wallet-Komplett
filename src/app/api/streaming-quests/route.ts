@@ -61,8 +61,9 @@ function deriveStatus(row: {
   status: string;
   enrollment_ends_at: string;
   deadline: string;
-}): 'enrollment' | 'active' | 'completed' | 'expired' {
+}): 'enrollment' | 'active' | 'completed' | 'expired' | 'cancelled' {
   if (row.status === 'completed') return 'completed';
+  if (row.status === 'cancelled') return 'cancelled';
   const now = Date.now();
   const enrollEnd = new Date(row.enrollment_ends_at).getTime();
   const deadline  = new Date(row.deadline).getTime();
@@ -90,7 +91,7 @@ export async function GET(req: NextRequest) {
       ORDER BY sq.created_at DESC
     `;
   } else {
-    // Fan-Board: alle nicht-expired, mit Teilnahmestatus des Fans
+    // Fan-Board: cancelled + expired ausblenden, mit Teilnahmestatus des Fans
     rows = await sql`
       SELECT sq.*,
         (SELECT COUNT(*)::int FROM streaming_quest_participants sqp WHERE sqp.quest_id = sq.id) AS participant_count,
@@ -104,6 +105,8 @@ export async function GET(req: NextRequest) {
           ), FALSE) AS reward_paid
         ` : sql`FALSE AS has_joined, FALSE AS reward_paid`}
       FROM streaming_quests sq
+      WHERE sq.status != 'cancelled'
+        AND (sq.deadline > NOW() OR sq.status = 'completed')
       ORDER BY sq.created_at DESC
     `;
   }

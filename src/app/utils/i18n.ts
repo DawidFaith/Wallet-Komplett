@@ -1428,6 +1428,13 @@ const dict: Translations = {
   'sq.claiming':         { de: 'Wird abgeholt…', en: 'Claiming…', pl: 'Odbieranie…' },
   'sq.labelShardChance': { de: 'Shard-Drop Chance (%)', en: 'Shard Drop Chance (%)', pl: 'Szansa na Shard (%)' },
   'sq.hintShardChance':  { de: 'Wahrscheinlichkeit, dass Teilnehmer beim Abholen einen Shard erhalten (0–100)', en: 'Probability that participants receive a shard when claiming (0–100)', pl: 'Prawdopodobieństwo otrzymania Shard przez uczestników przy odbiorze (0–100)' },
+  'sq.cancelBtn':        { de: 'Quest stornieren', en: 'Cancel Quest', pl: 'Anuluj Quest' },
+  'sq.cancelTitle':      { de: 'Quest stornieren?', en: 'Cancel Quest?', pl: 'Anulować Quest?' },
+  'sq.cancelConfirm':    { de: 'Der Quest wird unwiderruflich storniert. Teilnehmer können keine Belohnungen mehr abholen.', en: 'The quest will be cancelled permanently. Participants will no longer be able to claim rewards.', pl: 'Quest zostanie nieodwracalnie anulowany. Uczestnicy nie będą mogli już odebrać nagród.' },
+  'sq.cancelRefund':     { de: 'Rückerstattung', en: 'Refund', pl: 'Zwrot' },
+  'sq.cancelConfirmBtn': { de: 'Ja, stornieren', en: 'Yes, cancel', pl: 'Tak, anuluj' },
+  'sq.cancelling':       { de: 'Wird storniert…', en: 'Cancelling…', pl: 'Anulowanie…' },
+  'sq.cancelledInfo':    { de: 'Quest wurde storniert – Guthaben zurückerstattet', en: 'Quest was cancelled – credits refunded', pl: 'Quest został anulowany – środki zwrócone' },
 };
 
 

@@ -1,8 +1,11 @@
 /**
  * GET  /api/streaming-quests/[id]          → Quest-Details inkl. Updates
- * POST /api/streaming-quests/[id]/join     → Fan tritt bei (enrollment-Phase)
- * POST /api/streaming-quests/[id]/update   → Artist postet Fortschritt + Screenshot
- * POST /api/streaming-quests/[id]/confirm  → Artist bestätigt Ziel erreicht → Rewards auszahlen
+ * POST /api/streaming-quests/[id]?action=join     → Fan tritt bei
+ * POST /api/streaming-quests/[id]?action=update   → Artist postet Fortschritt
+ * POST /api/streaming-quests/[id]?action=confirm  → Artist schließt ab
+ * POST /api/streaming-quests/[id]?action=claim    → Fan holt Reward ab
+ * POST /api/streaming-quests/[id]?action=cancel   → Artist storniert + Guthaben-Erstattung
+ * DELETE /api/streaming-quests/[id]               → Artist löscht abgeschlossenen Quest
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
@@ -15,8 +18,9 @@ export const revalidate = 0;
 
 type QuestRow = { status: string; enrollment_ends_at: string; deadline: string; [key: string]: unknown };
 
-function deriveStatus(row: QuestRow) {
+function deriveStatus(row: QuestRow): 'enrollment' | 'active' | 'completed' | 'expired' | 'cancelled' {
   if (row.status === 'completed') return 'completed';
+  if (row.status === 'cancelled') return 'cancelled';
   const now = Date.now();
   if (now > new Date(row.deadline).getTime()) return 'expired';
   if (now > new Date(row.enrollment_ends_at).getTime()) return 'active';
@@ -209,5 +213,68 @@ export async function POST(
     return NextResponse.json({ success: true, shardDropped, reward: rewardPerParticipant, rep: repReward });
   }
 
+  // ── CANCEL (Artist storniert – Guthaben-Erstattung) ───────────────────────────
+  if (action === 'cancel') {
+    const wallet = (body.wallet as string)?.toLowerCase().trim();
+    if (wallet !== (quest.creator_wallet as string).toLowerCase()) {
+      return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 403 });
+    }
+    if (quest.status === 'completed') {
+      return NextResponse.json({ error: 'Abgeschlossener Quest kann nicht storniert werden' }, { status: 400 });
+    }
+
+    // Nicht-ausgezahlte Budget-Anteil zurückrechnen:
+    // Bereits beigetretene Teilnehmer deren Reward noch aussteht
+    const paidCount = await sql`
+      SELECT COUNT(*)::int AS cnt FROM streaming_quest_participants
+      WHERE quest_id = ${params.id} AND reward_paid = TRUE
+    `;
+    const totalPaid         = Number(paidCount[0].cnt) * Number(quest.reward_per_participant);
+    const totalBudget       = Number(quest.max_participants) * Number(quest.reward_per_participant);
+    const refundAmount      = Math.max(0, totalBudget - totalPaid);
+
+    // Quest als storniert markieren
+    await sql`
+      UPDATE streaming_quests SET status = 'cancelled' WHERE id = ${params.id}
+    `;
+
+    // Guthaben zurück an Künstler
+    if (refundAmount > 0) {
+      await addDfaithCredits(wallet, refundAmount);
+    }
+
+    return NextResponse.json({ success: true, refundAmount });
+  }
+
   return NextResponse.json({ error: 'Unbekannte Aktion' }, { status: 400 });
 }
+
+// ─── DELETE: Künstler löscht abgeschlossenen/stornierten Quest ───────────────────────────
+// Darf nur aufgerufen werden wenn Quest completed, cancelled oder expired ist
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const { searchParams } = new URL(req.url);
+  const wallet = searchParams.get('wallet')?.toLowerCase().trim();
+  if (!wallet) return NextResponse.json({ error: 'wallet required' }, { status: 400 });
+
+  const sql = getDb();
+  const quest = await getQuest(sql, params.id);
+  if (!quest) return NextResponse.json({ error: 'nicht gefunden' }, { status: 404 });
+
+  if (wallet !== (quest.creator_wallet as string).toLowerCase()) {
+    return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 403 });
+  }
+
+  const currentStatus = deriveStatus(quest);
+  if (!['completed', 'expired', 'cancelled'].includes(currentStatus) && quest.status !== 'cancelled') {
+    return NextResponse.json({ error: 'Nur abgeschlossene, abgelaufene oder stornierte Quests können gelöscht werden' }, { status: 400 });
+  }
+
+  // Kaskadierende Löschung
+  await sql`DELETE FROM streaming_quest_updates     WHERE quest_id = ${params.id}`;
+  await sql`DELETE FROM streaming_quest_participants WHERE quest_id = ${params.id}`;
+  await sql`DELETE FROM streaming_quests             WHERE id       = ${params.id}`;
+
+  return NextResponse.json({ success: true });
