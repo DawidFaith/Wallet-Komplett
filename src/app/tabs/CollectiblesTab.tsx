@@ -1214,8 +1214,8 @@ export default function CollectiblesTab() {
         </div>
       )}
 
-      {/* ── Tab-Auswahl: Supporter | Künstler ────────────────────────────────── */}
-      {view === 'overview' && (
+      {/* ── Tab-Auswahl: Supporter | Künstler – nur für Artists sichtbar ───── */}
+      {view === 'overview' && isArtist && (
         <div className="mx-4 mb-2 flex bg-zinc-900/70 rounded-xl p-1 border border-white/[0.07]">
           <button
             onClick={() => setMainTab('supporter')}
@@ -1256,6 +1256,22 @@ export default function CollectiblesTab() {
                 </div>
               ) : (
                 <>
+                  {/* ── Info-Banner ─────────────────────────────────────── */}
+                  <div className="bg-amber-400/[0.06] border border-amber-400/20 rounded-2xl p-4 flex gap-3 items-start">
+                    <div className="shrink-0 w-9 h-9 rounded-xl bg-amber-400/15 flex items-center justify-center">
+                      <GiCrystalShine className="text-amber-400" size={18} />
+                    </div>
+                    <div>
+                      <p className="text-amber-300 font-black text-sm mb-1">Was sind Collectibles?</p>
+                      <p className="text-zinc-300 text-[11px] leading-relaxed">
+                        Collectibles sind digitale Sammelkarten eines Künstlers – von <span className="text-zinc-100 font-semibold">Common</span> bis <span className="text-rose-400 font-semibold">Mythic</span>. Je seltener die Karte, desto höher dein Bonus auf Reputation, Credits und Shard-Chancen.
+                      </p>
+                      <p className="text-zinc-400 text-[11px] leading-relaxed mt-1.5">
+                        <span className="text-amber-400 font-semibold">Wie bekomme ich sie?</span> Schließe Quest-Bundles ab – du erhältst Shards. 1 Shard = 1 Zufalls-Collectible. Mit 10 gleichen Karten kannst du auf die nächste Seltenheitsstufe upgraden.
+                      </p>
+                    </div>
+                  </div>
+
                   <p className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-600">Künstler</p>
                   <div className="flex gap-4 overflow-x-auto pt-1 pb-2 scrollbar-none">
                     {[...artists].sort((a, b) => (myShards[b.artistWallet] ?? 0) - (myShards[a.artistWallet] ?? 0)).map((artist) => {
