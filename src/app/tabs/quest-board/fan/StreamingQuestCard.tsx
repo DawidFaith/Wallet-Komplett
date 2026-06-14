@@ -112,20 +112,24 @@ const PLATFORM_CONFIG: Record<string, {
 const DEFAULT_CFG = PLATFORM_CONFIG.other;
 function getCfg(p: string) { return PLATFORM_CONFIG[p] ?? DEFAULT_CFG; }
 
-const STATUS_LABELS: Record<string, string> = {
-  enrollment: '🎟️ Anmeldung offen',
-  active:     '🚀 Läuft',
-  completed:  '✅ Abgeschlossen',
-  expired:    '⌛ Abgelaufen',
-  cancelled:  '🚫 Storniert',
-};
+function getStatusLabel(status: string, lang: string): string {
+  const labels: Record<string, Record<string, string>> = {
+    enrollment: { de: '🎟️ Anmeldung offen', en: '🎟️ Enrollment open', pl: '🎟️ Rejestracja otwarta' },
+    active:     { de: '🚀 Läuft',           en: '🚀 Active',          pl: '🚀 Aktywny' },
+    completed:  { de: '✅ Abgeschlossen',   en: '✅ Completed',       pl: '✅ Zakończono' },
+    expired:    { de: '⌛ Abgelaufen',       en: '⌛ Expired',         pl: '⌛ Wygasł' },
+    cancelled:  { de: '🚫 Storniert',       en: '🚫 Cancelled',       pl: '🚫 Anulowano' },
+  };
+  return labels[status]?.[lang] ?? labels[status]?.['de'] ?? status;
+}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
-function timeLeft(iso: string): string {
+function timeLeft(iso: string, lang: string): string {
   const diff = new Date(iso).getTime() - Date.now();
-  if (diff <= 0) return 'abgelaufen';
+  const expired = { de: 'abgelaufen', en: 'expired', pl: 'wygasł' };
+  if (diff <= 0) return expired[lang as 'de'|'en'|'pl'] ?? expired.de;
   const h = Math.floor(diff / 3_600_000);
   const d = Math.floor(h / 24);
   return d > 0 ? `${d}d ${h % 24}h` : `${h}h`;
@@ -242,7 +246,7 @@ function StreamingQuestDetailModal({ quest, walletAddress, onClose, onJoined, on
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${cfg.bgClass} ${cfg.textClass}`}>
                 <Icon size={12} style={{ color: cfg.brandColor }} /> {cfg.label}
               </span>
-              <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-800 text-zinc-400">{STATUS_LABELS[quest.status] ?? quest.status}</span>
+              <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-800 text-zinc-400">{getStatusLabel(quest.status, lang)}</span>
               {quest.min_level > 1 && (
                 <span className="text-xs px-2.5 py-1 rounded-full bg-amber-900/30 text-amber-400 border border-amber-700/30">
                   Lvl {quest.min_level}+
@@ -413,7 +417,7 @@ export default function StreamingQuestCard({ quest, walletAddress, onJoined, onC
                 <Icon size={13} style={{ color: cfg.brandColor }} />
                 {cfg.label}
               </span>
-              <span className="text-xs px-2 py-1 rounded-full bg-zinc-800 text-zinc-400">{STATUS_LABELS[quest.status] ?? quest.status}</span>
+              <span className="text-xs px-2 py-1 rounded-full bg-zinc-800 text-zinc-400">{getStatusLabel(quest.status, lang)}</span>
               {quest.min_level > 1 && (
                 <span className="text-xs px-2 py-1 rounded-full bg-amber-900/30 text-amber-400 border border-amber-700/30 flex items-center gap-1">
                   <FaShieldAlt size={9} /> Lvl {quest.min_level}+
@@ -450,12 +454,12 @@ export default function StreamingQuestCard({ quest, walletAddress, onJoined, onC
           {/* Zeit */}
           {quest.status === 'enrollment' && (
             <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-              <FaClock size={11} /><span>Anmeldung noch {timeLeft(quest.enrollment_ends_at)}</span>
+              <FaClock size={11} /><span>{t('sq.enrollmentTimeLeft', lang)} {timeLeft(quest.enrollment_ends_at, lang)}</span>
             </div>
           )}
           {quest.status === 'active' && (
             <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-              <FaClock size={11} /><span>Endet in {timeLeft(quest.deadline)}</span>
+              <FaClock size={11} /><span>{t('sq.endsIn', lang)} {timeLeft(quest.deadline, lang)}</span>
             </div>
           )}
           {/* Aktionsbutton */}

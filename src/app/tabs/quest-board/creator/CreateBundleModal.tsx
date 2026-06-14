@@ -221,7 +221,9 @@ export default function CreateBundleModal({
     const _deadline = Math.max(_enroll + 1, Math.min(720, parseInt(sqDeadlineHours) || _enroll + 1));
     const _shard    = Math.max(0, Math.min(100, parseInt(sqShardChance) || 0));
     const _minLevel = Math.max(1, Math.min(100, parseInt(sqMinLevel) || 1));
-    if (!sqTitle.trim()) { setSqError(t('sq.errorTitle', lang)); return; }
+    // Titel automatisch aus Plattform + Stream-Ziel generieren
+    const platformLabel = STREAMING_PLATFORMS.find(p => p.value === sqPlatform)?.label ?? sqPlatform;
+    const autoTitle = `${_target.toLocaleString()} ${platformLabel} Streams`;
     if (_deadline <= _enroll) { setSqError(t('sq.errorDeadline', lang)); return; }
     setSqCreating(true); setSqError(null);
     try {
@@ -230,7 +232,7 @@ export default function CreateBundleModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           creatorWallet: walletAddress,
-          title: sqTitle.trim(),
+          title: autoTitle,
           description: sqDesc.trim() || undefined,
           platform: sqPlatform,
           targetStreams: _target,
@@ -532,19 +534,6 @@ export default function CreateBundleModal({
             <button onClick={() => setQuestMode(null)} className="text-xs text-zinc-500 hover:text-zinc-300 flex items-center gap-1 transition-colors">
               ← {t('btn.back', lang)}
             </button>
-
-            {/* Titel */}
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">{t('sq.labelTitle', lang)}</label>
-              <input
-                type="text"
-                value={sqTitle}
-                onChange={e => setSqTitle(e.target.value)}
-                placeholder={t('sq.placeholderTitle', lang)}
-                maxLength={100}
-                className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
-              />
-            </div>
 
             {/* Beschreibung */}
             <div>
