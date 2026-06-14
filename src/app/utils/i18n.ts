@@ -909,12 +909,22 @@ const dict: Translations = {
   'rep.pastQuarters': { de: 'Vergangene Quartale', en: 'Past quarters', pl: 'Poprzednie kwartały' },
   'rep.artistsLabel': { de: 'Künstler', en: 'Artists', pl: 'Artyści' },
   'rep.tapArtistHint': { de: 'Tippe auf einen Künstler um deine Reputation zu sehen.', en: 'Tap an artist to see your reputation.', pl: 'Kliknij artystę, aby zobaczyć swoją reputację.' },
+  'rep.infoTitle': { de: 'Was ist Reputation?', en: 'What is Reputation?', pl: 'Czym jest Reputacja?' },
+  'rep.infoText': { de: 'Reputation zeigt, wie aktiv du ein Fan eines Künstlers bist. Du sammelst REP-Punkte, indem du Quests abschließt – z. B. Posts liken, kommentieren oder teilen.', en: 'Reputation shows how active a fan you are of an artist. You earn REP points by completing quests – e.g. liking, commenting or sharing posts.', pl: 'Reputacja pokazuje, jak aktywnym fanem artysty jesteś. Zdobywasz punkty REP, wykonując questy – np. lajkując, komentując lub udostępniając posty.' },
+  'rep.infoWhyTitle': { de: 'Wozu brauche ich REP?', en: 'Why do I need REP?', pl: 'Po co mi REP?' },
+  'rep.infoWhyText': { de: 'Je mehr REP du hast, desto höher dein Level. Höhere Level schalten Boni frei: mehr Credits pro Quest, exklusive Rewards und einen höheren Rang im Leaderboard des Künstlers.', en: 'The more REP you have, the higher your level. Higher levels unlock bonuses: more credits per quest, exclusive rewards and a higher rank in the artist\'s leaderboard.', pl: 'Im więcej REP masz, tym wyższy poziom. Wyższe poziomy odblokowują bonusy: więcej kredytów za quest, ekskluzywne nagrody i wyższą pozycję w rankingu artysty.' },
   'rep.reputationSystem': { de: 'Dein Reputation-System', en: 'Your Reputation System', pl: 'Twój System Reputacji' },
   'rep.repRewards': { de: 'Reputation · Rewards', en: 'Reputation · Rewards', pl: 'Reputacja · Nagrody' },
   'rep.btnLoadDefault': { de: 'Standard (10)', en: 'Default (10)', pl: 'Domyślne (10)' },
   'rep.btnSaveConfig': { de: 'Konfiguration speichern', en: 'Save configuration', pl: 'Zapisz konfigurację' },
   'rep.btnSetup': { de: 'Einrichten', en: 'Set up', pl: 'Skonfiguruj' },
   'rep.levelCosts': { de: 'Kosten: {n} D.FAITH Credits (wird beim Speichern abgezogen)', en: 'Cost: {n} D.FAITH credits (deducted on save)', pl: 'Koszt: {n} kredytów D.FAITH (odliczany przy zapisie)' },
+
+  // ── Collectibles Info ─────────────────────────────────────────────────────────
+  'col.infoTitle': { de: 'Was sind Collectibles?', en: 'What are Collectibles?', pl: 'Czym są Collectibles?' },
+  'col.infoText': { de: 'Collectibles sind digitale Sammelkarten eines Künstlers – von Common bis Mythic. Je seltener die Karte, desto höher dein Bonus auf Reputation, Credits und Shard-Chancen.', en: 'Collectibles are digital trading cards of an artist – from Common to Mythic. The rarer the card, the higher your bonus on Reputation, Credits and Shard chances.', pl: 'Collectibles to cyfrowe karty kolekcjonerskie artysty – od Common do Mythic. Im rzadsza karta, tym wyższy bonus do Reputacji, Kredytów i szans na Shardy.' },
+  'col.infoHowTitle': { de: 'Wie bekomme ich sie?', en: 'How do I get them?', pl: 'Jak je zdobyć?' },
+  'col.infoHowText': { de: 'Schließe Quest-Bundles ab – du erhältst Shards. 1 Shard = 1 Zufalls-Collectible. Mit 10 gleichen Karten kannst du auf die nächste Seltenheitsstufe upgraden.', en: 'Complete Quest Bundles – you receive Shards. 1 Shard = 1 random Collectible. With 10 identical cards you can upgrade to the next rarity tier.', pl: 'Ukończ Pakiety Questów – otrzymasz Shardy. 1 Shard = 1 losowy Collectible. 10 identycznych kart pozwala awansować na kolejny poziom rzadkości.' },
 
   // ── Solana Wallet ────────────────────────────────────────────────────────────
 

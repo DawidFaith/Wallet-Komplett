@@ -7,6 +7,7 @@ import { FaGem, FaFire, FaChevronLeft, FaPlus, FaTimes, FaCheck, FaSync, FaImage
 import { GiCrystalShine, GiMagicSwirl } from 'react-icons/gi';
 import { upload } from '@vercel/blob/client';
 import { useLang } from '../components/LangContext';
+import { t } from '../utils/i18n';
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
 
@@ -1084,6 +1085,7 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
 export default function CollectiblesTab() {
   const { user } = useUser();
   const walletAddress = user?.id ?? '';
+  const lang = useLang();
 
   // Top-Level Tabs: supporter | artist
   const [mainTab, setMainTab] = useState<'supporter' | 'artist'>('supporter');
@@ -1262,12 +1264,12 @@ export default function CollectiblesTab() {
                       <GiCrystalShine className="text-amber-400" size={18} />
                     </div>
                     <div>
-                      <p className="text-amber-300 font-black text-sm mb-1">Was sind Collectibles?</p>
+                      <p className="text-amber-300 font-black text-sm mb-1">{t('col.infoTitle', lang)}</p>
                       <p className="text-zinc-300 text-[11px] leading-relaxed">
-                        Collectibles sind digitale Sammelkarten eines Künstlers – von <span className="text-zinc-100 font-semibold">Common</span> bis <span className="text-rose-400 font-semibold">Mythic</span>. Je seltener die Karte, desto höher dein Bonus auf Reputation, Credits und Shard-Chancen.
+                        {t('col.infoText', lang)}
                       </p>
                       <p className="text-zinc-400 text-[11px] leading-relaxed mt-1.5">
-                        <span className="text-amber-400 font-semibold">Wie bekomme ich sie?</span> Schließe Quest-Bundles ab – du erhältst Shards. 1 Shard = 1 Zufalls-Collectible. Mit 10 gleichen Karten kannst du auf die nächste Seltenheitsstufe upgraden.
+                        <span className="text-amber-400 font-semibold">{t('col.infoHowTitle', lang)}</span>{' '}{t('col.infoHowText', lang)}
                       </p>
                     </div>
                   </div>
