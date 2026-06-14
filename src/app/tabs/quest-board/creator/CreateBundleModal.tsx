@@ -10,15 +10,16 @@ import { t, tFmt } from '../../../utils/i18n';
 import type { Lang } from '../../../utils/i18n';
 import { upload } from '@vercel/blob/client';
 import { FaMusic, FaCamera } from 'react-icons/fa';
+import { SiSpotify, SiApplemusic, SiYoutubemusic, SiAmazonmusic, SiTidal } from 'react-icons/si';
 
 const STREAMING_PLATFORMS = [
-  { value: 'spotify',       label: 'Spotify' },
-  { value: 'apple_music',   label: 'Apple Music' },
-  { value: 'youtube_music', label: 'YouTube Music' },
-  { value: 'amazon_music',  label: 'Amazon Music' },
-  { value: 'deezer',        label: 'Deezer' },
-  { value: 'tidal',         label: 'Tidal' },
-  { value: 'other',         label: 'Andere' },
+  { value: 'spotify',       label: 'Spotify',       icon: SiSpotify,      color: '#1DB954', bg: 'bg-[#1DB954]/10', border: 'border-[#1DB954]/40', text: 'text-[#1DB954]' },
+  { value: 'apple_music',   label: 'Apple Music',   icon: SiApplemusic,   color: '#FC3C44', bg: 'bg-[#FC3C44]/10', border: 'border-[#FC3C44]/40', text: 'text-[#FC3C44]' },
+  { value: 'youtube_music', label: 'YouTube Music', icon: SiYoutubemusic, color: '#FF0000', bg: 'bg-[#FF0000]/10', border: 'border-[#FF0000]/40', text: 'text-[#FF0000]' },
+  { value: 'amazon_music',  label: 'Amazon Music',  icon: SiAmazonmusic,  color: '#00A8E1', bg: 'bg-[#00A8E1]/10', border: 'border-[#00A8E1]/40', text: 'text-[#00A8E1]' },
+  { value: 'deezer',        label: 'Deezer',        icon: FaMusic,        color: '#A238FF', bg: 'bg-[#A238FF]/10', border: 'border-[#A238FF]/40', text: 'text-[#A238FF]' },
+  { value: 'tidal',         label: 'Tidal',         icon: SiTidal,        color: '#00FFFF', bg: 'bg-[#00FFFF]/10', border: 'border-[#00FFFF]/40', text: 'text-[#00FFFF]' },
+  { value: 'other',         label: 'Andere',        icon: FaMusic,        color: '#888888', bg: 'bg-zinc-700/20',  border: 'border-zinc-600/40',  text: 'text-zinc-400' },
 ] as const;
 // ─── Media-Typen (für Video-Picker) ─────────────────────────────────────────
 interface AvailableQuestMediaItem {
@@ -116,13 +117,13 @@ export default function CreateBundleModal({
   const [sqTitle, setSqTitle]               = useState('');
   const [sqDesc, setSqDesc]                 = useState('');
   const [sqPlatform, setSqPlatform]         = useState('spotify');
-  const [sqTargetStreams, setSqTargetStreams] = useState(10000);
-  const [sqRewardPer, setSqRewardPer]       = useState(100);
-  const [sqMaxPart, setSqMaxPart]           = useState(50);
-  const [sqRepReward, setSqRepReward]       = useState(0);
-  const [sqEnrollHours, setSqEnrollHours]   = useState(48);
-  const [sqDeadlineHours, setSqDeadlineHours] = useState(240);
-  const [sqShardChance, setSqShardChance]   = useState(20);
+  const [sqTargetStreams, setSqTargetStreams] = useState('10000');
+  const [sqRewardPer, setSqRewardPer]       = useState('100');
+  const [sqMaxPart, setSqMaxPart]           = useState('50');
+  const [sqRepReward, setSqRepReward]       = useState('0');
+  const [sqEnrollHours, setSqEnrollHours]   = useState('48');
+  const [sqDeadlineHours, setSqDeadlineHours] = useState('240');
+  const [sqShardChance, setSqShardChance]   = useState('20');
   const [sqCreating, setSqCreating]         = useState(false);
   const [sqError, setSqError]               = useState<string | null>(null);
 
@@ -178,9 +179,9 @@ export default function CreateBundleModal({
     if (!open) return;
     setQuestMode(null);
     setSqTitle(''); setSqDesc(''); setSqPlatform('spotify');
-    setSqTargetStreams(10000); setSqRewardPer(100); setSqMaxPart(50);
-    setSqRepReward(0); setSqEnrollHours(48); setSqDeadlineHours(240);
-    setSqShardChance(20); setSqCreating(false); setSqError(null);
+    setSqTargetStreams('10000'); setSqRewardPer('100'); setSqMaxPart('50');
+    setSqRepReward('0'); setSqEnrollHours('48'); setSqDeadlineHours('240');
+    setSqShardChance('20'); setSqCreating(false); setSqError(null);
     setStep(1);
     setVideoUrl('');
     setVideoMediaId('');
@@ -211,8 +212,15 @@ export default function CreateBundleModal({
 
   // ── Streaming Quest erstellen ─────────────────────────────────────────────
   const handleCreateStreamingQuest = async () => {
+    const _target   = Math.max(1, parseInt(sqTargetStreams) || 1);
+    const _reward   = Math.max(0, parseFloat(sqRewardPer) || 0);
+    const _maxPart  = Math.max(1, parseInt(sqMaxPart) || 1);
+    const _rep      = Math.max(0, parseInt(sqRepReward) || 0);
+    const _enroll   = Math.max(1, Math.min(168, parseInt(sqEnrollHours) || 1));
+    const _deadline = Math.max(_enroll + 1, Math.min(720, parseInt(sqDeadlineHours) || _enroll + 1));
+    const _shard    = Math.max(0, Math.min(100, parseInt(sqShardChance) || 0));
     if (!sqTitle.trim()) { setSqError(t('sq.errorTitle', lang)); return; }
-    if (sqDeadlineHours <= sqEnrollHours) { setSqError(t('sq.errorDeadline', lang)); return; }
+    if (_deadline <= _enroll) { setSqError(t('sq.errorDeadline', lang)); return; }
     setSqCreating(true); setSqError(null);
     try {
       const res = await fetch('/api/streaming-quests', {
@@ -223,13 +231,13 @@ export default function CreateBundleModal({
           title: sqTitle.trim(),
           description: sqDesc.trim() || undefined,
           platform: sqPlatform,
-          targetStreams: sqTargetStreams,
-          rewardPerParticipant: sqRewardPer,
-          maxParticipants: sqMaxPart,
-          reputationReward: sqRepReward,
-          enrollmentHours: sqEnrollHours,
-          deadlineHours: sqDeadlineHours,
-          shardDropChance: sqShardChance,
+          targetStreams: _target,
+          rewardPerParticipant: _reward,
+          maxParticipants: _maxPart,
+          reputationReward: _rep,
+          enrollmentHours: _enroll,
+          deadlineHours: _deadline,
+          shardDropChance: _shard,
         }),
       });
       const data = await res.json();
@@ -476,29 +484,39 @@ export default function CreateBundleModal({
 
         {/* ── Typ-Wähler ────────────────────────────────────────────────── */}
         {questMode === null && (
-          <div className="space-y-3">
-            <p className="text-zinc-400 text-sm">{t('cb.chooseTypeHint', lang)}</p>
+          <div className="space-y-4">
+            <p className="text-zinc-400 text-sm text-center">{t('cb.chooseTypeHint', lang)}</p>
             <div className="grid grid-cols-2 gap-3">
               {/* Social Quest */}
               <button
                 onClick={() => setQuestMode('social')}
-                className="rounded-2xl border border-purple-600/40 bg-purple-900/20 hover:bg-purple-900/40 transition-colors p-5 flex flex-col items-center gap-3 text-left group"
+                className="rounded-2xl border border-purple-600/40 bg-zinc-900 hover:bg-purple-900/30 transition-all p-5 flex flex-col items-center gap-3 group"
               >
-                <span className="text-3xl">📱</span>
-                <div>
+                <div className="flex gap-1.5 items-center">
+                  <FaYoutube className="text-red-500" size={18} />
+                  <FaInstagram className="text-pink-500" size={18} />
+                  <FaTiktok className="text-white" size={16} />
+                  <FaFacebook className="text-blue-500" size={18} />
+                </div>
+                <div className="text-center">
                   <p className="text-white font-bold text-sm group-hover:text-purple-300 transition-colors">{t('cb.typesSocial', lang)}</p>
-                  <p className="text-zinc-500 text-xs mt-0.5">{t('cb.typesSocialHint', lang)}</p>
+                  <p className="text-zinc-500 text-xs mt-0.5 leading-tight">{t('cb.typesSocialHint', lang)}</p>
                 </div>
               </button>
               {/* Streaming Milestone */}
               <button
                 onClick={() => setQuestMode('streaming')}
-                className="rounded-2xl border border-green-600/40 bg-green-900/20 hover:bg-green-900/40 transition-colors p-5 flex flex-col items-center gap-3 text-left group"
+                className="rounded-2xl border border-green-600/40 bg-zinc-900 hover:bg-green-900/30 transition-all p-5 flex flex-col items-center gap-3 group"
               >
-                <span className="text-3xl">🎵</span>
-                <div>
+                <div className="flex gap-1.5 items-center">
+                  <SiSpotify className="text-[#1DB954]" size={18} />
+                  <SiApplemusic className="text-[#FC3C44]" size={18} />
+                  <SiYoutubemusic className="text-[#FF0000]" size={18} />
+                  <SiTidal className="text-[#00FFFF]" size={16} />
+                </div>
+                <div className="text-center">
                   <p className="text-white font-bold text-sm group-hover:text-green-300 transition-colors">{t('cb.typeStreaming', lang)}</p>
-                  <p className="text-zinc-500 text-xs mt-0.5">{t('cb.typeStreamingHint', lang)}</p>
+                  <p className="text-zinc-500 text-xs mt-0.5 leading-tight">{t('cb.typeStreamingHint', lang)}</p>
                 </div>
               </button>
             </div>
@@ -540,14 +558,28 @@ export default function CreateBundleModal({
 
             {/* Plattform */}
             <div>
-              <label className="block text-sm text-gray-400 mb-1">{t('sq.labelPlatform', lang)}</label>
-              <select
-                value={sqPlatform}
-                onChange={e => setSqPlatform(e.target.value)}
-                className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
-              >
-                {STREAMING_PLATFORMS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-              </select>
+              <label className="block text-sm text-gray-400 mb-2">{t('sq.labelPlatform', lang)}</label>
+              <div className="grid grid-cols-2 gap-2">
+                {STREAMING_PLATFORMS.map(p => {
+                  const Icon = p.icon;
+                  const isSelected = sqPlatform === p.value;
+                  return (
+                    <button
+                      key={p.value}
+                      type="button"
+                      onClick={() => setSqPlatform(p.value)}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-sm font-medium ${
+                        isSelected
+                          ? `${p.bg} ${p.border} ${p.text}`
+                          : 'bg-zinc-800/50 border-zinc-700/40 text-zinc-400 hover:border-zinc-500/60 hover:text-zinc-200'
+                      }`}
+                    >
+                      <Icon size={16} style={isSelected ? { color: p.color } : {}} />
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Stream-Ziel */}
@@ -556,7 +588,8 @@ export default function CreateBundleModal({
               <input
                 type="number"
                 value={sqTargetStreams}
-                onChange={e => setSqTargetStreams(Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={e => setSqTargetStreams(e.target.value)}
+                onBlur={e => { const v = parseInt(e.target.value); setSqTargetStreams(String(isNaN(v) || v < 1 ? 1 : v)); }}
                 min={1}
                 className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
               />
@@ -569,7 +602,8 @@ export default function CreateBundleModal({
                 <input
                   type="number"
                   value={sqRewardPer}
-                  onChange={e => setSqRewardPer(Math.max(0, parseFloat(e.target.value) || 0))}
+                  onChange={e => setSqRewardPer(e.target.value)}
+                  onBlur={e => { const v = parseFloat(e.target.value); setSqRewardPer(String(isNaN(v) || v < 0 ? 0 : v)); }}
                   min={0} step={10}
                   className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
                 />
@@ -579,7 +613,8 @@ export default function CreateBundleModal({
                 <input
                   type="number"
                   value={sqMaxPart}
-                  onChange={e => setSqMaxPart(Math.max(1, parseInt(e.target.value) || 1))}
+                  onChange={e => setSqMaxPart(e.target.value)}
+                  onBlur={e => { const v = parseInt(e.target.value); setSqMaxPart(String(isNaN(v) || v < 1 ? 1 : v)); }}
                   min={1}
                   className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
                 />
@@ -592,7 +627,8 @@ export default function CreateBundleModal({
               <input
                 type="number"
                 value={sqRepReward}
-                onChange={e => setSqRepReward(Math.max(0, parseInt(e.target.value) || 0))}
+                onChange={e => setSqRepReward(e.target.value)}
+                onBlur={e => { const v = parseInt(e.target.value); setSqRepReward(String(isNaN(v) || v < 0 ? 0 : v)); }}
                 min={0} step={5}
                 className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
               />
@@ -604,7 +640,8 @@ export default function CreateBundleModal({
               <input
                 type="number"
                 value={sqShardChance}
-                onChange={e => setSqShardChance(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
+                onChange={e => setSqShardChance(e.target.value)}
+                onBlur={e => { const v = parseInt(e.target.value); setSqShardChance(String(isNaN(v) ? 0 : Math.max(0, Math.min(100, v)))); }}
                 min={0} max={100} step={5}
                 className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
               />
@@ -618,7 +655,8 @@ export default function CreateBundleModal({
                 <input
                   type="number"
                   value={sqEnrollHours}
-                  onChange={e => setSqEnrollHours(Math.max(1, parseInt(e.target.value) || 1))}
+                  onChange={e => setSqEnrollHours(e.target.value)}
+                  onBlur={e => { const v = parseInt(e.target.value); setSqEnrollHours(String(isNaN(v) || v < 1 ? 1 : Math.min(168, v))); }}
                   min={1} max={168}
                   className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
                 />
@@ -629,8 +667,9 @@ export default function CreateBundleModal({
                 <input
                   type="number"
                   value={sqDeadlineHours}
-                  onChange={e => setSqDeadlineHours(Math.max(sqEnrollHours + 1, parseInt(e.target.value) || sqEnrollHours + 1))}
-                  min={sqEnrollHours + 1} max={720}
+                  onChange={e => setSqDeadlineHours(e.target.value)}
+                  onBlur={e => { const v = parseInt(e.target.value); const min = (parseInt(sqEnrollHours) || 1) + 1; setSqDeadlineHours(String(isNaN(v) || v < min ? min : Math.min(720, v))); }}
+                  min={(parseInt(sqEnrollHours) || 1) + 1} max={720}
                   className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
                 />
                 <p className="text-xs text-zinc-600 mt-1">{t('sq.hintDeadlineHours', lang)}</p>
@@ -640,7 +679,7 @@ export default function CreateBundleModal({
             {/* Budget-Info */}
             <div className="rounded-lg bg-purple-900/30 border border-purple-500/30 p-3 text-sm">
               <p className="text-purple-300">
-                {t('sq.budgetInfo', lang)}: <span className="font-bold text-white">{(sqRewardPer * sqMaxPart).toLocaleString()} D.FAITH</span>
+                {t('sq.budgetInfo', lang)}: <span className="font-bold text-white">{((parseFloat(sqRewardPer) || 0) * (parseInt(sqMaxPart) || 0)).toLocaleString()} D.FAITH</span>
               </p>
               <p className="text-zinc-500 text-xs mt-1">{t('sq.budgetHint', lang)}</p>
             </div>
