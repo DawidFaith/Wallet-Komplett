@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
-import { FaTimes, FaUsers, FaCheckCircle, FaClock, FaChartLine, FaImages } from 'react-icons/fa';
-import { t, tFmt } from '../../../utils/i18n';
+import { FaTimes, FaUsers, FaCheckCircle, FaClock, FaChartLine, FaImages, FaTrophy, FaStar } from 'react-icons/fa';
+import { t } from '../../../utils/i18n';
 import { useLang } from '../../../components/LangContext';
 
 export interface StreamingQuest {
@@ -36,48 +35,37 @@ export interface StreamingQuestUpdate {
   posted_at: string;
 }
 
-const PLATFORM_LABELS: Record<string, string> = {
-  spotify:       'Spotify',
-  apple_music:   'Apple Music',
-  youtube_music: 'YouTube Music',
-  amazon_music:  'Amazon Music',
-  deezer:        'Deezer',
-  tidal:         'Tidal',
-  other:         'Andere',
+const PLATFORM_CONFIG: Record<string, {
+  label: string; color: string; border: string;
+  accent: string; button: string; progress: string;
+}> = {
+  spotify:       { label: 'Spotify',       color: 'bg-green-500/20 text-green-400',   border: 'border-green-700/40',  accent: 'from-green-600 to-emerald-500',  button: 'from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500',   progress: 'from-green-500 to-emerald-400' },
+  apple_music:   { label: 'Apple Music',   color: 'bg-pink-500/20 text-pink-400',     border: 'border-pink-700/40',   accent: 'from-pink-600 to-rose-500',      button: 'from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500',         progress: 'from-pink-500 to-rose-400' },
+  youtube_music: { label: 'YouTube Music', color: 'bg-red-500/20 text-red-400',       border: 'border-red-700/40',    accent: 'from-red-600 to-orange-500',     button: 'from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500',       progress: 'from-red-500 to-orange-400' },
+  amazon_music:  { label: 'Amazon Music',  color: 'bg-blue-500/20 text-blue-400',     border: 'border-blue-700/40',   accent: 'from-blue-600 to-cyan-500',      button: 'from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500',         progress: 'from-blue-500 to-cyan-400' },
+  deezer:        { label: 'Deezer',        color: 'bg-purple-500/20 text-purple-400', border: 'border-purple-700/40', accent: 'from-purple-600 to-violet-500',  button: 'from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500', progress: 'from-purple-500 to-violet-400' },
+  tidal:         { label: 'Tidal',         color: 'bg-cyan-500/20 text-cyan-400',     border: 'border-cyan-700/40',   accent: 'from-cyan-600 to-teal-500',      button: 'from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500',         progress: 'from-cyan-500 to-teal-400' },
+  other:         { label: 'Streaming',     color: 'bg-gray-500/20 text-gray-400',     border: 'border-gray-700/40',   accent: 'from-gray-600 to-gray-500',      button: 'from-gray-600 to-gray-500 hover:from-gray-500 hover:to-gray-400',         progress: 'from-gray-500 to-gray-400' },
 };
+const DEFAULT_CFG = PLATFORM_CONFIG.other;
+function getCfg(p: string) { return PLATFORM_CONFIG[p] ?? DEFAULT_CFG; }
 
-const PLATFORM_COLORS: Record<string, string> = {
-  spotify:       'bg-green-500/20 text-green-400 border-green-500/30',
-  apple_music:   'bg-pink-500/20 text-pink-400 border-pink-500/30',
-  youtube_music: 'bg-red-500/20 text-red-400 border-red-500/30',
-  amazon_music:  'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  deezer:        'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  tidal:         'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  other:         'bg-gray-500/20 text-gray-400 border-gray-500/30',
+const STATUS_LABELS: Record<string, string> = {
+  enrollment: '🎟️ Anmeldung offen',
+  active:     '🚀 Läuft',
+  completed:  '✅ Erreicht',
+  expired:    '⌛ Abgelaufen',
 };
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
-
-function StatusBadge({ status }: { status: StreamingQuest['status'] }) {
-  const styles: Record<string, string> = {
-    enrollment: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    active:     'bg-green-500/20 text-green-400 border-green-500/30',
-    completed:  'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    expired:    'bg-gray-500/20 text-gray-500 border-gray-500/30',
-  };
-  const labels: Record<string, string> = {
-    enrollment: '🎟️ Anmeldung offen',
-    active:     '🚀 Aktiv',
-    completed:  '✅ Abgeschlossen',
-    expired:    '⌛ Abgelaufen',
-  };
-  return (
-    <span className={`text-xs px-2 py-0.5 rounded-full border ${styles[status] ?? ''}`}>
-      {labels[status] ?? status}
-    </span>
-  );
+function timeLeft(iso: string): string {
+  const diff = new Date(iso).getTime() - Date.now();
+  if (diff <= 0) return 'abgelaufen';
+  const h = Math.floor(diff / 3_600_000);
+  const d = Math.floor(h / 24);
+  return d > 0 ? `${d}d ${h % 24}h` : `${h}h`;
 }
 
 // ─── Detail-Modal ─────────────────────────────────────────────────────────────
@@ -90,31 +78,26 @@ interface DetailModalProps {
 
 function StreamingQuestDetailModal({ quest, walletAddress, onClose, onJoined }: DetailModalProps) {
   const lang = useLang();
-  const [updates, setUpdates]       = useState<StreamingQuestUpdate[]>([]);
+  const cfg  = getCfg(quest.platform);
+  const [updates, setUpdates]           = useState<StreamingQuestUpdate[]>([]);
   const [loadedUpdates, setLoadedUpdates] = useState(false);
-  const [joining, setJoining]       = useState(false);
-  const [joinError, setJoinError]   = useState<string | null>(null);
-  const [selectedImg, setSelectedImg] = useState<string | null>(null);
+  const [joining, setJoining]           = useState(false);
+  const [joinError, setJoinError]       = useState<string | null>(null);
+  const [selectedImg, setSelectedImg]   = useState<string | null>(null);
 
-  const loadUpdates = async () => {
+  React.useEffect(() => {
     if (loadedUpdates) return;
-    try {
-      const res = await fetch(`/api/streaming-quests/${quest.id}`, { cache: 'no-store' });
-      const data = await res.json();
-      setUpdates(data.updates ?? []);
-    } catch { /* ignore */ }
-    setLoadedUpdates(true);
-  };
-
-  React.useEffect(() => { loadUpdates(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    fetch(`/api/streaming-quests/${quest.id}`, { cache: 'no-store' })
+      .then(r => r.json())
+      .then(d => { setUpdates(d.updates ?? []); setLoadedUpdates(true); })
+      .catch(() => setLoadedUpdates(true));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const progress = quest.target_streams > 0
-    ? Math.min(100, Math.round((quest.current_streams / quest.target_streams) * 100))
-    : 0;
+    ? Math.min(100, Math.round((quest.current_streams / quest.target_streams) * 100)) : 0;
 
   const handleJoin = async () => {
-    setJoining(true);
-    setJoinError(null);
+    setJoining(true); setJoinError(null);
     try {
       const res = await fetch(`/api/streaming-quests/${quest.id}?action=join`, {
         method: 'POST',
@@ -124,115 +107,91 @@ function StreamingQuestDetailModal({ quest, walletAddress, onClose, onJoined }: 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Fehler');
       onJoined();
-      onClose();
     } catch (err) {
       setJoinError(err instanceof Error ? err.message : 'Fehler');
-    } finally {
-      setJoining(false);
-    }
+    } finally { setJoining(false); }
   };
 
-  const canJoin = quest.status === 'enrollment' && !quest.has_joined;
+  const canJoin = quest.status === 'enrollment' && !quest.has_joined && !!walletAddress;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
-      <div className="relative w-full max-w-xl rounded-2xl bg-gray-900 border border-white/10 shadow-2xl overflow-y-auto max-h-[90vh]">
-        {/* Fullscreen Bild-Overlay */}
+      <div className="relative w-full max-w-xl rounded-2xl bg-zinc-900 border border-white/10 shadow-2xl overflow-y-auto max-h-[90vh]">
         {selectedImg && (
-          <div
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 cursor-zoom-out"
-            onClick={() => setSelectedImg(null)}
-          >
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 cursor-zoom-out" onClick={() => setSelectedImg(null)}>
             <img src={selectedImg} alt="Screenshot" className="max-w-full max-h-full rounded-xl object-contain" />
-            <button onClick={() => setSelectedImg(null)} className="absolute top-4 right-4 text-white text-2xl">
-              <FaTimes />
-            </button>
+            <button onClick={() => setSelectedImg(null)} className="absolute top-4 right-4 text-white text-2xl"><FaTimes /></button>
           </div>
         )}
-
-        {/* Header */}
-        <div className="flex items-start justify-between p-5 border-b border-white/10">
+        <div className={`h-1 w-full rounded-t-2xl bg-gradient-to-r ${cfg.accent}`} />
+        <div className="flex items-start justify-between p-5 pb-3">
           <div className="flex-1 pr-4">
-            <div className="flex flex-wrap gap-2 mb-2">
-              <StatusBadge status={quest.status} />
-              <span className={`text-xs px-2 py-0.5 rounded-full border ${PLATFORM_COLORS[quest.platform] ?? 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
-                {PLATFORM_LABELS[quest.platform] ?? quest.platform}
-              </span>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${cfg.color}`}>🎵 {cfg.label}</span>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">{STATUS_LABELS[quest.status] ?? quest.status}</span>
             </div>
-            <h2 className="text-lg font-bold text-white">{quest.title}</h2>
-            {quest.description && <p className="text-sm text-gray-400 mt-1">{quest.description}</p>}
+            <h2 className="text-base font-bold text-white leading-snug">{quest.title}</h2>
+            {quest.description && <p className="text-sm text-zinc-400 mt-1">{quest.description}</p>}
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors flex-shrink-0">
-            <FaTimes />
-          </button>
+          <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors flex-shrink-0 mt-0.5"><FaTimes /></button>
         </div>
-
-        <div className="p-5 space-y-5">
-          {/* Stream-Fortschritt */}
+        <div className="px-5 pb-5 space-y-4">
           <div>
-            <div className="flex justify-between text-sm text-gray-400 mb-1">
-              <span className="flex items-center gap-1"><FaChartLine size={12} /> {t('sq.progress', lang)}</span>
-              <span>{quest.current_streams.toLocaleString()} / {quest.target_streams.toLocaleString()}</span>
+            <div className="flex justify-between text-xs text-zinc-400 mb-1.5">
+              <span className="flex items-center gap-1"><FaChartLine size={11} /> {t('sq.progress', lang)}</span>
+              <span className="font-medium">{quest.current_streams.toLocaleString()} / {quest.target_streams.toLocaleString()} Streams</span>
             </div>
-            <div className="w-full h-2.5 bg-gray-800 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500"
-                style={{ width: `${progress}%` }}
-              />
+            <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div className={`h-full rounded-full bg-gradient-to-r ${cfg.progress} transition-all duration-500`} style={{ width: `${progress}%` }} />
             </div>
-            <p className="text-right text-xs text-gray-500 mt-0.5">{progress}%</p>
+            <p className="text-right text-xs text-zinc-500 mt-0.5">{progress}%</p>
           </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gray-800/50 rounded-xl p-3">
-              <p className="text-xs text-gray-500">{t('sq.reward', lang)}</p>
-              <p className="text-white font-bold">{quest.reward_per_participant.toLocaleString()} D.FAITH</p>
-              {quest.reputation_reward > 0 && (
-                <p className="text-xs text-yellow-400">+{quest.reputation_reward} REP</p>
-              )}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-zinc-800/60 rounded-xl p-3">
+              <p className="text-[11px] text-zinc-500 mb-0.5">{t('sq.reward', lang)}</p>
+              <p className="text-white font-bold text-sm">{quest.reward_per_participant.toLocaleString()} D.FAITH</p>
+              {quest.reputation_reward > 0 && <p className="text-xs text-amber-400">+{quest.reputation_reward} REP</p>}
             </div>
-            <div className="bg-gray-800/50 rounded-xl p-3">
-              <p className="text-xs text-gray-500 flex items-center gap-1"><FaUsers size={11} /> {t('sq.participants', lang)}</p>
-              <p className="text-white font-bold">{quest.participant_count} / {quest.max_participants}</p>
+            <div className="bg-zinc-800/60 rounded-xl p-3">
+              <p className="text-[11px] text-zinc-500 mb-0.5 flex items-center gap-1"><FaUsers size={10} /> {t('sq.participants', lang)}</p>
+              <p className="text-white font-bold text-sm">{quest.participant_count} / {quest.max_participants}</p>
+              <div className="w-full h-1 bg-zinc-700 rounded-full mt-1.5 overflow-hidden">
+                <div className={`h-full rounded-full bg-gradient-to-r ${cfg.progress}`}
+                  style={{ width: `${Math.min(100, (quest.participant_count / quest.max_participants) * 100)}%` }} />
+              </div>
             </div>
-            <div className="bg-gray-800/50 rounded-xl p-3">
-              <p className="text-xs text-gray-500 flex items-center gap-1"><FaClock size={11} /> {t('sq.enrollEnds', lang)}</p>
+            <div className="bg-zinc-800/60 rounded-xl p-3">
+              <p className="text-[11px] text-zinc-500 mb-0.5 flex items-center gap-1"><FaClock size={10} /> {t('sq.enrollEnds', lang)}</p>
               <p className="text-white text-xs font-medium">{formatDate(quest.enrollment_ends_at)}</p>
             </div>
-            <div className="bg-gray-800/50 rounded-xl p-3">
-              <p className="text-xs text-gray-500 flex items-center gap-1"><FaClock size={11} /> {t('sq.deadline', lang)}</p>
+            <div className="bg-zinc-800/60 rounded-xl p-3">
+              <p className="text-[11px] text-zinc-500 mb-0.5 flex items-center gap-1"><FaClock size={10} /> {t('sq.deadline', lang)}</p>
               <p className="text-white text-xs font-medium">{formatDate(quest.deadline)}</p>
             </div>
           </div>
-
-          {/* Updates / Screenshots */}
+          {canJoin && (
+            <div className="bg-zinc-800/40 border border-zinc-700/40 rounded-xl px-3 py-2 text-xs text-zinc-400">
+              🔒 {t('sq.antiSybilHint', lang)}
+            </div>
+          )}
           {updates.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-400 mb-3 flex items-center gap-2">
-                <FaImages size={13} /> {t('sq.updates', lang)}
+              <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <FaImages size={11} /> {t('sq.updates', lang)}
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {updates.map(u => (
-                  <div key={u.id} className="rounded-xl bg-gray-800/50 border border-white/5 p-3">
+                  <div key={u.id} className="rounded-xl bg-zinc-800/50 border border-zinc-700/40 p-3">
                     <div className="flex justify-between items-start gap-2">
                       <div className="flex-1">
-                        <p className="text-white font-semibold text-sm">
-                          {u.streams_count.toLocaleString()} Streams
-                        </p>
-                        {u.note && <p className="text-gray-400 text-xs mt-0.5">{u.note}</p>}
-                        <p className="text-gray-600 text-xs mt-1">{formatDate(u.posted_at)}</p>
+                        <p className="text-white font-semibold text-sm">{u.streams_count.toLocaleString()} Streams</p>
+                        {u.note && <p className="text-zinc-400 text-xs mt-0.5">{u.note}</p>}
+                        <p className="text-zinc-600 text-xs mt-1">{formatDate(u.posted_at)}</p>
                       </div>
                       {u.screenshot_url && (
-                        <button
-                          onClick={() => setSelectedImg(u.screenshot_url!)}
-                          className="flex-shrink-0 rounded-lg overflow-hidden border border-white/10 hover:border-white/30 transition-colors"
-                        >
-                          <img
-                            src={u.screenshot_url}
-                            alt="Screenshot"
-                            className="w-20 h-14 object-cover"
-                          />
+                        <button onClick={() => setSelectedImg(u.screenshot_url!)}
+                          className="flex-shrink-0 rounded-lg overflow-hidden border border-zinc-700 hover:border-zinc-500 transition-colors">
+                          <img src={u.screenshot_url} alt="Screenshot" className="w-20 h-14 object-cover" />
                         </button>
                       )}
                     </div>
@@ -241,54 +200,38 @@ function StreamingQuestDetailModal({ quest, walletAddress, onClose, onJoined }: 
               </div>
             </div>
           )}
-
-          {/* Abschluss-Proof */}
           {quest.status === 'completed' && quest.proof_url && (
-            <div className="rounded-xl bg-green-900/20 border border-green-500/30 p-3">
-              <p className="text-green-400 text-sm font-semibold mb-2 flex items-center gap-2">
-                <FaCheckCircle /> {t('sq.completed', lang)}
-              </p>
-              <button
-                onClick={() => setSelectedImg(quest.proof_url!)}
-                className="rounded-lg overflow-hidden border border-green-500/30 hover:border-green-400/60 transition-colors"
-              >
+            <div className="rounded-xl bg-green-900/20 border border-green-600/30 p-3">
+              <p className="text-green-400 text-sm font-semibold mb-2 flex items-center gap-2"><FaCheckCircle /> {t('sq.completed', lang)}</p>
+              <button onClick={() => setSelectedImg(quest.proof_url!)}
+                className="rounded-lg overflow-hidden border border-green-600/30 hover:border-green-400/60 transition-colors w-full">
                 <img src={quest.proof_url} alt="Beweis" className="w-full max-h-40 object-cover" />
               </button>
-              <p className="text-gray-500 text-xs mt-2">{formatDate(quest.confirmed_at!)}</p>
             </div>
           )}
-
-          {/* Join-Button */}
           {canJoin && (
-            <div>
-              {joinError && (
-                <p className="text-red-400 text-sm bg-red-900/20 rounded-lg px-3 py-2 mb-3">{joinError}</p>
-              )}
-              <button
-                onClick={handleJoin}
-                disabled={joining}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
-              >
-                {joining ? t('sq.joining', lang) : t('sq.joinBtn', lang)}
+            <div className="space-y-2">
+              {joinError && <p className="text-red-400 text-sm bg-red-900/20 rounded-xl px-3 py-2">{joinError}</p>}
+              <button onClick={handleJoin} disabled={joining}
+                className={`w-full py-3 rounded-xl bg-gradient-to-r ${cfg.button} text-white font-bold text-sm disabled:opacity-50 transition-opacity flex items-center justify-center gap-2`}>
+                <FaTrophy size={13} /> {joining ? t('sq.joining', lang) : t('sq.joinBtn', lang)}
               </button>
+              <p className="text-center text-xs text-zinc-600">
+                {quest.max_participants - quest.participant_count} {t('sq.slotsLeft', lang)}
+              </p>
             </div>
           )}
           {quest.has_joined && quest.status !== 'completed' && (
-            <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-green-900/20 border border-green-500/30">
-              <FaCheckCircle className="text-green-400" />
+            <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-green-900/20 border border-green-600/30">
+              <FaCheckCircle className="text-green-400" size={14} />
               <span className="text-green-400 font-semibold text-sm">{t('sq.joined', lang)}</span>
             </div>
           )}
           {quest.has_joined && quest.status === 'completed' && (
-            <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-purple-900/20 border border-purple-500/30">
-              <FaCheckCircle className="text-purple-400" />
+            <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-purple-900/20 border border-purple-600/30">
+              <FaTrophy className="text-purple-400" size={14} />
               <span className="text-purple-400 font-semibold text-sm">{t('sq.rewardPaid', lang)}</span>
             </div>
-          )}
-          {quest.status === 'enrollment' && !quest.has_joined && walletAddress && (
-            <p className="text-center text-xs text-gray-600">
-              {quest.max_participants - quest.participant_count} {t('sq.slotsLeft', lang)}
-            </p>
           )}
         </div>
       </div>
@@ -306,12 +249,10 @@ interface CardProps {
 export default function StreamingQuestCard({ quest, walletAddress, onJoined }: CardProps) {
   const lang = useLang();
   const [showDetail, setShowDetail] = useState(false);
-
+  const cfg = getCfg(quest.platform);
   const progress = quest.target_streams > 0
-    ? Math.min(100, Math.round((quest.current_streams / quest.target_streams) * 100))
-    : 0;
-
-  const platformColor = PLATFORM_COLORS[quest.platform] ?? 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    ? Math.min(100, Math.round((quest.current_streams / quest.target_streams) * 100)) : 0;
+  const isExpired = quest.status === 'expired';
 
   return (
     <>
@@ -323,62 +264,70 @@ export default function StreamingQuestCard({ quest, walletAddress, onJoined }: C
           onJoined={() => { onJoined(); setShowDetail(false); }}
         />
       )}
-
       <div
-        className="rounded-2xl bg-gray-900 border border-white/10 hover:border-purple-500/30 transition-colors p-4 cursor-pointer group"
         onClick={() => setShowDetail(true)}
+        className={`bg-zinc-900 rounded-2xl border ${cfg.border} overflow-hidden cursor-pointer transition-all hover:brightness-110 ${isExpired ? 'opacity-50' : ''}`}
       >
-        {/* Obere Reihe: Status + Plattform */}
-        <div className="flex flex-wrap gap-2 mb-3">
-          <StatusBadge status={quest.status} />
-          <span className={`text-xs px-2 py-0.5 rounded-full border ${platformColor}`}>
-            {PLATFORM_LABELS[quest.platform] ?? quest.platform}
-          </span>
-        </div>
-
-        {/* Titel */}
-        <h3 className="text-sm font-bold text-white group-hover:text-purple-300 transition-colors line-clamp-2 mb-1">
-          {quest.title}
-        </h3>
-        {quest.description && (
-          <p className="text-xs text-gray-500 line-clamp-1 mb-3">{quest.description}</p>
-        )}
-
-        {/* Fortschrittsbalken */}
-        <div className="mb-3">
-          <div className="flex justify-between text-xs text-gray-500 mb-1">
-            <span>{quest.current_streams.toLocaleString()} / {quest.target_streams.toLocaleString()} Streams</span>
-            <span>{progress}%</span>
+        <div className={`h-1 w-full bg-gradient-to-r ${cfg.accent}`} />
+        <div className="p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-1.5">
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${cfg.color}`}>🎵 {cfg.label}</span>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">{STATUS_LABELS[quest.status] ?? quest.status}</span>
+            </div>
+            {quest.has_joined && <FaCheckCircle className="text-green-400 flex-shrink-0" size={13} />}
           </div>
-          <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Rewards + Teilnehmer */}
-        <div className="flex items-center justify-between text-xs">
+          <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{quest.title}</h3>
           <div>
-            <span className="text-yellow-400 font-semibold">{quest.reward_per_participant.toLocaleString()} D.FAITH</span>
-            {quest.reputation_reward > 0 && (
-              <span className="text-gray-500 ml-1">+{quest.reputation_reward} REP</span>
-            )}
+            <div className="flex justify-between text-xs text-zinc-400 mb-1">
+              <span>{quest.current_streams.toLocaleString()} / {quest.target_streams.toLocaleString()} Streams</span>
+              <span>{progress}%</span>
+            </div>
+            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+              <div className={`h-full rounded-full bg-gradient-to-r ${cfg.progress} transition-all duration-500`} style={{ width: `${progress}%` }} />
+            </div>
           </div>
-          <div className="flex items-center gap-1 text-gray-500">
-            <FaUsers size={11} />
-            <span>{quest.participant_count}/{quest.max_participants}</span>
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-yellow-400 font-bold">{quest.reward_per_participant.toLocaleString()} D.FAITH</span>
+              {quest.reputation_reward > 0 && (
+                <span className="flex items-center gap-0.5 text-amber-300"><FaStar size={9} /> +{quest.reputation_reward} REP</span>
+              )}
+            </div>
+            <div className="flex items-center gap-1 text-zinc-500">
+              <FaUsers size={10} />
+              <span>{quest.participant_count}/{quest.max_participants}</span>
+            </div>
           </div>
+          {quest.status === 'enrollment' && (
+            <div className="flex items-center gap-1 text-xs text-zinc-500">
+              <FaClock size={10} /><span>Anmeldung noch {timeLeft(quest.enrollment_ends_at)}</span>
+            </div>
+          )}
+          {quest.status === 'active' && (
+            <div className="flex items-center gap-1 text-xs text-zinc-500">
+              <FaClock size={10} /><span>Endet in {timeLeft(quest.deadline)}</span>
+            </div>
+          )}
+          {quest.status === 'enrollment' && !quest.has_joined && (
+            <button
+              onClick={e => { e.stopPropagation(); setShowDetail(true); }}
+              className={`w-full py-2.5 rounded-xl bg-gradient-to-r ${cfg.button} text-white font-bold text-sm flex items-center justify-center gap-2`}
+            >
+              <FaTrophy size={12} /> {t('sq.joinBtn', lang)}
+            </button>
+          )}
+          {quest.has_joined && quest.status !== 'completed' && (
+            <div className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-green-900/30 border border-green-700/30 text-green-400 text-sm font-semibold">
+              <FaCheckCircle size={12} /> {t('sq.joined', lang)}
+            </div>
+          )}
+          {quest.status === 'completed' && quest.has_joined && (
+            <div className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-purple-900/30 border border-purple-700/30 text-purple-400 text-sm font-semibold">
+              <FaTrophy size={12} /> {t('sq.rewardPaid', lang)}
+            </div>
+          )}
         </div>
-
-        {/* Joined-Badge */}
-        {quest.has_joined && (
-          <div className="mt-2 flex items-center gap-1 text-xs text-green-400">
-            <FaCheckCircle size={11} />
-            <span>{t('sq.joined', lang)}</span>
-          </div>
-        )}
       </div>
     </>
   );

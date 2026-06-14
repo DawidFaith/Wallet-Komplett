@@ -1423,6 +1423,7 @@ const dict: Translations = {
   'sq.confirmWarning':   { de: 'Damit werden alle Teilnehmer sofort ausgezahlt. Diese Aktion kann nicht rückgängig gemacht werden!', en: 'This will immediately pay out all participants. This action cannot be undone!', pl: 'Spowoduje to natychmiastową wypłatę wszystkim uczestnikom. Ta akcja jest nieodwracalna!' },
   'sq.completedInfo':    { de: 'Abgeschlossen · {count} Teilnehmer ausgezahlt', en: 'Completed · {count} participants paid', pl: 'Ukończono · {count} uczestników wypłacono' },
   'sq.expiredInfo':      { de: 'Quest ist abgelaufen – kein Reward ausgezahlt', en: 'Quest expired – no reward paid', pl: 'Quest wygasł – brak wypłaty nagrody' },
+  'sq.antiSybilHint':    { de: 'Du brauchst mindestens eine verknüpfte Social-Plattform (YouTube, Instagram, TikTok oder Facebook) um teilzunehmen.', en: 'You need at least one connected social platform (YouTube, Instagram, TikTok or Facebook) to participate.', pl: 'Potrzebujesz co najmniej jednej połączonej platformy społecznościowej (YouTube, Instagram, TikTok lub Facebook), aby uczestniczyć.' },
 };
 
 
