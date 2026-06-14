@@ -7,7 +7,7 @@ import { FaGem, FaFire, FaChevronLeft, FaPlus, FaTimes, FaCheck, FaSync, FaImage
 import { GiCrystalShine, GiMagicSwirl } from 'react-icons/gi';
 import { upload } from '@vercel/blob/client';
 import { useLang } from '../components/LangContext';
-import { t } from '../utils/i18n';
+import { t, tFmt } from '../utils/i18n';
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
 
@@ -172,6 +172,7 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
   onFused: (rarity: CollectibleRarity, newShards: number) => void;
   walletAddress: string;
 }) {
+  const lang = useLang();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CollectibleRarity | null>(null);
   const [newShards, setNewShards] = useState(shards);
@@ -308,7 +309,7 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
             </div>
 
             {/* Rarity-Label */}
-            <p className="text-white/50 text-[10px] uppercase tracking-[0.3em] font-bold mb-1">Collectible erhalten!</p>
+            <p className="text-white/50 text-[10px] uppercase tracking-[0.3em] font-bold mb-1">{t('col.fuseReceived', lang)}</p>
             <p className="font-black text-3xl mb-1" style={{ color: RARITY_CONFIG[result].color }}>
               {RARITY_CONFIG[result].label}
             </p>
@@ -320,7 +321,7 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
               className="w-full py-3 rounded-2xl font-black text-sm text-black transition-all active:scale-95"
               style={{ backgroundColor: RARITY_CONFIG[result].color }}
             >
-              {currentShards >= 1 ? 'Nochmal verschmelzen! 🔮' : 'Awesome! 🎊'}
+              {currentShards >= 1 ? t('col.fuseAgain', lang) : t('col.fuseAwesome', lang)}
             </button>
           </div>
         </div>
@@ -334,7 +335,7 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-black text-white text-lg flex items-center gap-2">
             <GiMagicSwirl className="text-amber-400" />
-            Verschmelzen
+            {t('col.fuseTitle', lang)}
           </h3>
           <button onClick={onClose} className="text-zinc-500 hover:text-white"><FaTimes /></button>
         </div>
@@ -350,13 +351,13 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
           )}
           <div>
             <p className="font-bold text-white text-sm">{collection.name}</p>
-            <p className="text-xs text-zinc-300">{currentShards} Shard{currentShards !== 1 ? 's' : ''} verfügbar</p>
+            <p className="text-xs text-zinc-300">{currentShards} Shard{currentShards !== 1 ? 's' : ''} {t('col.fuseAvailable', lang).replace('{n}', '').replace('{s}', '').trim()}</p>
           </div>
         </div>
 
         {/* Wahrscheinlichkeiten */}
         <div className="space-y-1.5 mb-5">
-          <p className="text-[10px] font-black tracking-[0.3em] uppercase text-zinc-400 mb-2">Chancen</p>
+          <p className="text-[10px] font-black tracking-[0.3em] uppercase text-zinc-400 mb-2">{t('col.fuseChances', lang)}</p>
           {chances.map(({ rarity, chance }) => {
             const cfg = RARITY_CONFIG[rarity];
             return (
@@ -383,11 +384,11 @@ function FusionModal({ collection, shards, onClose, onFused, walletAddress }: {
           }`}
         >
           {loading ? (
-            <><GiMagicSwirl className="animate-spin" /> Verschmelze…</>
+            <><GiMagicSwirl className="animate-spin" /> {t('col.fuseMerging', lang)}</>
           ) : canFuse ? (
-            <><GiMagicSwirl /> 1 Shard verschmelzen</>
+            <><GiMagicSwirl /> {t('col.fuseAction', lang)}</>
           ) : (
-            'Keine Shards verfügbar'
+            t('col.fuseNoShards', lang)
           )}
         </button>
       </div>
@@ -436,6 +437,7 @@ function UpgradeModal({ collection, fromRarity, count, onClose, onUpgraded, wall
 
   const fromCfg = RARITY_CONFIG[fromRarity];
   const nextCfg = RARITY_CONFIG[nextRarity];
+  const lang = useLang();
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -443,7 +445,7 @@ function UpgradeModal({ collection, fromRarity, count, onClose, onUpgraded, wall
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-black text-white text-lg flex items-center gap-2">
             <FaFire className="text-orange-400" />
-            Upgrade
+            {t('col.upgradeTitle', lang)}
           </h3>
           <button onClick={onClose} className="text-zinc-500 hover:text-white"><FaTimes /></button>
         </div>
@@ -463,8 +465,8 @@ function UpgradeModal({ collection, fromRarity, count, onClose, onUpgraded, wall
         {result && (
           <div className={`flex flex-col items-center gap-2 p-4 rounded-xl border ${RARITY_CONFIG[result].border} ${RARITY_CONFIG[result].bg} ${RARITY_CONFIG[result].glow} mb-4`}>
             <GiCrystalShine size={40} style={{ color: RARITY_CONFIG[result].color }} />
-            <p className={`font-black text-lg ${RARITY_CONFIG[result].textColor}`}>Upgrade erfolgreich!</p>
-            <p className="text-xs text-zinc-400">{RARITY_CONFIG[result].label} erhalten</p>
+            <p className={`font-black text-lg ${RARITY_CONFIG[result].textColor}`}>{t('col.upgradeSuccess', lang)}</p>
+            <p className="text-xs text-zinc-400">{tFmt('col.upgradeReceived', lang, { rarity: RARITY_CONFIG[result].label })}</p>
           </div>
         )}
 
@@ -497,11 +499,11 @@ function UpgradeModal({ collection, fromRarity, count, onClose, onUpgraded, wall
           {loading ? (
             <FaSync className="animate-spin" />
           ) : result ? (
-            <><FaCheck /> Fertig</>
+            <><FaCheck /> {t('col.upgradeDone', lang)}</>
           ) : canUpgrade ? (
-            <><FaFire /> 10× {fromCfg.label} upgraden</>
+            <><FaFire /> {tFmt('col.upgradeAction', lang, { rarity: fromCfg.label })}</>
           ) : (
-            `Noch ${10 - count} ${fromCfg.label} fehlen`
+            tFmt('col.upgradeMissing', lang, { n: String(10 - count), rarity: fromCfg.label })
           )}
         </button>
       </div>
@@ -518,6 +520,7 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
   isOwner?: boolean;
   onShardsChanged?: (newCount: number) => void;
 }) {
+  const lang = useLang();
   const [fuseOpen, setFuseOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState<CollectibleRarity | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -580,7 +583,7 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
 
       {/* Alle 6 Rarity-Karten: owned farbig, unowned gesperrt/grau */}
       <div className="mb-4">
-        <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-400 mb-3">Deine Karten</p>
+        <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-400 mb-3">{t('col.myCards', lang)}</p>
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
           {RARITY_ORDER.map((rarity) => {
             const count = ownedByRarity[rarity] ?? 0;
@@ -648,7 +651,7 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
           }`}
         >
           <GiMagicSwirl size={12} />
-          Verschmelzen ({shards} Shard{shards !== 1 ? 's' : ''})
+          {tFmt('col.fuseBtn', lang, { n: String(shards), s: shards !== 1 ? 's' : '' })}
         </button>
 
         {/* Zusammenfassen: Dropdown + Button */}
@@ -1172,7 +1175,7 @@ export default function CollectiblesTab() {
     return (
       <div className="w-full max-w-lg mx-auto px-4 py-8 text-center">
         <GiCrystalShine className="text-zinc-700 mx-auto mb-3" size={40} />
-        <p className="text-zinc-500 text-sm">Bitte einloggen um Collectibles zu sehen.</p>
+        <p className="text-zinc-500 text-sm">{t('col.loginHint', lang)}</p>
       </div>
     );
   }
@@ -1200,7 +1203,7 @@ export default function CollectiblesTab() {
       {view === 'artistDetail' && (
         <div className="px-4 pt-4 pb-3 flex items-center gap-3">
           <button onClick={() => setView('overview')} className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-sm transition-colors">
-            <FaChevronLeft size={11} /> Zurück
+            <FaChevronLeft size={11} /> {t('col.back', lang)}
           </button>
           <div className="flex-1 min-w-0">
             <p className="text-white font-black text-base truncate">{selectedArtist?.name}</p>
@@ -1211,7 +1214,7 @@ export default function CollectiblesTab() {
             <span className="text-amber-300 font-black text-sm">
               {selectedArtist ? (myShards[selectedArtist.artistWallet] ?? 0) : 0}
             </span>
-            <span className="text-amber-400/60 text-xs">Shards</span>
+            <span className="text-amber-400/60 text-xs">{t('col.shards', lang)}</span>
           </div>
         </div>
       )}
@@ -1225,7 +1228,7 @@ export default function CollectiblesTab() {
               mainTab === 'supporter' ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'
             }`}
           >
-            <FaGem size={11} /> Supporter
+            <FaGem size={11} /> {t('col.tabSupporter', lang)}
           </button>
           <button
             onClick={() => setMainTab('artist')}
@@ -1233,7 +1236,7 @@ export default function CollectiblesTab() {
               mainTab === 'artist' ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'
             }`}
           >
-            <GiCrystalShine size={11} /> Künstler
+            <GiCrystalShine size={11} /> {t('col.tabArtist', lang)}
           </button>
         </div>
       )}
@@ -1253,8 +1256,8 @@ export default function CollectiblesTab() {
               {artists.length === 0 ? (
                 <div className="text-center py-16">
                   <GiCrystalShine className="text-zinc-800 mx-auto mb-3" size={48} />
-                  <p className="text-zinc-600 text-sm">Noch keine Kollektionen verfügbar.</p>
-                  <p className="text-zinc-700 text-xs mt-1">Schließe Quest-Bundles ab um Shards zu erhalten!</p>
+                  <p className="text-zinc-600 text-sm">{t('col.noCollections', lang)}</p>
+                  <p className="text-zinc-700 text-xs mt-1">{t('col.noCollectionsHint', lang)}</p>
                 </div>
               ) : (
                 <>
@@ -1274,7 +1277,7 @@ export default function CollectiblesTab() {
                     </div>
                   </div>
 
-                  <p className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-600">Künstler</p>
+                  <p className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-600">{t('col.artistsLabel', lang)}</p>
                   <div className="flex gap-4 overflow-x-auto pt-1 pb-2 scrollbar-none">
                     {[...artists].sort((a, b) => (myShards[b.artistWallet] ?? 0) - (myShards[a.artistWallet] ?? 0)).map((artist) => {
                       const shardCount = myShards[artist.artistWallet] ?? 0;
@@ -1321,8 +1324,8 @@ export default function CollectiblesTab() {
               ) : artistCollections.length === 0 ? (
                 <div className="text-center py-12">
                   <GiCrystalShine className="text-zinc-800 mx-auto mb-3" size={40} />
-                  <p className="text-zinc-600 text-sm">Noch keine Kollektion verfügbar.</p>
-                  <p className="text-zinc-700 text-xs mt-1">Schließe Quest-Bundles ab um Shards zu sammeln!</p>
+                  <p className="text-zinc-600 text-sm">{t('col.noArtistCollection', lang)}</p>
+                  <p className="text-zinc-700 text-xs mt-1">{t('col.noArtistCollectionHint', lang)}</p>
                 </div>
               ) : (
                 <>
@@ -1350,23 +1353,23 @@ export default function CollectiblesTab() {
                     if (totalRep === 0 && totalCredits === 0 && totalShard === 0) return null;
                     return (
                       <div className="bg-white/[0.03] border border-amber-400/20 rounded-2xl p-4">
-                        <p className="text-[9px] font-black tracking-[0.3em] uppercase text-amber-400/50 mb-3">✨ Deine aktiven Boni</p>
+                        <p className="text-[9px] font-black tracking-[0.3em] uppercase text-amber-400/50 mb-3">{t('col.activeBonuses', lang)}</p>
                         <div className="grid grid-cols-3 gap-2">
                           <div className="bg-white/[0.03] rounded-xl p-3 text-center">
                             <p className={`font-black text-2xl ${totalCredits > 0 ? 'text-amber-300' : 'text-zinc-700'}`}>+{totalCredits}%</p>
-                            <p className="text-zinc-500 text-[10px] mt-0.5">Credits</p>
+                            <p className="text-zinc-500 text-[10px] mt-0.5">{t('col.bonusCredits', lang)}</p>
                           </div>
                           <div className="bg-white/[0.03] rounded-xl p-3 text-center">
                             <p className={`font-black text-2xl ${totalShard > 0 ? 'text-blue-300' : 'text-zinc-700'}`}>+{totalShard}%</p>
-                            <p className="text-zinc-500 text-[10px] mt-0.5">Shard-Chance</p>
+                            <p className="text-zinc-500 text-[10px] mt-0.5">{t('col.bonusShard', lang)}</p>
                           </div>
                           <div className="bg-white/[0.03] rounded-xl p-3 text-center">
                             <p className={`font-black text-2xl ${totalRep > 0 ? 'text-purple-300' : 'text-zinc-700'}`}>+{totalRep}%</p>
-                            <p className="text-zinc-500 text-[10px] mt-0.5">Reputation</p>
+                            <p className="text-zinc-500 text-[10px] mt-0.5">{t('col.bonusRep', lang)}</p>
                           </div>
                         </div>
                         <p className="text-zinc-300 text-[10px] mt-2.5 leading-relaxed">
-                          Basiert auf deinen besten Collectibles je Kollektion. Wird automatisch auf Quest-Rewards angerechnet.
+                          {t('col.bonusHint', lang)}
                         </p>
                       </div>
                     );
@@ -1392,7 +1395,7 @@ export default function CollectiblesTab() {
             {!isArtist ? (
               <div className="text-center py-16">
                 <GiCrystalShine className="text-zinc-800 mx-auto mb-3" size={48} />
-                <p className="text-zinc-500 text-sm">Nur verifizierte Künstler können Kollektionen erstellen.</p>
+                <p className="text-zinc-500 text-sm">{t('col.notArtist', lang)}</p>
               </div>
             ) : (
               <>
@@ -1407,11 +1410,11 @@ export default function CollectiblesTab() {
                 ) : myCollections.length === 0 ? (
                   <div className="text-center py-8">
                     <GiCrystalShine className="text-zinc-800 mx-auto mb-2" size={32} />
-                    <p className="text-zinc-600 text-xs">Noch keine Kollektionen erstellt.</p>
+                    <p className="text-zinc-600 text-xs">{t('col.noMyCollections', lang)}</p>
                   </div>
                 ) : (
                   <>
-                    <p className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-600">Meine Kollektionen</p>
+                    <p className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-600">{t('col.myCollections', lang)}</p>
                     {myCollections.map((data) => (
                       <CollectionPanel
                         key={data.collection.id}
