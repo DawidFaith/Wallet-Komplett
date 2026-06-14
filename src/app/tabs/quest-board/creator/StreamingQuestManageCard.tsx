@@ -258,6 +258,18 @@ export default function StreamingQuestManageCard({ quest, creatorWallet, onRefre
           </div>
         </div>
 
+        {/* Track-Link */}
+        {quest.track_url && (
+          <a
+            href={quest.track_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs text-purple-400 hover:text-purple-300 truncate"
+          >
+            <FaChartLine size={10} /> {t('sq.listenOnPlatform', lang)}
+          </a>
+        )}
+
         {/* Infos */}
         <div className="grid grid-cols-3 gap-2 text-xs text-gray-400">
           <div>

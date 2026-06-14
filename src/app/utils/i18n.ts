@@ -1457,6 +1457,10 @@ const dict: Translations = {
   'sq.deleteError':       { de: 'Fehler beim Löschen',      en: 'Error deleting quest',    pl: 'Błąd usuwania' },
   'sq.uploadFailed':      { de: 'Upload fehlgeschlagen',    en: 'Upload failed',           pl: 'Błąd przesyłania' },
   'sq.platformOther':     { de: 'Andere',                   en: 'Other',                   pl: 'Inne' },
+  'sq.labelTrackUrl':     { de: 'Track-Link (optional)',    en: 'Track link (optional)',    pl: 'Link do utworu (opcjonalnie)' },
+  'sq.placeholderTrackUrl': { de: 'https://open.spotify.com/track/…', en: 'https://open.spotify.com/track/…', pl: 'https://open.spotify.com/track/…' },
+  'sq.hintTrackUrl':      { de: 'Link zum Song, der gestreamt werden soll', en: 'Link to the song to be streamed', pl: 'Link do utworu do streamowania' },
+  'sq.listenOnPlatform':  { de: 'Track anhören', en: 'Listen to track', pl: 'Posłuchaj utworu' },
 };
 
 

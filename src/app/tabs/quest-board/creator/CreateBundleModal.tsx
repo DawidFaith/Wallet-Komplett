@@ -125,6 +125,7 @@ export default function CreateBundleModal({
   const [sqDeadlineHours, setSqDeadlineHours] = useState('240');
   const [sqShardChance, setSqShardChance]   = useState('20');
   const [sqMinLevel, setSqMinLevel]         = useState('3');
+  const [sqTrackUrl, setSqTrackUrl]         = useState('');
   const [sqCreating, setSqCreating]         = useState(false);
   const [sqError, setSqError]               = useState<string | null>(null);
 
@@ -209,6 +210,7 @@ export default function CreateBundleModal({
     setPlatformUserCount(0);
     setTopFanBonusPcts([]);
     setMaxCollectibleCreditPct(0);
+    setSqTrackUrl('');
   }, [open]);
 
   // ── Streaming Quest erstellen ─────────────────────────────────────────────
@@ -234,6 +236,7 @@ export default function CreateBundleModal({
           creatorWallet: walletAddress,
           title: autoTitle,
           description: sqDesc.trim() || undefined,
+          trackUrl: sqTrackUrl.trim() || undefined,
           platform: sqPlatform,
           targetStreams: _target,
           rewardPerParticipant: _reward,
@@ -572,6 +575,19 @@ export default function CreateBundleModal({
                   );
                 })}
               </div>
+            </div>
+
+            {/* Track-Link */}
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">{t('sq.labelTrackUrl', lang)}</label>
+              <input
+                type="url"
+                value={sqTrackUrl}
+                onChange={e => setSqTrackUrl(e.target.value)}
+                placeholder={t('sq.placeholderTrackUrl', lang)}
+                className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+              />
+              <p className="text-xs text-zinc-600 mt-1">{t('sq.hintTrackUrl', lang)}</p>
             </div>
 
             {/* Stream-Ziel */}

@@ -20,6 +20,7 @@ export interface StreamingQuest {
   reputation_reward: number;
   shard_drop_chance: number;
   min_level: number;
+  track_url?: string | null;
   enrollment_ends_at: string;
   deadline: string;
   status: 'enrollment' | 'active' | 'completed' | 'expired' | 'cancelled';
@@ -111,6 +112,57 @@ const PLATFORM_CONFIG: Record<string, {
 };
 const DEFAULT_CFG = PLATFORM_CONFIG.other;
 function getCfg(p: string) { return PLATFORM_CONFIG[p] ?? DEFAULT_CFG; }
+
+/** Versucht, aus einer Track-URL einen Spotify-Embed zu generieren.
+ * Gibt null zurück wenn kein Spotify-Track erkannt. */
+function getSpotifyEmbedUrl(url: string): string | null {
+  // https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC?...
+  const m = url.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?track\/([A-Za-z0-9]+)/);
+  return m ? `https://open.spotify.com/embed/track/${m[1]}?utm_source=generator&theme=0` : null;
+}
+
+// Erkennt die Plattform anhand der URL für den Link-Button-Text
+function getPlatformFromUrl(url: string, fallback: string): { label: string; color: string } {
+  if (url.includes('spotify.com'))      return { label: 'Spotify',       color: '#1DB954' };
+  if (url.includes('music.apple.com'))  return { label: 'Apple Music',   color: '#FC3C44' };
+  if (url.includes('music.youtube.com') || url.includes('youtu')) return { label: 'YouTube Music', color: '#FF0000' };
+  if (url.includes('music.amazon'))     return { label: 'Amazon Music',  color: '#00A8E1' };
+  if (url.includes('tidal.com'))        return { label: 'Tidal',         color: '#00FFFF' };
+  if (url.includes('deezer.com'))       return { label: 'Deezer',        color: '#A238FF' };
+  return { label: fallback, color: '#888888' };
+}
+
+interface TrackDisplayProps { url: string; platformLabel: string; lang: string; compact?: boolean; }
+function TrackDisplay({ url, platformLabel, lang, compact = false }: TrackDisplayProps) {
+  const embedUrl = getSpotifyEmbedUrl(url);
+  if (embedUrl && !compact) {
+    return (
+      <iframe
+        src={embedUrl}
+        width="100%"
+        height="80"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+        loading="lazy"
+        className="rounded-xl border-0"
+        style={{ minHeight: 80 }}
+      />
+    );
+  }
+  const { label, color } = getPlatformFromUrl(url, platformLabel);
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={e => e.stopPropagation()}
+      className="flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-colors hover:brightness-125"
+      style={{ borderColor: `${color}55`, color, backgroundColor: `${color}15` }}
+    >
+      <FaChartLine size={12} />
+      {t('sq.listenOnPlatform', lang as Parameters<typeof t>[1])} • {label}
+    </a>
+  );
+}
 
 function getStatusLabel(status: string, lang: string): string {
   const labels: Record<string, Record<string, string>> = {
@@ -260,6 +312,13 @@ function StreamingQuestDetailModal({ quest, walletAddress, onClose, onJoined, on
           <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors flex-shrink-0 mt-0.5"><FaTimes /></button>
         </div>
         <div className="px-5 pb-5 space-y-4">
+          {/* Track-Link / Embed */}
+          {quest.track_url && (
+            <div>
+              <TrackDisplay url={quest.track_url} platformLabel={cfg.label} lang={lang} />
+            </div>
+          )}
+
           {/* Fortschritt */}
           <div>
             <div className="flex justify-between text-xs text-zinc-400 mb-1.5">
@@ -430,6 +489,10 @@ export default function StreamingQuestCard({ quest, walletAddress, onJoined, onC
           </div>
           {/* Titel */}
           <h3 className="text-white font-bold text-base leading-snug line-clamp-2">{quest.title}</h3>
+          {/* Track-Link (kompakt, kein Embed auf der Karte) */}
+          {quest.track_url && (
+            <TrackDisplay url={quest.track_url} platformLabel={cfg.label} lang={lang} compact />
+          )}
           {/* Fortschrittsbalken */}
           <div>
             <div className="flex justify-between text-xs text-zinc-400 mb-1.5">
