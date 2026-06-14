@@ -1148,6 +1148,11 @@ const dict: Translations = {
   'cb.networkError': { de: 'Netzwerkfehler', en: 'Network error', pl: 'Błąd sieci' },
   'cb.networkErrorCancel': { de: 'Netzwerkfehler beim Stornieren', en: 'Network error while cancelling', pl: 'Błąd sieci podczas anulowania' },
   'cb.topUpBtn': { de: 'Aufladen', en: 'Top Up', pl: 'Doładuj' },
+  'cb.chooseTypeHint':   { de: 'Welche Art von Quest möchtest du erstellen?', en: 'What type of quest do you want to create?', pl: 'Jaki rodzaj questa chcesz stworzyć?' },
+  'cb.typesSocial':      { de: 'Social Quest', en: 'Social Quest', pl: 'Social Quest' },
+  'cb.typesSocialHint':  { de: 'YouTube, Instagram, TikTok, Facebook', en: 'YouTube, Instagram, TikTok, Facebook', pl: 'YouTube, Instagram, TikTok, Facebook' },
+  'cb.typeStreaming':     { de: 'Streaming Milestone', en: 'Streaming Milestone', pl: 'Streaming Milestone' },
+  'cb.typeStreamingHint': { de: 'Spotify, Apple Music, Deezer u.a.', en: 'Spotify, Apple Music, Deezer etc.', pl: 'Spotify, Apple Music, Deezer itp.' },
 
   // ── Bundle Card ─────────────────────────────────────────────────────────────
 
