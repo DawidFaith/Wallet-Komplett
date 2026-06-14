@@ -52,8 +52,9 @@ async function ensureTables(sql: ReturnType<typeof getDb>) {
       posted_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
-  // Neue Spalte nachträglich hinzufügen (idempotent)
+  // Neue Spalten nachträglich hinzufügen (idempotent)
   await sql`ALTER TABLE streaming_quests ADD COLUMN IF NOT EXISTS shard_drop_chance INT NOT NULL DEFAULT 20`;
+  await sql`ALTER TABLE streaming_quests ADD COLUMN IF NOT EXISTS min_level INT NOT NULL DEFAULT 1`;
 }
 
 /** Status aus Zeitstempeln ableiten (Serverless hat keinen Background-Job) */
@@ -123,6 +124,7 @@ export async function GET(req: NextRequest) {
     has_joined: Boolean(r.has_joined),
     reward_paid: Boolean(r.reward_paid),
     shard_drop_chance: Number(r.shard_drop_chance ?? 20),
+    min_level: Number(r.min_level ?? 1),
   }));
 
   return NextResponse.json({ quests });
@@ -141,6 +143,7 @@ export async function POST(req: NextRequest) {
     enrollmentHours?: number;  // wie viele Stunden Anmeldefenster
     deadlineHours?: number;    // wie viele Stunden bis Deadline (ab jetzt)
     shardDropChance?: number;  // Shard-Drop-Wahrscheinlichkeit 0-100
+    minLevel?: number;         // Mindestlevel für Teilnahme (Standard 1)
   };
 
   const creatorWallet = body.creatorWallet?.toLowerCase().trim();
@@ -155,6 +158,7 @@ export async function POST(req: NextRequest) {
   const enrollmentHours      = Math.max(1, Math.min(168, Number(body.enrollmentHours ?? 24)));
   const deadlineHours        = Math.max(enrollmentHours + 1, Math.min(720, Number(body.deadlineHours ?? 168)));
   const shardDropChance      = Math.max(0, Math.min(100, Math.round(Number(body.shardDropChance ?? 20))));
+  const minLevel             = Math.max(1, Math.min(100, Math.round(Number(body.minLevel ?? 1))));
 
   const totalBudget = rewardPerParticipant * maxParticipants;
 
@@ -180,11 +184,11 @@ export async function POST(req: NextRequest) {
     INSERT INTO streaming_quests (
       creator_wallet, title, description, platform,
       target_streams, reward_per_participant, max_participants,
-      reputation_reward, enrollment_ends_at, deadline, status, shard_drop_chance
+      reputation_reward, enrollment_ends_at, deadline, status, shard_drop_chance, min_level
     ) VALUES (
       ${creatorWallet}, ${body.title.trim()}, ${body.description?.trim() ?? null}, ${platform},
       ${targetStreams}, ${rewardPerParticipant}, ${maxParticipants},
-      ${reputationReward}, ${enrollmentEndsAt}, ${deadlineAt}, 'enrollment', ${shardDropChance}
+      ${reputationReward}, ${enrollmentEndsAt}, ${deadlineAt}, 'enrollment', ${shardDropChance}, ${minLevel}
     )
     RETURNING id
   `;

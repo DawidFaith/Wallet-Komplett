@@ -124,6 +124,7 @@ export default function CreateBundleModal({
   const [sqEnrollHours, setSqEnrollHours]   = useState('48');
   const [sqDeadlineHours, setSqDeadlineHours] = useState('240');
   const [sqShardChance, setSqShardChance]   = useState('20');
+  const [sqMinLevel, setSqMinLevel]         = useState('3');
   const [sqCreating, setSqCreating]         = useState(false);
   const [sqError, setSqError]               = useState<string | null>(null);
 
@@ -181,7 +182,7 @@ export default function CreateBundleModal({
     setSqTitle(''); setSqDesc(''); setSqPlatform('spotify');
     setSqTargetStreams('10000'); setSqRewardPer('100'); setSqMaxPart('50');
     setSqRepReward('0'); setSqEnrollHours('48'); setSqDeadlineHours('240');
-    setSqShardChance('20'); setSqCreating(false); setSqError(null);
+    setSqShardChance('20'); setSqMinLevel('3'); setSqCreating(false); setSqError(null);
     setStep(1);
     setVideoUrl('');
     setVideoMediaId('');
@@ -219,6 +220,7 @@ export default function CreateBundleModal({
     const _enroll   = Math.max(1, Math.min(168, parseInt(sqEnrollHours) || 1));
     const _deadline = Math.max(_enroll + 1, Math.min(720, parseInt(sqDeadlineHours) || _enroll + 1));
     const _shard    = Math.max(0, Math.min(100, parseInt(sqShardChance) || 0));
+    const _minLevel = Math.max(1, Math.min(100, parseInt(sqMinLevel) || 1));
     if (!sqTitle.trim()) { setSqError(t('sq.errorTitle', lang)); return; }
     if (_deadline <= _enroll) { setSqError(t('sq.errorDeadline', lang)); return; }
     setSqCreating(true); setSqError(null);
@@ -238,6 +240,7 @@ export default function CreateBundleModal({
           enrollmentHours: _enroll,
           deadlineHours: _deadline,
           shardDropChance: _shard,
+          minLevel: _minLevel,
         }),
       });
       const data = await res.json();
@@ -646,6 +649,20 @@ export default function CreateBundleModal({
                 className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
               />
               <p className="text-xs text-zinc-600 mt-1">{t('sq.hintShardChance', lang)}</p>
+            </div>
+
+            {/* Mindest-Level */}
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">{t('sq.labelMinLevel', lang)}</label>
+              <input
+                type="number"
+                value={sqMinLevel}
+                onChange={e => setSqMinLevel(e.target.value)}
+                onBlur={e => { const v = parseInt(e.target.value); setSqMinLevel(String(isNaN(v) || v < 1 ? 1 : Math.min(100, v))); }}
+                min={1} max={100} step={1}
+                className="w-full rounded-lg bg-zinc-800 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+              />
+              <p className="text-xs text-zinc-600 mt-1">{t('sq.hintMinLevel', lang)}</p>
             </div>
 
             {/* Zeitfenster */}

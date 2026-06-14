@@ -1428,6 +1428,8 @@ const dict: Translations = {
   'sq.claiming':         { de: 'Wird abgeholt…', en: 'Claiming…', pl: 'Odbieranie…' },
   'sq.labelShardChance': { de: 'Shard-Drop Chance (%)', en: 'Shard Drop Chance (%)', pl: 'Szansa na Shard (%)' },
   'sq.hintShardChance':  { de: 'Wahrscheinlichkeit, dass Teilnehmer beim Abholen einen Shard erhalten (0–100)', en: 'Probability that participants receive a shard when claiming (0–100)', pl: 'Prawdopodobieństwo otrzymania Shard przez uczestników przy odbiorze (0–100)' },
+  'sq.labelMinLevel':    { de: 'Mindest-Level', en: 'Minimum Level', pl: 'Minimalny poziom' },
+  'sq.hintMinLevel':     { de: 'Nur Supporter ab diesem Level können teilnehmen (Anti-Sybil). Standard: 3', en: 'Only supporters at or above this level can participate (anti-sybil). Default: 3', pl: 'Tylko uczestnicy na tym lub wyższym poziomie mogą brać udział (anti-sybil). Domyślnie: 3' },
   'sq.cancelBtn':        { de: 'Quest stornieren', en: 'Cancel Quest', pl: 'Anuluj Quest' },
   'sq.cancelTitle':      { de: 'Quest stornieren?', en: 'Cancel Quest?', pl: 'Anulować Quest?' },
   'sq.cancelConfirm':    { de: 'Der Quest wird unwiderruflich storniert. Teilnehmer können keine Belohnungen mehr abholen.', en: 'The quest will be cancelled permanently. Participants will no longer be able to claim rewards.', pl: 'Quest zostanie nieodwracalnie anulowany. Uczestnicy nie będą mogli już odebrać nagród.' },

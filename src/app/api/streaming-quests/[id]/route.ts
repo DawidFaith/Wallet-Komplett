@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 import { addDfaithCredits, addUserReputation } from '../../../lib/questDb';
 import { addShard, getCollectiblesShardBonus } from '../../../lib/questDb/collectibles';
+import { getUserXp, xpToLevel } from '../../../lib/questDb/profile';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -87,6 +88,19 @@ export async function POST(
     if (status !== 'enrollment') {
       return NextResponse.json({ error: 'Anmeldephase bereits abgelaufen' }, { status: 400 });
     }
+
+    // ── Level-Check: Mindest-Level des Quests prüfen ─────────────────────────
+    const minLevel = Number(quest.min_level ?? 1);
+    if (minLevel > 1) {
+      const xp = await getUserXp(wallet);
+      const { level } = xpToLevel(xp);
+      if (level < minLevel) {
+        return NextResponse.json({
+          error: `Du brauchst mindestens Level ${minLevel} um teilzunehmen. Dein Level: ${level}`,
+        }, { status: 403 });
+      }
+    }
+
     // Max-Teilnehmer prüfen
     const countRow = await sql`
       SELECT COUNT(*)::int AS cnt FROM streaming_quest_participants WHERE quest_id = ${params.id}
