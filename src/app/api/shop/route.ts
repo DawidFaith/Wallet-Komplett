@@ -110,8 +110,8 @@ export async function POST(req: NextRequest) {
 
   const item = rows[0] as { id: string; title: string; type: string; [k: string]: unknown };
 
-  // NFT: Master Edition minten wenn gewünscht und contentUrl + imageUrl vorhanden
-  if (mintAsNft && type === 'song' && contentUrl && imageUrl) {
+  // Songs werden immer als NFT geminted (Master Edition + nummerierte Print Editions)
+  if (type === 'song' && contentUrl && imageUrl) {
     try {
       const artistRows = await sql`
         SELECT solana_address FROM solana_accounts
