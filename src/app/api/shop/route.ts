@@ -84,12 +84,28 @@ export async function POST(req: NextRequest) {
 
   const sql = getDb();
 
-  // Sicherstellen, dass der Nutzer ein Artist ist
-  const profile = await sql`
-    SELECT is_artist FROM user_profiles WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1
-  `;
-  if (!profile.length || !profile[0].is_artist) {
+  // Sicherstellen, dass der Nutzer ein Artist ist + Pflichtfelder für Songs vorab prüfen
+  const [profileRows, artistRows, artistNameRows] = await Promise.all([
+    sql`SELECT is_artist FROM user_profiles WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`,
+    sql`SELECT solana_address FROM solana_accounts WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`,
+    sql`SELECT display_name FROM user_profiles WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`,
+  ]);
+
+  if (!profileRows.length || !profileRows[0].is_artist) {
     return NextResponse.json({ error: 'Nur Artists können Items erstellen' }, { status: 403 });
+  }
+
+  if (type === 'song') {
+    if (!contentUrl || !imageUrl) {
+      return NextResponse.json({ error: 'Song benötigt Audio- und Cover-URL.' }, { status: 400 });
+    }
+    const artistName = artistNameRows[0]?.display_name as string | null;
+    if (!artistName?.trim()) {
+      return NextResponse.json({ error: 'Bitte hinterlege zuerst einen Künstlernamen in deinem Profil.' }, { status: 400 });
+    }
+    if (!artistRows.length || !artistRows[0].solana_address) {
+      return NextResponse.json({ error: 'Keine Solana-Adresse hinterlegt. Bitte verbinde zuerst dein Solana-Wallet.' }, { status: 400 });
+    }
   }
 
   const rows = await sql`
@@ -113,13 +129,8 @@ export async function POST(req: NextRequest) {
   // Songs werden immer als NFT geminted (Master Edition + nummerierte Print Editions)
   if (type === 'song' && contentUrl && imageUrl) {
     try {
-      const [artistRows, artistNameRows] = await Promise.all([
-        sql`SELECT solana_address FROM solana_accounts WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`,
-        sql`SELECT display_name FROM user_profiles WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`,
-      ]);
       if (artistRows.length && artistRows[0].solana_address) {
-        const artistName = artistNameRows[0]?.display_name as string | null;
-        if (!artistName?.trim()) throw new Error('Bitte hinterlege zuerst einen Künstlernamen in deinem Profil.');
+        const artistName = artistNameRows[0]?.display_name as string;
         const { masterMint, metadataUri } = await mintSongMasterEdition({
           artistWallet:        wallet.toLowerCase(),
           artistSolanaAddress: artistRows[0].solana_address as string,
