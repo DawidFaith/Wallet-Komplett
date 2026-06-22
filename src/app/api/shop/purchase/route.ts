@@ -19,7 +19,7 @@ import { redeemDfaithCredits, addDfaithCredits } from '../../../lib/questDb';
 import { decryptKey } from '../../../lib/solanaCrypto';
 import { mintSongPrintEdition } from '../../../lib/songNft';
 
-const RPC_URL     = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+const RPC_URL     = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN;
 
 export const dynamic = 'force-dynamic';

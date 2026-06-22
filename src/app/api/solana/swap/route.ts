@@ -20,7 +20,7 @@ import { getDb } from '@/app/lib/db';
 import { decryptKey } from '@/app/lib/solanaCrypto';
 import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
 
-const RPC_URL         = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+const RPC_URL         = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const JUPITER_SWAP    = 'https://api.jup.ag/swap/v1/swap';
 const JUPITER_API_KEY = process.env.JUPITER_API_KEY ?? '';
 const DFAITH_MINT     = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';

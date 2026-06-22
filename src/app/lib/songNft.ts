@@ -24,7 +24,7 @@ import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 import { getTreasuryKeypair } from './solanaOperator';
 import { fetchAndUploadToArweave, uploadToArweave } from './arweaveUpload';
 
-const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
 export interface SongMasterEditionResult {
   masterMint: string;

@@ -28,7 +28,7 @@ import { getTreasuryKeypair } from './solanaOperator';
 import { fetchAndUploadToArweave, uploadToArweave } from './arweaveUpload';
 import type { CollectibleRarity } from './questDb/collectibles';
 
-const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
 const RARITY_LABELS: Record<CollectibleRarity, string> = {
   common:    'Common',

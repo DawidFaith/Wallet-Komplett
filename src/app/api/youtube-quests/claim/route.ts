@@ -62,7 +62,7 @@ async function sendFraudAlert(walletAddress: string, solanaAddress: string): Pro
   }
 }
 
-const RPC_URL     = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+const RPC_URL     = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
 
 // POST: Credits einlösen → echte SPL-Token senden (Solana)

@@ -12,7 +12,7 @@ import {
 } from '@solana/spl-token';
 import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
 
-const RPC_URL    = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+const RPC_URL    = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN;
 const DECIMALS   = 6;
 
