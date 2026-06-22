@@ -373,11 +373,10 @@ export async function fuseShards(
   return { rarity, collectibleId: id, nftMintAddress };
 }
 
-// ─── Upgrade: 10 NFTs verbrennen → 1 NFT nächste Stufe ──────────────────────
+// ─── Upgrade: 10 NFTs aus Wallet verbrennen → 1 NFT nächste Stufe ────────────
 //
-// Zählt SOWOHL DB-Collectibles als auch NFTs die auf dem Sekundärmarkt
-// (Magic Eden etc.) gekauft wurden – der on-chain Bestand ist die Wahrheit.
-// Alle 10 NFTs werden mit dem BurnDelegate on-chain verbrannt.
+// Die Wallet ist die Source of Truth — egal ob die NFTs original geminted
+// oder auf dem Sekundärmarkt (Magic Eden etc.) gekauft wurden.
 
 export async function upgradeCollectibles(
   walletAddress: string,
@@ -402,6 +401,8 @@ export async function upgradeCollectibles(
   const nftCollectionMint  = collRows[0].nft_collection_mint as string | null;
   const artistWallet       = collRows[0].artist_wallet as string;
 
+  if (!nftCollectionMint) throw new Error('Diese Kollektion hat noch keine on-chain NFTs');
+
   const solanaRows = await sql`
     SELECT sa.solana_address, ap.solana_address AS artist_solana
     FROM solana_accounts sa
@@ -414,69 +415,40 @@ export async function upgradeCollectibles(
   const userSolanaAddress   = solanaRows[0]?.solana_address as string | null;
   const artistSolanaAddress = solanaRows[0]?.artist_solana  as string | null;
 
-  // DB-Collectibles der fromRarity (mit nft_mint_address)
-  const dbOwned = await sql`
-    SELECT id, nft_mint_address FROM user_collectibles
-    WHERE wallet_address = ${walletAddress.toLowerCase()}
-      AND collection_id  = ${collectionId}
-      AND rarity         = ${fromRarity}
-    ORDER BY created_at ASC
-  `;
-  const dbMints = dbOwned
-    .map((r: { nft_mint_address: string | null }) => r.nft_mint_address)
-    .filter((m: string | null): m is string => !!m);
+  if (!userSolanaAddress) throw new Error('Keine Solana-Adresse für diesen User hinterlegt');
 
-  // On-chain Scan: NFTs die der User auf dem Sekundärmarkt gekauft hat
-  let secondaryMints: string[] = [];
-  if (nftCollectionMint && userSolanaAddress) {
-    const chainMints = await scanCollectiblesByOwner(
-      userSolanaAddress, nftCollectionMint, fromRarity,
-    );
-    // Nur die, die NICHT schon in unserer DB sind
-    secondaryMints = chainMints.filter(m => !dbMints.includes(m));
-  }
+  // Wallet scannen — alle NFTs dieser Rarität die der User besitzt (egal woher)
+  const ownedMints = await scanCollectiblesByOwner(
+    userSolanaAddress, nftCollectionMint, fromRarity,
+  );
 
-  // Gesamtanzahl: DB-Einträge + Sekundärmarkt-NFTs
-  const totalCount = dbOwned.length + secondaryMints.length;
-  if (totalCount < 10) {
+  if (ownedMints.length < 10) {
     throw new Error(
-      `Mindestens 10 ${RARITY_LABELS[fromRarity]}-Collectibles benötigt (gefunden: ${totalCount})`,
+      `Mindestens 10 ${RARITY_LABELS[fromRarity]}-Collectibles in der Wallet benötigt (gefunden: ${ownedMints.length})`,
     );
   }
 
-  // Auswahl: genau 10 Items konsumieren (DB zuerst, dann Sekundärmarkt)
-  const toConsume: { dbId?: string; nftMint?: string }[] = [];
-  for (const row of dbOwned) {
-    if (toConsume.length >= 10) break;
-    toConsume.push({ dbId: row.id as string, nftMint: row.nft_mint_address as string | undefined });
-  }
-  for (const mint of secondaryMints) {
-    if (toConsume.length >= 10) break;
-    toConsume.push({ nftMint: mint });
-  }
+  // Erste 10 verbrennen (BurnDelegate — kein User-Signing nötig)
+  const mintsToBurn = ownedMints.slice(0, 10);
+  await burnCollectibleAssets(mintsToBurn, nftCollectionMint);
 
-  // 1. On-chain verbrennen (BurnDelegate — kein User-Signing nötig)
-  const mintsToBurn = toConsume.map(i => i.nftMint).filter((m): m is string => !!m);
-  if (nftCollectionMint && mintsToBurn.length > 0) {
-    await burnCollectibleAssets(mintsToBurn, nftCollectionMint);
-  }
+  // DB aufräumen: verbrannte NFTs aus user_collectibles entfernen
+  await sql`
+    DELETE FROM user_collectibles
+    WHERE wallet_address  = ${walletAddress.toLowerCase()}
+      AND collection_id   = ${collectionId}
+      AND nft_mint_address = ANY(${mintsToBurn})
+  `;
 
-  // 2. DB-Einträge löschen
-  const dbIdsToDelete = toConsume.map(i => i.dbId).filter((id): id is string => !!id);
-  if (dbIdsToDelete.length > 0) {
-    await sql`DELETE FROM user_collectibles WHERE id = ANY(${dbIdsToDelete}::uuid[])`;
-  }
-
-  // 3. Neues Collectible in DB anlegen
+  // Neues Collectible in DB anlegen + NFT minten
   const newId = crypto.randomUUID();
   await sql`
     INSERT INTO user_collectibles (id, wallet_address, collection_id, rarity)
     VALUES (${newId}, ${walletAddress.toLowerCase()}, ${collectionId}, ${nextRarity})
   `;
 
-  // 4. Neues NFT minten (höhere Rarität)
   let nftMintAddress: string | undefined;
-  if (nftCollectionMint && userSolanaAddress && artistSolanaAddress) {
+  if (artistSolanaAddress) {
     try {
       const result = await mintCollectibleAsset({
         collectionMint:      nftCollectionMint,
