@@ -39,6 +39,42 @@ const RARITY_LABELS: Record<CollectibleRarity, string> = {
   mythic:    'Mythic',
 };
 
+const RARITY_BG_COLOR: Record<CollectibleRarity, string> = {
+  common:    '6b7280',
+  uncommon:  '16a34a',
+  rare:      '2563eb',
+  epic:      '9333ea',
+  legendary: 'd97706',
+  mythic:    'dc2626',
+};
+
+const RARITY_DROP_RATE: Record<CollectibleRarity, string> = {
+  common:    '48.9%',
+  uncommon:  '30.0%',
+  rare:      '15.0%',
+  epic:       '5.0%',
+  legendary:  '1.0%',
+  mythic:     '0.1%',
+};
+
+function buildBonusLine(
+  repBonusPercent:    number,
+  creditBonusPercent: number,
+  shardBonus:         number,
+  primaryBonus:       'rep' | 'credits' | 'shard',
+  activeSlots:        1 | 2 | 3,
+): string {
+  const order: Array<'rep' | 'credits' | 'shard'> = [
+    primaryBonus,
+    ...(['rep', 'credits', 'shard'] as const).filter(b => b !== primaryBonus),
+  ];
+  return order.slice(0, activeSlots).map(slot => {
+    if (slot === 'rep')     return `+${repBonusPercent}% REP`;
+    if (slot === 'credits') return `+${creditBonusPercent}% Credits`;
+    return `+${shardBonus} Shard Chance`;
+  }).join(' · ');
+}
+
 function getUmi() {
   const treasury = getTreasuryKeypair();
   return createUmi(RPC_URL)
@@ -124,6 +160,11 @@ export async function mintCollectibleAsset(params: {
   ownerSolanaAddress:  string;
   artistSolanaAddress: string;
   rarity:              CollectibleRarity;
+  repBonusPercent:     number;
+  creditBonusPercent:  number;
+  shardBonus:          number;
+  primaryBonus:        'rep' | 'credits' | 'shard';
+  activeSlots:         1 | 2 | 3;
 }): Promise<CollectibleAssetResult> {
   const {
     collectionMint,
@@ -132,16 +173,32 @@ export async function mintCollectibleAsset(params: {
     ownerSolanaAddress,
     artistSolanaAddress,
     rarity,
+    repBonusPercent,
+    creditBonusPercent,
+    shardBonus,
+    primaryBonus,
+    activeSlots,
   } = params;
 
+  const bonusLine = buildBonusLine(repBonusPercent, creditBonusPercent, shardBonus, primaryBonus, activeSlots);
+
+  const attributes: { trait_type: string; value: string }[] = [
+    { trait_type: 'Rarity',     value: RARITY_LABELS[rarity] },
+    { trait_type: 'Collection', value: collectionName },
+    { trait_type: 'Platform',   value: 'D.FAITH' },
+    { trait_type: 'Drop Rate',  value: RARITY_DROP_RATE[rarity] },
+  ];
+  if (repBonusPercent > 0)    attributes.push({ trait_type: 'REP Bonus',    value: `+${repBonusPercent}%` });
+  if (creditBonusPercent > 0) attributes.push({ trait_type: 'Credit Bonus', value: `+${creditBonusPercent}%` });
+  if (shardBonus > 0)         attributes.push({ trait_type: 'Shard Bonus',  value: `+${shardBonus}` });
+
   const metadata = {
-    name:        `${collectionName} [${RARITY_LABELS[rarity]}]`,
-    description: `${RARITY_LABELS[rarity]} Collectible aus der ${collectionName} Kollektion`,
-    image:       collectionImageUri,
-    attributes: [
-      { trait_type: 'Rarity',   value: RARITY_LABELS[rarity] },
-      { trait_type: 'Platform', value: 'D.FAITH' },
-    ],
+    name:             `${collectionName} — ${RARITY_LABELS[rarity]}`,
+    description:      `${RARITY_LABELS[rarity]} D.FAITH Collectible from the "${collectionName}" series.\n\nBonuses: ${bonusLine}\n\nTradeable on secondary markets — 5% artist royalties on every resale.`,
+    image:            collectionImageUri,
+    external_url:     'https://app.dawidfaith.de',
+    background_color: RARITY_BG_COLOR[rarity],
+    attributes,
   };
   const metadataUri = await uploadToArweave(
     JSON.stringify(metadata),
@@ -157,7 +214,7 @@ export async function mintCollectibleAsset(params: {
     asset:      assetSigner,
     collection,
     owner:      umiPubkey(ownerSolanaAddress),
-    name:       `${collectionName} [${RARITY_LABELS[rarity]}]`.slice(0, 32),
+    name:       `${collectionName} — ${RARITY_LABELS[rarity]}`.slice(0, 32),
     uri:        metadataUri,
     plugins: [
       {

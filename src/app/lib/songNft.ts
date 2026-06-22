@@ -67,11 +67,12 @@ export async function mintSongMasterEdition(params: {
 
   // Metadata JSON auf Arweave
   const metadata = {
-    name: title,
+    name:          title,
     symbol,
-    description,
-    image: arweaveCover,
+    description:   `${description}\n\nLimited to ${maxSupply} numbered editions — each holder receives a unique Print Edition NFT. Tradeable on secondary markets with 5% artist royalties on every resale.`,
+    image:         arweaveCover,
     animation_url: arweaveAudio,
+    external_url:  'https://app.dawidfaith.de',
     properties: {
       category: 'audio',
       files: [
@@ -81,9 +82,11 @@ export async function mintSongMasterEdition(params: {
       creators: [{ address: artistSolanaAddress, share: 100 }],
     },
     attributes: [
-      { trait_type: 'Type', value: 'Music' },
+      { trait_type: 'Type',         value: 'Music' },
+      { trait_type: 'Platform',     value: 'D.FAITH' },
       { trait_type: 'Max Editions', value: String(maxSupply) },
-      { trait_type: 'Platform', value: 'D.FAITH' },
+      { trait_type: 'Royalties',    value: '5%' },
+      { trait_type: 'Release Year', value: String(new Date().getFullYear()) },
     ],
   };
   const metadataUri = await uploadToArweave(

@@ -806,6 +806,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
   const [fRequiredLevel, setFRequiredLevel] = useState('0');
   const [fContent, setFContent] = useState('');
   const [fImage, setFImage] = useState('');
+  const [fMaxEditions, setFMaxEditions] = useState(100);
   const [uploadingContent, setUploadingContent] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -883,6 +884,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
           contentUrl: fContent,
           imageUrl: fImage,
           requiredLevel: parseInt(fRequiredLevel, 10) || 0,
+          nftMaxSupply: fMaxEditions,
         }),
       });
       if (!res.ok) {
@@ -1117,6 +1119,22 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
               />
             </div>
             {fContent && <p className="text-emerald-400 text-[10px] mt-1 truncate">✓ {fContent}</p>}
+          </div>
+
+          {/* Max. Editionen */}
+          <div>
+            <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Max. Editionen (NFT Print Editions)</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                max={10000}
+                value={fMaxEditions}
+                onChange={e => setFMaxEditions(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                className="w-32 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-amber-500/50"
+              />
+              <span className="text-zinc-500 text-[10px]">Käufer erhalten nummerierte Editionen (z.B. #1/100)</span>
+            </div>
           </div>
 
           {/* Vorschaubild */}

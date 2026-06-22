@@ -352,13 +352,20 @@ export async function fuseShards(
         WHERE sa.wallet_address = ${walletAddress.toLowerCase()} LIMIT 1
       `;
       if (solanaRows.length && solanaRows[0].solana_address && solanaRows[0].artist_solana) {
+        const repBonus    = parseFloat((collection.maxRepBonusPercent    * RARITY_REP_MULTIPLIER[rarity]).toFixed(1));
+        const creditBonus = parseFloat((collection.maxCreditBonusPercent * RARITY_CREDIT_MULTIPLIER[rarity]).toFixed(1));
         const result = await mintCollectibleAsset({
           collectionMint:      nftCollectionMint,
           collectionName:      collection.name,
-          collectionImageUri:  collRows[0].image_url as string,
+          collectionImageUri:  collection.imageUrl,
           ownerSolanaAddress:  solanaRows[0].solana_address as string,
           artistSolanaAddress: solanaRows[0].artist_solana as string,
           rarity,
+          repBonusPercent:    repBonus,
+          creditBonusPercent: creditBonus,
+          shardBonus:         RARITY_SHARD_BONUS[rarity],
+          primaryBonus:       collection.primaryBonus,
+          activeSlots:        getActiveSlotsCount(rarity),
         });
         nftMintAddress = result.assetMint;
         await sql`
@@ -393,7 +400,8 @@ export async function upgradeCollectibles(
 
   // Kollektion + Solana-Adressen laden
   const collRows = await sql`
-    SELECT nft_collection_mint, image_url, name, artist_wallet
+    SELECT nft_collection_mint, image_url, name, artist_wallet,
+           max_rep_bonus_percent, max_credit_bonus_percent, max_shard_chance_bonus, primary_bonus
     FROM collectible_collections WHERE id = ${collectionId} LIMIT 1
   `;
   if (!collRows.length) throw new Error('Kollektion nicht gefunden');
@@ -450,6 +458,11 @@ export async function upgradeCollectibles(
   let nftMintAddress: string | undefined;
   if (artistSolanaAddress) {
     try {
+      const maxRep    = Number(collRows[0].max_rep_bonus_percent ?? 0);
+      const maxCredit = Number(collRows[0].max_credit_bonus_percent ?? 0);
+      const repBonus    = parseFloat((maxRep    * RARITY_REP_MULTIPLIER[nextRarity]).toFixed(1));
+      const creditBonus = parseFloat((maxCredit * RARITY_CREDIT_MULTIPLIER[nextRarity]).toFixed(1));
+      const primaryBonus = (collRows[0].primary_bonus as 'rep' | 'credits' | 'shard') ?? 'rep';
       const result = await mintCollectibleAsset({
         collectionMint:      nftCollectionMint,
         collectionName:      collRows[0].name as string,
@@ -457,6 +470,11 @@ export async function upgradeCollectibles(
         ownerSolanaAddress:  userSolanaAddress,
         artistSolanaAddress,
         rarity:              nextRarity,
+        repBonusPercent:     repBonus,
+        creditBonusPercent:  creditBonus,
+        shardBonus:          RARITY_SHARD_BONUS[nextRarity],
+        primaryBonus,
+        activeSlots:         getActiveSlotsCount(nextRarity),
       });
       nftMintAddress = result.assetMint;
       await sql`UPDATE user_collectibles SET nft_mint_address = ${nftMintAddress} WHERE id = ${newId}`;
