@@ -5,6 +5,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../lib/db';
+import { mintSongMasterEdition } from '../../lib/songNft';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +54,11 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: 'Kein Body' }, { status: 400 });
 
-  const { wallet, title, description, type, priceCredits, priceTokens, contentUrl, imageUrl, requiredLevel } = body as {
+  const {
+    wallet, title, description, type, priceCredits, priceTokens,
+    contentUrl, imageUrl, requiredLevel,
+    mintAsNft = false, nftMaxSupply = 100,
+  } = body as {
     wallet?: string;
     title?: string;
     description?: string;
@@ -63,6 +68,8 @@ export async function POST(req: NextRequest) {
     contentUrl?: string;
     imageUrl?: string;
     requiredLevel?: number;
+    mintAsNft?: boolean;
+    nftMaxSupply?: number;
   };
 
   if (!wallet || !title || !type) {
@@ -101,7 +108,42 @@ export async function POST(req: NextRequest) {
     RETURNING id, title, type, price_credits, price_tokens, is_active, created_at, required_level
   `;
 
-  return NextResponse.json(rows[0], { status: 201 });
+  const item = rows[0] as { id: string; title: string; type: string; [k: string]: unknown };
+
+  // NFT: Master Edition minten wenn gewünscht und contentUrl + imageUrl vorhanden
+  if (mintAsNft && type === 'song' && contentUrl && imageUrl) {
+    try {
+      const artistRows = await sql`
+        SELECT solana_address FROM solana_accounts
+        WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1
+      `;
+      if (artistRows.length && artistRows[0].solana_address) {
+        const { masterMint, metadataUri } = await mintSongMasterEdition({
+          artistWallet:        wallet.toLowerCase(),
+          artistSolanaAddress: artistRows[0].solana_address as string,
+          title:               title.trim(),
+          description:         description?.trim() ?? '',
+          coverImageUrl:       imageUrl.trim(),
+          audioUrl:            contentUrl.trim(),
+          maxSupply:           typeof nftMaxSupply === 'number' && nftMaxSupply > 0 ? nftMaxSupply : 100,
+        });
+        await sql`
+          UPDATE shop_items
+          SET master_edition_mint = ${masterMint},
+              nft_max_supply      = ${nftMaxSupply},
+              is_nft_enabled      = TRUE
+          WHERE id = ${item.id}
+        `;
+        return NextResponse.json({
+          ...item, masterEditionMint: masterMint, metadataUri, isNftEnabled: true,
+        }, { status: 201 });
+      }
+    } catch (nftErr) {
+      console.error('Master Edition Mint fehlgeschlagen (Shop-Item wurde trotzdem erstellt):', nftErr);
+    }
+  }
+
+  return NextResponse.json(item, { status: 201 });
 }
 
 // ─── PATCH ────────────────────────────────────────────────────────────────────

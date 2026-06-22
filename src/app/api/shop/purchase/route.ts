@@ -17,6 +17,7 @@ import bs58 from 'bs58';
 import { getDb } from '../../../lib/db';
 import { redeemDfaithCredits, addDfaithCredits } from '../../../lib/questDb';
 import { decryptKey } from '../../../lib/solanaCrypto';
+import { mintSongPrintEdition } from '../../../lib/songNft';
 
 const RPC_URL     = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN;
@@ -43,7 +44,8 @@ export async function POST(req: NextRequest) {
 
   // Item laden
   const items = await sql`
-    SELECT id, artist_wallet, price_credits, price_tokens, title, content_url, type, is_active
+    SELECT id, artist_wallet, price_credits, price_tokens, title, content_url, type, is_active,
+           master_edition_mint, nft_max_supply, edition_count, is_nft_enabled
     FROM shop_items
     WHERE id = ${itemId}
     LIMIT 1
@@ -61,7 +63,18 @@ export async function POST(req: NextRequest) {
     content_url: string;
     type: string;
     is_active: boolean;
+    master_edition_mint: string | null;
+    nft_max_supply: number | null;
+    edition_count: number;
+    is_nft_enabled: boolean;
   };
+
+  // NFT-Auflagen-Limit prüfen
+  if (item.is_nft_enabled && item.master_edition_mint && item.nft_max_supply !== null) {
+    if (item.edition_count >= item.nft_max_supply) {
+      return NextResponse.json({ error: 'Alle NFT-Editionen sind ausverkauft' }, { status: 410 });
+    }
+  }
 
   // Artist-Token-Konfiguration laden (custom oder D.FAITH Fallback)
   const artistProfileRows = await sql`
@@ -167,11 +180,55 @@ export async function POST(req: NextRequest) {
     VALUES (${buyerWallet.toLowerCase()}, ${itemId}, ${paymentMethod === 'credits' ? item.price_credits : 0})
   `;
 
+  // NFT Print Edition minten (async, blockiert die Response nicht bei Fehler)
+  let nftMintAddress: string | null = null;
+  let editionNumber: number | null  = null;
+
+  if (item.is_nft_enabled && item.master_edition_mint) {
+    try {
+      // Edition-Nummer atomar inkrementieren
+      const edRows = await sql`
+        UPDATE shop_items
+        SET edition_count = edition_count + 1
+        WHERE id = ${item.id}
+        RETURNING edition_count
+      `;
+      const newEditionNumber = Number(edRows[0].edition_count);
+
+      // Käufer-Solana-Adresse laden
+      const buyerSolanaRows = await sql`
+        SELECT solana_address FROM solana_accounts
+        WHERE wallet_address = ${buyerWallet.toLowerCase()} LIMIT 1
+      `;
+
+      if (buyerSolanaRows.length && buyerSolanaRows[0].solana_address) {
+        const { printMint } = await mintSongPrintEdition({
+          masterMint:          item.master_edition_mint,
+          buyerSolanaAddress:  buyerSolanaRows[0].solana_address as string,
+          editionNumber:       newEditionNumber,
+        });
+        nftMintAddress = printMint;
+        editionNumber  = newEditionNumber;
+
+        // NFT-Adresse + Edition-Nummer im Kauf speichern
+        await sql`
+          UPDATE shop_purchases
+          SET nft_mint_address = ${printMint}, edition_number = ${newEditionNumber}
+          WHERE buyer_wallet = ${buyerWallet.toLowerCase()} AND item_id = ${itemId}
+        `;
+      }
+    } catch (nftErr) {
+      console.error('Print Edition Mint fehlgeschlagen (Kauf war trotzdem erfolgreich):', nftErr);
+    }
+  }
+
   return NextResponse.json({
-    success: true,
-    title: item.title,
-    contentUrl: item.content_url,
-    type: item.type,
+    success:        true,
+    title:          item.title,
+    contentUrl:     item.content_url,
+    type:           item.type,
     paymentMethod,
+    nftMintAddress,
+    editionNumber,
   });
 }
