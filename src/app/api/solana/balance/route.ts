@@ -9,7 +9,7 @@ import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { mplTokenMetadata, fetchMetadataFromSeeds } from '@metaplex-foundation/mpl-token-metadata';
 import { publicKey as umiPubkey } from '@metaplex-foundation/umi';
 
-const RPC_URL       = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
+const RPC_URL       = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const DFAITH_MINT   = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
 const PINATA_GW     = process.env.PINATA_GATEWAY ?? 'https://gateway.pinata.cloud';
 const DFAITH_POOL   = '9Ei1AhVghZJxH1hsxP2rdakqBFN9sYsqH2hmTCgzC7yK';

@@ -19,7 +19,7 @@ import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 import { keypairIdentity, publicKey as umiPublicKey, none } from '@metaplex-foundation/umi';
 import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
 
-const RPC_URL  = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
+const RPC_URL  = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const DEFAULT_DECIMALS = 6;
 
 async function uploadToPinata(content: string | Buffer, filename: string, mimeType: string): Promise<string> {
