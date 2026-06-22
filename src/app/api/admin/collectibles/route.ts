@@ -108,6 +108,6 @@ export async function DELETE(req: NextRequest) {
     success: true,
     deletedCollectibles: deletedCollectibles.length,
     deletedCollections:  deletedCollections.length,
-    deletedCollectionNames: deletedCollections.map((r: { name: string }) => r.name),
+    deletedCollectionNames: deletedCollections.map(r => String(r.name)),
   });
 }
