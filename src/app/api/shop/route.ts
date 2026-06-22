@@ -118,7 +118,8 @@ export async function POST(req: NextRequest) {
         sql`SELECT display_name FROM user_profiles WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`,
       ]);
       if (artistRows.length && artistRows[0].solana_address) {
-        const artistName = (artistNameRows[0]?.display_name as string | null) ?? wallet.slice(0, 8);
+        const artistName = artistNameRows[0]?.display_name as string | null;
+        if (!artistName?.trim()) throw new Error('Bitte hinterlege zuerst einen Künstlernamen in deinem Profil.');
         const { masterMint, metadataUri } = await mintSongMasterEdition({
           artistWallet:        wallet.toLowerCase(),
           artistSolanaAddress: artistRows[0].solana_address as string,

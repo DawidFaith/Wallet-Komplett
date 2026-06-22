@@ -355,7 +355,8 @@ export async function fuseShards(
         const repBonus    = parseFloat((collection.maxRepBonusPercent    * RARITY_REP_MULTIPLIER[rarity]).toFixed(1));
         const creditBonus = parseFloat((collection.maxCreditBonusPercent * RARITY_CREDIT_MULTIPLIER[rarity]).toFixed(1));
         const artistNameRow = await sql`SELECT display_name FROM user_profiles WHERE wallet_address = ${artistWallet.toLowerCase()} LIMIT 1`;
-        const artistName = (artistNameRow[0]?.display_name as string | null) ?? artistWallet.slice(0, 8);
+        const artistName = artistNameRow[0]?.display_name as string | null;
+        if (!artistName?.trim()) throw new Error('Künstler hat keinen Namen im Profil hinterlegt.');
         const result = await mintCollectibleAsset({
           collectionMint:      nftCollectionMint,
           collectionName:      collection.name,
@@ -467,7 +468,8 @@ export async function upgradeCollectibles(
       const creditBonus  = parseFloat((maxCredit * RARITY_CREDIT_MULTIPLIER[nextRarity]).toFixed(1));
       const primaryBonus = (collRows[0].primary_bonus as 'rep' | 'credits' | 'shard') ?? 'rep';
       const artistNameRow = await sql`SELECT display_name FROM user_profiles WHERE wallet_address = ${artistWallet.toLowerCase()} LIMIT 1`;
-      const artistName    = (artistNameRow[0]?.display_name as string | null) ?? artistWallet.slice(0, 8);
+      const artistName    = artistNameRow[0]?.display_name as string | null;
+      if (!artistName?.trim()) throw new Error('Künstler hat keinen Namen im Profil hinterlegt.');
       const result = await mintCollectibleAsset({
         collectionMint:      nftCollectionMint,
         collectionName:      collRows[0].name as string,
