@@ -5,7 +5,7 @@ import Image from 'next/image';
 import {
   FaYoutube, FaInstagram, FaTiktok, FaFacebook,
   FaCheck, FaTimes, FaSearch, FaShieldAlt, FaCoins, FaStar, FaSync, FaPaperPlane,
-  FaShoppingBag, FaEdit, FaCopy, FaWallet, FaExternalLinkAlt,
+  FaShoppingBag, FaEdit, FaCopy, FaWallet, FaExternalLinkAlt, FaTrashAlt,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
 import { GiCrystalShine } from 'react-icons/gi';
@@ -2895,12 +2895,53 @@ function CollectiblesAdminSection({ secret, users }: { secret: string; users: Ad
   const [collections, setCollections] = useState<CollectionInfo[]>([]);
   const [loadingCollections, setLoadingCollections] = useState(false);
 
+  // Pre-NFT Daten löschen
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteMsg, setDeleteMsg]         = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+
+  const handleDeleteLegacy = async () => {
+    if (!deleteConfirm) { setDeleteConfirm(true); return; }
+    setDeleteLoading(true);
+    setDeleteMsg('');
+    setDeleteConfirm(false);
+    try {
+      const res  = await fetch('/api/admin/collectibles', {
+        method:  'DELETE',
+        headers: { 'x-admin-secret': secret },
+      });
+      const data = await res.json() as {
+        success?: boolean;
+        deletedCollectibles?: number;
+        deletedCollections?: number;
+        deletedCollectionNames?: string[];
+        error?: string;
+      };
+      if (!res.ok || !data.success) {
+        setDeleteMsg(`Fehler: ${data.error ?? 'Unbekannt'}`);
+      } else {
+        setDeleteMsg(
+          `Gelöscht: ${data.deletedCollectibles} Collectibles, ${data.deletedCollections} Kollektionen` +
+          (data.deletedCollectionNames?.length ? ` (${data.deletedCollectionNames.join(', ')})` : '')
+        );
+        // Kollektionen-Liste neu laden
+        const r = await fetch('/api/admin/collectibles', { headers: { 'x-admin-secret': secret } });
+        const d = await r.json() as { collections?: CollectionInfo[] };
+        setCollections(d.collections ?? []);
+      }
+    } catch (e) {
+      setDeleteMsg(`Fehler: ${String(e)}`);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!secret) return;
     setLoadingCollections(true);
     fetch('/api/admin/collectibles', { headers: { 'x-admin-secret': secret } })
       .then(r => r.json())
-      .then(d => setCollections(d.collections ?? []))
+      .then(d => setCollections((d as { collections?: CollectionInfo[] }).collections ?? []))
       .catch(() => {})
       .finally(() => setLoadingCollections(false));
   }, [secret]);
@@ -3094,6 +3135,42 @@ function CollectiblesAdminSection({ secret, users }: { secret: string; users: Ad
           </button>
           {colMsg && <p className={`text-sm font-medium ${colMsg.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>{colMsg}</p>}
         </div>
+      </div>
+
+      {/* Pre-NFT Daten löschen */}
+      <div className="bg-red-950/30 border border-red-900/40 rounded-2xl p-6">
+        <h3 className="text-red-300 font-bold text-base mb-2 flex items-center gap-2">
+          <FaTrashAlt className="text-red-400" /> Legacy-Daten löschen (vor NFT-Integration)
+        </h3>
+        <p className="text-zinc-400 text-xs mb-4">
+          Löscht alle Collectibles und Kollektionen die <strong className="text-white">ohne NFT-Mint</strong> erstellt wurden
+          (kein <code className="bg-zinc-800 px-1 rounded">nft_mint_address</code> / <code className="bg-zinc-800 px-1 rounded">nft_collection_mint</code>).
+          Diese Aktion ist <strong className="text-red-300">nicht rückgängig</strong> machbar.
+        </p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={handleDeleteLegacy}
+            disabled={deleteLoading}
+            className={`flex items-center gap-2 px-5 py-2.5 font-bold rounded-xl text-sm transition-colors ${
+              deleteConfirm
+                ? 'bg-red-600 hover:bg-red-500 text-white animate-pulse'
+                : 'bg-zinc-700 hover:bg-red-700 text-zinc-200 hover:text-white'
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            {deleteLoading ? <FaSync className="animate-spin" /> : <FaTrashAlt />}
+            {deleteConfirm ? 'Sicher? Nochmal klicken zum Bestätigen' : 'Legacy-Daten löschen'}
+          </button>
+          {deleteConfirm && (
+            <button onClick={() => setDeleteConfirm(false)} className="text-zinc-400 text-xs hover:text-white">
+              Abbrechen
+            </button>
+          )}
+        </div>
+        {deleteMsg && (
+          <p className={`text-sm font-medium mt-3 ${deleteMsg.startsWith('Fehler') ? 'text-red-400' : 'text-green-400'}`}>
+            {deleteMsg}
+          </p>
+        )}
       </div>
     </div>
   );
