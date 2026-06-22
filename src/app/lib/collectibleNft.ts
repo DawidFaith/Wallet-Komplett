@@ -13,6 +13,7 @@ import {
   createCollection,
   create,
   ruleSet,
+  fetchCollectionV1,
 } from '@metaplex-foundation/mpl-core';
 import {
   keypairIdentity,
@@ -152,12 +153,13 @@ export async function mintCollectibleAsset(params: {
     [{ name: 'Rarity', value: rarity }, { name: 'Collection', value: collectionName }],
   );
 
-  const umi = getUmi();
+  const umi        = getUmi();
   const assetSigner = generateSigner(umi);
+  const collection  = await fetchCollectionV1(umi, umiPubkey(collectionMint));
 
   await create(umi, {
     asset:      assetSigner,
-    collection: umiPubkey(collectionMint),
+    collection,
     owner:      umiPubkey(ownerSolanaAddress),
     name:       `${collectionName} [${RARITY_LABELS[rarity]}]`.slice(0, 32),
     uri:        metadataUri,

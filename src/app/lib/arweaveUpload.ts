@@ -21,11 +21,13 @@ const arweave = Arweave.init({
 
 export interface UploadTag { name: string; value: string }
 
-function getWallet(): object {
+// JSON.parse returns any — deliberately untyped so it's assignable to JWKInterface
+function getWallet() {
   const raw = process.env.ARWEAVE_WALLET_KEY;
   if (!raw) throw new Error('ARWEAVE_WALLET_KEY nicht konfiguriert. Bitte Arweave-Wallet generieren und in Vercel eintragen.');
   try {
-    return JSON.parse(raw) as object;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return JSON.parse(raw);
   } catch {
     throw new Error('ARWEAVE_WALLET_KEY ist kein gültiges JSON (JWK-Format erwartet).');
   }
