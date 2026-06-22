@@ -16,6 +16,7 @@ import {
   burn,
   ruleSet,
   fetchCollectionV1,
+  fetchAssetV1,
 } from '@metaplex-foundation/mpl-core';
 import {
   keypairIdentity,
@@ -192,10 +193,8 @@ export async function burnCollectibleAssets(
   const collection = await fetchCollectionV1(umi, umiPubkey(collectionMint));
 
   for (const assetMint of assetMints) {
-    await burn(umi, {
-      asset:      umiPubkey(assetMint),
-      collection,
-    }).sendAndConfirm(umi);
+    const asset = await fetchAssetV1(umi, umiPubkey(assetMint));
+    await burn(umi, { asset, collection }).sendAndConfirm(umi);
   }
 }
 
