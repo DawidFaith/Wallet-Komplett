@@ -461,6 +461,16 @@ export async function POST(req: NextRequest) {
     // ── Bundle Shard-Drop-Chance (ersetzt Abschluss-Token-Bonus) ─────────────
     await sql`ALTER TABLE quest_bundles ADD COLUMN IF NOT EXISTS shard_drop_chance SMALLINT NOT NULL DEFAULT 20`;
 
+    // ── NFT-Integration (Solana On-Chain) ────────────────────────────────────
+    await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS master_edition_mint TEXT`;
+    await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS nft_max_supply      INTEGER`;
+    await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS edition_count       INTEGER NOT NULL DEFAULT 0`;
+    await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS is_nft_enabled      BOOLEAN NOT NULL DEFAULT FALSE`;
+    await sql`ALTER TABLE shop_purchases ADD COLUMN IF NOT EXISTS nft_mint_address TEXT`;
+    await sql`ALTER TABLE shop_purchases ADD COLUMN IF NOT EXISTS edition_number   INTEGER`;
+    await sql`ALTER TABLE collectible_collections ADD COLUMN IF NOT EXISTS nft_collection_mint TEXT`;
+    await sql`ALTER TABLE user_collectibles ADD COLUMN IF NOT EXISTS nft_mint_address TEXT`;
+
     return NextResponse.json({
       success: true,
       message: `Migration abgeschlossen (${(backfill as unknown as { count?: number }).count ?? backfill.length} neue Profile)`,

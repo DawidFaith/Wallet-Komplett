@@ -1,62 +1,67 @@
 /**
- * Permanente NFT-Media-Speicherung.
+ * Permanente NFT-Media-Speicherung via Arweave.
  *
- * Phase 1: Pinata IPFS (bereits integriert, sofort einsatzbereit)
- * Phase 2: Arweave via Irys — swap nur diese Datei aus, alle anderen bleiben gleich.
+ * Nutzt das native `arweave` npm-Paket mit einem Arweave JWK-Wallet.
+ * Zahlt einmalig in AR-Token — Dateien bleiben für 200+ Jahre gespeichert.
  *
- * IPFS-Hinweis: Content ist durch CID (Content-Hash) adressiert und kann von
- * beliebigen IPFS-Nodes gepinnt werden. Für langfristige Permanenz kann der
- * CID jederzeit auf Arweave gespiegelt werden.
+ * Setup (einmalig):
+ *   1. Arweave-Wallet generieren (GET /api/admin/arweave-keygen)
+ *   2. Wallet-Adresse mit AR-Token aufladen (z.B. über Binance → Arweave)
+ *   3. ARWEAVE_WALLET_KEY=<JSON-String> in Vercel Environment Variables eintragen
  *
- * ENV: PINATA_JWT
+ * ENV: ARWEAVE_WALLET_KEY  (stringified JWK, z.B. {"kty":"RSA","n":"...","e":"...","d":"...",...})
  */
+import Arweave from 'arweave';
+
+const arweave = Arweave.init({
+  host:     'arweave.net',
+  port:     443,
+  protocol: 'https',
+});
 
 export interface UploadTag { name: string; value: string }
 
-const PINATA_API = 'https://api.pinata.cloud/pinning/pinFileToIPFS';
-const GATEWAY    = 'https://ipfs.io/ipfs';
-
-async function pinToPinata(buf: Buffer, filename: string, mimeType: string): Promise<string> {
-  const jwt = process.env.PINATA_JWT;
-  if (!jwt) throw new Error('PINATA_JWT nicht konfiguriert');
-
-  const formData = new FormData();
-  formData.append('file', new Blob([buf], { type: mimeType }), filename);
-  formData.append('pinataOptions', JSON.stringify({ cidVersion: 1 }));
-
-  const res = await fetch(PINATA_API, {
-    method:  'POST',
-    headers: { Authorization: `Bearer ${jwt}` },
-    body:    formData,
-  });
-
-  if (!res.ok) throw new Error(`Pinata Upload fehlgeschlagen: ${await res.text()}`);
-  const data = await res.json() as { IpfsHash: string };
-  return data.IpfsHash;
+function getWallet(): object {
+  const raw = process.env.ARWEAVE_WALLET_KEY;
+  if (!raw) throw new Error('ARWEAVE_WALLET_KEY nicht konfiguriert. Bitte Arweave-Wallet generieren und in Vercel eintragen.');
+  try {
+    return JSON.parse(raw) as object;
+  } catch {
+    throw new Error('ARWEAVE_WALLET_KEY ist kein gültiges JSON (JWK-Format erwartet).');
+  }
 }
 
 /**
- * Lädt eine Datei auf IPFS (via Pinata) hoch.
- * Gibt die öffentliche Gateway-URL zurück: https://ipfs.io/ipfs/<CID>
- * Auch als ipfs://<CID> nutzbar in NFT-Metadaten (von Wallets wie Phantom unterstützt).
+ * Lädt eine Datei permanent auf Arweave hoch.
+ * Gibt den permanenten Arweave-URI zurück: ar://<txId>
+ * (Phantom, Magic Eden, Tensor lösen ar:// nativ auf)
  */
 export async function uploadToArweave(
   data: Buffer | string,
   mimeType: string,
   tags: UploadTag[] = [],
 ): Promise<string> {
-  const buf      = Buffer.isBuffer(data) ? data : Buffer.from(data, 'utf-8');
-  const ext      = mimeType.split('/')[1]?.split('+')[0] ?? 'bin';
-  const title    = tags.find(t => t.name === 'Title')?.value ?? 'nft-file';
-  const filename = `${title.toLowerCase().replace(/\s+/g, '-')}.${ext}`;
+  const wallet = getWallet();
+  const buf    = Buffer.isBuffer(data) ? data : Buffer.from(data, 'utf-8');
 
-  const cid = await pinToPinata(buf, filename, mimeType);
-  // ipfs:// wird von Phantom, Magic Eden, Tensor nativ aufgelöst
-  return `ipfs://${cid}`;
+  const tx = await arweave.createTransaction({ data: buf }, wallet);
+  tx.addTag('Content-Type', mimeType);
+  for (const tag of tags) {
+    tx.addTag(tag.name, tag.value);
+  }
+
+  await arweave.transactions.sign(tx, wallet);
+  const response = await arweave.transactions.post(tx);
+
+  if (response.status !== 200 && response.status !== 208) {
+    throw new Error(`Arweave Upload fehlgeschlagen: Status ${response.status} – ${response.statusText}`);
+  }
+
+  return `ar://${tx.id}`;
 }
 
 /**
- * Holt eine Datei von einer URL und lädt sie auf IPFS hoch.
+ * Holt eine Datei von einer URL und lädt sie permanent auf Arweave hoch.
  */
 export async function fetchAndUploadToArweave(
   sourceUrl: string,
@@ -70,9 +75,13 @@ export async function fetchAndUploadToArweave(
   return uploadToArweave(buf, detectedMime, tags);
 }
 
-/** Gibt die HTTP-Gateway-URL für einen IPFS/Arweave URI zurück (für Previews im Browser). */
+/**
+ * Gibt die HTTP-Gateway-URL für NFT-Media URIs zurück (für Browser-Previews).
+ * ar://xxx → https://arweave.net/xxx
+ * ipfs://xxx → https://ipfs.io/ipfs/xxx
+ */
 export function resolveMediaUrl(uri: string): string {
-  if (uri.startsWith('ipfs://')) return `${GATEWAY}/${uri.slice(7)}`;
   if (uri.startsWith('ar://'))   return `https://arweave.net/${uri.slice(5)}`;
+  if (uri.startsWith('ipfs://')) return `https://ipfs.io/ipfs/${uri.slice(7)}`;
   return uri;
 }
