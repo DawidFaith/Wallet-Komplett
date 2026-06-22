@@ -88,26 +88,34 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
 
-  const sql = getDb();
+  try {
+    const sql = getDb();
 
-  // 1. user_collectibles ohne nft_mint_address löschen (alle Kollektionen)
-  const deletedCollectibles = await sql`
-    DELETE FROM user_collectibles
-    WHERE nft_mint_address IS NULL
-    RETURNING id
-  `;
+    const deletedCollectibles = await sql`
+      DELETE FROM user_collectibles
+      WHERE nft_mint_address IS NULL
+      RETURNING id
+    `;
 
-  // 2. collectible_collections ohne nft_collection_mint löschen
-  const deletedCollections = await sql`
-    DELETE FROM collectible_collections
-    WHERE nft_collection_mint IS NULL
-    RETURNING id, name
-  `;
+    const deletedCollections = await sql`
+      DELETE FROM collectible_collections
+      WHERE nft_collection_mint IS NULL
+      RETURNING id, name
+    `;
 
-  return NextResponse.json({
-    success: true,
-    deletedCollectibles: deletedCollectibles.length,
-    deletedCollections:  deletedCollections.length,
-    deletedCollectionNames: deletedCollections.map(r => String(r.name)),
-  });
+    return NextResponse.json({
+      success: true,
+      deletedCollectibles: deletedCollectibles.length,
+      deletedCollections:  deletedCollections.length,
+      deletedCollectionNames: deletedCollections.map(r => String(r.name)),
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    // Spalten existieren noch nicht → Migration noch nicht ausgeführt
+    const needsMigration = msg.includes('column') && msg.includes('does not exist');
+    return NextResponse.json(
+      { error: needsMigration ? 'Migration noch nicht ausgeführt. Bitte zuerst POST /api/admin/migrate aufrufen.' : msg },
+      { status: 500 },
+    );
+  }
 }
