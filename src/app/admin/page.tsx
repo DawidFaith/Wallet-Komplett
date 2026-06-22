@@ -5,7 +5,7 @@ import Image from 'next/image';
 import {
   FaYoutube, FaInstagram, FaTiktok, FaFacebook,
   FaCheck, FaTimes, FaSearch, FaShieldAlt, FaCoins, FaStar, FaSync, FaPaperPlane,
-  FaShoppingBag, FaEdit,
+  FaShoppingBag, FaEdit, FaCopy, FaWallet, FaExternalLinkAlt,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
 import { GiCrystalShine } from 'react-icons/gi';
@@ -253,7 +253,7 @@ export default function AdminPage() {
     return matchSearch && matchFilter;
   });
 
-  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'collectibles' | 'referral'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'collectibles' | 'referral' | 'arweave'>('users');
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState('');
   const [resetting, setResetting] = useState(false);
@@ -333,7 +333,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-0">
-        {(['users', 'credits', 'token', 'shop', 'platform', 'collectibles', 'referral'] as const).map((tab) => (
+        {(['users', 'credits', 'token', 'shop', 'platform', 'collectibles', 'referral', 'arweave'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -343,7 +343,7 @@ export default function AdminPage() {
                 : 'text-zinc-500 border-transparent hover:text-zinc-300'
             }`}
           >
-            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'platform' ? '⚡ Platform' : tab === 'collectibles' ? '💎 Collectibles' : '🔗 Referral'}
+            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'platform' ? '⚡ Platform' : tab === 'collectibles' ? '💎 Collectibles' : tab === 'referral' ? '🔗 Referral' : '🟣 Arweave'}
           </button>
         ))}
       </div>
@@ -608,6 +608,11 @@ export default function AdminPage() {
       {/* ── Referral Tab ─────────────────────────────────────────────────────── */}
       {activeTab === 'referral' && (
         <ReferralSection secret={secret} users={users} />
+      )}
+
+      {/* ── Arweave Tab ──────────────────────────────────────────────────────── */}
+      {activeTab === 'arweave' && (
+        <ArweaveSetupSection secret={secret} />
       )}
     </div>
   );
@@ -3089,6 +3094,331 @@ function CollectiblesAdminSection({ secret, users }: { secret: string; users: Ad
           </button>
           {colMsg && <p className={`text-sm font-medium ${colMsg.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>{colMsg}</p>}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ArweaveSetupSection ──────────────────────────────────────────────────────
+
+interface ArweaveStatus {
+  configured: boolean;
+  address?: string;
+  balanceAr?: number;
+  error?: string;
+}
+
+interface GeneratedWallet {
+  address: string;
+  jwk: Record<string, string>;
+  instructions: string[];
+}
+
+function ArweaveSetupSection({ secret }: { secret: string }) {
+  const [status, setStatus]       = useState<ArweaveStatus | null>(null);
+  const [loading, setLoading]     = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generated, setGenerated] = useState<GeneratedWallet | null>(null);
+  const [copied, setCopied]       = useState<'address' | 'jwk' | 'env' | null>(null);
+  const [error, setError]         = useState('');
+
+  const loadStatus = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/arweave-status?secret=${encodeURIComponent(secret)}`);
+      const d   = await res.json() as ArweaveStatus;
+      if (!res.ok) throw new Error(d.error ?? 'Fehler');
+      setStatus(d);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unbekannter Fehler');
+    } finally {
+      setLoading(false);
+    }
+  }, [secret]);
+
+  useEffect(() => { void loadStatus(); }, [loadStatus]);
+
+  const handleGenerate = async () => {
+    if (!confirm('Neues Arweave-Wallet generieren? Bestehende Konfiguration wird NICHT überschrieben – du musst den Key manuell in Vercel eintragen.')) return;
+    setGenerating(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/arweave-keygen?secret=${encodeURIComponent(secret)}`);
+      const d   = await res.json() as GeneratedWallet & { error?: string };
+      if (!res.ok) throw new Error(d.error ?? 'Fehler');
+      setGenerated(d);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unbekannter Fehler');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const copy = async (text: string, which: 'address' | 'jwk' | 'env') => {
+    await navigator.clipboard.writeText(text);
+    setCopied(which);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const envValue = generated ? `ARWEAVE_WALLET_KEY=${JSON.stringify(generated.jwk)}` : '';
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-9 h-9 rounded-full bg-purple-900/40 border border-purple-700/40 flex items-center justify-center">
+            <FaWallet size={15} className="text-purple-400" />
+          </div>
+          <div>
+            <h2 className="text-white font-bold text-base">Arweave NFT Storage</h2>
+            <p className="text-zinc-500 text-xs">Permanenter dezentraler Speicher für NFT-Medien (ar://)</p>
+          </div>
+          <button onClick={loadStatus} disabled={loading} className="ml-auto text-xs bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-1.5">
+            <FaSync size={10} className={loading ? 'animate-spin' : ''} /> Aktualisieren
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-red-900/30 border border-red-800/50 text-red-300 text-sm px-4 py-3 rounded-xl">{error}</div>
+      )}
+
+      {/* ── Status ─────────────────────────────────────────────────────────── */}
+      {status && (
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
+          <h3 className="text-white font-semibold text-sm">Status</h3>
+
+          {status.configured ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-400 inline-block"></span>
+                <span className="text-green-400 text-sm font-semibold">Wallet konfiguriert</span>
+              </div>
+
+              <div className="bg-zinc-800 rounded-xl p-4 space-y-3">
+                <div>
+                  <p className="text-zinc-500 text-xs mb-1">Wallet-Adresse</p>
+                  <div className="flex items-center gap-2">
+                    <code className="text-purple-300 text-xs font-mono break-all flex-1">{status.address}</code>
+                    <button
+                      onClick={() => void copy(status.address ?? '', 'address')}
+                      className="shrink-0 text-zinc-400 hover:text-white transition-colors"
+                      title="Kopieren"
+                    >
+                      {copied === 'address' ? <FaCheck size={12} className="text-green-400" /> : <FaCopy size={12} />}
+                    </button>
+                    <a
+                      href={`https://viewblock.io/arweave/address/${status.address}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 text-zinc-400 hover:text-purple-400 transition-colors"
+                      title="Im Explorer anzeigen"
+                    >
+                      <FaExternalLinkAlt size={11} />
+                    </a>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-zinc-500 text-xs mb-1">AR Balance</p>
+                  {status.balanceAr !== undefined ? (
+                    <div className="flex items-baseline gap-2">
+                      <span className={`text-2xl font-bold ${status.balanceAr > 0 ? 'text-white' : 'text-zinc-500'}`}>
+                        {status.balanceAr.toFixed(6)}
+                      </span>
+                      <span className="text-zinc-400 text-sm">AR</span>
+                      {status.balanceAr > 0 && (
+                        <span className="text-zinc-500 text-xs">
+                          ≈ ${(status.balanceAr * 25).toFixed(2)} USD
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-zinc-600 text-sm">Wird geladen…</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Aufladen-Anleitung wenn Balance niedrig */}
+              {(status.balanceAr ?? 0) < 0.01 && (
+                <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-xl p-4 space-y-2">
+                  <p className="text-yellow-400 text-xs font-semibold">Wallet aufladen</p>
+                  <ol className="text-zinc-300 text-xs space-y-1 list-decimal list-inside">
+                    <li>AR-Token kaufen (z.B. Binance, Kraken, KuCoin)</li>
+                    <li>AR auf diese Adresse senden: <code className="text-purple-300">{status.address}</code></li>
+                    <li>Empfehlung: mind. 0.1 AR (~$2.50) für erste NFT-Uploads</li>
+                    <li>Upload-Kosten: ~0.0001 AR/KB (Metadaten-JSON ist &lt;1 KB)</li>
+                  </ol>
+                  <a
+                    href={`https://viewblock.io/arweave/address/${status.address}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-purple-400 hover:text-purple-300 text-xs transition-colors"
+                  >
+                    Balance im Explorer prüfen <FaExternalLinkAlt size={10} />
+                  </a>
+                </div>
+              )}
+
+              {(status.balanceAr ?? 0) >= 0.01 && (
+                <div className="bg-green-900/20 border border-green-700/30 rounded-xl px-4 py-3">
+                  <p className="text-green-400 text-xs font-semibold">Wallet bereit — NFT-Uploads funktionieren</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-zinc-500 inline-block"></span>
+                <span className="text-zinc-400 text-sm">Kein Wallet konfiguriert</span>
+              </div>
+              <p className="text-zinc-500 text-xs">
+                Generiere ein neues Arweave-Wallet und trage den Key in Vercel ein.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Wallet generieren ───────────────────────────────────────────────── */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-5">
+        <div className="flex items-center justify-between">
+          <h3 className="text-white font-semibold text-sm">
+            {status?.configured ? 'Neues Wallet generieren' : 'Schritt 1: Wallet generieren'}
+          </h3>
+          <button
+            onClick={handleGenerate}
+            disabled={generating}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-700 hover:bg-purple-600 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-bold rounded-xl text-sm transition-colors"
+          >
+            {generating ? <FaSync size={12} className="animate-spin" /> : <FaWallet size={12} />}
+            {generating ? 'Generiere…' : 'Wallet generieren'}
+          </button>
+        </div>
+
+        {/* Generiertes Wallet anzeigen */}
+        {generated && (
+          <div className="space-y-4">
+            {/* Adresse */}
+            <div className="bg-zinc-800 rounded-xl p-4 space-y-1">
+              <p className="text-zinc-400 text-xs font-semibold">Wallet-Adresse (öffentlich)</p>
+              <div className="flex items-center gap-2 mt-1">
+                <code className="text-purple-300 text-xs font-mono break-all flex-1">{generated.address}</code>
+                <button
+                  onClick={() => void copy(generated.address, 'address')}
+                  className="shrink-0 text-zinc-400 hover:text-white transition-colors"
+                >
+                  {copied === 'address' ? <FaCheck size={12} className="text-green-400" /> : <FaCopy size={12} />}
+                </button>
+              </div>
+            </div>
+
+            {/* JWK */}
+            <div className="bg-zinc-800 rounded-xl p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-zinc-400 text-xs font-semibold">Private Key (JWK) — niemals teilen!</p>
+                <button
+                  onClick={() => void copy(JSON.stringify(generated.jwk), 'jwk')}
+                  className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors"
+                >
+                  {copied === 'jwk' ? <><FaCheck size={10} className="text-green-400" /> Kopiert</> : <><FaCopy size={10} /> JWK kopieren</>}
+                </button>
+              </div>
+              <div className="bg-zinc-900 rounded-lg p-3 max-h-32 overflow-y-auto">
+                <code className="text-zinc-400 text-xs font-mono break-all">{JSON.stringify(generated.jwk, null, 2)}</code>
+              </div>
+            </div>
+
+            {/* Vercel ENV-Variable */}
+            <div className="bg-purple-900/20 border border-purple-700/30 rounded-xl p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-purple-300 text-xs font-semibold">Schritt 2: In Vercel eintragen</p>
+                <button
+                  onClick={() => void copy(envValue, 'env')}
+                  className="flex items-center gap-1.5 text-xs text-purple-300 hover:text-white transition-colors"
+                >
+                  {copied === 'env' ? <><FaCheck size={10} className="text-green-400" /> Kopiert</> : <><FaCopy size={10} /> Env kopieren</>}
+                </button>
+              </div>
+              <p className="text-zinc-400 text-xs">
+                Geh zu <span className="text-white">Vercel → Dein Projekt → Settings → Environment Variables</span>
+              </p>
+              <div className="bg-zinc-900 rounded-lg p-3">
+                <div className="flex gap-2 text-xs mb-1">
+                  <span className="text-zinc-500">Name:</span>
+                  <code className="text-white">ARWEAVE_WALLET_KEY</code>
+                </div>
+                <div className="flex gap-2 text-xs">
+                  <span className="text-zinc-500">Value:</span>
+                  <code className="text-purple-300 break-all">{JSON.stringify(generated.jwk).slice(0, 60)}…</code>
+                </div>
+              </div>
+              <a
+                href="https://vercel.com/dashboard"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-purple-400 hover:text-purple-300 text-xs transition-colors"
+              >
+                Vercel Dashboard öffnen <FaExternalLinkAlt size={10} />
+              </a>
+            </div>
+
+            {/* Schritt 3: Aufladen */}
+            <div className="bg-zinc-800 rounded-xl p-4 space-y-2">
+              <p className="text-zinc-300 text-xs font-semibold">Schritt 3: Wallet mit AR aufladen</p>
+              <ol className="text-zinc-400 text-xs space-y-1 list-decimal list-inside">
+                <li>AR-Token kaufen (Binance, Kraken, KuCoin oder Gate.io)</li>
+                <li>
+                  AR an deine Wallet senden:{' '}
+                  <code className="text-purple-300">{generated.address}</code>
+                </li>
+                <li>Empfehlung: mind. 0.1 AR (~$2.50)</li>
+                <li>Upload-Kosten: ~0.0001 AR/KB (JSON-Metadata &lt;1KB, Cover-Bilder ~10–50KB)</li>
+              </ol>
+              <a
+                href={`https://viewblock.io/arweave/address/${generated.address}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-purple-400 hover:text-purple-300 text-xs transition-colors"
+              >
+                Eingehende Transaktion im Explorer prüfen <FaExternalLinkAlt size={10} />
+              </a>
+            </div>
+
+            {/* Schritt 4: Deploy */}
+            <div className="bg-zinc-800 rounded-xl p-4 space-y-2">
+              <p className="text-zinc-300 text-xs font-semibold">Schritt 4: Vercel Re-Deploy</p>
+              <p className="text-zinc-400 text-xs">
+                Nach dem Eintragen der Environment Variable: Vercel → Deployments → Redeploy (oder neuer Commit).
+                Danach hier auf <span className="text-white">Aktualisieren</span> klicken – der Status wechselt auf grün.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Kosten-Übersicht ────────────────────────────────────────────────── */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+        <h3 className="text-white font-semibold text-sm mb-4">Kosten-Übersicht</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            { label: 'Metadata JSON', size: '< 1 KB', cost: '~$0.00005' },
+            { label: 'Cover-Bild (JPG)', size: '~50 KB', cost: '~$0.003' },
+            { label: 'Audio (MP3 Preview)', size: '~500 KB', cost: '~$0.025' },
+          ].map(item => (
+            <div key={item.label} className="bg-zinc-800 rounded-xl p-3 space-y-1">
+              <p className="text-zinc-300 text-xs font-semibold">{item.label}</p>
+              <p className="text-zinc-500 text-xs">{item.size}</p>
+              <p className="text-purple-400 text-sm font-bold">{item.cost}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-zinc-600 text-xs mt-3">
+          Arweave-Preise basieren auf ~0.1 AR/MB (Stand: Juni 2026, ~$25/AR).
+          Permanenter Speicher — einmalige Zahlung, für immer gespeichert.
+        </p>
       </div>
     </div>
   );
