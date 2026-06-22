@@ -113,14 +113,16 @@ export async function POST(req: NextRequest) {
   // Songs werden immer als NFT geminted (Master Edition + nummerierte Print Editions)
   if (type === 'song' && contentUrl && imageUrl) {
     try {
-      const artistRows = await sql`
-        SELECT solana_address FROM solana_accounts
-        WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1
-      `;
+      const [artistRows, artistNameRows] = await Promise.all([
+        sql`SELECT solana_address FROM solana_accounts WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`,
+        sql`SELECT display_name FROM user_profiles WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`,
+      ]);
       if (artistRows.length && artistRows[0].solana_address) {
+        const artistName = (artistNameRows[0]?.display_name as string | null) ?? wallet.slice(0, 8);
         const { masterMint, metadataUri } = await mintSongMasterEdition({
           artistWallet:        wallet.toLowerCase(),
           artistSolanaAddress: artistRows[0].solana_address as string,
+          artistName,
           title:               title.trim(),
           description:         description?.trim() ?? '',
           coverImageUrl:       imageUrl.trim(),

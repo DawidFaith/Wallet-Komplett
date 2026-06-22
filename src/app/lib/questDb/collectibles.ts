@@ -354,12 +354,15 @@ export async function fuseShards(
       if (solanaRows.length && solanaRows[0].solana_address && solanaRows[0].artist_solana) {
         const repBonus    = parseFloat((collection.maxRepBonusPercent    * RARITY_REP_MULTIPLIER[rarity]).toFixed(1));
         const creditBonus = parseFloat((collection.maxCreditBonusPercent * RARITY_CREDIT_MULTIPLIER[rarity]).toFixed(1));
+        const artistNameRow = await sql`SELECT display_name FROM user_profiles WHERE wallet_address = ${artistWallet.toLowerCase()} LIMIT 1`;
+        const artistName = (artistNameRow[0]?.display_name as string | null) ?? artistWallet.slice(0, 8);
         const result = await mintCollectibleAsset({
           collectionMint:      nftCollectionMint,
           collectionName:      collection.name,
           collectionImageUri:  collection.imageUrl,
           ownerSolanaAddress:  solanaRows[0].solana_address as string,
           artistSolanaAddress: solanaRows[0].artist_solana as string,
+          artistName,
           rarity,
           repBonusPercent:    repBonus,
           creditBonusPercent: creditBonus,
@@ -460,15 +463,18 @@ export async function upgradeCollectibles(
     try {
       const maxRep    = Number(collRows[0].max_rep_bonus_percent ?? 0);
       const maxCredit = Number(collRows[0].max_credit_bonus_percent ?? 0);
-      const repBonus    = parseFloat((maxRep    * RARITY_REP_MULTIPLIER[nextRarity]).toFixed(1));
-      const creditBonus = parseFloat((maxCredit * RARITY_CREDIT_MULTIPLIER[nextRarity]).toFixed(1));
+      const repBonus     = parseFloat((maxRep    * RARITY_REP_MULTIPLIER[nextRarity]).toFixed(1));
+      const creditBonus  = parseFloat((maxCredit * RARITY_CREDIT_MULTIPLIER[nextRarity]).toFixed(1));
       const primaryBonus = (collRows[0].primary_bonus as 'rep' | 'credits' | 'shard') ?? 'rep';
+      const artistNameRow = await sql`SELECT display_name FROM user_profiles WHERE wallet_address = ${artistWallet.toLowerCase()} LIMIT 1`;
+      const artistName    = (artistNameRow[0]?.display_name as string | null) ?? artistWallet.slice(0, 8);
       const result = await mintCollectibleAsset({
         collectionMint:      nftCollectionMint,
         collectionName:      collRows[0].name as string,
         collectionImageUri:  collRows[0].image_url as string,
         ownerSolanaAddress:  userSolanaAddress,
         artistSolanaAddress,
+        artistName,
         rarity:              nextRarity,
         repBonusPercent:     repBonus,
         creditBonusPercent:  creditBonus,

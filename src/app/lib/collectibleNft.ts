@@ -159,6 +159,7 @@ export async function mintCollectibleAsset(params: {
   collectionImageUri:  string;
   ownerSolanaAddress:  string;
   artistSolanaAddress: string;
+  artistName:          string;
   rarity:              CollectibleRarity;
   repBonusPercent:     number;
   creditBonusPercent:  number;
@@ -172,6 +173,7 @@ export async function mintCollectibleAsset(params: {
     collectionImageUri,
     ownerSolanaAddress,
     artistSolanaAddress,
+    artistName,
     rarity,
     repBonusPercent,
     creditBonusPercent,
@@ -184,6 +186,7 @@ export async function mintCollectibleAsset(params: {
 
   const attributes: { trait_type: string; value: string }[] = [
     { trait_type: 'Rarity',     value: RARITY_LABELS[rarity] },
+    { trait_type: 'Artist',     value: artistName },
     { trait_type: 'Collection', value: collectionName },
     { trait_type: 'Platform',   value: 'D.FAITH' },
     { trait_type: 'Drop Rate',  value: RARITY_DROP_RATE[rarity] },
@@ -194,7 +197,7 @@ export async function mintCollectibleAsset(params: {
 
   const metadata = {
     name:             `${collectionName} — ${RARITY_LABELS[rarity]}`,
-    description:      `${RARITY_LABELS[rarity]} D.FAITH Collectible from the "${collectionName}" series.\n\nBonuses: ${bonusLine}\n\nTradeable on secondary markets — 5% artist royalties on every resale.`,
+    description:      `${RARITY_LABELS[rarity]} D.FAITH Collectible from the "${collectionName}" series by ${artistName}.\n\nBonuses: ${bonusLine}\n\nTradeable on secondary markets — 5% artist royalties on every resale.`,
     image:            collectionImageUri,
     external_url:     'https://app.dawidfaith.de',
     background_color: RARITY_BG_COLOR[rarity],

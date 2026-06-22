@@ -41,6 +41,7 @@ export interface SongMasterEditionResult {
 export async function mintSongMasterEdition(params: {
   artistWallet: string;
   artistSolanaAddress: string;
+  artistName?: string;
   title: string;
   description: string;
   coverImageUrl: string;
@@ -51,6 +52,7 @@ export async function mintSongMasterEdition(params: {
   const {
     artistWallet,
     artistSolanaAddress,
+    artistName,
     title,
     description,
     coverImageUrl,
@@ -83,6 +85,7 @@ export async function mintSongMasterEdition(params: {
     },
     attributes: [
       { trait_type: 'Type',         value: 'Music' },
+      { trait_type: 'Artist',       value: artistName ?? artistWallet.slice(0, 8) },
       { trait_type: 'Platform',     value: 'D.FAITH' },
       { trait_type: 'Max Editions', value: String(maxSupply) },
       { trait_type: 'Royalties',    value: '5%' },
