@@ -6,43 +6,19 @@
  *
  * ENV: ARWEAVE_WALLET_KEY  — JSON-String eines Arweave JWK-Wallets
  */
+import type { JWKInterface } from 'arweave/node/lib/wallet';
 
 export interface UploadTag { name: string; value: string }
 
 async function getArweave() {
-  // Dynamic import prevents webpack from bundling arweave at build time.
-  // At runtime on Vercel, Node.js resolves it from node_modules.
-  const { default: Arweave } = await import('arweave') as { default: {
-    init(cfg: { host: string; port: number; protocol: string }): ArweaveInstance;
-  }};
+  const { default: Arweave } = await import('arweave');
   return Arweave.init({ host: 'arweave.net', port: 443, protocol: 'https' });
 }
 
-interface ArweaveInstance {
-  wallets: {
-    generate(): Promise<Record<string, string>>;
-    jwkToAddress(jwk: Record<string, string>): Promise<string>;
-  };
-  transactions: {
-    sign(tx: ArweaveTx, jwk?: Record<string, string>): Promise<void>;
-    post(tx: ArweaveTx): Promise<{ status: number; statusText: string }>;
-  };
-  createTransaction(
-    attrs: { data: Buffer | string },
-    jwk?: Record<string, string>,
-  ): Promise<ArweaveTx>;
-}
-
-interface ArweaveTx {
-  id: string;
-  addTag(name: string, value: string): void;
-}
-
-function getWallet(): Record<string, string> {
+function getWallet(): JWKInterface {
   const raw = process.env.ARWEAVE_WALLET_KEY;
   if (!raw) throw new Error('ARWEAVE_WALLET_KEY not configured. Generate a wallet via /api/admin/arweave-keygen');
-  try { return JSON.parse(raw) as Record<string, string>; }
-  catch { throw new Error('ARWEAVE_WALLET_KEY ist kein gültiges JSON'); }
+  return JSON.parse(raw) as JWKInterface;
 }
 
 export async function uploadToArweave(

@@ -13,15 +13,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
 
-  // Dynamic import so webpack doesn't try to bundle arweave at build time
-  const { default: Arweave } = await import('arweave') as {
-    default: { init(cfg: { host: string; port: number; protocol: string }): {
-      wallets: {
-        generate(): Promise<Record<string, string>>;
-        jwkToAddress(jwk: Record<string, string>): Promise<string>;
-      };
-    }};
-  };
+  // Dynamic import so webpack doesn't bundle arweave at build time.
+  const { default: Arweave } = await import('arweave');
   const arweave = Arweave.init({ host: 'arweave.net', port: 443, protocol: 'https' });
   const jwk     = await arweave.wallets.generate();
   const address = await arweave.wallets.jwkToAddress(jwk);
