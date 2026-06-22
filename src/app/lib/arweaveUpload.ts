@@ -1,64 +1,84 @@
 /**
- * NFT-Media-Speicherung via Vercel Blob.
+ * NFT-Media-Speicherung auf Arweave (permanenter dezentraler Speicher).
  *
- * Vercel Blob ist dauerhaft öffentlich zugänglich und sofort einsatzbereit.
- * Die gleiche Schnittstelle erlaubt später einen Wechsel zu Arweave.
+ * Verwendet dynamische Imports, damit webpack das Modul nicht bündelt
+ * (arweave nutzt Node.js-native APIs wie crypto und https).
  *
- * ENV: BLOB_READ_WRITE_TOKEN  (wird von Vercel automatisch gesetzt)
+ * ENV: ARWEAVE_WALLET_KEY  — JSON-String eines Arweave JWK-Wallets
  */
-import { put } from '@vercel/blob';
 
 export interface UploadTag { name: string; value: string }
 
-/**
- * Lädt eine Datei auf Vercel Blob hoch und gibt die öffentliche HTTPS-URL zurück.
- */
+async function getArweave() {
+  // Dynamic import prevents webpack from bundling arweave at build time.
+  // At runtime on Vercel, Node.js resolves it from node_modules.
+  const { default: Arweave } = await import('arweave') as { default: {
+    init(cfg: { host: string; port: number; protocol: string }): ArweaveInstance;
+  }};
+  return Arweave.init({ host: 'arweave.net', port: 443, protocol: 'https' });
+}
+
+interface ArweaveInstance {
+  wallets: {
+    generate(): Promise<Record<string, string>>;
+    jwkToAddress(jwk: Record<string, string>): Promise<string>;
+  };
+  transactions: {
+    sign(tx: ArweaveTx, jwk?: Record<string, string>): Promise<void>;
+    post(tx: ArweaveTx): Promise<{ status: number; statusText: string }>;
+  };
+  createTransaction(
+    attrs: { data: Buffer | string },
+    jwk?: Record<string, string>,
+  ): Promise<ArweaveTx>;
+}
+
+interface ArweaveTx {
+  id: string;
+  addTag(name: string, value: string): void;
+}
+
+function getWallet(): Record<string, string> {
+  const raw = process.env.ARWEAVE_WALLET_KEY;
+  if (!raw) throw new Error('ARWEAVE_WALLET_KEY not configured. Generate a wallet via /api/admin/arweave-keygen');
+  try { return JSON.parse(raw) as Record<string, string>; }
+  catch { throw new Error('ARWEAVE_WALLET_KEY ist kein gültiges JSON'); }
+}
+
 export async function uploadToArweave(
   data: Buffer | string,
   mimeType: string,
   tags: UploadTag[] = [],
 ): Promise<string> {
-  const buf = Buffer.isBuffer(data) ? data : Buffer.from(data, 'utf-8');
+  const arweave = await getArweave();
+  const wallet  = getWallet();
+  const buf     = Buffer.isBuffer(data) ? data : Buffer.from(data, 'utf-8');
+  const tx      = await arweave.createTransaction({ data: buf }, wallet);
 
-  const ext = mimeType
-    .split('/')[1]
-    ?.replace('mpeg', 'mp3')
-    .replace('jpeg', 'jpg')
-    .replace('plain', 'txt') ?? 'bin';
+  tx.addTag('Content-Type', mimeType);
+  for (const tag of tags) tx.addTag(tag.name, tag.value);
 
-  const nameTag = tags.find(t => t.name === 'Collection' || t.name === 'Type');
-  const slug    = nameTag ? `-${nameTag.value.toLowerCase().replace(/\s+/g, '-')}` : '';
-  const path    = `nft${slug}-${Date.now()}.${ext}`;
+  await arweave.transactions.sign(tx, wallet);
+  const res = await arweave.transactions.post(tx);
 
-  const { url } = await put(path, buf, {
-    access:      'public',
-    contentType: mimeType,
-  });
-
-  return url;
+  if (res.status !== 200 && res.status !== 208) {
+    throw new Error(`Arweave Upload fehlgeschlagen: ${res.status} ${res.statusText}`);
+  }
+  return `ar://${tx.id}`;
 }
 
-/**
- * Holt eine Datei von einer URL und lädt sie auf Vercel Blob hoch.
- */
 export async function fetchAndUploadToArweave(
   sourceUrl: string,
   mimeType: string,
   tags: UploadTag[] = [],
 ): Promise<string> {
-  const res = await fetch(sourceUrl);
+  const res  = await fetch(sourceUrl);
   if (!res.ok) throw new Error(`Fetch fehlgeschlagen: ${sourceUrl} → ${res.status}`);
-  const buf          = Buffer.from(await res.arrayBuffer());
-  const detectedMime = res.headers.get('content-type')?.split(';')[0] ?? mimeType;
-  return uploadToArweave(buf, detectedMime, tags);
+  const buf  = Buffer.from(await res.arrayBuffer());
+  const mime = res.headers.get('content-type')?.split(';')[0] ?? mimeType;
+  return uploadToArweave(buf, mime, tags);
 }
 
-/**
- * Gibt die HTTP-URL für NFT-Media-URIs zurück.
- * ar://xxx → https://arweave.net/xxx (falls irgendwann migriert wird)
- * ipfs://xxx → https://ipfs.io/ipfs/xxx
- * https://... → unverändert
- */
 export function resolveMediaUrl(uri: string): string {
   if (uri.startsWith('ar://'))   return `https://arweave.net/${uri.slice(5)}`;
   if (uri.startsWith('ipfs://')) return `https://ipfs.io/ipfs/${uri.slice(7)}`;
