@@ -15,7 +15,7 @@ import { t, tFmt } from '../utils/i18n';
 
 // ─── Typen ───────────────────────────────────────────────────────────────────
 
-type ItemType = 'song' | 'video' | 'nft' | 'exclusive';
+type ItemType = 'song' | 'video' | 'nft' | 'exclusive'; // video/exclusive: nur noch Anzeige, Neu-Erstellung nur 'song'
 
 interface ShopItem {
   id: string;
@@ -1054,10 +1054,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                 onChange={e => setFType(e.target.value as ItemType)}
                 className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50"
               >
-                <option value="song">Song</option>
-                <option value="video">Video</option>
-                <option value="nft">NFT</option>
-                <option value="exclusive">{t('shop.exclusive', lang)}</option>
+                <option value="song">Song (NFT)</option>
               </select>
             </div>
             <div>
@@ -1211,10 +1208,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                       <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelType', lang)}</label>
                       <select value={editData.type} onChange={e => setEditData(d => d && { ...d, type: e.target.value as ItemType })}
                         className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50">
-                        <option value="song">Song</option>
-                        <option value="video">Video</option>
-                        <option value="nft">NFT</option>
-                        <option value="exclusive">{t('shop.exclusive', lang)}</option>
+                        <option value="song">Song (NFT)</option>
                       </select>
                     </div>
                     <div>
