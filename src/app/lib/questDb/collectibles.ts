@@ -361,6 +361,7 @@ export async function fuseShards(
     VALUES (${id}, ${walletAddress.toLowerCase()}, ${collectionId}, ${rarity})
   `;
 
+  let nftMintAddress: string | undefined;
   if (nftCollectionMint && cachedArtistName && cachedUserSolana && cachedArtistSolana) {
     const repBonus    = parseFloat((collection.maxRepBonusPercent    * RARITY_REP_MULTIPLIER[rarity]).toFixed(1));
     const creditBonus = parseFloat((collection.maxCreditBonusPercent * RARITY_CREDIT_MULTIPLIER[rarity]).toFixed(1));
