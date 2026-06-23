@@ -928,15 +928,14 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
     setUploading(true);
     setEditError('');
     try {
-      const ext = file.name.replace(/.*\./, '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const safeWallet = walletAddress.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 32);
-      const pathname = `shop/${field === 'image' ? 'images' : 'content'}/${safeWallet}/${Date.now()}.${ext}`;
-      const blob = await upload(pathname, file, {
-        access: 'public',
-        handleUploadUrl: '/api/shop/upload',
-        clientPayload: JSON.stringify({ fileType: field, wallet: walletAddress }),
-      });
-      setEditData(prev => prev ? { ...prev, [field === 'content' ? 'content' : 'image']: blob.url } : prev);
+      const form = new FormData();
+      form.append('file',     file);
+      form.append('wallet',   walletAddress);
+      form.append('fileType', field);
+      const res  = await fetch('/api/shop/upload-arweave', { method: 'POST', body: form });
+      const data = await res.json() as { url?: string; error?: string };
+      if (!res.ok || !data.url) throw new Error(data.error ?? 'Upload fehlgeschlagen');
+      setEditData(prev => prev ? { ...prev, [field === 'content' ? 'content' : 'image']: data.url! } : prev);
     } catch (err) {
       setEditError(err instanceof Error ? err.message : 'Upload fehlgeschlagen');
     } finally {
