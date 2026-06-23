@@ -263,7 +263,7 @@ export async function POST(req: NextRequest) {
         purchased_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `;
-    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_shop_purchases_unique ON shop_purchases(buyer_wallet, item_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_shop_purchases_unique ON shop_purchases(buyer_wallet, item_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_shop_purchases_buyer ON shop_purchases(buyer_wallet)`;
 
     // ── ATA Fraud Protection ──────────────────────────────────────────────────
@@ -468,6 +468,9 @@ export async function POST(req: NextRequest) {
     await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS is_nft_enabled      BOOLEAN NOT NULL DEFAULT FALSE`;
     await sql`ALTER TABLE shop_purchases ADD COLUMN IF NOT EXISTS nft_mint_address TEXT`;
     await sql`ALTER TABLE shop_purchases ADD COLUMN IF NOT EXISTS edition_number   INTEGER`;
+    // Unique-Constraint entfernen damit User mehrere Editionen kaufen können
+    await sql`DROP INDEX IF EXISTS idx_shop_purchases_unique`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_shop_purchases_buyer_item ON shop_purchases(buyer_wallet, item_id)`;
     await sql`ALTER TABLE collectible_collections ADD COLUMN IF NOT EXISTS nft_collection_mint TEXT`;
     await sql`ALTER TABLE user_collectibles ADD COLUMN IF NOT EXISTS nft_mint_address TEXT`;
 
