@@ -416,6 +416,7 @@ function ArtistShopView({
       setBuyCelebration({ title: item.title, type: item.type, price: item.priceCredits, paymentMethod });
       setItems(prev => prev.map(i => i.id === item.id ? { ...i, purchased: true } : i));
       onPurchased?.();
+      if (data.nftError) console.warn('NFT Mint Fehler:', data.nftError);
     } finally {
       setBuying(null);
     }
@@ -558,15 +559,9 @@ function ArtistShopView({
         </div>
       ) : (
         <div className="px-4 grid grid-cols-2 gap-2">
-          {items.filter(item => !item.purchased).length === 0 ? (
-            <div className="bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
-              {t('shop.allBought', lang)}
-            </div>
-          ) : (
-            items.filter(item => !item.purchased).map(item => (
-              <ItemCard key={item.id} item={item} onBuy={handleBuy} buying={buying} walletAddress={walletAddress} artistRewardToken={artist.rewardToken} userLevel={userLevel} />
-            ))
-          )}
+          {items.map(item => (
+            <ItemCard key={item.id} item={item} onBuy={handleBuy} buying={buying} walletAddress={walletAddress} artistRewardToken={artist.rewardToken} userLevel={userLevel} />
+          ))}
         </div>
       )}
     </div>

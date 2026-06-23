@@ -217,7 +217,18 @@ export async function POST(req: NextRequest) {
         `;
       }
     } catch (nftErr) {
-      console.error('Print Edition Mint fehlgeschlagen (Kauf war trotzdem erfolgreich):', nftErr);
+      const nftErrMsg = nftErr instanceof Error ? nftErr.message : String(nftErr);
+      console.error('Print Edition Mint fehlgeschlagen:', nftErrMsg);
+      return NextResponse.json({
+        success: true,
+        title: item.title,
+        contentUrl: item.content_url,
+        type: item.type,
+        paymentMethod,
+        nftMintAddress: null,
+        editionNumber:  null,
+        nftError: nftErrMsg,
+      });
     }
   }
 

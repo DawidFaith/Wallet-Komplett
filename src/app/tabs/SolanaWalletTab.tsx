@@ -861,8 +861,7 @@ export default function SolanaWalletTab() {
       </div>
 
       {/* ── NFTs ── */}
-      {(nftsLoading || nfts.length > 0) && (
-        <div className="space-y-2">
+      <div className="space-y-2">
           <div className="flex items-center justify-between px-1">
             <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">NFTs</p>
             {nftsLoading && <FaSpinner size={10} className="text-zinc-600 animate-spin" />}
@@ -872,6 +871,12 @@ export default function SolanaWalletTab() {
               {[1,2].map(i => (
                 <div key={i} className="h-16 rounded-2xl bg-zinc-900/60 border border-white/[0.05] animate-pulse" />
               ))}
+            </div>
+          ) : nfts.length === 0 ? (
+            <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5 text-center space-y-1">
+              <FaGem size={20} className="text-zinc-700 mx-auto mb-2" />
+              <p className="text-zinc-500 text-sm">Noch keine NFTs</p>
+              <p className="text-zinc-600 text-xs">Kaufe Items im Shop um deine Sammlung zu starten</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -923,8 +928,7 @@ export default function SolanaWalletTab() {
               })}
             </div>
           )}
-        </div>
-      )}
+      </div>
 
       {/* ── Private Key (aufklappbar) ── */}
       <div className="bg-white/[0.06] border border-white/[0.1] rounded-2xl overflow-hidden">
