@@ -785,6 +785,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState('');
 
   // Edit-State (inline Bearbeitung bestehender Items)
   type EditData = {
@@ -881,6 +882,8 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
     const price = parseInt(fPrice, 10);
     if (isNaN(price) || price < 0) { setFormError(t('shop.invalidPrice', lang)); return; }
     setFormError('');
+    setFormSuccess('');
+    setSaving(true);
     try {
       const res = await fetch('/api/shop', {
         method: 'POST',
@@ -902,6 +905,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
         setFormError(err.error ?? 'Fehler beim Erstellen');
         return;
       }
+      setFormSuccess(`"${fTitle}" wurde erfolgreich erstellt${fType === 'song' ? ' und als NFT geminted' : ''}.`);
       resetForm();
       loadMyItems();
     } finally {
@@ -1026,6 +1030,14 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
           </button>
         )}
       </div>
+
+      {/* Erfolgsmeldung */}
+      {formSuccess && (
+        <div className="flex items-center justify-between gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3">
+          <p className="text-emerald-400 text-sm">{formSuccess}</p>
+          <button onClick={() => setFormSuccess('')} className="text-emerald-500/60 hover:text-emerald-300 shrink-0"><FaTimes size={12} /></button>
+        </div>
+      )}
 
       {/* Formular */}
       {showForm && (
