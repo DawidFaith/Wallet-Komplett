@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     SELECT
       sp.id           AS purchase_id,
       sp.item_id,
-      sp.print_mint,
+      sp.nft_mint_address AS print_mint,
       sp.edition_number,
       sp.purchased_at,
       si.title,

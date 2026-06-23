@@ -857,7 +857,7 @@ export default function SolanaWalletTab() {
         )}
       </div>
 
-      {/* ── NFTs ── */}
+      {/* ── NFTs (nur wenn vorhanden) ── */}
       {nfts.length > 0 && (
         <div className="space-y-2">
           <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest px-1">NFTs</p>

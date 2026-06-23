@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
       si.nft_max_supply,
       si.master_edition_mint,
       sp.purchased_at,
-      sp.print_mint,
+      sp.nft_mint_address AS print_mint,
       sp.edition_number,
       COALESCE(
         p.display_name,
