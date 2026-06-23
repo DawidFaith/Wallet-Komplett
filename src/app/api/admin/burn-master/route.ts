@@ -96,13 +96,12 @@ export async function POST(req: NextRequest) {
           const buyerSigner = createSignerFromKeypair(umi, buyerUmiKp);
 
           await burnV1(umi, {
-            mint:                           umiPubkey(print.nft_mint_address as string),
-            authority:                      buyerSigner,
-            tokenOwner:                     buyerSigner.publicKey,
-            masterEditionMint:              umiPubkey(masterMint),
-            masterEditionToken:             umiPubkey(treasuryAta.toBase58()),
-            masterEditionTokenAccountOwner: umi.identity,
-            tokenStandard:                  TokenStandard.NonFungible,
+            mint:               umiPubkey(print.nft_mint_address as string),
+            authority:          buyerSigner,
+            tokenOwner:         buyerSigner.publicKey,
+            masterEditionMint:  umiPubkey(masterMint),
+            masterEditionToken: umiPubkey(treasuryAta.toBase58()),
+            tokenStandard:      TokenStandard.NonFungible,
           }).sendAndConfirm(umi);
 
           burned.push(print.nft_mint_address as string);
