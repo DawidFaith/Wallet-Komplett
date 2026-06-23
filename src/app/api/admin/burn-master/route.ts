@@ -54,51 +54,65 @@ export async function POST(req: NextRequest) {
     const burned: string[] = [];
     const failed: string[] = [];
 
+    // ── Setup Treasury UMI (einmalig) ─────────────────────────────────────────
+    const treasury    = getTreasuryKeypair();
+    const umi         = createUmi(RPC_URL).use(mplTokenMetadata()).use(keypairIdentity(fromWeb3JsKeypair(treasury)));
+    const conn        = new Connection(RPC_URL, 'confirmed');
+    const masterMintPk = new PublicKey(masterMint);
+    const treasuryPk   = new PublicKey(treasury.publicKey.toBytes());
+    const treasuryAta  = await getAssociatedTokenAddress(masterMintPk, treasuryPk, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
+
+    // ── 0. Master Token in Treasury ATA sicherstellen (vor Print-Burns nötig) ─
+    let hasMasterToken = false;
+    try {
+      const ataInfo = await getAccount(conn, treasuryAta);
+      hasMasterToken = Number(ataInfo.amount) > 0;
+    } catch { hasMasterToken = false; }
+
+    if (!hasMasterToken) {
+      await mintV1(umi, {
+        mint:          umiPubkey(masterMint),
+        tokenOwner:    umi.identity.publicKey,
+        amount:        1,
+        tokenStandard: TokenStandard.NonFungible,
+      }).sendAndConfirm(umi);
+    }
+
     // ── 1. Alle Print Editions burnen ────────────────────────────────────────
     if (itemId) {
       const prints = await sql`
-        SELECT sp.id, sp.nft_mint_address, sp.buyer_wallet,
-               sa.solana_private_key,
-               si.master_edition_mint
+        SELECT sp.nft_mint_address, sp.buyer_wallet, sa.solana_private_key
         FROM shop_purchases sp
         JOIN solana_accounts sa ON sa.wallet_address = sp.buyer_wallet
-        JOIN shop_items si ON si.id = sp.item_id
         WHERE sp.item_id = ${itemId}
           AND sp.nft_mint_address IS NOT NULL
       `;
 
       for (const print of prints) {
         try {
-          const secretB58 = decryptKey(print.solana_private_key as string);
-          const buyerKp   = Keypair.fromSecretKey(bs58.decode(secretB58));
-
-          // Treasury zahlt Gebühren, Käufer ist Authority (hält das NFT)
-          const treasury = getTreasuryKeypair();
-          const umi = createUmi(RPC_URL)
-            .use(mplTokenMetadata())
-            .use(keypairIdentity(fromWeb3JsKeypair(treasury)));
-
-          const buyerUmiKp  = umi.eddsa.createKeypairFromSecretKey(buyerKp.secretKey);
+          const secretB58  = decryptKey(print.solana_private_key as string);
+          const buyerKp    = Keypair.fromSecretKey(bs58.decode(secretB58));
+          const buyerUmiKp = umi.eddsa.createKeypairFromSecretKey(buyerKp.secretKey);
           const buyerSigner = createSignerFromKeypair(umi, buyerUmiKp);
 
           await burnV1(umi, {
-            mint:                umiPubkey(print.nft_mint_address as string),
-            authority:           buyerSigner,
-            tokenOwner:          buyerSigner.publicKey,
-            masterEditionMint:   umiPubkey(print.master_edition_mint as string),
-            tokenStandard:       TokenStandard.NonFungible,
+            mint:                           umiPubkey(print.nft_mint_address as string),
+            authority:                      buyerSigner,
+            tokenOwner:                     buyerSigner.publicKey,
+            masterEditionMint:              umiPubkey(masterMint),
+            masterEditionToken:             umiPubkey(treasuryAta.toBase58()),
+            masterEditionTokenAccountOwner: umi.identity,
+            tokenStandard:                  TokenStandard.NonFungible,
           }).sendAndConfirm(umi);
 
           burned.push(print.nft_mint_address as string);
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
           console.error(`Print burn failed [${print.nft_mint_address}]:`, msg);
-          // Bereits geburnt oder Token-Account existiert nicht mehr → als erledigt zählen
           const alreadyGone = msg.includes('AccountNotFound')
             || msg.includes('invalid account data')
             || msg.includes('could not find account')
-            || msg.includes('0x25')
-            || msg.includes('0xbc4')
+            || msg.includes('0x25') || msg.includes('0xbc4')
             || msg.includes('TokenAccountNotFound');
           if (alreadyGone) {
             burned.push(print.nft_mint_address as string);
@@ -118,31 +132,6 @@ export async function POST(req: NextRequest) {
     }
 
     // ── 2. Master Edition burnen ──────────────────────────────────────────────
-    const treasury = getTreasuryKeypair();
-    const umi = createUmi(RPC_URL)
-      .use(mplTokenMetadata())
-      .use(keypairIdentity(fromWeb3JsKeypair(treasury)));
-
-    // Sicherstellen dass das Treasury das Master Token hält (ältere Items hatten kein mintV1)
-    const conn = new Connection(RPC_URL, 'confirmed');
-    const masterMintPk = new PublicKey(masterMint);
-    const treasuryPk   = new PublicKey(treasury.publicKey.toBytes());
-    const treasuryAta  = await getAssociatedTokenAddress(masterMintPk, treasuryPk, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
-    let needsMint = false;
-    try {
-      const ataInfo = await getAccount(conn, treasuryAta);
-      if (Number(ataInfo.amount) === 0) needsMint = true;
-    } catch { needsMint = true; }
-
-    if (needsMint) {
-      await mintV1(umi, {
-        mint:          umiPubkey(masterMint),
-        tokenOwner:    umi.identity.publicKey,
-        amount:        1,
-        tokenStandard: TokenStandard.NonFungible,
-      }).sendAndConfirm(umi);
-    }
-
     await burnV1(umi, {
       mint:          umiPubkey(masterMint),
       authority:     umi.identity,
