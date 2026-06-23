@@ -11,6 +11,8 @@ import {
   createV1,
   printV1,
   TokenStandard,
+  verifyCreatorV1,
+  findMetadataPda,
 } from '@metaplex-foundation/mpl-token-metadata';
 import {
   keypairIdentity,
@@ -19,8 +21,10 @@ import {
   publicKey as umiPubkey,
   some,
   none,
+  createSignerFromKeypair,
 } from '@metaplex-foundation/umi';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
+import { Keypair } from '@solana/web3.js';
 import { getTreasuryKeypair } from './solanaOperator';
 import { fetchAndUploadToArweave, uploadToArweave } from './arweaveUpload';
 
@@ -41,6 +45,7 @@ export interface SongMasterEditionResult {
 export async function mintSongMasterEdition(params: {
   artistWallet: string;
   artistSolanaAddress: string;
+  artistPrivateKey: string;
   artistName: string;
   title: string;
   description: string;
@@ -52,6 +57,7 @@ export async function mintSongMasterEdition(params: {
   const {
     artistWallet,
     artistSolanaAddress,
+    artistPrivateKey,
     artistName,
     title,
     description,
@@ -123,6 +129,18 @@ export async function mintSongMasterEdition(params: {
     printSupply:   some({ __kind: 'Limited', fields: [BigInt(maxSupply)] }),
     collection:    none(),
     uses:          none(),
+  }).sendAndConfirm(umi);
+
+  // Creator-Verifikation mit dem Artist-Keypair aus der DB (kein Phantom nötig)
+  const artistSecretBytes = Buffer.from(artistPrivateKey, 'base64');
+  const artistWeb3Kp     = Keypair.fromSecretKey(artistSecretBytes);
+  const artistUmiKp      = umi.eddsa.createKeypairFromSecretKey(artistWeb3Kp.secretKey);
+  const artistSigner     = createSignerFromKeypair(umi, artistUmiKp);
+
+  const [metadataPda] = findMetadataPda(umi, { mint: mintSigner.publicKey });
+  await verifyCreatorV1(umi, {
+    metadata: metadataPda,
+    authority: artistSigner,
   }).sendAndConfirm(umi);
 
   return {

@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
   // Sicherstellen, dass der Nutzer ein Artist ist + Pflichtfelder für Songs vorab prüfen
   const [profileRows, artistRows, artistNameRows] = await Promise.all([
     sql`SELECT is_artist FROM user_profiles WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`,
-    sql`SELECT solana_address FROM solana_accounts WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`,
+    sql`SELECT solana_address, solana_private_key FROM solana_accounts WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`,
     sql`SELECT display_name FROM user_profiles WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`,
   ]);
 
@@ -137,6 +137,7 @@ export async function POST(req: NextRequest) {
         const { masterMint, metadataUri } = await mintSongMasterEdition({
           artistWallet:        wallet.toLowerCase(),
           artistSolanaAddress: artistRows[0].solana_address as string,
+          artistPrivateKey:    artistRows[0].solana_private_key as string,
           artistName,
           title:               title.trim(),
           description:         description?.trim() ?? '',
