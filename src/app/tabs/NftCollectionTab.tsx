@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useWallet } from '../components/WalletContext';
+import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
 import { FaGem, FaExternalLinkAlt } from 'react-icons/fa';
 
@@ -19,7 +19,8 @@ interface OwnedNft {
 }
 
 export default function NftCollectionTab() {
-  const { walletAddress } = useWallet();
+  const { user } = useUser();
+  const walletAddress = user?.id ?? null;
   const [nfts, setNfts]     = useState<OwnedNft[]>([]);
   const [loading, setLoading] = useState(true);
 
