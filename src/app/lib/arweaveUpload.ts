@@ -37,7 +37,8 @@ export async function uploadToArweave(
   await arweave.transactions.sign(tx, wallet);
   const res = await arweave.transactions.post(tx);
 
-  if (res.status !== 200 && res.status !== 208) {
+  // 200 = success, 202 = accepted/pending, 208 = already processed
+  if (res.status !== 200 && res.status !== 202 && res.status !== 208) {
     throw new Error(`Arweave Upload fehlgeschlagen: ${res.status} ${res.statusText}`);
   }
   return `ar://${tx.id}`;

@@ -982,6 +982,39 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
 
   const cancelEdit = () => { setEditData(null); setEditError(''); };
 
+  const [verifying, setVerifying] = useState<string | null>(null);
+  const handleVerifyCreator = async (item: ShopItem) => {
+    if (!item.masterEditionMint) return;
+    setVerifying(item.id);
+    setFormError('');
+    try {
+      const phantom = (window as unknown as { solana?: { connect: () => Promise<unknown>; publicKey: { toString: () => string } } }).solana;
+      if (!phantom) throw new Error('Phantom Wallet nicht gefunden. Bitte installiere Phantom.');
+      await phantom.connect();
+
+      const { createUmi }         = await import('@metaplex-foundation/umi-bundle-defaults');
+      const { mplTokenMetadata, verifyCreatorV1, findMetadataPda } = await import('@metaplex-foundation/mpl-token-metadata');
+      const { walletAdapterIdentity } = await import('@metaplex-foundation/umi-signer-wallet-adapters');
+      const { publicKey }         = await import('@metaplex-foundation/umi');
+
+      const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
+      const umi = createUmi(RPC_URL)
+        .use(mplTokenMetadata())
+        .use(walletAdapterIdentity(phantom as Parameters<typeof walletAdapterIdentity>[0]));
+
+      const mint     = publicKey(item.masterEditionMint);
+      const [metadata] = findMetadataPda(umi, { mint });
+
+      await verifyCreatorV1(umi, { metadata }).sendAndConfirm(umi);
+
+      setFormSuccess(`Creator für "${item.title}" verifiziert.`);
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : 'Verifikation fehlgeschlagen');
+    } finally {
+      setVerifying(null);
+    }
+  };
+
   const handleEditUpload = async (file: File, field: 'content' | 'image') => {
     const setUploading = field === 'content' ? setUploadingEditContent : setUploadingEditImage;
     setUploading(true);
@@ -1467,6 +1500,19 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
+                    {item.isNftEnabled && item.masterEditionMint && (
+                      <button
+                        onClick={() => handleVerifyCreator(item)}
+                        disabled={verifying === item.id}
+                        title="Als Creator verifizieren (Phantom öffnet sich)"
+                        className="text-zinc-500 hover:text-violet-400 disabled:opacity-40 transition-colors p-1"
+                      >
+                        {verifying === item.id
+                          ? <span className="w-3 h-3 border border-violet-400/30 border-t-violet-400 rounded-full animate-spin block" />
+                          : <FaCheck size={12} />
+                        }
+                      </button>
+                    )}
                     <button
                       onClick={() => startEdit(item)}
                       className="text-zinc-500 hover:text-amber-400 transition-colors p-1"
