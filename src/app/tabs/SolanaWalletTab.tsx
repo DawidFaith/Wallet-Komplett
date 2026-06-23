@@ -36,13 +36,13 @@ type Panel = 'key' | null;
 type ActionModal = 'send' | 'swap' | 'receive' | 'buy' | null;
 
 interface OwnedNft {
-  purchaseId: string;
-  printMint: string | null;
-  editionNumber: number | null;
-  title: string;
-  imageUrl: string;
-  nftMaxSupply: number | null;
-  artistName: string | null;
+  mint:       string;
+  name:       string;
+  image:      string | null;
+  collection: string | null;
+  isDfaith:   boolean;
+  interface:  string;
+  attributes: { trait_type: string; value: string }[];
 }
 
 // ─── Token Row ────────────────────────────────────────────────────────────────
@@ -401,6 +401,7 @@ export default function SolanaWalletTab() {
   const [showSendTokenDrop, setShowSendTokenDrop] = useState(false);
 
   const [nfts, setNfts]                   = useState<OwnedNft[]>([]);
+  const [nftsLoading, setNftsLoading]     = useState(false);
   const [nftSendTarget, setNftSendTarget] = useState<OwnedNft | null>(null);
   const [nftRecipient, setNftRecipient]   = useState('');
   const [nftSending, setNftSending]       = useState(false);
@@ -499,12 +500,14 @@ export default function SolanaWalletTab() {
   }, [solanaAddr, loadBalance]);
 
   useEffect(() => {
-    if (!userId) return;
-    fetch(`/api/nfts?wallet=${userId}`)
+    if (!solanaAddr) return;
+    setNftsLoading(true);
+    fetch(`/api/solana/nfts?solanaAddress=${solanaAddr}`)
       .then(r => r.ok ? r.json() : [])
-      .then((data: OwnedNft[]) => setNfts(data))
-      .catch(() => {});
-  }, [userId]);
+      .then((data: OwnedNft[]) => setNfts(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setNftsLoading(false));
+  }, [solanaAddr]);
 
   // ── Senden ────────────────────────────────────────────────────────────────
   const handleSend = async () => {
@@ -550,7 +553,7 @@ export default function SolanaWalletTab() {
 
   // ── NFT senden ───────────────────────────────────────────────────────────
   const handleNftSend = async () => {
-    if (!nftSendTarget?.printMint) return;
+    if (!nftSendTarget) return;
     setNftSendErr(''); setNftSendOk('');
     if (!nftRecipient.trim()) { setNftSendErr('Empfänger-Adresse fehlt'); return; }
     setNftSending(true);
@@ -562,13 +565,13 @@ export default function SolanaWalletTab() {
           walletAddress: userId,
           toAddress: nftRecipient.trim(),
           amount: 1,
-          mintAddress: nftSendTarget.printMint,
+          mintAddress: nftSendTarget.mint,
         }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error ?? 'Transfer fehlgeschlagen');
       setNftSendOk(`✓ NFT gesendet: ${d.signature}`);
-      setNfts(prev => prev.filter(n => n.purchaseId !== nftSendTarget.purchaseId));
+      setNfts(prev => prev.filter(n => n.mint !== nftSendTarget.mint));
       setNftRecipient('');
       setTimeout(() => { setNftSendTarget(null); setNftSendOk(''); }, 3000);
     } catch (e) {
@@ -857,42 +860,69 @@ export default function SolanaWalletTab() {
         )}
       </div>
 
-      {/* ── NFTs (nur wenn vorhanden) ── */}
-      {nfts.length > 0 && (
+      {/* ── NFTs ── */}
+      {(nftsLoading || nfts.length > 0) && (
         <div className="space-y-2">
-          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest px-1">NFTs</p>
-          <div className="space-y-2">
-            {nfts.map(nft => (
-              <div key={nft.purchaseId} className="flex items-center gap-3 px-4 py-3 rounded-2xl border bg-violet-950/20 border-violet-800/25 hover:bg-violet-950/30 transition-colors">
-                {nft.imageUrl ? (
-                  <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
-                    <Image src={nft.imageUrl} alt={nft.title} width={40} height={40}
-                      style={{ width: '40px', height: '40px', objectFit: 'cover', display: 'block' }} />
-                  </div>
-                ) : (
-                  <div className="w-10 h-10 rounded-xl bg-violet-900/40 flex items-center justify-center shrink-0">
-                    <FaGem size={16} className="text-violet-400" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-semibold truncate">{nft.title}</p>
-                  <p className="text-violet-300/70 text-xs">
-                    {nft.editionNumber != null && nft.nftMaxSupply != null
-                      ? `Edition #${nft.editionNumber} / ${nft.nftMaxSupply}`
-                      : 'NFT'}
-                    {nft.artistName ? ` · ${nft.artistName}` : ''}
-                  </p>
-                </div>
-                {nft.printMint && (
-                  <button
-                    onClick={() => { setNftSendTarget(nft); setNftSendErr(''); setNftSendOk(''); setNftRecipient(''); }}
-                    className="bg-violet-900/40 hover:bg-violet-800/50 border border-violet-700/30 text-violet-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 shrink-0 transition-colors">
-                    <FaPaperPlane size={9} /> Send
-                  </button>
-                )}
-              </div>
-            ))}
+          <div className="flex items-center justify-between px-1">
+            <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">NFTs</p>
+            {nftsLoading && <FaSpinner size={10} className="text-zinc-600 animate-spin" />}
           </div>
+          {nftsLoading ? (
+            <div className="space-y-2">
+              {[1,2].map(i => (
+                <div key={i} className="h-16 rounded-2xl bg-zinc-900/60 border border-white/[0.05] animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {nfts.map(nft => {
+                const editionAttr = nft.attributes.find(a => a.trait_type === 'Max Editions')?.value;
+                const artistAttr  = nft.attributes.find(a => a.trait_type === 'Artist')?.value;
+                return (
+                  <div key={nft.mint} className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-colors ${
+                    nft.isDfaith
+                      ? 'bg-violet-950/20 border-violet-800/25 hover:bg-violet-950/30'
+                      : 'bg-white/[0.05] border-white/[0.08] hover:bg-white/[0.08]'
+                  }`}>
+                    {nft.image ? (
+                      <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
+                        <Image src={nft.image} alt={nft.name} width={40} height={40}
+                          style={{ width: '40px', height: '40px', objectFit: 'cover', display: 'block' }} unoptimized />
+                      </div>
+                    ) : (
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${nft.isDfaith ? 'bg-violet-900/40' : 'bg-white/8'}`}>
+                        <FaGem size={16} className={nft.isDfaith ? 'text-violet-400' : 'text-zinc-500'} />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-white text-sm font-semibold truncate">{nft.name}</p>
+                        {nft.isDfaith && (
+                          <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-900/60 border border-violet-500/30 text-violet-300">D.FAITH</span>
+                        )}
+                      </div>
+                      <p className="text-zinc-500 text-xs truncate">
+                        {artistAttr ? `${artistAttr}` : ''}
+                        {editionAttr ? ` · ${editionAttr} Editionen` : ''}
+                        {!artistAttr && !editionAttr ? nft.interface : ''}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <button
+                        onClick={() => { setNftSendTarget(nft); setNftSendErr(''); setNftSendOk(''); setNftRecipient(''); }}
+                        className="bg-[#231e12] hover:bg-[#2d2615] text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                        <FaPaperPlane size={9} /> Send
+                      </button>
+                      <a href={`https://solscan.io/token/${nft.mint}`} target="_blank" rel="noopener noreferrer"
+                        className="bg-[#231e12] hover:bg-[#2d2615] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                        <FaExternalLinkAlt size={8} /> Info
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -952,10 +982,8 @@ export default function SolanaWalletTab() {
                   <FaGem size={14} className="text-violet-400" />
                 </div>
                 <div>
-                  <p className="text-white font-bold text-sm">{nftSendTarget.title}</p>
-                  <p className="text-violet-300/60 text-xs">
-                    {nftSendTarget.editionNumber != null ? `Edition #${nftSendTarget.editionNumber}` : 'NFT'} senden
-                  </p>
+                  <p className="text-white font-bold text-sm">{nftSendTarget.name}</p>
+                  <p className="text-violet-300/60 text-xs">NFT senden</p>
                 </div>
               </div>
               <button onClick={() => setNftSendTarget(null)} className="text-zinc-500 hover:text-white p-1.5 rounded-lg hover:bg-white/8">
