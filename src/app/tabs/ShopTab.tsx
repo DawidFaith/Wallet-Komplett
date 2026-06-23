@@ -587,6 +587,9 @@ interface InventoryItem {
   artistName: string | null;
   artistPicture: string | null;
   isActive: boolean;
+  printMint: string | null;
+  editionNumber: number | null;
+  nftMaxSupply: number | null;
 }
 
 function InventoryItemCard({ item }: { item: InventoryItem }) {
@@ -628,15 +631,22 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
         <span className={`absolute top-3 left-3 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border backdrop-blur-md ${TYPE_COLORS[item.type]}`}>
           <TypeIcon type={item.type} /> {TYPE_LABELS[item.type]}
         </span>
-        {item.isActive ? (
-          <span className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-900/70 border border-emerald-700/40 text-emerald-400 backdrop-blur-md">
-            <FaCheck size={8} /> {t('shop.boughtBadge', lang)}
-          </span>
-        ) : (
-          <span className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-800/80 border border-zinc-600/40 text-zinc-400 backdrop-blur-md">
-            <FaCheck size={8} /> {t('shop.boughtInactive', lang)}
-          </span>
-        )}
+        <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+          {item.isActive ? (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-900/70 border border-emerald-700/40 text-emerald-400 backdrop-blur-md">
+              <FaCheck size={8} /> {t('shop.boughtBadge', lang)}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-800/80 border border-zinc-600/40 text-zinc-400 backdrop-blur-md">
+              <FaCheck size={8} /> {t('shop.boughtInactive', lang)}
+            </span>
+          )}
+          {item.editionNumber != null && item.nftMaxSupply != null && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-900/70 border border-violet-500/40 text-violet-300 backdrop-blur-md">
+              <FaGem size={7} /> #{item.editionNumber} / {item.nftMaxSupply}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="p-4 space-y-3">
@@ -696,6 +706,14 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
             <FaExternalLinkAlt size={10} /> {t('shop.openContent', lang)}
           </a>
         )}
+
+        {/* NFT on-chain Link */}
+        {item.printMint && (
+          <a href={`https://solscan.io/token/${item.printMint}`} target="_blank" rel="noopener noreferrer"
+            className="flex items-center justify-center gap-1.5 w-full text-violet-400/70 hover:text-violet-300 text-[11px] transition-colors py-1">
+            <FaGem size={9} /> On-Chain ansehen (Solscan)
+          </a>
+        )}
       </div>
     </div>
   );
@@ -729,6 +747,9 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
           artistName: i.artist_name ? String(i.artist_name) : null,
           artistPicture: i.artist_picture ? String(i.artist_picture) : null,
           isActive: Boolean(i.is_active),
+          printMint: i.print_mint ? String(i.print_mint) : null,
+          editionNumber: i.edition_number != null ? Number(i.edition_number) : null,
+          nftMaxSupply: i.nft_max_supply != null ? Number(i.nft_max_supply) : null,
         }));
         setItems(mapped);
         // Alle Artists standardmäßig ausklappen

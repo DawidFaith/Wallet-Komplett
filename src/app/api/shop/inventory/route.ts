@@ -30,7 +30,11 @@ export async function GET(req: NextRequest) {
       si.image_url,
       si.is_active,
       si.created_at,
+      si.nft_max_supply,
+      si.master_edition_mint,
       sp.purchased_at,
+      sp.print_mint,
+      sp.edition_number,
       COALESCE(
         p.display_name,
         CASE WHEN p.display_platform = 'youtube'   THEN yb.channel_name      ELSE NULL END,

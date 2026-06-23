@@ -10,7 +10,6 @@ import SolanaWalletTab from "../tabs/SolanaWalletTab";
 import ReputationTab from "../tabs/ReputationTab";
 import ShopTab from "../tabs/ShopTab";
 import CollectiblesTab from "../tabs/CollectiblesTab";
-import NftCollectionTab from "../tabs/NftCollectionTab";
 import type { SupportedLanguage } from "../utils/deepLTranslation";
 import type { ArtistInfo } from "../tabs/quest-board/index";
 import { useLang, useSetLang } from "../components/LangContext";
@@ -108,7 +107,6 @@ function HomeContent() {
         {activeTab === "reputation" && <ReputationTab artistWallet={artistParam} />}
         {activeTab === "shop" && <ShopTab initialArtistWallet={shopArtistWallet ?? artistParam} />}
         {activeTab === "collectibles" && <CollectiblesTab />}
-        {activeTab === "nfts" && <NftCollectionTab />}
       </section>
     </main>
   );

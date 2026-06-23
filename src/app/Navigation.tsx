@@ -97,7 +97,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
             <FaGlobe
               size={19}
               className={`transition-colors ${
-                ["reputation", "shop", "quest-board", "collectibles", "nfts"].includes(activeTab)
+                ["reputation", "shop", "quest-board", "collectibles"].includes(activeTab)
                   ? "text-amber-400"
                   : "text-zinc-400"
               } hover:text-amber-400`}
@@ -146,15 +146,6 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
               >
                 <GiCrystalShine size={15} className={activeTab === "collectibles" ? "text-amber-400" : "text-zinc-400"} />
                 <span className="font-medium text-sm">Collectibles</span>
-              </button>
-              <button
-                onClick={() => { navigateToTab("nfts"); setOpen(false); }}
-                className={`flex items-center gap-3 px-4 py-3 hover:bg-[#2d2515] w-full transition-colors duration-200 ${
-                  activeTab === "nfts" ? "text-violet-400" : "text-zinc-300"
-                }`}
-              >
-                <FaGem size={14} className={activeTab === "nfts" ? "text-violet-400" : "text-zinc-400"} />
-                <span className="font-medium text-sm">Meine NFTs</span>
               </button>
             </div>
           )}

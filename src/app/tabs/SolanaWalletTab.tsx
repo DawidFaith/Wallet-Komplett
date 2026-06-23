@@ -7,7 +7,7 @@ import {
   FaCopy, FaCheckCircle, FaSync, FaPaperPlane, FaExternalLinkAlt,
   FaKey, FaEye, FaEyeSlash, FaSpinner, FaExchangeAlt,
   FaChevronDown, FaChevronUp, FaDownload, FaCreditCard,
-  FaTimes, FaLock, FaUnlock, FaChartLine, FaInfoCircle,
+  FaTimes, FaLock, FaUnlock, FaChartLine, FaInfoCircle, FaGem,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
 import SwapWidget from './wallet/SwapWidget';
@@ -34,6 +34,16 @@ type SendMode =
 
 type Panel = 'key' | null;
 type ActionModal = 'send' | 'swap' | 'receive' | 'buy' | null;
+
+interface OwnedNft {
+  purchaseId: string;
+  printMint: string | null;
+  editionNumber: number | null;
+  title: string;
+  imageUrl: string;
+  nftMaxSupply: number | null;
+  artistName: string | null;
+}
 
 // ─── Token Row ────────────────────────────────────────────────────────────────
 function TokenRow({
@@ -390,6 +400,13 @@ export default function SolanaWalletTab() {
   const [sendOk, setSendOk]       = useState('');
   const [showSendTokenDrop, setShowSendTokenDrop] = useState(false);
 
+  const [nfts, setNfts]                   = useState<OwnedNft[]>([]);
+  const [nftSendTarget, setNftSendTarget] = useState<OwnedNft | null>(null);
+  const [nftRecipient, setNftRecipient]   = useState('');
+  const [nftSending, setNftSending]       = useState(false);
+  const [nftSendErr, setNftSendErr]       = useState('');
+  const [nftSendOk, setNftSendOk]         = useState('');
+
   const [exportKey, setExportKey]         = useState('');
   const [showExport, setShowExport]       = useState(false);
   const [showKey, setShowKey]             = useState(false);
@@ -481,6 +498,14 @@ export default function SolanaWalletTab() {
     if (solanaAddr) loadBalance(solanaAddr);
   }, [solanaAddr, loadBalance]);
 
+  useEffect(() => {
+    if (!userId) return;
+    fetch(`/api/nfts?wallet=${userId}`)
+      .then(r => r.ok ? r.json() : [])
+      .then((data: OwnedNft[]) => setNfts(data))
+      .catch(() => {});
+  }, [userId]);
+
   // ── Senden ────────────────────────────────────────────────────────────────
   const handleSend = async () => {
     setSendErr(''); setSendOk('');
@@ -520,6 +545,36 @@ export default function SolanaWalletTab() {
       setSendErr('Fehler: ' + (e instanceof Error ? e.message : 'Unbekannt'));
     } finally {
       setSending(false);
+    }
+  };
+
+  // ── NFT senden ───────────────────────────────────────────────────────────
+  const handleNftSend = async () => {
+    if (!nftSendTarget?.printMint) return;
+    setNftSendErr(''); setNftSendOk('');
+    if (!nftRecipient.trim()) { setNftSendErr('Empfänger-Adresse fehlt'); return; }
+    setNftSending(true);
+    try {
+      const res = await fetch('/api/solana/send-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletAddress: userId,
+          toAddress: nftRecipient.trim(),
+          amount: 1,
+          mintAddress: nftSendTarget.printMint,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? 'Transfer fehlgeschlagen');
+      setNftSendOk(`✓ NFT gesendet: ${d.signature}`);
+      setNfts(prev => prev.filter(n => n.purchaseId !== nftSendTarget.purchaseId));
+      setNftRecipient('');
+      setTimeout(() => { setNftSendTarget(null); setNftSendOk(''); }, 3000);
+    } catch (e) {
+      setNftSendErr(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setNftSending(false);
     }
   };
 
@@ -802,6 +857,45 @@ export default function SolanaWalletTab() {
         )}
       </div>
 
+      {/* ── NFTs ── */}
+      {nfts.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest px-1">NFTs</p>
+          <div className="space-y-2">
+            {nfts.map(nft => (
+              <div key={nft.purchaseId} className="flex items-center gap-3 px-4 py-3 rounded-2xl border bg-violet-950/20 border-violet-800/25 hover:bg-violet-950/30 transition-colors">
+                {nft.imageUrl ? (
+                  <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
+                    <Image src={nft.imageUrl} alt={nft.title} width={40} height={40}
+                      style={{ width: '40px', height: '40px', objectFit: 'cover', display: 'block' }} />
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 rounded-xl bg-violet-900/40 flex items-center justify-center shrink-0">
+                    <FaGem size={16} className="text-violet-400" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-semibold truncate">{nft.title}</p>
+                  <p className="text-violet-300/70 text-xs">
+                    {nft.editionNumber != null && nft.nftMaxSupply != null
+                      ? `Edition #${nft.editionNumber} / ${nft.nftMaxSupply}`
+                      : 'NFT'}
+                    {nft.artistName ? ` · ${nft.artistName}` : ''}
+                  </p>
+                </div>
+                {nft.printMint && (
+                  <button
+                    onClick={() => { setNftSendTarget(nft); setNftSendErr(''); setNftSendOk(''); setNftRecipient(''); }}
+                    className="bg-violet-900/40 hover:bg-violet-800/50 border border-violet-700/30 text-violet-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 shrink-0 transition-colors">
+                    <FaPaperPlane size={9} /> Send
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Private Key (aufklappbar) ── */}
       <div className="bg-white/[0.06] border border-white/[0.1] rounded-2xl overflow-hidden">
         <button
@@ -847,6 +941,52 @@ export default function SolanaWalletTab() {
       </div>
 
       </>
+
+      {/* ── NFT Send Modal ── */}
+      {nftSendTarget && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="w-full sm:max-w-md bg-[#13100a] border border-violet-800/30 rounded-t-3xl sm:rounded-3xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08]">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-violet-900/40 flex items-center justify-center">
+                  <FaGem size={14} className="text-violet-400" />
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm">{nftSendTarget.title}</p>
+                  <p className="text-violet-300/60 text-xs">
+                    {nftSendTarget.editionNumber != null ? `Edition #${nftSendTarget.editionNumber}` : 'NFT'} senden
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setNftSendTarget(null)} className="text-zinc-500 hover:text-white p-1.5 rounded-lg hover:bg-white/8">
+                <FaTimes size={14} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-zinc-400 text-xs block mb-1.5">Empfänger (Solana-Adresse)</label>
+                <input
+                  value={nftRecipient}
+                  onChange={e => setNftRecipient(e.target.value)}
+                  placeholder="Bs58-Adresse…"
+                  className="w-full bg-[#231e12] border border-white/[0.1] text-white rounded-xl px-3 py-2.5 text-sm font-mono outline-none focus:border-violet-500/50"
+                />
+              </div>
+              {nftSendErr && <p className="text-red-400 text-xs">{nftSendErr}</p>}
+              {nftSendOk  && <p className="text-emerald-400 text-xs break-all">{nftSendOk}</p>}
+              <button
+                onClick={handleNftSend}
+                disabled={nftSending || !nftRecipient.trim()}
+                className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
+                {nftSending
+                  ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Wird gesendet…</>
+                  : <><FaPaperPlane size={12} /> NFT senden</>}
+              </button>
+              <p className="text-zinc-600 text-xs text-center">On-Chain Transfer · nicht umkehrbar</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Token Detail Modal ── */}
       {tokenDetailModal && (
