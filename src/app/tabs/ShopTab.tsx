@@ -1037,14 +1037,38 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
 
           {/* Beschreibung */}
           <div>
-            <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelDesc', lang)}</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-zinc-400 text-[10px] uppercase tracking-widest">{t('shop.labelDesc', lang)}</label>
+              <button
+                type="button"
+                onClick={() => setFDesc(
+                  lang === 'en'
+                    ? `Exclusive track available as a limited NFT on D.FAITH. As the holder of this edition, you directly support the artist and become part of an exclusive community of ${fMaxEditions} collectors.`
+                    : lang === 'pl'
+                    ? `Ekskluzywny utwór dostępny jako limitowany NFT na D.FAITH. Jako posiadacz tej edycji bezpośrednio wspierasz artystę i stajesz się częścią ekskluzywnej społeczności ${fMaxEditions} kolekcjonerów.`
+                    : `Exklusiver Track, erhältlich als limitiertes NFT auf D.FAITH. Als Inhaber dieser Edition unterstützt du den Künstler direkt und wirst Teil einer exklusiven Gemeinschaft von ${fMaxEditions} Sammlern.`
+                )}
+                className="text-[10px] text-amber-400 hover:text-amber-300 transition-colors"
+              >
+                Vorlage einfügen
+              </button>
+            </div>
             <textarea
               value={fDesc}
               onChange={e => setFDesc(e.target.value)}
-              rows={2}
-              placeholder={t('shop.descPlaceholder', lang)}
+              rows={3}
+              placeholder={
+                lang === 'en'
+                  ? 'Describe your track — what makes it special, what the buyer receives...'
+                  : lang === 'pl'
+                  ? 'Opisz swój utwór — co go wyróżnia, co otrzyma kupujący...'
+                  : 'Beschreibe deinen Track — was ihn besonders macht, was der Käufer erhält...'
+              }
               className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-amber-500/50 resize-none"
             />
+            <p className="text-zinc-600 text-[10px] mt-1">
+              Die NFT-Informationen (Editionen, Royalties etc.) werden automatisch ergänzt.
+            </p>
           </div>
 
           {/* Typ + Preise */}
