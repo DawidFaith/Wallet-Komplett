@@ -1375,86 +1375,35 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
           {items.map(item => (
             <div key={item.id} className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl p-4">
               {editData?.id === item.id ? (
-                /* ── Inline-Edit-Formular ── */
+                /* ── Inline-Edit-Formular (nur Preis) ── */
                 <div className="space-y-3">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-white text-sm font-semibold">{t('shop.editItemTitle', lang)}</p>
+                    <div>
+                      <p className="text-white text-sm font-semibold">{item.title}</p>
+                      <p className="text-zinc-500 text-[10px] mt-0.5">NFT-Inhalt kann nicht geändert werden</p>
+                    </div>
                     <button onClick={cancelEdit} className="text-zinc-500 hover:text-zinc-300"><FaTimes size={13} /></button>
                   </div>
 
-                  <div>
-                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelTitle', lang)} *</label>
-                    <input value={editData.title} onChange={e => setEditData(d => d && { ...d, title: e.target.value })}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
-                  </div>
-
-                  <div>
-                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelDesc', lang)}</label>
-                    <textarea value={editData.desc} onChange={e => setEditData(d => d && { ...d, desc: e.target.value })}
-                      rows={2} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50 resize-none" />
-                  </div>
-
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelType', lang)}</label>
-                      <select value={editData.type} onChange={e => setEditData(d => d && { ...d, type: e.target.value as ItemType })}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50">
-                        <option value="song">Song (NFT)</option>
-                      </select>
-                    </div>
                     <div>
                       <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelPriceCredits', lang)} *</label>
                       <input type="number" min="0" value={editData.price}
                         onChange={e => setEditData(d => d && { ...d, price: e.target.value })}
                         className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelMinLevel', lang)}</label>
-                    <input type="number" min="0" value={editData.level}
-                      onChange={e => setEditData(d => d && { ...d, level: e.target.value })}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
-                  </div>
-
-                  {/* Content-Datei */}
-                  <div>
-                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelContentFileEdit', lang)}</label>
-                    <div className="flex gap-2">
-                      <label className={`flex items-center gap-2 shrink-0 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
-                        uploadingEditContent ? 'bg-zinc-700 text-zinc-500 pointer-events-none' : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
-                      }`}>
-                        {uploadingEditContent ? <><span className="w-3 h-3 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" /> {t('shop.uploading', lang)}</> : <><FaMusic size={11} /> {t('shop.btnChange', lang)}</>}
-                        <input type="file" className="hidden" accept="audio/*,video/*,.pdf,.zip" disabled={uploadingEditContent}
-                          onChange={e => { const f = e.target.files?.[0]; if (f) handleEditUpload(f, 'content'); e.target.value = ''; }} />
-                      </label>
-                      <input value={editData.content} onChange={e => setEditData(d => d && { ...d, content: e.target.value })}
-                        placeholder="URL" className="flex-1 min-w-0 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-amber-500/50" />
+                    <div>
+                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelMinLevel', lang)}</label>
+                      <input type="number" min="0" value={editData.level}
+                        onChange={e => setEditData(d => d && { ...d, level: e.target.value })}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
                     </div>
-                    {editData.content && <p className="text-emerald-400 text-[10px] mt-1 truncate">✓ {editData.content}</p>}
-                  </div>
-
-                  {/* Vorschaubild */}
-                  <div>
-                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelPreviewImageEdit', lang)}</label>
-                    <div className="flex gap-2 items-start">
-                      <label className={`flex items-center gap-2 shrink-0 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
-                        uploadingEditImage ? 'bg-zinc-700 text-zinc-500 pointer-events-none' : 'bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 border border-violet-500/30'
-                      }`}>
-                        {uploadingEditImage ? <><span className="w-3 h-3 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" /> {t('shop.uploading', lang)}</> : <><FaStar size={10} /> {t('shop.btnImage', lang)}</>}
-                        <input type="file" className="hidden" accept="image/*" disabled={uploadingEditImage}
-                          onChange={e => { const f = e.target.files?.[0]; if (f) handleEditUpload(f, 'image'); e.target.value = ''; }} />
-                      </label>
-                      <input value={editData.image} onChange={e => setEditData(d => d && { ...d, image: e.target.value })}
-                        placeholder="Bild-URL" className="flex-1 min-w-0 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-violet-500/50" />
-                    </div>
-                    {editData.image && <Image src={editData.image} alt="Vorschau" width={64} height={64} className="mt-2 w-16 h-16 rounded-xl object-cover border border-white/10" />}
                   </div>
 
                   {editError && <p className="text-red-400 text-xs">{editError}</p>}
 
                   <div className="flex gap-2 pt-1">
-                    <button onClick={handleEdit} disabled={editSaving || uploadingEditContent || uploadingEditImage}
+                    <button onClick={handleEdit} disabled={editSaving}
                       className="flex-1 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold py-2.5 rounded-xl text-sm transition-colors">
                       {editSaving ? <span className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : <><FaCheck size={11} /> {t('common.save', lang)}</>}
                     </button>
