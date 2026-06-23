@@ -812,11 +812,6 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
   // Artist-Profil für NFT-Preview
   type ArtistProfile = {
     display_name: string | null;
-    instagram_handle: string | null;
-    tiktok_handle: string | null;
-    facebook_handle: string | null;
-    youtube_channel_name: string | null;
-    youtube_channel_id: string | null;
   };
   const [artistProfile, setArtistProfile] = useState<ArtistProfile | null>(null);
   useEffect(() => {
@@ -1236,13 +1231,10 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                       ['Type', 'Music'],
                       ['Artist', artistProfile?.display_name ?? '—'],
                       ['Platform', 'D.FAITH'],
+                      ['Website', 'app.dawidfaith.de'],
                       ['Max Editions', String(fMaxEditions)],
                       ['Royalties', '5%'],
                       ['Release Year', String(new Date().getFullYear())],
-                      ...(artistProfile?.instagram_handle ? [['Instagram', `@${artistProfile.instagram_handle}`]] : []),
-                      ...(artistProfile?.tiktok_handle    ? [['TikTok',    `@${artistProfile.tiktok_handle}`]]    : []),
-                      ...(artistProfile?.youtube_channel_name ? [['YouTube', artistProfile.youtube_channel_name]] : []),
-                      ...(artistProfile?.facebook_handle  ? [['Facebook',  `@${artistProfile.facebook_handle}`]]  : []),
                     ].map(([k, v]) => (
                       <span key={k} className="bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-0.5 text-[10px] text-zinc-300">
                         <span className="text-zinc-500">{k}:</span> {v}
