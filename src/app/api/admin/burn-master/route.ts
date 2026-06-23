@@ -78,11 +78,18 @@ export async function POST(req: NextRequest) {
           burned.push(print.nft_mint_address as string);
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
-          // Bereits geburnt oder nicht mehr vorhanden → ignorieren
-          if (msg.includes('AccountNotFound') || msg.includes('invalid account data') || msg.includes('0x25')) {
+          console.error(`Print burn failed [${print.nft_mint_address}]:`, msg);
+          // Bereits geburnt oder Token-Account existiert nicht mehr → als erledigt zählen
+          const alreadyGone = msg.includes('AccountNotFound')
+            || msg.includes('invalid account data')
+            || msg.includes('could not find account')
+            || msg.includes('0x25')
+            || msg.includes('0xbc4')
+            || msg.includes('TokenAccountNotFound');
+          if (alreadyGone) {
             burned.push(print.nft_mint_address as string);
           } else {
-            failed.push(`${print.nft_mint_address}: ${msg}`);
+            failed.push(`${(print.nft_mint_address as string).slice(0, 8)}…: ${msg.split('Caused By:')[0].trim()}`);
           }
         }
       }

@@ -2402,7 +2402,10 @@ function ShopManageSection({
         body: JSON.stringify({ masterMint: item.master_edition_mint, itemId: item.id }),
       });
       const d = await res.json();
-      if (!res.ok) throw new Error(d.error ?? 'Burn fehlgeschlagen');
+      if (!res.ok) {
+        const detail = d.details?.join('\n') ?? '';
+        throw new Error(`${d.error ?? 'Burn fehlgeschlagen'}${detail ? `\n${detail}` : ''}`);
+      }
       setBurnMsg(`✓ "${item.title}" geburnt — SOL zurückerhalten`);
       setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_active: false } : i));
     } catch (e) {
@@ -2594,7 +2597,7 @@ function ShopManageSection({
                     >
                       <FaEdit size={10} /> Preis
                     </button>
-                    {item.is_nft_enabled && item.master_edition_mint && item.is_active && (
+                    {item.is_nft_enabled && item.master_edition_mint && (
                       confirmBurnId === item.id ? (
                         <div className="flex items-center gap-1">
                           <button
