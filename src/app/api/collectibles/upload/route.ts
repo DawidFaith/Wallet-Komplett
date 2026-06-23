@@ -35,7 +35,8 @@ export async function POST(req: NextRequest) {
         }
 
         return {
-          allowedContentTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+          allowedContentTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/avif'],
+          maximumSizeInBytes: 10 * 1024 * 1024,
           tokenPayload: JSON.stringify({ wallet }),
         };
       },

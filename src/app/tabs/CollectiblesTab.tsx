@@ -750,13 +750,16 @@ function EditCollectionForm({ collection, artistWallet, onClose, onSaved }: {
     setUploadingImage(true);
     setError('');
     try {
-      const formData = new FormData();
-      formData.append('file',   file);
-      formData.append('wallet', artistWallet);
-      const res  = await fetch('/api/collectibles/upload-arweave', { method: 'POST', body: formData });
-      const data = await res.json() as { url?: string; error?: string };
-      if (!res.ok || !data.url) throw new Error(data.error ?? 'Upload fehlgeschlagen');
-      setForm((f) => ({ ...f, imageUrl: data.url! }));
+      const { upload } = await import('@vercel/blob/client');
+      const ext        = file.name.replace(/.*\./, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const safeWallet = artistWallet.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 32);
+      const pathname   = `collectibles/images/${safeWallet}/${Date.now()}.${ext}`;
+      const blob = await upload(pathname, file, {
+        access:          'public',
+        handleUploadUrl: '/api/collectibles/upload',
+        clientPayload:   JSON.stringify({ wallet: artistWallet }),
+      });
+      setForm((f) => ({ ...f, imageUrl: blob.url }));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Upload fehlgeschlagen');
     } finally {
@@ -898,11 +901,73 @@ function EditCollectionForm({ collection, artistWallet, onClose, onSaved }: {
 
 // ─── Künstler-Erstell-Panel (Artist) ─────────────────────────────────────────
 
+const SHARD_BONUS_BY_RARITY: Record<CollectibleRarity, number> = {
+  common: 0, uncommon: 2, rare: 5, epic: 10, legendary: 15, mythic: 25,
+};
+
+function CollectibleNftPreview({ form, rarity }: {
+  form: { name: string; description: string; imageUrl: string; maxRepBonusPercent: number; maxCreditBonusPercent: number; maxShardChanceBonus: number; primaryBonus: BonusType };
+  rarity: CollectibleRarity;
+}) {
+  const cfg          = RARITY_CONFIG[rarity];
+  const multiplier   = cfg.repMultiplier;
+  const repBonus     = parseFloat((form.maxRepBonusPercent    * multiplier).toFixed(1));
+  const creditBonus  = parseFloat((form.maxCreditBonusPercent * multiplier).toFixed(1));
+  const shardBonus   = SHARD_BONUS_BY_RARITY[rarity];
+  const activeSlots  = getActiveSlotsCount(rarity);
+  const slots        = getBonusSlots(form.primaryBonus).slice(0, activeSlots);
+
+  const bonusLine = slots.map(slot => {
+    if (slot === 'rep')     return repBonus > 0     ? `+${repBonus}% REP`       : null;
+    if (slot === 'credits') return creditBonus > 0  ? `+${creditBonus}% Credits` : null;
+    return shardBonus > 0 ? `+${shardBonus} Shard Chance` : null;
+  }).filter(Boolean).join(' · ') || '—';
+
+  const attrs = [
+    { k: 'Rarity',     v: cfg.label },
+    { k: 'Collection', v: form.name || '—' },
+    { k: 'Platform',   v: 'D.FAITH' },
+    { k: 'Drop Rate',  v: `${FIXED_RARITY_CHANCES[rarity]}%` },
+    ...(repBonus    > 0 ? [{ k: 'REP Bonus',    v: `+${repBonus}%`    }] : []),
+    ...(creditBonus > 0 ? [{ k: 'Credit Bonus', v: `+${creditBonus}%` }] : []),
+    ...(shardBonus  > 0 ? [{ k: 'Shard Bonus',  v: `+${shardBonus}`   }] : []),
+  ];
+
+  return (
+    <div className={`rounded-xl border ${cfg.border} ${cfg.bg} ${cfg.glow} p-3`}>
+      <div className="flex gap-3 items-start">
+        {form.imageUrl ? (
+          <Image src={form.imageUrl} alt="" width={72} height={72} className="w-[72px] h-[72px] rounded-lg object-cover shrink-0 border border-white/10" />
+        ) : (
+          <div className="w-[72px] h-[72px] rounded-lg bg-white/5 border border-white/10 shrink-0 flex items-center justify-center">
+            <span className="text-zinc-600 text-xs">Kein Bild</span>
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className={`font-bold text-sm truncate ${cfg.textColor}`}>{form.name || '—'} — {cfg.label}</p>
+          <p className="text-zinc-400 text-[10px] mt-0.5 line-clamp-2">
+            {form.name ? `${cfg.label} D.FAITH Collectible from the "${form.name}" series.` : '—'}
+          </p>
+          <p className="text-zinc-300 text-[10px] mt-1 font-medium">Bonuses: {bonusLine}</p>
+          <div className="flex flex-wrap gap-1 mt-2">
+            {attrs.map(({ k, v }) => (
+              <span key={k} className="bg-black/30 border border-white/10 rounded-md px-1.5 py-0.5 text-[9px] text-zinc-300">
+                <span className="text-zinc-500">{k}:</span> {v}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: string; onCreated: () => void }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [previewRarity, setPreviewRarity] = useState<CollectibleRarity>('rare');
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: '', description: '', imageUrl: '',
@@ -914,13 +979,16 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
     setUploadingImage(true);
     setError('');
     try {
-      const formData = new FormData();
-      formData.append('file',   file);
-      formData.append('wallet', artistWallet);
-      const res  = await fetch('/api/collectibles/upload-arweave', { method: 'POST', body: formData });
-      const data = await res.json() as { url?: string; error?: string };
-      if (!res.ok || !data.url) throw new Error(data.error ?? 'Upload fehlgeschlagen');
-      setForm((f) => ({ ...f, imageUrl: data.url! }));
+      const { upload } = await import('@vercel/blob/client');
+      const ext        = file.name.replace(/.*\./, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const safeWallet = artistWallet.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 32);
+      const pathname   = `collectibles/images/${safeWallet}/${Date.now()}.${ext}`;
+      const blob = await upload(pathname, file, {
+        access:          'public',
+        handleUploadUrl: '/api/collectibles/upload',
+        clientPayload:   JSON.stringify({ wallet: artistWallet }),
+      });
+      setForm((f) => ({ ...f, imageUrl: blob.url }));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Upload fehlgeschlagen');
     } finally {
@@ -1069,6 +1137,32 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
           </div>
           <p className="text-[9px] text-zinc-700 mt-1.5">Common erhält z.B. 4% davon, Mythic 100%</p>
         </div>
+
+        {/* NFT Preview */}
+        {form.name && (
+          <div className="border border-amber-500/20 bg-amber-500/5 rounded-2xl p-4">
+            <p className="text-amber-400 text-[10px] uppercase tracking-widest mb-3 font-semibold">NFT Vorschau — wähle eine Rarität</p>
+            <div className="flex gap-1 flex-wrap mb-3">
+              {RARITY_ORDER.map(r => {
+                const c = RARITY_CONFIG[r];
+                const isActive = previewRarity === r;
+                return (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setPreviewRarity(r)}
+                    className={`px-2 py-1 rounded-lg text-[9px] font-black border transition-colors ${
+                      isActive ? `${c.bg} ${c.border} ${c.textColor}` : 'bg-white/[0.03] border-white/[0.06] text-zinc-600 hover:text-zinc-400'
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
+            <CollectibleNftPreview form={form} rarity={previewRarity} />
+          </div>
+        )}
 
         {error && <p className="text-red-400 text-xs">{error}</p>}
 

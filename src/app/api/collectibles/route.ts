@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchAndUploadToArweave } from '../../lib/arweaveUpload';
 import {
   createCollectibleCollection,
   updateCollectibleCollection,
@@ -115,12 +116,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Wahrscheinlichkeiten müssen zusammen 100 ergeben (aktuell: ${total})` }, { status: 400 });
   }
 
+  // Bild von Vercel Blob (https://) permanent auf Arweave übertragen
+  let finalImageUrl = body.imageUrl ?? '';
+  if (finalImageUrl.startsWith('https://')) {
+    try {
+      finalImageUrl = await fetchAndUploadToArweave(finalImageUrl, 'image/jpeg', [
+        { name: 'App',  value: 'D.FAITH' },
+        { name: 'Type', value: 'Collectible Image' },
+      ]);
+    } catch (e) {
+      return NextResponse.json({ error: `Arweave-Upload fehlgeschlagen: ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
+    }
+  }
+
   try {
     const result = await createCollectibleCollection({
       artistWallet,
       name: name.trim(),
       description: body.description ?? '',
-      imageUrl: body.imageUrl ?? '',
+      imageUrl: finalImageUrl,
       ...chances,
       maxRepBonusPercent: body.maxRepBonusPercent ?? 0,
       maxShardChanceBonus: body.maxShardChanceBonus ?? 0,
@@ -175,11 +189,24 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
+  // Bild von Vercel Blob (https://) permanent auf Arweave übertragen
+  let patchImageUrl = body.imageUrl;
+  if (patchImageUrl?.startsWith('https://')) {
+    try {
+      patchImageUrl = await fetchAndUploadToArweave(patchImageUrl, 'image/jpeg', [
+        { name: 'App',  value: 'D.FAITH' },
+        { name: 'Type', value: 'Collectible Image' },
+      ]);
+    } catch (e) {
+      return NextResponse.json({ error: `Arweave-Upload fehlgeschlagen: ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
+    }
+  }
+
   try {
     const updated = await updateCollectibleCollection(id.trim(), artistWallet.trim(), {
       name:                  body.name,
       description:           body.description,
-      imageUrl:              body.imageUrl,
+      imageUrl:              patchImageUrl,
       chanceCommon:          body.chanceCommon,
       chanceUncommon:        body.chanceUncommon,
       chanceRare:            body.chanceRare,
