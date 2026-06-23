@@ -946,9 +946,40 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
         setFormError(err.error ?? 'Fehler beim Erstellen');
         return;
       }
-      setFormSuccess(`"${fTitle}" wurde erfolgreich erstellt${fType === 'song' ? ' und als NFT geminted' : ''}.`);
+      const data = await res.json() as { masterEditionMint?: string; title?: string };
+      const titleCreated = fTitle;
       resetForm();
       loadMyItems();
+
+      // Direkt nach dem Minting Creator verifizieren (Phantom öffnet sich einmalig)
+      if (data.masterEditionMint) {
+        setFormSuccess(`"${titleCreated}" wurde geminted. Bitte in Phantom bestätigen um dich als Creator zu verifizieren…`);
+        try {
+          const phantom = (window as unknown as { solana?: { connect: () => Promise<unknown>; publicKey: { toString: () => string } } }).solana;
+          if (!phantom) throw new Error('Phantom nicht gefunden');
+          await phantom.connect();
+
+          const { createUmi }         = await import('@metaplex-foundation/umi-bundle-defaults');
+          const { mplTokenMetadata, verifyCreatorV1, findMetadataPda } = await import('@metaplex-foundation/mpl-token-metadata');
+          const { walletAdapterIdentity } = await import('@metaplex-foundation/umi-signer-wallet-adapters');
+          const { publicKey }         = await import('@metaplex-foundation/umi');
+
+          const RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
+          const umi = createUmi(RPC)
+            .use(mplTokenMetadata())
+            .use(walletAdapterIdentity(phantom as Parameters<typeof walletAdapterIdentity>[0]));
+
+          const [metadata] = findMetadataPda(umi, { mint: publicKey(data.masterEditionMint) });
+          await verifyCreatorV1(umi, { metadata }).sendAndConfirm(umi);
+          setFormSuccess(`"${titleCreated}" erfolgreich erstellt, geminted und als Creator verifiziert.`);
+        } catch (e) {
+          // Verifikation fehlgeschlagen — kein fataler Fehler, Item existiert bereits
+          setFormSuccess(`"${titleCreated}" wurde erstellt und geminted. Creator-Verifikation kann später über das ✓-Symbol nachgeholt werden.`);
+          console.warn('Creator-Verifikation fehlgeschlagen:', e);
+        }
+      } else {
+        setFormSuccess(`"${titleCreated}" wurde erfolgreich erstellt.`);
+      }
     } finally {
       setSaving(false);
     }
