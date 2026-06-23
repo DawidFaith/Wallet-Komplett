@@ -2363,6 +2363,10 @@ interface ShopItemAdmin {
   price_tokens: number | null;
   is_active: boolean;
   created_at: string;
+  master_edition_mint: string | null;
+  nft_max_supply: number | null;
+  edition_count: number;
+  is_nft_enabled: boolean;
 }
 
 function ShopManageSection({
@@ -2383,6 +2387,32 @@ function ShopManageSection({
   const [editTokens, setEditTokens] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
+  const [burningId, setBurningId] = useState<string | null>(null);
+  const [burnMsg, setBurnMsg] = useState('');
+  const [confirmBurnId, setConfirmBurnId] = useState<string | null>(null);
+
+  const handleBurnMaster = async (item: ShopItemAdmin) => {
+    if (!item.master_edition_mint) return;
+    setBurningId(item.id);
+    setBurnMsg('');
+    try {
+      const res = await fetch('/api/admin/burn-master', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ masterMint: item.master_edition_mint, itemId: item.id }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? 'Burn fehlgeschlagen');
+      setBurnMsg(`✓ "${item.title}" geburnt — SOL zurückerhalten`);
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_active: false } : i));
+    } catch (e) {
+      setBurnMsg(`✗ ${e instanceof Error ? e.message : 'Fehler'}`);
+    } finally {
+      setBurningId(null);
+      setConfirmBurnId(null);
+      setTimeout(() => setBurnMsg(''), 5000);
+    }
+  };
 
   const loadItems = useCallback(async (wallet: string) => {
     if (!wallet) return;
@@ -2513,6 +2543,11 @@ function ShopManageSection({
                 {saveMsg}
               </span>
             )}
+            {burnMsg && (
+              <span className={`text-xs font-semibold ${burnMsg.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>
+                {burnMsg}
+              </span>
+            )}
           </div>
 
           {loadingItems && (
@@ -2552,12 +2587,35 @@ function ShopManageSection({
                 </div>
 
                 {editingId !== item.id && (
-                  <button
-                    onClick={() => startEdit(item)}
-                    className="shrink-0 flex items-center gap-1.5 text-xs text-zinc-400 hover:text-amber-400 transition-colors bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1.5 rounded-lg"
-                  >
-                    <FaEdit size={10} /> Preis
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => startEdit(item)}
+                      className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-amber-400 transition-colors bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1.5 rounded-lg"
+                    >
+                      <FaEdit size={10} /> Preis
+                    </button>
+                    {item.is_nft_enabled && item.master_edition_mint && item.is_active && (
+                      confirmBurnId === item.id ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleBurnMaster(item)}
+                            disabled={burningId === item.id}
+                            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 bg-red-900/30 hover:bg-red-900/50 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            {burningId === item.id ? '…' : '🔥 Sicher?'}
+                          </button>
+                          <button onClick={() => setConfirmBurnId(null)} className="text-zinc-600 hover:text-zinc-400 text-xs px-1.5 py-1.5">✕</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmBurnId(item.id)}
+                          className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-red-400 transition-colors bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1.5 rounded-lg"
+                        >
+                          <FaTrashAlt size={9} /> Burn
+                        </button>
+                      )
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -2603,7 +2661,7 @@ function ShopManageSection({
                   </div>
                 </div>
               ) : (
-                <div className="mt-2 flex items-center gap-4 text-xs text-zinc-400">
+                <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-zinc-400">
                   <span className="flex items-center gap-1">
                     <FaCoins size={9} className="text-yellow-500" />
                     {item.price_credits} Credits
@@ -2613,6 +2671,18 @@ function ShopManageSection({
                       <FaStar size={9} className="text-amber-400" />
                       {item.price_tokens} Tokens
                     </span>
+                  )}
+                  {item.is_nft_enabled && item.master_edition_mint && (
+                    <span className="flex items-center gap-1 text-violet-400">
+                      💎 {item.edition_count ?? 0}/{item.nft_max_supply ?? '∞'} Editions
+                    </span>
+                  )}
+                  {item.master_edition_mint && (
+                    <a href={`https://solscan.io/token/${item.master_edition_mint}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-zinc-600 hover:text-zinc-300 transition-colors">
+                      <FaExternalLinkAlt size={8} /> Solscan
+                    </a>
                   )}
                 </div>
               )}

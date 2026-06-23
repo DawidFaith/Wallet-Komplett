@@ -17,16 +17,33 @@ export async function GET(req: NextRequest) {
   }
   const { searchParams } = new URL(req.url);
   const artistWallet = searchParams.get('artistWallet')?.toLowerCase();
-  if (!artistWallet) {
-    return NextResponse.json({ error: 'artistWallet fehlt' }, { status: 400 });
-  }
   const sql = getDb();
+
+  if (artistWallet) {
+    const rows = await sql`
+      SELECT id, title, description, type, image_url,
+             price_credits, price_tokens, is_active, created_at,
+             master_edition_mint, nft_max_supply, edition_count, is_nft_enabled
+      FROM shop_items
+      WHERE LOWER(artist_wallet) = ${artistWallet}
+      ORDER BY created_at DESC
+    `;
+    return NextResponse.json(rows);
+  }
+
+  // Alle Items (Admin-Übersicht)
   const rows = await sql`
-    SELECT id, title, description, type,
-           price_credits, price_tokens, is_active, created_at
-    FROM shop_items
-    WHERE LOWER(artist_wallet) = ${artistWallet}
-    ORDER BY created_at DESC
+    SELECT
+      si.id, si.title, si.type, si.image_url, si.is_active, si.is_nft_enabled,
+      si.master_edition_mint, si.nft_max_supply, si.edition_count,
+      si.price_credits, si.created_at, si.artist_wallet,
+      p.display_name AS artist_name,
+      COUNT(sp.id)::int AS purchase_count
+    FROM shop_items si
+    LEFT JOIN user_profiles p ON LOWER(p.wallet_address) = si.artist_wallet
+    LEFT JOIN shop_purchases sp ON sp.item_id = si.id
+    GROUP BY si.id, p.display_name
+    ORDER BY si.created_at DESC
   `;
   return NextResponse.json(rows);
 }

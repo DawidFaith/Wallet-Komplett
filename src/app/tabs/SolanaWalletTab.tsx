@@ -407,6 +407,10 @@ export default function SolanaWalletTab() {
   const [nftSending, setNftSending]       = useState(false);
   const [nftSendErr, setNftSendErr]       = useState('');
   const [nftSendOk, setNftSendOk]         = useState('');
+  const [nftBurnTarget, setNftBurnTarget] = useState<OwnedNft | null>(null);
+  const [nftBurning, setNftBurning]       = useState(false);
+  const [nftBurnErr, setNftBurnErr]       = useState('');
+  const [nftBurnOk, setNftBurnOk]         = useState('');
 
   const [exportKey, setExportKey]         = useState('');
   const [showExport, setShowExport]       = useState(false);
@@ -578,6 +582,29 @@ export default function SolanaWalletTab() {
       setNftSendErr(e instanceof Error ? e.message : 'Fehler');
     } finally {
       setNftSending(false);
+    }
+  };
+
+  // ── NFT burnen ───────────────────────────────────────────────────────────
+  const handleNftBurn = async () => {
+    if (!nftBurnTarget || !userId) return;
+    setNftBurnErr(''); setNftBurnOk('');
+    setNftBurning(true);
+    try {
+      const res = await fetch('/api/solana/burn-nft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress: userId, mintAddress: nftBurnTarget.mint }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? 'Burn fehlgeschlagen');
+      setNftBurnOk('✓ NFT geburnt — SOL zurückerhalten');
+      setNfts(prev => prev.filter(n => n.mint !== nftBurnTarget.mint));
+      setTimeout(() => { setNftBurnTarget(null); setNftBurnOk(''); }, 2500);
+    } catch (e) {
+      setNftBurnErr(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setNftBurning(false);
     }
   };
 
@@ -918,6 +945,13 @@ export default function SolanaWalletTab() {
                         className="bg-[#231e12] hover:bg-[#2d2615] text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
                         <FaPaperPlane size={9} /> Send
                       </button>
+                      {nft.isDfaith && (
+                        <button
+                          onClick={() => { setNftBurnTarget(nft); setNftBurnErr(''); setNftBurnOk(''); }}
+                          className="bg-red-950/40 hover:bg-red-900/50 text-red-400 hover:text-red-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                          🔥 Burn
+                        </button>
+                      )}
                       <a href={`https://solscan.io/token/${nft.mint}`} target="_blank" rel="noopener noreferrer"
                         className="bg-[#231e12] hover:bg-[#2d2615] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
                         <FaExternalLinkAlt size={8} /> Info
@@ -1015,6 +1049,40 @@ export default function SolanaWalletTab() {
                   : <><FaPaperPlane size={12} /> NFT senden</>}
               </button>
               <p className="text-zinc-600 text-xs text-center">On-Chain Transfer · nicht umkehrbar</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── NFT Burn Modal ── */}
+      {nftBurnTarget && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-[#1a0a0a] border border-red-900/40 rounded-2xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-red-900/30 flex items-center justify-between">
+              <div>
+                <p className="text-red-400 font-bold text-sm">🔥 NFT verbrennen</p>
+                <p className="text-red-300/60 text-xs">{nftBurnTarget.name}</p>
+              </div>
+              <button onClick={() => setNftBurnTarget(null)} className="text-zinc-500 hover:text-white p-1.5 rounded-lg hover:bg-white/8">
+                <FaTimes size={14} />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              <p className="text-zinc-400 text-sm">
+                Das NFT wird dauerhaft vernichtet und die Rent-SOL werden zurück auf dein Wallet gutgeschrieben. <span className="text-red-400 font-semibold">Diese Aktion ist nicht umkehrbar.</span>
+              </p>
+              {nftBurnErr && <p className="text-red-400 text-xs bg-red-900/20 rounded-lg px-3 py-2">{nftBurnErr}</p>}
+              {nftBurnOk  && <p className="text-green-400 text-xs bg-green-900/20 rounded-lg px-3 py-2">{nftBurnOk}</p>}
+              <button
+                onClick={handleNftBurn}
+                disabled={nftBurning}
+                className="w-full py-3 rounded-xl bg-red-700 hover:bg-red-600 text-white font-bold text-sm disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              >
+                {nftBurning
+                  ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  : '🔥 Jetzt verbrennen'}
+              </button>
+              <p className="text-zinc-600 text-xs text-center">Endgültig · SOL wird zurückerstattet</p>
             </div>
           </div>
         </div>
