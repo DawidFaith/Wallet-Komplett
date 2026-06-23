@@ -87,7 +87,6 @@ export async function mintSongMasterEdition(params: {
       { trait_type: 'Type',         value: 'Music' },
       { trait_type: 'Artist',       value: artistName },
       { trait_type: 'Platform',     value: 'D.FAITH' },
-      { trait_type: 'Website',      value: 'app.dawidfaith.de' },
       { trait_type: 'Max Editions', value: String(maxSupply) },
       { trait_type: 'Royalties',    value: '5%' },
       { trait_type: 'Release Year', value: String(new Date().getFullYear()) },

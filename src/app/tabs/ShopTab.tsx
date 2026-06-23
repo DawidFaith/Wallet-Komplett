@@ -1231,7 +1231,6 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                       ['Type', 'Music'],
                       ['Artist', artistProfile?.display_name ?? '—'],
                       ['Platform', 'D.FAITH'],
-                      ['Website', 'app.dawidfaith.de'],
                       ['Max Editions', String(fMaxEditions)],
                       ['Royalties', '5%'],
                       ['Release Year', String(new Date().getFullYear())],
@@ -1241,8 +1240,15 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                       </span>
                     ))}
                   </div>
+
+                  {/* Audio-Preview */}
                   {fContent && (
-                    <p className="text-emerald-400 text-[10px] mt-2">Audio hochgeladen</p>
+                    <audio
+                      src={fContent}
+                      controls
+                      className="w-full mt-3 h-8 rounded-lg"
+                      style={{ accentColor: '#f59e0b' }}
+                    />
                   )}
                 </div>
               </div>
