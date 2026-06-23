@@ -36,21 +36,25 @@ export async function GET(req: NextRequest) {
     ORDER BY si.created_at DESC
   `;
 
-  // Bereits gekaufte Items des Nutzers
-  let purchasedIds: string[] = [];
+  // Wie viele Exemplare der Nutzer von jedem Item besitzt
+  const ownedCounts: Record<string, number> = {};
   if (wallet) {
     const itemIds = (items as Array<Record<string, unknown>>).map(i => String(i.id));
     const rows = await sql`
-      SELECT item_id FROM shop_purchases
+      SELECT item_id, COUNT(*)::int AS cnt FROM shop_purchases
       WHERE buyer_wallet = ${wallet} AND item_id = ANY(${itemIds})
+        AND nft_mint_address IS NOT NULL
+      GROUP BY item_id
     `;
-    purchasedIds = (rows as Array<Record<string, unknown>>).map(r => String(r.item_id));
+    for (const r of rows as Array<Record<string, unknown>>) {
+      ownedCounts[String(r.item_id)] = Number(r.cnt);
+    }
   }
 
   return NextResponse.json(
     items.map((item: Record<string, unknown>) => ({
       ...item,
-      purchased: purchasedIds.includes(item.id as string),
+      ownedCount: ownedCounts[String(item.id)] ?? 0,
     })),
   );
 }

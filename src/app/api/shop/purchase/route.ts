@@ -2,9 +2,14 @@
  * POST /api/shop/purchase
  * Body: { buyerWallet, itemId, paymentMethod: 'credits' | 'tokens' }
  *
- * Credits: Zieht D.FAITH Credits ab und schreibt dem Artist gut.
- * Tokens:  Überträgt D.FAITH Tokens on-chain vom Käufer-Wallet zum Artist-Wallet.
- * Verhindert Doppelkäufe.
+ * Ablauf:
+ *  1. Verfügbarkeit prüfen (max supply, atomar reservieren)
+ *  2. Zahlung abwickeln (Credits abziehen / Token-Transfer)
+ *  3. NFT minten → bei Fehler: Credits zurückerstatten + Slot freigeben + Error-Response
+ *  4. Kauf in DB speichern (nur bei erfolgreichem Mint)
+ *
+ * Kein Limit pro User — jeder kann beliebig viele Editionen kaufen.
+ * Inventar zeigt nur Käufe mit erfolgreich geminteter NFT.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { Connection, Keypair, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
@@ -42,7 +47,7 @@ export async function POST(req: NextRequest) {
 
   const sql = getDb();
 
-  // Item laden
+  // ── Item laden ────────────────────────────────────────────────────────────
   const items = await sql`
     SELECT id, artist_wallet, price_credits, price_tokens, title, content_url, type, is_active,
            master_edition_mint, nft_max_supply, edition_count, is_nft_enabled
@@ -69,174 +74,145 @@ export async function POST(req: NextRequest) {
     is_nft_enabled: boolean;
   };
 
-  // NFT-Auflagen-Limit prüfen
-  if (item.is_nft_enabled && item.master_edition_mint && item.nft_max_supply !== null) {
-    if (item.edition_count >= item.nft_max_supply) {
+  // ── Max Supply prüfen ─────────────────────────────────────────────────────
+  if (item.is_nft_enabled && item.nft_max_supply !== null) {
+    if (Number(item.edition_count) >= Number(item.nft_max_supply)) {
       return NextResponse.json({ error: 'Alle NFT-Editionen sind ausverkauft' }, { status: 410 });
     }
   }
 
-  // Artist-Token-Konfiguration laden (custom oder D.FAITH Fallback)
+  // ── Token-Konfiguration ───────────────────────────────────────────────────
   const artistProfileRows = await sql`
-    SELECT reward_token, token_mint_address FROM user_profiles
+    SELECT token_mint_address FROM user_profiles
     WHERE wallet_address = ${item.artist_wallet} LIMIT 1
   `;
-  const artistMint: string | null = artistProfileRows.length > 0
-    ? (artistProfileRows[0].token_mint_address as string | null ?? null)
-    : null;
-  // Nutze Artist-Token wenn gesetzt, sonst globaler D.FAITH-Token
+  const artistMint: string | null = artistProfileRows[0]?.token_mint_address as string | null ?? null;
   const effectiveMint = artistMint ?? DFAITH_MINT ?? null;
+
+  if (paymentMethod === 'tokens' && !effectiveMint) {
+    return NextResponse.json({ error: 'Token nicht konfiguriert' }, { status: 503 });
+  }
 
   const isSelfPurchase = item.artist_wallet === buyerWallet.toLowerCase();
 
-  // Token-Zahlung: Mint prüfen
-  if (paymentMethod === 'tokens') {
-    if (!effectiveMint) {
-      return NextResponse.json({ error: 'Token nicht konfiguriert' }, { status: 503 });
-    }
-  }
-
-  // Doppelkauf prüfen
-  const alreadyBought = await sql`
-    SELECT id FROM shop_purchases
-    WHERE buyer_wallet = ${buyerWallet.toLowerCase()} AND item_id = ${itemId}
-    LIMIT 1
+  // ── Käufer-Solana-Konto laden ─────────────────────────────────────────────
+  const buyerSolanaRows = await sql`
+    SELECT solana_address, solana_private_key FROM solana_accounts
+    WHERE wallet_address = ${buyerWallet.toLowerCase()} LIMIT 1
   `;
-  if (alreadyBought.length) {
-    return NextResponse.json({ error: 'Bereits gekauft' }, { status: 409 });
+  if (!buyerSolanaRows.length) {
+    return NextResponse.json({ error: 'Kein Solana-Wallet gefunden' }, { status: 404 });
   }
+  const buyerSolanaAddress = buyerSolanaRows[0].solana_address as string;
 
-  // ── Zahlung abwickeln ──────────────────────────────────────────────────────
+  // ── Edition-Slot atomar reservieren ──────────────────────────────────────
+  const slotRows = await sql`
+    UPDATE shop_items
+    SET edition_count = edition_count + 1
+    WHERE id = ${item.id}
+      AND (nft_max_supply IS NULL OR edition_count < nft_max_supply)
+    RETURNING edition_count
+  `;
+  if (!slotRows.length) {
+    return NextResponse.json({ error: 'Alle NFT-Editionen sind ausverkauft' }, { status: 410 });
+  }
+  const editionNumber = Number(slotRows[0].edition_count);
 
-  if (paymentMethod === 'credits') {
-    if (!isSelfPurchase) {
-      try {
-        await redeemDfaithCredits(buyerWallet.toLowerCase(), item.price_credits);
-      } catch {
-        return NextResponse.json({ error: 'Nicht genug D.FAITH Credits' }, { status: 402 });
-      }
-      await addDfaithCredits(item.artist_wallet, item.price_credits);
+  // ── 1. Zahlung abwickeln ──────────────────────────────────────────────────
+  if (paymentMethod === 'credits' && !isSelfPurchase) {
+    try {
+      await redeemDfaithCredits(buyerWallet.toLowerCase(), item.price_credits);
+    } catch {
+      await sql`UPDATE shop_items SET edition_count = edition_count - 1 WHERE id = ${item.id}`;
+      return NextResponse.json({ error: 'Nicht genug D.FAITH Credits' }, { status: 402 });
     }
+    await addDfaithCredits(item.artist_wallet, item.price_credits);
 
-  } else {
-    // Token-Transfer on-chain – gleicher Betrag wie Credits
-    const tokenAmount = Number(item.price_credits);
-
-    // Käufer-Keypair laden
-    const buyerRows = await sql`
-      SELECT solana_address, solana_private_key FROM solana_accounts
-      WHERE wallet_address = ${buyerWallet.toLowerCase()} LIMIT 1
-    `;
-    if (!buyerRows.length) {
-      return NextResponse.json({ error: 'Kein Solana-Wallet gefunden. Bitte zuerst Wallet erstellen.' }, { status: 404 });
-    }
-
-    // Artist-Solana-Adresse laden
+  } else if (paymentMethod === 'tokens' && !isSelfPurchase) {
     const artistRows = await sql`
       SELECT solana_address FROM solana_accounts
       WHERE wallet_address = ${item.artist_wallet} LIMIT 1
     `;
     if (!artistRows.length) {
+      await sql`UPDATE shop_items SET edition_count = edition_count - 1 WHERE id = ${item.id}`;
       return NextResponse.json({ error: 'Artist hat kein Solana-Wallet' }, { status: 404 });
     }
 
-    const secretB58  = decryptKey(buyerRows[0].solana_private_key as string);
-    const buyerKp    = Keypair.fromSecretKey(bs58.decode(secretB58));
-    const artistPk   = new PublicKey(artistRows[0].solana_address as string);
-    const mintPk     = new PublicKey(effectiveMint!);
-    const connection = new Connection(RPC_URL, 'confirmed');
-
-    const mintInfo = await getMint(connection, mintPk, 'confirmed', TOKEN_PROGRAM_ID);
-    const decimals = mintInfo.decimals;
-
-    const fromAta = await getAssociatedTokenAddress(mintPk, buyerKp.publicKey, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
-    const toAta   = await getAssociatedTokenAddress(mintPk, artistPk, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
+    const secretB58 = decryptKey(buyerSolanaRows[0].solana_private_key as string);
+    const buyerKp   = Keypair.fromSecretKey(bs58.decode(secretB58));
+    const artistPk  = new PublicKey(artistRows[0].solana_address as string);
+    const mintPk    = new PublicKey(effectiveMint!);
+    const conn      = new Connection(RPC_URL, 'confirmed');
+    const mintInfo  = await getMint(conn, mintPk, 'confirmed', TOKEN_PROGRAM_ID);
+    const fromAta   = await getAssociatedTokenAddress(mintPk, buyerKp.publicKey, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
+    const toAta     = await getAssociatedTokenAddress(mintPk, artistPk, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
 
     const tx = new Transaction();
-    try {
-      await getAccount(connection, toAta);
-    } catch {
+    try { await getAccount(conn, toAta); } catch {
       tx.add(createAssociatedTokenAccountInstruction(buyerKp.publicKey, toAta, artistPk, mintPk, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID));
     }
-
-    const rawAmount = BigInt(Math.round(tokenAmount * 10 ** decimals));
+    const rawAmount = BigInt(Math.round(Number(item.price_credits) * 10 ** mintInfo.decimals));
     tx.add(createTransferInstruction(fromAta, toAta, buyerKp.publicKey, rawAmount, [], TOKEN_PROGRAM_ID));
 
     try {
-      await sendAndConfirmTransaction(connection, tx, [buyerKp]);
+      await sendAndConfirmTransaction(conn, tx, [buyerKp]);
     } catch (err) {
+      await sql`UPDATE shop_items SET edition_count = edition_count - 1 WHERE id = ${item.id}`;
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.toLowerCase().includes('insufficient')) {
-        return NextResponse.json({ error: 'Nicht genug D.FAITH Tokens im Wallet' }, { status: 402 });
-      }
-      return NextResponse.json({ error: `Token-Transfer fehlgeschlagen: ${msg}` }, { status: 500 });
+      return NextResponse.json({
+        error: msg.toLowerCase().includes('insufficient')
+          ? 'Nicht genug D.FAITH Tokens im Wallet'
+          : `Token-Transfer fehlgeschlagen: ${msg}`,
+      }, { status: 402 });
     }
   }
 
-  // Kauf speichern
+  // ── 2. NFT minten ─────────────────────────────────────────────────────────
+  let nftMintAddress: string;
+  try {
+    const { printMint } = await mintSongPrintEdition({
+      masterMint:         item.master_edition_mint!,
+      buyerSolanaAddress,
+      editionNumber,
+    });
+    nftMintAddress = printMint;
+  } catch (nftErr) {
+    // Slot freigeben
+    await sql`UPDATE shop_items SET edition_count = edition_count - 1 WHERE id = ${item.id}`;
+
+    // Credits zurückerstatten
+    if (paymentMethod === 'credits' && !isSelfPurchase) {
+      await addDfaithCredits(buyerWallet.toLowerCase(), item.price_credits);
+      await redeemDfaithCredits(item.artist_wallet, item.price_credits).catch(() => {});
+    }
+
+    const msg = nftErr instanceof Error ? nftErr.message : String(nftErr);
+    console.error('Print Edition Mint fehlgeschlagen:', msg);
+    return NextResponse.json({
+      error: paymentMethod === 'credits'
+        ? `NFT Mint fehlgeschlagen — deine Credits wurden zurückerstattet. Fehler: ${msg}`
+        : `NFT Mint fehlgeschlagen. Tokens können nicht automatisch zurückgesendet werden — bitte Support kontaktieren. Fehler: ${msg}`,
+      nftError: true,
+    }, { status: 500 });
+  }
+
+  // ── 3. Kauf speichern (nur bei erfolgreichem Mint) ────────────────────────
   await sql`
-    INSERT INTO shop_purchases (buyer_wallet, item_id, price_credits_paid)
-    VALUES (${buyerWallet.toLowerCase()}, ${itemId}, ${paymentMethod === 'credits' ? item.price_credits : 0})
+    INSERT INTO shop_purchases (buyer_wallet, item_id, price_credits_paid, nft_mint_address, edition_number)
+    VALUES (
+      ${buyerWallet.toLowerCase()},
+      ${itemId},
+      ${paymentMethod === 'credits' && !isSelfPurchase ? item.price_credits : 0},
+      ${nftMintAddress},
+      ${editionNumber}
+    )
   `;
 
-  // NFT Print Edition minten (async, blockiert die Response nicht bei Fehler)
-  let nftMintAddress: string | null = null;
-  let editionNumber: number | null  = null;
-
-  if (item.is_nft_enabled && item.master_edition_mint) {
-    try {
-      // Edition-Nummer atomar inkrementieren
-      const edRows = await sql`
-        UPDATE shop_items
-        SET edition_count = edition_count + 1
-        WHERE id = ${item.id}
-        RETURNING edition_count
-      `;
-      const newEditionNumber = Number(edRows[0].edition_count);
-
-      // Käufer-Solana-Adresse laden
-      const buyerSolanaRows = await sql`
-        SELECT solana_address FROM solana_accounts
-        WHERE wallet_address = ${buyerWallet.toLowerCase()} LIMIT 1
-      `;
-
-      if (buyerSolanaRows.length && buyerSolanaRows[0].solana_address) {
-        const { printMint } = await mintSongPrintEdition({
-          masterMint:          item.master_edition_mint,
-          buyerSolanaAddress:  buyerSolanaRows[0].solana_address as string,
-          editionNumber:       newEditionNumber,
-        });
-        nftMintAddress = printMint;
-        editionNumber  = newEditionNumber;
-
-        // NFT-Adresse + Edition-Nummer im Kauf speichern
-        await sql`
-          UPDATE shop_purchases
-          SET nft_mint_address = ${printMint}, edition_number = ${newEditionNumber}
-          WHERE buyer_wallet = ${buyerWallet.toLowerCase()} AND item_id = ${itemId}
-        `;
-      }
-    } catch (nftErr) {
-      const nftErrMsg = nftErr instanceof Error ? nftErr.message : String(nftErr);
-      console.error('Print Edition Mint fehlgeschlagen:', nftErrMsg);
-      return NextResponse.json({
-        success: true,
-        title: item.title,
-        contentUrl: item.content_url,
-        type: item.type,
-        paymentMethod,
-        nftMintAddress: null,
-        editionNumber:  null,
-        nftError: nftErrMsg,
-      });
-    }
-  }
-
   return NextResponse.json({
-    success:        true,
-    title:          item.title,
-    contentUrl:     item.content_url,
-    type:           item.type,
+    success:       true,
+    title:         item.title,
+    contentUrl:    item.content_url,
+    type:          item.type,
     paymentMethod,
     nftMintAddress,
     editionNumber,

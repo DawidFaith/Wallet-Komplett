@@ -29,7 +29,7 @@ interface ShopItem {
   imageUrl: string;
   isActive: boolean;
   createdAt: string;
-  purchased?: boolean;
+  ownedCount?: number;
   requiredLevel: number;
   nftMaxSupply: number | null;
   isNftEnabled: boolean;
@@ -141,7 +141,7 @@ function ItemCard({
         )}
 
         {/* Play-Button Hover (nur wenn Song + Preview) */}
-        {item.type === 'song' && item.contentUrl && !item.purchased && !isLocked && (
+        {item.type === 'song' && item.contentUrl && !isLocked && (
           <>
             <audio
               ref={audioRef}
@@ -268,20 +268,14 @@ function ItemCard({
               <FaLock size={9} className="text-zinc-600 shrink-0" />
               <p className="text-zinc-600 text-[10px]">Level {item.requiredLevel} erforderlich</p>
             </div>
-          ) : item.purchased ? (
-            <div className="flex gap-1.5">
-              <div className="flex-1 flex items-center justify-center gap-1 bg-amber-400/10 border border-amber-400/30 rounded-lg py-2 text-amber-400 text-[11px] font-bold">
-                <FaCheck size={9} /> {t('shop.boughtBadge', lang)}
-              </div>
-              {item.contentUrl && (
-                <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-zinc-400 hover:text-white text-[11px] font-semibold transition-colors">
-                  <FaExternalLinkAlt size={8} />
-                </a>
-              )}
-            </div>
           ) : (
             <div className="space-y-1.5">
+              {/* Besitz-Badge */}
+              {(item.ownedCount ?? 0) > 0 && (
+                <div className="flex items-center justify-center gap-1 bg-amber-400/10 border border-amber-400/30 rounded-lg py-1 text-amber-400 text-[10px] font-bold">
+                  <FaCheck size={8} /> Du besitzt {item.ownedCount}×
+                </div>
+              )}
               {/* Credits / Token Toggle */}
               <div className="flex bg-black/40 rounded-lg p-0.5">
                 <button
@@ -383,7 +377,7 @@ function ArtistShopView({
         imageUrl: i.image_url as string,
         isActive: i.is_active as boolean,
         createdAt: i.created_at as string,
-        purchased: i.purchased as boolean,
+        ownedCount: Number(i.owned_count ?? 0),
         requiredLevel: Number(i.required_level ?? 0),
         nftMaxSupply: i.nft_max_supply != null ? Number(i.nft_max_supply) : null,
         isNftEnabled: Boolean(i.is_nft_enabled),
@@ -414,9 +408,8 @@ function ArtistShopView({
       const data = await res.json();
       setBuyResult({ itemId: item.id, contentUrl: data.contentUrl, type: data.type, title: item.title, paymentMethod });
       setBuyCelebration({ title: item.title, type: item.type, price: item.priceCredits, paymentMethod });
-      setItems(prev => prev.map(i => i.id === item.id ? { ...i, purchased: true } : i));
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, ownedCount: (i.ownedCount ?? 0) + 1 } : i));
       onPurchased?.();
-      if (data.nftError) console.warn('NFT Mint Fehler:', data.nftError);
     } finally {
       setBuying(null);
     }
