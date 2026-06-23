@@ -160,7 +160,11 @@ export async function POST(req: NextRequest) {
         }, { status: 201 });
       }
     } catch (nftErr) {
-      console.error('Master Edition Mint fehlgeschlagen (Shop-Item wurde trotzdem erstellt):', nftErr);
+      const msg = nftErr instanceof Error ? nftErr.message : String(nftErr);
+      console.error('Master Edition Mint fehlgeschlagen:', msg);
+      // Item aus DB löschen damit kein Eintrag ohne NFT entsteht
+      await sql`DELETE FROM shop_items WHERE id = ${item.id}`;
+      return NextResponse.json({ error: `NFT-Mint fehlgeschlagen: ${msg}` }, { status: 500 });
     }
   }
 

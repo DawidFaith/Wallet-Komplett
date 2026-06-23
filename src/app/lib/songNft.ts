@@ -25,7 +25,9 @@ import {
 } from '@metaplex-foundation/umi';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 import { Keypair } from '@solana/web3.js';
+import bs58 from 'bs58';
 import { getTreasuryKeypair } from './solanaOperator';
+import { decryptKey } from './solanaCrypto';
 import { fetchAndUploadToArweave, uploadToArweave } from './arweaveUpload';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
@@ -132,8 +134,8 @@ export async function mintSongMasterEdition(params: {
   }).sendAndConfirm(umi);
 
   // Creator-Verifikation mit dem Artist-Keypair aus der DB (kein Phantom nötig)
-  const artistSecretBytes = Buffer.from(artistPrivateKey, 'base64');
-  const artistWeb3Kp     = Keypair.fromSecretKey(artistSecretBytes);
+  const artistSecretB58  = decryptKey(artistPrivateKey);
+  const artistWeb3Kp     = Keypair.fromSecretKey(bs58.decode(artistSecretB58));
   const artistUmiKp      = umi.eddsa.createKeypairFromSecretKey(artistWeb3Kp.secretKey);
   const artistSigner     = createSignerFromKeypair(umi, artistUmiKp);
 
