@@ -80,19 +80,24 @@ export async function mintSongMasterEdition(params: {
     fetchAndUploadToArweave(audioUrl,      'audio/mpeg', [{ name: 'Title', value: title }]),
   ]);
 
+  // ar:// → https://arweave.net/ damit Solscan + alle Viewer das Bild anzeigen können
+  const toHttps = (url: string) => url.startsWith('ar://') ? `https://arweave.net/${url.slice(5)}` : url;
+  const coverHttps = toHttps(arweaveCover);
+  const audioHttps = toHttps(arweaveAudio);
+
   // Metadata JSON auf Arweave
   const metadata = {
     name:          title,
     symbol,
     description:   `${description}\n\nLimited to ${maxSupply} numbered editions — each holder receives a unique Print Edition NFT. Tradeable on secondary markets with 5% artist royalties on every resale.`,
-    image:         arweaveCover,
-    animation_url: arweaveAudio,
+    image:         coverHttps,
+    animation_url: audioHttps,
     external_url:  'https://app.dawidfaith.de',
     properties: {
       category: 'audio',
       files: [
-        { uri: arweaveCover, type: 'image/jpeg' },
-        { uri: arweaveAudio, type: 'audio/mpeg' },
+        { uri: coverHttps, type: 'image/jpeg' },
+        { uri: audioHttps, type: 'audio/mpeg' },
       ],
       creators: [{ address: artistSolanaAddress, share: 100 }],
     },
