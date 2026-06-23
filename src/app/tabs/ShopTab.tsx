@@ -1042,11 +1042,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
               <button
                 type="button"
                 onClick={() => setFDesc(
-                  lang === 'en'
-                    ? `Exclusive track available as a limited NFT on D.FAITH. As the holder of this edition, you directly support the artist and become part of an exclusive community of ${fMaxEditions} collectors.`
-                    : lang === 'pl'
-                    ? `Ekskluzywny utwór dostępny jako limitowany NFT na D.FAITH. Jako posiadacz tej edycji bezpośrednio wspierasz artystę i stajesz się częścią ekskluzywnej społeczności ${fMaxEditions} kolekcjonerów.`
-                    : `Exklusiver Track, erhältlich als limitiertes NFT auf D.FAITH. Als Inhaber dieser Edition unterstützt du den Künstler direkt und wirst Teil einer exklusiven Gemeinschaft von ${fMaxEditions} Sammlern.`
+                  `Exclusive track available as a limited NFT on D.FAITH. As the holder of this edition, you directly support the artist and become part of an exclusive community of ${fMaxEditions} collectors.`
                 )}
                 className="text-[10px] text-amber-400 hover:text-amber-300 transition-colors"
               >
