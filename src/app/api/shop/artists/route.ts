@@ -1,8 +1,9 @@
 /**
  * GET /api/shop/artists
  * Gibt alle Artists zurück, die mindestens ein aktives Shop-Item haben.
+ * ?wallet=X  → gibt Profil + Social-Links eines einzelnen Artists zurück (kein shop-item filter)
  */
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -10,8 +11,42 @@ export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const sql = getDb();
+  const walletParam = new URL(req.url).searchParams.get('wallet');
+
+  // Einzelprofil mit Social-Links (für NFT-Vorschau / Mint-Attribute)
+  if (walletParam) {
+    try {
+      const rows = await sql`
+        SELECT
+          p.display_name,
+          p.instagram_handle, p.instagram_name,
+          p.tiktok_handle,    p.tiktok_name,
+          p.facebook_handle,  p.facebook_name,
+          yb.channel_id AS youtube_channel_id, yb.channel_name AS youtube_channel_name
+        FROM user_profiles p
+        LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
+        WHERE LOWER(p.wallet_address) = ${walletParam.toLowerCase()}
+        LIMIT 1
+      `;
+      if (!rows.length) return NextResponse.json({ error: 'Profil nicht gefunden' }, { status: 404 });
+      const r = rows[0];
+      return NextResponse.json({
+        display_name:          (r.display_name          as string | null) ?? null,
+        instagram_handle:      (r.instagram_handle      as string | null) ?? null,
+        instagram_name:        (r.instagram_name        as string | null) ?? null,
+        tiktok_handle:         (r.tiktok_handle         as string | null) ?? null,
+        tiktok_name:           (r.tiktok_name           as string | null) ?? null,
+        facebook_handle:       (r.facebook_handle       as string | null) ?? null,
+        facebook_name:         (r.facebook_name         as string | null) ?? null,
+        youtube_channel_id:    (r.youtube_channel_id    as string | null) ?? null,
+        youtube_channel_name:  (r.youtube_channel_name  as string | null) ?? null,
+      });
+    } catch (err) {
+      return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
+    }
+  }
 
   try {
   // Spalten sicherstellen (idempotent) – werden sonst von /api/admin/artists angelegt,

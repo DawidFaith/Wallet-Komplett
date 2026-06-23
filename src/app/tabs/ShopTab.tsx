@@ -809,6 +809,24 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
   const [uploadingContent, setUploadingContent] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  // Artist-Profil für NFT-Preview
+  type ArtistProfile = {
+    display_name: string | null;
+    instagram_handle: string | null;
+    tiktok_handle: string | null;
+    facebook_handle: string | null;
+    youtube_channel_name: string | null;
+    youtube_channel_id: string | null;
+  };
+  const [artistProfile, setArtistProfile] = useState<ArtistProfile | null>(null);
+  useEffect(() => {
+    if (!showForm || artistProfile) return;
+    fetch(`/api/shop/artists?wallet=${walletAddress}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && !d.error) setArtistProfile(d as ArtistProfile); })
+      .catch(() => {});
+  }, [showForm, walletAddress, artistProfile]);
+
   const handleUpload = async (file: File, type: 'content' | 'image') => {
     const setUploading = type === 'content' ? setUploadingContent : setUploadingImage;
     const setUrl       = type === 'content' ? setFContent : setFImage;
@@ -1193,18 +1211,38 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
               <p className="text-amber-400 text-[10px] uppercase tracking-widest mb-3 font-semibold">NFT Vorschau — so sieht es auf Magic Eden aus</p>
               <div className="flex gap-4 items-start">
                 <div className="shrink-0">
-                  <Image src={fImage} alt="NFT Cover" width={100} height={100} className="w-24 h-24 rounded-xl object-cover border border-white/10" />
+                  <Image src={fImage} alt="NFT Cover" width={96} height={96} className="w-24 h-24 rounded-xl object-cover border border-white/10" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-white font-bold text-sm truncate">{fTitle || '—'}</p>
-                  <p className="text-zinc-400 text-[11px] mt-0.5 line-clamp-2">{fDesc || '—'}</p>
+                  <p className="text-white font-bold text-sm truncate">{fTitle}</p>
+                  {artistProfile?.display_name && (
+                    <p className="text-amber-300 text-[11px] font-semibold mt-0.5">{artistProfile.display_name}</p>
+                  )}
+                  <p className="text-zinc-400 text-[11px] mt-1 line-clamp-2">{fDesc || '—'}</p>
+
+                  {/* Website-Link */}
+                  <a
+                    href="https://app.dawidfaith.de"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block text-amber-400/70 hover:text-amber-300 text-[10px] mt-1.5 underline underline-offset-2"
+                  >
+                    app.dawidfaith.de
+                  </a>
+
+                  {/* NFT Attributes */}
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {[
                       ['Type', 'Music'],
+                      ['Artist', artistProfile?.display_name ?? '—'],
                       ['Platform', 'D.FAITH'],
                       ['Max Editions', String(fMaxEditions)],
                       ['Royalties', '5%'],
                       ['Release Year', String(new Date().getFullYear())],
+                      ...(artistProfile?.instagram_handle ? [['Instagram', `@${artistProfile.instagram_handle}`]] : []),
+                      ...(artistProfile?.tiktok_handle    ? [['TikTok',    `@${artistProfile.tiktok_handle}`]]    : []),
+                      ...(artistProfile?.youtube_channel_name ? [['YouTube', artistProfile.youtube_channel_name]] : []),
+                      ...(artistProfile?.facebook_handle  ? [['Facebook',  `@${artistProfile.facebook_handle}`]]  : []),
                     ].map(([k, v]) => (
                       <span key={k} className="bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-0.5 text-[10px] text-zinc-300">
                         <span className="text-zinc-500">{k}:</span> {v}
@@ -1212,7 +1250,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                     ))}
                   </div>
                   {fContent && (
-                    <p className="text-emerald-400 text-[10px] mt-2">🎵 Audio hochgeladen</p>
+                    <p className="text-emerald-400 text-[10px] mt-2">Audio hochgeladen</p>
                   )}
                 </div>
               </div>

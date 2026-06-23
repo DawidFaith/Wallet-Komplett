@@ -88,8 +88,10 @@ export async function POST(req: NextRequest) {
   const [profileRows, artistRows, artistNameRows] = await Promise.all([
     sql`SELECT is_artist FROM user_profiles WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`,
     sql`SELECT solana_address FROM solana_accounts WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`,
-    sql`SELECT display_name FROM user_profiles WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`,
+    sql`SELECT display_name, instagram_handle, tiktok_handle, facebook_handle FROM user_profiles WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`,
   ]);
+  // YouTube-Binding separat (left join wäre nötig, separate query einfacher)
+  const ytRows = await sql`SELECT channel_name FROM youtube_bindings WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`;
 
   if (!profileRows.length || !profileRows[0].is_artist) {
     return NextResponse.json({ error: 'Nur Artists können Items erstellen' }, { status: 403 });
@@ -140,6 +142,10 @@ export async function POST(req: NextRequest) {
           coverImageUrl:       imageUrl.trim(),
           audioUrl:            contentUrl.trim(),
           maxSupply:           typeof nftMaxSupply === 'number' && nftMaxSupply > 0 ? nftMaxSupply : 100,
+          instagramHandle:     (artistNameRows[0]?.instagram_handle as string | null) ?? null,
+          tiktokHandle:        (artistNameRows[0]?.tiktok_handle    as string | null) ?? null,
+          youtubeChannelName:  (ytRows[0]?.channel_name             as string | null) ?? null,
+          facebookHandle:      (artistNameRows[0]?.facebook_handle  as string | null) ?? null,
         });
         await sql`
           UPDATE shop_items

@@ -48,6 +48,10 @@ export async function mintSongMasterEdition(params: {
   audioUrl: string;
   maxSupply: number;
   symbol?: string;
+  instagramHandle?: string | null;
+  tiktokHandle?: string | null;
+  youtubeChannelName?: string | null;
+  facebookHandle?: string | null;
 }): Promise<SongMasterEditionResult> {
   const {
     artistWallet,
@@ -59,6 +63,10 @@ export async function mintSongMasterEdition(params: {
     audioUrl,
     maxSupply,
     symbol = 'DFAITH',
+    instagramHandle,
+    tiktokHandle,
+    youtubeChannelName,
+    facebookHandle,
   } = params;
 
   // Cover + Audio von Vercel Blob permanent auf Arweave hochladen
@@ -87,9 +95,14 @@ export async function mintSongMasterEdition(params: {
       { trait_type: 'Type',         value: 'Music' },
       { trait_type: 'Artist',       value: artistName },
       { trait_type: 'Platform',     value: 'D.FAITH' },
+      { trait_type: 'Website',      value: 'app.dawidfaith.de' },
       { trait_type: 'Max Editions', value: String(maxSupply) },
       { trait_type: 'Royalties',    value: '5%' },
       { trait_type: 'Release Year', value: String(new Date().getFullYear()) },
+      ...(instagramHandle    ? [{ trait_type: 'Instagram', value: `@${instagramHandle}` }]    : []),
+      ...(tiktokHandle       ? [{ trait_type: 'TikTok',    value: `@${tiktokHandle}` }]       : []),
+      ...(youtubeChannelName ? [{ trait_type: 'YouTube',   value: youtubeChannelName }]        : []),
+      ...(facebookHandle     ? [{ trait_type: 'Facebook',  value: `@${facebookHandle}` }]     : []),
     ],
   };
   const metadataUri = await uploadToArweave(
