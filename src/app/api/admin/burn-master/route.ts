@@ -90,11 +90,43 @@ export async function POST(req: NextRequest) {
       `;
 
       for (const print of prints) {
+        const printMintStr = print.nft_mint_address as string;
+
+        // Tatsächlichen Besitzer des Print-Tokens on-chain ermitteln
+        const holderKp = await (async (): Promise<Keypair | null> => {
+          try {
+            const printMintPk = new PublicKey(printMintStr);
+            const largest = await conn.getTokenLargestAccounts(printMintPk);
+            const tokenAcct = largest.value.find(a => BigInt(a.amount) > 0n);
+            if (!tokenAcct) return null;
+            const parsed = await conn.getParsedAccountInfo(tokenAcct.address);
+            const ownerAddr: string = (parsed.value?.data as { parsed?: { info?: { owner?: string } } })?.parsed?.info?.owner ?? '';
+            if (!ownerAddr) return null;
+            // Wenn der aktuelle Besitzer unser ursprünglicher Käufer ist → seinen Keypair verwenden
+            const secretB58 = decryptKey(print.solana_private_key as string);
+            const originalKp = Keypair.fromSecretKey(bs58.decode(secretB58));
+            if (originalKp.publicKey.toBase58() === ownerAddr) return originalKp;
+            // Sonst: anderen Keypair aus DB suchen
+            const ownerRows = await sql`
+              SELECT solana_private_key FROM solana_accounts
+              WHERE LOWER(solana_address) = ${ownerAddr.toLowerCase()} LIMIT 1
+            `;
+            if (!ownerRows.length) return null;
+            const ownerSecret = decryptKey(ownerRows[0].solana_private_key as string);
+            return Keypair.fromSecretKey(bs58.decode(ownerSecret));
+          } catch {
+            return null;
+          }
+        })();
+
+        if (!holderKp) {
+          failed.push(`${printMintStr.slice(0, 8)}…: Aktueller Besitzer nicht in DB — NFT in externes Wallet transferiert`);
+          continue;
+        }
+
         try {
-          const secretB58  = decryptKey(print.solana_private_key as string);
-          const buyerKp    = Keypair.fromSecretKey(bs58.decode(secretB58));
-          const buyerUmiKp = umi.eddsa.createKeypairFromSecretKey(buyerKp.secretKey);
-          const buyerSigner = createSignerFromKeypair(umi, buyerUmiKp);
+          const holderUmiKp  = umi.eddsa.createKeypairFromSecretKey(holderKp.secretKey);
+          const holderSigner = createSignerFromKeypair(umi, holderUmiKp);
 
           const editionMarker = findEditionMarkerPda(umi, {
             mint:          umiPubkey(masterMint),
@@ -102,38 +134,37 @@ export async function POST(req: NextRequest) {
           });
 
           await burnV1(umi, {
-            mint:               umiPubkey(print.nft_mint_address as string),
-            authority:          buyerSigner,
-            tokenOwner:         buyerSigner.publicKey,
+            mint:               umiPubkey(printMintStr),
+            authority:          holderSigner,
+            tokenOwner:         holderSigner.publicKey,
             masterEditionMint:  umiPubkey(masterMint),
             masterEditionToken: umiPubkey(treasuryAta.toBase58()),
             editionMarker,
             tokenStandard:      TokenStandard.NonFungible,
           }).sendAndConfirm(umi);
 
-          burned.push(print.nft_mint_address as string);
+          burned.push(printMintStr);
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
-          console.error(`Print burn failed [${print.nft_mint_address}]:`, msg);
+          console.error(`Print burn failed [${printMintStr}]:`, msg);
           const looksGone = msg.includes('AccountNotFound')
             || msg.includes('invalid account data')
             || msg.includes('could not find account')
             || msg.includes('0x25') || msg.includes('0xbc4')
             || msg.includes('TokenAccountNotFound');
           if (looksGone) {
-            // Prüfen ob der Mint wirklich weg ist — sonst wurde der NFT nur transferiert
             try {
-              const mintInfo = await conn.getAccountInfo(new PublicKey(print.nft_mint_address as string));
+              const mintInfo = await conn.getAccountInfo(new PublicKey(printMintStr));
               if (mintInfo === null) {
-                burned.push(print.nft_mint_address as string); // Mint weg → wirklich fertig
+                burned.push(printMintStr);
               } else {
-                failed.push(`${(print.nft_mint_address as string).slice(0, 8)}…: Token-Account fehlt aber Mint existiert noch — NFT möglicherweise in anderes Wallet transferiert`);
+                failed.push(`${printMintStr.slice(0, 8)}…: Token-Account fehlt aber Mint existiert noch`);
               }
             } catch {
-              burned.push(print.nft_mint_address as string);
+              burned.push(printMintStr);
             }
           } else {
-            failed.push(`${(print.nft_mint_address as string).slice(0, 8)}…: ${msg.split('Caused By:')[0].trim()}`);
+            failed.push(`${printMintStr.slice(0, 8)}…: ${msg.split('Caused By:')[0].trim()}`);
           }
         }
       }
