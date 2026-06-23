@@ -1045,9 +1045,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
     if (!editData.title.trim()) { setEditError(lang === 'en' ? 'Title is required' : lang === 'pl' ? 'Tytuł jest wymagany' : 'Titel ist Pflicht'); return; }
     const price = parseInt(editData.price, 10);
     if (isNaN(price) || price < 0) { setEditError(t('shop.invalidPrice', lang)); return; }
-    const tokensRaw = editData.tokens.trim();
-    const tokens = tokensRaw === '' ? null : parseFloat(tokensRaw);
-    if (tokensRaw !== '' && (isNaN(tokens!) || tokens! < 0)) { setEditError(t('shop.invalidTokenPrice', lang)); return; }
+    const tokens = price; // Credits = Tokens (1:1)
 
     setEditSaving(true);
     setEditError('');
@@ -1412,19 +1410,11 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelTokenPrice', lang)} <span className="text-zinc-600 normal-case">(opt.)</span></label>
-                      <input type="number" min="0" step="0.000001" value={editData.tokens} placeholder={t('shop.tokenPriceOptional', lang)}
-                        onChange={e => setEditData(d => d && { ...d, tokens: e.target.value })}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50 placeholder:text-zinc-600" />
-                    </div>
-                    <div>
-                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelMinLevel', lang)}</label>
-                      <input type="number" min="0" value={editData.level}
-                        onChange={e => setEditData(d => d && { ...d, level: e.target.value })}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
-                    </div>
+                  <div>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelMinLevel', lang)}</label>
+                    <input type="number" min="0" value={editData.level}
+                      onChange={e => setEditData(d => d && { ...d, level: e.target.value })}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
                   </div>
 
                   {/* Content-Datei */}
