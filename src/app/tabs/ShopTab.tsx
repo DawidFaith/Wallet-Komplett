@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import { useUser } from '@clerk/nextjs';
 import {
@@ -815,15 +815,16 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
     setUploading(true);
     setFormError('');
     try {
-      const form = new FormData();
-      form.append('file',     file);
-      form.append('wallet',   walletAddress);
-      form.append('fileType', type);
-
-      const res  = await fetch('/api/shop/upload-arweave', { method: 'POST', body: form });
-      const data = await res.json() as { url?: string; error?: string };
-      if (!res.ok || !data.url) throw new Error(data.error ?? 'Upload fehlgeschlagen');
-      setUrl(data.url);
+      const { upload } = await import('@vercel/blob/client');
+      const ext        = file.name.replace(/.*\./, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const safeWallet = walletAddress.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 32);
+      const pathname   = `shop/${type === 'image' ? 'images' : 'content'}/${safeWallet}/${Date.now()}.${ext}`;
+      const blob = await upload(pathname, file, {
+        access:          'public',
+        handleUploadUrl: '/api/shop/upload',
+        clientPayload:   JSON.stringify({ fileType: type, wallet: walletAddress }),
+      });
+      setUrl(blob.url);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Upload fehlgeschlagen');
     } finally {
@@ -928,14 +929,16 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
     setUploading(true);
     setEditError('');
     try {
-      const form = new FormData();
-      form.append('file',     file);
-      form.append('wallet',   walletAddress);
-      form.append('fileType', field);
-      const res  = await fetch('/api/shop/upload-arweave', { method: 'POST', body: form });
-      const data = await res.json() as { url?: string; error?: string };
-      if (!res.ok || !data.url) throw new Error(data.error ?? 'Upload fehlgeschlagen');
-      setEditData(prev => prev ? { ...prev, [field === 'content' ? 'content' : 'image']: data.url! } : prev);
+      const { upload } = await import('@vercel/blob/client');
+      const ext        = file.name.replace(/.*\./, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const safeWallet = walletAddress.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 32);
+      const pathname   = `shop/${field === 'image' ? 'images' : 'content'}/${safeWallet}/${Date.now()}.${ext}`;
+      const blob = await upload(pathname, file, {
+        access:          'public',
+        handleUploadUrl: '/api/shop/upload',
+        clientPayload:   JSON.stringify({ fileType: field, wallet: walletAddress }),
+      });
+      setEditData(prev => prev ? { ...prev, [field === 'content' ? 'content' : 'image']: blob.url } : prev);
     } catch (err) {
       setEditError(err instanceof Error ? err.message : 'Upload fehlgeschlagen');
     } finally {
@@ -1183,6 +1186,38 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
               <Image src={fImage} alt="Vorschau" width={80} height={80} className="mt-2 w-20 h-20 rounded-xl object-cover border border-white/10" />
             )}
           </div>
+
+          {/* NFT Preview */}
+          {fImage && fTitle && (
+            <div className="border border-amber-500/20 bg-amber-500/5 rounded-2xl p-4">
+              <p className="text-amber-400 text-[10px] uppercase tracking-widest mb-3 font-semibold">NFT Vorschau — so sieht es auf Magic Eden aus</p>
+              <div className="flex gap-4 items-start">
+                <div className="shrink-0">
+                  <Image src={fImage} alt="NFT Cover" width={100} height={100} className="w-24 h-24 rounded-xl object-cover border border-white/10" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-white font-bold text-sm truncate">{fTitle || '—'}</p>
+                  <p className="text-zinc-400 text-[11px] mt-0.5 line-clamp-2">{fDesc || '—'}</p>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {[
+                      ['Type', 'Music'],
+                      ['Platform', 'D.FAITH'],
+                      ['Max Editions', String(fMaxEditions)],
+                      ['Royalties', '5%'],
+                      ['Release Year', String(new Date().getFullYear())],
+                    ].map(([k, v]) => (
+                      <span key={k} className="bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-0.5 text-[10px] text-zinc-300">
+                        <span className="text-zinc-500">{k}:</span> {v}
+                      </span>
+                    ))}
+                  </div>
+                  {fContent && (
+                    <p className="text-emerald-400 text-[10px] mt-2">🎵 Audio hochgeladen</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {formError && (
             <p className="text-red-400 text-xs">{formError}</p>
