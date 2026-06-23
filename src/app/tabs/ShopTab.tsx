@@ -199,7 +199,7 @@ function ItemCard({
         {item.artistName && (
           <p className="text-amber-300/80 text-[11px] font-semibold">{item.artistName}</p>
         )}
-        <p className="text-zinc-400 text-[11px] line-clamp-2 leading-relaxed mt-0.5">
+        <p className="text-zinc-400 text-[11px] leading-relaxed mt-0.5">
           {item.description || TYPE_LABELS[item.type]}
         </p>
 
