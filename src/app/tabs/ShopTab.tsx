@@ -34,6 +34,7 @@ interface ShopItem {
   nftMaxSupply: number | null;
   isNftEnabled: boolean;
   masterEditionMint: string | null;
+  soldCount: number;
 }
 
 interface ShopArtist {
@@ -95,7 +96,9 @@ function ItemCard({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lang = useLang();
   const tokenLabel = artistRewardToken ?? 'D.FAITH';
-  const isLocked = item.requiredLevel > 0 && userLevel < item.requiredLevel;
+  const isLocked   = item.requiredLevel > 0 && userLevel < item.requiredLevel;
+  const remaining  = item.isNftEnabled && item.nftMaxSupply != null ? item.nftMaxSupply - item.soldCount : null;
+  const isSoldOut  = remaining !== null && remaining <= 0;
 
   const togglePreview = () => {
     const audio = audioRef.current;
@@ -166,6 +169,14 @@ function ItemCard({
           </>
         )}
 
+        {/* Sold-Out-Overlay */}
+        {isSoldOut && !isLocked && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/75 backdrop-blur-[2px]">
+            <p className="text-white text-sm font-black tracking-widest uppercase">Ausverkauft</p>
+            <p className="text-zinc-400 text-[10px] mt-1">{item.nftMaxSupply} / {item.nftMaxSupply} Editionen</p>
+          </div>
+        )}
+
         {/* Lock-Overlay */}
         {isLocked && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 backdrop-blur-[2px]">
@@ -198,13 +209,25 @@ function ItemCard({
             {[
               ['Type', 'Music'],
               ['Platform', 'D.FAITH'],
-              ...(item.nftMaxSupply != null ? [['Editions', String(item.nftMaxSupply)]] : []),
               ['Royalties', '5%'],
             ].map(([k, v]) => (
               <span key={k} className="bg-zinc-800/80 border border-white/[0.06] rounded-md px-1.5 py-0.5 text-[9px] text-zinc-400">
                 <span className="text-zinc-600">{k}:</span> {v}
               </span>
             ))}
+            {item.nftMaxSupply != null && (
+              <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-semibold border ${
+                isSoldOut
+                  ? 'bg-red-900/40 border-red-500/30 text-red-400'
+                  : remaining !== null && remaining <= Math.ceil(item.nftMaxSupply * 0.1)
+                    ? 'bg-amber-900/40 border-amber-500/30 text-amber-400'
+                    : 'bg-zinc-800/80 border-white/[0.06] text-zinc-400'
+              }`}>
+                {isSoldOut
+                  ? 'Ausverkauft'
+                  : `${remaining} / ${item.nftMaxSupply} verfügbar`}
+              </span>
+            )}
             {item.masterEditionMint && (
               <a
                 href={`https://solscan.io/token/${item.masterEditionMint}`}
@@ -236,7 +259,11 @@ function ItemCard({
       {/* ── Kauf-Bereich ── */}
       <div className="px-3 pb-3 pt-1">
         {walletAddress ? (
-          isLocked ? (
+          isSoldOut ? (
+            <div className="flex items-center justify-center gap-1.5 py-2 bg-red-900/20 border border-red-500/20 rounded-lg">
+              <p className="text-red-400 text-[11px] font-bold">Ausverkauft</p>
+            </div>
+          ) : isLocked ? (
             <div className="flex items-center gap-1.5 py-2">
               <FaLock size={9} className="text-zinc-600 shrink-0" />
               <p className="text-zinc-600 text-[10px]">Level {item.requiredLevel} erforderlich</p>
@@ -361,6 +388,7 @@ function ArtistShopView({
         nftMaxSupply: i.nft_max_supply != null ? Number(i.nft_max_supply) : null,
         isNftEnabled: Boolean(i.is_nft_enabled),
         masterEditionMint: (i.master_edition_mint as string | null) ?? null,
+        soldCount: Number(i.sold_count ?? 0),
       })));
     }
     setLoading(false);
@@ -905,6 +933,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
         nftMaxSupply: i.nft_max_supply != null ? Number(i.nft_max_supply) : null,
         isNftEnabled: Boolean(i.is_nft_enabled),
         masterEditionMint: (i.master_edition_mint as string | null) ?? null,
+        soldCount: Number(i.sold_count ?? 0),
       })));
     }
     setLoading(false);

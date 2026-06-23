@@ -26,10 +26,13 @@ export async function GET(req: NextRequest) {
            si.price_credits, si.price_tokens, si.content_url, si.image_url,
            si.is_active, si.created_at, si.required_level,
            si.nft_max_supply, si.is_nft_enabled, si.master_edition_mint,
-           p.display_name AS artist_name
+           p.display_name AS artist_name,
+           COUNT(sp.id)::int AS sold_count
     FROM shop_items si
     LEFT JOIN user_profiles p ON LOWER(p.wallet_address) = si.artist_wallet
+    LEFT JOIN shop_purchases sp ON sp.item_id = si.id
     WHERE si.artist_wallet = ${artistWallet} AND si.is_active = TRUE
+    GROUP BY si.id, p.display_name
     ORDER BY si.created_at DESC
   `;
 
