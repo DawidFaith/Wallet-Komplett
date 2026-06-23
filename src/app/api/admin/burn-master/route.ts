@@ -15,6 +15,7 @@ import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import {
   mplTokenMetadata,
   burnV1,
+  mintV1,
   TokenStandard,
 } from '@metaplex-foundation/mpl-token-metadata';
 import {
@@ -22,7 +23,11 @@ import {
   publicKey as umiPubkey,
 } from '@metaplex-foundation/umi';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
-import { Keypair } from '@solana/web3.js';
+import { Connection, Keypair, PublicKey } from '@solana/web3.js';
+import {
+  getAssociatedTokenAddress, getAccount,
+  TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID,
+} from '@solana/spl-token';
 import bs58 from 'bs58';
 import { getTreasuryKeypair } from '../../../lib/solanaOperator';
 import { getDb } from '../../../lib/db';
@@ -108,6 +113,26 @@ export async function POST(req: NextRequest) {
     const umi = createUmi(RPC_URL)
       .use(mplTokenMetadata())
       .use(keypairIdentity(fromWeb3JsKeypair(treasury)));
+
+    // Sicherstellen dass das Treasury das Master Token hält (ältere Items hatten kein mintV1)
+    const conn = new Connection(RPC_URL, 'confirmed');
+    const masterMintPk = new PublicKey(masterMint);
+    const treasuryPk   = new PublicKey(treasury.publicKey.toBytes());
+    const treasuryAta  = await getAssociatedTokenAddress(masterMintPk, treasuryPk, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
+    let needsMint = false;
+    try {
+      const ataInfo = await getAccount(conn, treasuryAta);
+      if (Number(ataInfo.amount) === 0) needsMint = true;
+    } catch { needsMint = true; }
+
+    if (needsMint) {
+      await mintV1(umi, {
+        mint:          umiPubkey(masterMint),
+        tokenOwner:    umi.identity.publicKey,
+        amount:        1,
+        tokenStandard: TokenStandard.NonFungible,
+      }).sendAndConfirm(umi);
+    }
 
     await burnV1(umi, {
       mint:          umiPubkey(masterMint),
