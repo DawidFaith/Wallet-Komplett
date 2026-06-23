@@ -21,6 +21,7 @@ import {
 import {
   keypairIdentity,
   publicKey as umiPubkey,
+  createSignerFromKeypair,
 } from '@metaplex-foundation/umi';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
@@ -69,16 +70,21 @@ export async function POST(req: NextRequest) {
           const secretB58 = decryptKey(print.solana_private_key as string);
           const buyerKp   = Keypair.fromSecretKey(bs58.decode(secretB58));
 
-          const buyerUmi = createUmi(RPC_URL)
+          // Treasury zahlt Gebühren, Käufer ist Authority (hält das NFT)
+          const treasury = getTreasuryKeypair();
+          const umi = createUmi(RPC_URL)
             .use(mplTokenMetadata())
-            .use(keypairIdentity(fromWeb3JsKeypair(buyerKp)));
+            .use(keypairIdentity(fromWeb3JsKeypair(treasury)));
 
-          await burnV1(buyerUmi, {
+          const buyerUmiKp  = umi.eddsa.createKeypairFromSecretKey(buyerKp.secretKey);
+          const buyerSigner = createSignerFromKeypair(umi, buyerUmiKp);
+
+          await burnV1(umi, {
             mint:          umiPubkey(print.nft_mint_address as string),
-            authority:     buyerUmi.identity,
-            tokenOwner:    buyerUmi.identity.publicKey,
+            authority:     buyerSigner,
+            tokenOwner:    buyerSigner.publicKey,
             tokenStandard: TokenStandard.NonFungible,
-          }).sendAndConfirm(buyerUmi);
+          }).sendAndConfirm(umi);
 
           burned.push(print.nft_mint_address as string);
         } catch (e) {
