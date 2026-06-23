@@ -96,10 +96,9 @@ export async function POST(req: NextRequest) {
           const buyerUmiKp = umi.eddsa.createKeypairFromSecretKey(buyerKp.secretKey);
           const buyerSigner = createSignerFromKeypair(umi, buyerUmiKp);
 
-          const editionNum = Math.floor(Number(print.edition_number ?? 1) / 248);
           const editionMarker = findEditionMarkerPda(umi, {
             mint:          umiPubkey(masterMint),
-            editionMarker: editionNum,
+            editionMarker: String(Math.floor(Number(print.edition_number ?? 1) / 248)),
           });
 
           await burnV1(umi, {
