@@ -87,10 +87,7 @@ export async function POST(req: NextRequest) {
   // Nutze Artist-Token wenn gesetzt, sonst globaler D.FAITH-Token
   const effectiveMint = artistMint ?? DFAITH_MINT ?? null;
 
-  // Käufer darf sich nichts selbst verkaufen
-  if (item.artist_wallet === buyerWallet.toLowerCase()) {
-    return NextResponse.json({ error: 'Du kannst dein eigenes Item nicht kaufen' }, { status: 400 });
-  }
+  const isSelfPurchase = item.artist_wallet === buyerWallet.toLowerCase();
 
   // Token-Zahlung: Mint prüfen
   if (paymentMethod === 'tokens') {
@@ -112,12 +109,14 @@ export async function POST(req: NextRequest) {
   // ── Zahlung abwickeln ──────────────────────────────────────────────────────
 
   if (paymentMethod === 'credits') {
-    try {
-      await redeemDfaithCredits(buyerWallet.toLowerCase(), item.price_credits);
-    } catch {
-      return NextResponse.json({ error: 'Nicht genug D.FAITH Credits' }, { status: 402 });
+    if (!isSelfPurchase) {
+      try {
+        await redeemDfaithCredits(buyerWallet.toLowerCase(), item.price_credits);
+      } catch {
+        return NextResponse.json({ error: 'Nicht genug D.FAITH Credits' }, { status: 402 });
+      }
+      await addDfaithCredits(item.artist_wallet, item.price_credits);
     }
-    await addDfaithCredits(item.artist_wallet, item.price_credits);
 
   } else {
     // Token-Transfer on-chain – gleicher Betrag wie Credits
