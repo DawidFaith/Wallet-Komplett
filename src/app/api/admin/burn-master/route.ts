@@ -58,9 +58,11 @@ export async function POST(req: NextRequest) {
     if (itemId) {
       const prints = await sql`
         SELECT sp.id, sp.nft_mint_address, sp.buyer_wallet,
-               sa.solana_private_key
+               sa.solana_private_key,
+               si.master_edition_mint
         FROM shop_purchases sp
         JOIN solana_accounts sa ON sa.wallet_address = sp.buyer_wallet
+        JOIN shop_items si ON si.id = sp.item_id
         WHERE sp.item_id = ${itemId}
           AND sp.nft_mint_address IS NOT NULL
       `;
@@ -80,10 +82,11 @@ export async function POST(req: NextRequest) {
           const buyerSigner = createSignerFromKeypair(umi, buyerUmiKp);
 
           await burnV1(umi, {
-            mint:          umiPubkey(print.nft_mint_address as string),
-            authority:     buyerSigner,
-            tokenOwner:    buyerSigner.publicKey,
-            tokenStandard: TokenStandard.NonFungible,
+            mint:                umiPubkey(print.nft_mint_address as string),
+            authority:           buyerSigner,
+            tokenOwner:          buyerSigner.publicKey,
+            masterEditionMint:   umiPubkey(print.master_edition_mint as string),
+            tokenStandard:       TokenStandard.NonFungible,
           }).sendAndConfirm(umi);
 
           burned.push(print.nft_mint_address as string);
