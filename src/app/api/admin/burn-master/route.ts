@@ -115,13 +115,23 @@ export async function POST(req: NextRequest) {
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
           console.error(`Print burn failed [${print.nft_mint_address}]:`, msg);
-          const alreadyGone = msg.includes('AccountNotFound')
+          const looksGone = msg.includes('AccountNotFound')
             || msg.includes('invalid account data')
             || msg.includes('could not find account')
             || msg.includes('0x25') || msg.includes('0xbc4')
             || msg.includes('TokenAccountNotFound');
-          if (alreadyGone) {
-            burned.push(print.nft_mint_address as string);
+          if (looksGone) {
+            // Prüfen ob der Mint wirklich weg ist — sonst wurde der NFT nur transferiert
+            try {
+              const mintInfo = await conn.getAccountInfo(new PublicKey(print.nft_mint_address as string));
+              if (mintInfo === null) {
+                burned.push(print.nft_mint_address as string); // Mint weg → wirklich fertig
+              } else {
+                failed.push(`${(print.nft_mint_address as string).slice(0, 8)}…: Token-Account fehlt aber Mint existiert noch — NFT möglicherweise in anderes Wallet transferiert`);
+              }
+            } catch {
+              burned.push(print.nft_mint_address as string);
+            }
           } else {
             failed.push(`${(print.nft_mint_address as string).slice(0, 8)}…: ${msg.split('Caused By:')[0].trim()}`);
           }
