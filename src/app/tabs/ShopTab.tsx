@@ -19,6 +19,7 @@ type ItemType = 'song' | 'video' | 'nft' | 'exclusive'; // video/exclusive: nur 
 interface ShopItem {
   id: string;
   artistWallet: string;
+  artistName: string | null;
   title: string;
   description: string;
   type: ItemType;
@@ -30,6 +31,9 @@ interface ShopItem {
   createdAt: string;
   purchased?: boolean;
   requiredLevel: number;
+  nftMaxSupply: number | null;
+  isNftEnabled: boolean;
+  masterEditionMint: string | null;
 }
 
 interface ShopArtist {
@@ -181,9 +185,38 @@ function ItemCard({
       {/* ── Textbereich ── */}
       <div className="px-3 pt-3 pb-2 flex flex-col gap-0.5 flex-1">
         <p className="text-white font-bold text-sm leading-snug line-clamp-1">{item.title}</p>
-        <p className="text-zinc-400 text-[11px] line-clamp-2 leading-relaxed min-h-[2em]">
+        {item.artistName && (
+          <p className="text-amber-300/80 text-[11px] font-semibold">{item.artistName}</p>
+        )}
+        <p className="text-zinc-400 text-[11px] line-clamp-2 leading-relaxed mt-0.5">
           {item.description || TYPE_LABELS[item.type]}
         </p>
+
+        {/* NFT-Attribute */}
+        {item.isNftEnabled && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {[
+              ['Type', 'Music'],
+              ['Platform', 'D.FAITH'],
+              ...(item.nftMaxSupply != null ? [['Editions', String(item.nftMaxSupply)]] : []),
+              ['Royalties', '5%'],
+            ].map(([k, v]) => (
+              <span key={k} className="bg-zinc-800/80 border border-white/[0.06] rounded-md px-1.5 py-0.5 text-[9px] text-zinc-400">
+                <span className="text-zinc-600">{k}:</span> {v}
+              </span>
+            ))}
+            {item.masterEditionMint && (
+              <a
+                href={`https://solscan.io/token/${item.masterEditionMint}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-0.5 bg-violet-900/30 border border-violet-500/20 rounded-md px-1.5 py-0.5 text-[9px] text-violet-400 hover:text-violet-300 transition-colors"
+              >
+                <FaGem size={7} /> NFT
+              </a>
+            )}
+          </div>
+        )}
 
         {/* Preis-Zeile */}
         <div className="flex items-center gap-1.5 mt-1">
@@ -313,6 +346,7 @@ function ArtistShopView({
       setItems(data.map((i: Record<string, unknown>) => ({
         id: i.id,
         artistWallet: i.artist_wallet,
+        artistName: (i.artist_name as string | null) ?? null,
         title: i.title,
         description: i.description,
         type: i.type as ItemType,
@@ -324,6 +358,9 @@ function ArtistShopView({
         createdAt: i.created_at as string,
         purchased: i.purchased as boolean,
         requiredLevel: Number(i.required_level ?? 0),
+        nftMaxSupply: i.nft_max_supply != null ? Number(i.nft_max_supply) : null,
+        isNftEnabled: Boolean(i.is_nft_enabled),
+        masterEditionMint: (i.master_edition_mint as string | null) ?? null,
       })));
     }
     setLoading(false);
@@ -854,6 +891,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
       setItems(data.map((i: Record<string, unknown>) => ({
         id: i.id,
         artistWallet: i.artist_wallet,
+        artistName: (i.artist_name as string | null) ?? null,
         title: i.title,
         description: i.description,
         type: i.type as ItemType,
@@ -864,6 +902,9 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
         isActive: i.is_active as boolean,
         createdAt: i.created_at as string,
         requiredLevel: Number(i.required_level ?? 0),
+        nftMaxSupply: i.nft_max_supply != null ? Number(i.nft_max_supply) : null,
+        isNftEnabled: Boolean(i.is_nft_enabled),
+        masterEditionMint: (i.master_edition_mint as string | null) ?? null,
       })));
     }
     setLoading(false);

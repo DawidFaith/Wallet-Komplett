@@ -22,12 +22,15 @@ export async function GET(req: NextRequest) {
   const sql = getDb();
 
   const items = await sql`
-    SELECT id, artist_wallet, title, description, type,
-           price_credits, price_tokens, content_url, image_url, is_active, created_at,
-           required_level
-    FROM shop_items
-    WHERE artist_wallet = ${artistWallet} AND is_active = TRUE
-    ORDER BY created_at DESC
+    SELECT si.id, si.artist_wallet, si.title, si.description, si.type,
+           si.price_credits, si.price_tokens, si.content_url, si.image_url,
+           si.is_active, si.created_at, si.required_level,
+           si.nft_max_supply, si.is_nft_enabled, si.master_edition_mint,
+           p.display_name AS artist_name
+    FROM shop_items si
+    LEFT JOIN user_profiles p ON LOWER(p.wallet_address) = si.artist_wallet
+    WHERE si.artist_wallet = ${artistWallet} AND si.is_active = TRUE
+    ORDER BY si.created_at DESC
   `;
 
   // Bereits gekaufte Items des Nutzers
