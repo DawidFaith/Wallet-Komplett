@@ -9,6 +9,7 @@ import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import {
   mplTokenMetadata,
   createV1,
+  mintV1,
   printV1,
   TokenStandard,
   verifyCreatorV1,
@@ -24,7 +25,11 @@ import {
   createSignerFromKeypair,
 } from '@metaplex-foundation/umi';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
-import { Keypair } from '@solana/web3.js';
+import { Connection, Keypair, PublicKey } from '@solana/web3.js';
+import {
+  getAssociatedTokenAddress, getAccount,
+  TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID,
+} from '@solana/spl-token';
 import bs58 from 'bs58';
 import { getTreasuryKeypair } from './solanaOperator';
 import { decryptKey } from './solanaCrypto';
@@ -133,6 +138,14 @@ export async function mintSongMasterEdition(params: {
     uses:          none(),
   }).sendAndConfirm(umi);
 
+  // Master Edition Token in die Treasury-ATA minten (Pflicht für spätere printV1-Calls)
+  await mintV1(umi, {
+    mint:          mintSigner.publicKey,
+    tokenOwner:    umi.identity.publicKey,
+    amount:        1,
+    tokenStandard: TokenStandard.NonFungible,
+  }).sendAndConfirm(umi);
+
   // Creator-Verifikation mit dem Artist-Keypair aus der DB (kein Phantom nötig)
   const artistSecretB58  = decryptKey(artistPrivateKey);
   const artistWeb3Kp     = Keypair.fromSecretKey(bs58.decode(artistSecretB58));
@@ -176,6 +189,27 @@ export async function mintSongPrintEdition(params: {
     .use(keypairIdentity(fromWeb3JsKeypair(treasury)));
 
   const editionMintSigner = generateSigner(umi);
+
+  // Sicherstellen dass das Treasury das Master Edition Token hält (fix für ältere Items)
+  const conn = new Connection(RPC_URL, 'confirmed');
+  const masterMintPk = new PublicKey(masterMint);
+  const treasuryPk   = new PublicKey(treasury.publicKey.toBase58());
+  const treasuryAta  = await getAssociatedTokenAddress(masterMintPk, treasuryPk, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
+  let masterTokenMissing = false;
+  try {
+    const ataInfo = await getAccount(conn, treasuryAta);
+    if (Number(ataInfo.amount) === 0) masterTokenMissing = true;
+  } catch {
+    masterTokenMissing = true;
+  }
+  if (masterTokenMissing) {
+    await mintV1(umi, {
+      mint:          umiPubkey(masterMint),
+      tokenOwner:    umi.identity.publicKey,
+      amount:        1,
+      tokenStandard: TokenStandard.NonFungible,
+    }).sendAndConfirm(umi);
+  }
 
   await printV1(umi, {
     masterEditionMint:         umiPubkey(masterMint),
