@@ -22,7 +22,7 @@ import {
 } from '@metaplex-foundation/umi';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 import { getTreasuryKeypair } from './solanaOperator';
-import { fetchAndUploadToArweave, uploadToArweave } from './arweaveUpload';
+import { uploadToArweave } from './arweaveUpload';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
@@ -61,11 +61,9 @@ export async function mintSongMasterEdition(params: {
     symbol = 'DFAITH',
   } = params;
 
-  // Cover + Audio permanent auf Arweave hochladen
-  const [arweaveCover, arweaveAudio] = await Promise.all([
-    fetchAndUploadToArweave(coverImageUrl, 'image/jpeg', [{ name: 'Title', value: title }]),
-    fetchAndUploadToArweave(audioUrl, 'audio/mpeg', [{ name: 'Title', value: title }]),
-  ]);
+  // URLs sind bereits ar:// (direkt beim Upload hochgeladen) — nur Metadata-JSON noch hochladen
+  const arweaveCover = coverImageUrl;
+  const arweaveAudio = audioUrl;
 
   // Metadata JSON auf Arweave
   const metadata = {

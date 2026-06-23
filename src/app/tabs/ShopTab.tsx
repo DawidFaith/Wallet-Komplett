@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useUser } from '@clerk/nextjs';
-import { upload } from '@vercel/blob/client';
 import {
   FaChevronLeft, FaPlus, FaTimes, FaMusic, FaVideo, FaGem, FaStar,
   FaCoins, FaCheck, FaExternalLinkAlt, FaTrash, FaShoppingBag,
@@ -816,18 +815,15 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
     setUploading(true);
     setFormError('');
     try {
-      // Sicheren Dateinamen erzeugen – Artist-eigener Unterordner
-      const ext        = file.name.replace(/.*\./, '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const timestamp  = Date.now();
-      const safeWallet = walletAddress.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 32);
-      const pathname   = `shop/${type === 'image' ? 'images' : 'content'}/${safeWallet}/${timestamp}.${ext}`;
+      const form = new FormData();
+      form.append('file',     file);
+      form.append('wallet',   walletAddress);
+      form.append('fileType', type);
 
-      const blob = await upload(pathname, file, {
-        access: 'public',
-        handleUploadUrl: '/api/shop/upload',
-        clientPayload: JSON.stringify({ fileType: type, wallet: walletAddress }),
-      });
-      setUrl(blob.url);
+      const res  = await fetch('/api/shop/upload-arweave', { method: 'POST', body: form });
+      const data = await res.json() as { url?: string; error?: string };
+      if (!res.ok || !data.url) throw new Error(data.error ?? 'Upload fehlgeschlagen');
+      setUrl(data.url);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Upload fehlgeschlagen');
     } finally {
