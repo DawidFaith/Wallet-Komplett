@@ -17,6 +17,7 @@ import {
   burnV1,
   mintV1,
   TokenStandard,
+  findEditionMarkerPda,
 } from '@metaplex-foundation/mpl-token-metadata';
 import {
   keypairIdentity,
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
     // ── 1. Alle Print Editions burnen ────────────────────────────────────────
     if (itemId) {
       const prints = await sql`
-        SELECT sp.nft_mint_address, sp.buyer_wallet, sa.solana_private_key
+        SELECT sp.nft_mint_address, sp.buyer_wallet, sp.edition_number, sa.solana_private_key
         FROM shop_purchases sp
         JOIN solana_accounts sa ON sa.wallet_address = sp.buyer_wallet
         WHERE sp.item_id = ${itemId}
@@ -95,12 +96,19 @@ export async function POST(req: NextRequest) {
           const buyerUmiKp = umi.eddsa.createKeypairFromSecretKey(buyerKp.secretKey);
           const buyerSigner = createSignerFromKeypair(umi, buyerUmiKp);
 
+          const editionNum = Math.floor(Number(print.edition_number ?? 1) / 248);
+          const editionMarker = findEditionMarkerPda(umi, {
+            mint:          umiPubkey(masterMint),
+            editionMarker: editionNum,
+          });
+
           await burnV1(umi, {
             mint:               umiPubkey(print.nft_mint_address as string),
             authority:          buyerSigner,
             tokenOwner:         buyerSigner.publicKey,
             masterEditionMint:  umiPubkey(masterMint),
             masterEditionToken: umiPubkey(treasuryAta.toBase58()),
+            editionMarker,
             tokenStandard:      TokenStandard.NonFungible,
           }).sendAndConfirm(umi);
 
