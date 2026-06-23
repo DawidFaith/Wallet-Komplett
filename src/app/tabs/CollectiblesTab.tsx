@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { useUser } from '@clerk/nextjs';
 import { FaGem, FaFire, FaChevronLeft, FaPlus, FaTimes, FaCheck, FaSync, FaImage, FaEdit } from 'react-icons/fa';
 import { GiCrystalShine, GiMagicSwirl } from 'react-icons/gi';
-import { upload } from '@vercel/blob/client';
 import { useLang } from '../components/LangContext';
 import { t, tFmt } from '../utils/i18n';
 
@@ -751,12 +750,13 @@ function EditCollectionForm({ collection, artistWallet, onClose, onSaved }: {
     setUploadingImage(true);
     setError('');
     try {
-      const blob = await upload(`collectibles/${artistWallet}/${Date.now()}-${file.name}`, file, {
-        access: 'public',
-        handleUploadUrl: '/api/collectibles/upload',
-        clientPayload: JSON.stringify({ wallet: artistWallet }),
-      });
-      setForm((f) => ({ ...f, imageUrl: blob.url }));
+      const formData = new FormData();
+      formData.append('file',   file);
+      formData.append('wallet', artistWallet);
+      const res  = await fetch('/api/collectibles/upload-arweave', { method: 'POST', body: formData });
+      const data = await res.json() as { url?: string; error?: string };
+      if (!res.ok || !data.url) throw new Error(data.error ?? 'Upload fehlgeschlagen');
+      setForm((f) => ({ ...f, imageUrl: data.url! }));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Upload fehlgeschlagen');
     } finally {
@@ -914,12 +914,13 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
     setUploadingImage(true);
     setError('');
     try {
-      const blob = await upload(`collectibles/${artistWallet}/${Date.now()}-${file.name}`, file, {
-        access: 'public',
-        handleUploadUrl: '/api/collectibles/upload',
-        clientPayload: JSON.stringify({ wallet: artistWallet }),
-      });
-      setForm((f) => ({ ...f, imageUrl: blob.url }));
+      const formData = new FormData();
+      formData.append('file',   file);
+      formData.append('wallet', artistWallet);
+      const res  = await fetch('/api/collectibles/upload-arweave', { method: 'POST', body: formData });
+      const data = await res.json() as { url?: string; error?: string };
+      if (!res.ok || !data.url) throw new Error(data.error ?? 'Upload fehlgeschlagen');
+      setForm((f) => ({ ...f, imageUrl: data.url! }));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Upload fehlgeschlagen');
     } finally {
