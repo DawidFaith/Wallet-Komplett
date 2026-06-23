@@ -30,6 +30,7 @@ const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN;
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  try {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: 'Kein Body' }, { status: 400 });
 
@@ -108,15 +109,15 @@ export async function POST(req: NextRequest) {
   // ── Edition-Slot atomar reservieren ──────────────────────────────────────
   const slotRows = await sql`
     UPDATE shop_items
-    SET edition_count = edition_count + 1
+    SET edition_count = COALESCE(edition_count, 0) + 1
     WHERE id = ${item.id}
-      AND (nft_max_supply IS NULL OR edition_count < nft_max_supply)
+      AND (nft_max_supply IS NULL OR COALESCE(edition_count, 0) < nft_max_supply)
     RETURNING edition_count
   `;
   if (!slotRows.length) {
     return NextResponse.json({ error: 'Alle NFT-Editionen sind ausverkauft' }, { status: 410 });
   }
-  const editionNumber = Number(slotRows[0].edition_count);
+  const editionNumber = Number(slotRows[0].edition_count ?? 1);
 
   // ── 1. Zahlung abwickeln ──────────────────────────────────────────────────
   if (paymentMethod === 'credits' && !isSelfPurchase) {
@@ -217,4 +218,9 @@ export async function POST(req: NextRequest) {
     nftMintAddress,
     editionNumber,
   });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('Unerwarteter Fehler in /api/shop/purchase:', msg);
+    return NextResponse.json({ error: `Interner Fehler: ${msg}` }, { status: 500 });
+  }
 }

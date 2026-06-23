@@ -401,8 +401,9 @@ function ArtistShopView({
         body: JSON.stringify({ buyerWallet: walletAddress, itemId: item.id, paymentMethod }),
       });
       if (!res.ok) {
-        const err = await res.json();
-        setBuyError(err.error ?? t('shop.buyFailed', lang));
+        let errMsg = t('shop.buyFailed', lang);
+        try { const e = await res.json(); errMsg = e.error ?? errMsg; } catch {}
+        setBuyError(errMsg);
         return;
       }
       const data = await res.json();
