@@ -3,7 +3,8 @@
  * Body: { walletAddress, mintAddress }
  *
  * Verbrennt eine Print Edition NFT (mpl-token-metadata NonFungible).
- * Holder zahlt Gebühren und ist Authority (bekommt Rent zurück).
+ * Holder zahlt Gebühren und ist Authority.
+ * Wenn kein DB-Eintrag: master_edition_mint aus On-Chain-Daten lesen.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
@@ -13,6 +14,7 @@ import {
   mintV1,
   TokenStandard,
   findEditionMarkerPda,
+  findMasterEditionPda,
 } from '@metaplex-foundation/mpl-token-metadata';
 import {
   keypairIdentity,
@@ -33,6 +35,43 @@ const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-b
 
 export const dynamic = 'force-dynamic';
 
+/** Liest master_edition_mint + edition_number aus dem On-Chain Print Edition Account */
+async function resolveMasterMintFromChain(
+  umi: ReturnType<typeof createUmi>,
+  sql: ReturnType<typeof import('../../../lib/db').getDb>,
+  printMint: string,
+): Promise<{ masterMint: string; editionNumber: number } | null> {
+  try {
+    // Print Edition PDA (gleiche Ableitung wie Master Edition PDA, aber vom Print Mint)
+    const printEditionPda = findMasterEditionPda(umi, { mint: umiPubkey(printMint) });
+    const acct = await umi.rpc.getAccount(printEditionPda[0]);
+    if (!acct.exists) return null;
+
+    const data = acct.data as Uint8Array;
+    if (data.length < 41) return null;
+
+    // Layout: 1 byte key + 32 bytes parent (master edition PDA) + 8 bytes edition number
+    const parentPdaBytes = data.slice(1, 33);
+    const parentPdaB58   = bs58.encode(parentPdaBytes);
+    const editionNumber  = Number(
+      new DataView(data.buffer, data.byteOffset + 33, 8).getBigUint64(0, true),
+    );
+
+    // Alle shop_items mit master_edition_mint durchgehen und PDA vergleichen
+    const items = await sql`SELECT master_edition_mint FROM shop_items WHERE master_edition_mint IS NOT NULL`;
+    for (const item of items) {
+      const masterPda    = findMasterEditionPda(umi, { mint: umiPubkey(item.master_edition_mint as string) });
+      const masterPdaB58 = bs58.encode(masterPda[0]);
+      if (masterPdaB58 === parentPdaB58) {
+        return { masterMint: item.master_edition_mint as string, editionNumber };
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { walletAddress, mintAddress } = await req.json();
@@ -42,9 +81,8 @@ export async function POST(req: NextRequest) {
 
     const sql = getDb();
 
-    // Holder-Keypair laden
     const rows = await sql`
-      SELECT solana_address, solana_private_key FROM solana_accounts
+      SELECT solana_private_key FROM solana_accounts
       WHERE wallet_address = ${walletAddress.toLowerCase()} LIMIT 1
     `;
     if (!rows.length) {
@@ -53,24 +91,36 @@ export async function POST(req: NextRequest) {
     const secretB58 = decryptKey(rows[0].solana_private_key as string);
     const holderKp  = Keypair.fromSecretKey(bs58.decode(secretB58));
 
-    // Holder zahlt Gebühren und ist Authority
     const holderUmi = createUmi(RPC_URL)
       .use(mplTokenMetadata())
       .use(keypairIdentity(fromWeb3JsKeypair(holderKp)));
 
-    // Master Edition Mint + Edition Number aus DB holen (Print Edition)
+    // 1. Versuche master_edition_mint aus DB zu holen
+    let masterMint: string | null = null;
+    let editionNumber = 1;
+
     const purchaseRows = await sql`
       SELECT sp.edition_number, si.master_edition_mint
       FROM shop_purchases sp
       JOIN shop_items si ON si.id = sp.item_id
       WHERE sp.nft_mint_address = ${mintAddress}
+        AND si.master_edition_mint IS NOT NULL
       LIMIT 1
     `;
 
-    if (purchaseRows.length && purchaseRows[0].master_edition_mint) {
-      const masterMint    = purchaseRows[0].master_edition_mint as string;
-      const editionNumber = Number(purchaseRows[0].edition_number ?? 1);
+    if (purchaseRows.length) {
+      masterMint    = purchaseRows[0].master_edition_mint as string;
+      editionNumber = Number(purchaseRows[0].edition_number ?? 1);
+    } else {
+      // 2. Fallback: On-Chain Print Edition Account lesen
+      const resolved = await resolveMasterMintFromChain(holderUmi, sql, mintAddress);
+      if (resolved) {
+        masterMint    = resolved.masterMint;
+        editionNumber = resolved.editionNumber;
+      }
+    }
 
+    if (masterMint) {
       const treasury    = getTreasuryKeypair();
       const conn        = new Connection(RPC_URL, 'confirmed');
       const masterMintPk = new PublicKey(masterMint);
@@ -79,7 +129,6 @@ export async function POST(req: NextRequest) {
         masterMintPk, treasuryPk, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID,
       );
 
-      // Sicherstellen dass Treasury das Master Token hält (via Treasury-UMI)
       let hasMasterToken = false;
       try {
         const ataInfo = await getAccount(conn, treasuryAta);
@@ -113,7 +162,7 @@ export async function POST(req: NextRequest) {
         tokenStandard:      TokenStandard.NonFungible,
       }).sendAndConfirm(holderUmi);
     } else {
-      // Fallback: einfacher Burn (Master Edition oder unbekannter Typ)
+      // Kein Master gefunden → einfacher Burn (z.B. normale NFTs)
       await burnV1(holderUmi, {
         mint:          umiPubkey(mintAddress),
         authority:     holderUmi.identity,
