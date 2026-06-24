@@ -945,13 +945,11 @@ export default function SolanaWalletTab() {
                         className="bg-[#231e12] hover:bg-[#2d2615] text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
                         <FaPaperPlane size={9} /> Send
                       </button>
-                      {nft.isDfaith && (
-                        <button
-                          onClick={() => { setNftBurnTarget(nft); setNftBurnErr(''); setNftBurnOk(''); }}
-                          className="bg-red-950/40 hover:bg-red-900/50 text-red-400 hover:text-red-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
-                          🔥 Burn
-                        </button>
-                      )}
+                      <button
+                        onClick={() => { setNftBurnTarget(nft); setNftBurnErr(''); setNftBurnOk(''); }}
+                        className="bg-red-950/40 hover:bg-red-900/50 text-red-400 hover:text-red-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                        🔥 Burn
+                      </button>
                       <a href={`https://solscan.io/token/${nft.mint}`} target="_blank" rel="noopener noreferrer"
                         className="bg-[#231e12] hover:bg-[#2d2615] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
                         <FaExternalLinkAlt size={8} /> Info
