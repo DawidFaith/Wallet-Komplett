@@ -619,10 +619,9 @@ export default function SolanaWalletTab() {
     setNftRedeeming(true);
     try {
       // Collection-Mint aus Grouping-Attributen des NFT ableiten
-      const collectionMint = nftRedeemTarget.attributes.find(a => a.trait_type === 'collection')?.value
-        ?? nftRedeemTarget.attributes.find(a => a.trait_type === 'Collection')?.value
-        ?? '';
-      if (!collectionMint) throw new Error('Collection-Adresse nicht gefunden (Helius DAS fehlt collection grouping)');
+      // collection kommt aus DAS grouping (group_key: 'collection'), nicht aus Attributen
+      const collectionMint = nftRedeemTarget.collection ?? '';
+      if (!collectionMint) throw new Error('Collection-Adresse nicht gefunden — bitte kurz warten bis Helius das NFT indexiert hat');
       const res = await fetch('/api/collectibles/redeem-nft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -977,7 +976,7 @@ export default function SolanaWalletTab() {
                         className="bg-[#231e12] hover:bg-[#2d2615] text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
                         <FaPaperPlane size={9} /> Send
                       </button>
-                      {nft.isDfaith && nft.interface === 'MplCoreAsset' ? (
+                      {nft.interface === 'MplCoreAsset' ? (
                         <button
                           onClick={() => { setNftRedeemTarget(nft); setNftRedeemErr(''); setNftRedeemOk(''); }}
                           className="bg-purple-950/40 hover:bg-purple-900/50 text-purple-400 hover:text-purple-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
