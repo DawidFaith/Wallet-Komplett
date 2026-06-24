@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchAndUploadToArweave } from '../../lib/arweaveUpload';
+import { fetchAndUploadToArweave, resolveMediaUrl } from '../../lib/arweaveUpload';
 import {
   createCollectibleCollection,
   updateCollectibleCollection,
@@ -124,14 +124,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Wahrscheinlichkeiten müssen zusammen 100 ergeben (aktuell: ${total})` }, { status: 400 });
   }
 
-  // Bild von Vercel Blob (https://) permanent auf Arweave übertragen
+  // Bild von Vercel Blob auf Arweave hochladen → https://arweave.net/... speichern
+  // (ar:// funktioniert nicht als img-src im Browser)
   let finalImageUrl = body.imageUrl ?? '';
-  if (finalImageUrl.startsWith('https://')) {
+  if (finalImageUrl.startsWith('https://') && !finalImageUrl.includes('arweave.net')) {
     try {
-      finalImageUrl = await fetchAndUploadToArweave(finalImageUrl, 'image/jpeg', [
+      const arUrl = await fetchAndUploadToArweave(finalImageUrl, 'image/jpeg', [
         { name: 'App',  value: 'D.FAITH' },
         { name: 'Type', value: 'Collectible Image' },
       ]);
+      finalImageUrl = resolveMediaUrl(arUrl); // ar://... → https://arweave.net/...
     } catch (e) {
       return NextResponse.json({ error: `Arweave-Upload fehlgeschlagen: ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
     }
@@ -224,14 +226,15 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
-  // Bild von Vercel Blob (https://) permanent auf Arweave übertragen
+  // Bild von Vercel Blob auf Arweave → https://arweave.net/... speichern
   let patchImageUrl = body.imageUrl;
-  if (patchImageUrl?.startsWith('https://')) {
+  if (patchImageUrl?.startsWith('https://') && !patchImageUrl.includes('arweave.net')) {
     try {
-      patchImageUrl = await fetchAndUploadToArweave(patchImageUrl, 'image/jpeg', [
+      const arUrl = await fetchAndUploadToArweave(patchImageUrl, 'image/jpeg', [
         { name: 'App',  value: 'D.FAITH' },
         { name: 'Type', value: 'Collectible Image' },
       ]);
+      patchImageUrl = resolveMediaUrl(arUrl);
     } catch (e) {
       return NextResponse.json({ error: `Arweave-Upload fehlgeschlagen: ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
     }
