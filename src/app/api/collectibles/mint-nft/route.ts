@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 import { mintCollectibleCollection, mintCollectibleAsset } from '../../../lib/collectibleNft';
 import type { CollectibleRarity } from '../../../lib/questDb/collectibles';
-import { RARITY_REP_MULTIPLIER, RARITY_CREDIT_MULTIPLIER, RARITY_SHARD_BONUS } from '../../../lib/questDb/collectibles';
+import { RARITY_REP_MULTIPLIER, RARITY_CREDIT_MULTIPLIER } from '../../../lib/questDb/collectibles';
 import { decryptKey } from '../../../lib/solanaCrypto';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     const r          = rarity as CollectibleRarity;
     const repBonus    = parseFloat((Number(coll.max_rep_bonus_percent)    * RARITY_REP_MULTIPLIER[r]).toFixed(1));
     const creditBonus = parseFloat((Number(coll.max_credit_bonus_percent) * RARITY_CREDIT_MULTIPLIER[r]).toFixed(1));
-    const shardBonus  = RARITY_SHARD_BONUS[r];
+    const shardBonus  = Math.round(Number(coll.max_shard_chance_bonus)    * RARITY_REP_MULTIPLIER[r]);
 
     // Asset minten — User zahlt die Gebühren (~0.002-0.003 SOL)
     const result = await mintCollectibleAsset({

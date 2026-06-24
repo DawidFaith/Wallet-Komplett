@@ -958,7 +958,7 @@ function CollectibleNftPreview({ form, rarity }: {
   const multiplier   = cfg.repMultiplier;
   const repBonus     = parseFloat((form.maxRepBonusPercent    * multiplier).toFixed(1));
   const creditBonus  = parseFloat((form.maxCreditBonusPercent * multiplier).toFixed(1));
-  const shardBonus   = SHARD_BONUS_BY_RARITY[rarity];
+  const shardBonus   = Math.round(form.maxShardChanceBonus * multiplier);
   const activeSlots  = getActiveSlotsCount(rarity);
   const slots        = getBonusSlots(form.primaryBonus).slice(0, activeSlots);
 
