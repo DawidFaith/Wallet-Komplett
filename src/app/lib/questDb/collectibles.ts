@@ -388,7 +388,9 @@ export async function getUserCollectibleCountsByRarity(
   const rows = await sql`
     SELECT rarity, COUNT(*) AS cnt
     FROM user_collectibles
-    WHERE wallet_address = ${walletAddress.toLowerCase()} AND collection_id = ${collectionId}
+    WHERE wallet_address = ${walletAddress.toLowerCase()}
+      AND collection_id = ${collectionId}
+      AND nft_mint_address IS NULL
     GROUP BY rarity
   `;
   const result: Partial<Record<CollectibleRarity, number>> = {};
@@ -412,6 +414,7 @@ export async function getCollectiblesRepBonus(
     WHERE uc.wallet_address = ${walletAddress.toLowerCase()}
       AND cc.artist_wallet = ${artistWallet.toLowerCase()}
       AND cc.is_active = true
+      AND uc.nft_mint_address IS NULL
   `;
   if (rows.length === 0) return 0;
   return calcBonus(rows, 'rep', (r) => ({
@@ -435,6 +438,7 @@ export async function getCollectiblesCreditBonus(
     WHERE uc.wallet_address = ${walletAddress.toLowerCase()}
       AND cc.artist_wallet = ${artistWallet.toLowerCase()}
       AND cc.is_active = true
+      AND uc.nft_mint_address IS NULL
   `;
   if (rows.length === 0) return 0;
   return calcBonus(rows, 'credits', (r) => ({
@@ -508,6 +512,7 @@ export async function getCollectiblesShardBonus(
     WHERE uc.wallet_address = ${walletAddress.toLowerCase()}
       AND cc.artist_wallet = ${artistWallet.toLowerCase()}
       AND cc.is_active = true
+      AND uc.nft_mint_address IS NULL
   `;
   if (rows.length === 0) return 0;
   return calcBonus(rows, 'shard', (r) => ({
