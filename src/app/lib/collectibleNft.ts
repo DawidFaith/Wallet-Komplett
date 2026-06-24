@@ -111,11 +111,10 @@ export async function mintCollectibleCollection(params: {
 }): Promise<CollectionNftResult> {
   const { artistSolanaAddress, name, description, imageUrl } = params;
 
-  const arweaveImage = toHttps(await fetchAndUploadToArweave(
-    imageUrl,
-    'image/jpeg',
-    [{ name: 'Collection', value: name }],
-  ));
+  // Wenn das Bild bereits auf Arweave liegt, kein erneuter Upload nötig
+  const arweaveImage = (imageUrl.startsWith('ar://') || imageUrl.includes('arweave.net'))
+    ? toHttps(imageUrl)
+    : toHttps(await fetchAndUploadToArweave(imageUrl, 'image/jpeg', [{ name: 'Collection', value: name }]));
 
   const metadata = {
     name,
