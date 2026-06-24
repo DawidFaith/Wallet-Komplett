@@ -312,7 +312,13 @@ export async function redeemCollectibleAsset(
     umi.payer = createSignerFromKeypair(umi, fromWeb3JsKeypair(userKeypair));
   }
 
-  const asset      = await fetchAssetV1(umi, umiPubkey(assetMint));
+  let asset;
+  try {
+    asset = await fetchAssetV1(umi, umiPubkey(assetMint));
+  } catch {
+    // Account leer = bereits verbrannt (z.B. Doppelklick oder DAS-Cache-Lag)
+    throw new Error('ASSET_ALREADY_BURNED');
+  }
   const collection = await fetchCollectionV1(umi, umiPubkey(collectionMint));
 
   // Rarity aus on-chain Attributes lesen (neue Assets); fallback für alte Assets ohne Plugin

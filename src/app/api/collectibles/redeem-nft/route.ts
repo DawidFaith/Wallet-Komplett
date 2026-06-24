@@ -54,17 +54,47 @@ export async function POST(req: NextRequest) {
     `;
     const fallbackRarity = dbRarityRows[0]?.rarity as CollectibleRarity | undefined;
 
-    // On-chain Asset lesen + verbrennen; User bekommt Rent-SOL zurück
-    const { rarity, ownerAddress } = await redeemCollectibleAsset(
-      mintAddress,
-      collectionMint,
-      userKeypair,
-      fallbackRarity,
-    );
+    let rarity: CollectibleRarity;
 
-    // Sicherheitsprüfung: Besitzer muss dem User entsprechen
-    if (ownerAddress.toLowerCase() !== userSolana.toLowerCase()) {
-      return NextResponse.json({ error: 'Dieses NFT gehört nicht deinem Wallet' }, { status: 403 });
+    try {
+      // On-chain Asset lesen + verbrennen; User bekommt Rent-SOL zurück
+      const result = await redeemCollectibleAsset(
+        mintAddress,
+        collectionMint,
+        userKeypair,
+        fallbackRarity,
+      );
+
+      // Sicherheitsprüfung: Besitzer muss dem User entsprechen
+      if (result.ownerAddress.toLowerCase() !== userSolana.toLowerCase()) {
+        return NextResponse.json({ error: 'Dieses NFT gehört nicht deinem Wallet' }, { status: 403 });
+      }
+
+      rarity = result.rarity;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+
+      if (msg === 'ASSET_ALREADY_BURNED') {
+        // NFT bereits verbrannt (Doppelklick / DAS-Cache-Lag)
+        // Prüfen ob DB-Eintrag schon angelegt wurde
+        const existing = await sql`
+          SELECT id, rarity FROM user_collectibles
+          WHERE wallet_address = ${walletAddress.toLowerCase()}
+            AND collection_id  = ${collectionId}
+            AND nft_mint_address IS NULL
+          ORDER BY created_at DESC LIMIT 1
+        `;
+        if (existing.length) {
+          return NextResponse.json({ success: true, rarity: existing[0].rarity, collectibleId: existing[0].id, alreadyRedeemed: true });
+        }
+        // Burn war erfolgreich aber DB-Schritt fehlte → mit Fallback-Rarity nachanlegen
+        if (!fallbackRarity) {
+          return NextResponse.json({ error: 'NFT bereits verbrannt aber Rarity nicht bestimmbar. Bitte Support kontaktieren.' }, { status: 400 });
+        }
+        rarity = fallbackRarity;
+      } else {
+        throw err;
+      }
     }
 
     // Alten DB-Eintrag (falls vorhanden) entfernen + neuen anlegen
