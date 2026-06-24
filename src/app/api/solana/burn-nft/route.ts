@@ -60,9 +60,8 @@ async function resolveMasterMintFromChain(
     // Alle shop_items mit master_edition_mint durchgehen und PDA vergleichen
     const items = await sql`SELECT master_edition_mint FROM shop_items WHERE master_edition_mint IS NOT NULL`;
     for (const item of items) {
-      const masterPda    = findMasterEditionPda(umi, { mint: umiPubkey(item.master_edition_mint as string) });
-      const masterPdaB58 = bs58.encode(masterPda[0]);
-      if (masterPdaB58 === parentPdaB58) {
+      const masterPda = findMasterEditionPda(umi, { mint: umiPubkey(item.master_edition_mint as string) });
+      if (String(masterPda[0]) === parentPdaB58) {
         return { masterMint: item.master_edition_mint as string, editionNumber };
       }
     }
