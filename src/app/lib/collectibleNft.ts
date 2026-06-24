@@ -24,6 +24,7 @@ import {
   publicKey as umiPubkey,
 } from '@metaplex-foundation/umi';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
+import { Keypair } from '@solana/web3.js';
 import { getTreasuryKeypair } from './solanaOperator';
 import { fetchAndUploadToArweave, uploadToArweave } from './arweaveUpload';
 import type { CollectibleRarity } from './questDb/collectibles';
@@ -75,11 +76,14 @@ function buildBonusLine(
   }).join(' · ');
 }
 
-function getUmi() {
-  const treasury = getTreasuryKeypair();
+function getUmi(payer: Keypair) {
   return createUmi(RPC_URL)
     .use(mplCore())
-    .use(keypairIdentity(fromWeb3JsKeypair(treasury)));
+    .use(keypairIdentity(fromWeb3JsKeypair(payer)));
+}
+
+function getTreasuryUmi() {
+  return getUmi(getTreasuryKeypair());
 }
 
 function getTreasuryUmiPubkey() {
@@ -93,20 +97,25 @@ export interface CollectionNftResult {
   metadataUri: string;
 }
 
+const toHttps = (url: string) =>
+  url.startsWith('ar://') ? `https://arweave.net/${url.slice(5)}` : url;
+
 export async function mintCollectibleCollection(params: {
   artistWallet: string;
   artistSolanaAddress: string;
   name: string;
   description: string;
   imageUrl: string;
+  /** Artist zahlt die Erstellungsgebühren */
+  payerKeypair: Keypair;
 }): Promise<CollectionNftResult> {
   const { artistSolanaAddress, name, description, imageUrl } = params;
 
-  const arweaveImage = await fetchAndUploadToArweave(
+  const arweaveImage = toHttps(await fetchAndUploadToArweave(
     imageUrl,
     'image/jpeg',
     [{ name: 'Collection', value: name }],
-  );
+  ));
 
   const metadata = {
     name,
@@ -127,7 +136,7 @@ export async function mintCollectibleCollection(params: {
     [{ name: 'Type', value: 'Collection Metadata' }, { name: 'Collection', value: name }],
   );
 
-  const umi              = getUmi();
+  const umi              = getUmi(params.payerKeypair);
   const collectionSigner = generateSigner(umi);
 
   await createCollection(umi, {
@@ -166,6 +175,8 @@ export async function mintCollectibleAsset(params: {
   shardBonus:          number;
   primaryBonus:        'rep' | 'credits' | 'shard';
   activeSlots:         1 | 2 | 3;
+  /** User zahlt die Mint-Gebühren (~0.002-0.003 SOL) */
+  payerKeypair:        Keypair;
 }): Promise<CollectibleAssetResult> {
   const {
     collectionMint,
@@ -198,7 +209,7 @@ export async function mintCollectibleAsset(params: {
   const metadata = {
     name:             `${collectionName} — ${RARITY_LABELS[rarity]}`,
     description:      `${RARITY_LABELS[rarity]} D.FAITH Collectible from the "${collectionName}" series by ${artistName}.\n\nBonuses: ${bonusLine}\n\nTradeable on secondary markets — 5% artist royalties on every resale.`,
-    image:            collectionImageUri,
+    image:            toHttps(collectionImageUri),
     external_url:     'https://app.dawidfaith.de',
     background_color: RARITY_BG_COLOR[rarity],
     attributes,
@@ -209,7 +220,7 @@ export async function mintCollectibleAsset(params: {
     [{ name: 'Rarity', value: rarity }, { name: 'Collection', value: collectionName }],
   );
 
-  const umi         = getUmi();
+  const umi         = getUmi(params.payerKeypair);
   const assetSigner = generateSigner(umi);
   const collection  = await fetchCollectionV1(umi, umiPubkey(collectionMint));
 
@@ -249,13 +260,49 @@ export async function burnCollectibleAssets(
   collectionMint: string,
 ): Promise<void> {
   if (assetMints.length === 0) return;
-  const umi        = getUmi();
+  const umi        = getTreasuryUmi();
   const collection = await fetchCollectionV1(umi, umiPubkey(collectionMint));
 
   for (const assetMint of assetMints) {
     const asset = await fetchAssetV1(umi, umiPubkey(assetMint));
     await burn(umi, { asset, collection }).sendAndConfirm(umi);
   }
+}
+
+// ─── NFT einlösen (burn → DB) ────────────────────────────────────────────────
+
+export interface RedeemResult {
+  rarity:         CollectibleRarity;
+  collectionMint: string;
+  ownerAddress:   string;
+}
+
+/**
+ * Liest Rarity + Collection vom on-chain Asset, verbrennt es via BurnDelegate.
+ * Gibt Daten zurück damit der Caller den DB-Eintrag anlegen kann.
+ */
+export async function redeemCollectibleAsset(
+  assetMint:      string,
+  collectionMint: string,
+): Promise<RedeemResult> {
+  const umi        = getTreasuryUmi();
+  const asset      = await fetchAssetV1(umi, umiPubkey(assetMint));
+  const collection = await fetchCollectionV1(umi, umiPubkey(collectionMint));
+
+  // Rarity aus on-chain Attributen lesen (mpl-core attributes plugin)
+  const attrList   = (asset as any).attributes?.attributeList as { key: string; value: string }[] | undefined;
+  const rarityAttr = attrList?.find(a => a.key === 'Rarity' || a.key === 'rarity');
+  const rarityLabel = rarityAttr?.value?.toLowerCase() ?? 'common';
+  const rarityMap: Record<string, CollectibleRarity> = {
+    common: 'common', uncommon: 'uncommon', rare: 'rare',
+    epic: 'epic', legendary: 'legendary', mythic: 'mythic',
+  };
+  const rarity       = rarityMap[rarityLabel] ?? 'common';
+  const ownerAddress = asset.owner.toString();
+
+  await burn(umi, { asset, collection }).sendAndConfirm(umi);
+
+  return { rarity, collectionMint, ownerAddress };
 }
 
 // ─── On-chain Scan (Sekundärmarkt-Erkennung) ─────────────────────────────────

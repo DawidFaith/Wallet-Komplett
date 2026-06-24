@@ -20,6 +20,7 @@ interface CollectibleCollection {
   name: string;
   description: string;
   imageUrl: string;
+  nftCollectionMint?: string | null;
   chanceCommon: number;
   chanceUncommon: number;
   chanceRare: number;
@@ -525,9 +526,30 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
   const [editOpen, setEditOpen] = useState(false);
   const [localShards, setLocalShards] = useState(data.shards);
   const [selectedUpgradeRarity, setSelectedUpgradeRarity] = useState<CollectibleRarity | null>(null);
+  const [mintingRarity, setMintingRarity] = useState<CollectibleRarity | null>(null);
+  const [mintError, setMintError] = useState<string | null>(null);
 
   // Shard-Zahl von außen (nach onRefresh) synchronisieren
   useEffect(() => { setLocalShards(data.shards); }, [data.shards]);
+
+  const handleMintNft = async (rarity: CollectibleRarity) => {
+    setMintingRarity(rarity);
+    setMintError(null);
+    try {
+      const res = await fetch('/api/collectibles/mint-nft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress, collectionId: collection.id, rarity }),
+      });
+      const json = await res.json() as { success?: boolean; mintAddress?: string; error?: string };
+      if (!res.ok || !json.success) throw new Error(json.error ?? 'Fehler beim Minten');
+      onRefresh();
+    } catch (e) {
+      setMintError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setMintingRarity(null);
+    }
+  };
 
   const { collection, ownedByRarity } = data;
   const shards = localShards;
@@ -687,6 +709,29 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
           );
         })()}
       </div>
+
+      {/* Als NFT minten (Treasury zahlt, User bekommt tradeable mpl-core Asset) */}
+      {totalCollectibles > 0 && (
+        <div className="mt-3">
+          <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-2">Als NFT minten (handelbar auf Tensor / Magic Eden)</p>
+          <div className="flex gap-2 flex-wrap">
+            {RARITY_ORDER.filter(r => (ownedByRarity[r] ?? 0) > 0).map(r => (
+              <button
+                key={r}
+                onClick={() => handleMintNft(r)}
+                disabled={mintingRarity !== null}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black transition-colors
+                  bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30
+                  disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {mintingRarity === r ? <FaSync size={9} className="animate-spin" /> : null}
+                {RARITY_CONFIG[r].label} NFT minten
+              </button>
+            ))}
+          </div>
+          {mintError && <p className="text-red-400 text-[10px] mt-1.5">{mintError}</p>}
+        </div>
+      )}
 
       {/* Fusion Modal */}
       {fuseOpen && (
@@ -1138,10 +1183,10 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
           <p className="text-[9px] text-zinc-700 mt-1.5">Common erhält z.B. 4% davon, Mythic 100%</p>
         </div>
 
-        {/* NFT Preview */}
+        {/* Collectible Preview */}
         {form.name && (
           <div className="border border-amber-500/20 bg-amber-500/5 rounded-2xl p-4">
-            <p className="text-amber-400 text-[10px] uppercase tracking-widest mb-3 font-semibold">NFT Vorschau — wähle eine Rarität</p>
+            <p className="text-amber-400 text-[10px] uppercase tracking-widest mb-3 font-semibold">Vorschau — wähle eine Rarität</p>
             <div className="flex gap-1 flex-wrap mb-3">
               {RARITY_ORDER.map(r => {
                 const c = RARITY_CONFIG[r];

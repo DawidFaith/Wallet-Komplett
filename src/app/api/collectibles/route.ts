@@ -11,6 +11,11 @@ import {
   getUserCollectibleCountsByRarity,
   getCollectiblesRepBonus,
 } from '../../lib/questDb/collectibles';
+import { mintCollectibleCollection } from '../../lib/collectibleNft';
+import { getDb } from '../../lib/db';
+import { decryptKey } from '../../lib/solanaCrypto';
+import { Keypair } from '@solana/web3.js';
+import bs58 from 'bs58';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,7 +47,11 @@ export async function GET(req: NextRequest) {
           const shards = wallet
             ? await getUserShards(wallet.toLowerCase(), artistWallet.toLowerCase())
             : 0;
-          return { collection: col, ownedByRarity: counts, shards };
+          return {
+            collection: { ...col, nftCollectionMint: (col as any).nftCollectionMint ?? null },
+            ownedByRarity: counts,
+            shards,
+          };
         }),
       );
       return NextResponse.json({ data: result });
@@ -129,6 +138,22 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const sql = getDb();
+
+    // Artist-Keypair für on-chain Zahlung laden
+    const artistSolRows = await sql`
+      SELECT sa.solana_address, sa.solana_private_key, p.display_name AS artist_name
+      FROM solana_accounts sa
+      LEFT JOIN user_profiles p ON LOWER(p.wallet_address) = LOWER(sa.wallet_address)
+      WHERE LOWER(sa.wallet_address) = ${artistWallet.toLowerCase()} LIMIT 1
+    `;
+    if (!artistSolRows.length) {
+      return NextResponse.json({ error: 'Kein Solana-Wallet für diesen Künstler gefunden' }, { status: 400 });
+    }
+    const { solana_address: artistSolana, solana_private_key: encKey, artist_name: artistDisplayName } = artistSolRows[0];
+    const artistKeypair = Keypair.fromSecretKey(bs58.decode(decryptKey(encKey as string)));
+
+    // DB-Eintrag anlegen
     const result = await createCollectibleCollection({
       artistWallet,
       name: name.trim(),
@@ -140,7 +165,19 @@ export async function POST(req: NextRequest) {
       maxCreditBonusPercent: body.maxCreditBonusPercent ?? 0,
       primaryBonus: (['rep', 'credits', 'shard'].includes(body.primaryBonus ?? '') ? body.primaryBonus : 'rep') as 'rep' | 'credits' | 'shard',
     });
-    return NextResponse.json({ id: result.id });
+
+    // mpl-core Collection on-chain minten (Artist zahlt)
+    const nftResult = await mintCollectibleCollection({
+      artistWallet,
+      artistSolanaAddress: artistSolana as string,
+      name: name.trim(),
+      description: body.description ?? '',
+      imageUrl: finalImageUrl,
+      payerKeypair: artistKeypair,
+    });
+    await sql`UPDATE collectible_collections SET nft_collection_mint = ${nftResult.collectionMint} WHERE id = ${result.id}`;
+
+    return NextResponse.json({ id: result.id, nftCollectionMint: nftResult.collectionMint });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }

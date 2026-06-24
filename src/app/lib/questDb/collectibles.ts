@@ -63,6 +63,7 @@ export interface CollectibleCollection {
   description: string;
   imageUrl: string;
   isActive: boolean;
+  nftCollectionMint: string | null;
   chanceCommon: number;
   chanceUncommon: number;
   chanceRare: number;
@@ -565,6 +566,7 @@ function rowToCollection(r: any): CollectibleCollection {
     description: r.description,
     imageUrl: r.image_url,
     isActive: r.is_active,
+    nftCollectionMint: r.nft_collection_mint ?? null,
     chanceCommon: Number(r.chance_common),
     chanceUncommon: Number(r.chance_uncommon),
     chanceRare: Number(r.chance_rare),

@@ -411,6 +411,10 @@ export default function SolanaWalletTab() {
   const [nftBurning, setNftBurning]       = useState(false);
   const [nftBurnErr, setNftBurnErr]       = useState('');
   const [nftBurnOk, setNftBurnOk]         = useState('');
+  const [nftRedeemTarget, setNftRedeemTarget] = useState<OwnedNft | null>(null);
+  const [nftRedeeming, setNftRedeeming]       = useState(false);
+  const [nftRedeemErr, setNftRedeemErr]       = useState('');
+  const [nftRedeemOk, setNftRedeemOk]         = useState('');
 
   const [exportKey, setExportKey]         = useState('');
   const [showExport, setShowExport]       = useState(false);
@@ -605,6 +609,34 @@ export default function SolanaWalletTab() {
       setNftBurnErr(e instanceof Error ? e.message : 'Fehler');
     } finally {
       setNftBurning(false);
+    }
+  };
+
+  // ── Collectible NFT einlösen (mpl-core → DB) ─────────────────────────────
+  const handleNftRedeem = async () => {
+    if (!nftRedeemTarget || !userId) return;
+    setNftRedeemErr(''); setNftRedeemOk('');
+    setNftRedeeming(true);
+    try {
+      // Collection-Mint aus Grouping-Attributen des NFT ableiten
+      const collectionMint = nftRedeemTarget.attributes.find(a => a.trait_type === 'collection')?.value
+        ?? nftRedeemTarget.attributes.find(a => a.trait_type === 'Collection')?.value
+        ?? '';
+      if (!collectionMint) throw new Error('Collection-Adresse nicht gefunden (Helius DAS fehlt collection grouping)');
+      const res = await fetch('/api/collectibles/redeem-nft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress: userId, mintAddress: nftRedeemTarget.mint, collectionMint }),
+      });
+      const d = await res.json() as { success?: boolean; rarity?: string; error?: string };
+      if (!res.ok || !d.success) throw new Error(d.error ?? 'Einlösen fehlgeschlagen');
+      setNftRedeemOk(`✓ Eingelöst als ${d.rarity}-Collectible`);
+      setNfts(prev => prev.filter(n => n.mint !== nftRedeemTarget.mint));
+      setTimeout(() => { setNftRedeemTarget(null); setNftRedeemOk(''); }, 2500);
+    } catch (e) {
+      setNftRedeemErr(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setNftRedeeming(false);
     }
   };
 
@@ -945,11 +977,19 @@ export default function SolanaWalletTab() {
                         className="bg-[#231e12] hover:bg-[#2d2615] text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
                         <FaPaperPlane size={9} /> Send
                       </button>
-                      <button
-                        onClick={() => { setNftBurnTarget(nft); setNftBurnErr(''); setNftBurnOk(''); }}
-                        className="bg-red-950/40 hover:bg-red-900/50 text-red-400 hover:text-red-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
-                        🔥 Burn
-                      </button>
+                      {nft.isDfaith && nft.interface === 'MplCoreAsset' ? (
+                        <button
+                          onClick={() => { setNftRedeemTarget(nft); setNftRedeemErr(''); setNftRedeemOk(''); }}
+                          className="bg-purple-950/40 hover:bg-purple-900/50 text-purple-400 hover:text-purple-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                          ✨ Einlösen
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => { setNftBurnTarget(nft); setNftBurnErr(''); setNftBurnOk(''); }}
+                          className="bg-red-950/40 hover:bg-red-900/50 text-red-400 hover:text-red-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                          🔥 Burn
+                        </button>
+                      )}
                       <a href={`https://solscan.io/token/${nft.mint}`} target="_blank" rel="noopener noreferrer"
                         className="bg-[#231e12] hover:bg-[#2d2615] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
                         <FaExternalLinkAlt size={8} /> Info
@@ -1081,6 +1121,40 @@ export default function SolanaWalletTab() {
                   : '🔥 Jetzt verbrennen'}
               </button>
               <p className="text-zinc-600 text-xs text-center">Endgültig · SOL wird zurückerstattet</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Collectible NFT Einlösen Modal ── */}
+      {nftRedeemTarget && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-[#0f0b1a] border border-purple-900/40 rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 bg-purple-950/30 border-b border-purple-900/30">
+              <div>
+                <p className="text-purple-300 font-bold text-sm">✨ NFT einlösen</p>
+                <p className="text-purple-300/60 text-xs">{nftRedeemTarget.name}</p>
+              </div>
+              <button onClick={() => setNftRedeemTarget(null)} className="text-zinc-500 hover:text-white p-1.5 rounded-lg hover:bg-white/8">
+                <FaTimes size={14} />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              <p className="text-zinc-400 text-sm">
+                Das NFT wird on-chain verbrannt und als Collectible in deinem D.FAITH-Account gespeichert. Du kannst es danach wieder handeln oder nutzen.
+              </p>
+              {nftRedeemErr && <p className="text-red-400 text-xs bg-red-900/20 rounded-lg px-3 py-2">{nftRedeemErr}</p>}
+              {nftRedeemOk  && <p className="text-green-400 text-xs bg-green-900/20 rounded-lg px-3 py-2">{nftRedeemOk}</p>}
+              <button
+                onClick={handleNftRedeem}
+                disabled={nftRedeeming}
+                className="w-full py-3 rounded-xl bg-purple-700 hover:bg-purple-600 text-white font-bold text-sm disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              >
+                {nftRedeeming
+                  ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  : '✨ Jetzt einlösen'}
+              </button>
+              <p className="text-zinc-600 text-xs text-center">NFT wird verbrannt · Collectible wird in D.FAITH gespeichert</p>
             </div>
           </div>
         </div>
