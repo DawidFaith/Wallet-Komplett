@@ -117,10 +117,17 @@ export async function mintSongMasterEdition(params: {
   );
 
   // Master Edition auf Solana minten
+  // Treasury bleibt Authority (für Heal-Path in printV1), Artist zahlt die Gebühren
   const treasury = getTreasuryKeypair();
   const umi = createUmi(RPC_URL)
     .use(mplTokenMetadata())
     .use(keypairIdentity(fromWeb3JsKeypair(treasury)));
+
+  const artistSecretB58 = decryptKey(artistPrivateKey);
+  const artistWeb3Kp    = Keypair.fromSecretKey(bs58.decode(artistSecretB58));
+  const artistUmiKp     = umi.eddsa.createKeypairFromSecretKey(artistWeb3Kp.secretKey);
+  const artistSigner    = createSignerFromKeypair(umi, artistUmiKp);
+  umi.payer             = artistSigner;
 
   const mintSigner = generateSigner(umi);
 
@@ -151,12 +158,7 @@ export async function mintSongMasterEdition(params: {
     tokenStandard: TokenStandard.NonFungible,
   }).sendAndConfirm(umi);
 
-  // Creator-Verifikation mit dem Artist-Keypair aus der DB (kein Phantom nötig)
-  const artistSecretB58  = decryptKey(artistPrivateKey);
-  const artistWeb3Kp     = Keypair.fromSecretKey(bs58.decode(artistSecretB58));
-  const artistUmiKp      = umi.eddsa.createKeypairFromSecretKey(artistWeb3Kp.secretKey);
-  const artistSigner     = createSignerFromKeypair(umi, artistUmiKp);
-
+  // Creator-Verifikation mit dem Artist-Keypair (bereits oben geparst)
   const [metadataPda] = findMetadataPda(umi, { mint: mintSigner.publicKey });
   await verifyCreatorV1(umi, {
     metadata: metadataPda,
@@ -184,14 +186,20 @@ export interface PrintEditionResult {
 export async function mintSongPrintEdition(params: {
   masterMint: string;
   buyerSolanaAddress: string;
+  artistPrivateKey: string;
   editionNumber: number;
 }): Promise<PrintEditionResult> {
-  const { masterMint, buyerSolanaAddress, editionNumber } = params;
+  const { masterMint, buyerSolanaAddress, artistPrivateKey, editionNumber } = params;
 
+  // Treasury bleibt Authority (masterTokenAccountOwner), Artist zahlt die Gebühren
   const treasury = getTreasuryKeypair();
   const umi = createUmi(RPC_URL)
     .use(mplTokenMetadata())
     .use(keypairIdentity(fromWeb3JsKeypair(treasury)));
+
+  const artistWeb3Kp = Keypair.fromSecretKey(bs58.decode(decryptKey(artistPrivateKey)));
+  const artistUmiKp  = umi.eddsa.createKeypairFromSecretKey(artistWeb3Kp.secretKey);
+  umi.payer          = createSignerFromKeypair(umi, artistUmiKp);
 
   const editionMintSigner = generateSigner(umi);
 

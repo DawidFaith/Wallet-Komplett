@@ -169,11 +169,22 @@ export async function POST(req: NextRequest) {
   }
 
   // ── 2. NFT minten ─────────────────────────────────────────────────────────
+  // Artist-Keypair laden damit Artist die Mint-Gebühren zahlt
+  const artistKeyRows = await sql`
+    SELECT solana_private_key FROM solana_accounts
+    WHERE wallet_address = ${item.artist_wallet} LIMIT 1
+  `;
+  if (!artistKeyRows.length) {
+    await sql`UPDATE shop_items SET edition_count = edition_count - 1 WHERE id = ${item.id}`;
+    return NextResponse.json({ error: 'Artist hat kein Solana-Wallet für NFT-Mint' }, { status: 404 });
+  }
+
   let nftMintAddress: string;
   try {
     const { printMint } = await mintSongPrintEdition({
-      masterMint:         item.master_edition_mint!,
+      masterMint:       item.master_edition_mint!,
       buyerSolanaAddress,
+      artistPrivateKey: artistKeyRows[0].solana_private_key as string,
       editionNumber,
     });
     nftMintAddress = printMint;
