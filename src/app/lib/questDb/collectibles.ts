@@ -1,6 +1,5 @@
 import { getDb } from '../db';
 import { addDfaithCredits } from './credits';
-import { mintCollectibleAsset, burnCollectibleAssets, scanCollectiblesByOwner } from '../collectibleNft';
 
 export type CollectibleRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic';
 
@@ -131,8 +130,7 @@ export async function createCollectibleCollection(params: {
   maxShardChanceBonus?: number;
   maxCreditBonusPercent?: number;
   primaryBonus?: BonusType;
-  enableNft?: boolean;
-}): Promise<{ id: string; nftCollectionMint?: string }> {
+}): Promise<{ id: string }> {
   const sql = getDb();
   const id = crypto.randomUUID();
   const {
@@ -141,7 +139,6 @@ export async function createCollectibleCollection(params: {
     chanceEpic = 7, chanceLegendary = 2, chanceMythic = 1,
     maxRepBonusPercent = 0, maxShardChanceBonus = 0,
     primaryBonus = 'rep',
-    enableNft = false,
   } = params;
 
   await sql`
@@ -156,34 +153,7 @@ export async function createCollectibleCollection(params: {
     )
   `;
 
-  // mpl-core Collection on-chain erstellen wenn gewünscht
-  let nftCollectionMint: string | undefined;
-  if (enableNft) {
-    try {
-      const artistSolanaRows = await sql`
-        SELECT solana_address FROM solana_accounts
-        WHERE wallet_address = ${artistWallet.toLowerCase()} LIMIT 1
-      `;
-      if (artistSolanaRows.length && artistSolanaRows[0].solana_address) {
-        const { mintCollectibleCollection } = await import('../collectibleNft');
-        const result = await mintCollectibleCollection({
-          artistWallet,
-          artistSolanaAddress: artistSolanaRows[0].solana_address as string,
-          name,
-          description,
-          imageUrl,
-        });
-        nftCollectionMint = result.collectionMint;
-        await sql`
-          UPDATE collectible_collections SET nft_collection_mint = ${nftCollectionMint} WHERE id = ${id}
-        `;
-      }
-    } catch (e) {
-      console.error('mpl-core Collection Mint fehlgeschlagen (DB-Eintrag existiert):', e);
-    }
-  }
-
-  return { id, nftCollectionMint };
+  return { id };
 }
 
 // ─── Kollektion aktualisieren ─────────────────────────────────────────────────
@@ -312,44 +282,14 @@ export async function deductShards(walletAddress: string, artistWallet: string, 
 export async function fuseShards(
   walletAddress: string,
   collectionId: string,
-): Promise<{ rarity: CollectibleRarity; collectibleId: string; nftMintAddress?: string }> {
+): Promise<{ rarity: CollectibleRarity; collectibleId: string }> {
   const sql = getDb();
   const collection = await getCollectionById(collectionId);
   if (!collection) throw new Error('Kollektion nicht gefunden');
   if (!collection.isActive) throw new Error('Kollektion nicht aktiv');
 
-  const artistWallet = collection.artistWallet;
-
-  // Pflichtprüfungen VOR jeder DB-Schreiboperation
-  const nftCollectionMint = (await sql`
-    SELECT nft_collection_mint FROM collectible_collections WHERE id = ${collectionId} LIMIT 1
-  `)[0]?.nft_collection_mint as string | null;
-
-  let cachedArtistName: string | null = null;
-  let cachedUserSolana: string | null = null;
-  let cachedArtistSolana: string | null = null;
-
-  if (nftCollectionMint) {
-    const [artistNameRow, solanaRow] = await Promise.all([
-      sql`SELECT display_name FROM user_profiles WHERE wallet_address = ${artistWallet.toLowerCase()} LIMIT 1`,
-      sql`
-        SELECT sa.solana_address, ap.solana_address AS artist_solana
-        FROM solana_accounts sa
-        CROSS JOIN (SELECT solana_address FROM solana_accounts WHERE wallet_address = ${artistWallet.toLowerCase()} LIMIT 1) ap
-        WHERE sa.wallet_address = ${walletAddress.toLowerCase()} LIMIT 1
-      `,
-    ]);
-    cachedArtistName   = artistNameRow[0]?.display_name as string | null;
-    cachedUserSolana   = solanaRow[0]?.solana_address as string | null;
-    cachedArtistSolana = solanaRow[0]?.artist_solana  as string | null;
-
-    if (!cachedArtistName?.trim())  throw new Error('Künstler hat keinen Namen im Profil hinterlegt.');
-    if (!cachedUserSolana)          throw new Error('Keine Solana-Adresse für diesen User hinterlegt.');
-    if (!cachedArtistSolana)        throw new Error('Keine Solana-Adresse für den Künstler hinterlegt.');
-  }
-
   // 1 Shard abziehen
-  await deductShards(walletAddress, artistWallet, 1);
+  await deductShards(walletAddress, collection.artistWallet, 1);
 
   // Seltenheit via RNG ermitteln
   const rarity = rollRarity(collection);
@@ -361,29 +301,7 @@ export async function fuseShards(
     VALUES (${id}, ${walletAddress.toLowerCase()}, ${collectionId}, ${rarity})
   `;
 
-  let nftMintAddress: string | undefined;
-  if (nftCollectionMint && cachedArtistName && cachedUserSolana && cachedArtistSolana) {
-    const repBonus    = parseFloat((collection.maxRepBonusPercent    * RARITY_REP_MULTIPLIER[rarity]).toFixed(1));
-    const creditBonus = parseFloat((collection.maxCreditBonusPercent * RARITY_CREDIT_MULTIPLIER[rarity]).toFixed(1));
-    const result = await mintCollectibleAsset({
-      collectionMint:      nftCollectionMint,
-      collectionName:      collection.name,
-      collectionImageUri:  collection.imageUrl,
-      ownerSolanaAddress:  cachedUserSolana,
-      artistSolanaAddress: cachedArtistSolana,
-      artistName:          cachedArtistName,
-      rarity,
-      repBonusPercent:    repBonus,
-      creditBonusPercent: creditBonus,
-      shardBonus:         RARITY_SHARD_BONUS[rarity],
-      primaryBonus:       collection.primaryBonus,
-      activeSlots:        getActiveSlotsCount(rarity),
-    });
-    nftMintAddress = result.assetMint;
-    await sql`UPDATE user_collectibles SET nft_mint_address = ${nftMintAddress} WHERE id = ${id}`;
-  }
-
-  return { rarity, collectibleId: id, nftMintAddress };
+  return { rarity, collectibleId: id };
 }
 
 // ─── Upgrade: 10 NFTs aus Wallet verbrennen → 1 NFT nächste Stufe ────────────
@@ -395,7 +313,7 @@ export async function upgradeCollectibles(
   walletAddress: string,
   collectionId:  string,
   fromRarity:    CollectibleRarity,
-): Promise<{ newRarity: CollectibleRarity; collectibleId: string; nftMintAddress?: string }> {
+): Promise<{ newRarity: CollectibleRarity; collectibleId: string }> {
   const sql = getDb();
 
   const rarityIndex = RARITY_ORDER.indexOf(fromRarity);
@@ -404,96 +322,37 @@ export async function upgradeCollectibles(
 
   const nextRarity = RARITY_ORDER[rarityIndex + 1];
 
-  // Kollektion + Solana-Adressen laden
-  const collRows = await sql`
-    SELECT nft_collection_mint, image_url, name, artist_wallet,
-           max_rep_bonus_percent, max_credit_bonus_percent, max_shard_chance_bonus, primary_bonus
-    FROM collectible_collections WHERE id = ${collectionId} LIMIT 1
-  `;
+  // Prüfen ob Kollektion existiert
+  const collRows = await sql`SELECT id FROM collectible_collections WHERE id = ${collectionId} LIMIT 1`;
   if (!collRows.length) throw new Error('Kollektion nicht gefunden');
 
-  const nftCollectionMint  = collRows[0].nft_collection_mint as string | null;
-  const artistWallet       = collRows[0].artist_wallet as string;
-
-  if (!nftCollectionMint) throw new Error('Diese Kollektion hat noch keine on-chain NFTs');
-
-  const solanaRows = await sql`
-    SELECT sa.solana_address, ap.solana_address AS artist_solana
-    FROM solana_accounts sa
-    CROSS JOIN (
-      SELECT solana_address FROM solana_accounts
-      WHERE wallet_address = ${artistWallet.toLowerCase()} LIMIT 1
-    ) ap
-    WHERE sa.wallet_address = ${walletAddress.toLowerCase()} LIMIT 1
+  // 10 Collectibles dieser Rarität in DB zählen
+  const ownedRows = await sql`
+    SELECT id FROM user_collectibles
+    WHERE wallet_address = ${walletAddress.toLowerCase()}
+      AND collection_id  = ${collectionId}
+      AND rarity         = ${fromRarity}
+    LIMIT 10
   `;
-  const userSolanaAddress   = solanaRows[0]?.solana_address as string | null;
-  const artistSolanaAddress = solanaRows[0]?.artist_solana  as string | null;
 
-  if (!userSolanaAddress) throw new Error('Keine Solana-Adresse für diesen User hinterlegt');
-
-  // Wallet scannen — alle NFTs dieser Rarität die der User besitzt (egal woher)
-  const ownedMints = await scanCollectiblesByOwner(
-    userSolanaAddress, nftCollectionMint, fromRarity,
-  );
-
-  if (ownedMints.length < 10) {
+  if (ownedRows.length < 10) {
     throw new Error(
-      `Mindestens 10 ${RARITY_LABELS[fromRarity]}-Collectibles in der Wallet benötigt (gefunden: ${ownedMints.length})`,
+      `Mindestens 10 ${RARITY_LABELS[fromRarity]}-Collectibles benötigt (vorhanden: ${ownedRows.length})`,
     );
   }
 
-  // Erste 10 verbrennen (BurnDelegate — kein User-Signing nötig)
-  const mintsToBurn = ownedMints.slice(0, 10);
-  await burnCollectibleAssets(mintsToBurn, nftCollectionMint);
+  // 10 aus DB löschen
+  const idsToBurn = ownedRows.map(r => r.id as string);
+  await sql`DELETE FROM user_collectibles WHERE id = ANY(${idsToBurn})`;
 
-  // DB aufräumen: verbrannte NFTs aus user_collectibles entfernen
-  await sql`
-    DELETE FROM user_collectibles
-    WHERE wallet_address  = ${walletAddress.toLowerCase()}
-      AND collection_id   = ${collectionId}
-      AND nft_mint_address = ANY(${mintsToBurn})
-  `;
-
-  // Neues Collectible in DB anlegen + NFT minten
+  // Neues Collectible anlegen
   const newId = crypto.randomUUID();
   await sql`
     INSERT INTO user_collectibles (id, wallet_address, collection_id, rarity)
     VALUES (${newId}, ${walletAddress.toLowerCase()}, ${collectionId}, ${nextRarity})
   `;
 
-  let nftMintAddress: string | undefined;
-  if (artistSolanaAddress) {
-    try {
-      const maxRep    = Number(collRows[0].max_rep_bonus_percent ?? 0);
-      const maxCredit = Number(collRows[0].max_credit_bonus_percent ?? 0);
-      const repBonus     = parseFloat((maxRep    * RARITY_REP_MULTIPLIER[nextRarity]).toFixed(1));
-      const creditBonus  = parseFloat((maxCredit * RARITY_CREDIT_MULTIPLIER[nextRarity]).toFixed(1));
-      const primaryBonus = (collRows[0].primary_bonus as 'rep' | 'credits' | 'shard') ?? 'rep';
-      const artistNameRow = await sql`SELECT display_name FROM user_profiles WHERE wallet_address = ${artistWallet.toLowerCase()} LIMIT 1`;
-      const artistName    = artistNameRow[0]?.display_name as string | null;
-      if (!artistName?.trim()) throw new Error('Künstler hat keinen Namen im Profil hinterlegt.');
-      const result = await mintCollectibleAsset({
-        collectionMint:      nftCollectionMint,
-        collectionName:      collRows[0].name as string,
-        collectionImageUri:  collRows[0].image_url as string,
-        ownerSolanaAddress:  userSolanaAddress,
-        artistSolanaAddress,
-        artistName,
-        rarity:              nextRarity,
-        repBonusPercent:     repBonus,
-        creditBonusPercent:  creditBonus,
-        shardBonus:          RARITY_SHARD_BONUS[nextRarity],
-        primaryBonus,
-        activeSlots:         getActiveSlotsCount(nextRarity),
-      });
-      nftMintAddress = result.assetMint;
-      await sql`UPDATE user_collectibles SET nft_mint_address = ${nftMintAddress} WHERE id = ${newId}`;
-    } catch (e) {
-      console.error('Upgrade NFT Mint fehlgeschlagen (DB-Eintrag existiert):', e);
-    }
-  }
-
-  return { newRarity: nextRarity, collectibleId: newId, nftMintAddress };
+  return { newRarity: nextRarity, collectibleId: newId };
 }
 
 // ─── Collectibles laden ───────────────────────────────────────────────────────

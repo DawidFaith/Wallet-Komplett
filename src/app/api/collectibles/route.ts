@@ -91,7 +91,6 @@ export async function POST(req: NextRequest) {
     maxShardChanceBonus?: number;
     maxCreditBonusPercent?: number;
     primaryBonus?: string;
-    enableNft?: boolean;
   };
 
   try { body = await req.json(); }
@@ -140,9 +139,8 @@ export async function POST(req: NextRequest) {
       maxShardChanceBonus: body.maxShardChanceBonus ?? 0,
       maxCreditBonusPercent: body.maxCreditBonusPercent ?? 0,
       primaryBonus: (['rep', 'credits', 'shard'].includes(body.primaryBonus ?? '') ? body.primaryBonus : 'rep') as 'rep' | 'credits' | 'shard',
-      enableNft: body.enableNft === true,
     });
-    return NextResponse.json({ id: result.id, nftCollectionMint: result.nftCollectionMint ?? null });
+    return NextResponse.json({ id: result.id });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
