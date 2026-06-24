@@ -22,6 +22,7 @@ import {
   keypairIdentity,
   generateSigner,
   publicKey as umiPubkey,
+  createSignerFromKeypair,
 } from '@metaplex-foundation/umi';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 import { Keypair } from '@solana/web3.js';
@@ -237,6 +238,23 @@ export async function mintCollectibleAsset(params: {
         ruleSet:     ruleSet('None'),
       },
       {
+        // Alle Collectible-Daten on-chain — kein Arweave-Indexierungswait nötig
+        type:          'Attributes',
+        attributeList: [
+          { key: 'Rarity',       value: RARITY_LABELS[rarity] },
+          { key: 'Collection',   value: collectionName },
+          { key: 'Platform',     value: 'D.FAITH' },
+          { key: 'Artist',       value: artistName },
+          { key: 'Image',        value: toHttps(collectionImageUri) },
+          { key: 'DropRate',     value: RARITY_DROP_RATE[rarity] },
+          { key: 'RepBonus',     value: String(repBonusPercent) },
+          { key: 'CreditBonus',  value: String(creditBonusPercent) },
+          { key: 'ShardBonus',   value: String(shardBonus) },
+          { key: 'PrimaryBonus', value: primaryBonus },
+          { key: 'ActiveSlots',  value: String(activeSlots) },
+        ],
+      },
+      {
         // Erlaubt dem Treasury, dieses NFT on-chain zu verbrennen (Upgrade ohne User-Signatur)
         type:      'BurnDelegate',
         authority: { type: 'Address', address: getTreasuryUmiPubkey() },
@@ -278,20 +296,29 @@ export interface RedeemResult {
 
 /**
  * Liest Rarity + Collection vom on-chain Asset, verbrennt es via BurnDelegate.
- * Gibt Daten zurück damit der Caller den DB-Eintrag anlegen kann.
+ * Treasury bleibt Authority; userKeypair wird als Payer gesetzt → Rent-SOL geht an User.
+ * fallbackRarity: DB-Wert für alte Assets ohne Attributes-Plugin.
  */
 export async function redeemCollectibleAsset(
-  assetMint:      string,
-  collectionMint: string,
+  assetMint:       string,
+  collectionMint:  string,
+  userKeypair?:    Keypair,
+  fallbackRarity?: CollectibleRarity,
 ): Promise<RedeemResult> {
-  const umi        = getTreasuryUmi();
+  const umi = getTreasuryUmi();
+
+  // Wenn User-Keypair bekannt: User als Payer setzen → Rent-SOL geht an User
+  if (userKeypair) {
+    umi.payer = createSignerFromKeypair(umi, fromWeb3JsKeypair(userKeypair));
+  }
+
   const asset      = await fetchAssetV1(umi, umiPubkey(assetMint));
   const collection = await fetchCollectionV1(umi, umiPubkey(collectionMint));
 
-  // Rarity aus on-chain Attributen lesen (mpl-core attributes plugin)
+  // Rarity aus on-chain Attributes lesen (neue Assets); fallback für alte Assets ohne Plugin
   const attrList   = (asset as any).attributes?.attributeList as { key: string; value: string }[] | undefined;
-  const rarityAttr = attrList?.find(a => a.key === 'Rarity' || a.key === 'rarity');
-  const rarityLabel = rarityAttr?.value?.toLowerCase() ?? 'common';
+  const rarityAttr = attrList?.find((a: { key: string }) => a.key === 'Rarity' || a.key === 'rarity');
+  const rarityLabel = rarityAttr?.value?.toLowerCase() ?? fallbackRarity ?? 'common';
   const rarityMap: Record<string, CollectibleRarity> = {
     common: 'common', uncommon: 'uncommon', rare: 'rare',
     epic: 'epic', legendary: 'legendary', mythic: 'mythic',
