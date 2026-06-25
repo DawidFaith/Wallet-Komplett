@@ -60,12 +60,20 @@ export async function GET(req: NextRequest) {
           interface: string;
           burnt?: boolean;
           content?: {
-            metadata?: { name?: string; description?: string; attributes?: { trait_type: string; value: string }[] };
+            metadata?: { name?: string; attributes?: { trait_type: string; value: string }[] };
             links?: { image?: string };
             files?: { uri?: string; mime?: string }[];
             json_uri?: string;
           };
           grouping?: { group_key: string; group_value: string }[];
+          // mpl-core on-chain plugins
+          plugins?: {
+            attributes?: {
+              data?: {
+                attributeList?: { key: string; value: string }[];
+              };
+            };
+          };
         }>;
       };
       error?: { message: string };
@@ -78,17 +86,31 @@ export async function GET(req: NextRequest) {
     const nfts: WalletNft[] = items
       .filter(a => ['V1_NFT', 'ProgrammableNFT', 'MplCoreAsset'].includes(a.interface) && !a.burnt)
       .map(a => {
-        const meta       = a.content?.metadata;
-        const links      = a.content?.links;
-        const attributes = meta?.attributes ?? [];
-        const isDfaith   = attributes.some(
-          attr => attr.trait_type === 'Platform' && attr.value === 'D.FAITH'
+        const meta    = a.content?.metadata;
+        const links   = a.content?.links;
+
+        // mpl-core: Attributes aus on-chain Plugin lesen (key/value → trait_type/value)
+        const pluginAttrs: { trait_type: string; value: string }[] =
+          (a.plugins?.attributes?.data?.attributeList ?? []).map(
+            (p: { key: string; value: string }) => ({ trait_type: p.key, value: p.value }),
+          );
+
+        // Token Metadata: Attributes aus Arweave-JSON
+        const metaAttrs: { trait_type: string; value: string }[] = meta?.attributes ?? [];
+
+        // Plugin-Attributes bevorzugen (on-chain, immer aktuell); fallback auf JSON-Attrs
+        const attributes = pluginAttrs.length > 0 ? pluginAttrs : metaAttrs;
+
+        const isDfaith = attributes.some(
+          a => (a.trait_type === 'Platform') && a.value === 'D.FAITH',
         );
         const collection = a.grouping?.find(g => g.group_key === 'collection')?.group_value ?? null;
 
-        // Bild: links.image → files[0].uri → null
+        // Bild: links.image → files → on-chain Image-Attribut → null
+        const pluginImage = pluginAttrs.find(p => p.trait_type === 'Image')?.value ?? null;
         const rawImage = links?.image
           ?? a.content?.files?.find(f => f.mime?.startsWith('image/'))?.uri
+          ?? pluginImage
           ?? null;
 
         return {
