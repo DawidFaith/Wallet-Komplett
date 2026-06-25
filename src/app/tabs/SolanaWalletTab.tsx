@@ -937,63 +937,121 @@ export default function SolanaWalletTab() {
               <p className="text-zinc-600 text-xs">Kaufe Items im Shop um deine Sammlung zu starten</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {nfts.map(nft => {
-                const editionAttr = nft.attributes.find(a => a.trait_type === 'Max Editions')?.value;
+                const isCollectible = nft.interface === 'MplCoreAsset';
+                const rarityRaw   = nft.attributes.find(a => a.trait_type === 'Rarity')?.value?.toLowerCase() ?? '';
                 const artistAttr  = nft.attributes.find(a => a.trait_type === 'Artist')?.value;
+                const repBonus    = nft.attributes.find(a => a.trait_type === 'REP Bonus')?.value;
+                const creditBonus = nft.attributes.find(a => a.trait_type === 'Credit Bonus')?.value;
+                const shardBonus  = nft.attributes.find(a => a.trait_type === 'Shard Bonus')?.value;
+                const dropRate    = nft.attributes.find(a => a.trait_type === 'Drop Rate')?.value;
+                const editionAttr = nft.attributes.find(a => a.trait_type === 'Max Editions')?.value;
+
+                const RARITY_STYLE: Record<string, string> = {
+                  common:    'text-zinc-300 bg-zinc-800/80 border-zinc-600/50',
+                  uncommon:  'text-green-300 bg-green-900/50 border-green-600/50',
+                  rare:      'text-blue-300 bg-blue-900/50 border-blue-600/50',
+                  epic:      'text-purple-300 bg-purple-900/50 border-purple-600/50',
+                  legendary: 'text-amber-300 bg-amber-900/50 border-amber-600/50',
+                  mythic:    'text-red-300 bg-red-900/50 border-red-600/50',
+                };
+                const RARITY_BORDER: Record<string, string> = {
+                  common:    'border-zinc-700/40',
+                  uncommon:  'border-green-700/30',
+                  rare:      'border-blue-700/30',
+                  epic:      'border-purple-700/30',
+                  legendary: 'border-amber-700/30',
+                  mythic:    'border-red-700/30',
+                };
+                const rarityStyle  = RARITY_STYLE[rarityRaw]  ?? 'text-zinc-300 bg-zinc-800/80 border-zinc-600/50';
+                const borderStyle  = isCollectible ? (RARITY_BORDER[rarityRaw] ?? 'border-violet-800/25') : 'border-white/[0.08]';
+                const bonuses = [repBonus, creditBonus, shardBonus ? `+${shardBonus} Shard` : null].filter(Boolean);
+
+                const nftButtons = (
+                  <div className="flex gap-1.5 flex-wrap">
+                    <button
+                      onClick={() => { setNftSendTarget(nft); setNftSendErr(''); setNftSendOk(''); setNftRecipient(''); }}
+                      className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                      <FaPaperPlane size={9} /> Send
+                    </button>
+                    {isCollectible ? (
+                      <button
+                        onClick={() => { setNftRedeemTarget(nft); setNftRedeemErr(''); setNftRedeemOk(''); }}
+                        className="bg-purple-950/50 hover:bg-purple-900/60 text-purple-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                        ✨ Einlösen
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => { setNftBurnTarget(nft); setNftBurnErr(''); setNftBurnOk(''); }}
+                        className="bg-red-950/40 hover:bg-red-900/50 text-red-400 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                        🔥 Burn
+                      </button>
+                    )}
+                    <a href={`https://solscan.io/token/${nft.mint}`} target="_blank" rel="noopener noreferrer"
+                      className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                      <FaExternalLinkAlt size={8} /> Solscan
+                    </a>
+                  </div>
+                );
+
+                if (isCollectible) {
+                  return (
+                    <div key={nft.mint} className={`rounded-2xl border overflow-hidden bg-white/[0.03] ${borderStyle}`}>
+                      <div className="flex gap-3 p-3">
+                        {/* Bild */}
+                        <div className="shrink-0 w-20 h-20 rounded-xl overflow-hidden bg-white/[0.05]">
+                          {nft.image
+                            ? <Image src={nft.image} alt={nft.name} width={80} height={80} unoptimized
+                                style={{ width: '80px', height: '80px', objectFit: 'cover', display: 'block' }} />
+                            : <div className="w-full h-full flex items-center justify-center"><FaGem size={24} className="text-violet-500" /></div>
+                          }
+                        </div>
+                        {/* Info */}
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-white text-sm font-bold truncate">{nft.name}</p>
+                            <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-900/60 border border-violet-500/30 text-violet-300">D.FAITH</span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {rarityRaw && (
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${rarityStyle}`}>
+                                {rarityRaw.charAt(0).toUpperCase() + rarityRaw.slice(1)}
+                              </span>
+                            )}
+                            {dropRate && <span className="text-zinc-500 text-[10px]">Drop {dropRate}</span>}
+                          </div>
+                          {artistAttr && <p className="text-zinc-400 text-xs">von {artistAttr}</p>}
+                          {bonuses.length > 0 && (
+                            <p className="text-zinc-400 text-[11px]">{bonuses.join(' · ')}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="px-3 pb-3">{nftButtons}</div>
+                    </div>
+                  );
+                }
+
+                // Kompakte Zeile für Song-NFTs
                 return (
-                  <div key={nft.mint} className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-colors ${
-                    nft.isDfaith
-                      ? 'bg-violet-950/20 border-violet-800/25 hover:bg-violet-950/30'
-                      : 'bg-white/[0.05] border-white/[0.08] hover:bg-white/[0.08]'
-                  }`}>
+                  <div key={nft.mint} className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-colors bg-white/[0.05] ${borderStyle}`}>
                     {nft.image ? (
                       <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
                         <Image src={nft.image} alt={nft.name} width={40} height={40}
                           style={{ width: '40px', height: '40px', objectFit: 'cover', display: 'block' }} unoptimized />
                       </div>
                     ) : (
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${nft.isDfaith ? 'bg-violet-900/40' : 'bg-white/8'}`}>
-                        <FaGem size={16} className={nft.isDfaith ? 'text-violet-400' : 'text-zinc-500'} />
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-white/[0.08]">
+                        <FaGem size={16} className="text-zinc-500" />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-white text-sm font-semibold truncate">{nft.name}</p>
-                        {nft.isDfaith && (
-                          <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-900/60 border border-violet-500/30 text-violet-300">D.FAITH</span>
-                        )}
-                      </div>
+                      <p className="text-white text-sm font-semibold truncate">{nft.name}</p>
                       <p className="text-zinc-500 text-xs truncate">
-                        {artistAttr ? `${artistAttr}` : ''}
-                        {editionAttr ? ` · ${editionAttr} Editionen` : ''}
-                        {!artistAttr && !editionAttr ? nft.interface : ''}
+                        {artistAttr ?? ''}{editionAttr ? ` · ${editionAttr} Editionen` : ''}
                       </p>
                     </div>
-                    <div className="flex flex-col gap-1 shrink-0">
-                      <button
-                        onClick={() => { setNftSendTarget(nft); setNftSendErr(''); setNftSendOk(''); setNftRecipient(''); }}
-                        className="bg-[#231e12] hover:bg-[#2d2615] text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
-                        <FaPaperPlane size={9} /> Send
-                      </button>
-                      {nft.interface === 'MplCoreAsset' ? (
-                        <button
-                          onClick={() => { setNftRedeemTarget(nft); setNftRedeemErr(''); setNftRedeemOk(''); }}
-                          className="bg-purple-950/40 hover:bg-purple-900/50 text-purple-400 hover:text-purple-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
-                          ✨ Einlösen
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => { setNftBurnTarget(nft); setNftBurnErr(''); setNftBurnOk(''); }}
-                          className="bg-red-950/40 hover:bg-red-900/50 text-red-400 hover:text-red-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
-                          🔥 Burn
-                        </button>
-                      )}
-                      <a href={`https://solscan.io/token/${nft.mint}`} target="_blank" rel="noopener noreferrer"
-                        className="bg-[#231e12] hover:bg-[#2d2615] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
-                        <FaExternalLinkAlt size={8} /> Info
-                      </a>
-                    </div>
+                    {nftButtons}
                   </div>
                 );
               })}
