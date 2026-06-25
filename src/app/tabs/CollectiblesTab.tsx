@@ -93,7 +93,7 @@ const BONUS_UNLOCK: Record<BonusType, string> = { rep: 'ab Common', credits: 'ab
 
 // ─── Collectible Card ─────────────────────────────────────────────────────────
 
-function CollectibleCard({ rarity, count, imageUrl, name, maxRepBonus, maxCreditBonus, maxShardBonus, primaryBonus }: {
+function CollectibleCard({ rarity, count, imageUrl, name, maxRepBonus, maxCreditBonus, maxShardBonus, primaryBonus, onMint }: {
   rarity: CollectibleRarity;
   count: number;
   imageUrl: string;
@@ -102,6 +102,7 @@ function CollectibleCard({ rarity, count, imageUrl, name, maxRepBonus, maxCredit
   maxCreditBonus: number;
   maxShardBonus: number;
   primaryBonus: BonusType;
+  onMint?: () => void;
 }) {
   const cfg = RARITY_CONFIG[rarity];
   const slots = getBonusSlots(primaryBonus);
@@ -146,7 +147,7 @@ function CollectibleCard({ rarity, count, imageUrl, name, maxRepBonus, maxCredit
       </span>
 
       {/* Nur aktive Bonus-Slots anzeigen */}
-      <div className="flex flex-col items-center gap-0.5 w-full">
+      <div className="flex flex-col items-center gap-0.5 w-full mb-2">
         {slots.slice(0, activeCount).map((bonusType) => {
           const value = bonusValues[bonusType];
           return value > 0 ? (
@@ -159,6 +160,16 @@ function CollectibleCard({ rarity, count, imageUrl, name, maxRepBonus, maxCredit
           ) : null;
         })}
       </div>
+
+      {/* Mint-Button */}
+      {onMint && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onMint(); }}
+          className="w-full mt-auto py-1.5 rounded-xl text-[10px] font-black bg-purple-500/15 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 transition-colors flex items-center justify-center gap-1"
+        >
+          <FaGem size={8} /> Als NFT minten
+        </button>
+      )}
     </div>
   );
 }
@@ -511,6 +522,113 @@ function UpgradeModal({ collection, fromRarity, count, onClose, onUpgraded, wall
   );
 }
 
+// ─── Mint Confirm Modal ───────────────────────────────────────────────────────
+
+function MintConfirmModal({ collection, rarity, walletAddress, onClose }: {
+  collection: CollectibleCollection;
+  rarity: CollectibleRarity;
+  walletAddress: string;
+  onClose: (minted: boolean) => void;
+}) {
+  const cfg = RARITY_CONFIG[rarity];
+  const [phase, setPhase] = useState<'confirm' | 'loading' | 'success' | 'error'>('confirm');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleMint = async () => {
+    setPhase('loading');
+    try {
+      const res = await fetch('/api/collectibles/mint-nft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress, collectionId: collection.id, rarity }),
+      });
+      const json = await res.json() as { success?: boolean; error?: string };
+      if (!res.ok || !json.success) throw new Error(json.error ?? 'Fehler beim Minten');
+      setPhase('success');
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : String(e));
+      setPhase('error');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => onClose(phase === 'success')}>
+      <div className="bg-[#1a1814] border border-white/10 rounded-2xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-black text-white text-lg flex items-center gap-2">
+            <FaGem className="text-purple-400" /> Als NFT minten
+          </h3>
+          <button onClick={() => onClose(phase === 'success')} className="text-zinc-500 hover:text-white"><FaTimes /></button>
+        </div>
+
+        {/* NFT Vorschau */}
+        <div className={`flex items-center gap-3 p-3 rounded-xl border ${cfg.border} ${cfg.bg} ${cfg.glow} mb-4`}>
+          <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-white/10">
+            {collection.imageUrl
+              ? <Image src={collection.imageUrl} alt={collection.name} width={56} height={56} className="w-full h-full object-cover" />
+              : <GiCrystalShine size={32} style={{ color: cfg.color }} className="m-auto mt-2" />}
+          </div>
+          <div>
+            <p className={`text-[10px] font-black tracking-widest uppercase ${cfg.textColor}`}>{cfg.label}</p>
+            <p className="text-white font-bold text-sm">{collection.name} — {cfg.label}</p>
+            <p className="text-zinc-400 text-[11px]">mpl-core · Solana</p>
+          </div>
+        </div>
+
+        {/* Kosten-Info */}
+        {phase === 'confirm' && (
+          <div className="bg-white/[0.04] rounded-xl p-3 mb-4 space-y-1.5">
+            <p className="text-[10px] font-black tracking-widest uppercase text-zinc-500 mb-2">Details</p>
+            <div className="flex justify-between text-xs">
+              <span className="text-zinc-400">Netzwerkgebühr (Solana Rent)</span>
+              <span className="text-white font-semibold">~0.002–0.003 SOL</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-zinc-400">Nach dem Minten</span>
+              <span className="text-white font-semibold">In deiner Wallet</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-zinc-400">Handelbar auf</span>
+              <span className="text-white font-semibold">Magic Eden · Tensor</span>
+            </div>
+          </div>
+        )}
+
+        {/* Erfolgsmeldung */}
+        {phase === 'success' && (
+          <div className="bg-green-900/30 border border-green-500/40 rounded-xl p-4 mb-4 text-center">
+            <p className="text-green-400 font-black text-sm mb-1">NFT geminted!</p>
+            <p className="text-zinc-300 text-xs">Das NFT ist jetzt in deiner Solana-Wallet zu finden und auf Magic Eden / Tensor handelbar.</p>
+          </div>
+        )}
+
+        {/* Fehlermeldung */}
+        {phase === 'error' && (
+          <div className="bg-red-900/30 border border-red-500/40 rounded-xl p-3 mb-4">
+            <p className="text-red-400 text-xs">{errorMsg}</p>
+          </div>
+        )}
+
+        <button
+          onClick={phase === 'success' || phase === 'error' ? () => onClose(phase === 'success') : handleMint}
+          disabled={phase === 'loading'}
+          className={`w-full py-3.5 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 ${
+            phase === 'success' ? 'bg-green-500 text-black' :
+            phase === 'error'   ? 'bg-zinc-700 text-zinc-300' :
+            phase === 'loading' ? 'bg-purple-800/50 text-purple-300 cursor-not-allowed' :
+            'bg-purple-600 hover:bg-purple-500 text-white active:scale-95'
+          }`}
+        >
+          {phase === 'loading' ? <><FaSync className="animate-spin" /> Wird geminted&hellip;</> :
+           phase === 'success' ? <><FaCheck /> Schließen</> :
+           phase === 'error'   ? 'Schließen' :
+           <><FaGem /> Jetzt minten</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Kollektion-Panel ─────────────────────────────────────────────────────────
 
 function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onShardsChanged }: {
@@ -526,30 +644,10 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
   const [editOpen, setEditOpen] = useState(false);
   const [localShards, setLocalShards] = useState(data.shards);
   const [selectedUpgradeRarity, setSelectedUpgradeRarity] = useState<CollectibleRarity | null>(null);
-  const [mintingRarity, setMintingRarity] = useState<CollectibleRarity | null>(null);
-  const [mintError, setMintError] = useState<string | null>(null);
+  const [mintConfirmRarity, setMintConfirmRarity] = useState<CollectibleRarity | null>(null);
 
   // Shard-Zahl von außen (nach onRefresh) synchronisieren
   useEffect(() => { setLocalShards(data.shards); }, [data.shards]);
-
-  const handleMintNft = async (rarity: CollectibleRarity) => {
-    setMintingRarity(rarity);
-    setMintError(null);
-    try {
-      const res = await fetch('/api/collectibles/mint-nft', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress, collectionId: collection.id, rarity }),
-      });
-      const json = await res.json() as { success?: boolean; mintAddress?: string; error?: string };
-      if (!res.ok || !json.success) throw new Error(json.error ?? 'Fehler beim Minten');
-      onRefresh();
-    } catch (e) {
-      setMintError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setMintingRarity(null);
-    }
-  };
 
   const { collection, ownedByRarity } = data;
   const shards = localShards;
@@ -620,6 +718,7 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
                   maxCreditBonus={collection.maxCreditBonusPercent ?? 0}
                   maxShardBonus={collection.maxShardChanceBonus ?? 0}
                   primaryBonus={collection.primaryBonus ?? 'rep'}
+                  onMint={() => setMintConfirmRarity(rarity)}
                 />
               );
             }
@@ -710,37 +809,15 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
         })()}
       </div>
 
-      {/* Als NFT minten (Treasury zahlt, User bekommt tradeable mpl-core Asset) */}
-      {totalCollectibles > 0 && (
-        <div className="mt-3">
-          <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-2">Als NFT minten (handelbar auf Tensor / Magic Eden)</p>
-          <div className="flex gap-2 flex-wrap">
-            {RARITY_ORDER.filter(r => (ownedByRarity[r] ?? 0) > 0).map(r => (
-              <button
-                key={r}
-                onClick={() => handleMintNft(r)}
-                disabled={mintingRarity !== null}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black transition-colors
-                  bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30
-                  disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                {mintingRarity === r ? <FaSync size={9} className="animate-spin" /> : null}
-                {RARITY_CONFIG[r].label} NFT minten
-              </button>
-            ))}
-          </div>
-          {mintError && <p className="text-red-400 text-[10px] mt-1.5">{mintError}</p>}
-        </div>
-      )}
-
-      {/* Fusion Modal */}
+      {/* Fusion Modal — onFused aktualisiert nur lokalenState, onRefresh erst beim Schließen
+          (sonst rerendert der Parent die Komponente und schließt das Reveal-Modal) */}
       {fuseOpen && (
         <FusionModal
           collection={collection}
           shards={shards}
           walletAddress={walletAddress}
-          onClose={() => setFuseOpen(false)}
-          onFused={(_rarity, newShardsCount) => { setLocalShards(newShardsCount); onShardsChanged?.(newShardsCount); onRefresh(); }}
+          onClose={() => { setFuseOpen(false); onRefresh(); }}
+          onFused={(_rarity, newShardsCount) => { setLocalShards(newShardsCount); onShardsChanged?.(newShardsCount); }}
         />
       )}
 
@@ -753,6 +830,16 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
           walletAddress={walletAddress}
           onClose={() => setUpgradeOpen(null)}
           onUpgraded={() => { setUpgradeOpen(null); onRefresh(); }}
+        />
+      )}
+
+      {/* Mint Bestätigungs-Modal */}
+      {mintConfirmRarity && (
+        <MintConfirmModal
+          collection={collection}
+          rarity={mintConfirmRarity}
+          walletAddress={walletAddress}
+          onClose={(minted) => { setMintConfirmRarity(null); if (minted) onRefresh(); }}
         />
       )}
 
