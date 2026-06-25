@@ -52,10 +52,15 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // On-chain Collection verbrennen falls vorhanden
+    // On-chain Collection verbrennen (best-effort — schlägt fehl wenn noch Assets on-chain)
     if (nft_collection_mint) {
-      const artistKeypair = Keypair.fromSecretKey(bs58.decode(decryptKey(solana_private_key as string)));
-      await burnCollectibleCollection(nft_collection_mint as string, artistKeypair);
+      try {
+        const artistKeypair = Keypair.fromSecretKey(bs58.decode(decryptKey(solana_private_key as string)));
+        await burnCollectibleCollection(nft_collection_mint as string, artistKeypair);
+      } catch {
+        // On-chain Burn fehlgeschlagen (z.B. noch aktive Assets oder bereits gelöscht)
+        // DB wird trotzdem bereinigt — die Collection-Account bleibt on-chain (harmlos)
+      }
     }
 
     // DB-Collectibles + Kollektion entfernen
