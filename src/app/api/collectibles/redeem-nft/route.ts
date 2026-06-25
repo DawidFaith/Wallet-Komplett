@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
           WHERE wallet_address = ${walletAddress.toLowerCase()}
             AND collection_id  = ${collectionId}
             AND nft_mint_address IS NULL
-          ORDER BY created_at DESC LIMIT 1
+          ORDER BY obtained_at DESC LIMIT 1
         `;
         if (existing.length) {
           return NextResponse.json({ success: true, rarity: existing[0].rarity, collectibleId: existing[0].id, alreadyRedeemed: true });
