@@ -82,11 +82,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Diese Kollektion hat noch keine on-chain Collection — bitte Künstler kontaktieren' }, { status: 400 });
     }
 
-    // Boni berechnen
+    // Boni berechnen — Math.round() wie in CollectiblesTab + questDb, damit NFT-Werte übereinstimmen
     const r          = rarity as CollectibleRarity;
-    const repBonus    = parseFloat((Number(coll.max_rep_bonus_percent)    * RARITY_REP_MULTIPLIER[r]).toFixed(1));
-    const creditBonus = parseFloat((Number(coll.max_credit_bonus_percent) * RARITY_CREDIT_MULTIPLIER[r]).toFixed(1));
-    const shardBonus  = Math.round(Number(coll.max_shard_chance_bonus)    * RARITY_REP_MULTIPLIER[r]);
+    const repBonus    = Math.round(Number(coll.max_rep_bonus_percent)    * RARITY_REP_MULTIPLIER[r]);
+    const creditBonus = Math.round(Number(coll.max_credit_bonus_percent) * RARITY_CREDIT_MULTIPLIER[r]);
+    const shardBonus  = Math.round(Number(coll.max_shard_chance_bonus)   * RARITY_REP_MULTIPLIER[r]);
 
     // Asset minten — User zahlt die Gebühren (~0.002-0.003 SOL)
     const result = await mintCollectibleAsset({
