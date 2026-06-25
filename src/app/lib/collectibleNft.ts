@@ -198,9 +198,14 @@ export async function burnCollectibleCollection(
   collectionMint: string,
   payerKeypair: Keypair,
 ): Promise<void> {
-  const umi        = getUmi(payerKeypair);
-  const collection = await fetchCollectionV1(umi, umiPubkey(collectionMint));
-  await (burnCollection as Function)(umi, { collection }).sendAndConfirm(umi);
+  const umi = getUmi(payerKeypair);
+  try {
+    await fetchCollectionV1(umi, umiPubkey(collectionMint));
+  } catch {
+    // Collection existiert nicht mehr on-chain → nichts zu tun
+    return;
+  }
+  await (burnCollection as Function)(umi, { collection: umiPubkey(collectionMint) }).sendAndConfirm(umi);
 }
 
 // ─── Asset minten ─────────────────────────────────────────────────────────────
