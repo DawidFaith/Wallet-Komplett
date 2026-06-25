@@ -58,6 +58,7 @@ export async function GET(req: NextRequest) {
         items: Array<{
           id: string;
           interface: string;
+          burnt?: boolean;
           content?: {
             metadata?: { name?: string; description?: string; attributes?: { trait_type: string; value: string }[] };
             links?: { image?: string };
@@ -75,7 +76,7 @@ export async function GET(req: NextRequest) {
     const items = json.result?.items ?? [];
 
     const nfts: WalletNft[] = items
-      .filter(a => ['V1_NFT', 'ProgrammableNFT', 'MplCoreAsset'].includes(a.interface))
+      .filter(a => ['V1_NFT', 'ProgrammableNFT', 'MplCoreAsset'].includes(a.interface) && !a.burnt)
       .map(a => {
         const meta       = a.content?.metadata;
         const links      = a.content?.links;
