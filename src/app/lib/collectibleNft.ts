@@ -121,6 +121,7 @@ export async function mintCollectibleCollection(params: {
     name,
     description,
     image: arweaveImage,
+    external_url: 'https://app.dawidfaith.de',
     properties: {
       category: 'collectible',
       creators: [{ address: artistSolanaAddress, share: 100 }],
