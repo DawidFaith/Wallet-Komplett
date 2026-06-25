@@ -200,8 +200,7 @@ export async function burnCollectibleCollection(
 ): Promise<void> {
   const umi        = getUmi(payerKeypair);
   const collection = await fetchCollectionV1(umi, umiPubkey(collectionMint));
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await burnCollection(umi, { collection } as any).sendAndConfirm(umi);
+  await (burnCollection as Function)(umi, { collection }).sendAndConfirm(umi);
 }
 
 // ─── Asset minten ─────────────────────────────────────────────────────────────
