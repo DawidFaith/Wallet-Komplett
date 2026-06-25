@@ -1216,21 +1216,29 @@ export default function SolanaWalletTab() {
               </button>
             </div>
             <div className="p-4 space-y-4">
-              <p className="text-zinc-400 text-sm">
-                Das NFT wird on-chain verbrannt und als Collectible in deinem D.FAITH-Account gespeichert. Du kannst es danach wieder handeln oder nutzen.
-              </p>
+              {!nftRedeemOk && (
+                <p className="text-zinc-400 text-sm">
+                  Das NFT wird on-chain verbrannt und als Collectible in deinem D.FAITH-Account gespeichert.
+                </p>
+              )}
               {nftRedeemErr && <p className="text-red-400 text-xs bg-red-900/20 rounded-lg px-3 py-2">{nftRedeemErr}</p>}
-              {nftRedeemOk  && <p className="text-green-400 text-xs bg-green-900/20 rounded-lg px-3 py-2">{nftRedeemOk}</p>}
+              {nftRedeemOk  && <p className="text-green-400 text-sm font-semibold bg-green-900/20 rounded-lg px-3 py-2 text-center">{nftRedeemOk}</p>}
               <button
                 onClick={handleNftRedeem}
-                disabled={nftRedeeming}
-                className="w-full py-3 rounded-xl bg-purple-700 hover:bg-purple-600 text-white font-bold text-sm disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                disabled={nftRedeeming || !!nftRedeemOk}
+                className={`w-full py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 ${
+                  nftRedeemOk
+                    ? 'bg-green-700/60 text-green-300 cursor-default'
+                    : 'bg-purple-700 hover:bg-purple-600 text-white disabled:opacity-50'
+                }`}
               >
                 {nftRedeeming
-                  ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  : '✨ Jetzt einlösen'}
+                  ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Wird eingelöst…</>
+                  : nftRedeemOk
+                    ? '✓ Eingelöst'
+                    : '✨ Jetzt einlösen'}
               </button>
-              <p className="text-zinc-600 text-xs text-center">NFT wird verbrannt · Collectible wird in D.FAITH gespeichert</p>
+              {!nftRedeemOk && <p className="text-zinc-600 text-xs text-center">NFT wird verbrannt · Collectible wird in D.FAITH gespeichert</p>}
             </div>
           </div>
         </div>
