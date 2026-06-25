@@ -14,6 +14,7 @@ import {
   createCollection,
   create,
   burn,
+  burnCollection,
   ruleSet,
   fetchCollectionV1,
   fetchAssetV1,
@@ -104,18 +105,30 @@ const toHttps = (url: string) =>
 export async function mintCollectibleCollection(params: {
   artistWallet: string;
   artistSolanaAddress: string;
+  artistName: string;
   name: string;
   description: string;
   imageUrl: string;
+  primaryBonus: 'rep' | 'credits' | 'shard';
+  maxRepBonusPercent: number;
+  maxCreditBonusPercent: number;
+  maxShardChanceBonus: number;
   /** Artist zahlt die Erstellungsgebühren */
   payerKeypair: Keypair;
 }): Promise<CollectionNftResult> {
-  const { artistSolanaAddress, name, description, imageUrl } = params;
+  const {
+    artistSolanaAddress, artistName, name, description, imageUrl,
+    primaryBonus, maxRepBonusPercent, maxCreditBonusPercent, maxShardChanceBonus,
+  } = params;
 
   // Wenn das Bild bereits auf Arweave liegt, kein erneuter Upload nötig
   const arweaveImage = (imageUrl.startsWith('ar://') || imageUrl.includes('arweave.net'))
     ? toHttps(imageUrl)
     : toHttps(await fetchAndUploadToArweave(imageUrl, 'image/jpeg', [{ name: 'Collection', value: name }]));
+
+  const BONUS_LABELS: Record<'rep' | 'credits' | 'shard', string> = {
+    rep: 'REP', credits: 'Credits', shard: 'Shard-Chance',
+  };
 
   const metadata = {
     name,
@@ -127,8 +140,15 @@ export async function mintCollectibleCollection(params: {
       creators: [{ address: artistSolanaAddress, share: 100 }],
     },
     attributes: [
-      { trait_type: 'Platform', value: 'D.FAITH' },
-      { trait_type: 'Type', value: 'Collectible Collection' },
+      { trait_type: 'Platform',      value: 'D.FAITH' },
+      { trait_type: 'Artist',        value: artistName },
+      { trait_type: 'Type',          value: 'Collectible Collection' },
+      { trait_type: 'Primary Bonus', value: BONUS_LABELS[primaryBonus] },
+      { trait_type: 'Max REP',       value: `${maxRepBonusPercent}%` },
+      { trait_type: 'Max Credits',   value: `${maxCreditBonusPercent}%` },
+      { trait_type: 'Max Shard',     value: String(maxShardChanceBonus) },
+      { trait_type: 'Royalties',     value: '5%' },
+      { trait_type: 'Website',       value: 'app.dawidfaith.de' },
     ],
   };
   const metadataUri = await uploadToArweave(
@@ -154,10 +174,34 @@ export async function mintCollectibleCollection(params: {
         creators:    [{ address: umiPubkey(artistSolanaAddress), percentage: 100 }],
         ruleSet:     ruleSet('None'),
       },
+      {
+        type:          'Attributes',
+        attributeList: [
+          { key: 'Platform',     value: 'D.FAITH' },
+          { key: 'Artist',       value: artistName },
+          { key: 'PrimaryBonus', value: primaryBonus },
+          { key: 'MaxRep',       value: String(maxRepBonusPercent) },
+          { key: 'MaxCredits',   value: String(maxCreditBonusPercent) },
+          { key: 'MaxShard',     value: String(maxShardChanceBonus) },
+          { key: 'Website',      value: 'app.dawidfaith.de' },
+        ],
+      },
     ],
   }).sendAndConfirm(umi);
 
   return { collectionMint: collectionSigner.publicKey.toString(), metadataUri };
+}
+
+// ─── Collection verbrennen ────────────────────────────────────────────────────
+
+export async function burnCollectibleCollection(
+  collectionMint: string,
+  payerKeypair: Keypair,
+): Promise<void> {
+  const umi        = getUmi(payerKeypair);
+  const collection = await fetchCollectionV1(umi, umiPubkey(collectionMint));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await burnCollection(umi, { collection } as any).sendAndConfirm(umi);
 }
 
 // ─── Asset minten ─────────────────────────────────────────────────────────────

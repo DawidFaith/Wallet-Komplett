@@ -169,13 +169,19 @@ export async function POST(req: NextRequest) {
     });
 
     // mpl-core Collection on-chain minten (Artist zahlt)
+    const primaryBonus = (['rep', 'credits', 'shard'].includes(body.primaryBonus ?? '') ? body.primaryBonus : 'rep') as 'rep' | 'credits' | 'shard';
     const nftResult = await mintCollectibleCollection({
       artistWallet,
       artistSolanaAddress: artistSolana as string,
-      name: name.trim(),
-      description: body.description ?? '',
-      imageUrl: finalImageUrl,
-      payerKeypair: artistKeypair,
+      artistName:           (artistDisplayName as string | null)?.trim() || artistWallet,
+      name:                 name.trim(),
+      description:          body.description ?? '',
+      imageUrl:             finalImageUrl,
+      primaryBonus,
+      maxRepBonusPercent:   body.maxRepBonusPercent   ?? 0,
+      maxCreditBonusPercent: body.maxCreditBonusPercent ?? 0,
+      maxShardChanceBonus:  body.maxShardChanceBonus  ?? 0,
+      payerKeypair:         artistKeypair,
     });
     await sql`UPDATE collectible_collections SET nft_collection_mint = ${nftResult.collectionMint} WHERE id = ${result.id}`;
 

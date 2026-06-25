@@ -866,6 +866,8 @@ function EditCollectionForm({ collection, artistWallet, onClose, onSaved }: {
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [burnConfirm, setBurnConfirm] = useState(false);
+  const [burning, setBurning] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
@@ -916,6 +918,26 @@ function EditCollectionForm({ collection, artistWallet, onClose, onSaved }: {
       setError(e instanceof Error ? e.message : 'Fehler');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBurn = async () => {
+    setBurning(true);
+    setError('');
+    try {
+      const res = await fetch('/api/collectibles/burn-collection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artistWallet, collectionId: collection.id }),
+      });
+      const data = await res.json() as { success?: boolean; error?: string };
+      if (!res.ok || !data.success) throw new Error(data.error ?? 'Fehler beim Verbrennen');
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler');
+      setBurnConfirm(false);
+    } finally {
+      setBurning(false);
     }
   };
 
@@ -1025,6 +1047,36 @@ function EditCollectionForm({ collection, artistWallet, onClose, onSaved }: {
               {loading ? <FaSync className="animate-spin" size={12} /> : <FaCheck size={12} />} Speichern
             </button>
           </div>
+
+          {/* Kollektion verbrennen */}
+          <div className="border-t border-white/[0.06] pt-3 mt-1">
+            {!burnConfirm ? (
+              <button
+                onClick={() => setBurnConfirm(true)}
+                className="w-full py-2 rounded-xl bg-red-950/30 hover:bg-red-900/40 text-red-500 hover:text-red-400 text-xs font-bold border border-red-900/40 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <FaFire size={10} /> Kollektion verbrennen
+              </button>
+            ) : (
+              <div className="bg-red-950/30 border border-red-900/40 rounded-xl p-3 space-y-2">
+                <p className="text-red-400 text-xs font-semibold text-center">Wirklich verbrennen? Diese Aktion ist unwiderruflich.</p>
+                <p className="text-zinc-500 text-[10px] text-center">Die Kollektion wird on-chain gelöscht. Vorher müssen alle Collectibles eingelöst oder geminted sein.</p>
+                <div className="flex gap-2">
+                  <button onClick={() => setBurnConfirm(false)} className="flex-1 py-2 rounded-lg bg-white/[0.04] text-zinc-400 text-xs font-bold hover:bg-white/[0.08] transition-colors">
+                    Abbrechen
+                  </button>
+                  <button
+                    onClick={handleBurn}
+                    disabled={burning}
+                    className="flex-1 py-2 rounded-lg bg-red-700 hover:bg-red-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
+                  >
+                    {burning ? <FaSync className="animate-spin" size={10} /> : <FaFire size={10} />}
+                    {burning ? 'Wird verbrannt…' : 'Ja, verbrennen'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -1078,7 +1130,7 @@ function CollectibleNftPreview({ form, rarity }: {
         <div className="min-w-0 flex-1">
           <p className={`font-bold text-sm truncate ${cfg.textColor}`}>{form.name || '—'} — {cfg.label}</p>
           <p className="text-zinc-400 text-[10px] mt-0.5 line-clamp-2">
-            {form.name ? `${cfg.label} D.FAITH Collectible from the "${form.name}" series.` : '—'}
+            {form.description || (form.name ? `${cfg.label} D.FAITH Collectible from the "${form.name}" series.` : '—')}
           </p>
           <p className="text-zinc-300 text-[10px] mt-1 font-medium">Bonuses: {bonusLine}</p>
           <div className="flex flex-wrap gap-1 mt-2">
