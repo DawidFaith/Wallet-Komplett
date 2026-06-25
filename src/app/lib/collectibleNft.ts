@@ -142,7 +142,7 @@ export async function mintCollectibleCollection(params: {
   await createCollection(umi, {
     collection: collectionSigner,
     name:       name.slice(0, 32),
-    uri:        metadataUri,
+    uri:        toHttps(metadataUri),
     plugins: [
       {
         type:        'Royalties',
@@ -229,7 +229,7 @@ export async function mintCollectibleAsset(params: {
     collection,
     owner:      umiPubkey(ownerSolanaAddress),
     name:       `${collectionName} — ${RARITY_LABELS[rarity]}`.slice(0, 32),
-    uri:        metadataUri,
+    uri:        toHttps(metadataUri),
     plugins: [
       {
         type:        'Royalties',
