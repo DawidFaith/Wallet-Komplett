@@ -220,6 +220,7 @@ export async function mintCollectibleAsset(params: {
   if (repActive)    attributes.push({ trait_type: 'REP Bonus',    value: `+${repBonusPercent}%` });
   if (creditActive) attributes.push({ trait_type: 'Credit Bonus', value: `+${creditBonusPercent}%` });
   if (shardActive)  attributes.push({ trait_type: 'Shard Bonus',  value: `+${shardBonus}` });
+  attributes.push({ trait_type: 'Website', value: 'app.dawidfaith.de' });
 
   const metadata = {
     name:             `${collectionName} — ${RARITY_LABELS[rarity]}`,
@@ -274,6 +275,7 @@ export async function mintCollectibleAsset(params: {
           ...(shardActive  ? [{ key: 'ShardBonus',  value: String(shardBonus) }]         : []),
           { key: 'PrimaryBonus', value: primaryBonus },
           { key: 'ActiveSlots',  value: String(activeSlots) },
+          { key: 'Website',      value: 'app.dawidfaith.de' },
         ],
       },
       {
