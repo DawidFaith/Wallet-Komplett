@@ -1007,12 +1007,6 @@ export default function SolanaWalletTab() {
                         🔥 Burn
                       </button>
                     )}
-                    {isCollectible && (
-                      <a href="https://app.dawidfaith.de" target="_blank" rel="noopener noreferrer"
-                        className="bg-violet-950/40 hover:bg-violet-900/50 text-violet-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
-                        <FaExternalLinkAlt size={8} /> App
-                      </a>
-                    )}
                     <a href={`https://solscan.io/token/${nft.mint}`} target="_blank" rel="noopener noreferrer"
                       className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
                       <FaExternalLinkAlt size={8} /> Solscan
