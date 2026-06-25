@@ -41,23 +41,25 @@ export async function POST(req: NextRequest) {
     }
     const { nft_collection_mint, solana_private_key } = collRows[0];
 
-    // Prüfen ob noch DB-Collectibles existieren
-    const activeCount = await sql`
-      SELECT COUNT(*) AS cnt FROM user_collectibles WHERE collection_id = ${collectionId}
+    // Nur on-chain NFTs blockieren (müssen zuerst eingelöst werden)
+    const nftCount = await sql`
+      SELECT COUNT(*) AS cnt FROM user_collectibles
+      WHERE collection_id = ${collectionId} AND nft_mint_address IS NOT NULL
     `;
-    if (Number(activeCount[0].cnt) > 0) {
+    if (Number(nftCount[0].cnt) > 0) {
       return NextResponse.json({
-        error: `Es gibt noch ${activeCount[0].cnt} Collectible(s) in dieser Kollektion. Bitte zuerst alle einlösen oder als NFT minten.`,
+        error: `Es gibt noch ${nftCount[0].cnt} gemintete NFT(s) in dieser Kollektion. Bitte zuerst alle einlösen.`,
       }, { status: 400 });
     }
 
-    // On-chain verbrennen falls vorhanden
+    // On-chain Collection verbrennen falls vorhanden
     if (nft_collection_mint) {
       const artistKeypair = Keypair.fromSecretKey(bs58.decode(decryptKey(solana_private_key as string)));
       await burnCollectibleCollection(nft_collection_mint as string, artistKeypair);
     }
 
-    // DB-Eintrag entfernen
+    // DB-Collectibles + Kollektion entfernen
+    await sql`DELETE FROM user_collectibles WHERE collection_id = ${collectionId}`;
     await sql`DELETE FROM collectible_collections WHERE id = ${collectionId}`;
 
     return NextResponse.json({ success: true });
