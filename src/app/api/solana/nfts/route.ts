@@ -66,11 +66,11 @@ export async function GET(req: NextRequest) {
             json_uri?: string;
           };
           grouping?: { group_key: string; group_value: string }[];
-          // mpl-core on-chain plugins
+          // mpl-core on-chain plugins (Helius DAS liefert snake_case: attribute_list)
           plugins?: {
             attributes?: {
               data?: {
-                attributeList?: { key: string; value: string }[];
+                attribute_list?: { key: string; value: string }[];
               };
             };
           };
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
 
         // mpl-core: Attributes aus on-chain Plugin lesen (key/value → trait_type/value)
         const pluginAttrs: { trait_type: string; value: string }[] =
-          (a.plugins?.attributes?.data?.attributeList ?? []).map(
+          (a.plugins?.attributes?.data?.attribute_list ?? []).map(
             (p: { key: string; value: string }) => ({ trait_type: p.key, value: p.value }),
           );
 
