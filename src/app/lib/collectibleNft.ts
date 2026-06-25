@@ -27,7 +27,7 @@ import {
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 import { Keypair } from '@solana/web3.js';
 import { getTreasuryKeypair } from './solanaOperator';
-import { fetchAndUploadToArweave, uploadToArweave } from './arweaveUpload';
+import { fetchAndUploadToArweave, uploadToArweave, waitForArweaveAvailability } from './arweaveUpload';
 import type { CollectibleRarity } from './questDb/collectibles';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
@@ -136,6 +136,9 @@ export async function mintCollectibleCollection(params: {
     [{ name: 'Type', value: 'Collection Metadata' }, { name: 'Collection', value: name }],
   );
 
+  // Warten bis die Collection-Metadaten erreichbar sind (siehe mintCollectibleAsset)
+  await waitForArweaveAvailability(metadataUri, { expectContentType: 'application/json' });
+
   const umi              = getUmi(params.payerKeypair);
   const collectionSigner = generateSigner(umi);
 
@@ -219,6 +222,12 @@ export async function mintCollectibleAsset(params: {
     'application/json',
     [{ name: 'Rarity', value: rarity }, { name: 'Collection', value: collectionName }],
   );
+
+  // Warten bis die Metadaten über das Gateway erreichbar sind, damit Indexer
+  // (Helius/Solscan/ORB) sie beim ersten Crawl nach dem Mint korrekt lesen können.
+  // Best-effort (max ~30s); Mint läuft auch bei Timeout weiter, da alle Daten
+  // redundant im on-chain Attributes-Plugin liegen.
+  await waitForArweaveAvailability(metadataUri, { expectContentType: 'application/json' });
 
   const umi         = getUmi(params.payerKeypair);
   const assetSigner = generateSigner(umi);

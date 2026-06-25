@@ -942,10 +942,11 @@ export default function SolanaWalletTab() {
                 const isCollectible = nft.interface === 'MplCoreAsset';
                 const rarityRaw   = nft.attributes.find(a => a.trait_type === 'Rarity')?.value?.toLowerCase() ?? '';
                 const artistAttr  = nft.attributes.find(a => a.trait_type === 'Artist')?.value;
-                const repBonus    = nft.attributes.find(a => a.trait_type === 'REP Bonus')?.value;
-                const creditBonus = nft.attributes.find(a => a.trait_type === 'Credit Bonus')?.value;
-                const shardBonus  = nft.attributes.find(a => a.trait_type === 'Shard Bonus')?.value;
-                const dropRate    = nft.attributes.find(a => a.trait_type === 'Drop Rate')?.value;
+                // On-chain Plugin-Keys ohne Leerzeichen (RepBonus); alte JSON-Attrs mit (REP Bonus)
+                const repBonus    = nft.attributes.find(a => a.trait_type === 'RepBonus'    || a.trait_type === 'REP Bonus')?.value;
+                const creditBonus = nft.attributes.find(a => a.trait_type === 'CreditBonus' || a.trait_type === 'Credit Bonus')?.value;
+                const shardBonus  = nft.attributes.find(a => a.trait_type === 'ShardBonus'  || a.trait_type === 'Shard Bonus')?.value;
+                const dropRate    = nft.attributes.find(a => a.trait_type === 'DropRate'    || a.trait_type === 'Drop Rate')?.value;
                 const editionAttr = nft.attributes.find(a => a.trait_type === 'Max Editions')?.value;
 
                 const RARITY_STYLE: Record<string, string> = {
@@ -966,7 +967,18 @@ export default function SolanaWalletTab() {
                 };
                 const rarityStyle  = RARITY_STYLE[rarityRaw]  ?? 'text-zinc-300 bg-zinc-800/80 border-zinc-600/50';
                 const borderStyle  = isCollectible ? (RARITY_BORDER[rarityRaw] ?? 'border-violet-800/25') : 'border-white/[0.08]';
-                const bonuses = [repBonus, creditBonus, shardBonus ? `+${shardBonus} Shard` : null].filter(Boolean);
+                // Werte können roh ("2") oder vorformatiert ("+2%") sein → normalisieren
+                const fmtPct = (v?: string, label?: string) => {
+                  if (!v) return null;
+                  const n = parseFloat(v.replace(/[^0-9.\-]/g, ''));
+                  if (!n) return null;
+                  return `+${n}% ${label}`;
+                };
+                const bonuses = [
+                  fmtPct(repBonus, 'REP'),
+                  fmtPct(creditBonus, 'Credit'),
+                  shardBonus && parseFloat(shardBonus.replace(/[^0-9.\-]/g, '')) ? `+${parseFloat(shardBonus.replace(/[^0-9.\-]/g, ''))} Shard` : null,
+                ].filter(Boolean);
 
                 const nftButtons = (
                   <div className="flex gap-1.5 flex-wrap">
