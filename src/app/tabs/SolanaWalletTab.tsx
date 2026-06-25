@@ -967,18 +967,25 @@ export default function SolanaWalletTab() {
                 };
                 const rarityStyle  = RARITY_STYLE[rarityRaw]  ?? 'text-zinc-300 bg-zinc-800/80 border-zinc-600/50';
                 const borderStyle  = isCollectible ? (RARITY_BORDER[rarityRaw] ?? 'border-violet-800/25') : 'border-white/[0.08]';
-                // Werte können roh ("2") oder vorformatiert ("+2%") sein → normalisieren
-                const fmtPct = (v?: string, label?: string) => {
-                  if (!v) return null;
-                  const n = parseFloat(v.replace(/[^0-9.\-]/g, ''));
-                  if (!n) return null;
-                  return `+${n}% ${label}`;
+                // ActiveSlots + PrimaryBonus bestimmen, welche/wie viele Boni aktiv sind
+                // (identisch zu buildBonusLine() beim Minten — Uncommon=1 Slot, primär zuerst)
+                const num = (v?: string) => parseFloat((v ?? '').replace(/[^0-9.\-]/g, '')) || 0;
+                const repVal    = num(repBonus);
+                const creditVal = num(creditBonus);
+                const shardVal  = num(shardBonus);
+                const activeSlots  = parseInt(nft.attributes.find(a => a.trait_type === 'ActiveSlots')?.value ?? '', 10);
+                const primaryBonus = nft.attributes.find(a => a.trait_type === 'PrimaryBonus')?.value ?? 'rep';
+                const bonusFor: Record<string, string | null> = {
+                  rep:     repVal    > 0 ? `+${repVal}% REP`     : null,
+                  credits: creditVal > 0 ? `+${creditVal}% Credit` : null,
+                  shard:   shardVal  > 0 ? `+${shardVal} Shard`   : null,
                 };
-                const bonuses = [
-                  fmtPct(repBonus, 'REP'),
-                  fmtPct(creditBonus, 'Credit'),
-                  shardBonus && parseFloat(shardBonus.replace(/[^0-9.\-]/g, '')) ? `+${parseFloat(shardBonus.replace(/[^0-9.\-]/g, ''))} Shard` : null,
-                ].filter(Boolean);
+                const slotOrder = [primaryBonus, ...['rep', 'credits', 'shard'].filter(b => b !== primaryBonus)];
+                const bonuses = Number.isFinite(activeSlots) && activeSlots > 0
+                  // neue Assets: nur die aktiven Slots in Reihenfolge (primär zuerst)
+                  ? slotOrder.slice(0, activeSlots).map(k => bonusFor[k]).filter(Boolean)
+                  // alte Assets ohne ActiveSlots: alle vorhandenen Boni zeigen
+                  : [bonusFor.rep, bonusFor.credits, bonusFor.shard].filter(Boolean);
 
                 const nftButtons = (
                   <div className="flex gap-1.5 flex-wrap">
@@ -999,6 +1006,12 @@ export default function SolanaWalletTab() {
                         className="bg-red-950/40 hover:bg-red-900/50 text-red-400 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
                         🔥 Burn
                       </button>
+                    )}
+                    {isCollectible && (
+                      <a href="https://app.dawidfaith.de" target="_blank" rel="noopener noreferrer"
+                        className="bg-violet-950/40 hover:bg-violet-900/50 text-violet-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                        <FaExternalLinkAlt size={8} /> App
+                      </a>
                     )}
                     <a href={`https://solscan.io/token/${nft.mint}`} target="_blank" rel="noopener noreferrer"
                       className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">

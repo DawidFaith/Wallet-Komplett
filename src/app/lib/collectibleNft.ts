@@ -198,6 +198,17 @@ export async function mintCollectibleAsset(params: {
 
   const bonusLine = buildBonusLine(repBonusPercent, creditBonusPercent, shardBonus, primaryBonus, activeSlots);
 
+  // Nur die für diese Rarität AKTIVEN Bonus-Slots speichern (primär zuerst),
+  // damit Wallet, Solscan und Marktplätze überall dasselbe zeigen.
+  const slotOrder: Array<'rep' | 'credits' | 'shard'> = [
+    primaryBonus,
+    ...(['rep', 'credits', 'shard'] as const).filter(b => b !== primaryBonus),
+  ];
+  const activeKeys = new Set(slotOrder.slice(0, activeSlots));
+  const repActive    = activeKeys.has('rep')     && repBonusPercent > 0;
+  const creditActive = activeKeys.has('credits') && creditBonusPercent > 0;
+  const shardActive  = activeKeys.has('shard')   && shardBonus > 0;
+
   const attributes: { trait_type: string; value: string }[] = [
     { trait_type: 'Rarity',     value: RARITY_LABELS[rarity] },
     { trait_type: 'Artist',     value: artistName },
@@ -205,9 +216,9 @@ export async function mintCollectibleAsset(params: {
     { trait_type: 'Platform',   value: 'D.FAITH' },
     { trait_type: 'Drop Rate',  value: RARITY_DROP_RATE[rarity] },
   ];
-  if (repBonusPercent > 0)    attributes.push({ trait_type: 'REP Bonus',    value: `+${repBonusPercent}%` });
-  if (creditBonusPercent > 0) attributes.push({ trait_type: 'Credit Bonus', value: `+${creditBonusPercent}%` });
-  if (shardBonus > 0)         attributes.push({ trait_type: 'Shard Bonus',  value: `+${shardBonus}` });
+  if (repActive)    attributes.push({ trait_type: 'REP Bonus',    value: `+${repBonusPercent}%` });
+  if (creditActive) attributes.push({ trait_type: 'Credit Bonus', value: `+${creditBonusPercent}%` });
+  if (shardActive)  attributes.push({ trait_type: 'Shard Bonus',  value: `+${shardBonus}` });
 
   const metadata = {
     name:             `${collectionName} — ${RARITY_LABELS[rarity]}`,
@@ -247,7 +258,8 @@ export async function mintCollectibleAsset(params: {
         ruleSet:     ruleSet('None'),
       },
       {
-        // Alle Collectible-Daten on-chain — kein Arweave-Indexierungswait nötig
+        // Alle Collectible-Daten on-chain — kein Arweave-Indexierungswait nötig.
+        // Bonus-Keys nur für aktive Slots → Wallet/Solscan/Marktplatz konsistent.
         type:          'Attributes',
         attributeList: [
           { key: 'Rarity',       value: RARITY_LABELS[rarity] },
@@ -256,9 +268,9 @@ export async function mintCollectibleAsset(params: {
           { key: 'Artist',       value: artistName },
           { key: 'Image',        value: toHttps(collectionImageUri) },
           { key: 'DropRate',     value: RARITY_DROP_RATE[rarity] },
-          { key: 'RepBonus',     value: String(repBonusPercent) },
-          { key: 'CreditBonus',  value: String(creditBonusPercent) },
-          { key: 'ShardBonus',   value: String(shardBonus) },
+          ...(repActive    ? [{ key: 'RepBonus',    value: String(repBonusPercent) }]    : []),
+          ...(creditActive ? [{ key: 'CreditBonus', value: String(creditBonusPercent) }] : []),
+          ...(shardActive  ? [{ key: 'ShardBonus',  value: String(shardBonus) }]         : []),
           { key: 'PrimaryBonus', value: primaryBonus },
           { key: 'ActiveSlots',  value: String(activeSlots) },
         ],
