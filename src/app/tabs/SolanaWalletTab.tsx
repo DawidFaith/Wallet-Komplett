@@ -507,30 +507,14 @@ export default function SolanaWalletTab() {
     if (solanaAddr) loadBalance(solanaAddr);
   }, [solanaAddr, loadBalance]);
 
-  // localStorage-Key für verbrannte/eingelöste NFTs (pro Wallet)
-  const burnedMintsKey = solanaAddr ? `burned_nft_mints_${solanaAddr}` : null;
-  const getBurnedMints = (): Set<string> => {
-    if (!burnedMintsKey) return new Set();
-    try { return new Set(JSON.parse(localStorage.getItem(burnedMintsKey) ?? '[]')); }
-    catch { return new Set(); }
-  };
-  const addBurnedMint = (mint: string) => {
-    if (!burnedMintsKey) return;
-    const set = getBurnedMints();
-    set.add(mint);
-    localStorage.setItem(burnedMintsKey, JSON.stringify([...set]));
-  };
-
   useEffect(() => {
     if (!solanaAddr) return;
     setNftsLoading(true);
-    const burned = getBurnedMints();
     fetch(`/api/solana/nfts?solanaAddress=${solanaAddr}`)
       .then(r => r.ok ? r.json() : [])
-      .then((data: OwnedNft[]) => setNfts(Array.isArray(data) ? data.filter(n => !burned.has(n.mint)) : []))
+      .then((data: OwnedNft[]) => setNfts(Array.isArray(data) ? data : []))
       .catch(() => {})
       .finally(() => setNftsLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [solanaAddr]);
 
   // ── Senden ────────────────────────────────────────────────────────────────
@@ -619,7 +603,6 @@ export default function SolanaWalletTab() {
       const d = await res.json();
       if (!res.ok) throw new Error(d.error ?? 'Burn fehlgeschlagen');
       setNftBurnOk('✓ NFT geburnt — SOL zurückerhalten');
-      addBurnedMint(nftBurnTarget.mint);
       setNfts(prev => prev.filter(n => n.mint !== nftBurnTarget.mint));
       setTimeout(() => { setNftBurnTarget(null); setNftBurnOk(''); }, 2500);
     } catch (e) {
@@ -647,7 +630,6 @@ export default function SolanaWalletTab() {
       const d = await res.json() as { success?: boolean; rarity?: string; error?: string };
       if (!res.ok || !d.success) throw new Error(d.error ?? 'Einlösen fehlgeschlagen');
       setNftRedeemOk(`✓ Eingelöst als ${d.rarity}-Collectible`);
-      addBurnedMint(nftRedeemTarget.mint);
       setNfts(prev => prev.filter(n => n.mint !== nftRedeemTarget.mint));
       setTimeout(() => { setNftRedeemTarget(null); setNftRedeemOk(''); }, 2500);
     } catch (e) {
