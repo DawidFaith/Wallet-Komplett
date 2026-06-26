@@ -109,10 +109,13 @@ export interface UserCollectible {
   collectionId: string;
   rarity: CollectibleRarity;
   obtainedAt: string;
+  nftMintAddress?: string | null;
+  nftCollectionMint?: string | null;
   // Joined:
   collectionName?: string;
   collectionImageUrl?: string;
   artistWallet?: string;
+  artistName?: string;
 }
 
 // ─── Kollektion erstellen ─────────────────────────────────────────────────────
@@ -361,21 +364,30 @@ export async function upgradeCollectibles(
 export async function getUserCollectibles(walletAddress: string): Promise<UserCollectible[]> {
   const sql = getDb();
   const rows = await sql`
-    SELECT uc.*, cc.name AS collection_name, cc.image_url AS collection_image_url, cc.artist_wallet
+    SELECT uc.*,
+           cc.name               AS collection_name,
+           cc.image_url          AS collection_image_url,
+           cc.nft_collection_mint,
+           cc.artist_wallet,
+           p.name                AS artist_name
     FROM user_collectibles uc
     JOIN collectible_collections cc ON cc.id = uc.collection_id
+    LEFT JOIN user_profiles p ON LOWER(p.wallet_address) = LOWER(cc.artist_wallet)
     WHERE uc.wallet_address = ${walletAddress.toLowerCase()}
     ORDER BY uc.obtained_at DESC
   `;
   return rows.map((r: any) => ({
-    id: r.id,
-    walletAddress: r.wallet_address,
-    collectionId: r.collection_id,
-    rarity: r.rarity as CollectibleRarity,
-    obtainedAt: r.obtained_at,
-    collectionName: r.collection_name,
+    id:                 r.id,
+    walletAddress:      r.wallet_address,
+    collectionId:       r.collection_id,
+    rarity:             r.rarity as CollectibleRarity,
+    obtainedAt:         r.obtained_at,
+    nftMintAddress:     r.nft_mint_address ?? null,
+    nftCollectionMint:  r.nft_collection_mint ?? null,
+    collectionName:     r.collection_name,
     collectionImageUrl: r.collection_image_url,
-    artistWallet: r.artist_wallet,
+    artistWallet:       r.artist_wallet,
+    artistName:         r.artist_name ?? null,
   }));
 }
 

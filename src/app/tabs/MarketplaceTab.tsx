@@ -262,9 +262,9 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
             rarity:              c.rarity,
             collection_id:       c.collectionId,
             collection_name:     c.collectionName,
-            image_url:           c.imageUrl,
-            artist_name:         c.artistName,
-            nft_collection_mint: c.nftCollectionMint,
+            image_url:           c.collectionImageUrl ?? c.imageUrl ?? null,
+            artist_name:         c.artistName ?? null,
+            nft_collection_mint: c.nftCollectionMint ?? null,
           }));
         setOwnedNfts(minted);
       } finally {
