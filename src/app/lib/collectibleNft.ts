@@ -15,6 +15,7 @@ import {
   create,
   burn,
   burnCollection,
+  transfer,
   ruleSet,
   fetchCollectionV1,
   fetchAssetV1,
@@ -492,4 +493,27 @@ export async function scanCollectiblesByOwner(
   } catch {
     return [];
   }
+}
+
+// ─── NFT transferieren (Marktplatz-Kauf) ─────────────────────────────────────
+
+/**
+ * Überträgt ein mpl-core Collectible-Asset vom Verkäufer zum Käufer.
+ * Der Verkäufer-Keypair muss als Payer/Identity übergeben werden (er muss signieren).
+ */
+export async function transferCollectibleAsset(
+  assetMint:           string,
+  collectionMint:      string,
+  sellerKeypair:       Keypair,
+  buyerSolanaAddress:  string,
+): Promise<void> {
+  const umi        = getUmi(sellerKeypair);
+  const asset      = await fetchAssetV1(umi, umiPubkey(assetMint));
+  const collection = await fetchCollectionV1(umi, umiPubkey(collectionMint));
+
+  await transfer(umi, {
+    asset,
+    collection,
+    newOwner: umiPubkey(buyerSolanaAddress),
+  }).sendAndConfirm(umi);
 }
