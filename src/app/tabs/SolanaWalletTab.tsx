@@ -405,7 +405,7 @@ export default function SolanaWalletTab() {
   const [nfts, setNfts]                   = useState<OwnedNft[]>([]);
   const [nftsLoading, setNftsLoading]     = useState(false);
   const [artistMap, setArtistMap]         = useState<Record<string, string | null>>({});
-  const [openArtists, setOpenArtists]     = useState<Set<string>>(new Set());
+  const [selectedNftArtist, setSelectedNftArtist] = useState<string | null>(null);
   const [nftSendTarget, setNftSendTarget] = useState<OwnedNft | null>(null);
   const [nftRecipient, setNftRecipient]   = useState('');
   const [nftSending, setNftSending]       = useState(false);
@@ -524,13 +524,6 @@ export default function SolanaWalletTab() {
         map[a.name] = a.picture ?? null;
       }
       setArtistMap(map);
-      // Alle Artists standardmäßig aufklappen
-      const names = new Set<string>();
-      for (const nft of (Array.isArray(nftData) ? nftData : [])) {
-        const name = nft.attributes.find((a: { trait_type: string; value: string }) => a.trait_type === 'Artist')?.value ?? 'Andere';
-        names.add(name);
-      }
-      setOpenArtists(names);
     }).catch(() => {}).finally(() => setNftsLoading(false));
   }, [solanaAddr]);
 
@@ -1139,11 +1132,14 @@ export default function SolanaWalletTab() {
 
       {/* ── NFTs View ── */}
       {walletView === 'nfts' && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {nftsLoading ? (
-            <div className="space-y-3">
+            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-16 rounded-2xl bg-zinc-900/60 border border-white/[0.05] animate-pulse" />
+                <div key={i} className="shrink-0 flex flex-col items-center gap-2 w-[68px]">
+                  <div className="w-14 h-14 rounded-full bg-zinc-900/60 animate-pulse" />
+                  <div className="w-12 h-3 rounded bg-zinc-900/60 animate-pulse" />
+                </div>
               ))}
             </div>
           ) : nfts.length === 0 ? (
@@ -1160,73 +1156,66 @@ export default function SolanaWalletTab() {
               if (!groups.has(name)) groups.set(name, []);
               groups.get(name)!.push(nft);
             }
-            return Array.from(groups.entries()).map(([artistName, artistNfts]) => {
-              const picture  = artistMap[artistName] ?? null;
-              const isOpen   = openArtists.has(artistName);
-              const songs        = artistNfts.filter(n => n.interface !== 'MplCoreAsset');
-              const collectibles = artistNfts.filter(n => n.interface === 'MplCoreAsset');
-              return (
-                <div key={artistName} className="rounded-2xl border border-white/[0.08] overflow-hidden bg-white/[0.02]">
-                  {/* Artist Header */}
-                  <button
-                    onClick={() => setOpenArtists(prev => {
-                      const next = new Set(prev);
-                      if (next.has(artistName)) next.delete(artistName); else next.add(artistName);
-                      return next;
-                    })}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/[0.04] transition-colors"
-                  >
-                    {picture ? (
-                      <div className="relative shrink-0">
-                        <div className="w-9 h-9 rounded-full overflow-hidden ring-1 ring-amber-500/30">
-                          <Image src={picture} alt={artistName} width={36} height={36}
-                            style={{ width: '36px', height: '36px', objectFit: 'cover', display: 'block' }} unoptimized />
+            const activeNfts = selectedNftArtist
+              ? (groups.get(selectedNftArtist) ?? [])
+              : nfts;
+            const songs        = activeNfts.filter(n => n.interface !== 'MplCoreAsset');
+            const collectibles = activeNfts.filter(n => n.interface === 'MplCoreAsset');
+            return (
+              <>
+                {/* Artist-Icons horizontal (Quest-Board-Stil) */}
+                <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-none">
+                  {Array.from(groups.entries()).map(([artistName, artistNfts]) => {
+                    const picture   = artistMap[artistName] ?? null;
+                    const isActive  = selectedNftArtist === artistName;
+                    return (
+                      <button
+                        key={artistName}
+                        onClick={() => setSelectedNftArtist(isActive ? null : artistName)}
+                        className="flex flex-col items-center gap-2 shrink-0 w-[68px] group"
+                      >
+                        <div className="relative">
+                          <div className={`w-14 h-14 rounded-full transition-all group-hover:scale-105 overflow-hidden
+                            ${isActive
+                              ? 'ring-2 ring-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.6)]'
+                              : 'ring-2 ring-amber-500/40 shadow-[0_0_8px_rgba(245,158,11,0.2)] opacity-70 group-hover:opacity-100 group-hover:ring-amber-500'
+                            }`}>
+                            {picture
+                              ? <Image src={picture} alt={artistName} width={56} height={56}
+                                  className="w-14 h-14 rounded-full object-cover" unoptimized />
+                              : <div className="w-14 h-14 rounded-full bg-amber-400/20 flex items-center justify-center">
+                                  <FaGem className="text-amber-400" size={18} />
+                                </div>
+                            }
+                          </div>
+                          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-amber-400 text-black text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-lg">
+                            {artistNfts.length}
+                          </span>
                         </div>
-                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-amber-500 text-black text-[10px] font-black rounded-full flex items-center justify-center leading-none">
-                          {artistNfts.length}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="relative shrink-0">
-                        <div className="w-9 h-9 rounded-full bg-amber-900/30 ring-1 ring-amber-500/20 flex items-center justify-center">
-                          <span className="text-amber-300 font-bold text-sm">{artistName.slice(0, 1)}</span>
-                        </div>
-                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-amber-500 text-black text-[10px] font-black rounded-full flex items-center justify-center leading-none">
-                          {artistNfts.length}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex-1 text-left">
-                      <p className="text-white text-sm font-semibold">{artistName}</p>
-                      <p className="text-zinc-500 text-[10px]">
-                        {songs.length > 0 && `${songs.length} Song${songs.length !== 1 ? 's' : ''}`}
-                        {songs.length > 0 && collectibles.length > 0 && ' · '}
-                        {collectibles.length > 0 && `${collectibles.length} Collectible${collectibles.length !== 1 ? 's' : ''}`}
-                      </p>
-                    </div>
-                    <FaChevronDown size={11} className={`text-zinc-600 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {/* Aufgeklappter Inhalt */}
-                  {isOpen && (
-                    <div className="px-3 pb-3 space-y-3 border-t border-white/[0.06] pt-3">
-                      {songs.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest px-1">Songs</p>
-                          <div className="space-y-2">{songs.map(renderNft)}</div>
-                        </div>
-                      )}
-                      {collectibles.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest px-1">Collectibles</p>
-                          <div className="space-y-2">{collectibles.map(renderNft)}</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        <p className={`text-xs text-center line-clamp-2 leading-tight w-full transition-colors
+                          ${isActive ? 'text-white font-semibold' : 'text-zinc-400 group-hover:text-white'}`}>
+                          {artistName}
+                        </p>
+                      </button>
+                    );
+                  })}
                 </div>
-              );
-            });
+
+                {/* NFT-Liste (gefiltert oder alle) */}
+                {songs.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest px-1">Songs</p>
+                    <div className="space-y-2">{songs.map(renderNft)}</div>
+                  </div>
+                )}
+                {collectibles.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest px-1">Collectibles</p>
+                    <div className="space-y-2">{collectibles.map(renderNft)}</div>
+                  </div>
+                )}
+              </>
+            );
           })()}
         </div>
       )}
