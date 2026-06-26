@@ -1089,9 +1089,10 @@ const SHARD_BONUS_BY_RARITY: Record<CollectibleRarity, number> = {
   common: 0, uncommon: 2, rare: 5, epic: 10, legendary: 15, mythic: 25,
 };
 
-function CollectibleNftPreview({ form, rarity }: {
+function CollectibleNftPreview({ form, rarity, artistName }: {
   form: { name: string; description: string; imageUrl: string; maxRepBonusPercent: number; maxCreditBonusPercent: number; maxShardChanceBonus: number; primaryBonus: BonusType };
   rarity: CollectibleRarity;
+  artistName?: string;
 }) {
   const cfg          = RARITY_CONFIG[rarity];
   const multiplier   = cfg.repMultiplier;
@@ -1111,6 +1112,8 @@ function CollectibleNftPreview({ form, rarity }: {
     { k: 'Rarity',     v: cfg.label },
     { k: 'Collection', v: form.name || '—' },
     { k: 'Platform',   v: 'D.FAITH' },
+    ...(artistName ? [{ k: 'Artist', v: artistName }] : []),
+    { k: 'Website',    v: 'app.dawidfaith.de' },
     { k: 'Drop Rate',  v: `${FIXED_RARITY_CHANCES[rarity]}%` },
     ...(slots.includes('rep')     && repBonus    > 0 ? [{ k: 'REP Bonus',    v: `+${repBonus}%`    }] : []),
     ...(slots.includes('credits') && creditBonus > 0 ? [{ k: 'Credit Bonus', v: `+${creditBonus}%` }] : []),
@@ -1146,7 +1149,7 @@ function CollectibleNftPreview({ form, rarity }: {
   );
 }
 
-function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: string; onCreated: () => void }) {
+function CreateCollectionForm({ artistWallet, artistName, onCreated }: { artistWallet: string; artistName?: string; onCreated: () => void }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -1344,7 +1347,7 @@ function CreateCollectionForm({ artistWallet, onCreated }: { artistWallet: strin
                 );
               })}
             </div>
-            <CollectibleNftPreview form={form} rarity={previewRarity} />
+            <CollectibleNftPreview form={form} rarity={previewRarity} artistName={artistName} />
           </div>
         )}
 
@@ -1680,6 +1683,7 @@ export default function CollectiblesTab() {
               <>
                 <CreateCollectionForm
                   artistWallet={walletAddress}
+                  artistName={artists.find(a => a.artistWallet.toLowerCase() === walletAddress.toLowerCase())?.name}
                   onCreated={() => { loadArtists(); loadMyCollections(); }}
                 />
                 {myCollLoading ? (
