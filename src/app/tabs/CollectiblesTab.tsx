@@ -696,6 +696,19 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
             </span>
             <span className="text-[10px] text-zinc-400">·</span>
             <span className="text-[10px] text-zinc-300">{shards} Shard{shards !== 1 ? 's' : ''}</span>
+            {isOwner && collection.nftCollectionMint && (
+              <>
+                <span className="text-[10px] text-zinc-400">·</span>
+                <a
+                  href={`https://solscan.io/token/${collection.nftCollectionMint}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-purple-400 hover:text-purple-300 transition-colors"
+                >
+                  Solscan ↗
+                </a>
+              </>
+            )}
           </div>
         </div>
       </div>
