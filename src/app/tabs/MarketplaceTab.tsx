@@ -3,8 +3,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
 import { GiCrystalShine } from 'react-icons/gi';
-import { FaTag, FaStore, FaTimes, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
-import { MdSell } from 'react-icons/md';
+import { FaTag, FaTimes, FaCheckCircle, FaExclamationTriangle, FaGem, FaSearch } from 'react-icons/fa';
+import { MdSell, MdStorefront } from 'react-icons/md';
+import { HiOutlineViewGrid } from 'react-icons/hi';
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
 
@@ -34,84 +35,100 @@ interface OwnedNft {
   artist_name?: string;
   nft_collection_mint?: string;
   source?: 'db' | 'chain';
+  attributes?: { trait_type: string; value: string }[];
 }
 
-// ─── Rarity-Farben ────────────────────────────────────────────────────────────
+// ─── Rarity-Konfiguration ─────────────────────────────────────────────────────
 
-const RARITY_STYLE: Record<Rarity, { border: string; text: string; bg: string; glow: string }> = {
-  common:    { border: 'border-zinc-500',   text: 'text-zinc-300',   bg: 'bg-zinc-800/60',     glow: '' },
-  uncommon:  { border: 'border-green-500',  text: 'text-green-400',  bg: 'bg-green-950/40',    glow: 'shadow-[0_0_10px_rgba(74,222,128,0.3)]' },
-  rare:      { border: 'border-blue-500',   text: 'text-blue-400',   bg: 'bg-blue-950/40',     glow: 'shadow-[0_0_12px_rgba(96,165,250,0.35)]' },
-  epic:      { border: 'border-purple-500', text: 'text-purple-400', bg: 'bg-purple-950/40',   glow: 'shadow-[0_0_14px_rgba(167,139,250,0.45)]' },
-  legendary: { border: 'border-amber-400',  text: 'text-amber-400',  bg: 'bg-amber-950/40',    glow: 'shadow-[0_0_18px_rgba(251,191,36,0.5)]' },
-  mythic:    { border: 'border-rose-400',   text: 'text-rose-400',   bg: 'bg-rose-950/40',     glow: 'shadow-[0_0_22px_rgba(244,63,94,0.6)]' },
+const RARITY_CFG: Record<Rarity, {
+  border: string; text: string; bg: string; glow: string; badge: string; label: string;
+}> = {
+  common:    { border: 'border-zinc-500/60',  text: 'text-zinc-300',   bg: 'bg-zinc-800/50',   glow: '',                                              badge: 'bg-zinc-600 text-zinc-100',         label: 'Common'    },
+  uncommon:  { border: 'border-green-500/70', text: 'text-green-400',  bg: 'bg-green-950/40',  glow: 'shadow-[0_0_14px_rgba(74,222,128,0.25)]',       badge: 'bg-green-600 text-white',           label: 'Uncommon'  },
+  rare:      { border: 'border-blue-500/70',  text: 'text-blue-400',   bg: 'bg-blue-950/40',   glow: 'shadow-[0_0_16px_rgba(96,165,250,0.3)]',        badge: 'bg-blue-600 text-white',            label: 'Rare'      },
+  epic:      { border: 'border-purple-500/70',text: 'text-purple-400', bg: 'bg-purple-950/40', glow: 'shadow-[0_0_18px_rgba(167,139,250,0.35)]',      badge: 'bg-purple-600 text-white',          label: 'Epic'      },
+  legendary: { border: 'border-amber-400/80', text: 'text-amber-300',  bg: 'bg-amber-950/40',  glow: 'shadow-[0_0_22px_rgba(251,191,36,0.4)]',        badge: 'bg-amber-500 text-black font-black', label: 'Legendary' },
+  mythic:    { border: 'border-rose-400/80',  text: 'text-rose-300',   bg: 'bg-rose-950/40',   glow: 'shadow-[0_0_28px_rgba(244,63,94,0.5)]',         badge: 'bg-rose-500 text-white font-black',  label: 'Mythic'    },
 };
 const RARITY_ORDER: Rarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
-const RARITY_LABEL: Record<Rarity, string> = {
-  common: 'Common', uncommon: 'Uncommon', rare: 'Rare',
-  epic: 'Epic', legendary: 'Legendary', mythic: 'Mythic',
-};
 
-function rarityStyle(r: string | null) {
-  return RARITY_STYLE[(r?.toLowerCase() ?? 'common') as Rarity] ?? RARITY_STYLE.common;
+function rc(r: string | null | undefined) {
+  return RARITY_CFG[(r?.toLowerCase() ?? 'common') as Rarity] ?? RARITY_CFG.common;
 }
 
 // ─── Listing Card ─────────────────────────────────────────────────────────────
 
-function ListingCard({ listing, walletAddress, onBuy, onCancel, isSelf }: {
+function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
   listing: Listing;
-  walletAddress: string;
+  isSelf: boolean;
   onBuy: (l: Listing) => void;
   onCancel: (l: Listing) => void;
-  isSelf: boolean;
+  cancelLoading: boolean;
 }) {
-  const rs = rarityStyle(listing.rarity);
+  const cfg = rc(listing.rarity);
   return (
-    <div className={`rounded-xl border ${rs.border} ${rs.bg} ${rs.glow} p-3 flex flex-col gap-2`}>
-      {listing.image_url ? (
-        <div className="relative w-full aspect-square rounded-lg overflow-hidden">
-          <Image src={listing.image_url} alt={listing.nft_name ?? ''} fill className="object-cover" />
-        </div>
-      ) : (
-        <div className="w-full aspect-square rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-          <GiCrystalShine className="text-zinc-600" size={32} />
+    <div className={`relative flex flex-col rounded-2xl border ${cfg.border} ${cfg.bg} ${cfg.glow} overflow-hidden group transition-all duration-200 hover:scale-[1.02]`}>
+      {/* Badge: own listing */}
+      {isSelf && (
+        <div className="absolute top-2 left-2 z-10 text-[9px] font-black uppercase tracking-wider bg-amber-500/90 text-black rounded-full px-2 py-0.5">
+          Dein Listing
         </div>
       )}
-
-      <div className="min-w-0">
-        <p className={`font-bold text-sm truncate ${rs.text}`}>
-          {listing.nft_name || listing.collection_name || '—'}
-        </p>
-        {listing.rarity && (
-          <p className={`text-[10px] font-semibold ${rs.text}/80`}>
-            {RARITY_LABEL[(listing.rarity.toLowerCase() as Rarity)] ?? listing.rarity}
-          </p>
-        )}
-        {listing.artist_name && (
-          <p className="text-zinc-500 text-[10px] truncate">von {listing.artist_name}</p>
-        )}
+      {/* Rarity badge */}
+      <div className={`absolute top-2 right-2 z-10 text-[9px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 ${cfg.badge}`}>
+        {cfg.label}
       </div>
 
-      <div className="flex items-center justify-between mt-auto pt-1 border-t border-white/10">
-        <span className="text-amber-400 font-bold text-sm flex items-center gap-1">
-          <FaTag size={10} />
-          {Number(listing.price_dfaith).toLocaleString('de-DE')} D.FAITH
-        </span>
-        {isSelf ? (
-          <button
-            onClick={() => onCancel(listing)}
-            className="text-[11px] bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-md px-2 py-1 transition-colors"
-          >
-            Stornieren
-          </button>
+      {/* Image */}
+      <div className="relative w-full aspect-square bg-black/30">
+        {listing.image_url ? (
+          <Image src={listing.image_url} alt={listing.nft_name ?? ''} fill className="object-cover" />
         ) : (
-          <button
-            onClick={() => onBuy(listing)}
-            className="text-[11px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-md px-2 py-1 transition-colors"
-          >
-            Kaufen
-          </button>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <GiCrystalShine className={`${cfg.text} opacity-30`} size={40} />
+          </div>
         )}
+        <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent`} />
+      </div>
+
+      {/* Info */}
+      <div className="p-3 flex flex-col gap-2 flex-1">
+        <div className="min-w-0">
+          <p className={`font-black text-sm truncate ${cfg.text}`}>
+            {listing.collection_name ?? listing.nft_name ?? '—'}
+          </p>
+          {listing.artist_name && (
+            <p className="text-zinc-500 text-[10px] truncate mt-0.5">von {listing.artist_name}</p>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between mt-auto pt-2 border-t border-white/[0.06]">
+          <div className="flex flex-col">
+            <span className="text-[9px] text-zinc-500 uppercase tracking-wider">Preis</span>
+            <span className={`font-black text-sm ${cfg.text} flex items-center gap-1`}>
+              <FaTag size={9} />
+              {Number(listing.price_dfaith).toLocaleString('de-DE')}
+            </span>
+            <span className="text-[9px] text-zinc-500">D.FAITH</span>
+          </div>
+
+          {isSelf ? (
+            <button
+              onClick={() => onCancel(listing)}
+              disabled={cancelLoading}
+              className="text-[11px] bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl px-3 py-1.5 transition-colors disabled:opacity-50 font-semibold"
+            >
+              {cancelLoading ? '…' : 'Stornieren'}
+            </button>
+          ) : (
+            <button
+              onClick={() => onBuy(listing)}
+              className={`text-[11px] font-bold rounded-xl px-3 py-1.5 transition-all border ${cfg.border} ${cfg.bg} ${cfg.text} hover:brightness-125 active:scale-95`}
+            >
+              Kaufen
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -130,15 +147,15 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
   const [error, setError]     = useState('');
   const [done, setDone]       = useState(false);
 
-  const price = Number(listing.price_dfaith);
+  const price  = Number(listing.price_dfaith);
   const enough = balance >= price;
-  const rs = rarityStyle(listing.rarity);
+  const cfg    = rc(listing.rarity);
 
   const handleBuy = async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/marketplace/buy', {
+      const res  = await fetch('/api/marketplace/buy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ buyerWallet: walletAddress, listingId: listing.id }),
@@ -155,70 +172,77 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
-      <div className="bg-[#1a1810] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="font-bold text-white text-base">NFT kaufen</h3>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white"><FaTimes size={16} /></button>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:pb-0">
+      <div className="bg-[#161410] border border-white/[0.08] rounded-2xl p-5 w-full max-w-sm shadow-2xl">
+        <div className="flex justify-between items-center mb-5">
+          <h3 className="font-black text-white text-base">NFT kaufen</h3>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
+            <FaTimes size={14} />
+          </button>
         </div>
 
         {/* NFT-Vorschau */}
-        <div className={`rounded-xl border ${rs.border} ${rs.bg} p-3 mb-4 flex gap-3 items-center`}>
+        <div className={`rounded-xl border ${cfg.border} ${cfg.bg} ${cfg.glow} p-3 mb-4 flex gap-3 items-center`}>
           {listing.image_url ? (
-            <Image src={listing.image_url} alt="" width={56} height={56} className="w-14 h-14 rounded-lg object-cover shrink-0" />
+            <Image src={listing.image_url} alt="" width={56} height={56} className="w-14 h-14 rounded-lg object-cover shrink-0 border border-white/10" />
           ) : (
-            <div className="w-14 h-14 rounded-lg bg-white/5 shrink-0" />
+            <div className={`w-14 h-14 rounded-lg bg-black/30 border ${cfg.border} shrink-0 flex items-center justify-center`}>
+              <GiCrystalShine className={cfg.text} size={20} />
+            </div>
           )}
-          <div className="min-w-0">
-            <p className={`font-bold text-sm truncate ${rs.text}`}>{listing.nft_name || listing.collection_name}</p>
-            {listing.rarity && <p className={`text-[10px] ${rs.text}/70`}>{RARITY_LABEL[(listing.rarity.toLowerCase() as Rarity)] ?? listing.rarity}</p>}
+          <div className="min-w-0 flex-1">
+            <div className={`inline-block text-[9px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 mb-1 ${cfg.badge}`}>
+              {cfg.label}
+            </div>
+            <p className={`font-black text-sm truncate ${cfg.text}`}>{listing.collection_name ?? listing.nft_name ?? '—'}</p>
             {listing.artist_name && <p className="text-zinc-500 text-[10px]">von {listing.artist_name}</p>}
           </div>
         </div>
 
         {/* Preisübersicht */}
-        <div className="space-y-1.5 text-sm mb-4">
-          <div className="flex justify-between text-zinc-300">
-            <span>Preis</span>
-            <span className="text-amber-400 font-bold">{price.toLocaleString('de-DE')} D.FAITH</span>
+        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 space-y-2 mb-4">
+          <div className="flex justify-between text-sm">
+            <span className="text-zinc-400">Preis</span>
+            <span className={`font-black ${cfg.text}`}>{price.toLocaleString('de-DE')} D.FAITH</span>
           </div>
-          <div className="flex justify-between text-zinc-500 text-xs">
-            <span>Artist-Royalty (5%)</span>
-            <span>{(price * 0.05).toFixed(2)} D.FAITH</span>
+          <div className="h-px bg-white/[0.06]" />
+          <div className="flex justify-between text-xs text-zinc-500">
+            <span>Artist Royalty (5%)</span>
+            <span>{(price * 0.05).toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-zinc-500 text-xs">
+          <div className="flex justify-between text-xs text-zinc-500">
             <span>Plattformgebühr (2.5%)</span>
-            <span>{(price * 0.025).toFixed(2)} D.FAITH</span>
+            <span>{(price * 0.025).toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-zinc-500 text-xs">
+          <div className="flex justify-between text-xs text-zinc-500">
             <span>Verkäufer erhält</span>
-            <span>{(price * 0.925).toFixed(2)} D.FAITH</span>
+            <span>{(price * 0.925).toFixed(2)}</span>
           </div>
-          <div className={`flex justify-between text-xs pt-1 border-t border-white/10 ${enough ? 'text-zinc-400' : 'text-red-400'}`}>
+          <div className="h-px bg-white/[0.06]" />
+          <div className={`flex justify-between text-xs font-semibold ${enough ? 'text-zinc-300' : 'text-red-400'}`}>
             <span>Dein Guthaben</span>
             <span>{balance.toLocaleString('de-DE')} D.FAITH</span>
           </div>
         </div>
 
         {!enough && (
-          <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-red-400 text-xs mb-4">
-            <FaExclamationTriangle size={12} />
-            <span>Nicht genug D.FAITH — benötigt: {price.toLocaleString('de-DE')}</span>
+          <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-xs mb-4">
+            <FaExclamationTriangle size={12} className="shrink-0" />
+            <span>Nicht genug D.FAITH — benötigt {price.toLocaleString('de-DE')}</span>
           </div>
         )}
 
         {done ? (
-          <div className="flex items-center gap-2 justify-center bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-green-400 text-sm">
-            <FaCheckCircle size={14} />
-            NFT erfolgreich gekauft!
+          <div className="flex items-center gap-2 justify-center bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-green-400 text-sm font-semibold">
+            <FaCheckCircle size={14} /> NFT erfolgreich gekauft!
           </div>
         ) : (
           <>
-            {error && <p className="text-red-400 text-xs mb-3">{error}</p>}
+            {error && <p className="text-red-400 text-xs mb-3 bg-red-500/10 border border-red-500/20 rounded-lg p-2">{error}</p>}
             <button
               onClick={handleBuy}
               disabled={loading || !enough}
-              className="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-700 disabled:text-zinc-500 text-black font-bold rounded-xl py-3 text-sm transition-colors"
+              className="w-full bg-amber-500 hover:bg-amber-400 active:bg-amber-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-black font-black rounded-xl py-3 text-sm transition-all"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -241,19 +265,18 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const [ownedNfts, setOwnedNfts]   = useState<OwnedNft[]>([]);
+  const [ownedNfts, setOwnedNfts]     = useState<OwnedNft[]>([]);
   const [loadingNfts, setLoadingNfts] = useState(true);
-  const [selected, setSelected]     = useState<OwnedNft | null>(null);
-  const [price, setPrice]           = useState('');
-  const [loading, setLoading]       = useState(false);
-  const [error, setError]           = useState('');
-  const [done, setDone]             = useState(false);
+  const [selected, setSelected]       = useState<OwnedNft | null>(null);
+  const [price, setPrice]             = useState('');
+  const [loading, setLoading]         = useState(false);
+  const [error, setError]             = useState('');
+  const [done, setDone]               = useState(false);
 
   useEffect(() => {
     async function load() {
       setLoadingNfts(true);
       try {
-        // 1. DB-Collectibles laden
         const dbRes  = await fetch(`/api/collectibles?wallet=${walletAddress}`);
         const dbData = await dbRes.json();
         const dbNfts: OwnedNft[] = (dbData.collectibles ?? [])
@@ -263,17 +286,16 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
             nft_mint_address:    c.nftMintAddress,
             rarity:              c.rarity,
             collection_id:       c.collectionId ?? '',
-            collection_name:     c.collectionName ?? null,
-            image_url:           c.collectionImageUrl ?? c.imageUrl ?? null,
-            artist_name:         c.artistName ?? null,
-            nft_collection_mint: c.nftCollectionMint ?? null,
+            collection_name:     c.collectionName ?? undefined,
+            image_url:           c.collectionImageUrl ?? c.imageUrl ?? undefined,
+            artist_name:         c.artistName ?? undefined,
+            nft_collection_mint: c.nftCollectionMint ?? undefined,
             source:              'db' as const,
           }));
 
         const dbMints = new Set(dbNfts.map(n => n.nft_mint_address));
 
-        // 2. On-Chain NFTs via Helius laden (braucht Solana-Adresse)
-        const addrRes = await fetch(`/api/solana/create-account?walletAddress=${walletAddress}`);
+        const addrRes  = await fetch(`/api/solana/create-account?walletAddress=${walletAddress}`);
         const addrData = await addrRes.json();
         const solanaAddress: string | null = addrData.solanaAddress ?? null;
 
@@ -296,6 +318,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
                 artist_name:         undefined,
                 nft_collection_mint: (n.collection as string | null) ?? undefined,
                 source:              'chain',
+                attributes:          n.attributes ?? [],
               };
             });
         }
@@ -340,95 +363,131 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
     }
   };
 
-  const rs = selected ? rarityStyle(selected.rarity) : null;
+  const cfg = selected ? rc(selected.rarity) : null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
-      <div className="bg-[#1a1810] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="font-bold text-white text-base">NFT verkaufen</h3>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white"><FaTimes size={16} /></button>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:pb-0">
+      <div className="bg-[#161410] border border-white/[0.08] rounded-2xl p-5 w-full max-w-sm shadow-2xl max-h-[92vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-5">
+          <h3 className="font-black text-white text-base flex items-center gap-2">
+            <MdSell className="text-amber-400" size={16} />
+            NFT verkaufen
+          </h3>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
+            <FaTimes size={14} />
+          </button>
         </div>
 
         {done ? (
-          <div className="flex items-center gap-2 justify-center bg-green-500/10 border border-green-500/30 rounded-lg p-4 text-green-400 text-sm">
-            <FaCheckCircle size={14} />
-            NFT erfolgreich eingestellt!
+          <div className="flex items-center gap-2 justify-center bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-green-400 text-sm font-semibold">
+            <FaCheckCircle size={14} /> NFT erfolgreich eingestellt!
+          </div>
+        ) : loadingNfts ? (
+          <div className="flex flex-col items-center justify-center py-10 gap-3">
+            <span className="w-7 h-7 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+            <p className="text-zinc-500 text-xs">Lade deine NFTs…</p>
+          </div>
+        ) : ownedNfts.length === 0 ? (
+          <div className="text-center py-8">
+            <FaGem className="text-zinc-700 mx-auto mb-3" size={28} />
+            <p className="text-zinc-400 text-sm font-semibold mb-1">Keine D.FAITH NFTs gefunden</p>
+            <p className="text-zinc-600 text-xs">Minte zuerst eine Collectible-Karte in deiner Sammlung.</p>
           </div>
         ) : (
           <>
-            {loadingNfts ? (
-              <div className="flex justify-center py-8">
-                <span className="w-6 h-6 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
-              </div>
-            ) : ownedNfts.length === 0 ? (
-              <p className="text-zinc-500 text-sm text-center py-6">Keine D.FAITH NFTs in deiner Wallet gefunden.</p>
-            ) : (
-              <>
-                <p className="text-zinc-400 text-xs mb-3">Wähle ein NFT zum Verkaufen:</p>
-                <div className="grid grid-cols-2 gap-2 mb-4 max-h-64 overflow-y-auto pr-1">
-                  {ownedNfts.map((nft) => {
-                    const nrs = rarityStyle(nft.rarity);
-                    const isSelected = selected?.nft_mint_address === nft.nft_mint_address;
-                    return (
-                      <button
-                        key={nft.nft_mint_address}
-                        onClick={() => setSelected(nft)}
-                        className={`rounded-lg border p-2 text-left transition-all ${nrs.border} ${nrs.bg} ${isSelected ? 'ring-2 ring-amber-400' : 'opacity-70 hover:opacity-100'}`}
-                      >
-                        {nft.image_url ? (
-                          <Image src={nft.image_url} alt="" width={64} height={64} className="w-full aspect-square rounded object-cover mb-1" />
-                        ) : (
-                          <div className="w-full aspect-square rounded bg-white/5 mb-1" />
-                        )}
-                        <p className={`text-[10px] font-semibold truncate ${nrs.text}`}>{RARITY_LABEL[(nft.rarity.toLowerCase() as Rarity)] ?? nft.rarity}</p>
-                        <p className="text-zinc-500 text-[9px] truncate">{nft.collection_name ?? '—'}</p>
-                      </button>
-                    );
-                  })}
-                </div>
+            <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">NFT auswählen</p>
+            <div className="grid grid-cols-2 gap-2 mb-4 max-h-60 overflow-y-auto pr-1 scrollbar-none">
+              {ownedNfts.map((nft) => {
+                const c    = rc(nft.rarity);
+                const isSel = selected?.nft_mint_address === nft.nft_mint_address;
+                return (
+                  <button
+                    key={nft.nft_mint_address}
+                    onClick={() => setSelected(nft)}
+                    className={`relative rounded-xl border overflow-hidden text-left transition-all ${c.border} ${c.bg} ${isSel ? `ring-2 ring-amber-400 ${c.glow}` : 'opacity-70 hover:opacity-100'}`}
+                  >
+                    <div className="relative w-full aspect-square bg-black/30">
+                      {nft.image_url ? (
+                        <Image src={nft.image_url} alt="" fill className="object-cover" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <GiCrystalShine className={`${c.text} opacity-40`} size={24} />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                      <div className={`absolute top-1.5 right-1.5 text-[8px] font-bold uppercase rounded-full px-1.5 py-0.5 ${c.badge}`}>
+                        {c.label}
+                      </div>
+                      {isSel && (
+                        <div className="absolute top-1.5 left-1.5 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center">
+                          <FaCheckCircle size={10} className="text-black" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-2">
+                      <p className={`text-[10px] font-black truncate ${c.text}`}>{nft.collection_name ?? nft.id.slice(0, 8) + '…'}</p>
+                      {nft.artist_name && <p className="text-zinc-600 text-[9px] truncate">von {nft.artist_name}</p>}
+                      {/* Attribute */}
+                      {nft.attributes && nft.attributes.filter(a => ['Rep Bonus', 'Credit Bonus'].includes(a.trait_type)).map(a => (
+                        <p key={a.trait_type} className="text-[8px] text-zinc-500">{a.trait_type}: {a.value}</p>
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
 
-                {selected && rs && (
-                  <div className={`rounded-lg border ${rs.border} ${rs.bg} p-2 mb-4 text-xs flex items-center gap-2`}>
-                    <span className={rs.text}>✓ Ausgewählt:</span>
-                    <span className="text-zinc-300 truncate">{selected.collection_name} — {RARITY_LABEL[(selected.rarity.toLowerCase() as Rarity)] ?? selected.rarity}</span>
-                  </div>
-                )}
-
-                <div className="mb-4">
-                  <label className="text-zinc-400 text-xs block mb-1">Preis in D.FAITH</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="1"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                      placeholder="z.B. 500"
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-amber-500 focus:outline-none pr-20"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-400 text-xs font-semibold">D.FAITH</span>
-                  </div>
-                  {price && Number(price) > 0 && (
-                    <p className="text-zinc-500 text-[10px] mt-1">Du erhältst: {(Number(price) * 0.925).toFixed(2)} D.FAITH (nach 5% Royalty + 2.5% Gebühr)</p>
+            {selected && cfg && (
+              <div className={`rounded-xl border ${cfg.border} ${cfg.bg} p-3 mb-4`}>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Ausgewählt</p>
+                <div className="flex items-center gap-2">
+                  {selected.image_url && (
+                    <Image src={selected.image_url} alt="" width={32} height={32} className="w-8 h-8 rounded-lg object-cover shrink-0 border border-white/10" />
                   )}
+                  <div className="min-w-0">
+                    <p className={`font-black text-xs truncate ${cfg.text}`}>{selected.collection_name}</p>
+                    <p className={`text-[9px] ${cfg.text}/70`}>{cfg.label}</p>
+                  </div>
                 </div>
-
-                {error && <p className="text-red-400 text-xs mb-3">{error}</p>}
-
-                <button
-                  onClick={handleList}
-                  disabled={loading || !selected || !price || Number(price) <= 0}
-                  className="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-700 disabled:text-zinc-500 text-black font-bold rounded-xl py-3 text-sm transition-colors"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                      Wird eingestellt…
-                    </span>
-                  ) : 'NFT einstellen'}
-                </button>
-              </>
+              </div>
             )}
+
+            <div className="mb-4">
+              <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest block mb-2">Preis in D.FAITH</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="1"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder="z.B. 500"
+                  className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-amber-500/60 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none transition-colors pr-20"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-amber-400 text-xs font-bold">D.FAITH</span>
+              </div>
+              {price && Number(price) > 0 && (
+                <p className="text-zinc-500 text-[10px] mt-1.5">
+                  Du erhältst: <span className="text-amber-400 font-bold">{(Number(price) * 0.925).toFixed(2)} D.FAITH</span> (nach 5% Royalty + 2.5% Gebühr)
+                </p>
+              )}
+            </div>
+
+            {error && (
+              <p className="text-red-400 text-xs mb-3 bg-red-500/10 border border-red-500/20 rounded-xl p-3">{error}</p>
+            )}
+
+            <button
+              onClick={handleList}
+              disabled={loading || !selected || !price || Number(price) <= 0}
+              className="w-full bg-amber-500 hover:bg-amber-400 active:bg-amber-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-black font-black rounded-xl py-3 text-sm transition-all"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                  Wird eingestellt…
+                </span>
+              ) : 'NFT einstellen'}
+            </button>
           </>
         )}
       </div>
@@ -439,17 +498,18 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
 // ─── Haupt-Komponente ─────────────────────────────────────────────────────────
 
 export default function MarketplaceTab() {
-  const { user } = useUser();
-  const walletAddress = user?.id ?? '';
+  const { user }          = useUser();
+  const walletAddress     = user?.id ?? '';
 
-  const [view, setView]             = useState<'browse' | 'my'>('browse');
-  const [listings, setListings]     = useState<Listing[]>([]);
-  const [myListings, setMyListings] = useState<Listing[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [balance, setBalance]       = useState(0);
+  const [view, setView]               = useState<'browse' | 'my'>('browse');
+  const [listings, setListings]       = useState<Listing[]>([]);
+  const [myListings, setMyListings]   = useState<Listing[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [balance, setBalance]         = useState(0);
+  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
   const [rarityFilter, setRarityFilter] = useState<string>('all');
-  const [buyTarget, setBuyTarget]   = useState<Listing | null>(null);
-  const [showSell, setShowSell]     = useState(false);
+  const [buyTarget, setBuyTarget]     = useState<Listing | null>(null);
+  const [showSell, setShowSell]       = useState(false);
   const [cancelLoading, setCancelLoading] = useState<string | null>(null);
 
   const loadListings = useCallback(async () => {
@@ -473,6 +533,21 @@ export default function MarketplaceTab() {
     }
   }, [rarityFilter, walletAddress]);
 
+  // D.FAITH Token-Balance on-chain laden
+  useEffect(() => {
+    if (!walletAddress) return;
+    fetch(`/api/solana/create-account?walletAddress=${walletAddress}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        const solAddr = d?.solanaAddress;
+        if (!solAddr) return;
+        return fetch(`/api/solana/balance?solanaAddress=${solAddr}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(b => { if (b?.dfaithBalance != null) setTokenBalance(Number(b.dfaithBalance)); });
+      })
+      .catch(() => {});
+  }, [walletAddress]);
+
   const loadMyListings = useCallback(async () => {
     if (!walletAddress) return;
     const res  = await fetch(`/api/marketplace?seller=${walletAddress}`);
@@ -491,117 +566,173 @@ export default function MarketplaceTab() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ walletAddress, listingId: listing.id }),
       });
-      await loadMyListings();
-      if (view === 'browse') await loadListings();
+      await Promise.all([loadMyListings(), loadListings()]);
     } finally {
       setCancelLoading(null);
     }
   };
 
-  const visibleListings = view === 'browse'
-    ? listings.filter(l => l.seller_wallet !== walletAddress.toLowerCase())
-    : myListings;
+  const visibleListings = view === 'browse' ? listings : myListings;
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-4 py-6 space-y-5">
+    <div className="w-full flex flex-col min-h-screen bg-[#0e0c0a] text-white pb-24">
+      <div className="max-w-2xl mx-auto w-full">
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FaStore className="text-amber-400" size={18} />
-          <h2 className="text-white font-bold text-lg">Marktplatz</h2>
-        </div>
-        {walletAddress && (
-          <div className="flex items-center gap-2">
-            <span className="text-amber-400 text-xs font-semibold bg-amber-500/10 border border-amber-500/20 rounded-full px-3 py-1">
-              {balance.toLocaleString('de-DE')} D.FAITH
-            </span>
-            <button
-              onClick={() => setShowSell(true)}
-              className="flex items-center gap-1.5 text-xs bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-full px-3 py-1.5 transition-colors"
-            >
-              <MdSell size={12} />
-              Verkaufen
-            </button>
+        {/* ── Header ──────────────────────────────────────────────────────────── */}
+        <div className="px-4 pt-6 pb-4">
+          <div className="flex items-center gap-3 mb-4">
+            <Image src="/D.FAITH.png" alt="D.FAITH" width={40} height={40} className="w-10 h-10 rounded-full object-contain shrink-0" />
+            <div>
+              <h1 className="text-white font-black text-xl tracking-wide">D.FAITH Marktplatz</h1>
+              <p className="text-zinc-400 text-[10px] tracking-widest uppercase font-semibold mt-0.5">
+                NFTs kaufen · verkaufen
+              </p>
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Sub-Tabs */}
-      <div className="flex gap-1 bg-zinc-900/60 rounded-xl p-1">
-        {(['browse', 'my'] as const).map((v) => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-colors ${
-              view === v ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            {v === 'browse' ? 'Alle Listings' : 'Meine Listings'}
-          </button>
-        ))}
-      </div>
-
-      {/* Rarity-Filter (nur Browse) */}
-      {view === 'browse' && (
-        <div className="flex gap-1.5 flex-wrap">
-          {['all', ...RARITY_ORDER].map((r) => {
-            const rs = r !== 'all' ? RARITY_STYLE[r as Rarity] : null;
-            return (
+          {/* Balance-Karte */}
+          {walletAddress && (
+            <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 flex items-center justify-between gap-3">
+              <div className="flex gap-4">
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-0.5">Credits</p>
+                  <p className="text-amber-300 font-black text-base leading-none">
+                    {balance.toLocaleString('de-DE')}
+                  </p>
+                  <p className="text-zinc-500 text-[9px] mt-0.5">D.FAITH</p>
+                </div>
+                {tokenBalance !== null && (
+                  <>
+                    <div className="w-px bg-white/[0.08]" />
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-0.5">Token</p>
+                      <p className="text-purple-300 font-black text-base leading-none">
+                        {tokenBalance.toLocaleString('de-DE', { maximumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-zinc-500 text-[9px] mt-0.5">DFAITH</p>
+                    </div>
+                  </>
+                )}
+              </div>
               <button
-                key={r}
-                onClick={() => setRarityFilter(r)}
-                className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-colors ${
-                  rarityFilter === r
-                    ? rs
-                      ? `${rs.border} ${rs.bg} ${rs.text}`
-                      : 'border-amber-400 bg-amber-500/10 text-amber-400'
-                    : 'border-zinc-700 text-zinc-500 hover:border-zinc-500'
-                }`}
+                onClick={() => setShowSell(true)}
+                className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-black font-black rounded-xl px-4 py-2.5 text-sm transition-all shrink-0"
               >
-                {r === 'all' ? 'Alle' : RARITY_LABEL[r as Rarity]}
+                <MdSell size={14} />
+                Verkaufen
               </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Listings Grid */}
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <span className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
-        </div>
-      ) : visibleListings.length === 0 ? (
-        <div className="text-center py-12">
-          <FaStore className="text-zinc-700 mx-auto mb-3" size={36} />
-          <p className="text-zinc-500 text-sm">
-            {view === 'my' ? 'Du hast keine aktiven Listings.' : 'Keine NFTs gelistet.'}
-          </p>
-          {view === 'my' && (
-            <button
-              onClick={() => setShowSell(true)}
-              className="mt-3 text-xs text-amber-400 hover:text-amber-300 underline"
-            >
-              Jetzt NFT einstellen →
-            </button>
+            </div>
           )}
         </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-3">
-          {visibleListings.map((l) => (
-            <ListingCard
-              key={l.id}
-              listing={l}
-              walletAddress={walletAddress}
-              isSelf={l.seller_wallet === walletAddress.toLowerCase()}
-              onBuy={setBuyTarget}
-              onCancel={cancelLoading === l.id ? () => {} : handleCancel}
-            />
-          ))}
-        </div>
-      )}
 
-      {/* Kauf-Modal */}
+        {/* ── Tab-Toggle ──────────────────────────────────────────────────────── */}
+        <div className="mx-4 mb-4">
+          <div className="flex bg-white/[0.04] border border-white/[0.07] rounded-2xl p-1">
+            <button
+              onClick={() => setView('browse')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                view === 'browse'
+                  ? 'bg-amber-500/20 border border-amber-500/30 text-amber-300'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              <HiOutlineViewGrid size={13} /> Alle Listings
+              {listings.length > 0 && (
+                <span className="bg-amber-500/20 text-amber-300 text-[9px] font-black rounded-full px-1.5 py-0.5">
+                  {listings.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setView('my')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                view === 'my'
+                  ? 'bg-violet-500/20 border border-violet-500/30 text-violet-300'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              <FaTag size={11} /> Meine Listings
+              {myListings.length > 0 && (
+                <span className="bg-violet-500/20 text-violet-300 text-[9px] font-black rounded-full px-1.5 py-0.5">
+                  {myListings.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* ── Rarity-Filter ───────────────────────────────────────────────────── */}
+        {view === 'browse' && (
+          <div className="px-4 mb-4">
+            <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-1">
+              {(['all', ...RARITY_ORDER] as const).map((r) => {
+                const c = r !== 'all' ? RARITY_CFG[r as Rarity] : null;
+                const isActive = rarityFilter === r;
+                return (
+                  <button
+                    key={r}
+                    onClick={() => setRarityFilter(r)}
+                    className={`shrink-0 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all ${
+                      isActive
+                        ? c
+                          ? `${c.border} ${c.bg} ${c.text} ${c.glow}`
+                          : 'border-amber-500/50 bg-amber-500/10 text-amber-300'
+                        : 'border-white/[0.08] bg-white/[0.03] text-zinc-500 hover:border-white/20 hover:text-zinc-300'
+                    }`}
+                  >
+                    {r === 'all' ? 'Alle' : RARITY_CFG[r as Rarity].label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Listings ────────────────────────────────────────────────────────── */}
+        <div className="px-4">
+          {loading && view === 'browse' ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <span className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+              <p className="text-zinc-500 text-xs">Lade Listings…</p>
+            </div>
+          ) : visibleListings.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto mb-4">
+                <MdStorefront className="text-zinc-600" size={28} />
+              </div>
+              <p className="text-zinc-400 font-semibold text-sm mb-1">
+                {view === 'my' ? 'Du hast keine aktiven Listings' : 'Keine NFTs gelistet'}
+              </p>
+              <p className="text-zinc-600 text-xs">
+                {view === 'my' ? 'Stelle dein erstes NFT ein und verdiene D.FAITH.' : 'Schau bald wieder vorbei — der Marktplatz füllt sich.'}
+              </p>
+              {view === 'my' && (
+                <button
+                  onClick={() => setShowSell(true)}
+                  className="mt-4 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors border border-amber-500/30 rounded-full px-4 py-1.5"
+                >
+                  NFT einstellen →
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {visibleListings.map((l) => (
+                <ListingCard
+                  key={l.id}
+                  listing={l}
+                  isSelf={l.seller_wallet === walletAddress.toLowerCase()}
+                  onBuy={setBuyTarget}
+                  onCancel={handleCancel}
+                  cancelLoading={cancelLoading === l.id}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Kauf-Modal ──────────────────────────────────────────────────────────── */}
       {buyTarget && (
         <BuyModal
           listing={buyTarget}
@@ -612,7 +743,7 @@ export default function MarketplaceTab() {
         />
       )}
 
-      {/* Verkaufen-Modal */}
+      {/* ── Verkaufen-Modal ─────────────────────────────────────────────────────── */}
       {showSell && (
         <SellModal
           walletAddress={walletAddress}
