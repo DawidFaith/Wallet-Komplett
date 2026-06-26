@@ -1112,9 +1112,9 @@ function CollectibleNftPreview({ form, rarity }: {
     { k: 'Collection', v: form.name || '—' },
     { k: 'Platform',   v: 'D.FAITH' },
     { k: 'Drop Rate',  v: `${FIXED_RARITY_CHANCES[rarity]}%` },
-    ...(repBonus    > 0 ? [{ k: 'REP Bonus',    v: `+${repBonus}%`    }] : []),
-    ...(creditBonus > 0 ? [{ k: 'Credit Bonus', v: `+${creditBonus}%` }] : []),
-    ...(shardBonus  > 0 ? [{ k: 'Shard Bonus',  v: `+${shardBonus}`   }] : []),
+    ...(slots.includes('rep')     && repBonus    > 0 ? [{ k: 'REP Bonus',    v: `+${repBonus}%`    }] : []),
+    ...(slots.includes('credits') && creditBonus > 0 ? [{ k: 'Credit Bonus', v: `+${creditBonus}%` }] : []),
+    ...(slots.includes('shard')   && shardBonus  > 0 ? [{ k: 'Shard Bonus',  v: `+${shardBonus}`   }] : []),
   ];
 
   return (
