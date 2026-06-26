@@ -247,6 +247,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState('');
   const [done, setDone]             = useState(false);
+  const [debugInfo, setDebugInfo]   = useState<string>('');
 
   useEffect(() => {
     async function load() {
@@ -254,8 +255,10 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
       try {
         const res  = await fetch(`/api/collectibles?wallet=${walletAddress}`);
         const data = await res.json();
-        const minted: OwnedNft[] = (data.collectibles ?? [])
-          .filter((c: any) => c.nftMintAddress)
+        const all: any[] = data.collectibles ?? [];
+        const withMint = all.filter((c: any) => c.nftMintAddress);
+        setDebugInfo(`DB: ${all.length} Collectibles gesamt, ${withMint.length} mit NFT-Mint`);
+        const minted: OwnedNft[] = withMint
           .map((c: any) => ({
             id:                  c.id,
             nft_mint_address:    c.nftMintAddress,
@@ -327,7 +330,10 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
                 <span className="w-6 h-6 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
               </div>
             ) : ownedNfts.length === 0 ? (
-              <p className="text-zinc-500 text-sm text-center py-6">Keine geminteten NFTs gefunden.</p>
+              <div className="text-center py-6">
+                <p className="text-zinc-500 text-sm mb-2">Keine geminteten NFTs gefunden.</p>
+                {debugInfo && <p className="text-zinc-600 text-[10px] bg-white/[0.03] rounded px-2 py-1">{debugInfo}</p>}
+              </div>
             ) : (
               <>
                 <p className="text-zinc-400 text-xs mb-3">Wähle ein NFT zum Verkaufen:</p>
