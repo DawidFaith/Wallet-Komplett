@@ -43,6 +43,7 @@ async function ensureTable(sql: ReturnType<typeof getDb>) {
   await sql`CREATE INDEX IF NOT EXISTS idx_nft_listings_seller ON nft_listings(seller_wallet)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_nft_listings_mint   ON nft_listings(mint_address)`;
   await sql`ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS nft_collection_mint TEXT`;
+  await sql`ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS attributes JSONB`;
 }
 
 // ─── GET: Listings laden ──────────────────────────────────────────────────────
@@ -95,6 +96,7 @@ export async function POST(req: NextRequest) {
       nftName?: string;
       artistName?: string;
       nftCollectionMint?: string;
+      attributes?: { trait_type: string; value: string }[] | null;
     };
 
     const { walletAddress, mintAddress, priceDfaith } = body;
@@ -105,13 +107,16 @@ export async function POST(req: NextRequest) {
     const sql = getDb();
     await ensureTable(sql);
 
-    // Bereits gelistet?
+    // Bereits aktiv gelistet?
     const existing = await sql`
       SELECT id FROM nft_listings WHERE mint_address = ${mintAddress} AND status = 'active'
     `;
     if (existing.length) {
       return NextResponse.json({ error: 'Dieses NFT ist bereits gelistet' }, { status: 409 });
     }
+
+    // Alte abgeschlossene/stornierte Listings löschen um Unique-Constraint-Konflikt zu vermeiden
+    await sql`DELETE FROM nft_listings WHERE mint_address = ${mintAddress} AND status != 'active'`;
 
     // nft_collection_mint: aus Übergabe oder aus DB holen
     let nftCollectionMint = body.nftCollectionMint ?? null;
@@ -155,14 +160,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Listing nur einfügen wenn Transfer erfolgreich war
+    const attributesJson = body.attributes ? JSON.stringify(body.attributes) : null;
     const row = await sql`
       INSERT INTO nft_listings
-        (mint_address, seller_wallet, price_dfaith, collection_id, collection_name, rarity, image_url, nft_name, artist_name, nft_collection_mint)
+        (mint_address, seller_wallet, price_dfaith, collection_id, collection_name, rarity, image_url, nft_name, artist_name, nft_collection_mint, attributes)
       VALUES
         (${mintAddress}, ${walletAddress.toLowerCase()}, ${priceDfaith},
          ${body.collectionId ?? null}, ${body.collectionName ?? null}, ${body.rarity ?? null},
          ${body.imageUrl ?? null}, ${body.nftName ?? null}, ${body.artistName ?? null},
-         ${nftCollectionMint})
+         ${nftCollectionMint}, ${attributesJson}::jsonb)
       RETURNING id
     `;
 

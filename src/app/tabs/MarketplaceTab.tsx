@@ -11,6 +11,8 @@ import { HiOutlineViewGrid } from 'react-icons/hi';
 
 type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic';
 
+interface NftAttribute { trait_type: string; value: string; }
+
 interface Listing {
   id: string;
   mint_address: string;
@@ -23,6 +25,7 @@ interface Listing {
   artist_name: string | null;
   listed_at: string;
   status: string;
+  attributes?: NftAttribute[] | null;
 }
 
 interface OwnedNft {
@@ -101,6 +104,22 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
             <p className="text-zinc-500 text-[10px] truncate mt-0.5">von {listing.artist_name}</p>
           )}
         </div>
+
+        {/* Attribute / Boost-Badges */}
+        {listing.attributes && listing.attributes.length > 0 && (() => {
+          const boosts = listing.attributes!.filter(a =>
+            ['Rep Bonus', 'Credit Bonus', 'Shard Bonus', 'Bonus'].some(k => a.trait_type.includes(k))
+          );
+          return boosts.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {boosts.map(a => (
+                <span key={a.trait_type} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${cfg.border} ${cfg.bg} ${cfg.text}`}>
+                  {a.trait_type.replace(' Bonus', '')} {a.value}
+                </span>
+              ))}
+            </div>
+          ) : null;
+        })()}
 
         <div className="flex items-center justify-between mt-auto pt-2 border-t border-white/[0.06]">
           <div className="flex flex-col">
@@ -196,6 +215,20 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
             </div>
             <p className={`font-black text-sm truncate ${cfg.text}`}>{listing.collection_name ?? listing.nft_name ?? '—'}</p>
             {listing.artist_name && <p className="text-zinc-500 text-[10px]">von {listing.artist_name}</p>}
+            {listing.attributes && (() => {
+              const boosts = listing.attributes!.filter(a =>
+                ['Rep Bonus', 'Credit Bonus', 'Shard Bonus', 'Bonus'].some(k => a.trait_type.includes(k))
+              );
+              return boosts.length > 0 ? (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {boosts.map(a => (
+                    <span key={a.trait_type} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${cfg.border} ${cfg.text} bg-black/30`}>
+                      {a.trait_type.replace(' Bonus', '')} {a.value}
+                    </span>
+                  ))}
+                </div>
+              ) : null;
+            })()}
           </div>
         </div>
 
@@ -277,51 +310,62 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
     async function load() {
       setLoadingNfts(true);
       try {
-        const dbRes  = await fetch(`/api/collectibles?wallet=${walletAddress}`);
-        const dbData = await dbRes.json();
-        const dbNfts: OwnedNft[] = (dbData.collectibles ?? [])
-          .filter((c: any) => c.nftMintAddress)
-          .map((c: any) => ({
-            id:                  c.id,
-            nft_mint_address:    c.nftMintAddress,
-            rarity:              c.rarity,
-            collection_id:       c.collectionId ?? '',
-            collection_name:     c.collectionName ?? undefined,
-            image_url:           c.collectionImageUrl ?? c.imageUrl ?? undefined,
-            artist_name:         c.artistName ?? undefined,
-            nft_collection_mint: c.nftCollectionMint ?? undefined,
-            source:              'db' as const,
-          }));
-
-        const dbMints = new Set(dbNfts.map(n => n.nft_mint_address));
-
-        const addrRes  = await fetch(`/api/solana/create-account?walletAddress=${walletAddress}`);
+        const [dbRes, addrRes] = await Promise.all([
+          fetch(`/api/collectibles?wallet=${walletAddress}`),
+          fetch(`/api/solana/create-account?walletAddress=${walletAddress}`),
+        ]);
+        const dbData   = await dbRes.json();
         const addrData = await addrRes.json();
         const solanaAddress: string | null = addrData.solanaAddress ?? null;
 
-        let chainNfts: OwnedNft[] = [];
+        // Helius-NFTs laden (für Attribute aller D.FAITH NFTs)
+        let heliusMap = new Map<string, any>();
         if (solanaAddress) {
           const nftRes  = await fetch(`/api/solana/nfts?solanaAddress=${solanaAddress}`);
           const nftData = await nftRes.json();
           const walletNfts: any[] = Array.isArray(nftData) ? nftData : [];
-          chainNfts = walletNfts
-            .filter((n: any) => n.isDfaith && !dbMints.has(n.mint))
-            .map((n: any): OwnedNft => {
-              const rarityAttr = (n.attributes ?? []).find((a: any) => a.trait_type === 'Rarity');
-              return {
-                id:                  n.mint as string,
-                nft_mint_address:    n.mint as string,
-                rarity:              ((rarityAttr?.value as string | undefined) ?? 'common').toLowerCase(),
-                collection_id:       (n.collection as string | null) ?? '',
-                collection_name:     (n.name as string | null) ?? undefined,
-                image_url:           (n.image as string | null) ?? undefined,
-                artist_name:         undefined,
-                nft_collection_mint: (n.collection as string | null) ?? undefined,
-                source:              'chain',
-                attributes:          n.attributes ?? [],
-              };
-            });
+          walletNfts.forEach(n => heliusMap.set(n.mint as string, n));
         }
+
+        // DB-Collectibles — mit Helius-Attributen anreichern
+        const dbNfts: OwnedNft[] = (dbData.collectibles ?? [])
+          .filter((c: any) => c.nftMintAddress)
+          .map((c: any) => {
+            const helius = heliusMap.get(c.nftMintAddress as string);
+            return {
+              id:                  c.id,
+              nft_mint_address:    c.nftMintAddress,
+              rarity:              c.rarity,
+              collection_id:       c.collectionId ?? '',
+              collection_name:     c.collectionName ?? undefined,
+              image_url:           c.collectionImageUrl ?? c.imageUrl ?? undefined,
+              artist_name:         c.artistName ?? undefined,
+              nft_collection_mint: c.nftCollectionMint ?? undefined,
+              source:              'db' as const,
+              attributes:          helius?.attributes ?? [],
+            };
+          });
+
+        const dbMints = new Set(dbNfts.map(n => n.nft_mint_address));
+
+        // Chain-only NFTs (nicht in DB)
+        const chainNfts: OwnedNft[] = Array.from(heliusMap.values())
+          .filter((n: any) => n.isDfaith && !dbMints.has(n.mint as string))
+          .map((n: any): OwnedNft => {
+            const rarityAttr = (n.attributes ?? []).find((a: any) => a.trait_type === 'Rarity');
+            return {
+              id:                  n.mint as string,
+              nft_mint_address:    n.mint as string,
+              rarity:              ((rarityAttr?.value as string | undefined) ?? 'common').toLowerCase(),
+              collection_id:       (n.collection as string | null) ?? '',
+              collection_name:     (n.name as string | null) ?? undefined,
+              image_url:           (n.image as string | null) ?? undefined,
+              artist_name:         undefined,
+              nft_collection_mint: (n.collection as string | null) ?? undefined,
+              source:              'chain',
+              attributes:          n.attributes ?? [],
+            };
+          });
 
         setOwnedNfts([...dbNfts, ...chainNfts]);
       } finally {
@@ -350,6 +394,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
           nftName:           `${selected.collection_name ?? ''} — ${selected.rarity ?? ''}`.trim(),
           artistName:        selected.artist_name,
           nftCollectionMint: selected.nft_collection_mint ?? null,
+          attributes:        selected.attributes?.length ? selected.attributes : null,
         }),
       });
       const data = await res.json();
