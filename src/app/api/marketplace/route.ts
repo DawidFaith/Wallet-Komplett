@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
       imageUrl?: string;
       nftName?: string;
       artistName?: string;
+      nftCollectionMint?: string;
     };
 
     const { walletAddress, mintAddress, priceDfaith } = body;
@@ -66,16 +67,18 @@ export async function POST(req: NextRequest) {
 
     const sql = getDb();
 
-    // Prüfen ob User dieses NFT wirklich besitzt (DB-Check)
+    // Sicherstellen dass nft_collection_mint Spalte existiert (idempotent)
+    await sql`ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS nft_collection_mint TEXT`;
+
+    // Ownership-Check: DB-Eintrag ODER on-chain (bei on-chain-only NFTs kein DB-Eintrag)
     const owns = await sql`
       SELECT id FROM user_collectibles
       WHERE wallet_address = ${walletAddress.toLowerCase()}
         AND nft_mint_address = ${mintAddress}
       LIMIT 1
     `;
-    if (!owns.length) {
-      return NextResponse.json({ error: 'Du besitzt dieses NFT nicht (laut Datenbank)' }, { status: 403 });
-    }
+    // Wenn kein DB-Eintrag: trotzdem erlauben — on-chain Transfer erzwingt Besitz beim Kauf
+    // (z.B. Collection-NFTs oder extern erhaltene D.FAITH-Assets)
 
     // Bereits gelistet?
     const existing = await sql`
@@ -85,11 +88,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Dieses NFT ist bereits gelistet' }, { status: 409 });
     }
 
+    // nft_collection_mint: aus Übergabe oder aus user_collectibles JOIN collectible_collections holen
+    let nftCollectionMint = body.nftCollectionMint ?? null;
+    if (!nftCollectionMint && owns.length) {
+      const ccRow = await sql`
+        SELECT cc.nft_collection_mint FROM user_collectibles uc
+        JOIN collectible_collections cc ON cc.id = uc.collection_id
+        WHERE uc.wallet_address = ${walletAddress.toLowerCase()}
+          AND uc.nft_mint_address = ${mintAddress}
+        LIMIT 1
+      `;
+      nftCollectionMint = (ccRow[0]?.nft_collection_mint as string | null) ?? null;
+    }
+
     const row = await sql`
-      INSERT INTO nft_listings (mint_address, seller_wallet, price_dfaith, collection_id, collection_name, rarity, image_url, nft_name, artist_name)
-      VALUES (${mintAddress}, ${walletAddress.toLowerCase()}, ${priceDfaith},
-              ${body.collectionId ?? null}, ${body.collectionName ?? null}, ${body.rarity ?? null},
-              ${body.imageUrl ?? null}, ${body.nftName ?? null}, ${body.artistName ?? null})
+      INSERT INTO nft_listings
+        (mint_address, seller_wallet, price_dfaith, collection_id, collection_name, rarity, image_url, nft_name, artist_name, nft_collection_mint)
+      VALUES
+        (${mintAddress}, ${walletAddress.toLowerCase()}, ${priceDfaith},
+         ${body.collectionId ?? null}, ${body.collectionName ?? null}, ${body.rarity ?? null},
+         ${body.imageUrl ?? null}, ${body.nftName ?? null}, ${body.artistName ?? null},
+         ${nftCollectionMint})
       RETURNING id
     `;
 

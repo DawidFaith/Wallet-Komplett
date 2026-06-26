@@ -335,4 +335,6 @@ export const MIGRATION_SQL = `
   CREATE INDEX IF NOT EXISTS idx_nft_listings_status   ON nft_listings(status);
   CREATE INDEX IF NOT EXISTS idx_nft_listings_seller   ON nft_listings(seller_wallet);
   CREATE INDEX IF NOT EXISTS idx_nft_listings_mint     ON nft_listings(mint_address);
+
+  ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS nft_collection_mint TEXT;
 `;

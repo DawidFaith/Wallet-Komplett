@@ -33,6 +33,7 @@ interface OwnedNft {
   image_url?: string;
   artist_name?: string;
   nft_collection_mint?: string;
+  source?: 'db' | 'chain';
 }
 
 // ─── Rarity-Farben ────────────────────────────────────────────────────────────
@@ -247,29 +248,59 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState('');
   const [done, setDone]             = useState(false);
-  const [debugInfo, setDebugInfo]   = useState<string>('');
 
   useEffect(() => {
     async function load() {
       setLoadingNfts(true);
       try {
-        const res  = await fetch(`/api/collectibles?wallet=${walletAddress}`);
-        const data = await res.json();
-        const all: any[] = data.collectibles ?? [];
-        const withMint = all.filter((c: any) => c.nftMintAddress);
-        setDebugInfo(`DB: ${all.length} Collectibles gesamt, ${withMint.length} mit NFT-Mint`);
-        const minted: OwnedNft[] = withMint
+        // 1. DB-Collectibles laden
+        const dbRes  = await fetch(`/api/collectibles?wallet=${walletAddress}`);
+        const dbData = await dbRes.json();
+        const dbNfts: OwnedNft[] = (dbData.collectibles ?? [])
+          .filter((c: any) => c.nftMintAddress)
           .map((c: any) => ({
             id:                  c.id,
             nft_mint_address:    c.nftMintAddress,
             rarity:              c.rarity,
-            collection_id:       c.collectionId,
-            collection_name:     c.collectionName,
+            collection_id:       c.collectionId ?? '',
+            collection_name:     c.collectionName ?? null,
             image_url:           c.collectionImageUrl ?? c.imageUrl ?? null,
             artist_name:         c.artistName ?? null,
             nft_collection_mint: c.nftCollectionMint ?? null,
+            source:              'db' as const,
           }));
-        setOwnedNfts(minted);
+
+        const dbMints = new Set(dbNfts.map(n => n.nft_mint_address));
+
+        // 2. On-Chain NFTs via Helius laden (braucht Solana-Adresse)
+        const addrRes = await fetch(`/api/solana/create-account?walletAddress=${walletAddress}`);
+        const addrData = await addrRes.json();
+        const solanaAddress: string | null = addrData.solanaAddress ?? null;
+
+        let chainNfts: OwnedNft[] = [];
+        if (solanaAddress) {
+          const nftRes  = await fetch(`/api/solana/nfts?solanaAddress=${solanaAddress}`);
+          const nftData = await nftRes.json();
+          const walletNfts: any[] = Array.isArray(nftData) ? nftData : [];
+          chainNfts = walletNfts
+            .filter((n: any) => n.isDfaith && !dbMints.has(n.mint))
+            .map((n: any): OwnedNft => {
+              const rarityAttr = (n.attributes ?? []).find((a: any) => a.trait_type === 'Rarity');
+              return {
+                id:                  n.mint as string,
+                nft_mint_address:    n.mint as string,
+                rarity:              ((rarityAttr?.value as string | undefined) ?? 'common').toLowerCase(),
+                collection_id:       (n.collection as string | null) ?? '',
+                collection_name:     (n.name as string | null) ?? undefined,
+                image_url:           (n.image as string | null) ?? undefined,
+                artist_name:         undefined,
+                nft_collection_mint: (n.collection as string | null) ?? undefined,
+                source:              'chain',
+              };
+            });
+        }
+
+        setOwnedNfts([...dbNfts, ...chainNfts]);
       } finally {
         setLoadingNfts(false);
       }
@@ -287,14 +318,15 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           walletAddress,
-          mintAddress:    selected.nft_mint_address,
-          priceDfaith:    Number(price),
-          collectionId:   selected.collection_id,
-          collectionName: selected.collection_name,
-          rarity:         selected.rarity,
-          imageUrl:       selected.image_url,
-          nftName:        `${selected.collection_name ?? ''} — ${selected.rarity ?? ''}`.trim(),
-          artistName:     selected.artist_name,
+          mintAddress:       selected.nft_mint_address,
+          priceDfaith:       Number(price),
+          collectionId:      selected.collection_id,
+          collectionName:    selected.collection_name,
+          rarity:            selected.rarity,
+          imageUrl:          selected.image_url,
+          nftName:           `${selected.collection_name ?? ''} — ${selected.rarity ?? ''}`.trim(),
+          artistName:        selected.artist_name,
+          nftCollectionMint: selected.nft_collection_mint ?? null,
         }),
       });
       const data = await res.json();
@@ -330,10 +362,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
                 <span className="w-6 h-6 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
               </div>
             ) : ownedNfts.length === 0 ? (
-              <div className="text-center py-6">
-                <p className="text-zinc-500 text-sm mb-2">Keine geminteten NFTs gefunden.</p>
-                {debugInfo && <p className="text-zinc-600 text-[10px] bg-white/[0.03] rounded px-2 py-1">{debugInfo}</p>}
-              </div>
+              <p className="text-zinc-500 text-sm text-center py-6">Keine D.FAITH NFTs in deiner Wallet gefunden.</p>
             ) : (
               <>
                 <p className="text-zinc-400 text-xs mb-3">Wähle ein NFT zum Verkaufen:</p>
