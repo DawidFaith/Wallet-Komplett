@@ -199,13 +199,32 @@ export async function burnCollectibleCollection(
   payerKeypair: Keypair,
 ): Promise<void> {
   const umi = getUmi(payerKeypair);
+
+  // Prüfen ob Collection noch on-chain existiert
+  let collectionAccount;
   try {
-    await fetchCollectionV1(umi, umiPubkey(collectionMint));
-  } catch {
-    // Collection existiert nicht mehr on-chain → nichts zu tun
+    collectionAccount = await fetchCollectionV1(umi, umiPubkey(collectionMint));
+    console.log('[burnCollection] fetched OK, currentSize:', collectionAccount.currentSize, 'updateAuthority:', JSON.stringify(collectionAccount.updateAuthority));
+  } catch (e) {
+    console.log('[burnCollection] fetchCollectionV1 failed (already burned?):', (e as Error).message);
     return;
   }
-  await (burnCollection as Function)(umi, { collection: umiPubkey(collectionMint) }).sendAndConfirm(umi);
+
+  try {
+    const identityPubkey = umi.identity.publicKey;
+    console.log('[burnCollection] calling burnCollection with identity:', identityPubkey, 'collection:', collectionMint);
+    await (burnCollection as Function)(umi, {
+      collection: umiPubkey(collectionMint),
+      authority: umi.identity,
+      payer: umi.payer,
+    }).sendAndConfirm(umi);
+    console.log('[burnCollection] success!');
+  } catch (e) {
+    const err = e as Error;
+    console.error('[burnCollection] ERROR:', err.message);
+    console.error('[burnCollection] STACK:', err.stack);
+    throw err;
+  }
 }
 
 // ─── Asset minten ─────────────────────────────────────────────────────────────
