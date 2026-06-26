@@ -217,6 +217,7 @@ export async function burnCollectibleCollection(
       collection: umiPubkey(collectionMint),
       authority: umi.identity,
       payer: umi.payer,
+      compressionProof: null,
     }).sendAndConfirm(umi);
     console.log('[burnCollection] success!');
   } catch (e) {
