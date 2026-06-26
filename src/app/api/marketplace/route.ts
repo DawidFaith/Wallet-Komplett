@@ -1,42 +1,61 @@
 /**
- * GET  /api/marketplace          → aktive Listings (optional ?seller=wallet für eigene)
- * POST /api/marketplace          → NFT einstellen
- * DELETE /api/marketplace        → Listing stornieren
+ * GET    /api/marketplace  → aktive Listings (optional ?seller=wallet)
+ * POST   /api/marketplace  → NFT einstellen (überträgt NFT in Treasury-Escrow)
+ * DELETE /api/marketplace  → Listing stornieren (NFT zurück an Verkäufer)
+ *
+ * Escrow-Flow:
+ *   Listing erstellt → NFT Seller → Treasury
+ *   Kauf             → NFT Treasury → Käufer  (buy/route.ts)
+ *   Stornierung      → NFT Treasury → Seller
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../lib/db';
+import { transferCollectibleAsset } from '../../lib/collectibleNft';
+import { getTreasuryKeypair } from '../../lib/solanaOperator';
+import { decryptKey } from '../../lib/solanaCrypto';
+import { Keypair } from '@solana/web3.js';
+import bs58 from 'bs58';
 
-export const dynamic = 'force-dynamic';
+export const dynamic     = 'force-dynamic';
+export const maxDuration = 60;
+
+// ─── Tabelle sicherstellen (idempotent) ───────────────────────────────────────
+
+async function ensureTable(sql: ReturnType<typeof getDb>) {
+  await sql`
+    CREATE TABLE IF NOT EXISTS nft_listings (
+      id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      mint_address        TEXT NOT NULL UNIQUE,
+      seller_wallet       TEXT NOT NULL,
+      price_dfaith        NUMERIC(20,2) NOT NULL,
+      collection_id       TEXT,
+      collection_name     TEXT,
+      rarity              TEXT,
+      image_url           TEXT,
+      nft_name            TEXT,
+      artist_name         TEXT,
+      nft_collection_mint TEXT,
+      listed_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      status              TEXT NOT NULL DEFAULT 'active'
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_nft_listings_status ON nft_listings(status)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_nft_listings_seller ON nft_listings(seller_wallet)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_nft_listings_mint   ON nft_listings(mint_address)`;
+  await sql`ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS nft_collection_mint TEXT`;
+}
 
 // ─── GET: Listings laden ──────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const seller = searchParams.get('seller');
-  const rarity = searchParams.get('rarity');
+  const seller       = searchParams.get('seller');
+  const rarity       = searchParams.get('rarity');
   const collectionId = searchParams.get('collection');
 
   try {
     const sql = getDb();
-
-    // Tabelle sicherstellen (idempotent)
-    await sql`
-      CREATE TABLE IF NOT EXISTS nft_listings (
-        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        mint_address    TEXT NOT NULL UNIQUE,
-        seller_wallet   TEXT NOT NULL,
-        price_dfaith    NUMERIC(20,2) NOT NULL,
-        collection_id   TEXT,
-        collection_name TEXT,
-        rarity          TEXT,
-        image_url       TEXT,
-        nft_name        TEXT,
-        artist_name     TEXT,
-        nft_collection_mint TEXT,
-        listed_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        status          TEXT NOT NULL DEFAULT 'active'
-      )
-    `;
+    await ensureTable(sql);
 
     if (seller) {
       const rows = await sql`
@@ -47,7 +66,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ listings: rows });
     }
 
-    // Alle aktiven Listings mit optionalen Filtern
     const rows = rarity && collectionId
       ? await sql`SELECT * FROM nft_listings WHERE status = 'active' AND rarity = ${rarity} AND collection_id = ${collectionId} ORDER BY price_dfaith ASC, listed_at DESC`
       : rarity
@@ -62,7 +80,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// ─── POST: NFT einstellen ─────────────────────────────────────────────────────
+// ─── POST: NFT einstellen + in Treasury-Escrow übertragen ────────────────────
 
 export async function POST(req: NextRequest) {
   try {
@@ -85,39 +103,7 @@ export async function POST(req: NextRequest) {
     }
 
     const sql = getDb();
-
-    // Tabelle + Spalte sicherstellen (idempotent, Self-Healing)
-    await sql`
-      CREATE TABLE IF NOT EXISTS nft_listings (
-        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        mint_address    TEXT NOT NULL UNIQUE,
-        seller_wallet   TEXT NOT NULL,
-        price_dfaith    NUMERIC(20,2) NOT NULL,
-        collection_id   TEXT,
-        collection_name TEXT,
-        rarity          TEXT,
-        image_url       TEXT,
-        nft_name        TEXT,
-        artist_name     TEXT,
-        nft_collection_mint TEXT,
-        listed_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        status          TEXT NOT NULL DEFAULT 'active'
-      )
-    `;
-    await sql`CREATE INDEX IF NOT EXISTS idx_nft_listings_status ON nft_listings(status)`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_nft_listings_seller ON nft_listings(seller_wallet)`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_nft_listings_mint   ON nft_listings(mint_address)`;
-    await sql`ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS nft_collection_mint TEXT`;
-
-    // Ownership-Check: DB-Eintrag ODER on-chain (bei on-chain-only NFTs kein DB-Eintrag)
-    const owns = await sql`
-      SELECT id FROM user_collectibles
-      WHERE wallet_address = ${walletAddress.toLowerCase()}
-        AND nft_mint_address = ${mintAddress}
-      LIMIT 1
-    `;
-    // Wenn kein DB-Eintrag: trotzdem erlauben — on-chain Transfer erzwingt Besitz beim Kauf
-    // (z.B. Collection-NFTs oder extern erhaltene D.FAITH-Assets)
+    await ensureTable(sql);
 
     // Bereits gelistet?
     const existing = await sql`
@@ -127,9 +113,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Dieses NFT ist bereits gelistet' }, { status: 409 });
     }
 
-    // nft_collection_mint: aus Übergabe oder aus user_collectibles JOIN collectible_collections holen
+    // nft_collection_mint: aus Übergabe oder aus DB holen
     let nftCollectionMint = body.nftCollectionMint ?? null;
-    if (!nftCollectionMint && owns.length) {
+    if (!nftCollectionMint) {
       const ccRow = await sql`
         SELECT cc.nft_collection_mint FROM user_collectibles uc
         JOIN collectible_collections cc ON cc.id = uc.collection_id
@@ -140,6 +126,35 @@ export async function POST(req: NextRequest) {
       nftCollectionMint = (ccRow[0]?.nft_collection_mint as string | null) ?? null;
     }
 
+    if (!nftCollectionMint) {
+      return NextResponse.json({ error: 'Collection-Mint fehlt — NFT kann nicht in Escrow übertragen werden' }, { status: 400 });
+    }
+
+    // Seller-Solana-Keypair laden
+    const sellerSolRows = await sql`
+      SELECT solana_private_key FROM solana_accounts
+      WHERE wallet_address = ${walletAddress.toLowerCase()} LIMIT 1
+    `;
+    if (!sellerSolRows.length) {
+      return NextResponse.json({ error: 'Kein Solana-Wallet gefunden — verbinde zuerst dein Wallet' }, { status: 400 });
+    }
+    const sellerKeypair = Keypair.fromSecretKey(
+      bs58.decode(decryptKey(sellerSolRows[0].solana_private_key as string))
+    );
+
+    // NFT in Treasury-Escrow übertragen
+    const treasuryKeypair = getTreasuryKeypair();
+    const treasuryAddress = treasuryKeypair.publicKey.toBase58();
+
+    try {
+      await transferCollectibleAsset(mintAddress, nftCollectionMint, sellerKeypair, treasuryAddress);
+    } catch (transferErr) {
+      return NextResponse.json({
+        error: `NFT-Escrow-Transfer fehlgeschlagen: ${transferErr instanceof Error ? transferErr.message : String(transferErr)}`,
+      }, { status: 500 });
+    }
+
+    // Listing nur einfügen wenn Transfer erfolgreich war
     const row = await sql`
       INSERT INTO nft_listings
         (mint_address, seller_wallet, price_dfaith, collection_id, collection_name, rarity, image_url, nft_name, artist_name, nft_collection_mint)
@@ -157,7 +172,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ─── DELETE: Listing stornieren ───────────────────────────────────────────────
+// ─── DELETE: Listing stornieren + NFT aus Escrow zurück an Verkäufer ─────────
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -170,17 +185,48 @@ export async function DELETE(req: NextRequest) {
     }
 
     const sql = getDb();
-    const result = await sql`
-      UPDATE nft_listings SET status = 'cancelled'
-      WHERE id = ${listingId}
-        AND seller_wallet = ${walletAddress.toLowerCase()}
-        AND status = 'active'
-      RETURNING id
-    `;
 
-    if (!result.length) {
+    // Listing laden und Besitz prüfen
+    const listingRows = await sql`
+      SELECT mint_address, nft_collection_mint
+      FROM nft_listings
+      WHERE id           = ${listingId}
+        AND seller_wallet = ${walletAddress.toLowerCase()}
+        AND status        = 'active'
+      LIMIT 1
+    `;
+    if (!listingRows.length) {
       return NextResponse.json({ error: 'Listing nicht gefunden oder keine Berechtigung' }, { status: 404 });
     }
+
+    const mintAddress       = listingRows[0].mint_address        as string;
+    const nftCollectionMint = listingRows[0].nft_collection_mint as string | null;
+
+    // Seller-Solana-Adresse laden (Ziel für Rückgabe)
+    const sellerSolRows = await sql`
+      SELECT solana_address FROM solana_accounts
+      WHERE wallet_address = ${walletAddress.toLowerCase()} LIMIT 1
+    `;
+    if (!sellerSolRows.length) {
+      return NextResponse.json({ error: 'Kein Solana-Wallet für Verkäufer gefunden' }, { status: 400 });
+    }
+    const sellerSolanaAddress = sellerSolRows[0].solana_address as string;
+
+    // NFT aus Treasury-Escrow zurück an Verkäufer übertragen
+    if (nftCollectionMint) {
+      const treasuryKeypair = getTreasuryKeypair();
+      try {
+        await transferCollectibleAsset(mintAddress, nftCollectionMint, treasuryKeypair, sellerSolanaAddress);
+      } catch (transferErr) {
+        return NextResponse.json({
+          error: `NFT-Rückgabe fehlgeschlagen: ${transferErr instanceof Error ? transferErr.message : String(transferErr)}`,
+        }, { status: 500 });
+      }
+    }
+
+    // Erst nach erfolgreichem Transfer als storniert markieren
+    await sql`UPDATE nft_listings SET status = 'cancelled' WHERE id = ${listingId}`;
+
     return NextResponse.json({ success: true });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });

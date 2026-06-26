@@ -2,25 +2,25 @@
  * POST /api/marketplace/buy
  * Body: { buyerWallet, listingId }
  *
+ * Escrow-Flow: NFT liegt während des Listings im Treasury-Wallet.
+ * Beim Kauf wird es direkt aus dem Treasury an den Käufer übertragen.
+ *
  * Aufteilung des Kaufpreises:
  *   92.5% → Verkäufer
  *    5.0% → Artist-Royalty (aus collectible_collections.artist_wallet)
- *    2.5% → Platform-Treasury (getTreasuryKeypair().publicKey)
+ *    2.5% → Platform-Treasury
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 import { transferCollectibleAsset } from '../../../lib/collectibleNft';
 import { getTreasuryKeypair } from '../../../lib/solanaOperator';
-import { decryptKey } from '../../../lib/solanaCrypto';
 import { getDfaithCredits, addDfaithCredits, redeemDfaithCredits } from '../../../lib/questDb/credits';
-import { Keypair } from '@solana/web3.js';
-import bs58 from 'bs58';
 
-export const dynamic = 'force-dynamic';
+export const dynamic     = 'force-dynamic';
 export const maxDuration = 60;
 
-const PLATFORM_FEE  = 0.025; // 2.5%
-const ROYALTY_FEE   = 0.05;  // 5.0%
+const PLATFORM_FEE = 0.025; // 2.5%
+const ROYALTY_FEE  = 0.05;  // 5.0%
 
 export async function POST(req: NextRequest) {
   try {
@@ -57,16 +57,7 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // 3. Seller-Keypair + Collection + Artist laden
-    const sellerSolRows = await sql`
-      SELECT solana_address, solana_private_key FROM solana_accounts
-      WHERE wallet_address = ${sellerWallet} LIMIT 1
-    `;
-    if (!sellerSolRows.length) {
-      return NextResponse.json({ error: 'Kein Solana-Wallet für Verkäufer gefunden' }, { status: 400 });
-    }
-    const sellerKeypair = Keypair.fromSecretKey(bs58.decode(decryptKey(sellerSolRows[0].solana_private_key as string)));
-
+    // 3. Käufer-Solana-Adresse laden + Treasury-Keypair (NFT kommt aus Escrow)
     const buyerSolRows = await sql`
       SELECT solana_address FROM solana_accounts
       WHERE wallet_address = ${buyerWallet.toLowerCase()} LIMIT 1
@@ -76,9 +67,9 @@ export async function POST(req: NextRequest) {
     }
     const buyerSolanaAddress = buyerSolRows[0].solana_address as string;
 
-    // Collection-Mint + Artist-Wallet für Royalties holen
-    // Primär: user_collectibles JOIN collectible_collections
-    // Fallback: nft_collection_mint direkt aus nft_listings + CC lookup
+    // 4. Collection-Mint + Artist-Wallet für Royalties holen
+    // Primär: user_collectibles JOIN collectible_collections (Eintrag beim ursprünglichen Seller)
+    // Fallback: nft_collection_mint direkt aus nft_listings + CC-Lookup
     const collectibleRows = await sql`
       SELECT cc.nft_collection_mint, cc.artist_wallet
       FROM user_collectibles uc
@@ -97,7 +88,6 @@ export async function POST(req: NextRequest) {
       artistWallet   = (collectibleRows[0].artist_wallet as string | null)?.toLowerCase() ?? null;
       hasDbEntry     = true;
     } else {
-      // Fallback: nft_collection_mint aus Listing selbst lesen
       const listingMint = (listing as any).nft_collection_mint as string | null;
       if (listingMint) {
         const ccRows = await sql`
@@ -117,17 +107,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Collection-Mint fehlt — NFT kann nicht übertragen werden' }, { status: 500 });
     }
 
-    // Treasury-Wallet-Adresse aus vorhandenem Keypair ableiten
-    const treasuryWallet = getTreasuryKeypair().publicKey.toBase58().toLowerCase();
-
-    // 4. Beträge berechnen
-    // Artist bekommt keine Royalty wenn er selbst der Verkäufer ist (Erstverkauf)
+    // 5. Beträge berechnen
+    const treasuryKeypair = getTreasuryKeypair();
+    const treasuryWallet  = treasuryKeypair.publicKey.toBase58().toLowerCase();
+    // Kein Royalty wenn Artist selbst der ursprüngliche Verkäufer ist (Erstverkauf)
     const isFirstSale    = artistWallet === sellerWallet;
     const royaltyAmount  = isFirstSale ? 0 : Math.round(price * ROYALTY_FEE  * 100) / 100;
     const platformAmount = Math.round(price * PLATFORM_FEE * 100) / 100;
     const sellerAmount   = Math.round((price - royaltyAmount - platformAmount) * 100) / 100;
 
-    // 5. D.FAITH Credits buchen
+    // 6. D.FAITH Credits buchen
     await redeemDfaithCredits(buyerWallet, price);
     await addDfaithCredits(sellerWallet, sellerAmount);
     await addDfaithCredits(treasuryWallet, platformAmount);
@@ -135,12 +124,12 @@ export async function POST(req: NextRequest) {
       await addDfaithCredits(artistWallet, royaltyAmount);
     }
 
-    // 6. NFT on-chain übertragen (bei Fehler: Credits zurückbuchen)
+    // 7. NFT aus Treasury-Escrow an Käufer übertragen (bei Fehler: Credits zurückbuchen)
     try {
       await transferCollectibleAsset(
         listing.mint_address as string,
         collectionMint,
-        sellerKeypair,
+        treasuryKeypair,   // NFT liegt im Treasury (Escrow)
         buyerSolanaAddress,
       );
     } catch (transferErr) {
@@ -153,7 +142,7 @@ export async function POST(req: NextRequest) {
       throw new Error(`NFT-Transfer fehlgeschlagen: ${transferErr instanceof Error ? transferErr.message : String(transferErr)}`);
     }
 
-    // 7. DB aktualisieren
+    // 8. DB aktualisieren
     await sql`UPDATE nft_listings SET status = 'sold' WHERE id = ${listingId}`;
     if (hasDbEntry) {
       await sql`
