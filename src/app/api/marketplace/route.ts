@@ -19,6 +19,25 @@ export async function GET(req: NextRequest) {
   try {
     const sql = getDb();
 
+    // Tabelle sicherstellen (idempotent)
+    await sql`
+      CREATE TABLE IF NOT EXISTS nft_listings (
+        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        mint_address    TEXT NOT NULL UNIQUE,
+        seller_wallet   TEXT NOT NULL,
+        price_dfaith    NUMERIC(20,2) NOT NULL,
+        collection_id   TEXT,
+        collection_name TEXT,
+        rarity          TEXT,
+        image_url       TEXT,
+        nft_name        TEXT,
+        artist_name     TEXT,
+        nft_collection_mint TEXT,
+        listed_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        status          TEXT NOT NULL DEFAULT 'active'
+      )
+    `;
+
     if (seller) {
       const rows = await sql`
         SELECT * FROM nft_listings
@@ -67,7 +86,27 @@ export async function POST(req: NextRequest) {
 
     const sql = getDb();
 
-    // Sicherstellen dass nft_collection_mint Spalte existiert (idempotent)
+    // Tabelle + Spalte sicherstellen (idempotent, Self-Healing)
+    await sql`
+      CREATE TABLE IF NOT EXISTS nft_listings (
+        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        mint_address    TEXT NOT NULL UNIQUE,
+        seller_wallet   TEXT NOT NULL,
+        price_dfaith    NUMERIC(20,2) NOT NULL,
+        collection_id   TEXT,
+        collection_name TEXT,
+        rarity          TEXT,
+        image_url       TEXT,
+        nft_name        TEXT,
+        artist_name     TEXT,
+        nft_collection_mint TEXT,
+        listed_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        status          TEXT NOT NULL DEFAULT 'active'
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_nft_listings_status ON nft_listings(status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_nft_listings_seller ON nft_listings(seller_wallet)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_nft_listings_mint   ON nft_listings(mint_address)`;
     await sql`ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS nft_collection_mint TEXT`;
 
     // Ownership-Check: DB-Eintrag ODER on-chain (bei on-chain-only NFTs kein DB-Eintrag)
