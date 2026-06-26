@@ -182,12 +182,16 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
             <span className="text-amber-400 font-bold">{price.toLocaleString('de-DE')} D.FAITH</span>
           </div>
           <div className="flex justify-between text-zinc-500 text-xs">
+            <span>Artist-Royalty (5%)</span>
+            <span>{(price * 0.05).toFixed(2)} D.FAITH</span>
+          </div>
+          <div className="flex justify-between text-zinc-500 text-xs">
             <span>Plattformgebühr (2.5%)</span>
             <span>{(price * 0.025).toFixed(2)} D.FAITH</span>
           </div>
           <div className="flex justify-between text-zinc-500 text-xs">
             <span>Verkäufer erhält</span>
-            <span>{(price * 0.975).toFixed(2)} D.FAITH</span>
+            <span>{(price * 0.925).toFixed(2)} D.FAITH</span>
           </div>
           <div className={`flex justify-between text-xs pt-1 border-t border-white/10 ${enough ? 'text-zinc-400' : 'text-red-400'}`}>
             <span>Dein Guthaben</span>
@@ -370,7 +374,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-400 text-xs font-semibold">D.FAITH</span>
                   </div>
                   {price && Number(price) > 0 && (
-                    <p className="text-zinc-500 text-[10px] mt-1">Du erhältst: {(Number(price) * 0.975).toFixed(2)} D.FAITH (nach 2.5% Gebühr)</p>
+                    <p className="text-zinc-500 text-[10px] mt-1">Du erhältst: {(Number(price) * 0.925).toFixed(2)} D.FAITH (nach 5% Royalty + 2.5% Gebühr)</p>
                   )}
                 </div>
 

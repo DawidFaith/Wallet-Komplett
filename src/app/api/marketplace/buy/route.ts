@@ -2,16 +2,15 @@
  * POST /api/marketplace/buy
  * Body: { buyerWallet, listingId }
  *
- * Ablauf:
- * 1. Listing + Verkäufer laden, Preis prüfen
- * 2. Käufer-Guthaben prüfen (dfaith_credits)
- * 3. D.FAITH Credits: Käufer → Verkäufer (97.5%) + Platform-Treasury (2.5%)
- * 4. NFT on-chain: Verkäufer → Käufer (mpl-core transfer)
- * 5. DB: Listing als 'sold' markieren, user_collectibles-Owner wechseln
+ * Aufteilung des Kaufpreises:
+ *   92.5% → Verkäufer
+ *    5.0% → Artist-Royalty (aus collectible_collections.artist_wallet)
+ *    2.5% → Platform-Treasury (getTreasuryKeypair().publicKey)
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 import { transferCollectibleAsset } from '../../../lib/collectibleNft';
+import { getTreasuryKeypair } from '../../../lib/solanaOperator';
 import { decryptKey } from '../../../lib/solanaCrypto';
 import { getDfaithCredits, addDfaithCredits, redeemDfaithCredits } from '../../../lib/questDb/credits';
 import { Keypair } from '@solana/web3.js';
@@ -20,8 +19,8 @@ import bs58 from 'bs58';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-const PLATFORM_FEE = 0.025; // 2.5%
-const PLATFORM_WALLET = (process.env.PLATFORM_WALLET_ADDRESS ?? '').toLowerCase();
+const PLATFORM_FEE  = 0.025; // 2.5%
+const ROYALTY_FEE   = 0.05;  // 5.0%
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,8 +41,8 @@ export async function POST(req: NextRequest) {
     if (!listingRows.length) {
       return NextResponse.json({ error: 'Listing nicht gefunden oder bereits verkauft' }, { status: 404 });
     }
-    const listing = listingRows[0];
-    const price     = Number(listing.price_dfaith);
+    const listing      = listingRows[0];
+    const price        = Number(listing.price_dfaith);
     const sellerWallet = listing.seller_wallet as string;
 
     if (sellerWallet === buyerWallet.toLowerCase()) {
@@ -54,11 +53,11 @@ export async function POST(req: NextRequest) {
     const buyerBalance = await getDfaithCredits(buyerWallet);
     if (buyerBalance < price) {
       return NextResponse.json({
-        error: `Nicht genug D.FAITH. Benötigt: ${price}, Verfügbar: ${buyerBalance.toFixed(2)}`,
+        error: `Nicht genug D.FAITH. Benötigt: ${price.toLocaleString('de-DE')}, Verfügbar: ${buyerBalance.toFixed(2)}`,
       }, { status: 400 });
     }
 
-    // 3. Seller-Keypair laden (für NFT-Transfer)
+    // 3. Seller-Keypair + Collection + Artist laden
     const sellerSolRows = await sql`
       SELECT solana_address, solana_private_key FROM solana_accounts
       WHERE wallet_address = ${sellerWallet} LIMIT 1
@@ -68,7 +67,6 @@ export async function POST(req: NextRequest) {
     }
     const sellerKeypair = Keypair.fromSecretKey(bs58.decode(decryptKey(sellerSolRows[0].solana_private_key as string)));
 
-    // Käufer Solana-Adresse laden (für NFT-Empfang)
     const buyerSolRows = await sql`
       SELECT solana_address FROM solana_accounts
       WHERE wallet_address = ${buyerWallet.toLowerCase()} LIMIT 1
@@ -78,9 +76,9 @@ export async function POST(req: NextRequest) {
     }
     const buyerSolanaAddress = buyerSolRows[0].solana_address as string;
 
-    // Collection-Mint für NFT-Transfer holen
+    // Collection-Mint + Artist-Wallet für Royalties holen
     const collectibleRows = await sql`
-      SELECT uc.nft_mint_address, cc.nft_collection_mint
+      SELECT uc.nft_mint_address, cc.nft_collection_mint, cc.artist_wallet
       FROM user_collectibles uc
       JOIN collectible_collections cc ON cc.id = uc.collection_id
       WHERE uc.wallet_address = ${sellerWallet}
@@ -91,21 +89,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'NFT nicht mehr im Besitz des Verkäufers (DB)' }, { status: 409 });
     }
     const collectionMint = collectibleRows[0].nft_collection_mint as string | null;
+    const artistWallet   = (collectibleRows[0].artist_wallet as string | null)?.toLowerCase() ?? null;
     if (!collectionMint) {
       return NextResponse.json({ error: 'Collection-Mint fehlt' }, { status: 500 });
     }
 
-    // 4. D.FAITH Credits buchen (Käufer abziehen → Verkäufer + Platform)
-    const feeAmount    = Math.round(price * PLATFORM_FEE * 100) / 100;
-    const sellerAmount = Math.round((price - feeAmount) * 100) / 100;
+    // Treasury-Wallet-Adresse aus vorhandenem Keypair ableiten
+    const treasuryWallet = getTreasuryKeypair().publicKey.toBase58().toLowerCase();
 
+    // 4. Beträge berechnen
+    // Artist bekommt keine Royalty wenn er selbst der Verkäufer ist (Erstverkauf)
+    const isFirstSale    = artistWallet === sellerWallet;
+    const royaltyAmount  = isFirstSale ? 0 : Math.round(price * ROYALTY_FEE  * 100) / 100;
+    const platformAmount = Math.round(price * PLATFORM_FEE * 100) / 100;
+    const sellerAmount   = Math.round((price - royaltyAmount - platformAmount) * 100) / 100;
+
+    // 5. D.FAITH Credits buchen
     await redeemDfaithCredits(buyerWallet, price);
     await addDfaithCredits(sellerWallet, sellerAmount);
-    if (PLATFORM_WALLET) {
-      await addDfaithCredits(PLATFORM_WALLET, feeAmount);
+    await addDfaithCredits(treasuryWallet, platformAmount);
+    if (!isFirstSale && artistWallet && royaltyAmount > 0) {
+      await addDfaithCredits(artistWallet, royaltyAmount);
     }
 
-    // 5. NFT on-chain übertragen
+    // 6. NFT on-chain übertragen (bei Fehler: Credits zurückbuchen)
     try {
       await transferCollectibleAsset(
         listing.mint_address as string,
@@ -114,14 +121,16 @@ export async function POST(req: NextRequest) {
         buyerSolanaAddress,
       );
     } catch (transferErr) {
-      // Credits-Buchung rückgängig machen bei NFT-Fehler
       await addDfaithCredits(buyerWallet, price);
       await redeemDfaithCredits(sellerWallet, sellerAmount);
-      if (PLATFORM_WALLET) await redeemDfaithCredits(PLATFORM_WALLET, feeAmount);
+      await redeemDfaithCredits(treasuryWallet, platformAmount);
+      if (!isFirstSale && artistWallet && royaltyAmount > 0) {
+        await redeemDfaithCredits(artistWallet, royaltyAmount);
+      }
       throw new Error(`NFT-Transfer fehlgeschlagen: ${transferErr instanceof Error ? transferErr.message : String(transferErr)}`);
     }
 
-    // 6. DB aktualisieren
+    // 7. DB aktualisieren
     await sql`UPDATE nft_listings SET status = 'sold' WHERE id = ${listingId}`;
     await sql`
       UPDATE user_collectibles
@@ -134,7 +143,9 @@ export async function POST(req: NextRequest) {
       success: true,
       price,
       sellerAmount,
-      feeAmount,
+      royaltyAmount,
+      platformAmount,
+      isFirstSale,
       mintAddress: listing.mint_address,
     });
   } catch (err) {
