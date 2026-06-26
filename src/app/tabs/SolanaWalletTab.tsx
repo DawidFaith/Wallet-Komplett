@@ -405,7 +405,7 @@ export default function SolanaWalletTab() {
   const [nfts, setNfts]                   = useState<OwnedNft[]>([]);
   const [nftsLoading, setNftsLoading]     = useState(false);
   const [artistMap, setArtistMap]         = useState<Record<string, string | null>>({});
-  const [selectedNftArtist, setSelectedNftArtist] = useState<string | null>(null);
+  const [openNftArtists, setOpenNftArtists] = useState<Set<string>>(new Set());
   const [nftSendTarget, setNftSendTarget] = useState<OwnedNft | null>(null);
   const [nftRecipient, setNftRecipient]   = useState('');
   const [nftSending, setNftSending]       = useState(false);
@@ -1156,29 +1156,28 @@ export default function SolanaWalletTab() {
               if (!groups.has(name)) groups.set(name, []);
               groups.get(name)!.push(nft);
             }
-            const activeNfts = selectedNftArtist
-              ? (groups.get(selectedNftArtist) ?? [])
-              : nfts;
-            const songs        = activeNfts.filter(n => n.interface !== 'MplCoreAsset');
-            const collectibles = activeNfts.filter(n => n.interface === 'MplCoreAsset');
             return (
               <>
                 {/* Artist-Icons horizontal (Quest-Board-Stil) */}
-                <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-none">
+                <div className="flex gap-4 overflow-x-auto pt-2 pb-1 scrollbar-none">
                   {Array.from(groups.entries()).map(([artistName, artistNfts]) => {
-                    const picture   = artistMap[artistName] ?? null;
-                    const isActive  = selectedNftArtist === artistName;
+                    const picture  = artistMap[artistName] ?? null;
+                    const isOpen   = openNftArtists.has(artistName);
                     return (
                       <button
                         key={artistName}
-                        onClick={() => setSelectedNftArtist(isActive ? null : artistName)}
+                        onClick={() => setOpenNftArtists(prev => {
+                          const next = new Set(prev);
+                          if (next.has(artistName)) next.delete(artistName); else next.add(artistName);
+                          return next;
+                        })}
                         className="flex flex-col items-center gap-2 shrink-0 w-[68px] group"
                       >
                         <div className="relative">
                           <div className={`w-14 h-14 rounded-full transition-all group-hover:scale-105 overflow-hidden
-                            ${isActive
+                            ${isOpen
                               ? 'ring-2 ring-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.6)]'
-                              : 'ring-2 ring-amber-500/40 shadow-[0_0_8px_rgba(245,158,11,0.2)] opacity-70 group-hover:opacity-100 group-hover:ring-amber-500'
+                              : 'ring-2 ring-amber-500/40 shadow-[0_0_8px_rgba(245,158,11,0.2)] opacity-60 group-hover:opacity-100 group-hover:ring-amber-500'
                             }`}>
                             {picture
                               ? <Image src={picture} alt={artistName} width={56} height={56}
@@ -1193,7 +1192,7 @@ export default function SolanaWalletTab() {
                           </span>
                         </div>
                         <p className={`text-xs text-center line-clamp-2 leading-tight w-full transition-colors
-                          ${isActive ? 'text-white font-semibold' : 'text-zinc-400 group-hover:text-white'}`}>
+                          ${isOpen ? 'text-white font-semibold' : 'text-zinc-400 group-hover:text-white'}`}>
                           {artistName}
                         </p>
                       </button>
@@ -1201,19 +1200,29 @@ export default function SolanaWalletTab() {
                   })}
                 </div>
 
-                {/* NFT-Liste (gefiltert oder alle) */}
-                {songs.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest px-1">Songs</p>
-                    <div className="space-y-2">{songs.map(renderNft)}</div>
-                  </div>
-                )}
-                {collectibles.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest px-1">Collectibles</p>
-                    <div className="space-y-2">{collectibles.map(renderNft)}</div>
-                  </div>
-                )}
+                {/* Aufgeklappte Artist-Sektionen */}
+                {Array.from(groups.entries()).map(([artistName, artistNfts]) => {
+                  if (!openNftArtists.has(artistName)) return null;
+                  const artistSongs        = artistNfts.filter(n => n.interface !== 'MplCoreAsset');
+                  const artistCollectibles = artistNfts.filter(n => n.interface === 'MplCoreAsset');
+                  return (
+                    <div key={artistName} className="space-y-3 border-t border-white/[0.06] pt-3">
+                      <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">{artistName}</p>
+                      {artistSongs.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-zinc-700 text-[10px] font-bold uppercase tracking-widest px-1">Songs</p>
+                          <div className="space-y-2">{artistSongs.map(renderNft)}</div>
+                        </div>
+                      )}
+                      {artistCollectibles.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-zinc-700 text-[10px] font-bold uppercase tracking-widest px-1">Collectibles</p>
+                          <div className="space-y-2">{artistCollectibles.map(renderNft)}</div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </>
             );
           })()}
