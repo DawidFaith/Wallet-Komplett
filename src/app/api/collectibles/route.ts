@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchAndUploadToArweave, resolveMediaUrl } from '../../lib/arweaveUpload';
 import {
   createCollectibleCollection,
   updateCollectibleCollection,
@@ -124,20 +123,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Wahrscheinlichkeiten müssen zusammen 100 ergeben (aktuell: ${total})` }, { status: 400 });
   }
 
-  // Bild von Vercel Blob auf Arweave hochladen → https://arweave.net/... speichern
-  // (ar:// funktioniert nicht als img-src im Browser)
-  let finalImageUrl = body.imageUrl ?? '';
-  if (finalImageUrl.startsWith('https://') && !finalImageUrl.includes('arweave.net')) {
-    try {
-      const arUrl = await fetchAndUploadToArweave(finalImageUrl, 'image/jpeg', [
-        { name: 'App',  value: 'D.FAITH' },
-        { name: 'Type', value: 'Collectible Image' },
-      ]);
-      finalImageUrl = resolveMediaUrl(arUrl); // ar://... → https://arweave.net/...
-    } catch (e) {
-      return NextResponse.json({ error: `Arweave-Upload fehlgeschlagen: ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
-    }
-  }
+  // Blob-URL direkt speichern — Arweave-Upload passiert erst beim NFT-Minten
+  // (mintCollectibleCollection lädt das Bild selbst auf Arweave hoch)
+  const finalImageUrl = body.imageUrl ?? '';
 
   try {
     const sql = getDb();
@@ -232,19 +220,8 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
-  // Bild von Vercel Blob auf Arweave → https://arweave.net/... speichern
-  let patchImageUrl = body.imageUrl;
-  if (patchImageUrl?.startsWith('https://') && !patchImageUrl.includes('arweave.net')) {
-    try {
-      const arUrl = await fetchAndUploadToArweave(patchImageUrl, 'image/jpeg', [
-        { name: 'App',  value: 'D.FAITH' },
-        { name: 'Type', value: 'Collectible Image' },
-      ]);
-      patchImageUrl = resolveMediaUrl(arUrl);
-    } catch (e) {
-      return NextResponse.json({ error: `Arweave-Upload fehlgeschlagen: ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
-    }
-  }
+  // Blob-URL direkt speichern (kein Arweave-Upload hier nötig)
+  const patchImageUrl = body.imageUrl;
 
   try {
     const updated = await updateCollectibleCollection(id.trim(), artistWallet.trim(), {
