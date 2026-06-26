@@ -240,14 +240,13 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const [ownedNfts, setOwnedNfts]     = useState<OwnedNft[]>([]);
-  const [totalInDb, setTotalInDb]     = useState(0);
+  const [ownedNfts, setOwnedNfts]   = useState<OwnedNft[]>([]);
   const [loadingNfts, setLoadingNfts] = useState(true);
-  const [selected, setSelected]       = useState<OwnedNft | null>(null);
-  const [price, setPrice]             = useState('');
-  const [loading, setLoading]         = useState(false);
-  const [error, setError]             = useState('');
-  const [done, setDone]               = useState(false);
+  const [selected, setSelected]     = useState<OwnedNft | null>(null);
+  const [price, setPrice]           = useState('');
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState('');
+  const [done, setDone]             = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -255,9 +254,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
       try {
         const res  = await fetch(`/api/collectibles?wallet=${walletAddress}`);
         const data = await res.json();
-        const all: any[] = data.collectibles ?? [];
-        setTotalInDb(all.length);
-        const minted: OwnedNft[] = all
+        const minted: OwnedNft[] = (data.collectibles ?? [])
           .filter((c: any) => c.nftMintAddress)
           .map((c: any) => ({
             id:                  c.id,
@@ -330,18 +327,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
                 <span className="w-6 h-6 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
               </div>
             ) : ownedNfts.length === 0 ? (
-              <div className="text-center py-6 space-y-2">
-                <p className="text-zinc-400 text-sm">Keine auf die Blockchain geminteten NFTs gefunden.</p>
-                {totalInDb > 0 ? (
-                  <p className="text-zinc-600 text-xs">
-                    Du hast {totalInDb} Collectible{totalInDb !== 1 ? 's' : ''} in deiner Sammlung,<br />
-                    aber noch keine davon als NFT geminted.<br />
-                    <span className="text-amber-500/80">Gehe zu Collectibles → minte deine Karte zuerst.</span>
-                  </p>
-                ) : (
-                  <p className="text-zinc-600 text-xs">Du hast noch keine Collectibles in deiner Sammlung.</p>
-                )}
-              </div>
+              <p className="text-zinc-500 text-sm text-center py-6">Keine geminteten NFTs gefunden.</p>
             ) : (
               <>
                 <p className="text-zinc-400 text-xs mb-3">Wähle ein NFT zum Verkaufen:</p>
