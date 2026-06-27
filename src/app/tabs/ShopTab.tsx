@@ -637,6 +637,14 @@ function ArtistShopView({
           ))}
         </div>
       )}
+
+      {showDeposit && walletAddress && (
+        <ShopDepositModal
+          walletAddress={walletAddress}
+          onClose={() => setShowDeposit(false)}
+          onSuccess={() => { onDepositSuccess?.(); setShowDeposit(false); }}
+        />
+      )}
     </div>
   );
 }
@@ -783,14 +791,6 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
           </a>
         )}
       </div>
-
-      {showDeposit && walletAddress && (
-        <ShopDepositModal
-          walletAddress={walletAddress}
-          onClose={() => setShowDeposit(false)}
-          onSuccess={() => { onDepositSuccess?.(); setShowDeposit(false); }}
-        />
-      )}
     </div>
   );
 }
