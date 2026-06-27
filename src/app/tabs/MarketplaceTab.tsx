@@ -78,13 +78,18 @@ function ArtistAvatar({ name, picture, size = 'md' }: {
   picture?: string | null;
   size?: 'sm' | 'md' | 'lg';
 }) {
-  const dim = size === 'sm' ? 'w-5 h-5' : size === 'lg' ? 'w-14 h-14' : 'w-7 h-7';
+  const dim = size === 'sm' ? 'w-5 h-5'   : size === 'lg' ? 'w-14 h-14' : 'w-7 h-7';
+  const px  = size === 'sm' ? 20           : size === 'lg' ? 56          : 28;
   const txt = size === 'sm' ? 'text-[8px]' : size === 'lg' ? 'text-base' : 'text-[10px]';
   if (picture) {
     return (
-      <div className={`${dim} rounded-full overflow-hidden shrink-0 relative`}>
-        <Image src={picture} alt={name} fill sizes="56px" className="object-cover" />
-      </div>
+      <Image
+        src={picture}
+        alt={name}
+        width={px}
+        height={px}
+        className={`${dim} rounded-full object-cover shrink-0`}
+      />
     );
   }
   return (
