@@ -91,7 +91,6 @@ function ItemCard({
   artistRewardToken?: string | null;
   userLevel?: number;
 }) {
-  const [payMethod, setPayMethod] = useState<'credits' | 'tokens'>('credits');
   const [previewPlaying, setPreviewPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lang = useLang();
@@ -276,46 +275,115 @@ function ItemCard({
                   <FaCheck size={8} /> Du besitzt {item.ownedCount}×
                 </div>
               )}
-              {/* Credits / Token Toggle */}
-              <div className="flex bg-black/40 rounded-lg p-0.5">
-                <button
-                  onClick={() => setPayMethod('credits')}
-                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-md text-[10px] font-bold transition-all ${
-                    payMethod === 'credits' ? 'bg-amber-400 text-black' : 'text-zinc-500 hover:text-zinc-300'
-                  }`}
-                >
-                  <FaCoins size={8} /> Credits
-                </button>
-                <button
-                  onClick={() => setPayMethod('tokens')}
-                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-md text-[10px] font-bold transition-all ${
-                    payMethod === 'tokens' ? 'bg-violet-600 text-white' : 'text-zinc-500 hover:text-zinc-300'
-                  }`}
-                >
-                  <SiSolana size={8} /> Token
-                </button>
-              </div>
-              {/* Kauf-Button */}
+              {/* Kauf-Button (immer Credits) */}
               <button
-                onClick={() => onBuy(item, payMethod)}
+                onClick={() => onBuy(item, 'credits')}
                 disabled={buying === item.id}
-                className={`w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-bold disabled:opacity-50 transition-all active:scale-[0.98] ${
-                  payMethod === 'tokens'
-                    ? 'bg-violet-600 hover:bg-violet-500 text-white'
-                    : 'bg-amber-400 hover:bg-amber-300 text-black'
-                }`}
+                className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-bold disabled:opacity-50 transition-all active:scale-[0.98] bg-amber-400 hover:bg-amber-300 text-black"
               >
                 {buying === item.id
-                  ? <span className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
-                  : payMethod === 'tokens'
-                    ? <><SiSolana size={11} /> {t('shop.btnBuy', lang)}</>
-                    : <><FaCoins size={11} /> {t('shop.btnBuy', lang)}</>
+                  ? <span className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                  : <><FaCoins size={11} /> {t('shop.btnBuy', lang)}</>
                 }
               </button>
             </div>
           )
         ) : (
           <p className="text-center text-zinc-600 text-[10px] py-1.5">{t('shop.loginToBuy', lang)}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Deposit-Modal ────────────────────────────────────────────────────────────
+
+function ShopDepositModal({ walletAddress, onClose, onSuccess }: {
+  walletAddress: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+  const [loading, setLoading]           = useState(true);
+  const [amount, setAmount]             = useState('');
+  const [depositing, setDepositing]     = useState(false);
+  const [error, setError]               = useState('');
+  const [done, setDone]                 = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const addrRes = await fetch(`/api/solana/create-account?walletAddress=${walletAddress}`);
+        const addrData = await addrRes.json();
+        const solAddr: string | null = addrData.solanaAddress ?? null;
+        if (!solAddr) { setLoading(false); return; }
+        const balRes  = await fetch(`/api/solana/balance?solanaAddress=${solAddr}`);
+        const balData = await balRes.json();
+        setTokenBalance(Number(balData.dfaithBalance ?? 0));
+      } catch { setTokenBalance(0); }
+      finally   { setLoading(false); }
+    })();
+  }, [walletAddress]);
+
+  const handleDeposit = async () => {
+    const amt = Number(amount);
+    if (!amt || amt <= 0) return;
+    if (tokenBalance !== null && amt > tokenBalance) { setError(`Nicht genug Tokens — verfügbar: ${tokenBalance.toFixed(2)}`); return; }
+    setDepositing(true); setError('');
+    try {
+      const res  = await fetch('/api/marketplace/deposit-tokens', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress, amount: amt }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Fehler');
+      setDone(true);
+      setTimeout(() => { onSuccess(); onClose(); }, 2000);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Fehler'); }
+    finally     { setDepositing(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:pb-0">
+      <div className="bg-[#161410] border border-white/[0.08] rounded-2xl p-5 w-full max-w-sm shadow-2xl">
+        <div className="flex justify-between items-center mb-5">
+          <h3 className="font-black text-white text-base flex items-center gap-2">
+            <FaPlus className="text-amber-400" size={14} /> Credits aufladen
+          </h3>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
+            <FaTimes size={14} />
+          </button>
+        </div>
+        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 mb-4 flex justify-between items-center">
+          <span className="text-zinc-500 text-xs">Verfügbare D.FAITH Tokens</span>
+          {loading
+            ? <span className="text-zinc-600 text-xs">Laden…</span>
+            : <span className="text-amber-300 font-black text-sm">{(tokenBalance ?? 0).toLocaleString('de-DE', { maximumFractionDigits: 2 })}</span>
+          }
+        </div>
+        {done ? (
+          <div className="flex items-center gap-2 justify-center bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-green-400 text-sm font-semibold">
+            <FaCheck size={14} /> Credits erfolgreich aufgeladen!
+          </div>
+        ) : (
+          <>
+            <input
+              type="number" min="1" value={amount} onChange={e => setAmount(e.target.value)}
+              placeholder="Betrag eingeben"
+              className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-amber-500/60 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none transition-colors mb-3"
+            />
+            {error && <p className="text-red-400 text-xs mb-3 bg-red-500/10 border border-red-500/20 rounded-lg p-2">{error}</p>}
+            <button
+              onClick={handleDeposit}
+              disabled={depositing || !amount || Number(amount) <= 0}
+              className="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-800 disabled:text-zinc-500 text-black font-black rounded-xl py-3 text-sm transition-all"
+            >
+              {depositing
+                ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Wird aufgeladen…</span>
+                : 'D.FAITH Tokens → Credits'
+              }
+            </button>
+          </>
         )}
       </div>
     </div>
@@ -330,6 +398,7 @@ function ArtistShopView({
   creditBalance,
   onPurchased,
   onGoToInventory,
+  onDepositSuccess,
 }: {
   artist: ShopArtist;
   walletAddress: string | null;
@@ -337,6 +406,7 @@ function ArtistShopView({
   creditBalance?: number | null;
   onPurchased?: () => void;
   onGoToInventory?: () => void;
+  onDepositSuccess?: () => void;
 }) {
   const lang = useLang();
   const [items, setItems] = useState<ShopItem[]>([]);
@@ -346,6 +416,7 @@ function ArtistShopView({
   const [buyCelebration, setBuyCelebration] = useState<{ title: string; type: ItemType; price: number; paymentMethod: string } | null>(null);
   const [buyError, setBuyError] = useState('');
   const [userLevel, setUserLevel] = useState(0);
+  const [showDeposit, setShowDeposit] = useState(false);
 
   // User-Level für diesen Artist laden
   useEffect(() => {
@@ -441,13 +512,21 @@ function ArtistShopView({
             <p className="text-zinc-400 text-xs mt-0.5">{loading ? '…' : `${items.length} ${items.length === 1 ? 'Item' : 'Items'} ${t('shop.inShop', lang)}`}</p>
           </div>
           {creditBalance !== null && creditBalance !== undefined && (
-            <div className="shrink-0 flex flex-col items-end gap-0.5">
+            <div className="shrink-0 flex flex-col items-end gap-1">
               <span className="text-zinc-500 text-[9px] uppercase tracking-widest">{t('shop.creditBalance', lang)}</span>
               <span className="flex items-center gap-1 text-amber-300 font-bold text-sm">
                 {creditBalance.toFixed(2)}
                 <Image src="/D.FAITH.png" alt="" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
                 {artist.rewardToken ?? 'D.FAITH'} Credits
               </span>
+              {walletAddress && (
+                <button
+                  onClick={() => setShowDeposit(true)}
+                  className="flex items-center gap-1 text-[9px] font-bold text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-400/50 bg-amber-500/10 hover:bg-amber-500/20 rounded-full px-2 py-0.5 transition-all"
+                >
+                  <FaPlus size={7} /> Aufladen
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -704,6 +783,14 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
           </a>
         )}
       </div>
+
+      {showDeposit && walletAddress && (
+        <ShopDepositModal
+          walletAddress={walletAddress}
+          onClose={() => setShowDeposit(false)}
+          onSuccess={() => { onDepositSuccess?.(); setShowDeposit(false); }}
+        />
+      )}
     </div>
   );
 }
@@ -1690,6 +1777,7 @@ export default function ShopTab({ initialArtistWallet }: { initialArtistWallet?:
             onBack={() => setSelectedArtist(null)}
             creditBalance={creditBalance}
             onPurchased={loadCredits}
+            onDepositSuccess={loadCredits}
             onGoToInventory={() => { setMode('inventory'); setSelectedArtist(null); }}
           />
         ) : (
