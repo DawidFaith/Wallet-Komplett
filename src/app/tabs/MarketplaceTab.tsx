@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
 import { GiCrystalShine } from 'react-icons/gi';
-import { FaTag, FaTimes, FaCheckCircle, FaExclamationTriangle, FaGem, FaPlus, FaStar, FaCoins, FaMusic, FaSortAmountUp, FaSortAmountDown, FaClock } from 'react-icons/fa';
+import { FaTag, FaTimes, FaCheckCircle, FaExclamationTriangle, FaGem, FaPlus, FaStar, FaCoins, FaMusic, FaSortAmountUp, FaSortAmountDown, FaClock, FaSlidersH } from 'react-icons/fa';
 import { MdSell, MdStorefront } from 'react-icons/md';
 import { HiOutlineViewGrid } from 'react-icons/hi';
 import { RiUserStarFill } from 'react-icons/ri';
@@ -811,9 +811,10 @@ export default function MarketplaceTab() {
   const [rarityFilter, setRarityFilter]         = useState<string>('all');
   const [collectionFilter, setCollectionFilter] = useState<string | null>(null);
   const [artistFilter, setArtistFilter]         = useState<string | null>(null);
-  const [buyTarget, setBuyTarget]     = useState<Listing | null>(null);
-  const [showSell, setShowSell]       = useState(false);
-  const [showDeposit, setShowDeposit] = useState(false);
+  const [buyTarget, setBuyTarget]         = useState<Listing | null>(null);
+  const [showSell, setShowSell]           = useState(false);
+  const [showDeposit, setShowDeposit]     = useState(false);
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [cancelLoading, setCancelLoading] = useState<string | null>(null);
 
   const loadListings = useCallback(async () => {
@@ -979,132 +980,218 @@ export default function MarketplaceTab() {
           </div>
         </div>
 
-        {/* ── Filter Zeile 1: Sortierung + Kategorie ──────────────────────────── */}
-        {view === 'browse' && (
-          <div className="flex items-center gap-1.5 px-4 mb-2 overflow-x-auto scrollbar-none pb-1">
-            {/* Sort */}
-            {([
-              { key: 'price_asc',  icon: <FaSortAmountUp size={9} />,   label: 'Preis ↑' },
-              { key: 'price_desc', icon: <FaSortAmountDown size={9} />, label: 'Preis ↓' },
-              { key: 'newest',     icon: <FaClock size={9} />,          label: 'Neueste' },
-            ] as const).map(({ key, icon, label }) => (
-              <button
-                key={key}
-                onClick={() => setSortOrder(key)}
-                className={`shrink-0 flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-full border transition-all ${
-                  sortOrder === key
-                    ? 'border-amber-500/50 bg-amber-500/10 text-amber-300'
-                    : 'border-white/[0.07] bg-white/[0.02] text-zinc-500 hover:text-zinc-300 hover:border-white/15'
-                }`}
-              >
-                {icon}{label}
-              </button>
-            ))}
-
-            {/* Divider */}
-            <div className="w-px h-4 bg-white/10 shrink-0 mx-0.5" />
-
-            {/* Kategorie */}
-            {([
-              { key: 'all',        icon: <HiOutlineViewGrid size={10} />, label: 'Alle',        active: 'border-white/20 bg-white/[0.06] text-white' },
-              { key: 'collectible',icon: <GiCrystalShine size={10} />,   label: 'Collectibles', active: 'border-violet-500/40 bg-violet-500/10 text-violet-300' },
-              { key: 'song',       icon: <FaMusic size={9} />,           label: 'Artist Shop',  active: 'border-rose-500/40 bg-rose-500/10 text-rose-300' },
-            ] as const).map(({ key, icon, label, active }) => (
-              <button
-                key={key}
-                onClick={() => {
-                  setCategoryFilter(key);
-                  setCollectionFilter(null);
-                  setArtistFilter(null);
-                  if (key === 'song') setRarityFilter('all');
-                }}
-                className={`shrink-0 flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-full border transition-all ${
-                  categoryFilter === key
-                    ? active
-                    : 'border-white/[0.07] bg-white/[0.02] text-zinc-500 hover:text-zinc-300 hover:border-white/15'
-                }`}
-              >
-                {icon}{label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* ── Filter Zeile 2: Seltenheit + Kollektion (Collectibles) ──────────── */}
-        {view === 'browse' && categoryFilter !== 'song' && (
-          <div className="flex items-center gap-1.5 px-4 mb-2 overflow-x-auto scrollbar-none pb-1">
-            {/* Rarity */}
-            {(['all', ...RARITY_ORDER] as const).map((r) => {
-              const c = r !== 'all' ? RARITY_CFG[r as Rarity] : null;
-              const isActive = rarityFilter === r;
-              return (
-                <button
-                  key={r}
-                  onClick={() => setRarityFilter(r)}
-                  className={`shrink-0 text-[10px] font-bold px-2.5 py-1.5 rounded-full border transition-all ${
-                    isActive
-                      ? c ? `${c.border} ${c.bg} ${c.text}` : 'border-white/20 bg-white/[0.06] text-white'
-                      : 'border-white/[0.07] bg-white/[0.02] text-zinc-500 hover:text-zinc-300 hover:border-white/15'
-                  }`}
-                >
-                  {r === 'all' ? 'Alle' : RARITY_CFG[r as Rarity].label}
-                </button>
-              );
-            })}
-
-            {/* Kollektion-Chips (wenn vorhanden) */}
-            {collectionStats.length > 0 && (
-              <>
-                <div className="w-px h-4 bg-white/10 shrink-0 mx-0.5" />
-                {collectionStats.map(({ name, count }) => (
+        {/* ── Kategorie-Tabs + Filter-Button ──────────────────────────────────── */}
+        {view === 'browse' && (() => {
+          const activeCount =
+            (sortOrder !== 'price_asc' ? 1 : 0) +
+            (rarityFilter !== 'all'    ? 1 : 0) +
+            (collectionFilter          ? 1 : 0) +
+            (artistFilter              ? 1 : 0);
+          return (
+            <div className="flex items-center gap-2 px-4 mb-3">
+              {/* Kategorie-Tabs */}
+              <div className="flex gap-0.5 flex-1 bg-white/[0.03] border border-white/[0.06] rounded-2xl p-1 min-w-0">
+                {([
+                  { key: 'all',         icon: <HiOutlineViewGrid size={11} />, label: 'Alle'         },
+                  { key: 'collectible', icon: <GiCrystalShine size={11} />,   label: 'Collectibles'  },
+                  { key: 'song',        icon: <FaMusic size={10} />,           label: 'Artist Shop'   },
+                ] as const).map(({ key, icon, label }) => (
                   <button
-                    key={name}
-                    onClick={() => setCollectionFilter(collectionFilter === name ? null : name)}
-                    className={`shrink-0 flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-full border transition-all ${
-                      collectionFilter === name
-                        ? 'border-violet-400/50 bg-violet-500/10 text-violet-300'
-                        : 'border-white/[0.07] bg-white/[0.02] text-zinc-500 hover:text-zinc-300 hover:border-white/15'
+                    key={key}
+                    onClick={() => {
+                      setCategoryFilter(key);
+                      setCollectionFilter(null);
+                      setArtistFilter(null);
+                      if (key === 'song') setRarityFilter('all');
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-[10px] font-bold transition-all truncate ${
+                      categoryFilter === key
+                        ? key === 'collectible' ? 'bg-violet-500/15 border border-violet-500/25 text-violet-300'
+                          : key === 'song'      ? 'bg-rose-500/15 border border-rose-500/25 text-rose-300'
+                          :                       'bg-amber-500/15 border border-amber-500/25 text-amber-300'
+                        : 'text-zinc-500 hover:text-zinc-300'
                     }`}
                   >
-                    {name}<span className="opacity-40 text-[9px]">·{count}</span>
+                    {icon}<span className="hidden xs:inline">{label}</span>
                   </button>
                 ))}
-              </>
-            )}
-          </div>
-        )}
+              </div>
 
-        {/* ── Filter Zeile 2: Künstler (Artist Shop) ──────────────────────────── */}
-        {view === 'browse' && categoryFilter === 'song' && artistStats.length > 0 && (
-          <div className="flex items-center gap-1.5 px-4 mb-2 overflow-x-auto scrollbar-none pb-1">
-            <button
-              onClick={() => setArtistFilter(null)}
-              className={`shrink-0 flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-full border transition-all ${
-                !artistFilter
-                  ? 'border-rose-500/40 bg-rose-500/10 text-rose-300'
-                  : 'border-white/[0.07] bg-white/[0.02] text-zinc-500 hover:text-zinc-300 hover:border-white/15'
-              }`}
-            >
-              <RiUserStarFill size={9} /> Alle
-            </button>
-            {artistStats.map(({ name, picture }) => {
-              const isActive = artistFilter === name;
-              return (
+              {/* Filter-Button */}
+              <button
+                onClick={() => setShowFilterSheet(true)}
+                className={`relative shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-bold transition-all ${
+                  activeCount > 0
+                    ? 'border-amber-500/40 bg-amber-500/10 text-amber-300'
+                    : 'border-white/[0.08] bg-white/[0.04] text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <FaSlidersH size={12} />
+                {activeCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-500 text-black text-[9px] font-black rounded-full flex items-center justify-center leading-none">
+                    {activeCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          );
+        })()}
+
+        {/* ── Filter-Sheet ─────────────────────────────────────────────────────── */}
+        {showFilterSheet && (
+          <>
+            <div
+              className="fixed inset-0 bg-black/70 z-40 backdrop-blur-sm"
+              onClick={() => setShowFilterSheet(false)}
+            />
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#141210] border-t border-white/[0.08] rounded-t-3xl max-h-[82vh] overflow-y-auto pb-safe">
+              {/* Handle */}
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 bg-white/20 rounded-full" />
+              </div>
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-3">
+                <span className="font-black text-white text-base">Filter & Sortierung</span>
                 <button
-                  key={name}
-                  onClick={() => setArtistFilter(isActive ? null : name)}
-                  className={`shrink-0 flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1.5 rounded-full border transition-all ${
-                    isActive
-                      ? 'border-rose-400/50 bg-rose-500/10 text-rose-200'
-                      : 'border-white/[0.07] bg-white/[0.02] text-zinc-400 hover:text-zinc-200 hover:border-white/15'
-                  }`}
+                  onClick={() => {
+                    setSortOrder('price_asc');
+                    setRarityFilter('all');
+                    setCollectionFilter(null);
+                    setArtistFilter(null);
+                  }}
+                  className="text-xs text-amber-400 hover:text-amber-300 font-bold"
                 >
-                  <ArtistAvatar name={name} picture={picture} size="sm" />
-                  {name}
+                  Zurücksetzen
                 </button>
-              );
-            })}
-          </div>
+              </div>
+
+              {/* Sortierung */}
+              <div className="px-5 mb-5">
+                <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-2.5">Sortierung</p>
+                <div className="flex gap-2 flex-wrap">
+                  {([
+                    { key: 'price_asc',  icon: <FaSortAmountUp size={10} />,   label: 'Preis aufsteigend'  },
+                    { key: 'price_desc', icon: <FaSortAmountDown size={10} />, label: 'Preis absteigend'   },
+                    { key: 'newest',     icon: <FaClock size={10} />,          label: 'Neueste zuerst'     },
+                  ] as const).map(({ key, icon, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => setSortOrder(key)}
+                      className={`flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition-all ${
+                        sortOrder === key
+                          ? 'border-amber-500/50 bg-amber-500/10 text-amber-300'
+                          : 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      {icon}{label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Seltenheit (nur Collectibles) */}
+              {categoryFilter !== 'song' && (
+                <div className="px-5 mb-5">
+                  <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-2.5">Seltenheit</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {(['all', ...RARITY_ORDER] as const).map((r) => {
+                      const c = r !== 'all' ? RARITY_CFG[r as Rarity] : null;
+                      const isActive = rarityFilter === r;
+                      return (
+                        <button
+                          key={r}
+                          onClick={() => setRarityFilter(r)}
+                          className={`text-xs font-bold px-3 py-2 rounded-xl border transition-all ${
+                            isActive
+                              ? c ? `${c.border} ${c.bg} ${c.text}` : 'border-white/25 bg-white/[0.08] text-white'
+                              : 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-zinc-200'
+                          }`}
+                        >
+                          {r === 'all' ? 'Alle' : RARITY_CFG[r as Rarity].label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Kollektion (wenn vorhanden) */}
+              {categoryFilter !== 'song' && collectionStats.length > 0 && (
+                <div className="px-5 mb-5">
+                  <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-2.5">Kollektion</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    <button
+                      onClick={() => setCollectionFilter(null)}
+                      className={`text-xs font-bold px-3 py-2 rounded-xl border transition-all ${
+                        !collectionFilter
+                          ? 'border-violet-500/50 bg-violet-500/10 text-violet-300'
+                          : 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      Alle
+                    </button>
+                    {collectionStats.map(({ name, count }) => (
+                      <button
+                        key={name}
+                        onClick={() => setCollectionFilter(collectionFilter === name ? null : name)}
+                        className={`flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-xl border transition-all ${
+                          collectionFilter === name
+                            ? 'border-violet-400/50 bg-violet-500/10 text-violet-300'
+                            : 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-zinc-200'
+                        }`}
+                      >
+                        {name}<span className="text-[10px] opacity-40">·{count}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Künstler (Artist Shop) */}
+              {categoryFilter !== 'collectible' && artistStats.length > 0 && (
+                <div className="px-5 mb-5">
+                  <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-2.5">Künstler</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    <button
+                      onClick={() => setArtistFilter(null)}
+                      className={`flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition-all ${
+                        !artistFilter
+                          ? 'border-rose-500/40 bg-rose-500/10 text-rose-300'
+                          : 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      <RiUserStarFill size={11} /> Alle
+                    </button>
+                    {artistStats.map(({ name, picture }) => (
+                      <button
+                        key={name}
+                        onClick={() => setArtistFilter(artistFilter === name ? null : name)}
+                        className={`flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition-all ${
+                          artistFilter === name
+                            ? 'border-rose-400/50 bg-rose-500/10 text-rose-200'
+                            : 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-zinc-200'
+                        }`}
+                      >
+                        <ArtistAvatar name={name} picture={picture} size="sm" />
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Fertig-Button */}
+              <div className="px-5 pt-2 pb-10">
+                <button
+                  onClick={() => setShowFilterSheet(false)}
+                  className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-black font-black rounded-2xl text-sm transition-all"
+                >
+                  Fertig
+                </button>
+              </div>
+            </div>
+          </>
         )}
 
         {/* ── Listings ────────────────────────────────────────────────────────── */}
