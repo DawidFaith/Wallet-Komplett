@@ -82,8 +82,8 @@ function ArtistAvatar({ name, picture, size = 'md' }: {
   const txt = size === 'sm' ? 'text-[8px]' : size === 'lg' ? 'text-base' : 'text-[10px]';
   if (picture) {
     return (
-      <div className={`${dim} rounded-full overflow-hidden shrink-0`}>
-        <Image src={picture} alt={name} width={56} height={56} className="w-full h-full object-cover" />
+      <div className={`${dim} rounded-full overflow-hidden shrink-0 relative`}>
+        <Image src={picture} alt={name} fill sizes="56px" className="object-cover" />
       </div>
     );
   }
@@ -984,12 +984,14 @@ export default function MarketplaceTab() {
                 onClick={() => setArtistFilter(null)}
                 className="flex flex-col items-center gap-1.5 shrink-0 w-[68px] group"
               >
-                <div className={`w-14 h-14 rounded-full ring-2 transition-all group-hover:scale-105 flex items-center justify-center bg-white/[0.06] ${
+                <div className={`rounded-full ring-2 transition-all group-hover:scale-105 ${
                   artistFilter === null
                     ? 'ring-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.5)]'
                     : 'ring-white/20'
                 }`}>
-                  <RiUserStarFill size={22} className={artistFilter === null ? 'text-amber-400' : 'text-zinc-500'} />
+                  <div className="w-14 h-14 rounded-full bg-white/[0.06] flex items-center justify-center">
+                    <RiUserStarFill size={22} className={artistFilter === null ? 'text-amber-400' : 'text-zinc-500'} />
+                  </div>
                 </div>
                 <p className="text-[10px] text-zinc-300 text-center leading-tight group-hover:text-white transition-colors">Alle</p>
                 <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
@@ -1005,7 +1007,8 @@ export default function MarketplaceTab() {
                     onClick={() => setArtistFilter(isActive ? null : name)}
                     className="flex flex-col items-center gap-1.5 shrink-0 w-[68px] group"
                   >
-                    <div className={`w-14 h-14 rounded-full ring-2 transition-all group-hover:scale-105 overflow-hidden ${
+                    {/* Ring auf separatem Wrapper damit overflow-hidden ihn nicht abschneidet */}
+                    <div className={`rounded-full ring-2 transition-all group-hover:scale-105 ${
                       isActive
                         ? 'ring-amber-400 shadow-[0_0_14px_rgba(245,158,11,0.55)]'
                         : 'ring-white/20'
