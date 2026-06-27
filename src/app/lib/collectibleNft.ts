@@ -508,13 +508,14 @@ export async function transferCollectibleAsset(
   buyerSolanaAddress: string,
   feePayerKeypair?:   Keypair,       // zahlt Tx-Fees; Standard = ownerKeypair
 ): Promise<void> {
-  // UMI immer mit dem Owner initialisieren → identity = owner = korrekte Autorität
-  const umi = getUmi(ownerKeypair);
+  // UMI mit dem Fee-Payer initialisieren (context.payer = fee payer)
+  const payer = feePayerKeypair ?? ownerKeypair;
+  const umi   = getUmi(payer);
 
-  // Wenn separater Fee-Payer (Treasury): nur umi.payer überschreiben, identity bleibt Owner
-  if (feePayerKeypair) {
-    umi.payer = createSignerFromKeypair(umi, fromWeb3JsKeypair(feePayerKeypair));
-  }
+  // transferV1 liest umi.identity NICHT – authority muss immer explizit übergeben werden.
+  // Ohne explizite authority landet null in der Instruction → mpl-core nutzt payer als
+  // Autorität → 0x1a wenn payer !== asset.owner.
+  const ownerSigner = createSignerFromKeypair(umi, fromWeb3JsKeypair(ownerKeypair));
 
   const asset      = await fetchAssetV1(umi, umiPubkey(assetMint));
   const collection = await fetchCollectionV1(umi, umiPubkey(collectionMint));
@@ -522,6 +523,7 @@ export async function transferCollectibleAsset(
   await transfer(umi, {
     asset,
     collection,
-    newOwner: umiPubkey(buyerSolanaAddress),
+    newOwner:  umiPubkey(buyerSolanaAddress),
+    authority: ownerSigner,   // explizit: mpl-core prüft ob ownerSigner === asset.owner
   }).sendAndConfirm(umi);
 }
