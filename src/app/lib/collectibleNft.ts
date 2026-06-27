@@ -504,17 +504,16 @@ export async function scanCollectiblesByOwner(
 export async function transferCollectibleAsset(
   assetMint:          string,
   collectionMint:     string,
-  ownerKeypair:       Keypair,       // NFT-Besitzer (signiert die Transfer-Autorität)
+  ownerKeypair:       Keypair,       // NFT-Besitzer (signiert als Transfer-Autorität)
   buyerSolanaAddress: string,
   feePayerKeypair?:   Keypair,       // zahlt Tx-Fees; Standard = ownerKeypair
 ): Promise<void> {
-  // UMI mit Fee-Payer initialisieren (hat SOL für Fees)
-  const payer = feePayerKeypair ?? ownerKeypair;
-  const umi   = getUmi(payer);
+  // UMI immer mit dem Owner initialisieren → identity = owner = korrekte Autorität
+  const umi = getUmi(ownerKeypair);
 
-  // Falls separater Fee-Payer: Identity auf NFT-Besitzer setzen (Autorität für Transfer)
+  // Wenn separater Fee-Payer (Treasury): nur umi.payer überschreiben, identity bleibt Owner
   if (feePayerKeypair) {
-    umi.identity = createSignerFromKeypair(umi, fromWeb3JsKeypair(ownerKeypair));
+    umi.payer = createSignerFromKeypair(umi, fromWeb3JsKeypair(feePayerKeypair));
   }
 
   const asset      = await fetchAssetV1(umi, umiPubkey(assetMint));
