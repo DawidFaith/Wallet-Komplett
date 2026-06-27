@@ -1761,15 +1761,20 @@ function PlatformSection({ secret }: { secret: string }) {
     allTransactions: Array<{ id: string; from_wallet: string; to_wallet: string; amount: string; type: string; note: string | null; created_at: string; from_name: string | null; to_name: string | null }>;
   } | null>(null);
   const [creditsLoading, setCreditsLoading] = React.useState(false);
-  const [creditsTab, setCreditsTab] = React.useState<'overview' | 'history'>('overview');
+  const [creditsErr, setCreditsErr]         = React.useState('');
+  const [creditsTab, setCreditsTab]         = React.useState<'overview' | 'history'>('overview');
 
   const loadCredits = React.useCallback(async () => {
     setCreditsLoading(true);
+    setCreditsErr('');
     try {
       const res  = await fetch('/api/admin/platform-credits', { headers: { 'x-admin-secret': secret } });
       const data = await res.json();
       if (res.ok) setCreditsData(data);
-    } catch { } finally { setCreditsLoading(false); }
+      else setCreditsErr(data.error ?? `HTTP ${res.status}`);
+    } catch (e) {
+      setCreditsErr(e instanceof Error ? e.message : String(e));
+    } finally { setCreditsLoading(false); }
   }, [secret]);
 
   // ── Bild-Upload State ──────────────────────────────────────────────────────
@@ -2016,6 +2021,12 @@ function PlatformSection({ secret }: { secret: string }) {
             <span className={creditsLoading ? 'animate-spin inline-block' : ''}>↻</span> Refresh
           </button>
         </div>
+
+        {creditsErr && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 mb-4 text-red-400 text-xs font-mono break-all">
+            API-Fehler: {creditsErr}
+          </div>
+        )}
 
         {/* Gesamt-Balance */}
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-4">

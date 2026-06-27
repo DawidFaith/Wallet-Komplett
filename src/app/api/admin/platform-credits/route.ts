@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
     const txRows = await sql`
       SELECT
         ct.*,
-        p.name AS from_name
+        p.display_name AS from_name
       FROM credit_transactions ct
       LEFT JOIN user_profiles p ON LOWER(p.wallet_address) = ct.from_wallet
       WHERE ct.to_wallet = ${treasuryWallet}
@@ -68,8 +68,8 @@ export async function GET(req: NextRequest) {
     const allTxRows = await sql`
       SELECT
         ct.*,
-        pf.name AS from_name,
-        pt.name AS to_name
+        pf.display_name AS from_name,
+        pt.display_name AS to_name
       FROM credit_transactions ct
       LEFT JOIN user_profiles pf ON LOWER(pf.wallet_address) = ct.from_wallet
       LEFT JOIN user_profiles pt ON LOWER(pt.wallet_address) = ct.to_wallet
