@@ -877,11 +877,10 @@ export default function MarketplaceTab() {
     return [...map.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
   })();
 
-  // Künstler-Statistiken (für Artist-Shop-Kategorie: nur Song-Listings)
+  // Künstler-Statistiken aus allen Listings (Raritätswörter ignorieren)
   const artistStats = (() => {
-    const source = categoryFilter === 'collectible' ? [] : listings.filter(l => detectCategory(l) === 'song');
     const map = new Map<string, { count: number; picture: string | null }>();
-    source.forEach(l => {
+    listings.forEach(l => {
       const a = l.artist_name;
       if (a && !RARITY_WORDS.has(a.toLowerCase())) {
         const prev = map.get(a);
@@ -1198,8 +1197,8 @@ export default function MarketplaceTab() {
           </>
         )}
 
-        {/* ── Künstler-Avatare (Artist Shop) ──────────────────────────────────── */}
-        {view === 'browse' && categoryFilter === 'song' && artistStats.length > 0 && (
+        {/* ── Künstler-Avatare (immer sichtbar beim Browsen) ──────────────────── */}
+        {view === 'browse' && artistStats.length > 0 && (
           <div className="px-4 mb-4">
             <div className="flex gap-4 overflow-x-auto scrollbar-none pb-2">
               <button
@@ -1208,17 +1207,17 @@ export default function MarketplaceTab() {
               >
                 <div className={`rounded-full ring-2 transition-all group-hover:scale-105 ${
                   artistFilter === null
-                    ? 'ring-rose-400 shadow-[0_0_12px_rgba(251,113,133,0.5)]'
+                    ? 'ring-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.5)]'
                     : 'ring-white/20'
                 }`}>
                   <div className="w-14 h-14 rounded-full bg-white/[0.06] flex items-center justify-center">
-                    <RiUserStarFill size={22} className={artistFilter === null ? 'text-rose-400' : 'text-zinc-500'} />
+                    <RiUserStarFill size={22} className={artistFilter === null ? 'text-amber-400' : 'text-zinc-500'} />
                   </div>
                 </div>
                 <p className="text-[10px] text-zinc-300 text-center leading-tight group-hover:text-white transition-colors">Alle</p>
                 <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
-                  artistFilter === null ? 'bg-rose-500/30 text-rose-300' : 'bg-white/10 text-zinc-500'
-                }`}>{listings.filter(l => detectCategory(l) === 'song').length}</span>
+                  artistFilter === null ? 'bg-amber-500/30 text-amber-300' : 'bg-white/10 text-zinc-500'
+                }`}>{listings.length}</span>
               </button>
 
               {artistStats.map(({ name, count, picture }) => {
@@ -1231,14 +1230,14 @@ export default function MarketplaceTab() {
                   >
                     <div className={`rounded-full ring-2 transition-all group-hover:scale-105 ${
                       isActive
-                        ? 'ring-rose-400 shadow-[0_0_14px_rgba(251,113,133,0.55)]'
+                        ? 'ring-amber-400 shadow-[0_0_14px_rgba(245,158,11,0.55)]'
                         : 'ring-white/20'
                     }`}>
                       <ArtistAvatar name={name} picture={picture} size="lg" />
                     </div>
                     <p className="text-[10px] text-zinc-300 text-center line-clamp-2 leading-tight w-full group-hover:text-white transition-colors">{name}</p>
                     <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
-                      isActive ? 'bg-rose-500/30 text-rose-300' : 'bg-white/10 text-zinc-500'
+                      isActive ? 'bg-amber-500/30 text-amber-300' : 'bg-white/10 text-zinc-500'
                     }`}>{count}</span>
                   </button>
                 );
