@@ -85,6 +85,12 @@ function ArtistAvatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' 
 
 const RARITY_WORDS = new Set(['common','uncommon','rare','epic','legendary','mythic']);
 
+function fmtBonus(v: string): string {
+  const s = v.trim();
+  const withPlus = s.startsWith('+') || s.startsWith('-') ? s : `+${s}`;
+  return withPlus.endsWith('%') ? withPlus : `${withPlus}%`;
+}
+
 function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
   listing: Listing;
   isSelf: boolean;
@@ -137,13 +143,13 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
             {repBonus && (
               <div className="flex items-center gap-1 bg-violet-900/80 border border-violet-500/50 rounded-lg px-1.5 py-0.5 backdrop-blur-sm">
                 <FaStar size={7} className="text-violet-300 shrink-0" />
-                <span className="text-violet-200 text-[9px] font-black leading-none">{repBonus.value}</span>
+                <span className="text-violet-200 text-[9px] font-black leading-none">{fmtBonus(repBonus.value)}</span>
               </div>
             )}
             {creditBonus && (
               <div className="flex items-center gap-1 bg-amber-900/80 border border-amber-500/50 rounded-lg px-1.5 py-0.5 backdrop-blur-sm">
                 <FaCoins size={7} className="text-amber-300 shrink-0" />
-                <span className="text-amber-200 text-[9px] font-black leading-none">{creditBonus.value}</span>
+                <span className="text-amber-200 text-[9px] font-black leading-none">{fmtBonus(creditBonus.value)}</span>
               </div>
             )}
           </div>
@@ -174,7 +180,7 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
                   <FaStar size={8} className="text-violet-400" />
                   <span className="text-zinc-400 text-[9px]">Rep Bonus</span>
                 </div>
-                <span className="text-violet-300 font-black text-[10px]">{repBonus.value}</span>
+                <span className="text-violet-300 font-black text-[10px]">{fmtBonus(repBonus.value)}</span>
               </div>
             )}
             {creditBonus && (
@@ -183,7 +189,7 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
                   <FaCoins size={8} className="text-amber-400" />
                   <span className="text-zinc-400 text-[9px]">Credit Bonus</span>
                 </div>
-                <span className="text-amber-300 font-black text-[10px]">{creditBonus.value}</span>
+                <span className="text-amber-300 font-black text-[10px]">{fmtBonus(creditBonus.value)}</span>
               </div>
             )}
           </div>
