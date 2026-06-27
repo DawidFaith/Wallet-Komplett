@@ -58,22 +58,52 @@ export async function GET(req: NextRequest) {
     const sql = getDb();
     await ensureTable(sql);
 
+    const artistPictureSql = sql`COALESCE(up.instagram_picture, up.tiktok_picture, up.facebook_picture)`;
+
     if (seller) {
       const rows = await sql`
-        SELECT * FROM nft_listings
-        WHERE seller_wallet = ${seller.toLowerCase()} AND status = 'active'
-        ORDER BY listed_at DESC
+        SELECT nl.*, ${artistPictureSql} AS artist_picture
+        FROM nft_listings nl
+        LEFT JOIN collectible_collections cc ON cc.nft_collection_mint = nl.nft_collection_mint
+        LEFT JOIN user_profiles up ON LOWER(up.wallet_address) = cc.artist_wallet
+        WHERE nl.seller_wallet = ${seller.toLowerCase()} AND nl.status = 'active'
+        ORDER BY nl.listed_at DESC
       `;
       return NextResponse.json({ listings: rows });
     }
 
     const rows = rarity && collectionId
-      ? await sql`SELECT * FROM nft_listings WHERE status = 'active' AND rarity = ${rarity} AND collection_id = ${collectionId} ORDER BY price_dfaith ASC, listed_at DESC`
+      ? await sql`
+          SELECT nl.*, ${artistPictureSql} AS artist_picture
+          FROM nft_listings nl
+          LEFT JOIN collectible_collections cc ON cc.nft_collection_mint = nl.nft_collection_mint
+          LEFT JOIN user_profiles up ON LOWER(up.wallet_address) = cc.artist_wallet
+          WHERE nl.status = 'active' AND nl.rarity = ${rarity} AND nl.collection_id = ${collectionId}
+          ORDER BY nl.price_dfaith ASC, nl.listed_at DESC`
       : rarity
-      ? await sql`SELECT * FROM nft_listings WHERE status = 'active' AND rarity = ${rarity} ORDER BY price_dfaith ASC, listed_at DESC`
+      ? await sql`
+          SELECT nl.*, ${artistPictureSql} AS artist_picture
+          FROM nft_listings nl
+          LEFT JOIN collectible_collections cc ON cc.nft_collection_mint = nl.nft_collection_mint
+          LEFT JOIN user_profiles up ON LOWER(up.wallet_address) = cc.artist_wallet
+          WHERE nl.status = 'active' AND nl.rarity = ${rarity}
+          ORDER BY nl.price_dfaith ASC, nl.listed_at DESC`
       : collectionId
-      ? await sql`SELECT * FROM nft_listings WHERE status = 'active' AND collection_id = ${collectionId} ORDER BY price_dfaith ASC, listed_at DESC`
-      : await sql`SELECT * FROM nft_listings WHERE status = 'active' ORDER BY price_dfaith ASC, listed_at DESC LIMIT 100`;
+      ? await sql`
+          SELECT nl.*, ${artistPictureSql} AS artist_picture
+          FROM nft_listings nl
+          LEFT JOIN collectible_collections cc ON cc.nft_collection_mint = nl.nft_collection_mint
+          LEFT JOIN user_profiles up ON LOWER(up.wallet_address) = cc.artist_wallet
+          WHERE nl.status = 'active' AND nl.collection_id = ${collectionId}
+          ORDER BY nl.price_dfaith ASC, nl.listed_at DESC`
+      : await sql`
+          SELECT nl.*, ${artistPictureSql} AS artist_picture
+          FROM nft_listings nl
+          LEFT JOIN collectible_collections cc ON cc.nft_collection_mint = nl.nft_collection_mint
+          LEFT JOIN user_profiles up ON LOWER(up.wallet_address) = cc.artist_wallet
+          WHERE nl.status = 'active'
+          ORDER BY nl.price_dfaith ASC, nl.listed_at DESC
+          LIMIT 100`;
 
     return NextResponse.json({ listings: rows });
   } catch (e) {

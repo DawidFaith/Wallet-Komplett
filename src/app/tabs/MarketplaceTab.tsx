@@ -24,6 +24,7 @@ interface Listing {
   image_url: string | null;
   nft_name: string | null;
   artist_name: string | null;
+  artist_picture: string | null;
   listed_at: string;
   status: string;
   attributes?: NftAttribute[] | null;
@@ -72,10 +73,22 @@ function artistColor(name: string) {
   return colors[h % colors.length];
 }
 
-function ArtistAvatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' }) {
-  const sz = size === 'sm' ? 'w-5 h-5 text-[8px]' : 'w-7 h-7 text-[10px]';
+function ArtistAvatar({ name, picture, size = 'md' }: {
+  name: string;
+  picture?: string | null;
+  size?: 'sm' | 'md' | 'lg';
+}) {
+  const dim = size === 'sm' ? 'w-5 h-5' : size === 'lg' ? 'w-14 h-14' : 'w-7 h-7';
+  const txt = size === 'sm' ? 'text-[8px]' : size === 'lg' ? 'text-base' : 'text-[10px]';
+  if (picture) {
+    return (
+      <div className={`${dim} rounded-full overflow-hidden shrink-0`}>
+        <Image src={picture} alt={name} width={56} height={56} className="w-full h-full object-cover" />
+      </div>
+    );
+  }
   return (
-    <div className={`${sz} ${artistColor(name)} rounded-full flex items-center justify-center font-black text-white shrink-0`}>
+    <div className={`${dim} ${txt} ${artistColor(name)} rounded-full flex items-center justify-center font-black text-white shrink-0`}>
       {name.slice(0, 2).toUpperCase()}
     </div>
   );
@@ -160,7 +173,7 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
       <div className="p-2.5 flex flex-col gap-2 flex-1">
         {/* Name + Artist */}
         <div className="flex items-start gap-1.5 min-w-0">
-          {artist && <ArtistAvatar name={artist} size="sm" />}
+          {artist && <ArtistAvatar name={artist} picture={listing.artist_picture} size="sm" />}
           <div className="min-w-0 flex-1">
             <p className={`font-black text-[11px] truncate leading-tight ${cfg.text}`}>
               {displayName}
@@ -835,16 +848,19 @@ export default function MarketplaceTab() {
     }
   };
 
-  // Künstler-Statistiken aus allen Listings (Raritätswörter als Künstler ignorieren)
+  // Künstler-Statistiken aus allen Listings (Raritätswörter ignorieren, Profilbild sammeln)
   const artistStats = (() => {
-    const map = new Map<string, number>();
+    const map = new Map<string, { count: number; picture: string | null }>();
     listings.forEach(l => {
       const a = l.artist_name;
       if (a && !RARITY_WORDS.has(a.toLowerCase())) {
-        map.set(a, (map.get(a) ?? 0) + 1);
+        const prev = map.get(a);
+        map.set(a, { count: (prev?.count ?? 0) + 1, picture: prev?.picture ?? l.artist_picture ?? null });
       }
     });
-    return [...map.entries()].sort((a, b) => b[1] - a[1]);
+    return [...map.entries()]
+      .map(([name, d]) => ({ name, count: d.count, picture: d.picture }))
+      .sort((a, b) => b.count - a.count);
   })();
 
   const baseListings    = view === 'browse' ? listings : myListings;
@@ -961,39 +977,47 @@ export default function MarketplaceTab() {
         {/* ── Artist-Filter ────────────────────────────────────────────────────── */}
         {view === 'browse' && artistStats.length > 0 && (
           <div className="px-4 mb-4">
-            <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
-              {/* "Alle" Chip */}
+            <p className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-600 mb-2">Künstler</p>
+            <div className="flex gap-4 overflow-x-auto scrollbar-none pb-2">
+              {/* "Alle" Avatar */}
               <button
                 onClick={() => setArtistFilter(null)}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-bold transition-all ${
-                  artistFilter === null
-                    ? 'border-white/30 bg-white/10 text-white'
-                    : 'border-white/[0.08] bg-white/[0.03] text-zinc-500 hover:text-zinc-300 hover:border-white/20'
-                }`}
+                className="flex flex-col items-center gap-1.5 shrink-0 w-[68px] group"
               >
-                <RiUserStarFill size={10} />
-                Alle Künstler
+                <div className={`w-14 h-14 rounded-full ring-2 transition-all group-hover:scale-105 flex items-center justify-center bg-white/[0.06] ${
+                  artistFilter === null
+                    ? 'ring-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.5)]'
+                    : 'ring-white/20'
+                }`}>
+                  <RiUserStarFill size={22} className={artistFilter === null ? 'text-amber-400' : 'text-zinc-500'} />
+                </div>
+                <p className="text-[10px] text-zinc-300 text-center leading-tight group-hover:text-white transition-colors">Alle</p>
+                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
+                  artistFilter === null ? 'bg-amber-500/30 text-amber-300' : 'bg-white/10 text-zinc-500'
+                }`}>{listings.length}</span>
               </button>
 
-              {artistStats.map(([name, count]) => {
+              {artistStats.map(({ name, count, picture }) => {
                 const isActive = artistFilter === name;
                 return (
                   <button
                     key={name}
                     onClick={() => setArtistFilter(isActive ? null : name)}
-                    className={`shrink-0 flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full border text-[10px] font-bold transition-all ${
-                      isActive
-                        ? 'border-violet-500/60 bg-violet-900/30 text-violet-200'
-                        : 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:border-white/20'
-                    }`}
+                    className="flex flex-col items-center gap-1.5 shrink-0 w-[68px] group"
                   >
-                    <ArtistAvatar name={name} size="sm" />
-                    <span className="truncate max-w-[80px]">{name}</span>
-                    <span className={`text-[8px] font-black rounded-full px-1 py-0.5 min-w-[16px] text-center ${
-                      isActive ? 'bg-violet-500/30 text-violet-200' : 'bg-white/10 text-zinc-500'
+                    <div className={`w-14 h-14 rounded-full ring-2 transition-all group-hover:scale-105 overflow-hidden ${
+                      isActive
+                        ? 'ring-amber-400 shadow-[0_0_14px_rgba(245,158,11,0.55)]'
+                        : 'ring-white/20'
                     }`}>
-                      {count}
-                    </span>
+                      <ArtistAvatar name={name} picture={picture} size="lg" />
+                    </div>
+                    <p className="text-[10px] text-zinc-300 text-center line-clamp-2 leading-tight w-full group-hover:text-white transition-colors">
+                      {name}
+                    </p>
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
+                      isActive ? 'bg-amber-500/30 text-amber-300' : 'bg-white/10 text-zinc-500'
+                    }`}>{count}</span>
                   </button>
                 );
               })}
