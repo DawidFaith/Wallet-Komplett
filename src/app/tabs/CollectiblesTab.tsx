@@ -524,6 +524,8 @@ function UpgradeModal({ collection, fromRarity, count, onClose, onUpgraded, wall
 
 // ─── Mint Confirm Modal ───────────────────────────────────────────────────────
 
+const MINT_SOL_COST = 0.003; // obere Schätzung für Rent + Tx-Fee
+
 function MintConfirmModal({ collection, rarity, walletAddress, onClose }: {
   collection: CollectibleCollection;
   rarity: CollectibleRarity;
@@ -531,8 +533,26 @@ function MintConfirmModal({ collection, rarity, walletAddress, onClose }: {
   onClose: (minted: boolean) => void;
 }) {
   const cfg = RARITY_CONFIG[rarity];
-  const [phase, setPhase] = useState<'confirm' | 'loading' | 'success' | 'error'>('confirm');
+  const [phase, setPhase]       = useState<'confirm' | 'loading' | 'success' | 'error'>('confirm');
   const [errorMsg, setErrorMsg] = useState('');
+  const [solBalance, setSolBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function loadSol() {
+      try {
+        const addrRes  = await fetch(`/api/solana/create-account?walletAddress=${walletAddress}`);
+        const addrData = await addrRes.json();
+        const solAddr: string | null = addrData.solanaAddress ?? null;
+        if (!solAddr) return;
+        const balRes  = await fetch(`/api/solana/balance?solanaAddress=${solAddr}`);
+        const balData = await balRes.json();
+        if (balData.solBalance != null) setSolBalance(Number(balData.solBalance));
+      } catch { /* Balance bleibt null → kein Fehler */ }
+    }
+    loadSol();
+  }, [walletAddress]);
+
+  const enoughSol = solBalance === null ? null : solBalance >= MINT_SOL_COST;
 
   const handleMint = async () => {
     setPhase('loading');
@@ -575,22 +595,56 @@ function MintConfirmModal({ collection, rarity, walletAddress, onClose }: {
           </div>
         </div>
 
-        {/* Kosten-Info */}
+        {/* Kosten-Info + SOL-Balance */}
         {phase === 'confirm' && (
           <div className="bg-white/[0.04] rounded-xl p-3 mb-4 space-y-1.5">
             <p className="text-[10px] font-black tracking-widest uppercase text-zinc-500 mb-2">Details</p>
-            <div className="flex justify-between text-xs">
-              <span className="text-zinc-400">Netzwerkgebühr (Solana Rent)</span>
-              <span className="text-white font-semibold">~0.002–0.003 SOL</span>
+
+            {/* SOL-Kosten prominent */}
+            <div className="flex justify-between items-center py-1">
+              <span className="text-zinc-400 text-xs">Benötigt (Solana Rent + Fee)</span>
+              <span className="text-white font-black text-sm">~0.002–0.003 SOL</span>
             </div>
+
+            {/* SOL-Balance des Users */}
+            <div className={`flex justify-between items-center py-1 rounded-lg px-2 -mx-2 ${
+              enoughSol === null ? '' : enoughSol ? 'bg-green-500/10' : 'bg-red-500/10'
+            }`}>
+              <span className="text-zinc-400 text-xs">Dein SOL-Guthaben</span>
+              {solBalance === null ? (
+                <span className="text-zinc-500 text-xs">Wird geladen…</span>
+              ) : (
+                <span className={`font-black text-sm flex items-center gap-1.5 ${enoughSol ? 'text-green-400' : 'text-red-400'}`}>
+                  {solBalance.toFixed(4)} SOL
+                  {enoughSol ? (
+                    <span className="text-[9px] bg-green-500/20 text-green-400 rounded-full px-1.5 py-0.5 font-bold">✓ genug</span>
+                  ) : (
+                    <span className="text-[9px] bg-red-500/20 text-red-400 rounded-full px-1.5 py-0.5 font-bold">✗ zu wenig</span>
+                  )}
+                </span>
+              )}
+            </div>
+
+            <div className="h-px bg-white/[0.06] my-1" />
+
             <div className="flex justify-between text-xs">
               <span className="text-zinc-400">Nach dem Minten</span>
               <span className="text-white font-semibold">In deiner Wallet</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-zinc-400">Handelbar auf</span>
-              <span className="text-white font-semibold">Magic Eden · Tensor</span>
+              <span className="text-zinc-400">Handelbar</span>
+              <span className="text-white font-semibold">D.FAITH Marktplatz</span>
             </div>
+          </div>
+        )}
+
+        {/* Warnung: zu wenig SOL */}
+        {phase === 'confirm' && enoughSol === false && (
+          <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4">
+            <span className="text-red-400 text-xs shrink-0 mt-0.5">⚠</span>
+            <p className="text-red-400 text-xs">
+              Du hast nicht genug SOL. Lade mindestens <strong>0.003 SOL</strong> in dein Solana-Wallet, um minten zu können.
+            </p>
           </div>
         )}
 
@@ -598,7 +652,7 @@ function MintConfirmModal({ collection, rarity, walletAddress, onClose }: {
         {phase === 'success' && (
           <div className="bg-green-900/30 border border-green-500/40 rounded-xl p-4 mb-4 text-center">
             <p className="text-green-400 font-black text-sm mb-1">NFT geminted!</p>
-            <p className="text-zinc-300 text-xs">Das NFT ist jetzt in deiner Solana-Wallet zu finden und auf Magic Eden / Tensor handelbar.</p>
+            <p className="text-zinc-300 text-xs">Das NFT ist jetzt in deiner Wallet und auf dem D.FAITH Marktplatz handelbar.</p>
           </div>
         )}
 
@@ -611,17 +665,19 @@ function MintConfirmModal({ collection, rarity, walletAddress, onClose }: {
 
         <button
           onClick={phase === 'success' || phase === 'error' ? () => onClose(phase === 'success') : handleMint}
-          disabled={phase === 'loading'}
+          disabled={phase === 'loading' || (phase === 'confirm' && enoughSol === false)}
           className={`w-full py-3.5 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 ${
-            phase === 'success' ? 'bg-green-500 text-black' :
-            phase === 'error'   ? 'bg-zinc-700 text-zinc-300' :
-            phase === 'loading' ? 'bg-purple-800/50 text-purple-300 cursor-not-allowed' :
+            phase === 'success'                         ? 'bg-green-500 text-black' :
+            phase === 'error'                           ? 'bg-zinc-700 text-zinc-300' :
+            phase === 'loading'                         ? 'bg-purple-800/50 text-purple-300 cursor-not-allowed' :
+            enoughSol === false                         ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' :
             'bg-purple-600 hover:bg-purple-500 text-white active:scale-95'
           }`}
         >
           {phase === 'loading' ? <><FaSync className="animate-spin" /> Wird geminted&hellip;</> :
            phase === 'success' ? <><FaCheck /> Schließen</> :
            phase === 'error'   ? 'Schließen' :
+           enoughSol === false ? 'Nicht genug SOL' :
            <><FaGem /> Jetzt minten</>}
         </button>
       </div>
