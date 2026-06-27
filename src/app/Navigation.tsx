@@ -137,7 +137,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
                 }`}
               >
                 <FaTshirt size={15} className={activeTab === "shop" ? "text-amber-400" : "text-zinc-400"} />
-                <span className="font-medium text-sm">Shop</span>
+                <span className="font-medium text-sm">Artist Shop</span>
               </button>
               <button
                 onClick={() => { navigateToTab("collectibles"); setOpen(false); }}
