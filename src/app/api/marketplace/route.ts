@@ -72,9 +72,11 @@ export async function GET(req: NextRequest) {
       nl.nft_collection_mint, nl.listed_at, nl.status, nl.attributes,
       COALESCE(
         CASE WHEN up.display_platform = 'youtube'   THEN yb.channel_thumbnail  ELSE NULL END,
+        CASE WHEN up.display_platform = 'clerk'     THEN up.clerk_image_url    ELSE NULL END,
         CASE WHEN up.display_platform = 'instagram' THEN up.instagram_picture  ELSE NULL END,
         CASE WHEN up.display_platform = 'tiktok'    THEN up.tiktok_picture     ELSE NULL END,
         CASE WHEN up.display_platform = 'facebook'  THEN up.facebook_picture   ELSE NULL END,
+        up.clerk_image_url,
         yb.channel_thumbnail,
         up.instagram_picture, up.tiktok_picture, up.facebook_picture
       )                                                                              AS artist_picture
