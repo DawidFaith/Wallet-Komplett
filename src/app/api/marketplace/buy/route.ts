@@ -153,16 +153,22 @@ export async function POST(req: NextRequest) {
       `;
     }
 
-    // Credit-Transaktionen loggen (Best-Effort, kein throw bei Fehler)
+    // Tabelle sicherstellen (außerhalb des Logging-Catch damit INSERTs sicher laufen)
+    await sql`CREATE TABLE IF NOT EXISTS credit_transactions (
+      id           UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+      from_wallet  TEXT          NOT NULL,
+      to_wallet    TEXT          NOT NULL,
+      amount       NUMERIC(20,2) NOT NULL,
+      type         TEXT          NOT NULL,
+      reference_id TEXT,
+      note         TEXT,
+      created_at   TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+    )`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_credit_tx_to   ON credit_transactions(to_wallet, created_at DESC)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_credit_tx_from ON credit_transactions(from_wallet, created_at DESC)`;
+
+    // Credit-Transaktionen loggen (Best-Effort – kein throw bei Fehler, aber Fehler sichtbar)
     try {
-      await sql`CREATE TABLE IF NOT EXISTS credit_transactions (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        from_wallet TEXT NOT NULL, to_wallet TEXT NOT NULL,
-        amount NUMERIC(20,2) NOT NULL, type TEXT NOT NULL,
-        reference_id TEXT, note TEXT,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )`;
-      await sql`CREATE INDEX IF NOT EXISTS idx_credit_tx_to ON credit_transactions(to_wallet, created_at DESC)`;
       const ref = listingId;
       await sql`INSERT INTO credit_transactions (from_wallet,to_wallet,amount,type,reference_id,note) VALUES
         (${buyerWallet.toLowerCase()},${sellerWallet},${sellerAmount},'seller_payment',${ref},${'Verkäufer-Zahlung für ' + (listing.collection_name ?? listing.mint_address)})`;
@@ -172,7 +178,9 @@ export async function POST(req: NextRequest) {
         await sql`INSERT INTO credit_transactions (from_wallet,to_wallet,amount,type,reference_id,note) VALUES
           (${buyerWallet.toLowerCase()},${artistWallet},${royaltyAmount},'royalty',${ref},${'Artist Royalty 5%'})`;
       }
-    } catch { /* Logging-Fehler darf Kauf nicht blockieren */ }
+    } catch (logErr) {
+      console.error('credit_transactions logging fehlgeschlagen:', logErr instanceof Error ? logErr.message : logErr);
+    }
 
     return NextResponse.json({
       success: true,

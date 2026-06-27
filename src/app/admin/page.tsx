@@ -1755,6 +1755,7 @@ function PlatformSection({ secret }: { secret: string }) {
 
   // ── Credits State ──────────────────────────────────────────────────────────
   const [creditsData, setCreditsData] = React.useState<{
+    treasuryWallet: string;
     platformCredits: number;
     stats: Array<{ type: string; count: number; total: number }>;
     allTransactions: Array<{ id: string; from_wallet: string; to_wallet: string; amount: string; type: string; note: string | null; created_at: string; from_name: string | null; to_name: string | null }>;
@@ -2059,11 +2060,11 @@ function PlatformSection({ secret }: { secret: string }) {
 
         {/* Transaktionsliste */}
         {(() => {
-          const allTx = creditsData?.allTransactions ?? [];
-          const treasuryWallet = creditsData?.allTransactions?.find(t => t.type === 'platform_fee')?.to_wallet ?? '';
-          const rows = creditsTab === 'history'
+          const allTx       = creditsData?.allTransactions ?? [];
+          const twallet     = creditsData?.treasuryWallet ?? '';
+          const rows        = creditsTab === 'history'
             ? allTx
-            : allTx.filter(t => t.to_wallet === treasuryWallet && t.type === 'platform_fee');
+            : allTx.filter(t => t.to_wallet === twallet && t.type === 'platform_fee');
           const typeLabel: Record<string, string> = {
             platform_fee:   '⚡ Plattformgebühr',
             royalty:        '🎵 Royalty',
