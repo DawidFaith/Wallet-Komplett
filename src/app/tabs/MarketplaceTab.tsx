@@ -837,6 +837,9 @@ export default function MarketplaceTab() {
   }, [walletAddress]);
 
   useEffect(() => { loadListings(); }, [loadListings]);
+  // Immer beim Mount laden damit der Badge-Zähler sofort stimmt
+  useEffect(() => { if (walletAddress) loadMyListings(); }, [walletAddress, loadMyListings]);
+  // Bei Tab-Wechsel zu "Meine Listings" aktualisieren
   useEffect(() => { if (view === 'my') loadMyListings(); }, [view, loadMyListings]);
 
   const handleCancel = async (listing: Listing) => {
