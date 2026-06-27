@@ -502,12 +502,21 @@ export async function scanCollectiblesByOwner(
  * Der Verkäufer-Keypair muss als Payer/Identity übergeben werden (er muss signieren).
  */
 export async function transferCollectibleAsset(
-  assetMint:           string,
-  collectionMint:      string,
-  sellerKeypair:       Keypair,
-  buyerSolanaAddress:  string,
+  assetMint:          string,
+  collectionMint:     string,
+  ownerKeypair:       Keypair,       // NFT-Besitzer (signiert die Transfer-Autorität)
+  buyerSolanaAddress: string,
+  feePayerKeypair?:   Keypair,       // zahlt Tx-Fees; Standard = ownerKeypair
 ): Promise<void> {
-  const umi        = getUmi(sellerKeypair);
+  // UMI mit Fee-Payer initialisieren (hat SOL für Fees)
+  const payer = feePayerKeypair ?? ownerKeypair;
+  const umi   = getUmi(payer);
+
+  // Falls separater Fee-Payer: Identity auf NFT-Besitzer setzen (Autorität für Transfer)
+  if (feePayerKeypair) {
+    umi.identity = createSignerFromKeypair(umi, fromWeb3JsKeypair(ownerKeypair));
+  }
+
   const asset      = await fetchAssetV1(umi, umiPubkey(assetMint));
   const collection = await fetchCollectionV1(umi, umiPubkey(collectionMint));
 

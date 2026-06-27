@@ -152,7 +152,8 @@ export async function POST(req: NextRequest) {
     const treasuryAddress = treasuryKeypair.publicKey.toBase58();
 
     try {
-      await transferCollectibleAsset(mintAddress, nftCollectionMint, sellerKeypair, treasuryAddress);
+      // Seller signiert (Autorität), Treasury zahlt Tx-Fees (hat SOL)
+      await transferCollectibleAsset(mintAddress, nftCollectionMint, sellerKeypair, treasuryAddress, treasuryKeypair);
     } catch (transferErr) {
       return NextResponse.json({
         error: `NFT-Escrow-Transfer fehlgeschlagen: ${transferErr instanceof Error ? transferErr.message : String(transferErr)}`,
