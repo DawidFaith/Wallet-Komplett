@@ -83,6 +83,8 @@ function ArtistAvatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' 
 
 // ─── Listing Card ─────────────────────────────────────────────────────────────
 
+const RARITY_WORDS = new Set(['common','uncommon','rare','epic','legendary','mythic']);
+
 function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
   listing: Listing;
   isSelf: boolean;
@@ -92,8 +94,17 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
 }) {
   const cfg = rc(listing.rarity);
 
-  const repBonus    = listing.attributes?.find(a => a.trait_type === 'Rep Bonus');
-  const creditBonus = listing.attributes?.find(a => a.trait_type === 'Credit Bonus');
+  // Titel: collection_name bevorzugen (enthält keine Rarität); nft_name als Fallback
+  const displayName = listing.collection_name ?? listing.nft_name ?? '—';
+
+  // artist_name nicht anzeigen wenn es ein Raritätswort ist (Bug: wurde manchmal falsch gesetzt)
+  const artist = listing.artist_name && !RARITY_WORDS.has(listing.artist_name.toLowerCase())
+    ? listing.artist_name : null;
+
+  // Flexible Attribut-Suche (Helius kann trait_type leicht abweichend benennen)
+  const attrs       = listing.attributes ?? [];
+  const repBonus    = attrs.find(a => a.trait_type.toLowerCase().includes('rep'));
+  const creditBonus = attrs.find(a => a.trait_type.toLowerCase().includes('credit'));
   const hasBoosts   = repBonus || creditBonus;
 
   return (
@@ -143,13 +154,13 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
       <div className="p-2.5 flex flex-col gap-2 flex-1">
         {/* Name + Artist */}
         <div className="flex items-start gap-1.5 min-w-0">
-          {listing.artist_name && <ArtistAvatar name={listing.artist_name} size="sm" />}
+          {artist && <ArtistAvatar name={artist} size="sm" />}
           <div className="min-w-0 flex-1">
             <p className={`font-black text-[11px] truncate leading-tight ${cfg.text}`}>
-              {listing.nft_name ?? listing.collection_name ?? '—'}
+              {displayName}
             </p>
-            {listing.artist_name && (
-              <p className="text-zinc-500 text-[9px] truncate leading-tight">{listing.artist_name}</p>
+            {artist && (
+              <p className="text-zinc-500 text-[9px] truncate leading-tight">{artist}</p>
             )}
           </div>
         </div>
@@ -818,11 +829,14 @@ export default function MarketplaceTab() {
     }
   };
 
-  // Künstler-Statistiken aus allen Listings
+  // Künstler-Statistiken aus allen Listings (Raritätswörter als Künstler ignorieren)
   const artistStats = (() => {
     const map = new Map<string, number>();
     listings.forEach(l => {
-      if (l.artist_name) map.set(l.artist_name, (map.get(l.artist_name) ?? 0) + 1);
+      const a = l.artist_name;
+      if (a && !RARITY_WORDS.has(a.toLowerCase())) {
+        map.set(a, (map.get(a) ?? 0) + 1);
+      }
     });
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
   })();
