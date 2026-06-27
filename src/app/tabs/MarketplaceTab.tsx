@@ -103,6 +103,10 @@ function ArtistAvatar({ name, picture, size = 'md' }: {
 
 const RARITY_WORDS = new Set(['common','uncommon','rare','epic','legendary','mythic']);
 
+function stripRarity(name: string): string {
+  return name.replace(/\s*[-–—]\s*(Common|Uncommon|Rare|Epic|Legendary|Mythic)$/i, '').trim();
+}
+
 function detectCategory(l: { attributes?: NftAttribute[] | null }): 'collectible' | 'song' {
   const attrs = l.attributes ?? [];
   if (attrs.some(a => a.trait_type === 'Type' && a.value === 'Music')) return 'song';
@@ -863,11 +867,11 @@ export default function MarketplaceTab() {
     }
   };
 
-  // Dynamische Kollektion-Chips (alle Collectibles)
+  // Dynamische Kollektion-Chips — Rarity-Suffix aus collection_name entfernen
   const collectionStats = (() => {
     const map = new Map<string, number>();
     listings.filter(l => detectCategory(l) === 'collectible').forEach(l => {
-      const n = l.collection_name;
+      const n = l.collection_name ? stripRarity(l.collection_name) : null;
       if (n) map.set(n, (map.get(n) ?? 0) + 1);
     });
     return [...map.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
@@ -891,7 +895,7 @@ export default function MarketplaceTab() {
   const visibleListings = (() => {
     let result = baseListings;
     if (categoryFilter !== 'all') result = result.filter(l => detectCategory(l) === categoryFilter);
-    if (collectionFilter)         result = result.filter(l => l.collection_name === collectionFilter);
+    if (collectionFilter)         result = result.filter(l => stripRarity(l.collection_name ?? '') === collectionFilter);
     if (artistFilter)             result = result.filter(l => l.artist_name === artistFilter);
     if (rarityFilter !== 'all')   result = result.filter(l => l.rarity === rarityFilter);
     return [...result].sort((a, b) => {
