@@ -3,9 +3,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
 import { GiCrystalShine } from 'react-icons/gi';
-import { FaTag, FaTimes, FaCheckCircle, FaExclamationTriangle, FaGem, FaPlus } from 'react-icons/fa';
+import { FaTag, FaTimes, FaCheckCircle, FaExclamationTriangle, FaGem, FaPlus, FaStar, FaCoins } from 'react-icons/fa';
 import { MdSell, MdStorefront } from 'react-icons/md';
 import { HiOutlineViewGrid } from 'react-icons/hi';
+import { RiUserStarFill } from 'react-icons/ri';
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
 
@@ -59,6 +60,27 @@ function rc(r: string | null | undefined) {
   return RARITY_CFG[(r?.toLowerCase() ?? 'common') as Rarity] ?? RARITY_CFG.common;
 }
 
+// ─── Artist Avatar ────────────────────────────────────────────────────────────
+
+function artistColor(name: string) {
+  const colors = [
+    'bg-violet-600','bg-blue-600','bg-cyan-600','bg-teal-600',
+    'bg-green-600','bg-amber-600','bg-orange-600','bg-rose-600',
+  ];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff;
+  return colors[h % colors.length];
+}
+
+function ArtistAvatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' }) {
+  const sz = size === 'sm' ? 'w-5 h-5 text-[8px]' : 'w-7 h-7 text-[10px]';
+  return (
+    <div className={`${sz} ${artistColor(name)} rounded-full flex items-center justify-center font-black text-white shrink-0`}>
+      {name.slice(0, 2).toUpperCase()}
+    </div>
+  );
+}
+
 // ─── Listing Card ─────────────────────────────────────────────────────────────
 
 function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
@@ -69,12 +91,17 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
   cancelLoading: boolean;
 }) {
   const cfg = rc(listing.rarity);
+
+  const repBonus    = listing.attributes?.find(a => a.trait_type === 'Rep Bonus');
+  const creditBonus = listing.attributes?.find(a => a.trait_type === 'Credit Bonus');
+  const hasBoosts   = repBonus || creditBonus;
+
   return (
     <div className={`relative flex flex-col rounded-2xl border ${cfg.border} ${cfg.bg} ${cfg.glow} overflow-hidden group transition-all duration-200 hover:scale-[1.02]`}>
       {/* Badge: own listing */}
       {isSelf && (
         <div className="absolute top-2 left-2 z-10 text-[9px] font-black uppercase tracking-wider bg-amber-500/90 text-black rounded-full px-2 py-0.5">
-          Dein Listing
+          Dein
         </div>
       )}
       {/* Rarity badge */}
@@ -91,58 +118,88 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
             <GiCrystalShine className={`${cfg.text} opacity-30`} size={40} />
           </div>
         )}
-        <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent`} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+
+        {/* Boost-Overlay auf dem Bild unten */}
+        {hasBoosts && (
+          <div className="absolute bottom-0 left-0 right-0 px-2 pb-2 flex gap-1.5">
+            {repBonus && (
+              <div className="flex items-center gap-1 bg-violet-900/80 border border-violet-500/50 rounded-lg px-1.5 py-0.5 backdrop-blur-sm">
+                <FaStar size={7} className="text-violet-300 shrink-0" />
+                <span className="text-violet-200 text-[9px] font-black leading-none">{repBonus.value}</span>
+              </div>
+            )}
+            {creditBonus && (
+              <div className="flex items-center gap-1 bg-amber-900/80 border border-amber-500/50 rounded-lg px-1.5 py-0.5 backdrop-blur-sm">
+                <FaCoins size={7} className="text-amber-300 shrink-0" />
+                <span className="text-amber-200 text-[9px] font-black leading-none">{creditBonus.value}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Info */}
-      <div className="p-3 flex flex-col gap-2 flex-1">
-        <div className="min-w-0">
-          <p className={`font-black text-sm truncate ${cfg.text}`}>
-            {listing.collection_name ?? listing.nft_name ?? '—'}
-          </p>
-          {listing.artist_name && (
-            <p className="text-zinc-500 text-[10px] truncate mt-0.5">von {listing.artist_name}</p>
-          )}
+      <div className="p-2.5 flex flex-col gap-2 flex-1">
+        {/* Name + Artist */}
+        <div className="flex items-start gap-1.5 min-w-0">
+          {listing.artist_name && <ArtistAvatar name={listing.artist_name} size="sm" />}
+          <div className="min-w-0 flex-1">
+            <p className={`font-black text-[11px] truncate leading-tight ${cfg.text}`}>
+              {listing.nft_name ?? listing.collection_name ?? '—'}
+            </p>
+            {listing.artist_name && (
+              <p className="text-zinc-500 text-[9px] truncate leading-tight">{listing.artist_name}</p>
+            )}
+          </div>
         </div>
 
-        {/* Attribute / Boost-Badges */}
-        {listing.attributes && listing.attributes.length > 0 && (() => {
-          const boosts = listing.attributes!.filter(a =>
-            ['Rep Bonus', 'Credit Bonus', 'Shard Bonus', 'Bonus'].some(k => a.trait_type.includes(k))
-          );
-          return boosts.length > 0 ? (
-            <div className="flex flex-wrap gap-1">
-              {boosts.map(a => (
-                <span key={a.trait_type} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${cfg.border} ${cfg.bg} ${cfg.text}`}>
-                  {a.trait_type.replace(' Bonus', '')} {a.value}
-                </span>
-              ))}
-            </div>
-          ) : null;
-        })()}
+        {/* Boost-Details Block */}
+        {hasBoosts && (
+          <div className="bg-black/30 border border-white/[0.06] rounded-xl p-2 flex flex-col gap-1">
+            {repBonus && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <FaStar size={8} className="text-violet-400" />
+                  <span className="text-zinc-400 text-[9px]">Rep Bonus</span>
+                </div>
+                <span className="text-violet-300 font-black text-[10px]">{repBonus.value}</span>
+              </div>
+            )}
+            {creditBonus && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <FaCoins size={8} className="text-amber-400" />
+                  <span className="text-zinc-400 text-[9px]">Credit Bonus</span>
+                </div>
+                <span className="text-amber-300 font-black text-[10px]">{creditBonus.value}</span>
+              </div>
+            )}
+          </div>
+        )}
 
-        <div className="flex items-center justify-between mt-auto pt-2 border-t border-white/[0.06]">
-          <div className="flex flex-col">
-            <span className="text-[9px] text-zinc-500 uppercase tracking-wider">Preis</span>
+        {/* Preis + Aktion */}
+        <div className="flex items-center justify-between mt-auto pt-1.5 border-t border-white/[0.06]">
+          <div>
             <span className={`font-black text-sm ${cfg.text} flex items-center gap-1`}>
-              <FaTag size={9} />
+              <FaTag size={8} />
               {Number(listing.price_dfaith).toLocaleString('de-DE')}
             </span>
-            <span className="text-[9px] text-zinc-500">D.FAITH</span>
+            <span className="text-[9px] text-zinc-600">D.FAITH</span>
           </div>
 
           {isSelf ? (
             <button
               onClick={() => onCancel(listing)}
               disabled={cancelLoading}
-              className="text-[11px] bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl px-3 py-1.5 transition-colors disabled:opacity-50 font-semibold"
+              className="text-[10px] bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl px-2.5 py-1 transition-colors disabled:opacity-50 font-semibold"
             >
-              {cancelLoading ? '…' : 'Stornieren'}
+              {cancelLoading ? '…' : 'Storno'}
             </button>
           ) : (
             <button
               onClick={() => onBuy(listing)}
-              className={`text-[11px] font-bold rounded-xl px-3 py-1.5 transition-all border ${cfg.border} ${cfg.bg} ${cfg.text} hover:brightness-125 active:scale-95`}
+              className={`text-[10px] font-bold rounded-xl px-2.5 py-1 transition-all border ${cfg.border} ${cfg.bg} ${cfg.text} hover:brightness-125 active:scale-95`}
             >
               Kaufen
             </button>
@@ -709,6 +766,7 @@ export default function MarketplaceTab() {
   const [loading, setLoading]         = useState(true);
   const [balance, setBalance]         = useState(0);
   const [rarityFilter, setRarityFilter] = useState<string>('all');
+  const [artistFilter, setArtistFilter] = useState<string | null>(null);
   const [buyTarget, setBuyTarget]     = useState<Listing | null>(null);
   const [showSell, setShowSell]       = useState(false);
   const [showDeposit, setShowDeposit] = useState(false);
@@ -760,7 +818,19 @@ export default function MarketplaceTab() {
     }
   };
 
-  const visibleListings = view === 'browse' ? listings : myListings;
+  // Künstler-Statistiken aus allen Listings
+  const artistStats = (() => {
+    const map = new Map<string, number>();
+    listings.forEach(l => {
+      if (l.artist_name) map.set(l.artist_name, (map.get(l.artist_name) ?? 0) + 1);
+    });
+    return [...map.entries()].sort((a, b) => b[1] - a[1]);
+  })();
+
+  const baseListings    = view === 'browse' ? listings : myListings;
+  const visibleListings = artistFilter
+    ? baseListings.filter(l => l.artist_name === artistFilter)
+    : baseListings;
 
   return (
     <div className="w-full flex flex-col min-h-screen bg-[#0e0c0a] text-white pb-24">
@@ -843,7 +913,7 @@ export default function MarketplaceTab() {
 
         {/* ── Rarity-Filter ───────────────────────────────────────────────────── */}
         {view === 'browse' && (
-          <div className="px-4 mb-4">
+          <div className="px-4 mb-3">
             <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-1">
               {(['all', ...RARITY_ORDER] as const).map((r) => {
                 const c = r !== 'all' ? RARITY_CFG[r as Rarity] : null;
@@ -861,6 +931,49 @@ export default function MarketplaceTab() {
                     }`}
                   >
                     {r === 'all' ? 'Alle' : RARITY_CFG[r as Rarity].label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Artist-Filter ────────────────────────────────────────────────────── */}
+        {view === 'browse' && artistStats.length > 0 && (
+          <div className="px-4 mb-4">
+            <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+              {/* "Alle" Chip */}
+              <button
+                onClick={() => setArtistFilter(null)}
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-bold transition-all ${
+                  artistFilter === null
+                    ? 'border-white/30 bg-white/10 text-white'
+                    : 'border-white/[0.08] bg-white/[0.03] text-zinc-500 hover:text-zinc-300 hover:border-white/20'
+                }`}
+              >
+                <RiUserStarFill size={10} />
+                Alle Künstler
+              </button>
+
+              {artistStats.map(([name, count]) => {
+                const isActive = artistFilter === name;
+                return (
+                  <button
+                    key={name}
+                    onClick={() => setArtistFilter(isActive ? null : name)}
+                    className={`shrink-0 flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full border text-[10px] font-bold transition-all ${
+                      isActive
+                        ? 'border-violet-500/60 bg-violet-900/30 text-violet-200'
+                        : 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:border-white/20'
+                    }`}
+                  >
+                    <ArtistAvatar name={name} size="sm" />
+                    <span className="truncate max-w-[80px]">{name}</span>
+                    <span className={`text-[8px] font-black rounded-full px-1 py-0.5 min-w-[16px] text-center ${
+                      isActive ? 'bg-violet-500/30 text-violet-200' : 'bg-white/10 text-zinc-500'
+                    }`}>
+                      {count}
+                    </span>
                   </button>
                 );
               })}
