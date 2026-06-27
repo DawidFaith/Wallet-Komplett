@@ -58,14 +58,23 @@ export async function GET(req: NextRequest) {
     const sql = getDb();
     await ensureTable(sql);
 
-    const artistPictureSql = sql`COALESCE(up.instagram_picture, up.tiktok_picture, up.facebook_picture)`;
+    // Explizite Spaltenauswahl damit artist_name + artist_picture aus JOIN kommen
+    // (bestehende Listings haben artist_name = NULL weil p.name statt p.display_name verwendet wurde)
+    const cols = sql`
+      nl.id, nl.mint_address, nl.seller_wallet, nl.price_dfaith,
+      nl.collection_id, nl.collection_name, nl.rarity, nl.image_url, nl.nft_name,
+      COALESCE(up.display_name, nl.artist_name)                                     AS artist_name,
+      nl.nft_collection_mint, nl.listed_at, nl.status, nl.attributes,
+      COALESCE(up.instagram_picture, up.tiktok_picture, up.facebook_picture)        AS artist_picture
+    `;
+    const joins = sql`
+      LEFT JOIN collectible_collections cc ON cc.nft_collection_mint = nl.nft_collection_mint
+      LEFT JOIN user_profiles up           ON LOWER(up.wallet_address) = cc.artist_wallet
+    `;
 
     if (seller) {
       const rows = await sql`
-        SELECT nl.*, ${artistPictureSql} AS artist_picture
-        FROM nft_listings nl
-        LEFT JOIN collectible_collections cc ON cc.nft_collection_mint = nl.nft_collection_mint
-        LEFT JOIN user_profiles up ON LOWER(up.wallet_address) = cc.artist_wallet
+        SELECT ${cols} FROM nft_listings nl ${joins}
         WHERE nl.seller_wallet = ${seller.toLowerCase()} AND nl.status = 'active'
         ORDER BY nl.listed_at DESC
       `;
@@ -73,34 +82,18 @@ export async function GET(req: NextRequest) {
     }
 
     const rows = rarity && collectionId
-      ? await sql`
-          SELECT nl.*, ${artistPictureSql} AS artist_picture
-          FROM nft_listings nl
-          LEFT JOIN collectible_collections cc ON cc.nft_collection_mint = nl.nft_collection_mint
-          LEFT JOIN user_profiles up ON LOWER(up.wallet_address) = cc.artist_wallet
+      ? await sql`SELECT ${cols} FROM nft_listings nl ${joins}
           WHERE nl.status = 'active' AND nl.rarity = ${rarity} AND nl.collection_id = ${collectionId}
           ORDER BY nl.price_dfaith ASC, nl.listed_at DESC`
       : rarity
-      ? await sql`
-          SELECT nl.*, ${artistPictureSql} AS artist_picture
-          FROM nft_listings nl
-          LEFT JOIN collectible_collections cc ON cc.nft_collection_mint = nl.nft_collection_mint
-          LEFT JOIN user_profiles up ON LOWER(up.wallet_address) = cc.artist_wallet
+      ? await sql`SELECT ${cols} FROM nft_listings nl ${joins}
           WHERE nl.status = 'active' AND nl.rarity = ${rarity}
           ORDER BY nl.price_dfaith ASC, nl.listed_at DESC`
       : collectionId
-      ? await sql`
-          SELECT nl.*, ${artistPictureSql} AS artist_picture
-          FROM nft_listings nl
-          LEFT JOIN collectible_collections cc ON cc.nft_collection_mint = nl.nft_collection_mint
-          LEFT JOIN user_profiles up ON LOWER(up.wallet_address) = cc.artist_wallet
+      ? await sql`SELECT ${cols} FROM nft_listings nl ${joins}
           WHERE nl.status = 'active' AND nl.collection_id = ${collectionId}
           ORDER BY nl.price_dfaith ASC, nl.listed_at DESC`
-      : await sql`
-          SELECT nl.*, ${artistPictureSql} AS artist_picture
-          FROM nft_listings nl
-          LEFT JOIN collectible_collections cc ON cc.nft_collection_mint = nl.nft_collection_mint
-          LEFT JOIN user_profiles up ON LOWER(up.wallet_address) = cc.artist_wallet
+      : await sql`SELECT ${cols} FROM nft_listings nl ${joins}
           WHERE nl.status = 'active'
           ORDER BY nl.price_dfaith ASC, nl.listed_at DESC
           LIMIT 100`;

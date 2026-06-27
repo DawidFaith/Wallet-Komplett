@@ -369,7 +369,7 @@ export async function getUserCollectibles(walletAddress: string): Promise<UserCo
            cc.image_url          AS collection_image_url,
            cc.nft_collection_mint,
            cc.artist_wallet,
-           p.name                AS artist_name
+           p.display_name        AS artist_name
     FROM user_collectibles uc
     JOIN collectible_collections cc ON cc.id = uc.collection_id
     LEFT JOIN user_profiles p ON LOWER(p.wallet_address) = LOWER(cc.artist_wallet)
