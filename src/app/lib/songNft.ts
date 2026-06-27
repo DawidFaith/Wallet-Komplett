@@ -33,7 +33,7 @@ import {
 import bs58 from 'bs58';
 import { getTreasuryKeypair } from './solanaOperator';
 import { decryptKey } from './solanaCrypto';
-import { fetchAndUploadToArweave, uploadToArweave } from './arweaveUpload';
+import { fetchAndUploadToArweave, uploadToArweave, waitForArweaveAvailability } from './arweaveUpload';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
@@ -84,6 +84,13 @@ export async function mintSongMasterEdition(params: {
   const toHttps = (url: string) => url.startsWith('ar://') ? `https://arweave.net/${url.slice(5)}` : url;
   const coverHttps = toHttps(arweaveCover);
   const audioHttps = toHttps(arweaveAudio);
+
+  // Warten bis Bild + Audio wirklich vom Gateway ausgeliefert werden bevor Metadata gebaut wird
+  // (ohne das würde der Mint mit pending-URLs durchlaufen → "page not found" beim Öffnen)
+  await Promise.all([
+    waitForArweaveAvailability(arweaveCover, { maxWaitMs: 120_000, expectContentType: 'image' }),
+    waitForArweaveAvailability(arweaveAudio, { maxWaitMs: 120_000, expectContentType: 'audio' }),
+  ]);
 
   // Metadata JSON auf Arweave
   const metadata = {
