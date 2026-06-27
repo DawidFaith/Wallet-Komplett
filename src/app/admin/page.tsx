@@ -1753,6 +1753,24 @@ function PlatformSection({ secret }: { secret: string }) {
   const [questsLoading, setQuestsLoading] = React.useState(false);
   const [questMsg, setQuestMsg] = React.useState('');
 
+  // ── Credits State ──────────────────────────────────────────────────────────
+  const [creditsData, setCreditsData] = React.useState<{
+    platformCredits: number;
+    stats: Array<{ type: string; count: number; total: number }>;
+    allTransactions: Array<{ id: string; from_wallet: string; to_wallet: string; amount: string; type: string; note: string | null; created_at: string; from_name: string | null; to_name: string | null }>;
+  } | null>(null);
+  const [creditsLoading, setCreditsLoading] = React.useState(false);
+  const [creditsTab, setCreditsTab] = React.useState<'overview' | 'history'>('overview');
+
+  const loadCredits = React.useCallback(async () => {
+    setCreditsLoading(true);
+    try {
+      const res  = await fetch('/api/admin/platform-credits', { headers: { 'x-admin-secret': secret } });
+      const data = await res.json();
+      if (res.ok) setCreditsData(data);
+    } catch { } finally { setCreditsLoading(false); }
+  }, [secret]);
+
   // ── Bild-Upload State ──────────────────────────────────────────────────────
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [imageFile, setImageFile] = React.useState<File | null>(null);
@@ -1778,7 +1796,7 @@ function PlatformSection({ secret }: { secret: string }) {
     } catch { setQuests([]); }
   }, [secret]);
 
-  React.useEffect(() => { loadStatus(); loadQuests(); }, [loadStatus, loadQuests]);
+  React.useEffect(() => { loadStatus(); loadQuests(); loadCredits(); }, [loadStatus, loadQuests, loadCredits]);
 
   // ── Bild-Upload Handler ────────────────────────────────────────────────────
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1986,6 +2004,94 @@ function PlatformSection({ secret }: { secret: string }) {
         ) : (
           <p className="text-zinc-600 text-sm text-center py-4">Noch keine Platform-Quests vorhanden.</p>
         )}
+      </div>
+
+      {/* ── Platform Credits Übersicht ───────────────────────────────────────── */}
+      <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-white">💰 Platform Credits</h2>
+          <button onClick={loadCredits} disabled={creditsLoading}
+            className="text-zinc-500 hover:text-white text-xs flex items-center gap-1 transition-colors disabled:opacity-40">
+            <span className={creditsLoading ? 'animate-spin inline-block' : ''}>↻</span> Refresh
+          </button>
+        </div>
+
+        {/* Gesamt-Balance */}
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-4">
+          <p className="text-xs text-zinc-500 mb-1">Platform-Credits (Treasury)</p>
+          <p className="text-amber-300 font-black text-3xl">
+            {creditsLoading ? '…' : (creditsData?.platformCredits ?? 0).toLocaleString('de-DE', { maximumFractionDigits: 2 })}
+          </p>
+          <p className="text-zinc-500 text-xs mt-1">D.FAITH Credits</p>
+        </div>
+
+        {/* Stats nach Typ */}
+        {creditsData?.stats && creditsData.stats.length > 0 && (
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            {creditsData.stats.map(s => {
+              const labels: Record<string, string> = {
+                platform_fee:     '⚡ Plattformgebühr',
+                royalty:          '🎵 Royalties',
+                seller_payment:   '💸 Verkäuferzahlungen',
+                token_deposit:    '🔄 Token-Deposits',
+                quest_reward:     '🎯 Quest-Rewards',
+              };
+              return (
+                <div key={s.type} className="bg-zinc-800 rounded-xl p-3">
+                  <p className="text-zinc-400 text-xs mb-1">{labels[s.type] ?? s.type}</p>
+                  <p className="text-white font-bold text-sm">{Number(s.total).toLocaleString('de-DE', { maximumFractionDigits: 2 })}</p>
+                  <p className="text-zinc-600 text-xs">{s.count}× Transaktionen</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div className="flex gap-1 bg-zinc-800 rounded-xl p-1 mb-3">
+          {(['overview', 'history'] as const).map(t => (
+            <button key={t} onClick={() => setCreditsTab(t)}
+              className={`flex-1 text-xs font-bold py-1.5 rounded-lg transition-all ${creditsTab === t ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
+              {t === 'overview' ? 'Platform-Eingang' : 'Alle Transaktionen'}
+            </button>
+          ))}
+        </div>
+
+        {/* Transaktionsliste */}
+        <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
+          {creditsLoading ? (
+            <p className="text-zinc-600 text-sm text-center py-4">Lade…</p>
+          ) : (creditsTab === 'overview' ? creditsData?.allTransactions?.filter(t => t.to_wallet === creditsData?.allTransactions?.[0]?.to_wallet) : creditsData?.allTransactions ?? []).length === 0 ? (
+            <p className="text-zinc-600 text-sm text-center py-4">Noch keine Transaktionen</p>
+          ) : (creditsTab === 'history' ? creditsData?.allTransactions ?? [] : creditsData?.allTransactions?.filter(t => {
+              const treasuryLower = creditsData.allTransactions?.[0]?.to_wallet;
+              return t.to_wallet === treasuryLower && t.type === 'platform_fee';
+            }) ?? []).map(tx => {
+            const typeLabel: Record<string, string> = {
+              platform_fee:   '⚡ Plattformgebühr',
+              royalty:        '🎵 Royalty',
+              seller_payment: '💸 Verkauf',
+              token_deposit:  '🔄 Deposit',
+              quest_reward:   '🎯 Quest',
+            };
+            return (
+              <div key={tx.id} className="flex items-center justify-between bg-zinc-800/60 rounded-xl px-3 py-2 gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-white text-xs font-semibold truncate">{typeLabel[tx.type] ?? tx.type}</p>
+                  <p className="text-zinc-500 text-[10px] truncate">
+                    {tx.from_name ?? tx.from_wallet.slice(0, 12) + '…'}
+                    {creditsTab === 'history' && ` → ${tx.to_name ?? tx.to_wallet.slice(0, 12) + '…'}`}
+                  </p>
+                  {tx.note && <p className="text-zinc-600 text-[9px] truncate">{tx.note}</p>}
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-amber-300 font-black text-sm">+{Number(tx.amount).toLocaleString('de-DE', { maximumFractionDigits: 2 })}</p>
+                  <p className="text-zinc-600 text-[9px]">{new Date(tx.created_at).toLocaleDateString('de-DE')}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

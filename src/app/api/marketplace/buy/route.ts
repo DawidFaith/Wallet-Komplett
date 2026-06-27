@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
       throw new Error(`NFT-Transfer fehlgeschlagen: ${transferErr instanceof Error ? transferErr.message : String(transferErr)}`);
     }
 
-    // 8. DB aktualisieren
+    // 8. DB aktualisieren + Transaktionen loggen
     await sql`UPDATE nft_listings SET status = 'sold' WHERE id = ${listingId}`;
     if (hasDbEntry) {
       await sql`
@@ -152,6 +152,27 @@ export async function POST(req: NextRequest) {
           AND nft_mint_address = ${listing.mint_address as string}
       `;
     }
+
+    // Credit-Transaktionen loggen (Best-Effort, kein throw bei Fehler)
+    try {
+      await sql`CREATE TABLE IF NOT EXISTS credit_transactions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        from_wallet TEXT NOT NULL, to_wallet TEXT NOT NULL,
+        amount NUMERIC(20,2) NOT NULL, type TEXT NOT NULL,
+        reference_id TEXT, note TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_credit_tx_to ON credit_transactions(to_wallet, created_at DESC)`;
+      const ref = listingId;
+      await sql`INSERT INTO credit_transactions (from_wallet,to_wallet,amount,type,reference_id,note) VALUES
+        (${buyerWallet.toLowerCase()},${sellerWallet},${sellerAmount},'seller_payment',${ref},${'Verkäufer-Zahlung für ' + (listing.collection_name ?? listing.mint_address)})`;
+      await sql`INSERT INTO credit_transactions (from_wallet,to_wallet,amount,type,reference_id,note) VALUES
+        (${buyerWallet.toLowerCase()},${treasuryWallet},${platformAmount},'platform_fee',${ref},${'Plattformgebühr 2.5%'})`;
+      if (!isFirstSale && artistWallet && royaltyAmount > 0) {
+        await sql`INSERT INTO credit_transactions (from_wallet,to_wallet,amount,type,reference_id,note) VALUES
+          (${buyerWallet.toLowerCase()},${artistWallet},${royaltyAmount},'royalty',${ref},${'Artist Royalty 5%'})`;
+      }
+    } catch { /* Logging-Fehler darf Kauf nicht blockieren */ }
 
     return NextResponse.json({
       success: true,

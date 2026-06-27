@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
 import { GiCrystalShine } from 'react-icons/gi';
-import { FaTag, FaTimes, FaCheckCircle, FaExclamationTriangle, FaGem, FaSearch } from 'react-icons/fa';
+import { FaTag, FaTimes, FaCheckCircle, FaExclamationTriangle, FaGem, FaPlus } from 'react-icons/fa';
 import { MdSell, MdStorefront } from 'react-icons/md';
 import { HiOutlineViewGrid } from 'react-icons/hi';
 
@@ -291,6 +291,163 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
   );
 }
 
+// ─── Aufladen-Modal ───────────────────────────────────────────────────────────
+
+function DepositModal({ walletAddress, onClose, onSuccess }: {
+  walletAddress: string;
+  onClose: () => void;
+  onSuccess: (amount: number) => void;
+}) {
+  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+  const [loading, setLoading]           = useState(true);
+  const [amount, setAmount]             = useState('');
+  const [depositing, setDepositing]     = useState(false);
+  const [error, setError]               = useState('');
+  const [done, setDone]                 = useState(false);
+
+  useEffect(() => {
+    async function loadBalance() {
+      try {
+        const addrRes  = await fetch(`/api/solana/create-account?walletAddress=${walletAddress}`);
+        const addrData = await addrRes.json();
+        const solAddr: string | null = addrData.solanaAddress ?? null;
+        if (!solAddr) { setLoading(false); return; }
+        const balRes  = await fetch(`/api/solana/balance?solanaAddress=${solAddr}`);
+        const balData = await balRes.json();
+        setTokenBalance(Number(balData.dfaithBalance ?? 0));
+      } catch { setTokenBalance(0); }
+      finally { setLoading(false); }
+    }
+    loadBalance();
+  }, [walletAddress]);
+
+  const handleDeposit = async () => {
+    const amt = Number(amount);
+    if (!amt || amt <= 0) return;
+    if (tokenBalance !== null && amt > tokenBalance) {
+      setError(`Nicht genug Tokens — verfügbar: ${tokenBalance.toFixed(2)}`);
+      return;
+    }
+    setDepositing(true);
+    setError('');
+    try {
+      const res  = await fetch('/api/marketplace/deposit-tokens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress, amount: amt }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Fehler');
+      setDone(true);
+      setTimeout(() => { onSuccess(amt); onClose(); }, 2000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setDepositing(false);
+    }
+  };
+
+  const max = tokenBalance ?? 0;
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:pb-0">
+      <div className="bg-[#161410] border border-white/[0.08] rounded-2xl p-5 w-full max-w-sm shadow-2xl">
+        <div className="flex justify-between items-center mb-5">
+          <h3 className="font-black text-white text-base flex items-center gap-2">
+            <FaPlus className="text-amber-400" size={14} />
+            Credits aufladen
+          </h3>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
+            <FaTimes size={14} />
+          </button>
+        </div>
+
+        <div className="bg-white/[0.04] border border-white/[0.07] rounded-xl p-4 mb-4 space-y-2">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-3">Wie funktioniert es?</p>
+          <div className="flex items-start gap-2 text-xs text-zinc-400">
+            <span className="text-amber-400 font-black shrink-0">1.</span>
+            <span>Du sendest D.FAITH-Token aus deinem Platform-Wallet ins Treasury</span>
+          </div>
+          <div className="flex items-start gap-2 text-xs text-zinc-400">
+            <span className="text-amber-400 font-black shrink-0">2.</span>
+            <span>Die Plattform schreibt dir den Gegenwert als Credits gut</span>
+          </div>
+          <div className="flex items-start gap-2 text-xs text-zinc-400">
+            <span className="text-amber-400 font-black shrink-0">3.</span>
+            <span>Mit Credits kannst du NFTs auf dem Marktplatz kaufen</span>
+          </div>
+        </div>
+
+        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 mb-4">
+          <div className="flex justify-between items-center">
+            <span className="text-zinc-500 text-xs">Verfügbare Tokens</span>
+            {loading ? (
+              <span className="text-zinc-600 text-xs">Wird geladen…</span>
+            ) : (
+              <span className="text-amber-300 font-black text-sm">{max.toLocaleString('de-DE', { maximumFractionDigits: 2 })} DFAITH</span>
+            )}
+          </div>
+        </div>
+
+        {done ? (
+          <div className="flex items-center gap-2 justify-center bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-green-400 text-sm font-semibold">
+            <FaCheckCircle size={14} /> Credits erfolgreich aufgeladen!
+          </div>
+        ) : (
+          <>
+            <div className="mb-4">
+              <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest block mb-2">Betrag in D.FAITH</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  max={max}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="z.B. 100"
+                  className="flex-1 bg-white/[0.04] border border-white/[0.08] focus:border-amber-500/60 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none transition-colors"
+                />
+                <button
+                  onClick={() => setAmount(String(Math.floor(max)))}
+                  disabled={max <= 0}
+                  className="shrink-0 text-xs text-amber-400 hover:text-amber-300 border border-amber-500/30 rounded-xl px-3 transition-colors disabled:opacity-30"
+                >
+                  MAX
+                </button>
+              </div>
+              {amount && Number(amount) > 0 && (
+                <p className="text-zinc-500 text-[10px] mt-1.5">
+                  = <span className="text-amber-400 font-bold">{Number(amount).toLocaleString('de-DE')} D.FAITH Credits</span>
+                </p>
+              )}
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-xs mb-4">
+                <FaExclamationTriangle size={10} className="shrink-0" />
+                {error}
+              </div>
+            )}
+
+            <button
+              onClick={handleDeposit}
+              disabled={depositing || !amount || Number(amount) <= 0 || loading}
+              className="w-full bg-amber-500 hover:bg-amber-400 active:bg-amber-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-black font-black rounded-xl py-3 text-sm transition-all"
+            >
+              {depositing ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                  Wird aufgeladen…
+                </span>
+              ) : 'Tokens zu Credits umwandeln'}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Verkaufen-Modal ──────────────────────────────────────────────────────────
 
 function SellModal({ walletAddress, onClose, onSuccess }: {
@@ -551,10 +708,10 @@ export default function MarketplaceTab() {
   const [myListings, setMyListings]   = useState<Listing[]>([]);
   const [loading, setLoading]         = useState(true);
   const [balance, setBalance]         = useState(0);
-  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
   const [rarityFilter, setRarityFilter] = useState<string>('all');
   const [buyTarget, setBuyTarget]     = useState<Listing | null>(null);
   const [showSell, setShowSell]       = useState(false);
+  const [showDeposit, setShowDeposit] = useState(false);
   const [cancelLoading, setCancelLoading] = useState<string | null>(null);
 
   const loadListings = useCallback(async () => {
@@ -578,20 +735,6 @@ export default function MarketplaceTab() {
     }
   }, [rarityFilter, walletAddress]);
 
-  // D.FAITH Token-Balance on-chain laden
-  useEffect(() => {
-    if (!walletAddress) return;
-    fetch(`/api/solana/create-account?walletAddress=${walletAddress}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => {
-        const solAddr = d?.solanaAddress;
-        if (!solAddr) return;
-        return fetch(`/api/solana/balance?solanaAddress=${solAddr}`)
-          .then(r => r.ok ? r.json() : null)
-          .then(b => { if (b?.dfaithBalance != null) setTokenBalance(Number(b.dfaithBalance)); });
-      })
-      .catch(() => {});
-  }, [walletAddress]);
 
   const loadMyListings = useCallback(async () => {
     if (!walletAddress) return;
@@ -638,26 +781,18 @@ export default function MarketplaceTab() {
           {/* Balance-Karte */}
           {walletAddress && (
             <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 flex items-center justify-between gap-3">
-              <div className="flex gap-4">
-                <div>
+              <div className="flex gap-3 items-center flex-1 min-w-0">
+                <div className="min-w-0">
                   <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-0.5">Credits</p>
-                  <p className="text-amber-300 font-black text-base leading-none">
-                    {balance.toLocaleString('de-DE')}
-                  </p>
-                  <p className="text-zinc-500 text-[9px] mt-0.5">D.FAITH</p>
+                  <p className="text-amber-300 font-black text-xl leading-none">{balance.toLocaleString('de-DE')}</p>
+                  <p className="text-zinc-500 text-[9px] mt-0.5">D.FAITH Credits</p>
                 </div>
-                {tokenBalance !== null && (
-                  <>
-                    <div className="w-px bg-white/[0.08]" />
-                    <div>
-                      <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-0.5">Token</p>
-                      <p className="text-purple-300 font-black text-base leading-none">
-                        {tokenBalance.toLocaleString('de-DE', { maximumFractionDigits: 2 })}
-                      </p>
-                      <p className="text-zinc-500 text-[9px] mt-0.5">DFAITH</p>
-                    </div>
-                  </>
-                )}
+                <button
+                  onClick={() => setShowDeposit(true)}
+                  className="flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 font-bold rounded-xl px-3 py-2 text-xs transition-all shrink-0"
+                >
+                  <FaPlus size={9} /> Aufladen
+                </button>
               </div>
               <button
                 onClick={() => setShowSell(true)}
@@ -794,6 +929,18 @@ export default function MarketplaceTab() {
           walletAddress={walletAddress}
           onClose={() => setShowSell(false)}
           onSuccess={() => { setShowSell(false); loadListings(); loadMyListings(); }}
+        />
+      )}
+
+      {/* ── Aufladen-Modal ──────────────────────────────────────────────────────── */}
+      {showDeposit && (
+        <DepositModal
+          walletAddress={walletAddress}
+          onClose={() => setShowDeposit(false)}
+          onSuccess={(amt) => {
+            setBalance(prev => prev + amt);
+            setShowDeposit(false);
+          }}
         />
       )}
     </div>
