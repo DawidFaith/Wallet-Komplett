@@ -58,18 +58,31 @@ export async function GET(req: NextRequest) {
     const sql = getDb();
     await ensureTable(sql);
 
-    // Explizite Spaltenauswahl damit artist_name + artist_picture aus JOIN kommen
-    // (bestehende Listings haben artist_name = NULL weil p.name statt p.display_name verwendet wurde)
+    // Explizite Spaltenauswahl: artist_name + artist_picture via JOIN (gleiche Logik wie shop/inventory)
     const cols = sql`
       nl.id, nl.mint_address, nl.seller_wallet, nl.price_dfaith,
       nl.collection_id, nl.collection_name, nl.rarity, nl.image_url, nl.nft_name,
-      COALESCE(up.display_name, nl.artist_name)                                     AS artist_name,
+      COALESCE(
+        CASE WHEN up.display_platform = 'youtube'   THEN yb.channel_name     ELSE NULL END,
+        CASE WHEN up.display_platform = 'instagram' THEN up.instagram_name   ELSE NULL END,
+        CASE WHEN up.display_platform = 'tiktok'    THEN up.tiktok_name      ELSE NULL END,
+        CASE WHEN up.display_platform = 'facebook'  THEN up.facebook_name    ELSE NULL END,
+        up.display_name, nl.artist_name
+      )                                                                              AS artist_name,
       nl.nft_collection_mint, nl.listed_at, nl.status, nl.attributes,
-      COALESCE(up.instagram_picture, up.tiktok_picture, up.facebook_picture)        AS artist_picture
+      COALESCE(
+        CASE WHEN up.display_platform = 'youtube'   THEN yb.channel_thumbnail  ELSE NULL END,
+        CASE WHEN up.display_platform = 'instagram' THEN up.instagram_picture  ELSE NULL END,
+        CASE WHEN up.display_platform = 'tiktok'    THEN up.tiktok_picture     ELSE NULL END,
+        CASE WHEN up.display_platform = 'facebook'  THEN up.facebook_picture   ELSE NULL END,
+        yb.channel_thumbnail,
+        up.instagram_picture, up.tiktok_picture, up.facebook_picture
+      )                                                                              AS artist_picture
     `;
     const joins = sql`
       LEFT JOIN collectible_collections cc ON cc.nft_collection_mint = nl.nft_collection_mint
       LEFT JOIN user_profiles up           ON LOWER(up.wallet_address) = cc.artist_wallet
+      LEFT JOIN youtube_bindings yb        ON yb.wallet_address = up.wallet_address
     `;
 
     if (seller) {
