@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server';
 import { Connection, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
 import {
   getAssociatedTokenAddress, createAssociatedTokenAccountInstruction,
-  createTransferInstruction, getAccount,
+  createTransferInstruction, getAccount, getMint,
   TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
@@ -17,7 +17,6 @@ export const maxDuration = 60;
 
 const RPC_URL     = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN;
-const DECIMALS    = 6;
 
 export async function POST(req: Request) {
   try {
@@ -45,6 +44,10 @@ export async function POST(req: Request) {
     const mintPk     = new PublicKey(DFAITH_MINT);
     const connection = new Connection(RPC_URL, 'confirmed');
 
+    // Echte Dezimalstellen vom Mint laden (D.FAITH hat 2, nicht 6)
+    const mintInfo = await getMint(connection, mintPk);
+    const decimals = mintInfo.decimals;
+
     const fromAta = await getAssociatedTokenAddress(mintPk, treasury.publicKey, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
     const toAta   = await getAssociatedTokenAddress(mintPk, toPk,               false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
 
@@ -52,13 +55,13 @@ export async function POST(req: Request) {
     let treasuryBalance = 0;
     try {
       const fromAccount = await getAccount(connection, fromAta);
-      treasuryBalance   = Number(fromAccount.amount) / 10 ** DECIMALS;
+      treasuryBalance   = Number(fromAccount.amount) / 10 ** decimals;
     } catch {
       return NextResponse.json({ error: 'Treasury hat kein D.FAITH-Token-Konto — noch keine Tokens erhalten' }, { status: 400 });
     }
     if (treasuryBalance < amount) {
       return NextResponse.json({
-        error: `Treasury hat nicht genug D.FAITH. Verfügbar: ${treasuryBalance.toLocaleString('de-DE', { maximumFractionDigits: 2 })} — Angefordert: ${amount.toLocaleString('de-DE')}`,
+        error: `Treasury hat nicht genug D.FAITH. Verfügbar: ${treasuryBalance.toLocaleString('de-DE', { maximumFractionDigits: decimals })} — Angefordert: ${amount.toLocaleString('de-DE')}`,
       }, { status: 400 });
     }
 
@@ -74,7 +77,7 @@ export async function POST(req: Request) {
       ));
     }
 
-    const rawAmount = BigInt(Math.round(amount * 10 ** DECIMALS));
+    const rawAmount = BigInt(Math.round(amount * 10 ** decimals));
     tx.add(createTransferInstruction(fromAta, toAta, treasury.publicKey, rawAmount, [], TOKEN_PROGRAM_ID));
 
     const sig = await sendAndConfirmTransaction(connection, tx, [treasury]);

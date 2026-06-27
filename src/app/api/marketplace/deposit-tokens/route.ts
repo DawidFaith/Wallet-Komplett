@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Connection, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
 import {
   getAssociatedTokenAddress, createAssociatedTokenAccountInstruction,
-  createTransferInstruction, getAccount,
+  createTransferInstruction, getAccount, getMint,
   TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import { Keypair } from '@solana/web3.js';
@@ -25,7 +25,6 @@ export const maxDuration = 60;
 
 const RPC_URL     = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
-const DECIMALS    = 6;
 
 async function ensureTxTable(sql: ReturnType<typeof getDb>) {
   await sql`
@@ -76,6 +75,10 @@ export async function POST(req: NextRequest) {
     const mintPk      = new PublicKey(DFAITH_MINT);
     const connection  = new Connection(RPC_URL, 'confirmed');
 
+    // Echte Dezimalstellen vom Mint laden
+    const mintInfo = await getMint(connection, mintPk);
+    const decimals = mintInfo.decimals;
+
     // Token-Adressen bestimmen
     const fromAta = await getAssociatedTokenAddress(mintPk, userPk, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
     const toAta   = await getAssociatedTokenAddress(mintPk, treasury.publicKey, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
@@ -84,18 +87,18 @@ export async function POST(req: NextRequest) {
     let userTokenBalance = 0;
     try {
       const fromAccount = await getAccount(connection, fromAta);
-      userTokenBalance  = Number(fromAccount.amount) / 10 ** DECIMALS;
+      userTokenBalance  = Number(fromAccount.amount) / 10 ** decimals;
     } catch {
       return NextResponse.json({ error: 'Kein D.FAITH-Token-Konto gefunden — du hast keine Tokens' }, { status: 400 });
     }
     if (userTokenBalance < amount) {
       return NextResponse.json({
-        error: `Nicht genug Tokens. Verfügbar: ${userTokenBalance.toFixed(2)} DFAITH`,
+        error: `Nicht genug Tokens. Verfügbar: ${userTokenBalance.toFixed(decimals)} DFAITH`,
       }, { status: 400 });
     }
 
     // Transaktion bauen: Treasury zahlt Fees, User überträgt Tokens
-    const rawAmount = BigInt(Math.round(amount * 10 ** DECIMALS));
+    const rawAmount = BigInt(Math.round(amount * 10 ** decimals));
     const tx = new Transaction({ feePayer: treasury.publicKey });
 
     // Treasury-ATA erstellen falls nicht vorhanden
