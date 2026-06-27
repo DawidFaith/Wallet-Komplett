@@ -1198,6 +1198,55 @@ export default function MarketplaceTab() {
           </>
         )}
 
+        {/* ── Künstler-Avatare (Artist Shop) ──────────────────────────────────── */}
+        {view === 'browse' && categoryFilter === 'song' && artistStats.length > 0 && (
+          <div className="px-4 mb-4">
+            <div className="flex gap-4 overflow-x-auto scrollbar-none pb-2">
+              <button
+                onClick={() => setArtistFilter(null)}
+                className="flex flex-col items-center gap-1.5 shrink-0 w-[68px] group"
+              >
+                <div className={`rounded-full ring-2 transition-all group-hover:scale-105 ${
+                  artistFilter === null
+                    ? 'ring-rose-400 shadow-[0_0_12px_rgba(251,113,133,0.5)]'
+                    : 'ring-white/20'
+                }`}>
+                  <div className="w-14 h-14 rounded-full bg-white/[0.06] flex items-center justify-center">
+                    <RiUserStarFill size={22} className={artistFilter === null ? 'text-rose-400' : 'text-zinc-500'} />
+                  </div>
+                </div>
+                <p className="text-[10px] text-zinc-300 text-center leading-tight group-hover:text-white transition-colors">Alle</p>
+                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
+                  artistFilter === null ? 'bg-rose-500/30 text-rose-300' : 'bg-white/10 text-zinc-500'
+                }`}>{listings.filter(l => detectCategory(l) === 'song').length}</span>
+              </button>
+
+              {artistStats.map(({ name, count, picture }) => {
+                const isActive = artistFilter === name;
+                return (
+                  <button
+                    key={name}
+                    onClick={() => setArtistFilter(isActive ? null : name)}
+                    className="flex flex-col items-center gap-1.5 shrink-0 w-[68px] group"
+                  >
+                    <div className={`rounded-full ring-2 transition-all group-hover:scale-105 ${
+                      isActive
+                        ? 'ring-rose-400 shadow-[0_0_14px_rgba(251,113,133,0.55)]'
+                        : 'ring-white/20'
+                    }`}>
+                      <ArtistAvatar name={name} picture={picture} size="lg" />
+                    </div>
+                    <p className="text-[10px] text-zinc-300 text-center line-clamp-2 leading-tight w-full group-hover:text-white transition-colors">{name}</p>
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
+                      isActive ? 'bg-rose-500/30 text-rose-300' : 'bg-white/10 text-zinc-500'
+                    }`}>{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* ── Listings ────────────────────────────────────────────────────────── */}
         <div className="px-4">
           {loading && view === 'browse' ? (
