@@ -2058,40 +2058,44 @@ function PlatformSection({ secret }: { secret: string }) {
         </div>
 
         {/* Transaktionsliste */}
-        <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
-          {creditsLoading ? (
-            <p className="text-zinc-600 text-sm text-center py-4">Lade…</p>
-          ) : (creditsTab === 'overview' ? creditsData?.allTransactions?.filter(t => t.to_wallet === creditsData?.allTransactions?.[0]?.to_wallet) : creditsData?.allTransactions ?? []).length === 0 ? (
-            <p className="text-zinc-600 text-sm text-center py-4">Noch keine Transaktionen</p>
-          ) : (creditsTab === 'history' ? creditsData?.allTransactions ?? [] : creditsData?.allTransactions?.filter(t => {
-              const treasuryLower = creditsData.allTransactions?.[0]?.to_wallet;
-              return t.to_wallet === treasuryLower && t.type === 'platform_fee';
-            }) ?? []).map(tx => {
-            const typeLabel: Record<string, string> = {
-              platform_fee:   '⚡ Plattformgebühr',
-              royalty:        '🎵 Royalty',
-              seller_payment: '💸 Verkauf',
-              token_deposit:  '🔄 Deposit',
-              quest_reward:   '🎯 Quest',
-            };
-            return (
-              <div key={tx.id} className="flex items-center justify-between bg-zinc-800/60 rounded-xl px-3 py-2 gap-2">
-                <div className="min-w-0 flex-1">
-                  <p className="text-white text-xs font-semibold truncate">{typeLabel[tx.type] ?? tx.type}</p>
-                  <p className="text-zinc-500 text-[10px] truncate">
-                    {tx.from_name ?? tx.from_wallet.slice(0, 12) + '…'}
-                    {creditsTab === 'history' && ` → ${tx.to_name ?? tx.to_wallet.slice(0, 12) + '…'}`}
-                  </p>
-                  {tx.note && <p className="text-zinc-600 text-[9px] truncate">{tx.note}</p>}
+        {(() => {
+          const allTx = creditsData?.allTransactions ?? [];
+          const treasuryWallet = creditsData?.allTransactions?.find(t => t.type === 'platform_fee')?.to_wallet ?? '';
+          const rows = creditsTab === 'history'
+            ? allTx
+            : allTx.filter(t => t.to_wallet === treasuryWallet && t.type === 'platform_fee');
+          const typeLabel: Record<string, string> = {
+            platform_fee:   '⚡ Plattformgebühr',
+            royalty:        '🎵 Royalty',
+            seller_payment: '💸 Verkauf',
+            token_deposit:  '🔄 Deposit',
+            quest_reward:   '🎯 Quest',
+          };
+          return (
+            <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
+              {creditsLoading ? (
+                <p className="text-zinc-600 text-sm text-center py-4">Lade…</p>
+              ) : rows.length === 0 ? (
+                <p className="text-zinc-600 text-sm text-center py-4">Noch keine Transaktionen</p>
+              ) : rows.map(tx => (
+                <div key={tx.id} className="flex items-center justify-between bg-zinc-800/60 rounded-xl px-3 py-2 gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-white text-xs font-semibold truncate">{typeLabel[tx.type] ?? tx.type}</p>
+                    <p className="text-zinc-500 text-[10px] truncate">
+                      {tx.from_name ?? tx.from_wallet.slice(0, 12) + '…'}
+                      {creditsTab === 'history' && ` → ${tx.to_name ?? tx.to_wallet.slice(0, 12) + '…'}`}
+                    </p>
+                    {tx.note && <p className="text-zinc-600 text-[9px] truncate">{tx.note}</p>}
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-amber-300 font-black text-sm">+{Number(tx.amount).toLocaleString('de-DE', { maximumFractionDigits: 2 })}</p>
+                    <p className="text-zinc-600 text-[9px]">{new Date(tx.created_at).toLocaleDateString('de-DE')}</p>
+                  </div>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="text-amber-300 font-black text-sm">+{Number(tx.amount).toLocaleString('de-DE', { maximumFractionDigits: 2 })}</p>
-                  <p className="text-zinc-600 text-[9px]">{new Date(tx.created_at).toLocaleDateString('de-DE')}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
