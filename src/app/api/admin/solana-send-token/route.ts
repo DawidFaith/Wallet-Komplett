@@ -48,6 +48,20 @@ export async function POST(req: Request) {
     const fromAta = await getAssociatedTokenAddress(mintPk, treasury.publicKey, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
     const toAta   = await getAssociatedTokenAddress(mintPk, toPk,               false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
 
+    // Treasury-Guthaben prüfen
+    let treasuryBalance = 0;
+    try {
+      const fromAccount = await getAccount(connection, fromAta);
+      treasuryBalance   = Number(fromAccount.amount) / 10 ** DECIMALS;
+    } catch {
+      return NextResponse.json({ error: 'Treasury hat kein D.FAITH-Token-Konto — noch keine Tokens erhalten' }, { status: 400 });
+    }
+    if (treasuryBalance < amount) {
+      return NextResponse.json({
+        error: `Treasury hat nicht genug D.FAITH. Verfügbar: ${treasuryBalance.toLocaleString('de-DE', { maximumFractionDigits: 2 })} — Angefordert: ${amount.toLocaleString('de-DE')}`,
+      }, { status: 400 });
+    }
+
     const tx = new Transaction();
 
     // Empfänger-ATA erstellen falls nicht vorhanden
