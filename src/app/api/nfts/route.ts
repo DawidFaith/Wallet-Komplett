@@ -1,8 +1,10 @@
 /**
  * GET /api/nfts?wallet=0x...
  * Gibt alle Print-Edition NFTs zurück die der User im Shop gekauft hat.
+ * Künstler-Bild kommt aus Clerk (wie im Reputation-Tab).
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { clerkClient } from '@clerk/nextjs/server';
 import { getDb } from '../../lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -28,6 +30,7 @@ export async function GET(req: NextRequest) {
       si.type,
       si.nft_max_supply,
       si.master_edition_mint,
+      si.artist_wallet,
       COALESCE(p.display_name, yb.channel_name, p.instagram_name, p.tiktok_name) AS artist_name,
       COALESCE(
         CASE WHEN p.display_platform = 'youtube'   THEN yb.channel_thumbnail ELSE NULL END,
@@ -45,20 +48,43 @@ export async function GET(req: NextRequest) {
     ORDER BY sp.purchased_at DESC
   `;
 
-  return NextResponse.json(rows.map(r => ({
-    purchaseId:        r.purchase_id   as string,
-    itemId:            r.item_id       as string,
-    printMint:         r.print_mint    as string | null,
-    editionNumber:     r.edition_number != null ? Number(r.edition_number) : null,
-    purchasedAt:       r.purchased_at  as string,
-    title:             r.title         as string,
-    imageUrl:          r.image_url     as string,
-    description:       r.description   as string,
-    contentUrl:        r.content_url   as string | null,
-    type:              r.type          as string,
-    nftMaxSupply:      r.nft_max_supply != null ? Number(r.nft_max_supply) : null,
-    masterEditionMint: r.master_edition_mint as string | null,
-    artistName:        r.artist_name   as string | null,
-    artistPicture:     r.artist_picture as string | null,
-  })));
+  // Clerk-Bilder für alle einzigartigen Artist-Wallets laden (wie im Reputation-Tab)
+  const artistWallets = [...new Set(rows.map(r => r.artist_wallet as string).filter(Boolean))];
+  const clerkImageMap: Record<string, string> = {};
+
+  if (artistWallets.length > 0) {
+    try {
+      const clerk = await clerkClient();
+      const { data: users } = await clerk.users.getUserList({
+        userId: artistWallets,
+        limit:  100,
+      });
+      for (const u of users) {
+        if (u.imageUrl) clerkImageMap[u.id.toLowerCase()] = u.imageUrl;
+      }
+    } catch {
+      // Clerk-Fehler: fallback auf DB-Bild
+    }
+  }
+
+  return NextResponse.json(rows.map(r => {
+    const artistWallet = (r.artist_wallet as string | null)?.toLowerCase() ?? '';
+    const artistPicture = clerkImageMap[artistWallet] ?? (r.artist_picture as string | null);
+    return {
+      purchaseId:        r.purchase_id   as string,
+      itemId:            r.item_id       as string,
+      printMint:         r.print_mint    as string | null,
+      editionNumber:     r.edition_number != null ? Number(r.edition_number) : null,
+      purchasedAt:       r.purchased_at  as string,
+      title:             r.title         as string,
+      imageUrl:          r.image_url     as string,
+      description:       r.description   as string,
+      contentUrl:        r.content_url   as string | null,
+      type:              r.type          as string,
+      nftMaxSupply:      r.nft_max_supply != null ? Number(r.nft_max_supply) : null,
+      masterEditionMint: r.master_edition_mint as string | null,
+      artistName:        r.artist_name   as string | null,
+      artistPicture,
+    };
+  }));
 }

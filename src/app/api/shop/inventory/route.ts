@@ -1,8 +1,10 @@
 /**
  * GET /api/shop/inventory?wallet=XXX
  * Gibt alle gekauften Items eines Nutzers zurück, inkl. vollständiger contentUrl.
+ * Künstler-Bild kommt aus Clerk (wie im Reputation-Tab).
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { clerkClient } from '@clerk/nextjs/server';
 import { getDb } from '../../../lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -64,5 +66,27 @@ export async function GET(req: NextRequest) {
     ORDER BY sp.purchased_at DESC
   `;
 
-  return NextResponse.json(rows);
+  // Clerk-Bilder für alle einzigartigen Artist-Wallets laden (wie im Reputation-Tab)
+  const artistWallets = [...new Set(rows.map(r => r.artist_wallet as string).filter(Boolean))];
+  const clerkImageMap: Record<string, string> = {};
+
+  if (artistWallets.length > 0) {
+    try {
+      const clerk = await clerkClient();
+      const { data: users } = await clerk.users.getUserList({
+        userId: artistWallets,
+        limit:  100,
+      });
+      for (const u of users) {
+        if (u.imageUrl) clerkImageMap[u.id.toLowerCase()] = u.imageUrl;
+      }
+    } catch {
+      // Clerk-Fehler: fallback auf DB-Bild
+    }
+  }
+
+  return NextResponse.json(rows.map(r => ({
+    ...r,
+    artist_picture: clerkImageMap[(r.artist_wallet as string)?.toLowerCase() ?? ''] ?? r.artist_picture,
+  })));
 }
