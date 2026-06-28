@@ -250,8 +250,8 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
           </div>
         </div>
 
-        {/* Beschreibung für Song-NFTs */}
-        {isSong && listing.description && (
+        {/* Beschreibung */}
+        {listing.description && (
           <p className="text-zinc-400 text-[9px] leading-relaxed">{listing.description}</p>
         )}
 

@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
       nl.id, nl.mint_address, nl.seller_wallet, nl.price_dfaith,
       nl.collection_id, nl.collection_name, nl.rarity, nl.image_url, nl.nft_name,
       nl.nft_type,
-      COALESCE(nl.description,    si.description)                         AS description,
+      COALESCE(nl.description,    si.description, cc.description)          AS description,
       COALESCE(nl.content_url,    si.content_url)                         AS content_url,
       COALESCE(nl.edition_number, sp.edition_number)::int                 AS edition_number,
       COALESCE(
