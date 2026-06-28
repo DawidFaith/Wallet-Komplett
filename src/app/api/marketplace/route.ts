@@ -63,18 +63,22 @@ export async function GET(req: NextRequest) {
     const sql = getDb();
     await ensureTable(sql);
 
-    // Explizite Spaltenauswahl: artist_name + artist_picture via JOIN (gleiche Logik wie shop/inventory)
+    // Explizite Spaltenauswahl — für Song-NFTs: description/content_url/edition_number
+    // live aus shop_purchases + shop_items nachladen (Fallback für ältere Listings ohne gespeicherte Werte)
     const cols = sql`
       nl.id, nl.mint_address, nl.seller_wallet, nl.price_dfaith,
       nl.collection_id, nl.collection_name, nl.rarity, nl.image_url, nl.nft_name,
-      nl.nft_type, nl.description, nl.content_url, nl.edition_number,
+      nl.nft_type,
+      COALESCE(nl.description,    si.description)                         AS description,
+      COALESCE(nl.content_url,    si.content_url)                         AS content_url,
+      COALESCE(nl.edition_number, sp.edition_number)::int                 AS edition_number,
       COALESCE(
         CASE WHEN up.display_platform = 'youtube'   THEN yb.channel_name     ELSE NULL END,
         CASE WHEN up.display_platform = 'instagram' THEN up.instagram_name   ELSE NULL END,
         CASE WHEN up.display_platform = 'tiktok'    THEN up.tiktok_name      ELSE NULL END,
         CASE WHEN up.display_platform = 'facebook'  THEN up.facebook_name    ELSE NULL END,
         up.display_name, nl.artist_name
-      )                                                                              AS artist_name,
+      )                                                                    AS artist_name,
       nl.nft_collection_mint, nl.listed_at, nl.status, nl.attributes,
       COALESCE(
         CASE WHEN up.display_platform = 'youtube'   THEN yb.channel_thumbnail  ELSE NULL END,
@@ -85,12 +89,14 @@ export async function GET(req: NextRequest) {
         up.clerk_image_url,
         yb.channel_thumbnail,
         up.instagram_picture, up.tiktok_picture, up.facebook_picture
-      )                                                                              AS artist_picture
+      )                                                                    AS artist_picture
     `;
     const joins = sql`
-      LEFT JOIN collectible_collections cc ON cc.nft_collection_mint = nl.nft_collection_mint
-      LEFT JOIN user_profiles up           ON LOWER(up.wallet_address) = cc.artist_wallet
-      LEFT JOIN youtube_bindings yb        ON yb.wallet_address = up.wallet_address
+      LEFT JOIN shop_purchases sp            ON sp.nft_mint_address = nl.mint_address
+      LEFT JOIN shop_items si                ON si.id = sp.item_id
+      LEFT JOIN collectible_collections cc   ON cc.nft_collection_mint = nl.nft_collection_mint
+      LEFT JOIN user_profiles up             ON LOWER(up.wallet_address) = COALESCE(cc.artist_wallet, si.artist_wallet)
+      LEFT JOIN youtube_bindings yb          ON yb.wallet_address = up.wallet_address
     `;
 
     if (seller) {
