@@ -69,8 +69,8 @@ export async function GET(req: NextRequest) {
       nl.id, nl.mint_address, nl.seller_wallet, nl.price_dfaith,
       nl.collection_id, nl.collection_name, nl.rarity, nl.image_url, nl.nft_name,
       nl.nft_type,
-      COALESCE(nl.description,    si.description, cc.description)          AS description,
-      COALESCE(nl.content_url,    si.content_url)                         AS content_url,
+      NULLIF(COALESCE(NULLIF(nl.description,''), NULLIF(si.description,''), NULLIF(cc.description,'')), '') AS description,
+      NULLIF(COALESCE(NULLIF(nl.content_url,''), NULLIF(si.content_url,'')), '') AS content_url,
       COALESCE(nl.edition_number, sp.edition_number)::int                 AS edition_number,
       COALESCE(
         CASE WHEN up.display_platform = 'youtube'   THEN yb.channel_name     ELSE NULL END,
@@ -94,7 +94,8 @@ export async function GET(req: NextRequest) {
     const joins = sql`
       LEFT JOIN shop_purchases sp            ON sp.nft_mint_address = nl.mint_address
       LEFT JOIN shop_items si                ON si.id = sp.item_id
-      LEFT JOIN collectible_collections cc   ON cc.nft_collection_mint = nl.nft_collection_mint
+      LEFT JOIN user_collectibles uc         ON uc.nft_mint_address = nl.mint_address
+      LEFT JOIN collectible_collections cc   ON cc.id = uc.collection_id
       LEFT JOIN user_profiles up             ON LOWER(up.wallet_address) = COALESCE(cc.artist_wallet, si.artist_wallet)
       LEFT JOIN youtube_bindings yb          ON yb.wallet_address = up.wallet_address
     `;
