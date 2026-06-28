@@ -140,7 +140,7 @@ function SongNftCard({ nft, shopNft, onSend, onBurn }: {
           <p className="text-amber-300/80 text-[11px] font-semibold">{artistName}</p>
         )}
         {description && (
-          <p className="text-zinc-400 text-[11px] leading-relaxed line-clamp-2 mt-0.5">{description}</p>
+          <p className="text-zinc-400 text-[11px] leading-relaxed mt-0.5">{description}</p>
         )}
 
         {/* NFT-Attribut-Chips */}
