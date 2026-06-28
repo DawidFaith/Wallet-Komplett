@@ -143,11 +143,16 @@ export async function POST(req: NextRequest) {
     const { solana_address: artistSolana, solana_private_key: encKey, artist_name: artistDisplayName } = artistSolRows[0];
     const artistKeypair = Keypair.fromSecretKey(bs58.decode(decryptKey(encKey as string)));
 
+    const artistDisplayNameStr = (artistDisplayName as string | null)?.trim() || artistWallet;
+    // Fallback-Beschreibung — identisch mit dem Text der auf jedes einzelne NFT geminted wird
+    const description = (body.description ?? '').trim()
+      || `D.FAITH Collectible from the "${name.trim()}" series by ${artistDisplayNameStr}. Tradeable on secondary markets — 5% artist royalties on every resale.`;
+
     // DB-Eintrag anlegen
     const result = await createCollectibleCollection({
       artistWallet,
       name: name.trim(),
-      description: body.description ?? '',
+      description,
       imageUrl: finalImageUrl,
       ...chances,
       maxRepBonusPercent: body.maxRepBonusPercent ?? 0,
@@ -161,9 +166,9 @@ export async function POST(req: NextRequest) {
     const nftResult = await mintCollectibleCollection({
       artistWallet,
       artistSolanaAddress: artistSolana as string,
-      artistName:           (artistDisplayName as string | null)?.trim() || artistWallet,
-      name:                 name.trim(),
-      description:          body.description ?? '',
+      artistName:          artistDisplayNameStr,
+      name:                name.trim(),
+      description,
       imageUrl:             finalImageUrl,
       primaryBonus,
       maxRepBonusPercent:   body.maxRepBonusPercent   ?? 0,

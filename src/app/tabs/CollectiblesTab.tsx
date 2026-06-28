@@ -941,7 +941,6 @@ function EditCollectionForm({ collection, artistWallet, onClose, onSaved }: {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name:                collection.name,
-    description:         collection.description ?? '',
     imageUrl:            collection.imageUrl ?? '',
     maxRepBonusPercent:  collection.maxRepBonusPercent,
     maxShardChanceBonus: collection.maxShardChanceBonus ?? 0,
@@ -1028,14 +1027,6 @@ function EditCollectionForm({ collection, artistWallet, onClose, onSaved }: {
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-amber-400/30" />
           </div>
-          {/* Beschreibung */}
-          <div>
-            <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-1">Beschreibung</label>
-            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-              rows={2}
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-amber-400/30 resize-none" />
-          </div>
-
           {/* Bild */}
           <div>
             <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-1">Bild</label>
@@ -1159,7 +1150,7 @@ const SHARD_BONUS_BY_RARITY: Record<CollectibleRarity, number> = {
 };
 
 function CollectibleNftPreview({ form, rarity, artistName }: {
-  form: { name: string; description: string; imageUrl: string; maxRepBonusPercent: number; maxCreditBonusPercent: number; maxShardChanceBonus: number; primaryBonus: BonusType };
+  form: { name: string; imageUrl: string; maxRepBonusPercent: number; maxCreditBonusPercent: number; maxShardChanceBonus: number; primaryBonus: BonusType };
   rarity: CollectibleRarity;
   artistName?: string;
 }) {
@@ -1202,7 +1193,7 @@ function CollectibleNftPreview({ form, rarity, artistName }: {
         <div className="min-w-0 flex-1">
           <p className={`font-bold text-sm truncate ${cfg.textColor}`}>{form.name || '—'} — {cfg.label}</p>
           <p className="text-zinc-400 text-[10px] mt-0.5 line-clamp-2">
-            {form.description || (form.name ? `${cfg.label} D.FAITH Collectible from the "${form.name}" series.` : '—')}
+            {form.name ? `${cfg.label} D.FAITH Collectible from the "${form.name}" series.` : '—'}
           </p>
           <p className="text-zinc-300 text-[10px] mt-1 font-medium">Bonuses: {bonusLine}</p>
           <div className="flex flex-wrap gap-1 mt-2">
@@ -1226,7 +1217,7 @@ function CreateCollectionForm({ artistWallet, artistName, onCreated }: { artistW
   const [previewRarity, setPreviewRarity] = useState<CollectibleRarity>('rare');
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
-    name: '', description: '', imageUrl: '',
+    name: '', imageUrl: '',
     maxRepBonusPercent: 20, maxShardChanceBonus: 5, maxCreditBonusPercent: 10,
     primaryBonus: 'rep' as BonusType,
   });
@@ -1265,7 +1256,7 @@ function CreateCollectionForm({ artistWallet, artistName, onCreated }: { artistW
       const data = await res.json();
       if (!data.id) throw new Error(data.error || 'Fehler');
       setOpen(false);
-      setForm({ name: '', description: '', imageUrl: '', maxRepBonusPercent: 20, maxShardChanceBonus: 5, maxCreditBonusPercent: 10, primaryBonus: 'rep' });
+      setForm({ name: '', imageUrl: '', maxRepBonusPercent: 20, maxShardChanceBonus: 5, maxCreditBonusPercent: 10, primaryBonus: 'rep' });
       onCreated();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Fehler');
@@ -1297,13 +1288,6 @@ function CreateCollectionForm({ artistWallet, artistName, onCreated }: { artistW
             placeholder="z.B. Dawid Faith Season 1"
             className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-amber-400/30" />
         </div>
-        <div>
-          <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-1">Beschreibung</label>
-          <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-            rows={2} placeholder="Kurze Beschreibung..."
-            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-amber-400/30 resize-none" />
-        </div>
-
         {/* Bild-Upload */}
         <div>
           <label className="text-[9px] font-black tracking-widest uppercase text-zinc-600 block mb-1">Kollektion-Bild</label>

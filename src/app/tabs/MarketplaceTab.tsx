@@ -161,6 +161,12 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
   const artist      = listing.artist_name && !RARITY_WORDS.has(listing.artist_name.toLowerCase())
     ? listing.artist_name : null;
 
+  // Fallback-Beschreibung für Collectibles die ohne Beschreibung erstellt wurden
+  const description = listing.description
+    || (!isSong && listing.collection_name
+        ? `${cfg!.label} D.FAITH Collectible from the "${listing.collection_name}" series.`
+        : null);
+
   const attrs       = listing.attributes ?? [];
   const repBonus    = attrs.find(a => a.trait_type.toLowerCase().includes('rep'));
   const creditBonus = attrs.find(a => a.trait_type.toLowerCase().includes('credit'));
@@ -251,8 +257,8 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
         </div>
 
         {/* Beschreibung */}
-        {listing.description && (
-          <p className="text-zinc-400 text-[9px] leading-relaxed">{listing.description}</p>
+        {description && (
+          <p className="text-zinc-400 text-[9px] leading-relaxed">{description}</p>
         )}
 
         {/* Attribute-Chips für Song-NFTs */}
@@ -339,6 +345,10 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
   const enough  = balance >= price;
   const isSong  = listing.nft_type === 'song' || detectCategory(listing) === 'song';
   const cfg     = isSong ? null : rc(listing.rarity);
+  const description = listing.description
+    || (!isSong && listing.collection_name
+        ? `${cfg!.label} D.FAITH Collectible from the "${listing.collection_name}" series.`
+        : null);
 
   const handleBuy = async () => {
     setLoading(true);
@@ -393,8 +403,8 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
             )}
             <p className={`font-black text-sm truncate ${isSong ? 'text-amber-300' : cfg!.text}`}>{listing.collection_name ?? listing.nft_name ?? '—'}</p>
             {listing.artist_name && <p className="text-zinc-500 text-[10px]">von {listing.artist_name}</p>}
-            {isSong && listing.description && (
-              <p className="text-zinc-400 text-[9px] leading-relaxed mt-1">{listing.description}</p>
+            {isSong && description && (
+              <p className="text-zinc-400 text-[9px] leading-relaxed mt-1">{description}</p>
             )}
             {!isSong && listing.attributes && (() => {
               const boosts = listing.attributes!.filter(a =>
