@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../lib/db';
 import { transferCollectibleAsset } from '../../lib/collectibleNft';
+import { transferSongPrintEdition } from '../../lib/songNft';
 import { getTreasuryKeypair } from '../../lib/solanaOperator';
 import { decryptKey } from '../../lib/solanaCrypto';
 import { Keypair } from '@solana/web3.js';
@@ -44,6 +45,7 @@ async function ensureTable(sql: ReturnType<typeof getDb>) {
   await sql`CREATE INDEX IF NOT EXISTS idx_nft_listings_mint   ON nft_listings(mint_address)`;
   await sql`ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS nft_collection_mint TEXT`;
   await sql`ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS attributes JSONB`;
+  await sql`ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS nft_type TEXT NOT NULL DEFAULT 'collectible'`;
 }
 
 // ─── GET: Listings laden ──────────────────────────────────────────────────────
@@ -134,6 +136,7 @@ export async function POST(req: NextRequest) {
       nftName?: string;
       artistName?: string;
       nftCollectionMint?: string;
+      nftType?: 'collectible' | 'song';
       attributes?: { trait_type: string; value: string }[] | null;
     };
 
@@ -156,22 +159,12 @@ export async function POST(req: NextRequest) {
     // Alte abgeschlossene/stornierte Listings löschen um Unique-Constraint-Konflikt zu vermeiden
     await sql`DELETE FROM nft_listings WHERE mint_address = ${mintAddress} AND status != 'active'`;
 
-    // nft_collection_mint: aus Übergabe oder aus DB holen
-    let nftCollectionMint = body.nftCollectionMint ?? null;
-    if (!nftCollectionMint) {
-      const ccRow = await sql`
-        SELECT cc.nft_collection_mint FROM user_collectibles uc
-        JOIN collectible_collections cc ON cc.id = uc.collection_id
-        WHERE uc.wallet_address = ${walletAddress.toLowerCase()}
-          AND uc.nft_mint_address = ${mintAddress}
-        LIMIT 1
-      `;
-      nftCollectionMint = (ccRow[0]?.nft_collection_mint as string | null) ?? null;
-    }
-
-    if (!nftCollectionMint) {
-      return NextResponse.json({ error: 'Collection-Mint fehlt — NFT kann nicht in Escrow übertragen werden' }, { status: 400 });
-    }
+    // NFT-Typ bestimmen: explizit übergeben oder aus Attributen ableiten
+    const nftType: 'collectible' | 'song' =
+      body.nftType === 'song'
+      || (body.attributes ?? []).some(a => a.trait_type === 'Type' && a.value === 'Music')
+        ? 'song'
+        : 'collectible';
 
     // Seller-Solana-Keypair laden
     const sellerSolRows = await sql`
@@ -185,29 +178,60 @@ export async function POST(req: NextRequest) {
       bs58.decode(decryptKey(sellerSolRows[0].solana_private_key as string))
     );
 
-    // NFT in Treasury-Escrow übertragen
     const treasuryKeypair = getTreasuryKeypair();
     const treasuryAddress = treasuryKeypair.publicKey.toBase58();
 
-    try {
-      // Seller signiert (Autorität), Treasury zahlt Tx-Fees (hat SOL)
-      await transferCollectibleAsset(mintAddress, nftCollectionMint, sellerKeypair, treasuryAddress, treasuryKeypair);
-    } catch (transferErr) {
-      return NextResponse.json({
-        error: `NFT-Escrow-Transfer fehlgeschlagen: ${transferErr instanceof Error ? transferErr.message : String(transferErr)}`,
-      }, { status: 500 });
+    // nft_collection_mint nur für Collectibles benötigt
+    let nftCollectionMint: string | null = body.nftCollectionMint ?? null;
+
+    if (nftType === 'collectible') {
+      // Aus DB holen falls nicht übergeben
+      if (!nftCollectionMint) {
+        const ccRow = await sql`
+          SELECT cc.nft_collection_mint FROM user_collectibles uc
+          JOIN collectible_collections cc ON cc.id = uc.collection_id
+          WHERE uc.wallet_address = ${walletAddress.toLowerCase()}
+            AND uc.nft_mint_address = ${mintAddress}
+          LIMIT 1
+        `;
+        nftCollectionMint = (ccRow[0]?.nft_collection_mint as string | null) ?? null;
+      }
+      if (!nftCollectionMint) {
+        return NextResponse.json({ error: 'Collection-Mint fehlt — Collectible kann nicht übertragen werden' }, { status: 400 });
+      }
+      try {
+        await transferCollectibleAsset(mintAddress, nftCollectionMint, sellerKeypair, treasuryAddress, treasuryKeypair);
+      } catch (transferErr) {
+        return NextResponse.json({
+          error: `NFT-Escrow-Transfer fehlgeschlagen: ${transferErr instanceof Error ? transferErr.message : String(transferErr)}`,
+        }, { status: 500 });
+      }
+    } else {
+      // Song Print Edition → SPL Token Transfer
+      try {
+        await transferSongPrintEdition({
+          mintAddress,
+          ownerKeypair:     sellerKeypair,
+          recipientAddress: treasuryAddress,
+          payerKeypair:     treasuryKeypair,  // Treasury zahlt Tx-Fees
+        });
+      } catch (transferErr) {
+        return NextResponse.json({
+          error: `NFT-Escrow-Transfer fehlgeschlagen: ${transferErr instanceof Error ? transferErr.message : String(transferErr)}`,
+        }, { status: 500 });
+      }
     }
 
     // Listing nur einfügen wenn Transfer erfolgreich war
     const attributesJson = body.attributes ? JSON.stringify(body.attributes) : null;
     const row = await sql`
       INSERT INTO nft_listings
-        (mint_address, seller_wallet, price_dfaith, collection_id, collection_name, rarity, image_url, nft_name, artist_name, nft_collection_mint, attributes)
+        (mint_address, seller_wallet, price_dfaith, collection_id, collection_name, rarity, image_url, nft_name, artist_name, nft_collection_mint, nft_type, attributes)
       VALUES
         (${mintAddress}, ${walletAddress.toLowerCase()}, ${priceDfaith},
          ${body.collectionId ?? null}, ${body.collectionName ?? null}, ${body.rarity ?? null},
          ${body.imageUrl ?? null}, ${body.nftName ?? null}, ${body.artistName ?? null},
-         ${nftCollectionMint}, ${attributesJson}::jsonb)
+         ${nftCollectionMint}, ${nftType}, ${attributesJson}::jsonb)
       RETURNING id
     `;
 
@@ -233,7 +257,7 @@ export async function DELETE(req: NextRequest) {
 
     // Listing laden und Besitz prüfen
     const listingRows = await sql`
-      SELECT mint_address, nft_collection_mint
+      SELECT mint_address, nft_collection_mint, nft_type
       FROM nft_listings
       WHERE id           = ${listingId}
         AND seller_wallet = ${walletAddress.toLowerCase()}
@@ -246,6 +270,7 @@ export async function DELETE(req: NextRequest) {
 
     const mintAddress       = listingRows[0].mint_address        as string;
     const nftCollectionMint = listingRows[0].nft_collection_mint as string | null;
+    const nftType           = (listingRows[0].nft_type as string | null) ?? 'collectible';
 
     // Seller-Solana-Adresse laden (Ziel für Rückgabe)
     const sellerSolRows = await sql`
@@ -258,15 +283,22 @@ export async function DELETE(req: NextRequest) {
     const sellerSolanaAddress = sellerSolRows[0].solana_address as string;
 
     // NFT aus Treasury-Escrow zurück an Verkäufer übertragen
-    if (nftCollectionMint) {
-      const treasuryKeypair = getTreasuryKeypair();
-      try {
+    const treasuryKeypair = getTreasuryKeypair();
+    try {
+      if (nftType === 'song') {
+        await transferSongPrintEdition({
+          mintAddress,
+          ownerKeypair:     treasuryKeypair,
+          recipientAddress: sellerSolanaAddress,
+          payerKeypair:     treasuryKeypair,
+        });
+      } else if (nftCollectionMint) {
         await transferCollectibleAsset(mintAddress, nftCollectionMint, treasuryKeypair, sellerSolanaAddress);
-      } catch (transferErr) {
-        return NextResponse.json({
-          error: `NFT-Rückgabe fehlgeschlagen: ${transferErr instanceof Error ? transferErr.message : String(transferErr)}`,
-        }, { status: 500 });
       }
+    } catch (transferErr) {
+      return NextResponse.json({
+        error: `NFT-Rückgabe fehlgeschlagen: ${transferErr instanceof Error ? transferErr.message : String(transferErr)}`,
+      }, { status: 500 });
     }
 
     // Erst nach erfolgreichem Transfer als storniert markieren

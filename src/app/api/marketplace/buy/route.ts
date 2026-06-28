@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 import { transferCollectibleAsset } from '../../../lib/collectibleNft';
+import { transferSongPrintEdition } from '../../../lib/songNft';
 import { getTreasuryKeypair } from '../../../lib/solanaOperator';
 import { getDfaithCredits, addDfaithCredits, redeemDfaithCredits } from '../../../lib/questDb/credits';
 
@@ -125,13 +126,23 @@ export async function POST(req: NextRequest) {
     }
 
     // 7. NFT aus Treasury-Escrow an Käufer übertragen (bei Fehler: Credits zurückbuchen)
+    const nftType = (listing.nft_type as string | null) ?? 'collectible';
     try {
-      await transferCollectibleAsset(
-        listing.mint_address as string,
-        collectionMint,
-        treasuryKeypair,   // NFT liegt im Treasury (Escrow)
-        buyerSolanaAddress,
-      );
+      if (nftType === 'song') {
+        await transferSongPrintEdition({
+          mintAddress:      listing.mint_address as string,
+          ownerKeypair:     treasuryKeypair,
+          recipientAddress: buyerSolanaAddress,
+          payerKeypair:     treasuryKeypair,
+        });
+      } else {
+        await transferCollectibleAsset(
+          listing.mint_address as string,
+          collectionMint,
+          treasuryKeypair,
+          buyerSolanaAddress,
+        );
+      }
     } catch (transferErr) {
       await addDfaithCredits(buyerWallet, price);
       await redeemDfaithCredits(sellerWallet, sellerAmount);

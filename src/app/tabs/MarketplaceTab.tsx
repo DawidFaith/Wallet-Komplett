@@ -711,6 +711,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
             : `${selected.collection_name ?? ''} — ${selected.rarity ?? ''}`.trim(),
           artistName:        selected.artist_name,
           nftCollectionMint: selected.nft_collection_mint ?? null,
+          nftType:           selected.source === 'shop' ? 'song' : 'collectible',
           attributes:        selected.attributes?.length ? selected.attributes : null,
         }),
       });
@@ -725,7 +726,8 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
     }
   };
 
-  const cfg = selected ? rc(selected.rarity) : null;
+  const selectedIsSong = selected?.source === 'shop';
+  const cfg = selected && !selectedIsSong ? rc(selected.rarity) : null;
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:pb-0">
@@ -760,30 +762,37 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
             <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">NFT auswählen</p>
             <div className="grid grid-cols-2 gap-2 mb-4 max-h-60 overflow-y-auto pr-1 scrollbar-none">
               {ownedNfts.map((nft) => {
-                const c    = rc(nft.rarity);
-                const isSel = selected?.nft_mint_address === nft.nft_mint_address;
+                const isSong = nft.source === 'shop';
+                const c      = isSong ? null : rc(nft.rarity);
+                const isSel  = selected?.nft_mint_address === nft.nft_mint_address;
+                const cardBorder = isSong ? 'border-amber-500/40' : c!.border;
+                const cardBg     = isSong ? 'bg-amber-950/20'     : c!.bg;
+                const cardGlow   = isSong ? (isSel ? 'shadow-[0_0_14px_rgba(251,191,36,0.3)]' : '') : (isSel ? c!.glow : '');
                 return (
                   <button
                     key={nft.nft_mint_address}
                     onClick={() => setSelected(nft)}
-                    className={`relative rounded-xl border overflow-hidden text-left transition-all ${c.border} ${c.bg} ${isSel ? `ring-2 ring-amber-400 ${c.glow}` : 'opacity-70 hover:opacity-100'}`}
+                    className={`relative rounded-xl border overflow-hidden text-left transition-all ${cardBorder} ${cardBg} ${cardGlow} ${isSel ? 'ring-2 ring-amber-400' : 'opacity-70 hover:opacity-100'}`}
                   >
                     <div className="relative w-full aspect-square bg-black/30">
                       {nft.image_url ? (
                         <Image src={nft.image_url} alt="" fill className="object-cover" />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <GiCrystalShine className={`${c.text} opacity-40`} size={24} />
+                          {isSong
+                            ? <FaMusic className="text-amber-400 opacity-40" size={24} />
+                            : <GiCrystalShine className={`${c!.text} opacity-40`} size={24} />
+                          }
                         </div>
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                      {nft.source === 'shop' ? (
+                      {isSong ? (
                         <div className="absolute top-1.5 right-1.5 text-[8px] font-bold rounded-full px-1.5 py-0.5 bg-amber-500/80 text-black flex items-center gap-0.5">
                           <FaMusic size={6} /> {nft.editionNumber != null ? `#${nft.editionNumber}` : 'Song'}
                         </div>
                       ) : (
-                        <div className={`absolute top-1.5 right-1.5 text-[8px] font-bold uppercase rounded-full px-1.5 py-0.5 ${c.badge}`}>
-                          {c.label}
+                        <div className={`absolute top-1.5 right-1.5 text-[8px] font-bold uppercase rounded-full px-1.5 py-0.5 ${c!.badge}`}>
+                          {c!.label}
                         </div>
                       )}
                       {isSel && (
@@ -793,9 +802,8 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
                       )}
                     </div>
                     <div className="p-2">
-                      <p className={`text-[10px] font-black truncate ${c.text}`}>{nft.collection_name ?? nft.id.slice(0, 8) + '…'}</p>
+                      <p className={`text-[10px] font-black truncate ${isSong ? 'text-amber-300' : c!.text}`}>{nft.collection_name ?? nft.id.slice(0, 8) + '…'}</p>
                       {nft.artist_name && <p className="text-zinc-600 text-[9px] truncate">von {nft.artist_name}</p>}
-                      {/* Attribute */}
                       {nft.attributes && nft.attributes.filter(a => ['Rep Bonus', 'Credit Bonus'].includes(a.trait_type)).map(a => (
                         <p key={a.trait_type} className="text-[8px] text-zinc-500">{a.trait_type}: {a.value}</p>
                       ))}
@@ -805,16 +813,20 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
               })}
             </div>
 
-            {selected && cfg && (
-              <div className={`rounded-xl border ${cfg.border} ${cfg.bg} p-3 mb-4`}>
+            {selected && (
+              <div className={`rounded-xl border p-3 mb-4 ${selectedIsSong ? 'border-amber-500/40 bg-amber-950/20' : `${cfg!.border} ${cfg!.bg}`}`}>
                 <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Ausgewählt</p>
                 <div className="flex items-center gap-2">
                   {selected.image_url && (
                     <Image src={selected.image_url} alt="" width={32} height={32} className="w-8 h-8 rounded-lg object-cover shrink-0 border border-white/10" />
                   )}
                   <div className="min-w-0">
-                    <p className={`font-black text-xs truncate ${cfg.text}`}>{selected.collection_name}</p>
-                    <p className={`text-[9px] ${cfg.text}/70`}>{cfg.label}</p>
+                    <p className={`font-black text-xs truncate ${selectedIsSong ? 'text-amber-300' : cfg!.text}`}>{selected.collection_name}</p>
+                    <p className={`text-[9px] ${selectedIsSong ? 'text-amber-400/70' : `${cfg!.text}/70`}`}>
+                      {selectedIsSong
+                        ? `Song NFT${selected.editionNumber != null ? ` — Edition #${selected.editionNumber}` : ''}`
+                        : cfg!.label}
+                    </p>
                   </div>
                 </div>
               </div>

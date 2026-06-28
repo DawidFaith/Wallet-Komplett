@@ -25,9 +25,10 @@ import {
   createSignerFromKeypair,
 } from '@metaplex-foundation/umi';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
-import { Connection, Keypair, PublicKey } from '@solana/web3.js';
+import { Connection, Keypair, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
 import {
   getAssociatedTokenAddress, getAccount,
+  createAssociatedTokenAccountInstruction, createTransferInstruction,
   TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import bs58 from 'bs58';
@@ -245,4 +246,48 @@ export async function mintSongPrintEdition(params: {
     printMint:     editionMintSigner.publicKey.toString(),
     editionNumber,
   };
+}
+
+/**
+ * Überträgt eine Print Edition (Token Metadata SPL-Token) von einem Wallet zu einem anderen.
+ * Wird für Marktplatz-Escrow verwendet (Verkäufer → Treasury oder Treasury → Käufer/Verkäufer).
+ *
+ * @param ownerKeypair  Aktueller Besitzer der Edition (signiert den Transfer)
+ * @param payerKeypair  Zahlt die Tx-Fees (kann der gleiche wie ownerKeypair sein)
+ */
+export async function transferSongPrintEdition(params: {
+  mintAddress:       string;
+  ownerKeypair:      Keypair;
+  recipientAddress:  string;
+  payerKeypair?:     Keypair;
+}): Promise<void> {
+  const { mintAddress, ownerKeypair, recipientAddress, payerKeypair = ownerKeypair } = params;
+
+  const conn      = new Connection(RPC_URL, 'confirmed');
+  const mintPk    = new PublicKey(mintAddress);
+  const ownerPk   = ownerKeypair.publicKey;
+  const payerPk   = payerKeypair.publicKey;
+  const recipPk   = new PublicKey(recipientAddress);
+
+  const sourceAta = await getAssociatedTokenAddress(mintPk, ownerPk, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
+  const destAta   = await getAssociatedTokenAddress(mintPk, recipPk,  false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
+
+  const tx = new Transaction();
+
+  // Ziel-ATA anlegen falls noch nicht vorhanden
+  const destAtaInfo = await conn.getAccountInfo(destAta);
+  if (!destAtaInfo) {
+    tx.add(createAssociatedTokenAccountInstruction(
+      payerPk, destAta, recipPk, mintPk,
+      TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID,
+    ));
+  }
+
+  tx.add(createTransferInstruction(sourceAta, destAta, ownerPk, 1, [], TOKEN_PROGRAM_ID));
+
+  const signers = ownerKeypair === payerKeypair
+    ? [ownerKeypair]
+    : [payerKeypair, ownerKeypair];
+
+  await sendAndConfirmTransaction(conn, tx, signers, { commitment: 'confirmed' });
 }
