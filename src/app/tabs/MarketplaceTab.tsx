@@ -161,16 +161,19 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
   const artist      = listing.artist_name && !RARITY_WORDS.has(listing.artist_name.toLowerCase())
     ? listing.artist_name : null;
 
+  const cleanName = stripRarity(listing.collection_name ?? listing.nft_name ?? '');
+
   // Fallback-Beschreibung für Collectibles die ohne Beschreibung erstellt wurden
   const description = listing.description
-    || (!isSong && listing.collection_name
-        ? `${cfg!.label} D.FAITH Collectible from the "${listing.collection_name}" series.`
+    || (!isSong && cleanName
+        ? `${cfg!.label} D.FAITH Collectible from the "${cleanName}" series.`
         : null);
 
   const attrs       = listing.attributes ?? [];
   const repBonus    = attrs.find(a => a.trait_type.toLowerCase().includes('rep'));
   const creditBonus = attrs.find(a => a.trait_type.toLowerCase().includes('credit'));
-  const hasBoosts   = repBonus || creditBonus;
+  const shardBonus  = attrs.find(a => a.trait_type.toLowerCase().includes('shard'));
+  const hasBoosts   = repBonus || creditBonus || shardBonus;
 
   const cardBorder = isSong ? 'border-amber-500/30' : cfg!.border;
   const cardBg     = isSong ? 'bg-[#181818]'        : cfg!.bg;
@@ -261,8 +264,8 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
           <p className="text-zinc-400 text-[9px] leading-relaxed">{description}</p>
         )}
 
-        {/* Attribute-Chips für Song-NFTs */}
-        {isSong && (
+        {/* Attribute-Chips */}
+        {isSong ? (
           <div className="flex flex-wrap gap-1">
             <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">Musik</span>
             <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">D.FAITH</span>
@@ -270,28 +273,24 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
               <span className="text-[8px] bg-amber-900/40 text-amber-400 rounded-full px-1.5 py-0.5 border border-amber-500/30">Edition #{listing.edition_number}</span>
             )}
           </div>
-        )}
-
-        {/* Boost-Details (nur Collectibles) */}
-        {hasBoosts && !isSong && (
-          <div className="bg-black/30 border border-white/[0.06] rounded-xl p-2 flex flex-col gap-1">
+        ) : (
+          <div className="flex flex-wrap gap-1">
+            <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">Collectible</span>
+            <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">D.FAITH</span>
             {repBonus && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  <FaStar size={8} className="text-violet-400" />
-                  <span className="text-zinc-400 text-[9px]">Rep Bonus</span>
-                </div>
-                <span className="text-violet-300 font-black text-[10px]">{fmtBonus(repBonus.value)}</span>
-              </div>
+              <span className={`text-[8px] rounded-full px-1.5 py-0.5 border ${cfg!.border} ${cfg!.text} bg-black/30`}>
+                REP {fmtBonus(repBonus.value)}
+              </span>
             )}
             {creditBonus && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  <FaCoins size={8} className="text-amber-400" />
-                  <span className="text-zinc-400 text-[9px]">Credit Bonus</span>
-                </div>
-                <span className="text-amber-300 font-black text-[10px]">{fmtBonus(creditBonus.value)}</span>
-              </div>
+              <span className="text-[8px] bg-amber-900/30 text-amber-400 rounded-full px-1.5 py-0.5 border border-amber-500/30">
+                Credits {fmtBonus(creditBonus.value)}
+              </span>
+            )}
+            {shardBonus && (
+              <span className="text-[8px] bg-cyan-900/30 text-cyan-400 rounded-full px-1.5 py-0.5 border border-cyan-500/30">
+                Shard {fmtBonus(shardBonus.value)}
+              </span>
             )}
           </div>
         )}
@@ -345,9 +344,10 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
   const enough  = balance >= price;
   const isSong  = listing.nft_type === 'song' || detectCategory(listing) === 'song';
   const cfg     = isSong ? null : rc(listing.rarity);
+  const cleanName   = stripRarity(listing.collection_name ?? listing.nft_name ?? '');
   const description = listing.description
-    || (!isSong && listing.collection_name
-        ? `${cfg!.label} D.FAITH Collectible from the "${listing.collection_name}" series.`
+    || (!isSong && cleanName
+        ? `${cfg!.label} D.FAITH Collectible from the "${cleanName}" series.`
         : null);
 
   const handleBuy = async () => {
