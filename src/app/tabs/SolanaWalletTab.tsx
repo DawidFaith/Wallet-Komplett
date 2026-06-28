@@ -1301,9 +1301,13 @@ export default function SolanaWalletTab() {
             </div>
           ) : (() => {
             // NFTs nach Artist gruppieren
+            // Reihenfolge: On-Chain-Attribut → DB (shopNftsMap) → 'Andere'
             const groups = new Map<string, OwnedNft[]>();
             for (const nft of nfts) {
-              const name = nft.attributes.find(a => a.trait_type === 'Artist')?.value ?? 'Andere';
+              const name =
+                nft.attributes.find(a => a.trait_type === 'Artist')?.value
+                ?? shopNftsMap[nft.mint]?.artistName
+                ?? 'Andere';
               if (!groups.has(name)) groups.set(name, []);
               groups.get(name)!.push(nft);
             }
@@ -1312,7 +1316,14 @@ export default function SolanaWalletTab() {
                 {/* Artist-Icons horizontal (Quest-Board-Stil) */}
                 <div className="flex gap-4 overflow-x-auto pt-2 pb-1 scrollbar-none">
                   {Array.from(groups.entries()).map(([artistName, artistNfts]) => {
-                    const picture  = artistMap[artistName] ?? null;
+                    // Bild aus shopNftsMap (DB) bevorzugen, dann artistMap Fallback
+                    const picture = (() => {
+                      for (const nft of artistNfts) {
+                        const p = shopNftsMap[nft.mint]?.artistPicture;
+                        if (p) return p;
+                      }
+                      return artistMap[artistName] ?? null;
+                    })();
                     const isOpen   = openNftArtists.has(artistName);
                     return (
                       <button
@@ -1333,8 +1344,10 @@ export default function SolanaWalletTab() {
                             {picture
                               ? <Image src={picture} alt={artistName} width={56} height={56}
                                   className="w-14 h-14 rounded-full object-cover" unoptimized />
-                              : <div className="w-14 h-14 rounded-full bg-amber-400/20 flex items-center justify-center">
-                                  <FaGem className="text-amber-400" size={18} />
+                              : <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-500/30 to-zinc-800 flex items-center justify-center">
+                                  <span className="text-amber-300 font-black text-xl">
+                                    {artistName.charAt(0).toUpperCase()}
+                                  </span>
                                 </div>
                             }
                           </div>
@@ -1356,9 +1369,35 @@ export default function SolanaWalletTab() {
                   if (!openNftArtists.has(artistName)) return null;
                   const artistSongs        = artistNfts.filter(n => n.interface !== 'MplCoreAsset');
                   const artistCollectibles = artistNfts.filter(n => n.interface === 'MplCoreAsset');
+                  const sectionPicture = (() => {
+                    for (const nft of artistNfts) {
+                      const p = shopNftsMap[nft.mint]?.artistPicture;
+                      if (p) return p;
+                    }
+                    return artistMap[artistName] ?? null;
+                  })();
                   return (
-                    <div key={artistName} className="space-y-3 border-t border-white/[0.06] pt-3">
-                      <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">{artistName}</p>
+                    <div key={artistName} className="space-y-3 border-t border-white/[0.06] pt-4">
+                      {/* Artist Header */}
+                      <div className="flex items-center gap-3">
+                        <div className="relative shrink-0">
+                          <div className="w-11 h-11 rounded-full ring-2 ring-amber-500/50 shadow-[0_0_12px_rgba(245,158,11,0.2)] overflow-hidden">
+                            {sectionPicture
+                              ? <Image src={sectionPicture} alt={artistName} width={44} height={44} className="w-11 h-11 rounded-full object-cover" unoptimized />
+                              : <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-500/30 to-zinc-800 flex items-center justify-center">
+                                  <span className="text-amber-300 font-black text-lg">{artistName.charAt(0).toUpperCase()}</span>
+                                </div>
+                            }
+                          </div>
+                          <div className="absolute -bottom-1 -right-1 bg-amber-500 text-black text-[8px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow">
+                            {artistNfts.length}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-white font-bold text-sm">{artistName}</p>
+                          <p className="text-zinc-500 text-[10px]">{artistNfts.length} NFT{artistNfts.length !== 1 ? 's' : ''}</p>
+                        </div>
+                      </div>
                       {artistSongs.length > 0 && (
                         <div className="space-y-2">
                           <p className="text-zinc-700 text-[10px] font-bold uppercase tracking-widest px-1">Songs</p>

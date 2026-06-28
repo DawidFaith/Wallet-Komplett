@@ -115,6 +115,7 @@ export async function mintSongMasterEdition(params: {
       { trait_type: 'Max Editions', value: String(maxSupply) },
       { trait_type: 'Royalties',    value: '5%' },
       { trait_type: 'Release Year', value: String(new Date().getFullYear()) },
+      { trait_type: 'Website',      value: 'app.dawidfaith.de' },
     ],
   };
   const metadataUri = await uploadToArweave(
