@@ -207,7 +207,7 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
         {isSong && listing.content_url && (
           <button
             onClick={togglePlay}
-            className={`absolute bottom-2 right-2 z-10 w-10 h-10 rounded-full bg-amber-400 text-black flex items-center justify-center shadow-lg transition-all duration-200 ${playing ? 'opacity-100 scale-100' : 'opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0'}`}
+            className="absolute bottom-2 right-2 z-10 w-10 h-10 rounded-full bg-amber-400 text-black flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"
           >
             {playing
               ? <span className="flex gap-0.5"><span className="w-[3px] h-3 bg-black rounded-sm" /><span className="w-[3px] h-3 bg-black rounded-sm" /></span>
@@ -260,7 +260,6 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
           <div className="flex flex-wrap gap-1">
             <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">Musik</span>
             <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">D.FAITH</span>
-            <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">Royalties 5%</span>
             {listing.edition_number != null && (
               <span className="text-[8px] bg-amber-900/40 text-amber-400 rounded-full px-1.5 py-0.5 border border-amber-500/30">Edition #{listing.edition_number}</span>
             )}
