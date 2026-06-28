@@ -567,39 +567,54 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
   const [done, setDone]               = useState(false);
 
   useEffect(() => {
+    if (!walletAddress) return;
     async function load() {
       setLoadingNfts(true);
       try {
+        const safeJson = async (res: Response) => { try { return await res.json(); } catch { return null; } };
+
         const [dbRes, addrRes, shopRes, listingsRes] = await Promise.all([
           fetch(`/api/collectibles?wallet=${walletAddress}`),
           fetch(`/api/solana/create-account?walletAddress=${walletAddress}`),
           fetch(`/api/nfts?wallet=${walletAddress}`),
           fetch(`/api/marketplace?seller=${walletAddress}`),
         ]);
-        const dbData       = await dbRes.json();
-        const addrData     = await addrRes.json();
-        const shopData     = shopRes.ok ? await shopRes.json() : [];
-        const listingsData = listingsRes.ok ? await listingsRes.json() : [];
-        const solanaAddress: string | null = addrData.solanaAddress ?? null;
+
+        const [dbData, addrData, shopData, listingsData] = await Promise.all([
+          safeJson(dbRes),
+          safeJson(addrRes),
+          safeJson(shopRes),
+          safeJson(listingsRes),
+        ]);
+
+        const solanaAddress: string | null = addrData?.solanaAddress ?? null;
 
         // Bereits aktiv gelistete Mints — diese aus der Auswahl ausschließen
+        const listingsArr: any[] = Array.isArray(listingsData)
+          ? listingsData
+          : (listingsData?.listings ?? []);
         const listedMints = new Set<string>(
-          (Array.isArray(listingsData) ? listingsData : listingsData.listings ?? [])
-            .filter((l: any) => l.status === 'active')
-            .map((l: any) => l.mint_address as string)
+          listingsArr.map((l: any) => l.mint_address as string)
         );
 
-        // Helius-NFTs laden (für Attribute aller D.FAITH NFTs)
+        // Shop-NFTs: DB-Purchase-Daten aufbauen (printMint → shop data map)
+        const shopDataArr: any[] = Array.isArray(shopData) ? shopData : [];
+        const shopByMint = new Map<string, any>();
+        shopDataArr.forEach((s: any) => { if (s.printMint) shopByMint.set(s.printMint as string, s); });
+
+        // Helius-NFTs laden (für Attribute aller D.FAITH-Collectibles + Bild-Fallback)
         let heliusMap = new Map<string, any>();
         if (solanaAddress) {
-          const nftRes  = await fetch(`/api/solana/nfts?solanaAddress=${solanaAddress}`);
-          const nftData = await nftRes.json();
-          const walletNfts: any[] = Array.isArray(nftData) ? nftData : [];
-          walletNfts.forEach(n => heliusMap.set(n.mint as string, n));
+          try {
+            const nftRes  = await fetch(`/api/solana/nfts?solanaAddress=${solanaAddress}`);
+            const nftData = await safeJson(nftRes);
+            const walletNfts: any[] = Array.isArray(nftData) ? nftData : [];
+            walletNfts.forEach(n => heliusMap.set(n.mint as string, n));
+          } catch { /* Helius nicht erreichbar — nur DB-Daten */ }
         }
 
         // DB-Collectibles — mit Helius-Attributen anreichern
-        const dbNfts: OwnedNft[] = (dbData.collectibles ?? [])
+        const dbNfts: OwnedNft[] = ((dbData?.collectibles) ?? [])
           .filter((c: any) => c.nftMintAddress && !listedMints.has(c.nftMintAddress as string))
           .map((c: any) => {
             const helius = heliusMap.get(c.nftMintAddress as string);
@@ -617,11 +632,13 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
             };
           });
 
-        const dbMints = new Set(dbNfts.map(n => n.nft_mint_address));
+        // Alle bekannten Mints (Collectibles + Shop) zum Entduplizieren
+        const dbMints       = new Set(dbNfts.map(n => n.nft_mint_address));
+        const allKnownMints = new Set([...dbMints, ...shopByMint.keys()]);
 
-        // Chain-only NFTs (nicht in DB)
+        // Chain-only Collectibles (D.FAITH, nicht in DB, nicht als Shop erkannt)
         const chainNfts: OwnedNft[] = Array.from(heliusMap.values())
-          .filter((n: any) => n.isDfaith && !dbMints.has(n.mint as string) && !listedMints.has(n.mint as string))
+          .filter((n: any) => n.isDfaith && !allKnownMints.has(n.mint as string) && !listedMints.has(n.mint as string))
           .map((n: any): OwnedNft => {
             const rarityAttr = (n.attributes ?? []).find((a: any) => a.trait_type === 'Rarity');
             return {
@@ -638,16 +655,19 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
             };
           });
 
-        // Shop-NFTs (Artist Shop Print Editions) — noch nicht gelistet + Mint vorhanden
-        const shopNfts: OwnedNft[] = (Array.isArray(shopData) ? shopData : [])
-          .filter((s: any) => s.printMint && !listedMints.has(s.printMint as string))
-          .map((s: any): OwnedNft => ({
+        // Shop-NFTs (Artist Shop Print Editions) — über DB-printMint identifiziert
+        // isDfaith=false bei Helius kein Problem, da printMint aus DB kommt
+        const shopNfts: OwnedNft[] = [];
+        shopByMint.forEach((s, mint) => {
+          if (listedMints.has(mint)) return;
+          const helius = heliusMap.get(mint);
+          shopNfts.push({
             id:                  s.purchaseId,
-            nft_mint_address:    s.printMint,
+            nft_mint_address:    mint,
             rarity:              'common',
             collection_id:       s.masterEditionMint ?? s.itemId ?? '',
-            collection_name:     s.title ?? undefined,
-            image_url:           s.imageUrl ?? undefined,
+            collection_name:     s.title ?? helius?.name ?? undefined,
+            image_url:           s.imageUrl ?? helius?.image ?? undefined,
             artist_name:         s.artistName ?? undefined,
             nft_collection_mint: s.masterEditionMint ?? undefined,
             source:              'shop' as const,
@@ -657,9 +677,12 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
               { trait_type: 'Platform', value: 'D.FAITH' },
               ...(s.artistName ? [{ trait_type: 'Artist', value: s.artistName }] : []),
             ],
-          }));
+          });
+        });
 
         setOwnedNfts([...dbNfts, ...chainNfts, ...shopNfts]);
+      } catch (e) {
+        console.error('[SellModal] load error:', e);
       } finally {
         setLoadingNfts(false);
       }
