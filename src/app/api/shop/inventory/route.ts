@@ -1,10 +1,8 @@
 /**
  * GET /api/shop/inventory?wallet=XXX
  * Gibt alle gekauften Items eines Nutzers zurück, inkl. vollständiger contentUrl.
- * Künstler-Bild kommt aus Clerk (wie im Reputation-Tab).
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { clerkClient } from '@clerk/nextjs/server';
 import { getDb } from '../../../lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -49,10 +47,12 @@ export async function GET(req: NextRequest) {
         p.facebook_name
       ) AS artist_name,
       COALESCE(
+        CASE WHEN p.display_platform = 'clerk'      THEN p.clerk_image_url     ELSE NULL END,
         CASE WHEN p.display_platform = 'youtube'    THEN yb.channel_thumbnail  ELSE NULL END,
         CASE WHEN p.display_platform = 'instagram'  THEN p.instagram_picture   ELSE NULL END,
         CASE WHEN p.display_platform = 'tiktok'     THEN p.tiktok_picture      ELSE NULL END,
         CASE WHEN p.display_platform = 'facebook'   THEN p.facebook_picture    ELSE NULL END,
+        p.clerk_image_url,
         yb.channel_thumbnail,
         p.instagram_picture,
         p.tiktok_picture,
@@ -66,27 +66,5 @@ export async function GET(req: NextRequest) {
     ORDER BY sp.purchased_at DESC
   `;
 
-  // Clerk-Bilder für alle einzigartigen Artist-Wallets laden (wie im Reputation-Tab)
-  const artistWallets = [...new Set(rows.map(r => r.artist_wallet as string).filter(Boolean))];
-  const clerkImageMap: Record<string, string> = {};
-
-  if (artistWallets.length > 0) {
-    try {
-      const clerk = await clerkClient();
-      const { data: users } = await clerk.users.getUserList({
-        userId: artistWallets,
-        limit:  100,
-      });
-      for (const u of users) {
-        if (u.imageUrl) clerkImageMap[u.id.toLowerCase()] = u.imageUrl;
-      }
-    } catch {
-      // Clerk-Fehler: fallback auf DB-Bild
-    }
-  }
-
-  return NextResponse.json(rows.map(r => ({
-    ...r,
-    artist_picture: clerkImageMap[(r.artist_wallet as string)?.toLowerCase() ?? ''] ?? r.artist_picture,
-  })));
+  return NextResponse.json(rows);
 }
