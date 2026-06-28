@@ -155,7 +155,15 @@ export async function POST(req: NextRequest) {
 
     // 8. DB aktualisieren + Transaktionen loggen
     await sql`UPDATE nft_listings SET status = 'sold' WHERE id = ${listingId}`;
-    if (hasDbEntry) {
+
+    if (nftType === 'song') {
+      // Shop-Purchase auf neuen Besitzer umschreiben → NFT erscheint mit allen Daten in der Wallet
+      await sql`
+        UPDATE shop_purchases
+        SET buyer_wallet = ${buyerWallet.toLowerCase()}
+        WHERE nft_mint_address = ${listing.mint_address as string}
+      `;
+    } else if (hasDbEntry) {
       await sql`
         UPDATE user_collectibles
         SET wallet_address = ${buyerWallet.toLowerCase()}
