@@ -39,7 +39,8 @@ interface OwnedNft {
   image_url?: string;
   artist_name?: string;
   nft_collection_mint?: string;
-  source?: 'db' | 'chain';
+  source?: 'db' | 'chain' | 'shop';
+  editionNumber?: number | null;
   attributes?: { trait_type: string; value: string }[];
 }
 
@@ -569,13 +570,24 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
     async function load() {
       setLoadingNfts(true);
       try {
-        const [dbRes, addrRes] = await Promise.all([
+        const [dbRes, addrRes, shopRes, listingsRes] = await Promise.all([
           fetch(`/api/collectibles?wallet=${walletAddress}`),
           fetch(`/api/solana/create-account?walletAddress=${walletAddress}`),
+          fetch(`/api/nfts?wallet=${walletAddress}`),
+          fetch(`/api/marketplace?seller=${walletAddress}`),
         ]);
-        const dbData   = await dbRes.json();
-        const addrData = await addrRes.json();
+        const dbData       = await dbRes.json();
+        const addrData     = await addrRes.json();
+        const shopData     = shopRes.ok ? await shopRes.json() : [];
+        const listingsData = listingsRes.ok ? await listingsRes.json() : [];
         const solanaAddress: string | null = addrData.solanaAddress ?? null;
+
+        // Bereits aktiv gelistete Mints — diese aus der Auswahl ausschließen
+        const listedMints = new Set<string>(
+          (Array.isArray(listingsData) ? listingsData : listingsData.listings ?? [])
+            .filter((l: any) => l.status === 'active')
+            .map((l: any) => l.mint_address as string)
+        );
 
         // Helius-NFTs laden (für Attribute aller D.FAITH NFTs)
         let heliusMap = new Map<string, any>();
@@ -588,7 +600,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
 
         // DB-Collectibles — mit Helius-Attributen anreichern
         const dbNfts: OwnedNft[] = (dbData.collectibles ?? [])
-          .filter((c: any) => c.nftMintAddress)
+          .filter((c: any) => c.nftMintAddress && !listedMints.has(c.nftMintAddress as string))
           .map((c: any) => {
             const helius = heliusMap.get(c.nftMintAddress as string);
             return {
@@ -609,7 +621,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
 
         // Chain-only NFTs (nicht in DB)
         const chainNfts: OwnedNft[] = Array.from(heliusMap.values())
-          .filter((n: any) => n.isDfaith && !dbMints.has(n.mint as string))
+          .filter((n: any) => n.isDfaith && !dbMints.has(n.mint as string) && !listedMints.has(n.mint as string))
           .map((n: any): OwnedNft => {
             const rarityAttr = (n.attributes ?? []).find((a: any) => a.trait_type === 'Rarity');
             return {
@@ -626,7 +638,28 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
             };
           });
 
-        setOwnedNfts([...dbNfts, ...chainNfts]);
+        // Shop-NFTs (Artist Shop Print Editions) — noch nicht gelistet + Mint vorhanden
+        const shopNfts: OwnedNft[] = (Array.isArray(shopData) ? shopData : [])
+          .filter((s: any) => s.printMint && !listedMints.has(s.printMint as string))
+          .map((s: any): OwnedNft => ({
+            id:                  s.purchaseId,
+            nft_mint_address:    s.printMint,
+            rarity:              'common',
+            collection_id:       s.masterEditionMint ?? s.itemId ?? '',
+            collection_name:     s.title ?? undefined,
+            image_url:           s.imageUrl ?? undefined,
+            artist_name:         s.artistName ?? undefined,
+            nft_collection_mint: s.masterEditionMint ?? undefined,
+            source:              'shop' as const,
+            editionNumber:       s.editionNumber ?? null,
+            attributes: [
+              { trait_type: 'Type',     value: 'Music'   },
+              { trait_type: 'Platform', value: 'D.FAITH' },
+              ...(s.artistName ? [{ trait_type: 'Artist', value: s.artistName }] : []),
+            ],
+          }));
+
+        setOwnedNfts([...dbNfts, ...chainNfts, ...shopNfts]);
       } finally {
         setLoadingNfts(false);
       }
@@ -650,7 +683,9 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
           collectionName:    selected.collection_name,
           rarity:            selected.rarity,
           imageUrl:          selected.image_url,
-          nftName:           `${selected.collection_name ?? ''} — ${selected.rarity ?? ''}`.trim(),
+          nftName:           selected.source === 'shop'
+            ? `${selected.collection_name ?? ''}${selected.editionNumber != null ? ` — Edition #${selected.editionNumber}` : ''}`.trim()
+            : `${selected.collection_name ?? ''} — ${selected.rarity ?? ''}`.trim(),
           artistName:        selected.artist_name,
           nftCollectionMint: selected.nft_collection_mint ?? null,
           attributes:        selected.attributes?.length ? selected.attributes : null,
@@ -695,7 +730,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
           <div className="text-center py-8">
             <FaGem className="text-zinc-700 mx-auto mb-3" size={28} />
             <p className="text-zinc-400 text-sm font-semibold mb-1">Keine D.FAITH NFTs gefunden</p>
-            <p className="text-zinc-600 text-xs">Minte zuerst eine Collectible-Karte in deiner Sammlung.</p>
+            <p className="text-zinc-600 text-xs">Kaufe oder minte zuerst ein NFT im Artist Shop oder in deiner Sammlung.</p>
           </div>
         ) : (
           <>
@@ -719,9 +754,15 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
                         </div>
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                      <div className={`absolute top-1.5 right-1.5 text-[8px] font-bold uppercase rounded-full px-1.5 py-0.5 ${c.badge}`}>
-                        {c.label}
-                      </div>
+                      {nft.source === 'shop' ? (
+                        <div className="absolute top-1.5 right-1.5 text-[8px] font-bold rounded-full px-1.5 py-0.5 bg-amber-500/80 text-black flex items-center gap-0.5">
+                          <FaMusic size={6} /> {nft.editionNumber != null ? `#${nft.editionNumber}` : 'Song'}
+                        </div>
+                      ) : (
+                        <div className={`absolute top-1.5 right-1.5 text-[8px] font-bold uppercase rounded-full px-1.5 py-0.5 ${c.badge}`}>
+                          {c.label}
+                        </div>
+                      )}
                       {isSel && (
                         <div className="absolute top-1.5 left-1.5 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center">
                           <FaCheckCircle size={10} className="text-black" />
