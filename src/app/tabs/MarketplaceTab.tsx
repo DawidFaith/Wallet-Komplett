@@ -27,6 +27,10 @@ interface Listing {
   artist_picture: string | null;
   listed_at: string;
   status: string;
+  nft_type?: string | null;
+  description?: string | null;
+  content_url?: string | null;
+  edition_number?: number | null;
   attributes?: NftAttribute[] | null;
 }
 
@@ -41,6 +45,8 @@ interface OwnedNft {
   nft_collection_mint?: string;
   source?: 'db' | 'chain' | 'shop';
   editionNumber?: number | null;
+  description?: string | null;
+  contentUrl?: string | null;
   attributes?: { trait_type: string; value: string }[];
 }
 
@@ -127,47 +133,91 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
   onCancel: (l: Listing) => void;
   cancelLoading: boolean;
 }) {
-  const cfg = rc(listing.rarity);
+  const isSong = listing.nft_type === 'song' || detectCategory(listing) === 'song';
+  const cfg    = isSong ? null : rc(listing.rarity);
 
-  // Titel: collection_name bevorzugen (enthält keine Rarität); nft_name als Fallback
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useState<HTMLAudioElement | null>(null);
+
+  const togglePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!listing.content_url) return;
+    if (!audioRef[0]) {
+      const audio = new Audio(listing.content_url);
+      audioRef[1](audio);
+      audio.play();
+      setPlaying(true);
+      audio.onended = () => setPlaying(false);
+    } else if (playing) {
+      audioRef[0].pause();
+      setPlaying(false);
+    } else {
+      audioRef[0].play();
+      setPlaying(true);
+    }
+  };
+
   const displayName = listing.collection_name ?? listing.nft_name ?? '—';
-
-  // artist_name nicht anzeigen wenn es ein Raritätswort ist (Bug: wurde manchmal falsch gesetzt)
-  const artist = listing.artist_name && !RARITY_WORDS.has(listing.artist_name.toLowerCase())
+  const artist      = listing.artist_name && !RARITY_WORDS.has(listing.artist_name.toLowerCase())
     ? listing.artist_name : null;
 
-  // Flexible Attribut-Suche (Helius kann trait_type leicht abweichend benennen)
   const attrs       = listing.attributes ?? [];
   const repBonus    = attrs.find(a => a.trait_type.toLowerCase().includes('rep'));
   const creditBonus = attrs.find(a => a.trait_type.toLowerCase().includes('credit'));
   const hasBoosts   = repBonus || creditBonus;
 
+  const cardBorder = isSong ? 'border-amber-500/30' : cfg!.border;
+  const cardBg     = isSong ? 'bg-[#181818]'        : cfg!.bg;
+  const cardGlow   = isSong ? ''                    : cfg!.glow;
+
   return (
-    <div className={`relative flex flex-col rounded-2xl border ${cfg.border} ${cfg.bg} ${cfg.glow} overflow-hidden group transition-all duration-200 hover:scale-[1.02]`}>
-      {/* Badge: own listing */}
+    <div className={`relative flex flex-col rounded-2xl border ${cardBorder} ${cardBg} ${cardGlow} overflow-hidden group transition-all duration-200 hover:scale-[1.02]`}>
       {isSelf && (
         <div className="absolute top-2 left-2 z-10 text-[9px] font-black uppercase tracking-wider bg-amber-500/90 text-black rounded-full px-2 py-0.5">
           Dein
         </div>
       )}
-      {/* Rarity badge */}
-      <div className={`absolute top-2 right-2 z-10 text-[9px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 ${cfg.badge}`}>
-        {cfg.label}
-      </div>
 
-      {/* Image */}
+      {/* Bild */}
       <div className="relative w-full aspect-square bg-black/30">
         {listing.image_url ? (
-          <Image src={listing.image_url} alt={listing.nft_name ?? ''} fill className="object-cover" />
+          <Image src={listing.image_url} alt={displayName} fill className="object-cover" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <GiCrystalShine className={`${cfg.text} opacity-30`} size={40} />
+            {isSong
+              ? <FaMusic className="text-amber-400 opacity-30" size={40} />
+              : <GiCrystalShine className={`${cfg!.text} opacity-30`} size={40} />}
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
 
-        {/* Boost-Overlay auf dem Bild unten */}
-        {hasBoosts && (
+        {/* Badge oben rechts */}
+        {isSong ? (
+          <div className="absolute top-2 right-2 z-10 text-[8px] font-bold rounded-full px-1.5 py-0.5 bg-amber-500/80 text-black flex items-center gap-0.5">
+            <FaMusic size={6} />
+            {listing.edition_number != null ? `#${listing.edition_number}` : 'Song'}
+          </div>
+        ) : (
+          <div className={`absolute top-2 right-2 z-10 text-[9px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 ${cfg!.badge}`}>
+            {cfg!.label}
+          </div>
+        )}
+
+        {/* Play-Button für Song-NFTs */}
+        {isSong && listing.content_url && (
+          <button
+            onClick={togglePlay}
+            className={`absolute bottom-2 right-2 z-10 w-10 h-10 rounded-full bg-amber-400 text-black flex items-center justify-center shadow-lg transition-all duration-200 ${playing ? 'opacity-100 scale-100' : 'opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0'}`}
+          >
+            {playing
+              ? <span className="flex gap-0.5"><span className="w-[3px] h-3 bg-black rounded-sm" /><span className="w-[3px] h-3 bg-black rounded-sm" /></span>
+              : <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 ml-0.5"><path d="M8 5v14l11-7z" /></svg>
+            }
+          </button>
+        )}
+
+        {/* Boost-Overlay (nur Collectibles) */}
+        {hasBoosts && !isSong && (
           <div className="absolute bottom-0 left-0 right-0 px-2 pb-2 flex gap-1.5">
             {repBonus && (
               <div className="flex items-center gap-1 bg-violet-900/80 border border-violet-500/50 rounded-lg px-1.5 py-0.5 backdrop-blur-sm">
@@ -191,7 +241,7 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
         <div className="flex items-start gap-1.5 min-w-0">
           {artist && <ArtistAvatar name={artist} picture={listing.artist_picture} size="sm" />}
           <div className="min-w-0 flex-1">
-            <p className={`font-black text-[11px] truncate leading-tight ${cfg.text}`}>
+            <p className={`font-black text-[11px] truncate leading-tight ${isSong ? 'text-amber-300' : cfg!.text}`}>
               {displayName}
             </p>
             {artist && (
@@ -200,8 +250,25 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
           </div>
         </div>
 
-        {/* Boost-Details Block */}
-        {hasBoosts && (
+        {/* Beschreibung für Song-NFTs */}
+        {isSong && listing.description && (
+          <p className="text-zinc-400 text-[9px] leading-relaxed">{listing.description}</p>
+        )}
+
+        {/* Attribute-Chips für Song-NFTs */}
+        {isSong && (
+          <div className="flex flex-wrap gap-1">
+            <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">Musik</span>
+            <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">D.FAITH</span>
+            <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">Royalties 5%</span>
+            {listing.edition_number != null && (
+              <span className="text-[8px] bg-amber-900/40 text-amber-400 rounded-full px-1.5 py-0.5 border border-amber-500/30">Edition #{listing.edition_number}</span>
+            )}
+          </div>
+        )}
+
+        {/* Boost-Details (nur Collectibles) */}
+        {hasBoosts && !isSong && (
           <div className="bg-black/30 border border-white/[0.06] rounded-xl p-2 flex flex-col gap-1">
             {repBonus && (
               <div className="flex items-center justify-between">
@@ -227,7 +294,7 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
         {/* Preis + Aktion */}
         <div className="flex items-center justify-between mt-auto pt-1.5 border-t border-white/[0.06]">
           <div>
-            <span className={`font-black text-sm ${cfg.text} flex items-center gap-1`}>
+            <span className={`font-black text-sm flex items-center gap-1 ${isSong ? 'text-amber-400' : cfg!.text}`}>
               <FaTag size={8} />
               {Number(listing.price_dfaith).toLocaleString('de-DE')}
             </span>
@@ -245,7 +312,7 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
           ) : (
             <button
               onClick={() => onBuy(listing)}
-              className={`text-[10px] font-bold rounded-xl px-2.5 py-1 transition-all border ${cfg.border} ${cfg.bg} ${cfg.text} hover:brightness-125 active:scale-95`}
+              className={`text-[10px] font-bold rounded-xl px-2.5 py-1 transition-all border ${isSong ? 'border-amber-500/40 bg-amber-950/20 text-amber-400 hover:bg-amber-900/30' : `${cfg!.border} ${cfg!.bg} ${cfg!.text} hover:brightness-125`} active:scale-95`}
             >
               Kaufen
             </button>
@@ -269,9 +336,10 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
   const [error, setError]     = useState('');
   const [done, setDone]       = useState(false);
 
-  const price  = Number(listing.price_dfaith);
-  const enough = balance >= price;
-  const cfg    = rc(listing.rarity);
+  const price   = Number(listing.price_dfaith);
+  const enough  = balance >= price;
+  const isSong  = listing.nft_type === 'song' || detectCategory(listing) === 'song';
+  const cfg     = isSong ? null : rc(listing.rarity);
 
   const handleBuy = async () => {
     setLoading(true);
@@ -304,28 +372,39 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
         </div>
 
         {/* NFT-Vorschau */}
-        <div className={`rounded-xl border ${cfg.border} ${cfg.bg} ${cfg.glow} p-3 mb-4 flex gap-3 items-center`}>
+        <div className={`rounded-xl border p-3 mb-4 flex gap-3 items-start ${isSong ? 'border-amber-500/30 bg-amber-950/20' : `${cfg!.border} ${cfg!.bg} ${cfg!.glow}`}`}>
           {listing.image_url ? (
             <Image src={listing.image_url} alt="" width={56} height={56} className="w-14 h-14 rounded-lg object-cover shrink-0 border border-white/10" />
           ) : (
-            <div className={`w-14 h-14 rounded-lg bg-black/30 border ${cfg.border} shrink-0 flex items-center justify-center`}>
-              <GiCrystalShine className={cfg.text} size={20} />
+            <div className={`w-14 h-14 rounded-lg bg-black/30 shrink-0 flex items-center justify-center border ${isSong ? 'border-amber-500/30' : cfg!.border}`}>
+              {isSong ? <FaMusic className="text-amber-400" size={20} /> : <GiCrystalShine className={cfg!.text} size={20} />}
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <div className={`inline-block text-[9px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 mb-1 ${cfg.badge}`}>
-              {cfg.label}
-            </div>
-            <p className={`font-black text-sm truncate ${cfg.text}`}>{listing.collection_name ?? listing.nft_name ?? '—'}</p>
+            {isSong ? (
+              <div className="flex items-center gap-1 mb-1">
+                <span className="text-[8px] font-bold rounded-full px-1.5 py-0.5 bg-amber-500/80 text-black flex items-center gap-0.5">
+                  <FaMusic size={6} /> {listing.edition_number != null ? `Edition #${listing.edition_number}` : 'Song NFT'}
+                </span>
+              </div>
+            ) : (
+              <div className={`inline-block text-[9px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 mb-1 ${cfg!.badge}`}>
+                {cfg!.label}
+              </div>
+            )}
+            <p className={`font-black text-sm truncate ${isSong ? 'text-amber-300' : cfg!.text}`}>{listing.collection_name ?? listing.nft_name ?? '—'}</p>
             {listing.artist_name && <p className="text-zinc-500 text-[10px]">von {listing.artist_name}</p>}
-            {listing.attributes && (() => {
+            {isSong && listing.description && (
+              <p className="text-zinc-400 text-[9px] leading-relaxed mt-1">{listing.description}</p>
+            )}
+            {!isSong && listing.attributes && (() => {
               const boosts = listing.attributes!.filter(a =>
                 ['Rep Bonus', 'Credit Bonus', 'Shard Bonus', 'Bonus'].some(k => a.trait_type.includes(k))
               );
               return boosts.length > 0 ? (
                 <div className="flex flex-wrap gap-1 mt-1.5">
                   {boosts.map(a => (
-                    <span key={a.trait_type} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${cfg.border} ${cfg.text} bg-black/30`}>
+                    <span key={a.trait_type} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${cfg!.border} ${cfg!.text} bg-black/30`}>
                       {a.trait_type.replace(' Bonus', '')} {a.value}
                     </span>
                   ))}
@@ -339,7 +418,7 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
         <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 space-y-2 mb-4">
           <div className="flex justify-between text-sm">
             <span className="text-zinc-400">Preis</span>
-            <span className={`font-black ${cfg.text}`}>{price.toLocaleString('de-DE')} D.FAITH</span>
+            <span className={`font-black ${isSong ? 'text-amber-400' : cfg!.text}`}>{price.toLocaleString('de-DE')} D.FAITH</span>
           </div>
           <div className="h-px bg-white/[0.06]" />
           <div className="flex justify-between text-xs text-zinc-500">
@@ -672,6 +751,8 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
             nft_collection_mint: s.masterEditionMint ?? undefined,
             source:              'shop' as const,
             editionNumber:       s.editionNumber ?? null,
+            description:         s.description ?? null,
+            contentUrl:          s.contentUrl ?? null,
             attributes: [
               { trait_type: 'Type',     value: 'Music'   },
               { trait_type: 'Platform', value: 'D.FAITH' },
@@ -712,6 +793,9 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
           artistName:        selected.artist_name,
           nftCollectionMint: selected.nft_collection_mint ?? null,
           nftType:           selected.source === 'shop' ? 'song' : 'collectible',
+          description:       selected.description ?? null,
+          contentUrl:        selected.contentUrl ?? null,
+          editionNumber:     selected.editionNumber ?? null,
           attributes:        selected.attributes?.length ? selected.attributes : null,
         }),
       });

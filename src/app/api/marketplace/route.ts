@@ -46,6 +46,9 @@ async function ensureTable(sql: ReturnType<typeof getDb>) {
   await sql`ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS nft_collection_mint TEXT`;
   await sql`ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS attributes JSONB`;
   await sql`ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS nft_type TEXT NOT NULL DEFAULT 'collectible'`;
+  await sql`ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS description TEXT`;
+  await sql`ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS content_url TEXT`;
+  await sql`ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS edition_number INTEGER`;
 }
 
 // ─── GET: Listings laden ──────────────────────────────────────────────────────
@@ -64,6 +67,7 @@ export async function GET(req: NextRequest) {
     const cols = sql`
       nl.id, nl.mint_address, nl.seller_wallet, nl.price_dfaith,
       nl.collection_id, nl.collection_name, nl.rarity, nl.image_url, nl.nft_name,
+      nl.nft_type, nl.description, nl.content_url, nl.edition_number,
       COALESCE(
         CASE WHEN up.display_platform = 'youtube'   THEN yb.channel_name     ELSE NULL END,
         CASE WHEN up.display_platform = 'instagram' THEN up.instagram_name   ELSE NULL END,
@@ -137,6 +141,9 @@ export async function POST(req: NextRequest) {
       artistName?: string;
       nftCollectionMint?: string;
       nftType?: 'collectible' | 'song';
+      description?: string | null;
+      contentUrl?: string | null;
+      editionNumber?: number | null;
       attributes?: { trait_type: string; value: string }[] | null;
     };
 
@@ -226,12 +233,14 @@ export async function POST(req: NextRequest) {
     const attributesJson = body.attributes ? JSON.stringify(body.attributes) : null;
     const row = await sql`
       INSERT INTO nft_listings
-        (mint_address, seller_wallet, price_dfaith, collection_id, collection_name, rarity, image_url, nft_name, artist_name, nft_collection_mint, nft_type, attributes)
+        (mint_address, seller_wallet, price_dfaith, collection_id, collection_name, rarity, image_url, nft_name, artist_name, nft_collection_mint, nft_type, description, content_url, edition_number, attributes)
       VALUES
         (${mintAddress}, ${walletAddress.toLowerCase()}, ${priceDfaith},
          ${body.collectionId ?? null}, ${body.collectionName ?? null}, ${body.rarity ?? null},
          ${body.imageUrl ?? null}, ${body.nftName ?? null}, ${body.artistName ?? null},
-         ${nftCollectionMint}, ${nftType}, ${attributesJson}::jsonb)
+         ${nftCollectionMint}, ${nftType},
+         ${body.description ?? null}, ${body.contentUrl ?? null}, ${body.editionNumber ?? null},
+         ${attributesJson}::jsonb)
       RETURNING id
     `;
 
