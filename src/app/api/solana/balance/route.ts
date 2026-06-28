@@ -170,11 +170,12 @@ export async function GET(req: Request) {
   const lamports  = await connection.getBalance(pubkey);
   const solBalance = lamports / LAMPORTS_PER_SOL;
 
-  // All SPL token accounts (non-zero)
+  // All SPL token accounts (non-zero, keine NFTs — NFTs haben immer decimals=0)
   const tokenAccounts = await connection.getParsedTokenAccountsByOwner(pubkey, { programId: TOKEN_PROGRAM_ID });
-  const nonEmpty = tokenAccounts.value.filter(
-    ({ account }) => (account.data.parsed.info.tokenAmount.uiAmount ?? 0) > 0
-  );
+  const nonEmpty = tokenAccounts.value.filter(({ account }) => {
+    const amt = account.data.parsed.info.tokenAmount;
+    return (amt.uiAmount ?? 0) > 0 && (amt.decimals as number) > 0;
+  });
   const uniqueMints = [...new Set(nonEmpty.map(({ account }) => account.data.parsed.info.mint as string))];
 
   const [splMarket, solMarket, dfaithDex] = await Promise.all([
