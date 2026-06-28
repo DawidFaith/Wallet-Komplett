@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
 import Image from 'next/image';
 import {
@@ -8,6 +8,7 @@ import {
   FaKey, FaEye, FaEyeSlash, FaSpinner, FaExchangeAlt,
   FaChevronDown, FaChevronUp, FaDownload, FaCreditCard,
   FaTimes, FaLock, FaUnlock, FaChartLine, FaInfoCircle, FaGem, FaWallet,
+  FaPlay, FaPause,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
 import SwapWidget from './wallet/SwapWidget';
@@ -43,6 +44,149 @@ interface OwnedNft {
   isDfaith:   boolean;
   interface:  string;
   attributes: { trait_type: string; value: string }[];
+}
+
+interface ShopNftData {
+  purchaseId:    string;
+  printMint:     string | null;
+  editionNumber: number | null;
+  purchasedAt:   string;
+  title:         string;
+  imageUrl:      string;
+  description:   string;
+  contentUrl:    string | null;
+  type:          string;
+  nftMaxSupply:  number | null;
+  artistName:    string | null;
+  artistPicture: string | null;
+}
+
+// ─── Song NFT Card (Shop-Käufe: vollständig mit Bild, MP3, Artist) ───────────
+function SongNftCard({ nft, shopNft, onSend, onBurn }: {
+  nft:     OwnedNft;
+  shopNft: ShopNftData | null;
+  onSend:  () => void;
+  onBurn:  () => void;
+}) {
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const togglePlay = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) { audio.pause(); setPlaying(false); }
+    else { audio.play(); setPlaying(true); }
+  };
+
+  const title        = shopNft?.title    ?? nft.name;
+  const imageUrl     = shopNft?.imageUrl ?? nft.image;
+  const description  = shopNft?.description;
+  const artistAttr   = nft.attributes.find(a => a.trait_type === 'Artist')?.value;
+  const artistName   = shopNft?.artistName   ?? artistAttr;
+  const artistPic    = shopNft?.artistPicture ?? null;
+  const contentUrl   = shopNft?.contentUrl   ?? null;
+  const isSong       = shopNft?.type === 'song';
+  const editionNum   = shopNft?.editionNumber  ?? null;
+  const maxSupply    = shopNft?.nftMaxSupply   ?? null;
+  const editionLabel = editionNum != null && maxSupply != null
+    ? `#${editionNum} / ${maxSupply}`
+    : editionNum != null ? `Edition #${editionNum}` : null;
+
+  return (
+    <div className="bg-zinc-900 border border-white/[0.08] rounded-2xl overflow-hidden">
+      {/* Cover */}
+      <div className="relative aspect-[16/7] overflow-hidden bg-zinc-800">
+        {imageUrl ? (
+          <>
+            <Image src={imageUrl} alt="" fill className="object-cover scale-110 blur-xl opacity-60" unoptimized />
+            <Image src={imageUrl} alt={title} fill className="object-contain" unoptimized />
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-900/60 to-zinc-900">
+            <FaGem size={28} className="text-violet-500/30" />
+          </div>
+        )}
+        <span className="absolute top-2 left-2 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border backdrop-blur-md bg-violet-900/70 border-violet-500/40 text-violet-300">
+          <FaGem size={7} /> NFT
+        </span>
+        {editionLabel && (
+          <span className="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-sm border border-violet-500/30 text-violet-300">
+            {editionLabel}
+          </span>
+        )}
+      </div>
+
+      <div className="p-3 space-y-2.5">
+        {/* Titel + Artist */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-white font-bold text-sm leading-snug truncate">{title}</p>
+            {description && (
+              <p className="text-zinc-500 text-[11px] leading-relaxed line-clamp-2 mt-0.5">{description}</p>
+            )}
+          </div>
+          {artistName && (
+            <div className="flex items-center gap-1.5 shrink-0">
+              {artistPic ? (
+                <Image src={artistPic} alt="" width={22} height={22} className="w-[22px] h-[22px] rounded-full object-cover ring-1 ring-amber-500/40" unoptimized />
+              ) : (
+                <div className="w-[22px] h-[22px] rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                  <FaGem size={8} className="text-amber-400" />
+                </div>
+              )}
+              <span className="text-amber-300/80 text-[11px] font-semibold truncate max-w-[80px]">{artistName}</span>
+            </div>
+          )}
+        </div>
+
+        {/* MP3 Player */}
+        {isSong && contentUrl && (
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 bg-zinc-800/60 rounded-xl px-3 py-2">
+              <audio ref={audioRef} src={contentUrl} onEnded={() => setPlaying(false)} />
+              <button
+                onClick={togglePlay}
+                className="w-7 h-7 rounded-full bg-violet-500 flex items-center justify-center shrink-0 hover:bg-violet-400 transition-colors"
+              >
+                {playing
+                  ? <FaPause size={9} className="text-white" />
+                  : <FaPlay  size={9} className="text-white ml-0.5" />}
+              </button>
+              <div className="flex-1 min-w-0">
+                <p className="text-zinc-200 text-[11px] font-semibold truncate">{title}</p>
+                <p className="text-zinc-500 text-[10px]">NFT Edition · Vollständiger Song</p>
+              </div>
+            </div>
+            <a
+              href={contentUrl}
+              download
+              className="flex items-center justify-center gap-1.5 w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl py-1.5 text-zinc-400 text-[11px] font-semibold transition-colors"
+            >
+              <FaDownload size={9} /> Download
+            </a>
+          </div>
+        )}
+
+        {/* Buttons */}
+        <div className="flex gap-1.5 flex-wrap">
+          <button
+            onClick={onSend}
+            className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+            <FaPaperPlane size={9} /> Send
+          </button>
+          <button
+            onClick={onBurn}
+            className="bg-red-950/40 hover:bg-red-900/50 text-red-400 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+            🔥 Burn
+          </button>
+          <a href={`https://solscan.io/account/${nft.mint}`} target="_blank" rel="noopener noreferrer"
+            className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+            <FaExternalLinkAlt size={8} /> Solscan
+          </a>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ─── Token Row ────────────────────────────────────────────────────────────────
@@ -405,6 +549,7 @@ export default function SolanaWalletTab() {
   const [nfts, setNfts]                   = useState<OwnedNft[]>([]);
   const [nftsLoading, setNftsLoading]     = useState(false);
   const [artistMap, setArtistMap]         = useState<Record<string, string | null>>({});
+  const [shopNftsMap, setShopNftsMap]     = useState<Record<string, ShopNftData>>({});
   const [openNftArtists, setOpenNftArtists] = useState<Set<string>>(new Set());
   const [nftSendTarget, setNftSendTarget] = useState<OwnedNft | null>(null);
   const [nftRecipient, setNftRecipient]   = useState('');
@@ -517,15 +662,21 @@ export default function SolanaWalletTab() {
     Promise.all([
       fetch(`/api/solana/nfts?solanaAddress=${solanaAddr}`).then(r => r.ok ? r.json() : []),
       fetch('/api/admin/artists').then(r => r.ok ? r.json() : { artists: [] }),
-    ]).then(([nftData, artistData]) => {
+      userId ? fetch(`/api/nfts?wallet=${userId}`).then(r => r.ok ? r.json() : []) : Promise.resolve([]),
+    ]).then(([nftData, artistData, shopNftData]) => {
       setNfts(Array.isArray(nftData) ? nftData : []);
       const map: Record<string, string | null> = {};
       for (const a of (artistData.artists ?? [])) {
         map[a.name] = a.picture ?? null;
       }
       setArtistMap(map);
+      const smap: Record<string, ShopNftData> = {};
+      for (const s of (Array.isArray(shopNftData) ? shopNftData : [])) {
+        if (s.printMint) smap[s.printMint] = s as ShopNftData;
+      }
+      setShopNftsMap(smap);
     }).catch(() => {}).finally(() => setNftsLoading(false));
-  }, [solanaAddr]);
+  }, [solanaAddr, userId]);
 
   // ── Senden ────────────────────────────────────────────────────────────────
   const handleSend = async () => {
@@ -1211,7 +1362,17 @@ export default function SolanaWalletTab() {
                       {artistSongs.length > 0 && (
                         <div className="space-y-2">
                           <p className="text-zinc-700 text-[10px] font-bold uppercase tracking-widest px-1">Songs</p>
-                          <div className="space-y-2">{artistSongs.map(renderNft)}</div>
+                          <div className="space-y-2">
+                            {artistSongs.map(nft => (
+                              <SongNftCard
+                                key={nft.mint}
+                                nft={nft}
+                                shopNft={shopNftsMap[nft.mint] ?? null}
+                                onSend={() => { setNftSendTarget(nft); setNftSendErr(''); setNftSendOk(''); setNftRecipient(''); }}
+                                onBurn={() => { setNftBurnTarget(nft); setNftBurnErr(''); setNftBurnOk(''); }}
+                              />
+                            ))}
+                          </div>
                         </div>
                       )}
                       {artistCollectibles.length > 0 && (
