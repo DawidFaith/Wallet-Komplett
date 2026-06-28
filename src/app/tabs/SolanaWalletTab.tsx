@@ -61,7 +61,7 @@ interface ShopNftData {
   artistPicture: string | null;
 }
 
-// ─── Song NFT Card (Shop-Käufe: vollständig mit Bild, MP3, Artist) ───────────
+// ─── Song NFT Card — Design identisch mit Shop-ItemCard ──────────────────────
 function SongNftCard({ nft, shopNft, onSend, onBurn }: {
   nft:     OwnedNft;
   shopNft: ShopNftData | null;
@@ -71,34 +71,35 @@ function SongNftCard({ nft, shopNft, onSend, onBurn }: {
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const togglePlay = () => {
+  const togglePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const audio = audioRef.current;
     if (!audio) return;
     if (playing) { audio.pause(); setPlaying(false); }
     else { audio.play(); setPlaying(true); }
   };
 
-  const title        = shopNft?.title    ?? nft.name;
-  const imageUrl     = shopNft?.imageUrl ?? nft.image;
-  const description  = shopNft?.description;
-  const artistAttr   = nft.attributes.find(a => a.trait_type === 'Artist')?.value;
-  const artistName   = shopNft?.artistName   ?? artistAttr;
-  const artistPic    = shopNft?.artistPicture ?? null;
-  const contentUrl   = shopNft?.contentUrl   ?? null;
-  const isSong       = shopNft?.type === 'song';
-  const editionNum   = shopNft?.editionNumber  ?? null;
-  const maxSupply    = shopNft?.nftMaxSupply   ?? null;
+  const title       = shopNft?.title    ?? nft.name;
+  const imageUrl    = shopNft?.imageUrl ?? nft.image;
+  const description = shopNft?.description;
+  const artistAttr  = nft.attributes.find(a => a.trait_type === 'Artist')?.value;
+  const artistName  = shopNft?.artistName  ?? artistAttr;
+  const contentUrl  = shopNft?.contentUrl  ?? null;
+  const isSong      = shopNft?.type === 'song';
+  const editionNum  = shopNft?.editionNumber ?? null;
+  const maxSupply   = shopNft?.nftMaxSupply  ?? null;
   const editionLabel = editionNum != null && maxSupply != null
     ? `#${editionNum} / ${maxSupply}`
-    : editionNum != null ? `Edition #${editionNum}` : null;
+    : editionNum != null ? `#${editionNum}` : null;
 
   return (
-    <div className="bg-zinc-900 border border-white/[0.08] rounded-2xl overflow-hidden">
-      {/* Cover */}
-      <div className="relative aspect-[16/7] overflow-hidden bg-zinc-800">
+    <div className="group relative flex flex-col rounded-xl overflow-hidden bg-[#181818] hover:bg-[#282828] transition-all duration-200">
+
+      {/* Quadratisches Album-Art — identisch mit Shop ItemCard */}
+      <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl m-3 mb-0" style={{ width: 'calc(100% - 1.5rem)' }}>
         {imageUrl ? (
           <>
-            <Image src={imageUrl} alt="" fill className="object-cover scale-110 blur-xl opacity-60" unoptimized />
+            <Image src={imageUrl} alt="" fill className="object-cover scale-110 blur-xl opacity-40" unoptimized />
             <Image src={imageUrl} alt={title} fill className="object-contain" unoptimized />
           </>
         ) : (
@@ -106,76 +107,65 @@ function SongNftCard({ nft, shopNft, onSend, onBurn }: {
             <FaGem size={28} className="text-violet-500/30" />
           </div>
         )}
-        <span className="absolute top-2 left-2 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border backdrop-blur-md bg-violet-900/70 border-violet-500/40 text-violet-300">
-          <FaGem size={7} /> NFT
-        </span>
+
+        {/* Play-Button auf dem Bild — rechts unten, amber, erscheint beim Hover */}
+        {isSong && contentUrl && (
+          <>
+            <audio ref={audioRef} src={contentUrl} onEnded={() => setPlaying(false)} />
+            <button
+              onClick={togglePlay}
+              className={`absolute bottom-2 right-2 w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center shadow-xl transition-all duration-200 ${
+                playing ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0'
+              }`}
+            >
+              {playing
+                ? <FaPause size={12} className="text-black" />
+                : <FaPlay  size={12} className="text-black ml-0.5" />}
+            </button>
+          </>
+        )}
+
+        {/* Edition-Badge auf dem Bild */}
         {editionLabel && (
-          <span className="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-sm border border-violet-500/30 text-violet-300">
-            {editionLabel}
-          </span>
+          <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm border border-violet-500/30 rounded-lg px-2 py-0.5">
+            <p className="text-violet-300 text-[10px] font-bold">Edition {editionLabel}</p>
+          </div>
         )}
       </div>
 
-      <div className="p-3 space-y-2.5">
-        {/* Titel + Artist */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-white font-bold text-sm leading-snug truncate">{title}</p>
-            {description && (
-              <p className="text-zinc-500 text-[11px] leading-relaxed line-clamp-2 mt-0.5">{description}</p>
-            )}
-          </div>
-          {artistName && (
-            <div className="flex items-center gap-1.5 shrink-0">
-              {artistPic ? (
-                <Image src={artistPic} alt="" width={22} height={22} className="w-[22px] h-[22px] rounded-full object-cover ring-1 ring-amber-500/40" unoptimized />
-              ) : (
-                <div className="w-[22px] h-[22px] rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
-                  <FaGem size={8} className="text-amber-400" />
-                </div>
-              )}
-              <span className="text-amber-300/80 text-[11px] font-semibold truncate max-w-[80px]">{artistName}</span>
-            </div>
-          )}
-        </div>
-
-        {/* MP3 Player */}
-        {isSong && contentUrl && (
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 bg-zinc-800/60 rounded-xl px-3 py-2">
-              <audio ref={audioRef} src={contentUrl} onEnded={() => setPlaying(false)} />
-              <button
-                onClick={togglePlay}
-                className="w-7 h-7 rounded-full bg-violet-500 flex items-center justify-center shrink-0 hover:bg-violet-400 transition-colors"
-              >
-                {playing
-                  ? <FaPause size={9} className="text-white" />
-                  : <FaPlay  size={9} className="text-white ml-0.5" />}
-              </button>
-              <div className="flex-1 min-w-0">
-                <p className="text-zinc-200 text-[11px] font-semibold truncate">{title}</p>
-                <p className="text-zinc-500 text-[10px]">NFT Edition · Vollständiger Song</p>
-              </div>
-            </div>
-            <a
-              href={contentUrl}
-              download
-              className="flex items-center justify-center gap-1.5 w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl py-1.5 text-zinc-400 text-[11px] font-semibold transition-colors"
-            >
-              <FaDownload size={9} /> Download
-            </a>
-          </div>
+      {/* Textbereich */}
+      <div className="px-3 pt-3 pb-2 flex flex-col gap-0.5 flex-1">
+        <p className="text-white font-bold text-sm leading-snug line-clamp-1">{title}</p>
+        {artistName && (
+          <p className="text-amber-300/80 text-[11px] font-semibold">{artistName}</p>
+        )}
+        {description && (
+          <p className="text-zinc-400 text-[11px] leading-relaxed line-clamp-2 mt-0.5">{description}</p>
         )}
 
-        {/* Buttons */}
+        {/* NFT-Attribut-Chips */}
+        <div className="flex flex-wrap gap-1 mt-2">
+          {[['Type', 'Music'], ['Platform', 'D.FAITH'], ['Royalties', '5%']].map(([k, v]) => (
+            <span key={k} className="bg-zinc-800/80 border border-white/[0.06] rounded-md px-1.5 py-0.5 text-[9px] text-zinc-400">
+              <span className="text-zinc-600">{k}:</span> {v}
+            </span>
+          ))}
+          {editionLabel && (
+            <span className="bg-violet-900/40 border border-violet-500/30 rounded-md px-1.5 py-0.5 text-[9px] font-semibold text-violet-300">
+              Edition {editionLabel}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Action-Buttons */}
+      <div className="px-3 pb-3 pt-1">
         <div className="flex gap-1.5 flex-wrap">
-          <button
-            onClick={onSend}
+          <button onClick={onSend}
             className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
             <FaPaperPlane size={9} /> Send
           </button>
-          <button
-            onClick={onBurn}
+          <button onClick={onBurn}
             className="bg-red-950/40 hover:bg-red-900/50 text-red-400 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
             🔥 Burn
           </button>

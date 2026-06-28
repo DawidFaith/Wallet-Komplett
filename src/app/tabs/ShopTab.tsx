@@ -688,106 +688,96 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
   };
 
   return (
-    <div className="bg-zinc-900 border border-white/[0.08] rounded-2xl overflow-hidden shadow-xl">
-      {/* Cover */}
-      <div className="relative aspect-[16/7] overflow-hidden bg-zinc-800">
+    <div className="group relative flex flex-col rounded-xl overflow-hidden bg-[#181818] hover:bg-[#282828] transition-all duration-200">
+
+      {/* Quadratisches Album-Art — identisch mit Shop ItemCard */}
+      <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl m-3 mb-0" style={{ width: 'calc(100% - 1.5rem)' }}>
         {item.imageUrl ? (
           <>
-            {/* Blur-Hintergrund */}
-            <Image src={item.imageUrl} alt="" fill className="object-cover scale-110 blur-xl opacity-60" />
-            {/* Hauptbild */}
+            <Image src={item.imageUrl} alt="" fill className="object-cover scale-110 blur-xl opacity-40" />
             <Image src={item.imageUrl} alt={item.title} fill className="object-contain" />
           </>
         ) : (
           <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
-            <span className="opacity-20 scale-[3]"><TypeIcon type={item.type} /></span>
+            <span className="opacity-30 text-5xl"><TypeIcon type={item.type} /></span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent" />
-        <span className={`absolute top-3 left-3 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border backdrop-blur-md ${TYPE_COLORS[item.type]}`}>
-          <TypeIcon type={item.type} /> {TYPE_LABELS[item.type]}
-        </span>
-        <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
-          {item.isActive ? (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-900/70 border border-emerald-700/40 text-emerald-400 backdrop-blur-md">
-              <FaCheck size={8} /> {t('shop.boughtBadge', lang)}
+
+        {/* Play-Button auf dem Bild — rechts unten, amber */}
+        {item.type === 'song' && item.contentUrl && (
+          <>
+            <audio ref={audioRef} src={item.contentUrl} onEnded={() => setPlaying(false)} />
+            <button
+              onClick={e => { e.stopPropagation(); togglePlay(); }}
+              className={`absolute bottom-2 right-2 w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center shadow-xl transition-all duration-200 ${
+                playing ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0'
+              }`}
+            >
+              {playing ? <FaPause size={12} className="text-black" /> : <FaPlay size={12} className="text-black ml-0.5" />}
+            </button>
+          </>
+        )}
+
+        {/* Edition-Badge auf dem Bild */}
+        {item.editionNumber != null && item.nftMaxSupply != null && (
+          <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm border border-violet-500/30 rounded-lg px-2 py-0.5">
+            <p className="text-violet-300 text-[10px] font-bold">Edition #{item.editionNumber} / {item.nftMaxSupply}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Textbereich */}
+      <div className="px-3 pt-3 pb-2 flex flex-col gap-0.5 flex-1">
+        <p className="text-white font-bold text-sm leading-snug line-clamp-1">{item.title}</p>
+        {item.artistName && (
+          <p className="text-amber-300/80 text-[11px] font-semibold">{item.artistName}</p>
+        )}
+        {item.description && (
+          <p className="text-zinc-400 text-[11px] leading-relaxed line-clamp-2 mt-0.5">{item.description}</p>
+        )}
+
+        {/* NFT-Attribut-Chips */}
+        <div className="flex flex-wrap gap-1 mt-2">
+          {[['Type', TYPE_LABELS[item.type]], ['Platform', 'D.FAITH'], ['Royalties', '5%']].map(([k, v]) => (
+            <span key={k} className="bg-zinc-800/80 border border-white/[0.06] rounded-md px-1.5 py-0.5 text-[9px] text-zinc-400">
+              <span className="text-zinc-600">{k}:</span> {v}
             </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-800/80 border border-zinc-600/40 text-zinc-400 backdrop-blur-md">
-              <FaCheck size={8} /> {t('shop.boughtInactive', lang)}
+          ))}
+          {item.editionNumber != null && item.nftMaxSupply != null && (
+            <span className="bg-violet-900/40 border border-violet-500/30 rounded-md px-1.5 py-0.5 text-[9px] font-semibold text-violet-300">
+              Edition #{item.editionNumber} / {item.nftMaxSupply}
             </span>
           )}
-          {item.editionNumber != null && item.nftMaxSupply != null && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-900/70 border border-violet-500/40 text-violet-300 backdrop-blur-md">
-              <FaGem size={7} /> #{item.editionNumber} / {item.nftMaxSupply}
-            </span>
+          {item.printMint && (
+            <a
+              href={`https://solscan.io/token/${item.printMint}`}
+              target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-0.5 bg-violet-900/30 border border-violet-500/20 rounded-md px-1.5 py-0.5 text-[9px] text-violet-400 hover:text-violet-300 transition-colors"
+            >
+              <FaGem size={7} /> On-Chain
+            </a>
           )}
         </div>
       </div>
 
-      <div className="p-4 space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-white font-bold text-base leading-snug truncate">{item.title}</p>
-            {item.description && <p className="text-zinc-400 text-xs leading-relaxed line-clamp-2 mt-1">{item.description}</p>}
-          </div>
-          {item.artistName && (
-            <div className="flex items-center gap-1.5 shrink-0">
-              {item.artistPicture
-                ? <Image src={item.artistPicture} alt="" width={20} height={20} className="w-5 h-5 rounded-full object-cover" />
-                : <div className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center"><FaStar size={8} className="text-amber-400" /></div>}
-              <span className="text-zinc-400 text-xs truncate max-w-[80px]">{item.artistName}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Song: Audio-Player */}
+      {/* Kauf-Bereich: Download (Song) / Video / NFT */}
+      <div className="px-3 pb-3 pt-1 space-y-1.5">
         {item.type === 'song' && item.contentUrl && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 bg-zinc-800/60 rounded-xl px-3 py-2.5">
-              <audio ref={audioRef} src={item.contentUrl} onEnded={() => setPlaying(false)} />
-              <button
-                onClick={togglePlay}
-                className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center shrink-0 hover:bg-amber-400 transition-colors"
-              >
-                {playing ? <FaPause size={10} className="text-black" /> : <FaPlay size={10} className="text-black ml-0.5" />}
-              </button>
-              <div className="flex-1 min-w-0">
-                <p className="text-zinc-200 text-xs font-semibold truncate">{item.title}</p>
-                <p className="text-zinc-500 text-[10px]">{t('shop.fullSong', lang)}</p>
-              </div>
-            </div>
-            <a
-              href={item.contentUrl}
-              download
-              className="flex items-center justify-center gap-2 w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl py-2.5 text-zinc-300 text-xs font-semibold transition-colors"
-            >
-              <FaDownload size={10} /> Download
-            </a>
-          </div>
+          <a href={item.contentUrl} download
+            className="flex items-center justify-center gap-2 w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2 text-zinc-300 text-xs font-semibold transition-colors">
+            <FaDownload size={10} /> Download
+          </a>
         )}
-
-        {/* Video: Link öffnen */}
         {item.type === 'video' && item.contentUrl && (
           <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full bg-red-900/20 hover:bg-red-900/30 border border-red-800/30 rounded-xl py-2.5 text-red-300 text-xs font-semibold transition-colors">
+            className="flex items-center justify-center gap-2 w-full bg-red-900/20 hover:bg-red-900/30 border border-red-800/30 rounded-lg py-2 text-red-300 text-xs font-semibold transition-colors">
             <FaVideo size={11} /> {t('shop.watchVideo', lang)}
           </a>
         )}
-
-        {/* NFT / Exclusive: Inhalt öffnen */}
         {(item.type === 'nft' || item.type === 'exclusive') && item.contentUrl && (
           <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full bg-amber-900/20 hover:bg-amber-900/30 border border-amber-700/30 rounded-xl py-2.5 text-amber-300 text-xs font-semibold transition-colors">
+            className="flex items-center justify-center gap-2 w-full bg-amber-900/20 hover:bg-amber-900/30 border border-amber-700/30 rounded-lg py-2 text-amber-300 text-xs font-semibold transition-colors">
             <FaExternalLinkAlt size={10} /> {t('shop.openContent', lang)}
-          </a>
-        )}
-
-        {/* NFT on-chain Link */}
-        {item.printMint && (
-          <a href={`https://solscan.io/token/${item.printMint}`} target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 w-full text-violet-400/70 hover:text-violet-300 text-[11px] transition-colors py-1">
-            <FaGem size={9} /> On-Chain ansehen (Solscan)
           </a>
         )}
       </div>
