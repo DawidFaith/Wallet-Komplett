@@ -1,8 +1,11 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
-import { FaGem, FaExternalLinkAlt } from 'react-icons/fa';
+import {
+  FaGem, FaExternalLinkAlt, FaPlay, FaPause,
+  FaDownload, FaMusic, FaStar,
+} from 'react-icons/fa';
 
 interface OwnedNft {
   purchaseId:        string;
@@ -13,15 +16,18 @@ interface OwnedNft {
   title:             string;
   imageUrl:          string;
   description:       string;
+  contentUrl:        string | null;
+  type:              string;
   nftMaxSupply:      number | null;
   masterEditionMint: string | null;
   artistName:        string | null;
+  artistPicture:     string | null;
 }
 
 export default function NftCollectionTab() {
   const { user } = useUser();
   const walletAddress = user?.id ?? null;
-  const [nfts, setNfts]     = useState<OwnedNft[]>([]);
+  const [nfts, setNfts]       = useState<OwnedNft[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,19 +49,21 @@ export default function NftCollectionTab() {
         <div>
           <h2 className="text-white font-bold text-base leading-tight">Meine NFTs</h2>
           <p className="text-zinc-500 text-[11px]">
-            {nfts.length > 0 ? `${nfts.length} Edition${nfts.length !== 1 ? 'en' : ''}` : 'Deine Sammlung'}
+            {nfts.length > 0
+              ? `${nfts.length} Edition${nfts.length !== 1 ? 'en' : ''}`
+              : 'Deine Sammlung'}
           </p>
         </div>
       </div>
 
       {/* Content */}
       {loading ? (
-        <div className="grid grid-cols-2 gap-3">
-          {[1, 2, 3, 4].map(i => (
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
             <div key={i} className="bg-zinc-900/60 border border-white/[0.06] rounded-2xl overflow-hidden animate-pulse">
-              <div className="aspect-square bg-zinc-800/60" />
-              <div className="p-3 space-y-2">
-                <div className="h-3 bg-zinc-800/80 rounded-full w-3/4" />
+              <div className="aspect-[16/7] bg-zinc-800/60" />
+              <div className="p-4 space-y-2">
+                <div className="h-3.5 bg-zinc-800/80 rounded-full w-2/3" />
                 <div className="h-2.5 bg-zinc-800/60 rounded-full w-1/2" />
               </div>
             </div>
@@ -72,7 +80,7 @@ export default function NftCollectionTab() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-4">
           {nfts.map(nft => (
             <NftCard key={nft.purchaseId} nft={nft} />
           ))}
@@ -83,53 +91,113 @@ export default function NftCollectionTab() {
 }
 
 function NftCard({ nft }: { nft: OwnedNft }) {
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const togglePlay = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) { audio.pause(); setPlaying(false); }
+    else { audio.play(); setPlaying(true); }
+  };
+
   const editionLabel = nft.editionNumber != null && nft.nftMaxSupply != null
     ? `#${nft.editionNumber} / ${nft.nftMaxSupply}`
     : nft.editionNumber != null
       ? `Edition #${nft.editionNumber}`
       : null;
 
+  const isSong = nft.type === 'song';
+
   return (
-    <div className="group bg-zinc-900/60 border border-white/[0.06] rounded-2xl overflow-hidden hover:border-violet-500/30 transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,92,246,0.08)]">
+    <div className="bg-zinc-900 border border-white/[0.08] rounded-2xl overflow-hidden shadow-xl">
       {/* Cover */}
-      <div className="relative aspect-square bg-zinc-900 overflow-hidden">
+      <div className="relative aspect-[16/7] overflow-hidden bg-zinc-800">
         {nft.imageUrl ? (
-          <Image
-            src={nft.imageUrl}
-            alt={nft.title}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
-            sizes="(max-width: 640px) 50vw, 200px"
-          />
+          <>
+            <Image src={nft.imageUrl} alt="" fill className="object-cover scale-110 blur-xl opacity-60" />
+            <Image src={nft.imageUrl} alt={nft.title} fill className="object-contain" />
+          </>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-900/60 to-zinc-900">
             <FaGem size={32} className="text-violet-500/30" />
           </div>
         )}
 
+        {/* Type badge */}
+        <span className="absolute top-3 left-3 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border backdrop-blur-md bg-violet-900/70 border-violet-500/40 text-violet-300">
+          <FaGem size={8} /> NFT
+        </span>
+
         {/* Edition badge */}
         {editionLabel && (
-          <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm border border-violet-500/30 rounded-lg px-2 py-0.5">
-            <p className="text-violet-300 text-[10px] font-bold">{editionLabel}</p>
+          <span className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-sm border border-violet-500/30 text-violet-300">
+            {editionLabel}
+          </span>
+        )}
+      </div>
+
+      <div className="p-4 space-y-3">
+        {/* Title + Artist */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-white font-bold text-base leading-snug truncate">{nft.title}</p>
+            {nft.description && (
+              <p className="text-zinc-400 text-xs leading-relaxed line-clamp-2 mt-0.5">{nft.description}</p>
+            )}
+          </div>
+          {nft.artistName && (
+            <div className="flex items-center gap-1.5 shrink-0">
+              {nft.artistPicture ? (
+                <Image src={nft.artistPicture} alt="" width={24} height={24} className="w-6 h-6 rounded-full object-cover ring-1 ring-amber-500/40" />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <FaStar size={9} className="text-amber-400" />
+                </div>
+              )}
+              <span className="text-amber-300/80 text-xs font-semibold truncate max-w-[90px]">{nft.artistName}</span>
+            </div>
+          )}
+        </div>
+
+        {/* MP3 Player (nur für Songs) */}
+        {isSong && nft.contentUrl && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 bg-zinc-800/60 rounded-xl px-3 py-2.5">
+              <audio
+                ref={audioRef}
+                src={nft.contentUrl}
+                onEnded={() => setPlaying(false)}
+              />
+              <button
+                onClick={togglePlay}
+                className="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center shrink-0 hover:bg-violet-400 transition-colors"
+              >
+                {playing
+                  ? <FaPause size={10} className="text-white" />
+                  : <FaPlay size={10} className="text-white ml-0.5" />}
+              </button>
+              <div className="flex-1 min-w-0">
+                <p className="text-zinc-200 text-xs font-semibold truncate">{nft.title}</p>
+                <p className="text-zinc-500 text-[10px] flex items-center gap-1">
+                  <FaMusic size={8} /> NFT Edition — Vollständiger Song
+                </p>
+              </div>
+            </div>
+            <a
+              href={nft.contentUrl}
+              download
+              className="flex items-center justify-center gap-2 w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl py-2.5 text-zinc-300 text-xs font-semibold transition-colors"
+            >
+              <FaDownload size={10} /> Download
+            </a>
           </div>
         )}
 
-        {/* NFT gem indicator */}
-        <div className="absolute top-2 right-2 w-6 h-6 bg-black/60 backdrop-blur-sm border border-violet-500/30 rounded-lg flex items-center justify-center">
-          <FaGem size={10} className="text-violet-400" />
-        </div>
-      </div>
-
-      {/* Info */}
-      <div className="p-3 space-y-1">
-        <p className="text-white text-sm font-bold leading-tight line-clamp-1">{nft.title}</p>
-        {nft.artistName && (
-          <p className="text-amber-300/80 text-[11px] font-semibold">{nft.artistName}</p>
-        )}
-
+        {/* Kauf-Datum + Solscan */}
         <div className="flex items-center justify-between pt-1">
           <span className="text-zinc-600 text-[10px]">
-            {new Date(nft.purchasedAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+            Gekauft am {new Date(nft.purchasedAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}
           </span>
           {nft.printMint && (
             <a
@@ -138,7 +206,7 @@ function NftCard({ nft }: { nft: OwnedNft }) {
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-violet-400 hover:text-violet-300 transition-colors text-[10px]"
             >
-              Solscan <FaExternalLinkAlt size={8} />
+              On-Chain ansehen <FaExternalLinkAlt size={8} />
             </a>
           )}
         </div>
