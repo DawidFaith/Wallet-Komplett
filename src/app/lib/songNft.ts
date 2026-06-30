@@ -13,8 +13,9 @@ import {
   printV1,
   TokenStandard,
   verifyCreatorV1,
-  verifyCollectionV1,
+  setAndVerifySizedCollectionItem,
   findMetadataPda,
+  findMasterEditionPda,
 } from '@metaplex-foundation/mpl-token-metadata';
 import {
   keypairIdentity,
@@ -24,7 +25,6 @@ import {
   some,
   none,
   createSignerFromKeypair,
-  Context,
 } from '@metaplex-foundation/umi';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 import { Connection, Keypair, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
@@ -37,33 +37,8 @@ import bs58 from 'bs58';
 import { getTreasuryKeypair } from './solanaOperator';
 import { decryptKey } from './solanaCrypto';
 import { fetchAndUploadToArweave, uploadToArweave, waitForArweaveAvailability } from './arweaveUpload';
-import { getDb } from './db';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
-
-/** Liest die D.FAITH Songs Collection Mint-Adresse aus platform_settings. */
-async function getSongCollectionMint(): Promise<string | null> {
-  try {
-    const sql  = getDb();
-    const rows = await sql`SELECT value FROM platform_settings WHERE key = 'song_collection_mint' LIMIT 1`;
-    return (rows[0]?.value as string | undefined) ?? null;
-  } catch {
-    return null;
-  }
-}
-
-/** Verifiziert ein NFT als Mitglied der D.FAITH Songs Collection (Treasury = Autorität). */
-async function verifyAsSongCollectionMember(
-  umi: Awaited<ReturnType<typeof import('@metaplex-foundation/umi-bundle-defaults').createUmi>>,
-  nftMint: string,
-  collectionMint: string,
-): Promise<void> {
-  const [nftMetadata] = findMetadataPda(umi, { mint: umiPubkey(nftMint) });
-  await verifyCollectionV1(umi, {
-    metadata:       nftMetadata,
-    collectionMint: umiPubkey(collectionMint),
-  }).sendAndConfirm(umi);
-}
 
 export interface SongMasterEditionResult {
   masterMint: string;
@@ -167,8 +142,6 @@ export async function mintSongMasterEdition(params: {
 
   const mintSigner = generateSigner(umi);
 
-  const collectionMint = await getSongCollectionMint();
-
   await createV1(umi, {
     mint:                 mintSigner,
     authority:            umi.identity,
@@ -182,12 +155,13 @@ export async function mintSongMasterEdition(params: {
       verified: false,
       share:    100,
     }]),
-    tokenStandard: TokenStandard.NonFungible,
-    printSupply:   some({ __kind: 'Limited', fields: [BigInt(maxSupply)] }),
-    collection:    collectionMint
-      ? some({ key: umiPubkey(collectionMint), verified: false })
-      : none(),
-    uses:          none(),
+    tokenStandard:     TokenStandard.NonFungible,
+    printSupply:       some({ __kind: 'Limited', fields: [BigInt(maxSupply)] }),
+    // Master Edition ist selbst die Collection für ihre Print Editions (eigene Song-Collection,
+    // statt einer globalen Sammel-Collection für alle Songs).
+    collection:        none(),
+    collectionDetails: some({ __kind: 'V1', size: 0n }),
+    uses:              none(),
   }).sendAndConfirm(umi);
 
   // Master Edition Token in die Treasury-ATA minten (Pflicht für spätere printV1-Calls)
@@ -204,16 +178,6 @@ export async function mintSongMasterEdition(params: {
     metadata:  metadataPda,
     authority: artistSigner,
   }).sendAndConfirm(umi);
-
-  // Collection-Verifizierung: Treasury ist Update-Authority der Collection → kann verifizieren
-  if (collectionMint) {
-    try {
-      await verifyAsSongCollectionMember(umi, mintSigner.publicKey.toString(), collectionMint);
-    } catch (e) {
-      // Best-effort: Mint läuft weiter auch wenn Collection-Verify fehlschlägt
-      console.warn('[songNft] Collection-Verify für Master fehlgeschlagen:', e);
-    }
-  }
 
   return {
     masterMint:  mintSigner.publicKey.toString(),
@@ -283,14 +247,23 @@ export async function mintSongPrintEdition(params: {
     tokenStandard:             TokenStandard.NonFungible,
   }).sendAndConfirm(umi);
 
-  // Collection auf Print Edition verifizieren (Phantom zeigt sonst als Spam)
-  const collectionMint = await getSongCollectionMint();
-  if (collectionMint) {
-    try {
-      await verifyAsSongCollectionMember(umi, editionMintSigner.publicKey.toString(), collectionMint);
-    } catch (e) {
-      console.warn('[songNft] Collection-Verify für Print Edition fehlgeschlagen:', e);
-    }
+  // Print Edition als verifiziertes Mitglied der Song-eigenen Collection (Master Edition) eintragen.
+  // Ohne verifizierte Collection blendet Phantom das NFT als potenziellen Spam aus.
+  try {
+    const [printMetadata]  = findMetadataPda(umi, { mint: editionMintSigner.publicKey });
+    const [masterMetadata] = findMetadataPda(umi, { mint: umiPubkey(masterMint) });
+    const masterEditionPda = findMasterEditionPda(umi, { mint: umiPubkey(masterMint) });
+    await setAndVerifySizedCollectionItem(umi, {
+      metadata:                       printMetadata,
+      collectionAuthority:            umi.identity,
+      updateAuthority:                umi.identity.publicKey,
+      collectionMint:                 umiPubkey(masterMint),
+      collection:                     masterMetadata,
+      collectionMasterEditionAccount: masterEditionPda,
+    }).sendAndConfirm(umi);
+  } catch (e) {
+    // Best-effort: Print-NFT existiert bereits beim Käufer, Collection-Verify-Fehler darf den Kauf nicht blockieren
+    console.warn('[songNft] Collection-Verify für Print Edition fehlgeschlagen:', e);
   }
 
   return {
