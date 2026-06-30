@@ -63,6 +63,12 @@ export async function GET(req: NextRequest) {
     LEFT JOIN user_profiles p ON LOWER(p.wallet_address) = LOWER(si.artist_wallet)
     LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
     WHERE sp.buyer_wallet = ${wallet}
+      AND sp.nft_mint_address IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM nft_listings nl
+        WHERE nl.mint_address = sp.nft_mint_address
+          AND nl.status = 'active'
+      )
     ORDER BY sp.purchased_at DESC
   `;
 
