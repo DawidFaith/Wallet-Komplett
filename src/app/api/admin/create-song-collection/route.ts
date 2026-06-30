@@ -30,8 +30,13 @@ export const maxDuration = 120;
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
+    const body = await req.json().catch(() => ({}));
+    if (body?.password !== 'admin123') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const sql = getDb();
 
     // Schon vorhanden?
