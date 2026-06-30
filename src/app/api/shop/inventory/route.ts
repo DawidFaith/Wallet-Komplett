@@ -1,11 +1,37 @@
 /**
  * GET /api/shop/inventory?wallet=XXX
- * Gibt alle gekauften Items eines Nutzers zurück, inkl. vollständiger contentUrl.
+ * Gibt alle gekauften Items zurück die der User wirklich noch besitzt:
+ * - nicht aktiv auf dem Marktplatz gelistet
+ * - on-chain noch in seiner Solana-Wallet (getTokenAccountsByOwner)
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
+import { Connection, PublicKey } from '@solana/web3.js';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 export const dynamic = 'force-dynamic';
+
+const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
+
+/** Gibt alle Mint-Adressen zurück die aktuell on-chain in diesem Wallet liegen (amount > 0). */
+async function getOwnedMints(solanaAddress: string): Promise<Set<string>> {
+  try {
+    const conn     = new Connection(RPC_URL, 'confirmed');
+    const ownerPk  = new PublicKey(solanaAddress);
+    const accounts = await conn.getTokenAccountsByOwner(ownerPk, { programId: TOKEN_PROGRAM_ID });
+    const mints    = new Set<string>();
+    for (const { account } of accounts.value) {
+      const data   = account.data;
+      // SPL Token account layout: mint is bytes 0–31
+      const mint   = new PublicKey(data.slice(0, 32)).toBase58();
+      const amount = data.readBigUInt64LE(64);
+      if (amount > 0n) mints.add(mint);
+    }
+    return mints;
+  } catch {
+    return new Set();
+  }
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -16,6 +42,15 @@ export async function GET(req: NextRequest) {
   }
 
   const sql = getDb();
+
+  // Solana-Adresse des Users holen für on-chain Prüfung
+  const solanaRows = await sql`
+    SELECT solana_address FROM solana_accounts WHERE wallet_address = ${wallet} LIMIT 1
+  `;
+  const solanaAddress = (solanaRows[0]?.solana_address as string | undefined) ?? null;
+
+  // On-chain gehaltene Mints (ein RPC-Call für alle auf einmal)
+  const ownedMints = solanaAddress ? await getOwnedMints(solanaAddress) : new Set<string>();
 
   const rows = await sql`
     SELECT
@@ -72,5 +107,11 @@ export async function GET(req: NextRequest) {
     ORDER BY sp.purchased_at DESC
   `;
 
-  return NextResponse.json(rows);
+  // On-chain filtern: nur NFTs anzeigen die der User wirklich noch hält
+  // Falls kein Solana-Wallet verknüpft ist, fällt das on-chain-Filter weg (rows wie gehabt)
+  const filtered = solanaAddress
+    ? rows.filter(r => ownedMints.has(r.print_mint as string))
+    : rows;
+
+  return NextResponse.json(filtered);
 }
