@@ -13,6 +13,7 @@ import {
   printV1,
   TokenStandard,
   verifyCreatorV1,
+  verifyCollectionV1,
   findMetadataPda,
 } from '@metaplex-foundation/mpl-token-metadata';
 import {
@@ -23,6 +24,7 @@ import {
   some,
   none,
   createSignerFromKeypair,
+  Context,
 } from '@metaplex-foundation/umi';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 import { Connection, Keypair, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
@@ -35,8 +37,33 @@ import bs58 from 'bs58';
 import { getTreasuryKeypair } from './solanaOperator';
 import { decryptKey } from './solanaCrypto';
 import { fetchAndUploadToArweave, uploadToArweave, waitForArweaveAvailability } from './arweaveUpload';
+import { getDb } from './db';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
+
+/** Liest die D.FAITH Songs Collection Mint-Adresse aus platform_settings. */
+async function getSongCollectionMint(): Promise<string | null> {
+  try {
+    const sql  = getDb();
+    const rows = await sql`SELECT value FROM platform_settings WHERE key = 'song_collection_mint' LIMIT 1`;
+    return (rows[0]?.value as string | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Verifiziert ein NFT als Mitglied der D.FAITH Songs Collection (Treasury = Autorität). */
+async function verifyAsSongCollectionMember(
+  umi: Awaited<ReturnType<typeof import('@metaplex-foundation/umi-bundle-defaults').createUmi>>,
+  nftMint: string,
+  collectionMint: string,
+): Promise<void> {
+  const [nftMetadata] = findMetadataPda(umi, { mint: umiPubkey(nftMint) });
+  await verifyCollectionV1(umi, {
+    metadata:       nftMetadata,
+    collectionMint: umiPubkey(collectionMint),
+  }).sendAndConfirm(umi);
+}
 
 export interface SongMasterEditionResult {
   masterMint: string;
@@ -140,6 +167,8 @@ export async function mintSongMasterEdition(params: {
 
   const mintSigner = generateSigner(umi);
 
+  const collectionMint = await getSongCollectionMint();
+
   await createV1(umi, {
     mint:                 mintSigner,
     authority:            umi.identity,
@@ -155,7 +184,9 @@ export async function mintSongMasterEdition(params: {
     }]),
     tokenStandard: TokenStandard.NonFungible,
     printSupply:   some({ __kind: 'Limited', fields: [BigInt(maxSupply)] }),
-    collection:    none(),
+    collection:    collectionMint
+      ? some({ key: umiPubkey(collectionMint), verified: false })
+      : none(),
     uses:          none(),
   }).sendAndConfirm(umi);
 
@@ -170,9 +201,19 @@ export async function mintSongMasterEdition(params: {
   // Creator-Verifikation mit dem Artist-Keypair (bereits oben geparst)
   const [metadataPda] = findMetadataPda(umi, { mint: mintSigner.publicKey });
   await verifyCreatorV1(umi, {
-    metadata: metadataPda,
+    metadata:  metadataPda,
     authority: artistSigner,
   }).sendAndConfirm(umi);
+
+  // Collection-Verifizierung: Treasury ist Update-Authority der Collection → kann verifizieren
+  if (collectionMint) {
+    try {
+      await verifyAsSongCollectionMember(umi, mintSigner.publicKey.toString(), collectionMint);
+    } catch (e) {
+      // Best-effort: Mint läuft weiter auch wenn Collection-Verify fehlschlägt
+      console.warn('[songNft] Collection-Verify für Master fehlgeschlagen:', e);
+    }
+  }
 
   return {
     masterMint:  mintSigner.publicKey.toString(),
@@ -241,6 +282,16 @@ export async function mintSongPrintEdition(params: {
     editionNumber:             BigInt(editionNumber),
     tokenStandard:             TokenStandard.NonFungible,
   }).sendAndConfirm(umi);
+
+  // Collection auf Print Edition verifizieren (Phantom zeigt sonst als Spam)
+  const collectionMint = await getSongCollectionMint();
+  if (collectionMint) {
+    try {
+      await verifyAsSongCollectionMember(umi, editionMintSigner.publicKey.toString(), collectionMint);
+    } catch (e) {
+      console.warn('[songNft] Collection-Verify für Print Edition fehlgeschlagen:', e);
+    }
+  }
 
   return {
     printMint:     editionMintSigner.publicKey.toString(),
