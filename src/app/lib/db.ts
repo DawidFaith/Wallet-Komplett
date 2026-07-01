@@ -302,8 +302,9 @@ export const MIGRATION_SQL = `
 
   -- ── NFT-Integration (Solana On-Chain) ───────────────────────────────────────
   -- Songs: Master Edition Mint-Adresse + Auflagen-Zähler
-  ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS master_edition_mint TEXT;
-  ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS nft_max_supply      INTEGER;
+  ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS master_edition_mint  TEXT;
+  ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS nft_max_supply       INTEGER;
+  ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS nft_collection_mint  TEXT;
   ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS edition_count       INTEGER NOT NULL DEFAULT 0;
   ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS is_nft_enabled      BOOLEAN NOT NULL DEFAULT FALSE;
 

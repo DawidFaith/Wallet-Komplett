@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
   // ── Item laden ────────────────────────────────────────────────────────────
   const items = await sql`
     SELECT id, artist_wallet, price_credits, price_tokens, title, content_url, type, is_active,
-           master_edition_mint, nft_max_supply, edition_count, is_nft_enabled
+           master_edition_mint, nft_collection_mint, nft_max_supply, edition_count, is_nft_enabled
     FROM shop_items
     WHERE id = ${itemId}
     LIMIT 1
@@ -69,7 +69,8 @@ export async function POST(req: NextRequest) {
     content_url: string;
     type: string;
     is_active: boolean;
-    master_edition_mint: string | null;
+    master_edition_mint:  string | null;
+    nft_collection_mint:  string | null;
     nft_max_supply: number | null;
     edition_count: number;
     is_nft_enabled: boolean;
@@ -182,9 +183,10 @@ export async function POST(req: NextRequest) {
   let nftMintAddress: string;
   try {
     const { printMint } = await mintSongPrintEdition({
-      masterMint:       item.master_edition_mint!,
+      masterMint:        item.master_edition_mint!,
+      collectionMint:    item.nft_collection_mint ?? '',
       buyerSolanaAddress,
-      artistPrivateKey: artistKeyRows[0].solana_private_key as string,
+      artistPrivateKey:  artistKeyRows[0].solana_private_key as string,
       editionNumber,
     });
     nftMintAddress = printMint;

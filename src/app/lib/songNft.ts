@@ -13,9 +13,8 @@ import {
   printV1,
   TokenStandard,
   verifyCreatorV1,
-  setAndVerifySizedCollectionItem,
+  verifyCollectionV1,
   findMetadataPda,
-  findMasterEditionPda,
 } from '@metaplex-foundation/mpl-token-metadata';
 import {
   keypairIdentity,
@@ -41,8 +40,9 @@ import { fetchAndUploadToArweave, uploadToArweave, waitForArweaveAvailability } 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
 export interface SongMasterEditionResult {
-  masterMint: string;
-  metadataUri: string;
+  masterMint:     string;
+  collectionMint: string;
+  metadataUri:    string;
 }
 
 /**
@@ -140,8 +140,34 @@ export async function mintSongMasterEdition(params: {
   const artistSigner    = createSignerFromKeypair(umi, artistUmiKp);
   umi.payer             = artistSigner;
 
-  const mintSigner = generateSigner(umi);
+  // ── 1. Collection NFT für diesen Song erstellen (Treasury hält es) ──────────
+  // Jeder Song bekommt seine eigene Collection NFT. Master + alle Print Editions
+  // werden als verifizierte Mitglieder eingetragen → Phantom erkennt sie nicht als Spam.
+  const collectionMintSigner = generateSigner(umi);
+  await createV1(umi, {
+    mint:                 collectionMintSigner,
+    authority:            umi.identity,
+    updateAuthority:      umi.identity,
+    name:                 title.slice(0, 32),
+    symbol:               symbol.slice(0, 10),
+    uri:                  metadataUri,
+    sellerFeeBasisPoints: percentAmount(0),
+    creators:             none(),
+    tokenStandard:        TokenStandard.NonFungible,
+    printSupply:          none(),
+    collection:           none(),
+    collectionDetails:    some({ __kind: 'V1', size: 0n }),
+    uses:                 none(),
+  }).sendAndConfirm(umi);
+  await mintV1(umi, {
+    mint:          collectionMintSigner.publicKey,
+    tokenOwner:    umi.identity.publicKey,
+    amount:        1,
+    tokenStandard: TokenStandard.NonFungible,
+  }).sendAndConfirm(umi);
 
+  // ── 2. Master Edition mit Verweis auf die Song-Collection erstellen ──────────
+  const mintSigner = generateSigner(umi);
   await createV1(umi, {
     mint:                 mintSigner,
     authority:            umi.identity,
@@ -155,16 +181,12 @@ export async function mintSongMasterEdition(params: {
       verified: false,
       share:    100,
     }]),
-    tokenStandard:     TokenStandard.NonFungible,
-    printSupply:       some({ __kind: 'Limited', fields: [BigInt(maxSupply)] }),
-    // Master Edition ist selbst die Collection für ihre Print Editions (eigene Song-Collection,
-    // statt einer globalen Sammel-Collection für alle Songs).
-    collection:        none(),
-    collectionDetails: some({ __kind: 'V1', size: 0n }),
-    uses:              none(),
+    tokenStandard: TokenStandard.NonFungible,
+    printSupply:   some({ __kind: 'Limited', fields: [BigInt(maxSupply)] }),
+    collection:    some({ key: collectionMintSigner.publicKey, verified: false }),
+    uses:          none(),
   }).sendAndConfirm(umi);
 
-  // Master Edition Token in die Treasury-ATA minten (Pflicht für spätere printV1-Calls)
   await mintV1(umi, {
     mint:          mintSigner.publicKey,
     tokenOwner:    umi.identity.publicKey,
@@ -172,15 +194,21 @@ export async function mintSongMasterEdition(params: {
     tokenStandard: TokenStandard.NonFungible,
   }).sendAndConfirm(umi);
 
-  // Creator-Verifikation mit dem Artist-Keypair (bereits oben geparst)
-  const [metadataPda] = findMetadataPda(umi, { mint: mintSigner.publicKey });
+  // ── 3. Creator + Collection auf dem Master verifizieren ─────────────────────
+  const [masterMetadataPda] = findMetadataPda(umi, { mint: mintSigner.publicKey });
   await verifyCreatorV1(umi, {
-    metadata:  metadataPda,
+    metadata:  masterMetadataPda,
     authority: artistSigner,
   }).sendAndConfirm(umi);
 
+  await verifyCollectionV1(umi, {
+    metadata:       masterMetadataPda,
+    collectionMint: collectionMintSigner.publicKey,
+  }).sendAndConfirm(umi);
+
   return {
-    masterMint:  mintSigner.publicKey.toString(),
+    masterMint:     mintSigner.publicKey.toString(),
+    collectionMint: collectionMintSigner.publicKey.toString(),
     metadataUri,
   };
 }
@@ -198,12 +226,13 @@ export interface PrintEditionResult {
  * @param editionNumber       Laufende Nummer (1, 2, 3, …)
  */
 export async function mintSongPrintEdition(params: {
-  masterMint: string;
+  masterMint:        string;
+  collectionMint:    string;
   buyerSolanaAddress: string;
-  artistPrivateKey: string;
-  editionNumber: number;
+  artistPrivateKey:  string;
+  editionNumber:     number;
 }): Promise<PrintEditionResult> {
-  const { masterMint, buyerSolanaAddress, artistPrivateKey, editionNumber } = params;
+  const { masterMint, collectionMint, buyerSolanaAddress, artistPrivateKey, editionNumber } = params;
 
   // Treasury bleibt Authority (masterTokenAccountOwner), Artist zahlt die Gebühren
   const treasury = getTreasuryKeypair();
@@ -247,23 +276,19 @@ export async function mintSongPrintEdition(params: {
     tokenStandard:             TokenStandard.NonFungible,
   }).sendAndConfirm(umi);
 
-  // Print Edition als verifiziertes Mitglied der Song-eigenen Collection (Master Edition) eintragen.
-  // Ohne verifizierte Collection blendet Phantom das NFT als potenziellen Spam aus.
-  try {
-    const [printMetadata]  = findMetadataPda(umi, { mint: editionMintSigner.publicKey });
-    const [masterMetadata] = findMetadataPda(umi, { mint: umiPubkey(masterMint) });
-    const masterEditionPda = findMasterEditionPda(umi, { mint: umiPubkey(masterMint) });
-    await setAndVerifySizedCollectionItem(umi, {
-      metadata:                       printMetadata,
-      collectionAuthority:            umi.identity,
-      updateAuthority:                umi.identity.publicKey,
-      collectionMint:                 umiPubkey(masterMint),
-      collection:                     masterMetadata,
-      collectionMasterEditionAccount: masterEditionPda,
-    }).sendAndConfirm(umi);
-  } catch (e) {
-    // Best-effort: Print-NFT existiert bereits beim Käufer, Collection-Verify-Fehler darf den Kauf nicht blockieren
-    console.warn('[songNft] Collection-Verify für Print Edition fehlgeschlagen:', e);
+  // Print Edition als verifiziertes Mitglied der Song-Collection eintragen.
+  // printV1 kopiert das collection-Feld automatisch vom Master (unverified) →
+  // wir müssen nur noch verifizieren. Ohne verif. Collection blendet Phantom als Spam aus.
+  if (collectionMint) {
+    try {
+      const [printMetadataPda] = findMetadataPda(umi, { mint: editionMintSigner.publicKey });
+      await verifyCollectionV1(umi, {
+        metadata:       printMetadataPda,
+        collectionMint: umiPubkey(collectionMint),
+      }).sendAndConfirm(umi);
+    } catch (e) {
+      console.warn('[songNft] Collection-Verify für Print Edition fehlgeschlagen:', e);
+    }
   }
 
   return {

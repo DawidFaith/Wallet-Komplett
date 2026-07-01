@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
     try {
       if (artistRows.length && artistRows[0].solana_address) {
         const artistName = artistNameRows[0]?.display_name as string;
-        const { masterMint, metadataUri } = await mintSongMasterEdition({
+        const { masterMint, collectionMint, metadataUri } = await mintSongMasterEdition({
           artistWallet:        wallet.toLowerCase(),
           artistSolanaAddress: artistRows[0].solana_address as string,
           artistPrivateKey:    artistRows[0].solana_private_key as string,
@@ -155,12 +155,13 @@ export async function POST(req: NextRequest) {
         await sql`
           UPDATE shop_items
           SET master_edition_mint = ${masterMint},
+              nft_collection_mint = ${collectionMint},
               nft_max_supply      = ${nftMaxSupply},
               is_nft_enabled      = TRUE
           WHERE id = ${item.id}
         `;
         return NextResponse.json({
-          ...item, masterEditionMint: masterMint, metadataUri, isNftEnabled: true,
+          ...item, masterEditionMint: masterMint, collectionMint, metadataUri, isNftEnabled: true,
         }, { status: 201 });
       }
     } catch (nftErr) {
