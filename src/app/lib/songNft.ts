@@ -154,7 +154,7 @@ export async function mintSongMasterEdition(params: {
     sellerFeeBasisPoints: percentAmount(0),
     creators:             none(),
     tokenStandard:        TokenStandard.NonFungible,
-    printSupply:          none(),
+    printSupply:          some({ __kind: 'Zero' }),
     collection:           none(),
     collectionDetails:    some({ __kind: 'V1', size: 0n }),
     uses:                 none(),
