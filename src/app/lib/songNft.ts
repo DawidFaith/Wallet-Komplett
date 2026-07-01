@@ -138,9 +138,10 @@ export async function mintSongMasterEdition(params: {
   const artistWeb3Kp    = Keypair.fromSecretKey(bs58.decode(artistSecretB58));
   const artistUmiKp     = umi.eddsa.createKeypairFromSecretKey(artistWeb3Kp.secretKey);
   const artistSigner    = createSignerFromKeypair(umi, artistUmiKp);
-  umi.payer             = artistSigner;
+  // Treasury zahlt für Collection NFT (Treasury-owned), Artist zahlt für Master Edition
+  // umi.payer bleibt zunächst umi.identity (Treasury)
 
-  // ── 1. Collection NFT für diesen Song erstellen (Treasury hält es) ──────────
+  // ── 1. Collection NFT für diesen Song erstellen (Treasury zahlt + hält es) ──
   // Jeder Song bekommt seine eigene Collection NFT. Master + alle Print Editions
   // werden als verifizierte Mitglieder eingetragen → Phantom erkennt sie nicht als Spam.
   const collectionMintSigner = generateSigner(umi);
@@ -167,6 +168,8 @@ export async function mintSongMasterEdition(params: {
   }).sendAndConfirm(umi);
 
   // ── 2. Master Edition mit Verweis auf die Song-Collection erstellen ──────────
+  // Ab hier zahlt der Artist die Gebühren
+  umi.payer = artistSigner;
   const mintSigner = generateSigner(umi);
   await createV1(umi, {
     mint:                 mintSigner,
