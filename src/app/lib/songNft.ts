@@ -26,7 +26,7 @@ import {
   createSignerFromKeypair,
 } from '@metaplex-foundation/umi';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
-import { Connection, Keypair, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
+import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
 import {
   getAssociatedTokenAddress, getAccount,
   createAssociatedTokenAccountInstruction, createTransferInstruction,
@@ -38,6 +38,27 @@ import { decryptKey } from './solanaCrypto';
 import { fetchAndUploadToArweave, uploadToArweave, waitForArweaveAvailability } from './arweaveUpload';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
+
+// SOL-Mindestguthaben für NFT-Operationen (Rent + Tx-Gebühren, mit Puffer)
+const REQUIRED_SOL_SONG_CREATION = 0.05;   // Collection NFT + Master Edition + Verifikationen
+const REQUIRED_SOL_PRINT_EDITION = 0.02;   // Print Edition + Collection-Verify
+
+async function checkSolBalance(
+  connection: Connection,
+  publicKey: PublicKey,
+  requiredSol: number,
+  label: string,
+): Promise<void> {
+  const balance    = await connection.getBalance(publicKey);
+  const balanceSol = balance / LAMPORTS_PER_SOL;
+  if (balanceSol < requiredSol) {
+    throw new Error(
+      `Zu wenig SOL im ${label}-Wallet für den NFT-Mint. ` +
+      `Benötigt: ${requiredSol} SOL — Verfügbar: ${balanceSol.toFixed(4)} SOL. ` +
+      `Bitte mind. ${(requiredSol - balanceSol).toFixed(4)} SOL nachladen.`,
+    );
+  }
+}
 
 export interface SongMasterEditionResult {
   masterMint:     string;
@@ -139,6 +160,10 @@ export async function mintSongMasterEdition(params: {
   const artistUmiKp     = umi.eddsa.createKeypairFromSecretKey(artistWeb3Kp.secretKey);
   const artistSigner    = createSignerFromKeypair(umi, artistUmiKp);
   umi.payer             = artistSigner;
+
+  // SOL-Prüfung bevor irgendetwas geminted wird
+  const conn = new Connection(RPC_URL, 'confirmed');
+  await checkSolBalance(conn, artistWeb3Kp.publicKey, REQUIRED_SOL_SONG_CREATION, 'Artist');
 
   // ── 1. Collection NFT für diesen Song erstellen (Treasury hält es) ──────────
   // Jeder Song bekommt seine eigene Collection NFT. Master + alle Print Editions
@@ -244,10 +269,13 @@ export async function mintSongPrintEdition(params: {
   const artistUmiKp  = umi.eddsa.createKeypairFromSecretKey(artistWeb3Kp.secretKey);
   umi.payer          = createSignerFromKeypair(umi, artistUmiKp);
 
+  // SOL-Prüfung: Artist muss Print Edition bezahlen können (sonst kein NFT für Käufer)
+  const conn = new Connection(RPC_URL, 'confirmed');
+  await checkSolBalance(conn, artistWeb3Kp.publicKey, REQUIRED_SOL_PRINT_EDITION, 'Artist');
+
   const editionMintSigner = generateSigner(umi);
 
   // Sicherstellen dass das Treasury das Master Edition Token hält (fix für ältere Items)
-  const conn = new Connection(RPC_URL, 'confirmed');
   const masterMintPk = new PublicKey(masterMint);
   const treasuryPk   = new PublicKey(treasury.publicKey.toBase58());
   const treasuryAta  = await getAssociatedTokenAddress(masterMintPk, treasuryPk, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
