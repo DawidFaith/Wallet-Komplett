@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import { getDb } from '../db';
 import { addDfaithCredits, redeemDfaithCredits, savePendingReward } from './credits';
+import { addShard } from './collectibles';
 import type {
   Platform, QuestType, QuestIndexEntry, ReputationLevel, ReputationContest,
   UserArtistReputation, ReputationLeaderboardEntry, QuestDetail, YouTubeBinding,
@@ -427,7 +428,7 @@ export async function getActiveReputationContest(artistWallet: string): Promise<
   if (rows.length === 0) return null;
   const row = rows[0];
   const prizes = await sql`
-    SELECT rank, credit_reward FROM reputation_contest_prizes
+    SELECT rank, credit_reward, shard_reward FROM reputation_contest_prizes
     WHERE contest_id = ${row.id}
     ORDER BY rank ASC
   `;
@@ -437,7 +438,7 @@ export async function getActiveReputationContest(artistWallet: string): Promise<
     endDate: row.end_date instanceof Date ? row.end_date.toISOString() : String(row.end_date),
     distributed: Boolean(row.distributed),
     createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
-    prizes: prizes.map(p => ({ rank: Number(p.rank), creditReward: Number(p.credit_reward) })),
+    prizes: prizes.map(p => ({ rank: Number(p.rank), creditReward: Number(p.credit_reward), shardReward: Number(p.shard_reward ?? 0) })),
   };
 }
 
@@ -445,7 +446,7 @@ export async function getActiveReputationContest(artistWallet: string): Promise<
 export async function upsertReputationContest(
   artistWallet: string,
   endDate: Date,
-  prizes: { rank: number; creditReward: number }[],
+  prizes: { rank: number; creditReward: number; shardReward?: number }[],
 ): Promise<string> {
   const sql = getDb();
   const wallet = artistWallet.toLowerCase();
@@ -465,8 +466,8 @@ export async function upsertReputationContest(
   // Alten Contest löschen
   await sql`DELETE FROM reputation_contests WHERE artist_wallet = ${wallet}`;
 
-  // Gesamtkosten berechnen und sofort abziehen
-  const validPrizes = prizes.filter(p => p.creditReward > 0);
+  // Gesamtkosten berechnen und sofort abziehen (nur Credits werden upfront gesperrt; Shards sind gratis)
+  const validPrizes = prizes.filter(p => p.creditReward > 0 || (p.shardReward ?? 0) > 0);
   const totalCost = validPrizes.reduce((sum, p) => sum + p.creditReward, 0);
   if (totalCost > 0) {
     const ok = await redeemDfaithCredits(wallet, totalCost);
@@ -481,8 +482,8 @@ export async function upsertReputationContest(
   const contestId = rows[0].id as string;
   for (const p of validPrizes) {
     await sql`
-      INSERT INTO reputation_contest_prizes (contest_id, rank, credit_reward)
-      VALUES (${contestId}, ${p.rank}, ${p.creditReward})
+      INSERT INTO reputation_contest_prizes (contest_id, rank, credit_reward, shard_reward)
+      VALUES (${contestId}, ${p.rank}, ${p.creditReward}, ${p.shardReward ?? 0})
     `;
   }
 
@@ -517,7 +518,7 @@ export async function distributeReputationContest(
   if (!force && endDate > new Date()) throw new Error('Contest läuft noch');
 
   const prizes = await sql`
-    SELECT rank, credit_reward FROM reputation_contest_prizes
+    SELECT rank, credit_reward, shard_reward FROM reputation_contest_prizes
     WHERE contest_id = ${contestId}
     ORDER BY rank ASC
   `;
@@ -530,17 +531,22 @@ export async function distributeReputationContest(
   for (const prize of prizes) {
     const rank = Number(prize.rank);
     const creditReward = Number(prize.credit_reward);
+    const shardReward = Number(prize.shard_reward ?? 0);
     const winner = leaderboard.find(e => e.rank === rank);
-    if (!winner || creditReward <= 0) continue;
+    if (!winner || (creditReward <= 0 && shardReward <= 0)) continue;
     try {
-      // Reward als einlösbar speichern (wie Level-Up Rewards)
-      await savePendingReward({
-        walletAddress: winner.walletAddress,
-        amount: creditReward,
-        reason: `contest_reward:${artistWallet.toLowerCase()}:${contestId}:${rank}`,
-        questId: null,
-        createdAt: new Date().toISOString(),
-      });
+      if (creditReward > 0) {
+        await savePendingReward({
+          walletAddress: winner.walletAddress,
+          amount: creditReward,
+          reason: `contest_reward:${artistWallet.toLowerCase()}:${contestId}:${rank}`,
+          questId: null,
+          createdAt: new Date().toISOString(),
+        });
+      }
+      if (shardReward > 0) {
+        await addShard(winner.walletAddress, artistWallet.toLowerCase(), shardReward).catch(() => {});
+      }
       results.push({ rank, walletAddress: winner.walletAddress, credited: creditReward });
     } catch {
       // Fehler beim Speichern – überspringen
@@ -566,47 +572,53 @@ export async function distributeReputationContest(
  */
 export async function distributeLeaderboardRewards(
   artistWallet: string,
-  prizes: { rank: number; creditReward: number }[],
+  prizes: { rank: number; creditReward: number; shardReward?: number }[],
 ): Promise<{ rank: number; walletAddress: string; credited: number }[]> {
   const wallet = artistWallet.toLowerCase();
   const total = prizes.reduce((sum, p) => sum + (p.creditReward || 0), 0);
-  if (total <= 0) throw new Error('Keine Credits definiert');
+  if (total <= 0 && prizes.every(p => (p.shardReward ?? 0) <= 0)) throw new Error('Keine Preise definiert');
 
   // Guthaben prüfen
   const sql = getDb();
-  const balRows = await sql`SELECT balance FROM dfaith_credits WHERE wallet_address = ${wallet}`;
-  const balance = Number(balRows[0]?.balance ?? 0);
-  if (balance < total) throw new Error(`Nicht genug Credits (Guthaben: ${balance}, benötigt: ${total})`);
+  if (total > 0) {
+    const balRows = await sql`SELECT balance FROM dfaith_credits WHERE wallet_address = ${wallet}`;
+    const balance = Number(balRows[0]?.balance ?? 0);
+    if (balance < total) throw new Error(`Nicht genug Credits (Guthaben: ${balance}, benötigt: ${total})`);
+  }
 
   const maxRank = Math.max(...prizes.map(p => p.rank));
   const leaderboard = await getReputationLeaderboard(artistWallet, maxRank);
 
-  // Credits vom Artist abziehen
-  await addDfaithCredits(wallet, -total);
+  if (total > 0) await addDfaithCredits(wallet, -total);
 
   const results: { rank: number; walletAddress: string; credited: number }[] = [];
   let actuallySpent = 0;
 
   for (const prize of prizes) {
-    if (prize.creditReward <= 0) continue;
+    if (prize.creditReward <= 0 && (prize.shardReward ?? 0) <= 0) continue;
     const winner = leaderboard.find(e => e.rank === prize.rank);
     if (!winner) continue;
     try {
-      await savePendingReward({
-        walletAddress: winner.walletAddress,
-        amount: prize.creditReward,
-        reason: `leaderboard_reward:${artistWallet.toLowerCase()}:${prize.rank}`,
-        questId: null,
-        createdAt: new Date().toISOString(),
-      });
+      if (prize.creditReward > 0) {
+        await savePendingReward({
+          walletAddress: winner.walletAddress,
+          amount: prize.creditReward,
+          reason: `leaderboard_reward:${artistWallet.toLowerCase()}:${prize.rank}`,
+          questId: null,
+          createdAt: new Date().toISOString(),
+        });
+        actuallySpent += prize.creditReward;
+      }
+      if ((prize.shardReward ?? 0) > 0) {
+        await addShard(winner.walletAddress, artistWallet.toLowerCase(), prize.shardReward!).catch(() => {});
+      }
       results.push({ rank: prize.rank, walletAddress: winner.walletAddress, credited: prize.creditReward });
-      actuallySpent += prize.creditReward;
     } catch {
       // Überspringen, Refund am Ende
     }
   }
 
-  // Nicht vergebene Preise zurückerstatten
+  // Nicht vergebene Credit-Preise zurückerstatten
   const refund = total - actuallySpent;
   if (refund > 0) {
     await addDfaithCredits(wallet, refund);
@@ -632,7 +644,7 @@ export function getQuarterInfo(date: Date = new Date()): {
 /** Quartals-Reward-Konfiguration laden */
 export async function getLeaderboardQuarterlyConfig(
   artistWallet: string,
-): Promise<{ prizes: { rank: number; creditReward: number }[] } | null> {
+): Promise<{ prizes: { rank: number; creditReward: number; shardReward: number }[] } | null> {
   const sql = getDb();
   const rows = await sql`
     SELECT prizes FROM leaderboard_quarterly_config
@@ -640,13 +652,14 @@ export async function getLeaderboardQuarterlyConfig(
     LIMIT 1
   `;
   if (rows.length === 0) return null;
-  return { prizes: rows[0].prizes as { rank: number; creditReward: number }[] };
+  const raw = rows[0].prizes as { rank: number; creditReward: number; shardReward?: number }[];
+  return { prizes: raw.map(p => ({ rank: p.rank, creditReward: p.creditReward, shardReward: p.shardReward ?? 0 })) };
 }
 
 /** Quartals-Reward-Konfiguration speichern / aktualisieren */
 export async function upsertLeaderboardQuarterlyConfig(
   artistWallet: string,
-  prizes: { rank: number; creditReward: number }[],
+  prizes: { rank: number; creditReward: number; shardReward?: number }[],
 ): Promise<void> {
   const sql = getDb();
   await sql`
@@ -660,7 +673,7 @@ export async function upsertLeaderboardQuarterlyConfig(
 /** Quartals-Historie laden */
 export async function getLeaderboardQuarterlyHistory(
   artistWallet: string,
-): Promise<{ id: string; quarter: string; prizes: { rank: number; creditReward: number }[]; results: { rank: number; walletAddress: string; credited: number }[]; totalCredited: number; distributedAt: string }[]> {
+): Promise<{ id: string; quarter: string; prizes: { rank: number; creditReward: number; shardReward: number }[]; results: { rank: number; walletAddress: string; credited: number }[]; totalCredited: number; distributedAt: string }[]> {
   const sql = getDb();
   const rows = await sql`
     SELECT id, quarter, prizes, results, total_credited, distributed_at
@@ -708,20 +721,21 @@ export async function distributeLeaderboardQuarterly(
   const config = await getLeaderboardQuarterlyConfig(artistWallet);
   if (!config || config.prizes.length === 0) throw new Error('Keine Konfiguration gefunden');
 
-  const validPrizes = config.prizes.filter(p => p.creditReward > 0);
-  if (validPrizes.length === 0) throw new Error('Keine Preise > 0 konfiguriert');
+  const validPrizes = config.prizes.filter(p => p.creditReward > 0 || (p.shardReward ?? 0) > 0);
+  if (validPrizes.length === 0) throw new Error('Keine Preise konfiguriert');
 
   const total = validPrizes.reduce((s, p) => s + p.creditReward, 0);
 
-  // Guthaben prüfen
-  const balRows = await sql`SELECT balance FROM dfaith_credits WHERE wallet_address = ${wallet}`;
-  const balance = Number(balRows[0]?.balance ?? 0);
-  if (balance < total) throw new Error(`Nicht genug Credits (Guthaben: ${balance.toFixed(2)}, benötigt: ${total})`);
+  if (total > 0) {
+    const balRows = await sql`SELECT balance FROM dfaith_credits WHERE wallet_address = ${wallet}`;
+    const balance = Number(balRows[0]?.balance ?? 0);
+    if (balance < total) throw new Error(`Nicht genug Credits (Guthaben: ${balance.toFixed(2)}, benötigt: ${total})`);
+  }
 
   const maxRank = Math.max(...validPrizes.map(p => p.rank));
   const leaderboard = await getReputationLeaderboard(artistWallet, maxRank);
 
-  await addDfaithCredits(wallet, -total);
+  if (total > 0) await addDfaithCredits(wallet, -total);
 
   const results: { rank: number; walletAddress: string; credited: number }[] = [];
   let actuallySpent = 0;
@@ -730,9 +744,14 @@ export async function distributeLeaderboardQuarterly(
     const winner = leaderboard.find(e => e.rank === prize.rank);
     if (!winner) continue;
     try {
-      await addDfaithCredits(winner.walletAddress, prize.creditReward);
+      if (prize.creditReward > 0) {
+        await addDfaithCredits(winner.walletAddress, prize.creditReward);
+        actuallySpent += prize.creditReward;
+      }
+      if ((prize.shardReward ?? 0) > 0) {
+        await addShard(winner.walletAddress, artistWallet.toLowerCase(), prize.shardReward!).catch(() => {});
+      }
       results.push({ rank: prize.rank, walletAddress: winner.walletAddress, credited: prize.creditReward });
-      actuallySpent += prize.creditReward;
     } catch { /* überspringen */ }
   }
 

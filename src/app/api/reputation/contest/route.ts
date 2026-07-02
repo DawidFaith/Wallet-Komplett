@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     const body: {
       artistWallet?: string;
       endDate?: string;
-      prizes?: { rank: number; creditReward: number }[];
+      prizes?: { rank: number; creditReward: number; shardReward?: number }[];
     } = await req.json();
 
     const { artistWallet, endDate, prizes } = body;
@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
     }
 
     const validPrizes = prizes
-      .filter(p => p.rank >= 1 && p.creditReward >= 0)
-      .map(p => ({ rank: Math.round(p.rank), creditReward: Math.max(0, Math.round(p.creditReward)) }));
+      .filter(p => p.rank >= 1 && (p.creditReward >= 0 || (p.shardReward ?? 0) >= 0))
+      .map(p => ({ rank: Math.round(p.rank), creditReward: Math.max(0, Math.round(p.creditReward)), shardReward: Math.max(0, Math.round(p.shardReward ?? 0)) }));
 
     const contestId = await upsertReputationContest(artistWallet, end, validPrizes);
     return NextResponse.json({ success: true, contestId });

@@ -43,7 +43,7 @@ export interface ReputationContest {
   endDate: string;
   distributed: boolean;
   createdAt: string;
-  prizes: { rank: number; creditReward: number }[];
+  prizes: { rank: number; creditReward: number; shardReward: number }[];
 }
 
 export interface UserArtistReputation {

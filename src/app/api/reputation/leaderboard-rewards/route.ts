@@ -8,8 +8,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'artistWallet und prizes erforderlich' }, { status: 400 });
     }
     const validPrizes = prizes.filter(
-      (p: { rank: number; creditReward: number }) =>
-        typeof p.rank === 'number' && typeof p.creditReward === 'number' && p.creditReward > 0,
+      (p: { rank: number; creditReward: number; shardReward?: number }) =>
+        typeof p.rank === 'number' && (p.creditReward > 0 || (p.shardReward ?? 0) > 0),
     );
     if (validPrizes.length === 0) {
       return NextResponse.json({ error: 'Mindestens ein Preis > 0 erforderlich' }, { status: 400 });

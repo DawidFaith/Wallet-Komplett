@@ -344,4 +344,7 @@ export const MIGRATION_SQL = `
     value      TEXT NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
+
+  -- Shards als Preis für Contest-Platzierungen
+  ALTER TABLE reputation_contest_prizes ADD COLUMN IF NOT EXISTS shard_reward INTEGER NOT NULL DEFAULT 0;
 `;

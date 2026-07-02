@@ -44,7 +44,7 @@ interface ReputationContest {
   endDate: string;
   distributed: boolean;
   createdAt: string;
-  prizes: { rank: number; creditReward: number }[];
+  prizes: { rank: number; creditReward: number; shardReward: number }[];
   contestLeaderboard?: LeaderboardEntry[];
 }
 
@@ -453,10 +453,17 @@ function ArtistDetailView({
                             <p className="text-zinc-500 text-sm italic">{t('rep.noParticipant', lang)}</p>
                           )}
                         </div>
-                        <span className="flex items-center gap-1 text-amber-300 font-bold shrink-0 text-sm">
-                          <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full shrink-0" />
-                          {p.creditReward} D.FAITH
-                        </span>
+                        <div className="flex flex-col items-end gap-0.5 shrink-0">
+                          {p.creditReward > 0 && (
+                            <span className="flex items-center gap-1 text-amber-300 font-bold text-sm">
+                              <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full shrink-0" />
+                              {p.creditReward} D.FAITH
+                            </span>
+                          )}
+                          {p.shardReward > 0 && (
+                            <span className="text-cyan-300 font-bold text-xs">✦ {p.shardReward} Shards</span>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -508,9 +515,9 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
   const [showContestForm, setShowContestForm] = useState(false);
   const [contestEndDate, setContestEndDate] = useState('');
   const [contestPrizes, setContestPrizes] = useState([
-    { rank: 1, creditReward: 0 },
-    { rank: 2, creditReward: 0 },
-    { rank: 3, creditReward: 0 },
+    { rank: 1, creditReward: 0, shardReward: 0 },
+    { rank: 2, creditReward: 0, shardReward: 0 },
+    { rank: 3, creditReward: 0, shardReward: 0 },
   ]);
   const [contestSaving, setContestSaving] = useState(false);
   const [contestError, setContestError] = useState('');
@@ -519,14 +526,14 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
 
   // Quartals-Leaderboard-Rewards
-  const [quarterlyConfig, setQuarterlyConfig] = useState<{ prizes: { rank: number; creditReward: number }[] } | null>(null);
+  const [quarterlyConfig, setQuarterlyConfig] = useState<{ prizes: { rank: number; creditReward: number; shardReward: number }[] } | null>(null);
   const [quarterlyHistory, setQuarterlyHistory] = useState<{ id: string; quarter: string; results: { rank: number; walletAddress: string; credited: number }[]; totalCredited: number; distributedAt: string }[]>([]);
   const [quarterlyInfo, setQuarterlyInfo] = useState<{ quarter: string; start: string; end: string } | null>(null);
   const [showQlyForm, setShowQlyForm] = useState(false);
   const [qlyPrizes, setQlyPrizes] = useState([
-    { rank: 1, creditReward: 0 },
-    { rank: 2, creditReward: 0 },
-    { rank: 3, creditReward: 0 },
+    { rank: 1, creditReward: 0, shardReward: 0 },
+    { rank: 2, creditReward: 0, shardReward: 0 },
+    { rank: 3, creditReward: 0, shardReward: 0 },
   ]);
   const [qlySaving, setQlySaving] = useState(false);
   const [qlyDistributing, setQlyDistributing] = useState(false);
@@ -552,7 +559,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
         setQuarterlyConfig(qly.config);
         setQuarterlyHistory(Array.isArray(qly.history) ? qly.history : []);
         setQuarterlyInfo(qly.quarterInfo ?? null);
-        if (qly.config?.prizes?.length > 0) setQlyPrizes(qly.config.prizes);
+        if (qly.config?.prizes?.length > 0) setQlyPrizes(qly.config.prizes.map((p: { rank: number; creditReward: number; shardReward?: number }) => ({ rank: p.rank, creditReward: p.creditReward, shardReward: p.shardReward ?? 0 })));
       }
     } finally {
       setLoading(false);
@@ -974,10 +981,17 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       <span className="text-zinc-300 text-xs">
                         {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`} Platz
                       </span>
-                      <span className="flex items-center gap-1 text-amber-300 text-xs font-bold">
-                        <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full shrink-0" />
-                        {p.creditReward} D.FAITH Credits
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {p.creditReward > 0 && (
+                          <span className="flex items-center gap-1 text-amber-300 text-xs font-bold">
+                            <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full shrink-0" />
+                            {p.creditReward} Credits
+                          </span>
+                        )}
+                        {p.shardReward > 0 && (
+                          <span className="text-cyan-300 text-xs font-bold">✦ {p.shardReward} Shards</span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1014,38 +1028,54 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                 </div>
                 <p className="text-zinc-500 text-xs font-semibold uppercase tracking-widest">{t('rep.labelPrizesPerRank', lang)}</p>
                 {contestPrizes.map((p, i) => (
-                  <div key={p.rank} className="flex items-center gap-3">
-                    <span className="text-zinc-300 text-sm w-8 shrink-0">
-                      {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`}
-                    </span>
-                    <div className="relative flex-1">
-                      <input
-                        type="number" min="0"
-                        placeholder="0"
-                        className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500 pr-10"
-                        value={contestPrizes[i].creditReward || ''}
-                        onChange={e => {
-                          const u = [...contestPrizes];
-                          u[i] = { ...u[i], creditReward: Number(e.target.value) || 0 };
-                          setContestPrizes(u);
-                        }}
-                      />
-                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2">
-                        <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full" />
+                  <div key={p.rank} className="space-y-1.5">
+                    <div className="flex items-center gap-3">
+                      <span className="text-zinc-300 text-sm w-8 shrink-0">
+                        {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`}
                       </span>
+                      <div className="relative flex-1">
+                        <input
+                          type="number" min="0"
+                          placeholder="Credits"
+                          className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500 pr-10"
+                          value={contestPrizes[i].creditReward || ''}
+                          onChange={e => {
+                            const u = [...contestPrizes];
+                            u[i] = { ...u[i], creditReward: Number(e.target.value) || 0 };
+                            setContestPrizes(u);
+                          }}
+                        />
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                          <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full" />
+                        </span>
+                      </div>
+                      <div className="relative flex-1">
+                        <input
+                          type="number" min="0"
+                          placeholder="Shards"
+                          className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-cyan-500 pr-8"
+                          value={contestPrizes[i].shardReward || ''}
+                          onChange={e => {
+                            const u = [...contestPrizes];
+                            u[i] = { ...u[i], shardReward: Number(e.target.value) || 0 };
+                            setContestPrizes(u);
+                          }}
+                        />
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-cyan-400 text-[10px] font-bold">✦</span>
+                      </div>
+                      {contestPrizes.length > 1 && (
+                        <button
+                          onClick={() => setContestPrizes(prev => prev.filter((_, j) => j !== i).map((x, j) => ({ ...x, rank: j + 1 })))}
+                          className="text-red-500 hover:text-red-400 shrink-0"
+                        >
+                          <FaTimes size={11} />
+                        </button>
+                      )}
                     </div>
-                    {contestPrizes.length > 1 && (
-                      <button
-                        onClick={() => setContestPrizes(prev => prev.filter((_, j) => j !== i).map((x, j) => ({ ...x, rank: j + 1 })))}
-                        className="text-red-500 hover:text-red-400 shrink-0"
-                      >
-                        <FaTimes size={11} />
-                      </button>
-                    )}
                   </div>
                 ))}
                 <button
-                  onClick={() => setContestPrizes(prev => [...prev, { rank: prev.length + 1, creditReward: 0 }])}
+                  onClick={() => setContestPrizes(prev => [...prev, { rank: prev.length + 1, creditReward: 0, shardReward: 0 }])}
                   className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 text-xs"
                 >
                   <FaPlus size={9} /> {t('rep.addSlot', lang)}
@@ -1231,10 +1261,17 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       <span className="text-zinc-300 text-xs">
                         {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`} Platz
                       </span>
-                      <span className="flex items-center gap-1 text-amber-300 text-xs font-bold">
-                        <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full shrink-0" />
-                        {p.creditReward} D.FAITH Credits
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {p.creditReward > 0 && (
+                          <span className="flex items-center gap-1 text-amber-300 text-xs font-bold">
+                            <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full shrink-0" />
+                            {p.creditReward} Credits
+                          </span>
+                        )}
+                        {p.shardReward > 0 && (
+                          <span className="text-cyan-300 text-xs font-bold">✦ {p.shardReward} Shards</span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1260,29 +1297,40 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                 <p className="text-zinc-400 text-xs">{t('rep.quarterlyDesc', lang)}</p>
                 <p className="text-zinc-500 text-xs font-semibold uppercase tracking-widest">{t('rep.labelPrizesPerRank', lang)}</p>
                 {qlyPrizes.map((p, i) => (
-                  <div key={p.rank} className="flex items-center gap-3">
-                    <span className="text-zinc-300 text-sm w-8 shrink-0">
-                      {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`}
-                    </span>
-                    <div className="relative flex-1">
-                      <input
-                        type="number" min="0" placeholder="0"
-                        className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500 pr-10"
-                        value={qlyPrizes[i].creditReward || ''}
-                        onChange={e => { const u = [...qlyPrizes]; u[i] = { ...u[i], creditReward: Number(e.target.value) || 0 }; setQlyPrizes(u); }}
-                      />
-                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2">
-                        <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full" />
+                  <div key={p.rank} className="space-y-1.5">
+                    <div className="flex items-center gap-3">
+                      <span className="text-zinc-300 text-sm w-8 shrink-0">
+                        {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`}
                       </span>
+                      <div className="relative flex-1">
+                        <input
+                          type="number" min="0" placeholder="Credits"
+                          className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500 pr-10"
+                          value={qlyPrizes[i].creditReward || ''}
+                          onChange={e => { const u = [...qlyPrizes]; u[i] = { ...u[i], creditReward: Number(e.target.value) || 0 }; setQlyPrizes(u); }}
+                        />
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                          <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full" />
+                        </span>
+                      </div>
+                      <div className="relative flex-1">
+                        <input
+                          type="number" min="0" placeholder="Shards"
+                          className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-cyan-500 pr-8"
+                          value={qlyPrizes[i].shardReward || ''}
+                          onChange={e => { const u = [...qlyPrizes]; u[i] = { ...u[i], shardReward: Number(e.target.value) || 0 }; setQlyPrizes(u); }}
+                        />
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-cyan-400 text-[10px] font-bold">✦</span>
+                      </div>
+                      {qlyPrizes.length > 1 && (
+                        <button onClick={() => setQlyPrizes(prev => prev.filter((_, j) => j !== i).map((x, j) => ({ ...x, rank: j + 1 })))} className="text-red-500 hover:text-red-400 shrink-0">
+                          <FaTimes size={11} />
+                        </button>
+                      )}
                     </div>
-                    {qlyPrizes.length > 1 && (
-                      <button onClick={() => setQlyPrizes(prev => prev.filter((_, j) => j !== i).map((x, j) => ({ ...x, rank: j + 1 })))} className="text-red-500 hover:text-red-400 shrink-0">
-                        <FaTimes size={11} />
-                      </button>
-                    )}
                   </div>
                 ))}
-                <button onClick={() => setQlyPrizes(prev => [...prev, { rank: prev.length + 1, creditReward: 0 }])} className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 text-xs">
+                <button onClick={() => setQlyPrizes(prev => [...prev, { rank: prev.length + 1, creditReward: 0, shardReward: 0 }])} className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 text-xs">
                   <FaPlus size={9} /> {t('rep.addAnotherSlot', lang)}
                 </button>
                 {qlyError && <p className="text-red-400 text-xs">{qlyError}</p>}
@@ -1318,7 +1366,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                         else setQlyError(data.error || 'Fehler');
                       } finally { setQlySaving(false); }
                     }}
-                    disabled={qlySaving || qlyPrizes.every(p => p.creditReward <= 0)}
+                    disabled={qlySaving || qlyPrizes.every(p => p.creditReward <= 0 && p.shardReward <= 0)}
                     className="flex-1 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black text-xs font-bold py-2.5 rounded-xl"
                   >
                     {qlySaving ? t('btn.saving', lang) : t('rep.btnSaveConfig', lang)}
