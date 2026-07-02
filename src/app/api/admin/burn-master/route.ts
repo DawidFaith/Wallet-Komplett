@@ -51,14 +51,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'masterMint erforderlich' }, { status: 400 });
     }
 
+    const sql = getDb();
+
     // collectionMint aus Body oder aus DB laden
     let collectionMint: string | null = collectionMintParam ?? null;
     if (!collectionMint && itemId) {
       const rows = await sql`SELECT nft_collection_mint FROM shop_items WHERE id = ${itemId} LIMIT 1`;
       collectionMint = (rows[0]?.nft_collection_mint as string | null) ?? null;
     }
-
-    const sql = getDb();
     const burned: string[] = [];
     const failed: string[] = [];
 
