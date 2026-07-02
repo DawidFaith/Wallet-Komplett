@@ -167,6 +167,8 @@ export async function mintSongMasterEdition(params: {
   // ── 1. Collection NFT für diesen Song erstellen (Treasury hält es) ──────────
   // Jeder Song bekommt seine eigene Collection NFT. Master + alle Print Editions
   // werden als verifizierte Mitglieder eingetragen → Phantom erkennt sie nicht als Spam.
+  // createV1 + mintV1 in einer einzigen Transaktion senden, damit der RPC-Node
+  // die frisch erstellten Accounts (Metadata-PDA) beim Mint sofort sieht.
   const collectionMintSigner = generateSigner(umi);
   await createV1(umi, {
     mint:                 collectionMintSigner,
@@ -182,13 +184,12 @@ export async function mintSongMasterEdition(params: {
     collection:           none(),
     collectionDetails:    some({ __kind: 'V1', size: 0n }),
     uses:                 none(),
-  }).sendAndConfirm(umi);
-  await mintV1(umi, {
+  }).add(mintV1(umi, {
     mint:          collectionMintSigner.publicKey,
     tokenOwner:    umi.identity.publicKey,
     amount:        1,
     tokenStandard: TokenStandard.NonFungible,
-  }).sendAndConfirm(umi);
+  })).sendAndConfirm(umi);
 
   // ── 2. Master Edition mit Verweis auf die Song-Collection erstellen ──────────
   const mintSigner = generateSigner(umi);
@@ -209,14 +210,12 @@ export async function mintSongMasterEdition(params: {
     printSupply:   some({ __kind: 'Limited', fields: [BigInt(maxSupply)] }),
     collection:    some({ key: collectionMintSigner.publicKey, verified: false }),
     uses:          none(),
-  }).sendAndConfirm(umi);
-
-  await mintV1(umi, {
+  }).add(mintV1(umi, {
     mint:          mintSigner.publicKey,
     tokenOwner:    umi.identity.publicKey,
     amount:        1,
     tokenStandard: TokenStandard.NonFungible,
-  }).sendAndConfirm(umi);
+  })).sendAndConfirm(umi);
 
   // ── 3. Creator + Collection auf dem Master verifizieren ─────────────────────
   const [masterMetadataPda] = findMetadataPda(umi, { mint: mintSigner.publicKey });
