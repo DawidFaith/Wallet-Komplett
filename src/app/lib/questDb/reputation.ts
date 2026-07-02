@@ -685,7 +685,7 @@ export async function getLeaderboardQuarterlyHistory(
   return rows.map(r => ({
     id: r.id as string,
     quarter: r.quarter as string,
-    prizes: r.prizes as { rank: number; creditReward: number }[],
+    prizes: (r.prizes as { rank: number; creditReward: number; shardReward?: number }[]).map(p => ({ rank: p.rank, creditReward: p.creditReward, shardReward: p.shardReward ?? 0 })),
     results: r.results as { rank: number; walletAddress: string; credited: number }[],
     totalCredited: Number(r.total_credited),
     distributedAt: (r.distributed_at as Date).toISOString(),
