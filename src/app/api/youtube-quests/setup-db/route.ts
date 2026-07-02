@@ -319,9 +319,31 @@ export async function POST(req: NextRequest) {
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_tester_requests_handle ON instagram_tester_requests(instagram_handle) WHERE status = 'pending'`;
     await sql`CREATE INDEX IF NOT EXISTS idx_tester_requests_status ON instagram_tester_requests(status, created_at DESC)`;
 
+    // ── Shop / NFT-Spalten ───────────────────────────────────────────────────
+    await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS master_edition_mint TEXT`;
+    await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS nft_collection_mint TEXT`;
+    await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS nft_max_supply INTEGER`;
+    await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS edition_count INTEGER NOT NULL DEFAULT 0`;
+    await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS is_nft_enabled BOOLEAN NOT NULL DEFAULT FALSE`;
+    await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS required_level INTEGER NOT NULL DEFAULT 0`;
+    await sql`ALTER TABLE shop_purchases ADD COLUMN IF NOT EXISTS nft_mint_address TEXT`;
+    await sql`ALTER TABLE shop_purchases ADD COLUMN IF NOT EXISTS edition_number INTEGER`;
+
+    // ── Reputation Contest Preise ────────────────────────────────────────────
+    await sql`ALTER TABLE reputation_contest_prizes ADD COLUMN IF NOT EXISTS shard_reward INTEGER NOT NULL DEFAULT 0`;
+
+    // ── platform_settings ────────────────────────────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS platform_settings (
+        key        TEXT PRIMARY KEY,
+        value      TEXT NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+
     return NextResponse.json({
       success: true,
-      message: 'Alle Tabellen (inkl. instagram_testers, instagram_tester_requests, story_token) erstellt.',
+      message: 'Alle Tabellen und Spalten erstellt/aktualisiert.',
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
