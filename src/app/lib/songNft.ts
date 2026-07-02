@@ -161,20 +161,8 @@ export async function mintSongMasterEdition(params: {
   const artistSigner    = createSignerFromKeypair(umi, artistUmiKp);
   umi.payer             = artistSigner;
 
-  // SOL-Prüfung: Artist braucht Erstellung + Reserve für alle Print Editions
-  const requiredTotal = REQUIRED_SOL_SONG_CREATION + maxSupply * REQUIRED_SOL_PRINT_EDITION;
+  // SOL-Prüfung temporär deaktiviert (zum Testen)
   const conn = new Connection(RPC_URL, 'confirmed');
-  const balance = await conn.getBalance(artistWeb3Kp.publicKey);
-  const balanceSol = balance / LAMPORTS_PER_SOL;
-  if (balanceSol < requiredTotal) {
-    throw new Error(
-      `Zu wenig SOL im Artist-Wallet. ` +
-      `Benötigt: ${requiredTotal.toFixed(4)} SOL ` +
-      `(${REQUIRED_SOL_SONG_CREATION} SOL Erstellung + ${maxSupply} Editionen × ${REQUIRED_SOL_PRINT_EDITION} SOL). ` +
-      `Verfügbar: ${balanceSol.toFixed(4)} SOL. ` +
-      `Bitte mind. ${(requiredTotal - balanceSol).toFixed(4)} SOL nachladen.`,
-    );
-  }
 
   // ── 1. Collection NFT für diesen Song erstellen (Treasury hält es) ──────────
   // Jeder Song bekommt seine eigene Collection NFT. Master + alle Print Editions
