@@ -46,9 +46,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { masterMint, itemId } = await req.json();
+    const { masterMint, itemId, collectionMint: collectionMintParam } = await req.json();
     if (!masterMint) {
       return NextResponse.json({ error: 'masterMint erforderlich' }, { status: 400 });
+    }
+
+    // collectionMint aus Body oder aus DB laden
+    let collectionMint: string | null = collectionMintParam ?? null;
+    if (!collectionMint && itemId) {
+      const rows = await sql`SELECT nft_collection_mint FROM shop_items WHERE id = ${itemId} LIMIT 1`;
+      collectionMint = (rows[0]?.nft_collection_mint as string | null) ?? null;
     }
 
     const sql = getDb();
@@ -186,12 +193,28 @@ export async function POST(req: NextRequest) {
       tokenStandard: TokenStandard.NonFungible,
     }).sendAndConfirm(umi);
 
-    // ── 3. Item deaktivieren ──────────────────────────────────────────────────
+    // ── 3. Collection NFT burnen (Treasury hält es) ───────────────────────────
+    let collectionBurned = false;
+    if (collectionMint) {
+      try {
+        await burnV1(umi, {
+          mint:          umiPubkey(collectionMint),
+          authority:     umi.identity,
+          tokenOwner:    umi.identity.publicKey,
+          tokenStandard: TokenStandard.NonFungible,
+        }).sendAndConfirm(umi);
+        collectionBurned = true;
+      } catch (e) {
+        console.warn('Collection NFT burn fehlgeschlagen (evtl. schon geburnt):', e instanceof Error ? e.message : e);
+      }
+    }
+
+    // ── 4. Item deaktivieren ──────────────────────────────────────────────────
     if (itemId) {
       await sql`UPDATE shop_items SET is_active = FALSE WHERE id = ${itemId}`;
     }
 
-    return NextResponse.json({ success: true, burnedPrints: burned.length });
+    return NextResponse.json({ success: true, burnedPrints: burned.length, collectionBurned });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('Burn Master Fehler:', msg);

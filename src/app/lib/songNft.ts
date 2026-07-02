@@ -110,7 +110,6 @@ export async function mintSongMasterEdition(params: {
   const audioHttps = toHttps(arweaveAudio);
 
   // Warten bis Bild + Audio wirklich vom Gateway ausgeliefert werden bevor Metadata gebaut wird
-  // (ohne das würde der Mint mit pending-URLs durchlaufen → "page not found" beim Öffnen)
   await Promise.all([
     waitForArweaveAvailability(arweaveCover, { maxWaitMs: 120_000, expectContentType: 'image' }),
     waitForArweaveAvailability(arweaveAudio, { maxWaitMs: 120_000, expectContentType: 'audio' }),
@@ -142,11 +141,14 @@ export async function mintSongMasterEdition(params: {
       { trait_type: 'Website',      value: 'app.dawidfaith.de' },
     ],
   };
-  const metadataUri = await uploadToArweave(
+  const rawMetadataUri = await uploadToArweave(
     JSON.stringify(metadata),
     'application/json',
     [{ name: 'Type', value: 'NFT Metadata' }, { name: 'Title', value: title }],
   );
+  // ar:// → https://arweave.net/ damit DAS-Indexer, Phantom und alle Tools es direkt auflösen können
+  const metadataUri = toHttps(rawMetadataUri);
+  await waitForArweaveAvailability(rawMetadataUri, { maxWaitMs: 120_000 });
 
   // Master Edition auf Solana minten
   // Treasury bleibt Authority (für Heal-Path in printV1), Artist zahlt die Gebühren
