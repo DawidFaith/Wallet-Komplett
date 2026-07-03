@@ -133,11 +133,14 @@ export async function mintCollectibleCollection(params: {
 
   const metadata = {
     name,
+    symbol:                  'DFAITH',
     description,
-    image: arweaveImage,
-    external_url: 'https://app.dawidfaith.de',
+    seller_fee_basis_points: 500,
+    image:                   arweaveImage,
+    external_url:            'https://app.dawidfaith.de',
     properties: {
-      category: 'collectible',
+      category: 'image',
+      files:    [{ uri: arweaveImage, type: 'image/jpeg' }],
       creators: [{ address: artistSolanaAddress, share: 100 }],
     },
     attributes: [
@@ -152,14 +155,15 @@ export async function mintCollectibleCollection(params: {
       { trait_type: 'Website',       value: 'app.dawidfaith.de' },
     ],
   };
-  const metadataUri = await uploadToArweave(
+  const rawCollectionUri = await uploadToArweave(
     JSON.stringify(metadata),
     'application/json',
     [{ name: 'Type', value: 'Collection Metadata' }, { name: 'Collection', value: name }],
   );
+  const metadataUri = toHttps(rawCollectionUri);
 
-  // Warten bis die Collection-Metadaten erreichbar sind (siehe mintCollectibleAsset)
-  await waitForArweaveAvailability(metadataUri, { expectContentType: 'application/json' });
+  // Warten bis die Collection-Metadaten erreichbar sind (120s wie bei Song-NFTs)
+  await waitForArweaveAvailability(rawCollectionUri, { maxWaitMs: 120_000, expectContentType: 'application/json' });
 
   const umi              = getUmi(params.payerKeypair);
   const collectionSigner = generateSigner(umi);
@@ -167,7 +171,7 @@ export async function mintCollectibleCollection(params: {
   await createCollection(umi, {
     collection: collectionSigner,
     name:       name.slice(0, 32),
-    uri:        toHttps(metadataUri),
+    uri:        metadataUri,
     plugins: [
       {
         type:        'Royalties',
@@ -291,25 +295,33 @@ export async function mintCollectibleAsset(params: {
   if (shardActive)  attributes.push({ trait_type: 'Shard Bonus',  value: `+${shardBonus}` });
   attributes.push({ trait_type: 'Website', value: 'app.dawidfaith.de' });
 
+  const imageHttps = toHttps(collectionImageUri);
+
   const metadata = {
-    name:             `${collectionName} — ${RARITY_LABELS[rarity]}`,
-    description:      `${RARITY_LABELS[rarity]} D.FAITH Collectible from the "${collectionName}" series by ${artistName}.\n\nBonuses: ${bonusLine}\n\nTradeable on secondary markets — 5% artist royalties on every resale.`,
-    image:            toHttps(collectionImageUri),
-    external_url:     'https://app.dawidfaith.de',
-    background_color: RARITY_BG_COLOR[rarity],
+    name:                    `${collectionName} — ${RARITY_LABELS[rarity]}`,
+    symbol:                  'DFAITH',
+    description:             `${RARITY_LABELS[rarity]} D.FAITH Collectible from the "${collectionName}" series by ${artistName}.\n\nBonuses: ${bonusLine}\n\nTradeable on secondary markets — 5% artist royalties on every resale.`,
+    seller_fee_basis_points: 500,
+    image:                   imageHttps,
+    external_url:            'https://app.dawidfaith.de',
+    background_color:        RARITY_BG_COLOR[rarity],
+    properties: {
+      category: 'image',
+      files:    [{ uri: imageHttps, type: 'image/jpeg' }],
+      creators: [{ address: artistSolanaAddress, share: 100 }],
+    },
     attributes,
   };
-  const metadataUri = await uploadToArweave(
+  const rawAssetUri = await uploadToArweave(
     JSON.stringify(metadata),
     'application/json',
     [{ name: 'Rarity', value: rarity }, { name: 'Collection', value: collectionName }],
   );
+  const metadataUri = toHttps(rawAssetUri);
 
-  // Warten bis die Metadaten über das Gateway erreichbar sind, damit Indexer
-  // (Helius/Solscan/ORB) sie beim ersten Crawl nach dem Mint korrekt lesen können.
-  // Best-effort (max ~30s); Mint läuft auch bei Timeout weiter, da alle Daten
-  // redundant im on-chain Attributes-Plugin liegen.
-  await waitForArweaveAvailability(metadataUri, { expectContentType: 'application/json' });
+  // Warten bis die Metadaten über das Gateway erreichbar sind (120s wie bei Song-NFTs),
+  // damit Phantom, Helius und alle DAS-Indexer sie beim ersten Crawl korrekt lesen.
+  await waitForArweaveAvailability(rawAssetUri, { maxWaitMs: 120_000, expectContentType: 'application/json' });
 
   const umi         = getUmi(params.payerKeypair);
   const assetSigner = generateSigner(umi);
@@ -320,7 +332,7 @@ export async function mintCollectibleAsset(params: {
     collection,
     owner:      umiPubkey(ownerSolanaAddress),
     name:       `${collectionName} — ${RARITY_LABELS[rarity]}`.slice(0, 32),
-    uri:        toHttps(metadataUri),
+    uri:        metadataUri,
     plugins: [
       {
         type:        'Royalties',
