@@ -780,7 +780,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
 
   // Quartals-Leaderboard-Rewards
   const [quarterlyConfig, setQuarterlyConfig] = useState<{ prizes: { rank: number; creditReward: number; shardReward: number }[]; creditsLocked?: number } | null>(null);
-  const [quarterlyHistory, setQuarterlyHistory] = useState<{ id: string; quarter: string; prizes: { rank: number; creditReward: number; shardReward: number }[]; results: { rank: number; walletAddress: string; credited: number }[]; totalCredited: number; distributedAt: string }[]>([]);
+  const [quarterlyHistory, setQuarterlyHistory] = useState<{ id: string; quarter: string; prizes: { rank: number; creditReward: number; shardReward: number }[]; results: { rank: number; walletAddress: string; displayName: string | null; credited: number }[]; totalCredited: number; distributedAt: string }[]>([]);
   const [quarterlyInfo, setQuarterlyInfo] = useState<{ quarter: string; start: string; end: string } | null>(null);
   const [showQlyForm, setShowQlyForm] = useState(false);
   const [qlyPrizes, setQlyPrizes] = useState([
@@ -1469,7 +1469,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                                 </span>
                                 <div className="flex-1 min-w-0">
                                   {winner
-                                    ? <p className="text-white text-sm font-semibold truncate">{shortenWallet(winner.walletAddress)}</p>
+                                    ? <p className="text-white text-sm font-semibold truncate">{winner.displayName ?? shortenWallet(winner.walletAddress)}</p>
                                     : <p className="text-zinc-600 text-sm italic">Kein Teilnehmer</p>}
                                 </div>
                                 <div className="flex flex-col items-end gap-0.5 shrink-0">
