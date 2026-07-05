@@ -1572,15 +1572,21 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                   if (total === 0) return null;
                   const enough = creditBalance !== null && total <= creditBalance;
                   return (
-                    <div className={`rounded-xl px-3 py-2 flex items-center justify-between text-xs ${
-                      enough ? 'bg-green-950/40 border border-green-700/30' : 'bg-red-950/40 border border-red-700/40'
-                    }`}>
-                      <p className={enough ? 'text-green-300' : 'text-red-300'}>{t('rep.prizePerQuarter', lang)}</p>
-                      <p className={`flex items-center gap-1 font-bold ${enough ? 'text-green-400' : 'text-red-400'}`}>
-                        {total}
-                        <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full shrink-0" />
-                        D.FAITH {enough ? '✓' : '⚠'}
-                      </p>
+                    <div className="space-y-1.5">
+                      <div className={`rounded-xl px-3 py-2 flex items-center justify-between text-xs ${
+                        enough ? 'bg-green-950/40 border border-green-700/30' : 'bg-red-950/40 border border-red-700/40'
+                      }`}>
+                        <div>
+                          <p className={enough ? 'text-green-300' : 'text-red-300'}>{t('rep.prizePerQuarter', lang)}</p>
+                          <p className="text-zinc-600 text-[10px] mt-0.5">{creditBalance !== null ? `Guthaben: ${creditBalance.toFixed(2)}` : ''}</p>
+                        </div>
+                        <p className={`flex items-center gap-1 font-bold ${enough ? 'text-green-400' : 'text-red-400'}`}>
+                          {total}
+                          <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full shrink-0" />
+                          D.FAITH {enough ? '✓' : '⚠'}
+                        </p>
+                      </div>
+                      <p className="text-zinc-600 text-[10px] px-1">{t('rep.quarterlyDeductionNote', lang)}</p>
                     </div>
                   );
                 })()}

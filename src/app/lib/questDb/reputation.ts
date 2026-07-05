@@ -470,8 +470,7 @@ export async function upsertReputationContest(
   const validPrizes = prizes.filter(p => p.creditReward > 0 || (p.shardReward ?? 0) > 0);
   const totalCost = validPrizes.reduce((sum, p) => sum + p.creditReward, 0);
   if (totalCost > 0) {
-    const ok = await redeemDfaithCredits(wallet, totalCost);
-    if (!ok) throw new Error(`Nicht genügend Guthaben. Benötigt: ${totalCost} DFC`);
+    await redeemDfaithCredits(wallet, totalCost); // wirft selbst wenn nicht genug Guthaben
   }
 
   const rows = await sql`
