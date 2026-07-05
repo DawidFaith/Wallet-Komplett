@@ -201,8 +201,11 @@ function ArtistDetailView({
           const qly = await qlyRes.json();
           setQuarterlyConfig(qly.config ?? null);
           setQuarterlyInfo(qly.quarterInfo ?? null);
-          const hist: { quarter: string }[] = qly.history ?? [];
-          setQuarterlyAlreadyDistributed(hist.some(h => h.quarter === (qly.quarterInfo?.quarter ?? '')));
+          const hist: { quarter: string; distributedAt: string }[] = qly.history ?? [];
+          const currentQuarter = qly.quarterInfo?.quarter ?? '';
+          const doneEntry = hist.find(h => h.quarter === currentQuarter);
+          const restarted = !!(doneEntry && qly.config?.updatedAt && new Date(qly.config.updatedAt) > new Date(doneEntry.distributedAt));
+          setQuarterlyAlreadyDistributed(!!doneEntry && !restarted);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -780,7 +783,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
 
   // Quartals-Leaderboard-Rewards
-  const [quarterlyConfig, setQuarterlyConfig] = useState<{ prizes: { rank: number; creditReward: number; shardReward: number }[]; creditsLocked?: number } | null>(null);
+  const [quarterlyConfig, setQuarterlyConfig] = useState<{ prizes: { rank: number; creditReward: number; shardReward: number }[]; creditsLocked?: number; updatedAt?: string | null } | null>(null);
   const [quarterlyHistory, setQuarterlyHistory] = useState<{ id: string; quarter: string; prizes: { rank: number; creditReward: number; shardReward: number }[]; results: { rank: number; walletAddress: string; displayName: string | null; credited: number }[]; totalCredited: number; distributedAt: string }[]>([]);
   const [quarterlyInfo, setQuarterlyInfo] = useState<{ quarter: string; start: string; end: string } | null>(null);
   const [showQlyForm, setShowQlyForm] = useState(false);
@@ -1441,9 +1444,11 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                   const ended = new Date() > new Date(quarterlyInfo.end);
                   const alreadyDone = quarterlyHistory.some(h => h.quarter === quarterlyInfo.quarter);
                   const doneEntry = quarterlyHistory.find(h => h.quarter === quarterlyInfo.quarter);
+                  // Wenn Config nach letzter Verteilung neu gespeichert wurde → neuer Zyklus gestartet
+                  const restarted = !!(doneEntry && quarterlyConfig.updatedAt && new Date(quarterlyConfig.updatedAt) > new Date(doneEntry.distributedAt));
 
                   // ── Verteilt: Ergebnisansicht (wie Contest) ──────────────────
-                  if (alreadyDone && doneEntry) {
+                  if (alreadyDone && doneEntry && !restarted) {
                     return (
                       <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
                         <div className="px-4 py-4 text-center border-b border-white/[0.07]">

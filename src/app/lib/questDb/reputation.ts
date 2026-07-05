@@ -644,10 +644,10 @@ export function getQuarterInfo(date: Date = new Date()): {
 /** Quartals-Reward-Konfiguration laden */
 export async function getLeaderboardQuarterlyConfig(
   artistWallet: string,
-): Promise<{ prizes: { rank: number; creditReward: number; shardReward: number }[]; creditsLocked: number } | null> {
+): Promise<{ prizes: { rank: number; creditReward: number; shardReward: number }[]; creditsLocked: number; updatedAt: string | null } | null> {
   const sql = getDb();
   const rows = await sql`
-    SELECT prizes, COALESCE(credits_locked, 0) AS credits_locked
+    SELECT prizes, COALESCE(credits_locked, 0) AS credits_locked, updated_at
     FROM leaderboard_quarterly_config
     WHERE artist_wallet = ${artistWallet.toLowerCase()}
     LIMIT 1
@@ -657,6 +657,7 @@ export async function getLeaderboardQuarterlyConfig(
   return {
     prizes: raw.map(p => ({ rank: p.rank, creditReward: p.creditReward, shardReward: p.shardReward ?? 0 })),
     creditsLocked: Number(rows[0].credits_locked ?? 0),
+    updatedAt: rows[0].updated_at ? new Date(rows[0].updated_at as string).toISOString() : null,
   };
 }
 
