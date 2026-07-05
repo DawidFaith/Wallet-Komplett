@@ -1640,7 +1640,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                           D.FAITH {enough ? '✓' : '⚠'}
                         </p>
                       </div>
-                      <p className="text-zinc-600 text-[10px] px-1">{t('rep.quarterlyDeductionNote', lang)}</p>
+                      <p className="text-zinc-600 text-[10px] px-1">💡 Credits werden beim Speichern sofort reserviert</p>
                     </div>
                   );
                 })()}
