@@ -539,7 +539,7 @@ export async function distributeReputationContest(
         await savePendingReward({
           walletAddress: winner.walletAddress,
           amount: creditReward,
-          reason: `contest_reward:${artistWallet.toLowerCase()}:${contestId}:${rank}`,
+          reason: `contest_reward:${artistWallet.toLowerCase()}:${contestId}:${rank}:${shardReward}`,
           questId: null,
           createdAt: new Date().toISOString(),
         });
@@ -776,7 +776,7 @@ export async function distributeLeaderboardQuarterly(
         await savePendingReward({
           walletAddress: winner.walletAddress,
           amount: prize.creditReward,
-          reason: `leaderboard_reward:${wallet}:${prize.rank}`,
+          reason: `leaderboard_reward:${wallet}:${prize.rank}:${prize.shardReward ?? 0}`,
           questId: null,
           createdAt: new Date().toISOString(),
         });

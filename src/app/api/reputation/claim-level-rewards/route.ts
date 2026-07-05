@@ -57,15 +57,19 @@ export async function POST(req: NextRequest) {
   const rewards = rows.map((r) => {
     const reason = String(r.reason);
     const parts = reason.split(':');
-    let type = 'level', artistWallet = '', levelNumber = 0, levelName = '';
+    let type = 'level', artistWallet = '', levelNumber = 0, levelName = '', shardAmount = 0;
     if (reason.startsWith('level_reward:')) {
       type = 'level'; artistWallet = parts[1] ?? ''; levelNumber = Number(parts[2] ?? 0); levelName = parts.slice(3).join(':');
     } else if (reason.startsWith('contest_reward:')) {
-      type = 'contest'; artistWallet = parts[1] ?? ''; levelName = `🏆 Platz #${parts[3] ?? '?'} im Contest`;
+      type = 'contest'; artistWallet = parts[1] ?? '';
+      const rank = parts[3] ?? '?'; shardAmount = Number(parts[4] ?? 0);
+      levelName = `🏆 Platz #${rank} im Contest`;
     } else if (reason.startsWith('leaderboard_reward:')) {
-      type = 'leaderboard'; artistWallet = parts[1] ?? ''; levelName = `🥇 Platz #${parts[2] ?? '?'} im Leaderboard`;
+      type = 'leaderboard'; artistWallet = parts[1] ?? '';
+      const rank = parts[2] ?? '?'; shardAmount = Number(parts[3] ?? 0);
+      levelName = `🥇 Platz #${rank} im Leaderboard`;
     }
-    return { id: String(r.id), type, artistWallet, levelNumber, levelName, amount: Number(r.amount) };
+    return { id: String(r.id), type, artistWallet, levelNumber, levelName, shardAmount, amount: Number(r.amount) };
   });
 
   return NextResponse.json({ claimed: total, rewards });

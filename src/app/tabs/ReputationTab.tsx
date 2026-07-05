@@ -117,7 +117,7 @@ function ArtistDetailView({
 
   // Unclaimed Rewards (Level, Contest, Leaderboard)
   const [unclaimedTotal, setUnclaimedTotal] = useState(0);
-  const [unclaimedRewards, setUnclaimedRewards] = useState<{id:string;type:string;levelNumber:number;levelName:string;rank:number;amount:number}[]>([]);
+  const [unclaimedRewards, setUnclaimedRewards] = useState<{id:string;type:string;levelNumber:number;levelName:string;rank:number;shardAmount:number;amount:number}[]>([]);
   const [dismissedNotifs, setDismissedNotifs] = useState<Set<string>>(new Set());
 
   // Dismissed Contest-Notifications aus localStorage laden
@@ -141,7 +141,7 @@ function ArtistDetailView({
     });
   };
   const [claiming, setClaiming] = useState(false);
-  const [celebration, setCelebration] = useState<{total:number;rewards:{levelNumber:number;levelName:string;amount:number}[]} | null>(null);
+  const [celebration, setCelebration] = useState<{total:number;rewards:{type:string;levelNumber:number;levelName:string;shardAmount:number;amount:number}[]} | null>(null);
 
   const loadUnclaimed = useCallback(async () => {
     if (!walletAddress) return;
@@ -149,7 +149,7 @@ function ArtistDetailView({
       const res = await fetch(`/api/reputation/unclaimed?wallet=${walletAddress}`);
       if (!res.ok) return;
       const data = await res.json();
-      const filtered = (data.rewards as {id:string;type:string;artistWallet:string;levelNumber:number;levelName:string;rank:number;amount:number}[])
+      const filtered = (data.rewards as {id:string;type:string;artistWallet:string;levelNumber:number;levelName:string;rank:number;shardAmount:number;amount:number}[])
         .filter(r => r.artistWallet.toLowerCase() === entry.artistWallet.toLowerCase());
       setUnclaimedRewards(filtered);
       setUnclaimedTotal(filtered.reduce((s, r) => s + r.amount, 0));
@@ -167,7 +167,7 @@ function ArtistDetailView({
       });
       if (res.ok) {
         const data = await res.json();
-        const artistRewards = (data.rewards as {levelNumber:number;levelName:string;amount:number}[])
+        const artistRewards = (data.rewards as {type:string;levelNumber:number;levelName:string;shardAmount:number;amount:number}[])
           .filter((_r, _i) => {
             // Alle claims dieser Artist (API gibt nur die von diesem wallet-address zurück)
             return true;
@@ -276,10 +276,14 @@ function ArtistDetailView({
             <p className="text-amber-400 font-bold text-lg mb-4">D.FAITH Credits</p>
             <div className="space-y-1.5 mb-6">
               {celebration.rewards.map((r, i) => (
-                <div key={i} className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-1.5">
-                  <span className="text-amber-300 text-sm font-semibold">Level {r.levelNumber}</span>
-                  <span className="text-zinc-400 text-sm"> – {r.levelName}</span>
-                  <span className="text-amber-400 text-sm font-bold ml-2">+{r.amount}</span>
+                <div key={i} className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-1.5 flex items-center justify-between gap-2">
+                  <span className="text-amber-200 text-sm font-semibold truncate">
+                    {r.type === 'level' ? `Level ${r.levelNumber} – ${r.levelName}` : r.levelName}
+                  </span>
+                  <span className="flex items-center gap-2 shrink-0">
+                    {r.amount > 0 && <span className="text-amber-400 text-sm font-bold">+{r.amount}</span>}
+                    {r.shardAmount > 0 && <span className="text-cyan-300 text-sm font-bold">✦{r.shardAmount}</span>}
+                  </span>
                 </div>
               ))}
             </div>
@@ -341,11 +345,11 @@ function ArtistDetailView({
                 {r.type === 'leaderboard' ? t('rep.quarterlyWon', lang) : 'Contest beendet!'}
               </p>
               <p className="text-zinc-300 text-xs">Du hast <span className="font-bold text-white">Platz #{r.rank}</span> erreicht</p>
-              {r.amount > 0 && (
-                <p className={`text-xs font-semibold ${r.type === 'leaderboard' ? 'text-blue-400' : 'text-amber-400'}`}>
-                  +{r.amount} Credits warten auf dich
-                </p>
-              )}
+              <p className={`text-xs font-semibold flex items-center gap-2 flex-wrap ${r.type === 'leaderboard' ? 'text-blue-400' : 'text-amber-400'}`}>
+                {r.amount > 0 && <span>+{r.amount} Credits</span>}
+                {r.shardAmount > 0 && <span className="text-cyan-300">✦{r.shardAmount} Shards bereits gutgeschrieben</span>}
+                {r.amount > 0 && <span className="text-zinc-500 font-normal">warten auf dich</span>}
+              </p>
             </div>
             <button
               onClick={() => dismissNotif(r.id)}
@@ -397,7 +401,10 @@ function ArtistDetailView({
                 {unclaimedRewards.filter(r => r.type === 'contest' || r.type === 'leaderboard').map((r, i) => (
                   <div key={i} className="flex items-center justify-between bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-1.5">
                     <span className="text-amber-200 text-xs font-semibold">{r.levelName}</span>
-                    <span className="text-amber-400 text-xs font-bold">+{r.amount} Credits</span>
+                    <span className="flex items-center gap-2">
+                      {r.amount > 0 && <span className="text-amber-400 text-xs font-bold">+{r.amount} Credits</span>}
+                      {r.shardAmount > 0 && <span className="text-cyan-300 text-xs font-bold">✦{r.shardAmount}</span>}
+                    </span>
                   </div>
                 ))}
               </div>
