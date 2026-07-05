@@ -109,9 +109,8 @@ export default function LandingPage() {
 
   const artistFeatures = [
     { n: '01', title: t('landing.artist.1.title', language), desc: t('landing.artist.1.desc', language) },
-    { n: '02', title: t('landing.artist.2.title', language), desc: t('landing.artist.2.desc', language) },
-    { n: '03', title: t('landing.artist.3.title', language), desc: t('landing.artist.3.desc', language) },
-    { n: '04', title: t('landing.artist.4.title', language), desc: t('landing.artist.4.desc', language) },
+    { n: '02', title: t('landing.artist.3.title', language), desc: t('landing.artist.3.desc', language) },
+    { n: '03', title: t('landing.artist.4.title', language), desc: t('landing.artist.4.desc', language) },
   ];
 
   return (
