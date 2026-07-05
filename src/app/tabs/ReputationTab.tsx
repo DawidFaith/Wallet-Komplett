@@ -763,6 +763,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [activeSection, setActiveSection] = useState<'levels' | 'leaderboard'>('levels');
+  const [leaderboardSubTab, setLeaderboardSubTab] = useState<'contest' | 'quarterly'>('contest');
 
   // Contest-Formular
   const [showContestForm, setShowContestForm] = useState(false);
@@ -1174,7 +1175,33 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
       {/* ── Leaderboard + Contest ── */}
       {activeSection === 'leaderboard' && (
         <div className="space-y-4">
-          {/* Contest-Panel */}
+
+          {/* Sub-Tab Switcher */}
+          <div className="flex rounded-xl overflow-hidden border border-white/[0.07] bg-zinc-900/40">
+            <button
+              onClick={() => setLeaderboardSubTab('contest')}
+              className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
+                leaderboardSubTab === 'contest'
+                  ? 'bg-amber-500/20 text-amber-300 border-b-2 border-amber-500/60'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              🔥 Contest
+            </button>
+            <button
+              onClick={() => setLeaderboardSubTab('quarterly')}
+              className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
+                leaderboardSubTab === 'quarterly'
+                  ? 'bg-amber-500/20 text-amber-300 border-b-2 border-amber-500/60'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              🏆 Quartal
+            </button>
+          </div>
+
+          {/* ── Contest-Tab ── */}
+          {leaderboardSubTab === 'contest' && (
           <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
               <div>
@@ -1378,45 +1405,10 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
               </div>
             )}
           </div>
+          )} {/* end contest tab */}
 
-          {/* Fan-Leaderboard */}
-          <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-white/[0.07]">
-              <p className="text-white font-semibold text-sm">Fan Leaderboard</p>
-              <p className="text-zinc-500 text-xs mt-0.5">{t('rep.fanLeaderboardSubtitle', lang)}</p>
-            </div>
-            {leaderboard.length === 0 ? (
-              <div className="px-4 py-8 text-center">
-                <FaUsers size={28} className="text-zinc-700 mx-auto mb-3" />
-                <p className="text-zinc-500 text-sm">{t('rep.noArtists', lang)}</p>
-                <p className="text-zinc-600 text-xs mt-1">{t('rep.noFansHint', lang)}</p>
-              </div>
-            ) : (
-              <div className="p-4 space-y-1.5">
-                {leaderboard.map(lb => (
-                  <div key={lb.walletAddress} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-zinc-800/50">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
-                      lb.rank === 1 ? 'bg-amber-400 text-black' :
-                      lb.rank === 2 ? 'bg-zinc-400 text-black' :
-                      lb.rank === 3 ? 'bg-amber-700 text-white' :
-                      'bg-zinc-700 text-zinc-300'
-                    }`}>
-                      {lb.rank === 1 ? '🥇' : lb.rank === 2 ? '🥈' : lb.rank === 3 ? '🥉' : lb.rank}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium truncate">
-                        {lb.displayName || shortenWallet(lb.walletAddress)}
-                      </p>
-                      <p className="text-zinc-500 text-xs">{lb.levelName}</p>
-                    </div>
-                    <span className="text-amber-300 text-sm font-bold shrink-0">
-                      {lb.reputation.toLocaleString()} REP
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* ── Quartal-Tab ── */}
+          {leaderboardSubTab === 'quarterly' && (<>
 
           {/* Quartals-Leaderboard-Rewards */}
           <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
@@ -1722,6 +1714,46 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
               </div>
             )}
           </div>
+
+          {/* Aktuelle REP-Rangliste (zeigt wer Quartal-Rewards bekommt) */}
+          <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-white/[0.07]">
+              <p className="text-white font-semibold text-sm">REP-Rangliste</p>
+              <p className="text-zinc-500 text-xs mt-0.5">Aktueller Stand — diese Plätze gewinnen die Quartal-Rewards</p>
+            </div>
+            {leaderboard.length === 0 ? (
+              <div className="px-4 py-6 text-center">
+                <FaUsers size={24} className="text-zinc-700 mx-auto mb-2" />
+                <p className="text-zinc-500 text-sm">{t('rep.noFansHint', lang)}</p>
+              </div>
+            ) : (
+              <div className="p-3 space-y-1.5">
+                {leaderboard.slice(0, 10).map(lb => (
+                  <div key={lb.walletAddress} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-zinc-800/50">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                      lb.rank === 1 ? 'bg-amber-400 text-black' :
+                      lb.rank === 2 ? 'bg-zinc-400 text-black' :
+                      lb.rank === 3 ? 'bg-amber-700 text-white' :
+                      'bg-zinc-700 text-zinc-400'
+                    }`}>
+                      {lb.rank <= 3 ? (lb.rank === 1 ? '🥇' : lb.rank === 2 ? '🥈' : '🥉') : lb.rank}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-xs font-medium truncate">{lb.displayName || shortenWallet(lb.walletAddress)}</p>
+                      <p className="text-zinc-500 text-[10px]">{lb.levelName}</p>
+                    </div>
+                    <span className="text-amber-300 text-xs font-bold shrink-0">{lb.reputation.toLocaleString()} REP</span>
+                  </div>
+                ))}
+                {leaderboard.length > 10 && (
+                  <p className="text-zinc-600 text-xs text-center pt-1">+{leaderboard.length - 10} weitere</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          </>)} {/* end quarterly tab */}
+
         </div>
       )}
     </div>
