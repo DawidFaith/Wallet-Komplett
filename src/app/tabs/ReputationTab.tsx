@@ -62,6 +62,29 @@ function ProgressBar({ progress }: { progress: number }) {
 const shortenWallet = (w: string) =>
   w.length > 16 ? `${w.slice(0, 8)}\u2026${w.slice(-6)}` : w;
 
+function useCountdown(targetDate: string | null): { label: string; urgent: boolean } {
+  const [state, setState] = useState({ label: '', urgent: false });
+  useEffect(() => {
+    if (!targetDate) return;
+    const update = () => {
+      const diff = new Date(targetDate).getTime() - Date.now();
+      if (diff <= 0) { setState({ label: 'Abgelaufen', urgent: true }); return; }
+      const d = Math.floor(diff / 86_400_000);
+      const h = Math.floor((diff % 86_400_000) / 3_600_000);
+      const m = Math.floor((diff % 3_600_000) / 60_000);
+      const s = Math.floor((diff % 60_000) / 1_000);
+      const urgent = diff < 3 * 3_600_000;
+      if (d > 0)      setState({ label: `${d}T ${h}h ${m}m`, urgent });
+      else if (h > 0) setState({ label: `${h}h ${m}m ${s}s`, urgent });
+      else            setState({ label: `${m}m ${s}s`, urgent: true });
+    };
+    update();
+    const id = setInterval(update, 1_000);
+    return () => clearInterval(id);
+  }, [targetDate]);
+  return state;
+}
+
 // Supporter: Detail-Ansicht für einen Künstler
 function ArtistDetailView({
   entry,
@@ -80,7 +103,9 @@ function ArtistDetailView({
   const [tab, setTab] = useState<'leaderboard' | 'contest'>('leaderboard');
   const [levels, setLevels] = useState<ReputationLevel[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [contest, setContest] = useState<ReputationContest | null | false>(false); // false = nicht geladen
+  const [contest, setContest] = useState<ReputationContest | null | false>(false);
+  const [quarterlyConfig, setQuarterlyConfig] = useState<{ prizes: { rank: number; creditReward: number; shardReward: number }[] } | null>(null);
+  const [quarterlyInfo, setQuarterlyInfo] = useState<{ quarter: string; start: string; end: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Unclaimed Rewards (Level, Contest, Leaderboard)
@@ -133,15 +158,21 @@ function ArtistDetailView({
     (async () => {
       setLoading(true);
       try {
-        const [lvRes, lbRes, ctRes] = await Promise.all([
+        const [lvRes, lbRes, ctRes, qlyRes] = await Promise.all([
           fetch(`/api/reputation/levels?artistWallet=${entry.artistWallet}`),
           fetch(`/api/reputation/leaderboard?artistWallet=${entry.artistWallet}&limit=50`),
           fetch(`/api/reputation/contest?artistWallet=${entry.artistWallet}`),
+          fetch(`/api/reputation/leaderboard-quarterly?artistWallet=${entry.artistWallet}`),
         ]);
         if (cancelled) return;
         if (lvRes.ok) setLevels(await lvRes.json());
         if (lbRes.ok) setLeaderboard(await lbRes.json());
         setContest(ctRes.ok ? (await ctRes.json()) : null);
+        if (qlyRes.ok) {
+          const qly = await qlyRes.json();
+          setQuarterlyConfig(qly.config ?? null);
+          setQuarterlyInfo(qly.quarterInfo ?? null);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -354,121 +385,219 @@ function ArtistDetailView({
 
           {/* ── Leaderboard ── */}
           {tab === 'leaderboard' && (
-            <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-white/[0.07]">
-                <p className="text-white font-semibold text-sm">All-Time Leaderboard</p>
-                <p className="text-zinc-500 text-xs mt-0.5">{t('rep.leaderboardSubtitle', lang)}</p>
-              </div>
-              {leaderboard.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <FaUsers size={28} className="text-zinc-700 mx-auto mb-2" />
-                  <p className="text-zinc-500 text-sm">{t('rep.noArtists', lang)}</p>
-                </div>
-              ) : (
-                <div className="p-4 space-y-1.5">
-                  {leaderboard.map(lb => (
-                    <div key={lb.walletAddress} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${
-                      lb.walletAddress === walletAddress ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-zinc-800/50'
-                    }`}>
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
-                        lb.rank === 1 ? 'bg-amber-400 text-black' :
-                        lb.rank === 2 ? 'bg-zinc-400 text-black' :
-                        lb.rank === 3 ? 'bg-amber-700 text-white' :
-                        'bg-zinc-700 text-zinc-300'
-                      }`}>
-                        {lb.rank === 1 ? '🥇' : lb.rank === 2 ? '🥈' : lb.rank === 3 ? '🥉' : lb.rank}
+            <div className="space-y-3">
+              {/* Quartal-Prizes + Countdown */}
+              {quarterlyConfig && quarterlyConfig.prizes.length > 0 && quarterlyInfo && (() => {
+                const countdown = useCountdown(quarterlyInfo.end); // eslint-disable-line react-hooks/rules-of-hooks
+                return (
+                  <div className="bg-gradient-to-br from-amber-950/40 to-zinc-900/60 border border-amber-500/20 rounded-2xl overflow-hidden">
+                    <div className="px-4 py-3 border-b border-amber-500/10 flex items-center justify-between">
+                      <div>
+                        <p className="text-amber-300 font-black text-sm tracking-wide">🏆 Quartal {quarterlyInfo.quarter}</p>
+                        <p className="text-zinc-500 text-xs mt-0.5">Top-Supporter gewinnen am Quartalsende</p>
                       </div>
-                      {lb.imageUrl
-                        ? <Image src={lb.imageUrl} alt="" width={28} height={28} className="w-7 h-7 rounded-full object-cover shrink-0" />
-                        : <div className="w-7 h-7 rounded-full bg-zinc-700 shrink-0" />}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-medium truncate">
-                          {lb.displayName || shortenWallet(lb.walletAddress)}
-                          {lb.walletAddress === walletAddress && <span className="text-amber-400 ml-1 text-xs">(Du)</span>}
-                        </p>
-                        <p className="text-zinc-500 text-xs">{lb.levelName}</p>
+                      <div className={`text-right ${countdown.urgent ? 'animate-pulse' : ''}`}>
+                        <p className={`font-black text-sm tabular-nums ${countdown.urgent ? 'text-red-400' : 'text-amber-300'}`}>{countdown.label}</p>
+                        <p className="text-zinc-600 text-[10px]">verbleibend</p>
                       </div>
-                      <span className="text-amber-300 font-bold text-sm shrink-0">{lb.reputation.toLocaleString()} REP</span>
                     </div>
-                  ))}
+                    <div className="p-3 grid grid-cols-3 gap-2">
+                      {quarterlyConfig.prizes.slice(0, 3).map(p => {
+                        const medal = p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : '🥉';
+                        const currentLeader = leaderboard.find(lb => lb.rank === p.rank);
+                        return (
+                          <div key={p.rank} className={`rounded-xl p-2.5 flex flex-col gap-1 ${
+                            p.rank === 1 ? 'bg-amber-500/10 border border-amber-500/25' :
+                            p.rank === 2 ? 'bg-zinc-400/5 border border-zinc-400/15' :
+                            'bg-amber-900/10 border border-amber-700/15'
+                          }`}>
+                            <span className="text-lg leading-none">{medal}</span>
+                            {currentLeader && (
+                              <p className="text-white text-[10px] font-semibold truncate">
+                                {currentLeader.displayName || shortenWallet(currentLeader.walletAddress)}
+                                {currentLeader.walletAddress === walletAddress && <span className="text-amber-400"> ★</span>}
+                              </p>
+                            )}
+                            {!currentLeader && <p className="text-zinc-600 text-[10px] italic">Noch frei</p>}
+                            <div className="flex flex-col gap-0.5 mt-auto">
+                              {p.creditReward > 0 && (
+                                <span className="flex items-center gap-0.5 text-amber-300 font-bold text-[10px]">
+                                  <Image src="/D.FAITH.png" alt="" width={10} height={10} className="w-2.5 h-2.5 rounded-full shrink-0" />
+                                  {p.creditReward}
+                                </span>
+                              )}
+                              {p.shardReward > 0 && (
+                                <span className="text-cyan-300 font-bold text-[10px]">✦ {p.shardReward}</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {quarterlyConfig.prizes.length > 3 && (
+                      <div className="px-3 pb-3 flex gap-2 flex-wrap">
+                        {quarterlyConfig.prizes.slice(3).map(p => (
+                          <div key={p.rank} className="flex items-center gap-2 bg-zinc-800/40 rounded-lg px-2.5 py-1.5">
+                            <span className="text-zinc-400 text-xs font-bold">#{p.rank}</span>
+                            {p.creditReward > 0 && <span className="text-amber-300 text-xs font-bold">{p.creditReward} Credits</span>}
+                            {p.shardReward > 0 && <span className="text-cyan-300 text-xs font-bold">✦ {p.shardReward}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Leaderboard-Liste */}
+              <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-white/[0.07]">
+                  <p className="text-white font-semibold text-sm">All-Time Leaderboard</p>
+                  <p className="text-zinc-500 text-xs mt-0.5">{t('rep.leaderboardSubtitle', lang)}</p>
                 </div>
-              )}
+                {leaderboard.length === 0 ? (
+                  <div className="px-4 py-8 text-center">
+                    <FaUsers size={28} className="text-zinc-700 mx-auto mb-2" />
+                    <p className="text-zinc-500 text-sm">{t('rep.noArtists', lang)}</p>
+                  </div>
+                ) : (
+                  <div className="p-4 space-y-1.5">
+                    {leaderboard.map(lb => (
+                      <div key={lb.walletAddress} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                        lb.walletAddress === walletAddress ? 'bg-amber-500/10 border border-amber-500/20' :
+                        lb.rank <= 3 ? 'bg-zinc-800/70' : 'bg-zinc-800/40'
+                      }`}>
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                          lb.rank === 1 ? 'bg-amber-400 text-black' :
+                          lb.rank === 2 ? 'bg-zinc-400 text-black' :
+                          lb.rank === 3 ? 'bg-amber-700 text-white' :
+                          'bg-zinc-700 text-zinc-300'
+                        }`}>
+                          {lb.rank === 1 ? '🥇' : lb.rank === 2 ? '🥈' : lb.rank === 3 ? '🥉' : lb.rank}
+                        </div>
+                        {lb.imageUrl
+                          ? <Image src={lb.imageUrl} alt="" width={28} height={28} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                          : <div className="w-7 h-7 rounded-full bg-zinc-700 shrink-0" />}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-sm font-medium truncate">
+                            {lb.displayName || shortenWallet(lb.walletAddress)}
+                            {lb.walletAddress === walletAddress && <span className="text-amber-400 ml-1 text-xs">(Du)</span>}
+                          </p>
+                          <p className="text-zinc-500 text-xs">{lb.levelName}</p>
+                        </div>
+                        <span className="text-amber-300 font-bold text-sm shrink-0">{lb.reputation.toLocaleString()} REP</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           {/* ── Contest ── */}
           {tab === 'contest' && (
-            <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+            <div className="space-y-3">
               {!contest ? (
-                <div className="px-4 py-8 text-center">
+                <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl px-4 py-8 text-center">
                   <FaTrophy size={28} className="text-zinc-700 mx-auto mb-2" />
                   <p className="text-zinc-500 text-sm">{t('rep.noContest', lang)}</p>
                   <p className="text-zinc-600 text-xs mt-1">{t('rep.noContestHint', lang)}</p>
                 </div>
-              ) : (
-                <div className="p-4 space-y-3">
-                  <div className={`rounded-xl px-3 py-2.5 ${
-                    contest.distributed ? 'bg-zinc-800/40' :
-                    new Date(contest.endDate) <= new Date() ? 'bg-amber-950/30 border border-amber-700/30' :
-                    'bg-green-950/30 border border-green-700/30'
-                  }`}>
-                    <p className="text-white font-semibold text-sm">
-                      {contest.distributed
-                        ? t('rep.contestEnded', lang)
-                        : new Date(contest.endDate) <= new Date()
-                        ? t('rep.contestExpiring', lang)
-                        : t('rep.contestRunning', lang)}
-                    </p>
-                    <p className="text-zinc-400 text-xs mt-0.5">Ende: {new Date(contest.endDate).toLocaleString('de-DE')}</p>
-                  </div>
-                  <p className="text-zinc-400 text-[10px] font-semibold uppercase tracking-widest">{t('rep.prizesAndBoard', lang)}</p>
-                  {contest.prizes.map(p => {
-                    const contestBoard = contest.contestLeaderboard ?? [];
-                    const winner = contestBoard.find(lb => lb.rank === p.rank);
-                    return (
-                      <div key={p.rank} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-zinc-800/50">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
-                          p.rank === 1 ? 'bg-amber-400 text-black' :
-                          p.rank === 2 ? 'bg-zinc-400 text-black' :
-                          p.rank === 3 ? 'bg-amber-700 text-white' :
-                          'bg-zinc-700 text-zinc-300'
-                        }`}>
-                          {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`}
+              ) : (() => {
+                const isRunning = !contest.distributed && new Date(contest.endDate) > new Date();
+                const isExpired = !contest.distributed && new Date(contest.endDate) <= new Date();
+                const countdown = useCountdown(isRunning ? contest.endDate : null); // eslint-disable-line react-hooks/rules-of-hooks
+                const contestBoard = contest.contestLeaderboard ?? [];
+                return (
+                  <>
+                    {/* Status-Header */}
+                    <div className={`rounded-2xl overflow-hidden ${
+                      contest.distributed ? 'bg-zinc-900/60 border border-white/[0.07]' :
+                      isExpired ? 'bg-amber-950/40 border border-amber-700/30' :
+                      'bg-gradient-to-br from-green-950/50 to-zinc-900/60 border border-green-600/25'
+                    }`}>
+                      <div className="px-4 py-3 flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            {isRunning && <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />}
+                            <p className="text-white font-black text-sm">
+                              {contest.distributed ? t('rep.contestEnded', lang) :
+                               isExpired ? t('rep.contestExpiring', lang) :
+                               '🔥 ' + t('rep.contestRunning', lang)}
+                            </p>
+                          </div>
+                          <p className="text-zinc-500 text-xs">
+                            {isRunning ? 'Verdiene jetzt neuen REP und sichere dir einen Platz' : `Ende: ${new Date(contest.endDate).toLocaleString('de-DE')}`}
+                          </p>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          {winner ? (
-                            <>
-                              <div className="flex items-center gap-2">
-                                {winner.imageUrl
-                                  ? <Image src={winner.imageUrl} alt="" width={24} height={24} className="w-6 h-6 rounded-full object-cover shrink-0" />
-                                  : <div className="w-6 h-6 rounded-full bg-zinc-700 shrink-0" />}
-                                <p className="text-white text-sm font-medium truncate">
-                                  {winner.displayName || shortenWallet(winner.walletAddress)}
-                                  {winner.walletAddress === walletAddress && <span className="text-amber-400 ml-1 text-xs">(Du)</span>}
-                                </p>
-                              </div>
-                              <p className="text-zinc-500 text-xs">{winner.reputation.toLocaleString()} {t('rep.contestSinceStart', lang)}</p>
-                            </>
-                          ) : (
-                            <p className="text-zinc-500 text-sm italic">{t('rep.noParticipant', lang)}</p>
-                          )}
-                        </div>
-                        <div className="flex flex-col items-end gap-0.5 shrink-0">
-                          {p.creditReward > 0 && (
-                            <span className="flex items-center gap-1 text-amber-300 font-bold text-sm">
-                              <Image src="/D.FAITH.png" alt="" width={13} height={13} className="w-3 h-3 rounded-full shrink-0" />
-                              {p.creditReward} D.FAITH
-                            </span>
-                          )}
-                          {p.shardReward > 0 && (
-                            <span className="text-cyan-300 font-bold text-xs">✦ {p.shardReward} Shards</span>
-                          )}
-                        </div>
+                        {isRunning && (
+                          <div className={`text-right ${countdown.urgent ? 'animate-pulse' : ''}`}>
+                            <p className={`font-black text-lg tabular-nums leading-none ${countdown.urgent ? 'text-red-400' : 'text-green-400'}`}>{countdown.label}</p>
+                            <p className="text-zinc-600 text-[10px]">verbleibend</p>
+                          </div>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    </div>
+
+                    {/* Prize + Live-Ranking Cards */}
+                    <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+                      <div className="px-4 py-3 border-b border-white/[0.07]">
+                        <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">{t('rep.prizesAndBoard', lang)}</p>
+                      </div>
+                      <div className="p-3 space-y-2">
+                        {contest.prizes.map(p => {
+                          const winner = contestBoard.find(lb => lb.rank === p.rank);
+                          const isMe = winner?.walletAddress === walletAddress;
+                          return (
+                            <div key={p.rank} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                              isMe ? 'bg-amber-500/15 border border-amber-500/30 ring-1 ring-amber-500/20' :
+                              p.rank === 1 ? 'bg-zinc-800/70' : 'bg-zinc-800/40'
+                            }`}>
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm font-bold ${
+                                p.rank === 1 ? 'bg-amber-400 text-black' :
+                                p.rank === 2 ? 'bg-zinc-400 text-black' :
+                                p.rank === 3 ? 'bg-amber-700 text-white' :
+                                'bg-zinc-700 text-zinc-300'
+                              }`}>
+                                {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                {winner ? (
+                                  <>
+                                    <div className="flex items-center gap-1.5">
+                                      {winner.imageUrl
+                                        ? <Image src={winner.imageUrl} alt="" width={20} height={20} className="w-5 h-5 rounded-full object-cover shrink-0" />
+                                        : <div className="w-5 h-5 rounded-full bg-zinc-700 shrink-0" />}
+                                      <p className="text-white text-sm font-semibold truncate">
+                                        {winner.displayName || shortenWallet(winner.walletAddress)}
+                                        {isMe && <span className="text-amber-400 ml-1">★ Du</span>}
+                                      </p>
+                                    </div>
+                                    <p className="text-zinc-500 text-xs mt-0.5">{winner.reputation.toLocaleString()} neuer REP</p>
+                                  </>
+                                ) : (
+                                  <p className="text-zinc-600 text-sm italic">Noch nicht besetzt — sei der Erste!</p>
+                                )}
+                              </div>
+                              <div className="flex flex-col items-end gap-0.5 shrink-0">
+                                {p.creditReward > 0 && (
+                                  <span className="flex items-center gap-1 text-amber-300 font-bold text-xs">
+                                    <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full shrink-0" />
+                                    {p.creditReward}
+                                  </span>
+                                )}
+                                {p.shardReward > 0 && (
+                                  <span className="text-cyan-300 font-bold text-xs">✦ {p.shardReward}</span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           )}
         </div>
