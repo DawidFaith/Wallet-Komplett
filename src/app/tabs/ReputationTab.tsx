@@ -106,6 +106,7 @@ function ArtistDetailView({
   const [contest, setContest] = useState<ReputationContest | null | false>(false);
   const [quarterlyConfig, setQuarterlyConfig] = useState<{ prizes: { rank: number; creditReward: number; shardReward: number }[] } | null>(null);
   const [quarterlyInfo, setQuarterlyInfo] = useState<{ quarter: string; start: string; end: string } | null>(null);
+  const [quarterlyAlreadyDistributed, setQuarterlyAlreadyDistributed] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Countdowns auf Top-Level (Rules of Hooks)
@@ -200,6 +201,8 @@ function ArtistDetailView({
           const qly = await qlyRes.json();
           setQuarterlyConfig(qly.config ?? null);
           setQuarterlyInfo(qly.quarterInfo ?? null);
+          const hist: { quarter: string }[] = qly.history ?? [];
+          setQuarterlyAlreadyDistributed(hist.some(h => h.quarter === (qly.quarterInfo?.quarter ?? '')));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -453,12 +456,21 @@ function ArtistDetailView({
                     <div className="px-4 py-3 border-b border-amber-500/10 flex items-center justify-between">
                       <div>
                         <p className="text-amber-300 font-black text-sm tracking-wide">🏆 Quartal {quarterlyInfo.quarter}</p>
-                        <p className="text-zinc-500 text-xs mt-0.5">Top-Supporter gewinnen am Quartalsende</p>
+                        <p className="text-zinc-500 text-xs mt-0.5">
+                          {quarterlyAlreadyDistributed ? 'Rewards wurden ausgezahlt' : 'Top-Supporter gewinnen am Quartalsende'}
+                        </p>
                       </div>
-                      <div className={`text-right ${countdown.urgent ? 'animate-pulse' : ''}`}>
-                        <p className={`font-black text-sm tabular-nums ${countdown.urgent ? 'text-red-400' : 'text-amber-300'}`}>{countdown.label}</p>
-                        <p className="text-zinc-600 text-[10px]">verbleibend</p>
-                      </div>
+                      {quarterlyAlreadyDistributed ? (
+                        <div className="text-right">
+                          <p className="font-black text-sm text-zinc-400">✓ Abgeschlossen</p>
+                          <p className="text-zinc-600 text-[10px]">nächstes Quartal bald</p>
+                        </div>
+                      ) : (
+                        <div className={`text-right ${countdown.urgent ? 'animate-pulse' : ''}`}>
+                          <p className={`font-black text-sm tabular-nums ${countdown.urgent ? 'text-red-400' : 'text-amber-300'}`}>{countdown.label}</p>
+                          <p className="text-zinc-600 text-[10px]">verbleibend</p>
+                        </div>
+                      )}
                     </div>
                     <div className="p-3 grid grid-cols-3 gap-2">
                       {quarterlyConfig.prizes.slice(0, 3).map(p => {
@@ -1419,7 +1431,10 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
               </div>
               {!showQlyForm && (
                 <button
-                  onClick={() => { setShowQlyForm(true); setQlyError(''); setQlyDistResult(null); }}
+                  onClick={() => {
+                    if (quarterlyConfig) setQlyPrizes(quarterlyConfig.prizes.map(p => ({ rank: p.rank, creditReward: p.creditReward, shardReward: p.shardReward })));
+                    setShowQlyForm(true); setQlyError(''); setQlyDistResult(null);
+                  }}
                   className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 text-xs font-medium"
                 >
                   <FaEdit size={10} /> {quarterlyConfig ? t('common.edit', lang) : t('rep.btnSetup', lang)}
@@ -1470,8 +1485,18 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                             );
                           })}
                         </div>
-                        <div className="px-4 pb-3 text-center">
-                          <p className="text-zinc-600 text-[10px]">{t('rep.quarterlyDeductionNote', lang).replace('💡 ', '').replace('Abzug erfolgt erst beim Verteilen', 'Neues Quartal: Konfiguration erneut speichern um Credits zu reservieren')}</p>
+                        <div className="px-4 pb-4 flex flex-col gap-2">
+                          <button
+                            onClick={() => {
+                              setQlyPrizes(doneEntry.prizes.map(p => ({ rank: p.rank, creditReward: p.creditReward, shardReward: p.shardReward })));
+                              setShowQlyForm(true);
+                              setQlyError('');
+                            }}
+                            className="w-full bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold px-4 py-2.5 rounded-xl"
+                          >
+                            ✦ Neues Quartal konfigurieren
+                          </button>
+                          <p className="text-zinc-600 text-[10px] text-center">Credits werden beim Speichern für das neue Quartal reserviert</p>
                         </div>
                       </div>
                     );
