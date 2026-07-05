@@ -487,6 +487,16 @@ export async function upsertReputationContest(
     `;
   }
 
+  // Aktuellen Ruf aller User dieses Artists als Startwert snapshoten
+  // → jeder startet im Contest bei 0, nur neuer REP zählt
+  await sql`
+    INSERT INTO reputation_contest_snapshots (contest_id, wallet_address, reputation_at_start)
+    SELECT ${contestId}, wallet_address, reputation
+    FROM user_reputation
+    WHERE artist_wallet = ${wallet}
+    ON CONFLICT (contest_id, wallet_address) DO NOTHING
+  `;
+
   return contestId;
 }
 
@@ -949,7 +959,7 @@ export async function getReputationLeaderboard(
   });
 }
 
-/** Contest-Leaderboard: alle User mit Reputation dieses Artists, ranked by total REP */
+/** Contest-Leaderboard: nur REP seit Contest-Start zählt (alle starten bei 0) */
 export async function getContestLeaderboard(
   contestId: string,
   artistWallet: string,
@@ -959,7 +969,7 @@ export async function getContestLeaderboard(
   const rows = await sql`
     SELECT
       ur.wallet_address,
-      ur.reputation AS contest_rep,
+      ur.reputation - COALESCE(s.reputation_at_start, ur.reputation) AS contest_rep,
       COALESCE(
         p.display_name,
         p.instagram_name,
@@ -968,10 +978,12 @@ export async function getContestLeaderboard(
         yb.channel_name
       ) AS display_name
     FROM user_reputation ur
+    LEFT JOIN reputation_contest_snapshots s
+      ON s.contest_id = ${contestId} AND s.wallet_address = ur.wallet_address
     LEFT JOIN user_profiles p  ON p.wallet_address  = ur.wallet_address
     LEFT JOIN youtube_bindings yb ON yb.wallet_address = ur.wallet_address
     WHERE ur.artist_wallet = ${artistWallet.toLowerCase()}
-      AND ur.reputation > 0
+      AND ur.reputation - COALESCE(s.reputation_at_start, ur.reputation) > 0
     ORDER BY contest_rep DESC
     LIMIT ${limit}
   `;
