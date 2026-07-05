@@ -28,13 +28,15 @@ export async function GET(req: NextRequest) {
     if (allWallets.length > 0) {
       try {
         const clerk = await clerkClient();
-        const idSet = new Set(allWallets);
+        const idSet = new Set(allWallets.map(w => w.toLowerCase()));
         let offset = 0;
         while (true) {
           const { data: batch, totalCount } = await clerk.users.getUserList({ limit: 100, offset });
           for (const u of batch) {
-            if (idSet.has(u.id)) {
-              clerkNames[u.id] = u.fullName ?? u.username ?? u.firstName ?? u.emailAddresses[0]?.emailAddress?.split('@')[0] ?? u.id;
+            const lcId = u.id.toLowerCase();
+            if (idSet.has(lcId)) {
+              const name = u.fullName ?? u.username ?? u.firstName ?? u.emailAddresses[0]?.emailAddress?.split('@')[0] ?? null;
+              if (name) clerkNames[lcId] = name;
             }
           }
           if (batch.length < 100 || offset + batch.length >= totalCount) break;
@@ -47,7 +49,7 @@ export async function GET(req: NextRequest) {
       ...h,
       results: h.results.map(r => ({
         ...r,
-        displayName: clerkNames[r.walletAddress] ?? null,
+        displayName: clerkNames[r.walletAddress.toLowerCase()] ?? null,
       })),
     }));
 
