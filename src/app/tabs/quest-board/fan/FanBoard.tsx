@@ -74,6 +74,11 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const [shardBonusByCreator, setShardBonusByCreator] = useState<Record<string, number>>({});
   const [repBonusByCreator, setRepBonusByCreator] = useState<Record<string, number>>({});
 
+  type ConcertEvent = { id: string; title: string; eventDate: string | null; venue: string | null; creditReward: number; shardReward: number; repReward: number; status: string };
+  const [concertEvents, setConcertEvents] = useState<ConcertEvent[]>([]);
+  const [checkedInConcerts, setCheckedInConcerts] = useState<Set<string>>(new Set());
+  const [checkingInConcert, setCheckingInConcert] = useState<string | null>(null);
+
   // Celebration nach Quest-Abschluss
   const [celebration, setCelebration] = useState<{ amount: number; questTitle: string; reputationReward?: number; levelBonus?: number; collectiblesBonus?: number; shardDropped?: boolean; isBundleCompletion?: boolean } | null>(null);
   const pendingCelebration = useRef<{ amount: number; questTitle: string; reputationReward?: number; levelBonus?: number; collectiblesBonus?: number; shardDropped?: boolean; isBundleCompletion?: boolean } | null>(null);
@@ -154,6 +159,13 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   }, [walletAddress]);
 
   useEffect(() => { loadQuests(); loadBundles(); loadStreamingQuests(); }, [loadQuests, loadBundles, loadStreamingQuests]);
+
+  useEffect(() => {
+    if (!filterCreator) return;
+    fetch(`/api/concerts?artistWallet=${filterCreator}`)
+      .then(r => r.ok ? r.json() : [])
+      .then((data: ConcertEvent[]) => setConcertEvents(Array.isArray(data) ? data : []));
+  }, [filterCreator]);
 
   // VerifyModal (YouTube/TikTok-Kommentar): Auto-Schließen + Konfetti bei Erfolg
   useEffect(() => {
@@ -521,6 +533,55 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         </div>
       ) : (
         <div className="space-y-4">
+          {/* Live Konzert-Events */}
+          {concertEvents.length > 0 && (
+            <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">🎤 Live Events</p>
+          )}
+          {concertEvents.map(ev => (
+            <div key={ev.id} className="bg-gradient-to-br from-green-950/40 to-zinc-900/60 border border-green-600/25 rounded-2xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-green-600/10 flex items-center justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
+                    <p className="text-white font-black text-sm">🎤 {ev.title}</p>
+                  </div>
+                  <p className="text-zinc-500 text-xs mt-0.5">
+                    {ev.eventDate ? new Date(ev.eventDate).toLocaleString('de-DE') : ''}
+                    {ev.venue ? (ev.eventDate ? ` · ${ev.venue}` : ev.venue) : ''}
+                    {!ev.eventDate && !ev.venue && 'Live Event'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                  {ev.creditReward > 0 && <span className="flex items-center gap-1 text-amber-300 text-xs font-bold"><span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />{ev.creditReward}</span>}
+                  {ev.shardReward > 0 && <span className="text-cyan-300 text-xs font-bold">✦{ev.shardReward}</span>}
+                  {ev.repReward > 0 && <span className="text-green-300 text-xs font-bold">+{ev.repReward} REP</span>}
+                </div>
+              </div>
+              <div className="px-4 py-3">
+                {checkedInConcerts.has(ev.id) ? (
+                  <div className="flex items-center gap-2 justify-center py-1">
+                    <span className="text-green-400 text-lg">✓</span>
+                    <p className="text-green-300 text-sm font-semibold">Eingecheckt! Warte auf Bestätigung des Künstlers</p>
+                  </div>
+                ) : (
+                  <button
+                    disabled={checkingInConcert === ev.id}
+                    onClick={async () => {
+                      setCheckingInConcert(ev.id);
+                      try {
+                        const res = await fetch('/api/concerts/checkin', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ eventId: ev.id, walletAddress }) });
+                        if (res.ok) setCheckedInConcerts(prev => new Set([...prev, ev.id]));
+                      } finally { setCheckingInConcert(null); }
+                    }}
+                    className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold text-sm py-2.5 rounded-xl transition-colors">
+                    {checkingInConcert === ev.id ? '…' : '🎤 Ich bin da!'}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+
           {/* Quest-Reihen (Bundles) zuerst */}
           {activeBundles.length > 0 && (
             <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">{t('quest.bundles', language)}</p>

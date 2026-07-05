@@ -108,11 +108,6 @@ function ArtistDetailView({
   const [quarterlyInfo, setQuarterlyInfo] = useState<{ quarter: string; start: string; end: string } | null>(null);
   const [quarterlyAlreadyDistributed, setQuarterlyAlreadyDistributed] = useState(false);
   const [loading, setLoading] = useState(true);
-  type FanConcertEvent = { id: string; title: string; eventDate: string | null; venue: string | null; creditReward: number; shardReward: number; repReward: number; status: string };
-  const [activeConcerts, setActiveConcerts] = useState<FanConcertEvent[]>([]);
-  const [checkedInEvents, setCheckedInEvents] = useState<Set<string>>(new Set());
-  const [checkingIn, setCheckingIn] = useState<string | null>(null);
-
   // Countdowns auf Top-Level (Rules of Hooks)
   const quarterlyCountdown = useCountdown(quarterlyInfo?.end ?? null);
   const contestEndDate = contest && !contest.distributed && new Date((contest as ReputationContest).endDate) > new Date()
@@ -191,12 +186,11 @@ function ArtistDetailView({
     (async () => {
       setLoading(true);
       try {
-        const [lvRes, lbRes, ctRes, qlyRes, concertRes] = await Promise.all([
+        const [lvRes, lbRes, ctRes, qlyRes] = await Promise.all([
           fetch(`/api/reputation/levels?artistWallet=${entry.artistWallet}`),
           fetch(`/api/reputation/leaderboard?artistWallet=${entry.artistWallet}&limit=50`),
           fetch(`/api/reputation/contest?artistWallet=${entry.artistWallet}`),
           fetch(`/api/reputation/leaderboard-quarterly?artistWallet=${entry.artistWallet}`),
-          fetch(`/api/concerts?artistWallet=${entry.artistWallet}`),
         ]);
         if (cancelled) return;
         if (lvRes.ok) setLevels(await lvRes.json());
@@ -212,7 +206,6 @@ function ArtistDetailView({
           const restarted = !!(doneEntry && qly.config?.updatedAt && new Date(qly.config.updatedAt) > new Date(doneEntry.distributedAt));
           setQuarterlyAlreadyDistributed(!!doneEntry && !restarted);
         }
-        if (concertRes.ok) setActiveConcerts(await concertRes.json());
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -535,53 +528,6 @@ function ArtistDetailView({
                   </div>
                 );
               })()}
-
-              {/* Aktive Konzert-Events */}
-              {activeConcerts.length > 0 && activeConcerts.map(ev => (
-                <div key={ev.id} className="bg-gradient-to-br from-green-950/40 to-zinc-900/60 border border-green-600/25 rounded-2xl overflow-hidden">
-                  <div className="px-4 py-3 border-b border-green-600/10 flex items-center justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
-                        <p className="text-white font-black text-sm">🎤 {ev.title}</p>
-                      </div>
-                      <p className="text-zinc-500 text-xs mt-0.5">
-                        {ev.eventDate && new Date(ev.eventDate).toLocaleString('de-DE')}
-                        {ev.venue && ` · ${ev.venue}`}
-                        {!ev.eventDate && !ev.venue && 'Live Event'}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                      {ev.creditReward > 0 && <span className="flex items-center gap-1 text-amber-300 text-xs font-bold"><Image src="/D.FAITH.png" alt="" width={12} height={12} className="w-3 h-3 rounded-full" />{ev.creditReward}</span>}
-                      {ev.shardReward > 0 && <span className="text-cyan-300 text-xs font-bold">✦{ev.shardReward}</span>}
-                      {ev.repReward > 0 && <span className="text-green-300 text-xs font-bold">+{ev.repReward} REP</span>}
-                    </div>
-                  </div>
-                  <div className="px-4 py-3">
-                    {checkedInEvents.has(ev.id) ? (
-                      <div className="flex items-center gap-2 justify-center py-1">
-                        <span className="text-green-400 text-lg">✓</span>
-                        <p className="text-green-300 text-sm font-semibold">Eingecheckt! Warte auf Bestätigung</p>
-                      </div>
-                    ) : (
-                      <button
-                        disabled={checkingIn === ev.id}
-                        onClick={async () => {
-                          if (!walletAddress) return;
-                          setCheckingIn(ev.id);
-                          try {
-                            const res = await fetch('/api/concerts/checkin', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ eventId: ev.id, walletAddress }) });
-                            if (res.ok) setCheckedInEvents(prev => new Set([...prev, ev.id]));
-                          } finally { setCheckingIn(null); }
-                        }}
-                        className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold text-sm py-2.5 rounded-xl transition-colors">
-                        {checkingIn === ev.id ? '…' : '🎤 Ich bin da!'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
 
               {/* Leaderboard-Liste */}
               <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
