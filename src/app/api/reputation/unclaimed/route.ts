@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
     let artistWallet = '';
     let levelNumber = 0;
     let levelName = '';
+    let rank = 0;
 
     if (reason.startsWith('level_reward:')) {
       type = 'level';
@@ -47,12 +48,12 @@ export async function GET(req: NextRequest) {
     } else if (reason.startsWith('contest_reward:')) {
       type = 'contest';
       artistWallet = parts[1] ?? '';
-      const rank = Number(parts[3] ?? 0);
+      rank = Number(parts[3] ?? 0);
       levelName = `🏆 Platz #${rank} im Contest`;
     } else if (reason.startsWith('leaderboard_reward:')) {
       type = 'leaderboard';
       artistWallet = parts[1] ?? '';
-      const rank = Number(parts[2] ?? 0);
+      rank = Number(parts[2] ?? 0);
       levelName = `🥇 Platz #${rank} im Leaderboard`;
     }
 
@@ -62,6 +63,7 @@ export async function GET(req: NextRequest) {
       artistWallet,
       levelNumber,
       levelName,
+      rank,
       amount: Number(r.amount),
       createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
     };

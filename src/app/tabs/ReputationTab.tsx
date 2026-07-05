@@ -116,7 +116,29 @@ function ArtistDetailView({
 
   // Unclaimed Rewards (Level, Contest, Leaderboard)
   const [unclaimedTotal, setUnclaimedTotal] = useState(0);
-  const [unclaimedRewards, setUnclaimedRewards] = useState<{id:string;type:string;levelNumber:number;levelName:string;amount:number}[]>([]);
+  const [unclaimedRewards, setUnclaimedRewards] = useState<{id:string;type:string;levelNumber:number;levelName:string;rank:number;amount:number}[]>([]);
+  const [dismissedNotifs, setDismissedNotifs] = useState<Set<string>>(new Set());
+
+  // Dismissed Contest-Notifications aus localStorage laden
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const key = `dfaith_contest_dismissed_${entry.artistWallet}`;
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      try { setDismissedNotifs(new Set(JSON.parse(raw))); } catch { /* ignore */ }
+    }
+  }, [entry.artistWallet]);
+
+  const dismissNotif = (rewardId: string) => {
+    setDismissedNotifs(prev => {
+      const next = new Set(prev);
+      next.add(rewardId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`dfaith_contest_dismissed_${entry.artistWallet}`, JSON.stringify([...next]));
+      }
+      return next;
+    });
+  };
   const [claiming, setClaiming] = useState(false);
   const [celebration, setCelebration] = useState<{total:number;rewards:{levelNumber:number;levelName:string;amount:number}[]} | null>(null);
 
@@ -126,7 +148,7 @@ function ArtistDetailView({
       const res = await fetch(`/api/reputation/unclaimed?wallet=${walletAddress}`);
       if (!res.ok) return;
       const data = await res.json();
-      const filtered = (data.rewards as {id:string;type:string;artistWallet:string;levelNumber:number;levelName:string;amount:number}[])
+      const filtered = (data.rewards as {id:string;type:string;artistWallet:string;levelNumber:number;levelName:string;rank:number;amount:number}[])
         .filter(r => r.artistWallet.toLowerCase() === entry.artistWallet.toLowerCase());
       setUnclaimedRewards(filtered);
       setUnclaimedTotal(filtered.reduce((s, r) => s + r.amount, 0));
@@ -298,6 +320,29 @@ function ArtistDetailView({
             <p className="text-zinc-500 text-xs">REP</p>
           </div>
         </div>
+        {/* Contest-Ergebnis Notification */}
+        {unclaimedRewards.filter(r => r.type === 'contest' && !dismissedNotifs.has(r.id)).map(r => (
+          <div key={r.id} className="mt-3 bg-gradient-to-r from-amber-950/60 to-zinc-900/60 border border-amber-500/30 rounded-xl px-3 py-2.5 flex items-center gap-3">
+            <span className="text-2xl shrink-0">
+              {r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : '🏆'}
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-amber-300 font-black text-sm">Contest beendet!</p>
+              <p className="text-zinc-300 text-xs">Du hast <span className="font-bold text-white">Platz #{r.rank}</span> erreicht</p>
+              {r.amount > 0 && (
+                <p className="text-amber-400 text-xs font-semibold">+{r.amount} Credits warten auf dich</p>
+              )}
+            </div>
+            <button
+              onClick={() => dismissNotif(r.id)}
+              className="text-zinc-600 hover:text-zinc-300 transition-colors shrink-0 p-1"
+              title="Schließen"
+            >
+              <FaTimes size={12} />
+            </button>
+          </div>
+        ))}
+
         <ProgressBar progress={entry.progress} />
         <div className="flex justify-between mt-1.5">
           <span className="text-zinc-600 text-xs">Lv.{entry.level}</span>
@@ -516,9 +561,63 @@ function ArtistDetailView({
                 const contestBoard = contest.contestLeaderboard ?? [];
                 return (
                   <>
+                    {/* Beendeter Contest — Ergebnisansicht */}
+                    {contest.distributed && (
+                      <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+                        <div className="px-4 py-4 text-center border-b border-white/[0.07]">
+                          <p className="text-3xl mb-1">🏆</p>
+                          <p className="text-white font-black text-base">Contest abgeschlossen</p>
+                          <p className="text-zinc-500 text-xs mt-0.5">Beendet am {new Date(contest.endDate).toLocaleDateString('de-DE')}</p>
+                        </div>
+                        <div className="p-3 space-y-2">
+                          {contest.prizes.map(p => {
+                            const winner = contestBoard.find(lb => lb.rank === p.rank);
+                            const isMe = winner?.walletAddress === walletAddress;
+                            return (
+                              <div key={p.rank} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${
+                                isMe ? 'bg-amber-500/10 border border-amber-500/25' : 'bg-zinc-800/40'
+                              }`}>
+                                <span className="text-xl shrink-0">
+                                  {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  {winner ? (
+                                    <div className="flex items-center gap-2">
+                                      {winner.imageUrl
+                                        ? <Image src={winner.imageUrl} alt="" width={24} height={24} className="w-6 h-6 rounded-full object-cover shrink-0" />
+                                        : <div className="w-6 h-6 rounded-full bg-zinc-700 shrink-0" />}
+                                      <div>
+                                        <p className={`text-sm font-semibold truncate ${isMe ? 'text-amber-300' : 'text-white'}`}>
+                                          {winner.displayName || shortenWallet(winner.walletAddress)}
+                                          {isMe && <span className="ml-1 text-xs">★ Du</span>}
+                                        </p>
+                                        <p className="text-zinc-500 text-xs">{winner.reputation.toLocaleString()} REP</p>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <p className="text-zinc-600 text-sm italic">Kein Teilnehmer</p>
+                                  )}
+                                </div>
+                                <div className="flex flex-col items-end gap-0.5 shrink-0">
+                                  {p.creditReward > 0 && (
+                                    <span className="flex items-center gap-1 text-amber-300 font-bold text-xs">
+                                      <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full shrink-0" />
+                                      {p.creditReward}
+                                    </span>
+                                  )}
+                                  {p.shardReward > 0 && <span className="text-cyan-300 font-bold text-xs">✦ {p.shardReward}</span>}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Laufender / abgelaufener Contest */}
+                    {!contest.distributed && (<>
                     {/* Status-Header */}
                     <div className={`rounded-2xl overflow-hidden ${
-                      contest.distributed ? 'bg-zinc-900/60 border border-white/[0.07]' :
                       isExpired ? 'bg-amber-950/40 border border-amber-700/30' :
                       'bg-gradient-to-br from-green-950/50 to-zinc-900/60 border border-green-600/25'
                     }`}>
@@ -527,9 +626,7 @@ function ArtistDetailView({
                           <div className="flex items-center gap-2 mb-0.5">
                             {isRunning && <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />}
                             <p className="text-white font-black text-sm">
-                              {contest.distributed ? t('rep.contestEnded', lang) :
-                               isExpired ? t('rep.contestExpiring', lang) :
-                               '🔥 ' + t('rep.contestRunning', lang)}
+                              {isExpired ? t('rep.contestExpiring', lang) : '🔥 ' + t('rep.contestRunning', lang)}
                             </p>
                           </div>
                           <p className="text-zinc-500 text-xs">
@@ -601,6 +698,7 @@ function ArtistDetailView({
                         })}
                       </div>
                     </div>
+                    </>)}
                   </>
                 );
               })()}

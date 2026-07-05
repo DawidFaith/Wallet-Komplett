@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { clerkClient } from '@clerk/nextjs/server';
 import {
   getActiveReputationContest,
   upsertReputationContest,
@@ -17,7 +18,38 @@ export async function GET(req: NextRequest) {
     const contest = await getActiveReputationContest(artistWallet);
     if (!contest) return NextResponse.json(null);
     const contestLeaderboard = await getContestLeaderboard(contest.id, artistWallet, 50);
-    return NextResponse.json({ ...contest, contestLeaderboard });
+
+    // Clerk-Profilbilder + Namen anreichern (wie reguläre Leaderboard-Route)
+    const clerkData: Record<string, { name: string; imageUrl: string }> = {};
+    const ids = contestLeaderboard.map(e => e.walletAddress);
+    if (ids.length > 0) {
+      try {
+        const clerk = await clerkClient();
+        const idSet = new Set(ids);
+        let offset = 0;
+        const pageSize = 100;
+        while (true) {
+          const { data: batch, totalCount } = await clerk.users.getUserList({ limit: pageSize, offset });
+          for (const u of batch) {
+            const lcId = u.id.toLowerCase();
+            if (idSet.has(lcId)) {
+              const name = u.fullName ?? u.username ?? u.firstName ?? u.emailAddresses[0]?.emailAddress?.split('@')[0] ?? null;
+              clerkData[lcId] = { name: name ?? u.id, imageUrl: u.imageUrl };
+            }
+          }
+          if (batch.length < pageSize || offset + batch.length >= totalCount) break;
+          offset += pageSize;
+        }
+      } catch { /* Clerk optional */ }
+    }
+
+    const enrichedLeaderboard = contestLeaderboard.map(e => ({
+      ...e,
+      displayName: clerkData[e.walletAddress]?.name ?? e.displayName,
+      imageUrl: clerkData[e.walletAddress]?.imageUrl ?? null,
+    }));
+
+    return NextResponse.json({ ...contest, contestLeaderboard: enrichedLeaderboard });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
