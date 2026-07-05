@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
               u.firstName ??
               u.emailAddresses[0]?.emailAddress?.split('@')[0] ??
               null;
-            clerkData[lcId] = { name: name ?? u.id, imageUrl: u.imageUrl };
+            clerkData[lcId] = { name, imageUrl: u.imageUrl };
           }
         }
         if (batch.length < pageSize || offset + batch.length >= totalCount) break;
@@ -47,7 +47,8 @@ export async function GET(req: NextRequest) {
 
     const enriched = leaderboard.map((e) => ({
       ...e,
-      displayName: clerkData[e.walletAddress]?.name ?? e.walletAddress,
+      // Priorität: Clerk-Name → DB-Profilname (Instagram etc.) → null (UI zeigt shortenWallet)
+      displayName: clerkData[e.walletAddress]?.name ?? e.displayName ?? null,
       imageUrl: clerkData[e.walletAddress]?.imageUrl ?? null,
     }));
 
