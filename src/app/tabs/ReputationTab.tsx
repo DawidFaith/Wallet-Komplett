@@ -108,6 +108,12 @@ function ArtistDetailView({
   const [quarterlyInfo, setQuarterlyInfo] = useState<{ quarter: string; start: string; end: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Countdowns auf Top-Level (Rules of Hooks)
+  const quarterlyCountdown = useCountdown(quarterlyInfo?.end ?? null);
+  const contestEndDate = contest && !contest.distributed && new Date((contest as ReputationContest).endDate) > new Date()
+    ? (contest as ReputationContest).endDate : null;
+  const contestCountdown = useCountdown(contestEndDate);
+
   // Unclaimed Rewards (Level, Contest, Leaderboard)
   const [unclaimedTotal, setUnclaimedTotal] = useState(0);
   const [unclaimedRewards, setUnclaimedRewards] = useState<{id:string;type:string;levelNumber:number;levelName:string;amount:number}[]>([]);
@@ -388,7 +394,7 @@ function ArtistDetailView({
             <div className="space-y-3">
               {/* Quartal-Prizes + Countdown */}
               {quarterlyConfig && quarterlyConfig.prizes.length > 0 && quarterlyInfo && (() => {
-                const countdown = useCountdown(quarterlyInfo.end); // eslint-disable-line react-hooks/rules-of-hooks
+                const countdown = quarterlyCountdown;
                 return (
                   <div className="bg-gradient-to-br from-amber-950/40 to-zinc-900/60 border border-amber-500/20 rounded-2xl overflow-hidden">
                     <div className="px-4 py-3 border-b border-amber-500/10 flex items-center justify-between">
@@ -506,7 +512,7 @@ function ArtistDetailView({
               ) : (() => {
                 const isRunning = !contest.distributed && new Date(contest.endDate) > new Date();
                 const isExpired = !contest.distributed && new Date(contest.endDate) <= new Date();
-                const countdown = useCountdown(isRunning ? contest.endDate : null); // eslint-disable-line react-hooks/rules-of-hooks
+                const countdown = contestCountdown;
                 const contestBoard = contest.contestLeaderboard ?? [];
                 return (
                   <>
