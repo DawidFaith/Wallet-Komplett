@@ -44,9 +44,9 @@ const dict: Translations = {
     pl: 'Zdobywaj nagrody.',
   },
   'landing.sub': {
-    de: 'Das D.FAITH Ecosystem verbindet Künstler und Fans — mit echten Belohnungen und echter Community.',
-    en: 'The D.FAITH Ecosystem connects artists and fans — with real rewards and a real community.',
-    pl: 'Ekosystem D.FAITH łączy artystów i fanów — z prawdziwymi nagrodami i prawdziwą społecznością.',
+    de: 'Das D.FAITH Ecosystem verbindet Künstler und Supporter — mit echten Belohnungen und echter Community.',
+    en: 'The D.FAITH Ecosystem connects artists and supporters — with real rewards and a real community.',
+    pl: 'Ekosystem D.FAITH łączy artystów i supporterów — z prawdziwymi nagrodami i prawdziwą społecznością.',
   },
   'landing.activeArtists': {
     de: 'Aktive Künstler',
@@ -69,9 +69,9 @@ const dict: Translations = {
     pl: 'Questy dostępne',
   },
   'landing.forFans': {
-    de: 'Für Fans',
-    en: 'For Fans',
-    pl: 'Dla Fanów',
+    de: 'Für Supporter',
+    en: 'For Supporters',
+    pl: 'Dla Supporterów',
   },
   'landing.forArtists': {
     de: 'Für Künstler',
@@ -101,14 +101,14 @@ const dict: Translations = {
     pl: 'Lajkuj, udostępniaj, komentuj — i otrzymuj prawdziwe tokeny D.FAITH za każde wsparcie. Twój wkład ma teraz realną wartość.',
   },
   'landing.fan.2.title': {
-    de: 'Werde zum echten Insider',
-    en: 'Become a True Insider',
-    pl: 'Zostań prawdziwym Insiderem',
+    de: 'Kaufe limitierte Song-NFTs',
+    en: 'Buy Limited Song NFTs',
+    pl: 'Kupuj limitowane Song-NFT',
   },
   'landing.fan.2.desc': {
-    de: 'Tausche deine Token gegen exklusive Tracks, limitierte Drops und Frühzugänge — nur für aktive Supporter.',
-    en: 'Exchange your tokens for exclusive tracks, limited drops and early access — only for active supporters.',
-    pl: 'Wymieniaj tokeny na ekskluzywne utwory, limitowane premiery i wczesny dostęp — tylko dla aktywnych wspierających.',
+    de: 'Sichere dir nummerierte Editionen direkt vom Künstler — dauerhaft in deinem Wallet, weiterverkaufbar und wirklich dir gehörend.',
+    en: 'Secure numbered editions directly from the artist — permanently in your wallet, resellable and truly yours.',
+    pl: 'Zdobądź numerowane edycje bezpośrednio od artysty — na stałe w Twoim portfelu, możliwe do odsprzedaży i naprawdę Twoje.',
   },
   'landing.fan.3.title': {
     de: 'Zeig, wie loyal du bist',
@@ -120,6 +120,16 @@ const dict: Translations = {
     en: 'Climb the leaderboard and get noticed by your favorite artists.',
     pl: 'Wspinaj się na szczyt rankingu i daj się odkryć swoim ulubionym artystom.',
   },
+  'landing.fan.4.title': {
+    de: 'Sammle Collectible Cards',
+    en: 'Collect Collectible Cards',
+    pl: 'Zbieraj Karty Kolekcjonerskie',
+  },
+  'landing.fan.4.desc': {
+    de: 'Je aktiver du bist, desto seltener die Cards. Seltene Cards erhöhen dauerhaft deine Belohnungen auf alles, was du im Ecosystem tust.',
+    en: 'The more active you are, the rarer the cards. Rare cards permanently boost your rewards on everything you do in the Ecosystem.',
+    pl: 'Im bardziej aktywny jesteś, tym rzadsze karty. Rzadkie karty na stałe zwiększają Twoje nagrody za wszystko, co robisz w Ekosystemie.',
+  },
 
   // Artist features
   'landing.artist.1.title': {
@@ -128,9 +138,9 @@ const dict: Translations = {
     pl: 'Twoi fani promują Cię',
   },
   'landing.artist.1.desc': {
-    de: 'Erstelle Aufgaben auf Instagram, TikTok, YouTube & Facebook — deine Fans werden aktiv und deine Reichweite wächst.',
-    en: 'Create quests on Instagram, TikTok, YouTube & Facebook — your fans become active and your reach grows.',
-    pl: 'Twórz zadania na Instagramie, TikToku, YouTube i Facebooku — Twoi fani stają się aktywni, a Twój zasięg rośnie.',
+    de: 'Erstelle Aufgaben auf Instagram, TikTok, YouTube & Facebook — deine Supporter werden aktiv und deine Reichweite wächst.',
+    en: 'Create quests on Instagram, TikTok, YouTube & Facebook — your supporters become active and your reach grows.',
+    pl: 'Twórz zadania na Instagramie, TikToku, YouTube i Facebooku — Twoi supporterzy stają się aktywni, a Twój zasięg rośnie.',
   },
   'landing.artist.2.title': {
     de: 'Dein eigener Artist-Token',
@@ -158,9 +168,9 @@ const dict: Translations = {
     pl: 'Ekskluzywność jako waluta',
   },
   'landing.artist.4.desc': {
-    de: 'Nur deine treuesten Fans bekommen Zugang zum Shop — das schafft echten Anreiz, aktiv zu bleiben.',
-    en: 'Only your most loyal fans get access to the shop — creating real incentive to stay active.',
-    pl: 'Tylko Twoi najbardziej lojalni fani mają dostęp do sklepu — to stwarza prawdziwą motywację do aktywności.',
+    de: 'Nur deine treuesten Supporter bekommen Zugang zum Shop — das schafft echten Anreiz, aktiv zu bleiben.',
+    en: 'Only your most loyal supporters get access to the shop — creating real incentive to stay active.',
+    pl: 'Tylko Twoi najbardziej lojalni supporterzy mają dostęp do sklepu — to stwarza prawdziwą motywację do aktywności.',
   },
 
   // Artist apply form
