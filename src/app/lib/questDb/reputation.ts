@@ -644,16 +644,20 @@ export function getQuarterInfo(date: Date = new Date()): {
 /** Quartals-Reward-Konfiguration laden */
 export async function getLeaderboardQuarterlyConfig(
   artistWallet: string,
-): Promise<{ prizes: { rank: number; creditReward: number; shardReward: number }[] } | null> {
+): Promise<{ prizes: { rank: number; creditReward: number; shardReward: number }[]; creditsLocked: number } | null> {
   const sql = getDb();
   const rows = await sql`
-    SELECT prizes FROM leaderboard_quarterly_config
+    SELECT prizes, COALESCE(credits_locked, 0) AS credits_locked
+    FROM leaderboard_quarterly_config
     WHERE artist_wallet = ${artistWallet.toLowerCase()}
     LIMIT 1
   `;
   if (rows.length === 0) return null;
   const raw = rows[0].prizes as { rank: number; creditReward: number; shardReward?: number }[];
-  return { prizes: raw.map(p => ({ rank: p.rank, creditReward: p.creditReward, shardReward: p.shardReward ?? 0 })) };
+  return {
+    prizes: raw.map(p => ({ rank: p.rank, creditReward: p.creditReward, shardReward: p.shardReward ?? 0 })),
+    creditsLocked: Number(rows[0].credits_locked ?? 0),
+  };
 }
 
 /** Quartals-Reward-Konfiguration speichern / aktualisieren */
@@ -662,11 +666,30 @@ export async function upsertLeaderboardQuarterlyConfig(
   prizes: { rank: number; creditReward: number; shardReward?: number }[],
 ): Promise<void> {
   const sql = getDb();
+  const wallet = artistWallet.toLowerCase();
+
+  // Spalte einmalig hinzufügen falls noch nicht vorhanden
+  try {
+    await sql`ALTER TABLE leaderboard_quarterly_config ADD COLUMN IF NOT EXISTS credits_locked NUMERIC DEFAULT 0`;
+  } catch { /* ignorieren */ }
+
+  // Bereits gesperrte Credits laden
+  const old = await getLeaderboardQuarterlyConfig(artistWallet);
+  const oldLocked = old?.creditsLocked ?? 0;
+  const newTotal = prizes.reduce((s, p) => s + Math.max(0, Math.round(Number(p.creditReward) || 0)), 0);
+  const netCost = newTotal - oldLocked;
+
+  if (netCost > 0) {
+    await redeemDfaithCredits(wallet, netCost); // wirft bei unzureichendem Guthaben
+  } else if (netCost < 0) {
+    await addDfaithCredits(wallet, -netCost);
+  }
+
   await sql`
-    INSERT INTO leaderboard_quarterly_config (id, artist_wallet, prizes, updated_at)
-    VALUES (gen_random_uuid()::text, ${artistWallet.toLowerCase()}, ${JSON.stringify(prizes)}::jsonb, NOW())
+    INSERT INTO leaderboard_quarterly_config (id, artist_wallet, prizes, credits_locked, updated_at)
+    VALUES (gen_random_uuid()::text, ${wallet}, ${JSON.stringify(prizes)}::jsonb, ${newTotal}, NOW())
     ON CONFLICT (artist_wallet) DO UPDATE
-      SET prizes = EXCLUDED.prizes, updated_at = NOW()
+      SET prizes = EXCLUDED.prizes, credits_locked = EXCLUDED.credits_locked, updated_at = NOW()
   `;
 }
 
@@ -725,27 +748,37 @@ export async function distributeLeaderboardQuarterly(
   if (validPrizes.length === 0) throw new Error('Keine Preise konfiguriert');
 
   const total = validPrizes.reduce((s, p) => s + p.creditReward, 0);
+  const creditsLocked = config.creditsLocked;
 
-  if (total > 0) {
+  // Credits wurden beim Speichern der Konfiguration bereits reserviert.
+  // Nur die Differenz abziehen falls Konfiguration mit alter Code-Version gespeichert wurde (creditsLocked = 0).
+  const stillNeeded = Math.max(0, total - creditsLocked);
+  if (stillNeeded > 0) {
     const balRows = await sql`SELECT balance FROM dfaith_credits WHERE wallet_address = ${wallet}`;
     const balance = Number(balRows[0]?.balance ?? 0);
-    if (balance < total) throw new Error(`Nicht genug Credits (Guthaben: ${balance.toFixed(2)}, benötigt: ${total})`);
+    if (balance < stillNeeded) throw new Error(`Nicht genug Credits (Guthaben: ${balance.toFixed(2)}, benötigt: ${stillNeeded})`);
+    await addDfaithCredits(wallet, -stillNeeded);
   }
 
   const maxRank = Math.max(...validPrizes.map(p => p.rank));
   const leaderboard = await getReputationLeaderboard(artistWallet, maxRank);
-
-  if (total > 0) await addDfaithCredits(wallet, -total);
 
   const results: { rank: number; walletAddress: string; credited: number }[] = [];
   let actuallySpent = 0;
 
   for (const prize of validPrizes) {
     const winner = leaderboard.find(e => e.rank === prize.rank);
-    if (!winner) continue;
+    if (!winner || (prize.creditReward <= 0 && (prize.shardReward ?? 0) <= 0)) continue;
     try {
       if (prize.creditReward > 0) {
-        await addDfaithCredits(winner.walletAddress, prize.creditReward);
+        // savePendingReward statt direkter Gutschrift → Gewinner erhalten Benachrichtigung
+        await savePendingReward({
+          walletAddress: winner.walletAddress,
+          amount: prize.creditReward,
+          reason: `leaderboard_reward:${wallet}:${prize.rank}`,
+          questId: null,
+          createdAt: new Date().toISOString(),
+        });
         actuallySpent += prize.creditReward;
       }
       if ((prize.shardReward ?? 0) > 0) {
@@ -755,9 +788,13 @@ export async function distributeLeaderboardQuarterly(
     } catch { /* überspringen */ }
   }
 
-  // Refund nicht vergebener Preise
-  const refund = total - actuallySpent;
+  // Nicht vergebene Credits aus dem gesperrten Betrag zurückerstatten
+  const totalReserved = creditsLocked + stillNeeded;
+  const refund = totalReserved - actuallySpent;
   if (refund > 0) await addDfaithCredits(wallet, refund);
+
+  // credits_locked zurücksetzen (Artist muss für nächstes Quartal neu speichern)
+  await sql`UPDATE leaderboard_quarterly_config SET credits_locked = 0, updated_at = NOW() WHERE artist_wallet = ${wallet}`;
 
   // Historie speichern (upsert für force-Fall)
   await sql`

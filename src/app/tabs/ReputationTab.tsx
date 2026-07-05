@@ -320,17 +320,25 @@ function ArtistDetailView({
             <p className="text-zinc-500 text-xs">REP</p>
           </div>
         </div>
-        {/* Contest-Ergebnis Notification */}
-        {unclaimedRewards.filter(r => r.type === 'contest' && !dismissedNotifs.has(r.id)).map(r => (
-          <div key={r.id} className="mt-3 bg-gradient-to-r from-amber-950/60 to-zinc-900/60 border border-amber-500/30 rounded-xl px-3 py-2.5 flex items-center gap-3">
+        {/* Contest- & Quartal-Ergebnis Notification */}
+        {unclaimedRewards.filter(r => (r.type === 'contest' || r.type === 'leaderboard') && !dismissedNotifs.has(r.id)).map(r => (
+          <div key={r.id} className={`mt-3 border rounded-xl px-3 py-2.5 flex items-center gap-3 ${
+            r.type === 'leaderboard'
+              ? 'bg-gradient-to-r from-blue-950/60 to-zinc-900/60 border-blue-500/30'
+              : 'bg-gradient-to-r from-amber-950/60 to-zinc-900/60 border-amber-500/30'
+          }`}>
             <span className="text-2xl shrink-0">
               {r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : '🏆'}
             </span>
             <div className="flex-1 min-w-0">
-              <p className="text-amber-300 font-black text-sm">Contest beendet!</p>
+              <p className={`font-black text-sm ${r.type === 'leaderboard' ? 'text-blue-300' : 'text-amber-300'}`}>
+                {r.type === 'leaderboard' ? t('rep.quarterlyWon', lang) : 'Contest beendet!'}
+              </p>
               <p className="text-zinc-300 text-xs">Du hast <span className="font-bold text-white">Platz #{r.rank}</span> erreicht</p>
               {r.amount > 0 && (
-                <p className="text-amber-400 text-xs font-semibold">+{r.amount} Credits warten auf dich</p>
+                <p className={`text-xs font-semibold ${r.type === 'leaderboard' ? 'text-blue-400' : 'text-amber-400'}`}>
+                  +{r.amount} Credits warten auf dich
+                </p>
               )}
             </div>
             <button
@@ -759,8 +767,8 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
 
   // Quartals-Leaderboard-Rewards
-  const [quarterlyConfig, setQuarterlyConfig] = useState<{ prizes: { rank: number; creditReward: number; shardReward: number }[] } | null>(null);
-  const [quarterlyHistory, setQuarterlyHistory] = useState<{ id: string; quarter: string; results: { rank: number; walletAddress: string; credited: number }[]; totalCredited: number; distributedAt: string }[]>([]);
+  const [quarterlyConfig, setQuarterlyConfig] = useState<{ prizes: { rank: number; creditReward: number; shardReward: number }[]; creditsLocked?: number } | null>(null);
+  const [quarterlyHistory, setQuarterlyHistory] = useState<{ id: string; quarter: string; prizes: { rank: number; creditReward: number; shardReward: number }[]; results: { rank: number; walletAddress: string; credited: number }[]; totalCredited: number; distributedAt: string }[]>([]);
   const [quarterlyInfo, setQuarterlyInfo] = useState<{ quarter: string; start: string; end: string } | null>(null);
   const [showQlyForm, setShowQlyForm] = useState(false);
   const [qlyPrizes, setQlyPrizes] = useState([
@@ -1422,95 +1430,136 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
             {/* Aktuelle Konfiguration + Verteilen */}
             {!showQlyForm && quarterlyConfig && (
               <div className="p-4 space-y-3">
-                {/* Quartal-Status */}
                 {quarterlyInfo && (() => {
                   const ended = new Date() > new Date(quarterlyInfo.end);
                   const alreadyDone = quarterlyHistory.some(h => h.quarter === quarterlyInfo.quarter);
-                  return (
+                  const doneEntry = quarterlyHistory.find(h => h.quarter === quarterlyInfo.quarter);
+
+                  // ── Verteilt: Ergebnisansicht (wie Contest) ──────────────────
+                  if (alreadyDone && doneEntry) {
+                    return (
+                      <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+                        <div className="px-4 py-4 text-center border-b border-white/[0.07]">
+                          <p className="text-3xl mb-1">🏆</p>
+                          <p className="text-white font-black text-base">{t('rep.quarterlyEnded', lang)}</p>
+                          <p className="text-zinc-500 text-xs mt-0.5">{quarterlyInfo.quarter} &bull; {new Date(doneEntry.distributedAt).toLocaleDateString('de-DE')}</p>
+                        </div>
+                        <div className="p-3 space-y-2">
+                          {doneEntry.prizes.map(p => {
+                            const winner = doneEntry.results.find(r => r.rank === p.rank);
+                            return (
+                              <div key={p.rank} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-zinc-800/40">
+                                <span className="text-xl shrink-0">
+                                  {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  {winner
+                                    ? <p className="text-white text-sm font-semibold truncate">{shortenWallet(winner.walletAddress)}</p>
+                                    : <p className="text-zinc-600 text-sm italic">Kein Teilnehmer</p>}
+                                </div>
+                                <div className="flex flex-col items-end gap-0.5 shrink-0">
+                                  {p.creditReward > 0 && (
+                                    <span className="flex items-center gap-1 text-amber-300 font-bold text-xs">
+                                      <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full shrink-0" />
+                                      {p.creditReward}
+                                    </span>
+                                  )}
+                                  {p.shardReward > 0 && <span className="text-cyan-300 font-bold text-xs">✦ {p.shardReward}</span>}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="px-4 pb-3 text-center">
+                          <p className="text-zinc-600 text-[10px]">{t('rep.quarterlyDeductionNote', lang).replace('💡 ', '').replace('Abzug erfolgt erst beim Verteilen', 'Neues Quartal: Konfiguration erneut speichern um Credits zu reservieren')}</p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // ── Laufend / abgelaufen: Status + Buttons ───────────────────
+                  return (<>
                     <div className={`rounded-xl px-3 py-2.5 flex items-center justify-between ${
-                      alreadyDone ? 'bg-zinc-800/40' : ended ? 'bg-amber-950/30 border border-amber-700/30' : 'bg-green-950/30 border border-green-700/30'
+                      ended ? 'bg-amber-950/30 border border-amber-700/30' : 'bg-green-950/30 border border-green-700/30'
                     }`}>
                       <div>
                         <p className="text-xs font-semibold text-white">
-                          {alreadyDone ? tFmt('rep.quarterDistributed', lang, { q: quarterlyInfo.quarter }) : ended ? tFmt('rep.quarterExpired', lang, { q: quarterlyInfo.quarter }) : tFmt('rep.quarterRunning', lang, { q: quarterlyInfo.quarter })}
+                          {ended ? tFmt('rep.quarterExpired', lang, { q: quarterlyInfo.quarter }) : tFmt('rep.quarterRunning', lang, { q: quarterlyInfo.quarter })}
                         </p>
                         <p className="text-zinc-400 text-[11px] mt-0.5">
                           {new Date(quarterlyInfo.start).toLocaleDateString('de-DE')} – {new Date(quarterlyInfo.end).toLocaleDateString('de-DE')}
                         </p>
                       </div>
-                      {!alreadyDone && (
-                        <div className="flex gap-2">
-                          {ended && (
-                            <button
-                              onClick={async () => {
-                                setQlyDistributing(true); setQlyError('');
-                                try {
-                                  const res = await fetch('/api/reputation/leaderboard-quarterly', {
-                                    method: 'PUT',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ artistWallet: walletAddress, force: false }),
-                                  });
-                                  const data = await res.json();
-                                  if (res.ok) { setQlyDistResult(data); await loadData(); }
-                                  else setQlyError(data.error || 'Fehler');
-                                } finally { setQlyDistributing(false); }
-                              }}
-                              disabled={qlyDistributing}
-                              className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black text-xs font-bold px-3 py-1.5 rounded-lg"
-                            >
-                              {qlyDistributing ? '…' : t('rep.btnDistribute', lang)}
-                            </button>
-                          )}
+                      <div className="flex gap-2">
+                        {ended && (
                           <button
-                            onClick={() => {
-                              if (confirm(t('rep.quarterConfirmEnd', lang))) {
-                                setQlyDistributing(true); setQlyError('');
-                                fetch('/api/reputation/leaderboard-quarterly', {
+                            onClick={async () => {
+                              setQlyDistributing(true); setQlyError('');
+                              try {
+                                const res = await fetch('/api/reputation/leaderboard-quarterly', {
                                   method: 'PUT',
                                   headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ artistWallet: walletAddress, force: true }),
-                                })
-                                  .then(r => r.json())
-                                  .then(data => { setQlyDistResult(data); return loadData(); })
-                                  .catch(err => setQlyError(err.message))
-                                  .finally(() => setQlyDistributing(false));
-                              }
+                                  body: JSON.stringify({ artistWallet: walletAddress, force: false }),
+                                });
+                                const data = await res.json();
+                                if (res.ok) { setQlyDistResult(data); await loadData(); }
+                                else setQlyError(data.error || 'Fehler');
+                              } finally { setQlyDistributing(false); }
                             }}
                             disabled={qlyDistributing}
-                            className="bg-zinc-700/60 hover:bg-zinc-600 disabled:opacity-50 text-zinc-300 text-xs font-bold px-3 py-1.5 rounded-lg"
+                            className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black text-xs font-bold px-3 py-1.5 rounded-lg"
                           >
-                            {t('rep.btnNow', lang)}
+                            {qlyDistributing ? '…' : t('rep.btnDistribute', lang)}
                           </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-
-                {/* Preise */}
-                <div className="space-y-1.5">
-                  {quarterlyConfig.prizes.map(p => (
-                    <div key={p.rank} className="flex items-center justify-between px-3 py-2 rounded-lg bg-zinc-800/50">
-                      <span className="text-zinc-300 text-xs">
-                        {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`} Platz
-                      </span>
-                      <div className="flex items-center gap-2">
-                        {p.creditReward > 0 && (
-                          <span className="flex items-center gap-1 text-amber-300 text-xs font-bold">
-                            <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full shrink-0" />
-                            {p.creditReward} Credits
-                          </span>
                         )}
-                        {p.shardReward > 0 && (
-                          <span className="text-cyan-300 text-xs font-bold">✦ {p.shardReward} Shards</span>
-                        )}
+                        <button
+                          onClick={() => {
+                            if (confirm(t('rep.quarterConfirmEnd', lang))) {
+                              setQlyDistributing(true); setQlyError('');
+                              fetch('/api/reputation/leaderboard-quarterly', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ artistWallet: walletAddress, force: true }),
+                              })
+                                .then(r => r.json())
+                                .then(data => { setQlyDistResult(data); return loadData(); })
+                                .catch(err => setQlyError(err.message))
+                                .finally(() => setQlyDistributing(false));
+                            }
+                          }}
+                          disabled={qlyDistributing}
+                          className="bg-zinc-700/60 hover:bg-zinc-600 disabled:opacity-50 text-zinc-300 text-xs font-bold px-3 py-1.5 rounded-lg"
+                        >
+                          {t('rep.btnNow', lang)}
+                        </button>
                       </div>
                     </div>
-                  ))}
-                </div>
 
-                {/* Verteilungsergebnis */}
-                {qlyDistResult && (
+                    {/* Preisliste (nur wenn Quartal läuft / abgelaufen aber noch nicht verteilt) */}
+                    <div className="space-y-1.5">
+                      {quarterlyConfig.prizes.map(p => (
+                        <div key={p.rank} className="flex items-center justify-between px-3 py-2 rounded-lg bg-zinc-800/50">
+                          <span className="text-zinc-300 text-xs">
+                            {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`} Platz
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {p.creditReward > 0 && (
+                              <span className="flex items-center gap-1 text-amber-300 text-xs font-bold">
+                                <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full shrink-0" />
+                                {p.creditReward} Credits
+                              </span>
+                            )}
+                            {p.shardReward > 0 && (
+                              <span className="text-cyan-300 text-xs font-bold">✦ {p.shardReward} Shards</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>);
+                })()}
+
+                {qlyDistResult && !quarterlyHistory.some(h => h.quarter === qlyDistResult.quarter) && (
                   <div className="bg-green-950/30 border border-green-700/30 rounded-xl p-3 space-y-1">
                     <p className="text-green-400 text-xs font-semibold mb-1">{tFmt('rep.quarterDistributed', lang, { q: qlyDistResult.quarter })}</p>
                     {qlyDistResult.distributed.map(r => (
@@ -1578,7 +1627,12 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       }`}>
                         <div>
                           <p className={enough ? 'text-green-300' : 'text-red-300'}>{t('rep.prizePerQuarter', lang)}</p>
-                          <p className="text-zinc-600 text-[10px] mt-0.5">{creditBalance !== null ? `Guthaben: ${creditBalance.toFixed(2)}` : ''}</p>
+                          <p className="text-zinc-600 text-[10px] mt-0.5">
+                            {creditBalance !== null ? `Guthaben: ${creditBalance.toFixed(2)}` : ''}
+                            {quarterlyConfig?.creditsLocked && quarterlyConfig.creditsLocked > 0
+                              ? ` · ${quarterlyConfig.creditsLocked} ${t('rep.creditsReserved', lang)}`
+                              : ''}
+                          </p>
                         </div>
                         <p className={`flex items-center gap-1 font-bold ${enough ? 'text-green-400' : 'text-red-400'}`}>
                           {total}
