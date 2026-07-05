@@ -108,6 +108,10 @@ function ArtistDetailView({
   const [quarterlyInfo, setQuarterlyInfo] = useState<{ quarter: string; start: string; end: string } | null>(null);
   const [quarterlyAlreadyDistributed, setQuarterlyAlreadyDistributed] = useState(false);
   const [loading, setLoading] = useState(true);
+  type FanConcertEvent = { id: string; title: string; eventDate: string | null; venue: string | null; creditReward: number; shardReward: number; repReward: number; status: string };
+  const [activeConcerts, setActiveConcerts] = useState<FanConcertEvent[]>([]);
+  const [checkedInEvents, setCheckedInEvents] = useState<Set<string>>(new Set());
+  const [checkingIn, setCheckingIn] = useState<string | null>(null);
 
   // Countdowns auf Top-Level (Rules of Hooks)
   const quarterlyCountdown = useCountdown(quarterlyInfo?.end ?? null);
@@ -187,11 +191,12 @@ function ArtistDetailView({
     (async () => {
       setLoading(true);
       try {
-        const [lvRes, lbRes, ctRes, qlyRes] = await Promise.all([
+        const [lvRes, lbRes, ctRes, qlyRes, concertRes] = await Promise.all([
           fetch(`/api/reputation/levels?artistWallet=${entry.artistWallet}`),
           fetch(`/api/reputation/leaderboard?artistWallet=${entry.artistWallet}&limit=50`),
           fetch(`/api/reputation/contest?artistWallet=${entry.artistWallet}`),
           fetch(`/api/reputation/leaderboard-quarterly?artistWallet=${entry.artistWallet}`),
+          fetch(`/api/concerts?artistWallet=${entry.artistWallet}`),
         ]);
         if (cancelled) return;
         if (lvRes.ok) setLevels(await lvRes.json());
@@ -207,6 +212,7 @@ function ArtistDetailView({
           const restarted = !!(doneEntry && qly.config?.updatedAt && new Date(qly.config.updatedAt) > new Date(doneEntry.distributedAt));
           setQuarterlyAlreadyDistributed(!!doneEntry && !restarted);
         }
+        if (concertRes.ok) setActiveConcerts(await concertRes.json());
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -530,6 +536,53 @@ function ArtistDetailView({
                 );
               })()}
 
+              {/* Aktive Konzert-Events */}
+              {activeConcerts.length > 0 && activeConcerts.map(ev => (
+                <div key={ev.id} className="bg-gradient-to-br from-green-950/40 to-zinc-900/60 border border-green-600/25 rounded-2xl overflow-hidden">
+                  <div className="px-4 py-3 border-b border-green-600/10 flex items-center justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
+                        <p className="text-white font-black text-sm">🎤 {ev.title}</p>
+                      </div>
+                      <p className="text-zinc-500 text-xs mt-0.5">
+                        {ev.eventDate && new Date(ev.eventDate).toLocaleString('de-DE')}
+                        {ev.venue && ` · ${ev.venue}`}
+                        {!ev.eventDate && !ev.venue && 'Live Event'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                      {ev.creditReward > 0 && <span className="flex items-center gap-1 text-amber-300 text-xs font-bold"><Image src="/D.FAITH.png" alt="" width={12} height={12} className="w-3 h-3 rounded-full" />{ev.creditReward}</span>}
+                      {ev.shardReward > 0 && <span className="text-cyan-300 text-xs font-bold">✦{ev.shardReward}</span>}
+                      {ev.repReward > 0 && <span className="text-green-300 text-xs font-bold">+{ev.repReward} REP</span>}
+                    </div>
+                  </div>
+                  <div className="px-4 py-3">
+                    {checkedInEvents.has(ev.id) ? (
+                      <div className="flex items-center gap-2 justify-center py-1">
+                        <span className="text-green-400 text-lg">✓</span>
+                        <p className="text-green-300 text-sm font-semibold">Eingecheckt! Warte auf Bestätigung</p>
+                      </div>
+                    ) : (
+                      <button
+                        disabled={checkingIn === ev.id}
+                        onClick={async () => {
+                          if (!walletAddress) return;
+                          setCheckingIn(ev.id);
+                          try {
+                            const res = await fetch('/api/concerts/checkin', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ eventId: ev.id, walletAddress }) });
+                            if (res.ok) setCheckedInEvents(prev => new Set([...prev, ev.id]));
+                          } finally { setCheckingIn(null); }
+                        }}
+                        className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold text-sm py-2.5 rounded-xl transition-colors">
+                        {checkingIn === ev.id ? '…' : '🎤 Ich bin da!'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+
               {/* Leaderboard-Liste */}
               <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
                 <div className="px-4 py-3 border-b border-white/[0.07]">
@@ -772,7 +825,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
-  const [activeSection, setActiveSection] = useState<'levels' | 'leaderboard'>('levels');
+  const [activeSection, setActiveSection] = useState<'levels' | 'leaderboard' | 'concerts'>('levels');
   const [leaderboardSubTab, setLeaderboardSubTab] = useState<'contest' | 'quarterly'>('contest');
 
   // Contest-Formular
@@ -804,16 +857,27 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
   const [qlyDistResult, setQlyDistResult] = useState<{ quarter: string; distributed: { rank: number; walletAddress: string; credited: number }[] } | null>(null);
   const [qlyError, setQlyError] = useState('');
 
+  // Konzert-Events
+  type ConcertEvent = { id: string; title: string; eventDate: string | null; venue: string | null; creditReward: number; shardReward: number; repReward: number; status: 'active' | 'done'; createdAt: string; checkinCount?: number; checkins?: { id: string; walletAddress: string; checkedInAt: string; confirmed: boolean; rewarded: boolean; displayName: string | null; imageUrl: string | null }[] };
+  const [concerts, setConcerts] = useState<ConcertEvent[]>([]);
+  const [showConcertForm, setShowConcertForm] = useState(false);
+  const [concertForm, setConcertForm] = useState({ title: '', eventDate: '', venue: '', creditReward: 0, shardReward: 0, repReward: 0 });
+  const [concertSaving, setConcertSaving] = useState(false);
+  const [concertError, setConcertError] = useState('');
+  const [concertConfirming, setConcertConfirming] = useState<string | null>(null);
+  const [concertSelected, setConcertSelected] = useState<Record<string, Set<string>>>({});
+
   const loadData = useCallback(async () => {
     if (!walletAddress) return;
     setLoading(true);
     try {
-      const [lvs, lb, ct, profile, qly] = await Promise.all([
+      const [lvs, lb, ct, profile, qly, concertData] = await Promise.all([
         fetch(`/api/reputation/levels?artistWallet=${walletAddress}`).then(r => r.ok ? r.json() : []),
         fetch(`/api/reputation/leaderboard?artistWallet=${walletAddress}&limit=50`).then(r => r.ok ? r.json() : []),
         fetch(`/api/reputation/contest?artistWallet=${walletAddress}`).then(r => r.ok ? r.json() : null),
         fetch(`/api/youtube-quests/profile?wallet=${walletAddress}`).then(r => r.ok ? r.json() : null),
         fetch(`/api/reputation/leaderboard-quarterly?artistWallet=${walletAddress}`).then(r => r.ok ? r.json() : null),
+        fetch(`/api/concerts?artistWallet=${walletAddress}&manage=true`).then(r => r.ok ? r.json() : []),
       ]);
       setLevels(Array.isArray(lvs) ? lvs : []);
       setLeaderboard(Array.isArray(lb) ? lb : []);
@@ -825,6 +889,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
         setQuarterlyInfo(qly.quarterInfo ?? null);
         if (qly.config?.prizes?.length > 0) setQlyPrizes(qly.config.prizes.map((p: { rank: number; creditReward: number; shardReward?: number }) => ({ rank: p.rank, creditReward: p.creditReward, shardReward: p.shardReward ?? 0 })));
       }
+      setConcerts(Array.isArray(concertData) ? concertData : []);
     } finally {
       setLoading(false);
     }
@@ -978,6 +1043,19 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
           {leaderboard.length > 0 && (
             <span className="bg-white/20 text-xs rounded-full px-1.5 py-0.5 leading-none">
               {leaderboard.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveSection('concerts')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-colors ${
+            activeSection === 'concerts' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+          }`}
+        >
+          🎤 Konzerte
+          {concerts.filter(c => c.status === 'active').length > 0 && (
+            <span className="bg-white/20 text-xs rounded-full px-1.5 py-0.5 leading-none">
+              {concerts.filter(c => c.status === 'active').length}
             </span>
           )}
         </button>
@@ -1771,6 +1849,210 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
 
           </>)} {/* end quarterly tab */}
 
+        </div>
+      )}
+
+      {/* ── Konzert-Events ── */}
+      {activeSection === 'concerts' && (
+        <div className="space-y-4">
+          <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
+              <div>
+                <p className="text-white font-semibold text-sm">🎤 Konzert Check-in</p>
+                <p className="text-zinc-500 text-xs mt-0.5">Fans checken sich ein — du bestätigst wer wirklich da war</p>
+              </div>
+              {!showConcertForm && (
+                <button onClick={() => { setShowConcertForm(true); setConcertError(''); setConcertForm({ title: '', eventDate: '', venue: '', creditReward: 0, shardReward: 0, repReward: 0 }); }}
+                  className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 text-xs font-medium">
+                  <FaPlus size={10} /> Neues Event
+                </button>
+              )}
+            </div>
+
+            {/* Event erstellen */}
+            {showConcertForm && (
+              <div className="p-4 space-y-3">
+                <div>
+                  <label className="text-zinc-400 text-xs mb-1 block">Event-Name *</label>
+                  <input className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    placeholder="z.B. Release Party Berlin"
+                    value={concertForm.title}
+                    onChange={e => setConcertForm(f => ({ ...f, title: e.target.value }))} />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-zinc-400 text-xs mb-1 block">Datum (optional)</label>
+                    <input type="datetime-local" className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500"
+                      value={concertForm.eventDate}
+                      onChange={e => setConcertForm(f => ({ ...f, eventDate: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-zinc-400 text-xs mb-1 block">Venue (optional)</label>
+                    <input className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500"
+                      placeholder="z.B. Berghain"
+                      value={concertForm.venue}
+                      onChange={e => setConcertForm(f => ({ ...f, venue: e.target.value }))} />
+                  </div>
+                </div>
+                <p className="text-zinc-500 text-xs font-semibold uppercase tracking-widest">Belohnung pro Teilnehmer</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="relative">
+                    <input type="number" min="0" placeholder="Credits"
+                      className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500 pr-8"
+                      value={concertForm.creditReward || ''}
+                      onChange={e => setConcertForm(f => ({ ...f, creditReward: Number(e.target.value) || 0 }))} />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2"><Image src="/D.FAITH.png" alt="" width={12} height={12} className="w-3 h-3 rounded-full" /></span>
+                  </div>
+                  <div className="relative">
+                    <input type="number" min="0" placeholder="Shards"
+                      className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-cyan-500 pr-7"
+                      value={concertForm.shardReward || ''}
+                      onChange={e => setConcertForm(f => ({ ...f, shardReward: Number(e.target.value) || 0 }))} />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-cyan-400 text-[10px] font-bold">✦</span>
+                  </div>
+                  <div>
+                    <input type="number" min="0" placeholder="REP"
+                      className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-green-500"
+                      value={concertForm.repReward || ''}
+                      onChange={e => setConcertForm(f => ({ ...f, repReward: Number(e.target.value) || 0 }))} />
+                  </div>
+                </div>
+                {concertError && <p className="text-red-400 text-xs">{concertError}</p>}
+                <div className="flex gap-2">
+                  <button
+                    disabled={concertSaving || !concertForm.title.trim()}
+                    onClick={async () => {
+                      setConcertSaving(true); setConcertError('');
+                      try {
+                        const res = await fetch('/api/concerts', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ artistWallet: walletAddress, ...concertForm }) });
+                        const data = await res.json();
+                        if (res.ok) { setShowConcertForm(false); await loadData(); }
+                        else setConcertError(data.error || 'Fehler');
+                      } finally { setConcertSaving(false); }
+                    }}
+                    className="flex-1 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black text-xs font-bold py-2.5 rounded-xl">
+                    {concertSaving ? 'Speichern…' : '🎤 Event erstellen & aktivieren'}
+                  </button>
+                  <button onClick={() => setShowConcertForm(false)} className="text-zinc-400 hover:text-white text-xs px-3"><FaTimes size={11} /></button>
+                </div>
+              </div>
+            )}
+
+            {/* Event-Liste */}
+            {!showConcertForm && concerts.length === 0 && (
+              <div className="px-4 py-8 text-center">
+                <p className="text-4xl mb-2">🎤</p>
+                <p className="text-zinc-500 text-sm">Noch keine Konzert-Events</p>
+                <p className="text-zinc-600 text-xs mt-1">Erstelle ein Event — Fans können sich einchecken</p>
+              </div>
+            )}
+          </div>
+
+          {/* Aktive Events mit Checkin-Listen */}
+          {concerts.map(ev => (
+            <div key={ev.id} className={`bg-zinc-900/60 border rounded-2xl overflow-hidden ${ev.status === 'active' ? 'border-green-600/25' : 'border-white/[0.07]'}`}>
+              <div className="px-4 py-3 border-b border-white/[0.07] flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    {ev.status === 'active' && <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />}
+                    <p className="text-white font-semibold text-sm truncate">{ev.title}</p>
+                  </div>
+                  <p className="text-zinc-500 text-xs mt-0.5">
+                    {ev.eventDate && new Date(ev.eventDate).toLocaleString('de-DE')}
+                    {ev.venue && ` · ${ev.venue}`}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {ev.creditReward > 0 && <span className="flex items-center gap-1 text-amber-300 text-[10px] font-bold"><Image src="/D.FAITH.png" alt="" width={10} height={10} className="w-2.5 h-2.5 rounded-full" />{ev.creditReward}</span>}
+                    {ev.shardReward > 0 && <span className="text-cyan-300 text-[10px] font-bold">✦{ev.shardReward}</span>}
+                    {ev.repReward > 0 && <span className="text-green-300 text-[10px] font-bold">+{ev.repReward} REP</span>}
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ev.status === 'active' ? 'bg-green-500/20 text-green-300' : 'bg-zinc-700/50 text-zinc-400'}`}>
+                    {ev.status === 'active' ? 'Aktiv' : 'Beendet'}
+                  </span>
+                  <span className="text-zinc-500 text-[10px]">{ev.checkins?.length ?? ev.checkinCount ?? 0} Checkins</span>
+                </div>
+              </div>
+
+              {/* Checkin-Liste + Bestätigen */}
+              {ev.checkins && ev.checkins.length > 0 && (
+                <div className="p-3 space-y-1.5">
+                  {ev.checkins.map(c => {
+                    const sel = concertSelected[ev.id] ?? new Set();
+                    const checked = sel.has(c.walletAddress);
+                    return (
+                      <div key={c.id} className={`flex items-center gap-2.5 px-3 py-2 rounded-xl cursor-pointer transition-colors ${
+                        c.rewarded ? 'bg-green-950/30 border border-green-700/20' :
+                        checked ? 'bg-amber-500/15 border border-amber-500/25' : 'bg-zinc-800/50'
+                      }`}
+                        onClick={() => {
+                          if (c.rewarded) return;
+                          setConcertSelected(prev => {
+                            const next = { ...prev };
+                            const s = new Set(next[ev.id] ?? []);
+                            s.has(c.walletAddress) ? s.delete(c.walletAddress) : s.add(c.walletAddress);
+                            next[ev.id] = s;
+                            return next;
+                          });
+                        }}>
+                        {c.rewarded ? (
+                          <span className="text-green-400 text-sm">✓</span>
+                        ) : (
+                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${checked ? 'bg-amber-500 border-amber-500' : 'border-zinc-600'}`}>
+                            {checked && <span className="text-black text-[10px] font-black">✓</span>}
+                          </div>
+                        )}
+                        {c.imageUrl
+                          ? <Image src={c.imageUrl} alt="" width={24} height={24} className="w-6 h-6 rounded-full object-cover shrink-0" />
+                          : <div className="w-6 h-6 rounded-full bg-zinc-700 shrink-0" />}
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium truncate ${c.rewarded ? 'text-zinc-400' : 'text-white'}`}>
+                            {c.displayName ?? shortenWallet(c.walletAddress)}
+                          </p>
+                          <p className="text-zinc-600 text-[10px]">{new Date(c.checkedInAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                        {c.rewarded && <span className="text-green-400 text-[10px] font-semibold">Belohnt</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Bestätigen-Button */}
+              {ev.status === 'active' && (
+                <div className="px-4 pb-4 pt-2 flex gap-2">
+                  {(concertSelected[ev.id]?.size ?? 0) > 0 && (
+                    <button
+                      disabled={concertConfirming === ev.id}
+                      onClick={async () => {
+                        setConcertConfirming(ev.id); setConcertError('');
+                        try {
+                          const wallets = Array.from(concertSelected[ev.id] ?? []);
+                          const res = await fetch('/api/concerts/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ eventId: ev.id, artistWallet: walletAddress, walletAddresses: wallets }) });
+                          if (res.ok) { setConcertSelected(p => ({ ...p, [ev.id]: new Set() })); await loadData(); }
+                        } finally { setConcertConfirming(null); }
+                      }}
+                      className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs font-bold py-2 rounded-xl">
+                      {concertConfirming === ev.id ? '…' : `✓ ${concertSelected[ev.id]?.size ?? 0} Teilnehmer bestätigen`}
+                    </button>
+                  )}
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`"${ev.title}" als beendet markieren?`)) return;
+                      await fetch('/api/concerts', { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ eventId: ev.id, artistWallet: walletAddress, status: 'done' }) });
+                      await loadData();
+                    }}
+                    className="text-zinc-500 hover:text-zinc-300 text-xs px-3 py-2 rounded-xl border border-white/[0.07]">
+                    Event beenden
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
