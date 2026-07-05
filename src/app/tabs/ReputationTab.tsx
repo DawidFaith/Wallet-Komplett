@@ -1722,32 +1722,37 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
               <p className="text-zinc-500 text-xs mt-0.5">Aktueller Stand — diese Plätze gewinnen die Quartal-Rewards</p>
             </div>
             {leaderboard.length === 0 ? (
-              <div className="px-4 py-6 text-center">
-                <FaUsers size={24} className="text-zinc-700 mx-auto mb-2" />
+              <div className="px-4 py-8 text-center">
+                <FaUsers size={28} className="text-zinc-700 mx-auto mb-3" />
                 <p className="text-zinc-500 text-sm">{t('rep.noFansHint', lang)}</p>
               </div>
             ) : (
-              <div className="p-3 space-y-1.5">
-                {leaderboard.slice(0, 10).map(lb => (
-                  <div key={lb.walletAddress} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-zinc-800/50">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+              <div className="p-4 space-y-1.5">
+                {leaderboard.map(lb => (
+                  <div key={lb.walletAddress} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                    lb.walletAddress === walletAddress ? 'bg-amber-500/10 border border-amber-500/20' :
+                    lb.rank <= 3 ? 'bg-zinc-800/70' : 'bg-zinc-800/40'
+                  }`}>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
                       lb.rank === 1 ? 'bg-amber-400 text-black' :
                       lb.rank === 2 ? 'bg-zinc-400 text-black' :
                       lb.rank === 3 ? 'bg-amber-700 text-white' :
-                      'bg-zinc-700 text-zinc-400'
+                      'bg-zinc-700 text-zinc-300'
                     }`}>
-                      {lb.rank <= 3 ? (lb.rank === 1 ? '🥇' : lb.rank === 2 ? '🥈' : '🥉') : lb.rank}
+                      {lb.rank === 1 ? '🥇' : lb.rank === 2 ? '🥈' : lb.rank === 3 ? '🥉' : lb.rank}
                     </div>
+                    {lb.imageUrl
+                      ? <Image src={lb.imageUrl} alt="" width={28} height={28} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                      : <div className="w-7 h-7 rounded-full bg-zinc-700 shrink-0" />}
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-xs font-medium truncate">{lb.displayName || shortenWallet(lb.walletAddress)}</p>
-                      <p className="text-zinc-500 text-[10px]">{lb.levelName}</p>
+                      <p className="text-white text-sm font-medium truncate">
+                        {lb.displayName || shortenWallet(lb.walletAddress)}
+                      </p>
+                      <p className="text-zinc-500 text-xs">{lb.levelName}</p>
                     </div>
-                    <span className="text-amber-300 text-xs font-bold shrink-0">{lb.reputation.toLocaleString()} REP</span>
+                    <span className="text-amber-300 font-bold text-sm shrink-0">{lb.reputation.toLocaleString()} REP</span>
                   </div>
                 ))}
-                {leaderboard.length > 10 && (
-                  <p className="text-zinc-600 text-xs text-center pt-1">+{leaderboard.length - 10} weitere</p>
-                )}
               </div>
             )}
           </div>
