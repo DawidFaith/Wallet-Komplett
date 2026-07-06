@@ -522,21 +522,10 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         </button>
       </div>
 
-      {(loading || bundlesLoading) ? (
-        <div className="flex justify-center py-12">
-          <div className="border-4 border-amber-500/30 border-t-amber-500 rounded-full w-10 h-10 animate-spin" />
-        </div>
-      ) : activeBundles.length === 0 && youtubeQuests.length === 0 && tiktokCommentQuests.length === 0 && tiktokEngagementQuests.length === 0 && instagramQuests.length === 0 && facebookQuests.length === 0 ? (
-        <div className="text-center py-12 text-zinc-500">
-          <FaTrophy size={32} className="mx-auto mb-3 opacity-30" />
-          <p>{t('quest.none', language)}</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {/* Live Konzert-Events */}
-          {concertEvents.length > 0 && (
-            <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">🎤 Live Events</p>
-          )}
+      {/* Live Konzert-Events — immer anzeigen, unabhängig von anderen Quests */}
+      {concertEvents.length > 0 && (
+        <div className="space-y-3">
+          <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">🎤 Live Events</p>
           {concertEvents.map(ev => (
             <div key={ev.id} className="bg-gradient-to-br from-green-950/40 to-zinc-900/60 border border-green-600/25 rounded-2xl overflow-hidden">
               {ev.imageUrl && (
@@ -586,7 +575,22 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
               </div>
             </div>
           ))}
+        </div>
+      )}
 
+      {(loading || bundlesLoading) ? (
+        <div className="flex justify-center py-12">
+          <div className="border-4 border-amber-500/30 border-t-amber-500 rounded-full w-10 h-10 animate-spin" />
+        </div>
+      ) : activeBundles.length === 0 && youtubeQuests.length === 0 && tiktokCommentQuests.length === 0 && tiktokEngagementQuests.length === 0 && instagramQuests.length === 0 && facebookQuests.length === 0 ? (
+        concertEvents.length === 0 ? (
+          <div className="text-center py-12 text-zinc-500">
+            <FaTrophy size={32} className="mx-auto mb-3 opacity-30" />
+            <p>{t('quest.none', language)}</p>
+          </div>
+        ) : null
+      ) : (
+        <div className="space-y-4">
           {/* Quest-Reihen (Bundles) zuerst */}
           {activeBundles.length > 0 && (
             <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">{t('quest.bundles', language)}</p>
