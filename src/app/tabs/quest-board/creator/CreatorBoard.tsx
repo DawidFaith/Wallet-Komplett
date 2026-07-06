@@ -68,7 +68,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
 
   // Konzert-Events
   type ConcertCheckin = { id: string; walletAddress: string; checkedInAt: string; confirmed: boolean; rewarded: boolean; displayName: string | null; imageUrl: string | null };
-  type ConcertEvent = { id: string; title: string; eventDate: string | null; venue: string | null; creditReward: number; shardReward: number; repReward: number; status: 'active' | 'done'; createdAt: string; checkinCount?: number; checkins?: ConcertCheckin[] };
+  type ConcertEvent = { id: string; title: string; eventDate: string | null; venue: string | null; imageUrl: string | null; creditReward: number; shardReward: number; repReward: number; status: 'active' | 'done'; createdAt: string; checkinCount?: number; checkins?: ConcertCheckin[] };
   const [concerts, setConcerts] = useState<ConcertEvent[]>([]);
   const [concertsLoading, setConcertsLoading] = useState(false);
   const [showConcertModal, setShowConcertModal] = useState(false);
@@ -434,6 +434,11 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
             </div>
           ) : concerts.map(ev => (
             <div key={ev.id} className={`rounded-2xl border overflow-hidden ${ev.status === 'active' ? 'bg-green-950/20 border-green-600/25' : 'bg-zinc-900/60 border-white/[0.07]'}`}>
+              {ev.imageUrl && (
+                <div className="w-full h-28 overflow-hidden">
+                  <img src={ev.imageUrl} alt={ev.title} className="w-full h-full object-cover" />
+                </div>
+              )}
               {/* Header */}
               <div className="px-4 py-3 border-b border-white/[0.05] flex items-start justify-between gap-2">
                 <div>

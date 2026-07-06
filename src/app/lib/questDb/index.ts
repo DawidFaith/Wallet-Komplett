@@ -26,3 +26,4 @@ export * from './profile';
 export * from './reputation';
 export * from './bundles';
 export * from './collectibles';
+export * from './concerts';

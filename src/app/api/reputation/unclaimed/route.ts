@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
         reason LIKE 'level_reward:%'
         OR reason LIKE 'contest_reward:%'
         OR reason LIKE 'leaderboard_reward:%'
+        OR reason LIKE 'concert_checkin:%'
       )
     ORDER BY created_at ASC
   `;
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
     const reason = String(r.reason);
     const parts = reason.split(':');
 
-    let type: 'level' | 'contest' | 'leaderboard' = 'level';
+    let type: 'level' | 'contest' | 'leaderboard' | 'concert' = 'level';
     let artistWallet = '';
     let levelNumber = 0;
     let levelName = '';
@@ -58,6 +59,11 @@ export async function GET(req: NextRequest) {
       rank = Number(parts[2] ?? 0);
       shardAmount = Number(parts[3] ?? 0);
       levelName = `🥇 Platz #${rank} im Leaderboard`;
+    } else if (reason.startsWith('concert_checkin:')) {
+      type = 'concert';
+      artistWallet = parts[1] ?? '';
+      shardAmount = Number(parts[3] ?? 0);
+      levelName = '🎤 Konzert-Teilnahme bestätigt';
     }
 
     return {

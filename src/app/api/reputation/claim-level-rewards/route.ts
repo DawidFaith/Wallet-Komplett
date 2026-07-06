@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
         reason LIKE 'level_reward:%'
         OR reason LIKE 'contest_reward:%'
         OR reason LIKE 'leaderboard_reward:%'
+        OR reason LIKE 'concert_checkin:%'
       )
     RETURNING id, amount, reason
   `;
@@ -68,6 +69,10 @@ export async function POST(req: NextRequest) {
       type = 'leaderboard'; artistWallet = parts[1] ?? '';
       const rank = parts[2] ?? '?'; shardAmount = Number(parts[3] ?? 0);
       levelName = `🥇 Platz #${rank} im Leaderboard`;
+    } else if (reason.startsWith('concert_checkin:')) {
+      type = 'concert'; artistWallet = parts[1] ?? '';
+      shardAmount = Number(parts[3] ?? 0);
+      levelName = '🎤 Konzert-Teilnahme bestätigt';
     }
     return { id: String(r.id), type, artistWallet, levelNumber, levelName, shardAmount, amount: Number(r.amount) };
   });

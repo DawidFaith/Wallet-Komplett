@@ -74,7 +74,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const [shardBonusByCreator, setShardBonusByCreator] = useState<Record<string, number>>({});
   const [repBonusByCreator, setRepBonusByCreator] = useState<Record<string, number>>({});
 
-  type ConcertEvent = { id: string; title: string; eventDate: string | null; venue: string | null; creditReward: number; shardReward: number; repReward: number; status: string };
+  type ConcertEvent = { id: string; title: string; eventDate: string | null; venue: string | null; imageUrl: string | null; creditReward: number; shardReward: number; repReward: number; status: string };
   const [concertEvents, setConcertEvents] = useState<ConcertEvent[]>([]);
   const [checkedInConcerts, setCheckedInConcerts] = useState<Set<string>>(new Set());
   const [checkingInConcert, setCheckingInConcert] = useState<string | null>(null);
@@ -539,6 +539,11 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
           )}
           {concertEvents.map(ev => (
             <div key={ev.id} className="bg-gradient-to-br from-green-950/40 to-zinc-900/60 border border-green-600/25 rounded-2xl overflow-hidden">
+              {ev.imageUrl && (
+                <div className="w-full h-36 overflow-hidden">
+                  <img src={ev.imageUrl} alt={ev.title} className="w-full h-full object-cover" />
+                </div>
+              )}
               <div className="px-4 py-3 border-b border-green-600/10 flex items-center justify-between gap-2">
                 <div>
                   <div className="flex items-center gap-2">
