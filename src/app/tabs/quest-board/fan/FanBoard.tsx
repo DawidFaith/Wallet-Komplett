@@ -551,11 +551,34 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                   {ev.repReward > 0 && <span className="text-green-300 text-xs font-bold">+{ev.repReward} REP</span>}
                 </div>
               </div>
-              <div className="px-4 py-3">
+              {/* Anleitung */}
+              <div className="px-4 pt-3 pb-1">
+                <div className="flex gap-3 text-xs text-zinc-500">
+                  <div className="flex flex-col items-center gap-0.5 flex-1 text-center">
+                    <span className="text-base">📍</span>
+                    <span>Komm zum Event</span>
+                  </div>
+                  <div className="text-zinc-700 self-center">›</div>
+                  <div className="flex flex-col items-center gap-0.5 flex-1 text-center">
+                    <span className="text-base">🎤</span>
+                    <span>Klick &ldquo;Ich bin da!&rdquo;</span>
+                  </div>
+                  <div className="text-zinc-700 self-center">›</div>
+                  <div className="flex flex-col items-center gap-0.5 flex-1 text-center">
+                    <span className="text-base">🎁</span>
+                    <span>Künstler bestätigt & du erhältst deine Rewards</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-4 pb-3 pt-2">
                 {checkedInConcerts.has(ev.id) ? (
-                  <div className="flex items-center gap-2 justify-center py-1">
-                    <span className="text-green-400 text-lg">✓</span>
-                    <p className="text-green-300 text-sm font-semibold">Eingecheckt! Warte auf Bestätigung des Künstlers</p>
+                  <div className="bg-green-950/40 border border-green-600/25 rounded-xl px-4 py-3 flex items-start gap-3">
+                    <span className="text-green-400 text-xl shrink-0">✓</span>
+                    <div>
+                      <p className="text-green-300 text-sm font-semibold">Eingecheckt!</p>
+                      <p className="text-zinc-500 text-xs mt-0.5">Der Künstler sieht deine Anfrage und bestätigt deine Anwesenheit — danach werden deine Rewards automatisch gutgeschrieben.</p>
+                    </div>
                   </div>
                 ) : (
                   <button
@@ -568,7 +591,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                         if (res.ok) setCheckedInConcerts(prev => new Set([...prev, ev.id]));
                       } finally { setCheckingInConcert(null); }
                     }}
-                    className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold text-sm py-2.5 rounded-xl transition-colors">
+                    className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold text-sm py-3 rounded-xl transition-colors">
                     {checkingInConcert === ev.id ? '…' : '🎤 Ich bin da!'}
                   </button>
                 )}
