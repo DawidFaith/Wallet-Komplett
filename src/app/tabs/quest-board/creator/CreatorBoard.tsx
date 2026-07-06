@@ -7,6 +7,7 @@ import CreditsBox from '../components/CreditsBox';
 import DepositModal from './DepositModal';
 import CreateBundleModal from './CreateBundleModal';
 import CreateStreamingQuestModal from './CreateStreamingQuestModal';
+import CreateConcertModal from './CreateConcertModal';
 import StreamingQuestManageCard from './StreamingQuestManageCard';
 import type { StreamingQuest } from '../fan/StreamingQuestCard';
 import type { QuestIndexEntry, YouTubeBinding, VerifiedPlatforms, Platform, QuestType } from '../types';
@@ -65,6 +66,16 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
   const [streamingQuests, setStreamingQuests]   = useState<StreamingQuest[]>([]);
   const [streamingLoading, setStreamingLoading] = useState(false); // kept for future use, creation is now in CreateBundleModal
 
+  // Konzert-Events
+  type ConcertCheckin = { id: string; walletAddress: string; checkedInAt: string; confirmed: boolean; rewarded: boolean; displayName: string | null; imageUrl: string | null };
+  type ConcertEvent = { id: string; title: string; eventDate: string | null; venue: string | null; creditReward: number; shardReward: number; repReward: number; status: 'active' | 'done'; createdAt: string; checkinCount?: number; checkins?: ConcertCheckin[] };
+  const [concerts, setConcerts] = useState<ConcertEvent[]>([]);
+  const [concertsLoading, setConcertsLoading] = useState(false);
+  const [showConcertModal, setShowConcertModal] = useState(false);
+  const [concertSelected, setConcertSelected] = useState<Record<string, Set<string>>>({});
+  const [concertConfirming, setConcertConfirming] = useState<string | null>(null);
+  const [concertError, setConcertError] = useState('');
+
   const loadCreatorBalance = useCallback(async () => {
     setBalanceLoading(true);
     try {
@@ -109,6 +120,16 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       setStreamingQuests(data.quests ?? []);
     } catch { /* ignorieren */ }
     finally { setStreamingLoading(false); }
+  }, [walletAddress]);
+
+  const loadConcerts = useCallback(async () => {
+    setConcertsLoading(true);
+    try {
+      const res = await fetch(`/api/concerts?artistWallet=${walletAddress}&manage=true`, { cache: 'no-store' });
+      const data = await res.json();
+      setConcerts(Array.isArray(data) ? data : []);
+    } catch { /* ignorieren */ }
+    finally { setConcertsLoading(false); }
   }, [walletAddress]);
 
   const handleCancelBundle = useCallback(async (bundleId: string) => {
@@ -161,8 +182,9 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       loadCreatorBalance();
       loadCreatorBundles();
       loadStreamingQuests();
+      loadConcerts();
     });
-  }, [loadCreatorQuests, loadCreatorBalance, loadCreatorBundles, loadStreamingQuests, walletAddress]);
+  }, [loadCreatorQuests, loadCreatorBalance, loadCreatorBundles, loadStreamingQuests, loadConcerts, walletAddress]);
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 space-y-5">
@@ -181,6 +203,12 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       <div className="flex items-center justify-between">
         <h2 className="text-white font-bold text-lg">{t('cb.myQuests', lang)}</h2>
         <div className="flex gap-2">
+          <button
+            onClick={() => setShowConcertModal(true)}
+            className="bg-green-700 hover:bg-green-600 text-white font-semibold px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
+          >
+            <FaPlus size={12} /> 🎤 Konzert
+          </button>
           <button
             onClick={() => setShowBundleModal(true)}
             className="bg-purple-700 hover:bg-purple-600 text-white font-semibold px-4 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
@@ -391,6 +419,120 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         )}
       </div>
 
+      {/* ── Konzert-Events ──────────────────────────────────────────────── */}
+      {(concerts.length > 0 || concertsLoading) && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-white font-bold flex items-center gap-2">🎤 Konzert-Events</h3>
+            <button onClick={loadConcerts} className="text-zinc-400 hover:text-white p-1 transition-colors">
+              <FaSync size={13} className={concertsLoading ? 'animate-spin' : ''} />
+            </button>
+          </div>
+          {concertsLoading ? (
+            <div className="flex justify-center py-6">
+              <div className="border-4 border-green-500/30 border-t-green-500 rounded-full w-7 h-7 animate-spin" />
+            </div>
+          ) : concerts.map(ev => (
+            <div key={ev.id} className={`rounded-2xl border overflow-hidden ${ev.status === 'active' ? 'bg-green-950/20 border-green-600/25' : 'bg-zinc-900/60 border-white/[0.07]'}`}>
+              {/* Header */}
+              <div className="px-4 py-3 border-b border-white/[0.05] flex items-start justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    {ev.status === 'active' && <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />}
+                    <p className="text-white font-black text-sm">{ev.title}</p>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${ev.status === 'active' ? 'bg-green-900/60 text-green-300' : 'bg-zinc-800 text-zinc-500'}`}>
+                      {ev.status === 'active' ? 'Aktiv' : 'Beendet'}
+                    </span>
+                  </div>
+                  <p className="text-zinc-500 text-xs mt-0.5">
+                    {ev.eventDate ? new Date(ev.eventDate).toLocaleString('de-DE') : ''}
+                    {ev.venue ? (ev.eventDate ? ` · ${ev.venue}` : ev.venue) : ''}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end text-xs">
+                  {ev.creditReward > 0 && <span className="text-amber-300 font-bold">{ev.creditReward}C</span>}
+                  {ev.shardReward > 0 && <span className="text-cyan-300 font-bold">✦{ev.shardReward}</span>}
+                  {ev.repReward > 0 && <span className="text-green-300 font-bold">+{ev.repReward}REP</span>}
+                </div>
+              </div>
+
+              {/* Checkin-Liste */}
+              {ev.checkins && ev.checkins.length > 0 ? (
+                <div className="divide-y divide-white/[0.04]">
+                  {ev.checkins.map(c => {
+                    const sel = concertSelected[ev.id] ?? new Set<string>();
+                    const checked = sel.has(c.walletAddress);
+                    return (
+                      <div key={c.id} className={`flex items-center gap-3 px-4 py-2.5 ${c.rewarded ? 'opacity-50' : ''}`}>
+                        {ev.status === 'active' && !c.rewarded && (
+                          <button
+                            onClick={() => setConcertSelected(prev => {
+                              const next = new Set(prev[ev.id] ?? []);
+                              checked ? next.delete(c.walletAddress) : next.add(c.walletAddress);
+                              return { ...prev, [ev.id]: next };
+                            })}
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-green-500 border-green-500' : 'border-zinc-600 hover:border-green-400'}`}
+                          >
+                            {checked && <span className="text-white text-[10px] font-black">✓</span>}
+                          </button>
+                        )}
+                        {c.imageUrl
+                          ? <img src={c.imageUrl} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                          : <div className="w-7 h-7 rounded-full bg-zinc-700 shrink-0" />}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-xs font-medium truncate">{c.displayName ?? c.walletAddress.slice(0, 8) + '…'}</p>
+                          <p className="text-zinc-600 text-[10px]">{new Date(c.checkedInAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                        {c.rewarded && <span className="text-green-400 text-[10px] font-semibold shrink-0">Belohnt ✓</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="px-4 py-4 text-center">
+                  <p className="text-zinc-600 text-xs">Noch keine Eincheck-Anfragen</p>
+                </div>
+              )}
+
+              {/* Aktionen */}
+              {ev.status === 'active' && (
+                <div className="px-4 pb-4 pt-2 flex gap-2 flex-wrap">
+                  {(concertSelected[ev.id]?.size ?? 0) > 0 && (
+                    <button
+                      disabled={concertConfirming === ev.id}
+                      onClick={async () => {
+                        setConcertConfirming(ev.id); setConcertError('');
+                        try {
+                          const wallets = Array.from(concertSelected[ev.id] ?? []);
+                          const res = await fetch('/api/concerts/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ eventId: ev.id, artistWallet: walletAddress, walletAddresses: wallets }) });
+                          if (res.ok) { setConcertSelected(p => ({ ...p, [ev.id]: new Set() })); await loadConcerts(); }
+                          else { const d = await res.json(); setConcertError(d.error ?? 'Fehler'); }
+                        } finally { setConcertConfirming(null); }
+                      }}
+                      className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs font-bold py-2 rounded-xl transition-colors"
+                    >
+                      {concertConfirming === ev.id ? '…' : `✓ ${concertSelected[ev.id]?.size ?? 0} bestätigen & belohnen`}
+                    </button>
+                  )}
+                  <button
+                    onClick={async () => {
+                      await fetch('/api/concerts', { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: ev.id, artistWallet: walletAddress, status: 'done' }) });
+                      await loadConcerts();
+                    }}
+                    className="text-zinc-500 hover:text-white text-xs px-3 py-2 rounded-xl border border-zinc-700 hover:border-zinc-500 transition-colors"
+                  >
+                    Event beenden
+                  </button>
+                </div>
+              )}
+              {concertError && <p className="text-red-400 text-xs px-4 pb-2">{concertError}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Modals */}
       <CreateBundleModal
         open={showBundleModal}
@@ -406,6 +548,12 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         onClose={() => setShowDeposit(false)}
         walletAddress={walletAddress}
         onDeposited={(amount) => setCreatorBalance((prev) => prev + amount)}
+      />
+      <CreateConcertModal
+        open={showConcertModal}
+        onClose={() => setShowConcertModal(false)}
+        walletAddress={walletAddress}
+        onCreated={loadConcerts}
       />
     </div>
   );
