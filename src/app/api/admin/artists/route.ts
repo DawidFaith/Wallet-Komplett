@@ -14,6 +14,24 @@ export async function GET(req: Request) {
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS display_platform TEXT`;
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS clerk_image_url TEXT`;
     await sql`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS clerk_name TEXT`;
+    // Concert-Events-Tabelle sicherstellen
+    await sql`
+      CREATE TABLE IF NOT EXISTS concert_events (
+        id TEXT PRIMARY KEY,
+        artist_wallet TEXT NOT NULL,
+        title TEXT NOT NULL,
+        event_date TEXT,
+        venue TEXT,
+        image_url TEXT,
+        credit_reward INTEGER DEFAULT 0,
+        shard_reward INTEGER DEFAULT 0,
+        rep_reward INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'active',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `;
+    await sql`ALTER TABLE concert_events ADD COLUMN IF NOT EXISTS image_url TEXT`;
+
     // Streaming-Quests-Tabelle sicherstellen (falls noch nicht angelegt)
     await sql`
       CREATE TABLE IF NOT EXISTS streaming_quests (
@@ -74,6 +92,11 @@ export async function GET(req: Request) {
             AND sq.status IN ('enrollment', 'active')
             AND sq.deadline > NOW()
         ), 0) AS streaming_quest_count,
+        COALESCE((
+          SELECT COUNT(*) FROM concert_events ce
+          WHERE LOWER(ce.artist_wallet) = LOWER(p.wallet_address)
+            AND ce.status = 'active'
+        ), 0) AS concert_count,
         COALESCE((
           SELECT COUNT(*) FROM shop_items si
           WHERE LOWER(si.artist_wallet) = LOWER(p.wallet_address)
@@ -156,7 +179,7 @@ export async function GET(req: Request) {
         artistType: r.artist_type ?? null,
         artistBio: r.artist_bio ?? null,
         rewardToken: r.reward_token ?? 'D.FAITH',
-        questCount: Math.max(0, Number(r.quest_count) + Number(r.streaming_quest_count ?? 0) - (completedByCreator[(r.wallet_address as string).toLowerCase()] ?? 0)),
+        questCount: Math.max(0, Number(r.quest_count) + Number(r.streaming_quest_count ?? 0) + Number(r.concert_count ?? 0) - (completedByCreator[(r.wallet_address as string).toLowerCase()] ?? 0)),
         shopItemCount: Number(r.shop_item_count),
         isPlatformUser: Boolean(r.is_platform_user),
         socials: {
