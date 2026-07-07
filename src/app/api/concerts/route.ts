@@ -65,11 +65,11 @@ export async function GET(req: NextRequest) {
 /** POST /api/concerts — Event erstellen */
 export async function POST(req: NextRequest) {
   try {
-    const { artistWallet, title, eventDate, venue, creditReward, shardReward, repReward, imageUrl } = await req.json();
+    const { artistWallet, title, eventDate, venue, address, creditReward, shardReward, repReward, imageUrl } = await req.json();
     if (!artistWallet || !title) return NextResponse.json({ error: 'artistWallet und title erforderlich' }, { status: 400 });
     const id = await createConcertEvent(
       artistWallet, title,
-      eventDate || null, venue || null,
+      eventDate || null, venue || null, address || null,
       Math.max(0, Number(creditReward) || 0),
       Math.max(0, Number(shardReward) || 0),
       Math.max(0, Number(repReward) || 0),

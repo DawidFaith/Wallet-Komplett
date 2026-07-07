@@ -12,7 +12,7 @@ interface CreateConcertModalProps {
 }
 
 export default function CreateConcertModal({ open, onClose, walletAddress, onCreated }: CreateConcertModalProps) {
-  const [form, setForm] = useState({ title: '', eventDate: '', venue: '', creditReward: 0, shardReward: 0, repReward: 0 });
+  const [form, setForm] = useState({ title: '', eventDate: '', venue: '', address: '', creditReward: 0, shardReward: 0, repReward: 0 });
   const [imageUrl, setImageUrl] = useState('');
   const [imagePreview, setImagePreview] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -44,7 +44,7 @@ export default function CreateConcertModal({ open, onClose, walletAddress, onCre
       const res = await fetch('/api/concerts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ artistWallet: walletAddress, ...form, imageUrl: imageUrl || null }),
+        body: JSON.stringify({ artistWallet: walletAddress, ...form, address: form.address || null, imageUrl: imageUrl || null }),
       });
       let data: { error?: string } = {};
       try { data = await res.json(); } catch { /* ignore parse error */ }
@@ -105,7 +105,7 @@ export default function CreateConcertModal({ open, onClose, walletAddress, onCre
               />
             </div>
             <div>
-              <label className="text-zinc-400 text-xs mb-1 block">Location</label>
+              <label className="text-zinc-400 text-xs mb-1 block">Location / Venue</label>
               <input
                 className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2.5 text-sm border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-green-500"
                 placeholder="z.B. Berghain"
@@ -113,6 +113,16 @@ export default function CreateConcertModal({ open, onClose, walletAddress, onCre
                 onChange={e => setForm(f => ({ ...f, venue: e.target.value }))}
               />
             </div>
+          </div>
+
+          <div>
+            <label className="text-zinc-400 text-xs mb-1 block">Genaue Adresse</label>
+            <input
+              className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2.5 text-sm border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-green-500"
+              placeholder="z.B. Am Wriezener Bahnhof, 10243 Berlin"
+              value={form.address}
+              onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
+            />
           </div>
 
           <div>

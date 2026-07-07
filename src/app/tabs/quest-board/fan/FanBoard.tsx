@@ -74,7 +74,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const [shardBonusByCreator, setShardBonusByCreator] = useState<Record<string, number>>({});
   const [repBonusByCreator, setRepBonusByCreator] = useState<Record<string, number>>({});
 
-  type ConcertEvent = { id: string; title: string; eventDate: string | null; venue: string | null; imageUrl: string | null; creditReward: number; shardReward: number; repReward: number; status: string };
+  type ConcertEvent = { id: string; title: string; eventDate: string | null; venue: string | null; address: string | null; imageUrl: string | null; creditReward: number; shardReward: number; repReward: number; status: string };
   const [concertEvents, setConcertEvents] = useState<ConcertEvent[]>([]);
   const [checkedInConcerts, setCheckedInConcerts] = useState<Set<string>>(new Set());
   const [checkingInConcert, setCheckingInConcert] = useState<string | null>(null);
@@ -539,11 +539,15 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                     <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
                     <p className="text-white font-black text-sm">🎤 {ev.title}</p>
                   </div>
-                  <p className="text-zinc-500 text-xs mt-0.5">
-                    {ev.eventDate ? new Date(ev.eventDate).toLocaleString('de-DE') : ''}
-                    {ev.venue ? (ev.eventDate ? ` · ${ev.venue}` : ev.venue) : ''}
-                    {!ev.eventDate && !ev.venue && 'Live Event'}
-                  </p>
+                  {ev.eventDate && (
+                    <p className="text-zinc-400 text-xs mt-0.5 font-medium">
+                      🗓 {new Date(ev.eventDate).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
+                      {' · '}
+                      🕐 {new Date(ev.eventDate).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                    </p>
+                  )}
+                  {ev.venue && <p className="text-zinc-500 text-xs mt-0.5">📍 {ev.venue}</p>}
+                  {ev.address && <p className="text-zinc-600 text-xs">{ev.address}</p>}
                 </div>
                 <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                   {ev.creditReward > 0 && <span className="flex items-center gap-1 text-amber-300 text-xs font-bold"><span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />{ev.creditReward}</span>}

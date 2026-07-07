@@ -20,6 +20,7 @@ async function ensureTables() {
     )
   `;
   await sql`ALTER TABLE concert_events ADD COLUMN IF NOT EXISTS image_url TEXT`;
+  await sql`ALTER TABLE concert_events ADD COLUMN IF NOT EXISTS address TEXT`;
   await sql`
     CREATE TABLE IF NOT EXISTS concert_checkins (
       id TEXT PRIMARY KEY,
@@ -39,6 +40,7 @@ export interface ConcertEvent {
   title: string;
   eventDate: string | null;
   venue: string | null;
+  address: string | null;
   imageUrl: string | null;
   creditReward: number;
   shardReward: number;
@@ -77,6 +79,7 @@ export async function getConcertEvents(artistWallet: string): Promise<ConcertEve
     title: r.title as string,
     eventDate: r.event_date as string | null,
     venue: r.venue as string | null,
+    address: r.address as string | null,
     imageUrl: r.image_url as string | null,
     creditReward: Number(r.credit_reward),
     shardReward: Number(r.shard_reward),
@@ -102,6 +105,7 @@ export async function getActiveConcertEvents(artistWallet: string): Promise<Conc
     title: r.title as string,
     eventDate: r.event_date as string | null,
     venue: r.venue as string | null,
+    address: r.address as string | null,
     imageUrl: r.image_url as string | null,
     creditReward: Number(r.credit_reward),
     shardReward: Number(r.shard_reward),
@@ -135,6 +139,7 @@ export async function createConcertEvent(
   title: string,
   eventDate: string | null,
   venue: string | null,
+  address: string | null,
   creditReward: number,
   shardReward: number,
   repReward: number,
@@ -144,8 +149,8 @@ export async function createConcertEvent(
   const sql = getDb();
   const id = `ce_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   await sql`
-    INSERT INTO concert_events (id, artist_wallet, title, event_date, venue, image_url, credit_reward, shard_reward, rep_reward, status)
-    VALUES (${id}, ${artistWallet.toLowerCase()}, ${title}, ${eventDate || null}, ${venue || null}, ${imageUrl}, ${creditReward}, ${shardReward}, ${repReward}, 'active')
+    INSERT INTO concert_events (id, artist_wallet, title, event_date, venue, address, image_url, credit_reward, shard_reward, rep_reward, status)
+    VALUES (${id}, ${artistWallet.toLowerCase()}, ${title}, ${eventDate || null}, ${venue || null}, ${address || null}, ${imageUrl}, ${creditReward}, ${shardReward}, ${repReward}, 'active')
   `;
   return id;
 }

@@ -23,6 +23,7 @@ export async function GET(req: Request) {
         event_date TEXT,
         venue TEXT,
         image_url TEXT,
+        address TEXT,
         credit_reward INTEGER DEFAULT 0,
         shard_reward INTEGER DEFAULT 0,
         rep_reward INTEGER DEFAULT 0,
