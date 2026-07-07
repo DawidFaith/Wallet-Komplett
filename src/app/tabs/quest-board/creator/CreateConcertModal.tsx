@@ -49,7 +49,7 @@ export default function CreateConcertModal({ open, onClose, walletAddress, onCre
       let data: { error?: string } = {};
       try { data = await res.json(); } catch { /* ignore parse error */ }
       if (!res.ok) { setError(data.error ?? `Fehler ${res.status}`); return; }
-      setForm({ title: '', eventDate: '', venue: '', creditReward: 0, shardReward: 0, repReward: 0 });
+      setForm({ title: '', eventDate: '', venue: '', address: '', creditReward: 0, shardReward: 0, repReward: 0 });
       setImageUrl(''); setImagePreview('');
       onCreated();
       onClose();
