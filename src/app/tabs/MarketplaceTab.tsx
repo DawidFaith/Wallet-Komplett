@@ -713,8 +713,8 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
           .filter((c: any) => {
             if (!c.nftMintAddress) return false;
             if (listedMints.has(c.nftMintAddress as string)) return false;
-            // Wenn Helius-Daten verfügbar: nur zeigen wenn NFT noch in Wallet ist
-            if (heliusMap.size > 0 && !heliusMap.has(c.nftMintAddress as string)) return false;
+            // Nur zeigen wenn NFT aktuell in der Wallet ist (Helius als einzige Quelle)
+            if (!heliusMap.has(c.nftMintAddress as string)) return false;
             return true;
           })
           .map((c: any) => {
@@ -761,8 +761,8 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
         const shopNfts: OwnedNft[] = [];
         shopByMint.forEach((s, mint) => {
           if (listedMints.has(mint)) return;
-          // Wenn Helius-Daten verfügbar: nur zeigen wenn NFT noch in Wallet ist
-          if (heliusMap.size > 0 && !heliusMap.has(mint)) return;
+          // Nur zeigen wenn NFT aktuell in der Wallet ist (Helius als einzige Quelle)
+          if (!heliusMap.has(mint)) return;
           const helius = heliusMap.get(mint);
           shopNfts.push({
             id:                  s.purchaseId,
