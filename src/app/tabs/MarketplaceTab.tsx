@@ -7,6 +7,8 @@ import { FaTag, FaTimes, FaCheckCircle, FaExclamationTriangle, FaGem, FaPlus, Fa
 import { MdSell, MdStorefront } from 'react-icons/md';
 import { HiOutlineViewGrid } from 'react-icons/hi';
 import { RiUserStarFill } from 'react-icons/ri';
+import { useLang } from '../components/LangContext';
+import { t, tFmt } from '../utils/i18n';
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
 
@@ -133,6 +135,7 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
   onCancel: (l: Listing) => void;
   cancelLoading: boolean;
 }) {
+  const lang = useLang();
   const isSong = listing.nft_type === 'song' || detectCategory(listing) === 'song';
   const cfg    = isSong ? null : rc(listing.rarity);
 
@@ -183,7 +186,7 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
     <div className={`relative flex flex-col rounded-2xl border ${cardBorder} ${cardBg} ${cardGlow} overflow-hidden group transition-all duration-200 hover:scale-[1.02]`}>
       {isSelf && (
         <div className="absolute top-2 left-2 z-10 text-[9px] font-black uppercase tracking-wider bg-amber-500/90 text-black rounded-full px-2 py-0.5">
-          Dein
+          {t('mp.badgeOwn', lang)}
         </div>
       )}
 
@@ -267,7 +270,7 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
         {/* Attribute-Chips */}
         {isSong ? (
           <div className="flex flex-wrap gap-1">
-            <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">Musik</span>
+            <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">{t('mp.tagMusic', lang)}</span>
             <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">D.FAITH</span>
             {listing.edition_number != null && (
               <span className="text-[8px] bg-amber-900/40 text-amber-400 rounded-full px-1.5 py-0.5 border border-amber-500/30">Edition #{listing.edition_number}</span>
@@ -311,14 +314,14 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
               disabled={cancelLoading}
               className="text-[10px] bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl px-2.5 py-1 transition-colors disabled:opacity-50 font-semibold"
             >
-              {cancelLoading ? '…' : 'Storno'}
+              {cancelLoading ? '…' : t('mp.cancel', lang)}
             </button>
           ) : (
             <button
               onClick={() => onBuy(listing)}
               className={`text-[10px] font-bold rounded-xl px-2.5 py-1 transition-all border ${isSong ? 'border-amber-500/40 bg-amber-950/20 text-amber-400 hover:bg-amber-900/30' : `${cfg!.border} ${cfg!.bg} ${cfg!.text} hover:brightness-125`} active:scale-95`}
             >
-              Kaufen
+              {t('mp.buy', lang)}
             </button>
           )}
         </div>
@@ -336,6 +339,7 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const lang = useLang();
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
   const [done, setDone]       = useState(false);
@@ -374,7 +378,7 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:pb-0">
       <div className="bg-[#161410] border border-white/[0.08] rounded-2xl p-5 w-full max-w-sm shadow-2xl">
         <div className="flex justify-between items-center mb-5">
-          <h3 className="font-black text-white text-base">NFT kaufen</h3>
+          <h3 className="font-black text-white text-base">{t('mp.buyTitle', lang)}</h3>
           <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
             <FaTimes size={14} />
           </button>
@@ -402,7 +406,7 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
               </div>
             )}
             <p className={`font-black text-sm truncate ${isSong ? 'text-amber-300' : cfg!.text}`}>{listing.collection_name ?? listing.nft_name ?? '—'}</p>
-            {listing.artist_name && <p className="text-zinc-500 text-[10px]">von {listing.artist_name}</p>}
+            {listing.artist_name && <p className="text-zinc-500 text-[10px]">{t('mp.buyFrom', lang)} {listing.artist_name}</p>}
             {isSong && description && (
               <p className="text-zinc-400 text-[9px] leading-relaxed mt-1">{description}</p>
             )}
@@ -426,25 +430,25 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
         {/* Preisübersicht */}
         <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 space-y-2 mb-4">
           <div className="flex justify-between text-sm">
-            <span className="text-zinc-400">Preis</span>
+            <span className="text-zinc-400">{t('mp.buyPrice', lang)}</span>
             <span className={`font-black ${isSong ? 'text-amber-400' : cfg!.text}`}>{price.toLocaleString('de-DE')} D.FAITH</span>
           </div>
           <div className="h-px bg-white/[0.06]" />
           <div className="flex justify-between text-xs text-zinc-500">
-            <span>Artist Royalty (5%)</span>
+            <span>{t('mp.buyRoyalty', lang)}</span>
             <span>{(price * 0.05).toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-xs text-zinc-500">
-            <span>Plattformgebühr (2.5%)</span>
+            <span>{t('mp.buyFee', lang)}</span>
             <span>{(price * 0.025).toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-xs text-zinc-500">
-            <span>Verkäufer erhält</span>
+            <span>{t('mp.buySellerGets', lang)}</span>
             <span>{(price * 0.925).toFixed(2)}</span>
           </div>
           <div className="h-px bg-white/[0.06]" />
           <div className={`flex justify-between text-xs font-semibold ${enough ? 'text-zinc-300' : 'text-red-400'}`}>
-            <span>Dein Guthaben</span>
+            <span>{t('mp.buyBalance', lang)}</span>
             <span>{balance.toLocaleString('de-DE')} D.FAITH</span>
           </div>
         </div>
@@ -452,13 +456,13 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
         {!enough && (
           <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-xs mb-4">
             <FaExclamationTriangle size={12} className="shrink-0" />
-            <span>Nicht genug D.FAITH — benötigt {price.toLocaleString('de-DE')}</span>
+            <span>{tFmt('mp.buyNotEnough', lang, { n: price.toLocaleString('de-DE') })}</span>
           </div>
         )}
 
         {done ? (
           <div className="flex items-center gap-2 justify-center bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-green-400 text-sm font-semibold">
-            <FaCheckCircle size={14} /> NFT erfolgreich gekauft!
+            <FaCheckCircle size={14} /> {t('mp.buySuccess', lang)}
           </div>
         ) : (
           <>
@@ -471,9 +475,9 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                  Kaufe…
+                  {t('mp.buyLoading', lang)}
                 </span>
-              ) : `${price.toLocaleString('de-DE')} D.FAITH bezahlen`}
+              ) : tFmt('mp.buyPay', lang, { n: price.toLocaleString('de-DE') })}
             </button>
           </>
         )}
@@ -489,6 +493,7 @@ function DepositModal({ walletAddress, onClose, onSuccess }: {
   onClose: () => void;
   onSuccess: (amount: number) => void;
 }) {
+  const lang = useLang();
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
   const [loading, setLoading]           = useState(true);
   const [amount, setAmount]             = useState('');
@@ -516,7 +521,7 @@ function DepositModal({ walletAddress, onClose, onSuccess }: {
     const amt = Number(amount);
     if (!amt || amt <= 0) return;
     if (tokenBalance !== null && amt > tokenBalance) {
-      setError(`Nicht genug Tokens — verfügbar: ${tokenBalance.toFixed(2)}`);
+      setError(tFmt('mp.depositNotEnough', lang, { n: tokenBalance.toFixed(2) }));
       return;
     }
     setDepositing(true);
@@ -546,7 +551,7 @@ function DepositModal({ walletAddress, onClose, onSuccess }: {
         <div className="flex justify-between items-center mb-5">
           <h3 className="font-black text-white text-base flex items-center gap-2">
             <FaPlus className="text-amber-400" size={14} />
-            Credits aufladen
+            {t('mp.depositTitle', lang)}
           </h3>
           <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
             <FaTimes size={14} />
@@ -554,26 +559,26 @@ function DepositModal({ walletAddress, onClose, onSuccess }: {
         </div>
 
         <div className="bg-white/[0.04] border border-white/[0.07] rounded-xl p-4 mb-4 space-y-2">
-          <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-3">Wie funktioniert es?</p>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-3">{t('mp.depositHowTitle', lang)}</p>
           <div className="flex items-start gap-2 text-xs text-zinc-400">
             <span className="text-amber-400 font-black shrink-0">1.</span>
-            <span>Du sendest D.FAITH-Token aus deinem Platform-Wallet ins Treasury</span>
+            <span>{t('mp.depositStep1', lang)}</span>
           </div>
           <div className="flex items-start gap-2 text-xs text-zinc-400">
             <span className="text-amber-400 font-black shrink-0">2.</span>
-            <span>Die Plattform schreibt dir den Gegenwert als Credits gut</span>
+            <span>{t('mp.depositStep2', lang)}</span>
           </div>
           <div className="flex items-start gap-2 text-xs text-zinc-400">
             <span className="text-amber-400 font-black shrink-0">3.</span>
-            <span>Mit Credits kannst du NFTs auf dem Marktplatz kaufen</span>
+            <span>{t('mp.depositStep3', lang)}</span>
           </div>
         </div>
 
         <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 mb-4">
           <div className="flex justify-between items-center">
-            <span className="text-zinc-500 text-xs">Verfügbare Tokens</span>
+            <span className="text-zinc-500 text-xs">{t('mp.depositAvailable', lang)}</span>
             {loading ? (
-              <span className="text-zinc-600 text-xs">Wird geladen…</span>
+              <span className="text-zinc-600 text-xs">{t('mp.depositLoading', lang)}</span>
             ) : (
               <span className="text-amber-300 font-black text-sm">{max.toLocaleString('de-DE', { maximumFractionDigits: 2 })} DFAITH</span>
             )}
@@ -582,12 +587,12 @@ function DepositModal({ walletAddress, onClose, onSuccess }: {
 
         {done ? (
           <div className="flex items-center gap-2 justify-center bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-green-400 text-sm font-semibold">
-            <FaCheckCircle size={14} /> Credits erfolgreich aufgeladen!
+            <FaCheckCircle size={14} /> {t('mp.depositSuccess', lang)}
           </div>
         ) : (
           <>
             <div className="mb-4">
-              <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest block mb-2">Betrag in D.FAITH</label>
+              <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest block mb-2">{t('mp.depositAmountLabel', lang)}</label>
               <div className="flex gap-2">
                 <input
                   type="number"
@@ -608,7 +613,7 @@ function DepositModal({ walletAddress, onClose, onSuccess }: {
               </div>
               {amount && Number(amount) > 0 && (
                 <p className="text-zinc-500 text-[10px] mt-1.5">
-                  = <span className="text-amber-400 font-bold">{Number(amount).toLocaleString('de-DE')} D.FAITH Credits</span>
+                  = <span className="text-amber-400 font-bold">{tFmt('mp.depositConverts', lang, { n: Number(amount).toLocaleString('de-DE') })}</span>
                 </p>
               )}
             </div>
@@ -628,9 +633,9 @@ function DepositModal({ walletAddress, onClose, onSuccess }: {
               {depositing ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                  Wird aufgeladen…
+                  {t('mp.depositLoading2', lang)}
                 </span>
-              ) : 'Tokens zu Credits umwandeln'}
+              ) : t('mp.depositConvert', lang)}
             </button>
           </>
         )}
@@ -646,6 +651,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const lang = useLang();
   const [ownedNfts, setOwnedNfts]     = useState<OwnedNft[]>([]);
   const [loadingNfts, setLoadingNfts] = useState(true);
   const [selected, setSelected]       = useState<OwnedNft | null>(null);
@@ -828,7 +834,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
         <div className="flex justify-between items-center mb-5">
           <h3 className="font-black text-white text-base flex items-center gap-2">
             <MdSell className="text-amber-400" size={16} />
-            NFT verkaufen
+            {t('mp.sellTitle', lang)}
           </h3>
           <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
             <FaTimes size={14} />
@@ -837,22 +843,22 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
 
         {done ? (
           <div className="flex items-center gap-2 justify-center bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-green-400 text-sm font-semibold">
-            <FaCheckCircle size={14} /> NFT erfolgreich eingestellt!
+            <FaCheckCircle size={14} /> {t('mp.sellSuccess', lang)}
           </div>
         ) : loadingNfts ? (
           <div className="flex flex-col items-center justify-center py-10 gap-3">
             <span className="w-7 h-7 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
-            <p className="text-zinc-500 text-xs">Lade deine NFTs…</p>
+            <p className="text-zinc-500 text-xs">{t('mp.sellLoadingNfts', lang)}</p>
           </div>
         ) : ownedNfts.length === 0 ? (
           <div className="text-center py-8">
             <FaGem className="text-zinc-700 mx-auto mb-3" size={28} />
-            <p className="text-zinc-400 text-sm font-semibold mb-1">Keine D.FAITH NFTs gefunden</p>
-            <p className="text-zinc-600 text-xs">Kaufe oder minte zuerst ein NFT im Artist Shop oder in deiner Sammlung.</p>
+            <p className="text-zinc-400 text-sm font-semibold mb-1">{t('mp.sellNoNfts', lang)}</p>
+            <p className="text-zinc-600 text-xs">{t('mp.sellNoNftsHint', lang)}</p>
           </div>
         ) : (
           <>
-            <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">NFT auswählen</p>
+            <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">{t('mp.sellSelectLabel', lang)}</p>
             <div className="grid grid-cols-2 gap-2 mb-4 max-h-60 overflow-y-auto pr-1 scrollbar-none">
               {ownedNfts.map((nft) => {
                 const isSong = nft.source === 'shop';
@@ -896,7 +902,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
                     </div>
                     <div className="p-2">
                       <p className={`text-[10px] font-black truncate ${isSong ? 'text-amber-300' : c!.text}`}>{nft.collection_name ?? nft.id.slice(0, 8) + '…'}</p>
-                      {nft.artist_name && <p className="text-zinc-600 text-[9px] truncate">von {nft.artist_name}</p>}
+                      {nft.artist_name && <p className="text-zinc-600 text-[9px] truncate">{t('mp.sellVon', lang)} {nft.artist_name}</p>}
                       {nft.attributes && nft.attributes.filter(a => ['Rep Bonus', 'Credit Bonus'].includes(a.trait_type)).map(a => (
                         <p key={a.trait_type} className="text-[8px] text-zinc-500">{a.trait_type}: {a.value}</p>
                       ))}
@@ -908,7 +914,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
 
             {selected && (
               <div className={`rounded-xl border p-3 mb-4 ${selectedIsSong ? 'border-amber-500/40 bg-amber-950/20' : `${cfg!.border} ${cfg!.bg}`}`}>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Ausgewählt</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-1">{t('mp.sellSelectedLabel', lang)}</p>
                 <div className="flex items-center gap-2">
                   {selected.image_url && (
                     <Image src={selected.image_url} alt="" width={32} height={32} className="w-8 h-8 rounded-lg object-cover shrink-0 border border-white/10" />
@@ -926,7 +932,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
             )}
 
             <div className="mb-4">
-              <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest block mb-2">Preis in D.FAITH</label>
+              <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest block mb-2">{t('mp.sellPriceLabel', lang)}</label>
               <div className="relative">
                 <input
                   type="number"
@@ -940,7 +946,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
               </div>
               {price && Number(price) > 0 && (
                 <p className="text-zinc-500 text-[10px] mt-1.5">
-                  Du erhältst: <span className="text-amber-400 font-bold">{(Number(price) * 0.925).toFixed(2)} D.FAITH</span> (nach 5% Royalty + 2.5% Gebühr)
+                  {tFmt('mp.sellYouGet', lang, { n: (Number(price) * 0.925).toFixed(2) })}
                 </p>
               )}
             </div>
@@ -957,9 +963,9 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                  Wird eingestellt…
+                  {t('mp.sellListLoading', lang)}
                 </span>
-              ) : 'NFT einstellen'}
+              ) : t('mp.sellList', lang)}
             </button>
           </>
         )}
@@ -972,6 +978,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
 
 export default function MarketplaceTab() {
   const { user }          = useUser();
+  const lang              = useLang();
   const walletAddress     = user?.id ?? '';
 
   const [view, setView]               = useState<'browse' | 'my'>('browse');
@@ -1082,9 +1089,9 @@ export default function MarketplaceTab() {
           <div className="flex items-center gap-3 mb-4">
             <Image src="/D.FAITH.png" alt="D.FAITH" width={40} height={40} className="w-10 h-10 rounded-full object-contain shrink-0" />
             <div>
-              <h1 className="text-white font-black text-xl tracking-wide">D.FAITH Marktplatz</h1>
+              <h1 className="text-white font-black text-xl tracking-wide">{t('mp.title', lang)}</h1>
               <p className="text-zinc-400 text-[10px] tracking-widest uppercase font-semibold mt-0.5">
-                NFTs kaufen · verkaufen
+                {t('mp.subtitle', lang)}
               </p>
             </div>
           </div>
@@ -1094,7 +1101,7 @@ export default function MarketplaceTab() {
             <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 flex items-center justify-between gap-3">
               <div className="flex gap-3 items-center flex-1 min-w-0">
                 <div className="min-w-0">
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-0.5">Credits</p>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-0.5">{t('mp.credits', lang)}</p>
                   <p className="text-amber-300 font-black text-xl leading-none">{balance.toLocaleString('de-DE')}</p>
                   <p className="text-zinc-500 text-[9px] mt-0.5">D.FAITH Credits</p>
                 </div>
@@ -1102,7 +1109,7 @@ export default function MarketplaceTab() {
                   onClick={() => setShowDeposit(true)}
                   className="flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 font-bold rounded-xl px-3 py-2 text-xs transition-all shrink-0"
                 >
-                  <FaPlus size={9} /> Aufladen
+                  <FaPlus size={9} /> {t('mp.topUp', lang)}
                 </button>
               </div>
               <button
@@ -1110,7 +1117,7 @@ export default function MarketplaceTab() {
                 className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-black font-black rounded-xl px-4 py-2.5 text-sm transition-all shrink-0"
               >
                 <MdSell size={14} />
-                Verkaufen
+                {t('mp.sell', lang)}
               </button>
             </div>
           )}
@@ -1127,7 +1134,7 @@ export default function MarketplaceTab() {
                   : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
-              <HiOutlineViewGrid size={13} /> Alle Listings
+              <HiOutlineViewGrid size={13} /> {t('mp.tabBrowse', lang)}
               {listings.length > 0 && (
                 <span className="bg-amber-500/20 text-amber-300 text-[9px] font-black rounded-full px-1.5 py-0.5">
                   {listings.length}
@@ -1142,7 +1149,7 @@ export default function MarketplaceTab() {
                   : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
-              <FaTag size={11} /> Meine Listings
+              <FaTag size={11} /> {t('mp.tabMine', lang)}
               {myListings.length > 0 && (
                 <span className="bg-violet-500/20 text-violet-300 text-[9px] font-black rounded-full px-1.5 py-0.5">
                   {myListings.length}
@@ -1164,9 +1171,9 @@ export default function MarketplaceTab() {
               {/* Kategorie-Tabs */}
               <div className="flex gap-0.5 flex-1 bg-white/[0.03] border border-white/[0.06] rounded-2xl p-1 min-w-0">
                 {([
-                  { key: 'all',         icon: <HiOutlineViewGrid size={11} />, label: 'Alle'         },
-                  { key: 'collectible', icon: <GiCrystalShine size={11} />,   label: 'Collectibles'  },
-                  { key: 'song',        icon: <FaMusic size={10} />,           label: 'Artist Shop'   },
+                  { key: 'all',         icon: <HiOutlineViewGrid size={11} />, label: t('mp.catAll', lang)         },
+                  { key: 'collectible', icon: <GiCrystalShine size={11} />,   label: t('mp.catCollectibles', lang) },
+                  { key: 'song',        icon: <FaMusic size={10} />,           label: t('mp.catArtistShop', lang)  },
                 ] as const).map(({ key, icon, label }) => (
                   <button
                     key={key}
@@ -1224,7 +1231,7 @@ export default function MarketplaceTab() {
 
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-3">
-                <span className="font-black text-white text-base">Filter & Sortierung</span>
+                <span className="font-black text-white text-base">{t('mp.filterTitle', lang)}</span>
                 <button
                   onClick={() => {
                     setSortOrder('price_asc');
@@ -1234,18 +1241,18 @@ export default function MarketplaceTab() {
                   }}
                   className="text-xs text-amber-400 hover:text-amber-300 font-bold"
                 >
-                  Zurücksetzen
+                  {t('mp.filterReset', lang)}
                 </button>
               </div>
 
               {/* Sortierung */}
               <div className="px-5 mb-5">
-                <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-2.5">Sortierung</p>
+                <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-2.5">{t('mp.sortLabel', lang)}</p>
                 <div className="flex gap-2 flex-wrap">
                   {([
-                    { key: 'price_asc',  icon: <FaSortAmountUp size={10} />,   label: 'Preis aufsteigend'  },
-                    { key: 'price_desc', icon: <FaSortAmountDown size={10} />, label: 'Preis absteigend'   },
-                    { key: 'newest',     icon: <FaClock size={10} />,          label: 'Neueste zuerst'     },
+                    { key: 'price_asc',  icon: <FaSortAmountUp size={10} />,   label: t('mp.sortPriceAsc', lang)  },
+                    { key: 'price_desc', icon: <FaSortAmountDown size={10} />, label: t('mp.sortPriceDesc', lang)  },
+                    { key: 'newest',     icon: <FaClock size={10} />,          label: t('mp.sortNewest', lang)     },
                   ] as const).map(({ key, icon, label }) => (
                     <button
                       key={key}
@@ -1265,7 +1272,7 @@ export default function MarketplaceTab() {
               {/* Seltenheit (nur Collectibles) */}
               {categoryFilter !== 'song' && (
                 <div className="px-5 mb-5">
-                  <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-2.5">Seltenheit</p>
+                  <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-2.5">{t('mp.rarityLabel', lang)}</p>
                   <div className="flex gap-1.5 flex-wrap">
                     {(['all', ...RARITY_ORDER] as const).map((r) => {
                       const c = r !== 'all' ? RARITY_CFG[r as Rarity] : null;
@@ -1280,7 +1287,7 @@ export default function MarketplaceTab() {
                               : 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-zinc-200'
                           }`}
                         >
-                          {r === 'all' ? 'Alle' : RARITY_CFG[r as Rarity].label}
+                          {r === 'all' ? t('mp.catAll', lang) : RARITY_CFG[r as Rarity].label}
                         </button>
                       );
                     })}
@@ -1291,7 +1298,7 @@ export default function MarketplaceTab() {
               {/* Kollektion (wenn vorhanden) */}
               {categoryFilter !== 'song' && collectionStats.length > 0 && (
                 <div className="px-5 mb-5">
-                  <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-2.5">Kollektion</p>
+                  <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-2.5">{t('mp.collectionLabel', lang)}</p>
                   <div className="flex gap-1.5 flex-wrap">
                     <button
                       onClick={() => setCollectionFilter(null)}
@@ -1301,7 +1308,7 @@ export default function MarketplaceTab() {
                           : 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-zinc-200'
                       }`}
                     >
-                      Alle
+                      {t('mp.catAll', lang)}
                     </button>
                     {collectionStats.map(({ name, count }) => (
                       <button
@@ -1323,7 +1330,7 @@ export default function MarketplaceTab() {
               {/* Künstler (Artist Shop) */}
               {categoryFilter !== 'collectible' && artistStats.length > 0 && (
                 <div className="px-5 mb-5">
-                  <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-2.5">Künstler</p>
+                  <p className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-2.5">{t('mp.artistLabel', lang)}</p>
                   <div className="flex gap-1.5 flex-wrap">
                     <button
                       onClick={() => setArtistFilter(null)}
@@ -1333,7 +1340,7 @@ export default function MarketplaceTab() {
                           : 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-zinc-200'
                       }`}
                     >
-                      <RiUserStarFill size={11} /> Alle
+                      <RiUserStarFill size={11} /> {t('mp.catAll', lang)}
                     </button>
                     {artistStats.map(({ name, picture }) => (
                       <button
@@ -1359,7 +1366,7 @@ export default function MarketplaceTab() {
                   onClick={() => setShowFilterSheet(false)}
                   className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-black font-black rounded-2xl text-sm transition-all"
                 >
-                  Fertig
+                  {t('mp.filterDone', lang)}
                 </button>
               </div>
             </div>
@@ -1383,7 +1390,7 @@ export default function MarketplaceTab() {
                     <RiUserStarFill size={22} className={artistFilter === null ? 'text-amber-400' : 'text-zinc-500'} />
                   </div>
                 </div>
-                <p className="text-[10px] text-zinc-300 text-center leading-tight group-hover:text-white transition-colors">Alle</p>
+                <p className="text-[10px] text-zinc-300 text-center leading-tight group-hover:text-white transition-colors">{t('mp.catAll', lang)}</p>
                 <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
                   artistFilter === null ? 'bg-amber-500/30 text-amber-300' : 'bg-white/10 text-zinc-500'
                 }`}>{listings.length}</span>
@@ -1420,7 +1427,7 @@ export default function MarketplaceTab() {
           {loading && view === 'browse' ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
               <span className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
-              <p className="text-zinc-500 text-xs">Lade Listings…</p>
+              <p className="text-zinc-500 text-xs">{t('mp.loading', lang)}</p>
             </div>
           ) : visibleListings.length === 0 ? (
             <div className="text-center py-16">
@@ -1428,17 +1435,17 @@ export default function MarketplaceTab() {
                 <MdStorefront className="text-zinc-600" size={28} />
               </div>
               <p className="text-zinc-400 font-semibold text-sm mb-1">
-                {view === 'my' ? 'Du hast keine aktiven Listings' : 'Keine NFTs gelistet'}
+                {view === 'my' ? t('mp.emptyMine', lang) : t('mp.emptyBrowse', lang)}
               </p>
               <p className="text-zinc-600 text-xs">
-                {view === 'my' ? 'Stelle dein erstes NFT ein und verdiene D.FAITH.' : 'Schau bald wieder vorbei — der Marktplatz füllt sich.'}
+                {view === 'my' ? t('mp.emptyMineHint', lang) : t('mp.emptyBrowseHint', lang)}
               </p>
               {view === 'my' && (
                 <button
                   onClick={() => setShowSell(true)}
                   className="mt-4 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors border border-amber-500/30 rounded-full px-4 py-1.5"
                 >
-                  NFT einstellen →
+                  {t('mp.listNft', lang)}
                 </button>
               )}
             </div>
