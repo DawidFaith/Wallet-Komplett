@@ -193,8 +193,12 @@ export async function mintSongMasterEdition(params: {
     tokenStandard: TokenStandard.NonFungible,
   })).sendAndConfirm(umi);
 
-  // ── 2. Master Edition mit Verweis auf die Song-Collection erstellen ──────────
+  // ── 2. Master Edition erstellen + Creator/Collection in einer Transaktion verifizieren ──
+  // Alles in einer TX damit die Verify-Instruktionen die frisch erstellte Metadata-PDA
+  // sehen — separate Transaktionen können auf einem anderen RPC-Node landen der den
+  // vorherigen State noch nicht kennt (IncorrectOwner / 0x39).
   const mintSigner = generateSigner(umi);
+  const [masterMetadataPda] = findMetadataPda(umi, { mint: mintSigner.publicKey });
   await createV1(umi, {
     mint:                 mintSigner,
     authority:            umi.identity,
@@ -217,19 +221,13 @@ export async function mintSongMasterEdition(params: {
     tokenOwner:    umi.identity.publicKey,
     amount:        1,
     tokenStandard: TokenStandard.NonFungible,
-  })).sendAndConfirm(umi);
-
-  // ── 3. Creator + Collection auf dem Master verifizieren ─────────────────────
-  const [masterMetadataPda] = findMetadataPda(umi, { mint: mintSigner.publicKey });
-  await verifyCreatorV1(umi, {
+  })).add(verifyCreatorV1(umi, {
     metadata:  masterMetadataPda,
     authority: artistSigner,
-  }).sendAndConfirm(umi);
-
-  await verifyCollectionV1(umi, {
+  })).add(verifyCollectionV1(umi, {
     metadata:       masterMetadataPda,
     collectionMint: collectionMintSigner.publicKey,
-  }).sendAndConfirm(umi);
+  })).sendAndConfirm(umi);
 
   return {
     masterMint:     mintSigner.publicKey.toString(),
