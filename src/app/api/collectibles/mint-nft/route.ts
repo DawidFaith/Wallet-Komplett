@@ -2,8 +2,8 @@
  * POST /api/collectibles/mint-nft
  * Body: { walletAddress, collectionId, rarity }
  *
- * Mintет ein DB-Collectible als mpl-core Asset on-chain.
- * User zahlt keine Gebühren (Treasury übernimmt) — der Wert liegt im NFT selbst.
+ * Mintet ein DB-Collectible als mpl-core Asset on-chain.
+ * Der User zahlt die Mint-Gebühren (~0.002-0.003 SOL) von seinem Solana-Wallet.
  * Lazy-erstellt die mpl-core Collection falls noch nicht vorhanden.
  */
 import { NextRequest, NextResponse } from 'next/server';

@@ -39,8 +39,9 @@ import { decryptKey } from './solanaCrypto';
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
 // SOL-Mindestguthaben für NFT-Operationen (Rent + Tx-Gebühren, mit Puffer)
+// Gemessene Kosten (13.07.2026): Song-Erstellung 0,0394 / Print Edition 0,0197
 const REQUIRED_SOL_SONG_CREATION = 0.05;   // Collection NFT + Master Edition + Verifikationen
-const REQUIRED_SOL_PRINT_EDITION = 0.02;   // Print Edition + Collection-Verify
+const REQUIRED_SOL_PRINT_EDITION = 0.025;  // Print Edition + Collection-Verify
 
 async function checkSolBalance(
   connection: Connection,
@@ -123,8 +124,11 @@ export async function mintSongMasterEdition(params: {
   const artistSigner    = createSignerFromKeypair(umi, artistUmiKp);
   umi.payer             = artistSigner;
 
-  // SOL-Prüfung temporär deaktiviert (zum Testen)
+  // Vorab prüfen, damit der Mint nicht mittendrin abbricht (Collection wäre
+  // dann schon erstellt). Echte Kosten: 2 × ~0,0197 SOL (Metaplex-Fee 0,01 +
+  // Rent pro NFT) ≈ 0,0394 — Check mit Puffer bei 0,05.
   const conn = new Connection(RPC_URL, 'confirmed');
+  await checkSolBalance(conn, artistWeb3Kp.publicKey, REQUIRED_SOL_SONG_CREATION, 'Artist');
 
   // ── 1. Collection NFT für diesen Song erstellen (Treasury hält es) ──────────
   // Jeder Song bekommt seine eigene Collection NFT. Master + alle Print Editions
