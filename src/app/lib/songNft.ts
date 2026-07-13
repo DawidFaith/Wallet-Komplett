@@ -94,6 +94,7 @@ export async function mintSongMasterEdition(params: {
     itemId,
     artistSolanaAddress,
     artistPrivateKey,
+    artistName,
     title,
     maxSupply,
     symbol = 'DFAITH',
@@ -101,6 +102,11 @@ export async function mintSongMasterEdition(params: {
 
   const appUrl      = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de').replace(/\/$/, '');
   const metadataUri = `${appUrl}/api/nft-metadata/${itemId}`;
+
+  // Collection trägt den Künstlernamen → in Phantom & auf Marktplätzen ist die
+  // Herkunft sofort erkennbar ("Dawid Faith — Songtitel"), eigene Metadata-Variante
+  const collectionName = `${artistName} — ${title}`.slice(0, 32);
+  const collectionUri  = `${metadataUri}?variant=collection`;
 
   // Master Edition auf Solana minten
   // Treasury bleibt Authority (für Heal-Path in printV1), Artist zahlt die Gebühren
@@ -130,9 +136,9 @@ export async function mintSongMasterEdition(params: {
     mint:                 collectionMintSigner,
     authority:            umi.identity,
     updateAuthority:      umi.identity,
-    name:                 title.slice(0, 32),
+    name:                 collectionName,
     symbol:               symbol.slice(0, 10),
-    uri:                  metadataUri,
+    uri:                  collectionUri,
     sellerFeeBasisPoints: percentAmount(0),
     creators:             none(),
     tokenStandard:        TokenStandard.NonFungible,

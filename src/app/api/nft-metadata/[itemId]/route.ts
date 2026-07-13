@@ -17,13 +17,15 @@ export const dynamic = 'force-dynamic';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { itemId: string } },
 ) {
   const { itemId } = params;
   if (!UUID_RE.test(itemId)) {
     return NextResponse.json({ error: 'Ungültige Item-ID' }, { status: 400 });
   }
+  // ?variant=collection → Metadata des Collection-NFTs ("Artist — Titel")
+  const isCollection = new URL(req.url).searchParams.get('variant') === 'collection';
 
   const sql  = getDb();
   const rows = await sql`
@@ -46,6 +48,35 @@ export async function GET(
   const artistName = (item.artist_name as string | null) ?? 'D.FAITH Artist';
   const coverUrl   = (item.image_url as string | null) ?? '';
   const audioUrl   = (item.content_url as string | null) ?? '';
+
+  if (isCollection) {
+    const collectionMetadata = {
+      name:         `${artistName} — ${item.title as string}`,
+      symbol:       'DFAITH',
+      description:  `Official song collection by ${artistName} on D.FAITH. Contains the Master Edition and all numbered Print Editions of "${item.title as string}".`,
+      image:        coverUrl,
+      external_url: 'https://app.dawidfaith.de',
+      properties: {
+        category: 'image',
+        files:    [{ uri: coverUrl, type: 'image/jpeg' }],
+        ...(item.artist_solana_address
+          ? { creators: [{ address: item.artist_solana_address as string, share: 100 }] }
+          : {}),
+      },
+      attributes: [
+        { trait_type: 'Type',     value: 'Song Collection' },
+        { trait_type: 'Artist',   value: artistName },
+        { trait_type: 'Platform', value: 'D.FAITH' },
+        { trait_type: 'Website',  value: 'app.dawidfaith.de' },
+      ],
+    };
+    return NextResponse.json(collectionMetadata, {
+      headers: {
+        'Cache-Control':               'no-store',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  }
 
   const metadata = {
     name:          item.title as string,
