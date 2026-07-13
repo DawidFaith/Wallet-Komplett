@@ -77,8 +77,9 @@ export async function GET(
 
   return NextResponse.json(metadata, {
     headers: {
-      // Kurz cachen: Edits am Item (Titel/Cover) sollen zeitnah durchschlagen
-      'Cache-Control':               'public, max-age=300',
+      // Kein Caching: Vercel-Edge würde sonst die erste Indexer-Antwort einfrieren
+      // (Race direkt nach dem Mint) und Item-Edits kämen verspätet an
+      'Cache-Control':               'no-store',
       'Access-Control-Allow-Origin': '*',
     },
   });

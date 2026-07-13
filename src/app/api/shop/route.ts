@@ -118,8 +118,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // nft_max_supply schon beim INSERT setzen: DAS-Indexer holen die Metadata-URL
+  // sekundenschnell nach dem Mint — zu dem Zeitpunkt muss der Wert schon in der DB stehen
+  const effectiveMaxSupply = typeof nftMaxSupply === 'number' && nftMaxSupply > 0 ? nftMaxSupply : 100;
   const rows = await sql`
-    INSERT INTO shop_items (artist_wallet, title, description, type, price_credits, price_tokens, content_url, image_url, required_level)
+    INSERT INTO shop_items (artist_wallet, title, description, type, price_credits, price_tokens, content_url, image_url, required_level, nft_max_supply)
     VALUES (
       ${wallet.toLowerCase()},
       ${title.trim()},
@@ -129,7 +132,8 @@ export async function POST(req: NextRequest) {
       ${typeof priceTokens === 'number' && priceTokens > 0 ? priceTokens : null},
       ${contentUrl?.trim() ?? ''},
       ${imageUrl?.trim() ?? ''},
-      ${typeof requiredLevel === 'number' && requiredLevel > 0 ? requiredLevel : 0}
+      ${typeof requiredLevel === 'number' && requiredLevel > 0 ? requiredLevel : 0},
+      ${type === 'song' ? effectiveMaxSupply : null}
     )
     RETURNING id, title, type, price_credits, price_tokens, is_active, created_at, required_level
   `;
@@ -151,13 +155,12 @@ export async function POST(req: NextRequest) {
           description:         description?.trim() ?? '',
           coverImageUrl:       imageUrl.trim(),
           audioUrl:            contentUrl.trim(),
-          maxSupply:           typeof nftMaxSupply === 'number' && nftMaxSupply > 0 ? nftMaxSupply : 100,
+          maxSupply:           effectiveMaxSupply,
         });
         await sql`
           UPDATE shop_items
           SET master_edition_mint = ${masterMint},
               nft_collection_mint = ${collectionMint},
-              nft_max_supply      = ${nftMaxSupply},
               is_nft_enabled      = TRUE
           WHERE id = ${item.id}
         `;

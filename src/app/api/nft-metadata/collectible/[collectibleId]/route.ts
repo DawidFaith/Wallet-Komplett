@@ -68,7 +68,8 @@ export async function GET(
 
   return NextResponse.json(metadata, {
     headers: {
-      'Cache-Control':               'public, max-age=300',
+      // Kein Caching: Vercel-Edge würde sonst veraltete Antworten einfrieren
+      'Cache-Control':               'no-store',
       'Access-Control-Allow-Origin': '*',
     },
   });
