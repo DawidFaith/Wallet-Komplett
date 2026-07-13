@@ -35,7 +35,6 @@ import {
 import bs58 from 'bs58';
 import { getTreasuryKeypair } from './solanaOperator';
 import { decryptKey } from './solanaCrypto';
-import { fetchAndUploadToArweave, uploadToArweave, waitForArweaveAvailability } from './arweaveUpload';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
@@ -68,12 +67,18 @@ export interface SongMasterEditionResult {
 
 /**
  * Mintet eine Master Edition für einen Song.
- * Lädt Cover + Audio auf Arweave hoch und erstellt das NFT.
  *
+ * Die on-chain uri zeigt auf /api/nft-metadata/[itemId] — die Metadata wird
+ * dort live aus der DB generiert (Cover/Audio = Vercel-Blob-URLs). Kein
+ * Arweave, keine Upload- oder Gateway-Wartezeit: sofort nach dem Mint komplett
+ * in Phantom/Solscan sichtbar.
+ *
+ * @param itemId               shop_items.id — Basis der Metadata-URL
  * @param artistSolanaAddress  On-chain Wallet des Artists (für Royalties in creators[])
  * @param maxSupply            Maximale Anzahl Print Editions (z.B. 100)
  */
 export async function mintSongMasterEdition(params: {
+  itemId: string;
   artistWallet: string;
   artistSolanaAddress: string;
   artistPrivateKey: string;
@@ -86,69 +91,16 @@ export async function mintSongMasterEdition(params: {
   symbol?: string;
 }): Promise<SongMasterEditionResult> {
   const {
-    artistWallet,
+    itemId,
     artistSolanaAddress,
     artistPrivateKey,
-    artistName,
     title,
-    description,
-    coverImageUrl,
-    audioUrl,
     maxSupply,
     symbol = 'DFAITH',
   } = params;
 
-  // Cover + Audio von Vercel Blob permanent auf Arweave hochladen
-  const [arweaveCover, arweaveAudio] = await Promise.all([
-    fetchAndUploadToArweave(coverImageUrl, 'image/jpeg', [{ name: 'Title', value: title }]),
-    fetchAndUploadToArweave(audioUrl,      'audio/mpeg', [{ name: 'Title', value: title }]),
-  ]);
-
-  // ar:// → https://arweave.net/ damit Solscan + alle Viewer das Bild anzeigen können
-  const toHttps = (url: string) => url.startsWith('ar://') ? `https://arweave.net/${url.slice(5)}` : url;
-  const coverHttps = toHttps(arweaveCover);
-  const audioHttps = toHttps(arweaveAudio);
-
-  // Warten bis Bild + Audio wirklich vom Gateway ausgeliefert werden bevor Metadata gebaut wird
-  await Promise.all([
-    waitForArweaveAvailability(arweaveCover, { maxWaitMs: 120_000, expectContentType: 'image' }),
-    waitForArweaveAvailability(arweaveAudio, { maxWaitMs: 120_000, expectContentType: 'audio' }),
-  ]);
-
-  // Metadata JSON auf Arweave
-  const metadata = {
-    name:          title,
-    symbol,
-    description:   `${description}\n\nLimited to ${maxSupply} numbered editions — each holder receives a unique Print Edition NFT. Tradeable on secondary markets with 5% artist royalties on every resale.`,
-    image:         coverHttps,
-    animation_url: audioHttps,
-    external_url:  'https://app.dawidfaith.de',
-    properties: {
-      category: 'audio',
-      files: [
-        { uri: coverHttps, type: 'image/jpeg' },
-        { uri: audioHttps, type: 'audio/mpeg' },
-      ],
-      creators: [{ address: artistSolanaAddress, share: 100 }],
-    },
-    attributes: [
-      { trait_type: 'Type',         value: 'Music' },
-      { trait_type: 'Artist',       value: artistName },
-      { trait_type: 'Platform',     value: 'D.FAITH' },
-      { trait_type: 'Max Editions', value: String(maxSupply) },
-      { trait_type: 'Royalties',    value: '5%' },
-      { trait_type: 'Release Year', value: String(new Date().getFullYear()) },
-      { trait_type: 'Website',      value: 'app.dawidfaith.de' },
-    ],
-  };
-  const rawMetadataUri = await uploadToArweave(
-    JSON.stringify(metadata),
-    'application/json',
-    [{ name: 'Type', value: 'NFT Metadata' }, { name: 'Title', value: title }],
-  );
-  // ar:// → https://arweave.net/ damit DAS-Indexer, Phantom und alle Tools es direkt auflösen können
-  const metadataUri = toHttps(rawMetadataUri);
-  await waitForArweaveAvailability(rawMetadataUri, { maxWaitMs: 120_000 });
+  const appUrl      = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de').replace(/\/$/, '');
+  const metadataUri = `${appUrl}/api/nft-metadata/${itemId}`;
 
   // Master Edition auf Solana minten
   // Treasury bleibt Authority (für Heal-Path in printV1), Artist zahlt die Gebühren

@@ -142,6 +142,7 @@ export async function POST(req: NextRequest) {
       if (artistRows.length && artistRows[0].solana_address) {
         const artistName = artistNameRows[0]?.display_name as string;
         const { masterMint, collectionMint, metadataUri } = await mintSongMasterEdition({
+          itemId:              item.id,
           artistWallet:        wallet.toLowerCase(),
           artistSolanaAddress: artistRows[0].solana_address as string,
           artistPrivateKey:    artistRows[0].solana_private_key as string,

@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
 
     // Asset minten — User zahlt die Gebühren (~0.002-0.003 SOL)
     const result = await mintCollectibleAsset({
+      collectibleId,
       collectionMint:      nftCollectionMint,
       collectionName:      coll.name as string,
       collectionImageUri:  coll.image_url as string,

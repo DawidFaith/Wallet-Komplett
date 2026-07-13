@@ -29,7 +29,6 @@ import {
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 import { Keypair } from '@solana/web3.js';
 import { getTreasuryKeypair } from './solanaOperator';
-import { fetchAndUploadToArweave, uploadToArweave, waitForArweaveAvailability } from './arweaveUpload';
 import type { CollectibleRarity } from './questDb/collectibles';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
@@ -105,7 +104,56 @@ export interface CollectionNftResult {
 const toHttps = (url: string) =>
   url.startsWith('ar://') ? `https://arweave.net/${url.slice(5)}` : url;
 
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de').replace(/\/$/, '');
+
+/**
+ * Metadata-JSON einer Collectible-Collection — wird von
+ * /api/nft-metadata/collection/[collectionId] live aus der DB generiert.
+ */
+export function buildCollectionMetadata(p: {
+  artistSolanaAddress: string;
+  artistName: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  primaryBonus: 'rep' | 'credits' | 'shard';
+  maxRepBonusPercent: number;
+  maxCreditBonusPercent: number;
+  maxShardChanceBonus: number;
+}) {
+  const BONUS_LABELS: Record<'rep' | 'credits' | 'shard', string> = {
+    rep: 'REP', credits: 'Credits', shard: 'Shard-Chance',
+  };
+  const image = toHttps(p.imageUrl);
+  return {
+    name:                    p.name,
+    symbol:                  'DFAITH',
+    description:             p.description,
+    seller_fee_basis_points: 500,
+    image,
+    external_url:            'https://app.dawidfaith.de',
+    properties: {
+      category: 'image',
+      files:    [{ uri: image, type: 'image/jpeg' }],
+      creators: [{ address: p.artistSolanaAddress, share: 100 }],
+    },
+    attributes: [
+      { trait_type: 'Platform',      value: 'D.FAITH' },
+      { trait_type: 'Artist',        value: p.artistName },
+      { trait_type: 'Type',          value: 'Collectible Collection' },
+      { trait_type: 'Primary Bonus', value: BONUS_LABELS[p.primaryBonus] },
+      { trait_type: 'Max REP',       value: `${p.maxRepBonusPercent}%` },
+      { trait_type: 'Max Credits',   value: `${p.maxCreditBonusPercent}%` },
+      { trait_type: 'Max Shard',     value: String(p.maxShardChanceBonus) },
+      { trait_type: 'Royalties',     value: '5%' },
+      { trait_type: 'Website',       value: 'app.dawidfaith.de' },
+    ],
+  };
+}
+
 export async function mintCollectibleCollection(params: {
+  /** collectible_collections.id — Basis der Metadata-URL */
+  collectionId: string;
   artistWallet: string;
   artistSolanaAddress: string;
   artistName: string;
@@ -120,52 +168,13 @@ export async function mintCollectibleCollection(params: {
   payerKeypair: Keypair;
 }): Promise<CollectionNftResult> {
   const {
-    artistSolanaAddress, artistName, name, description, imageUrl,
+    collectionId, artistSolanaAddress, artistName, name,
     primaryBonus, maxRepBonusPercent, maxCreditBonusPercent, maxShardChanceBonus,
   } = params;
 
-  // Wenn das Bild bereits auf Arweave liegt, kein erneuter Upload nötig
-  const arweaveImage = (imageUrl.startsWith('ar://') || imageUrl.includes('arweave.net'))
-    ? toHttps(imageUrl)
-    : toHttps(await fetchAndUploadToArweave(imageUrl, 'image/jpeg', [{ name: 'Collection', value: name }]));
-
-  const BONUS_LABELS: Record<'rep' | 'credits' | 'shard', string> = {
-    rep: 'REP', credits: 'Credits', shard: 'Shard-Chance',
-  };
-
-  const metadata = {
-    name,
-    symbol:                  'DFAITH',
-    description,
-    seller_fee_basis_points: 500,
-    image:                   arweaveImage,
-    external_url:            'https://app.dawidfaith.de',
-    properties: {
-      category: 'image',
-      files:    [{ uri: arweaveImage, type: 'image/jpeg' }],
-      creators: [{ address: artistSolanaAddress, share: 100 }],
-    },
-    attributes: [
-      { trait_type: 'Platform',      value: 'D.FAITH' },
-      { trait_type: 'Artist',        value: artistName },
-      { trait_type: 'Type',          value: 'Collectible Collection' },
-      { trait_type: 'Primary Bonus', value: BONUS_LABELS[primaryBonus] },
-      { trait_type: 'Max REP',       value: `${maxRepBonusPercent}%` },
-      { trait_type: 'Max Credits',   value: `${maxCreditBonusPercent}%` },
-      { trait_type: 'Max Shard',     value: String(maxShardChanceBonus) },
-      { trait_type: 'Royalties',     value: '5%' },
-      { trait_type: 'Website',       value: 'app.dawidfaith.de' },
-    ],
-  };
-  const rawCollectionUri = await uploadToArweave(
-    JSON.stringify(metadata),
-    'application/json',
-    [{ name: 'Type', value: 'Collection Metadata' }, { name: 'Collection', value: name }],
-  );
-  const metadataUri = toHttps(rawCollectionUri);
-
-  // Warten bis die Collection-Metadaten erreichbar sind (120s wie bei Song-NFTs)
-  await waitForArweaveAvailability(rawCollectionUri, { maxWaitMs: 120_000, expectContentType: 'application/json' });
+  // Metadata wird live von unserer eigenen Domain ausgeliefert — kein Arweave,
+  // keine Gateway-Wartezeit, sofort in Phantom/Solscan sichtbar
+  const metadataUri = `${APP_URL}/api/nft-metadata/collection/${collectionId}`;
 
   const umi              = getUmi(params.payerKeypair);
   const collectionSigner = generateSigner(umi);
@@ -241,11 +250,13 @@ export interface CollectibleAssetResult {
   assetMint: string;
 }
 
-export async function mintCollectibleAsset(params: {
-  collectionMint:      string;
+/**
+ * Metadata-JSON eines Collectible-Assets — wird von
+ * /api/nft-metadata/collectible/[collectibleId] live aus der DB generiert.
+ */
+export function buildAssetMetadata(p: {
   collectionName:      string;
   collectionImageUri:  string;
-  ownerSolanaAddress:  string;
   artistSolanaAddress: string;
   artistName:          string;
   rarity:              CollectibleRarity;
@@ -254,23 +265,11 @@ export async function mintCollectibleAsset(params: {
   shardBonus:          number;
   primaryBonus:        'rep' | 'credits' | 'shard';
   activeSlots:         1 | 2 | 3;
-  /** User zahlt die Mint-Gebühren (~0.002-0.003 SOL) */
-  payerKeypair:        Keypair;
-}): Promise<CollectibleAssetResult> {
+}) {
   const {
-    collectionMint,
-    collectionName,
-    collectionImageUri,
-    ownerSolanaAddress,
-    artistSolanaAddress,
-    artistName,
-    rarity,
-    repBonusPercent,
-    creditBonusPercent,
-    shardBonus,
-    primaryBonus,
-    activeSlots,
-  } = params;
+    collectionName, collectionImageUri, artistSolanaAddress, artistName,
+    rarity, repBonusPercent, creditBonusPercent, shardBonus, primaryBonus, activeSlots,
+  } = p;
 
   const bonusLine = buildBonusLine(repBonusPercent, creditBonusPercent, shardBonus, primaryBonus, activeSlots);
 
@@ -299,7 +298,7 @@ export async function mintCollectibleAsset(params: {
 
   const imageHttps = toHttps(collectionImageUri);
 
-  const metadata = {
+  return {
     name:                    `${collectionName} — ${RARITY_LABELS[rarity]}`,
     symbol:                  'DFAITH',
     description:             `${RARITY_LABELS[rarity]} D.FAITH Collectible from the "${collectionName}" series by ${artistName}.\n\nBonuses: ${bonusLine}\n\nTradeable on secondary markets — 5% artist royalties on every resale.`,
@@ -314,16 +313,55 @@ export async function mintCollectibleAsset(params: {
     },
     attributes,
   };
-  const rawAssetUri = await uploadToArweave(
-    JSON.stringify(metadata),
-    'application/json',
-    [{ name: 'Rarity', value: rarity }, { name: 'Collection', value: collectionName }],
-  );
-  const metadataUri = toHttps(rawAssetUri);
+}
 
-  // Warten bis die Metadaten über das Gateway erreichbar sind (120s wie bei Song-NFTs),
-  // damit Phantom, Helius und alle DAS-Indexer sie beim ersten Crawl korrekt lesen.
-  await waitForArweaveAvailability(rawAssetUri, { maxWaitMs: 120_000, expectContentType: 'application/json' });
+export async function mintCollectibleAsset(params: {
+  /** user_collectibles.id — Basis der Metadata-URL */
+  collectibleId:       string;
+  collectionMint:      string;
+  collectionName:      string;
+  collectionImageUri:  string;
+  ownerSolanaAddress:  string;
+  artistSolanaAddress: string;
+  artistName:          string;
+  rarity:              CollectibleRarity;
+  repBonusPercent:     number;
+  creditBonusPercent:  number;
+  shardBonus:          number;
+  primaryBonus:        'rep' | 'credits' | 'shard';
+  activeSlots:         1 | 2 | 3;
+  /** User zahlt die Mint-Gebühren (~0.002-0.003 SOL) */
+  payerKeypair:        Keypair;
+}): Promise<CollectibleAssetResult> {
+  const {
+    collectibleId,
+    collectionMint,
+    collectionName,
+    collectionImageUri,
+    ownerSolanaAddress,
+    artistSolanaAddress,
+    artistName,
+    rarity,
+    repBonusPercent,
+    creditBonusPercent,
+    shardBonus,
+    primaryBonus,
+    activeSlots,
+  } = params;
+
+  // Nur die für diese Rarität AKTIVEN Bonus-Slots on-chain speichern (primär zuerst)
+  const slotOrder: Array<'rep' | 'credits' | 'shard'> = [
+    primaryBonus,
+    ...(['rep', 'credits', 'shard'] as const).filter(b => b !== primaryBonus),
+  ];
+  const activeKeys = new Set(slotOrder.slice(0, activeSlots));
+  const repActive    = activeKeys.has('rep')     && repBonusPercent > 0;
+  const creditActive = activeKeys.has('credits') && creditBonusPercent > 0;
+  const shardActive  = activeKeys.has('shard')   && shardBonus > 0;
+
+  // Metadata wird live von unserer eigenen Domain ausgeliefert — kein Arweave,
+  // keine Gateway-Wartezeit, sofort in Phantom/Solscan sichtbar
+  const metadataUri = `${APP_URL}/api/nft-metadata/collectible/${collectibleId}`;
 
   const umi         = getUmi(params.payerKeypair);
   const assetSigner = generateSigner(umi);

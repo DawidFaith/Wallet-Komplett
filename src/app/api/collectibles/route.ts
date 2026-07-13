@@ -164,6 +164,7 @@ export async function POST(req: NextRequest) {
     // mpl-core Collection on-chain minten (Artist zahlt)
     const primaryBonus = (['rep', 'credits', 'shard'].includes(body.primaryBonus ?? '') ? body.primaryBonus : 'rep') as 'rep' | 'credits' | 'shard';
     const nftResult = await mintCollectibleCollection({
+      collectionId:        result.id,
       artistWallet,
       artistSolanaAddress: artistSolana as string,
       artistName:          artistDisplayNameStr,
