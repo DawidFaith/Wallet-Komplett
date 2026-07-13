@@ -152,8 +152,10 @@ export async function mintSongMasterEdition(params: {
 
   // Master Edition auf Solana minten
   // Treasury bleibt Authority (für Heal-Path in printV1), Artist zahlt die Gebühren
+  // 'confirmed' statt web3.js-Default 'finalized' → Preflight + Confirm sehen
+  // frisch bestätigte Accounts und warten nicht ~30s auf Finalisierung.
   const treasury = getTreasuryKeypair();
-  const umi = createUmi(RPC_URL)
+  const umi = createUmi(RPC_URL, 'confirmed')
     .use(mplTokenMetadata())
     .use(keypairIdentity(fromWeb3JsKeypair(treasury)));
 
@@ -194,12 +196,13 @@ export async function mintSongMasterEdition(params: {
   })).sendAndConfirm(umi);
 
   // ── 2. Master Edition erstellen + Creator/Collection in einer Transaktion verifizieren ──
-  // Alles in einer TX damit die Verify-Instruktionen die frisch erstellte Metadata-PDA
-  // sehen — separate Transaktionen können auf einem anderen RPC-Node landen der den
-  // vorherigen State noch nicht kennt (IncorrectOwner / 0x39).
+  // verifyCollectionV1 referenziert die in TX 1 erstellten Collection-Accounts.
+  // Die Preflight-Simulation kann auf einem RPC-Node laufen, der TX 1 noch nicht
+  // kennt → IncorrectOwner (0x39). Deshalb skipPreflight: der Leader, der die TX
+  // ausführt, hat den bestätigten State von TX 1 garantiert.
   const mintSigner = generateSigner(umi);
   const [masterMetadataPda] = findMetadataPda(umi, { mint: mintSigner.publicKey });
-  await createV1(umi, {
+  const masterTx = await createV1(umi, {
     mint:                 mintSigner,
     authority:            umi.identity,
     updateAuthority:      umi.identity,
@@ -227,7 +230,15 @@ export async function mintSongMasterEdition(params: {
   })).add(verifyCollectionV1(umi, {
     metadata:       masterMetadataPda,
     collectionMint: collectionMintSigner.publicKey,
-  })).sendAndConfirm(umi);
+  })).sendAndConfirm(umi, { send: { skipPreflight: true } });
+
+  // Ohne Preflight meldet erst das Confirm-Ergebnis einen On-Chain-Fehler
+  if (masterTx.result.value.err) {
+    throw new Error(
+      `Master Edition TX on-chain fehlgeschlagen: ${JSON.stringify(masterTx.result.value.err)} ` +
+      `(Signature: ${bs58.encode(masterTx.signature)})`,
+    );
+  }
 
   return {
     masterMint:     mintSigner.publicKey.toString(),
@@ -259,7 +270,7 @@ export async function mintSongPrintEdition(params: {
 
   // Treasury bleibt Authority (masterTokenAccountOwner), Artist zahlt die Gebühren
   const treasury = getTreasuryKeypair();
-  const umi = createUmi(RPC_URL)
+  const umi = createUmi(RPC_URL, 'confirmed')
     .use(mplTokenMetadata())
     .use(keypairIdentity(fromWeb3JsKeypair(treasury)));
 
@@ -305,13 +316,18 @@ export async function mintSongPrintEdition(params: {
   // Print Edition als verifiziertes Mitglied der Song-Collection eintragen.
   // printV1 kopiert das collection-Feld automatisch vom Master (unverified) →
   // wir müssen nur noch verifizieren. Ohne verif. Collection blendet Phantom als Spam aus.
+  // skipPreflight: die Metadata-PDA der Edition stammt aus der printV1-TX davor —
+  // die Preflight-Simulation kann auf einem Node laufen, der sie noch nicht kennt.
   if (collectionMint) {
     try {
       const [printMetadataPda] = findMetadataPda(umi, { mint: editionMintSigner.publicKey });
-      await verifyCollectionV1(umi, {
+      const verifyTx = await verifyCollectionV1(umi, {
         metadata:       printMetadataPda,
         collectionMint: umiPubkey(collectionMint),
-      }).sendAndConfirm(umi);
+      }).sendAndConfirm(umi, { send: { skipPreflight: true } });
+      if (verifyTx.result.value.err) {
+        console.warn('[songNft] Collection-Verify für Print Edition on-chain fehlgeschlagen:', JSON.stringify(verifyTx.result.value.err));
+      }
     } catch (e) {
       console.warn('[songNft] Collection-Verify für Print Edition fehlgeschlagen:', e);
     }

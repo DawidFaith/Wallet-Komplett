@@ -80,7 +80,9 @@ function buildBonusLine(
 }
 
 function getUmi(payer: Keypair) {
-  return createUmi(RPC_URL)
+  // 'confirmed' statt web3.js-Default 'finalized' → Preflight/Confirm sehen
+  // frisch bestätigte Accounts und warten nicht ~30s auf Finalisierung.
+  return createUmi(RPC_URL, 'confirmed')
     .use(mplCore())
     .use(keypairIdentity(fromWeb3JsKeypair(payer)));
 }
