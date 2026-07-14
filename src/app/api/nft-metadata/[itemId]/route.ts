@@ -55,11 +55,12 @@ export async function GET(
 
   if (isCollection) {
     const collectionMetadata = {
-      name:         `${artistName} — ${item.title as string}`,
-      symbol:       'DFAITH',
-      description:  `Official song collection by ${artistName} on D.FAITH. Contains the Master Edition and all numbered Print Editions of "${item.title as string}".`,
-      image:        coverUrl,
-      external_url: 'https://app.dawidfaith.de',
+      name:                    `${artistName} — ${item.title as string}`,
+      symbol:                  'DFAITH',
+      description:             `Official song collection by ${artistName} on D.FAITH. Contains the Master Edition and all numbered Print Editions of "${item.title as string}".`,
+      seller_fee_basis_points: 500,
+      image:                   coverUrl,
+      external_url:            'https://app.dawidfaith.de',
       properties: {
         category: 'image',
         files:    [{ uri: coverUrl, type: 'image/jpeg' }],
@@ -83,12 +84,13 @@ export async function GET(
   }
 
   const metadata = {
-    name:          editionNumber !== null ? `${item.title as string} #${editionNumber}` : item.title as string,
-    symbol:        'DFAITH',
-    description:   `${(item.description as string | null) ?? ''}\n\nLimited to ${maxSupply} numbered editions — each holder receives a unique Edition NFT. Tradeable on secondary markets with 5% artist royalties on every resale.`,
-    image:         coverUrl,
-    animation_url: audioUrl,
-    external_url:  'https://app.dawidfaith.de',
+    name:                    editionNumber !== null ? `${item.title as string} #${editionNumber}` : item.title as string,
+    symbol:                  'DFAITH',
+    description:             `${(item.description as string | null) ?? ''}\n\nLimited to ${maxSupply} numbered editions — each holder receives a unique Edition NFT. Tradeable on secondary markets with 5% artist royalties on every resale.`,
+    seller_fee_basis_points: 500,
+    image:                   coverUrl,
+    animation_url:           audioUrl,
+    external_url:            'https://app.dawidfaith.de',
     properties: {
       category: 'audio',
       files: [
