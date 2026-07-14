@@ -944,10 +944,15 @@ export default function SolanaWalletTab() {
 
   // ── NFT-Karte rendern (wird in Songs + Collectibles-Abschnitt genutzt) ──
   // Songs sind seit der mpl-core-Umstellung ebenfalls MplCoreAsset →
-  // Unterscheidung über das On-Chain-Attribut Type='Music'
-  const isMusicNft = (nft: OwnedNft) =>
-    nft.attributes.some(a => a.trait_type === 'Type' && a.value === 'Music')
-    || nft.interface !== 'MplCoreAsset';
+  // DB (shopNftsMap) zuerst prüfen (zuverlässig, sofort nach Kauf da) — erst
+  // danach auf On-Chain-Attribute zurückfallen (Helius-Indexer kann direkt nach
+  // dem Mint noch hinterherhinken und fälschlich als Collectible einordnen)
+  const isMusicNft = (nft: OwnedNft) => {
+    const shopType = shopNftsMap[nft.mint]?.type;
+    if (shopType) return shopType === 'song';
+    return nft.attributes.some(a => a.trait_type === 'Type' && a.value === 'Music')
+      || nft.interface !== 'MplCoreAsset';
+  };
   const renderNft = (nft: OwnedNft) => {
     const isCollectible = !isMusicNft(nft);
     const rarityRaw   = nft.attributes.find(a => a.trait_type === 'Rarity')?.value?.toLowerCase() ?? '';

@@ -2,30 +2,42 @@
  * GET /api/shop/inventory?wallet=XXX
  * Gibt alle gekauften Items zurück die der User wirklich noch besitzt:
  * - nicht aktiv auf dem Marktplatz gelistet
- * - on-chain noch in seiner Solana-Wallet (getTokenAccountsByOwner)
+ * - on-chain noch in seiner Solana-Wallet (Helius DAS getAssetsByOwner)
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
-import { Connection, PublicKey } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 export const dynamic = 'force-dynamic';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
-/** Gibt alle Mint-Adressen zurück die aktuell on-chain in diesem Wallet liegen (amount > 0). */
+/**
+ * Gibt alle Mint-/Asset-Adressen zurück die aktuell on-chain in diesem Wallet liegen.
+ * Song Print Editions und Collectibles sind mpl-core Assets (keine SPL-Token-Konten) —
+ * daher über die Helius DAS API abgefragt statt getTokenAccountsByOwner.
+ */
 async function getOwnedMints(solanaAddress: string): Promise<Set<string>> {
   try {
-    const conn     = new Connection(RPC_URL, 'confirmed');
-    const ownerPk  = new PublicKey(solanaAddress);
-    const accounts = await conn.getTokenAccountsByOwner(ownerPk, { programId: TOKEN_PROGRAM_ID });
-    const mints    = new Set<string>();
-    for (const { account } of accounts.value) {
-      const data   = account.data;
-      // SPL Token account layout: mint is bytes 0–31
-      const mint   = new PublicKey(data.slice(0, 32)).toBase58();
-      const amount = data.readBigUInt64LE(64);
-      if (amount > 0n) mints.add(mint);
+    const res = await fetch(RPC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id:      'get-owned-mints',
+        method:  'getAssetsByOwner',
+        params: {
+          ownerAddress: solanaAddress,
+          page:         1,
+          limit:        1000,
+          options:      { showFungible: false, showNativeBalance: false },
+        },
+      }),
+    });
+    if (!res.ok) return new Set();
+    const json = await res.json() as { result?: { items?: Array<{ id: string; burnt?: boolean }> } };
+    const mints = new Set<string>();
+    for (const item of json.result?.items ?? []) {
+      if (!item.burnt) mints.add(item.id);
     }
     return mints;
   } catch {
