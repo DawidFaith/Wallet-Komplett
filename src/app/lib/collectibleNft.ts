@@ -74,7 +74,7 @@ function buildBonusLine(
   return order.slice(0, activeSlots).map(slot => {
     if (slot === 'rep')     return `+${repBonusPercent}% REP`;
     if (slot === 'credits') return `+${creditBonusPercent}% Credits`;
-    return `+${shardBonus} Shard Chance`;
+    return `+${shardBonus}% Shard Chance`;
   }).join(' · ');
 }
 
@@ -144,7 +144,7 @@ export function buildCollectionMetadata(p: {
       { trait_type: 'Primary Bonus', value: BONUS_LABELS[p.primaryBonus] },
       { trait_type: 'Max REP',       value: `${p.maxRepBonusPercent}%` },
       { trait_type: 'Max Credits',   value: `${p.maxCreditBonusPercent}%` },
-      { trait_type: 'Max Shard',     value: String(p.maxShardChanceBonus) },
+      { trait_type: 'Max Shard',     value: `${p.maxShardChanceBonus}%` },
       { trait_type: 'Royalties',     value: '5%' },
       { trait_type: 'Website',       value: 'app.dawidfaith.de' },
     ],
@@ -293,7 +293,7 @@ export function buildAssetMetadata(p: {
   ];
   if (repActive)    attributes.push({ trait_type: 'REP Bonus',    value: `+${repBonusPercent}%` });
   if (creditActive) attributes.push({ trait_type: 'Credit Bonus', value: `+${creditBonusPercent}%` });
-  if (shardActive)  attributes.push({ trait_type: 'Shard Bonus',  value: `+${shardBonus}` });
+  if (shardActive)  attributes.push({ trait_type: 'Shard Bonus',  value: `+${shardBonus}%` });
   attributes.push({ trait_type: 'Website', value: 'app.dawidfaith.de' });
 
   const imageHttps = toHttps(collectionImageUri);

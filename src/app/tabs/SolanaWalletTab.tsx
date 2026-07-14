@@ -984,7 +984,7 @@ export default function SolanaWalletTab() {
     const bonusFor: Record<string, string | null> = {
       rep:     repVal    > 0 ? `+${repVal}% REP`      : null,
       credits: creditVal > 0 ? `+${creditVal}% Credit` : null,
-      shard:   shardVal  > 0 ? `+${shardVal} Shard`   : null,
+      shard:   shardVal  > 0 ? `+${shardVal}% Shard`  : null,
     };
     const slotOrder = [primaryBonus, ...['rep', 'credits', 'shard'].filter(b => b !== primaryBonus)];
     const bonuses = Number.isFinite(activeSlots) && activeSlots > 0

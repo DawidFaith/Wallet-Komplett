@@ -1165,7 +1165,7 @@ function CollectibleNftPreview({ form, rarity, artistName }: {
   const bonusLine = slots.map(slot => {
     if (slot === 'rep')     return repBonus > 0     ? `+${repBonus}% REP`       : null;
     if (slot === 'credits') return creditBonus > 0  ? `+${creditBonus}% Credits` : null;
-    return shardBonus > 0 ? `+${shardBonus} Shard Chance` : null;
+    return shardBonus > 0 ? `+${shardBonus}% Shard Chance` : null;
   }).filter(Boolean).join(' · ') || '—';
 
   const attrs = [
@@ -1177,7 +1177,7 @@ function CollectibleNftPreview({ form, rarity, artistName }: {
     { k: 'Drop Rate',  v: `${FIXED_RARITY_CHANCES[rarity]}%` },
     ...(slots.includes('rep')     && repBonus    > 0 ? [{ k: 'REP Bonus',    v: `+${repBonus}%`    }] : []),
     ...(slots.includes('credits') && creditBonus > 0 ? [{ k: 'Credit Bonus', v: `+${creditBonus}%` }] : []),
-    ...(slots.includes('shard')   && shardBonus  > 0 ? [{ k: 'Shard Bonus',  v: `+${shardBonus}`   }] : []),
+    ...(slots.includes('shard')   && shardBonus  > 0 ? [{ k: 'Shard Bonus',  v: `+${shardBonus}%`  }] : []),
   ];
 
   return (
