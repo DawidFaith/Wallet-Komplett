@@ -1,63 +1,95 @@
 /**
- * POST /api/admin/burn-all-collectibles — TEMPORÄR (2026-07-14)
+ * POST /api/admin/burn-all-collectibles — TEMPORÄR (2026-07-14), 2. Anlauf
  *
- * Verbrennt auf ausdrücklichen Wunsch alle bisherigen Collectible-NFTs der
- * Kollektion "Katze" (2 Assets + Collection-NFT) und entfernt die Kollektion
- * aus der DB — gleiche Semantik wie /api/collectibles/burn-collection.
- * Alles fest einkodiert; der Endpoint wird nach der Ausführung entfernt.
+ * Die alten Assets (26.06.) haben kein greifendes BurnDelegate → Burn als
+ * jeweiliger BESITZER (mpl-core erlaubt Owner-Burns immer):
+ *   Asset 2edvi… gehört dem Fan-Wallet EGLf… (Key in solana_accounts)
+ *   Asset Czug…  gehört dem Treasury
+ * Danach Collection-Burn durch den Artist (Update Authority).
+ * DB wurde im 1. Anlauf bereits bereinigt. Endpoint wird danach entfernt.
  */
 import { NextResponse } from 'next/server';
-import { getDb } from '../../../lib/db';
-import { burnCollectibleAssets, burnCollectibleCollection } from '../../../lib/collectibleNft';
-import { decryptKey } from '../../../lib/solanaCrypto';
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
+import { mplCore, burn, burnCollection, fetchAssetV1, fetchCollectionV1 } from '@metaplex-foundation/mpl-core';
+import { keypairIdentity, publicKey as umiPubkey } from '@metaplex-foundation/umi';
+import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
+import { getDb } from '../../../lib/db';
+import { decryptKey } from '../../../lib/solanaCrypto';
+import { getTreasuryKeypair } from '../../../lib/solanaOperator';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
-const COLLECTION_ID   = 'ddead9ce-2583-428f-8053-ae86e59c8fa0';           // "Katze"
+const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
+
 const COLLECTION_MINT = 'HazogkMW7MB5cMV3xqzys4hmaJPboAz7U4X9hFUfjUqJ';
-const ASSET_MINTS = [
-  '2edviDxVwWDUHDcTgLSXKTLmS5XJDm69t7pURrfVg3zK', // Halter: Fan-Wallet
-  'CzugBFnYqt96ux34BizPVYjGTLU81sg6YBVcGKwvyCf3', // Halter: Treasury
-];
+const FAN_ASSET       = '2edviDxVwWDUHDcTgLSXKTLmS5XJDm69t7pURrfVg3zK';
+const FAN_SOLANA      = 'EGLf9GG8mQUZSPThfkEtpqcKG3Q7kb5fL96MjpStKADx';
+const TREASURY_ASSET  = 'CzugBFnYqt96ux34BizPVYjGTLU81sg6YBVcGKwvyCf3';
+const ARTIST_WALLET   = 'user_3dfvunr7ziaywue8bhzdqw2blsw';
+
+function coreUmi(kp: Keypair) {
+  return createUmi(RPC_URL, 'confirmed').use(mplCore()).use(keypairIdentity(fromWeb3JsKeypair(kp)));
+}
+
+async function burnAsOwner(ownerKp: Keypair, assetMint: string) {
+  const umi = coreUmi(ownerKp);
+  let asset;
+  try {
+    asset = await fetchAssetV1(umi, umiPubkey(assetMint));
+  } catch {
+    return 'already burned';
+  }
+  const collection = await fetchCollectionV1(umi, umiPubkey(COLLECTION_MINT));
+  await burn(umi, { asset, collection }).sendAndConfirm(umi);
+  return 'burned';
+}
 
 export async function POST() {
   const steps: Array<{ step: string; status: string; error?: string }> = [];
   const sql = getDb();
 
-  // 1. Assets via Treasury-BurnDelegate verbrennen (keine Halter-Signatur nötig)
-  try {
-    await burnCollectibleAssets(ASSET_MINTS, COLLECTION_MINT);
-    steps.push({ step: 'burn assets', status: 'ok' });
-  } catch (e) {
-    steps.push({ step: 'burn assets', status: 'error', error: e instanceof Error ? e.message : String(e) });
-  }
-
-  // 2. Collection-NFT verbrennen (Artist ist Update Authority)
+  // 1. Fan-Asset als Besitzer verbrennen (Rent-SOL geht an den Fan)
   try {
     const rows = await sql`
-      SELECT sa.solana_private_key
-      FROM collectible_collections cc
-      JOIN solana_accounts sa ON sa.wallet_address = cc.artist_wallet
-      WHERE cc.id = ${COLLECTION_ID} LIMIT 1
+      SELECT solana_private_key FROM solana_accounts
+      WHERE solana_address = ${FAN_SOLANA} LIMIT 1
+    `;
+    if (!rows.length) throw new Error('Fan-Keypair nicht gefunden');
+    const fanKp = Keypair.fromSecretKey(bs58.decode(decryptKey(rows[0].solana_private_key as string)));
+    steps.push({ step: 'burn fan asset', status: await burnAsOwner(fanKp, FAN_ASSET) });
+  } catch (e) {
+    steps.push({ step: 'burn fan asset', status: 'error', error: e instanceof Error ? e.message : String(e) });
+  }
+
+  // 2. Treasury-Asset als Besitzer verbrennen
+  try {
+    steps.push({ step: 'burn treasury asset', status: await burnAsOwner(getTreasuryKeypair(), TREASURY_ASSET) });
+  } catch (e) {
+    steps.push({ step: 'burn treasury asset', status: 'error', error: e instanceof Error ? e.message : String(e) });
+  }
+
+  // 3. Collection-NFT verbrennen (Artist ist Update Authority)
+  try {
+    const rows = await sql`
+      SELECT solana_private_key FROM solana_accounts
+      WHERE wallet_address = ${ARTIST_WALLET} LIMIT 1
     `;
     if (!rows.length) throw new Error('Artist-Keypair nicht gefunden');
     const artistKp = Keypair.fromSecretKey(bs58.decode(decryptKey(rows[0].solana_private_key as string)));
-    await burnCollectibleCollection(COLLECTION_MINT, artistKp);
-    steps.push({ step: 'burn collection', status: 'ok' });
+    const umi = coreUmi(artistKp);
+    try {
+      const collection = await fetchCollectionV1(umi, umiPubkey(COLLECTION_MINT));
+      await burnCollection(umi, { collection: collection.publicKey, compressionProof: null }).sendAndConfirm(umi);
+      steps.push({ step: 'burn collection', status: 'burned' });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      steps.push({ step: 'burn collection', status: msg.includes('exist') ? 'already burned' : 'error', error: msg });
+    }
   } catch (e) {
     steps.push({ step: 'burn collection', status: 'error', error: e instanceof Error ? e.message : String(e) });
-  }
-
-  // 3. DB aufräumen (wie /api/collectibles/burn-collection)
-  try {
-    await sql`DELETE FROM user_collectibles WHERE collection_id = ${COLLECTION_ID}`;
-    await sql`DELETE FROM collectible_collections WHERE id = ${COLLECTION_ID}`;
-    steps.push({ step: 'db cleanup', status: 'ok' });
-  } catch (e) {
-    steps.push({ step: 'db cleanup', status: 'error', error: e instanceof Error ? e.message : String(e) });
   }
 
   return NextResponse.json({ steps });
