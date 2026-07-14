@@ -7,7 +7,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 
-export const dynamic = 'force-dynamic';
+export const dynamic    = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+export const revalidate = 0;
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
@@ -125,5 +127,5 @@ export async function GET(req: NextRequest) {
     ? rows.filter(r => ownedMints.has(r.print_mint as string))
     : rows;
 
-  return NextResponse.json(filtered);
+  return NextResponse.json(filtered, { headers: { 'Cache-Control': 'no-store' } });
 }

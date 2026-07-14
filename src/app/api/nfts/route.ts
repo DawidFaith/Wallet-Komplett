@@ -5,8 +5,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../lib/db';
 
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
+export const dynamic     = 'force-dynamic';
+export const fetchCache  = 'force-no-store';
+export const revalidate  = 0;
+export const runtime     = 'nodejs';
 
 export async function GET(req: NextRequest) {
   const wallet = new URL(req.url).searchParams.get('wallet');
@@ -63,5 +65,5 @@ export async function GET(req: NextRequest) {
     masterEditionMint: r.master_edition_mint as string | null,
     artistName:        r.artist_name   as string | null,
     artistPicture:     r.artist_picture as string | null,
-  })));
+  })), { headers: { 'Cache-Control': 'no-store' } });
 }
