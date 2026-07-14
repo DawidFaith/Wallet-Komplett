@@ -275,7 +275,7 @@ function ItemCard({
                   <FaCheck size={8} /> Du besitzt {item.ownedCount}×
                 </div>
               )}
-              {/* Kauf-Button (immer Credits) */}
+              {/* Kauf-Button (immer Credits) — öffnet erst den Bestätigungsdialog */}
               <button
                 onClick={() => onBuy(item, 'credits')}
                 disabled={buying === item.id}
@@ -415,6 +415,7 @@ function ArtistShopView({
   const [buyResult, setBuyResult] = useState<{ itemId: string; contentUrl: string; type: string; title: string; paymentMethod: string } | null>(null);
   const [buyCelebration, setBuyCelebration] = useState<{ title: string; type: ItemType; price: number; paymentMethod: string } | null>(null);
   const [buyError, setBuyError] = useState('');
+  const [confirmPurchase, setConfirmPurchase] = useState<{ item: ShopItem; paymentMethod: 'credits' | 'tokens' } | null>(null);
   const [userLevel, setUserLevel] = useState(0);
   const [showDeposit, setShowDeposit] = useState(false);
 
@@ -487,6 +488,10 @@ function ArtistShopView({
     }
   };
 
+  const requestBuy = (item: ShopItem, paymentMethod: 'credits' | 'tokens') => {
+    setConfirmPurchase({ item, paymentMethod });
+  };
+
   return (
     <div className="space-y-4">
       {/* Zurück-Button */}
@@ -537,6 +542,70 @@ function ArtistShopView({
         <div className="mx-4 bg-red-900/20 border border-red-800/40 rounded-xl px-4 py-3 text-red-300 text-sm flex items-center justify-between">
           <span>{buyError}</span>
           <button onClick={() => setBuyError('')}><FaTimes size={12} /></button>
+        </div>
+      )}
+
+      {/* Kauf-Bestätigung */}
+      {confirmPurchase && (
+        <div
+          className="fixed inset-0 z-[999] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0"
+          onClick={() => { if (buying !== confirmPurchase.item.id) setConfirmPurchase(null); }}
+        >
+          <div
+            className="bg-[#161410] border border-white/[0.08] rounded-2xl p-5 w-full max-w-sm shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-black text-white text-base flex items-center gap-2">
+                <FaCoins className="text-amber-400" size={14} /> {t('shop.confirmPurchaseTitle', lang)}
+              </h3>
+              {buying !== confirmPurchase.item.id && (
+                <button onClick={() => setConfirmPurchase(null)} className="text-zinc-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
+                  <FaTimes size={14} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 mb-4">
+              <div className="relative w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-zinc-800">
+                {confirmPurchase.item.imageUrl && (
+                  <Image src={confirmPurchase.item.imageUrl} alt="" fill className="object-cover" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-white font-bold text-sm truncate">{confirmPurchase.item.title}</p>
+                <p className="text-zinc-500 text-xs">{TYPE_LABELS[confirmPurchase.item.type]}</p>
+              </div>
+            </div>
+
+            <p className="text-zinc-400 text-sm mb-5">
+              {tFmt('shop.confirmPurchaseBody', lang, {
+                title: confirmPurchase.item.title,
+                price: confirmPurchase.item.priceCredits.toLocaleString('de-DE'),
+                token: artist.rewardToken ?? 'D.FAITH',
+              })}
+            </p>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmPurchase(null)}
+                disabled={buying === confirmPurchase.item.id}
+                className="flex-1 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-semibold transition-colors disabled:opacity-50"
+              >
+                {t('common.cancel', lang)}
+              </button>
+              <button
+                onClick={async () => { await handleBuy(confirmPurchase.item, confirmPurchase.paymentMethod); setConfirmPurchase(null); }}
+                disabled={buying === confirmPurchase.item.id}
+                className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-sm font-bold transition-colors disabled:opacity-50"
+              >
+                {buying === confirmPurchase.item.id
+                  ? <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                  : <><FaCoins size={12} /> {t('shop.confirmPurchaseCta', lang)}</>
+                }
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -633,7 +702,7 @@ function ArtistShopView({
       ) : (
         <div className="px-4 grid grid-cols-2 gap-2">
           {items.map(item => (
-            <ItemCard key={item.id} item={item} onBuy={handleBuy} buying={buying} walletAddress={walletAddress} artistRewardToken={artist.rewardToken} userLevel={userLevel} />
+            <ItemCard key={item.id} item={item} onBuy={requestBuy} buying={buying} walletAddress={walletAddress} artistRewardToken={artist.rewardToken} userLevel={userLevel} />
           ))}
         </div>
       )}
