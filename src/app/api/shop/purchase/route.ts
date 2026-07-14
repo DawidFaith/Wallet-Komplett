@@ -173,7 +173,7 @@ export async function POST(req: NextRequest) {
   // ── 2. NFT minten ─────────────────────────────────────────────────────────
   // Artist-Keypair laden damit Artist die Mint-Gebühren zahlt
   const artistKeyRows = await sql`
-    SELECT solana_private_key FROM solana_accounts
+    SELECT solana_private_key, solana_address FROM solana_accounts
     WHERE wallet_address = ${item.artist_wallet} LIMIT 1
   `;
   if (!artistKeyRows.length) {
@@ -191,13 +191,14 @@ export async function POST(req: NextRequest) {
   let nftMintAddress: string;
   try {
     const { printMint } = await mintSongPrintEdition({
-      itemId:            item.id,
-      collectionMint:    songCollectionMint,
+      itemId:              item.id,
+      collectionMint:      songCollectionMint,
       buyerSolanaAddress,
-      artistPrivateKey:  artistKeyRows[0].solana_private_key as string,
+      artistPrivateKey:    artistKeyRows[0].solana_private_key as string,
+      artistSolanaAddress: artistKeyRows[0].solana_address as string,
       artistName,
-      title:             item.title,
-      maxSupply:         item.nft_max_supply !== null ? Number(item.nft_max_supply) : null,
+      title:               item.title,
+      maxSupply:           item.nft_max_supply !== null ? Number(item.nft_max_supply) : null,
       editionNumber,
     });
     nftMintAddress = printMint;

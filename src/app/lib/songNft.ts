@@ -17,6 +17,7 @@ import {
   createCollection,
   create,
   transfer,
+  burn,
   ruleSet,
   fetchCollectionV1,
   fetchAssetV1,
@@ -151,18 +152,19 @@ export interface PrintEditionResult {
  * Artist ist Collection-Authority und zahlt die Gebühren (~0,003 SOL).
  */
 export async function mintSongPrintEdition(params: {
-  itemId:             string;
-  collectionMint:     string;
-  buyerSolanaAddress: string;
-  artistPrivateKey:   string;
-  artistName:         string;
-  title:              string;
-  maxSupply:          number | null;
-  editionNumber:      number;
+  itemId:              string;
+  collectionMint:      string;
+  buyerSolanaAddress:  string;
+  artistPrivateKey:    string;
+  artistSolanaAddress: string;
+  artistName:          string;
+  title:               string;
+  maxSupply:           number | null;
+  editionNumber:       number;
 }): Promise<PrintEditionResult> {
   const {
-    itemId, collectionMint, buyerSolanaAddress, artistPrivateKey,
-    artistName, title, maxSupply, editionNumber,
+    itemId, collectionMint, buyerSolanaAddress, artistPrivateKey, artistSolanaAddress,
+    title, editionNumber,
   } = params;
 
   const { umi, artistKp } = getArtistUmi(artistPrivateKey);
@@ -177,6 +179,9 @@ export async function mintSongPrintEdition(params: {
   const suffix    = ` #${editionNumber}`;
   const assetName = `${title.slice(0, 32 - suffix.length)}${suffix}`;
 
+  // Metadata (inkl. aller Anzeige-Attribute) kommt live von unserer eigenen
+  // Domain — KEIN On-Chain-Attributes-Plugin mehr, sonst zeigen Magic Eden &
+  // Co. jedes Attribut doppelt (JSON + Plugin), analog zum Collectible-Fix.
   await create(umi, {
     asset:      assetSigner,
     collection,
@@ -190,15 +195,12 @@ export async function mintSongPrintEdition(params: {
         number: editionNumber,
       },
       {
-        type:          'Attributes',
-        attributeList: [
-          { key: 'Type',        value: 'Music' },
-          { key: 'Artist',      value: artistName },
-          { key: 'Platform',    value: 'D.FAITH' },
-          { key: 'Edition',     value: String(editionNumber) },
-          ...(maxSupply ? [{ key: 'MaxEditions', value: String(maxSupply) }] : []),
-          { key: 'Website',     value: 'app.dawidfaith.de' },
-        ],
+        // Direkt aufs Asset (nicht nur auf die Collection) — sonst lesen manche
+        // Marktplätze/Indexer die Royalty am Asset selbst als 0% aus.
+        type:        'Royalties',
+        basisPoints: 500,
+        creators:    [{ address: umiPubkey(artistSolanaAddress), percentage: 100 }],
+        ruleSet:     ruleSet('None'),
       },
     ],
   }).sendAndConfirm(umi);
@@ -246,4 +248,35 @@ export async function transferSongPrintEdition(params: {
     newOwner:  umiPubkey(recipientAddress),
     authority: ownerSigner,
   }).sendAndConfirm(umi);
+}
+
+/**
+ * Verbrennt ein Song-Edition-Asset (mpl-core). mpl-core erlaubt Owner-Burns
+ * immer, auch ohne BurnDelegate-Plugin — der Besitzer muss signieren.
+ *
+ * @param ownerKeypair  Aktueller Besitzer des Assets (signiert den Burn)
+ * @param payerKeypair  Zahlt die Tx-Fees (kann der gleiche wie ownerKeypair sein)
+ */
+export async function burnSongPrintEdition(params: {
+  mintAddress:  string;
+  ownerKeypair: Keypair;
+  payerKeypair?: Keypair;
+}): Promise<void> {
+  const { mintAddress, ownerKeypair, payerKeypair = ownerKeypair } = params;
+
+  const umi = createUmi(RPC_URL, 'confirmed')
+    .use(mplCore())
+    .use(keypairIdentity(fromWeb3JsKeypair(payerKeypair)));
+
+  const asset = await fetchAssetV1(umi, umiPubkey(mintAddress));
+
+  const collection = asset.updateAuthority.type === 'Collection' && asset.updateAuthority.address
+    ? await fetchCollectionV1(umi, asset.updateAuthority.address)
+    : undefined;
+
+  const ownerSigner = ownerKeypair.publicKey.equals(payerKeypair.publicKey)
+    ? umi.identity
+    : createSignerFromKeypair(umi, umi.eddsa.createKeypairFromSecretKey(ownerKeypair.secretKey));
+
+  await burn(umi, { asset, collection, authority: ownerSigner }).sendAndConfirm(umi);
 }
