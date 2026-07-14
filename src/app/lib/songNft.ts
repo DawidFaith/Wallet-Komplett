@@ -36,9 +36,9 @@ const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-b
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de').replace(/\/$/, '');
 
 // SOL-Mindestguthaben für NFT-Operationen (Rent + Tx-Gebühren, mit Puffer)
-// mpl-core: Collection ~0,003 / Edition-Asset ~0,003 (gemessen wird nach Umstellung)
+// Gemessen (14.07.2026, mpl-core): Collection 0,0045 / Edition-Asset 0,0050
 const REQUIRED_SOL_SONG_CREATION = 0.01;
-const REQUIRED_SOL_PRINT_EDITION = 0.006;
+const REQUIRED_SOL_PRINT_EDITION = 0.008;
 
 async function checkSolBalance(
   connection: Connection,
