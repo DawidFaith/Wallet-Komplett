@@ -337,30 +337,15 @@ export async function mintCollectibleAsset(params: {
     collectibleId,
     collectionMint,
     collectionName,
-    collectionImageUri,
     ownerSolanaAddress,
     artistSolanaAddress,
-    artistName,
     rarity,
-    repBonusPercent,
-    creditBonusPercent,
-    shardBonus,
-    primaryBonus,
-    activeSlots,
   } = params;
 
-  // Nur die für diese Rarität AKTIVEN Bonus-Slots on-chain speichern (primär zuerst)
-  const slotOrder: Array<'rep' | 'credits' | 'shard'> = [
-    primaryBonus,
-    ...(['rep', 'credits', 'shard'] as const).filter(b => b !== primaryBonus),
-  ];
-  const activeKeys = new Set(slotOrder.slice(0, activeSlots));
-  const repActive    = activeKeys.has('rep')     && repBonusPercent > 0;
-  const creditActive = activeKeys.has('credits') && creditBonusPercent > 0;
-  const shardActive  = activeKeys.has('shard')   && shardBonus > 0;
-
-  // Metadata wird live von unserer eigenen Domain ausgeliefert — kein Arweave,
-  // keine Gateway-Wartezeit, sofort in Phantom/Solscan sichtbar
+  // Metadata (inkl. aller Anzeige-Attribute) kommt live von unserer eigenen
+  // Domain — KEIN On-Chain-Attributes-Plugin mehr, sonst zeigen Magic Eden &
+  // Co. jedes Attribut doppelt (JSON + Plugin). Die Rarity, die der
+  // Redeem-Flow braucht, kommt aus der DB (fallbackRarity in redeem-nft).
   const metadataUri = `${APP_URL}/api/nft-metadata/collectible/${collectibleId}`;
 
   const umi         = getUmi(params.payerKeypair);
@@ -379,25 +364,6 @@ export async function mintCollectibleAsset(params: {
         basisPoints: 500,
         creators:    [{ address: umiPubkey(artistSolanaAddress), percentage: 100 }],
         ruleSet:     ruleSet('None'),
-      },
-      {
-        // Alle Collectible-Daten on-chain — kein Arweave-Indexierungswait nötig.
-        // Bonus-Keys nur für aktive Slots → Wallet/Solscan/Marktplatz konsistent.
-        type:          'Attributes',
-        attributeList: [
-          { key: 'Rarity',       value: RARITY_LABELS[rarity] },
-          { key: 'Collection',   value: collectionName },
-          { key: 'Platform',     value: 'D.FAITH' },
-          { key: 'Artist',       value: artistName },
-          { key: 'Image',        value: toHttps(collectionImageUri) },
-          { key: 'DropRate',     value: RARITY_DROP_RATE[rarity] },
-          ...(repActive    ? [{ key: 'RepBonus',    value: String(repBonusPercent) }]    : []),
-          ...(creditActive ? [{ key: 'CreditBonus', value: String(creditBonusPercent) }] : []),
-          ...(shardActive  ? [{ key: 'ShardBonus',  value: String(shardBonus) }]         : []),
-          { key: 'PrimaryBonus', value: primaryBonus },
-          { key: 'ActiveSlots',  value: String(activeSlots) },
-          { key: 'Website',      value: 'app.dawidfaith.de' },
-        ],
       },
       {
         // Erlaubt dem Treasury, dieses NFT on-chain zu verbrennen (Upgrade ohne User-Signatur)

@@ -95,11 +95,17 @@ export async function GET(req: NextRequest) {
             (p: { key: string; value: string }) => ({ trait_type: p.key, value: p.value }),
           );
 
-        // Token Metadata: Attributes aus Arweave-JSON
+        // JSON-Attribute (hübsch formatiert, von unserer Metadata-Route)
         const metaAttrs: { trait_type: string; value: string }[] = meta?.attributes ?? [];
 
-        // Plugin-Attributes bevorzugen (on-chain, immer aktuell); fallback auf JSON-Attrs
-        const attributes = pluginAttrs.length > 0 ? pluginAttrs : metaAttrs;
+        // JSON + Plugin mergen, Duplikate über normalisierte Keys entfernen
+        // ('REP Bonus' und 'RepBonus' sind dasselbe Attribut) — JSON gewinnt
+        const normalize = (k: string) => k.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const seen = new Set(metaAttrs.map(a => normalize(a.trait_type)));
+        const attributes = [
+          ...metaAttrs,
+          ...pluginAttrs.filter(p => !seen.has(normalize(p.trait_type))),
+        ];
 
         const isDfaith = attributes.some(
           a => (a.trait_type === 'Platform') && a.value === 'D.FAITH',
