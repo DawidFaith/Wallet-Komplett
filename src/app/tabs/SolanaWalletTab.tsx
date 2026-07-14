@@ -584,6 +584,11 @@ export default function SolanaWalletTab() {
       setCreateError('');
       return;
     }
+    // Adresse aus dem lokalen Cache sofort anzeigen — der Tab wird bei jedem
+    // Wechsel neu gemountet und würde sonst jedes Mal den Lade-Screen zeigen
+    const cacheKey = `dfaith_solana_addr_${userId}`;
+    const cached   = typeof window !== 'undefined' ? localStorage.getItem(cacheKey) : null;
+    if (cached) setSolanaAddr(cached);
     let cancelled = false;
     async function init() {
       try {
@@ -596,6 +601,7 @@ export default function SolanaWalletTab() {
 
         if (checkData.solanaAddress) {
           setSolanaAddr(checkData.solanaAddress);
+          if (typeof window !== 'undefined') localStorage.setItem(cacheKey, checkData.solanaAddress);
           // Referral-Fallback: immer versuchen zu speichern wenn Code im localStorage
           // (home/page.tsx sollte ihn bereits gespeichert haben, ON CONFLICT DO NOTHING verhindert Duplikate)
           if (referralCode && userId) {
@@ -632,6 +638,7 @@ export default function SolanaWalletTab() {
           localStorage.removeItem('dfaith_referral');
         }
         setSolanaAddr(data.solanaAddress);
+        if (typeof window !== 'undefined') localStorage.setItem(cacheKey, data.solanaAddress);
       } catch (e) {
         if (!cancelled) setCreateError(e instanceof Error ? e.message : 'Unbekannter Fehler');
       } finally {
@@ -855,7 +862,9 @@ export default function SolanaWalletTab() {
     );
   }
 
-  // ── Erstellen ──────────────────────────────────────────────────────────────
+  // ── Erstellen / Laden ───────────────────────────────────────────────────────
+  // "Wallet wird erstellt" nur beim echten Erstellen (creating) — beim normalen
+  // Laden der bereits vorhandenen Adresse nur ein neutraler Lade-Hinweis
   if (creating || (userId && !solanaAddr && !createError)) {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
@@ -868,8 +877,8 @@ export default function SolanaWalletTab() {
         </div>
         <div className="bg-white/[0.06] border border-white/[0.1] rounded-2xl p-8 text-center space-y-4">
           <FaSpinner size={28} className="animate-spin text-amber-400 mx-auto" />
-          <p className="text-white font-semibold">{t('sol.creatingWallet', lang)}</p>
-          <p className="text-zinc-400 text-sm">{t('sol.creatingHint', lang)}</p>
+          <p className="text-white font-semibold">{creating ? t('sol.creatingWallet', lang) : t('common.loading', lang)}</p>
+          {creating && <p className="text-zinc-400 text-sm">{t('sol.creatingHint', lang)}</p>}
         </div>
       </div>
     );
