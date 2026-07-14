@@ -62,6 +62,30 @@ export async function GET(req: NextRequest) {
     ORDER BY sp.purchased_at DESC
   `;
 
+  // Exakter Nachbau der /api/nfts-Query (inkl. beider LEFT JOINs) zum Vergleich
+  const exactNftsQueryReplica = await sql`
+    SELECT
+      sp.id           AS purchase_id,
+      sp.item_id,
+      sp.nft_mint_address AS print_mint,
+      sp.edition_number,
+      sp.purchased_at,
+      si.title,
+      si.image_url,
+      si.description,
+      si.content_url,
+      si.type,
+      si.nft_max_supply,
+      si.master_edition_mint,
+      COALESCE(p.display_name, yb.channel_name, p.instagram_name, p.tiktok_name) AS artist_name
+    FROM shop_purchases sp
+    JOIN shop_items si ON si.id = sp.item_id
+    LEFT JOIN user_profiles p ON LOWER(p.wallet_address) = si.artist_wallet
+    LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
+    WHERE sp.buyer_wallet = ${walletAddress.toLowerCase()}
+    ORDER BY sp.purchased_at DESC
+  `;
+
   const activeListings = await sql`
     SELECT mint_address FROM nft_listings WHERE status = 'active'
   `;
@@ -80,6 +104,8 @@ export async function GET(req: NextRequest) {
     solanaAddress,
     ownedMints,
     ownedMintsError,
+    exactNftsQueryReplicaCount: exactNftsQueryReplica.length,
+    exactNftsQueryReplicaMints: exactNftsQueryReplica.map(r => r.print_mint),
     purchases: purchases.map(p => ({
       purchaseId:     p.id,
       itemId:         p.item_id,
