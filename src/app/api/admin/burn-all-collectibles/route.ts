@@ -11,7 +11,7 @@
 import { NextResponse } from 'next/server';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { mplCore, burn, burnCollection, fetchAssetV1, fetchCollectionV1 } from '@metaplex-foundation/mpl-core';
-import { keypairIdentity, publicKey as umiPubkey } from '@metaplex-foundation/umi';
+import { keypairIdentity, publicKey as umiPubkey, createSignerFromKeypair } from '@metaplex-foundation/umi';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
@@ -35,15 +35,17 @@ function coreUmi(kp: Keypair) {
 }
 
 async function burnAsOwner(ownerKp: Keypair, assetMint: string) {
-  const umi = coreUmi(ownerKp);
+  // Treasury zahlt die Tx-Fee (Fan-Wallets haben teils 0 SOL), Besitzer signiert den Burn
+  const umi = coreUmi(getTreasuryKeypair());
   let asset;
   try {
     asset = await fetchAssetV1(umi, umiPubkey(assetMint));
   } catch {
     return 'already burned';
   }
-  const collection = await fetchCollectionV1(umi, umiPubkey(COLLECTION_MINT));
-  await burn(umi, { asset, collection }).sendAndConfirm(umi);
+  const collection  = await fetchCollectionV1(umi, umiPubkey(COLLECTION_MINT));
+  const ownerSigner = createSignerFromKeypair(umi, umi.eddsa.createKeypairFromSecretKey(ownerKp.secretKey));
+  await burn(umi, { asset, collection, authority: ownerSigner }).sendAndConfirm(umi);
   return 'burned';
 }
 
