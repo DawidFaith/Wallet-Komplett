@@ -25,7 +25,11 @@ export async function GET(
     return NextResponse.json({ error: 'Ungültige Item-ID' }, { status: 400 });
   }
   // ?variant=collection → Metadata des Collection-NFTs ("Artist — Titel")
-  const isCollection = new URL(req.url).searchParams.get('variant') === 'collection';
+  // ?edition=N          → Metadata einer nummerierten Edition ("Titel #N")
+  const searchParams  = new URL(req.url).searchParams;
+  const isCollection  = searchParams.get('variant') === 'collection';
+  const editionParam  = searchParams.get('edition');
+  const editionNumber = editionParam && /^\d{1,6}$/.test(editionParam) ? Number(editionParam) : null;
 
   const sql  = getDb();
   const rows = await sql`
@@ -79,9 +83,9 @@ export async function GET(
   }
 
   const metadata = {
-    name:          item.title as string,
+    name:          editionNumber !== null ? `${item.title as string} #${editionNumber}` : item.title as string,
     symbol:        'DFAITH',
-    description:   `${(item.description as string | null) ?? ''}\n\nLimited to ${maxSupply} numbered editions — each holder receives a unique Print Edition NFT. Tradeable on secondary markets with 5% artist royalties on every resale.`,
+    description:   `${(item.description as string | null) ?? ''}\n\nLimited to ${maxSupply} numbered editions — each holder receives a unique Edition NFT. Tradeable on secondary markets with 5% artist royalties on every resale.`,
     image:         coverUrl,
     animation_url: audioUrl,
     external_url:  'https://app.dawidfaith.de',
@@ -99,6 +103,7 @@ export async function GET(
       { trait_type: 'Type',         value: 'Music' },
       { trait_type: 'Artist',       value: artistName },
       { trait_type: 'Platform',     value: 'D.FAITH' },
+      ...(editionNumber !== null ? [{ trait_type: 'Edition', value: String(editionNumber) }] : []),
       { trait_type: 'Max Editions', value: String(maxSupply) },
       { trait_type: 'Royalties',    value: '5%' },
       { trait_type: 'Release Year', value: String(new Date(item.created_at as string).getFullYear()) },

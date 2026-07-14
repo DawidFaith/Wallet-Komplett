@@ -83,11 +83,12 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── Token-Konfiguration ───────────────────────────────────────────────────
+  // ── Token-Konfiguration + Artist-Name (für NFT-Attribute) ────────────────
   const artistProfileRows = await sql`
-    SELECT token_mint_address FROM user_profiles
+    SELECT token_mint_address, display_name FROM user_profiles
     WHERE wallet_address = ${item.artist_wallet} LIMIT 1
   `;
+  const artistName: string = (artistProfileRows[0]?.display_name as string | null)?.trim() || 'D.FAITH Artist';
   const artistMint: string | null = artistProfileRows[0]?.token_mint_address as string | null ?? null;
   const effectiveMint = artistMint ?? DFAITH_MINT ?? null;
 
@@ -180,13 +181,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Artist hat kein Solana-Wallet für NFT-Mint' }, { status: 404 });
   }
 
+  // mpl-core: Editionen werden in die Song-Collection geminted
+  const songCollectionMint = item.nft_collection_mint ?? item.master_edition_mint;
+  if (!songCollectionMint) {
+    await sql`UPDATE shop_items SET edition_count = edition_count - 1 WHERE id = ${item.id}`;
+    return NextResponse.json({ error: 'Item hat keine On-Chain-Collection für den NFT-Mint' }, { status: 500 });
+  }
+
   let nftMintAddress: string;
   try {
     const { printMint } = await mintSongPrintEdition({
-      masterMint:        item.master_edition_mint!,
-      collectionMint:    item.nft_collection_mint ?? '',
+      itemId:            item.id,
+      collectionMint:    songCollectionMint,
       buyerSolanaAddress,
       artistPrivateKey:  artistKeyRows[0].solana_private_key as string,
+      artistName,
+      title:             item.title,
+      maxSupply:         item.nft_max_supply !== null ? Number(item.nft_max_supply) : null,
       editionNumber,
     });
     nftMintAddress = printMint;

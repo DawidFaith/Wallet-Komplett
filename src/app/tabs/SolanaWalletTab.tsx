@@ -934,15 +934,20 @@ export default function SolanaWalletTab() {
   const totalValueLabel = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(totalValueUsd);
 
   // ── NFT-Karte rendern (wird in Songs + Collectibles-Abschnitt genutzt) ──
+  // Songs sind seit der mpl-core-Umstellung ebenfalls MplCoreAsset →
+  // Unterscheidung über das On-Chain-Attribut Type='Music'
+  const isMusicNft = (nft: OwnedNft) =>
+    nft.attributes.some(a => a.trait_type === 'Type' && a.value === 'Music')
+    || nft.interface !== 'MplCoreAsset';
   const renderNft = (nft: OwnedNft) => {
-    const isCollectible = nft.interface === 'MplCoreAsset';
+    const isCollectible = !isMusicNft(nft);
     const rarityRaw   = nft.attributes.find(a => a.trait_type === 'Rarity')?.value?.toLowerCase() ?? '';
     const artistAttr  = nft.attributes.find(a => a.trait_type === 'Artist')?.value;
     const repBonus    = nft.attributes.find(a => a.trait_type === 'RepBonus'    || a.trait_type === 'REP Bonus')?.value;
     const creditBonus = nft.attributes.find(a => a.trait_type === 'CreditBonus' || a.trait_type === 'Credit Bonus')?.value;
     const shardBonus  = nft.attributes.find(a => a.trait_type === 'ShardBonus'  || a.trait_type === 'Shard Bonus')?.value;
     const dropRate    = nft.attributes.find(a => a.trait_type === 'DropRate'    || a.trait_type === 'Drop Rate')?.value;
-    const editionAttr = nft.attributes.find(a => a.trait_type === 'Max Editions')?.value;
+    const editionAttr = nft.attributes.find(a => a.trait_type === 'Max Editions' || a.trait_type === 'MaxEditions')?.value;
     const RARITY_STYLE: Record<string, string> = {
       common:    'text-zinc-300 bg-zinc-800/80 border-zinc-600/50',
       uncommon:  'text-green-300 bg-green-900/50 border-green-600/50',
@@ -1357,8 +1362,8 @@ export default function SolanaWalletTab() {
                 {/* Aufgeklappte Artist-Sektionen */}
                 {Array.from(groups.entries()).map(([artistName, artistNfts]) => {
                   if (!openNftArtists.has(artistName)) return null;
-                  const artistSongs        = artistNfts.filter(n => n.interface !== 'MplCoreAsset');
-                  const artistCollectibles = artistNfts.filter(n => n.interface === 'MplCoreAsset');
+                  const artistSongs        = artistNfts.filter(n => isMusicNft(n));
+                  const artistCollectibles = artistNfts.filter(n => !isMusicNft(n));
                   const sectionPicture = (() => {
                     for (const nft of artistNfts) {
                       const p = shopNftsMap[nft.mint]?.artistPicture;

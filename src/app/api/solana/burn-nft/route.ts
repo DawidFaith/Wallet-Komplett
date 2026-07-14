@@ -16,6 +16,7 @@ import {
   findEditionMarkerPda,
   findMasterEditionPda,
 } from '@metaplex-foundation/mpl-token-metadata';
+import { mplCore, burn as coreBurn, fetchAssetV1, fetchCollectionV1 } from '@metaplex-foundation/mpl-core';
 import {
   keypairIdentity,
   publicKey as umiPubkey,
@@ -93,6 +94,22 @@ export async function POST(req: NextRequest) {
     const holderUmi = createUmi(RPC_URL)
       .use(mplTokenMetadata())
       .use(keypairIdentity(fromWeb3JsKeypair(holderKp)));
+
+    // 0. mpl-core Asset (Song-Editionen seit 13.07.2026, Collectibles)?
+    //    → Core-Burn, Holder bekommt das Rent-SOL zurück
+    try {
+      const coreUmi = createUmi(RPC_URL, 'confirmed')
+        .use(mplCore())
+        .use(keypairIdentity(fromWeb3JsKeypair(holderKp)));
+      const asset = await fetchAssetV1(coreUmi, umiPubkey(mintAddress));
+      const collection = asset.updateAuthority.type === 'Collection' && asset.updateAuthority.address
+        ? await fetchCollectionV1(coreUmi, asset.updateAuthority.address)
+        : undefined;
+      await coreBurn(coreUmi, { asset, collection }).sendAndConfirm(coreUmi);
+      return NextResponse.json({ success: true });
+    } catch {
+      // Kein mpl-core Asset → Token-Metadata-Pfad unten
+    }
 
     // 1. Versuche master_edition_mint aus DB zu holen
     let masterMint: string | null = null;

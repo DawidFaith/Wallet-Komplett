@@ -1,47 +1,44 @@
 /**
- * Song NFT – Metaplex Token Metadata (mpl-token-metadata v3)
+ * Song NFT – Metaplex Core (mpl-core)
  *
- * Master Edition  → wird beim Shop-Item-Erstellen geminted (Treasury hält es)
- * Print Edition   → wird bei jedem Kauf an den Käufer geminted (nummeriert)
- * Royalty         → 5 % gehen automatisch an den Artist bei jedem Zweitverkauf
+ * Song-Collection → wird beim Shop-Item-Erstellen geminted (Artist ist Authority)
+ * Edition-Asset   → wird bei jedem Kauf an den Käufer geminted (Edition-Plugin mit Nummer)
+ * Royalty         → 5 % an den Artist bei jedem Zweitverkauf (Royalties-Plugin der Collection)
+ *
+ * Kosten (Umstellung von Token Metadata auf mpl-core am 13.07.2026):
+ *   Song erstellen: ~0,004 SOL statt 0,039 (keine doppelte Metaplex-Fee von 0,01)
+ *   Edition-Mint:   ~0,003 SOL statt 0,020
+ *
+ * Metadata kommt live von /api/nft-metadata/[itemId] (kein Arweave, kein Warten).
  */
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import {
-  mplTokenMetadata,
-  createV1,
-  mintV1,
-  printV1,
-  TokenStandard,
-  verifyCreatorV1,
-  verifyCollectionV1,
-  findMetadataPda,
-} from '@metaplex-foundation/mpl-token-metadata';
+  mplCore,
+  createCollection,
+  create,
+  transfer,
+  ruleSet,
+  fetchCollectionV1,
+  fetchAssetV1,
+} from '@metaplex-foundation/mpl-core';
 import {
   keypairIdentity,
   generateSigner,
-  percentAmount,
   publicKey as umiPubkey,
-  some,
-  none,
   createSignerFromKeypair,
 } from '@metaplex-foundation/umi';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
-import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
-import {
-  getAssociatedTokenAddress, getAccount,
-  createAssociatedTokenAccountInstruction, createTransferInstruction,
-  TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
+import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { getTreasuryKeypair } from './solanaOperator';
 import { decryptKey } from './solanaCrypto';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de').replace(/\/$/, '');
 
 // SOL-Mindestguthaben für NFT-Operationen (Rent + Tx-Gebühren, mit Puffer)
-// Gemessene Kosten (13.07.2026): Song-Erstellung 0,0394 / Print Edition 0,0197
-const REQUIRED_SOL_SONG_CREATION = 0.05;   // Collection NFT + Master Edition + Verifikationen
-const REQUIRED_SOL_PRINT_EDITION = 0.025;  // Print Edition + Collection-Verify
+// mpl-core: Collection ~0,003 / Edition-Asset ~0,003 (gemessen wird nach Umstellung)
+const REQUIRED_SOL_SONG_CREATION = 0.01;
+const REQUIRED_SOL_PRINT_EDITION = 0.006;
 
 async function checkSolBalance(
   connection: Connection,
@@ -60,6 +57,14 @@ async function checkSolBalance(
   }
 }
 
+function getArtistUmi(artistPrivateKey: string) {
+  const artistKp = Keypair.fromSecretKey(bs58.decode(decryptKey(artistPrivateKey)));
+  const umi = createUmi(RPC_URL, 'confirmed')
+    .use(mplCore())
+    .use(keypairIdentity(fromWeb3JsKeypair(artistKp)));
+  return { umi, artistKp };
+}
+
 export interface SongMasterEditionResult {
   masterMint:     string;
   collectionMint: string;
@@ -67,16 +72,12 @@ export interface SongMasterEditionResult {
 }
 
 /**
- * Mintet eine Master Edition für einen Song.
+ * Erstellt die mpl-core Collection für einen Song ("Artist — Titel").
+ * Der Artist ist Authority + Payer; jede verkaufte Edition wird als Asset
+ * in diese Collection geminted.
  *
- * Die on-chain uri zeigt auf /api/nft-metadata/[itemId] — die Metadata wird
- * dort live aus der DB generiert (Cover/Audio = Vercel-Blob-URLs). Kein
- * Arweave, keine Upload- oder Gateway-Wartezeit: sofort nach dem Mint komplett
- * in Phantom/Solscan sichtbar.
- *
- * @param itemId               shop_items.id — Basis der Metadata-URL
- * @param artistSolanaAddress  On-chain Wallet des Artists (für Royalties in creators[])
- * @param maxSupply            Maximale Anzahl Print Editions (z.B. 100)
+ * masterMint im Result = collectionMint (Kompatibilität mit DB/UI, die den
+ * On-Chain-Anker des Songs in master_edition_mint erwarten).
  */
 export async function mintSongMasterEdition(params: {
   itemId: string;
@@ -91,122 +92,53 @@ export async function mintSongMasterEdition(params: {
   maxSupply: number;
   symbol?: string;
 }): Promise<SongMasterEditionResult> {
-  const {
-    itemId,
-    artistSolanaAddress,
-    artistPrivateKey,
-    artistName,
-    title,
-    maxSupply,
-    symbol = 'DFAITH',
-  } = params;
+  const { itemId, artistSolanaAddress, artistPrivateKey, artistName, title, maxSupply } = params;
 
-  const appUrl      = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de').replace(/\/$/, '');
-  const metadataUri = `${appUrl}/api/nft-metadata/${itemId}`;
-
-  // Collection trägt den Künstlernamen → in Phantom & auf Marktplätzen ist die
-  // Herkunft sofort erkennbar ("Dawid Faith — Songtitel"), eigene Metadata-Variante
+  const metadataUri   = `${APP_URL}/api/nft-metadata/${itemId}`;
+  const collectionUri = `${metadataUri}?variant=collection`;
+  // Collection trägt den Künstlernamen → Herkunft in Phantom/Marktplätzen sofort erkennbar
   const collectionName = `${artistName} — ${title}`.slice(0, 32);
-  const collectionUri  = `${metadataUri}?variant=collection`;
 
-  // Master Edition auf Solana minten
-  // Treasury bleibt Authority (für Heal-Path in printV1), Artist zahlt die Gebühren
-  // 'confirmed' statt web3.js-Default 'finalized' → Preflight + Confirm sehen
-  // frisch bestätigte Accounts und warten nicht ~30s auf Finalisierung.
-  const treasury = getTreasuryKeypair();
-  const umi = createUmi(RPC_URL, 'confirmed')
-    .use(mplTokenMetadata())
-    .use(keypairIdentity(fromWeb3JsKeypair(treasury)));
+  const { umi, artistKp } = getArtistUmi(artistPrivateKey);
 
-  const artistSecretB58 = decryptKey(artistPrivateKey);
-  const artistWeb3Kp    = Keypair.fromSecretKey(bs58.decode(artistSecretB58));
-  const artistUmiKp     = umi.eddsa.createKeypairFromSecretKey(artistWeb3Kp.secretKey);
-  const artistSigner    = createSignerFromKeypair(umi, artistUmiKp);
-  umi.payer             = artistSigner;
-
-  // Vorab prüfen, damit der Mint nicht mittendrin abbricht (Collection wäre
-  // dann schon erstellt). Echte Kosten: 2 × ~0,0197 SOL (Metaplex-Fee 0,01 +
-  // Rent pro NFT) ≈ 0,0394 — Check mit Puffer bei 0,05.
   const conn = new Connection(RPC_URL, 'confirmed');
-  await checkSolBalance(conn, artistWeb3Kp.publicKey, REQUIRED_SOL_SONG_CREATION, 'Artist');
+  await checkSolBalance(conn, artistKp.publicKey, REQUIRED_SOL_SONG_CREATION, 'Artist');
 
-  // ── 1. Collection NFT für diesen Song erstellen (Treasury hält es) ──────────
-  // Jeder Song bekommt seine eigene Collection NFT. Master + alle Print Editions
-  // werden als verifizierte Mitglieder eingetragen → Phantom erkennt sie nicht als Spam.
-  // createV1 + mintV1 in einer einzigen Transaktion senden, damit der RPC-Node
-  // die frisch erstellten Accounts (Metadata-PDA) beim Mint sofort sieht.
-  const collectionMintSigner = generateSigner(umi);
-  await createV1(umi, {
-    mint:                 collectionMintSigner,
-    authority:            umi.identity,
-    updateAuthority:      umi.identity,
-    name:                 collectionName,
-    symbol:               symbol.slice(0, 10),
-    uri:                  collectionUri,
-    sellerFeeBasisPoints: percentAmount(0),
-    creators:             none(),
-    tokenStandard:        TokenStandard.NonFungible,
-    printSupply:          some({ __kind: 'Zero' }),
-    collection:           none(),
-    collectionDetails:    some({ __kind: 'V1', size: 0n }),
-    uses:                 none(),
-  }).add(mintV1(umi, {
-    mint:          collectionMintSigner.publicKey,
-    tokenOwner:    umi.identity.publicKey,
-    amount:        1,
-    tokenStandard: TokenStandard.NonFungible,
-  })).sendAndConfirm(umi);
+  const collectionSigner = generateSigner(umi);
+  await createCollection(umi, {
+    collection: collectionSigner,
+    name:       collectionName,
+    uri:        collectionUri,
+    plugins: [
+      {
+        type:        'Royalties',
+        basisPoints: 500,
+        creators:    [{ address: umiPubkey(artistSolanaAddress), percentage: 100 }],
+        ruleSet:     ruleSet('None'),
+      },
+      {
+        // Numbered-Editions-Kennzeichnung: Wallets/Marktplätze zeigen "Limited Edition x/maxSupply"
+        type:      'MasterEdition',
+        maxSupply,
+        name:      title.slice(0, 32),
+        uri:       metadataUri,
+      },
+      {
+        // On-chain Attributes → Artist-Gruppierung in der Wallet funktioniert ohne JSON-Fetch
+        type:          'Attributes',
+        attributeList: [
+          { key: 'Type',        value: 'Music' },
+          { key: 'Artist',      value: artistName },
+          { key: 'Platform',    value: 'D.FAITH' },
+          { key: 'MaxEditions', value: String(maxSupply) },
+          { key: 'Website',     value: 'app.dawidfaith.de' },
+        ],
+      },
+    ],
+  }).sendAndConfirm(umi);
 
-  // ── 2. Master Edition erstellen + Creator/Collection in einer Transaktion verifizieren ──
-  // verifyCollectionV1 referenziert die in TX 1 erstellten Collection-Accounts.
-  // Die Preflight-Simulation kann auf einem RPC-Node laufen, der TX 1 noch nicht
-  // kennt → IncorrectOwner (0x39). Deshalb skipPreflight: der Leader, der die TX
-  // ausführt, hat den bestätigten State von TX 1 garantiert.
-  const mintSigner = generateSigner(umi);
-  const [masterMetadataPda] = findMetadataPda(umi, { mint: mintSigner.publicKey });
-  const masterTx = await createV1(umi, {
-    mint:                 mintSigner,
-    authority:            umi.identity,
-    updateAuthority:      umi.identity,
-    name:                 title.slice(0, 32),
-    symbol:               symbol.slice(0, 10),
-    uri:                  metadataUri,
-    sellerFeeBasisPoints: percentAmount(5),
-    creators: some([{
-      address:  umiPubkey(artistSolanaAddress),
-      verified: false,
-      share:    100,
-    }]),
-    tokenStandard: TokenStandard.NonFungible,
-    printSupply:   some({ __kind: 'Limited', fields: [BigInt(maxSupply)] }),
-    collection:    some({ key: collectionMintSigner.publicKey, verified: false }),
-    uses:          none(),
-  }).add(mintV1(umi, {
-    mint:          mintSigner.publicKey,
-    tokenOwner:    umi.identity.publicKey,
-    amount:        1,
-    tokenStandard: TokenStandard.NonFungible,
-  })).add(verifyCreatorV1(umi, {
-    metadata:  masterMetadataPda,
-    authority: artistSigner,
-  })).add(verifyCollectionV1(umi, {
-    metadata:       masterMetadataPda,
-    collectionMint: collectionMintSigner.publicKey,
-  })).sendAndConfirm(umi, { send: { skipPreflight: true } });
-
-  // Ohne Preflight meldet erst das Confirm-Ergebnis einen On-Chain-Fehler
-  if (masterTx.result.value.err) {
-    throw new Error(
-      `Master Edition TX on-chain fehlgeschlagen: ${JSON.stringify(masterTx.result.value.err)} ` +
-      `(Signature: ${bs58.encode(masterTx.signature)})`,
-    );
-  }
-
-  return {
-    masterMint:     mintSigner.publicKey.toString(),
-    collectionMint: collectionMintSigner.publicKey.toString(),
-    metadataUri,
-  };
+  const collectionMint = collectionSigner.publicKey.toString();
+  return { masterMint: collectionMint, collectionMint, metadataUri };
 }
 
 export interface PrintEditionResult {
@@ -215,97 +147,74 @@ export interface PrintEditionResult {
 }
 
 /**
- * Mintet eine nummerierte Print Edition an den Käufer.
- * Wird nach jedem erfolgreichen Kauf aufgerufen.
- *
- * @param buyerSolanaAddress  Solana-Adresse des Käufers (Empfänger des NFT)
- * @param editionNumber       Laufende Nummer (1, 2, 3, …)
+ * Mintet eine nummerierte Edition (mpl-core Asset) an den Käufer.
+ * Artist ist Collection-Authority und zahlt die Gebühren (~0,003 SOL).
  */
 export async function mintSongPrintEdition(params: {
-  masterMint:        string;
-  collectionMint:    string;
+  itemId:             string;
+  collectionMint:     string;
   buyerSolanaAddress: string;
-  artistPrivateKey:  string;
-  editionNumber:     number;
+  artistPrivateKey:   string;
+  artistName:         string;
+  title:              string;
+  maxSupply:          number | null;
+  editionNumber:      number;
 }): Promise<PrintEditionResult> {
-  const { masterMint, collectionMint, buyerSolanaAddress, artistPrivateKey, editionNumber } = params;
+  const {
+    itemId, collectionMint, buyerSolanaAddress, artistPrivateKey,
+    artistName, title, maxSupply, editionNumber,
+  } = params;
 
-  // Treasury bleibt Authority (masterTokenAccountOwner), Artist zahlt die Gebühren
-  const treasury = getTreasuryKeypair();
-  const umi = createUmi(RPC_URL, 'confirmed')
-    .use(mplTokenMetadata())
-    .use(keypairIdentity(fromWeb3JsKeypair(treasury)));
+  const { umi, artistKp } = getArtistUmi(artistPrivateKey);
 
-  const artistWeb3Kp = Keypair.fromSecretKey(bs58.decode(decryptKey(artistPrivateKey)));
-  const artistUmiKp  = umi.eddsa.createKeypairFromSecretKey(artistWeb3Kp.secretKey);
-  umi.payer          = createSignerFromKeypair(umi, artistUmiKp);
-
-  // SOL-Prüfung: Artist muss Print Edition bezahlen können (sonst kein NFT für Käufer)
   const conn = new Connection(RPC_URL, 'confirmed');
-  await checkSolBalance(conn, artistWeb3Kp.publicKey, REQUIRED_SOL_PRINT_EDITION, 'Artist');
+  await checkSolBalance(conn, artistKp.publicKey, REQUIRED_SOL_PRINT_EDITION, 'Artist');
 
-  const editionMintSigner = generateSigner(umi);
+  const collection  = await fetchCollectionV1(umi, umiPubkey(collectionMint));
+  const assetSigner = generateSigner(umi);
 
-  // Sicherstellen dass das Treasury das Master Edition Token hält (fix für ältere Items)
-  const masterMintPk = new PublicKey(masterMint);
-  const treasuryPk   = new PublicKey(treasury.publicKey.toBase58());
-  const treasuryAta  = await getAssociatedTokenAddress(masterMintPk, treasuryPk, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
-  let masterTokenMissing = false;
-  try {
-    const ataInfo = await getAccount(conn, treasuryAta);
-    if (Number(ataInfo.amount) === 0) masterTokenMissing = true;
-  } catch {
-    masterTokenMissing = true;
-  }
-  if (masterTokenMissing) {
-    await mintV1(umi, {
-      mint:          umiPubkey(masterMint),
-      tokenOwner:    umi.identity.publicKey,
-      amount:        1,
-      tokenStandard: TokenStandard.NonFungible,
-    }).sendAndConfirm(umi);
-  }
+  // "Titel #3" — mpl-core Namen sind auf 32 Zeichen begrenzt
+  const suffix    = ` #${editionNumber}`;
+  const assetName = `${title.slice(0, 32 - suffix.length)}${suffix}`;
 
-  await printV1(umi, {
-    masterEditionMint:         umiPubkey(masterMint),
-    editionMint:               editionMintSigner,
-    editionTokenAccountOwner:  umiPubkey(buyerSolanaAddress),
-    masterTokenAccountOwner:   umi.identity,
-    editionNumber:             BigInt(editionNumber),
-    tokenStandard:             TokenStandard.NonFungible,
+  await create(umi, {
+    asset:      assetSigner,
+    collection,
+    owner:      umiPubkey(buyerSolanaAddress),
+    name:       assetName,
+    uri:        `${APP_URL}/api/nft-metadata/${itemId}?edition=${editionNumber}`,
+    plugins: [
+      {
+        // Offizielles Edition-Plugin → Wallets zeigen die Editionsnummer nativ an
+        type:   'Edition',
+        number: editionNumber,
+      },
+      {
+        type:          'Attributes',
+        attributeList: [
+          { key: 'Type',        value: 'Music' },
+          { key: 'Artist',      value: artistName },
+          { key: 'Platform',    value: 'D.FAITH' },
+          { key: 'Edition',     value: String(editionNumber) },
+          ...(maxSupply ? [{ key: 'MaxEditions', value: String(maxSupply) }] : []),
+          { key: 'Website',     value: 'app.dawidfaith.de' },
+        ],
+      },
+    ],
   }).sendAndConfirm(umi);
 
-  // Print Edition als verifiziertes Mitglied der Song-Collection eintragen.
-  // printV1 kopiert das collection-Feld automatisch vom Master (unverified) →
-  // wir müssen nur noch verifizieren. Ohne verif. Collection blendet Phantom als Spam aus.
-  // skipPreflight: die Metadata-PDA der Edition stammt aus der printV1-TX davor —
-  // die Preflight-Simulation kann auf einem Node laufen, der sie noch nicht kennt.
-  if (collectionMint) {
-    try {
-      const [printMetadataPda] = findMetadataPda(umi, { mint: editionMintSigner.publicKey });
-      const verifyTx = await verifyCollectionV1(umi, {
-        metadata:       printMetadataPda,
-        collectionMint: umiPubkey(collectionMint),
-      }).sendAndConfirm(umi, { send: { skipPreflight: true } });
-      if (verifyTx.result.value.err) {
-        console.warn('[songNft] Collection-Verify für Print Edition on-chain fehlgeschlagen:', JSON.stringify(verifyTx.result.value.err));
-      }
-    } catch (e) {
-      console.warn('[songNft] Collection-Verify für Print Edition fehlgeschlagen:', e);
-    }
-  }
-
   return {
-    printMint:     editionMintSigner.publicKey.toString(),
+    printMint: assetSigner.publicKey.toString(),
     editionNumber,
   };
 }
 
 /**
- * Überträgt eine Print Edition (Token Metadata SPL-Token) von einem Wallet zu einem anderen.
+ * Überträgt ein Song-Edition-Asset (mpl-core) von einem Wallet zu einem anderen.
  * Wird für Marktplatz-Escrow verwendet (Verkäufer → Treasury oder Treasury → Käufer/Verkäufer).
+ * Die Collection wird on-chain vom Asset abgeleitet — Aufrufer brauchen sie nicht zu kennen.
  *
- * @param ownerKeypair  Aktueller Besitzer der Edition (signiert den Transfer)
+ * @param ownerKeypair  Aktueller Besitzer des Assets (signiert den Transfer)
  * @param payerKeypair  Zahlt die Tx-Fees (kann der gleiche wie ownerKeypair sein)
  */
 export async function transferSongPrintEdition(params: {
@@ -316,31 +225,25 @@ export async function transferSongPrintEdition(params: {
 }): Promise<void> {
   const { mintAddress, ownerKeypair, recipientAddress, payerKeypair = ownerKeypair } = params;
 
-  const conn      = new Connection(RPC_URL, 'confirmed');
-  const mintPk    = new PublicKey(mintAddress);
-  const ownerPk   = ownerKeypair.publicKey;
-  const payerPk   = payerKeypair.publicKey;
-  const recipPk   = new PublicKey(recipientAddress);
+  const umi = createUmi(RPC_URL, 'confirmed')
+    .use(mplCore())
+    .use(keypairIdentity(fromWeb3JsKeypair(payerKeypair)));
 
-  const sourceAta = await getAssociatedTokenAddress(mintPk, ownerPk, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
-  const destAta   = await getAssociatedTokenAddress(mintPk, recipPk,  false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
+  const asset = await fetchAssetV1(umi, umiPubkey(mintAddress));
 
-  const tx = new Transaction();
+  // Collection aus der Update Authority des Assets ableiten
+  const collection = asset.updateAuthority.type === 'Collection' && asset.updateAuthority.address
+    ? await fetchCollectionV1(umi, asset.updateAuthority.address)
+    : undefined;
 
-  // Ziel-ATA anlegen falls noch nicht vorhanden
-  const destAtaInfo = await conn.getAccountInfo(destAta);
-  if (!destAtaInfo) {
-    tx.add(createAssociatedTokenAccountInstruction(
-      payerPk, destAta, recipPk, mintPk,
-      TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID,
-    ));
-  }
+  const ownerSigner = ownerKeypair.publicKey.equals(payerKeypair.publicKey)
+    ? umi.identity
+    : createSignerFromKeypair(umi, umi.eddsa.createKeypairFromSecretKey(ownerKeypair.secretKey));
 
-  tx.add(createTransferInstruction(sourceAta, destAta, ownerPk, 1, [], TOKEN_PROGRAM_ID));
-
-  const signers = ownerKeypair === payerKeypair
-    ? [ownerKeypair]
-    : [payerKeypair, ownerKeypair];
-
-  await sendAndConfirmTransaction(conn, tx, signers, { commitment: 'confirmed' });
+  await transfer(umi, {
+    asset,
+    collection,
+    newOwner:  umiPubkey(recipientAddress),
+    authority: ownerSigner,
+  }).sendAndConfirm(umi);
 }
