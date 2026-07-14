@@ -700,7 +700,7 @@ function ArtistShopView({
           {t('shop.noItems', lang)}
         </div>
       ) : (
-        <div className="px-4 grid grid-cols-2 gap-2">
+        <div className="px-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
           {items.map(item => (
             <ItemCard key={item.id} item={item} onBuy={requestBuy} buying={buying} walletAddress={walletAddress} artistRewardToken={artist.rewardToken} userLevel={userLevel} />
           ))}
