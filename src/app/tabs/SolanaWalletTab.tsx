@@ -62,11 +62,10 @@ interface ShopNftData {
 }
 
 // ─── Song NFT Card — Design identisch mit Shop-ItemCard ──────────────────────
-function SongNftCard({ nft, shopNft, onSend, onBurn }: {
+function SongNftCard({ nft, shopNft, onSend }: {
   nft:     OwnedNft;
   shopNft: ShopNftData | null;
   onSend:  () => void;
-  onBurn:  () => void;
 }) {
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -165,10 +164,12 @@ function SongNftCard({ nft, shopNft, onSend, onBurn }: {
             className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
             <FaPaperPlane size={9} /> Send
           </button>
-          <button onClick={onBurn}
-            className="bg-red-950/40 hover:bg-red-900/50 text-red-400 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
-            🔥 Burn
-          </button>
+          {contentUrl && (
+            <a href={contentUrl} download
+              className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+              <FaDownload size={9} /> Download
+            </a>
+          )}
           <a href={`https://solscan.io/account/${nft.mint}`} target="_blank" rel="noopener noreferrer"
             className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
             <FaExternalLinkAlt size={8} /> Solscan
@@ -1417,7 +1418,6 @@ export default function SolanaWalletTab() {
                                 nft={nft}
                                 shopNft={shopNftsMap[nft.mint] ?? null}
                                 onSend={() => { setNftSendTarget(nft); setNftSendErr(''); setNftSendOk(''); setNftRecipient(''); }}
-                                onBurn={() => { setNftBurnTarget(nft); setNftBurnErr(''); setNftBurnOk(''); }}
                               />
                             ))}
                           </div>
