@@ -6,6 +6,7 @@ import {
   getConcertCheckins,
   createConcertEvent,
   updateConcertEventStatus,
+  deleteConcertEvent,
 } from '@/app/lib/questDb';
 
 /** GET /api/concerts?artistWallet=...&manage=true */
@@ -91,6 +92,23 @@ export async function PATCH(req: NextRequest) {
     const { artistWallet, status } = body;
     if (!eventId || !artistWallet || !status) return NextResponse.json({ error: 'eventId, artistWallet, status erforderlich' }, { status: 400 });
     await updateConcertEventStatus(eventId, artistWallet, status);
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Fehler' }, { status: 500 });
+  }
+}
+
+/** DELETE /api/concerts — beendetes Event endgültig löschen */
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const eventId = searchParams.get('eventId');
+    const artistWallet = searchParams.get('artistWallet');
+    if (!eventId || !artistWallet) return NextResponse.json({ error: 'eventId und artistWallet erforderlich' }, { status: 400 });
+    const deleted = await deleteConcertEvent(eventId, artistWallet);
+    if (!deleted) {
+      return NextResponse.json({ error: 'Event nicht gefunden oder noch aktiv (erst beenden)' }, { status: 400 });
+    }
     return NextResponse.json({ success: true });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Fehler' }, { status: 500 });

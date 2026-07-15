@@ -74,6 +74,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
   const [showConcertModal, setShowConcertModal] = useState(false);
   const [concertSelected, setConcertSelected] = useState<Record<string, Set<string>>>({});
   const [concertConfirming, setConcertConfirming] = useState<string | null>(null);
+  const [concertDeleting, setConcertDeleting] = useState<string | null>(null);
   const [concertError, setConcertError] = useState('');
 
   const loadCreatorBalance = useCallback(async () => {
@@ -534,6 +535,25 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                     className="text-zinc-500 hover:text-white text-xs px-3 py-2 rounded-xl border border-zinc-700 hover:border-zinc-500 transition-colors"
                   >
                     Event beenden
+                  </button>
+                </div>
+              )}
+              {ev.status !== 'active' && (
+                <div className="px-4 pb-4 pt-2 flex justify-end">
+                  <button
+                    disabled={concertDeleting === ev.id}
+                    onClick={async () => {
+                      if (!confirm(`"${ev.title}" wirklich endgültig löschen? Das kann nicht rückgängig gemacht werden.`)) return;
+                      setConcertDeleting(ev.id); setConcertError('');
+                      try {
+                        const res = await fetch(`/api/concerts?eventId=${encodeURIComponent(ev.id)}&artistWallet=${encodeURIComponent(walletAddress)}`, { method: 'DELETE' });
+                        if (res.ok) await loadConcerts();
+                        else { const d = await res.json(); setConcertError(d.error ?? 'Fehler'); }
+                      } finally { setConcertDeleting(null); }
+                    }}
+                    className="text-red-400/70 hover:text-red-300 disabled:opacity-50 text-xs px-3 py-2 rounded-xl border border-red-900/40 hover:border-red-700/60 transition-colors"
+                  >
+                    {concertDeleting === ev.id ? '…' : '🗑 Event löschen'}
                   </button>
                 </div>
               )}
