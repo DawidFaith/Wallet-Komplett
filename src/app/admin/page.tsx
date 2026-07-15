@@ -752,7 +752,7 @@ function SolanaMintSection({ secret }: { secret: string }) {
   const [imagePreview, setImagePreview]   = useState('');
   const [disableMinting, setDisableMinting] = useState(false);
   const [loading, setLoading]         = useState(false);
-  const [result, setResult]           = useState<{ mintAddress: string; explorerUrl: string; metadataUri?: string; mintingDisabled?: boolean } | null>(null);
+  const [result, setResult]           = useState<{ mintAddress: string; explorerUrl: string; metadataUri?: string; metadataError?: string | null; mintingDisabled?: boolean } | null>(null);
   const [error, setError]             = useState('');
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -817,6 +817,11 @@ function SolanaMintSection({ secret }: { secret: string }) {
       {result ? (
         <div className="bg-green-900/20 border border-green-800/40 rounded-xl p-4 space-y-2">
           <p className="text-green-400 font-semibold text-sm">✓ Token erfolgreich erstellt!</p>
+          {result.metadataError && (
+            <p className="text-red-400 text-xs font-semibold bg-red-900/20 border border-red-800/40 rounded-lg px-3 py-2">
+              ⚠ Metadata-Account konnte NICHT erstellt werden: {result.metadataError} — der Token existiert, hat aber kein Logo/keinen Namen auf Explorern/Wallets.
+            </p>
+          )}
           {result.mintingDisabled && (
             <p className="text-orange-400 text-xs font-semibold">🔒 Minting wurde permanent deaktiviert — keine weiteren Token können erstellt werden.</p>
           )}

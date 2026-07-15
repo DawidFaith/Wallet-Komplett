@@ -116,14 +116,11 @@ export async function POST(req: Request) {
     );
     const sig1 = await sendAndConfirmTransaction(connection, tx1, [treasury, mintKp]);
 
-    // ── Schritt 2b: Minting permanent deaktivieren (optional) ─────────────────
-    let mintingDisabled = false;
-    if (disableMinting) {
-      await setAuthority(connection, treasury, mintKp.publicKey, treasury, AuthorityType.MintTokens, null);
-      mintingDisabled = true;
-    }
-
+    // ── Schritt 2: Metadata erstellen (MUSS vor dem Mint-Authority-Disable
+    // passieren — createMetadataAccountV3 verlangt die aktuelle On-Chain-Mint-
+    // Authority als Signer; ist die schon null, lehnt das Programm lautlos ab) ──
     let sig2: string | null = null;
+    let metadataError: string | null = null;
     if (metadataUri) {
       try {
         const umi = createUmi(RPC_URL)
@@ -148,8 +145,16 @@ export async function POST(req: Request) {
 
         sig2 = Buffer.from(tx.signature).toString('base64');
       } catch (e) {
-        console.error('Metadata-Setzen fehlgeschlagen:', e);
+        metadataError = e instanceof Error ? e.message : String(e);
+        console.error('Metadata-Setzen fehlgeschlagen:', metadataError);
       }
+    }
+
+    // ── Schritt 3: Minting permanent deaktivieren (optional, erst NACH Metadata) ─
+    let mintingDisabled = false;
+    if (disableMinting) {
+      await setAuthority(connection, treasury, mintKp.publicKey, treasury, AuthorityType.MintTokens, null);
+      mintingDisabled = true;
     }
 
     return NextResponse.json({
@@ -157,6 +162,7 @@ export async function POST(req: Request) {
       mintAddress: mintKp.publicKey.toBase58(),
       ata:         ata.toBase58(),
       metadataUri: metadataUri || null,
+      metadataError,
       mintingDisabled,
       sig1,
       sig2,
