@@ -864,7 +864,7 @@ function SolanaMintSection({ secret }: { secret: string }) {
               className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
           </div>
           <div className="sm:col-span-2">
-            <label className="text-zinc-400 text-xs block mb-1">Token-Bild (wird auf Pinata IPFS hochgeladen)</label>
+            <label className="text-zinc-400 text-xs block mb-1">Token-Bild (wird auf Vercel Blob hochgeladen)</label>
             <div className="flex items-center gap-3">
               {imagePreview && (
                 <Image src={imagePreview} alt="Vorschau" width={56} height={56} className="w-14 h-14 rounded-xl object-cover border border-zinc-700 shrink-0" unoptimized />
@@ -878,7 +878,7 @@ function SolanaMintSection({ secret }: { secret: string }) {
                   className="text-zinc-500 hover:text-red-400 text-xs px-2 shrink-0">✕</button>
               )}
             </div>
-            {imageBase64 && <p className="text-zinc-600 text-xs mt-1">Bild + Metaplex JSON werden beim Mint auf Pinata IPFS hochgeladen</p>}
+            {imageBase64 && <p className="text-zinc-600 text-xs mt-1">Bild + Metaplex JSON werden beim Mint auf Vercel Blob hochgeladen</p>}
           </div>
           {/* Social Links */}
           <div className="sm:col-span-2 border-t border-zinc-800 pt-3">
@@ -925,7 +925,7 @@ function SolanaMintSection({ secret }: { secret: string }) {
         <button onClick={handleMint} disabled={loading || !name.trim() || !symbol.trim()}
           className="w-full bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all">
           {loading
-            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{imageBase64 ? 'IPFS + Token wird erstellt…' : 'Token wird erstellt…'}</>
+            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{imageBase64 ? 'Upload + Token wird erstellt…' : 'Token wird erstellt…'}</>
             : <><SiSolana size={14} /> D.FAITH Token auf Solana erstellen</>}
         </button>
       )}
@@ -1176,7 +1176,7 @@ function SolanaUpdateMetadataSection({ secret }: { secret: string }) {
               className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500" />
           </div>
           <div className="sm:col-span-2">
-            <label className="text-zinc-400 text-xs block mb-1">Token-Bild (wird auf Pinata IPFS hochgeladen)</label>
+            <label className="text-zinc-400 text-xs block mb-1">Token-Bild (wird auf Vercel Blob hochgeladen)</label>
             <div className="flex items-center gap-3">
               {imagePreview && (
                 <Image src={imagePreview} alt="Vorschau" width={56} height={56} className="w-14 h-14 rounded-xl object-cover border border-zinc-700 shrink-0" unoptimized />
@@ -1239,7 +1239,7 @@ function SolanaUpdateMetadataSection({ secret }: { secret: string }) {
           className="w-full bg-blue-700 hover:bg-blue-600 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
         >
           {loading
-            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{imageBase64 ? 'IPFS + Metadata wird gesetzt…' : disableMinting ? 'Minting wird deaktiviert…' : 'Metadata wird gesetzt…'}</>
+            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{imageBase64 ? 'Upload + Metadata wird gesetzt…' : disableMinting ? 'Minting wird deaktiviert…' : 'Metadata wird gesetzt…'}</>
             : <><SiSolana size={14} /> {disableMinting && !imageBase64 && !name.trim() ? 'Minting permanent deaktivieren' : 'Metadata on-chain setzen'}</>
           }
         </button>
