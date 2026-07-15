@@ -116,6 +116,16 @@ export async function POST(req: Request) {
     );
     const sig1 = await sendAndConfirmTransaction(connection, tx1, [treasury, mintKp]);
 
+    // Mint-Account explizit abwarten, bis er mit vollen Daten sichtbar ist —
+    // UMI nutzt eine eigene Connection/Routing, die den frisch bestätigten
+    // Mint sonst noch nicht sieht (RPC-Konsistenz zwischen zwei Verbindungen)
+    // -> createMetadataAccountV3 liest sonst eine leere Slice und crasht.
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const info = await connection.getAccountInfo(mintKp.publicKey, 'confirmed');
+      if (info && info.data.length >= MINT_SIZE) break;
+      await new Promise(r => setTimeout(r, 500));
+    }
+
     // ── Schritt 2: Metadata erstellen (MUSS vor dem Mint-Authority-Disable
     // passieren — createMetadataAccountV3 verlangt die aktuelle On-Chain-Mint-
     // Authority als Signer; ist die schon null, lehnt das Programm lautlos ab) ──
@@ -123,7 +133,7 @@ export async function POST(req: Request) {
     let metadataError: string | null = null;
     if (metadataUri) {
       try {
-        const umi = createUmi(RPC_URL)
+        const umi = createUmi(RPC_URL, { commitment: 'confirmed' })
           .use(mplTokenMetadata())
           .use(keypairIdentity(fromWeb3JsKeypair(treasury)));
 
