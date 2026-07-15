@@ -741,6 +741,7 @@ function SolanaMintSection({ secret }: { secret: string }) {
   const [totalSupply, setTotalSupply] = useState('1000000000');
   const [decimals, setDecimals]       = useState('6');
   const [description, setDescription] = useState('The official D.FAITH fan token by Dawid Faith');
+  const [creatorName, setCreatorName] = useState('Dawid Faith');
   const [website, setWebsite]         = useState('');
   const [twitter, setTwitter]         = useState('');
   const [instagram, setInstagram]     = useState('');
@@ -781,6 +782,7 @@ function SolanaMintSection({ secret }: { secret: string }) {
           totalSupply: parseInt(totalSupply),
           decimals: parseInt(decimals),
           description: description.trim(),
+          creatorName: creatorName.trim() || undefined,
           imageBase64: imageBase64 || undefined,
           imageMimeType,
           website:   website.trim()   || undefined,
@@ -861,6 +863,12 @@ function SolanaMintSection({ secret }: { secret: string }) {
             <input type="number" min="0" max="9" value={decimals} onChange={e => setDecimals(e.target.value)}
               className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
             <p className="text-zinc-600 text-xs mt-0.5">Standard: 6 (wie USDC)</p>
+          </div>
+          <div>
+            <label className="text-zinc-400 text-xs block mb-1">Artist / Ersteller (erscheint als Attribut)</label>
+            <input value={creatorName} onChange={e => setCreatorName(e.target.value)}
+              placeholder="Dawid Faith"
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500" />
           </div>
           <div className="sm:col-span-2">
             <label className="text-zinc-400 text-xs block mb-1">Beschreibung</label>

@@ -38,8 +38,10 @@ export async function POST(req: Request) {
       secret?: string; mintAddress?: string; name?: string; symbol?: string;
       description?: string; imageBase64?: string; imageMimeType?: string; metadataUri?: string;
       website?: string; twitter?: string; instagram?: string; youtube?: string; telegram?: string; discord?: string;
+      creatorName?: string;
       disableMinting?: boolean; revokeFreezeAuthority?: boolean; makeImmutable?: boolean;
     };
+    const creatorName = body.creatorName;
     const disableMinting        = body.disableMinting === true;
     const revokeFreezeAuthority = body.revokeFreezeAuthority === true;
     const makeImmutable         = body.makeImmutable === true;
@@ -102,12 +104,23 @@ export async function POST(req: Request) {
       if (telegram)  extensions.telegram  = telegram;
       if (discord)   extensions.discord   = discord;
 
+      const attributes: Array<{ trait_type: string; value: string }> = [];
+      if (creatorName) attributes.push({ trait_type: 'Artist',     value: creatorName });
+      attributes.push({ trait_type: 'Platform', value: symbol });
+      if (website)   attributes.push({ trait_type: 'Website',     value: website });
+      if (twitter)   attributes.push({ trait_type: 'Twitter / X', value: twitter });
+      if (instagram) attributes.push({ trait_type: 'Instagram',   value: instagram });
+      if (youtube)   attributes.push({ trait_type: 'YouTube',     value: youtube });
+      if (telegram)  attributes.push({ trait_type: 'Telegram',    value: telegram });
+      if (discord)   attributes.push({ trait_type: 'Discord',     value: discord });
+
       const metadata: Record<string, unknown> = {
         name,
         symbol,
         description: description ?? '',
         image: imageUrl,
         properties: { files: [{ uri: imageUrl, type: mime }], category: 'image' },
+        attributes,
       };
       if (Object.keys(extensions).length > 0) metadata.extensions = extensions;
       metadataUri = await uploadToBlob(

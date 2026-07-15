@@ -40,11 +40,12 @@ export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
     const { secret, name, symbol, totalSupply, decimals: decimalsRaw, description, imageBase64, imageMimeType, metadataUri: metadataUriDirect,
-      website, twitter, instagram, youtube, telegram, discord,
+      website, twitter, instagram, youtube, telegram, discord, creatorName,
     } = body as {
       secret?: string; name?: string; symbol?: string; totalSupply?: number; decimals?: number;
       description?: string; imageBase64?: string; imageMimeType?: string; metadataUri?: string;
       website?: string; twitter?: string; instagram?: string; youtube?: string; telegram?: string; discord?: string;
+      creatorName?: string;
       disableMinting?: boolean;
     };
     const disableMinting = body.disableMinting === true;
@@ -73,12 +74,25 @@ export async function POST(req: Request) {
       if (telegram)  extensions.telegram  = telegram;
       if (discord)   extensions.discord   = discord;
 
+      // Attribute-Array wie bei den NFTs — Solscan/Solflare/Phantom zeigen das
+      // oft als eigenen Trait-Grid an, sofort sichtbar wer/was/wo.
+      const attributes: Array<{ trait_type: string; value: string }> = [];
+      if (creatorName) attributes.push({ trait_type: 'Artist',      value: creatorName });
+      attributes.push({ trait_type: 'Platform', value: symbol });
+      if (website)   attributes.push({ trait_type: 'Website',      value: website });
+      if (twitter)   attributes.push({ trait_type: 'Twitter / X',  value: twitter });
+      if (instagram) attributes.push({ trait_type: 'Instagram',    value: instagram });
+      if (youtube)   attributes.push({ trait_type: 'YouTube',      value: youtube });
+      if (telegram)  attributes.push({ trait_type: 'Telegram',     value: telegram });
+      if (discord)   attributes.push({ trait_type: 'Discord',      value: discord });
+
       const metadata: Record<string, unknown> = {
         name,
         symbol,
         description: description ?? '',
         image: imageUrl,
         properties: { files: [{ uri: imageUrl, type: mime }], category: 'image' },
+        attributes,
       };
       if (Object.keys(extensions).length > 0) metadata.extensions = extensions;
       metadataUri = await uploadToBlob(
