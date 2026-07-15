@@ -3,6 +3,7 @@
  * Body: { secret, name, symbol, totalSupply, decimals?, description?, imageBase64?, imageMimeType?, metadataUri? }
  */
 import { NextResponse } from 'next/server';
+import { put } from '@vercel/blob';
 import {
   Connection, Keypair, SystemProgram,
   Transaction, sendAndConfirmTransaction,
@@ -22,21 +23,17 @@ import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
 const RPC_URL  = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DEFAULT_DECIMALS = 6;
 
-async function uploadToPinata(content: string | Buffer, filename: string, mimeType: string): Promise<string> {
-  const jwt = process.env.PINATA_JWT;
-  if (!jwt) throw new Error('PINATA_JWT nicht konfiguriert');
-  const formData = new FormData();
-  const blob = new Blob([content], { type: mimeType });
-  formData.append('file', blob, filename);
-  formData.append('pinataOptions', JSON.stringify({ cidVersion: 1 }));
-  const res = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${jwt}` },
-    body: formData,
+// Vercel Blob statt IPFS/Pinata: gleiche schnelle, zuverlässige Auslieferung
+// wie bei den Song/Collectible-NFT-Bildern — kein langsames/ipfs://-Gateway-
+// Problem, das manche Wallets (z.B. Solflare) beim Laden des Logos scheitern lässt.
+async function uploadToBlob(content: string | Buffer, filename: string, mimeType: string): Promise<string> {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error('BLOB_READ_WRITE_TOKEN nicht konfiguriert');
+  const blob = await put(`tokens/${filename}`, content, {
+    access:      'public',
+    contentType: mimeType,
+    addRandomSuffix: true,
   });
-  if (!res.ok) throw new Error(`Pinata Upload fehlgeschlagen: ${await res.text()}`);
-  const data = await res.json();
-  return data.IpfsHash as string;
+  return blob.url;
 }
 
 export async function POST(req: Request) {
@@ -60,13 +57,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'name, symbol, totalSupply benötigt' }, { status: 400 });
     }
 
-    // ── Schritt 1: Bild + Metadata auf Pinata IPFS hochladen ─────────────────
+    // ── Schritt 1: Bild + Metadata auf Vercel Blob hochladen ─────────────────
     let metadataUri = metadataUriDirect ?? '';
     if (imageBase64 && !metadataUri) {
       const mime = imageMimeType ?? 'image/png';
       const ext  = mime.split('/')[1] ?? 'png';
-      const imgBuffer  = Buffer.from(imageBase64, 'base64');
-      const imageHash  = await uploadToPinata(imgBuffer, `${symbol.toLowerCase()}.${ext}`, mime);
+      const imgBuffer = Buffer.from(imageBase64, 'base64');
+      const imageUrl  = await uploadToBlob(imgBuffer, `${symbol.toLowerCase()}-logo.${ext}`, mime);
 
       const extensions: Record<string, string> = {};
       if (website)   extensions.website   = website;
@@ -76,10 +73,6 @@ export async function POST(req: Request) {
       if (telegram)  extensions.telegram  = telegram;
       if (discord)   extensions.discord   = discord;
 
-      // HTTPS-Gateway statt ipfs://-Schema: Phantom löst ipfs:// clientseitig auf,
-      // Solflare (und andere) nicht zuverlässig — das Logo würde sonst nirgends
-      // außer Phantom angezeigt.
-      const imageUrl = `https://gateway.pinata.cloud/ipfs/${imageHash}`;
       const metadata: Record<string, unknown> = {
         name,
         symbol,
@@ -88,10 +81,9 @@ export async function POST(req: Request) {
         properties: { files: [{ uri: imageUrl, type: mime }], category: 'image' },
       };
       if (Object.keys(extensions).length > 0) metadata.extensions = extensions;
-      const metaHash = await uploadToPinata(
+      metadataUri = await uploadToBlob(
         JSON.stringify(metadata), `${symbol.toLowerCase()}-metadata.json`, 'application/json',
       );
-      metadataUri = `https://gateway.pinata.cloud/ipfs/${metaHash}`;
     }
 
     // ── Schritt 2: SPL Token minten ───────────────────────────────────────────

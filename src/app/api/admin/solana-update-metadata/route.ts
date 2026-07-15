@@ -6,6 +6,7 @@
  * Nutzt das offizielle @metaplex-foundation SDK für korrekte Borsh-Serialisierung.
  */
 import { NextResponse } from 'next/server';
+import { put } from '@vercel/blob';
 import { Connection } from '@solana/web3.js';
 import { setAuthority, AuthorityType } from '@solana/spl-token';
 import { PublicKey } from '@solana/web3.js';
@@ -17,21 +18,15 @@ import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
-async function uploadToPinata(content: string | Buffer, filename: string, mimeType: string): Promise<string> {
-  const jwt = process.env.PINATA_JWT;
-  if (!jwt) throw new Error('PINATA_JWT nicht konfiguriert');
-  const formData = new FormData();
-  const blob = new Blob([content], { type: mimeType });
-  formData.append('file', blob, filename);
-  formData.append('pinataOptions', JSON.stringify({ cidVersion: 1 }));
-  const res = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${jwt}` },
-    body: formData,
+// Vercel Blob statt IPFS/Pinata — schnell & zuverlässig, kein ipfs://-Auflösungsproblem bei Wallets wie Solflare.
+async function uploadToBlob(content: string | Buffer, filename: string, mimeType: string): Promise<string> {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error('BLOB_READ_WRITE_TOKEN nicht konfiguriert');
+  const blob = await put(`tokens/${filename}`, content, {
+    access:      'public',
+    contentType: mimeType,
+    addRandomSuffix: true,
   });
-  if (!res.ok) throw new Error(`Pinata Upload fehlgeschlagen: ${await res.text()}`);
-  const data = await res.json();
-  return data.IpfsHash as string;
+  return blob.url;
 }
 
 export async function POST(req: Request) {
@@ -91,13 +86,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'name und symbol benötigt (oder nur disableMinting ohne weitere Felder)' }, { status: 400 });
     }
 
-    // ── Schritt 1: Bild auf Pinata hochladen (falls vorhanden) ───────────────
+    // ── Schritt 1: Bild auf Vercel Blob hochladen (falls vorhanden) ───────────
     let metadataUri = metadataUriDirect ?? '';
     if (imageBase64 && !metadataUri) {
       const mime = imageMimeType ?? 'image/png';
       const ext  = mime.split('/')[1] ?? 'png';
       const imgBuffer = Buffer.from(imageBase64, 'base64');
-      const imageHash = await uploadToPinata(imgBuffer, `${symbol.toLowerCase()}.${ext}`, mime);
+      const imageUrl  = await uploadToBlob(imgBuffer, `${symbol.toLowerCase()}-logo.${ext}`, mime);
 
       const extensions: Record<string, string> = {};
       if (website)   extensions.website   = website;
@@ -111,14 +106,13 @@ export async function POST(req: Request) {
         name,
         symbol,
         description: description ?? '',
-        image: `ipfs://${imageHash}`,
-        properties: { files: [{ uri: `ipfs://${imageHash}`, type: mime }], category: 'image' },
+        image: imageUrl,
+        properties: { files: [{ uri: imageUrl, type: mime }], category: 'image' },
       };
       if (Object.keys(extensions).length > 0) metadata.extensions = extensions;
-      const metaHash = await uploadToPinata(
+      metadataUri = await uploadToBlob(
         JSON.stringify(metadata), `${symbol.toLowerCase()}-metadata.json`, 'application/json',
       );
-      metadataUri = `ipfs://${metaHash}`;
     }
 
     if (!metadataUri) {
