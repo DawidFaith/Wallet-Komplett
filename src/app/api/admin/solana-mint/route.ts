@@ -76,18 +76,22 @@ export async function POST(req: Request) {
       if (telegram)  extensions.telegram  = telegram;
       if (discord)   extensions.discord   = discord;
 
+      // HTTPS-Gateway statt ipfs://-Schema: Phantom löst ipfs:// clientseitig auf,
+      // Solflare (und andere) nicht zuverlässig — das Logo würde sonst nirgends
+      // außer Phantom angezeigt.
+      const imageUrl = `https://gateway.pinata.cloud/ipfs/${imageHash}`;
       const metadata: Record<string, unknown> = {
         name,
         symbol,
         description: description ?? '',
-        image: `ipfs://${imageHash}`,
-        properties: { files: [{ uri: `ipfs://${imageHash}`, type: mime }], category: 'image' },
+        image: imageUrl,
+        properties: { files: [{ uri: imageUrl, type: mime }], category: 'image' },
       };
       if (Object.keys(extensions).length > 0) metadata.extensions = extensions;
       const metaHash = await uploadToPinata(
         JSON.stringify(metadata), `${symbol.toLowerCase()}-metadata.json`, 'application/json',
       );
-      metadataUri = `ipfs://${metaHash}`;
+      metadataUri = `https://gateway.pinata.cloud/ipfs/${metaHash}`;
     }
 
     // ── Schritt 2: SPL Token minten ───────────────────────────────────────────
@@ -108,7 +112,9 @@ export async function POST(req: Request) {
         lamports:         lamportsForMint,
         programId:        TOKEN_PROGRAM_ID,
       }),
-      createInitializeMintInstruction(mintKp.publicKey, DECIMALS, treasury.publicKey, treasury.publicKey),
+      // Freeze Authority von Anfang an null — kein Konto kann je eingefroren werden
+      // (üblicher Vertrauens-/Risiko-Indikator bei Wallets wie Solflare)
+      createInitializeMintInstruction(mintKp.publicKey, DECIMALS, treasury.publicKey, null),
       createAssociatedTokenAccountInstruction(treasury.publicKey, ata, treasury.publicKey, mintKp.publicKey, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID),
       createMintToInstruction(
         mintKp.publicKey, ata, treasury.publicKey,
