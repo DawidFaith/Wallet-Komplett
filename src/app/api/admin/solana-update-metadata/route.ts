@@ -43,9 +43,11 @@ export async function POST(req: Request) {
       secret?: string; mintAddress?: string; name?: string; symbol?: string;
       description?: string; imageBase64?: string; imageMimeType?: string; metadataUri?: string;
       website?: string; twitter?: string; instagram?: string; youtube?: string; telegram?: string; discord?: string;
-      disableMinting?: boolean;
+      disableMinting?: boolean; revokeFreezeAuthority?: boolean; makeImmutable?: boolean;
     };
-    const disableMinting = body.disableMinting === true;
+    const disableMinting        = body.disableMinting === true;
+    const revokeFreezeAuthority = body.revokeFreezeAuthority === true;
+    const makeImmutable         = body.makeImmutable === true;
 
     if (secret !== process.env.MIGRATION_SECRET) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     if (!mintAddress) {
@@ -58,6 +60,31 @@ export async function POST(req: Request) {
       const treasury = getTreasuryKeypair();
       await setAuthority(connection, treasury, new PublicKey(mintAddress), treasury, AuthorityType.MintTokens, null);
       return NextResponse.json({ success: true, metadataUri: null, signature: null, mintingDisabled: true, explorerUrl: `https://solscan.io/token/${mintAddress}` });
+    }
+
+    // Freeze Authority permanent widerrufen (unwiderruflich — kein Konto kann danach je wieder eingefroren werden)
+    if (revokeFreezeAuthority && !imageBase64 && !metadataUriDirect && !name && !symbol) {
+      const connection = new Connection(RPC_URL, 'confirmed');
+      const treasury = getTreasuryKeypair();
+      const sig = await setAuthority(connection, treasury, new PublicKey(mintAddress), treasury, AuthorityType.FreezeAccount, null);
+      return NextResponse.json({ success: true, freezeAuthorityRevoked: true, signature: sig, explorerUrl: `https://solscan.io/token/${mintAddress}` });
+    }
+
+    // Metadata permanent unveränderlich machen (unwiderruflich — Name/Symbol/Bild/URI danach für immer fix)
+    if (makeImmutable && !imageBase64 && !metadataUriDirect && !name && !symbol) {
+      const treasury = getTreasuryKeypair();
+      const umi = createUmi(RPC_URL).use(mplTokenMetadata()).use(keypairIdentity(fromWeb3JsKeypair(treasury)));
+      const tx = await updateV1(umi, {
+        mint:              umiPublicKey(mintAddress),
+        isMutable:         some(false),
+        authorizationData: none(),
+      }).sendAndConfirm(umi);
+      return NextResponse.json({
+        success:               true,
+        metadataMadeImmutable: true,
+        signature:             Buffer.from(tx.signature).toString('base64'),
+        explorerUrl:           `https://solscan.io/token/${mintAddress}`,
+      });
     }
 
     if (!name || !symbol) {
