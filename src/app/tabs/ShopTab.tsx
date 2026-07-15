@@ -1696,6 +1696,11 @@ function ArtistList({
               <div className="absolute -bottom-1 -right-1 bg-amber-500 text-black text-[9px] font-black rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
                 <FaShoppingBag size={8} />
               </div>
+              {artist.itemCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-amber-400 text-black text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-lg">
+                  {artist.itemCount}
+                </span>
+              )}
             </div>
             <p className="text-xs text-zinc-300 text-center line-clamp-2 leading-tight w-full group-hover:text-white transition-colors">
               {artist.displayName || shortenWallet(artist.artistWallet)}
