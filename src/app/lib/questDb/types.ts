@@ -43,6 +43,8 @@ export interface ReputationContest {
   endDate: string;
   distributed: boolean;
   createdAt: string;
+  title: string | null;
+  imageUrl: string | null;
   prizes: { rank: number; creditReward: number; shardReward: number }[];
 }
 

@@ -63,9 +63,11 @@ export async function POST(req: NextRequest) {
       artistWallet?: string;
       endDate?: string;
       prizes?: { rank: number; creditReward: number; shardReward?: number }[];
+      title?: string;
+      imageUrl?: string;
     } = await req.json();
 
-    const { artistWallet, endDate, prizes } = body;
+    const { artistWallet, endDate, prizes, title, imageUrl } = body;
     if (!artistWallet || !endDate || !Array.isArray(prizes)) {
       return NextResponse.json({ error: 'artistWallet, endDate und prizes sind erforderlich' }, { status: 400 });
     }
@@ -79,7 +81,7 @@ export async function POST(req: NextRequest) {
       .filter(p => p.rank >= 1 && (p.creditReward >= 0 || (p.shardReward ?? 0) >= 0))
       .map(p => ({ rank: Math.round(p.rank), creditReward: Math.max(0, Math.round(p.creditReward)), shardReward: Math.max(0, Math.round(p.shardReward ?? 0)) }));
 
-    const contestId = await upsertReputationContest(artistWallet, end, validPrizes);
+    const contestId = await upsertReputationContest(artistWallet, end, validPrizes, title?.trim() || null, imageUrl || null);
     return NextResponse.json({ success: true, contestId });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

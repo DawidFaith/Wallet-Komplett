@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
+import { upload } from '@vercel/blob/client';
 import { useUser } from '@clerk/nextjs';
 import { FaTrophy, FaStar, FaChevronDown, FaChevronUp, FaChevronLeft, FaEdit, FaCheck, FaTimes, FaUsers, FaMedal, FaPlus, FaGift } from 'react-icons/fa';
 import { useLang } from '../components/LangContext';
@@ -44,6 +45,8 @@ interface ReputationContest {
   endDate: string;
   distributed: boolean;
   createdAt: string;
+  title: string | null;
+  imageUrl: string | null;
   prizes: { rank: number; creditReward: number; shardReward: number }[];
   contestLeaderboard?: LeaderboardEntry[];
 }
@@ -542,32 +545,46 @@ function ArtistDetailView({
                   </div>
                 ) : (
                   <div className="p-4 space-y-1.5">
-                    {leaderboard.map(lb => (
-                      <div key={lb.walletAddress} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                        lb.walletAddress === walletAddress ? 'bg-amber-500/10 border border-amber-500/20' :
-                        lb.rank <= 3 ? 'bg-zinc-800/70' : 'bg-zinc-800/40'
-                      }`}>
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
-                          lb.rank === 1 ? 'bg-amber-400 text-black' :
-                          lb.rank === 2 ? 'bg-zinc-400 text-black' :
-                          lb.rank === 3 ? 'bg-amber-700 text-white' :
-                          'bg-zinc-700 text-zinc-300'
+                    {leaderboard.map(lb => {
+                      const isMe = lb.walletAddress === walletAddress;
+                      const avatarSize = lb.rank === 1 ? 40 : lb.rank <= 3 ? 34 : 28;
+                      const avatarClass = lb.rank === 1 ? 'w-10 h-10' : lb.rank <= 3 ? 'w-[34px] h-[34px]' : 'w-7 h-7';
+                      return (
+                        <div key={lb.walletAddress} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                          isMe ? 'bg-amber-500/10 border border-amber-500/20' :
+                          lb.rank === 1 ? 'bg-gradient-to-r from-amber-500/15 to-transparent border border-amber-500/25' :
+                          lb.rank === 2 ? 'bg-gradient-to-r from-zinc-400/10 to-transparent border border-zinc-400/15' :
+                          lb.rank === 3 ? 'bg-gradient-to-r from-amber-700/10 to-transparent border border-amber-700/20' :
+                          'bg-zinc-800/40'
                         }`}>
-                          {lb.rank === 1 ? '🥇' : lb.rank === 2 ? '🥈' : lb.rank === 3 ? '🥉' : lb.rank}
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                            lb.rank === 1 ? 'bg-amber-400 text-black' :
+                            lb.rank === 2 ? 'bg-zinc-400 text-black' :
+                            lb.rank === 3 ? 'bg-amber-700 text-white' :
+                            'bg-zinc-700 text-zinc-300'
+                          }`}>
+                            {lb.rank === 1 ? '🥇' : lb.rank === 2 ? '🥈' : lb.rank === 3 ? '🥉' : lb.rank}
+                          </div>
+                          <div className={`relative shrink-0 rounded-full ${
+                            lb.rank === 1 ? 'ring-2 ring-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]' :
+                            lb.rank === 2 ? 'ring-2 ring-zinc-400' :
+                            lb.rank === 3 ? 'ring-2 ring-amber-700' : ''
+                          }`}>
+                            {lb.imageUrl
+                              ? <Image src={lb.imageUrl} alt="" width={avatarSize} height={avatarSize} className={`${avatarClass} rounded-full object-cover`} />
+                              : <div className={`${avatarClass} rounded-full bg-zinc-700`} />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-medium truncate ${lb.rank === 1 ? 'text-amber-200 text-base font-black' : 'text-white text-sm'}`}>
+                              {lb.displayName || shortenWallet(lb.walletAddress)}
+                              {isMe && <span className="text-amber-400 ml-1 text-xs">(Du)</span>}
+                            </p>
+                            <p className="text-zinc-500 text-xs">{lb.levelName}</p>
+                          </div>
+                          <span className={`font-bold shrink-0 ${lb.rank === 1 ? 'text-amber-300 text-base' : 'text-amber-300 text-sm'}`}>{lb.reputation.toLocaleString()} REP</span>
                         </div>
-                        {lb.imageUrl
-                          ? <Image src={lb.imageUrl} alt="" width={28} height={28} className="w-7 h-7 rounded-full object-cover shrink-0" />
-                          : <div className="w-7 h-7 rounded-full bg-zinc-700 shrink-0" />}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white text-sm font-medium truncate">
-                            {lb.displayName || shortenWallet(lb.walletAddress)}
-                            {lb.walletAddress === walletAddress && <span className="text-amber-400 ml-1 text-xs">(Du)</span>}
-                          </p>
-                          <p className="text-zinc-500 text-xs">{lb.levelName}</p>
-                        </div>
-                        <span className="text-amber-300 font-bold text-sm shrink-0">{lb.reputation.toLocaleString()} REP</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -593,8 +610,14 @@ function ArtistDetailView({
                     {/* Beendeter Contest — Ergebnisansicht */}
                     {contest.distributed && (
                       <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+                        {contest.imageUrl && (
+                          <div className="w-full h-32 overflow-hidden">
+                            <img src={contest.imageUrl} alt="" className="w-full h-full object-cover" />
+                          </div>
+                        )}
                         <div className="px-4 py-4 text-center border-b border-white/[0.07]">
                           <p className="text-3xl mb-1">🏆</p>
+                          {contest.title && <p className="text-amber-300 font-black text-lg mb-0.5">{contest.title}</p>}
                           <p className="text-white font-black text-base">Contest abgeschlossen</p>
                           <p className="text-zinc-500 text-xs mt-0.5">Beendet am {new Date(contest.endDate).toLocaleDateString('de-DE')}</p>
                         </div>
@@ -650,14 +673,24 @@ function ArtistDetailView({
                       isExpired ? 'bg-amber-950/40 border border-amber-700/30' :
                       'bg-gradient-to-br from-green-950/50 to-zinc-900/60 border border-green-600/25'
                     }`}>
+                      {contest.imageUrl && (
+                        <div className="w-full h-32 overflow-hidden">
+                          <img src={contest.imageUrl} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      )}
                       <div className="px-4 py-3 flex items-center justify-between">
                         <div>
                           <div className="flex items-center gap-2 mb-0.5">
                             {isRunning && <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />}
                             <p className="text-white font-black text-sm">
-                              {isExpired ? t('rep.contestExpiring', lang) : '🔥 ' + t('rep.contestRunning', lang)}
+                              {contest.title || (isExpired ? t('rep.contestExpiring', lang) : '🔥 ' + t('rep.contestRunning', lang))}
                             </p>
                           </div>
+                          {contest.title && (
+                            <p className={`text-[11px] font-bold mb-0.5 ${isExpired ? 'text-amber-400' : 'text-green-400'}`}>
+                              {isExpired ? t('rep.contestExpiring', lang) : '🔥 ' + t('rep.contestRunning', lang)}
+                            </p>
+                          )}
                           <p className="text-zinc-500 text-xs">
                             {isRunning ? 'Verdiene jetzt neuen REP und sichere dir einen Platz' : `Ende: ${new Date(contest.endDate).toLocaleString('de-DE')}`}
                           </p>
@@ -777,6 +810,11 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
   // Contest-Formular
   const [showContestForm, setShowContestForm] = useState(false);
   const [contestEndDate, setContestEndDate] = useState('');
+  const [contestTitle, setContestTitle] = useState('');
+  const [contestImageUrl, setContestImageUrl] = useState('');
+  const [contestImagePreview, setContestImagePreview] = useState('');
+  const [contestImageUploading, setContestImageUploading] = useState(false);
+  const contestFileRef = useRef<HTMLInputElement>(null);
   const [contestPrizes, setContestPrizes] = useState([
     { rank: 1, creditReward: 0, shardReward: 0 },
     { rank: 2, creditReward: 0, shardReward: 0 },
@@ -887,6 +925,23 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
     }
   };
 
+  const handleContestImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setContestImageUploading(true); setContestError('');
+    try {
+      const blob = await upload(
+        `contests/${walletAddress}/${Date.now()}-${file.name}`,
+        file,
+        { access: 'public', handleUploadUrl: '/api/reputation/contest/upload', clientPayload: JSON.stringify({ wallet: walletAddress }) },
+      );
+      setContestImageUrl(blob.url);
+      setContestImagePreview(URL.createObjectURL(file));
+    } catch (err) {
+      setContestError(err instanceof Error ? err.message : 'Bild-Upload fehlgeschlagen');
+    } finally { setContestImageUploading(false); }
+  };
+
   const saveContest = async () => {
     setContestSaving(true);
     setContestError('');
@@ -894,11 +949,12 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
       const res = await fetch('/api/reputation/contest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ artistWallet: walletAddress, endDate: contestEndDate, prizes: contestPrizes }),
+        body: JSON.stringify({ artistWallet: walletAddress, endDate: contestEndDate, prizes: contestPrizes, title: contestTitle.trim() || undefined, imageUrl: contestImageUrl || undefined }),
       });
       const data = await res.json();
       if (res.ok) {
         setShowContestForm(false);
+        setContestTitle(''); setContestImageUrl(''); setContestImagePreview('');
         await loadData();
       } else {
         setContestError(data.error || 'Fehler beim Speichern');
@@ -1231,6 +1287,12 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
             {/* Aktiver Contest */}
             {contest && !showContestForm && (
               <div className="p-4 space-y-3">
+                {contest.imageUrl && (
+                  <div className="w-full h-28 rounded-xl overflow-hidden">
+                    <img src={contest.imageUrl} alt="" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                {contest.title && <p className="text-white font-black text-sm">{contest.title}</p>}
                 <div className={`flex items-center justify-between rounded-xl px-3 py-2 ${
                   contest.distributed ? 'bg-zinc-800/40' : contestExpired ? 'bg-amber-950/30 border border-amber-700/30' : 'bg-green-950/30 border border-green-700/30'
                 }`}>
@@ -1307,6 +1369,34 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
             {/* Contest-Formular */}
             {showContestForm && (
               <div className="p-4 space-y-3">
+                {/* Banner-Bild */}
+                <div>
+                  <label className="text-zinc-400 text-xs mb-1.5 block">Contest-Banner (optional)</label>
+                  {contestImagePreview ? (
+                    <div className="relative w-full h-28 rounded-xl overflow-hidden">
+                      <img src={contestImagePreview} alt="" className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => { setContestImageUrl(''); setContestImagePreview(''); }}
+                        className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-colors"
+                      >✕</button>
+                    </div>
+                  ) : (
+                    <label className={`flex flex-col items-center justify-center gap-1.5 w-full h-20 rounded-xl border-2 border-dashed transition-colors cursor-pointer ${contestImageUploading ? 'border-amber-500/50 bg-amber-500/5' : 'border-zinc-700 hover:border-amber-500/50 hover:bg-amber-500/5'}`}>
+                      <span className="text-xl">{contestImageUploading ? '⏳' : '🖼️'}</span>
+                      <span className="text-zinc-500 text-xs">{contestImageUploading ? 'Wird hochgeladen…' : 'Bild auswählen'}</span>
+                      <input ref={contestFileRef} type="file" accept="image/*" className="hidden" onChange={handleContestImageUpload} disabled={contestImageUploading} />
+                    </label>
+                  )}
+                </div>
+                <div>
+                  <label className="text-zinc-400 text-xs mb-1 block">Contest-Titel (optional)</label>
+                  <input
+                    className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2.5 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    placeholder="z.B. Single Release Contest"
+                    value={contestTitle}
+                    onChange={e => setContestTitle(e.target.value)}
+                  />
+                </div>
                 <div>
                   <label className="text-zinc-400 text-xs mb-1 block">{t('rep.labelEndDate', lang)}</label>
                   <input
@@ -1393,7 +1483,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                 <div className="flex gap-2 pt-1">
                   <button
                     onClick={saveContest}
-                    disabled={contestSaving || !contestEndDate}
+                    disabled={contestSaving || contestImageUploading || !contestEndDate}
                     className="flex-1 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black text-xs font-bold py-2.5 rounded-xl transition-colors"
                   >
                     {contestSaving ? t('btn.saving', lang) : t('rep.btnStartContest', lang)}

@@ -415,11 +415,20 @@ export async function getTopFanBonusPcts(
 
 // ─── Reputation Contest ────────────────────────────────────────────────────────
 
+/** Titel/Bild-Spalten einmalig nachrüsten (idempotent, self-healing wie leaderboard_quarterly_config) */
+async function ensureContestColumns(sql: ReturnType<typeof getDb>) {
+  try {
+    await sql`ALTER TABLE reputation_contests ADD COLUMN IF NOT EXISTS title      TEXT`;
+    await sql`ALTER TABLE reputation_contests ADD COLUMN IF NOT EXISTS image_url  TEXT`;
+  } catch { /* ignorieren */ }
+}
+
 /** Aktiven Contest eines Artists laden */
 export async function getActiveReputationContest(artistWallet: string): Promise<ReputationContest | null> {
   const sql = getDb();
+  await ensureContestColumns(sql);
   const rows = await sql`
-    SELECT id, artist_wallet, end_date, distributed, created_at
+    SELECT id, artist_wallet, end_date, distributed, created_at, title, image_url
     FROM reputation_contests
     WHERE artist_wallet = ${artistWallet.toLowerCase()}
     ORDER BY created_at DESC
@@ -438,6 +447,8 @@ export async function getActiveReputationContest(artistWallet: string): Promise<
     endDate: row.end_date instanceof Date ? row.end_date.toISOString() : String(row.end_date),
     distributed: Boolean(row.distributed),
     createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
+    title: (row.title as string | null) ?? null,
+    imageUrl: (row.image_url as string | null) ?? null,
     prizes: prizes.map(p => ({ rank: Number(p.rank), creditReward: Number(p.credit_reward), shardReward: Number(p.shard_reward ?? 0) })),
   };
 }
@@ -447,8 +458,11 @@ export async function upsertReputationContest(
   artistWallet: string,
   endDate: Date,
   prizes: { rank: number; creditReward: number; shardReward?: number }[],
+  title: string | null = null,
+  imageUrl: string | null = null,
 ): Promise<string> {
   const sql = getDb();
+  await ensureContestColumns(sql);
   const wallet = artistWallet.toLowerCase();
 
   // Alten Contest laden – falls nicht verteilt, gesperrte Credits zurückbuchen
@@ -474,8 +488,8 @@ export async function upsertReputationContest(
   }
 
   const rows = await sql`
-    INSERT INTO reputation_contests (artist_wallet, end_date, credits_locked)
-    VALUES (${wallet}, ${endDate}, ${totalCost})
+    INSERT INTO reputation_contests (artist_wallet, end_date, credits_locked, title, image_url)
+    VALUES (${wallet}, ${endDate}, ${totalCost}, ${title}, ${imageUrl})
     RETURNING id
   `;
   const contestId = rows[0].id as string;
