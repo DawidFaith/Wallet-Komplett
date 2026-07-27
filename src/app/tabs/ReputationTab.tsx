@@ -65,6 +65,13 @@ function ProgressBar({ progress }: { progress: number }) {
 const shortenWallet = (w: string) =>
   w.length > 16 ? `${w.slice(0, 8)}\u2026${w.slice(-6)}` : w;
 
+/** ISO-String \u2192 lokales datetime-local Input-Format (YYYY-MM-DDTHH:mm) */
+const toDatetimeLocalValue = (iso: string): string => {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 function useCountdown(targetDate: string | null): { label: string; urgent: boolean } {
   const [state, setState] = useState({ label: '', urgent: false });
   useEffect(() => {
@@ -1358,7 +1365,20 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                   </div>
                 )}
                 <button
-                  onClick={() => { setShowContestForm(true); setContestError(''); }}
+                  onClick={() => {
+                    // Bestehende Contest-Daten ins Formular übernehmen statt leer zu starten
+                    setContestTitle(contest.title ?? '');
+                    setContestImageUrl(contest.imageUrl ?? '');
+                    setContestImagePreview(contest.imageUrl ?? '');
+                    setContestEndDate(contest.distributed ? '' : toDatetimeLocalValue(contest.endDate));
+                    setContestPrizes(
+                      contest.prizes.length > 0
+                        ? contest.prizes.map(p => ({ rank: p.rank, creditReward: p.creditReward, shardReward: p.shardReward }))
+                        : [{ rank: 1, creditReward: 0, shardReward: 0 }, { rank: 2, creditReward: 0, shardReward: 0 }, { rank: 3, creditReward: 0, shardReward: 0 }]
+                    );
+                    setShowContestForm(true);
+                    setContestError('');
+                  }}
                   className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors"
                 >
                   {contest.distributed ? t('rep.btnNewContest', lang) : t('rep.btnUpdateContest', lang)}
