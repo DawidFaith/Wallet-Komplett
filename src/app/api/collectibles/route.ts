@@ -123,8 +123,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Wahrscheinlichkeiten müssen zusammen 100 ergeben (aktuell: ${total})` }, { status: 400 });
   }
 
-  // Blob-URL direkt speichern — Arweave-Upload passiert erst beim NFT-Minten
-  // (mintCollectibleCollection lädt das Bild selbst auf Arweave hoch)
   const finalImageUrl = body.imageUrl ?? '';
 
   try {
