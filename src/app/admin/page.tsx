@@ -3399,6 +3399,80 @@ interface GeneratedWallet {
   instructions: string[];
 }
 
+function ArweaveSendForm({ secret, balanceAr, onSent }: { secret: string; balanceAr: number; onSent: () => void }) {
+  const [toAddress, setToAddress] = useState('');
+  const [amount, setAmount]       = useState('');
+  const [sendAll, setSendAll]     = useState(true);
+  const [sending, setSending]     = useState(false);
+  const [ok, setOk]               = useState('');
+  const [err, setErr]             = useState('');
+
+  const handleSend = async () => {
+    setErr(''); setOk('');
+    const addr = toAddress.trim();
+    if (!/^[A-Za-z0-9_-]{43}$/.test(addr)) { setErr('Ungültige Arweave-Adresse (43 Zeichen erwartet)'); return; }
+    const amt = sendAll ? undefined : parseFloat(amount);
+    if (!sendAll && (!isFinite(amt!) || amt! <= 0)) { setErr('Ungültiger Betrag'); return; }
+    if (!confirm(sendAll
+      ? `Wirklich das GESAMTE AR-Guthaben (${balanceAr.toFixed(6)} AR) an ${addr} senden? Das kann nicht rückgängig gemacht werden.`
+      : `Wirklich ${amt} AR an ${addr} senden? Das kann nicht rückgängig gemacht werden.`)) return;
+
+    setSending(true);
+    try {
+      const res = await fetch('/api/admin/arweave-send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret, toAddress: addr, amount: sendAll ? undefined : amt }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? 'Fehler');
+      setOk(`✓ ${d.sentAr} AR gesendet — TX: ${d.txId}`);
+      setToAddress(''); setAmount('');
+      setTimeout(onSent, 3000);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="bg-zinc-800 rounded-xl p-4 space-y-3">
+      <p className="text-zinc-400 text-xs font-semibold">AR senden</p>
+      <input
+        type="text"
+        value={toAddress}
+        onChange={(e) => setToAddress(e.target.value)}
+        placeholder="Ziel-Adresse (43 Zeichen)"
+        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white text-xs font-mono placeholder:text-zinc-600 focus:outline-none focus:border-purple-600"
+      />
+      <label className="flex items-center gap-2 text-xs text-zinc-400">
+        <input type="checkbox" checked={sendAll} onChange={(e) => setSendAll(e.target.checked)} className="accent-purple-600" />
+        Gesamtes Guthaben senden ({balanceAr.toFixed(6)} AR minus Gebühr)
+      </label>
+      {!sendAll && (
+        <input
+          type="number" min="0" step="any"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="Betrag in AR"
+          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-purple-600"
+        />
+      )}
+      {err && <p className="text-red-400 text-xs">{err}</p>}
+      {ok && <p className="text-green-400 text-xs break-all">{ok}</p>}
+      <button
+        onClick={handleSend}
+        disabled={sending || !toAddress.trim()}
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-700 hover:bg-purple-600 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-bold rounded-xl text-xs transition-colors"
+      >
+        {sending ? <FaSync size={11} className="animate-spin" /> : <FaWallet size={11} />}
+        {sending ? 'Sende…' : 'Senden'}
+      </button>
+    </div>
+  );
+}
+
 function ArweaveSetupSection({ secret }: { secret: string }) {
   const [status, setStatus]       = useState<ArweaveStatus | null>(null);
   const [loading, setLoading]     = useState(false);
@@ -3552,6 +3626,8 @@ function ArweaveSetupSection({ secret }: { secret: string }) {
                   <p className="text-green-400 text-xs font-semibold">Wallet bereit — NFT-Uploads funktionieren</p>
                 </div>
               )}
+
+              <ArweaveSendForm secret={secret} balanceAr={status.balanceAr ?? 0} onSent={loadStatus} />
             </div>
           ) : (
             <div className="space-y-3">
