@@ -33,15 +33,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Guthaben ist bereits 0', fromAddress });
   }
 
-  // Tx zunächst mit vollem Guthaben bauen — dabei berechnet die Bibliothek
-  // selbst die reward (Gebühr) inkl. Anchor/Ziel-Adresse. Erst danach die
-  // Gebühr vom Guthaben abziehen — eine manuell vorab geschätzte Gebühr wich
-  // vom tatsächlich von der Lib gesetzten reward-Feld ab → "verification failed".
-  const tx = await arweave.createTransaction({
-    target:   RECIPIENT,
-    quantity: balanceWinston,
-  }, jwk);
-  const feeWinston = tx.reward;
+  // Gebühr MIT Zieladresse schätzen (getPrice ohne target ergab eine zu
+  // niedrige reward für eine TX, die tatsächlich ein target trägt →
+  // "Transaction verification failed"). quantity ist TS-readonly, deshalb
+  // direkt mit dem finalen Betrag erzeugen statt nachträglich zu mutieren.
+  const feeWinston  = await arweave.transactions.getPrice(0, RECIPIENT);
   const sendWinston = BigInt(balanceWinston) - BigInt(feeWinston);
 
   if (sendWinston <= 0n) {
@@ -50,8 +46,11 @@ export async function POST(req: NextRequest) {
       fromAddress, balanceWinston, feeWinston,
     }, { status: 400 });
   }
-  tx.quantity = sendWinston.toString();
 
+  const tx = await arweave.createTransaction({
+    target:   RECIPIENT,
+    quantity: sendWinston.toString(),
+  }, jwk);
   await arweave.transactions.sign(tx, jwk);
   const res = await arweave.transactions.post(tx);
 
