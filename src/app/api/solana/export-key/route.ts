@@ -7,11 +7,15 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/app/lib/db';
 import { decryptKey } from '@/app/lib/solanaCrypto';
+import { requireOwnWallet } from '@/app/lib/apiAuth';
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const { walletAddress } = body as { walletAddress?: string };
   if (!walletAddress) return NextResponse.json({ error: 'walletAddress fehlt' }, { status: 400 });
+
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
 
   const sql = getDb();
   const rows = await sql`
