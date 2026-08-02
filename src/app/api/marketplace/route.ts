@@ -129,7 +129,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ listings: rows });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+    console.error('marketplace GET Fehler:', e instanceof Error ? e.message : String(e));
+    return NextResponse.json({ error: 'Fehler beim Laden. Bitte versuche es erneut.' }, { status: 500 });
   }
 }
 
@@ -219,8 +220,9 @@ export async function POST(req: NextRequest) {
       try {
         await transferCollectibleAsset(mintAddress, nftCollectionMint, sellerKeypair, treasuryAddress, treasuryKeypair);
       } catch (transferErr) {
+        console.error('NFT-Escrow-Transfer fehlgeschlagen:', transferErr instanceof Error ? transferErr.message : String(transferErr));
         return NextResponse.json({
-          error: `NFT-Escrow-Transfer fehlgeschlagen: ${transferErr instanceof Error ? transferErr.message : String(transferErr)}`,
+          error: 'NFT-Transfer fehlgeschlagen. Bitte versuche es erneut.',
         }, { status: 500 });
       }
     } else {
@@ -233,8 +235,9 @@ export async function POST(req: NextRequest) {
           payerKeypair:     treasuryKeypair,  // Treasury zahlt Tx-Fees
         });
       } catch (transferErr) {
+        console.error('NFT-Escrow-Transfer fehlgeschlagen:', transferErr instanceof Error ? transferErr.message : String(transferErr));
         return NextResponse.json({
-          error: `NFT-Escrow-Transfer fehlgeschlagen: ${transferErr instanceof Error ? transferErr.message : String(transferErr)}`,
+          error: 'NFT-Transfer fehlgeschlagen. Bitte versuche es erneut.',
         }, { status: 500 });
       }
     }
@@ -256,7 +259,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, listingId: row[0].id });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+    console.error('marketplace POST Fehler:', e instanceof Error ? e.message : String(e));
+    return NextResponse.json({ error: 'Angebot konnte nicht erstellt werden. Bitte versuche es erneut.' }, { status: 500 });
   }
 }
 
@@ -317,8 +321,9 @@ export async function DELETE(req: NextRequest) {
         await transferCollectibleAsset(mintAddress, nftCollectionMint, treasuryKeypair, sellerSolanaAddress);
       }
     } catch (transferErr) {
+      console.error('NFT-Rückgabe fehlgeschlagen:', transferErr instanceof Error ? transferErr.message : String(transferErr));
       return NextResponse.json({
-        error: `NFT-Rückgabe fehlgeschlagen: ${transferErr instanceof Error ? transferErr.message : String(transferErr)}`,
+        error: 'NFT-Rückgabe fehlgeschlagen. Bitte versuche es erneut.',
       }, { status: 500 });
     }
 
@@ -327,6 +332,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+    console.error('marketplace DELETE Fehler:', e instanceof Error ? e.message : String(e));
+    return NextResponse.json({ error: 'Stornierung fehlgeschlagen. Bitte versuche es erneut.' }, { status: 500 });
   }
 }

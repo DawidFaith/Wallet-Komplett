@@ -68,7 +68,8 @@ export async function POST(req: NextRequest) {
         const msg = e instanceof Error ? e.message : String(e);
         // Bereits verbrannt/nicht mehr vorhanden ist kein Fehler für uns — DB trotzdem aufräumen
         if (!msg.toLowerCase().includes('not found') && !msg.toLowerCase().includes('account not')) {
-          return NextResponse.json({ error: `On-Chain-Burn fehlgeschlagen: ${msg}` }, { status: 500 });
+          console.error('On-Chain-Burn fehlgeschlagen:', msg);
+          return NextResponse.json({ error: 'On-Chain-Burn fehlgeschlagen. Bitte versuche es erneut.' }, { status: 500 });
         }
       }
     }
@@ -80,6 +81,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('shop/burn-collection Fehler:', msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: 'Aktion fehlgeschlagen. Bitte versuche es erneut.' }, { status: 500 });
   }
 }

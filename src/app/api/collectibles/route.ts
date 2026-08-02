@@ -75,7 +75,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ error: 'wallet oder artistWallet fehlt' }, { status: 400 });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+    console.error('collectibles GET Fehler:', e instanceof Error ? e.message : String(e));
+    return NextResponse.json({ error: 'Fehler beim Laden. Bitte versuche es erneut.' }, { status: 500 });
   }
 }
 
@@ -182,7 +183,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ id: result.id, nftCollectionMint: nftResult.collectionMint });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+    console.error('collectibles POST Fehler:', e instanceof Error ? e.message : String(e));
+    return NextResponse.json({ error: 'Kollektion konnte nicht erstellt werden. Bitte versuche es erneut.' }, { status: 500 });
   }
 }
 
@@ -251,6 +253,7 @@ export async function PATCH(req: NextRequest) {
     if (!updated) return NextResponse.json({ error: 'Kollektion nicht gefunden oder keine Berechtigung' }, { status: 403 });
     return NextResponse.json({ success: true });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+    console.error('collectibles PATCH Fehler:', e instanceof Error ? e.message : String(e));
+    return NextResponse.json({ error: 'Änderung fehlgeschlagen. Bitte versuche es erneut.' }, { status: 500 });
   }
 }

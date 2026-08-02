@@ -182,6 +182,6 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: 'Swap fehlgeschlagen. Bitte versuche es erneut.' }, { status: 500 });
   }
 }

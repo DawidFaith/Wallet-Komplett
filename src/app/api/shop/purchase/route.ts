@@ -165,10 +165,11 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       await sql`UPDATE shop_items SET edition_count = edition_count - 1 WHERE id = ${item.id}`;
       const msg = err instanceof Error ? err.message : String(err);
+      console.error('Token-Transfer fehlgeschlagen:', msg);
       return NextResponse.json({
         error: msg.toLowerCase().includes('insufficient')
           ? 'Nicht genug D.FAITH Tokens im Wallet'
-          : `Token-Transfer fehlgeschlagen: ${msg}`,
+          : 'Token-Transfer fehlgeschlagen. Bitte versuche es erneut.',
       }, { status: 402 });
     }
   }
@@ -249,6 +250,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('Unerwarteter Fehler in /api/shop/purchase:', msg);
-    return NextResponse.json({ error: `Interner Fehler: ${msg}` }, { status: 500 });
+    return NextResponse.json({ error: 'Kauf fehlgeschlagen. Bitte versuche es erneut.' }, { status: 500 });
   }
 }
