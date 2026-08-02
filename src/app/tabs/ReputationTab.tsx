@@ -351,19 +351,19 @@ function ArtistDetailView({
             </span>
             <div className="flex-1 min-w-0">
               <p className={`font-black text-sm ${r.type === 'leaderboard' ? 'text-blue-300' : 'text-amber-300'}`}>
-                {r.type === 'leaderboard' ? t('rep.quarterlyWon', lang) : 'Contest beendet!'}
+                {r.type === 'leaderboard' ? t('rep.quarterlyWon', lang) : t('rep.contestEndedNotifTitle', lang)}
               </p>
-              <p className="text-zinc-300 text-xs">Du hast <span className="font-bold text-white">Platz #{r.rank}</span> erreicht</p>
+              <p className="text-zinc-300 text-xs">{tFmt('rep.reachedPlaceNotif', lang, { n: String(r.rank) })}</p>
               <p className={`text-xs font-semibold flex items-center gap-2 flex-wrap ${r.type === 'leaderboard' ? 'text-blue-400' : 'text-amber-400'}`}>
-                {r.amount > 0 && <span>+{r.amount} Credits</span>}
-                {r.shardAmount > 0 && <span className="text-cyan-300">✦{r.shardAmount} Shards bereits gutgeschrieben</span>}
-                {r.amount > 0 && <span className="text-zinc-500 font-normal">warten auf dich</span>}
+                {r.amount > 0 && <span>+{r.amount} {t('rep.creditsUnitShort', lang)}</span>}
+                {r.shardAmount > 0 && <span className="text-cyan-300">{tFmt('rep.shardsAlreadyCredited', lang, { n: String(r.shardAmount) })}</span>}
+                {r.amount > 0 && <span className="text-zinc-500 font-normal">{t('rep.waitingForYou', lang)}</span>}
               </p>
             </div>
             <button
               onClick={() => dismissNotif(r.id)}
               className="text-zinc-600 hover:text-zinc-300 transition-colors shrink-0 p-1"
-              title="Schließen"
+              title={t('common.close', lang)}
             >
               <FaTimes size={12} />
             </button>
@@ -375,8 +375,8 @@ function ArtistDetailView({
           <span className="text-zinc-600 text-xs">Lv.{entry.level}</span>
           <span className="text-zinc-500 text-xs">{entry.progress.toFixed(0)}%</span>
           {entry.nextLevelRep
-            ? <span className="text-zinc-600 text-xs">{(entry.nextLevelRep - entry.reputation).toLocaleString()} REP bis Lv.{entry.level + 1}</span>
-            : <span className="text-amber-500 text-xs">MAX LEVEL</span>}
+            ? <span className="text-zinc-600 text-xs">{tFmt('rep.repUntilNextLevel', lang, { n: (entry.nextLevelRep - entry.reputation).toLocaleString(), level: String(entry.level + 1) })}</span>
+            : <span className="text-amber-500 text-xs">{t('rep.maxLevel', lang)}</span>}
         </div>
         {/* Nächster Reward */}
         {nextLevel && (nextLevel.creditReward > 0 || nextLevel.prizeDescription) && (
@@ -411,7 +411,7 @@ function ArtistDetailView({
                   <div key={i} className="flex items-center justify-between bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-1.5">
                     <span className="text-amber-200 text-xs font-semibold">{r.levelName}</span>
                     <span className="flex items-center gap-2">
-                      {r.amount > 0 && <span className="text-amber-400 text-xs font-bold">+{r.amount} Credits</span>}
+                      {r.amount > 0 && <span className="text-amber-400 text-xs font-bold">+{r.amount} {t('rep.creditsUnitShort', lang)}</span>}
                       {r.shardAmount > 0 && <span className="text-cyan-300 text-xs font-bold">✦{r.shardAmount}</span>}
                     </span>
                   </div>
@@ -474,20 +474,20 @@ function ArtistDetailView({
                   <div className="bg-gradient-to-br from-amber-950/40 to-zinc-900/60 border border-amber-500/20 rounded-2xl overflow-hidden">
                     <div className="px-4 py-3 border-b border-amber-500/10 flex items-center justify-between">
                       <div>
-                        <p className="text-amber-300 font-black text-sm tracking-wide">🏆 Quartal {quarterlyInfo.quarter}</p>
+                        <p className="text-amber-300 font-black text-sm tracking-wide">{tFmt('rep.quarterLabel', lang, { q: quarterlyInfo.quarter })}</p>
                         <p className="text-zinc-500 text-xs mt-0.5">
-                          {quarterlyAlreadyDistributed ? 'Rewards wurden ausgezahlt' : 'Top-Supporter gewinnen am Quartalsende'}
+                          {quarterlyAlreadyDistributed ? t('rep.quarterlyRewardsPaidOut', lang) : t('rep.topSupportersWinAtQuarterEnd', lang)}
                         </p>
                       </div>
                       {quarterlyAlreadyDistributed ? (
                         <div className="text-right">
-                          <p className="font-black text-sm text-zinc-400">✓ Abgeschlossen</p>
-                          <p className="text-zinc-600 text-[10px]">nächstes Quartal bald</p>
+                          <p className="font-black text-sm text-zinc-400">{t('rep.quarterlyCompletedCheck', lang)}</p>
+                          <p className="text-zinc-600 text-[10px]">{t('rep.nextQuarterSoon', lang)}</p>
                         </div>
                       ) : (
                         <div className={`text-right ${countdown.urgent ? 'animate-pulse' : ''}`}>
                           <p className={`font-black text-sm tabular-nums ${countdown.urgent ? 'text-red-400' : 'text-amber-300'}`}>{countdown.label}</p>
-                          <p className="text-zinc-600 text-[10px]">verbleibend</p>
+                          <p className="text-zinc-600 text-[10px]">{t('rep.remaining', lang)}</p>
                         </div>
                       )}
                     </div>
@@ -508,7 +508,7 @@ function ArtistDetailView({
                                 {currentLeader.walletAddress === walletAddress && <span className="text-amber-400"> ★</span>}
                               </p>
                             )}
-                            {!currentLeader && <p className="text-zinc-600 text-[10px] italic">Noch frei</p>}
+                            {!currentLeader && <p className="text-zinc-600 text-[10px] italic">{t('rep.stillFree', lang)}</p>}
                             <div className="flex flex-col gap-0.5 mt-auto">
                               {p.creditReward > 0 && (
                                 <span className="flex items-center gap-0.5 text-amber-300 font-bold text-[10px]">
@@ -529,7 +529,7 @@ function ArtistDetailView({
                         {quarterlyConfig.prizes.slice(3).map(p => (
                           <div key={p.rank} className="flex items-center gap-2 bg-zinc-800/40 rounded-lg px-2.5 py-1.5">
                             <span className="text-zinc-400 text-xs font-bold">#{p.rank}</span>
-                            {p.creditReward > 0 && <span className="text-amber-300 text-xs font-bold">{p.creditReward} Credits</span>}
+                            {p.creditReward > 0 && <span className="text-amber-300 text-xs font-bold">{p.creditReward} {t('rep.creditsUnitShort', lang)}</span>}
                             {p.shardReward > 0 && <span className="text-cyan-300 text-xs font-bold">✦ {p.shardReward}</span>}
                           </div>
                         ))}
@@ -542,7 +542,7 @@ function ArtistDetailView({
               {/* Leaderboard-Liste */}
               <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
                 <div className="px-4 py-3 border-b border-white/[0.07]">
-                  <p className="text-white font-semibold text-sm">All-Time Leaderboard</p>
+                  <p className="text-white font-semibold text-sm">{t('rep.allTimeLeaderboard', lang)}</p>
                   <p className="text-zinc-500 text-xs mt-0.5">{t('rep.leaderboardSubtitle', lang)}</p>
                 </div>
                 {leaderboard.length === 0 ? (
@@ -584,7 +584,7 @@ function ArtistDetailView({
                           <div className="flex-1 min-w-0">
                             <p className={`font-medium truncate ${lb.rank === 1 ? 'text-amber-200 text-base font-black' : 'text-white text-sm'}`}>
                               {lb.displayName || shortenWallet(lb.walletAddress)}
-                              {isMe && <span className="text-amber-400 ml-1 text-xs">(Du)</span>}
+                              {isMe && <span className="text-amber-400 ml-1 text-xs">{t('rep.youParen', lang)}</span>}
                             </p>
                             <p className="text-zinc-500 text-xs">{lb.levelName}</p>
                           </div>
@@ -625,8 +625,8 @@ function ArtistDetailView({
                         <div className="px-4 py-4 text-center border-b border-white/[0.07]">
                           <p className="text-3xl mb-1">🏆</p>
                           {contest.title && <p className="text-amber-300 font-black text-lg mb-0.5">{contest.title}</p>}
-                          <p className="text-white font-black text-base">Contest abgeschlossen</p>
-                          <p className="text-zinc-500 text-xs mt-0.5">Beendet am {new Date(contest.endDate).toLocaleDateString('de-DE')}</p>
+                          <p className="text-white font-black text-base">{t('rep.contestCompletedTitle', lang)}</p>
+                          <p className="text-zinc-500 text-xs mt-0.5">{tFmt('rep.endedAt', lang, { date: new Date(contest.endDate).toLocaleDateString('de-DE') })}</p>
                         </div>
                         <div className="p-3 space-y-2">
                           {contest.prizes.map(p => {
@@ -648,13 +648,13 @@ function ArtistDetailView({
                                       <div>
                                         <p className={`text-sm font-semibold truncate ${isMe ? 'text-amber-300' : 'text-white'}`}>
                                           {winner.displayName || shortenWallet(winner.walletAddress)}
-                                          {isMe && <span className="ml-1 text-xs">★ Du</span>}
+                                          {isMe && <span className="ml-1 text-xs">{t('rep.starYou', lang)}</span>}
                                         </p>
                                         <p className="text-zinc-500 text-xs">{winner.reputation.toLocaleString()} REP</p>
                                       </div>
                                     </div>
                                   ) : (
-                                    <p className="text-zinc-600 text-sm italic">Kein Teilnehmer</p>
+                                    <p className="text-zinc-600 text-sm italic">{t('rep.noParticipant', lang)}</p>
                                   )}
                                 </div>
                                 <div className="flex flex-col items-end gap-0.5 shrink-0">
@@ -699,13 +699,13 @@ function ArtistDetailView({
                             </p>
                           )}
                           <p className="text-zinc-500 text-xs">
-                            {isRunning ? 'Verdiene jetzt neuen REP und sichere dir einen Platz' : `Ende: ${new Date(contest.endDate).toLocaleString('de-DE')}`}
+                            {isRunning ? t('rep.earnRepNowSecurePlace', lang) : tFmt('rep.endsAt', lang, { date: new Date(contest.endDate).toLocaleString('de-DE') })}
                           </p>
                         </div>
                         {isRunning && (
                           <div className={`text-right ${countdown.urgent ? 'animate-pulse' : ''}`}>
                             <p className={`font-black text-lg tabular-nums leading-none ${countdown.urgent ? 'text-red-400' : 'text-green-400'}`}>{countdown.label}</p>
-                            <p className="text-zinc-600 text-[10px]">verbleibend</p>
+                            <p className="text-zinc-600 text-[10px]">{t('rep.remaining', lang)}</p>
                           </div>
                         )}
                       </div>
@@ -742,13 +742,13 @@ function ArtistDetailView({
                                         : <div className="w-5 h-5 rounded-full bg-zinc-700 shrink-0" />}
                                       <p className="text-white text-sm font-semibold truncate">
                                         {winner.displayName || shortenWallet(winner.walletAddress)}
-                                        {isMe && <span className="text-amber-400 ml-1">★ Du</span>}
+                                        {isMe && <span className="text-amber-400 ml-1">{t('rep.starYou', lang)}</span>}
                                       </p>
                                     </div>
-                                    <p className="text-zinc-500 text-xs mt-0.5">{winner.reputation.toLocaleString()} neuer REP</p>
+                                    <p className="text-zinc-500 text-xs mt-0.5">{tFmt('rep.newRepAmount', lang, { n: winner.reputation.toLocaleString() })}</p>
                                   </>
                                 ) : (
-                                  <p className="text-zinc-600 text-sm italic">Noch nicht besetzt — sei der Erste!</p>
+                                  <p className="text-zinc-600 text-sm italic">{t('rep.notYetClaimedBeFirst', lang)}</p>
                                 )}
                               </div>
                               <div className="flex flex-col items-end gap-0.5 shrink-0">
@@ -1308,7 +1308,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       {contest.distributed ? t('rep.contestEnded', lang) : contestExpired ? t('rep.contestExpired', lang) : t('rep.contestRunning', lang)}
                     </p>
                     <p className="text-zinc-400 text-[11px] mt-0.5">
-                      Ende: {new Date(contest.endDate).toLocaleString('de-DE')}
+                      {tFmt('rep.endsAt', lang, { date: new Date(contest.endDate).toLocaleString('de-DE') })}
                     </p>
                   </div>
                   {contestExpired && (
@@ -1338,17 +1338,17 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                   {contest.prizes.map(p => (
                     <div key={p.rank} className="flex items-center justify-between px-3 py-2 rounded-lg bg-zinc-800/50">
                       <span className="text-zinc-300 text-xs">
-                        {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`} Platz
+                        {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`} {t('rep.rankSuffix', lang)}
                       </span>
                       <div className="flex items-center gap-2">
                         {p.creditReward > 0 && (
                           <span className="flex items-center gap-1 text-amber-300 text-xs font-bold">
                             <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full shrink-0" />
-                            {p.creditReward} Credits
+                            {p.creditReward} {t('rep.creditsUnitShort', lang)}
                           </span>
                         )}
                         {p.shardReward > 0 && (
-                          <span className="text-cyan-300 text-xs font-bold">✦ {p.shardReward} Shards</span>
+                          <span className="text-cyan-300 text-xs font-bold">✦ {p.shardReward} {t('col.shards', lang)}</span>
                         )}
                       </div>
                     </div>
@@ -1391,7 +1391,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
               <div className="p-4 space-y-3">
                 {/* Banner-Bild */}
                 <div>
-                  <label className="text-zinc-400 text-xs mb-1.5 block">Contest-Banner (optional)</label>
+                  <label className="text-zinc-400 text-xs mb-1.5 block">{t('rep.contestBannerLabel', lang)}</label>
                   {contestImagePreview ? (
                     <div className="relative w-full h-28 rounded-xl overflow-hidden">
                       <img src={contestImagePreview} alt="" className="w-full h-full object-cover" />
@@ -1409,7 +1409,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                   )}
                 </div>
                 <div>
-                  <label className="text-zinc-400 text-xs mb-1 block">Contest-Titel (optional)</label>
+                  <label className="text-zinc-400 text-xs mb-1 block">{t('rep.contestTitleLabel', lang)}</label>
                   <input
                     className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2.5 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500"
                     placeholder="z.B. Single Release Contest"
@@ -1436,7 +1436,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       <div className="relative flex-1">
                         <input
                           type="number" min="0"
-                          placeholder="Credits"
+                          placeholder={t('rep.creditsUnitShort', lang)}
                           className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500 pr-10"
                           value={contestPrizes[i].creditReward || ''}
                           onChange={e => {
@@ -1452,7 +1452,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       <div className="relative flex-1">
                         <input
                           type="number" min="0"
-                          placeholder="Shards"
+                          placeholder={t('col.shards', lang)}
                           className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-cyan-500 pr-8"
                           value={contestPrizes[i].shardReward || ''}
                           onChange={e => {
@@ -1584,7 +1584,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                                 <div className="flex-1 min-w-0">
                                   {winner
                                     ? <p className="text-white text-sm font-semibold truncate">{winner.displayName ?? shortenWallet(winner.walletAddress)}</p>
-                                    : <p className="text-zinc-600 text-sm italic">Kein Teilnehmer</p>}
+                                    : <p className="text-zinc-600 text-sm italic">{t('rep.noParticipant', lang)}</p>}
                                 </div>
                                 <div className="flex flex-col items-end gap-0.5 shrink-0">
                                   {p.creditReward > 0 && (
@@ -1610,7 +1610,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                           >
                             ✦ Neues Quartal konfigurieren
                           </button>
-                          <p className="text-zinc-600 text-[10px] text-center">Credits werden beim Speichern für das neue Quartal reserviert</p>
+                          <p className="text-zinc-600 text-[10px] text-center">{t('rep.creditsReservedNextQuarter', lang)}</p>
                         </div>
                       </div>
                     );
@@ -1679,17 +1679,17 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       {quarterlyConfig.prizes.map(p => (
                         <div key={p.rank} className="flex items-center justify-between px-3 py-2 rounded-lg bg-zinc-800/50">
                           <span className="text-zinc-300 text-xs">
-                            {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`} Platz
+                            {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`} {t('rep.rankSuffix', lang)}
                           </span>
                           <div className="flex items-center gap-2">
                             {p.creditReward > 0 && (
                               <span className="flex items-center gap-1 text-amber-300 text-xs font-bold">
                                 <Image src="/D.FAITH.png" alt="" width={11} height={11} className="w-2.5 h-2.5 rounded-full shrink-0" />
-                                {p.creditReward} Credits
+                                {p.creditReward} {t('rep.creditsUnitShort', lang)}
                               </span>
                             )}
                             {p.shardReward > 0 && (
-                              <span className="text-cyan-300 text-xs font-bold">✦ {p.shardReward} Shards</span>
+                              <span className="text-cyan-300 text-xs font-bold">✦ {p.shardReward} {t('col.shards', lang)}</span>
                             )}
                           </div>
                         </div>
@@ -1725,7 +1725,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       </span>
                       <div className="relative flex-1">
                         <input
-                          type="number" min="0" placeholder="Credits"
+                          type="number" min="0" placeholder={t('rep.creditsUnitShort', lang)}
                           className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-amber-500 pr-10"
                           value={qlyPrizes[i].creditReward || ''}
                           onChange={e => { const u = [...qlyPrizes]; u[i] = { ...u[i], creditReward: Number(e.target.value) || 0 }; setQlyPrizes(u); }}
@@ -1736,7 +1736,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       </div>
                       <div className="relative flex-1">
                         <input
-                          type="number" min="0" placeholder="Shards"
+                          type="number" min="0" placeholder={t('col.shards', lang)}
                           className="w-full bg-zinc-800 text-white rounded-xl px-3 py-2 text-xs border border-white/[0.07] focus:outline-none focus:ring-1 focus:ring-cyan-500 pr-8"
                           value={qlyPrizes[i].shardReward || ''}
                           onChange={e => { const u = [...qlyPrizes]; u[i] = { ...u[i], shardReward: Number(e.target.value) || 0 }; setQlyPrizes(u); }}
@@ -1779,7 +1779,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                           D.FAITH {enough ? '✓' : '⚠'}
                         </p>
                       </div>
-                      <p className="text-zinc-600 text-[10px] px-1">💡 Credits werden beim Speichern sofort reserviert</p>
+                      <p className="text-zinc-600 text-[10px] px-1">{t('rep.creditsReservedImmediately', lang)}</p>
                     </div>
                   );
                 })()}
@@ -1840,8 +1840,8 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
           {/* Aktuelle REP-Rangliste (zeigt wer Quartal-Rewards bekommt) */}
           <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-white/[0.07]">
-              <p className="text-white font-semibold text-sm">REP-Rangliste</p>
-              <p className="text-zinc-500 text-xs mt-0.5">Aktueller Stand — diese Plätze gewinnen die Quartal-Rewards</p>
+              <p className="text-white font-semibold text-sm">{t('rep.repLeaderboardTitle', lang)}</p>
+              <p className="text-zinc-500 text-xs mt-0.5">{t('rep.currentStandingQuarterlyWins', lang)}</p>
             </div>
             {leaderboard.length === 0 ? (
               <div className="px-4 py-8 text-center">
