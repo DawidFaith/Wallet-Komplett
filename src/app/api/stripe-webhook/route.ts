@@ -72,7 +72,9 @@ async function handleSuccessfulPayment(paymentIntent: Stripe.PaymentIntent) {
  * zustellen, ohne dieses Guard würde doppelt gutgeschrieben.
  */
 async function handleCreditsPurchase(paymentIntent: Stripe.PaymentIntent) {
-  const walletAddress = paymentIntent.metadata.walletAddress;
+  // Fallback auf den alten Key-Namen "walletAddress" für die eine
+  // Test-Zahlung, die vor der Umbenennung auf "accountId" erstellt wurde
+  const walletAddress = paymentIntent.metadata.accountId ?? paymentIntent.metadata.walletAddress;
   const credits        = Number(paymentIntent.metadata.credits);
   const amountEur       = Number(paymentIntent.metadata.amountEur);
 

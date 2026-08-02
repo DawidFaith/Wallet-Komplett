@@ -11,6 +11,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { getDb } from '../../../lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +37,22 @@ export async function POST(req: NextRequest) {
   }
 
   const credits = Math.round(amountEur * EUR_TO_CREDITS_RATE);
+  const accountId = walletAddress.trim().toLowerCase();
+
+  // Anzeigename statt Wallet-Adresse für Stripe-Beschreibung/Metadaten — im
+  // Stripe-Dashboard soll kein "walletAddress"-Feld auftauchen (sieht nach
+  // Krypto-Geschäft aus, genau das Feld, an dem Stripes Compliance-Team bei
+  // NFT/Crypto-nahen Businesses hängen bleiben könnte).
+  let customerName = 'D.FAITH Nutzer';
+  try {
+    const sql  = getDb();
+    const rows = await sql`SELECT display_name FROM user_profiles WHERE wallet_address = ${accountId} LIMIT 1`;
+    const name = (rows[0]?.display_name as string | null)?.trim();
+    if (name) customerName = name;
+  } catch {
+    // Fallback-Name reicht, kein harter Fehler nötig
+  }
+
   const stripe = new Stripe(secretKey, { apiVersion: '2025-08-27.basil' });
 
   try {
@@ -44,12 +61,13 @@ export async function POST(req: NextRequest) {
       currency: 'eur',
       automatic_payment_methods: { enabled: true },
       metadata: {
-        type:          'credits_purchase',
-        walletAddress: walletAddress.trim().toLowerCase(),
-        amountEur:     amountEur.toFixed(2),
-        credits:       String(credits),
+        type:         'credits_purchase',
+        accountId,
+        customerName,
+        amountEur:    amountEur.toFixed(2),
+        credits:      String(credits),
       },
-      description: `D.FAITH Credits (${credits}) für Wallet ${walletAddress.slice(0, 12)}…`,
+      description: `D.FAITH Credits (${credits}) für ${customerName}`,
     });
 
     return NextResponse.json({
