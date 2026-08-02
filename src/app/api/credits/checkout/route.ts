@@ -14,8 +14,9 @@ import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
 
-// 1 € = 100 Credits — einzige Stelle, an der der Kurs definiert ist
-export const EUR_TO_CREDITS_RATE = 100;
+// 1 € = 100 Credits — muss mit EUR_TO_CREDITS_RATE in CreditsCardCheckout.tsx übereinstimmen.
+// Kein `export`: Next.js lässt in Route-Dateien nur GET/POST/etc. + Config-Exports zu.
+const EUR_TO_CREDITS_RATE = 100;
 const MIN_EUR = 1;
 
 export async function POST(req: NextRequest) {
