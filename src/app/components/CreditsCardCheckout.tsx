@@ -83,20 +83,24 @@ function CheckoutForm({ walletAddress, amountEur, onSuccess, onError }: {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <div className="bg-white/[0.04] border border-white/[0.08] rounded-xl p-3">
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: '15px', color: '#ffffff', fontFamily: 'system-ui, sans-serif',
-                '::placeholder': { color: '#71717a' },
+      <div>
+        <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">Kartendaten</label>
+        <div className="bg-white/[0.04] border border-white/[0.08] focus-within:border-amber-500/60 rounded-xl px-4 py-4 transition-colors">
+          <CardElement
+            options={{
+              style: {
+                base: {
+                  fontSize: '18px', color: '#ffffff', fontFamily: 'system-ui, sans-serif',
+                  lineHeight: '28px',
+                  '::placeholder': { color: '#71717a' },
+                },
+                invalid: { color: '#f87171' },
               },
-              invalid: { color: '#f87171' },
-            },
-            hidePostalCode: true,
-            disabled: processing || done || loadingIntent,
-          }}
-        />
+              hidePostalCode: true,
+              disabled: processing || done || loadingIntent,
+            }}
+          />
+        </div>
       </div>
       {done ? (
         <div className="flex items-center justify-center gap-2 bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-green-400 text-sm font-semibold">
@@ -156,9 +160,17 @@ export default function CreditsCardCheckout({ walletAddress, onSuccess }: Props)
           onChange={e => { setAmount(e.target.value); setError(''); }}
           className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-amber-500/60 rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition-colors"
         />
-        <p className="text-zinc-500 text-xs mt-1.5">
-          {validAmount ? `≈ ${credits.toLocaleString('de-DE')} Credits` : `Mindestbetrag ${MIN_EUR} €`}
-        </p>
+      </div>
+
+      <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 flex items-center justify-between">
+        <span className="text-amber-200/80 text-xs font-semibold">Du erhältst</span>
+        {validAmount ? (
+          <span className="flex items-center gap-1.5 text-amber-300 font-black text-xl">
+            {credits.toLocaleString('de-DE')} <span className="text-xs font-bold text-amber-400/80">Credits</span>
+          </span>
+        ) : (
+          <span className="text-red-400 text-xs font-semibold">Mindestbetrag {MIN_EUR} €</span>
+        )}
       </div>
 
       {error && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg p-2">{error}</p>}
