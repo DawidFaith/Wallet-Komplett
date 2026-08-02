@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../lib/db';
 import { mintSongMasterEdition } from '../../lib/songNft';
 import { requireOwnWallet } from '../../lib/apiAuth';
+import { checkRateLimit } from '../../lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,6 +92,8 @@ export async function POST(req: NextRequest) {
   }
   const authCheck = requireOwnWallet(wallet);
   if (!authCheck.ok) return authCheck.response;
+  const rl = await checkRateLimit(`shop-create:${authCheck.userId}`, 5, 300);
+  if (!rl.ok) return rl.response!;
   if (!['song', 'video', 'nft', 'exclusive'].includes(type)) {
     return NextResponse.json({ error: 'Ungültiger Typ' }, { status: 400 });
   }

@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/app/lib/db';
 import { decryptKey } from '@/app/lib/solanaCrypto';
 import { requireOwnWallet } from '@/app/lib/apiAuth';
+import { checkRateLimit } from '@/app/lib/rateLimit';
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
@@ -16,6 +17,10 @@ export async function POST(req: Request) {
 
   const authCheck = requireOwnWallet(walletAddress);
   if (!authCheck.ok) return authCheck.response;
+
+  // Streng limitiert — Key-Export sollte im Normalbetrieb sehr selten passieren
+  const rl = await checkRateLimit(`export-key:${authCheck.userId}`, 3, 3600);
+  if (!rl.ok) return rl.response!;
 
   const sql = getDb();
   const rows = await sql`

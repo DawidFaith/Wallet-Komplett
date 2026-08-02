@@ -24,6 +24,7 @@ import { redeemDfaithCredits, addDfaithCredits } from '../../../lib/questDb';
 import { decryptKey } from '../../../lib/solanaCrypto';
 import { mintSongPrintEdition } from '../../../lib/songNft';
 import { requireOwnWallet } from '../../../lib/apiAuth';
+import { checkRateLimit } from '../../../lib/rateLimit';
 
 const RPC_URL     = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN;
@@ -45,6 +46,8 @@ export async function POST(req: NextRequest) {
   }
   const authCheck = requireOwnWallet(buyerWallet);
   if (!authCheck.ok) return authCheck.response;
+  const rl = await checkRateLimit(`shop-purchase:${authCheck.userId}`, 20, 60);
+  if (!rl.ok) return rl.response!;
   if (!['credits', 'tokens'].includes(paymentMethod)) {
     return NextResponse.json({ error: 'Ungültige Zahlungsmethode' }, { status: 400 });
   }

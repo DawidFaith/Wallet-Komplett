@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fuseShards, upgradeCollectibles, type CollectibleRarity } from '../../../lib/questDb/collectibles';
 import { requireOwnWallet } from '../../../lib/apiAuth';
+import { checkRateLimit } from '../../../lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,8 @@ export async function POST(req: NextRequest) {
   }
   const authCheck = requireOwnWallet(walletAddress);
   if (!authCheck.ok) return authCheck.response;
+  const rl = await checkRateLimit(`collectibles-fuse:${authCheck.userId}`, 30, 60);
+  if (!rl.ok) return rl.response!;
 
   try {
     if (action === 'upgrade') {

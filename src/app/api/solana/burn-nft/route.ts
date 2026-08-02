@@ -32,6 +32,7 @@ import { getDb } from '../../../lib/db';
 import { decryptKey } from '../../../lib/solanaCrypto';
 import { getTreasuryKeypair } from '../../../lib/solanaOperator';
 import { requireOwnWallet } from '../../../lib/apiAuth';
+import { checkRateLimit } from '../../../lib/rateLimit';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
@@ -82,6 +83,9 @@ export async function POST(req: NextRequest) {
 
     const authCheck = requireOwnWallet(walletAddress);
     if (!authCheck.ok) return authCheck.response;
+
+    const rl = await checkRateLimit(`burn-nft:${authCheck.userId}`, 10, 60);
+    if (!rl.ok) return rl.response!;
 
     const sql = getDb();
 

@@ -14,6 +14,7 @@ import bs58 from 'bs58';
 import { getDb } from '@/app/lib/db';
 import { decryptKey } from '@/app/lib/solanaCrypto';
 import { requireOwnWallet } from '@/app/lib/apiAuth';
+import { checkRateLimit } from '@/app/lib/rateLimit';
 
 const RPC_URL     = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN;
@@ -30,6 +31,10 @@ export async function POST(req: Request) {
 
   const authCheck = requireOwnWallet(walletAddress);
   if (!authCheck.ok) return authCheck.response;
+
+  const rl = await checkRateLimit(`send-token:${authCheck.userId}`, 10, 60);
+  if (!rl.ok) return rl.response!;
+
   const usedMint = mintAddress ?? DFAITH_MINT;
   if (!usedMint) return NextResponse.json({ error: 'Token-Adresse nicht konfiguriert' }, { status: 503 });
 

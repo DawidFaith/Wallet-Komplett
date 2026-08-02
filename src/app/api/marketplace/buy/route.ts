@@ -17,6 +17,7 @@ import { transferSongPrintEdition } from '../../../lib/songNft';
 import { getTreasuryKeypair } from '../../../lib/solanaOperator';
 import { getDfaithCredits, addDfaithCredits, redeemDfaithCredits } from '../../../lib/questDb/credits';
 import { requireOwnWallet } from '../../../lib/apiAuth';
+import { checkRateLimit } from '../../../lib/rateLimit';
 
 export const dynamic     = 'force-dynamic';
 export const maxDuration = 60;
@@ -35,6 +36,8 @@ export async function POST(req: NextRequest) {
     }
     const authCheck = requireOwnWallet(buyerWallet);
     if (!authCheck.ok) return authCheck.response;
+    const rl = await checkRateLimit(`marketplace-buy:${authCheck.userId}`, 10, 60);
+    if (!rl.ok) return rl.response!;
 
     const sql = getDb();
 

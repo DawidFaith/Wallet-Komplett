@@ -15,6 +15,7 @@ import { transferSongPrintEdition } from '../../lib/songNft';
 import { getTreasuryKeypair } from '../../lib/solanaOperator';
 import { decryptKey } from '../../lib/solanaCrypto';
 import { requireOwnWallet } from '../../lib/apiAuth';
+import { checkRateLimit } from '../../lib/rateLimit';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 
@@ -162,6 +163,8 @@ export async function POST(req: NextRequest) {
     }
     const authCheck = requireOwnWallet(walletAddress);
     if (!authCheck.ok) return authCheck.response;
+    const rl = await checkRateLimit(`marketplace-list:${authCheck.userId}`, 10, 60);
+    if (!rl.ok) return rl.response!;
 
     const sql = getDb();
     await ensureTable(sql);
@@ -277,6 +280,8 @@ export async function DELETE(req: NextRequest) {
     }
     const authCheck = requireOwnWallet(walletAddress);
     if (!authCheck.ok) return authCheck.response;
+    const rl = await checkRateLimit(`marketplace-cancel:${authCheck.userId}`, 10, 60);
+    if (!rl.ok) return rl.response!;
 
     const sql = getDb();
 

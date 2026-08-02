@@ -10,6 +10,7 @@ import { getDb } from '../../../lib/db';
 import { burnCollectibleCollection } from '../../../lib/collectibleNft';
 import { decryptKey } from '../../../lib/solanaCrypto';
 import { requireOwnWallet } from '../../../lib/apiAuth';
+import { checkRateLimit } from '../../../lib/rateLimit';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 
@@ -27,6 +28,9 @@ export async function POST(req: NextRequest) {
     }
     const authCheck = requireOwnWallet(artistWallet);
     if (!authCheck.ok) return authCheck.response;
+
+    const rl = await checkRateLimit(`collectibles-burn:${authCheck.userId}`, 10, 60);
+    if (!rl.ok) return rl.response!;
 
     const sql = getDb();
 

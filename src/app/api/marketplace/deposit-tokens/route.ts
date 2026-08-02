@@ -20,6 +20,7 @@ import { getTreasuryKeypair } from '../../../lib/solanaOperator';
 import { decryptKey } from '../../../lib/solanaCrypto';
 import { addDfaithCredits } from '../../../lib/questDb/credits';
 import { requireOwnWallet } from '../../../lib/apiAuth';
+import { checkRateLimit } from '../../../lib/rateLimit';
 
 export const dynamic     = 'force-dynamic';
 export const maxDuration = 60;
@@ -56,6 +57,8 @@ export async function POST(req: NextRequest) {
     }
     const authCheck = requireOwnWallet(walletAddress);
     if (!authCheck.ok) return authCheck.response;
+    const rl = await checkRateLimit(`marketplace-deposit:${authCheck.userId}`, 10, 60);
+    if (!rl.ok) return rl.response!;
     if (!DFAITH_MINT) {
       return NextResponse.json({ error: 'D.FAITH Token-Adresse nicht konfiguriert' }, { status: 503 });
     }

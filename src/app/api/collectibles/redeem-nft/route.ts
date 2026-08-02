@@ -12,6 +12,7 @@ import { redeemCollectibleAsset } from '../../../lib/collectibleNft';
 import type { CollectibleRarity } from '../../../lib/questDb/collectibles';
 import { decryptKey } from '../../../lib/solanaCrypto';
 import { requireOwnWallet } from '../../../lib/apiAuth';
+import { checkRateLimit } from '../../../lib/rateLimit';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 
@@ -30,6 +31,9 @@ export async function POST(req: NextRequest) {
     }
     const authCheck = requireOwnWallet(walletAddress);
     if (!authCheck.ok) return authCheck.response;
+
+    const rl = await checkRateLimit(`collectibles-redeem:${authCheck.userId}`, 20, 60);
+    if (!rl.ok) return rl.response!;
 
     const sql = getDb();
 

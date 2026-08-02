@@ -510,6 +510,16 @@ export async function POST(req: NextRequest) {
     `;
     await sql`CREATE INDEX IF NOT EXISTS idx_stripe_credit_purchases_wallet ON stripe_credit_purchases(wallet_address)`;
 
+    // ── Rate-Limiting (DB-basiert, kein Redis nötig) ─────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS rate_limits (
+        key          TEXT        NOT NULL,
+        window_start TIMESTAMPTZ NOT NULL,
+        count        INTEGER     NOT NULL DEFAULT 1,
+        PRIMARY KEY (key, window_start)
+      )
+    `;
+
     return NextResponse.json({
       success: true,
       message: `Migration abgeschlossen (${(backfill as unknown as { count?: number }).count ?? backfill.length} neue Profile)`,

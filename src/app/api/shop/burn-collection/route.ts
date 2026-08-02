@@ -18,6 +18,7 @@ import bs58 from 'bs58';
 import { getDb } from '../../../lib/db';
 import { decryptKey } from '../../../lib/solanaCrypto';
 import { requireOwnWallet } from '../../../lib/apiAuth';
+import { checkRateLimit } from '../../../lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -32,6 +33,9 @@ export async function POST(req: NextRequest) {
     }
     const authCheck = requireOwnWallet(wallet);
     if (!authCheck.ok) return authCheck.response;
+
+    const rl = await checkRateLimit(`shop-burn:${authCheck.userId}`, 10, 60);
+    if (!rl.ok) return rl.response!;
 
     const sql = getDb();
     const rows = await sql`

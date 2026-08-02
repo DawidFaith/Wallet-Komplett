@@ -13,6 +13,7 @@ import bs58 from 'bs58';
 import { getDb } from '@/app/lib/db';
 import { decryptKey } from '@/app/lib/solanaCrypto';
 import { requireOwnWallet } from '@/app/lib/apiAuth';
+import { checkRateLimit } from '@/app/lib/rateLimit';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
@@ -28,6 +29,9 @@ export async function POST(req: Request) {
 
   const authCheck = requireOwnWallet(walletAddress);
   if (!authCheck.ok) return authCheck.response;
+
+  const rl = await checkRateLimit(`send-sol:${authCheck.userId}`, 10, 60);
+  if (!rl.ok) return rl.response!;
 
   let toPk: PublicKey;
   try { toPk = new PublicKey(toAddress); } catch {

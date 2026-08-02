@@ -20,6 +20,7 @@ import { getDb } from '@/app/lib/db';
 import { decryptKey } from '@/app/lib/solanaCrypto';
 import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
 import { requireOwnWallet } from '@/app/lib/apiAuth';
+import { checkRateLimit } from '@/app/lib/rateLimit';
 
 const RPC_URL         = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const JUPITER_SWAP    = 'https://api.jup.ag/swap/v1/swap';
@@ -71,6 +72,9 @@ export async function POST(req: Request) {
 
   const authCheck = requireOwnWallet(walletAddress);
   if (!authCheck.ok) return authCheck.response;
+
+  const rl = await checkRateLimit(`swap:${authCheck.userId}`, 10, 60);
+  if (!rl.ok) return rl.response!;
 
   const sql  = getDb();
   const rows = await sql`

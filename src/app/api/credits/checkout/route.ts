@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getDb } from '../../../lib/db';
 import { requireOwnWallet } from '../../../lib/apiAuth';
+import { checkRateLimit } from '../../../lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,8 @@ export async function POST(req: NextRequest) {
   }
   const authCheck = requireOwnWallet(walletAddress);
   if (!authCheck.ok) return authCheck.response;
+  const rl = await checkRateLimit(`credits-checkout:${authCheck.userId}`, 10, 60);
+  if (!rl.ok) return rl.response!;
   if (typeof amountEur !== 'number' || !isFinite(amountEur) || amountEur < MIN_EUR) {
     return NextResponse.json({ error: `Mindestbetrag ist ${MIN_EUR} €` }, { status: 400 });
   }
