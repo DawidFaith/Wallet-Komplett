@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { t, tFmt, type Lang } from '../utils/i18n';
 
 // 1 € = 100 Credits — muss mit EUR_TO_CREDITS_RATE in /api/credits/checkout übereinstimmen
 const EUR_TO_CREDITS_RATE = 100;
@@ -20,13 +21,15 @@ function getStripePromise() {
 interface Props {
   walletAddress: string;
   onSuccess: () => void;
+  lang: Lang;
 }
 
-function CheckoutForm({ walletAddress, amountEur, onSuccess, onError }: {
+function CheckoutForm({ walletAddress, amountEur, onSuccess, onError, lang }: {
   walletAddress: string;
   amountEur: number;
   onSuccess: () => void;
   onError: (msg: string) => void;
+  lang: Lang;
 }) {
   const stripe   = useStripe();
   const elements = useElements();
@@ -47,13 +50,13 @@ function CheckoutForm({ walletAddress, amountEur, onSuccess, onError }: {
       .then(r => r.json())
       .then(d => {
         if (cancelled) return;
-        if (!d.clientSecret) throw new Error(d.error ?? 'Fehler beim Erstellen der Zahlung');
+        if (!d.clientSecret) throw new Error(d.error ?? t('shop.cardCreateError', lang));
         setClientSecret(d.clientSecret);
       })
-      .catch(e => !cancelled && onError(e instanceof Error ? e.message : 'Fehler'))
+      .catch(e => !cancelled && onError(e instanceof Error ? e.message : t('common.error', lang)))
       .finally(() => !cancelled && setLoadingIntent(false));
     return () => { cancelled = true; };
-  }, [walletAddress, amountEur, onError]);
+  }, [walletAddress, amountEur, onError, lang]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +70,7 @@ function CheckoutForm({ walletAddress, amountEur, onSuccess, onError }: {
         payment_method: { card: cardElement },
       });
       if (error) {
-        onError(error.message ?? 'Zahlung fehlgeschlagen');
+        onError(error.message ?? t('shop.cardPaymentFailed', lang));
       } else if (paymentIntent?.status === 'succeeded') {
         setDone(true);
         // Webhook schreibt die Credits gut — kurze Verzögerung, damit er
@@ -75,7 +78,7 @@ function CheckoutForm({ walletAddress, amountEur, onSuccess, onError }: {
         setTimeout(onSuccess, 2500);
       }
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'Zahlung fehlgeschlagen');
+      onError(err instanceof Error ? err.message : t('shop.cardPaymentFailed', lang));
     } finally {
       setProcessing(false);
     }
@@ -84,7 +87,7 @@ function CheckoutForm({ walletAddress, amountEur, onSuccess, onError }: {
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
-        <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">Kartendaten</label>
+        <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">{t('shop.cardDetails', lang)}</label>
         <div className="bg-white/[0.04] border border-white/[0.08] focus-within:border-amber-500/60 rounded-xl px-4 py-4 transition-colors">
           <CardElement
             options={{
@@ -104,7 +107,7 @@ function CheckoutForm({ walletAddress, amountEur, onSuccess, onError }: {
       </div>
       {done ? (
         <div className="flex items-center justify-center gap-2 bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-green-400 text-sm font-semibold">
-          ✓ Zahlung erfolgreich — Credits werden gutgeschrieben…
+          ✓ {t('shop.cardPaymentSuccess', lang)}
         </div>
       ) : (
         <button
@@ -113,17 +116,17 @@ function CheckoutForm({ walletAddress, amountEur, onSuccess, onError }: {
           className="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-800 disabled:text-zinc-500 text-black font-black rounded-xl py-3 text-sm transition-all"
         >
           {processing
-            ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Zahlung wird verarbeitet…</span>
+            ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> {t('shop.cardProcessing', lang)}</span>
             : loadingIntent
-            ? 'Wird vorbereitet…'
-            : `${amountEur.toFixed(2)} € bezahlen`}
+            ? t('shop.cardPreparing', lang)
+            : tFmt('shop.cardPayButton', lang, { amount: amountEur.toFixed(2) })}
         </button>
       )}
     </form>
   );
 }
 
-export default function CreditsCardCheckout({ walletAddress, onSuccess }: Props) {
+export default function CreditsCardCheckout({ walletAddress, onSuccess, lang }: Props) {
   const [amount, setAmount] = useState('10');
   const [error, setError]   = useState('');
   const amountEur = Number(amount);
@@ -146,7 +149,7 @@ export default function CreditsCardCheckout({ walletAddress, onSuccess }: Props)
   if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
     return (
       <p className="text-zinc-500 text-xs bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
-        Kartenzahlung ist noch nicht konfiguriert.
+        {t('shop.cardNotConfigured', lang)}
       </p>
     );
   }
@@ -154,7 +157,7 @@ export default function CreditsCardCheckout({ walletAddress, onSuccess }: Props)
   return (
     <div className="space-y-3">
       <div>
-        <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">Betrag (EUR)</label>
+        <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">{t('shop.cardAmountLabel', lang)}</label>
         <input
           type="number" min={MIN_EUR} step="1" value={amount}
           onChange={e => { setAmount(e.target.value); setError(''); }}
@@ -163,13 +166,13 @@ export default function CreditsCardCheckout({ walletAddress, onSuccess }: Props)
       </div>
 
       <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 flex items-center justify-between">
-        <span className="text-amber-200/80 text-xs font-semibold">Du erhältst</span>
+        <span className="text-amber-200/80 text-xs font-semibold">{t('shop.cardYouReceive', lang)}</span>
         {validAmount ? (
           <span className="flex items-center gap-1.5 text-amber-300 font-black text-xl">
-            {credits.toLocaleString('de-DE')} <span className="text-xs font-bold text-amber-400/80">Credits</span>
+            {credits.toLocaleString('de-DE')} <span className="text-xs font-bold text-amber-400/80">{t('shop.cardCreditsUnit', lang)}</span>
           </span>
         ) : (
-          <span className="text-red-400 text-xs font-semibold">Mindestbetrag {MIN_EUR} €</span>
+          <span className="text-red-400 text-xs font-semibold">{tFmt('shop.cardMinAmount', lang, { n: MIN_EUR })}</span>
         )}
       </div>
 
@@ -177,7 +180,7 @@ export default function CreditsCardCheckout({ walletAddress, onSuccess }: Props)
 
       {validAmount && (
         <Elements key={amountEur} stripe={getStripePromise()} options={elementsOptions}>
-          <CheckoutForm walletAddress={walletAddress} amountEur={amountEur} onSuccess={onSuccess} onError={setError} />
+          <CheckoutForm walletAddress={walletAddress} amountEur={amountEur} onSuccess={onSuccess} onError={setError} lang={lang} />
         </Elements>
       )}
     </div>

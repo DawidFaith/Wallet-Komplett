@@ -305,6 +305,7 @@ function ShopDepositModal({ walletAddress, onClose, onSuccess }: {
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const lang = useLang();
   const [mode, setMode]                 = useState<'tokens' | 'card'>('tokens');
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
   const [loading, setLoading]           = useState(true);
@@ -331,7 +332,7 @@ function ShopDepositModal({ walletAddress, onClose, onSuccess }: {
   const handleDeposit = async () => {
     const amt = Number(amount);
     if (!amt || amt <= 0) return;
-    if (tokenBalance !== null && amt > tokenBalance) { setError(`Nicht genug Tokens — verfügbar: ${tokenBalance.toFixed(2)}`); return; }
+    if (tokenBalance !== null && amt > tokenBalance) { setError(tFmt('shop.depositInsufficientTokens', lang, { n: tokenBalance.toFixed(2) })); return; }
     setDepositing(true); setError('');
     try {
       const res  = await fetch('/api/marketplace/deposit-tokens', {
@@ -339,10 +340,10 @@ function ShopDepositModal({ walletAddress, onClose, onSuccess }: {
         body: JSON.stringify({ walletAddress, amount: amt }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Fehler');
+      if (!res.ok) throw new Error(data.error ?? t('common.error', lang));
       setDone(true);
       setTimeout(() => { onSuccess(); onClose(); }, 2000);
-    } catch (e) { setError(e instanceof Error ? e.message : 'Fehler'); }
+    } catch (e) { setError(e instanceof Error ? e.message : t('common.error', lang)); }
     finally     { setDepositing(false); }
   };
 
@@ -356,7 +357,7 @@ function ShopDepositModal({ walletAddress, onClose, onSuccess }: {
       <div className="bg-[#161410] border border-white/[0.08] rounded-2xl p-5 w-full max-w-sm shadow-2xl">
         <div className="flex justify-between items-center mb-5">
           <h3 className="font-black text-white text-base flex items-center gap-2">
-            <FaPlus className="text-amber-400" size={14} /> Credits aufladen
+            <FaPlus className="text-amber-400" size={14} /> {t('shop.depositTitle', lang)}
           </h3>
           <button onClick={onClose} className="text-zinc-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
             <FaTimes size={14} />
@@ -371,7 +372,7 @@ function ShopDepositModal({ walletAddress, onClose, onSuccess }: {
                 mode === 'tokens' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
               }`}
             >
-              <Image src="/D.FAITH.png" alt="" width={12} height={12} className="w-3 h-3 rounded-full" /> D.FAITH
+              <Image src="/D.FAITH.png" alt="" width={12} height={12} className="w-3 h-3 rounded-full" /> {t('shop.depositTabTokens', lang)}
             </button>
             <button
               onClick={() => { setMode('card'); setError(''); }}
@@ -379,27 +380,27 @@ function ShopDepositModal({ walletAddress, onClose, onSuccess }: {
                 mode === 'card' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
               }`}
             >
-              <FaCreditCard size={11} /> Karte (EUR)
+              <FaCreditCard size={11} /> {t('shop.depositTabCard', lang)}
             </button>
           </div>
         )}
 
         {done ? (
           <div className="flex items-center gap-2 justify-center bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-green-400 text-sm font-semibold">
-            <FaCheck size={14} /> Credits erfolgreich aufgeladen!
+            <FaCheck size={14} /> {t('shop.depositSuccess', lang)}
           </div>
         ) : mode === 'tokens' ? (
           <>
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 mb-4 flex justify-between items-center">
-              <span className="text-zinc-500 text-xs">Verfügbare D.FAITH Tokens</span>
+              <span className="text-zinc-500 text-xs">{t('shop.depositAvailableTokens', lang)}</span>
               {loading
-                ? <span className="text-zinc-600 text-xs">Laden…</span>
+                ? <span className="text-zinc-600 text-xs">{t('common.loading', lang)}</span>
                 : <span className="text-amber-300 font-black text-sm">{(tokenBalance ?? 0).toLocaleString('de-DE', { maximumFractionDigits: 2 })}</span>
               }
             </div>
             <input
               type="number" min="1" value={amount} onChange={e => setAmount(e.target.value)}
-              placeholder="Betrag eingeben"
+              placeholder={t('shop.depositAmountPlaceholder', lang)}
               className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-amber-500/60 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none transition-colors mb-3"
             />
             {error && <p className="text-red-400 text-xs mb-3 bg-red-500/10 border border-red-500/20 rounded-lg p-2">{error}</p>}
@@ -409,13 +410,13 @@ function ShopDepositModal({ walletAddress, onClose, onSuccess }: {
               className="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-800 disabled:text-zinc-500 text-black font-black rounded-xl py-3 text-sm transition-all"
             >
               {depositing
-                ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Wird aufgeladen…</span>
-                : 'D.FAITH Tokens → Credits'
+                ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> {t('shop.depositProcessing', lang)}</span>
+                : t('shop.depositTokensButton', lang)
               }
             </button>
           </>
         ) : (
-          <CreditsCardCheckout walletAddress={walletAddress} onSuccess={handleCardSuccess} />
+          <CreditsCardCheckout walletAddress={walletAddress} onSuccess={handleCardSuccess} lang={lang} />
         )}
       </div>
     </div>

@@ -859,6 +859,31 @@ const dict: Translations = {
   'shop.itemCount': { de: '{n} {items} im Shop', en: '{n} {items} in shop', pl: '{n} {items} w sklepie' },
   'shop.inShop': { de: 'im Shop', en: 'in shop', pl: 'w sklepie' },
 
+  // ── Shop: Credits aufladen (Tokens + Karte) ───────────────────────────────────
+  'shop.depositTitle':            { de: 'Credits aufladen', en: 'Top up credits', pl: 'Doładuj kredyty' },
+  'shop.depositTabTokens':        { de: 'D.FAITH', en: 'D.FAITH', pl: 'D.FAITH' },
+  'shop.depositTabCard':          { de: 'Karte (EUR)', en: 'Card (EUR)', pl: 'Karta (EUR)' },
+  'shop.depositSuccess':          { de: 'Credits erfolgreich aufgeladen!', en: 'Credits topped up successfully!', pl: 'Kredyty doładowane pomyślnie!' },
+  'shop.depositAvailableTokens':  { de: 'Verfügbare D.FAITH Tokens', en: 'Available D.FAITH Tokens', pl: 'Dostępne tokeny D.FAITH' },
+  'shop.depositAmountPlaceholder': { de: 'Betrag eingeben', en: 'Enter amount', pl: 'Wpisz kwotę' },
+  'shop.depositInsufficientTokens': { de: 'Nicht genug Tokens — verfügbar: {n}', en: 'Not enough tokens — available: {n}', pl: 'Za mało tokenów — dostępne: {n}' },
+  'shop.depositProcessing':       { de: 'Wird aufgeladen…', en: 'Topping up…', pl: 'Doładowywanie…' },
+  'shop.depositTokensButton':     { de: 'D.FAITH Tokens → Credits', en: 'D.FAITH Tokens → Credits', pl: 'Tokeny D.FAITH → Kredyty' },
+
+  // ── Shop: Kreditkarten-Checkout (Stripe) ──────────────────────────────────────
+  'shop.cardDetails':        { de: 'Kartendaten', en: 'Card details', pl: 'Dane karty' },
+  'shop.cardPaymentSuccess': { de: 'Zahlung erfolgreich — Credits werden gutgeschrieben…', en: 'Payment successful — credits are being added…', pl: 'Płatność zakończona sukcesem — kredyty są dodawane…' },
+  'shop.cardProcessing':     { de: 'Zahlung wird verarbeitet…', en: 'Processing payment…', pl: 'Przetwarzanie płatności…' },
+  'shop.cardPreparing':      { de: 'Wird vorbereitet…', en: 'Preparing…', pl: 'Przygotowywanie…' },
+  'shop.cardPayButton':      { de: '{amount} € bezahlen', en: 'Pay €{amount}', pl: 'Zapłać {amount} €' },
+  'shop.cardAmountLabel':    { de: 'Betrag (EUR)', en: 'Amount (EUR)', pl: 'Kwota (EUR)' },
+  'shop.cardYouReceive':     { de: 'Du erhältst', en: 'You receive', pl: 'Otrzymasz' },
+  'shop.cardCreditsUnit':    { de: 'Credits', en: 'Credits', pl: 'Kredytów' },
+  'shop.cardMinAmount':      { de: 'Mindestbetrag {n} €', en: 'Minimum amount €{n}', pl: 'Minimalna kwota {n} €' },
+  'shop.cardNotConfigured':  { de: 'Kartenzahlung ist noch nicht konfiguriert.', en: 'Card payment is not configured yet.', pl: 'Płatność kartą nie jest jeszcze skonfigurowana.' },
+  'shop.cardCreateError':    { de: 'Fehler beim Erstellen der Zahlung', en: 'Error creating payment', pl: 'Błąd podczas tworzenia płatności' },
+  'shop.cardPaymentFailed':  { de: 'Zahlung fehlgeschlagen', en: 'Payment failed', pl: 'Płatność nie powiodła się' },
+
   // ── Reputation ──────────────────────────────────────────────────────────────
 
   'rep.title': { de: 'Reputation', en: 'Reputation', pl: 'Reputacja' },
