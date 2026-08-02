@@ -14,6 +14,26 @@ import { SiSolana } from 'react-icons/si';
 import { useLang } from '../components/LangContext';
 import { t, tFmt } from '../utils/i18n';
 
+// Fehlercodes von /api/shop/purchase → i18n-Key, damit die Meldung in der
+// Sprache des Nutzers erscheint statt im festen Deutsch der API-Antwort.
+const PURCHASE_ERROR_KEYS: Record<string, string> = {
+  no_body:                     'shop.errNoBody',
+  missing_fields:              'shop.errMissingFields',
+  invalid_payment_method:      'shop.errInvalidPaymentMethod',
+  item_not_found:              'shop.errItemNotFound',
+  sold_out:                    'shop.errSoldOut',
+  token_not_configured:        'shop.errTokenNotConfigured',
+  no_solana_wallet:            'shop.errNoSolanaWallet',
+  insufficient_credits:        'shop.errInsufficientCredits',
+  insufficient_tokens:         'shop.errInsufficientTokens',
+  artist_no_solana_wallet:     'shop.errArtistNoSolanaWallet',
+  token_transfer_failed:       'shop.errTokenTransferFailed',
+  no_onchain_collection:       'shop.errNoOnchainCollection',
+  nft_mint_failed_refunded:    'shop.errNftMintFailedRefunded',
+  nft_mint_failed_no_refund:   'shop.errNftMintFailedNoRefund',
+  unexpected_error:            'shop.buyFailed',
+};
+
 // ─── Typen ───────────────────────────────────────────────────────────────────
 
 type ItemType = 'song' | 'video' | 'nft' | 'exclusive'; // video/exclusive: nur noch Anzeige, Neu-Erstellung nur 'song'
@@ -508,7 +528,11 @@ function ArtistShopView({
       });
       if (!res.ok) {
         let errMsg = t('shop.buyFailed', lang);
-        try { const e = await res.json(); errMsg = e.error ?? errMsg; } catch {}
+        try {
+          const e = await res.json();
+          const codeKey = e.code ? PURCHASE_ERROR_KEYS[e.code as string] : undefined;
+          errMsg = codeKey ? t(codeKey, lang) : (e.error ?? errMsg);
+        } catch {}
         setBuyError(errMsg);
         return;
       }
@@ -563,7 +587,7 @@ function ArtistShopView({
                   onClick={() => setShowDeposit(true)}
                   className="flex items-center gap-1 text-[9px] font-bold text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-400/50 bg-amber-500/10 hover:bg-amber-500/20 rounded-full px-2 py-0.5 transition-all"
                 >
-                  <FaPlus size={7} /> Aufladen
+                  <FaPlus size={7} /> {t('shop.depositButton', lang)}
                 </button>
               )}
             </div>

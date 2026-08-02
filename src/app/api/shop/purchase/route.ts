@@ -34,7 +34,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
   const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: 'Kein Body' }, { status: 400 });
+  if (!body) return NextResponse.json({ error: 'Kein Body', code: 'no_body' }, { status: 400 });
 
   const { buyerWallet, itemId, paymentMethod = 'credits' } = body as {
     buyerWallet?: string;
@@ -42,14 +42,14 @@ export async function POST(req: NextRequest) {
     paymentMethod?: 'credits' | 'tokens';
   };
   if (!buyerWallet || !itemId) {
-    return NextResponse.json({ error: 'buyerWallet und itemId erforderlich' }, { status: 400 });
+    return NextResponse.json({ error: 'buyerWallet und itemId erforderlich', code: 'missing_fields' }, { status: 400 });
   }
   const authCheck = requireOwnWallet(buyerWallet);
   if (!authCheck.ok) return authCheck.response;
   const rl = await checkRateLimit(`shop-purchase:${authCheck.userId}`, 20, 60);
   if (!rl.ok) return rl.response!;
   if (!['credits', 'tokens'].includes(paymentMethod)) {
-    return NextResponse.json({ error: 'Ungültige Zahlungsmethode' }, { status: 400 });
+    return NextResponse.json({ error: 'Ungültige Zahlungsmethode', code: 'invalid_payment_method' }, { status: 400 });
   }
 
   const sql = getDb();
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     LIMIT 1
   `;
   if (!items.length || !items[0].is_active) {
-    return NextResponse.json({ error: 'Item nicht gefunden oder nicht aktiv' }, { status: 404 });
+    return NextResponse.json({ error: 'Item nicht gefunden oder nicht aktiv', code: 'item_not_found' }, { status: 404 });
   }
 
   const item = items[0] as {
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
   // ── Max Supply prüfen ─────────────────────────────────────────────────────
   if (item.is_nft_enabled && item.nft_max_supply !== null) {
     if (Number(item.edition_count) >= Number(item.nft_max_supply)) {
-      return NextResponse.json({ error: 'Alle NFT-Editionen sind ausverkauft' }, { status: 410 });
+      return NextResponse.json({ error: 'Alle NFT-Editionen sind ausverkauft', code: 'sold_out' }, { status: 410 });
     }
   }
 
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
   const effectiveMint = artistMint ?? DFAITH_MINT ?? null;
 
   if (paymentMethod === 'tokens' && !effectiveMint) {
-    return NextResponse.json({ error: 'Token nicht konfiguriert' }, { status: 503 });
+    return NextResponse.json({ error: 'Token nicht konfiguriert', code: 'token_not_configured' }, { status: 503 });
   }
 
   const isSelfPurchase = item.artist_wallet === buyerWallet.toLowerCase();
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
     WHERE wallet_address = ${buyerWallet.toLowerCase()} LIMIT 1
   `;
   if (!buyerSolanaRows.length) {
-    return NextResponse.json({ error: 'Kein Solana-Wallet gefunden' }, { status: 404 });
+    return NextResponse.json({ error: 'Kein Solana-Wallet gefunden', code: 'no_solana_wallet' }, { status: 404 });
   }
   const buyerSolanaAddress = buyerSolanaRows[0].solana_address as string;
 
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
       await redeemDfaithCredits(buyerWallet.toLowerCase(), item.price_credits);
     } catch {
       await sql`UPDATE shop_items SET edition_count = edition_count - 1 WHERE id = ${item.id}`;
-      return NextResponse.json({ error: 'Nicht genug D.FAITH Credits' }, { status: 402 });
+      return NextResponse.json({ error: 'Nicht genug D.FAITH Credits', code: 'insufficient_credits' }, { status: 402 });
     }
     await addDfaithCredits(item.artist_wallet, item.price_credits);
 
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
     `;
     if (!artistRows.length) {
       await sql`UPDATE shop_items SET edition_count = edition_count - 1 WHERE id = ${item.id}`;
-      return NextResponse.json({ error: 'Artist hat kein Solana-Wallet' }, { status: 404 });
+      return NextResponse.json({ error: 'Artist hat kein Solana-Wallet', code: 'artist_no_solana_wallet' }, { status: 404 });
     }
 
     const secretB58 = decryptKey(buyerSolanaRows[0].solana_private_key as string);
@@ -169,10 +169,12 @@ export async function POST(req: NextRequest) {
       await sql`UPDATE shop_items SET edition_count = edition_count - 1 WHERE id = ${item.id}`;
       const msg = err instanceof Error ? err.message : String(err);
       console.error('Token-Transfer fehlgeschlagen:', msg);
+      const insufficientTokens = msg.toLowerCase().includes('insufficient');
       return NextResponse.json({
-        error: msg.toLowerCase().includes('insufficient')
+        error: insufficientTokens
           ? 'Nicht genug D.FAITH Tokens im Wallet'
           : 'Token-Transfer fehlgeschlagen. Bitte versuche es erneut.',
+        code: insufficientTokens ? 'insufficient_tokens' : 'token_transfer_failed',
       }, { status: 402 });
     }
   }
@@ -185,14 +187,14 @@ export async function POST(req: NextRequest) {
   `;
   if (!artistKeyRows.length) {
     await sql`UPDATE shop_items SET edition_count = edition_count - 1 WHERE id = ${item.id}`;
-    return NextResponse.json({ error: 'Artist hat kein Solana-Wallet für NFT-Mint' }, { status: 404 });
+    return NextResponse.json({ error: 'Artist hat kein Solana-Wallet für NFT-Mint', code: 'artist_no_solana_wallet' }, { status: 404 });
   }
 
   // mpl-core: Editionen werden in die Song-Collection geminted
   const songCollectionMint = item.nft_collection_mint ?? item.master_edition_mint;
   if (!songCollectionMint) {
     await sql`UPDATE shop_items SET edition_count = edition_count - 1 WHERE id = ${item.id}`;
-    return NextResponse.json({ error: 'Item hat keine On-Chain-Collection für den NFT-Mint' }, { status: 500 });
+    return NextResponse.json({ error: 'Item hat keine On-Chain-Collection für den NFT-Mint', code: 'no_onchain_collection' }, { status: 500 });
   }
 
   let nftMintAddress: string;
@@ -225,6 +227,7 @@ export async function POST(req: NextRequest) {
       error: paymentMethod === 'credits'
         ? `NFT Mint fehlgeschlagen — deine Credits wurden zurückerstattet. Fehler: ${msg}`
         : `NFT Mint fehlgeschlagen. Tokens können nicht automatisch zurückgesendet werden — bitte Support kontaktieren. Fehler: ${msg}`,
+      code: paymentMethod === 'credits' ? 'nft_mint_failed_refunded' : 'nft_mint_failed_no_refund',
       nftError: true,
     }, { status: 500 });
   }
@@ -253,6 +256,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('Unerwarteter Fehler in /api/shop/purchase:', msg);
-    return NextResponse.json({ error: 'Kauf fehlgeschlagen. Bitte versuche es erneut.' }, { status: 500 });
+    return NextResponse.json({ error: 'Kauf fehlgeschlagen. Bitte versuche es erneut.', code: 'unexpected_error' }, { status: 500 });
   }
 }
