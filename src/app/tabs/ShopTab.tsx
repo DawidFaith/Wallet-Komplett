@@ -412,6 +412,21 @@ function ShopDepositModal({ walletAddress, onClose, onSuccess }: {
           </div>
         ) : mode === 'tokens' ? (
           <>
+            <div className="bg-white/[0.04] border border-white/[0.07] rounded-xl p-4 mb-4 space-y-2">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-3">{t('mp.depositHowTitle', lang)}</p>
+              <div className="flex items-start gap-2 text-xs text-zinc-400">
+                <span className="text-amber-400 font-black shrink-0">1.</span>
+                <span>{t('mp.depositStep1', lang)}</span>
+              </div>
+              <div className="flex items-start gap-2 text-xs text-zinc-400">
+                <span className="text-amber-400 font-black shrink-0">2.</span>
+                <span>{t('mp.depositStep2', lang)}</span>
+              </div>
+              <div className="flex items-start gap-2 text-xs text-zinc-400">
+                <span className="text-amber-400 font-black shrink-0">3.</span>
+                <span>{t('shop.depositStep3', lang)}</span>
+              </div>
+            </div>
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 mb-4 flex justify-between items-center">
               <span className="text-zinc-500 text-xs">{t('shop.depositAvailableTokens', lang)}</span>
               {loading

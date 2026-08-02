@@ -876,6 +876,7 @@ const dict: Translations = {
 
   // ── Shop: Credits aufladen (Tokens + Karte) ───────────────────────────────────
   'shop.depositTitle':            { de: 'Credits aufladen', en: 'Top up credits', pl: 'Doładuj kredyty' },
+  'shop.depositStep3':            { de: 'Mit Credits kannst du Items im Shop kaufen', en: 'Use credits to buy items in the shop', pl: 'Kredytami możesz kupować produkty w sklepie' },
   'shop.depositTabTokens':        { de: 'D.FAITH', en: 'D.FAITH', pl: 'D.FAITH' },
   'shop.depositTabCard':          { de: 'Karte (EUR)', en: 'Card (EUR)', pl: 'Karta (EUR)' },
   'shop.depositSuccess':          { de: 'Credits erfolgreich aufgeladen!', en: 'Credits topped up successfully!', pl: 'Kredyty doładowane pomyślnie!' },
@@ -887,6 +888,9 @@ const dict: Translations = {
 
   // ── Shop: Kreditkarten-Checkout (Stripe) ──────────────────────────────────────
   'shop.cardDetails':        { de: 'Kartendaten', en: 'Card details', pl: 'Dane karty' },
+  'shop.cardNumberLabel':    { de: 'Kartennummer', en: 'Card number', pl: 'Numer karty' },
+  'shop.cardExpiryLabel':    { de: 'Ablaufdatum', en: 'Expiry date', pl: 'Data ważności' },
+  'shop.cardCvcLabel':       { de: 'CVC', en: 'CVC', pl: 'CVC' },
   'shop.cardPaymentSuccess': { de: 'Zahlung erfolgreich — Credits werden gutgeschrieben…', en: 'Payment successful — credits are being added…', pl: 'Płatność zakończona sukcesem — kredyty są dodawane…' },
   'shop.cardProcessing':     { de: 'Zahlung wird verarbeitet…', en: 'Processing payment…', pl: 'Przetwarzanie płatności…' },
   'shop.cardPreparing':      { de: 'Wird vorbereitet…', en: 'Preparing…', pl: 'Przygotowywanie…' },

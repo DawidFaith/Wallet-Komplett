@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { t, tFmt, type Lang } from '../utils/i18n';
 
 // 1 € = 100 Credits — muss mit EUR_TO_CREDITS_RATE in /api/credits/checkout übereinstimmen
@@ -61,7 +61,9 @@ function CheckoutForm({ walletAddress, amountEur, onSuccess, onError, lang }: {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stripe || !elements || !clientSecret || processing || done) return;
-    const cardElement = elements.getElement(CardElement);
+    // Stripe verknüpft Card Number/Expiry/CVC automatisch über denselben Elements-Kontext —
+    // eines der drei Split-Elemente reicht als Referenz für confirmCardPayment.
+    const cardElement = elements.getElement(CardNumberElement);
     if (!cardElement) return;
 
     setProcessing(true);
@@ -84,25 +86,36 @@ function CheckoutForm({ walletAddress, amountEur, onSuccess, onError, lang }: {
     }
   };
 
+  const elementStyle = {
+    base: {
+      fontSize: '16px', color: '#ffffff', fontFamily: 'system-ui, sans-serif',
+      lineHeight: '24px',
+      '::placeholder': { color: '#71717a' },
+    },
+    invalid: { color: '#f87171' },
+  };
+  const fieldDisabled = processing || done || loadingIntent;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
-        <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">{t('shop.cardDetails', lang)}</label>
-        <div className="bg-white/[0.04] border border-white/[0.08] focus-within:border-amber-500/60 rounded-xl px-4 py-4 transition-colors">
-          <CardElement
-            options={{
-              style: {
-                base: {
-                  fontSize: '18px', color: '#ffffff', fontFamily: 'system-ui, sans-serif',
-                  lineHeight: '28px',
-                  '::placeholder': { color: '#71717a' },
-                },
-                invalid: { color: '#f87171' },
-              },
-              hidePostalCode: true,
-              disabled: processing || done || loadingIntent,
-            }}
-          />
+        <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">{t('shop.cardNumberLabel', lang)}</label>
+        <div className="bg-white/[0.04] border border-white/[0.08] focus-within:border-amber-500/60 rounded-xl px-4 py-3.5 transition-colors">
+          <CardNumberElement options={{ style: elementStyle, disabled: fieldDisabled }} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">{t('shop.cardExpiryLabel', lang)}</label>
+          <div className="bg-white/[0.04] border border-white/[0.08] focus-within:border-amber-500/60 rounded-xl px-4 py-3.5 transition-colors">
+            <CardExpiryElement options={{ style: elementStyle, disabled: fieldDisabled }} />
+          </div>
+        </div>
+        <div>
+          <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">{t('shop.cardCvcLabel', lang)}</label>
+          <div className="bg-white/[0.04] border border-white/[0.08] focus-within:border-amber-500/60 rounded-xl px-4 py-3.5 transition-colors">
+            <CardCvcElement options={{ style: elementStyle, disabled: fieldDisabled }} />
+          </div>
         </div>
       </div>
       {done ? (
