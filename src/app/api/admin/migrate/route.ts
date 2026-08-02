@@ -497,6 +497,19 @@ export async function POST(req: NextRequest) {
     await sql`CREATE INDEX IF NOT EXISTS idx_nft_listings_mint   ON nft_listings(mint_address)`;
     await sql`ALTER TABLE nft_listings ADD COLUMN IF NOT EXISTS nft_collection_mint TEXT`;
 
+    // ── Stripe Credits-Käufe (EUR → D.FAITH Credits) ────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS stripe_credit_purchases (
+        id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        payment_intent_id TEXT NOT NULL UNIQUE,
+        wallet_address    TEXT NOT NULL,
+        amount_eur        NUMERIC(10,2) NOT NULL,
+        credits_granted   NUMERIC(20,2) NOT NULL,
+        created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_stripe_credit_purchases_wallet ON stripe_credit_purchases(wallet_address)`;
+
     return NextResponse.json({
       success: true,
       message: `Migration abgeschlossen (${(backfill as unknown as { count?: number }).count ?? backfill.length} neue Profile)`,

@@ -7,7 +7,9 @@ import {
   FaChevronLeft, FaPlus, FaTimes, FaMusic, FaVideo, FaGem, FaStar,
   FaCoins, FaCheck, FaExternalLinkAlt, FaTrash, FaShoppingBag,
   FaPlay, FaPause, FaDownload, FaBoxOpen, FaLock, FaChevronUp, FaChevronDown, FaEdit,
+  FaCreditCard,
 } from 'react-icons/fa';
+import CreditsCardCheckout from '../components/CreditsCardCheckout';
 import { SiSolana } from 'react-icons/si';
 import { useLang } from '../components/LangContext';
 import { t, tFmt } from '../utils/i18n';
@@ -303,6 +305,7 @@ function ShopDepositModal({ walletAddress, onClose, onSuccess }: {
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const [mode, setMode]                 = useState<'tokens' | 'card'>('tokens');
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
   const [loading, setLoading]           = useState(true);
   const [amount, setAmount]             = useState('');
@@ -343,6 +346,11 @@ function ShopDepositModal({ walletAddress, onClose, onSuccess }: {
     finally     { setDepositing(false); }
   };
 
+  const handleCardSuccess = () => {
+    setDone(true);
+    setTimeout(() => { onSuccess(); onClose(); }, 2000);
+  };
+
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:pb-0">
       <div className="bg-[#161410] border border-white/[0.08] rounded-2xl p-5 w-full max-w-sm shadow-2xl">
@@ -354,19 +362,41 @@ function ShopDepositModal({ walletAddress, onClose, onSuccess }: {
             <FaTimes size={14} />
           </button>
         </div>
-        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 mb-4 flex justify-between items-center">
-          <span className="text-zinc-500 text-xs">Verfügbare D.FAITH Tokens</span>
-          {loading
-            ? <span className="text-zinc-600 text-xs">Laden…</span>
-            : <span className="text-amber-300 font-black text-sm">{(tokenBalance ?? 0).toLocaleString('de-DE', { maximumFractionDigits: 2 })}</span>
-          }
-        </div>
+
+        {!done && (
+          <div className="flex gap-1.5 mb-4 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1">
+            <button
+              onClick={() => { setMode('tokens'); setError(''); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-colors ${
+                mode === 'tokens' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Image src="/D.FAITH.png" alt="" width={12} height={12} className="w-3 h-3 rounded-full" /> D.FAITH
+            </button>
+            <button
+              onClick={() => { setMode('card'); setError(''); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-colors ${
+                mode === 'card' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              <FaCreditCard size={11} /> Karte (EUR)
+            </button>
+          </div>
+        )}
+
         {done ? (
           <div className="flex items-center gap-2 justify-center bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-green-400 text-sm font-semibold">
             <FaCheck size={14} /> Credits erfolgreich aufgeladen!
           </div>
-        ) : (
+        ) : mode === 'tokens' ? (
           <>
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 mb-4 flex justify-between items-center">
+              <span className="text-zinc-500 text-xs">Verfügbare D.FAITH Tokens</span>
+              {loading
+                ? <span className="text-zinc-600 text-xs">Laden…</span>
+                : <span className="text-amber-300 font-black text-sm">{(tokenBalance ?? 0).toLocaleString('de-DE', { maximumFractionDigits: 2 })}</span>
+              }
+            </div>
             <input
               type="number" min="1" value={amount} onChange={e => setAmount(e.target.value)}
               placeholder="Betrag eingeben"
@@ -384,6 +414,8 @@ function ShopDepositModal({ walletAddress, onClose, onSuccess }: {
               }
             </button>
           </>
+        ) : (
+          <CreditsCardCheckout walletAddress={walletAddress} onSuccess={handleCardSuccess} />
         )}
       </div>
     </div>
