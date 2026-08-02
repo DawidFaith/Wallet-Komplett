@@ -14,7 +14,6 @@
     "@clerk/nextjs": "^5.7.6",
     "@coinbase/cbpay-js": "^2.4.0",
     "@fingerprintjs/fingerprintjs": "^5.2.0",
-    "@hashgraph/sdk": "^2.81.0",
     "@metaplex-foundation/mpl-core": "^1.10.0",
     "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
     "@metaplex-foundation/umi": "^1.5.1",
