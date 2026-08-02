@@ -14,6 +14,7 @@ import { transferCollectibleAsset } from '../../lib/collectibleNft';
 import { transferSongPrintEdition } from '../../lib/songNft';
 import { getTreasuryKeypair } from '../../lib/solanaOperator';
 import { decryptKey } from '../../lib/solanaCrypto';
+import { requireOwnWallet } from '../../lib/apiAuth';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 
@@ -158,6 +159,8 @@ export async function POST(req: NextRequest) {
     if (!walletAddress || !mintAddress || !priceDfaith || priceDfaith <= 0) {
       return NextResponse.json({ error: 'walletAddress, mintAddress und priceDfaith > 0 erforderlich' }, { status: 400 });
     }
+    const authCheck = requireOwnWallet(walletAddress);
+    if (!authCheck.ok) return authCheck.response;
 
     const sql = getDb();
     await ensureTable(sql);
@@ -268,6 +271,8 @@ export async function DELETE(req: NextRequest) {
     if (!walletAddress || !listingId) {
       return NextResponse.json({ error: 'walletAddress und listingId erforderlich' }, { status: 400 });
     }
+    const authCheck = requireOwnWallet(walletAddress);
+    if (!authCheck.ok) return authCheck.response;
 
     const sql = getDb();
 

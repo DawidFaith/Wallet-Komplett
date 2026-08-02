@@ -16,6 +16,7 @@ import { transferCollectibleAsset } from '../../../lib/collectibleNft';
 import { transferSongPrintEdition } from '../../../lib/songNft';
 import { getTreasuryKeypair } from '../../../lib/solanaOperator';
 import { getDfaithCredits, addDfaithCredits, redeemDfaithCredits } from '../../../lib/questDb/credits';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 export const dynamic     = 'force-dynamic';
 export const maxDuration = 60;
@@ -32,6 +33,8 @@ export async function POST(req: NextRequest) {
     if (!buyerWallet || !listingId) {
       return NextResponse.json({ error: 'buyerWallet und listingId erforderlich' }, { status: 400 });
     }
+    const authCheck = requireOwnWallet(buyerWallet);
+    if (!authCheck.ok) return authCheck.response;
 
     const sql = getDb();
 

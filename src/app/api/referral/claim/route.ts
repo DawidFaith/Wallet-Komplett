@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 import { addDfaithCredits } from '../../../lib/questDb/credits';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json() as { wallet?: string };
     const wallet = body.wallet?.toLowerCase().trim();
     if (!wallet) return NextResponse.json({ error: 'wallet required' }, { status: 400 });
+    const authCheck = requireOwnWallet(wallet);
+    if (!authCheck.ok) return authCheck.response;
 
     const sql = getDb();
 

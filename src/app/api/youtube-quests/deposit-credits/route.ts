@@ -19,6 +19,7 @@ import bs58 from 'bs58';
 import { getDb } from '@/app/lib/db';
 import { decryptKey } from '@/app/lib/solanaCrypto';
 import { creditCreatorBalance } from '@/app/lib/questDb';
+import { requireOwnWallet } from '@/app/lib/apiAuth';
 
 const RPC_URL     = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
@@ -38,6 +39,8 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
 
   const treasuryAddress = process.env.NEXT_PUBLIC_REWARD_POOL_ADDRESS;
   if (!treasuryAddress) {

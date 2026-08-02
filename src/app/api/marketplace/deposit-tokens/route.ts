@@ -19,6 +19,7 @@ import { getDb } from '../../../lib/db';
 import { getTreasuryKeypair } from '../../../lib/solanaOperator';
 import { decryptKey } from '../../../lib/solanaCrypto';
 import { addDfaithCredits } from '../../../lib/questDb/credits';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 export const dynamic     = 'force-dynamic';
 export const maxDuration = 60;
@@ -53,6 +54,8 @@ export async function POST(req: NextRequest) {
     if (!walletAddress || !amount || amount <= 0) {
       return NextResponse.json({ error: 'walletAddress und amount > 0 erforderlich' }, { status: 400 });
     }
+    const authCheck = requireOwnWallet(walletAddress);
+    if (!authCheck.ok) return authCheck.response;
     if (!DFAITH_MINT) {
       return NextResponse.json({ error: 'D.FAITH Token-Adresse nicht konfiguriert' }, { status: 503 });
     }

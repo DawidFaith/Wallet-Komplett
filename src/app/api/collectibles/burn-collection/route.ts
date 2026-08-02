@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 import { burnCollectibleCollection } from '../../../lib/collectibleNft';
 import { decryptKey } from '../../../lib/solanaCrypto';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 
@@ -24,6 +25,8 @@ export async function POST(req: NextRequest) {
     if (!artistWallet || !collectionId) {
       return NextResponse.json({ error: 'artistWallet und collectionId erforderlich' }, { status: 400 });
     }
+    const authCheck = requireOwnWallet(artistWallet);
+    if (!authCheck.ok) return authCheck.response;
 
     const sql = getDb();
 

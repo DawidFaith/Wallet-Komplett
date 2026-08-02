@@ -6,6 +6,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
+import { auth } from '@clerk/nextjs/server';
 import { getDb } from '../../../lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -40,6 +41,12 @@ export async function POST(req: NextRequest) {
         }
 
         if (!wallet) throw new Error('wallet fehlt');
+
+        // Nur der eingeloggte Nutzer darf für seine eigene wallet hochladen
+        const { userId } = auth();
+        if (!userId || userId.toLowerCase() !== wallet.toLowerCase()) {
+          throw new Error('Nicht autorisiert');
+        }
 
         // Artist-Check
         const sql  = getDb();

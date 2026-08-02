@@ -11,6 +11,7 @@ import { getDb } from '../../../lib/db';
 import { redeemCollectibleAsset } from '../../../lib/collectibleNft';
 import type { CollectibleRarity } from '../../../lib/questDb/collectibles';
 import { decryptKey } from '../../../lib/solanaCrypto';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 
@@ -27,6 +28,8 @@ export async function POST(req: NextRequest) {
     if (!walletAddress || !mintAddress || !collectionMint) {
       return NextResponse.json({ error: 'walletAddress, mintAddress und collectionMint erforderlich' }, { status: 400 });
     }
+    const authCheck = requireOwnWallet(walletAddress);
+    if (!authCheck.ok) return authCheck.response;
 
     const sql = getDb();
 

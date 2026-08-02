@@ -13,6 +13,7 @@ import {
 import { mintCollectibleCollection } from '../../lib/collectibleNft';
 import { getDb } from '../../lib/db';
 import { decryptKey } from '../../lib/solanaCrypto';
+import { requireOwnWallet } from '../../lib/apiAuth';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 
@@ -108,6 +109,8 @@ export async function POST(req: NextRequest) {
   if (!artistWallet || !name?.trim()) {
     return NextResponse.json({ error: 'artistWallet und name sind erforderlich' }, { status: 400 });
   }
+  const authCheck = requireOwnWallet(artistWallet);
+  if (!authCheck.ok) return authCheck.response;
 
   // Wahrscheinlichkeiten validieren (Summe muss 100 ergeben)
   const chances = {
@@ -213,6 +216,8 @@ export async function PATCH(req: NextRequest) {
   if (!id?.trim() || !artistWallet?.trim()) {
     return NextResponse.json({ error: 'id und artistWallet sind erforderlich' }, { status: 400 });
   }
+  const authCheck = requireOwnWallet(artistWallet);
+  if (!authCheck.ok) return authCheck.response;
 
   // Wenn Chancen geändert werden, Summe prüfen
   const hasChances = [body.chanceCommon, body.chanceUncommon, body.chanceRare, body.chanceEpic, body.chanceLegendary, body.chanceMythic].some(v => v !== undefined);

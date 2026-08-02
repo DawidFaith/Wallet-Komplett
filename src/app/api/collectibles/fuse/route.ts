@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fuseShards, upgradeCollectibles, type CollectibleRarity } from '../../../lib/questDb/collectibles';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,8 @@ export async function POST(req: NextRequest) {
   if (!walletAddress || !collectionId) {
     return NextResponse.json({ error: 'walletAddress und collectionId fehlen' }, { status: 400 });
   }
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
 
   try {
     if (action === 'upgrade') {

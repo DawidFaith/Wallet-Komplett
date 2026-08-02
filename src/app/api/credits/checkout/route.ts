@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getDb } from '../../../lib/db';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +33,8 @@ export async function POST(req: NextRequest) {
   if (!walletAddress?.trim()) {
     return NextResponse.json({ error: 'walletAddress erforderlich' }, { status: 400 });
   }
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
   if (typeof amountEur !== 'number' || !isFinite(amountEur) || amountEur < MIN_EUR) {
     return NextResponse.json({ error: `Mindestbetrag ist ${MIN_EUR} €` }, { status: 400 });
   }

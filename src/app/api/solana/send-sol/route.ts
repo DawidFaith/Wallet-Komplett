@@ -12,6 +12,7 @@ import {
 import bs58 from 'bs58';
 import { getDb } from '@/app/lib/db';
 import { decryptKey } from '@/app/lib/solanaCrypto';
+import { requireOwnWallet } from '@/app/lib/apiAuth';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
@@ -24,6 +25,9 @@ export async function POST(req: Request) {
   if (!walletAddress || !toAddress || amountSol === undefined || amountSol === null) {
     return NextResponse.json({ error: 'Ungültige Eingabe (walletAddress, toAddress, amountSol benötigt)' }, { status: 400 });
   }
+
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
 
   let toPk: PublicKey;
   try { toPk = new PublicKey(toAddress); } catch {

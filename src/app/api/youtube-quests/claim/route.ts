@@ -16,6 +16,7 @@ import {
 } from '@/app/lib/questDb';
 import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
 import { getDb } from '@/app/lib/db';
+import { requireOwnWallet } from '@/app/lib/apiAuth';
 import nodemailer from 'nodemailer';
 
 /** Sendet eine Betrugs-Warnung per E-Mail an den Admin. */
@@ -81,6 +82,8 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
 
   // Solana-Adresse + ATA-Fraud-Status aus DB holen
   const sql = getDb();

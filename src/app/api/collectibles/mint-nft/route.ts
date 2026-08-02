@@ -12,6 +12,7 @@ import { mintCollectibleCollection, mintCollectibleAsset } from '../../../lib/co
 import type { CollectibleRarity } from '../../../lib/questDb/collectibles';
 import { RARITY_REP_MULTIPLIER, RARITY_CREDIT_MULTIPLIER } from '../../../lib/questDb/collectibles';
 import { decryptKey } from '../../../lib/solanaCrypto';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 
@@ -36,6 +37,8 @@ export async function POST(req: NextRequest) {
     if (!walletAddress || !collectionId || !rarity) {
       return NextResponse.json({ error: 'walletAddress, collectionId und rarity erforderlich' }, { status: 400 });
     }
+    const authCheck = requireOwnWallet(walletAddress);
+    if (!authCheck.ok) return authCheck.response;
 
     const sql = getDb();
 

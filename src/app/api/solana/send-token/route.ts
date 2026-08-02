@@ -13,6 +13,7 @@ import {
 import bs58 from 'bs58';
 import { getDb } from '@/app/lib/db';
 import { decryptKey } from '@/app/lib/solanaCrypto';
+import { requireOwnWallet } from '@/app/lib/apiAuth';
 
 const RPC_URL     = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN;
@@ -26,6 +27,9 @@ export async function POST(req: Request) {
   if (!walletAddress || !toAddress || typeof amount !== 'number' || amount <= 0) {
     return NextResponse.json({ error: 'Ungültige Eingabe (walletAddress, toAddress, amount benötigt)' }, { status: 400 });
   }
+
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
   const usedMint = mintAddress ?? DFAITH_MINT;
   if (!usedMint) return NextResponse.json({ error: 'Token-Adresse nicht konfiguriert' }, { status: 503 });
 

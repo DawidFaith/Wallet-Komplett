@@ -19,6 +19,7 @@ import bs58 from 'bs58';
 import { getDb } from '@/app/lib/db';
 import { decryptKey } from '@/app/lib/solanaCrypto';
 import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
+import { requireOwnWallet } from '@/app/lib/apiAuth';
 
 const RPC_URL         = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const JUPITER_SWAP    = 'https://api.jup.ag/swap/v1/swap';
@@ -67,6 +68,9 @@ export async function POST(req: Request) {
   if (!walletAddress || !quoteResponse) {
     return NextResponse.json({ error: 'walletAddress und quoteResponse benötigt' }, { status: 400 });
   }
+
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
 
   const sql  = getDb();
   const rows = await sql`

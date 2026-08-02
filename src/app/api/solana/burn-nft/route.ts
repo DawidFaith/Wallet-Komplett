@@ -31,6 +31,7 @@ import bs58 from 'bs58';
 import { getDb } from '../../../lib/db';
 import { decryptKey } from '../../../lib/solanaCrypto';
 import { getTreasuryKeypair } from '../../../lib/solanaOperator';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
@@ -78,6 +79,9 @@ export async function POST(req: NextRequest) {
     if (!walletAddress || !mintAddress) {
       return NextResponse.json({ error: 'walletAddress und mintAddress erforderlich' }, { status: 400 });
     }
+
+    const authCheck = requireOwnWallet(walletAddress);
+    if (!authCheck.ok) return authCheck.response;
 
     const sql = getDb();
 

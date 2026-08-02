@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../lib/db';
 import { mintSongMasterEdition } from '../../lib/songNft';
+import { requireOwnWallet } from '../../lib/apiAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,6 +89,8 @@ export async function POST(req: NextRequest) {
   if (!wallet || !title || !type) {
     return NextResponse.json({ error: 'wallet, title, type sind Pflichtfelder' }, { status: 400 });
   }
+  const authCheck = requireOwnWallet(wallet);
+  if (!authCheck.ok) return authCheck.response;
   if (!['song', 'video', 'nft', 'exclusive'].includes(type)) {
     return NextResponse.json({ error: 'Ungültiger Typ' }, { status: 400 });
   }
@@ -205,6 +208,8 @@ export async function PATCH(req: NextRequest) {
   if (!wallet || !itemId) {
     return NextResponse.json({ error: 'wallet und itemId erforderlich' }, { status: 400 });
   }
+  const authCheck = requireOwnWallet(wallet);
+  if (!authCheck.ok) return authCheck.response;
   if (type !== undefined && !['song', 'video', 'nft', 'exclusive'].includes(type)) {
     return NextResponse.json({ error: 'Ungültiger Typ' }, { status: 400 });
   }
@@ -250,6 +255,8 @@ export async function DELETE(req: NextRequest) {
   if (!wallet || !itemId) {
     return NextResponse.json({ error: 'wallet und itemId erforderlich' }, { status: 400 });
   }
+  const authCheck = requireOwnWallet(wallet);
+  if (!authCheck.ok) return authCheck.response;
 
   const sql = getDb();
   const rows = await sql`

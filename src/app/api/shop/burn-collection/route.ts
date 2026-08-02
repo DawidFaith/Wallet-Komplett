@@ -17,6 +17,7 @@ import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { getDb } from '../../../lib/db';
 import { decryptKey } from '../../../lib/solanaCrypto';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -29,6 +30,8 @@ export async function POST(req: NextRequest) {
     if (!wallet || !itemId) {
       return NextResponse.json({ error: 'wallet und itemId erforderlich' }, { status: 400 });
     }
+    const authCheck = requireOwnWallet(wallet);
+    if (!authCheck.ok) return authCheck.response;
 
     const sql = getDb();
     const rows = await sql`
