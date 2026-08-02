@@ -1728,7 +1728,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:pb-0">
           <div className="bg-[#161410] border border-white/[0.08] rounded-2xl p-5 w-full max-w-sm shadow-2xl space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="font-black text-white text-base">„{deleteTarget.title}" löschen?</h3>
+              <h3 className="font-black text-white text-base">„{deleteTarget.title}&rdquo; löschen?</h3>
               <button onClick={() => setDeleteTarget(null)} className="text-zinc-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
                 <FaTimes size={14} />
               </button>
