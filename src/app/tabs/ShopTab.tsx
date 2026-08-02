@@ -37,6 +37,7 @@ interface ShopItem {
   isNftEnabled: boolean;
   masterEditionMint: string | null;
   soldCount: number;
+  editionCount?: number;
 }
 
 interface ShopArtist {
@@ -1038,6 +1039,9 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [reactivating, setReactivating] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ShopItem | null>(null);
+  const [deleteError, setDeleteError] = useState('');
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
@@ -1102,7 +1106,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
 
   const loadMyItems = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/shop?artistWallet=${walletAddress}`);
+    const res = await fetch(`/api/shop?artistWallet=${walletAddress}&includeInactive=true`);
     if (res.ok) {
       const data = await res.json();
       setItems(data.map((i: Record<string, unknown>) => ({
@@ -1123,6 +1127,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
         isNftEnabled: Boolean(i.is_nft_enabled),
         masterEditionMint: (i.master_edition_mint as string | null) ?? null,
         soldCount: Number(i.sold_count ?? 0),
+        editionCount: Number(i.edition_count ?? 0),
       })));
     }
     setLoading(false);
@@ -1178,15 +1183,54 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
     }
   };
 
-  const handleDelete = async (itemId: string) => {
-    setDeleting(itemId);
-    await fetch('/api/shop', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wallet: walletAddress, itemId }),
-    });
-    setItems(prev => prev.filter(i => i.id !== itemId));
-    setDeleting(null);
+  // Nur aus dem Shop ausblenden (reversibel) — On-Chain-NFT bleibt unangetastet
+  const handleHide = async (itemId: string) => {
+    setDeleting(itemId); setDeleteError('');
+    try {
+      await fetch('/api/shop', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: walletAddress, itemId }),
+      });
+      setItems(prev => prev.map(i => i.id === itemId ? { ...i, isActive: false } : i));
+      setDeleteTarget(null);
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  // Endgültig löschen + On-Chain-Collection verbrennen — nur möglich wenn 0 Editionen verkauft
+  const handleBurnDelete = async (itemId: string) => {
+    setDeleting(itemId); setDeleteError('');
+    try {
+      const res  = await fetch('/api/shop/burn-collection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: walletAddress, itemId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? t('common.error', lang));
+      setItems(prev => prev.filter(i => i.id !== itemId));
+      setDeleteTarget(null);
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : t('common.error', lang));
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const handleReactivate = async (itemId: string) => {
+    setReactivating(itemId);
+    try {
+      const res = await fetch('/api/shop', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: walletAddress, itemId, isActive: true }),
+      });
+      if (res.ok) setItems(prev => prev.map(i => i.id === itemId ? { ...i, isActive: true } : i));
+    } finally {
+      setReactivating(null);
+    }
   };
 
   const startEdit = (item: ShopItem) => {
@@ -1567,11 +1611,15 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                 /* ── Inline-Edit-Formular (nur Preis) ── */
                 <div className="space-y-3">
                   <div className="flex items-center justify-between mb-1">
-                    <div>
-                      <p className="text-white text-sm font-semibold">{item.title}</p>
-                      <p className="text-zinc-500 text-[10px] mt-0.5">NFT-Inhalt kann nicht geändert werden</p>
-                    </div>
+                    <p className="text-zinc-500 text-[10px]">NFT-Inhalt (Bild/Audio) kann nicht geändert werden</p>
                     <button onClick={cancelEdit} className="text-zinc-500 hover:text-zinc-300"><FaTimes size={13} /></button>
+                  </div>
+
+                  <div>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Titel *</label>
+                    <input type="text" value={editData.title}
+                      onChange={e => setEditData(d => d && { ...d, title: e.target.value })}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -1603,7 +1651,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                 </div>
               ) : (
                 /* ── Normale Item-Ansicht ── */
-                <div className="flex items-start justify-between gap-3">
+                <div className={`flex items-start justify-between gap-3 ${!item.isActive ? 'opacity-50' : ''}`}>
                   <div className="flex items-start gap-3 min-w-0">
                     {item.imageUrl && (
                       <Image src={item.imageUrl} alt="" width={48} height={48} className="w-12 h-12 rounded-xl object-cover shrink-0" />
@@ -1614,6 +1662,11 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                           <TypeIcon type={item.type} />
                           {TYPE_LABELS[item.type]}
                         </span>
+                        {!item.isActive && (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-zinc-800 border-zinc-600 text-zinc-400">
+                            Inaktiv
+                          </span>
+                        )}
                         {item.requiredLevel > 0 && (
                           <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-amber-900/40 border-amber-700/40 text-amber-400">
                             <FaLock size={7} /> Lvl {item.requiredLevel}+
@@ -1631,6 +1684,19 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
+                    {!item.isActive && (
+                      <button
+                        onClick={() => handleReactivate(item.id)}
+                        disabled={reactivating === item.id}
+                        className="text-zinc-500 hover:text-green-400 disabled:opacity-40 transition-colors p-1"
+                        title="Reaktivieren"
+                      >
+                        {reactivating === item.id
+                          ? <span className="w-3.5 h-3.5 border border-green-400/30 border-t-green-400 rounded-full animate-spin block" />
+                          : <FaCheck size={12} />
+                        }
+                      </button>
+                    )}
                     <button
                       onClick={() => startEdit(item)}
                       className="text-zinc-500 hover:text-amber-400 transition-colors p-1"
@@ -1639,9 +1705,10 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                       <FaEdit size={12} />
                     </button>
                     <button
-                      onClick={() => handleDelete(item.id)}
+                      onClick={() => { setDeleteTarget(item); setDeleteError(''); }}
                       disabled={deleting === item.id}
                       className="text-zinc-600 hover:text-red-400 disabled:opacity-40 transition-colors p-1"
+                      title="Löschen"
                     >
                       {deleting === item.id
                         ? <span className="w-3.5 h-3.5 border border-red-400/30 border-t-red-400 rounded-full animate-spin block" />
@@ -1653,6 +1720,63 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── Lösch-Bestätigung ── */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:pb-0">
+          <div className="bg-[#161410] border border-white/[0.08] rounded-2xl p-5 w-full max-w-sm shadow-2xl space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="font-black text-white text-base">„{deleteTarget.title}" löschen?</h3>
+              <button onClick={() => setDeleteTarget(null)} className="text-zinc-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
+                <FaTimes size={14} />
+              </button>
+            </div>
+
+            {(deleteTarget.editionCount ?? 0) > 0 ? (
+              <>
+                <p className="text-zinc-400 text-sm">
+                  Es {deleteTarget.editionCount === 1 ? 'wurde bereits 1 Edition' : `wurden bereits ${deleteTarget.editionCount} Editionen`} verkauft.
+                  Das Item wird nur aus dem Shop ausgeblendet — bereits verkaufte NFTs bleiben unverändert bei den Käufern,
+                  das On-Chain-NFT kann nicht mehr verbrannt werden.
+                </p>
+                {deleteError && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg p-2">{deleteError}</p>}
+                <button
+                  onClick={() => handleHide(deleteTarget.id)}
+                  disabled={deleting === deleteTarget.id}
+                  className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-black rounded-xl py-3 text-sm transition-all"
+                >
+                  {deleting === deleteTarget.id ? 'Wird ausgeblendet…' : 'Aus Shop ausblenden'}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-zinc-400 text-sm">
+                  Es wurde noch keine Edition verkauft. Wie möchtest du fortfahren?
+                </p>
+                {deleteError && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg p-2">{deleteError}</p>}
+                <div className="space-y-2">
+                  <button
+                    onClick={() => handleHide(deleteTarget.id)}
+                    disabled={deleting === deleteTarget.id}
+                    className="w-full bg-white/[0.06] hover:bg-white/10 border border-white/[0.08] disabled:opacity-50 text-white font-bold rounded-xl py-3 text-sm transition-all text-left px-4"
+                  >
+                    Nur ausblenden
+                    <span className="block text-zinc-500 text-xs font-normal mt-0.5">Reversibel — später reaktivierbar, Name/Bild/Audio bleiben änderbar. On-Chain-NFT bleibt bestehen.</span>
+                  </button>
+                  <button
+                    onClick={() => handleBurnDelete(deleteTarget.id)}
+                    disabled={deleting === deleteTarget.id}
+                    className="w-full bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 disabled:opacity-50 text-red-300 font-bold rounded-xl py-3 text-sm transition-all text-left px-4"
+                  >
+                    {deleting === deleteTarget.id ? 'Wird verarbeitet…' : 'Endgültig löschen + NFT verbrennen'}
+                    <span className="block text-red-400/70 text-xs font-normal mt-0.5">Unwiderruflich — On-Chain-Collection wird verbrannt, Rent-SOL kommt zurück.</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

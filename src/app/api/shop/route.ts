@@ -12,8 +12,11 @@ export const dynamic = 'force-dynamic';
 // ─── GET ─────────────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const artistWallet = searchParams.get('artistWallet')?.toLowerCase();
-  const wallet       = searchParams.get('wallet')?.toLowerCase();
+  const artistWallet    = searchParams.get('artistWallet')?.toLowerCase();
+  const wallet          = searchParams.get('wallet')?.toLowerCase();
+  // Nur für die eigene Shop-Verwaltung (MyShopPanel) — zeigt auch deaktivierte
+  // Items, damit sie sich reaktivieren/umbenennen statt nur löschen lassen
+  const includeInactive = searchParams.get('includeInactive') === 'true';
 
   if (!artistWallet) {
     return NextResponse.json({ error: 'artistWallet fehlt' }, { status: 400 });
@@ -25,13 +28,13 @@ export async function GET(req: NextRequest) {
     SELECT si.id, si.artist_wallet, si.title, si.description, si.type,
            si.price_credits, si.price_tokens, si.content_url, si.image_url,
            si.is_active, si.created_at, si.required_level,
-           si.nft_max_supply, si.is_nft_enabled, si.master_edition_mint,
+           si.nft_max_supply, si.is_nft_enabled, si.master_edition_mint, si.edition_count,
            p.display_name AS artist_name,
            COUNT(sp.id)::int AS sold_count
     FROM shop_items si
     LEFT JOIN user_profiles p ON LOWER(p.wallet_address) = si.artist_wallet
     LEFT JOIN shop_purchases sp ON sp.item_id = si.id
-    WHERE si.artist_wallet = ${artistWallet} AND si.is_active = TRUE
+    WHERE si.artist_wallet = ${artistWallet} AND (si.is_active = TRUE OR ${includeInactive})
     GROUP BY si.id, p.display_name
     ORDER BY si.created_at DESC
   `;
@@ -185,7 +188,7 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: 'Kein Body' }, { status: 400 });
 
-  const { wallet, itemId, title, description, type, priceCredits, priceTokens, contentUrl, imageUrl, requiredLevel } = body as {
+  const { wallet, itemId, title, description, type, priceCredits, priceTokens, contentUrl, imageUrl, requiredLevel, isActive } = body as {
     wallet?: string;
     itemId?: string;
     title?: string;
@@ -196,6 +199,7 @@ export async function PATCH(req: NextRequest) {
     contentUrl?: string;
     imageUrl?: string;
     requiredLevel?: number;
+    isActive?: boolean;
   };
 
   if (!wallet || !itemId) {
@@ -224,7 +228,8 @@ export async function PATCH(req: NextRequest) {
                        END,
       content_url    = COALESCE(${contentUrl?.trim() ?? null}, content_url),
       image_url      = COALESCE(${imageUrl?.trim() ?? null}, image_url),
-      required_level = COALESCE(${requiredLevel ?? null}, required_level)
+      required_level = COALESCE(${requiredLevel ?? null}, required_level),
+      is_active      = CASE WHEN ${isActive !== undefined} THEN ${isActive ?? null} ELSE is_active END
     WHERE id = ${itemId} AND artist_wallet = ${wallet.toLowerCase()}
     RETURNING id
   `;
