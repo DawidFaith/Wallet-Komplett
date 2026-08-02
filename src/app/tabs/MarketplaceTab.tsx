@@ -3,12 +3,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
 import { GiCrystalShine } from 'react-icons/gi';
-import { FaTag, FaTimes, FaCheckCircle, FaExclamationTriangle, FaGem, FaPlus, FaStar, FaCoins, FaMusic, FaSortAmountUp, FaSortAmountDown, FaClock, FaSlidersH } from 'react-icons/fa';
+import { FaTag, FaTimes, FaCheckCircle, FaExclamationTriangle, FaGem, FaPlus, FaStar, FaCoins, FaMusic, FaSortAmountUp, FaSortAmountDown, FaClock, FaSlidersH, FaCreditCard } from 'react-icons/fa';
 import { MdSell, MdStorefront } from 'react-icons/md';
 import { HiOutlineViewGrid } from 'react-icons/hi';
 import { RiUserStarFill } from 'react-icons/ri';
 import { useLang } from '../components/LangContext';
 import { t, tFmt } from '../utils/i18n';
+import CreditsCardCheckout from '../components/CreditsCardCheckout';
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
 
@@ -491,9 +492,10 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
 function DepositModal({ walletAddress, onClose, onSuccess }: {
   walletAddress: string;
   onClose: () => void;
-  onSuccess: (amount: number) => void;
+  onSuccess: (amount?: number) => void;
 }) {
   const lang = useLang();
+  const [mode, setMode]                 = useState<'tokens' | 'card'>('tokens');
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
   const [loading, setLoading]           = useState(true);
   const [amount, setAmount]             = useState('');
@@ -543,6 +545,11 @@ function DepositModal({ walletAddress, onClose, onSuccess }: {
     }
   };
 
+  const handleCardSuccess = () => {
+    setDone(true);
+    setTimeout(() => { onSuccess(); onClose(); }, 2000);
+  };
+
   const max = tokenBalance ?? 0;
 
   return (
@@ -558,39 +565,60 @@ function DepositModal({ walletAddress, onClose, onSuccess }: {
           </button>
         </div>
 
-        <div className="bg-white/[0.04] border border-white/[0.07] rounded-xl p-4 mb-4 space-y-2">
-          <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-3">{t('mp.depositHowTitle', lang)}</p>
-          <div className="flex items-start gap-2 text-xs text-zinc-400">
-            <span className="text-amber-400 font-black shrink-0">1.</span>
-            <span>{t('mp.depositStep1', lang)}</span>
+        {!done && (
+          <div className="flex gap-1.5 mb-4 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1">
+            <button
+              onClick={() => { setMode('tokens'); setError(''); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-colors ${
+                mode === 'tokens' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Image src="/D.FAITH.png" alt="" width={12} height={12} className="w-3 h-3 rounded-full" /> {t('shop.depositTabTokens', lang)}
+            </button>
+            <button
+              onClick={() => { setMode('card'); setError(''); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-colors ${
+                mode === 'card' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              <FaCreditCard size={11} /> {t('shop.depositTabCard', lang)}
+            </button>
           </div>
-          <div className="flex items-start gap-2 text-xs text-zinc-400">
-            <span className="text-amber-400 font-black shrink-0">2.</span>
-            <span>{t('mp.depositStep2', lang)}</span>
-          </div>
-          <div className="flex items-start gap-2 text-xs text-zinc-400">
-            <span className="text-amber-400 font-black shrink-0">3.</span>
-            <span>{t('mp.depositStep3', lang)}</span>
-          </div>
-        </div>
-
-        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 mb-4">
-          <div className="flex justify-between items-center">
-            <span className="text-zinc-500 text-xs">{t('mp.depositAvailable', lang)}</span>
-            {loading ? (
-              <span className="text-zinc-600 text-xs">{t('mp.depositLoading', lang)}</span>
-            ) : (
-              <span className="text-amber-300 font-black text-sm">{max.toLocaleString('de-DE', { maximumFractionDigits: 2 })} DFAITH</span>
-            )}
-          </div>
-        </div>
+        )}
 
         {done ? (
           <div className="flex items-center gap-2 justify-center bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-green-400 text-sm font-semibold">
             <FaCheckCircle size={14} /> {t('mp.depositSuccess', lang)}
           </div>
-        ) : (
+        ) : mode === 'tokens' ? (
           <>
+            <div className="bg-white/[0.04] border border-white/[0.07] rounded-xl p-4 mb-4 space-y-2">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-3">{t('mp.depositHowTitle', lang)}</p>
+              <div className="flex items-start gap-2 text-xs text-zinc-400">
+                <span className="text-amber-400 font-black shrink-0">1.</span>
+                <span>{t('mp.depositStep1', lang)}</span>
+              </div>
+              <div className="flex items-start gap-2 text-xs text-zinc-400">
+                <span className="text-amber-400 font-black shrink-0">2.</span>
+                <span>{t('mp.depositStep2', lang)}</span>
+              </div>
+              <div className="flex items-start gap-2 text-xs text-zinc-400">
+                <span className="text-amber-400 font-black shrink-0">3.</span>
+                <span>{t('mp.depositStep3', lang)}</span>
+              </div>
+            </div>
+
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 mb-4">
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-500 text-xs">{t('mp.depositAvailable', lang)}</span>
+                {loading ? (
+                  <span className="text-zinc-600 text-xs">{t('mp.depositLoading', lang)}</span>
+                ) : (
+                  <span className="text-amber-300 font-black text-sm">{max.toLocaleString('de-DE', { maximumFractionDigits: 2 })} DFAITH</span>
+                )}
+              </div>
+            </div>
+
             <div className="mb-4">
               <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest block mb-2">{t('mp.depositAmountLabel', lang)}</label>
               <div className="flex gap-2">
@@ -638,6 +666,8 @@ function DepositModal({ walletAddress, onClose, onSuccess }: {
               ) : t('mp.depositConvert', lang)}
             </button>
           </>
+        ) : (
+          <CreditsCardCheckout walletAddress={walletAddress} onSuccess={handleCardSuccess} lang={lang} />
         )}
       </div>
     </div>
@@ -1501,7 +1531,8 @@ export default function MarketplaceTab() {
           walletAddress={walletAddress}
           onClose={() => setShowDeposit(false)}
           onSuccess={(amt) => {
-            setBalance(prev => prev + amt);
+            if (amt !== undefined) setBalance(prev => prev + amt);
+            else loadListings(); // Kartenzahlung: exakten Credit-Betrag vom Server nachladen statt schätzen
             setShowDeposit(false);
           }}
         />
