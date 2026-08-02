@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserProfile } from '../../../lib/questDb';
 import { upsertInstagramTesterRequest } from '../../../lib/questDb';
 import { sendTesterRequestAdminEmail } from '../../../lib/email';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 export const maxDuration = 15;
 
@@ -27,6 +28,8 @@ export async function POST(req: NextRequest) {
   if (!walletAddress || !email) {
     return NextResponse.json({ error: 'walletAddress und email sind erforderlich' }, { status: 400 });
   }
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
 
   // E-Mail-Format prüfen
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

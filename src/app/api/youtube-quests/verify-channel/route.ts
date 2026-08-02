@@ -7,6 +7,7 @@ import {
   getVerificationCode,
 } from '../../../lib/questDb';
 import { uploadProfileImageToBlob } from '../../../lib/profileImageStorage';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 const YT_API_KEY = process.env.YOUTUBE_DATA_API_KEY;
 
@@ -49,6 +50,8 @@ export async function DELETE(req: NextRequest) {
   if (!walletAddress) {
     return NextResponse.json({ error: 'walletAddress fehlt' }, { status: 400 });
   }
+  const authCheckDel = requireOwnWallet(walletAddress);
+  if (!authCheckDel.ok) return authCheckDel.response;
   try {
     await deleteYouTubeBinding(walletAddress);
     return NextResponse.json({ success: true });
@@ -81,6 +84,8 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
 
   const normalized = walletAddress.toLowerCase();
   const verificationCode = getVerificationCode(walletAddress);

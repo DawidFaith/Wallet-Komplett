@@ -27,6 +27,7 @@ import {
   deleteInstagramLikeVerification,
   QuestCompletion,
 } from '../../../lib/questDb';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 export const maxDuration = 30;
 
@@ -113,6 +114,8 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
 
   const normalized = walletAddress.toLowerCase();
 

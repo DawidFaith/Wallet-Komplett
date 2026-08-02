@@ -18,6 +18,7 @@ import { getVerificationCode, upsertUserProfile, recordFingerprintVerification, 
 import { getDb } from '../../../lib/db';
 import { findInstagramComment, fetchPlatformIgMedia, fetchPlatformFbPosts, findFacebookComment } from '../../../lib/metaApi';
 import { uploadProfileImageToBlob, extractOriginalImageUrl, fetchAndUploadFromUnavatar } from '../../../lib/profileImageStorage';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 export const maxDuration = 30; // Vercel Pro: 30s für Bright Data Web Unlocker
 
@@ -297,6 +298,8 @@ async function handlePost(req: NextRequest) {
   if (!walletAddress) {
     return NextResponse.json({ error: 'walletAddress fehlt' }, { status: 400 });
   }
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
   if (!platform || !['instagram', 'tiktok', 'facebook'].includes(platform)) {
     return NextResponse.json({ error: 'Ungültige Plattform' }, { status: 400 });
   }

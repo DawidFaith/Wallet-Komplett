@@ -7,6 +7,7 @@ import {
   getDfaithCredits,
   loadBindingByWallet,
 } from '../../../lib/questDb';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 export async function GET(req: NextRequest) {
   const wallet = new URL(req.url).searchParams.get('wallet');
@@ -62,6 +63,8 @@ export async function POST(req: NextRequest) {
   if (!wallet) {
     return NextResponse.json({ error: 'wallet fehlt' }, { status: 400 });
   }
+  const authCheck = requireOwnWallet(wallet);
+  if (!authCheck.ok) return authCheck.response;
   try {
     await upsertUserProfile(wallet, { displayName, instagramHandle, tiktokHandle, facebookHandle, artistType, artistBio, rewardToken, displayPlatform, clerkImageUrl, clerkName });
     return NextResponse.json({ success: true });

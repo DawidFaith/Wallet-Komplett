@@ -17,6 +17,7 @@ import {
   payQuestCreditBonus,
   QuestCompletion,
 } from '../../../lib/questDb';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 const YT_API_KEY = process.env.YOUTUBE_DATA_API_KEY;
 
@@ -73,6 +74,8 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
 
   const normalized = walletAddress.toLowerCase();
 

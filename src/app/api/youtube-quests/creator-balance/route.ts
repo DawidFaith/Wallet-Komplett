@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCreatorBalance, creditCreatorBalance, getDfaithCredits } from '@/app/lib/questDb';
 import { getDb } from '@/app/lib/db';
+import { requireOwnWallet } from '@/app/lib/apiAuth';
 
 // Verhindert Next.js-Caching – Balance muss immer live aus der DB kommen
 export const dynamic = 'force-dynamic';
@@ -42,6 +43,8 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
 
   const sender = senderWallet.trim();
   if (!sender || sender.length < 32) {

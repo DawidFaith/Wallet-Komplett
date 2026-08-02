@@ -29,6 +29,7 @@ import {
 } from '../../../lib/questDb';
 import { fetchFacebookPostCounts, extractFacebookPostId, resolvePostIdFromUrl } from '../../../lib/metaApi';
 import { getDb } from '../../../lib/db';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 export const maxDuration = 30;
 
@@ -48,6 +49,8 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
 
   const normalized = walletAddress.toLowerCase();
 

@@ -11,6 +11,7 @@ import {
   payLevelBonus,
   payQuestCreditBonus,
 } from '../../../lib/questDb';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 export async function POST(req: NextRequest) {
   let body: { questId?: string; walletAddress?: string; code?: string };
@@ -28,6 +29,8 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
 
   try {
     const quest = await loadQuestDetail(questId);

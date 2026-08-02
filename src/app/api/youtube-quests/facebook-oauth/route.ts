@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { upsertUserProfile, getUserProfile } from '../../../lib/questDb';
 import { uploadProfileImageToBlob } from '../../../lib/profileImageStorage';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 /**
  * POST /api/youtube-quests/facebook-oauth
@@ -20,6 +21,8 @@ export async function POST(req: NextRequest) {
   if (!walletAddress || !facebookId) {
     return NextResponse.json({ error: 'walletAddress und facebookId sind erforderlich' }, { status: 400 });
   }
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
 
   const normalized = walletAddress.toLowerCase();
   const normalizedFbId = facebookId.toLowerCase();

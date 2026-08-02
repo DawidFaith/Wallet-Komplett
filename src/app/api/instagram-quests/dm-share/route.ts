@@ -29,6 +29,7 @@ import {
   deleteInstagramDmVerification,
   type QuestCompletion,
 } from '../../../lib/questDb';
+import { requireOwnWallet } from '../../../lib/apiAuth';
 
 export const maxDuration = 30;
 
@@ -89,6 +90,8 @@ export async function POST(req: NextRequest) {
   if (!action || !walletAddress || !questId) {
     return NextResponse.json({ error: 'action, walletAddress und questId sind erforderlich' }, { status: 400 });
   }
+  const authCheck = requireOwnWallet(walletAddress);
+  if (!authCheck.ok) return authCheck.response;
 
   const normalized = walletAddress.toLowerCase();
 
