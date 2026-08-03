@@ -6,6 +6,7 @@ import {
   FaInstagram, FaTiktok, FaFacebook,
   FaCheck, FaSync, FaCopy, FaUnlink, FaChevronRight, FaUserCheck,
 } from 'react-icons/fa';
+import { t, tFmt, type Lang } from '../../utils/i18n';
 
 type Platform = 'instagram' | 'tiktok' | 'facebook';
 
@@ -15,13 +16,6 @@ const PLATFORM_CONFIG = {
     label: 'Instagram',
     color: 'pink',
     handlePrefix: '@',
-    placeholder: 'deinname',
-    bioInstructions: (code: string) => [
-      'Öffne die Instagram App',
-      'Gehe auf einen Post von @dfaith_ecosystem (D.Faith Ecosystem)',
-      `Schreibe einen Kommentar mit genau diesem Code: ${code}`,
-      'Komm zurück und klicke auf „Verifizieren"',
-    ],
     profileUrl: (_handle: string) => `https://www.instagram.com/dfaith_ecosystem/`,
   },
   tiktok: {
@@ -29,13 +23,6 @@ const PLATFORM_CONFIG = {
     label: 'TikTok',
     color: 'zinc',
     handlePrefix: '@',
-    placeholder: 'deinname',
-    bioInstructions: (code: string) => [
-      'Öffne TikTok',
-      'Gehe zu Profil → Bearbeiten',
-      `Füge „${code}" in deine Biografie ein`,
-      'Tippe auf „Speichern" und komm zurück',
-    ],
     profileUrl: (handle: string) => `https://www.tiktok.com/@${handle}`,
   },
   facebook: {
@@ -43,13 +30,6 @@ const PLATFORM_CONFIG = {
     label: 'Facebook',
     color: 'blue',
     handlePrefix: '',
-    placeholder: 'dein.name oder Profil-URL',
-    bioInstructions: (code: string) => [
-      'Öffne Facebook',
-      'Gehe auf einen Post der D.Faith Ecosystem Seite',
-      `Schreibe einen Kommentar mit genau diesem Code: ${code}`,
-      'Komm zurück und klicke auf „Verifizieren"',
-    ],
     profileUrl: (_handle: string) => `https://www.facebook.com/1144846495374893`,
   },
 };
@@ -61,6 +41,7 @@ interface SocialVerifyModalProps {
   currentVerified: boolean;
   currentName: string | null;
   currentPicture: string | null;
+  lang: Lang;
   onDone: () => void;
   onClose: () => void;
 }
@@ -74,6 +55,7 @@ export default function SocialVerifyModal({
   currentVerified,
   currentName,
   currentPicture,
+  lang,
   onDone,
   onClose,
 }: SocialVerifyModalProps) {
@@ -142,18 +124,18 @@ export default function SocialVerifyModal({
       if (platform === 'facebook') {
         // Facebook Preview: social-verify aufrufen für Verifizierungscode
         const { ok, data } = await call({ handle: handle.trim(), action: 'preview' });
-        if (!ok) { setError(data.error ?? 'Fehler'); return; }
+        if (!ok) { setError(data.error ?? t('sv.serverError', lang)); return; }
         setPreview(data);
         savePreviewCache(handle.trim(), data);
         setStep('instructions');
         return;
       }
       const { ok, data } = await call({ handle: handle.trim(), action: 'preview' });
-      if (!ok) { setError(data.error ?? 'Fehler'); return; }
+      if (!ok) { setError(data.error ?? t('sv.serverError', lang)); return; }
       setPreview(data);
       savePreviewCache(handle.trim(), data);
       setStep('instructions');
-    } catch { setError('Netzwerkfehler'); }
+    } catch { setError(t('sv.networkError', lang)); }
     finally { setLoading(false); }
   };
 
@@ -163,15 +145,20 @@ export default function SocialVerifyModal({
     try {
       const extraBody = {};
       const { ok, data } = await call({ handle: handle.trim(), action: 'verify', ...extraBody });
-      if (!ok) { setError(data.error ?? 'Serverfehler'); return; }
-      if (data.notFound) { setError(data.message); return; }
+      if (!ok) { setError(data.error ?? t('sv.serverError', lang)); return; }
+      if (data.notFound) {
+        const cleanHandle = handle.replace(/^@/, '').trim();
+        const key = platform === 'instagram' ? 'sv.notFoundInstagram' : platform === 'facebook' ? 'sv.notFoundFacebook' : 'sv.notFoundTiktok';
+        setError(tFmt(key, lang, { code: preview.verificationCode, handle: cleanHandle }));
+        return;
+      }
       clearPreviewCache();
       setName(data.name); setPicture(data.picture);
       setStep('success');
       onDone();
       // Modal nach kurzem Erfolgs-Flash automatisch schließen
       setTimeout(() => onClose(), 1800);
-    } catch { setError('Netzwerkfehler'); }
+    } catch { setError(t('sv.networkError', lang)); }
     finally { setLoading(false); }
   };
 
@@ -204,7 +191,7 @@ export default function SocialVerifyModal({
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
           <div className="flex items-center gap-2.5">
             {cfg.icon}
-            <span className="text-white font-bold">{cfg.label} verknüpfen</span>
+            <span className="text-white font-bold">{tFmt('sv.headerLink', lang, { platform: cfg.label })}</span>
           </div>
           <button onClick={onClose} className="text-zinc-500 hover:text-white text-xl leading-none">×</button>
         </div>
@@ -224,7 +211,7 @@ export default function SocialVerifyModal({
                 </div>
                 {currentVerified && (
                   <span className="shrink-0 flex items-center gap-1 text-green-400 text-xs font-semibold bg-green-900/30 px-2 py-1 rounded-full">
-                    <FaCheck size={9} /> Verifiziert
+                    <FaCheck size={9} /> {t('sv.verified', lang)}
                   </span>
                 )}
               </div>
@@ -235,7 +222,7 @@ export default function SocialVerifyModal({
                 rel="noopener noreferrer"
                 className="block text-center text-zinc-400 text-xs hover:text-white transition-colors"
               >
-                Profil auf {cfg.label} ansehen ↗
+                {tFmt('sv.viewProfile', lang, { platform: cfg.label })}
               </a>
 
               <div className="flex gap-2">
@@ -243,7 +230,7 @@ export default function SocialVerifyModal({
                   onClick={() => { setStep('start'); setHandle(''); }}
                   className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
-                  Ändern
+                  {t('sv.change', lang)}
                 </button>
                 <button
                   onClick={handleUnlink}
@@ -251,7 +238,7 @@ export default function SocialVerifyModal({
                   className="flex-1 bg-red-900/40 hover:bg-red-800/60 text-red-400 text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
                   {loading ? <div className="border-2 border-red-400/30 border-t-red-400 rounded-full w-3 h-3 animate-spin" /> : <FaUnlink size={11} />}
-                  Trennen
+                  {t('sv.unlink', lang)}
                 </button>
               </div>
             </div>
@@ -261,27 +248,27 @@ export default function SocialVerifyModal({
           {step === 'start' && (
             <div className="space-y-4">
               <div className="bg-zinc-800 rounded-xl p-4 text-sm text-zinc-300 space-y-1.5">
-                <p className="font-semibold text-yellow-400 text-sm">So funktioniert es:</p>
+                <p className="font-semibold text-yellow-400 text-sm">{t('sv.howItWorks', lang)}</p>
                 {platform === 'instagram' ? (
                   <>
-                    <p>1. Gib deinen Instagram-Handle ein</p>
-                    <p>2. Du bekommst deinen einzigartigen Verifizierungscode</p>
-                    <p>3. Kommentiere den Code auf einem Post von @dfaith_ecosystem</p>
-                    <p>4. Klicke auf &quot;Verifizieren&quot;</p>
+                    <p>{t('sv.igStart1', lang)}</p>
+                    <p>{t('sv.igStart2', lang)}</p>
+                    <p>{t('sv.igStart3', lang)}</p>
+                    <p>{t('sv.igStart4', lang)}</p>
                   </>
                 ) : platform === 'facebook' ? (
                   <>
-                    <p>1. Gib deinen Facebook-Namen ein</p>
-                    <p>2. Du bekommst deinen einzigartigen Verifizierungscode</p>
-                    <p>3. Kommentiere den Code auf einem Post der D.Faith Ecosystem Seite</p>
-                    <p>4. Klicke auf &quot;Verifizieren&quot;</p>
+                    <p>{t('sv.fbStart1', lang)}</p>
+                    <p>{t('sv.fbStart2', lang)}</p>
+                    <p>{t('sv.fbStart3', lang)}</p>
+                    <p>{t('sv.fbStart4', lang)}</p>
                   </>
                 ) : (
                   <>
-                    <p>1. Gib deinen {cfg.label}-Handle ein</p>
-                    <p>2. Du bekommst einen einzigartigen Code</p>
-                    <p>3. Trage den Code in deine Bio ein</p>
-                    <p>4. Wir verifizieren automatisch</p>
+                    <p>{tFmt('sv.genericStart1', lang, { platform: cfg.label })}</p>
+                    <p>{t('sv.genericStart2', lang)}</p>
+                    <p>{t('sv.genericStart3', lang)}</p>
+                    <p>{t('sv.genericStart4', lang)}</p>
                   </>
                 )}
               </div>
@@ -290,7 +277,7 @@ export default function SocialVerifyModal({
                 <input
                   value={handle.replace(/^@/, '')}
                   onChange={(e) => setHandle(e.target.value)}
-                  placeholder={cfg.placeholder}
+                  placeholder={platform === 'facebook' ? t('sv.placeholderFacebook', lang) : t('sv.placeholderGeneric', lang)}
                   className="w-full bg-zinc-800 text-white rounded-xl pl-8 pr-4 py-3 border border-zinc-700 focus:border-red-500 focus:outline-none text-sm placeholder-zinc-500"
                   onKeyDown={(e) => e.key === 'Enter' && handlePreview()}
                 />
@@ -302,7 +289,7 @@ export default function SocialVerifyModal({
                 className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 {loading ? <FaSync className="animate-spin" size={14} /> : <FaChevronRight size={14} />}
-                {loading ? (platform === 'instagram' ? 'Profil wird geladen (15–30s)…' : 'Suche Profil…') : (platform === 'facebook' ? 'Weiter' : 'Profil laden')}
+                {loading ? (platform === 'instagram' ? t('sv.loadingIg', lang) : t('sv.searching', lang)) : (platform === 'facebook' ? t('sv.continue', lang) : t('sv.loadProfile', lang))}
               </button>
             </div>
           )}
@@ -328,7 +315,7 @@ export default function SocialVerifyModal({
               {/* Code – nur für TikTok */}
               {platform === 'tiktok' && (
               <div className="bg-zinc-800 rounded-xl p-4 space-y-3">
-                <p className="text-yellow-400 font-semibold text-sm">Dein Verifikationscode:</p>
+                <p className="text-yellow-400 font-semibold text-sm">{t('sv.yourCode', lang)}</p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 bg-zinc-900 text-yellow-300 font-mono text-sm px-3 py-2 rounded-lg border border-zinc-700 select-all">
                     {preview.verificationCode}
@@ -341,18 +328,19 @@ export default function SocialVerifyModal({
                   </button>
                 </div>
                 <ol className="text-zinc-400 text-sm space-y-1 list-decimal list-inside">
-                  {cfg.bioInstructions(preview.verificationCode).map((step, i) => (
-                    <li key={i}>{step}</li>
-                  ))}
+                  <li>{t('sv.tiktokStep1', lang)}</li>
+                  <li>{t('sv.tiktokStep2', lang)}</li>
+                  <li>{tFmt('sv.tiktokStep3', lang, { code: preview.verificationCode })}</li>
+                  <li>{t('sv.tiktokStep4', lang)}</li>
                 </ol>
-                <p className="text-yellow-500 text-xs">⏳ Nach dem Speichern kann es bis zu 1 Minute oder länger dauern, bis TikTok die neue Bio öffentlich anzeigt. Klappt die Verifizierung nicht sofort, warte kurz und versuche es erneut.</p>
+                <p className="text-yellow-500 text-xs">{t('sv.bioDelayHint', lang)}</p>
               </div>
               )}
 
               {/* Tag-Anleitung – Instagram */}
               {platform === 'instagram' && (
               <div className="bg-zinc-800 rounded-xl p-4 space-y-3">
-                <p className="text-pink-400 font-semibold text-sm">Dein Verifikationscode:</p>
+                <p className="text-pink-400 font-semibold text-sm">{t('sv.yourCode', lang)}</p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 bg-zinc-900 text-yellow-300 font-mono text-sm px-3 py-2 rounded-lg border border-zinc-700 select-all">
                     {preview.verificationCode}
@@ -364,12 +352,12 @@ export default function SocialVerifyModal({
                     {codeCopied ? <FaCheck className="text-green-400" /> : <FaCopy size={13} />}
                   </button>
                 </div>
-                <p className="text-pink-400 font-semibold text-sm">So verifizierst du dich:</p>
+                <p className="text-pink-400 font-semibold text-sm">{t('sv.howToVerify', lang)}</p>
                 <ol className="text-zinc-400 text-sm space-y-1 list-decimal list-inside">
-                  <li>Öffne die Instagram App</li>
-                  <li>Gehe auf einen Post von <strong className="text-zinc-300">@dfaith_ecosystem</strong></li>
-                  <li>Schreibe den Code oben als Kommentar</li>
-                  <li>Komm zurück und klicke auf &bdquo;Verifizieren&ldquo;</li>
+                  <li>{t('sv.igOpenApp', lang)}</li>
+                  <li>{t('sv.igGoToPost', lang)}</li>
+                  <li>{t('sv.stepWriteCodeComment', lang)}</li>
+                  <li>{t('sv.stepComeBackVerify', lang)}</li>
                 </ol>
                 <a
                   href="https://www.instagram.com/dfaith_ecosystem/"
@@ -379,16 +367,16 @@ export default function SocialVerifyModal({
                 >
                   <FaInstagram size={14} className="text-pink-400 shrink-0" />
                   <span className="text-pink-300 font-mono text-sm">@dfaith_ecosystem</span>
-                  <span className="text-zinc-500 text-xs ml-auto">Profil öffnen ↗</span>
+                  <span className="text-zinc-500 text-xs ml-auto">{t('sv.openProfile', lang)}</span>
                 </a>
-                <p className="text-yellow-500 text-xs">⏳ Nach dem Kommentieren kann es bis zu 1 Minute oder länger dauern, bis der Kommentar abrufbar ist. Klappt die Verifizierung nicht sofort, warte kurz und versuche es erneut.</p>
+                <p className="text-yellow-500 text-xs">{t('sv.commentDelayHint', lang)}</p>
               </div>
               )}
 
               {/* Facebook – zeigt Seiten-Link + Kommentar-Anweisung mit Code */}
               {platform === 'facebook' && (
               <div className="bg-zinc-800 rounded-xl p-4 space-y-3">
-                <p className="text-blue-400 font-semibold text-sm">Dein Verifikationscode:</p>
+                <p className="text-blue-400 font-semibold text-sm">{t('sv.yourCode', lang)}</p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 bg-zinc-900 text-yellow-300 font-mono text-sm px-3 py-2 rounded-lg border border-zinc-700 select-all">
                     {preview.verificationCode}
@@ -400,12 +388,12 @@ export default function SocialVerifyModal({
                     {codeCopied ? <FaCheck className="text-green-400" /> : <FaCopy size={13} />}
                   </button>
                 </div>
-                <p className="text-blue-400 font-semibold text-sm">So verifizierst du dich:</p>
+                <p className="text-blue-400 font-semibold text-sm">{t('sv.howToVerify', lang)}</p>
                 <ol className="text-zinc-400 text-sm space-y-1 list-decimal list-inside">
-                  <li>Öffne Facebook</li>
-                  <li>Gehe auf einen Post der <strong className="text-zinc-300">D.Faith Ecosystem Seite</strong></li>
-                  <li>Schreibe den Code oben als Kommentar</li>
-                  <li>Komm zurück und klicke auf &bdquo;Verifizieren&ldquo;</li>
+                  <li>{t('sv.fbOpenApp', lang)}</li>
+                  <li>{t('sv.fbGoToPost', lang)}</li>
+                  <li>{t('sv.stepWriteCodeComment', lang)}</li>
+                  <li>{t('sv.stepComeBackVerify', lang)}</li>
                 </ol>
                 <a
                   href="https://www.facebook.com/1144846495374893"
@@ -415,9 +403,9 @@ export default function SocialVerifyModal({
                 >
                   <FaFacebook size={14} className="text-blue-400 shrink-0" />
                   <span className="text-blue-300 font-mono text-sm">D.Faith Ecosystem</span>
-                  <span className="text-zinc-500 text-xs ml-auto">Seite öffnen ↗</span>
+                  <span className="text-zinc-500 text-xs ml-auto">{t('sv.openPage', lang)}</span>
                 </a>
-                <p className="text-yellow-500 text-xs">⏳ Nach dem Kommentieren kann es bis zu 1 Minute oder länger dauern, bis der Kommentar abrufbar ist. Klappt die Verifizierung nicht sofort, warte kurz und versuche es erneut.</p>
+                <p className="text-yellow-500 text-xs">{t('sv.commentDelayHint', lang)}</p>
               </div>
               )}
 
@@ -428,7 +416,7 @@ export default function SocialVerifyModal({
                   onClick={() => { setStep('start'); setError(''); }}
                   className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold py-3 rounded-xl transition-colors text-sm"
                 >
-                  Zurück
+                  {t('sv.back', lang)}
                 </button>
                 <button
                   onClick={() => handleVerify()}
@@ -436,7 +424,7 @@ export default function SocialVerifyModal({
                   className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
                 >
                   {loading ? <FaSync className="animate-spin" size={13} /> : <FaUserCheck size={14} />}
-                  {loading ? 'Verifiziere…' : 'Verifizieren'}
+                  {loading ? t('sv.verifying', lang) : t('sv.verify', lang)}
                 </button>
               </div>
             </div>

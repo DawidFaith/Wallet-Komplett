@@ -1240,6 +1240,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
             : verifyModal === 'tiktok' ? (p?.tiktokPicture ?? null)
             : (p?.facebookPicture ?? null)
           }
+          lang={lang}
           onDone={() => { loadProfile(); }}
           onClose={() => { setVerifyModal(null); loadProfile(); }}
         />
