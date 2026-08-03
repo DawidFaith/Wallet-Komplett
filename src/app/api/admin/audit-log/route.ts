@@ -16,13 +16,17 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const limit = Math.min(500, Math.max(1, Number(searchParams.get('limit')) || 100));
 
-  const sql = getDb();
-  const rows = await sql`
-    SELECT id, route, method, ip, secret_valid, status_code, created_at
-    FROM admin_audit_log
-    ORDER BY created_at DESC
-    LIMIT ${limit}
-  `;
-
-  return NextResponse.json({ entries: rows });
+  try {
+    const sql = getDb();
+    const rows = await sql`
+      SELECT id, route, method, ip, secret_valid, status_code, created_at
+      FROM admin_audit_log
+      ORDER BY created_at DESC
+      LIMIT ${limit}
+    `;
+    return NextResponse.json({ entries: rows });
+  } catch (err) {
+    console.error('[admin/audit-log]', err);
+    return NextResponse.json({ error: 'Log konnte nicht geladen werden' }, { status: 500 });
+  }
 }
