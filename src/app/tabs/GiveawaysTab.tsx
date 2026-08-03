@@ -213,6 +213,12 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
 
   const handleEnd = async (id: string) => {
     if (!confirm(t('gw.confirmEnd', lang))) return;
+    await fetch(`/api/giveaways/campaigns/${id}?artistWallet=${artistWallet}`, { method: 'PATCH' });
+    await load();
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm(t('gw.confirmDelete', lang))) return;
     await fetch(`/api/giveaways/campaigns/${id}?artistWallet=${artistWallet}`, { method: 'DELETE' });
     await load();
   };
@@ -441,12 +447,19 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
                   >
                     <FaCopy size={10} /> {copiedId === c.id ? t('gw.copied', lang) : t('gw.copyLink', lang)}
                   </button>
-                  {c.status === 'active' && (
+                  {c.status === 'active' ? (
                     <button
                       onClick={() => handleEnd(c.id)}
                       className="flex-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-400 rounded-xl py-2 text-xs font-semibold transition-all"
                     >
                       {t('gw.endCampaign', lang)}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleDelete(c.id)}
+                      className="flex-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-400 rounded-xl py-2 text-xs font-semibold transition-all"
+                    >
+                      {t('gw.deleteCampaign', lang)}
                     </button>
                   )}
                 </div>

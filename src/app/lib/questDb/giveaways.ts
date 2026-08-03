@@ -239,6 +239,20 @@ export async function endGiveawayCampaign(campaignId: string, artistWallet: stri
   return true;
 }
 
+/**
+ * Beendete Kampagne endgültig löschen (inkl. Plattformen + Teilnahmen via ON DELETE CASCADE).
+ * Nur eigene, bereits beendete Kampagnen — aktive müssen zuerst beendet werden.
+ */
+export async function deleteGiveawayCampaign(campaignId: string, artistWallet: string): Promise<boolean> {
+  const sql = getDb();
+  const rows = await sql`
+    DELETE FROM giveaway_campaigns
+    WHERE id = ${campaignId} AND artist_wallet = ${artistWallet.toLowerCase()} AND status != 'active'
+    RETURNING id
+  `;
+  return rows.length > 0;
+}
+
 /** Startet eine Teilnahme: generiert einen Code, den der Fan als Kommentar posten muss. */
 export async function startGiveawayEntry(
   campaignId: string,

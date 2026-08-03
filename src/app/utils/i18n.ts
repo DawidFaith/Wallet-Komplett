@@ -1691,6 +1691,8 @@ const dict: Translations = {
   'gw.copied':              { de: 'Kopiert!',                     en: 'Copied!',                     pl: 'Skopiowano!' },
   'gw.endCampaign':         { de: 'Beenden',                      en: 'End',                         pl: 'Zakończ' },
   'gw.confirmEnd':          { de: 'Gewinnspiel wirklich beenden? Nicht genutztes Budget wird dir zurückerstattet.', en: 'Really end this giveaway? Unused budget will be refunded to you.', pl: 'Na pewno zakończyć konkurs? Niewykorzystany budżet zostanie Ci zwrócony.' },
+  'gw.deleteCampaign':      { de: 'Löschen',                      en: 'Delete',                      pl: 'Usuń' },
+  'gw.confirmDelete':       { de: 'Gewinnspiel endgültig löschen? Das kann nicht rückgängig gemacht werden.', en: 'Permanently delete this giveaway? This cannot be undone.', pl: 'Trwale usunąć konkurs? Tej operacji nie można cofnąć.' },
   'gw.errTitleRequired':    { de: 'Bitte einen Titel eingeben.',  en: 'Please enter a title.',       pl: 'Podaj tytuł.' },
   'gw.errInvalidReward':    { de: 'Ungültige Credit-Belohnung.',  en: 'Invalid credit reward.',      pl: 'Nieprawidłowa nagroda w kredytach.' },
   'gw.errInvalidWinners':   { de: 'Ungültige Gewinneranzahl.',    en: 'Invalid number of winners.',  pl: 'Nieprawidłowa liczba zwycięzców.' },
