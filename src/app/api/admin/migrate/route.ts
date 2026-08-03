@@ -520,6 +520,19 @@ export async function POST(req: NextRequest) {
       )
     `;
 
+    await sql`
+      CREATE TABLE IF NOT EXISTS admin_audit_log (
+        id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+        route        TEXT        NOT NULL,
+        method       TEXT        NOT NULL,
+        ip           TEXT,
+        secret_valid BOOLEAN,
+        status_code  INTEGER,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_admin_audit_log_created ON admin_audit_log(created_at DESC)`;
+
     return NextResponse.json({
       success: true,
       message: `Migration abgeschlossen (${(backfill as unknown as { count?: number }).count ?? backfill.length} neue Profile)`,

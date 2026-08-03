@@ -1,11 +1,13 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+import { logAdminAccess } from '@/app/lib/adminAudit';
 
 const isProtectedRoute = createRouteMatcher(['/home(.*)', '/admin(.*)']);
 const isApiRoute = createRouteMatcher(['/api(.*)']);
+const isAdminApiRoute = createRouteMatcher(['/api/admin(.*)']);
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
-export default clerkMiddleware(async (auth, req) => {
+export default clerkMiddleware(async (auth, req, event) => {
   if (isProtectedRoute(req)) {
     const session = await auth();
     session.protect();
@@ -19,6 +21,29 @@ export default clerkMiddleware(async (auth, req) => {
     if (req.headers.get('sec-fetch-site') === 'cross-site') {
       return NextResponse.json({ error: 'Cross-site request blocked' }, { status: 403 });
     }
+  }
+
+  // Audit-Log: jeder Zugriff auf /api/admin/* wird protokolliert (IP, Route,
+  // ob das mitgeschickte Secret gültig war), unabhängig vom Ergebnis der
+  // eigentlichen Route. Manche Admin-Routen nehmen das Secret im Body statt
+  // im Header/Query entgegen — dort bleibt secretValid absichtlich `null`
+  // (unbekannt hier), die Route prüft es wie bisher selbst.
+  if (isAdminApiRoute(req)) {
+    const headerSecret = req.headers.get('x-admin-secret');
+    const querySecret = req.nextUrl.searchParams.get('secret');
+    const providedSecret = headerSecret ?? querySecret;
+    const secretValid = providedSecret !== null ? providedSecret === process.env.MIGRATION_SECRET : null;
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
+
+    event.waitUntil(
+      logAdminAccess({
+        route: req.nextUrl.pathname,
+        method: req.method,
+        ip,
+        secretValid,
+        statusCode: null,
+      })
+    );
   }
 });
 

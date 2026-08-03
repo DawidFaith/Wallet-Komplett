@@ -253,7 +253,7 @@ export default function AdminPage() {
     return matchSearch && matchFilter;
   });
 
-  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'collectibles' | 'referral'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'collectibles' | 'referral' | 'audit'>('users');
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState('');
   const [resetting, setResetting] = useState(false);
@@ -333,7 +333,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-0">
-        {(['users', 'credits', 'token', 'shop', 'platform', 'collectibles', 'referral'] as const).map((tab) => (
+        {(['users', 'credits', 'token', 'shop', 'platform', 'collectibles', 'referral', 'audit'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -343,7 +343,7 @@ export default function AdminPage() {
                 : 'text-zinc-500 border-transparent hover:text-zinc-300'
             }`}
           >
-            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'platform' ? '⚡ Platform' : tab === 'collectibles' ? '💎 Collectibles' : '🔗 Referral'}
+            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'platform' ? '⚡ Platform' : tab === 'collectibles' ? '💎 Collectibles' : tab === 'referral' ? '🔗 Referral' : '🛡️ Audit-Log'}
           </button>
         ))}
       </div>
@@ -608,6 +608,11 @@ export default function AdminPage() {
       {/* ── Referral Tab ─────────────────────────────────────────────────────── */}
       {activeTab === 'referral' && (
         <ReferralSection secret={secret} users={users} />
+      )}
+
+      {/* ── Audit-Log Tab ────────────────────────────────────────────────────── */}
+      {activeTab === 'audit' && (
+        <AuditLogSection secret={secret} />
       )}
     </div>
   );
@@ -3374,6 +3379,115 @@ function CollectiblesAdminSection({ secret, users }: { secret: string; users: Ad
             {deleteMsg}
           </p>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─── AuditLogSection ──────────────────────────────────────────────────────────
+
+interface AdminAuditEntry {
+  id: string;
+  route: string;
+  method: string;
+  ip: string | null;
+  secret_valid: boolean | null;
+  status_code: number | null;
+  created_at: string;
+}
+
+function AuditLogSection({ secret }: { secret: string }) {
+  const [entries, setEntries] = useState<AdminAuditEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const r = await fetch('/api/admin/audit-log?limit=200', {
+        headers: { 'x-admin-secret': secret },
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? 'Fehler');
+      setEntries(Array.isArray(d.entries) ? d.entries : []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler beim Laden');
+    } finally {
+      setLoading(false);
+    }
+  }, [secret]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const failedAttempts = entries.filter(e => e.secret_valid === false).length;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <FaShieldAlt className="text-red-400" /> Admin-Zugriffs-Log
+          </h2>
+          <p className="text-xs text-zinc-500 mt-1">
+            Jeder Zugriff auf /api/admin/* wird hier protokolliert (IP, Route, ob das Secret gültig war).
+          </p>
+        </div>
+        <button
+          onClick={load}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50"
+        >
+          <FaSync className={loading ? 'animate-spin' : ''} /> Aktualisieren
+        </button>
+      </div>
+
+      {error && (
+        <div className="bg-red-900/30 border border-red-800/50 text-red-300 text-sm px-4 py-3 rounded-xl">
+          {error}
+        </div>
+      )}
+
+      {failedAttempts > 0 && (
+        <div className="bg-amber-900/30 border border-amber-800/50 text-amber-300 text-sm px-4 py-3 rounded-xl">
+          ⚠️ {failedAttempts} Zugriff{failedAttempts === 1 ? '' : 'e'} mit ungültigem Secret in den letzten {entries.length} Einträgen — bei vielen Fehlversuchen von derselben IP könnte jemand das Secret erraten.
+        </div>
+      )}
+
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-zinc-500 border-b border-zinc-800">
+              <th className="px-4 py-2 font-semibold">Zeit</th>
+              <th className="px-4 py-2 font-semibold">Route</th>
+              <th className="px-4 py-2 font-semibold">Methode</th>
+              <th className="px-4 py-2 font-semibold">IP</th>
+              <th className="px-4 py-2 font-semibold">Secret</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((e) => (
+              <tr key={e.id} className="border-b border-zinc-800/50 last:border-0">
+                <td className="px-4 py-2 text-zinc-400 whitespace-nowrap">
+                  {new Date(e.created_at).toLocaleString('de-DE')}
+                </td>
+                <td className="px-4 py-2 text-zinc-200 font-mono text-xs">{e.route}</td>
+                <td className="px-4 py-2 text-zinc-400">{e.method}</td>
+                <td className="px-4 py-2 text-zinc-400 font-mono text-xs">{e.ip ?? '—'}</td>
+                <td className="px-4 py-2">
+                  {e.secret_valid === true && <span className="text-green-400">✓ gültig</span>}
+                  {e.secret_valid === false && <span className="text-red-400 font-semibold">✗ ungültig</span>}
+                  {e.secret_valid === null && <span className="text-zinc-500">— (im Body geprüft)</span>}
+                </td>
+              </tr>
+            ))}
+            {entries.length === 0 && !loading && (
+              <tr>
+                <td colSpan={5} className="px-4 py-6 text-center text-zinc-500">Keine Einträge</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
