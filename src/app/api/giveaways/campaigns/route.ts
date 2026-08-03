@@ -24,15 +24,16 @@ export async function POST(req: NextRequest) {
     artistWallet?: string;
     title?: string;
     imageUrl?: string | null;
+    mediaType?: string;
     requiredText?: string;
     creditReward?: number;
     maxWinners?: number;
-    platforms?: { platform: string; postUrl: string }[];
+    platforms?: { platform: string; postUrl: string; mediaId?: string | null }[];
   };
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 }); }
 
-  const { artistWallet, title, imageUrl, requiredText, creditReward, maxWinners, platforms } = body;
+  const { artistWallet, title, imageUrl, mediaType, requiredText, creditReward, maxWinners, platforms } = body;
   if (!artistWallet || !title?.trim() || !creditReward || !maxWinners || !platforms?.length) {
     return NextResponse.json({ error: 'artistWallet, title, creditReward, maxWinners und platforms sind erforderlich.' }, { status: 400 });
   }
@@ -52,13 +53,16 @@ export async function POST(req: NextRequest) {
     if (!VALID_PLATFORMS.includes(p.platform as GiveawayPlatform) || !p.postUrl?.trim()) continue;
     const platform = p.platform as GiveawayPlatform;
     const postUrl = p.postUrl.trim();
-    let mediaId: string | null = null;
+    // Der Video-Picker im Frontend liefert die Media-ID bereits direkt aus den
+    // available-media Endpoints mit — nur wenn der Artist stattdessen einen Link
+    // manuell eingefügt hat, wird sie hier serverseitig nachträglich aufgelöst.
+    let mediaId: string | null = p.mediaId?.trim() || null;
 
-    if (platform === 'tiktok') {
+    if (!mediaId && platform === 'tiktok') {
       mediaId = extractTiktokVideoId(postUrl);
-    } else if (platform === 'youtube') {
+    } else if (!mediaId && platform === 'youtube') {
       mediaId = extractYoutubeVideoId(postUrl);
-    } else if (platform === 'instagram') {
+    } else if (!mediaId && platform === 'instagram') {
       try {
         const res = await fetch(`${req.nextUrl.origin}/api/instagram-quests/resolve-reel?url=${encodeURIComponent(postUrl)}`);
         if (res.ok) {
@@ -70,7 +74,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `Instagram-Link konnte nicht aufgelöst werden: ${postUrl}` }, { status: 400 });
       }
     }
-    // facebook: wird erst zur Verifikationszeit aufgelöst (Page-ID-Kombination nötig)
+    // facebook ohne mediaId: wird erst zur Verifikationszeit aufgelöst (Page-ID-Kombination nötig)
     resolvedPlatforms.push({ platform, postUrl, mediaId });
   }
 
@@ -83,6 +87,7 @@ export async function POST(req: NextRequest) {
       artistWallet,
       title.trim(),
       imageUrl?.trim() || null,
+      mediaType === 'video' ? 'video' : 'image',
       requiredText?.trim() || 'dfaith',
       rewardNum,
       winnersNum,

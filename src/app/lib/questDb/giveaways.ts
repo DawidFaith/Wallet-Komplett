@@ -22,6 +22,7 @@ async function ensureTables() {
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `;
+  await sql`ALTER TABLE giveaway_campaigns ADD COLUMN IF NOT EXISTS media_type TEXT NOT NULL DEFAULT 'image'`;
   await sql`
     CREATE TABLE IF NOT EXISTS giveaway_campaign_platforms (
       id TEXT PRIMARY KEY,
@@ -55,6 +56,7 @@ export interface GiveawayCampaign {
   artistWallet: string;
   title: string;
   imageUrl: string | null;
+  mediaType: 'image' | 'video';
   requiredText: string;
   creditReward: number;
   maxWinners: number;
@@ -91,6 +93,7 @@ function rowToCampaign(r: any, platforms: GiveawayCampaignPlatform[]): GiveawayC
     artistWallet: r.artist_wallet as string,
     title: r.title as string,
     imageUrl: r.image_url as string | null,
+    mediaType: (r.media_type as 'image' | 'video') ?? 'image',
     requiredText: r.required_text as string,
     creditReward: Number(r.credit_reward),
     maxWinners: Number(r.max_winners),
@@ -118,11 +121,20 @@ function rowToEntry(r: any): GiveawayEntry {
   };
 }
 
-function generateCode(): string {
+/**
+ * Generiert den einmaligen Kommentar-Code für einen Fan: das Kommentar-Wort
+ * des Artists (z.B. "dfaith") + ein zufälliges Suffix. So bleibt der Kommentar
+ * lesbar/gebrandet, ist aber trotzdem pro Teilnahme eindeutig (verhindert
+ * Copy-Paste eines fremden Kommentars). Der Abgleich erfolgt überall
+ * case-insensitive (siehe giveawayVerify.ts), Groß-/Kleinschreibung spielt
+ * beim Kommentieren also keine Rolle.
+ */
+function generateCode(requiredText: string): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return `DF-${code}`;
+  let suffix = '';
+  for (let i = 0; i < 6; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
+  const prefix = requiredText.trim().replace(/[^a-zA-Z0-9]+/g, '').slice(0, 20) || 'dfaith';
+  return `${prefix}-${suffix}`;
 }
 
 /** Kampagne erstellen. Sperrt sofort creditReward * maxWinners vom Künstler-Guthaben (Escrow). */
@@ -130,6 +142,7 @@ export async function createGiveawayCampaign(
   artistWallet: string,
   title: string,
   imageUrl: string | null,
+  mediaType: 'image' | 'video',
   requiredText: string,
   creditReward: number,
   maxWinners: number,
@@ -145,8 +158,8 @@ export async function createGiveawayCampaign(
   const id = `gw_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   try {
     await sql`
-      INSERT INTO giveaway_campaigns (id, artist_wallet, title, image_url, required_text, credit_reward, max_winners, credits_locked, status)
-      VALUES (${id}, ${artistWallet.toLowerCase()}, ${title}, ${imageUrl}, ${requiredText}, ${creditReward}, ${maxWinners}, ${totalBudget}, 'active')
+      INSERT INTO giveaway_campaigns (id, artist_wallet, title, image_url, media_type, required_text, credit_reward, max_winners, credits_locked, status)
+      VALUES (${id}, ${artistWallet.toLowerCase()}, ${title}, ${imageUrl}, ${mediaType}, ${requiredText}, ${creditReward}, ${maxWinners}, ${totalBudget}, 'active')
     `;
     for (const p of platforms) {
       const pid = `gwp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -248,7 +261,7 @@ export async function startGiveawayEntry(
   if (existing.length > 0) return { entry: rowToEntry(existing[0]) };
 
   const id = `gwe_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  const code = generateCode();
+  const code = generateCode(campaign.requiredText);
   await sql`
     INSERT INTO giveaway_entries (id, campaign_id, platform, handle, email, code, status)
     VALUES (${id}, ${campaignId}, ${platform}, ${cleanHandle}, ${cleanEmail}, ${code}, 'pending')

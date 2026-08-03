@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
-import { FaPlus, FaGift, FaCopy, FaInstagram, FaTiktok, FaFacebook, FaYoutube, FaLock } from 'react-icons/fa';
+import { FaPlus, FaGift, FaCopy, FaInstagram, FaTiktok, FaFacebook, FaYoutube, FaLock, FaSync, FaCoins } from 'react-icons/fa';
 import { upload } from '@vercel/blob/client';
 
 // ─── Giveaways (Artist-Tool) ──────────────────────────────────────────────────
@@ -17,10 +17,65 @@ const GIVEAWAY_PLATFORM_META: Record<GiveawayPlatformKey, { label: string; icon:
 };
 const GIVEAWAY_PLATFORMS: GiveawayPlatformKey[] = ['instagram', 'tiktok', 'facebook', 'youtube'];
 
+const AVAILABLE_MEDIA_ENDPOINT: Record<GiveawayPlatformKey, string> = {
+  instagram: '/api/instagram-quests/available-media',
+  tiktok:    '/api/tiktok-quests/available-media',
+  facebook:  '/api/facebook-quests/available-media',
+  youtube:   '/api/youtube-quests/available-media',
+};
+
+interface MediaPickItem {
+  id: string;
+  url: string;
+  thumbnail: string;
+  title: string;
+}
+
+/** Normalisiert die unterschiedlichen available-media Antwortformate der 4 Plattformen. */
+async function fetchAvailableMedia(platform: GiveawayPlatformKey, wallet: string): Promise<{ items: MediaPickItem[]; hint?: string; error?: string }> {
+  try {
+    const res = await fetch(`${AVAILABLE_MEDIA_ENDPOINT[platform]}?wallet=${encodeURIComponent(wallet)}`);
+    const data = await res.json();
+    if (data.error) return { items: [], error: data.error };
+
+    const raw: any[] = Array.isArray(data.media) ? data.media : [];
+    let items: MediaPickItem[] = [];
+
+    if (platform === 'instagram') {
+      items = raw.map(m => ({
+        id: String(m.graph_media_id || m.shortcode || ''),
+        url: String(m.permalink || ''),
+        thumbnail: String(m.thumbnail_url || m.media_url || ''),
+        title: String(m.caption || '').slice(0, 70),
+      }));
+    } else if (platform === 'facebook') {
+      items = raw.map(m => ({
+        id: String(m.post_id || ''),
+        url: String(m.permalink || ''),
+        thumbnail: String(m.thumbnail_url || ''),
+        title: String(m.caption || '').slice(0, 70),
+      }));
+    } else {
+      // tiktok + youtube teilen sich das gleiche Format
+      items = raw.map(m => ({
+        id: String(m.video_id || ''),
+        url: String(m.video_url || ''),
+        thumbnail: String(m.thumbnail_url || ''),
+        title: String(m.title || '').slice(0, 70),
+      }));
+    }
+
+    return { items: items.filter(i => i.id && i.url), hint: data.hint };
+  } catch {
+    return { items: [], error: 'Videos konnten nicht geladen werden.' };
+  }
+}
+
 interface GiveawayCampaignData {
   id: string;
   title: string;
   imageUrl: string | null;
+  mediaType: 'image' | 'video';
   requiredText: string;
   creditReward: number;
   maxWinners: number;
@@ -32,27 +87,40 @@ interface GiveawayCampaignData {
 function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
   const [campaigns, setCampaigns] = useState<GiveawayCampaignData[]>([]);
   const [loading, setLoading]     = useState(true);
+  const [balance, setBalance]     = useState<number | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating]   = useState(false);
   const [error, setError]         = useState('');
   const [copiedId, setCopiedId]   = useState<string | null>(null);
 
   const [title, setTitle]                 = useState('');
-  const [imageFile, setImageFile]         = useState<File | null>(null);
-  const [imagePreview, setImagePreview]   = useState<string | null>(null);
+  const [mediaFile, setMediaFile]         = useState<File | null>(null);
+  const [mediaPreview, setMediaPreview]   = useState<string | null>(null);
+  const [mediaType, setMediaType]         = useState<'image' | 'video'>('image');
   const [creditReward, setCreditReward]   = useState('50');
   const [maxWinners, setMaxWinners]       = useState('20');
   const [requiredText, setRequiredText]   = useState('dfaith');
   const [enabledPlatforms, setEnabledPlatforms] = useState<Partial<Record<GiveawayPlatformKey, boolean>>>({});
   const [platformUrls, setPlatformUrls]         = useState<Partial<Record<GiveawayPlatformKey, string>>>({});
+  const [platformMediaIds, setPlatformMediaIds] = useState<Partial<Record<GiveawayPlatformKey, string>>>({});
+  const [mediaLists, setMediaLists]     = useState<Partial<Record<GiveawayPlatformKey, MediaPickItem[]>>>({});
+  const [mediaLoading, setMediaLoading] = useState<Partial<Record<GiveawayPlatformKey, boolean>>>({});
+  const [mediaHint, setMediaHint]       = useState<Partial<Record<GiveawayPlatformKey, string>>>({});
 
   const load = useCallback(async () => {
     if (!artistWallet) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/giveaways/campaigns?artistWallet=${artistWallet}`);
-      const data = await res.json();
+      const [campaignsRes, balanceRes] = await Promise.all([
+        fetch(`/api/giveaways/campaigns?artistWallet=${artistWallet}`),
+        fetch(`/api/youtube-quests/creator-balance?wallet=${artistWallet}`),
+      ]);
+      const data = await campaignsRes.json();
       setCampaigns(data.campaigns ?? []);
+      if (balanceRes.ok) {
+        const balData = await balanceRes.json();
+        setBalance(typeof balData.balance === 'number' ? balData.balance : Number(balData.balance ?? 0));
+      }
     } finally {
       setLoading(false);
     }
@@ -61,9 +129,31 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
   useEffect(() => { load(); }, [load]);
 
   const resetForm = () => {
-    setTitle(''); setImageFile(null); setImagePreview(null);
+    setTitle(''); setMediaFile(null); setMediaPreview(null); setMediaType('image');
     setCreditReward('50'); setMaxWinners('20'); setRequiredText('dfaith');
-    setEnabledPlatforms({}); setPlatformUrls({});
+    setEnabledPlatforms({}); setPlatformUrls({}); setPlatformMediaIds({});
+    setMediaLists({}); setMediaLoading({}); setMediaHint({});
+  };
+
+  const loadMediaForPlatform = async (p: GiveawayPlatformKey) => {
+    setMediaLoading(prev => ({ ...prev, [p]: true }));
+    setMediaHint(prev => ({ ...prev, [p]: '' }));
+    const { items, hint, error: err } = await fetchAvailableMedia(p, artistWallet);
+    setMediaLists(prev => ({ ...prev, [p]: items }));
+    if (hint || err) setMediaHint(prev => ({ ...prev, [p]: hint || err || '' }));
+    setMediaLoading(prev => ({ ...prev, [p]: false }));
+  };
+
+  const togglePlatform = (p: GiveawayPlatformKey, checked: boolean) => {
+    setEnabledPlatforms(prev => ({ ...prev, [p]: checked }));
+    if (checked && !mediaLists[p] && !mediaLoading[p]) {
+      loadMediaForPlatform(p);
+    }
+  };
+
+  const pickMedia = (p: GiveawayPlatformKey, item: MediaPickItem) => {
+    setPlatformUrls(prev => ({ ...prev, [p]: item.url }));
+    setPlatformMediaIds(prev => ({ ...prev, [p]: item.id }));
   };
 
   const handleCreate = async () => {
@@ -72,30 +162,31 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
     const winners = Math.round(Number(maxWinners));
     const platforms = GIVEAWAY_PLATFORMS
       .filter(p => enabledPlatforms[p])
-      .map(p => ({ platform: p, postUrl: (platformUrls[p] ?? '').trim() }));
+      .map(p => ({ platform: p, postUrl: (platformUrls[p] ?? '').trim(), mediaId: platformMediaIds[p] ?? null }));
 
     if (!title.trim()) return setError('Bitte einen Titel eingeben.');
     if (!reward || reward <= 0) return setError('Ungültige Credit-Belohnung.');
     if (!winners || winners <= 0) return setError('Ungültige Gewinneranzahl.');
     if (platforms.length === 0) return setError('Mindestens eine Plattform aktivieren.');
-    if (platforms.some(p => !p.postUrl)) return setError('Bitte für jede aktivierte Plattform einen Link angeben.');
+    if (platforms.some(p => !p.postUrl)) return setError('Bitte für jede aktivierte Plattform ein Video auswählen oder einen Link angeben.');
+    if (balance !== null && reward * winners > balance) return setError(`Nicht genug Guthaben — Budget benötigt ${(reward * winners).toLocaleString('de-DE')} Credits, verfügbar sind ${balance.toLocaleString('de-DE')}.`);
 
     setCreating(true);
     try {
-      let imageUrl: string | null = null;
-      if (imageFile) {
-        const blob = await upload(`giveaways/${artistWallet}/${Date.now()}-${imageFile.name}`, imageFile, {
+      let mediaUrl: string | null = null;
+      if (mediaFile) {
+        const blob = await upload(`giveaways/${artistWallet}/${Date.now()}-${mediaFile.name}`, mediaFile, {
           access: 'public',
           handleUploadUrl: '/api/giveaways/upload',
           clientPayload: JSON.stringify({ wallet: artistWallet }),
         });
-        imageUrl = blob.url;
+        mediaUrl = blob.url;
       }
       const res = await fetch('/api/giveaways/campaigns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          artistWallet, title: title.trim(), imageUrl,
+          artistWallet, title: title.trim(), imageUrl: mediaUrl, mediaType,
           requiredText: requiredText.trim() || 'dfaith',
           creditReward: reward, maxWinners: winners, platforms,
         }),
@@ -128,6 +219,20 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
 
   return (
     <div className="px-4">
+      {/* ── Guthaben ── */}
+      <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 mb-4 flex items-center justify-between">
+        <div>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-0.5">Verfügbares Guthaben</p>
+          <p className="text-amber-300 font-black text-xl leading-none flex items-center gap-1.5">
+            <FaCoins size={14} />{balance === null ? '…' : balance.toLocaleString('de-DE')}
+          </p>
+          <p className="text-zinc-500 text-[9px] mt-0.5">D.FAITH Credits</p>
+        </div>
+        <p className="text-zinc-500 text-[10px] max-w-[130px] text-right leading-snug">
+          Wird bei Kampagnenstart als Budget reserviert
+        </p>
+      </div>
+
       <button
         onClick={() => setShowCreate(v => !v)}
         className="w-full mb-4 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-black font-black rounded-xl py-3 text-sm transition-all"
@@ -138,20 +243,25 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
       {showCreate && (
         <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 mb-4 space-y-3">
           <div>
-            <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">Banner (optional)</label>
-            <label className="flex items-center justify-center bg-white/[0.03] border border-dashed border-white/[0.15] rounded-xl h-24 cursor-pointer overflow-hidden">
-              {imagePreview ? (
-                <Image src={imagePreview} alt="" width={400} height={96} className="w-full h-full object-cover" />
+            <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">Banner: Bild oder Teaser-Video (optional)</label>
+            <label className="flex items-center justify-center bg-white/[0.03] border border-dashed border-white/[0.15] rounded-xl h-28 cursor-pointer overflow-hidden">
+              {mediaPreview ? (
+                mediaType === 'video' ? (
+                  <video src={mediaPreview} className="w-full h-full object-cover" muted autoPlay loop playsInline />
+                ) : (
+                  <Image src={mediaPreview} alt="" width={400} height={112} className="w-full h-full object-cover" />
+                )
               ) : (
-                <span className="text-zinc-500 text-xs">Bild wählen</span>
+                <span className="text-zinc-500 text-xs">Bild oder Video wählen</span>
               )}
               <input
-                type="file" accept="image/*" className="hidden"
+                type="file" accept="image/*,video/*" className="hidden"
                 onChange={e => {
                   const f = e.target.files?.[0];
                   if (!f) return;
-                  setImageFile(f);
-                  setImagePreview(URL.createObjectURL(f));
+                  setMediaFile(f);
+                  setMediaType(f.type.startsWith('video/') ? 'video' : 'image');
+                  setMediaPreview(URL.createObjectURL(f));
                 }}
               />
             </label>
@@ -183,8 +293,13 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
             </div>
           </div>
 
-          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 text-amber-300 text-xs font-semibold">
+          <div className={`rounded-xl px-3 py-2 text-xs font-semibold border ${
+            balance !== null && (Number(creditReward) || 0) * (Number(maxWinners) || 0) > balance
+              ? 'bg-red-500/10 border-red-500/20 text-red-400'
+              : 'bg-amber-500/10 border-amber-500/20 text-amber-300'
+          }`}>
             Budget: {((Number(creditReward) || 0) * (Number(maxWinners) || 0)).toLocaleString('de-DE')} Credits werden bei Erstellung reserviert
+            {balance !== null && ` (verfügbar: ${balance.toLocaleString('de-DE')})`}
           </div>
 
           <div>
@@ -193,6 +308,7 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
               value={requiredText} onChange={e => setRequiredText(e.target.value)}
               className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60"
             />
+            <p className="text-zinc-600 text-[10px] mt-1">Jeder Fan bekommt einen eigenen Code auf Basis dieses Worts (z.B. „{requiredText || 'dfaith'}-7F3K9Q") — Groß-/Kleinschreibung spielt beim Kommentieren keine Rolle.</p>
           </div>
 
           <div className="space-y-2">
@@ -202,17 +318,62 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
                 <label className="flex items-center gap-2 text-xs font-semibold text-zinc-200 mb-1.5 cursor-pointer">
                   <input
                     type="checkbox" checked={!!enabledPlatforms[p]}
-                    onChange={e => setEnabledPlatforms(prev => ({ ...prev, [p]: e.target.checked }))}
+                    onChange={e => togglePlatform(p, e.target.checked)}
                   />
                   {GIVEAWAY_PLATFORM_META[p].icon} {GIVEAWAY_PLATFORM_META[p].label}
                 </label>
                 {enabledPlatforms[p] && (
-                  <input
-                    value={platformUrls[p] ?? ''}
-                    onChange={e => setPlatformUrls(prev => ({ ...prev, [p]: e.target.value }))}
-                    placeholder="Link zum Post / Reel / Video"
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500/60"
-                  />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-zinc-500 text-[10px]">Verfügbare Videos/Posts</p>
+                      <button
+                        onClick={() => loadMediaForPlatform(p)}
+                        disabled={mediaLoading[p]}
+                        className="flex items-center gap-1 text-[10px] text-amber-400 hover:text-amber-300 font-semibold disabled:opacity-50"
+                      >
+                        <FaSync size={9} className={mediaLoading[p] ? 'animate-spin' : ''} /> Aktualisieren
+                      </button>
+                    </div>
+
+                    {mediaLoading[p] ? (
+                      <div className="flex justify-center py-4">
+                        <span className="w-5 h-5 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+                      </div>
+                    ) : (mediaLists[p]?.length ?? 0) > 0 ? (
+                      <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+                        {mediaLists[p]!.map(item => (
+                          <button
+                            key={item.id}
+                            onClick={() => pickMedia(p, item)}
+                            title={item.title}
+                            className={`shrink-0 w-16 rounded-lg overflow-hidden border-2 transition-all ${
+                              platformMediaIds[p] === item.id ? 'border-amber-400' : 'border-transparent'
+                            }`}
+                          >
+                            {item.thumbnail ? (
+                              <Image src={item.thumbnail} alt="" width={64} height={64} className="w-16 h-16 object-cover" unoptimized />
+                            ) : (
+                              <div className="w-16 h-16 bg-white/[0.06] flex items-center justify-center text-zinc-600 text-[9px]">?</div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    ) : mediaHint[p] ? (
+                      <p className="text-amber-400/80 text-[10px] bg-amber-500/5 rounded-lg p-2">{mediaHint[p]}</p>
+                    ) : (
+                      <p className="text-zinc-600 text-[10px]">Keine Videos gefunden.</p>
+                    )}
+
+                    <input
+                      value={platformUrls[p] ?? ''}
+                      onChange={e => {
+                        setPlatformUrls(prev => ({ ...prev, [p]: e.target.value }));
+                        setPlatformMediaIds(prev => ({ ...prev, [p]: '' }));
+                      }}
+                      placeholder="…oder Link manuell einfügen"
+                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500/60"
+                    />
+                  </div>
                 )}
               </div>
             ))}
@@ -244,7 +405,11 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
           {campaigns.map(c => (
             <div key={c.id} className="bg-white/[0.04] border border-white/[0.08] rounded-2xl overflow-hidden">
               {c.imageUrl && (
-                <Image src={c.imageUrl} alt={c.title} width={600} height={160} className="w-full h-32 object-cover" />
+                c.mediaType === 'video' ? (
+                  <video src={c.imageUrl} className="w-full h-32 object-cover" muted autoPlay loop playsInline />
+                ) : (
+                  <Image src={c.imageUrl} alt={c.title} width={600} height={160} className="w-full h-32 object-cover" />
+                )
               )}
               <div className="p-3.5">
                 <div className="flex items-center justify-between mb-2 gap-2">

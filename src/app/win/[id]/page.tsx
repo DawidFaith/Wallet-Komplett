@@ -20,6 +20,7 @@ interface PublicCampaign {
   id: string;
   title: string;
   imageUrl: string | null;
+  mediaType: 'image' | 'video';
   requiredText: string;
   creditReward: number;
   status: 'active' | 'ended';
@@ -133,7 +134,11 @@ export default function GiveawayLandingPage() {
     <div className="min-h-screen bg-[#0e0c0a] text-white pb-16">
       <div className="max-w-md mx-auto w-full">
         {campaign.imageUrl && (
-          <Image src={campaign.imageUrl} alt={campaign.title} width={800} height={400} className="w-full h-48 object-cover" />
+          campaign.mediaType === 'video' ? (
+            <video src={campaign.imageUrl} className="w-full h-48 object-cover" muted autoPlay loop playsInline controls />
+          ) : (
+            <Image src={campaign.imageUrl} alt={campaign.title} width={800} height={400} className="w-full h-48 object-cover" />
+          )
         )}
         <div className="px-5 pt-6">
           <div className="flex items-center gap-2 mb-2">

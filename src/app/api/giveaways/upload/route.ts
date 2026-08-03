@@ -19,9 +19,12 @@ export async function POST(req: NextRequest) {
         const rows = await sql`SELECT is_artist FROM user_profiles WHERE wallet_address = ${wallet.toLowerCase()} LIMIT 1`;
         if (!rows.length || !rows[0].is_artist) throw new Error('Nur Artists dürfen Giveaway-Banner hochladen');
         return {
-          allowedContentTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+          allowedContentTypes: [
+            'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+            'video/mp4', 'video/webm', 'video/quicktime',
+          ],
           tokenPayload: JSON.stringify({ wallet }),
-          maximumSizeInBytes: 8 * 1024 * 1024,
+          maximumSizeInBytes: 50 * 1024 * 1024,
         };
       },
       onUploadCompleted: async () => {},

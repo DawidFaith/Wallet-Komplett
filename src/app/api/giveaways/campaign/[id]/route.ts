@@ -15,6 +15,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       id: campaign.id,
       title: campaign.title,
       imageUrl: campaign.imageUrl,
+      mediaType: campaign.mediaType,
       requiredText: campaign.requiredText,
       creditReward: campaign.creditReward,
       status: campaign.status,
