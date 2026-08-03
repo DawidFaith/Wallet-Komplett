@@ -345,6 +345,7 @@ export default function SocialVerifyModal({
                     <li key={i}>{step}</li>
                   ))}
                 </ol>
+                <p className="text-yellow-500 text-xs">⏳ Nach dem Speichern kann es bis zu 1 Minute oder länger dauern, bis TikTok die neue Bio öffentlich anzeigt. Klappt die Verifizierung nicht sofort, warte kurz und versuche es erneut.</p>
               </div>
               )}
 
@@ -380,7 +381,7 @@ export default function SocialVerifyModal({
                   <span className="text-pink-300 font-mono text-sm">@dfaith_ecosystem</span>
                   <span className="text-zinc-500 text-xs ml-auto">Profil öffnen ↗</span>
                 </a>
-                <p className="text-yellow-500 text-xs">⏳ Warte kurz nach dem Kommentieren, bevor du auf &quot;Verifizieren&quot; klickst.</p>
+                <p className="text-yellow-500 text-xs">⏳ Nach dem Kommentieren kann es bis zu 1 Minute oder länger dauern, bis der Kommentar abrufbar ist. Klappt die Verifizierung nicht sofort, warte kurz und versuche es erneut.</p>
               </div>
               )}
 
@@ -416,7 +417,7 @@ export default function SocialVerifyModal({
                   <span className="text-blue-300 font-mono text-sm">D.Faith Ecosystem</span>
                   <span className="text-zinc-500 text-xs ml-auto">Seite öffnen ↗</span>
                 </a>
-                <p className="text-yellow-500 text-xs">⏳ Warte kurz nach dem Kommentieren, bevor du auf &quot;Verifizieren&quot; klickst.</p>
+                <p className="text-yellow-500 text-xs">⏳ Nach dem Kommentieren kann es bis zu 1 Minute oder länger dauern, bis der Kommentar abrufbar ist. Klappt die Verifizierung nicht sofort, warte kurz und versuche es erneut.</p>
               </div>
               )}
 

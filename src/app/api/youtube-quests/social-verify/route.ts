@@ -398,7 +398,7 @@ async function handlePost(req: NextRequest) {
       if (!mentionFound) {
         return NextResponse.json({
           notFound: true,
-          message: `Code "${verificationCode}" nicht in einem Kommentar von @${cleanHandle} auf @dfaith_ecosystem gefunden. Kommentiere den Code auf einem Post von @dfaith_ecosystem und versuche es erneut.`,
+          message: `Code "${verificationCode}" nicht in einem Kommentar von @${cleanHandle} auf @dfaith_ecosystem gefunden. Falls du den Kommentar bereits geschrieben hast: Instagram braucht manchmal bis zu 1 Minute oder länger, bis er sichtbar/abrufbar ist — warte kurz und versuche es erneut. Falls nicht, kommentiere den Code zuerst auf einem Post von @dfaith_ecosystem.`,
         });
       }
 
@@ -477,7 +477,7 @@ async function handlePost(req: NextRequest) {
       if (!fbResult.found) {
         return NextResponse.json({
           notFound: true,
-          message: `Code "${verificationCode}" nicht in einem Kommentar auf der D.Faith Ecosystem Facebook-Seite gefunden. Kommentiere den Code unter einem Post und versuche es erneut.`,
+          message: `Code "${verificationCode}" nicht in einem Kommentar auf der D.Faith Ecosystem Facebook-Seite gefunden. Falls du den Kommentar bereits geschrieben hast: Facebook braucht manchmal bis zu 1 Minute oder länger, bis er sichtbar/abrufbar ist — warte kurz und versuche es erneut. Falls nicht, kommentiere den Code zuerst unter einem Post.`,
         });
       }
 
@@ -532,7 +532,7 @@ async function handlePost(req: NextRequest) {
     if (!verified) {
       return NextResponse.json({
         notFound: true,
-        message: `Code "${verificationCode}" nicht in der Bio von @${cleanHandle} gefunden. Bitte füge den Code zuerst in deine Bio ein und versuche es erneut.`,
+        message: `Code "${verificationCode}" nicht in der Bio von @${cleanHandle} gefunden. Falls du den Code bereits eingetragen und gespeichert hast: TikTok braucht manchmal bis zu 1 Minute oder länger, bis die neue Bio öffentlich abrufbar ist — warte kurz und versuche es erneut. Falls nicht, füge den Code zuerst in deine Bio ein.`,
       });
     }
 
