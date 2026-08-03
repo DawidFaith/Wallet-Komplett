@@ -308,7 +308,7 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
               value={requiredText} onChange={e => setRequiredText(e.target.value)}
               className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60"
             />
-            <p className="text-zinc-600 text-[10px] mt-1">Jeder Fan bekommt einen eigenen Code auf Basis dieses Worts (z.B. „{requiredText || 'dfaith'}-7F3K9Q") — Groß-/Kleinschreibung spielt beim Kommentieren keine Rolle.</p>
+            <p className="text-zinc-600 text-[10px] mt-1">Jeder Fan bekommt einen eigenen Code auf Basis dieses Worts (z.B. „{requiredText || 'dfaith'}-7F3K9Q&quot;) — Groß-/Kleinschreibung spielt beim Kommentieren keine Rolle.</p>
           </div>
 
           <div className="space-y-2">
