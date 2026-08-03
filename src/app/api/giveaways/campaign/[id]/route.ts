@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPublicGiveawayCampaign, getLatestGiveawayCampaignByArtist, getUserProfile } from '../../../../lib/questDb';
+import { getPublicGiveawayCampaign, getLatestGiveawayCampaignByArtist, getArtistWalletBySlug, getUserProfile } from '../../../../lib/questDb';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 export const revalidate = 0;
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  // Der öffentliche Link ist entweder eine konkrete Kampagnen-ID (gw_...) oder
-  // die Wallet-Adresse eines Artists — dann wird dessen neuestes Gewinnspiel
-  // angezeigt. So bleibt ein einmal geteilter Link (z.B. für automatisierte
-  // Social-Media-Antworten) dauerhaft gültig, auch wenn Kampagnen wechseln.
-  const campaign = (await getPublicGiveawayCampaign(params.id)) ?? (await getLatestGiveawayCampaignByArtist(params.id));
+  // Der öffentliche Link ist entweder eine konkrete Kampagnen-ID (gw_...), der
+  // Namens-Slug eines Artists (z.B. "dawid-faith") oder — als Altlast — direkt
+  // dessen Wallet-Adresse. In jedem Fall wird sein neuestes Gewinnspiel gezeigt,
+  // damit ein einmal geteilter Link (z.B. für automatisierte Social-Media-
+  // Antworten) dauerhaft gültig bleibt, auch wenn Kampagnen wechseln.
+  let campaign = await getPublicGiveawayCampaign(params.id);
+  if (!campaign) {
+    const artistWallet = (await getArtistWalletBySlug(params.id)) ?? params.id;
+    campaign = await getLatestGiveawayCampaignByArtist(artistWallet);
+  }
   if (!campaign) return NextResponse.json({ error: 'Gewinnspiel nicht gefunden' }, { status: 404 });
 
   // Anzeigename des Veranstalters für Teilnahmebedingungen — keine Wallet-Adresse rausgeben

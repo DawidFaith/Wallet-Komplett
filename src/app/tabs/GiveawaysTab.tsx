@@ -6,6 +6,7 @@ import { FaPlus, FaGift, FaCopy, FaInstagram, FaTiktok, FaFacebook, FaYoutube, F
 import { upload } from '@vercel/blob/client';
 import { useLang } from '../components/LangContext';
 import { t, tFmt } from '../utils/i18n';
+import { slugify } from '../utils/slug';
 
 // ─── Giveaways (Artist-Tool) ──────────────────────────────────────────────────
 
@@ -86,7 +87,7 @@ interface GiveawayCampaignData {
   platforms: { platform: GiveawayPlatformKey; postUrl: string }[];
 }
 
-function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
+function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; artistName: string | null }) {
   const lang = useLang();
   const [campaigns, setCampaigns] = useState<GiveawayCampaignData[]>([]);
   const [loading, setLoading]     = useState(true);
@@ -225,8 +226,10 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
 
   // Permanenter Link, immer gleich — zeigt automatisch die neueste Kampagne dieses
   // Artists an. Wichtig für automatisierte Antworten (z.B. TikTok-Kommentar-Bots),
-  // die sonst pro Kampagne neu durch den App-Review müssten.
-  const permanentLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/win/${artistWallet}`;
+  // die sonst pro Kampagne neu durch den App-Review müssten. Nutzt den lesbaren
+  // Namens-Slug statt der rohen Wallet-ID, sofern ein Anzeigename gesetzt ist.
+  const linkSlug = artistName ? slugify(artistName) : '';
+  const permanentLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/win/${linkSlug || artistWallet}`;
 
   const copyPermanentLink = () => {
     navigator.clipboard.writeText(permanentLink).then(() => {
@@ -494,12 +497,16 @@ export default function GiveawaysTab() {
   const { user } = useUser();
   const walletAddress = user?.id ?? '';
   const [isArtist, setIsArtist] = useState<boolean | null>(null);
+  const [artistName, setArtistName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!walletAddress) return;
     fetch(`/api/youtube-quests/profile?wallet=${walletAddress}`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => setIsArtist(!!(data?.profile?.isArtist)))
+      .then(data => {
+        setIsArtist(!!(data?.profile?.isArtist));
+        setArtistName(data?.profile?.displayName ?? data?.profile?.clerkName ?? null);
+      })
       .catch(() => setIsArtist(false));
   }, [walletAddress]);
 
@@ -525,7 +532,7 @@ export default function GiveawaysTab() {
             <span className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
           </div>
         ) : isArtist ? (
-          <GiveawaysPanel artistWallet={walletAddress} />
+          <GiveawaysPanel artistWallet={walletAddress} artistName={artistName} />
         ) : (
           <div className="text-center py-16 px-6">
             <FaLock className="text-zinc-600 mx-auto mb-3" size={26} />

@@ -1,6 +1,7 @@
 import { getDb } from '../db';
 import { addDfaithCredits } from './credits';
 import { lockQuestBudget } from './quests';
+import { slugify } from '../../utils/slug';
 
 export type GiveawayPlatform = 'instagram' | 'tiktok' | 'facebook' | 'youtube';
 
@@ -223,6 +224,24 @@ export async function getPublicGiveawayCampaign(campaignId: string): Promise<Giv
   if (rows.length === 0) return null;
   const platRows = await sql`SELECT platform, post_url, media_id FROM giveaway_campaign_platforms WHERE campaign_id = ${campaignId}`;
   return rowToCampaign(rows[0], platRows.map(p => ({ platform: p.platform as GiveawayPlatform, postUrl: p.post_url as string, mediaId: p.media_id as string | null })));
+}
+
+/**
+ * Löst einen URL-Slug (z.B. "dawid-faith", abgeleitet vom Anzeigenamen des Artists)
+ * zur passenden Wallet-Adresse auf — damit der permanente Fan-Link lesbar ist statt
+ * einer rohen Wallet-/Clerk-ID. Bei Namenskollisionen zwischen zwei Artists gewinnt
+ * schlicht der erste Treffer (in der Praxis vernachlässigbar bei der Artist-Anzahl).
+ */
+export async function getArtistWalletBySlug(slug: string): Promise<string | null> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT wallet_address, display_name, clerk_name FROM user_profiles WHERE is_artist = TRUE
+  `;
+  for (const r of rows) {
+    const name = (r.display_name as string | null) ?? (r.clerk_name as string | null);
+    if (name && slugify(name) === slug) return r.wallet_address as string;
+  }
+  return null;
 }
 
 /**
