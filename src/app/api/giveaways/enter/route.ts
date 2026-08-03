@@ -9,16 +9,19 @@ const DUPLICATE_EMAIL_MESSAGE = 'Mit dieser E-Mail-Adresse wurde bereits eine Be
 const PENDING_SIGNUP_MESSAGE = 'Verifiziert! Melde dich im D.FAITH Ecosystem an und verknüpfe diesen Account, um deine Credits automatisch gutgeschrieben zu bekommen. Wir haben dir außerdem eine E-Mail mit den nächsten Schritten geschickt.';
 
 export async function POST(req: NextRequest) {
-  let body: { campaignId?: string; platform?: string; handle?: string; email?: string };
+  let body: { campaignId?: string; platform?: string; handle?: string; email?: string; consent?: boolean };
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 }); }
 
-  const { campaignId, platform, handle, email } = body;
+  const { campaignId, platform, handle, email, consent } = body;
   if (!campaignId || !platform || !handle || !email) {
     return NextResponse.json({ error: 'campaignId, platform, handle und email sind erforderlich.' }, { status: 400 });
   }
   if (!/^\S+@\S+\.\S+$/.test(email)) {
     return NextResponse.json({ error: 'Ungültige E-Mail-Adresse.' }, { status: 400 });
+  }
+  if (consent !== true) {
+    return NextResponse.json({ error: 'Zustimmung zu den Teilnahmebedingungen und Datenschutzhinweisen ist erforderlich.' }, { status: 400 });
   }
 
   const result = await startGiveawayEntry(campaignId, platform as GiveawayPlatform, handle, email);

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import { FaInstagram, FaTiktok, FaFacebook, FaYoutube, FaGift, FaExternalLinkAlt, FaCheckCircle } from 'react-icons/fa';
 import { useLang, useSetLang } from '../../components/LangContext';
@@ -48,6 +49,7 @@ interface PublicCampaign {
   status: 'active' | 'ended';
   slotsLeft: number;
   platforms: { platform: Platform; postUrl: string }[];
+  artistName: string;
 }
 
 interface PendingState {
@@ -68,6 +70,7 @@ export default function GiveawayLandingPage() {
   const [platform, setPlatform] = useState<Platform | null>(null);
   const [handle, setHandle]     = useState('');
   const [email, setEmail]       = useState('');
+  const [consent, setConsent]   = useState(false);
   const [starting, setStarting] = useState(false);
   const [error, setError]       = useState('');
 
@@ -98,13 +101,14 @@ export default function GiveawayLandingPage() {
     if (!platform) return setError(t('win.step1Title', lang));
     if (!handle.trim()) return setError(t('win.handleLabel', lang));
     if (!/^\S+@\S+\.\S+$/.test(email)) return setError(t('win.emailLabel', lang));
+    if (!consent) return setError(t('win.consentRequired', lang));
 
     setStarting(true);
     try {
       const res = await fetch('/api/giveaways/enter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ campaignId, platform, handle: handle.trim(), email: email.trim() }),
+        body: JSON.stringify({ campaignId, platform, handle: handle.trim(), email: email.trim(), consent: true }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? 'Error'); return; }
@@ -276,6 +280,27 @@ export default function GiveawayLandingPage() {
                   />
                 </div>
               </div>
+
+              <p className="text-zinc-600 text-[10px] leading-relaxed">
+                {tFmt('win.platformDisclaimer', lang, {
+                  platforms: campaign.platforms.map(p => PLATFORM_META[p.platform].label).join(', '),
+                })}
+              </p>
+
+              <label className="flex items-start gap-2 text-xs text-zinc-400 cursor-pointer">
+                <input
+                  type="checkbox" checked={consent}
+                  onChange={e => setConsent(e.target.checked)}
+                  className="mt-0.5 shrink-0"
+                />
+                <span>
+                  {t('win.consentPrefix', lang)}{' '}
+                  <Link href={`/win/${campaignId}/terms`} target="_blank" className="text-amber-400 hover:text-amber-300 underline">
+                    {t('win.termsAndPrivacyLabel', lang)}
+                  </Link>{' '}
+                  {t('win.consentSuffix', lang)}
+                </span>
+              </label>
 
               {error && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg p-2.5">{error}</p>}
 
