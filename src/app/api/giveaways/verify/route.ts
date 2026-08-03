@@ -60,13 +60,19 @@ export async function POST(req: NextRequest) {
   }
 
   if (result.status === 'verified') {
-    sendGiveawaySignupInviteEmail({
-      toEmail: entry.email,
-      campaignTitle: campaign.title,
-      platform: entry.platform,
-      handle: entry.handle,
-      creditReward: campaign.creditReward,
-    }).catch(e => console.error('[giveaways/verify] Einladungsmail fehlgeschlagen:', e));
+    // Wichtig: await'en statt fire-and-forget — Vercel kann die Serverless-Funktion
+    // beenden, sobald die Response raus ist, und würde den Mailversand sonst abwürgen.
+    try {
+      await sendGiveawaySignupInviteEmail({
+        toEmail: entry.email,
+        campaignTitle: campaign.title,
+        platform: entry.platform,
+        handle: entry.handle,
+        creditReward: campaign.creditReward,
+      });
+    } catch (e) {
+      console.error('[giveaways/verify] Einladungsmail fehlgeschlagen:', e);
+    }
   }
 
   return NextResponse.json({
