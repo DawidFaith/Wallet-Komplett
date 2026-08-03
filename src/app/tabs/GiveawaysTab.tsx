@@ -94,7 +94,7 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating]   = useState(false);
   const [error, setError]         = useState('');
-  const [copiedId, setCopiedId]   = useState<string | null>(null);
+  const [copiedPermanent, setCopiedPermanent] = useState(false);
 
   const [title, setTitle]                 = useState('');
   const [mediaFile, setMediaFile]         = useState<File | null>(null);
@@ -223,13 +223,19 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
     await load();
   };
 
-  const copyLink = (id: string) => {
-    const url = `${window.location.origin}/win/${id}`;
-    navigator.clipboard.writeText(url).then(() => {
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
+  // Permanenter Link, immer gleich — zeigt automatisch die neueste Kampagne dieses
+  // Artists an. Wichtig für automatisierte Antworten (z.B. TikTok-Kommentar-Bots),
+  // die sonst pro Kampagne neu durch den App-Review müssten.
+  const permanentLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/win/${artistWallet}`;
+
+  const copyPermanentLink = () => {
+    navigator.clipboard.writeText(permanentLink).then(() => {
+      setCopiedPermanent(true);
+      setTimeout(() => setCopiedPermanent(false), 2000);
     }).catch(() => {});
   };
+
+  const hasActiveCampaign = campaigns.some(c => c.status === 'active');
 
   return (
     <div className="px-4">
@@ -247,12 +253,31 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
         </p>
       </div>
 
+      {/* ── Permanenter Link ── */}
+      <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 mb-4">
+        <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-1.5">{t('gw.permanentLinkLabel', lang)}</p>
+        <div className="flex items-center gap-2">
+          <code className="flex-1 min-w-0 truncate text-amber-300 text-xs bg-black/20 rounded-lg px-2.5 py-2">{permanentLink}</code>
+          <button
+            onClick={copyPermanentLink}
+            className="shrink-0 flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 rounded-lg px-3 py-2 text-xs font-semibold transition-all"
+          >
+            <FaCopy size={10} /> {copiedPermanent ? t('gw.copied', lang) : t('gw.copyLink', lang)}
+          </button>
+        </div>
+        <p className="text-zinc-500 text-[10px] mt-1.5">{t('gw.permanentLinkHint', lang)}</p>
+      </div>
+
       <button
         onClick={() => setShowCreate(v => !v)}
-        className="w-full mb-4 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-black font-black rounded-xl py-3 text-sm transition-all"
+        disabled={hasActiveCampaign && !showCreate}
+        className="w-full mb-2 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-800 disabled:text-zinc-500 text-black font-black rounded-xl py-3 text-sm transition-all"
       >
         <FaPlus size={11} /> {showCreate ? t('gw.cancelButton', lang) : t('gw.newCampaignButton', lang)}
       </button>
+      {hasActiveCampaign && !showCreate && (
+        <p className="text-zinc-500 text-[10px] text-center mb-4">{t('gw.activeCampaignBlocksNew', lang)}</p>
+      )}
 
       {showCreate && (
         <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 mb-4 space-y-3">
@@ -440,29 +465,21 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
                 <p className="text-zinc-500 text-xs mb-3">
                   {tFmt('gw.winnersProgress', lang, { count: c.winnerCount, max: c.maxWinners, reward: c.creditReward })}
                 </p>
-                <div className="flex gap-2">
+                {c.status === 'active' ? (
                   <button
-                    onClick={() => copyLink(c.id)}
-                    className="flex-1 flex items-center justify-center gap-1.5 bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] rounded-xl py-2 text-xs font-semibold text-zinc-200 transition-all"
+                    onClick={() => handleEnd(c.id)}
+                    className="w-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-400 rounded-xl py-2 text-xs font-semibold transition-all"
                   >
-                    <FaCopy size={10} /> {copiedId === c.id ? t('gw.copied', lang) : t('gw.copyLink', lang)}
+                    {t('gw.endCampaign', lang)}
                   </button>
-                  {c.status === 'active' ? (
-                    <button
-                      onClick={() => handleEnd(c.id)}
-                      className="flex-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-400 rounded-xl py-2 text-xs font-semibold transition-all"
-                    >
-                      {t('gw.endCampaign', lang)}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleDelete(c.id)}
-                      className="flex-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-400 rounded-xl py-2 text-xs font-semibold transition-all"
-                    >
-                      {t('gw.deleteCampaign', lang)}
-                    </button>
-                  )}
-                </div>
+                ) : (
+                  <button
+                    onClick={() => handleDelete(c.id)}
+                    className="w-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-400 rounded-xl py-2 text-xs font-semibold transition-all"
+                  >
+                    {t('gw.deleteCampaign', lang)}
+                  </button>
+                )}
               </div>
             </div>
           ))}

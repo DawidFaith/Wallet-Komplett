@@ -140,6 +140,18 @@ function generateCode(requiredText: string): string {
   return `${prefix}-${suffix}`;
 }
 
+/**
+ * Prüft ob ein Artist bereits ein aktives Gewinnspiel hat — es darf immer nur
+ * eines gleichzeitig laufen, damit der öffentliche Link stabil bleibt (siehe
+ * getLatestGiveawayCampaignByArtist).
+ */
+export async function hasActiveGiveawayCampaign(artistWallet: string): Promise<boolean> {
+  await ensureTables();
+  const sql = getDb();
+  const rows = await sql`SELECT 1 FROM giveaway_campaigns WHERE artist_wallet = ${artistWallet.toLowerCase()} AND status = 'active' LIMIT 1`;
+  return rows.length > 0;
+}
+
 /** Kampagne erstellen. Sperrt sofort creditReward * maxWinners vom Künstler-Guthaben (Escrow). */
 export async function createGiveawayCampaign(
   artistWallet: string,
@@ -153,6 +165,9 @@ export async function createGiveawayCampaign(
 ): Promise<{ id: string } | { error: string }> {
   await ensureTables();
   if (platforms.length === 0) return { error: 'Mindestens eine Plattform muss konfiguriert werden.' };
+  if (await hasActiveGiveawayCampaign(artistWallet)) {
+    return { error: 'Du hast bereits ein aktives Gewinnspiel. Beende es zuerst, bevor du ein neues startest.' };
+  }
   const totalBudget = creditReward * maxWinners;
   const locked = await lockQuestBudget(artistWallet, totalBudget);
   if (!locked) return { error: 'Nicht genug D.FAITH Credits für dieses Budget vorhanden.' };
@@ -207,6 +222,26 @@ export async function getPublicGiveawayCampaign(campaignId: string): Promise<Giv
   const rows = await sql`SELECT * FROM giveaway_campaigns WHERE id = ${campaignId} LIMIT 1`;
   if (rows.length === 0) return null;
   const platRows = await sql`SELECT platform, post_url, media_id FROM giveaway_campaign_platforms WHERE campaign_id = ${campaignId}`;
+  return rowToCampaign(rows[0], platRows.map(p => ({ platform: p.platform as GiveawayPlatform, postUrl: p.post_url as string, mediaId: p.media_id as string | null })));
+}
+
+/**
+ * Neuestes Gewinnspiel eines Artists (unabhängig vom Status) — Grundlage für den
+ * stabilen, permanenten Fan-Link "/win/{artistWallet}". Da pro Artist immer nur
+ * ein Gewinnspiel gleichzeitig aktiv sein darf, zeigt dieser Link nach Ende einer
+ * Kampagne automatisch die nächste an, sobald sie erstellt wird — die Adresse
+ * selbst ändert sich nie, wichtig z.B. für automatisierte TikTok-Kommentar-/
+ * DM-Antworten, die sonst pro Kampagne erneut durch den App-Review müssten.
+ */
+export async function getLatestGiveawayCampaignByArtist(artistWallet: string): Promise<GiveawayCampaign | null> {
+  await ensureTables();
+  const sql = getDb();
+  const rows = await sql`
+    SELECT * FROM giveaway_campaigns WHERE artist_wallet = ${artistWallet.toLowerCase()}
+    ORDER BY created_at DESC LIMIT 1
+  `;
+  if (rows.length === 0) return null;
+  const platRows = await sql`SELECT platform, post_url, media_id FROM giveaway_campaign_platforms WHERE campaign_id = ${rows[0].id}`;
   return rowToCampaign(rows[0], platRows.map(p => ({ platform: p.platform as GiveawayPlatform, postUrl: p.post_url as string, mediaId: p.media_id as string | null })));
 }
 

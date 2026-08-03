@@ -98,6 +98,7 @@ export default function GiveawayLandingPage() {
 
   const handleStart = async () => {
     setError('');
+    if (!campaign) return;
     if (!platform) return setError(t('win.step1Title', lang));
     if (!handle.trim()) return setError(t('win.handleLabel', lang));
     if (!/^\S+@\S+\.\S+$/.test(email)) return setError(t('win.emailLabel', lang));
@@ -108,7 +109,9 @@ export default function GiveawayLandingPage() {
       const res = await fetch('/api/giveaways/enter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ campaignId, platform, handle: handle.trim(), email: email.trim(), consent: true }),
+        // Immer die aufgelöste Kampagnen-ID verwenden, nicht den URL-Parameter —
+        // der kann bei permanenten Artist-Links auch eine Wallet-Adresse sein.
+        body: JSON.stringify({ campaignId: campaign.id, platform, handle: handle.trim(), email: email.trim(), consent: true }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? 'Error'); return; }
@@ -295,7 +298,7 @@ export default function GiveawayLandingPage() {
                 />
                 <span>
                   {t('win.consentPrefix', lang)}{' '}
-                  <Link href={`/win/${campaignId}/terms`} target="_blank" className="text-amber-400 hover:text-amber-300 underline">
+                  <Link href={`/win/${campaign.id}/terms`} target="_blank" className="text-amber-400 hover:text-amber-300 underline">
                     {t('win.termsAndPrivacyLabel', lang)}
                   </Link>{' '}
                   {t('win.consentSuffix', lang)}
