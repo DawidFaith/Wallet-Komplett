@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 import {
   FaWallet,
   FaChartBar,
@@ -17,11 +17,12 @@ import {
   FaStar,
   FaTasks,
   FaGem,
+  FaGift,
 } from "react-icons/fa";
 import { MdStorefront } from "react-icons/md";
 import { GiCrystalShine } from "react-icons/gi";
 import { FiChevronDown } from "react-icons/fi";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLang, useSetLang } from "./components/LangContext";
 
 type NavigationProps = {
@@ -58,6 +59,16 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
   const pathname = usePathname();
   const language = useLang();
   const setLanguage = useSetLang();
+  const { user } = useUser();
+  const [isArtist, setIsArtist] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch(`/api/youtube-quests/profile?wallet=${user.id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => setIsArtist(!!(data?.profile?.isArtist)))
+      .catch(() => {});
+  }, [user?.id]);
 
   // Funktionen für Navigation
   const navigateToTab = (tab: string) => {
@@ -98,7 +109,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
             <FaGlobe
               size={19}
               className={`transition-colors ${
-                ["reputation", "shop", "quest-board", "collectibles", "marketplace"].includes(activeTab)
+                ["reputation", "shop", "quest-board", "collectibles", "marketplace", "giveaways"].includes(activeTab)
                   ? "text-amber-400"
                   : "text-zinc-400"
               } hover:text-amber-400`}
@@ -151,12 +162,25 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
               <button
                 onClick={() => { navigateToTab("marketplace"); setOpen(false); }}
                 className={`flex items-center gap-3 px-4 py-3 hover:bg-[#2d2515] w-full transition-colors duration-200 ${
+                  isArtist ? "border-b border-white/10" : ""
+                } ${
                   activeTab === "marketplace" ? "text-amber-400" : "text-zinc-300"
                 }`}
               >
                 <MdStorefront size={15} className={activeTab === "marketplace" ? "text-amber-400" : "text-zinc-400"} />
                 <span className="font-medium text-sm">Marktplatz</span>
               </button>
+              {isArtist && (
+                <button
+                  onClick={() => { navigateToTab("giveaways"); setOpen(false); }}
+                  className={`flex items-center gap-3 px-4 py-3 hover:bg-[#2d2515] w-full transition-colors duration-200 ${
+                    activeTab === "giveaways" ? "text-amber-400" : "text-zinc-300"
+                  }`}
+                >
+                  <FaGift size={15} className={activeTab === "giveaways" ? "text-amber-400" : "text-zinc-400"} />
+                  <span className="font-medium text-sm">Giveaways</span>
+                </button>
+              )}
             </div>
           )}
         </li>
