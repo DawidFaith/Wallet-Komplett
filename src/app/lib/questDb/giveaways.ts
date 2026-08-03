@@ -81,7 +81,7 @@ export interface GiveawayEntry {
   handle: string;
   email: string;
   code: string;
-  status: 'pending' | 'verified' | 'credited';
+  status: 'pending' | 'verified' | 'credited' | 'rejected';
   creditedWallet: string | null;
   createdAt: string;
   verifiedAt: string | null;
@@ -114,7 +114,7 @@ function rowToEntry(r: any): GiveawayEntry {
     handle: r.handle as string,
     email: r.email as string,
     code: r.code as string,
-    status: r.status as 'pending' | 'verified' | 'credited',
+    status: r.status as 'pending' | 'verified' | 'credited' | 'rejected',
     creditedWallet: r.credited_wallet as string | null,
     createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
     verifiedAt: r.verified_at ? (r.verified_at instanceof Date ? r.verified_at.toISOString() : String(r.verified_at)) : null,
@@ -263,6 +263,20 @@ export async function startGiveawayEntry(
   `;
   if (existing.length > 0) return { entry: rowToEntry(existing[0]) };
 
+  // Ein und dieselbe E-Mail-Adresse darf pro Kampagne nur einmal belohnt werden —
+  // verhindert, dass eine Person über mehrere Plattformen/Handles mehrfach gewinnt.
+  // (Die eigentliche, race-sichere Durchsetzung passiert atomar in creditGiveawayWinner;
+  // dieser Check hier gibt nur direkt Feedback statt die Person durch die ganze
+  // Kommentar-Verifikation laufen zu lassen, nur um am Ende doch nichts zu bekommen.)
+  const alreadyWon = await sql`
+    SELECT 1 FROM giveaway_entries
+    WHERE campaign_id = ${campaignId} AND email = ${cleanEmail} AND status IN ('verified', 'credited')
+    LIMIT 1
+  `;
+  if (alreadyWon.length > 0) {
+    return { error: 'Mit dieser E-Mail-Adresse wurde bereits an diesem Gewinnspiel teilgenommen.' };
+  }
+
   const id = `gwe_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const code = generateCode(campaign.requiredText);
   await sql`
@@ -279,16 +293,33 @@ export async function getGiveawayEntry(entryId: string): Promise<GiveawayEntry |
   return rows.length > 0 ? rowToEntry(rows[0]) : null;
 }
 
+/** Prüft ob für diese E-Mail-Adresse in dieser Kampagne bereits eine Belohnung vergeben wurde. */
+async function emailAlreadyWonCampaign(sql: ReturnType<typeof getDb>, campaignId: string, email: string, excludeEntryId: string): Promise<boolean> {
+  const rows = await sql`
+    SELECT 1 FROM giveaway_entries
+    WHERE campaign_id = ${campaignId} AND email = ${email} AND status = 'credited' AND id != ${excludeEntryId}
+    LIMIT 1
+  `;
+  return rows.length > 0;
+}
+
 /**
- * Kredit einem Gewinner gutschreiben (atomar gegen das Kampagnenbudget geprüft).
- * Gibt false zurück, wenn keine Plätze mehr frei sind.
+ * Kredit einem Gewinner gutschreiben (atomar gegen Kampagnenbudget UND Mehrfach-Gewinn
+ * derselben E-Mail-Adresse geprüft — die NOT EXISTS-Bedingung läuft in derselben
+ * Query wie das Budget-Update und ist damit race-sicher, auch wenn zwei Plattformen
+ * derselben Person nahezu gleichzeitig verifiziert werden).
+ * Gibt false zurück, wenn keine Plätze mehr frei sind oder die E-Mail bereits gewonnen hat.
  */
-async function creditGiveawayWinner(campaignId: string, entryId: string, wallet: string): Promise<boolean> {
+async function creditGiveawayWinner(campaignId: string, entryId: string, email: string, wallet: string): Promise<boolean> {
   const sql = getDb();
   const rows = await sql`
     UPDATE giveaway_campaigns
     SET winner_count = winner_count + 1
     WHERE id = ${campaignId} AND winner_count < max_winners AND status = 'active'
+      AND NOT EXISTS (
+        SELECT 1 FROM giveaway_entries
+        WHERE campaign_id = ${campaignId} AND email = ${email} AND status = 'credited' AND id != ${entryId}
+      )
     RETURNING credit_reward, winner_count, max_winners
   `;
   if (rows.length === 0) return false;
@@ -308,11 +339,18 @@ async function creditGiveawayWinner(campaignId: string, entryId: string, wallet:
  * Nach erfolgreicher Kommentar-Verifikation aufgerufen: prüft ob der Handle bereits
  * zu einem verifizierten Nutzer-Profil gehört (sofortige Gutschrift), sonst bleibt
  * der Entry als 'verified' liegen bis der Nutzer sich später registriert/verifiziert.
+ * Hat diese E-Mail-Adresse in dieser Kampagne bereits über eine andere Plattform
+ * gewonnen, wird die Teilnahme abgelehnt (verhindert Mehrfach-Gewinn einer Person).
  */
-export async function markGiveawayEntryVerified(entryId: string): Promise<{ status: 'credited' | 'verified'; wallet?: string; amount?: number }> {
+export async function markGiveawayEntryVerified(entryId: string): Promise<{ status: 'credited' | 'verified' | 'duplicate_email'; wallet?: string; amount?: number }> {
   const sql = getDb();
   const entry = await getGiveawayEntry(entryId);
   if (!entry) throw new Error('Entry nicht gefunden');
+
+  if (await emailAlreadyWonCampaign(sql, entry.campaignId, entry.email, entry.id)) {
+    await sql`UPDATE giveaway_entries SET status = 'rejected', verified_at = NOW() WHERE id = ${entryId}`;
+    return { status: 'duplicate_email' };
+  }
 
   let matchedWallet: string | null = null;
   if (entry.platform === 'youtube') {
@@ -330,10 +368,15 @@ export async function markGiveawayEntryVerified(entryId: string): Promise<{ stat
   }
 
   if (matchedWallet) {
-    const credited = await creditGiveawayWinner(entry.campaignId, entry.id, matchedWallet);
+    const credited = await creditGiveawayWinner(entry.campaignId, entry.id, entry.email, matchedWallet);
     if (credited) {
       const campaign = await getPublicGiveawayCampaign(entry.campaignId);
       return { status: 'credited', wallet: matchedWallet, amount: campaign?.creditReward };
+    }
+    // Budget in der Zwischenzeit ausgeschöpft oder E-Mail parallel andernorts gewonnen
+    if (await emailAlreadyWonCampaign(sql, entry.campaignId, entry.email, entry.id)) {
+      await sql`UPDATE giveaway_entries SET status = 'rejected', verified_at = NOW() WHERE id = ${entryId}`;
+      return { status: 'duplicate_email' };
     }
   }
 
@@ -359,6 +402,9 @@ export async function creditPendingGiveawayEntriesForHandle(
   `;
   for (const r of rows) {
     const entry = rowToEntry(r);
-    await creditGiveawayWinner(entry.campaignId, entry.id, walletAddress.toLowerCase());
+    const credited = await creditGiveawayWinner(entry.campaignId, entry.id, entry.email, walletAddress.toLowerCase());
+    if (!credited && await emailAlreadyWonCampaign(sql, entry.campaignId, entry.email, entry.id)) {
+      await sql`UPDATE giveaway_entries SET status = 'rejected', verified_at = NOW() WHERE id = ${entry.id}`;
+    }
   }
 }

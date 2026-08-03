@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGiveawayEntry, getPublicGiveawayCampaign, markGiveawayEntryVerified } from '../../../lib/questDb';
 import { checkGiveawayEntryComment } from '../../../lib/giveawayEntryCheck';
+import { sendGiveawaySignupInviteEmail } from '../../../lib/email';
 
 export const maxDuration = 30;
+
+const DUPLICATE_EMAIL_MESSAGE = 'Mit dieser E-Mail-Adresse wurde bereits eine Belohnung für dieses Gewinnspiel beansprucht.';
+const PENDING_SIGNUP_MESSAGE = 'Verifiziert! Melde dich im D.FAITH Ecosystem an und verknüpfe diesen Account, um deine Credits automatisch gutgeschrieben zu bekommen. Wir haben dir außerdem eine E-Mail mit den nächsten Schritten geschickt.';
 
 /**
  * Erneute Prüfung einer bestehenden Teilnahme (z.B. nachdem der Fan den
@@ -20,6 +24,9 @@ export async function POST(req: NextRequest) {
 
   const entry = await getGiveawayEntry(entryId);
   if (!entry) return NextResponse.json({ error: 'Teilnahme nicht gefunden' }, { status: 404 });
+  if (entry.status === 'rejected') {
+    return NextResponse.json({ verified: false, error: DUPLICATE_EMAIL_MESSAGE, duplicateEmail: true }, { status: 400 });
+  }
   if (entry.status !== 'pending') {
     return NextResponse.json({ error: 'Diese Teilnahme wurde bereits verifiziert.' }, { status: 400 });
   }
@@ -47,11 +54,26 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await markGiveawayEntryVerified(entryId);
+
+  if (result.status === 'duplicate_email') {
+    return NextResponse.json({ verified: false, error: DUPLICATE_EMAIL_MESSAGE, duplicateEmail: true }, { status: 400 });
+  }
+
+  if (result.status === 'verified') {
+    sendGiveawaySignupInviteEmail({
+      toEmail: entry.email,
+      campaignTitle: campaign.title,
+      platform: entry.platform,
+      handle: entry.handle,
+      creditReward: campaign.creditReward,
+    }).catch(e => console.error('[giveaways/verify] Einladungsmail fehlgeschlagen:', e));
+  }
+
   return NextResponse.json({
     verified: true,
     credited: result.status === 'credited',
     message: result.status === 'credited'
       ? `Verifiziert! Du hast ${result.amount} D.FAITH Credits erhalten.`
-      : 'Verifiziert! Melde dich im D.FAITH Ecosystem an und verknüpfe diesen Account, um deine Credits automatisch gutgeschrieben zu bekommen.',
+      : PENDING_SIGNUP_MESSAGE,
   });
 }

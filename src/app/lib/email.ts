@@ -96,3 +96,52 @@ export async function sendTesterApprovedEmail(params: {
     `,
   });
 }
+
+/**
+ * Giveaway: Teilnahme wurde per Kommentar verifiziert, aber der Social-Account
+ * ist noch keinem D.FAITH-Profil zugeordnet. Lädt die Person ein, sich zu
+ * registrieren und den Account zu verknüpfen, damit die Credits automatisch
+ * nachträglich gutgeschrieben werden.
+ */
+export async function sendGiveawaySignupInviteEmail(params: {
+  toEmail: string;
+  campaignTitle: string;
+  platform: string;
+  handle: string;
+  creditReward: number;
+}): Promise<void> {
+  const transporter = createTransporter();
+  const gmailUser = process.env.GMAIL_USER;
+  if (!transporter) {
+    console.log('[email] GMAIL_USER/GMAIL_APP_PASSWORD fehlt – Giveaway-Einladungsmail übersprungen');
+    return;
+  }
+  const platformLabel = params.platform.charAt(0).toUpperCase() + params.platform.slice(1);
+  await transporter.sendMail({
+    from: `"D.FAITH App" <${gmailUser}>`,
+    to: params.toEmail,
+    subject: `[D.FAITH] Fast geschafft! Sichere dir deine ${params.creditReward} Credits 🎁`,
+    html: `
+      <h2>Dein Kommentar wurde bestätigt! 🎉</h2>
+      <p>
+        Deine Teilnahme am Gewinnspiel „${params.campaignTitle}" mit deinem ${platformLabel}-Account
+        <b>@${params.handle}</b> wurde erfolgreich verifiziert.
+      </p>
+      <p>
+        Damit dir die <b>${params.creditReward} D.FAITH Credits</b> gutgeschrieben werden können,
+        fehlt nur noch ein letzter Schritt: Registriere dich kostenlos im D.FAITH Ecosystem und
+        verknüpfe dort denselben ${platformLabel}-Account (@${params.handle}) in deinem Profil.
+        Deine Credits werden dann automatisch gutgeschrieben.
+      </p>
+      <p>
+        <a href="${APP_URL}" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">
+          Jetzt registrieren & Credits sichern
+        </a>
+      </p>
+      <p style="color:#888;font-size:12px;">
+        Falls du bereits einen Account hast, melde dich einfach an und verknüpfe deinen ${platformLabel}-Account
+        in den "Sozialen Profilen" – die Credits erscheinen dann automatisch in deinem Guthaben.
+      </p>
+    `,
+  });
+}

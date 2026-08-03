@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { startGiveawayEntry, getPublicGiveawayCampaign, markGiveawayEntryVerified, type GiveawayPlatform } from '../../../lib/questDb';
 import { checkGiveawayEntryComment } from '../../../lib/giveawayEntryCheck';
+import { sendGiveawaySignupInviteEmail } from '../../../lib/email';
 
 export const maxDuration = 30;
+
+const DUPLICATE_EMAIL_MESSAGE = 'Mit dieser E-Mail-Adresse wurde bereits eine Belohnung für dieses Gewinnspiel beansprucht.';
+const PENDING_SIGNUP_MESSAGE = 'Verifiziert! Melde dich im D.FAITH Ecosystem an und verknüpfe diesen Account, um deine Credits automatisch gutgeschrieben zu bekommen. Wir haben dir außerdem eine E-Mail mit den nächsten Schritten geschickt.';
 
 export async function POST(req: NextRequest) {
   let body: { campaignId?: string; platform?: string; handle?: string; email?: string };
@@ -21,8 +25,11 @@ export async function POST(req: NextRequest) {
   if ('error' in result) return NextResponse.json({ error: result.error }, { status: 400 });
   const entry = result.entry;
 
-  // Bereits früher verifiziert/gutgeschrieben (z.B. erneuter Aufruf) — direkt zurückgeben
+  // Bereits früher verifiziert/gutgeschrieben/abgelehnt (z.B. erneuter Aufruf) — direkt zurückgeben
   if (entry.status !== 'pending') {
+    if (entry.status === 'rejected') {
+      return NextResponse.json({ entryId: entry.id, verified: false, error: DUPLICATE_EMAIL_MESSAGE, duplicateEmail: true }, { status: 400 });
+    }
     return NextResponse.json({
       entryId: entry.id,
       verified: true,
@@ -30,7 +37,7 @@ export async function POST(req: NextRequest) {
       alreadyProcessed: true,
       message: entry.status === 'credited'
         ? 'Du hast bereits Credits für diese Teilnahme erhalten.'
-        : 'Verifiziert! Melde dich im D.FAITH Ecosystem an und verknüpfe diesen Account, um deine Credits automatisch gutgeschrieben zu bekommen.',
+        : PENDING_SIGNUP_MESSAGE,
     });
   }
 
@@ -56,12 +63,27 @@ export async function POST(req: NextRequest) {
   }
 
   const markResult = await markGiveawayEntryVerified(entry.id);
+
+  if (markResult.status === 'duplicate_email') {
+    return NextResponse.json({ entryId: entry.id, verified: false, error: DUPLICATE_EMAIL_MESSAGE, duplicateEmail: true }, { status: 400 });
+  }
+
+  if (markResult.status === 'verified') {
+    sendGiveawaySignupInviteEmail({
+      toEmail: entry.email,
+      campaignTitle: campaign.title,
+      platform: entry.platform,
+      handle: entry.handle,
+      creditReward: campaign.creditReward,
+    }).catch(e => console.error('[giveaways/enter] Einladungsmail fehlgeschlagen:', e));
+  }
+
   return NextResponse.json({
     entryId: entry.id,
     verified: true,
     credited: markResult.status === 'credited',
     message: markResult.status === 'credited'
       ? `Verifiziert! Du hast ${markResult.amount} D.FAITH Credits erhalten.`
-      : 'Verifiziert! Melde dich im D.FAITH Ecosystem an und verknüpfe diesen Account, um deine Credits automatisch gutgeschrieben zu bekommen.',
+      : PENDING_SIGNUP_MESSAGE,
   });
 }
