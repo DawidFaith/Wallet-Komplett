@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '../../../lib/db';
 import { getGiveawayEntry, getPublicGiveawayCampaign, markGiveawayEntryVerified } from '../../../lib/questDb';
-import { verifyInstagramEntry, verifyTiktokEntry, verifyYoutubeEntry, verifyFacebookEntry } from '../../../lib/giveawayVerify';
+import { checkGiveawayEntryComment } from '../../../lib/giveawayEntryCheck';
 
 export const maxDuration = 30;
 
+/**
+ * Erneute Prüfung einer bestehenden Teilnahme (z.B. nachdem der Fan den
+ * Facebook-Code kommentiert hat, oder ein "Erneut prüfen"-Klick bei
+ * Instagram/TikTok/YouTube, falls der Kommentar beim ersten Versuch noch
+ * nicht gefunden wurde).
+ */
 export async function POST(req: NextRequest) {
   let body: { entryId?: string };
   try { body = await req.json(); }
@@ -24,25 +29,10 @@ export async function POST(req: NextRequest) {
   if (campaign.status !== 'active') {
     return NextResponse.json({ error: 'Dieses Gewinnspiel ist bereits beendet.' }, { status: 400 });
   }
-  const platformCfg = campaign.platforms.find(p => p.platform === entry.platform);
-  if (!platformCfg) return NextResponse.json({ error: 'Plattform nicht konfiguriert' }, { status: 400 });
 
   let found = false;
   try {
-    if (entry.platform === 'instagram') {
-      const mediaId = platformCfg.mediaId;
-      if (!mediaId) return NextResponse.json({ error: 'Instagram-Post nicht auflösbar.' }, { status: 500 });
-      found = await verifyInstagramEntry(mediaId, entry.handle, entry.code);
-    } else if (entry.platform === 'tiktok') {
-      found = await verifyTiktokEntry(platformCfg.mediaId ?? platformCfg.postUrl, entry.handle, entry.code);
-    } else if (entry.platform === 'youtube') {
-      found = await verifyYoutubeEntry(platformCfg.mediaId ?? platformCfg.postUrl, entry.handle, entry.code);
-    } else if (entry.platform === 'facebook') {
-      const sql = getDb();
-      const rows = await sql`SELECT facebook_page_id FROM user_profiles WHERE wallet_address = ${campaign.artistWallet.toLowerCase()} LIMIT 1`;
-      const pageIdHint = (rows[0]?.facebook_page_id as string | null) ?? null;
-      found = await verifyFacebookEntry(platformCfg.postUrl, entry.code, pageIdHint);
-    }
+    found = await checkGiveawayEntryComment(campaign, entry);
   } catch (e) {
     console.error('[giveaways/verify]', e);
     return NextResponse.json({ error: 'Verifikation momentan nicht möglich. Bitte später erneut versuchen.' }, { status: 502 });
@@ -51,21 +41,17 @@ export async function POST(req: NextRequest) {
   if (!found) {
     return NextResponse.json({
       verified: false,
-      message: `Kein Kommentar mit dem Code "${entry.code}" von @${entry.handle} gefunden. Kommentiere den Code unter dem Beitrag und versuche es erneut (kann 1-2 Minuten dauern).`,
+      code: entry.platform === 'facebook' ? entry.code : undefined,
+      requiredText: entry.platform === 'facebook' ? undefined : campaign.requiredText,
     });
   }
 
   const result = await markGiveawayEntryVerified(entryId);
-  if (result.status === 'credited') {
-    return NextResponse.json({
-      verified: true,
-      credited: true,
-      message: `Verifiziert! Du hast ${result.amount} D.FAITH Credits erhalten.`,
-    });
-  }
   return NextResponse.json({
     verified: true,
-    credited: false,
-    message: 'Verifiziert! Melde dich im D.FAITH Ecosystem an und verknüpfe diesen Account, um deine Credits automatisch gutgeschrieben zu bekommen.',
+    credited: result.status === 'credited',
+    message: result.status === 'credited'
+      ? `Verifiziert! Du hast ${result.amount} D.FAITH Credits erhalten.`
+      : 'Verifiziert! Melde dich im D.FAITH Ecosystem an und verknüpfe diesen Account, um deine Credits automatisch gutgeschrieben zu bekommen.',
   });
 }

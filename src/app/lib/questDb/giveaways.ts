@@ -122,10 +122,13 @@ function rowToEntry(r: any): GiveawayEntry {
 }
 
 /**
- * Generiert den einmaligen Kommentar-Code für einen Fan: das Kommentar-Wort
- * des Artists (z.B. "dfaith") + ein zufälliges Suffix. So bleibt der Kommentar
- * lesbar/gebrandet, ist aber trotzdem pro Teilnahme eindeutig (verhindert
- * Copy-Paste eines fremden Kommentars). Der Abgleich erfolgt überall
+ * Generiert einen einmaligen Kommentar-Code (Kommentar-Wort + zufälliges Suffix).
+ * Wird nur für Facebook tatsächlich gebraucht, da dort die Autor:in eines
+ * Kommentars nicht zuverlässig zurückgegeben wird und daher nur über einen
+ * eindeutigen Code pro Teilnahme geprüft werden kann. Instagram/TikTok/YouTube
+ * reicht der direkte Abgleich von Handle + Kommentar-Wort der Kampagne (siehe
+ * checkGiveawayEntryComment in giveawayEntryCheck.ts) — der Code wird dort mit
+ * abgespeichert, aber nicht zur Prüfung verwendet. Der Abgleich erfolgt überall
  * case-insensitive (siehe giveawayVerify.ts), Groß-/Kleinschreibung spielt
  * beim Kommentieren also keine Rolle.
  */

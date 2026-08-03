@@ -4,6 +4,8 @@ import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
 import { FaPlus, FaGift, FaCopy, FaInstagram, FaTiktok, FaFacebook, FaYoutube, FaLock, FaSync, FaCoins } from 'react-icons/fa';
 import { upload } from '@vercel/blob/client';
+import { useLang } from '../components/LangContext';
+import { t, tFmt } from '../utils/i18n';
 
 // ─── Giveaways (Artist-Tool) ──────────────────────────────────────────────────
 
@@ -32,7 +34,7 @@ interface MediaPickItem {
 }
 
 /** Normalisiert die unterschiedlichen available-media Antwortformate der 4 Plattformen. */
-async function fetchAvailableMedia(platform: GiveawayPlatformKey, wallet: string): Promise<{ items: MediaPickItem[]; hint?: string; error?: string }> {
+async function fetchAvailableMedia(platform: GiveawayPlatformKey, wallet: string, loadErrorMessage: string): Promise<{ items: MediaPickItem[]; hint?: string; error?: string }> {
   try {
     const res = await fetch(`${AVAILABLE_MEDIA_ENDPOINT[platform]}?wallet=${encodeURIComponent(wallet)}`);
     const data = await res.json();
@@ -67,7 +69,7 @@ async function fetchAvailableMedia(platform: GiveawayPlatformKey, wallet: string
 
     return { items: items.filter(i => i.id && i.url), hint: data.hint };
   } catch {
-    return { items: [], error: 'Videos konnten nicht geladen werden.' };
+    return { items: [], error: loadErrorMessage };
   }
 }
 
@@ -85,6 +87,7 @@ interface GiveawayCampaignData {
 }
 
 function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
+  const lang = useLang();
   const [campaigns, setCampaigns] = useState<GiveawayCampaignData[]>([]);
   const [loading, setLoading]     = useState(true);
   const [balance, setBalance]     = useState<number | null>(null);
@@ -138,7 +141,7 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
   const loadMediaForPlatform = async (p: GiveawayPlatformKey) => {
     setMediaLoading(prev => ({ ...prev, [p]: true }));
     setMediaHint(prev => ({ ...prev, [p]: '' }));
-    const { items, hint, error: err } = await fetchAvailableMedia(p, artistWallet);
+    const { items, hint, error: err } = await fetchAvailableMedia(p, artistWallet, t('gw.errMediaLoad', lang));
     setMediaLists(prev => ({ ...prev, [p]: items }));
     if (hint || err) setMediaHint(prev => ({ ...prev, [p]: hint || err || '' }));
     setMediaLoading(prev => ({ ...prev, [p]: false }));
@@ -164,12 +167,17 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
       .filter(p => enabledPlatforms[p])
       .map(p => ({ platform: p, postUrl: (platformUrls[p] ?? '').trim(), mediaId: platformMediaIds[p] ?? null }));
 
-    if (!title.trim()) return setError('Bitte einen Titel eingeben.');
-    if (!reward || reward <= 0) return setError('Ungültige Credit-Belohnung.');
-    if (!winners || winners <= 0) return setError('Ungültige Gewinneranzahl.');
-    if (platforms.length === 0) return setError('Mindestens eine Plattform aktivieren.');
-    if (platforms.some(p => !p.postUrl)) return setError('Bitte für jede aktivierte Plattform ein Video auswählen oder einen Link angeben.');
-    if (balance !== null && reward * winners > balance) return setError(`Nicht genug Guthaben — Budget benötigt ${(reward * winners).toLocaleString('de-DE')} Credits, verfügbar sind ${balance.toLocaleString('de-DE')}.`);
+    if (!title.trim()) return setError(t('gw.errTitleRequired', lang));
+    if (!reward || reward <= 0) return setError(t('gw.errInvalidReward', lang));
+    if (!winners || winners <= 0) return setError(t('gw.errInvalidWinners', lang));
+    if (platforms.length === 0) return setError(t('gw.errNoPlatform', lang));
+    if (platforms.some(p => !p.postUrl)) return setError(t('gw.errMissingLink', lang));
+    if (balance !== null && reward * winners > balance) {
+      return setError(tFmt('gw.errInsufficientBudget', lang, {
+        needed: (reward * winners).toLocaleString('de-DE'),
+        available: balance.toLocaleString('de-DE'),
+      }));
+    }
 
     setCreating(true);
     try {
@@ -192,19 +200,19 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
         }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? 'Fehler beim Erstellen.'); return; }
+      if (!res.ok) { setError(data.error ?? t('gw.errGeneric', lang)); return; }
       setShowCreate(false);
       resetForm();
       await load();
     } catch {
-      setError('Netzwerkfehler. Bitte erneut versuchen.');
+      setError(t('gw.errNetwork', lang));
     } finally {
       setCreating(false);
     }
   };
 
   const handleEnd = async (id: string) => {
-    if (!confirm('Gewinnspiel wirklich beenden? Nicht genutztes Budget wird dir zurückerstattet.')) return;
+    if (!confirm(t('gw.confirmEnd', lang))) return;
     await fetch(`/api/giveaways/campaigns/${id}?artistWallet=${artistWallet}`, { method: 'DELETE' });
     await load();
   };
@@ -222,14 +230,14 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
       {/* ── Guthaben ── */}
       <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 mb-4 flex items-center justify-between">
         <div>
-          <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-0.5">Verfügbares Guthaben</p>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-0.5">{t('gw.balanceLabel', lang)}</p>
           <p className="text-amber-300 font-black text-xl leading-none flex items-center gap-1.5">
             <FaCoins size={14} />{balance === null ? '…' : balance.toLocaleString('de-DE')}
           </p>
-          <p className="text-zinc-500 text-[9px] mt-0.5">D.FAITH Credits</p>
+          <p className="text-zinc-500 text-[9px] mt-0.5">{t('gw.creditsUnit', lang)}</p>
         </div>
         <p className="text-zinc-500 text-[10px] max-w-[130px] text-right leading-snug">
-          Wird bei Kampagnenstart als Budget reserviert
+          {t('gw.balanceHint', lang)}
         </p>
       </div>
 
@@ -237,13 +245,13 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
         onClick={() => setShowCreate(v => !v)}
         className="w-full mb-4 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-black font-black rounded-xl py-3 text-sm transition-all"
       >
-        <FaPlus size={11} /> {showCreate ? 'Abbrechen' : 'Neues Gewinnspiel erstellen'}
+        <FaPlus size={11} /> {showCreate ? t('gw.cancelButton', lang) : t('gw.newCampaignButton', lang)}
       </button>
 
       {showCreate && (
         <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 mb-4 space-y-3">
           <div>
-            <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">Banner: Bild oder Teaser-Video (optional)</label>
+            <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">{t('gw.bannerLabel', lang)}</label>
             <label className="flex items-center justify-center bg-white/[0.03] border border-dashed border-white/[0.15] rounded-xl h-28 cursor-pointer overflow-hidden">
               {mediaPreview ? (
                 mediaType === 'video' ? (
@@ -252,7 +260,7 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
                   <Image src={mediaPreview} alt="" width={400} height={112} className="w-full h-full object-cover" />
                 )
               ) : (
-                <span className="text-zinc-500 text-xs">Bild oder Video wählen</span>
+                <span className="text-zinc-500 text-xs">{t('gw.bannerPlaceholder', lang)}</span>
               )}
               <input
                 type="file" accept="image/*,video/*" className="hidden"
@@ -268,24 +276,24 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
           </div>
 
           <div>
-            <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">Titel</label>
+            <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">{t('gw.titleLabel', lang)}</label>
             <input
               value={title} onChange={e => setTitle(e.target.value)}
-              placeholder="z.B. Katze Release Giveaway"
+              placeholder={t('gw.titlePlaceholder', lang)}
               className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">Credits / Gewinner</label>
+              <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">{t('gw.creditPerWinnerLabel', lang)}</label>
               <input
                 type="number" min={1} value={creditReward} onChange={e => setCreditReward(e.target.value)}
                 className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60"
               />
             </div>
             <div>
-              <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">Max. Gewinner</label>
+              <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">{t('gw.maxWinnersLabel', lang)}</label>
               <input
                 type="number" min={1} value={maxWinners} onChange={e => setMaxWinners(e.target.value)}
                 className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60"
@@ -298,21 +306,21 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
               ? 'bg-red-500/10 border-red-500/20 text-red-400'
               : 'bg-amber-500/10 border-amber-500/20 text-amber-300'
           }`}>
-            Budget: {((Number(creditReward) || 0) * (Number(maxWinners) || 0)).toLocaleString('de-DE')} Credits werden bei Erstellung reserviert
-            {balance !== null && ` (verfügbar: ${balance.toLocaleString('de-DE')})`}
+            {tFmt('gw.budgetText', lang, { amount: ((Number(creditReward) || 0) * (Number(maxWinners) || 0)).toLocaleString('de-DE') })}
+            {balance !== null && tFmt('gw.budgetAvailable', lang, { n: balance.toLocaleString('de-DE') })}
           </div>
 
           <div>
-            <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">Kommentar-Wort</label>
+            <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">{t('gw.commentWordLabel', lang)}</label>
             <input
               value={requiredText} onChange={e => setRequiredText(e.target.value)}
               className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60"
             />
-            <p className="text-zinc-600 text-[10px] mt-1">Jeder Fan bekommt einen eigenen Code auf Basis dieses Worts (z.B. „{requiredText || 'dfaith'}-7F3K9Q&quot;) — Groß-/Kleinschreibung spielt beim Kommentieren keine Rolle.</p>
+            <p className="text-zinc-600 text-[10px] mt-1">{tFmt('gw.commentWordHint', lang, { word: requiredText || 'dfaith' })}</p>
           </div>
 
           <div className="space-y-2">
-            <label className="text-zinc-500 text-[10px] uppercase tracking-widest block">Plattformen (mind. 1)</label>
+            <label className="text-zinc-500 text-[10px] uppercase tracking-widest block">{t('gw.platformsLabel', lang)}</label>
             {GIVEAWAY_PLATFORMS.map(p => (
               <div key={p} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-2.5">
                 <label className="flex items-center gap-2 text-xs font-semibold text-zinc-200 mb-1.5 cursor-pointer">
@@ -325,13 +333,13 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
                 {enabledPlatforms[p] && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <p className="text-zinc-500 text-[10px]">Verfügbare Videos/Posts</p>
+                      <p className="text-zinc-500 text-[10px]">{t('gw.availableMedia', lang)}</p>
                       <button
                         onClick={() => loadMediaForPlatform(p)}
                         disabled={mediaLoading[p]}
                         className="flex items-center gap-1 text-[10px] text-amber-400 hover:text-amber-300 font-semibold disabled:opacity-50"
                       >
-                        <FaSync size={9} className={mediaLoading[p] ? 'animate-spin' : ''} /> Aktualisieren
+                        <FaSync size={9} className={mediaLoading[p] ? 'animate-spin' : ''} /> {t('gw.refresh', lang)}
                       </button>
                     </div>
 
@@ -361,7 +369,7 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
                     ) : mediaHint[p] ? (
                       <p className="text-amber-400/80 text-[10px] bg-amber-500/5 rounded-lg p-2">{mediaHint[p]}</p>
                     ) : (
-                      <p className="text-zinc-600 text-[10px]">Keine Videos gefunden.</p>
+                      <p className="text-zinc-600 text-[10px]">{t('gw.noVideosFound', lang)}</p>
                     )}
 
                     <input
@@ -370,7 +378,7 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
                         setPlatformUrls(prev => ({ ...prev, [p]: e.target.value }));
                         setPlatformMediaIds(prev => ({ ...prev, [p]: '' }));
                       }}
-                      placeholder="…oder Link manuell einfügen"
+                      placeholder={t('gw.manualLinkPlaceholder', lang)}
                       className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500/60"
                     />
                   </div>
@@ -385,7 +393,7 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
             onClick={handleCreate} disabled={creating}
             className="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-800 disabled:text-zinc-500 text-black font-black rounded-xl py-3 text-sm transition-all"
           >
-            {creating ? 'Wird erstellt…' : 'Gewinnspiel starten'}
+            {creating ? t('gw.creatingCampaign', lang) : t('gw.startCampaign', lang)}
           </button>
         </div>
       )}
@@ -397,8 +405,8 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
       ) : campaigns.length === 0 ? (
         <div className="text-center py-16">
           <FaGift className="text-zinc-600 mx-auto mb-3" size={28} />
-          <p className="text-zinc-400 font-semibold text-sm">Noch keine Gewinnspiele</p>
-          <p className="text-zinc-600 text-xs mt-1">Erstelle eins, um Fans über Social Media zu gewinnen.</p>
+          <p className="text-zinc-400 font-semibold text-sm">{t('gw.noCampaigns', lang)}</p>
+          <p className="text-zinc-600 text-xs mt-1">{t('gw.noCampaignsHint', lang)}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -417,28 +425,28 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
                   <span className={`shrink-0 text-[9px] font-black px-2 py-0.5 rounded-full ${
                     c.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-zinc-700 text-zinc-400'
                   }`}>
-                    {c.status === 'active' ? 'Aktiv' : 'Beendet'}
+                    {c.status === 'active' ? t('gw.statusActive', lang) : t('gw.statusEnded', lang)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 mb-2">
                   {c.platforms.map(p => <span key={p.platform}>{GIVEAWAY_PLATFORM_META[p.platform]?.icon}</span>)}
                 </div>
                 <p className="text-zinc-500 text-xs mb-3">
-                  {c.winnerCount} / {c.maxWinners} Gewinner &middot; {c.creditReward} Credits je Gewinner
+                  {tFmt('gw.winnersProgress', lang, { count: c.winnerCount, max: c.maxWinners, reward: c.creditReward })}
                 </p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => copyLink(c.id)}
                     className="flex-1 flex items-center justify-center gap-1.5 bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] rounded-xl py-2 text-xs font-semibold text-zinc-200 transition-all"
                   >
-                    <FaCopy size={10} /> {copiedId === c.id ? 'Kopiert!' : 'Link kopieren'}
+                    <FaCopy size={10} /> {copiedId === c.id ? t('gw.copied', lang) : t('gw.copyLink', lang)}
                   </button>
                   {c.status === 'active' && (
                     <button
                       onClick={() => handleEnd(c.id)}
                       className="flex-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-400 rounded-xl py-2 text-xs font-semibold transition-all"
                     >
-                      Beenden
+                      {t('gw.endCampaign', lang)}
                     </button>
                   )}
                 </div>
@@ -452,6 +460,7 @@ function GiveawaysPanel({ artistWallet }: { artistWallet: string }) {
 }
 
 export default function GiveawaysTab() {
+  const lang = useLang();
   const { user } = useUser();
   const walletAddress = user?.id ?? '';
   const [isArtist, setIsArtist] = useState<boolean | null>(null);
@@ -472,10 +481,10 @@ export default function GiveawaysTab() {
             <Image src="/D.FAITH.png" alt="D.FAITH" width={40} height={40} className="w-10 h-10 rounded-full object-contain shrink-0" />
             <div>
               <h1 className="text-white font-black text-xl tracking-wide flex items-center gap-2">
-                <FaGift className="text-rose-400" size={17} /> Giveaways
+                <FaGift className="text-rose-400" size={17} /> {t('gw.title', lang)}
               </h1>
               <p className="text-zinc-400 text-[10px] tracking-widest uppercase font-semibold mt-0.5">
-                Fans über Social Media gewinnen
+                {t('gw.subtitle', lang)}
               </p>
             </div>
           </div>
@@ -490,8 +499,8 @@ export default function GiveawaysTab() {
         ) : (
           <div className="text-center py-16 px-6">
             <FaLock className="text-zinc-600 mx-auto mb-3" size={26} />
-            <p className="text-zinc-400 font-semibold text-sm">Nur für Künstler verfügbar</p>
-            <p className="text-zinc-600 text-xs mt-1">Dieser Bereich ist Artists vorbehalten.</p>
+            <p className="text-zinc-400 font-semibold text-sm">{t('gw.artistOnly', lang)}</p>
+            <p className="text-zinc-600 text-xs mt-1">{t('gw.artistOnlyHint', lang)}</p>
           </div>
         )}
       </div>

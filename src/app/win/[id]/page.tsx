@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { FaInstagram, FaTiktok, FaFacebook, FaYoutube, FaGift, FaExternalLinkAlt, FaCheckCircle } from 'react-icons/fa';
-import { useLang } from '../../components/LangContext';
-import { t, tFmt } from '../../utils/i18n';
+import { useLang, useSetLang } from '../../components/LangContext';
+import { t, tFmt, type Lang } from '../../utils/i18n';
 
 type Platform = 'instagram' | 'tiktok' | 'facebook' | 'youtube';
 
@@ -15,6 +15,28 @@ const PLATFORM_META: Record<Platform, { label: string; icon: ReactNode; color: s
   facebook:  { label: 'Facebook',  icon: <FaFacebook size={18} />, color: 'text-blue-500' },
   youtube:   { label: 'YouTube',   icon: <FaYoutube size={18} />,  color: 'text-red-500' },
 };
+
+const LANG_FLAGS: Record<Lang, string> = { de: '🇩🇪', en: '🇺🇸', pl: '🇵🇱' };
+
+function LanguageSwitcher() {
+  const lang = useLang();
+  const setLang = useSetLang();
+  return (
+    <div className="flex items-center gap-1 bg-white/[0.05] border border-white/[0.08] rounded-full p-1">
+      {(['de', 'en', 'pl'] as Lang[]).map(l => (
+        <button
+          key={l}
+          onClick={() => setLang(l)}
+          className={`w-7 h-7 rounded-full flex items-center justify-center text-sm transition-all ${
+            lang === l ? 'bg-amber-500/20 ring-1 ring-amber-400/60' : 'opacity-60 hover:opacity-100'
+          }`}
+        >
+          {LANG_FLAGS[l]}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 interface PublicCampaign {
   id: string;
@@ -26,6 +48,12 @@ interface PublicCampaign {
   status: 'active' | 'ended';
   slotsLeft: number;
   platforms: { platform: Platform; postUrl: string }[];
+}
+
+interface PendingState {
+  entryId: string;
+  code?: string;
+  requiredText?: string;
 }
 
 export default function GiveawayLandingPage() {
@@ -43,8 +71,7 @@ export default function GiveawayLandingPage() {
   const [starting, setStarting] = useState(false);
   const [error, setError]       = useState('');
 
-  const [entryId, setEntryId]   = useState<string | null>(null);
-  const [code, setCode]         = useState<string | null>(null);
+  const [pending, setPending]     = useState<PendingState | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [verifyMsg, setVerifyMsg] = useState('');
   const [result, setResult]     = useState<{ credited: boolean; message: string } | null>(null);
@@ -81,8 +108,11 @@ export default function GiveawayLandingPage() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? 'Error'); return; }
-      setEntryId(data.entryId);
-      setCode(data.code);
+      if (data.verified) {
+        setResult({ credited: !!data.credited, message: data.message });
+      } else {
+        setPending({ entryId: data.entryId, code: data.code, requiredText: data.requiredText });
+      }
     } catch {
       setError('Network error');
     } finally {
@@ -91,18 +121,18 @@ export default function GiveawayLandingPage() {
   };
 
   const handleVerify = async () => {
-    if (!entryId) return;
+    if (!pending) return;
     setVerifying(true);
     setVerifyMsg('');
     try {
       const res = await fetch('/api/giveaways/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entryId }),
+        body: JSON.stringify({ entryId: pending.entryId }),
       });
       const data = await res.json();
       if (!res.ok) { setVerifyMsg(data.error ?? 'Error'); return; }
-      if (!data.verified) { setVerifyMsg(data.message ?? t('win.verifyNotFound', lang)); return; }
+      if (!data.verified) { setVerifyMsg(t('win.verifyNotFound', lang)); return; }
       setResult({ credited: !!data.credited, message: data.message });
     } catch {
       setVerifyMsg('Network error');
@@ -141,9 +171,12 @@ export default function GiveawayLandingPage() {
           )
         )}
         <div className="px-5 pt-6">
-          <div className="flex items-center gap-2 mb-2">
-            <FaGift className="text-amber-400" size={16} />
-            <h1 className="text-xl font-black">{campaign.title}</h1>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <FaGift className="text-amber-400" size={16} />
+              <h1 className="text-xl font-black">{campaign.title}</h1>
+            </div>
+            <LanguageSwitcher />
           </div>
           <div className="flex items-center gap-2 mb-6">
             <span className="bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-full px-3 py-1">
@@ -172,13 +205,21 @@ export default function GiveawayLandingPage() {
                 {t('win.goToApp', lang)}
               </a>
             </div>
-          ) : code && activePlatform ? (
+          ) : pending && activePlatform ? (
             <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5 space-y-4">
               <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-bold">{t('win.step3Title', lang)}</p>
-              <p className="text-zinc-300 text-sm">{t('win.instructionsIntro', lang)}</p>
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl py-3 text-center">
-                <span className="text-amber-300 font-black text-2xl tracking-widest">{code}</span>
-              </div>
+              {pending.code ? (
+                <>
+                  <p className="text-zinc-300 text-sm">{t('win.instructionsIntro', lang)}</p>
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl py-3 text-center">
+                    <span className="text-amber-300 font-black text-2xl tracking-widest">{pending.code}</span>
+                  </div>
+                </>
+              ) : (
+                <p className="text-zinc-300 text-sm">
+                  {tFmt('win.instructionsIntroWord', lang, { word: pending.requiredText ?? '' })}
+                </p>
+              )}
               <a
                 href={activePlatform.postUrl}
                 target="_blank"
