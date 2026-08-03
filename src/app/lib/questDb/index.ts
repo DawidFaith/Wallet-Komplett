@@ -27,3 +27,4 @@ export * from './reputation';
 export * from './bundles';
 export * from './collectibles';
 export * from './concerts';
+export * from './giveaways';

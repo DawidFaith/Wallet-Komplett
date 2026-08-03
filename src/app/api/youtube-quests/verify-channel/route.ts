@@ -5,6 +5,7 @@ import {
   saveYouTubeBinding,
   deleteYouTubeBinding,
   getVerificationCode,
+  creditPendingGiveawayEntriesForHandle,
 } from '../../../lib/questDb';
 import { uploadProfileImageToBlob } from '../../../lib/profileImageStorage';
 import { requireOwnWallet } from '../../../lib/apiAuth';
@@ -185,6 +186,8 @@ export async function POST(req: NextRequest) {
       };
 
       await saveYouTubeBinding(binding);
+      await creditPendingGiveawayEntriesForHandle(normalized, 'youtube', channelId).catch(() => {});
+      await creditPendingGiveawayEntriesForHandle(normalized, 'youtube', channelName).catch(() => {});
       return NextResponse.json({ success: true, binding });
     } catch (dbErr) {
       console.error('Datenbankfehler beim Verifizieren:', dbErr);

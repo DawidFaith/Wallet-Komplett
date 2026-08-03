@@ -14,7 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getVerificationCode, upsertUserProfile, recordFingerprintVerification, getFingerprintWalletCount } from '../../../lib/questDb';
+import { getVerificationCode, upsertUserProfile, recordFingerprintVerification, getFingerprintWalletCount, creditPendingGiveawayEntriesForHandle } from '../../../lib/questDb';
 import { getDb } from '../../../lib/db';
 import { findInstagramComment, fetchPlatformIgMedia, fetchPlatformFbPosts, findFacebookComment } from '../../../lib/metaApi';
 import { uploadProfileImageToBlob, extractOriginalImageUrl, fetchAndUploadFromUnavatar } from '../../../lib/profileImageStorage';
@@ -439,6 +439,7 @@ async function handlePost(req: NextRequest) {
         instagramPicture: profilePicture,
       });
       if (fingerprint) await recordFingerprintVerification(fingerprint, walletAddress);
+      await creditPendingGiveawayEntriesForHandle(walletAddress, 'instagram', cleanHandle).catch(() => {});
       return NextResponse.json({ success: true, name: profileName, picture: profilePicture });
     }
 
@@ -502,6 +503,7 @@ async function handlePost(req: NextRequest) {
         facebookPicture: fbPicture,
       });
       if (fingerprint) await recordFingerprintVerification(fingerprint, walletAddress);
+      await creditPendingGiveawayEntriesForHandle(walletAddress, 'facebook', fbDisplayName).catch(() => {});
       return NextResponse.json({ success: true, name: fbDisplayName, picture: null });
     }
 
@@ -567,6 +569,7 @@ async function handlePost(req: NextRequest) {
       tiktokPicture: finalPicture,
     });
     if (fingerprint) await recordFingerprintVerification(fingerprint, walletAddress);
+    await creditPendingGiveawayEntriesForHandle(walletAddress, 'tiktok', cleanHandle).catch(() => {});
     return NextResponse.json({ success: true, name, picture });
   }
 

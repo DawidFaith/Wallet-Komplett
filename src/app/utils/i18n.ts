@@ -1628,6 +1628,31 @@ const dict: Translations = {
   'mp.sellList':            { de: 'NFT einstellen',               en: 'List NFT',                    pl: 'Wystaw NFT' },
   'mp.sellSuccess':         { de: 'NFT erfolgreich eingestellt!', en: 'NFT listed successfully!',    pl: 'NFT wystawione pomyślnie!' },
   'mp.sellVon':             { de: 'von',                          en: 'by',                          pl: 'od' },
+
+  // ── Öffentliche Giveaway-Landingpage (/win/[id]) ──────────────────────────────
+  'win.loading':            { de: 'Wird geladen…',                en: 'Loading…',                    pl: 'Ładowanie…' },
+  'win.notFound':           { de: 'Dieses Gewinnspiel wurde nicht gefunden.', en: 'This giveaway could not be found.', pl: 'Nie znaleziono tego konkursu.' },
+  'win.ended':              { de: 'Dieses Gewinnspiel ist bereits beendet.', en: 'This giveaway has already ended.', pl: 'Ten konkurs już się zakończył.' },
+  'win.reward':             { de: '{n} D.FAITH Credits pro Gewinner', en: '{n} D.FAITH Credits per winner', pl: '{n} kredytów D.FAITH na zwycięzcę' },
+  'win.slotsLeft':          { de: '{n} Plätze übrig',             en: '{n} spots left',              pl: 'Pozostało miejsc: {n}' },
+  'win.step1Title':         { de: '1. Plattform wählen',          en: '1. Choose platform',          pl: '1. Wybierz platformę' },
+  'win.step2Title':         { de: '2. Handle & E-Mail eingeben',  en: '2. Enter handle & email',     pl: '2. Podaj nazwę użytkownika i e-mail' },
+  'win.handleLabel':        { de: 'Dein Benutzername (ohne @)',   en: 'Your username (without @)',   pl: 'Twoja nazwa użytkownika (bez @)' },
+  'win.emailLabel':         { de: 'Deine E-Mail-Adresse',         en: 'Your email address',          pl: 'Twój adres e-mail' },
+  'win.startButton':        { de: 'Teilnehmen',                   en: 'Enter now',                   pl: 'Weź udział' },
+  'win.startLoading':       { de: 'Wird gestartet…',              en: 'Starting…',                   pl: 'Rozpoczynanie…' },
+  'win.step3Title':         { de: '3. Kommentieren & bestätigen', en: '3. Comment & confirm',        pl: '3. Skomentuj i potwierdź' },
+  'win.instructionsIntro':  { de: 'Kommentiere diesen Code unter dem Beitrag:', en: 'Comment this code under the post:', pl: 'Skomentuj tym kodem pod postem:' },
+  'win.openPost':           { de: 'Beitrag öffnen',               en: 'Open post',                   pl: 'Otwórz post' },
+  'win.verifyButton':       { de: 'Ich habe kommentiert — prüfen', en: 'I commented — verify',       pl: 'Skomentowałem/am — sprawdź' },
+  'win.verifyLoading':      { de: 'Wird geprüft…',                en: 'Verifying…',                  pl: 'Sprawdzanie…' },
+  'win.verifyNotFound':     { de: 'Kommentar noch nicht gefunden. Warte kurz und versuche es erneut.', en: 'Comment not found yet. Wait a moment and try again.', pl: 'Nie znaleziono jeszcze komentarza. Poczekaj chwilę i spróbuj ponownie.' },
+  'win.creditedTitle':      { de: 'Gewonnen!',                    en: 'You won!',                    pl: 'Wygrałeś/aś!' },
+  'win.creditedBody':       { de: 'Du hast {n} D.FAITH Credits erhalten.', en: 'You received {n} D.FAITH Credits.', pl: 'Otrzymałeś/aś {n} kredytów D.FAITH.' },
+  'win.pendingTitle':       { de: 'Fast geschafft!',              en: 'Almost there!',               pl: 'Prawie gotowe!' },
+  'win.pendingBody':        { de: 'Verifiziert! Melde dich im D.FAITH Ecosystem an und verknüpfe diesen Account in deinem Profil — deine Credits werden dann automatisch gutgeschrieben.', en: 'Verified! Sign up on D.FAITH Ecosystem and link this account in your profile — your credits will then be credited automatically.', pl: 'Zweryfikowano! Zarejestruj się w D.FAITH Ecosystem i połącz to konto w swoim profilu — Twoje kredyty zostaną automatycznie przyznane.' },
+  'win.goToApp':            { de: 'Zum D.FAITH Ecosystem',        en: 'Go to D.FAITH Ecosystem',     pl: 'Przejdź do D.FAITH Ecosystem' },
+  'win.soldOut':            { de: 'Alle Plätze sind bereits vergeben.', en: 'All spots have already been claimed.', pl: 'Wszystkie miejsca zostały już zajęte.' },
 };
 
 
