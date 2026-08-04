@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import {
   FaYoutube, FaInstagram, FaTiktok, FaFacebook,
@@ -3431,6 +3431,22 @@ const GIVEAWAY_STATUS_LABEL: Record<AdminGiveawayEntry['status'], { label: strin
   rejected: { label: 'Abgelehnt', className: 'text-red-400' },
 };
 
+// Für die Zusammenfassung pro E-Mail: der "beste" je erreichte Status zählt.
+const GIVEAWAY_STATUS_PRIORITY: Record<AdminGiveawayEntry['status'], number> = {
+  credited: 4, verified: 3, pending: 2, rejected: 1,
+};
+
+interface AggregatedGiveawayRow {
+  email: string;
+  lang: string;
+  platforms: AdminGiveawayEntry['platform'][];
+  campaigns: string[];
+  artists: string[];
+  status: AdminGiveawayEntry['status'];
+  count: number;
+  latestDate: string;
+}
+
 function GiveawayEntriesSection({ secret }: { secret: string }) {
   const [entries, setEntries] = useState<AdminGiveawayEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -3457,18 +3473,49 @@ function GiveawayEntriesSection({ secret }: { secret: string }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = entries.filter(e => {
+  // Pro E-Mail-Adresse zu genau einer Zeile zusammenfassen — statt einer Zeile
+  // pro Teilnahme (eine Person kann mehrfach über verschiedene Plattformen/
+  // Kampagnen auftauchen).
+  const aggregated = useMemo<AggregatedGiveawayRow[]>(() => {
+    const byEmail = new Map<string, AggregatedGiveawayRow>();
+    for (const e of entries) {
+      const existing = byEmail.get(e.email);
+      if (!existing) {
+        byEmail.set(e.email, {
+          email: e.email,
+          lang: e.lang,
+          platforms: [e.platform],
+          campaigns: [e.campaignTitle],
+          artists: [e.artistName],
+          status: e.status,
+          count: 1,
+          latestDate: e.createdAt,
+        });
+        continue;
+      }
+      if (!existing.platforms.includes(e.platform)) existing.platforms.push(e.platform);
+      if (!existing.campaigns.includes(e.campaignTitle)) existing.campaigns.push(e.campaignTitle);
+      if (!existing.artists.includes(e.artistName)) existing.artists.push(e.artistName);
+      if (GIVEAWAY_STATUS_PRIORITY[e.status] > GIVEAWAY_STATUS_PRIORITY[existing.status]) existing.status = e.status;
+      existing.count += 1;
+      if (new Date(e.createdAt).getTime() > new Date(existing.latestDate).getTime()) {
+        existing.latestDate = e.createdAt;
+        existing.lang = e.lang;
+      }
+    }
+    return Array.from(byEmail.values()).sort((a, b) => new Date(b.latestDate).getTime() - new Date(a.latestDate).getTime());
+  }, [entries]);
+
+  const filtered = aggregated.filter(row => {
     if (!search.trim()) return true;
     const q = search.trim().toLowerCase();
-    return e.email.toLowerCase().includes(q)
-      || e.handle.toLowerCase().includes(q)
-      || e.artistName.toLowerCase().includes(q)
-      || e.campaignTitle.toLowerCase().includes(q);
+    return row.email.toLowerCase().includes(q)
+      || row.artists.some(a => a.toLowerCase().includes(q))
+      || row.campaigns.some(c => c.toLowerCase().includes(q));
   });
 
   const copyAllEmails = () => {
-    const uniqueEmails = Array.from(new Set(filtered.map(e => e.email)));
-    navigator.clipboard.writeText(uniqueEmails.join(', ')).then(() => {
+    navigator.clipboard.writeText(filtered.map(r => r.email).join(', ')).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }).catch(() => {});
@@ -3482,7 +3529,7 @@ function GiveawayEntriesSection({ secret }: { secret: string }) {
             <FaGift className="text-rose-400" /> Giveaway-Teilnahmen
           </h2>
           <p className="text-xs text-zinc-500 mt-1">
-            Alle gesammelten Daten aus Gewinnspielen — E-Mail, Sprache, Plattform, Künstler, Status.
+            {aggregated.length} eindeutige E-Mail-Adressen ({entries.length} Teilnahmen insgesamt).
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -3491,7 +3538,7 @@ function GiveawayEntriesSection({ secret }: { secret: string }) {
             disabled={filtered.length === 0}
             className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-sm font-semibold rounded-xl disabled:opacity-50"
           >
-            <FaCopy /> {copied ? 'Kopiert!' : `${filtered.length === entries.length ? 'Alle' : filtered.length} E-Mails kopieren`}
+            <FaCopy /> {copied ? 'Kopiert!' : `${filtered.length === aggregated.length ? 'Alle' : filtered.length} E-Mails kopieren`}
           </button>
           <button
             onClick={load}
@@ -3508,7 +3555,7 @@ function GiveawayEntriesSection({ secret }: { secret: string }) {
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Suche nach E-Mail, Handle, Künstler oder Kampagne…"
+          placeholder="Suche nach E-Mail, Künstler oder Kampagne…"
           className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60"
         />
       </div>
@@ -3525,28 +3572,36 @@ function GiveawayEntriesSection({ secret }: { secret: string }) {
             <tr className="text-left text-zinc-500 border-b border-zinc-800">
               <th className="px-4 py-2 font-semibold">E-Mail</th>
               <th className="px-4 py-2 font-semibold">Sprache</th>
-              <th className="px-4 py-2 font-semibold">Plattform</th>
-              <th className="px-4 py-2 font-semibold">Handle</th>
+              <th className="px-4 py-2 font-semibold">Plattformen</th>
               <th className="px-4 py-2 font-semibold">Status</th>
-              <th className="px-4 py-2 font-semibold">Kampagne</th>
+              <th className="px-4 py-2 font-semibold">Teilnahmen</th>
+              <th className="px-4 py-2 font-semibold">Kampagnen</th>
               <th className="px-4 py-2 font-semibold">Künstler</th>
-              <th className="px-4 py-2 font-semibold">Datum</th>
+              <th className="px-4 py-2 font-semibold">Letzte Teilnahme</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((e) => (
-              <tr key={e.id} className="border-b border-zinc-800/50 last:border-0">
-                <td className="px-4 py-2 text-zinc-200 whitespace-nowrap">{e.email}</td>
-                <td className="px-4 py-2 text-zinc-400 uppercase text-xs">{e.lang}</td>
-                <td className="px-4 py-2">{GIVEAWAY_PLATFORM_ICON[e.platform]}</td>
-                <td className="px-4 py-2 text-zinc-300 whitespace-nowrap">@{e.handle}</td>
-                <td className={`px-4 py-2 whitespace-nowrap ${GIVEAWAY_STATUS_LABEL[e.status].className}`}>
-                  {GIVEAWAY_STATUS_LABEL[e.status].label}
+            {filtered.map((row) => (
+              <tr key={row.email} className="border-b border-zinc-800/50 last:border-0">
+                <td className="px-4 py-2 text-zinc-200 whitespace-nowrap">{row.email}</td>
+                <td className="px-4 py-2 text-zinc-400 uppercase text-xs">{row.lang}</td>
+                <td className="px-4 py-2">
+                  <div className="flex items-center gap-1.5">
+                    {row.platforms.map(p => <span key={p}>{GIVEAWAY_PLATFORM_ICON[p]}</span>)}
+                  </div>
                 </td>
-                <td className="px-4 py-2 text-zinc-300 whitespace-nowrap">{e.campaignTitle}</td>
-                <td className="px-4 py-2 text-zinc-400 whitespace-nowrap">{e.artistName}</td>
+                <td className={`px-4 py-2 whitespace-nowrap ${GIVEAWAY_STATUS_LABEL[row.status].className}`}>
+                  {GIVEAWAY_STATUS_LABEL[row.status].label}
+                </td>
+                <td className="px-4 py-2 text-zinc-400">{row.count}</td>
+                <td className="px-4 py-2 text-zinc-300 whitespace-nowrap max-w-[200px] truncate" title={row.campaigns.join(', ')}>
+                  {row.campaigns.join(', ')}
+                </td>
+                <td className="px-4 py-2 text-zinc-400 whitespace-nowrap max-w-[160px] truncate" title={row.artists.join(', ')}>
+                  {row.artists.join(', ')}
+                </td>
                 <td className="px-4 py-2 text-zinc-500 whitespace-nowrap">
-                  {new Date(e.createdAt).toLocaleString('de-DE')}
+                  {new Date(row.latestDate).toLocaleString('de-DE')}
                 </td>
               </tr>
             ))}
