@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/youtube-giveaway-reply",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}

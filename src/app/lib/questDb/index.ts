@@ -28,3 +28,4 @@ export * from './bundles';
 export * from './collectibles';
 export * from './concerts';
 export * from './giveaways';
+export * from './youtubeBot';
