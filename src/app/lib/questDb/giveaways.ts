@@ -489,3 +489,50 @@ export async function creditPendingGiveawayEntriesForHandle(
     }
   }
 }
+
+export interface GiveawayEntryAdminRow {
+  id: string;
+  email: string;
+  lang: 'de' | 'en' | 'pl';
+  platform: GiveawayPlatform;
+  handle: string;
+  status: 'pending' | 'verified' | 'credited' | 'rejected';
+  creditedWallet: string | null;
+  campaignId: string;
+  campaignTitle: string;
+  artistWallet: string;
+  artistName: string;
+  createdAt: string;
+  verifiedAt: string | null;
+}
+
+/** Alle Giveaway-Teilnahmen plattformweit, für die Admin-Übersicht (E-Mails, Sprache, Künstler, Status). */
+export async function getAllGiveawayEntriesForAdmin(): Promise<GiveawayEntryAdminRow[]> {
+  await ensureTables();
+  const sql = getDb();
+  const rows = await sql`
+    SELECT
+      e.id, e.email, e.lang, e.platform, e.handle, e.status, e.credited_wallet, e.created_at, e.verified_at,
+      c.id AS campaign_id, c.title AS campaign_title, c.artist_wallet,
+      p.display_name, p.clerk_name
+    FROM giveaway_entries e
+    JOIN giveaway_campaigns c ON c.id = e.campaign_id
+    LEFT JOIN user_profiles p ON p.wallet_address = c.artist_wallet
+    ORDER BY e.created_at DESC
+  `;
+  return rows.map(r => ({
+    id: r.id as string,
+    email: r.email as string,
+    lang: (r.lang as 'de' | 'en' | 'pl') ?? 'de',
+    platform: r.platform as GiveawayPlatform,
+    handle: r.handle as string,
+    status: r.status as 'pending' | 'verified' | 'credited' | 'rejected',
+    creditedWallet: r.credited_wallet as string | null,
+    campaignId: r.campaign_id as string,
+    campaignTitle: r.campaign_title as string,
+    artistWallet: r.artist_wallet as string,
+    artistName: (r.display_name as string | null) ?? (r.clerk_name as string | null) ?? r.artist_wallet as string,
+    createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
+    verifiedAt: r.verified_at ? (r.verified_at instanceof Date ? r.verified_at.toISOString() : String(r.verified_at)) : null,
+  }));
+}

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import {
   FaYoutube, FaInstagram, FaTiktok, FaFacebook,
   FaCheck, FaTimes, FaSearch, FaShieldAlt, FaCoins, FaStar, FaSync, FaPaperPlane,
-  FaShoppingBag, FaEdit, FaCopy, FaWallet, FaExternalLinkAlt, FaTrashAlt,
+  FaShoppingBag, FaEdit, FaCopy, FaWallet, FaExternalLinkAlt, FaTrashAlt, FaGift,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
 import { GiCrystalShine } from 'react-icons/gi';
@@ -253,7 +253,7 @@ export default function AdminPage() {
     return matchSearch && matchFilter;
   });
 
-  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'collectibles' | 'referral' | 'audit'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'collectibles' | 'referral' | 'giveaways' | 'audit'>('users');
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState('');
   const [resetting, setResetting] = useState(false);
@@ -333,7 +333,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-0">
-        {(['users', 'credits', 'token', 'shop', 'platform', 'collectibles', 'referral', 'audit'] as const).map((tab) => (
+        {(['users', 'credits', 'token', 'shop', 'platform', 'collectibles', 'referral', 'giveaways', 'audit'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -343,7 +343,7 @@ export default function AdminPage() {
                 : 'text-zinc-500 border-transparent hover:text-zinc-300'
             }`}
           >
-            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'platform' ? '⚡ Platform' : tab === 'collectibles' ? '💎 Collectibles' : tab === 'referral' ? '🔗 Referral' : '🛡️ Audit-Log'}
+            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'platform' ? '⚡ Platform' : tab === 'collectibles' ? '💎 Collectibles' : tab === 'referral' ? '🔗 Referral' : tab === 'giveaways' ? '🎁 Giveaways' : '🛡️ Audit-Log'}
           </button>
         ))}
       </div>
@@ -608,6 +608,11 @@ export default function AdminPage() {
       {/* ── Referral Tab ─────────────────────────────────────────────────────── */}
       {activeTab === 'referral' && (
         <ReferralSection secret={secret} users={users} />
+      )}
+
+      {/* ── Giveaways Tab ─────────────────────────────────────────────────────── */}
+      {activeTab === 'giveaways' && (
+        <GiveawayEntriesSection secret={secret} />
       )}
 
       {/* ── Audit-Log Tab ────────────────────────────────────────────────────── */}
@@ -3394,6 +3399,167 @@ interface AdminAuditEntry {
   secret_valid: boolean | null;
   status_code: number | null;
   created_at: string;
+}
+
+interface AdminGiveawayEntry {
+  id: string;
+  email: string;
+  lang: 'de' | 'en' | 'pl';
+  platform: 'instagram' | 'tiktok' | 'facebook' | 'youtube';
+  handle: string;
+  status: 'pending' | 'verified' | 'credited' | 'rejected';
+  creditedWallet: string | null;
+  campaignId: string;
+  campaignTitle: string;
+  artistWallet: string;
+  artistName: string;
+  createdAt: string;
+  verifiedAt: string | null;
+}
+
+const GIVEAWAY_PLATFORM_ICON: Record<AdminGiveawayEntry['platform'], React.ReactNode> = {
+  instagram: <FaInstagram className="text-pink-500" />,
+  tiktok: <FaTiktok className="text-zinc-200" />,
+  facebook: <FaFacebook className="text-blue-500" />,
+  youtube: <FaYoutube className="text-red-500" />,
+};
+
+const GIVEAWAY_STATUS_LABEL: Record<AdminGiveawayEntry['status'], { label: string; className: string }> = {
+  pending: { label: 'Ausstehend', className: 'text-zinc-400' },
+  verified: { label: 'Verifiziert', className: 'text-amber-400' },
+  credited: { label: 'Gutgeschrieben', className: 'text-green-400 font-semibold' },
+  rejected: { label: 'Abgelehnt', className: 'text-red-400' },
+};
+
+function GiveawayEntriesSection({ secret }: { secret: string }) {
+  const [entries, setEntries] = useState<AdminGiveawayEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const r = await fetch('/api/admin/giveaway-entries', {
+        headers: { 'x-admin-secret': secret },
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? 'Fehler');
+      setEntries(Array.isArray(d.entries) ? d.entries : []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler beim Laden');
+    } finally {
+      setLoading(false);
+    }
+  }, [secret]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const filtered = entries.filter(e => {
+    if (!search.trim()) return true;
+    const q = search.trim().toLowerCase();
+    return e.email.toLowerCase().includes(q)
+      || e.handle.toLowerCase().includes(q)
+      || e.artistName.toLowerCase().includes(q)
+      || e.campaignTitle.toLowerCase().includes(q);
+  });
+
+  const copyAllEmails = () => {
+    const uniqueEmails = Array.from(new Set(filtered.map(e => e.email)));
+    navigator.clipboard.writeText(uniqueEmails.join(', ')).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <FaGift className="text-rose-400" /> Giveaway-Teilnahmen
+          </h2>
+          <p className="text-xs text-zinc-500 mt-1">
+            Alle gesammelten Daten aus Gewinnspielen — E-Mail, Sprache, Plattform, Künstler, Status.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={copyAllEmails}
+            disabled={filtered.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-sm font-semibold rounded-xl disabled:opacity-50"
+          >
+            <FaCopy /> {copied ? 'Kopiert!' : `${filtered.length === entries.length ? 'Alle' : filtered.length} E-Mails kopieren`}
+          </button>
+          <button
+            onClick={load}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50"
+          >
+            <FaSync className={loading ? 'animate-spin' : ''} /> Aktualisieren
+          </button>
+        </div>
+      </div>
+
+      <div className="relative">
+        <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={13} />
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Suche nach E-Mail, Handle, Künstler oder Kampagne…"
+          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60"
+        />
+      </div>
+
+      {error && (
+        <div className="bg-red-900/30 border border-red-800/50 text-red-300 text-sm px-4 py-3 rounded-xl">
+          {error}
+        </div>
+      )}
+
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-zinc-500 border-b border-zinc-800">
+              <th className="px-4 py-2 font-semibold">E-Mail</th>
+              <th className="px-4 py-2 font-semibold">Sprache</th>
+              <th className="px-4 py-2 font-semibold">Plattform</th>
+              <th className="px-4 py-2 font-semibold">Handle</th>
+              <th className="px-4 py-2 font-semibold">Status</th>
+              <th className="px-4 py-2 font-semibold">Kampagne</th>
+              <th className="px-4 py-2 font-semibold">Künstler</th>
+              <th className="px-4 py-2 font-semibold">Datum</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((e) => (
+              <tr key={e.id} className="border-b border-zinc-800/50 last:border-0">
+                <td className="px-4 py-2 text-zinc-200 whitespace-nowrap">{e.email}</td>
+                <td className="px-4 py-2 text-zinc-400 uppercase text-xs">{e.lang}</td>
+                <td className="px-4 py-2">{GIVEAWAY_PLATFORM_ICON[e.platform]}</td>
+                <td className="px-4 py-2 text-zinc-300 whitespace-nowrap">@{e.handle}</td>
+                <td className={`px-4 py-2 whitespace-nowrap ${GIVEAWAY_STATUS_LABEL[e.status].className}`}>
+                  {GIVEAWAY_STATUS_LABEL[e.status].label}
+                </td>
+                <td className="px-4 py-2 text-zinc-300 whitespace-nowrap">{e.campaignTitle}</td>
+                <td className="px-4 py-2 text-zinc-400 whitespace-nowrap">{e.artistName}</td>
+                <td className="px-4 py-2 text-zinc-500 whitespace-nowrap">
+                  {new Date(e.createdAt).toLocaleString('de-DE')}
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 && !loading && (
+              <tr>
+                <td colSpan={8} className="px-4 py-6 text-center text-zinc-500">Keine Einträge</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 function AuditLogSection({ secret }: { secret: string }) {
