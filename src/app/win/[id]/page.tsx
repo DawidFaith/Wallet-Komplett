@@ -159,7 +159,7 @@ export default function GiveawayLandingPage() {
         headers: { 'Content-Type': 'application/json' },
         // Immer die aufgelöste Kampagnen-ID verwenden, nicht den URL-Parameter —
         // der kann bei permanenten Artist-Links auch eine Wallet-Adresse sein.
-        body: JSON.stringify({ campaignId: campaign.id, platform, handle: handle.trim(), email: email.trim(), consent: true }),
+        body: JSON.stringify({ campaignId: campaign.id, platform, handle: handle.trim(), email: email.trim(), consent: true, lang }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? 'Error'); return; }
@@ -245,22 +245,6 @@ export default function GiveawayLandingPage() {
           </div>
 
           {campaign.releaseAt && <Countdown releaseAt={campaign.releaseAt} lang={lang} />}
-
-          {campaign.presaveUrl && (
-            <a
-              href={campaign.presaveUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 bg-gradient-to-r from-purple-500/15 to-pink-500/15 border border-purple-400/30 rounded-xl px-4 py-3 mb-4 hover:from-purple-500/25 hover:to-pink-500/25 transition-all"
-            >
-              <span className="text-2xl shrink-0">💎</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-purple-200 font-bold text-sm">{t('win.presaveTitle', lang)}</p>
-                <p className="text-zinc-400 text-xs">{t('win.presaveHint', lang)}</p>
-              </div>
-              <FaExternalLinkAlt className="text-purple-300 shrink-0" size={12} />
-            </a>
-          )}
 
           {campaign.status !== 'active' || campaign.slotsLeft <= 0 ? (
             <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5 text-center text-zinc-400 text-sm">

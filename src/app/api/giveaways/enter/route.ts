@@ -9,11 +9,11 @@ const DUPLICATE_EMAIL_MESSAGE = 'Mit dieser E-Mail-Adresse wurde bereits eine Be
 const PENDING_SIGNUP_MESSAGE = 'Verifiziert! Melde dich im D.FAITH Ecosystem an und verknüpfe diesen Account, um deine Credits automatisch gutgeschrieben zu bekommen. Wir haben dir außerdem eine E-Mail mit den nächsten Schritten geschickt.';
 
 export async function POST(req: NextRequest) {
-  let body: { campaignId?: string; platform?: string; handle?: string; email?: string; consent?: boolean };
+  let body: { campaignId?: string; platform?: string; handle?: string; email?: string; consent?: boolean; lang?: string };
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 }); }
 
-  const { campaignId, platform, handle, email, consent } = body;
+  const { campaignId, platform, handle, email, consent, lang } = body;
   if (!campaignId || !platform || !handle || !email) {
     return NextResponse.json({ error: 'campaignId, platform, handle und email sind erforderlich.' }, { status: 400 });
   }
@@ -23,8 +23,9 @@ export async function POST(req: NextRequest) {
   if (consent !== true) {
     return NextResponse.json({ error: 'Zustimmung zu den Teilnahmebedingungen und Datenschutzhinweisen ist erforderlich.' }, { status: 400 });
   }
+  const entryLang = lang === 'en' || lang === 'pl' ? lang : 'de';
 
-  const result = await startGiveawayEntry(campaignId, platform as GiveawayPlatform, handle, email);
+  const result = await startGiveawayEntry(campaignId, platform as GiveawayPlatform, handle, email, entryLang);
   if ('error' in result) return NextResponse.json({ error: result.error }, { status: 400 });
   const entry = result.entry;
 
@@ -84,6 +85,7 @@ export async function POST(req: NextRequest) {
       credited: markResult.status === 'credited',
       releaseAt: campaign.releaseAt,
       presaveUrl: campaign.presaveUrl,
+      lang: entry.lang,
     });
   } catch (e) {
     console.error('[giveaways/enter] Mailversand fehlgeschlagen:', e);

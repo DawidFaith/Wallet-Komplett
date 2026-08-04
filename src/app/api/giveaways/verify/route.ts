@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
       credited: result.status === 'credited',
       releaseAt: campaign.releaseAt,
       presaveUrl: campaign.presaveUrl,
+      lang: entry.lang,
     });
   } catch (e) {
     console.error('[giveaways/verify] Mailversand fehlgeschlagen:', e);

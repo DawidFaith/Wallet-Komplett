@@ -8,6 +8,7 @@
  */
 
 import nodemailer from 'nodemailer';
+import type { Lang } from '../utils/i18n';
 
 function createTransporter() {
   const user = process.env.GMAIL_USER;
@@ -97,6 +98,82 @@ export async function sendTesterApprovedEmail(params: {
   });
 }
 
+const GIVEAWAY_EMAIL_LOCALE: Record<Lang, string> = { de: 'de-DE', en: 'en-US', pl: 'pl-PL' };
+
+const GIVEAWAY_EMAIL_STRINGS: Record<Lang, {
+  subjectCredited: (reward: number) => string;
+  subjectPending: (reward: number) => string;
+  creditedHeading: string;
+  creditedBody: (title: string, platform: string, handle: string, reward: number) => string;
+  pendingHeading: string;
+  pendingBody1: (title: string, platform: string, handle: string) => string;
+  pendingBody2: (reward: number, platform: string, handle: string) => string;
+  registerButton: string;
+  alreadyHaveAccount: (platform: string) => string;
+  promoHeading: string;
+  releaseLine: (dateStr: string) => string;
+  mythicIntro: string;
+  mythicButton: string;
+}> = {
+  de: {
+    subjectCredited: reward => `[D.FAITH] Du hast ${reward} Credits gewonnen! 🎉`,
+    subjectPending: reward => `[D.FAITH] Fast geschafft! Sichere dir deine ${reward} Credits 🎁`,
+    creditedHeading: 'Du hast gewonnen! 🎉',
+    creditedBody: (title, platform, handle, reward) =>
+      `Deine Teilnahme am Gewinnspiel „${title}" mit deinem ${platform}-Account <b>@${handle}</b> wurde verifiziert — dir wurden <b>${reward} D.FAITH Credits</b> gutgeschrieben!`,
+    pendingHeading: 'Dein Kommentar wurde bestätigt! 🎉',
+    pendingBody1: (title, platform, handle) =>
+      `Deine Teilnahme am Gewinnspiel „${title}" mit deinem ${platform}-Account <b>@${handle}</b> wurde erfolgreich verifiziert.`,
+    pendingBody2: (reward, platform, handle) =>
+      `Damit dir die <b>${reward} D.FAITH Credits</b> gutgeschrieben werden können, fehlt nur noch ein letzter Schritt: Registriere dich kostenlos im D.FAITH Ecosystem und verknüpfe dort denselben ${platform}-Account (@${handle}) in deinem Profil. Deine Credits werden dann automatisch gutgeschrieben.`,
+    registerButton: 'Jetzt registrieren & Credits sichern',
+    alreadyHaveAccount: platform =>
+      `Falls du bereits einen Account hast, melde dich einfach an und verknüpfe deinen ${platform}-Account in den "Sozialen Profilen" – die Credits erscheinen dann automatisch in deinem Guthaben.`,
+    promoHeading: 'Willst du mehr? 🎵',
+    releaseLine: dateStr => `Die neue Single erscheint am <b>${dateStr}</b>.`,
+    mythicIntro: 'Sichere dir zusätzlich die Chance auf ein exklusives Mythic NFT.',
+    mythicButton: '💎 Mythic NFT Gewinnen durch Presave',
+  },
+  en: {
+    subjectCredited: reward => `[D.FAITH] You won ${reward} Credits! 🎉`,
+    subjectPending: reward => `[D.FAITH] Almost there! Secure your ${reward} Credits 🎁`,
+    creditedHeading: 'You won! 🎉',
+    creditedBody: (title, platform, handle, reward) =>
+      `Your entry for the giveaway "${title}" with your ${platform} account <b>@${handle}</b> has been verified — you've been credited <b>${reward} D.FAITH Credits</b>!`,
+    pendingHeading: 'Your comment has been confirmed! 🎉',
+    pendingBody1: (title, platform, handle) =>
+      `Your entry for the giveaway "${title}" with your ${platform} account <b>@${handle}</b> was successfully verified.`,
+    pendingBody2: (reward, platform, handle) =>
+      `To get your <b>${reward} D.FAITH Credits</b> credited, there's just one last step: sign up for free on D.FAITH Ecosystem and link the same ${platform} account (@${handle}) in your profile. Your credits will then be added automatically.`,
+    registerButton: 'Sign up now & claim your credits',
+    alreadyHaveAccount: platform =>
+      `If you already have an account, just log in and link your ${platform} account under "Social Profiles" — your credits will then appear automatically in your balance.`,
+    promoHeading: 'Want more? 🎵',
+    releaseLine: dateStr => `The new single drops on <b>${dateStr}</b>.`,
+    mythicIntro: 'Get an extra chance to win an exclusive Mythic NFT.',
+    mythicButton: '💎 Win a Mythic NFT via Presave',
+  },
+  pl: {
+    subjectCredited: reward => `[D.FAITH] Wygrałeś/aś ${reward} kredytów! 🎉`,
+    subjectPending: reward => `[D.FAITH] Już prawie! Zabezpiecz swoje ${reward} kredytów 🎁`,
+    creditedHeading: 'Wygrałeś/aś! 🎉',
+    creditedBody: (title, platform, handle, reward) =>
+      `Twoje zgłoszenie do konkursu „${title}" z kontem ${platform} <b>@${handle}</b> zostało zweryfikowane — otrzymałeś/aś <b>${reward} kredytów D.FAITH</b>!`,
+    pendingHeading: 'Twój komentarz został potwierdzony! 🎉',
+    pendingBody1: (title, platform, handle) =>
+      `Twoje zgłoszenie do konkursu „${title}" z kontem ${platform} <b>@${handle}</b> zostało pomyślnie zweryfikowane.`,
+    pendingBody2: (reward, platform, handle) =>
+      `Aby otrzymać <b>${reward} kredytów D.FAITH</b>, brakuje tylko jednego kroku: zarejestruj się bezpłatnie w D.FAITH Ecosystem i połącz tam to samo konto ${platform} (@${handle}) w swoim profilu. Twoje kredyty zostaną wtedy dodane automatycznie.`,
+    registerButton: 'Zarejestruj się i odbierz kredyty',
+    alreadyHaveAccount: platform =>
+      `Jeśli masz już konto, po prostu zaloguj się i połącz swoje konto ${platform} w „Profilach społecznościowych" — kredyty pojawią się wtedy automatycznie na Twoim koncie.`,
+    promoHeading: 'Chcesz więcej? 🎵',
+    releaseLine: dateStr => `Nowy singiel ukaże się <b>${dateStr}</b>.`,
+    mythicIntro: 'Zdobądź dodatkową szansę na wygranie ekskluzywnego Mythic NFT.',
+    mythicButton: '💎 Wygraj Mythic NFT dzięki Presave',
+  },
+};
+
 /**
  * Giveaway: geht an JEDE erfolgreich verifizierte Teilnahme — sowohl an Personen,
  * die sofort automatisch gutgeschrieben wurden (credited=true), als auch an
@@ -104,7 +181,8 @@ export async function sendTesterApprovedEmail(params: {
  * die sich dafür erst registrieren müssen (credited=false). Enthält zusätzlich,
  * falls vom Artist hinterlegt, einen Hinweis auf den Single-Release-Countdown
  * und den Presave/Preorder-Link (Chance auf ein Mythic NFT) — um Leute, die noch
- * mehr wollen, gezielt weiter anzusprechen.
+ * mehr wollen, gezielt weiter anzusprechen. Sprache richtet sich danach, welche
+ * die Person auf der Gewinnspiel-Seite gewählt hatte.
  */
 export async function sendGiveawayParticipationEmail(params: {
   toEmail: string;
@@ -115,6 +193,7 @@ export async function sendGiveawayParticipationEmail(params: {
   credited: boolean;
   releaseAt?: string | null;
   presaveUrl?: string | null;
+  lang?: Lang;
 }): Promise<void> {
   const transporter = createTransporter();
   const gmailUser = process.env.GMAIL_USER;
@@ -122,68 +201,46 @@ export async function sendGiveawayParticipationEmail(params: {
     console.log('[email] GMAIL_USER/GMAIL_APP_PASSWORD fehlt – Giveaway-Mail übersprungen');
     return;
   }
-  const platformLabel = params.platform.charAt(0).toUpperCase() + params.platform.slice(1);
+  const lang = params.lang ?? 'de';
+  const s = GIVEAWAY_EMAIL_STRINGS[lang];
+  const platformLabel = params.platform === 'tiktok' ? 'TikTok' : params.platform.charAt(0).toUpperCase() + params.platform.slice(1);
 
   const mainBlock = params.credited
-    ? `
-      <h2>Du hast gewonnen! 🎉</h2>
-      <p>
-        Deine Teilnahme am Gewinnspiel „${params.campaignTitle}" mit deinem ${platformLabel}-Account
-        <b>@${params.handle}</b> wurde verifiziert — dir wurden <b>${params.creditReward} D.FAITH Credits</b> gutgeschrieben!
-      </p>
-    `
+    ? `<h2>${s.creditedHeading}</h2><p>${s.creditedBody(params.campaignTitle, platformLabel, params.handle, params.creditReward)}</p>`
     : `
-      <h2>Dein Kommentar wurde bestätigt! 🎉</h2>
-      <p>
-        Deine Teilnahme am Gewinnspiel „${params.campaignTitle}" mit deinem ${platformLabel}-Account
-        <b>@${params.handle}</b> wurde erfolgreich verifiziert.
-      </p>
-      <p>
-        Damit dir die <b>${params.creditReward} D.FAITH Credits</b> gutgeschrieben werden können,
-        fehlt nur noch ein letzter Schritt: Registriere dich kostenlos im D.FAITH Ecosystem und
-        verknüpfe dort denselben ${platformLabel}-Account (@${params.handle}) in deinem Profil.
-        Deine Credits werden dann automatisch gutgeschrieben.
-      </p>
+      <h2>${s.pendingHeading}</h2>
+      <p>${s.pendingBody1(params.campaignTitle, platformLabel, params.handle)}</p>
+      <p>${s.pendingBody2(params.creditReward, platformLabel, params.handle)}</p>
       <p>
         <a href="${APP_URL}" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">
-          Jetzt registrieren & Credits sichern
+          ${s.registerButton}
         </a>
       </p>
-      <p style="color:#888;font-size:12px;">
-        Falls du bereits einen Account hast, melde dich einfach an und verknüpfe deinen ${platformLabel}-Account
-        in den "Sozialen Profilen" – die Credits erscheinen dann automatisch in deinem Guthaben.
-      </p>
+      <p style="color:#888;font-size:12px;">${s.alreadyHaveAccount(platformLabel)}</p>
     `;
 
   let promoBlock = '';
   if (params.releaseAt || params.presaveUrl) {
     const releaseLine = params.releaseAt
-      ? `<p>Die neue Single erscheint am <b>${new Date(params.releaseAt).toLocaleString('de-DE', { dateStyle: 'full', timeStyle: 'short' })}</b>.</p>`
+      ? `<p>${s.releaseLine(new Date(params.releaseAt).toLocaleString(GIVEAWAY_EMAIL_LOCALE[lang], { dateStyle: 'full', timeStyle: 'short' }))}</p>`
       : '';
     const presaveLine = params.presaveUrl
       ? `
-        <p>Wer presaved, hat zusätzlich die Chance auf ein exklusives <b>Mythic NFT</b>.</p>
+        <p>${s.mythicIntro}</p>
         <p>
           <a href="${params.presaveUrl}" style="background:#a855f7;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">
-            💎 Jetzt presaven & Mythic NFT gewinnen
+            ${s.mythicButton}
           </a>
         </p>
       `
       : '';
-    promoBlock = `
-      <hr/>
-      <h3>Willst du mehr? 🎵</h3>
-      ${releaseLine}
-      ${presaveLine}
-    `;
+    promoBlock = `<hr/><h3>${s.promoHeading}</h3>${releaseLine}${presaveLine}`;
   }
 
   await transporter.sendMail({
     from: `"D.FAITH App" <${gmailUser}>`,
     to: params.toEmail,
-    subject: params.credited
-      ? `[D.FAITH] Du hast ${params.creditReward} Credits gewonnen! 🎉`
-      : `[D.FAITH] Fast geschafft! Sichere dir deine ${params.creditReward} Credits 🎁`,
+    subject: params.credited ? s.subjectCredited(params.creditReward) : s.subjectPending(params.creditReward),
     html: `${mainBlock}${promoBlock}`,
   });
 }

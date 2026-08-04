@@ -1660,8 +1660,6 @@ const dict: Translations = {
   'win.hours':              { de: 'Std',                          en: 'Hrs',                          pl: 'Godz' },
   'win.minutes':            { de: 'Min',                          en: 'Min',                          pl: 'Min' },
   'win.seconds':            { de: 'Sek',                          en: 'Sec',                          pl: 'Sek' },
-  'win.presaveTitle':       { de: '💎 Presave & Mythic NFT gewinnen', en: '💎 Presave & win a Mythic NFT', pl: '💎 Presave i wygraj Mythic NFT' },
-  'win.presaveHint':        { de: 'Presave/Preorder jetzt sichern für die Chance auf ein exklusives Mythic NFT.', en: 'Presave/preorder now for a chance to win an exclusive Mythic NFT.', pl: 'Zapisz presave/preorder już teraz, by mieć szansę na ekskluzywne Mythic NFT.' },
   'win.platformDisclaimer': { de: 'Dieses Gewinnspiel steht in keiner Verbindung zu {platforms} und wird von diesen Unternehmen in keiner Weise gesponsert, unterstützt oder durchgeführt.', en: 'This giveaway is in no way connected to, sponsored, endorsed, or administered by {platforms}.', pl: 'Ten konkurs nie jest w żaden sposób powiązany z {platforms} ani sponsorowany, popierany czy administrowany przez te firmy.' },
   'win.consentPrefix':      { de: 'Ich akzeptiere die',           en: 'I accept the',                pl: 'Akceptuję' },
   'win.termsAndPrivacyLabel': { de: 'Teilnahmebedingungen und Datenschutzhinweise', en: 'terms & conditions and privacy notice', pl: 'regulamin i informacje o ochronie danych' },

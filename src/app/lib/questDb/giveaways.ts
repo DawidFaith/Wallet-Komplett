@@ -51,6 +51,7 @@ async function ensureTables() {
       UNIQUE(campaign_id, platform, handle)
     )
   `;
+  await sql`ALTER TABLE giveaway_entries ADD COLUMN IF NOT EXISTS lang TEXT NOT NULL DEFAULT 'de'`;
   await sql`CREATE INDEX IF NOT EXISTS giveaway_entries_handle_idx ON giveaway_entries (platform, handle, status)`;
 }
 
@@ -86,6 +87,7 @@ export interface GiveawayEntry {
   handle: string;
   email: string;
   code: string;
+  lang: 'de' | 'en' | 'pl';
   status: 'pending' | 'verified' | 'credited' | 'rejected';
   creditedWallet: string | null;
   createdAt: string;
@@ -121,6 +123,7 @@ function rowToEntry(r: any): GiveawayEntry {
     handle: r.handle as string,
     email: r.email as string,
     code: r.code as string,
+    lang: (r.lang as 'de' | 'en' | 'pl') ?? 'de',
     status: r.status as 'pending' | 'verified' | 'credited' | 'rejected',
     creditedWallet: r.credited_wallet as string | null,
     createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
@@ -321,6 +324,7 @@ export async function startGiveawayEntry(
   platform: GiveawayPlatform,
   handle: string,
   email: string,
+  lang: 'de' | 'en' | 'pl' = 'de',
 ): Promise<{ entry: GiveawayEntry } | { error: string }> {
   await ensureTables();
   const sql = getDb();
@@ -355,9 +359,10 @@ export async function startGiveawayEntry(
 
   const id = `gwe_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const code = generateCode(campaign.requiredText);
+  const validLang = (['de', 'en', 'pl'] as const).includes(lang) ? lang : 'de';
   await sql`
-    INSERT INTO giveaway_entries (id, campaign_id, platform, handle, email, code, status)
-    VALUES (${id}, ${campaignId}, ${platform}, ${cleanHandle}, ${cleanEmail}, ${code}, 'pending')
+    INSERT INTO giveaway_entries (id, campaign_id, platform, handle, email, code, status, lang)
+    VALUES (${id}, ${campaignId}, ${platform}, ${cleanHandle}, ${cleanEmail}, ${code}, 'pending', ${validLang})
   `;
   const rows = await sql`SELECT * FROM giveaway_entries WHERE id = ${id} LIMIT 1`;
   return { entry: rowToEntry(rows[0]) };
