@@ -29,11 +29,13 @@ export async function POST(req: NextRequest) {
     creditReward?: number;
     maxWinners?: number;
     platforms?: { platform: string; postUrl: string; mediaId?: string | null }[];
+    releaseAt?: string | null;
+    presaveUrl?: string | null;
   };
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 }); }
 
-  const { artistWallet, title, imageUrl, mediaType, requiredText, creditReward, maxWinners, platforms } = body;
+  const { artistWallet, title, imageUrl, mediaType, requiredText, creditReward, maxWinners, platforms, releaseAt, presaveUrl } = body;
   if (!artistWallet || !title?.trim() || !creditReward || !maxWinners || !platforms?.length) {
     return NextResponse.json({ error: 'artistWallet, title, creditReward, maxWinners und platforms sind erforderlich.' }, { status: 400 });
   }
@@ -82,6 +84,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Keine gültige Plattform übergeben.' }, { status: 400 });
   }
 
+  let releaseAtIso: string | null = null;
+  if (releaseAt?.trim()) {
+    const parsed = new Date(releaseAt);
+    if (isNaN(parsed.getTime())) return NextResponse.json({ error: 'Ungültiges Release-Datum.' }, { status: 400 });
+    releaseAtIso = parsed.toISOString();
+  }
+
   try {
     const result = await createGiveawayCampaign(
       artistWallet,
@@ -92,6 +101,8 @@ export async function POST(req: NextRequest) {
       rewardNum,
       winnersNum,
       resolvedPlatforms,
+      releaseAtIso,
+      presaveUrl?.trim() || null,
     );
     if ('error' in result) return NextResponse.json({ error: result.error }, { status: 400 });
     return NextResponse.json({ success: true, campaignId: result.id });

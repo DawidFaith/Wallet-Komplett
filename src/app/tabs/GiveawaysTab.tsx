@@ -104,6 +104,8 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
   const [creditReward, setCreditReward]   = useState('50');
   const [maxWinners, setMaxWinners]       = useState('20');
   const [requiredText, setRequiredText]   = useState('dfaith');
+  const [releaseAt, setReleaseAt]         = useState('');
+  const [presaveUrl, setPresaveUrl]       = useState('');
   const [enabledPlatforms, setEnabledPlatforms] = useState<Partial<Record<GiveawayPlatformKey, boolean>>>({});
   const [platformUrls, setPlatformUrls]         = useState<Partial<Record<GiveawayPlatformKey, string>>>({});
   const [platformMediaIds, setPlatformMediaIds] = useState<Partial<Record<GiveawayPlatformKey, string>>>({});
@@ -135,6 +137,7 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
   const resetForm = () => {
     setTitle(''); setMediaFile(null); setMediaPreview(null); setMediaType('image');
     setCreditReward('50'); setMaxWinners('20'); setRequiredText('dfaith');
+    setReleaseAt(''); setPresaveUrl('');
     setEnabledPlatforms({}); setPlatformUrls({}); setPlatformMediaIds({});
     setMediaLists({}); setMediaLoading({}); setMediaHint({});
   };
@@ -198,6 +201,8 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
           artistWallet, title: title.trim(), imageUrl: mediaUrl, mediaType,
           requiredText: requiredText.trim() || 'dfaith',
           creditReward: reward, maxWinners: winners, platforms,
+          releaseAt: releaseAt || null,
+          presaveUrl: presaveUrl.trim() || null,
         }),
       });
       const data = await res.json();
@@ -351,6 +356,25 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
               className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60"
             />
             <p className="text-zinc-600 text-[10px] mt-1">{tFmt('gw.commentWordHint', lang, { word: requiredText || 'dfaith' })}</p>
+          </div>
+
+          <div>
+            <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">{t('gw.releaseAtLabel', lang)}</label>
+            <input
+              type="datetime-local" value={releaseAt} onChange={e => setReleaseAt(e.target.value)}
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60"
+            />
+            <p className="text-zinc-600 text-[10px] mt-1">{t('gw.releaseAtHint', lang)}</p>
+          </div>
+
+          <div>
+            <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">{t('gw.presaveUrlLabel', lang)}</label>
+            <input
+              type="url" value={presaveUrl} onChange={e => setPresaveUrl(e.target.value)}
+              placeholder="https://..."
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60"
+            />
+            <p className="text-zinc-600 text-[10px] mt-1">{t('gw.presaveUrlHint', lang)}</p>
           </div>
 
           <div className="space-y-2">

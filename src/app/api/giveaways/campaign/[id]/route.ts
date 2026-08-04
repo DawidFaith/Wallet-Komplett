@@ -35,6 +35,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       slotsLeft: Math.max(0, campaign.maxWinners - campaign.winnerCount),
       platforms: campaign.platforms.map(p => ({ platform: p.platform, postUrl: p.postUrl })),
       artistName,
+      releaseAt: campaign.releaseAt,
+      presaveUrl: campaign.presaveUrl,
     },
   }, { headers: { 'Cache-Control': 'no-store' } });
 }

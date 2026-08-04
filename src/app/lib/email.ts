@@ -98,30 +98,41 @@ export async function sendTesterApprovedEmail(params: {
 }
 
 /**
- * Giveaway: Teilnahme wurde per Kommentar verifiziert, aber der Social-Account
- * ist noch keinem D.FAITH-Profil zugeordnet. Lädt die Person ein, sich zu
- * registrieren und den Account zu verknüpfen, damit die Credits automatisch
- * nachträglich gutgeschrieben werden.
+ * Giveaway: geht an JEDE erfolgreich verifizierte Teilnahme — sowohl an Personen,
+ * die sofort automatisch gutgeschrieben wurden (credited=true), als auch an
+ * Personen, deren Social-Account noch keinem D.FAITH-Profil zugeordnet ist und
+ * die sich dafür erst registrieren müssen (credited=false). Enthält zusätzlich,
+ * falls vom Artist hinterlegt, einen Hinweis auf den Single-Release-Countdown
+ * und den Presave/Preorder-Link (Chance auf ein Mythic NFT) — um Leute, die noch
+ * mehr wollen, gezielt weiter anzusprechen.
  */
-export async function sendGiveawaySignupInviteEmail(params: {
+export async function sendGiveawayParticipationEmail(params: {
   toEmail: string;
   campaignTitle: string;
   platform: string;
   handle: string;
   creditReward: number;
+  credited: boolean;
+  releaseAt?: string | null;
+  presaveUrl?: string | null;
 }): Promise<void> {
   const transporter = createTransporter();
   const gmailUser = process.env.GMAIL_USER;
   if (!transporter) {
-    console.log('[email] GMAIL_USER/GMAIL_APP_PASSWORD fehlt – Giveaway-Einladungsmail übersprungen');
+    console.log('[email] GMAIL_USER/GMAIL_APP_PASSWORD fehlt – Giveaway-Mail übersprungen');
     return;
   }
   const platformLabel = params.platform.charAt(0).toUpperCase() + params.platform.slice(1);
-  await transporter.sendMail({
-    from: `"D.FAITH App" <${gmailUser}>`,
-    to: params.toEmail,
-    subject: `[D.FAITH] Fast geschafft! Sichere dir deine ${params.creditReward} Credits 🎁`,
-    html: `
+
+  const mainBlock = params.credited
+    ? `
+      <h2>Du hast gewonnen! 🎉</h2>
+      <p>
+        Deine Teilnahme am Gewinnspiel „${params.campaignTitle}" mit deinem ${platformLabel}-Account
+        <b>@${params.handle}</b> wurde verifiziert — dir wurden <b>${params.creditReward} D.FAITH Credits</b> gutgeschrieben!
+      </p>
+    `
+    : `
       <h2>Dein Kommentar wurde bestätigt! 🎉</h2>
       <p>
         Deine Teilnahme am Gewinnspiel „${params.campaignTitle}" mit deinem ${platformLabel}-Account
@@ -142,6 +153,37 @@ export async function sendGiveawaySignupInviteEmail(params: {
         Falls du bereits einen Account hast, melde dich einfach an und verknüpfe deinen ${platformLabel}-Account
         in den "Sozialen Profilen" – die Credits erscheinen dann automatisch in deinem Guthaben.
       </p>
-    `,
+    `;
+
+  let promoBlock = '';
+  if (params.releaseAt || params.presaveUrl) {
+    const releaseLine = params.releaseAt
+      ? `<p>Die neue Single erscheint am <b>${new Date(params.releaseAt).toLocaleString('de-DE', { dateStyle: 'full', timeStyle: 'short' })}</b>.</p>`
+      : '';
+    const presaveLine = params.presaveUrl
+      ? `
+        <p>Wer presaved, hat zusätzlich die Chance auf ein exklusives <b>Mythic NFT</b>.</p>
+        <p>
+          <a href="${params.presaveUrl}" style="background:#a855f7;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">
+            💎 Jetzt presaven & Mythic NFT gewinnen
+          </a>
+        </p>
+      `
+      : '';
+    promoBlock = `
+      <hr/>
+      <h3>Willst du mehr? 🎵</h3>
+      ${releaseLine}
+      ${presaveLine}
+    `;
+  }
+
+  await transporter.sendMail({
+    from: `"D.FAITH App" <${gmailUser}>`,
+    to: params.toEmail,
+    subject: params.credited
+      ? `[D.FAITH] Du hast ${params.creditReward} Credits gewonnen! 🎉`
+      : `[D.FAITH] Fast geschafft! Sichere dir deine ${params.creditReward} Credits 🎁`,
+    html: `${mainBlock}${promoBlock}`,
   });
 }

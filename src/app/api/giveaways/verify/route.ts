@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGiveawayEntry, getPublicGiveawayCampaign, markGiveawayEntryVerified } from '../../../lib/questDb';
 import { checkGiveawayEntryComment } from '../../../lib/giveawayEntryCheck';
-import { sendGiveawaySignupInviteEmail } from '../../../lib/email';
+import { sendGiveawayParticipationEmail } from '../../../lib/email';
 
 export const maxDuration = 30;
 
@@ -59,20 +59,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ verified: false, error: DUPLICATE_EMAIL_MESSAGE, duplicateEmail: true }, { status: 400 });
   }
 
-  if (result.status === 'verified') {
-    // Wichtig: await'en statt fire-and-forget — Vercel kann die Serverless-Funktion
-    // beenden, sobald die Response raus ist, und würde den Mailversand sonst abwürgen.
-    try {
-      await sendGiveawaySignupInviteEmail({
-        toEmail: entry.email,
-        campaignTitle: campaign.title,
-        platform: entry.platform,
-        handle: entry.handle,
-        creditReward: campaign.creditReward,
-      });
-    } catch (e) {
-      console.error('[giveaways/verify] Einladungsmail fehlgeschlagen:', e);
-    }
+  // Wichtig: await'en statt fire-and-forget — Vercel kann die Serverless-Funktion
+  // beenden, sobald die Response raus ist, und würde den Mailversand sonst abwürgen.
+  // Geht an jede erfolgreich verifizierte Teilnahme, nicht nur an unregistrierte.
+  try {
+    await sendGiveawayParticipationEmail({
+      toEmail: entry.email,
+      campaignTitle: campaign.title,
+      platform: entry.platform,
+      handle: entry.handle,
+      creditReward: campaign.creditReward,
+      credited: result.status === 'credited',
+      releaseAt: campaign.releaseAt,
+      presaveUrl: campaign.presaveUrl,
+    });
+  } catch (e) {
+    console.error('[giveaways/verify] Mailversand fehlgeschlagen:', e);
   }
 
   return NextResponse.json({

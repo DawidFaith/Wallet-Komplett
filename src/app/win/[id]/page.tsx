@@ -19,6 +19,52 @@ const PLATFORM_META: Record<Platform, { label: string; icon: ReactNode; color: s
 
 const LANG_FLAGS: Record<Lang, string> = { de: '🇩🇪', en: '🇺🇸', pl: '🇵🇱' };
 
+function Countdown({ releaseAt, lang }: { releaseAt: string; lang: Lang }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const diff = new Date(releaseAt).getTime() - now;
+  if (diff <= 0) {
+    return (
+      <div className="bg-green-500/10 border border-green-500/25 rounded-xl px-4 py-2.5 text-center text-green-400 text-sm font-bold mb-4">
+        {t('win.releasedNow', lang)}
+      </div>
+    );
+  }
+
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  const seconds = Math.floor((diff % 60000) / 1000);
+
+  return (
+    <div className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 mb-4">
+      <p className="text-zinc-500 text-[9px] uppercase tracking-widest font-bold text-center mb-2">{t('win.countdownLabel', lang)}</p>
+      <div className="flex items-center justify-center gap-3">
+        <div className="text-center">
+          <p className="text-amber-300 font-black text-xl leading-none tabular-nums">{String(days).padStart(2, '0')}</p>
+          <p className="text-zinc-500 text-[8px] uppercase tracking-widest mt-0.5">{t('win.days', lang)}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-amber-300 font-black text-xl leading-none tabular-nums">{String(hours).padStart(2, '0')}</p>
+          <p className="text-zinc-500 text-[8px] uppercase tracking-widest mt-0.5">{t('win.hours', lang)}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-amber-300 font-black text-xl leading-none tabular-nums">{String(minutes).padStart(2, '0')}</p>
+          <p className="text-zinc-500 text-[8px] uppercase tracking-widest mt-0.5">{t('win.minutes', lang)}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-amber-300 font-black text-xl leading-none tabular-nums">{String(seconds).padStart(2, '0')}</p>
+          <p className="text-zinc-500 text-[8px] uppercase tracking-widest mt-0.5">{t('win.seconds', lang)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function LanguageSwitcher() {
   const lang = useLang();
   const setLang = useSetLang();
@@ -50,6 +96,8 @@ interface PublicCampaign {
   slotsLeft: number;
   platforms: { platform: Platform; postUrl: string }[];
   artistName: string;
+  releaseAt: string | null;
+  presaveUrl: string | null;
 }
 
 interface PendingState {
@@ -195,6 +243,24 @@ export default function GiveawayLandingPage() {
               </span>
             )}
           </div>
+
+          {campaign.releaseAt && <Countdown releaseAt={campaign.releaseAt} lang={lang} />}
+
+          {campaign.presaveUrl && (
+            <a
+              href={campaign.presaveUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 bg-gradient-to-r from-purple-500/15 to-pink-500/15 border border-purple-400/30 rounded-xl px-4 py-3 mb-4 hover:from-purple-500/25 hover:to-pink-500/25 transition-all"
+            >
+              <span className="text-2xl shrink-0">💎</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-purple-200 font-bold text-sm">{t('win.presaveTitle', lang)}</p>
+                <p className="text-zinc-400 text-xs">{t('win.presaveHint', lang)}</p>
+              </div>
+              <FaExternalLinkAlt className="text-purple-300 shrink-0" size={12} />
+            </a>
+          )}
 
           {campaign.status !== 'active' || campaign.slotsLeft <= 0 ? (
             <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5 text-center text-zinc-400 text-sm">

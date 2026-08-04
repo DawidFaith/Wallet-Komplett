@@ -24,6 +24,8 @@ async function ensureTables() {
     )
   `;
   await sql`ALTER TABLE giveaway_campaigns ADD COLUMN IF NOT EXISTS media_type TEXT NOT NULL DEFAULT 'image'`;
+  await sql`ALTER TABLE giveaway_campaigns ADD COLUMN IF NOT EXISTS release_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE giveaway_campaigns ADD COLUMN IF NOT EXISTS presave_url TEXT`;
   await sql`
     CREATE TABLE IF NOT EXISTS giveaway_campaign_platforms (
       id TEXT PRIMARY KEY,
@@ -66,6 +68,8 @@ export interface GiveawayCampaign {
   creditsRefunded: boolean;
   status: 'active' | 'ended';
   createdAt: string;
+  releaseAt: string | null;
+  presaveUrl: string | null;
   platforms: GiveawayCampaignPlatform[];
 }
 
@@ -103,6 +107,8 @@ function rowToCampaign(r: any, platforms: GiveawayCampaignPlatform[]): GiveawayC
     creditsRefunded: Boolean(r.credits_refunded),
     status: r.status as 'active' | 'ended',
     createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
+    releaseAt: r.release_at ? (r.release_at instanceof Date ? r.release_at.toISOString() : String(r.release_at)) : null,
+    presaveUrl: r.presave_url as string | null,
     platforms,
   };
 }
@@ -163,6 +169,8 @@ export async function createGiveawayCampaign(
   creditReward: number,
   maxWinners: number,
   platforms: { platform: GiveawayPlatform; postUrl: string; mediaId: string | null }[],
+  releaseAt: string | null = null,
+  presaveUrl: string | null = null,
 ): Promise<{ id: string } | { error: string }> {
   await ensureTables();
   if (platforms.length === 0) return { error: 'Mindestens eine Plattform muss konfiguriert werden.' };
@@ -177,8 +185,8 @@ export async function createGiveawayCampaign(
   const id = `gw_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   try {
     await sql`
-      INSERT INTO giveaway_campaigns (id, artist_wallet, title, image_url, media_type, required_text, credit_reward, max_winners, credits_locked, status)
-      VALUES (${id}, ${artistWallet.toLowerCase()}, ${title}, ${imageUrl}, ${mediaType}, ${requiredText}, ${creditReward}, ${maxWinners}, ${totalBudget}, 'active')
+      INSERT INTO giveaway_campaigns (id, artist_wallet, title, image_url, media_type, required_text, credit_reward, max_winners, credits_locked, status, release_at, presave_url)
+      VALUES (${id}, ${artistWallet.toLowerCase()}, ${title}, ${imageUrl}, ${mediaType}, ${requiredText}, ${creditReward}, ${maxWinners}, ${totalBudget}, 'active', ${releaseAt}, ${presaveUrl})
     `;
     for (const p of platforms) {
       const pid = `gwp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
