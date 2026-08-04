@@ -9,7 +9,15 @@ export const maxDuration = 60;
 // nur für den Dawid-Faith-Kanal gebaut, nicht als Feature für alle Artists.
 const BOT_ARTIST_WALLET = 'user_3dfvunr7ziaywue8bhzdqw2blsw';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de';
+// Absolute https://-URL erzwingen (falls die Env-Var ohne Schema gesetzt wurde) —
+// YouTube linkifiziert einen Kommentar nur, wenn die URL als vollständige,
+// gültige Adresse erkennbar ist.
+function resolveAppUrl(): string {
+  let url = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de';
+  if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+  return url.replace(/\/$/, '');
+}
+const APP_URL = resolveAppUrl();
 
 function isAuthorized(req: NextRequest): boolean {
   const authHeader = req.headers.get('authorization');
@@ -41,7 +49,7 @@ export async function GET(req: NextRequest) {
   const artistName = profile.displayName ?? profile.clerkName;
   const slug = artistName ? slugify(artistName) : '';
   const permanentLink = `${APP_URL}/win/${slug || BOT_ARTIST_WALLET}`;
-  const replyText = `🎁 Danke fürs Kommentieren! Sichere dir deine Credits hier: ${permanentLink}`;
+  const replyText = `🎁 Thanks for joining! Here's the link to the giveaway: ${permanentLink}`;
 
   const comments = await fetchLatestYoutubeComments(ytPlatform.mediaId);
   const requiredText = campaign.requiredText.toLowerCase();
