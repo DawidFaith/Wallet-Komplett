@@ -101,6 +101,22 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Kein Page Access Token verfügbar' }, { status: 500 });
   }
 
+  // Optional: Posts/Fan-Count derselben Page mit demselben Token abrufen —
+  // Vergleich, ob nur die Conversations-API für diese Page fehlschlägt oder
+  // grundsätzlich alles.
+  if (req.nextUrl.searchParams.get('testPosts') === '1') {
+    try {
+      const res = await fetch(
+        `${GRAPH}/${pageId}?fields=name,fan_count,posts.limit(5){message,created_time,permalink_url}&access_token=${pageToken}`,
+        { cache: 'no-store' },
+      );
+      const data = await res.json();
+      return NextResponse.json(data, { status: res.status });
+    } catch (err) {
+      return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
+    }
+  }
+
   // Optional: nur die tatsächlichen Scopes des Page-Tokens prüfen, ohne Nachrichten zu lesen
   if (req.nextUrl.searchParams.get('debugToken') === '1') {
     const appId = process.env.META_APP_ID ?? process.env.FACEBOOK_APP_ID;
