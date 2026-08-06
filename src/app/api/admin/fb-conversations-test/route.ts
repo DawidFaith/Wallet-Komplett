@@ -8,7 +8,7 @@
  * Kommentar-Name bei Reels über die normale Comments-API fehlt.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getPageAccessToken } from '@/app/lib/metaApi';
+import { getPageAccessToken, getPageTokenByPageId } from '@/app/lib/metaApi';
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
@@ -19,12 +19,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
 
-  const pageId = process.env.FACEBOOK_PAGE_ID;
+  // Optional: gezielt eine andere Artist-Page abfragen statt der Standard-Page
+  const overridePageId = req.nextUrl.searchParams.get('pageId');
+  const pageId = overridePageId ?? process.env.FACEBOOK_PAGE_ID;
   if (!pageId) {
     return NextResponse.json({ error: 'FACEBOOK_PAGE_ID nicht gesetzt' }, { status: 500 });
   }
 
-  const pageToken = await getPageAccessToken();
+  const pageToken = overridePageId
+    ? await getPageTokenByPageId(overridePageId)
+    : await getPageAccessToken();
   if (!pageToken) {
     return NextResponse.json({ error: 'Kein Page Access Token verfügbar' }, { status: 500 });
   }
