@@ -26,6 +26,32 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'FACEBOOK_PAGE_ID nicht gesetzt' }, { status: 500 });
   }
 
+  // Optional: nur prüfen, über welche Quelle (me/accounts = direkte Page-Rolle,
+  // owned_pages/client_pages = Business Manager) diese eine pageId erreichbar ist —
+  // ohne andere Pages oder Tokens preiszugeben.
+  if (req.nextUrl.searchParams.get('checkSource') === '1') {
+    const systemToken = process.env.META_SYSTEM_USER_TOKEN;
+    const bizId = process.env.META_BUSINESS_ID;
+    if (!systemToken) return NextResponse.json({ error: 'META_SYSTEM_USER_TOKEN nicht gesetzt' }, { status: 500 });
+
+    const checkOne = async (url: string): Promise<boolean> => {
+      try {
+        const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+        const data = await res.json() as { data?: Array<{ id: string }>; error?: unknown };
+        return !!data.data?.some(p => p.id === pageId);
+      } catch { return false; }
+    };
+
+    const foundInMeAccounts = await checkOne(`${GRAPH}/me/accounts?fields=id&limit=200&access_token=${systemToken}`);
+    let foundInOwnedPages = false;
+    let foundInClientPages = false;
+    if (bizId) {
+      foundInOwnedPages = await checkOne(`${GRAPH}/${bizId}/owned_pages?fields=id&limit=200&access_token=${systemToken}`);
+      foundInClientPages = await checkOne(`${GRAPH}/${bizId}/client_pages?fields=id&limit=200&access_token=${systemToken}`);
+    }
+    return NextResponse.json({ pageId, foundInMeAccounts, foundInOwnedPages, foundInClientPages });
+  }
+
   const pageToken = overridePageId
     ? await getPageTokenByPageId(overridePageId)
     : await getPageAccessToken();
