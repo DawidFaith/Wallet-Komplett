@@ -10,6 +10,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPageAccessToken, getPageTokenByPageId } from '@/app/lib/metaApi';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
 export async function GET(req: NextRequest) {
