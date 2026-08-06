@@ -49,7 +49,16 @@ export async function GET(req: NextRequest) {
       foundInOwnedPages = await checkOne(`${GRAPH}/${bizId}/owned_pages?fields=id&limit=200&access_token=${systemToken}`);
       foundInClientPages = await checkOne(`${GRAPH}/${bizId}/client_pages?fields=id&limit=200&access_token=${systemToken}`);
     }
-    return NextResponse.json({ pageId, foundInMeAccounts, foundInOwnedPages, foundInClientPages });
+
+    // Tatsächlich gewährte Page-Tasks (z.B. MESSAGING) für diese eine Page laut Meta
+    let tasks: string[] | null = null;
+    try {
+      const res = await fetch(`${GRAPH}/me/accounts?fields=id,tasks&limit=200&access_token=${systemToken}`, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+      const data = await res.json() as { data?: Array<{ id: string; tasks?: string[] }> };
+      tasks = data.data?.find(p => p.id === pageId)?.tasks ?? null;
+    } catch { /* tasks bleibt null */ }
+
+    return NextResponse.json({ pageId, foundInMeAccounts, foundInOwnedPages, foundInClientPages, tasks });
   }
 
   const pageToken = overridePageId
