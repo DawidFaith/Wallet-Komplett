@@ -341,7 +341,15 @@ export async function startGiveawayEntry(
   const existing = await sql`
     SELECT * FROM giveaway_entries WHERE campaign_id = ${campaignId} AND platform = ${platform} AND handle = ${cleanHandle} LIMIT 1
   `;
-  if (existing.length > 0) return { entry: rowToEntry(existing[0]) };
+  if (existing.length > 0) {
+    // Nur der/die ursprüngliche Teilnehmer:in (gleiche E-Mail) darf den Status dieses
+    // Eintrags sehen — sonst könnte jemand fremde, bereits gewonnene Handles mit einer
+    // beliebigen E-Mail "abfragen" und sich fälschlich als Gewinner:in ausgeben.
+    if ((existing[0].email as string).toLowerCase() !== cleanEmail) {
+      return { error: 'Dieser Handle wurde für dieses Gewinnspiel bereits mit einer anderen E-Mail-Adresse verwendet.', code: 'handle_taken' };
+    }
+    return { entry: rowToEntry(existing[0]) };
+  }
 
   // Ein und dieselbe E-Mail-Adresse darf pro Kampagne nur einmal belohnt werden —
   // verhindert, dass eine Person über mehrere Plattformen/Handles mehrfach gewinnt.

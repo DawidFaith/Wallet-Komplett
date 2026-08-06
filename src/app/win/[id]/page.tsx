@@ -29,6 +29,7 @@ const ERROR_CODE_KEYS: Record<string, string> = {
   sold_out: 'win.soldOut',
   platform_unavailable: 'win.errPlatformUnavailable',
   already_participated: 'win.errAlreadyParticipated',
+  handle_taken: 'win.errHandleTaken',
   already_credited: 'win.errAlreadyCredited',
   verification_unavailable: 'win.errVerificationUnavailable',
 };
