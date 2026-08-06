@@ -5,48 +5,43 @@ import { sendGiveawayParticipationEmail } from '../../../lib/email';
 
 export const maxDuration = 30;
 
-const DUPLICATE_EMAIL_MESSAGE = 'Mit dieser E-Mail-Adresse wurde bereits eine Belohnung für dieses Gewinnspiel beansprucht.';
-const PENDING_SIGNUP_MESSAGE = 'Verifiziert! Melde dich im D.FAITH Ecosystem an und verknüpfe diesen Account, um deine Credits automatisch gutgeschrieben zu bekommen. Wir haben dir außerdem eine E-Mail mit den nächsten Schritten geschickt.';
-
 export async function POST(req: NextRequest) {
   let body: { campaignId?: string; platform?: string; handle?: string; email?: string; consent?: boolean; lang?: string };
   try { body = await req.json(); }
-  catch { return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 }); }
+  catch { return NextResponse.json({ error: 'Ungültiger Request Body', errorCode: 'invalid_body' }, { status: 400 }); }
 
   const { campaignId, platform, handle, email, consent, lang } = body;
   if (!campaignId || !platform || !handle || !email) {
-    return NextResponse.json({ error: 'campaignId, platform, handle und email sind erforderlich.' }, { status: 400 });
+    return NextResponse.json({ error: 'campaignId, platform, handle und email sind erforderlich.', errorCode: 'missing_fields' }, { status: 400 });
   }
   if (!/^\S+@\S+\.\S+$/.test(email)) {
-    return NextResponse.json({ error: 'Ungültige E-Mail-Adresse.' }, { status: 400 });
+    return NextResponse.json({ error: 'Ungültige E-Mail-Adresse.', errorCode: 'invalid_email' }, { status: 400 });
   }
   if (consent !== true) {
-    return NextResponse.json({ error: 'Zustimmung zu den Teilnahmebedingungen und Datenschutzhinweisen ist erforderlich.' }, { status: 400 });
+    return NextResponse.json({ error: 'Zustimmung zu den Teilnahmebedingungen und Datenschutzhinweisen ist erforderlich.', errorCode: 'consent_required' }, { status: 400 });
   }
   const entryLang = lang === 'en' || lang === 'pl' ? lang : 'de';
 
   const result = await startGiveawayEntry(campaignId, platform as GiveawayPlatform, handle, email, entryLang);
-  if ('error' in result) return NextResponse.json({ error: result.error }, { status: 400 });
+  if ('error' in result) return NextResponse.json({ error: result.error, errorCode: result.code }, { status: 400 });
   const entry = result.entry;
+
+  const campaign = await getPublicGiveawayCampaign(campaignId);
+  if (!campaign) return NextResponse.json({ error: 'Gewinnspiel nicht gefunden', errorCode: 'not_found' }, { status: 404 });
 
   // Bereits früher verifiziert/gutgeschrieben/abgelehnt (z.B. erneuter Aufruf) — direkt zurückgeben
   if (entry.status !== 'pending') {
     if (entry.status === 'rejected') {
-      return NextResponse.json({ entryId: entry.id, verified: false, error: DUPLICATE_EMAIL_MESSAGE, duplicateEmail: true }, { status: 400 });
+      return NextResponse.json({ entryId: entry.id, verified: false, errorCode: 'already_participated', duplicateEmail: true }, { status: 400 });
     }
     return NextResponse.json({
       entryId: entry.id,
       verified: true,
       credited: entry.status === 'credited',
       alreadyProcessed: true,
-      message: entry.status === 'credited'
-        ? 'Du hast bereits Credits für diese Teilnahme erhalten.'
-        : PENDING_SIGNUP_MESSAGE,
+      amount: entry.status === 'credited' ? campaign.creditReward : undefined,
     });
   }
-
-  const campaign = await getPublicGiveawayCampaign(campaignId);
-  if (!campaign) return NextResponse.json({ error: 'Gewinnspiel nicht gefunden' }, { status: 404 });
 
   let found = false;
   try {
@@ -69,7 +64,7 @@ export async function POST(req: NextRequest) {
   const markResult = await markGiveawayEntryVerified(entry.id);
 
   if (markResult.status === 'duplicate_email') {
-    return NextResponse.json({ entryId: entry.id, verified: false, error: DUPLICATE_EMAIL_MESSAGE, duplicateEmail: true }, { status: 400 });
+    return NextResponse.json({ entryId: entry.id, verified: false, errorCode: 'already_participated', duplicateEmail: true }, { status: 400 });
   }
 
   // Wichtig: await'en statt fire-and-forget — Vercel kann die Serverless-Funktion
@@ -95,8 +90,6 @@ export async function POST(req: NextRequest) {
     entryId: entry.id,
     verified: true,
     credited: markResult.status === 'credited',
-    message: markResult.status === 'credited'
-      ? `Verifiziert! Du hast ${markResult.amount} D.FAITH Credits erhalten.`
-      : PENDING_SIGNUP_MESSAGE,
+    amount: markResult.status === 'credited' ? markResult.amount : undefined,
   });
 }

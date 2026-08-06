@@ -107,7 +107,7 @@ const GIVEAWAY_EMAIL_STRINGS: Record<Lang, {
   creditedBody: (title: string, platform: string, handle: string, reward: number) => string;
   pendingHeading: string;
   pendingBody1: (title: string, platform: string, handle: string) => string;
-  pendingBody2: (reward: number, platform: string, handle: string) => string;
+  pendingBody2: (reward: number, platform: string, handle: string, email: string) => string;
   registerButton: string;
   alreadyHaveAccount: (platform: string) => string;
   promoHeading: string;
@@ -124,11 +124,11 @@ const GIVEAWAY_EMAIL_STRINGS: Record<Lang, {
     pendingHeading: 'Dein Kommentar wurde bestätigt! 🎉',
     pendingBody1: (title, platform, handle) =>
       `Deine Teilnahme am Gewinnspiel „${title}" mit deinem ${platform}-Account <b>@${handle}</b> wurde erfolgreich verifiziert.`,
-    pendingBody2: (reward, platform, handle) =>
-      `Damit dir die <b>${reward} D.FAITH Credits</b> gutgeschrieben werden können, fehlt nur noch ein letzter Schritt: Registriere dich kostenlos im D.FAITH Ecosystem und verknüpfe dort denselben ${platform}-Account (@${handle}) in deinem Profil. Deine Credits werden dann automatisch gutgeschrieben.`,
+    pendingBody2: (reward, platform, handle, email) =>
+      `Damit dir die <b>${reward} D.FAITH Credits</b> gutgeschrieben werden können, fehlt nur noch ein letzter Schritt: Registriere dich kostenlos im D.FAITH Ecosystem — und zwar mit <b>genau dieser E-Mail-Adresse (${email})</b>. Dein ${platform}-Account (@${handle}) wird dann automatisch als verifiziert erkannt und deine Credits automatisch gutgeschrieben, ganz ohne weiteren Verknüpfungsschritt.`,
     registerButton: 'Jetzt registrieren & Credits sichern',
     alreadyHaveAccount: platform =>
-      `Falls du bereits einen Account hast, melde dich einfach an und verknüpfe deinen ${platform}-Account in den "Sozialen Profilen" – die Credits erscheinen dann automatisch in deinem Guthaben.`,
+      `Falls du bereits einen Account mit dieser E-Mail-Adresse hast, öffne einfach die App – dein ${platform}-Account wird automatisch erkannt und die Credits erscheinen in deinem Guthaben. Solltest du eine andere E-Mail-Adresse für deinen Account nutzen, verknüpfe deinen ${platform}-Account stattdessen manuell in den "Sozialen Profilen".`,
     promoHeading: 'Willst du mehr? 🎵',
     releaseLine: dateStr => `Die neue Single erscheint am <b>${dateStr}</b>.`,
     mythicIntro: 'Sichere dir zusätzlich die Chance auf ein exklusives Mythic NFT.',
@@ -143,11 +143,11 @@ const GIVEAWAY_EMAIL_STRINGS: Record<Lang, {
     pendingHeading: 'Your comment has been confirmed! 🎉',
     pendingBody1: (title, platform, handle) =>
       `Your entry for the giveaway "${title}" with your ${platform} account <b>@${handle}</b> was successfully verified.`,
-    pendingBody2: (reward, platform, handle) =>
-      `To get your <b>${reward} D.FAITH Credits</b> credited, there's just one last step: sign up for free on D.FAITH Ecosystem and link the same ${platform} account (@${handle}) in your profile. Your credits will then be added automatically.`,
+    pendingBody2: (reward, platform, handle, email) =>
+      `To get your <b>${reward} D.FAITH Credits</b> credited, there's just one last step: sign up for free on D.FAITH Ecosystem — using <b>exactly this email address (${email})</b>. Your ${platform} account (@${handle}) will then automatically be recognized as verified and your credits added automatically, with no extra linking step needed.`,
     registerButton: 'Sign up now & claim your credits',
     alreadyHaveAccount: platform =>
-      `If you already have an account, just log in and link your ${platform} account under "Social Profiles" — your credits will then appear automatically in your balance.`,
+      `If you already have an account with this email address, just open the app — your ${platform} account will be recognized automatically and the credits will appear in your balance. If your account uses a different email address, link your ${platform} account manually under "Social Profiles" instead.`,
     promoHeading: 'Want more? 🎵',
     releaseLine: dateStr => `The new single drops on <b>${dateStr}</b>.`,
     mythicIntro: 'Get an extra chance to win an exclusive Mythic NFT.',
@@ -162,11 +162,11 @@ const GIVEAWAY_EMAIL_STRINGS: Record<Lang, {
     pendingHeading: 'Twój komentarz został potwierdzony! 🎉',
     pendingBody1: (title, platform, handle) =>
       `Twoje zgłoszenie do konkursu „${title}" z kontem ${platform} <b>@${handle}</b> zostało pomyślnie zweryfikowane.`,
-    pendingBody2: (reward, platform, handle) =>
-      `Aby otrzymać <b>${reward} kredytów D.FAITH</b>, brakuje tylko jednego kroku: zarejestruj się bezpłatnie w D.FAITH Ecosystem i połącz tam to samo konto ${platform} (@${handle}) w swoim profilu. Twoje kredyty zostaną wtedy dodane automatycznie.`,
+    pendingBody2: (reward, platform, handle, email) =>
+      `Aby otrzymać <b>${reward} kredytów D.FAITH</b>, brakuje tylko jednego kroku: zarejestruj się bezpłatnie w D.FAITH Ecosystem — używając <b>dokładnie tego adresu e-mail (${email})</b>. Twoje konto ${platform} (@${handle}) zostanie wtedy automatycznie rozpoznane jako zweryfikowane, a kredyty zostaną dodane automatycznie, bez dodatkowego kroku łączenia.`,
     registerButton: 'Zarejestruj się i odbierz kredyty',
     alreadyHaveAccount: platform =>
-      `Jeśli masz już konto, po prostu zaloguj się i połącz swoje konto ${platform} w „Profilach społecznościowych" — kredyty pojawią się wtedy automatycznie na Twoim koncie.`,
+      `Jeśli masz już konto z tym adresem e-mail, po prostu otwórz aplikację — Twoje konto ${platform} zostanie rozpoznane automatycznie, a kredyty pojawią się na Twoim koncie. Jeśli Twoje konto korzysta z innego adresu e-mail, połącz swoje konto ${platform} ręcznie w „Profilach społecznościowych".`,
     promoHeading: 'Chcesz więcej? 🎵',
     releaseLine: dateStr => `Nowy singiel ukaże się <b>${dateStr}</b>.`,
     mythicIntro: 'Zdobądź dodatkową szansę na wygranie ekskluzywnego Mythic NFT.',
@@ -210,7 +210,7 @@ export async function sendGiveawayParticipationEmail(params: {
     : `
       <h2>${s.pendingHeading}</h2>
       <p>${s.pendingBody1(params.campaignTitle, platformLabel, params.handle)}</p>
-      <p>${s.pendingBody2(params.creditReward, platformLabel, params.handle)}</p>
+      <p>${s.pendingBody2(params.creditReward, platformLabel, params.handle, params.toEmail)}</p>
       <p>
         <a href="${APP_URL}" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">
           ${s.registerButton}

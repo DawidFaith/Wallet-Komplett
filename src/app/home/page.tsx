@@ -50,6 +50,23 @@ function HomeContent() {
     }).catch(() => {});
   }, [user?.id]);
 
+  // Offene Giveaway-Teilnahmen mit derselben E-Mail automatisch dem Account zuordnen
+  // (Social-Handle wird dabei auto-verifiziert, Credits sofort gutgeschrieben) — einmal pro Session
+  useEffect(() => {
+    if (!user?.id) return;
+    const email = user.primaryEmailAddress?.emailAddress;
+    if (!email || typeof window === 'undefined') return;
+    const claimedKey = 'dfaith_giveaway_claimed';
+    if (sessionStorage.getItem(claimedKey) === user.id.toLowerCase()) return;
+    fetch('/api/giveaways/claim-by-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ walletAddress: user.id, email }),
+    }).then(() => {
+      sessionStorage.setItem(claimedKey, user.id.toLowerCase());
+    }).catch(() => {});
+  }, [user?.id]);
+
   // Beim ersten Laden: gespeicherten Tab + Artist wiederherstellen (URL-Parameter hat Vorrang)
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab");

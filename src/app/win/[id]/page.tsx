@@ -19,6 +19,25 @@ const PLATFORM_META: Record<Platform, { label: string; icon: ReactNode; color: s
 
 const LANG_FLAGS: Record<Lang, string> = { de: '🇩🇪', en: '🇺🇸', pl: '🇵🇱' };
 
+const ERROR_CODE_KEYS: Record<string, string> = {
+  missing_fields: 'win.errGeneric',
+  invalid_email: 'win.errGeneric',
+  invalid_body: 'win.errGeneric',
+  consent_required: 'win.consentRequired',
+  not_found: 'win.notFound',
+  ended: 'win.ended',
+  sold_out: 'win.soldOut',
+  platform_unavailable: 'win.errPlatformUnavailable',
+  already_participated: 'win.errAlreadyParticipated',
+  already_credited: 'win.errAlreadyCredited',
+  verification_unavailable: 'win.errVerificationUnavailable',
+};
+
+function errorCodeToMessage(errorCode: string | undefined, lang: Lang): string {
+  const key = (errorCode && ERROR_CODE_KEYS[errorCode]) || 'win.errGeneric';
+  return t(key, lang);
+}
+
 function LanguageSwitcher() {
   const lang = useLang();
   const setLang = useSetLang();
@@ -79,7 +98,7 @@ export default function GiveawayLandingPage() {
   const [pending, setPending]     = useState<PendingState | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [verifyMsg, setVerifyMsg] = useState('');
-  const [result, setResult]     = useState<{ credited: boolean; message: string } | null>(null);
+  const [result, setResult]     = useState<{ credited: boolean; amount?: number } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -116,14 +135,14 @@ export default function GiveawayLandingPage() {
         body: JSON.stringify({ campaignId: campaign.id, platform, handle: handle.trim(), email: email.trim(), consent: true, lang }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? 'Error'); return; }
+      if (!res.ok) { setError(errorCodeToMessage(data.errorCode, lang)); return; }
       if (data.verified) {
-        setResult({ credited: !!data.credited, message: data.message });
+        setResult({ credited: !!data.credited, amount: data.amount });
       } else {
         setPending({ entryId: data.entryId, code: data.code, requiredText: data.requiredText });
       }
     } catch {
-      setError('Network error');
+      setError(t('win.errGeneric', lang));
     } finally {
       setStarting(false);
     }
@@ -140,11 +159,11 @@ export default function GiveawayLandingPage() {
         body: JSON.stringify({ entryId: pending.entryId }),
       });
       const data = await res.json();
-      if (!res.ok) { setVerifyMsg(data.error ?? 'Error'); return; }
+      if (!res.ok) { setVerifyMsg(errorCodeToMessage(data.errorCode, lang)); return; }
       if (!data.verified) { setVerifyMsg(t('win.verifyNotFound', lang)); return; }
-      setResult({ credited: !!data.credited, message: data.message });
+      setResult({ credited: !!data.credited, amount: data.amount });
     } catch {
-      setVerifyMsg('Network error');
+      setVerifyMsg(t('win.errGeneric', lang));
     } finally {
       setVerifying(false);
     }
@@ -206,7 +225,9 @@ export default function GiveawayLandingPage() {
             <div className={`rounded-2xl p-5 text-center border ${result.credited ? 'bg-green-500/10 border-green-500/25' : 'bg-amber-500/10 border-amber-500/25'}`}>
               <FaCheckCircle className={`mx-auto mb-3 ${result.credited ? 'text-green-400' : 'text-amber-400'}`} size={28} />
               <p className="font-bold mb-1.5">{result.credited ? t('win.creditedTitle', lang) : t('win.pendingTitle', lang)}</p>
-              <p className="text-zinc-300 text-sm mb-4">{result.message}</p>
+              <p className="text-zinc-300 text-sm mb-4">
+                {result.credited ? tFmt('win.creditedBody', lang, { n: result.amount ?? campaign.creditReward }) : t('win.pendingBody', lang)}
+              </p>
               <a
                 href="/"
                 className="inline-block bg-amber-500 hover:bg-amber-400 text-black font-black rounded-xl px-5 py-2.5 text-sm transition-all"

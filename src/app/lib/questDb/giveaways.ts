@@ -325,18 +325,18 @@ export async function startGiveawayEntry(
   handle: string,
   email: string,
   lang: 'de' | 'en' | 'pl' = 'de',
-): Promise<{ entry: GiveawayEntry } | { error: string }> {
+): Promise<{ entry: GiveawayEntry } | { error: string; code: string }> {
   await ensureTables();
   const sql = getDb();
   const cleanHandle = handle.trim().replace(/^@/, '').toLowerCase();
   const cleanEmail = email.trim().toLowerCase();
-  if (!cleanHandle || !cleanEmail) return { error: 'Handle und E-Mail sind erforderlich.' };
+  if (!cleanHandle || !cleanEmail) return { error: 'Handle und E-Mail sind erforderlich.', code: 'missing_fields' };
 
   const campaign = await getPublicGiveawayCampaign(campaignId);
-  if (!campaign) return { error: 'Gewinnspiel nicht gefunden.' };
-  if (campaign.status !== 'active') return { error: 'Dieses Gewinnspiel ist bereits beendet.' };
-  if (campaign.winnerCount >= campaign.maxWinners) return { error: 'Alle Plätze sind bereits vergeben.' };
-  if (!campaign.platforms.some(p => p.platform === platform)) return { error: 'Diese Plattform ist für dieses Gewinnspiel nicht verfügbar.' };
+  if (!campaign) return { error: 'Gewinnspiel nicht gefunden.', code: 'not_found' };
+  if (campaign.status !== 'active') return { error: 'Dieses Gewinnspiel ist bereits beendet.', code: 'ended' };
+  if (campaign.winnerCount >= campaign.maxWinners) return { error: 'Alle Plätze sind bereits vergeben.', code: 'sold_out' };
+  if (!campaign.platforms.some(p => p.platform === platform)) return { error: 'Diese Plattform ist für dieses Gewinnspiel nicht verfügbar.', code: 'platform_unavailable' };
 
   const existing = await sql`
     SELECT * FROM giveaway_entries WHERE campaign_id = ${campaignId} AND platform = ${platform} AND handle = ${cleanHandle} LIMIT 1
@@ -354,7 +354,7 @@ export async function startGiveawayEntry(
     LIMIT 1
   `;
   if (alreadyWon.length > 0) {
-    return { error: 'Mit dieser E-Mail-Adresse wurde bereits an diesem Gewinnspiel teilgenommen.' };
+    return { error: 'Mit dieser E-Mail-Adresse wurde bereits an diesem Gewinnspiel teilgenommen.', code: 'already_participated' };
   }
 
   const id = `gwe_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -414,6 +414,114 @@ async function creditGiveawayWinner(campaignId: string, entryId: string, email: 
     await sql`UPDATE giveaway_campaigns SET status = 'ended', credits_refunded = TRUE WHERE id = ${campaignId}`;
   }
   return true;
+}
+
+/**
+ * Setzt das Social-Profil einer Wallet automatisch auf "verifiziert" für die
+ * Plattform/den Handle aus einer bereits per Kommentar bestätigten Giveaway-
+ * Teilnahme — überspringt die sonst nötige manuelle Bio-Code-Verifizierung,
+ * da der Handle ja schon nachweislich "dfaith" kommentiert hat. Greift nicht
+ * ein, wenn die Wallet die Plattform schon verifiziert hat oder der Handle
+ * bereits einer ANDEREN Wallet zugeordnet ist (überschreibt nie bestehende,
+ * über den normalen Flow verifizierte Verknüpfungen).
+ */
+async function autoVerifyPlatformForWallet(
+  sql: ReturnType<typeof getDb>,
+  wallet: string,
+  platform: GiveawayPlatform,
+  handle: string,
+): Promise<void> {
+  if (platform === 'youtube') {
+    const ytApiKey = process.env.YOUTUBE_DATA_API_KEY;
+    if (!ytApiKey) return;
+    try {
+      const alreadyBound = await sql`SELECT 1 FROM youtube_bindings WHERE wallet_address = ${wallet} LIMIT 1`;
+      if (alreadyBound.length > 0) return;
+      const isChannelId = /^UC[\w-]{22}$/.test(handle);
+      const url = new URL('https://www.googleapis.com/youtube/v3/channels');
+      url.searchParams.set('part', 'snippet');
+      url.searchParams.set(isChannelId ? 'id' : 'forHandle', handle);
+      url.searchParams.set('key', ytApiKey);
+      const res = await fetch(url.toString(), { cache: 'no-store' });
+      const data = await res.json() as { items?: { id: string; snippet?: { title?: string; thumbnails?: { default?: { url?: string } } } }[] };
+      const channel = data.items?.[0];
+      if (!channel) return;
+      const channelTaken = await sql`SELECT 1 FROM youtube_bindings WHERE channel_id = ${channel.id} LIMIT 1`;
+      if (channelTaken.length > 0) return;
+      await sql`
+        INSERT INTO youtube_bindings (wallet_address, channel_id, channel_name, channel_thumbnail, verification_code, verified_at)
+        VALUES (${wallet}, ${channel.id}, ${channel.snippet?.title ?? channel.id}, ${channel.snippet?.thumbnails?.default?.url ?? null}, 'giveaway-auto', NOW())
+        ON CONFLICT (wallet_address) DO NOTHING
+      `;
+    } catch {
+      // Bleibt unverifiziert liegen — normaler manueller Flow greift weiterhin
+    }
+    return;
+  }
+
+  if (platform === 'instagram') {
+    const taken = await sql`SELECT 1 FROM user_profiles WHERE LOWER(instagram_handle) = ${handle} AND wallet_address != ${wallet} LIMIT 1`;
+    if (taken.length > 0) return;
+    const existing = await sql`SELECT instagram_verified FROM user_profiles WHERE wallet_address = ${wallet} LIMIT 1`;
+    if (existing.length > 0 && existing[0].instagram_verified) return;
+    await sql`
+      INSERT INTO user_profiles (wallet_address, instagram_handle, instagram_verified, updated_at)
+      VALUES (${wallet}, ${handle}, TRUE, NOW())
+      ON CONFLICT (wallet_address) DO UPDATE SET instagram_handle = ${handle}, instagram_verified = TRUE, updated_at = NOW()
+    `;
+    return;
+  }
+  if (platform === 'tiktok') {
+    const taken = await sql`SELECT 1 FROM user_profiles WHERE LOWER(tiktok_handle) = ${handle} AND wallet_address != ${wallet} LIMIT 1`;
+    if (taken.length > 0) return;
+    const existing = await sql`SELECT tiktok_verified FROM user_profiles WHERE wallet_address = ${wallet} LIMIT 1`;
+    if (existing.length > 0 && existing[0].tiktok_verified) return;
+    await sql`
+      INSERT INTO user_profiles (wallet_address, tiktok_handle, tiktok_verified, updated_at)
+      VALUES (${wallet}, ${handle}, TRUE, NOW())
+      ON CONFLICT (wallet_address) DO UPDATE SET tiktok_handle = ${handle}, tiktok_verified = TRUE, updated_at = NOW()
+    `;
+    return;
+  }
+  if (platform === 'facebook') {
+    const taken = await sql`SELECT 1 FROM user_profiles WHERE LOWER(facebook_handle) = ${handle} AND wallet_address != ${wallet} LIMIT 1`;
+    if (taken.length > 0) return;
+    const existing = await sql`SELECT facebook_verified FROM user_profiles WHERE wallet_address = ${wallet} LIMIT 1`;
+    if (existing.length > 0 && existing[0].facebook_verified) return;
+    await sql`
+      INSERT INTO user_profiles (wallet_address, facebook_handle, facebook_verified, facebook_name, updated_at)
+      VALUES (${wallet}, ${handle}, TRUE, ${handle}, NOW())
+      ON CONFLICT (wallet_address) DO UPDATE SET facebook_handle = ${handle}, facebook_verified = TRUE, updated_at = NOW()
+    `;
+  }
+}
+
+/**
+ * Wird aufgerufen, sobald eine Wallet zum ersten Mal mit einer E-Mail-Adresse in
+ * Verbindung gebracht werden kann (z.B. direkt nach dem Signup). Holt alle noch
+ * offenen ('verified', aber keinem Account zugeordneten) Giveaway-Teilnahmen mit
+ * dieser E-Mail nach, verifiziert die jeweilige Plattform automatisch und
+ * schreibt die Credits gut — der Fan muss die Bio-Code-Verifizierung nicht mehr
+ * manuell wiederholen, da der Kommentar-Nachweis schon erbracht wurde.
+ */
+export async function claimPendingGiveawayEntriesForEmail(walletAddress: string, email: string): Promise<void> {
+  await ensureTables();
+  const sql = getDb();
+  const wallet = walletAddress.toLowerCase();
+  const cleanEmail = email.trim().toLowerCase();
+  if (!cleanEmail) return;
+
+  const rows = await sql`
+    SELECT * FROM giveaway_entries WHERE email = ${cleanEmail} AND status = 'verified'
+  `;
+  for (const r of rows) {
+    const entry = rowToEntry(r);
+    await autoVerifyPlatformForWallet(sql, wallet, entry.platform, entry.handle);
+    const credited = await creditGiveawayWinner(entry.campaignId, entry.id, entry.email, wallet);
+    if (!credited && await emailAlreadyWonCampaign(sql, entry.campaignId, entry.email, entry.id)) {
+      await sql`UPDATE giveaway_entries SET status = 'rejected', verified_at = NOW() WHERE id = ${entry.id}`;
+    }
+  }
 }
 
 /**
