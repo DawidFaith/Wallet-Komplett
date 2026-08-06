@@ -61,6 +61,39 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ pageId, foundInMeAccounts, foundInOwnedPages, foundInClientPages, tasks });
   }
 
+  // Optional: NUR die Berechtigungs-Metadaten (kein Nachrichteninhalt!) von zwei
+  // verschiedenen Tokens für dieselbe Page vergleichen — dem Business-Partner-Token
+  // (client_pages, was die App normalerweise nutzt) und dem direkten Page-Rollen-
+  // Token (/me/accounts) — um zu sehen, ob sie unterschiedliche Scopes tragen.
+  if (req.nextUrl.searchParams.get('compareScopes') === '1') {
+    const systemToken = process.env.META_SYSTEM_USER_TOKEN;
+    const appId = process.env.META_APP_ID ?? process.env.FACEBOOK_APP_ID;
+    const appSecret = process.env.FACEBOOK_APP_SECRET;
+    if (!systemToken) return NextResponse.json({ error: 'META_SYSTEM_USER_TOKEN nicht gesetzt' }, { status: 500 });
+    if (!appId || !appSecret) return NextResponse.json({ error: 'META_APP_ID/FACEBOOK_APP_ID oder FACEBOOK_APP_SECRET nicht gesetzt' }, { status: 500 });
+    const appToken = `${appId}|${appSecret}`;
+
+    const scopesOf = async (token: string): Promise<string[] | { error: string }> => {
+      try {
+        const res = await fetch(`${GRAPH}/debug_token?input_token=${token}&access_token=${appToken}`, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+        const data = await res.json() as { data?: { scopes?: string[] }; error?: { message: string } };
+        if (data.error) return { error: data.error.message };
+        return data.data?.scopes ?? [];
+      } catch (e) { return { error: e instanceof Error ? e.message : String(e) }; }
+    };
+
+    const businessPartnerToken = await getPageTokenByPageId(pageId);
+    const meAccountsRes = await fetch(`${GRAPH}/me/accounts?fields=id,access_token&limit=200&access_token=${systemToken}`, { cache: 'no-store' });
+    const meAccountsData = await meAccountsRes.json() as { data?: Array<{ id: string; access_token?: string }> };
+    const meAccountsToken = meAccountsData.data?.find(p => p.id === pageId)?.access_token ?? null;
+
+    return NextResponse.json({
+      pageId,
+      businessPartnerTokenScopes: businessPartnerToken ? await scopesOf(businessPartnerToken) : null,
+      meAccountsTokenScopes: meAccountsToken ? await scopesOf(meAccountsToken) : null,
+    });
+  }
+
   const pageToken = overridePageId
     ? await getPageTokenByPageId(overridePageId)
     : await getPageAccessToken();
