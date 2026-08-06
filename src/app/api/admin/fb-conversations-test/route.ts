@@ -33,6 +33,22 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Kein Page Access Token verfügbar' }, { status: 500 });
   }
 
+  // Optional: nur die tatsächlichen Scopes des Page-Tokens prüfen, ohne Nachrichten zu lesen
+  if (req.nextUrl.searchParams.get('debugToken') === '1') {
+    const appId = process.env.META_APP_ID ?? process.env.FACEBOOK_APP_ID;
+    const appSecret = process.env.FACEBOOK_APP_SECRET;
+    if (!appId || !appSecret) {
+      return NextResponse.json({ error: 'META_APP_ID/FACEBOOK_APP_ID oder FACEBOOK_APP_SECRET nicht gesetzt' }, { status: 500 });
+    }
+    const appToken = `${appId}|${appSecret}`;
+    const res = await fetch(
+      `${GRAPH}/debug_token?input_token=${pageToken}&access_token=${appToken}`,
+      { cache: 'no-store' },
+    );
+    const data = await res.json();
+    return NextResponse.json(data, { status: res.status });
+  }
+
   try {
     const res = await fetch(
       `${GRAPH}/${pageId}/conversations?fields=participants,updated_time,messages.limit(3){message,from,created_time}&limit=10&access_token=${pageToken}`,
