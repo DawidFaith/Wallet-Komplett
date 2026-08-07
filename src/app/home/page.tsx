@@ -50,6 +50,32 @@ function HomeContent() {
     }).catch(() => {});
   }, [user?.id]);
 
+  // Solana-Wallet sofort beim Laden sicherstellen (nicht erst wenn der Wallet-Tab
+  // besucht wird) — SolanaWalletTab macht denselben Check nochmal für seine eigene
+  // Lade-/Fehleranzeige, das GET hier ist aber schon idempotent: existiert der
+  // Account bereits, passiert nichts weiter.
+  useEffect(() => {
+    const userId = user?.id;
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const check = await fetch(`/api/solana/create-account?walletAddress=${encodeURIComponent(userId)}`);
+        const checkData = await check.json();
+        if (cancelled || checkData.solanaAddress) return;
+        const referralCode = typeof window !== 'undefined' ? localStorage.getItem('dfaith_referral') : null;
+        await fetch('/api/solana/create-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ walletAddress: userId, referredBy: referralCode ?? undefined }),
+        });
+      } catch {
+        /* SolanaWalletTab versucht es beim Öffnen erneut und zeigt dann ggf. den Fehler an */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
   // Offene Giveaway-Teilnahmen mit derselben E-Mail automatisch dem Account zuordnen
   // (Social-Handle wird dabei auto-verifiziert, Credits sofort gutgeschrieben) — bei
   // jedem Laden der Seite (kein Session-Gate mehr: das verhinderte, dass ein Claim
