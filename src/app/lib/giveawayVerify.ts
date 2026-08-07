@@ -132,6 +132,12 @@ export async function verifyYoutubeEntry(videoIdOrUrl: string, handle: string, c
  * geprüft: (1) gibt es überhaupt einen Kommentar mit dem Stichwort, (2) gibt es
  * eine Konversation, deren Teilnehmer:in-Name zum eingegebenen Handle passt.
  */
+// Fester Textbaustein der automatisierten Erstnachricht des Giveaway-Bots
+// (z.B. ManyChat) auf der Dawid-Faith-Page — der eigentliche Link steckt in
+// einem Button/Template, das über die Read-API nicht zuverlässig auslesbar
+// ist, daher dient dieser Textteil zusammen mit dem Zeitfenster als Beweis.
+const DAWID_FAITH_BOT_MESSAGE_FRAGMENT = 'Dzięki za komentarz';
+
 export async function verifyFacebookEntry(
   postUrl: string,
   code: string,
@@ -140,6 +146,7 @@ export async function verifyFacebookEntry(
   handle: string,
   entryId: string,
   requiredText?: string,
+  campaignCreatedAt?: string,
 ): Promise<{ found: boolean; verifiedName?: string }> {
   if (pageIdHint === DAWID_FAITH_PAGE_ID && DAWID_FAITH_PAGE_TOKEN) {
     const cleanHandle = handle.trim();
@@ -169,10 +176,12 @@ export async function verifyFacebookEntry(
 
     // Nachweis, dass die Konversation wirklich vom Automatisierungstool für
     // GENAU diese Kampagne ausgelöst wurde (nicht nur eine ältere Konversation
-    // mit zufällig ähnlichem Namen): die Page muss darin den Kampagnen-Link
-    // verschickt haben.
-    const linkFragment = `/win/${campaignId}`;
-    const match = await findFacebookConversationByName(DAWID_FAITH_PAGE_ID, DAWID_FAITH_PAGE_TOKEN, cleanHandle, linkFragment, excludeThreadIds);
+    // mit zufällig ähnlichem Namen): die Bot-Nachricht muss NACH Kampagnenstart
+    // verschickt worden sein (es läuft immer nur eine Kampagne gleichzeitig).
+    const afterIso = campaignCreatedAt ?? new Date(0).toISOString();
+    const match = await findFacebookConversationByName(
+      DAWID_FAITH_PAGE_ID, DAWID_FAITH_PAGE_TOKEN, cleanHandle, DAWID_FAITH_BOT_MESSAGE_FRAGMENT, afterIso, excludeThreadIds,
+    );
     if (!match) return { found: false };
 
     await sql`

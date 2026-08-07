@@ -428,25 +428,30 @@ export async function fetchAllFacebookComments(postId: string, pageToken: string
 
 // ─── Namensauflösung über bestehende Messenger-Konversationen ───────────────
 /**
- * Sucht unter den letzten Messenger-Konversationen der Page eine, die (a) von
- * der Page selbst eine Nachricht mit `requiredLinkFragment` enthält (Beweis,
- * dass genau diese Konversation vom Giveaway-Automatisierungstool für DIESE
- * Kampagne ausgelöst wurde — nicht irgendeine ältere, unabhängige Konversation
- * mit zufällig ähnlichem Namen) und (b) deren Teilnehmer:in (nicht die Page
- * selbst) namentlich zu `targetName` passt. Sendet selbst keine Nachricht.
- * Braucht einen direkt (nicht nur über Business-Partner-Freigabe)
- * ausgestellten Page-Token mit `pages_messaging`-Berechtigung.
+ * Sucht unter den letzten Messenger-Konversationen der Page eine, die (a) eine
+ * von der Page NACH `afterIso` verschickte Nachricht mit `messageTextFragment`
+ * enthält (der Link selbst steckt oft in einem Button/Template, das über die
+ * Read-API nicht zuverlässig auslesbar ist — daher stattdessen: bekannter,
+ * fester Nachrichtentext + Zeitfenster als Beweis, dass genau diese Konversation
+ * vom Giveaway-Automatisierungstool für DIESE Kampagne ausgelöst wurde, nicht
+ * irgendeine ältere, unabhängige Konversation mit zufällig ähnlichem Namen) und
+ * (b) deren Teilnehmer:in (nicht die Page selbst) namentlich zu `targetName`
+ * passt. Sendet selbst keine Nachricht. Braucht einen direkt (nicht nur über
+ * Business-Partner-Freigabe) ausgestellten Page-Token mit
+ * `pages_messaging`-Berechtigung.
  */
 export async function findFacebookConversationByName(
   pageId: string,
   pageToken: string,
   targetName: string,
-  requiredLinkFragment: string,
+  messageTextFragment: string,
+  afterIso: string,
   excludeThreadIds: string[] = [],
 ): Promise<{ threadId: string; name: string; messageText: string; sentAt: string | null } | null> {
   const cleanTarget = targetName.trim().toLowerCase();
   if (!cleanTarget) return null;
   const excluded = new Set(excludeThreadIds);
+  const afterTime = new Date(afterIso).getTime();
   try {
     const res = await fetch(
       `${GRAPH}/${pageId}/conversations?fields=participants,messages.limit(10){message,from,created_time}&limit=50&access_token=${pageToken}`,
@@ -470,12 +475,15 @@ export async function findFacebookConversationByName(
         || (cleanTarget.length >= 3 && (name.includes(cleanTarget) || cleanTarget.includes(name)));
       if (!nameMatch) continue;
 
-      const linkMessage = thread.messages?.data?.find(
-        m => m.from?.id === pageId && (m.message ?? '').includes(requiredLinkFragment),
-      );
-      if (!linkMessage) continue;
+      const botMessage = thread.messages?.data?.find(m => {
+        if (m.from?.id !== pageId) return false;
+        if (!(m.message ?? '').includes(messageTextFragment)) return false;
+        const sentTime = m.created_time ? new Date(m.created_time).getTime() : NaN;
+        return !isNaN(sentTime) && sentTime >= afterTime;
+      });
+      if (!botMessage) continue;
 
-      return { threadId: thread.id, name: other!.name!, messageText: linkMessage.message ?? '', sentAt: linkMessage.created_time ?? null };
+      return { threadId: thread.id, name: other!.name!, messageText: botMessage.message ?? '', sentAt: botMessage.created_time ?? null };
     }
     return null;
   } catch (e) {

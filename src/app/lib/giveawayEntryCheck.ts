@@ -32,7 +32,7 @@ export async function checkGiveawayEntryComment(campaign: GiveawayCampaign, entr
       const rows = await sql`SELECT facebook_page_id FROM user_profiles WHERE wallet_address = ${campaign.artistWallet.toLowerCase()} LIMIT 1`;
       pageIdHint = (rows[0]?.facebook_page_id as string | null) ?? null;
     }
-    return verifyFacebookEntry(platformCfg.postUrl, entry.code, pageIdHint, campaign.id, entry.handle, entry.id, campaign.requiredText);
+    return verifyFacebookEntry(platformCfg.postUrl, entry.code, pageIdHint, campaign.id, entry.handle, entry.id, campaign.requiredText, campaign.createdAt);
   }
   if (entry.platform === 'instagram') {
     if (!platformCfg.mediaId) return { found: false };
