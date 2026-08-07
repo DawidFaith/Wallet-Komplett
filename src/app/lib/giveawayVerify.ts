@@ -2,7 +2,15 @@
  * Plattform-übergreifende Kommentar-Verifikation für das Giveaway-Feature.
  * Reused die bestehenden Meta-/RapidAPI-/YouTube-Helfer, die auch das Quest-System nutzt.
  */
-import { findInstagramComment, findFacebookComment, resolvePostIdFromUrl, extractFacebookPostId } from './metaApi';
+import { findInstagramComment, findFacebookComment, resolvePostIdFromUrl, extractFacebookPostId, sendFacebookPrivateReply, getMostRecentFacebookConversationName } from './metaApi';
+
+// Direkt (nicht über Business-Partner-Freigabe) ausgestellter Page-Token für die
+// "Dawid Faith"-Page — Business-Partner-Tokens haben laut Meta keinen
+// zuverlässigen Messenger/Conversations-Zugriff, auch mit korrekt gesetzten
+// Scopes/Tasks nicht. Nur für diese eine Page vorhanden, daher hart verdrahtet
+// statt generisch pro Artist-Page.
+const DAWID_FAITH_PAGE_ID = '528116477058109';
+const DAWID_FAITH_PAGE_TOKEN = process.env.META_DAWID_FAITH_PAGE_TOKEN;
 
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 const RAPIDAPI_HOST = 'tiktok-api23.p.rapidapi.com';
@@ -114,8 +122,18 @@ export async function verifyYoutubeEntry(videoIdOrUrl: string, handle: string, c
  * Facebook: Autor-Abgleich ist auf Facebook-Seiten unzuverlässig (kein "from"-Feld),
  * daher wird ausschließlich der einmalige Code als Kommentartext geprüft — exakt
  * das gleiche Verfahren wie beim bestehenden Facebook-Quest-System.
+ *
+ * Für die "Dawid Faith"-Page zusätzlich: sobald der Code gefunden ist, wird per
+ * privater Antwort auf genau diesen Kommentar (comment_id) automatisch eine
+ * Messenger-Konversation ausgelöst — darüber liefert Meta den echten Namen der
+ * Person, den wir sonst nirgends bekommen (die eigentliche Verifikation bleibt
+ * aber weiterhin allein der Code, der Name ist nur zusätzliche, bestätigte Info).
  */
-export async function verifyFacebookEntry(postUrl: string, code: string, pageIdHint: string | null): Promise<boolean> {
+export async function verifyFacebookEntry(
+  postUrl: string,
+  code: string,
+  pageIdHint: string | null,
+): Promise<{ found: boolean; verifiedName?: string }> {
   let postId = postUrl;
   if (postUrl.startsWith('http')) {
     const resolved = await resolvePostIdFromUrl(postUrl);
@@ -125,5 +143,20 @@ export async function verifyFacebookEntry(postUrl: string, code: string, pageIdH
     postId = `${pageIdHint}_${postId}`;
   }
   const result = await findFacebookComment(postId, code, null, pageIdHint);
-  return result.found;
+  if (!result.found) return { found: false };
+
+  if (pageIdHint === DAWID_FAITH_PAGE_ID && DAWID_FAITH_PAGE_TOKEN && result.commentId) {
+    try {
+      const replyText = 'Danke für deine Teilnahme am Gewinnspiel! 🎁';
+      const sent = await sendFacebookPrivateReply(result.commentId, replyText, DAWID_FAITH_PAGE_TOKEN);
+      if (sent) {
+        const name = await getMostRecentFacebookConversationName(DAWID_FAITH_PAGE_ID, DAWID_FAITH_PAGE_TOKEN);
+        if (name) return { found: true, verifiedName: name };
+      }
+    } catch (e) {
+      console.error('[verifyFacebookEntry] Private-Reply-Namensauflösung fehlgeschlagen:', e);
+      // Verifikation bleibt trotzdem gültig — der Code hat schon gematcht
+    }
+  }
+  return { found: true };
 }

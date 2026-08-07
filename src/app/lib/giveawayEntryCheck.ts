@@ -14,9 +14,9 @@ import { verifyInstagramEntry, verifyTiktokEntry, verifyYoutubeEntry, verifyFace
  * einmalige Code aus entry.code geprüft (gleiches Verfahren wie im bestehenden
  * Facebook-Quest-System).
  */
-export async function checkGiveawayEntryComment(campaign: GiveawayCampaign, entry: GiveawayEntry): Promise<boolean> {
+export async function checkGiveawayEntryComment(campaign: GiveawayCampaign, entry: GiveawayEntry): Promise<{ found: boolean; verifiedName?: string }> {
   const platformCfg = campaign.platforms.find(p => p.platform === entry.platform);
-  if (!platformCfg) return false;
+  if (!platformCfg) return { found: false };
 
   if (entry.platform === 'facebook') {
     const sql = getDb();
@@ -25,14 +25,14 @@ export async function checkGiveawayEntryComment(campaign: GiveawayCampaign, entr
     return verifyFacebookEntry(platformCfg.postUrl, entry.code, pageIdHint);
   }
   if (entry.platform === 'instagram') {
-    if (!platformCfg.mediaId) return false;
-    return verifyInstagramEntry(platformCfg.mediaId, entry.handle, campaign.requiredText);
+    if (!platformCfg.mediaId) return { found: false };
+    return { found: await verifyInstagramEntry(platformCfg.mediaId, entry.handle, campaign.requiredText) };
   }
   if (entry.platform === 'tiktok') {
-    return verifyTiktokEntry(platformCfg.mediaId ?? platformCfg.postUrl, entry.handle, campaign.requiredText);
+    return { found: await verifyTiktokEntry(platformCfg.mediaId ?? platformCfg.postUrl, entry.handle, campaign.requiredText) };
   }
   if (entry.platform === 'youtube') {
-    return verifyYoutubeEntry(platformCfg.mediaId ?? platformCfg.postUrl, entry.handle, campaign.requiredText);
+    return { found: await verifyYoutubeEntry(platformCfg.mediaId ?? platformCfg.postUrl, entry.handle, campaign.requiredText) };
   }
-  return false;
+  return { found: false };
 }

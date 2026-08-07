@@ -44,8 +44,11 @@ export async function POST(req: NextRequest) {
   }
 
   let found = false;
+  let verifiedName: string | undefined;
   try {
-    found = await checkGiveawayEntryComment(campaign, entry);
+    const checkResult = await checkGiveawayEntryComment(campaign, entry);
+    found = checkResult.found;
+    verifiedName = checkResult.verifiedName;
   } catch (e) {
     console.error('[giveaways/enter] Verifikations-Fehler:', e);
   }
@@ -61,7 +64,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const markResult = await markGiveawayEntryVerified(entry.id);
+  const markResult = await markGiveawayEntryVerified(entry.id, verifiedName);
 
   if (markResult.status === 'duplicate_email') {
     return NextResponse.json({ entryId: entry.id, verified: false, errorCode: 'already_participated', duplicateEmail: true }, { status: 400 });

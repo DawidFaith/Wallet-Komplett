@@ -35,8 +35,11 @@ export async function POST(req: NextRequest) {
   }
 
   let found = false;
+  let verifiedName: string | undefined;
   try {
-    found = await checkGiveawayEntryComment(campaign, entry);
+    const checkResult = await checkGiveawayEntryComment(campaign, entry);
+    found = checkResult.found;
+    verifiedName = checkResult.verifiedName;
   } catch (e) {
     console.error('[giveaways/verify]', e);
     return NextResponse.json({ error: 'Verifikation momentan nicht möglich. Bitte später erneut versuchen.', errorCode: 'verification_unavailable' }, { status: 502 });
@@ -50,7 +53,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const result = await markGiveawayEntryVerified(entryId);
+  const result = await markGiveawayEntryVerified(entryId, verifiedName);
 
   if (result.status === 'duplicate_email') {
     return NextResponse.json({ verified: false, errorCode: 'already_participated', duplicateEmail: true }, { status: 400 });

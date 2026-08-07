@@ -52,6 +52,7 @@ async function ensureTables() {
     )
   `;
   await sql`ALTER TABLE giveaway_entries ADD COLUMN IF NOT EXISTS lang TEXT NOT NULL DEFAULT 'de'`;
+  await sql`ALTER TABLE giveaway_entries ADD COLUMN IF NOT EXISTS verified_name TEXT`;
   await sql`CREATE INDEX IF NOT EXISTS giveaway_entries_handle_idx ON giveaway_entries (platform, handle, status)`;
 }
 
@@ -90,6 +91,7 @@ export interface GiveawayEntry {
   lang: 'de' | 'en' | 'pl';
   status: 'pending' | 'verified' | 'credited' | 'rejected';
   creditedWallet: string | null;
+  verifiedName: string | null;
   createdAt: string;
   verifiedAt: string | null;
 }
@@ -126,6 +128,7 @@ function rowToEntry(r: any): GiveawayEntry {
     lang: (r.lang as 'de' | 'en' | 'pl') ?? 'de',
     status: r.status as 'pending' | 'verified' | 'credited' | 'rejected',
     creditedWallet: r.credited_wallet as string | null,
+    verifiedName: (r.verified_name as string | null) ?? null,
     createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
     verifiedAt: r.verified_at ? (r.verified_at instanceof Date ? r.verified_at.toISOString() : String(r.verified_at)) : null,
   };
@@ -438,6 +441,7 @@ async function autoVerifyPlatformForWallet(
   wallet: string,
   platform: GiveawayPlatform,
   handle: string,
+  verifiedName?: string | null,
 ): Promise<void> {
   if (platform === 'youtube') {
     const ytApiKey = process.env.YOUTUBE_DATA_API_KEY;
@@ -496,10 +500,13 @@ async function autoVerifyPlatformForWallet(
     if (taken.length > 0) return;
     const existing = await sql`SELECT facebook_verified FROM user_profiles WHERE wallet_address = ${wallet} LIMIT 1`;
     if (existing.length > 0 && existing[0].facebook_verified) return;
+    // Echter, von Meta bestätigter Name (falls über die Messenger-Namensauflösung
+    // ermittelt) wird bevorzugt — sonst Fallback auf den eingegebenen Handle-Text.
+    const displayName = verifiedName ?? handle;
     await sql`
       INSERT INTO user_profiles (wallet_address, facebook_handle, facebook_verified, facebook_name, updated_at)
-      VALUES (${wallet}, ${handle}, TRUE, ${handle}, NOW())
-      ON CONFLICT (wallet_address) DO UPDATE SET facebook_handle = ${handle}, facebook_verified = TRUE, updated_at = NOW()
+      VALUES (${wallet}, ${handle}, TRUE, ${displayName}, NOW())
+      ON CONFLICT (wallet_address) DO UPDATE SET facebook_handle = ${handle}, facebook_verified = TRUE, facebook_name = ${displayName}, updated_at = NOW()
     `;
   }
 }
@@ -524,7 +531,7 @@ export async function claimPendingGiveawayEntriesForEmail(walletAddress: string,
   `;
   for (const r of rows) {
     const entry = rowToEntry(r);
-    await autoVerifyPlatformForWallet(sql, wallet, entry.platform, entry.handle);
+    await autoVerifyPlatformForWallet(sql, wallet, entry.platform, entry.handle, entry.verifiedName);
     const credited = await creditGiveawayWinner(entry.campaignId, entry.id, entry.email, wallet);
     if (!credited && await emailAlreadyWonCampaign(sql, entry.campaignId, entry.email, entry.id)) {
       await sql`UPDATE giveaway_entries SET status = 'rejected', verified_at = NOW() WHERE id = ${entry.id}`;
@@ -539,10 +546,14 @@ export async function claimPendingGiveawayEntriesForEmail(walletAddress: string,
  * Hat diese E-Mail-Adresse in dieser Kampagne bereits über eine andere Plattform
  * gewonnen, wird die Teilnahme abgelehnt (verhindert Mehrfach-Gewinn einer Person).
  */
-export async function markGiveawayEntryVerified(entryId: string): Promise<{ status: 'credited' | 'verified' | 'duplicate_email'; wallet?: string; amount?: number }> {
+export async function markGiveawayEntryVerified(entryId: string, verifiedName?: string): Promise<{ status: 'credited' | 'verified' | 'duplicate_email'; wallet?: string; amount?: number }> {
   const sql = getDb();
   const entry = await getGiveawayEntry(entryId);
   if (!entry) throw new Error('Entry nicht gefunden');
+
+  if (verifiedName) {
+    await sql`UPDATE giveaway_entries SET verified_name = ${verifiedName} WHERE id = ${entryId}`;
+  }
 
   if (await emailAlreadyWonCampaign(sql, entry.campaignId, entry.email, entry.id)) {
     await sql`UPDATE giveaway_entries SET status = 'rejected', verified_at = NOW() WHERE id = ${entryId}`;

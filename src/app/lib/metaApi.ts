@@ -284,7 +284,7 @@ export async function findFacebookComment(
   requiredText: string | null,
   fromName?: string | null,
   accessiblePageId?: string | null,
-): Promise<{ found: boolean; fromName?: string; allComments?: Array<{ from?: string; message: string }> }> {
+): Promise<{ found: boolean; fromName?: string; commentId?: string; allComments?: Array<{ from?: string; message: string }> }> {
   // Page-ID aus Post-ID extrahieren um das spezifische Page Access Token zu holen.
   // Damit können Artist-Posts gelesen werden, nicht nur die dfaith-eigene Page.
   const systemToken = process.env.META_SYSTEM_USER_TOKEN;
@@ -337,14 +337,14 @@ export async function findFacebookComment(
   // Hinweis: "from{name,id}" funktioniert nicht bei der neuen Facebook-Seiten-API.
   // Stattdessen "from" ohne Unterfelder verwenden.
   let url: string | null =
-    `${GRAPH}/${postId}/comments?fields=from,message&limit=200&access_token=${token}`;
+    `${GRAPH}/${postId}/comments?fields=id,from,message&limit=200&access_token=${token}`;
 
   console.log('[findFacebookComment] DEBUG - Suche nach:', { postId, requiredText, fromName, cleanText, cleanName });
 
   const allComments: Array<{ from?: string; message: string }> = [];
 
   for (let page = 0; page < 5 && url; page++) {
-    let data: { data?: Array<{ from?: { name?: string; id?: string }; message?: string }>; paging?: { next?: string }; error?: { message: string } };
+    let data: { data?: Array<{ id?: string; from?: { name?: string; id?: string }; message?: string }>; paging?: { next?: string }; error?: { message: string } };
     try {
       const res = await fetch(url, { cache: 'no-store' });
       data = await res.json();
@@ -354,7 +354,7 @@ export async function findFacebookComment(
     // "from" Feld nicht verfügbar (z.B. bei Reels) – ohne "from" nochmal versuchen
     if (data.error?.message?.includes('nonexisting field (from)')) {
       console.log('[findFacebookComment] „from“ Feld nicht verfügbar – nur message abrufen');
-      url = url.replace('fields=from,message', 'fields=message');
+      url = url.replace('fields=id,from,message', 'fields=id,message');
       try {
         const res2 = await fetch(url, { cache: 'no-store' });
         data = await res2.json();
@@ -388,13 +388,70 @@ export async function findFacebookComment(
       const textMatch = cleanText ? commentMessage.toLowerCase().includes(cleanText) : true;
       if (authorMatch && textMatch) {
         console.log('[findFacebookComment] DEBUG - MATCH GEFUNDEN!', { authorName, fromName: comment.from?.name });
-        return { found: true, fromName: comment.from?.name ?? undefined, allComments };
+        return { found: true, fromName: comment.from?.name ?? undefined, commentId: comment.id, allComments };
       }
     }
     url = data.paging?.next ?? null;
   }
   console.log('[findFacebookComment] DEBUG - Kein Match gefunden');
   return { found: false, allComments };
+}
+
+// ─── Private Antwort auf einen Kommentar + Namensauflösung über Messenger ────
+/**
+ * Sendet eine private Nachricht als Antwort auf einen Kommentar (referenziert
+ * per comment_id, kein vorheriges Wissen über die Person nötig). Dadurch
+ * entsteht eine echte Messenger-Konversation, über die Meta anschließend den
+ * echten Namen preisgibt — anders als bei der Comments-API, die den Autor
+ * (besonders bei Reels) oft nicht zurückgibt. Braucht einen direkt (nicht nur
+ * über Business-Partner-Freigabe) ausgestellten Page-Token mit
+ * `pages_messaging`-Berechtigung.
+ */
+export async function sendFacebookPrivateReply(commentId: string, message: string, pageToken: string): Promise<boolean> {
+  try {
+    const res = await fetch(
+      `${GRAPH}/${commentId}/private_replies`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, access_token: pageToken }),
+      },
+    );
+    const data = await res.json() as { id?: string; error?: { message: string } };
+    if (data.error) {
+      console.error('[sendFacebookPrivateReply] Fehler:', data.error.message, '| commentId:', commentId);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('[sendFacebookPrivateReply] Exception:', e);
+    return false;
+  }
+}
+
+/**
+ * Holt den Namen aus der zuletzt aktualisierten Messenger-Konversation der Page
+ * (unmittelbar nach sendFacebookPrivateReply aufrufen — die eben erst
+ * ausgelöste Konversation ist dann die aktuellste).
+ */
+export async function getMostRecentFacebookConversationName(pageId: string, pageToken: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `${GRAPH}/${pageId}/conversations?fields=participants&limit=1&access_token=${pageToken}`,
+      { cache: 'no-store' },
+    );
+    const data = await res.json() as {
+      data?: Array<{ participants?: { data?: Array<{ name?: string; id?: string }> } }>;
+      error?: { message: string };
+    };
+    if (data.error || !data.data?.[0]) return null;
+    const participants = data.data[0].participants?.data ?? [];
+    const other = participants.find(p => p.id !== pageId);
+    return other?.name ?? null;
+  } catch (e) {
+    console.error('[getMostRecentFacebookConversationName] Exception:', e);
+    return null;
+  }
 }
 
 // ─── IG-Account-ID aus Facebook-Page ermitteln ───────────────────────────────
