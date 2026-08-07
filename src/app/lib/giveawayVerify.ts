@@ -2,17 +2,16 @@
  * Plattform-übergreifende Kommentar-Verifikation für das Giveaway-Feature.
  * Reused die bestehenden Meta-/RapidAPI-/YouTube-Helfer, die auch das Quest-System nutzt.
  */
-import { findInstagramComment, findFacebookComment, resolvePostIdFromUrl, extractFacebookPostId } from './metaApi';
+import { findInstagramComment, findFacebookComment, fetchAllFacebookComments, findFacebookConversationByName, resolvePostIdFromUrl, extractFacebookPostId } from './metaApi';
 import { getDb } from './db';
 
 // Direkt (nicht über Business-Partner-Freigabe) ausgestellter Page-Token für die
 // "Dawid Faith"-Page — Business-Partner-Tokens haben laut Meta keinen
 // zuverlässigen Messenger/Conversations-Zugriff, auch mit korrekt gesetzten
 // Scopes/Tasks nicht. Nur für diese eine Page vorhanden, daher hart verdrahtet
-// statt generisch pro Artist-Page. Der Cronjob (facebook-giveaway-reply) nutzt
-// denselben Token, um Kommentare mit dem Kampagnen-Stichwort automatisch per
-// privater Nachricht zu beantworten und dabei den echten Namen zu erfassen.
+// statt generisch pro Artist-Page.
 export const DAWID_FAITH_PAGE_ID = '528116477058109';
+const DAWID_FAITH_PAGE_TOKEN = process.env.META_DAWID_FAITH_PAGE_TOKEN;
 
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 const RAPIDAPI_HOST = 'tiktok-api23.p.rapidapi.com';
@@ -127,10 +126,11 @@ export async function verifyYoutubeEntry(videoIdOrUrl: string, handle: string, c
  *
  * Für die "Dawid Faith"-Page läuft es wie bei den anderen Plattformen: kein
  * individueller Code nötig, nur das gemeinsame Kampagnen-Stichwort (z.B.
- * "dfaith"). Der Cronjob facebook-giveaway-reply.ts entdeckt solche Kommentare
- * automatisch, antwortet privat und speichert den dabei ermittelten echten
- * Namen in giveaway_facebook_replies. Hier wird nur noch geprüft, ob der vom
- * Fan eingegebene Handle zu einem dieser erfassten Namen passt.
+ * "dfaith"). Ein externes Tool (z.B. ManyChat) antwortet auf solche Kommentare
+ * bereits automatisch per DM — bis der Fan über diesen Link das Formular
+ * ausfüllt, existiert die Messenger-Konversation also schon. Hier wird live
+ * geprüft: (1) gibt es überhaupt einen Kommentar mit dem Stichwort, (2) gibt es
+ * eine Konversation, deren Teilnehmer:in-Name zum eingegebenen Handle passt.
  */
 export async function verifyFacebookEntry(
   postUrl: string,
@@ -139,31 +139,43 @@ export async function verifyFacebookEntry(
   campaignId: string,
   handle: string,
   entryId: string,
+  requiredText?: string,
 ): Promise<{ found: boolean; verifiedName?: string }> {
-  if (pageIdHint === DAWID_FAITH_PAGE_ID) {
-    const sql = getDb();
-    const cleanHandle = handle.trim().toLowerCase();
+  if (pageIdHint === DAWID_FAITH_PAGE_ID && DAWID_FAITH_PAGE_TOKEN) {
+    const cleanHandle = handle.trim();
     if (!cleanHandle) return { found: false };
-    const rows = await sql`
-      SELECT comment_id, resolved_name FROM giveaway_facebook_replies
-      WHERE campaign_id = ${campaignId}
-        AND resolved_name IS NOT NULL
-        AND (claimed_by_entry_id IS NULL OR claimed_by_entry_id = ${entryId})
-    `;
-    for (const r of rows) {
-      const name = (r.resolved_name as string).trim().toLowerCase();
-      if (!name) continue;
-      const match = name === cleanHandle
-        || (cleanHandle.length >= 3 && (name.includes(cleanHandle) || cleanHandle.includes(name)));
-      if (match) {
-        await sql`
-          UPDATE giveaway_facebook_replies SET claimed_by_entry_id = ${entryId}
-          WHERE comment_id = ${r.comment_id} AND claimed_by_entry_id IS NULL
-        `;
-        return { found: true, verifiedName: r.resolved_name as string };
-      }
+
+    let postId = postUrl;
+    if (postUrl.startsWith('http')) {
+      const resolved = await resolvePostIdFromUrl(postUrl);
+      postId = resolved ?? (extractFacebookPostId(postUrl) ?? postUrl);
     }
-    return { found: false };
+    if (!postId.includes('_') && /^\d+$/.test(postId)) {
+      postId = `${DAWID_FAITH_PAGE_ID}_${postId}`;
+    }
+    const cleanRequired = (requiredText ?? '').toLowerCase();
+    const comments = await fetchAllFacebookComments(postId, DAWID_FAITH_PAGE_TOKEN);
+    const hasMatchingComment = cleanRequired
+      ? comments.some(c => c.message.toLowerCase().includes(cleanRequired))
+      : false;
+    if (!hasMatchingComment) return { found: false };
+
+    const sql = getDb();
+    const claimedRows = await sql`
+      SELECT thread_id FROM giveaway_facebook_claimed_conversations
+      WHERE campaign_id = ${campaignId} AND claimed_by_entry_id != ${entryId}
+    `;
+    const excludeThreadIds = claimedRows.map(r => r.thread_id as string);
+
+    const match = await findFacebookConversationByName(DAWID_FAITH_PAGE_ID, DAWID_FAITH_PAGE_TOKEN, cleanHandle, excludeThreadIds);
+    if (!match) return { found: false };
+
+    await sql`
+      INSERT INTO giveaway_facebook_claimed_conversations (thread_id, campaign_id, claimed_by_entry_id, resolved_name)
+      VALUES (${match.threadId}, ${campaignId}, ${entryId}, ${match.name})
+      ON CONFLICT (thread_id) DO NOTHING
+    `;
+    return { found: true, verifiedName: match.name };
   }
 
   // Fallback für andere Artist-Pages ohne eigenen Messaging-Token: bisheriges

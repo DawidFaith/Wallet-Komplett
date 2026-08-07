@@ -55,20 +55,20 @@ async function ensureTables() {
   await sql`ALTER TABLE giveaway_entries ADD COLUMN IF NOT EXISTS verified_name TEXT`;
   await sql`CREATE INDEX IF NOT EXISTS giveaway_entries_handle_idx ON giveaway_entries (platform, handle, status)`;
 
-  // Erfasst Facebook-Kommentare, die der facebook-giveaway-reply-Cronjob bereits
-  // automatisch privat beantwortet hat, inkl. dem dabei über Messenger ermittelten
-  // echten Namen — genutzt zum Abgleich statt eines individuellen Codes (siehe
-  // verifyFacebookEntry in giveawayVerify.ts).
+  // Merkt sich, welche Messenger-Konversation der Dawid-Faith-Page bereits einer
+  // Giveaway-Teilnahme zugeordnet wurde (verhindert, dass zwei Personen sich mit
+  // demselben erkannten Namen denselben Gewinn erschleichen) — siehe
+  // verifyFacebookEntry in giveawayVerify.ts.
   await sql`
-    CREATE TABLE IF NOT EXISTS giveaway_facebook_replies (
-      comment_id TEXT PRIMARY KEY,
+    CREATE TABLE IF NOT EXISTS giveaway_facebook_claimed_conversations (
+      thread_id TEXT PRIMARY KEY,
       campaign_id TEXT NOT NULL,
+      claimed_by_entry_id TEXT NOT NULL,
       resolved_name TEXT,
-      claimed_by_entry_id TEXT,
-      replied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      claimed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
-  await sql`CREATE INDEX IF NOT EXISTS giveaway_facebook_replies_campaign_idx ON giveaway_facebook_replies (campaign_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS giveaway_fb_claimed_conv_campaign_idx ON giveaway_facebook_claimed_conversations (campaign_id)`;
 }
 
 export interface GiveawayCampaign {

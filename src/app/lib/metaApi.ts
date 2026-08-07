@@ -426,59 +426,47 @@ export async function fetchAllFacebookComments(postId: string, pageToken: string
   return results;
 }
 
-// ─── Private Antwort auf einen Kommentar + Namensauflösung über Messenger ────
+// ─── Namensauflösung über bestehende Messenger-Konversationen ───────────────
 /**
- * Sendet eine private Nachricht als Antwort auf einen Kommentar (referenziert
- * per comment_id, kein vorheriges Wissen über die Person nötig). Dadurch
- * entsteht eine echte Messenger-Konversation, über die Meta anschließend den
- * echten Namen preisgibt — anders als bei der Comments-API, die den Autor
- * (besonders bei Reels) oft nicht zurückgibt. Braucht einen direkt (nicht nur
- * über Business-Partner-Freigabe) ausgestellten Page-Token mit
+ * Sucht unter den letzten Messenger-Konversationen der Page eine, deren
+ * Teilnehmer:in (nicht die Page selbst) namentlich zu `targetName` passt —
+ * ohne selbst eine Nachricht zu senden. Setzt voraus, dass die Konversation
+ * bereits existiert (z.B. weil ein externes Tool wie ManyChat automatisch auf
+ * den Kommentar geantwortet hat). Braucht einen direkt (nicht nur über
+ * Business-Partner-Freigabe) ausgestellten Page-Token mit
  * `pages_messaging`-Berechtigung.
  */
-export async function sendFacebookPrivateReply(commentId: string, message: string, pageToken: string): Promise<boolean> {
+export async function findFacebookConversationByName(
+  pageId: string,
+  pageToken: string,
+  targetName: string,
+  excludeThreadIds: string[] = [],
+): Promise<{ threadId: string; name: string } | null> {
+  const cleanTarget = targetName.trim().toLowerCase();
+  if (!cleanTarget) return null;
+  const excluded = new Set(excludeThreadIds);
   try {
     const res = await fetch(
-      `${GRAPH}/${commentId}/private_replies`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, access_token: pageToken }),
-      },
-    );
-    const data = await res.json() as { id?: string; error?: { message: string } };
-    if (data.error) {
-      console.error('[sendFacebookPrivateReply] Fehler:', data.error.message, '| commentId:', commentId);
-      return false;
-    }
-    return true;
-  } catch (e) {
-    console.error('[sendFacebookPrivateReply] Exception:', e);
-    return false;
-  }
-}
-
-/**
- * Holt den Namen aus der zuletzt aktualisierten Messenger-Konversation der Page
- * (unmittelbar nach sendFacebookPrivateReply aufrufen — die eben erst
- * ausgelöste Konversation ist dann die aktuellste).
- */
-export async function getMostRecentFacebookConversationName(pageId: string, pageToken: string): Promise<string | null> {
-  try {
-    const res = await fetch(
-      `${GRAPH}/${pageId}/conversations?fields=participants&limit=1&access_token=${pageToken}`,
+      `${GRAPH}/${pageId}/conversations?fields=participants&limit=50&access_token=${pageToken}`,
       { cache: 'no-store' },
     );
     const data = await res.json() as {
-      data?: Array<{ participants?: { data?: Array<{ name?: string; id?: string }> } }>;
+      data?: Array<{ id: string; participants?: { data?: Array<{ name?: string; id?: string }> } }>;
       error?: { message: string };
     };
-    if (data.error || !data.data?.[0]) return null;
-    const participants = data.data[0].participants?.data ?? [];
-    const other = participants.find(p => p.id !== pageId);
-    return other?.name ?? null;
+    if (data.error || !data.data) return null;
+    for (const thread of data.data) {
+      if (excluded.has(thread.id)) continue;
+      const other = thread.participants?.data?.find(p => p.id !== pageId);
+      const name = other?.name?.trim().toLowerCase();
+      if (!name) continue;
+      const match = name === cleanTarget
+        || (cleanTarget.length >= 3 && (name.includes(cleanTarget) || cleanTarget.includes(name)));
+      if (match) return { threadId: thread.id, name: other!.name! };
+    }
+    return null;
   } catch (e) {
-    console.error('[getMostRecentFacebookConversationName] Exception:', e);
+    console.error('[findFacebookConversationByName] Exception:', e);
     return null;
   }
 }
