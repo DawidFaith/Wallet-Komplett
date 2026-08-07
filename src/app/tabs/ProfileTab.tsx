@@ -549,27 +549,34 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
         <div className="border-t border-white/[0.1]" />
 
         {/* ── Guthaben ── */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em]">{t('profile.balance', lang)}</p>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-2">
-              <Image src="/D.FAITH.png" alt="D.FAITH" width={20} height={20} className="w-5 h-5 rounded-full object-contain shrink-0" />
-              <div className="min-w-0">
-                <p className="text-white font-bold text-sm leading-tight">
-                  {dfaithBalance !== null
-                    ? dfaithBalance.toLocaleString(lang === 'de' ? 'de-DE' : lang === 'pl' ? 'pl-PL' : 'en-US', { maximumFractionDigits: 2 })
-                    : '…'}
-                </p>
-                <p className="text-zinc-500 text-[9px] font-semibold uppercase tracking-wide truncate">{t('profile.dfaithWalletLabel', lang)}</p>
-              </div>
+          <div className="flex items-center gap-2">
+            <Image src="/D.FAITH.png" alt="D.FAITH" width={20} height={20} className="w-5 h-5 rounded-full object-contain shrink-0" />
+            <div className="min-w-0">
+              <p className="text-white font-bold text-sm leading-tight">
+                {dfaithBalance !== null
+                  ? dfaithBalance.toLocaleString(lang === 'de' ? 'de-DE' : lang === 'pl' ? 'pl-PL' : 'en-US', { maximumFractionDigits: 2 })
+                  : '…'}
+              </p>
+              <p className="text-zinc-500 text-[9px] font-semibold uppercase tracking-wide truncate">{t('profile.dfaithWalletLabel', lang)}</p>
             </div>
-            <div className="flex items-center gap-2">
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               <FaCoins className="text-amber-400 shrink-0" size={16} />
               <div className="min-w-0">
                 <p className="text-white font-bold text-sm leading-tight">{(data?.credits ?? 0).toFixed(2)}</p>
                 <p className="text-zinc-500 text-[9px] font-semibold uppercase tracking-wide truncate">{t('profile.creditsLabel', lang)}</p>
               </div>
             </div>
+            <button
+              onClick={() => setShowClaimConfirm(true)}
+              disabled={claiming || (data?.credits ?? 0) <= 0}
+              className="shrink-0 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold text-xs px-3 py-1.5 rounded-lg transition-colors"
+            >
+              {claiming ? '…' : t('profile.redeem', lang)}
+            </button>
           </div>
         </div>
 
@@ -974,19 +981,6 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                 <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="w-3.5 h-3.5 rounded-full shrink-0" />
                 <span className="text-white font-bold tracking-wide">{selectedArtist.rewardToken ?? 'D.FAITH'}</span>
               </div>
-              <div className="flex items-center gap-2 bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-3 py-1.5">
-                  <Image src="/D.FAITH.png" alt="D.FAITH" width={16} height={16} className="w-4 h-4 rounded-full shrink-0" />
-                  <span className="text-yellow-300 font-semibold text-xs flex-1">
-                    {(data?.credits ?? 0).toFixed(2)} D.FAITH Credits
-                  </span>
-                  <button
-                    onClick={() => setShowClaimConfirm(true)}
-                    disabled={claiming || (data?.credits ?? 0) <= 0}
-                    className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold text-xs px-3 py-1 rounded-lg transition-colors"
-                  >
-                    {claiming ? '…' : t('profile.redeem', lang)}
-                  </button>
-                </div>
 
               {/* ── Referral-Sektion (nur Platform-Card) ── */}
               {selectedArtist.isPlatformUser && (

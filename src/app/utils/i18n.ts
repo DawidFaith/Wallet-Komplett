@@ -237,7 +237,7 @@ const dict: Translations = {
     pl: 'Wspierający',
   },
   'profile.dfaithWalletLabel': { de: 'D.FAITH Wallet', en: 'D.FAITH Wallet', pl: 'D.FAITH w portfelu' },
-  'profile.creditsLabel': { de: 'Credits', en: 'Credits', pl: 'Kredyty' },
+  'profile.creditsLabel': { de: 'D.FAITH Credits', en: 'D.FAITH Credits', pl: 'Kredyty D.FAITH' },
   'profile.balance': { de: 'Guthaben', en: 'Balance', pl: 'Saldo' },
   'profile.artistProfile': {
     de: 'Künstler-Profil',
