@@ -127,6 +127,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
     }));
   };
   const [claimModal, setClaimModal] = useState<{ sentAmount: number } | null>(null);
+  const [showClaimConfirm, setShowClaimConfirm] = useState(false);
   const [dfaithBalance, setDfaithBalance] = useState<number | null>(null);
   const [repData, setRepData] = useState<{ reputation: number; level: number; levelName: string; progress: number; nextLevelRep: number | null; questRewardBonusPercent: number } | null>(null);
   // Reputation des Users bei ausgewähltem Artist laden
@@ -957,7 +958,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                     {(data?.credits ?? 0).toFixed(2)} D.FAITH Credits
                   </span>
                   <button
-                    onClick={handleClaim}
+                    onClick={() => setShowClaimConfirm(true)}
                     disabled={claiming || (data?.credits ?? 0) <= 0}
                     className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold text-xs px-3 py-1 rounded-lg transition-colors"
                   >
@@ -1229,6 +1230,42 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               walletAddress={account.address}
               onLinked={() => { setShowYoutubeModal(false); loadProfile(); }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Einlösen-Bestätigungs-Modal */}
+      {showClaimConfirm && (
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowClaimConfirm(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-[#1a150a] border border-amber-700/40 rounded-2xl p-6 space-y-4 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-16 h-16 mx-auto">
+              <Image src="/D.FAITH.png" alt="D.FAITH" width={64} height={64} className="w-16 h-16 object-contain" />
+            </div>
+            <h3 className="text-white font-bold text-lg">{t('profile.claimConfirmTitle', lang)}</h3>
+            <p className="text-zinc-400 text-sm leading-relaxed">
+              {tFmt('profile.claimConfirmBody', lang, { n: (data?.credits ?? 0).toFixed(2) })}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowClaimConfirm(false)}
+                className="flex-1 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] text-zinc-300 font-bold py-3 rounded-xl transition-colors"
+              >
+                {t('profile.claimConfirmCancel', lang)}
+              </button>
+              <button
+                onClick={() => { setShowClaimConfirm(false); handleClaim(); }}
+                disabled={claiming}
+                className="flex-1 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold py-3 rounded-xl transition-colors"
+              >
+                {claiming ? '…' : t('profile.claimConfirmConfirm', lang)}
+              </button>
+            </div>
           </div>
         </div>
       )}

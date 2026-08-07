@@ -323,6 +323,26 @@ const dict: Translations = {
     en: 'Not connected',
     pl: 'Niepołączony',
   },
+  'profile.claimConfirmTitle': {
+    de: 'Credits einlösen?',
+    en: 'Redeem credits?',
+    pl: 'Odebrać kredyty?',
+  },
+  'profile.claimConfirmBody': {
+    de: 'Deine {n} D.FAITH Credits werden 1:1 in echte D.FAITH-Token umgewandelt und direkt an deine Wallet gesendet. Danach sind es keine Credits mehr, sondern On-Chain-Token in deiner Wallet — der Vorgang kann nicht rückgängig gemacht werden.',
+    en: 'Your {n} D.FAITH Credits will be converted 1:1 into real D.FAITH tokens and sent directly to your wallet. Afterwards they\'re no longer credits, but on-chain tokens in your wallet — this cannot be undone.',
+    pl: 'Twoje {n} kredytów D.FAITH zostanie zamienione 1:1 na prawdziwe tokeny D.FAITH i wysłane bezpośrednio na Twój portfel. Później nie będą to już kredyty, tylko tokeny on-chain w Twoim portfelu — tej operacji nie można cofnąć.',
+  },
+  'profile.claimConfirmCancel': {
+    de: 'Abbrechen',
+    en: 'Cancel',
+    pl: 'Anuluj',
+  },
+  'profile.claimConfirmConfirm': {
+    de: 'Jetzt einlösen',
+    en: 'Redeem now',
+    pl: 'Odbierz teraz',
+  },
   'profile.claimSuccess': {
     de: 'Erfolgreich eingelöst!',
     en: 'Successfully redeemed!',
