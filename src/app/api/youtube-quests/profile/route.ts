@@ -9,6 +9,9 @@ import {
 } from '../../../lib/questDb';
 import { requireOwnWallet } from '../../../lib/apiAuth';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
   const wallet = new URL(req.url).searchParams.get('wallet');
   if (!wallet) {
