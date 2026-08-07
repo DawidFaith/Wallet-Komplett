@@ -1,5 +1,5 @@
 /**
- * GET /api/admin/debug-giveaway-state?email=...&wallet=...
+ * GET /api/admin/debug-giveaway-state?email=...&wallet=...&handle=...
  * Header: x-admin-secret
  *
  * Diagnose-Route: zeigt den rohen DB-Zustand für einen Test-Account, um
@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
 
   const email = req.nextUrl.searchParams.get('email')?.trim().toLowerCase();
   const wallet = req.nextUrl.searchParams.get('wallet')?.trim().toLowerCase();
+  const handle = req.nextUrl.searchParams.get('handle')?.trim().toLowerCase();
 
   const sql = getDb();
   const result: Record<string, unknown> = {};
@@ -40,6 +41,12 @@ export async function GET(req: NextRequest) {
     `;
     result.solanaAccount = await sql`
       SELECT wallet_address, solana_address, created_at FROM solana_accounts WHERE wallet_address = ${wallet} LIMIT 1
+    `;
+  }
+  if (handle) {
+    result.handleTakenBy = await sql`
+      SELECT wallet_address, facebook_handle, facebook_verified, updated_at
+      FROM user_profiles WHERE LOWER(facebook_handle) = ${handle}
     `;
   }
 
