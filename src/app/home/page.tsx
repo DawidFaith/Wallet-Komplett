@@ -51,48 +51,45 @@ function HomeContent() {
   }, [user?.id]);
 
   // Solana-Wallet sofort beim Laden sicherstellen (nicht erst wenn der Wallet-Tab
-  // besucht wird) — SolanaWalletTab macht denselben Check nochmal für seine eigene
-  // Lade-/Fehleranzeige, das GET hier ist aber schon idempotent: existiert der
-  // Account bereits, passiert nichts weiter.
+  // besucht wird), DANACH — nicht parallel — offene Giveaway-Teilnahmen mit
+  // derselben E-Mail automatisch dem Account zuordnen (Social-Handle wird dabei
+  // auto-verifiziert, Credits sofort gutgeschrieben). Beide liefen vorher als
+  // zwei unabhängige Effekte gleichzeitig los; strikt nacheinander schließt
+  // eine mögliche Race Condition zwischen beiden Requests aus, statt nur auf
+  // gutes Timing zu hoffen. Kein Session-Gate mehr für den Claim-Teil: der
+  // Abruf ist günstig/idempotent, findet er nichts Offenes, passiert nichts.
   useEffect(() => {
     const userId = user?.id;
-    if (!userId) return;
+    if (!userId || typeof window === 'undefined') return;
     let cancelled = false;
     (async () => {
       try {
         const check = await fetch(`/api/solana/create-account?walletAddress=${encodeURIComponent(userId)}`);
         const checkData = await check.json();
-        if (cancelled || checkData.solanaAddress) return;
-        const referralCode = typeof window !== 'undefined' ? localStorage.getItem('dfaith_referral') : null;
-        await fetch('/api/solana/create-account', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ walletAddress: userId, referredBy: referralCode ?? undefined }),
-        });
+        if (!cancelled && !checkData.solanaAddress) {
+          const referralCode = localStorage.getItem('dfaith_referral');
+          await fetch('/api/solana/create-account', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ walletAddress: userId, referredBy: referralCode ?? undefined }),
+          });
+        }
       } catch {
         /* SolanaWalletTab versucht es beim Öffnen erneut und zeigt dann ggf. den Fehler an */
       }
+      if (cancelled) return;
+      try {
+        // E-Mail wird serverseitig aus dem verifizierten Clerk-Profil geholt,
+        // nicht hier mitgeschickt (sonst clientseitig fälschbar).
+        await fetch('/api/giveaways/claim-by-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ walletAddress: userId }),
+        });
+        if (!cancelled) window.dispatchEvent(new CustomEvent('dfaith:giveaway-claimed'));
+      } catch { /* ignore */ }
     })();
     return () => { cancelled = true; };
-  }, [user?.id]);
-
-  // Offene Giveaway-Teilnahmen mit derselben E-Mail automatisch dem Account zuordnen
-  // (Social-Handle wird dabei auto-verifiziert, Credits sofort gutgeschrieben) — bei
-  // jedem Laden der Seite (kein Session-Gate mehr: das verhinderte, dass ein Claim
-  // erneut versucht wird, wenn der erste Versuch vor Abschluss der Giveaway-
-  // Verifizierung lief — der Abruf selbst ist günstig/idempotent, findet er nichts
-  // Offenes mehr, passiert einfach nichts).
-  useEffect(() => {
-    if (!user?.id || typeof window === 'undefined') return;
-    // E-Mail wird serverseitig aus dem verifizierten Clerk-Profil geholt, nicht hier
-    // mitgeschickt (sonst clientseitig fälschbar).
-    fetch('/api/giveaways/claim-by-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ walletAddress: user.id }),
-    }).then(() => {
-      window.dispatchEvent(new CustomEvent('dfaith:giveaway-claimed'));
-    }).catch(() => {});
   }, [user?.id]);
 
   // Beim ersten Laden: gespeicherten Tab + Artist wiederherstellen (URL-Parameter hat Vorrang)
