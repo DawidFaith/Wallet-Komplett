@@ -51,11 +51,13 @@ function HomeContent() {
   }, [user?.id]);
 
   // Offene Giveaway-Teilnahmen mit derselben E-Mail automatisch dem Account zuordnen
-  // (Social-Handle wird dabei auto-verifiziert, Credits sofort gutgeschrieben) — einmal pro Session
+  // (Social-Handle wird dabei auto-verifiziert, Credits sofort gutgeschrieben) — bei
+  // jedem Laden der Seite (kein Session-Gate mehr: das verhinderte, dass ein Claim
+  // erneut versucht wird, wenn der erste Versuch vor Abschluss der Giveaway-
+  // Verifizierung lief — der Abruf selbst ist günstig/idempotent, findet er nichts
+  // Offenes mehr, passiert einfach nichts).
   useEffect(() => {
     if (!user?.id || typeof window === 'undefined') return;
-    const claimedKey = 'dfaith_giveaway_claimed';
-    if (sessionStorage.getItem(claimedKey) === user.id.toLowerCase()) return;
     // E-Mail wird serverseitig aus dem verifizierten Clerk-Profil geholt, nicht hier
     // mitgeschickt (sonst clientseitig fälschbar).
     fetch('/api/giveaways/claim-by-email', {
@@ -63,7 +65,7 @@ function HomeContent() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ walletAddress: user.id }),
     }).then(() => {
-      sessionStorage.setItem(claimedKey, user.id.toLowerCase());
+      window.dispatchEvent(new CustomEvent('dfaith:giveaway-claimed'));
     }).catch(() => {});
   }, [user?.id]);
 

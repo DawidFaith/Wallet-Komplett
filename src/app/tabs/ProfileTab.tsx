@@ -127,6 +127,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
     }));
   };
   const [claimModal, setClaimModal] = useState<{ sentAmount: number } | null>(null);
+  const [dfaithBalance, setDfaithBalance] = useState<number | null>(null);
   const [repData, setRepData] = useState<{ reputation: number; level: number; levelName: string; progress: number; nextLevelRep: number | null; questRewardBonusPercent: number } | null>(null);
   // Reputation des Users bei ausgewähltem Artist laden
   useEffect(() => {
@@ -219,6 +220,26 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
       setLoading(false);
     }
   }, [account?.address, setPrimaryPlatform]);
+
+  // D.FAITH-Token-Guthaben der Wallet laden (für die Anzeige in der Supporter-Karte)
+  const loadDfaithBalance = useCallback(async () => {
+    if (!account?.address) { setDfaithBalance(null); return; }
+    try {
+      const accRes = await fetch(`/api/solana/create-account?walletAddress=${account.address}`);
+      if (!accRes.ok) return;
+      const accData = await accRes.json();
+      const solanaAddress = accData.solanaAddress as string | null;
+      if (!solanaAddress) return;
+      const balRes = await fetch(`/api/solana/balance?solanaAddress=${solanaAddress}`);
+      if (!balRes.ok) return;
+      const balData = await balRes.json();
+      const dfaithMint = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
+      const dfaithToken = (balData.tokens ?? []).find((tk: { mint: string; balance: number }) => tk.mint === dfaithMint);
+      setDfaithBalance(dfaithToken?.balance ?? 0);
+    } catch {
+      /* Balance bleibt null — nicht kritisch für den Rest der Seite */
+    }
+  }, [account?.address]);
 
   const loadMetaPartnerStatus = useCallback(async () => {
     if (!account?.address) return;
@@ -370,6 +391,17 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
   }, [account?.address, artistDisplayNameInput, artistTypeInput, artistBioInput, artistRewardTokenInput, artistDisplayPlatformInput, _clerkUser?.imageUrl, _clerkUser?.fullName, _clerkUser?.firstName, _clerkUser?.lastName, _clerkUser?.username, loadProfile]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
+  useEffect(() => { loadDfaithBalance(); }, [loadDfaithBalance]);
+
+  // Wird von home/page.tsx nach dem automatischen Giveaway-Claim gefeuert (der
+  // beim ersten Laden parallel zum Profil-Fetch läuft und diesen manchmal
+  // gerade erst NACH dem initialen Laden fertigstellt — ohne dieses Signal
+  // blieben Credits/Verifizierung dann bis zum nächsten Tab-Wechsel unsichtbar).
+  useEffect(() => {
+    const handler = () => { loadProfile(); loadDfaithBalance(); };
+    window.addEventListener('dfaith:giveaway-claimed', handler);
+    return () => window.removeEventListener('dfaith:giveaway-claimed', handler);
+  }, [loadProfile, loadDfaithBalance]);
   useEffect(() => { loadMetaPartnerStatus(); }, [loadMetaPartnerStatus]);
 
   useEffect(() => {
@@ -500,6 +532,12 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               {p?.displayName || _clerkUser?.fullName || [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') || _clerkUser?.username || shortenAddress(account.address)}
             </p>
           </div>
+          {dfaithBalance !== null && (
+            <div className="shrink-0 flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/25 rounded-xl px-3 py-1.5">
+              <Image src="/D.FAITH.png" alt="D.FAITH" width={16} height={16} className="w-4 h-4 rounded-full object-contain" />
+              <span className="text-amber-300 font-bold text-sm">{dfaithBalance.toLocaleString(lang === 'de' ? 'de-DE' : lang === 'pl' ? 'pl-PL' : 'en-US', { maximumFractionDigits: 2 })}</span>
+            </div>
+          )}
         </div>
 
         {/* Divider */}
