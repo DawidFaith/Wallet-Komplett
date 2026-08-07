@@ -167,7 +167,12 @@ export async function verifyFacebookEntry(
     `;
     const excludeThreadIds = claimedRows.map(r => r.thread_id as string);
 
-    const match = await findFacebookConversationByName(DAWID_FAITH_PAGE_ID, DAWID_FAITH_PAGE_TOKEN, cleanHandle, excludeThreadIds);
+    // Nachweis, dass die Konversation wirklich vom Automatisierungstool für
+    // GENAU diese Kampagne ausgelöst wurde (nicht nur eine ältere Konversation
+    // mit zufällig ähnlichem Namen): die Page muss darin den Kampagnen-Link
+    // verschickt haben.
+    const linkFragment = `/win/${campaignId}`;
+    const match = await findFacebookConversationByName(DAWID_FAITH_PAGE_ID, DAWID_FAITH_PAGE_TOKEN, cleanHandle, linkFragment, excludeThreadIds);
     if (!match) return { found: false };
 
     await sql`

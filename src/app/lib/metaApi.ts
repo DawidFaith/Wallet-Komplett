@@ -428,30 +428,36 @@ export async function fetchAllFacebookComments(postId: string, pageToken: string
 
 // ─── Namensauflösung über bestehende Messenger-Konversationen ───────────────
 /**
- * Sucht unter den letzten Messenger-Konversationen der Page eine, deren
- * Teilnehmer:in (nicht die Page selbst) namentlich zu `targetName` passt —
- * ohne selbst eine Nachricht zu senden. Setzt voraus, dass die Konversation
- * bereits existiert (z.B. weil ein externes Tool wie ManyChat automatisch auf
- * den Kommentar geantwortet hat). Braucht einen direkt (nicht nur über
- * Business-Partner-Freigabe) ausgestellten Page-Token mit
- * `pages_messaging`-Berechtigung.
+ * Sucht unter den letzten Messenger-Konversationen der Page eine, die (a) von
+ * der Page selbst eine Nachricht mit `requiredLinkFragment` enthält (Beweis,
+ * dass genau diese Konversation vom Giveaway-Automatisierungstool für DIESE
+ * Kampagne ausgelöst wurde — nicht irgendeine ältere, unabhängige Konversation
+ * mit zufällig ähnlichem Namen) und (b) deren Teilnehmer:in (nicht die Page
+ * selbst) namentlich zu `targetName` passt. Sendet selbst keine Nachricht.
+ * Braucht einen direkt (nicht nur über Business-Partner-Freigabe)
+ * ausgestellten Page-Token mit `pages_messaging`-Berechtigung.
  */
 export async function findFacebookConversationByName(
   pageId: string,
   pageToken: string,
   targetName: string,
+  requiredLinkFragment: string,
   excludeThreadIds: string[] = [],
-): Promise<{ threadId: string; name: string } | null> {
+): Promise<{ threadId: string; name: string; messageText: string; sentAt: string | null } | null> {
   const cleanTarget = targetName.trim().toLowerCase();
   if (!cleanTarget) return null;
   const excluded = new Set(excludeThreadIds);
   try {
     const res = await fetch(
-      `${GRAPH}/${pageId}/conversations?fields=participants&limit=50&access_token=${pageToken}`,
+      `${GRAPH}/${pageId}/conversations?fields=participants,messages.limit(10){message,from,created_time}&limit=50&access_token=${pageToken}`,
       { cache: 'no-store' },
     );
     const data = await res.json() as {
-      data?: Array<{ id: string; participants?: { data?: Array<{ name?: string; id?: string }> } }>;
+      data?: Array<{
+        id: string;
+        participants?: { data?: Array<{ name?: string; id?: string }> };
+        messages?: { data?: Array<{ message?: string; from?: { id?: string }; created_time?: string }> };
+      }>;
       error?: { message: string };
     };
     if (data.error || !data.data) return null;
@@ -460,9 +466,16 @@ export async function findFacebookConversationByName(
       const other = thread.participants?.data?.find(p => p.id !== pageId);
       const name = other?.name?.trim().toLowerCase();
       if (!name) continue;
-      const match = name === cleanTarget
+      const nameMatch = name === cleanTarget
         || (cleanTarget.length >= 3 && (name.includes(cleanTarget) || cleanTarget.includes(name)));
-      if (match) return { threadId: thread.id, name: other!.name! };
+      if (!nameMatch) continue;
+
+      const linkMessage = thread.messages?.data?.find(
+        m => m.from?.id === pageId && (m.message ?? '').includes(requiredLinkFragment),
+      );
+      if (!linkMessage) continue;
+
+      return { threadId: thread.id, name: other!.name!, messageText: linkMessage.message ?? '', sentAt: linkMessage.created_time ?? null };
     }
     return null;
   } catch (e) {
