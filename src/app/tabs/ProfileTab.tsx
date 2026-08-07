@@ -394,10 +394,20 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
   useEffect(() => { loadProfile(); }, [loadProfile]);
   useEffect(() => { loadDfaithBalance(); }, [loadDfaithBalance]);
 
-  // Wird von home/page.tsx nach dem automatischen Giveaway-Claim gefeuert (der
-  // beim ersten Laden parallel zum Profil-Fetch läuft und diesen manchmal
-  // gerade erst NACH dem initialen Laden fertigstellt — ohne dieses Signal
-  // blieben Credits/Verifizierung dann bis zum nächsten Tab-Wechsel unsichtbar).
+  // Der automatische Giveaway-Claim beim Login läuft parallel zum ersten
+  // Profil-Fetch hier und ist manchmal noch nicht fertig, wenn dieser schon
+  // durchgelaufen ist — dann bleiben frisch verknüpfte Plattformen/Credits bis
+  // zum nächsten Tab-Wechsel unsichtbar. Statt uns auf perfektes Timing eines
+  // Cross-Component-Events zu verlassen, laden wir hier einfach zusätzlich
+  // kurz danach nochmal automatisch nach (billig, idempotent).
+  useEffect(() => {
+    if (!account?.address) return;
+    const timer = setTimeout(() => { loadProfile(); loadDfaithBalance(); }, 3000);
+    return () => clearTimeout(timer);
+  }, [account?.address, loadProfile, loadDfaithBalance]);
+
+  // Zusätzlich: falls home/page.tsx das Signal doch rechtzeitig feuert, direkt
+  // reagieren statt auf den Timer zu warten.
   useEffect(() => {
     const handler = () => { loadProfile(); loadDfaithBalance(); };
     window.addEventListener('dfaith:giveaway-claimed', handler);
