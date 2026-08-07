@@ -2,7 +2,7 @@
  * Plattform-übergreifende Kommentar-Verifikation für das Giveaway-Feature.
  * Reused die bestehenden Meta-/RapidAPI-/YouTube-Helfer, die auch das Quest-System nutzt.
  */
-import { findInstagramComment, findFacebookComment, fetchAllFacebookComments, findFacebookConversationByName, resolvePostIdFromUrl, extractFacebookPostId } from './metaApi';
+import { findInstagramComment, findFacebookComment, findFacebookConversationByName, resolvePostIdFromUrl, extractFacebookPostId } from './metaApi';
 import { getDb } from './db';
 
 // Direkt (nicht über Business-Partner-Freigabe) ausgestellter Page-Token für die
@@ -128,9 +128,10 @@ export async function verifyYoutubeEntry(videoIdOrUrl: string, handle: string, c
  * individueller Code nötig, nur das gemeinsame Kampagnen-Stichwort (z.B.
  * "dfaith"). Ein externes Tool (z.B. ManyChat) antwortet auf solche Kommentare
  * bereits automatisch per DM — bis der Fan über diesen Link das Formular
- * ausfüllt, existiert die Messenger-Konversation also schon. Hier wird live
- * geprüft: (1) gibt es überhaupt einen Kommentar mit dem Stichwort, (2) gibt es
- * eine Konversation, deren Teilnehmer:in-Name zum eingegebenen Handle passt.
+ * ausfüllt, existiert die Messenger-Konversation also schon. Ein eigener
+ * Kommentar-Check ist deshalb nicht nötig: das Tool antwortet ohnehin nur auf
+ * echte Stichwort-Kommentare, die Existenz der Bot-Konversation (Name + Text +
+ * Zeitfenster) ist der Beweis.
  */
 // Fester Textbaustein der automatisierten Erstnachricht des Giveaway-Bots
 // (z.B. ManyChat) auf der Dawid-Faith-Page — der eigentliche Link steckt in
@@ -145,28 +146,15 @@ export async function verifyFacebookEntry(
   campaignId: string,
   handle: string,
   entryId: string,
-  requiredText?: string,
   campaignCreatedAt?: string,
 ): Promise<{ found: boolean; verifiedName?: string }> {
   if (pageIdHint === DAWID_FAITH_PAGE_ID && DAWID_FAITH_PAGE_TOKEN) {
     const cleanHandle = handle.trim();
     if (!cleanHandle) return { found: false };
 
-    let postId = postUrl;
-    if (postUrl.startsWith('http')) {
-      const resolved = await resolvePostIdFromUrl(postUrl);
-      postId = resolved ?? (extractFacebookPostId(postUrl) ?? postUrl);
-    }
-    if (!postId.includes('_') && /^\d+$/.test(postId)) {
-      postId = `${DAWID_FAITH_PAGE_ID}_${postId}`;
-    }
-    const cleanRequired = (requiredText ?? '').toLowerCase();
-    const comments = await fetchAllFacebookComments(postId, DAWID_FAITH_PAGE_TOKEN);
-    const hasMatchingComment = cleanRequired
-      ? comments.some(c => c.message.toLowerCase().includes(cleanRequired))
-      : false;
-    if (!hasMatchingComment) return { found: false };
-
+    // Kein separater Kommentar-Check nötig: das Automatisierungstool antwortet
+    // nur auf echte Stichwort-Kommentare, daher beweist die Existenz der
+    // Bot-Konversation (mit Zeitstempel + Text, siehe unten) das bereits.
     const sql = getDb();
     const claimedRows = await sql`
       SELECT thread_id FROM giveaway_facebook_claimed_conversations
