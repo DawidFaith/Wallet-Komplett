@@ -551,23 +551,23 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
         {/* ── Guthaben ── */}
         <div className="space-y-2">
           <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em]">{t('profile.balance', lang)}</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/25 rounded-xl px-3 py-2">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-2">
               <Image src="/D.FAITH.png" alt="D.FAITH" width={20} height={20} className="w-5 h-5 rounded-full object-contain shrink-0" />
               <div className="min-w-0">
-                <p className="text-amber-300 font-bold text-sm leading-tight">
+                <p className="text-white font-bold text-sm leading-tight">
                   {dfaithBalance !== null
                     ? dfaithBalance.toLocaleString(lang === 'de' ? 'de-DE' : lang === 'pl' ? 'pl-PL' : 'en-US', { maximumFractionDigits: 2 })
                     : '…'}
                 </p>
-                <p className="text-amber-300/60 text-[9px] font-bold uppercase tracking-wide truncate">{t('profile.dfaithWalletLabel', lang)}</p>
+                <p className="text-zinc-500 text-[9px] font-semibold uppercase tracking-wide truncate">{t('profile.dfaithWalletLabel', lang)}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/25 rounded-xl px-3 py-2">
-              <FaCoins className="text-emerald-400 shrink-0" size={18} />
+            <div className="flex items-center gap-2">
+              <FaCoins className="text-amber-400 shrink-0" size={16} />
               <div className="min-w-0">
-                <p className="text-emerald-300 font-bold text-sm leading-tight">{(data?.credits ?? 0).toFixed(2)}</p>
-                <p className="text-emerald-300/60 text-[9px] font-bold uppercase tracking-wide truncate">{t('profile.creditsLabel', lang)}</p>
+                <p className="text-white font-bold text-sm leading-tight">{(data?.credits ?? 0).toFixed(2)}</p>
+                <p className="text-zinc-500 text-[9px] font-semibold uppercase tracking-wide truncate">{t('profile.creditsLabel', lang)}</p>
               </div>
             </div>
           </div>
