@@ -563,18 +563,20 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               </p>
               <p className="text-zinc-500 text-[9px] font-semibold uppercase tracking-wide truncate">{t('profile.dfaithWalletLabel', lang)}</p>
             </div>
-            <div className="min-w-0">
-              <p className="text-white font-bold text-sm leading-tight">{(data?.credits ?? 0).toFixed(2)}</p>
-              <p className="text-zinc-500 text-[9px] font-semibold uppercase tracking-wide truncate">{t('profile.creditsLabel', lang)}</p>
+            <div className="flex items-center justify-between gap-2 min-w-0">
+              <div className="min-w-0">
+                <p className="text-white font-bold text-sm leading-tight">{(data?.credits ?? 0).toFixed(2)}</p>
+                <p className="text-zinc-500 text-[9px] font-semibold uppercase tracking-wide truncate">{t('profile.creditsLabel', lang)}</p>
+              </div>
+              <button
+                onClick={() => setShowClaimConfirm(true)}
+                disabled={claiming || (data?.credits ?? 0) <= 0}
+                className="shrink-0 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition-colors"
+              >
+                {claiming ? '…' : t('profile.redeem', lang)}
+              </button>
             </div>
           </div>
-          <button
-            onClick={() => setShowClaimConfirm(true)}
-            disabled={claiming || (data?.credits ?? 0) <= 0}
-            className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold text-xs py-2 rounded-lg transition-colors"
-          >
-            {claiming ? '…' : t('profile.redeem', lang)}
-          </button>
         </div>
 
         {/* Divider */}
