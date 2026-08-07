@@ -454,14 +454,21 @@ export async function findFacebookConversationByName(
   const afterTime = new Date(afterIso).getTime();
   try {
     const res = await fetch(
-      `${GRAPH}/${pageId}/conversations?fields=participants,messages.limit(10){message,from,created_time}&limit=50&access_token=${pageToken}`,
+      `${GRAPH}/${pageId}/conversations?fields=participants,messages.limit(10){message,from,created_time,attachments}&limit=50&access_token=${pageToken}`,
       { cache: 'no-store' },
     );
     const data = await res.json() as {
       data?: Array<{
         id: string;
         participants?: { data?: Array<{ name?: string; id?: string }> };
-        messages?: { data?: Array<{ message?: string; from?: { id?: string }; created_time?: string }> };
+        messages?: {
+          data?: Array<{
+            message?: string;
+            from?: { id?: string };
+            created_time?: string;
+            attachments?: { data?: Array<{ generic_template?: { title?: string } }> };
+          }>;
+        };
       }>;
       error?: { message: string };
     };
@@ -477,13 +484,18 @@ export async function findFacebookConversationByName(
 
       const botMessage = thread.messages?.data?.find(m => {
         if (m.from?.id !== pageId) return false;
-        if (!(m.message ?? '').includes(messageTextFragment)) return false;
+        // Button-/Template-Nachrichten (z.B. von LinkDM/ManyChat) haben ein
+        // leeres `message`-Feld — der eigentliche Text steckt im
+        // generic_template-Attachment-Titel.
+        const text = m.message || m.attachments?.data?.[0]?.generic_template?.title || '';
+        if (!text.includes(messageTextFragment)) return false;
         const sentTime = m.created_time ? new Date(m.created_time).getTime() : NaN;
         return !isNaN(sentTime) && sentTime >= afterTime;
       });
       if (!botMessage) continue;
 
-      return { threadId: thread.id, name: other!.name!, messageText: botMessage.message ?? '', sentAt: botMessage.created_time ?? null };
+      const botMessageText = botMessage.message || botMessage.attachments?.data?.[0]?.generic_template?.title || '';
+      return { threadId: thread.id, name: other!.name!, messageText: botMessageText, sentAt: botMessage.created_time ?? null };
     }
     return null;
   } catch (e) {
