@@ -532,12 +532,22 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               {p?.displayName || _clerkUser?.fullName || [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') || _clerkUser?.username || shortenAddress(account.address)}
             </p>
           </div>
-          {dfaithBalance !== null && (
-            <div className="shrink-0 flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/25 rounded-xl px-3 py-1.5">
-              <Image src="/D.FAITH.png" alt="D.FAITH" width={16} height={16} className="w-4 h-4 rounded-full object-contain" />
-              <span className="text-amber-300 font-bold text-sm">{dfaithBalance.toLocaleString(lang === 'de' ? 'de-DE' : lang === 'pl' ? 'pl-PL' : 'en-US', { maximumFractionDigits: 2 })}</span>
+          <div className="shrink-0 flex flex-col items-end gap-1.5">
+            {dfaithBalance !== null && (
+              <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/25 rounded-lg px-2.5 py-1">
+                <Image src="/D.FAITH.png" alt="D.FAITH" width={14} height={14} className="w-3.5 h-3.5 rounded-full object-contain shrink-0" />
+                <span className="text-amber-300 font-bold text-xs">
+                  {dfaithBalance.toLocaleString(lang === 'de' ? 'de-DE' : lang === 'pl' ? 'pl-PL' : 'en-US', { maximumFractionDigits: 2 })}
+                </span>
+                <span className="text-amber-300/60 text-[9px] font-bold uppercase tracking-wide">{t('profile.dfaithWalletLabel', lang)}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-lg px-2.5 py-1">
+              <FaCoins className="text-emerald-400 shrink-0" size={12} />
+              <span className="text-emerald-300 font-bold text-xs">{(data?.credits ?? 0).toFixed(2)}</span>
+              <span className="text-emerald-300/60 text-[9px] font-bold uppercase tracking-wide">{t('profile.creditsLabel', lang)}</span>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Divider */}
