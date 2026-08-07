@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/youtube-giveaway-reply",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/facebook-giveaway-reply",
+      "schedule": "*/10 * * * *"
     }
   ]
 }

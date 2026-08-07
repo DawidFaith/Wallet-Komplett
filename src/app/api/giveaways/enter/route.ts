@@ -3,6 +3,10 @@ import { startGiveawayEntry, getPublicGiveawayCampaign, markGiveawayEntryVerifie
 import { checkGiveawayEntryComment } from '../../../lib/giveawayEntryCheck';
 import { sendGiveawayParticipationEmail } from '../../../lib/email';
 
+// Für die Dawid-Faith-Page läuft Facebook wie die anderen Plattformen (nur
+// Stichwort, kein individueller Code) — siehe giveawayVerify.ts.
+const DAWID_FAITH_ARTIST_WALLET = 'user_3dfvunr7ziaywue8bhzdqw2blsw';
+
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
@@ -54,13 +58,15 @@ export async function POST(req: NextRequest) {
   }
 
   if (!found) {
-    // Instagram/TikTok/YouTube: reicht das Kommentar-Wort der Kampagne — kein eigener Code nötig.
-    // Facebook: Autor:in nicht zuverlässig prüfbar, daher eigener Code pro Teilnahme.
+    // Instagram/TikTok/YouTube + Facebook auf der Dawid-Faith-Page: reicht das
+    // Kommentar-Wort der Kampagne — kein eigener Code nötig. Andere Artist-Pages
+    // auf Facebook: Autor:in nicht zuverlässig prüfbar, daher eigener Code pro Teilnahme.
+    const needsCode = entry.platform === 'facebook' && campaign.artistWallet.toLowerCase() !== DAWID_FAITH_ARTIST_WALLET;
     return NextResponse.json({
       entryId: entry.id,
       verified: false,
-      code: entry.platform === 'facebook' ? entry.code : undefined,
-      requiredText: entry.platform === 'facebook' ? undefined : campaign.requiredText,
+      code: needsCode ? entry.code : undefined,
+      requiredText: needsCode ? undefined : campaign.requiredText,
     });
   }
 

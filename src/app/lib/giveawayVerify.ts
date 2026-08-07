@@ -2,15 +2,17 @@
  * Plattform-übergreifende Kommentar-Verifikation für das Giveaway-Feature.
  * Reused die bestehenden Meta-/RapidAPI-/YouTube-Helfer, die auch das Quest-System nutzt.
  */
-import { findInstagramComment, findFacebookComment, resolvePostIdFromUrl, extractFacebookPostId, sendFacebookPrivateReply, getMostRecentFacebookConversationName } from './metaApi';
+import { findInstagramComment, findFacebookComment, resolvePostIdFromUrl, extractFacebookPostId } from './metaApi';
+import { getDb } from './db';
 
 // Direkt (nicht über Business-Partner-Freigabe) ausgestellter Page-Token für die
 // "Dawid Faith"-Page — Business-Partner-Tokens haben laut Meta keinen
 // zuverlässigen Messenger/Conversations-Zugriff, auch mit korrekt gesetzten
 // Scopes/Tasks nicht. Nur für diese eine Page vorhanden, daher hart verdrahtet
-// statt generisch pro Artist-Page.
-const DAWID_FAITH_PAGE_ID = '528116477058109';
-const DAWID_FAITH_PAGE_TOKEN = process.env.META_DAWID_FAITH_PAGE_TOKEN;
+// statt generisch pro Artist-Page. Der Cronjob (facebook-giveaway-reply) nutzt
+// denselben Token, um Kommentare mit dem Kampagnen-Stichwort automatisch per
+// privater Nachricht zu beantworten und dabei den echten Namen zu erfassen.
+export const DAWID_FAITH_PAGE_ID = '528116477058109';
 
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 const RAPIDAPI_HOST = 'tiktok-api23.p.rapidapi.com';
@@ -120,20 +122,52 @@ export async function verifyYoutubeEntry(videoIdOrUrl: string, handle: string, c
 
 /**
  * Facebook: Autor-Abgleich ist auf Facebook-Seiten unzuverlässig (kein "from"-Feld),
- * daher wird ausschließlich der einmalige Code als Kommentartext geprüft — exakt
- * das gleiche Verfahren wie beim bestehenden Facebook-Quest-System.
+ * daher normalerweise nur über einen einmaligen Code als Kommentartext geprüfbar
+ * (Fallback für Artist-Pages ohne eigenen Messaging-Token).
  *
- * Für die "Dawid Faith"-Page zusätzlich: sobald der Code gefunden ist, wird per
- * privater Antwort auf genau diesen Kommentar (comment_id) automatisch eine
- * Messenger-Konversation ausgelöst — darüber liefert Meta den echten Namen der
- * Person, den wir sonst nirgends bekommen (die eigentliche Verifikation bleibt
- * aber weiterhin allein der Code, der Name ist nur zusätzliche, bestätigte Info).
+ * Für die "Dawid Faith"-Page läuft es wie bei den anderen Plattformen: kein
+ * individueller Code nötig, nur das gemeinsame Kampagnen-Stichwort (z.B.
+ * "dfaith"). Der Cronjob facebook-giveaway-reply.ts entdeckt solche Kommentare
+ * automatisch, antwortet privat und speichert den dabei ermittelten echten
+ * Namen in giveaway_facebook_replies. Hier wird nur noch geprüft, ob der vom
+ * Fan eingegebene Handle zu einem dieser erfassten Namen passt.
  */
 export async function verifyFacebookEntry(
   postUrl: string,
   code: string,
   pageIdHint: string | null,
+  campaignId: string,
+  handle: string,
+  entryId: string,
 ): Promise<{ found: boolean; verifiedName?: string }> {
+  if (pageIdHint === DAWID_FAITH_PAGE_ID) {
+    const sql = getDb();
+    const cleanHandle = handle.trim().toLowerCase();
+    if (!cleanHandle) return { found: false };
+    const rows = await sql`
+      SELECT comment_id, resolved_name FROM giveaway_facebook_replies
+      WHERE campaign_id = ${campaignId}
+        AND resolved_name IS NOT NULL
+        AND (claimed_by_entry_id IS NULL OR claimed_by_entry_id = ${entryId})
+    `;
+    for (const r of rows) {
+      const name = (r.resolved_name as string).trim().toLowerCase();
+      if (!name) continue;
+      const match = name === cleanHandle
+        || (cleanHandle.length >= 3 && (name.includes(cleanHandle) || cleanHandle.includes(name)));
+      if (match) {
+        await sql`
+          UPDATE giveaway_facebook_replies SET claimed_by_entry_id = ${entryId}
+          WHERE comment_id = ${r.comment_id} AND claimed_by_entry_id IS NULL
+        `;
+        return { found: true, verifiedName: r.resolved_name as string };
+      }
+    }
+    return { found: false };
+  }
+
+  // Fallback für andere Artist-Pages ohne eigenen Messaging-Token: bisheriges
+  // Verfahren über einen pro Teilnahme einmaligen Code.
   let postId = postUrl;
   if (postUrl.startsWith('http')) {
     const resolved = await resolvePostIdFromUrl(postUrl);
@@ -143,20 +177,5 @@ export async function verifyFacebookEntry(
     postId = `${pageIdHint}_${postId}`;
   }
   const result = await findFacebookComment(postId, code, null, pageIdHint);
-  if (!result.found) return { found: false };
-
-  if (pageIdHint === DAWID_FAITH_PAGE_ID && DAWID_FAITH_PAGE_TOKEN && result.commentId) {
-    try {
-      const replyText = 'Danke für deine Teilnahme am Gewinnspiel! 🎁';
-      const sent = await sendFacebookPrivateReply(result.commentId, replyText, DAWID_FAITH_PAGE_TOKEN);
-      if (sent) {
-        const name = await getMostRecentFacebookConversationName(DAWID_FAITH_PAGE_ID, DAWID_FAITH_PAGE_TOKEN);
-        if (name) return { found: true, verifiedName: name };
-      }
-    } catch (e) {
-      console.error('[verifyFacebookEntry] Private-Reply-Namensauflösung fehlgeschlagen:', e);
-      // Verifikation bleibt trotzdem gültig — der Code hat schon gematcht
-    }
-  }
-  return { found: true };
+  return { found: result.found };
 }

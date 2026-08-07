@@ -397,6 +397,35 @@ export async function findFacebookComment(
   return { found: false, allComments };
 }
 
+/**
+ * Holt ALLE Kommentare eines Posts (nicht nur bis zum ersten Treffer) mit dem
+ * übergebenen, direkt ausgestellten Page-Token — für den Auto-Reply-Cronjob,
+ * der jeden neuen Kommentar mit dem Kampagnen-Stichwort finden muss, nicht nur
+ * einen einzelnen.
+ */
+export async function fetchAllFacebookComments(postId: string, pageToken: string): Promise<Array<{ id: string; message: string }>> {
+  const results: Array<{ id: string; message: string }> = [];
+  let url: string | null = `${GRAPH}/${postId}/comments?fields=id,message&limit=200&access_token=${pageToken}`;
+  for (let page = 0; page < 5 && url; page++) {
+    let data: { data?: Array<{ id: string; message?: string }>; paging?: { next?: string }; error?: { message: string } };
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      data = await res.json();
+    } catch {
+      break;
+    }
+    if (data.error) {
+      console.error('[fetchAllFacebookComments] Graph API Fehler:', data.error.message, '| postId:', postId);
+      break;
+    }
+    for (const c of data.data ?? []) {
+      if (c.id) results.push({ id: c.id, message: (c.message ?? '').normalize('NFC') });
+    }
+    url = data.paging?.next ?? null;
+  }
+  return results;
+}
+
 // ─── Private Antwort auf einen Kommentar + Namensauflösung über Messenger ────
 /**
  * Sendet eine private Nachricht als Antwort auf einen Kommentar (referenziert
