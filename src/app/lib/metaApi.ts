@@ -429,15 +429,15 @@ export async function fetchAllFacebookComments(postId: string, pageToken: string
 // ─── Namensauflösung über bestehende Messenger-Konversationen ───────────────
 /**
  * Sucht unter den letzten Messenger-Konversationen der Page eine, die (a) eine
- * von der Page NACH `afterIso` verschickte Nachricht mit `messageTextFragment`
- * enthält (der Link selbst steckt oft in einem Button/Template, das über die
- * Read-API nicht zuverlässig auslesbar ist — daher stattdessen: bekannter,
- * fester Nachrichtentext + Zeitfenster als Beweis, dass genau diese Konversation
- * vom Giveaway-Automatisierungstool für DIESE Kampagne ausgelöst wurde, nicht
- * irgendeine ältere, unabhängige Konversation mit zufällig ähnlichem Namen) und
- * (b) deren Teilnehmer:in (nicht die Page selbst) namentlich zu `targetName`
- * passt. Sendet selbst keine Nachricht. Braucht einen direkt (nicht nur über
- * Business-Partner-Freigabe) ausgestellten Page-Token mit
+ * von der Page NACH `afterIso` verschickte Button-Template-Nachricht enthält,
+ * deren Titel `messageTextFragment` enthält (der Giveaway-Bot — LinkDM —
+ * verschickt seine Erstantwort immer als Button/Template, nie als reinen Text;
+ * der Titel dient zusammen mit dem Zeitfenster als Beweis, dass genau diese
+ * Konversation vom Automatisierungstool für DIESE Kampagne ausgelöst wurde,
+ * nicht irgendeine ältere, unabhängige Konversation mit zufällig ähnlichem
+ * Namen) und (b) deren Teilnehmer:in (nicht die Page selbst) namentlich zu
+ * `targetName` passt. Sendet selbst keine Nachricht. Braucht einen direkt
+ * (nicht nur über Business-Partner-Freigabe) ausgestellten Page-Token mit
  * `pages_messaging`-Berechtigung.
  */
 export async function findFacebookConversationByName(
@@ -454,7 +454,7 @@ export async function findFacebookConversationByName(
   const afterTime = new Date(afterIso).getTime();
   try {
     const res = await fetch(
-      `${GRAPH}/${pageId}/conversations?fields=participants,messages.limit(10){message,from,created_time,attachments}&limit=50&access_token=${pageToken}`,
+      `${GRAPH}/${pageId}/conversations?fields=participants,messages.limit(10){from,created_time,attachments}&limit=50&access_token=${pageToken}`,
       { cache: 'no-store' },
     );
     const data = await res.json() as {
@@ -463,7 +463,6 @@ export async function findFacebookConversationByName(
         participants?: { data?: Array<{ name?: string; id?: string }> };
         messages?: {
           data?: Array<{
-            message?: string;
             from?: { id?: string };
             created_time?: string;
             attachments?: { data?: Array<{ generic_template?: { title?: string } }> };
@@ -484,17 +483,14 @@ export async function findFacebookConversationByName(
 
       const botMessage = thread.messages?.data?.find(m => {
         if (m.from?.id !== pageId) return false;
-        // Button-/Template-Nachrichten (z.B. von LinkDM/ManyChat) haben ein
-        // leeres `message`-Feld — der eigentliche Text steckt im
-        // generic_template-Attachment-Titel.
-        const text = m.message || m.attachments?.data?.[0]?.generic_template?.title || '';
-        if (!text.includes(messageTextFragment)) return false;
+        const title = m.attachments?.data?.[0]?.generic_template?.title ?? '';
+        if (!title.includes(messageTextFragment)) return false;
         const sentTime = m.created_time ? new Date(m.created_time).getTime() : NaN;
         return !isNaN(sentTime) && sentTime >= afterTime;
       });
       if (!botMessage) continue;
 
-      const botMessageText = botMessage.message || botMessage.attachments?.data?.[0]?.generic_template?.title || '';
+      const botMessageText = botMessage.attachments?.data?.[0]?.generic_template?.title ?? '';
       return { threadId: thread.id, name: other!.name!, messageText: botMessageText, sentAt: botMessage.created_time ?? null };
     }
     return null;
