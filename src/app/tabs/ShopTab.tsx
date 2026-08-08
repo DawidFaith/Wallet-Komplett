@@ -92,6 +92,35 @@ function getYoutubeEmbedUrl(url: string): string | null {
   }
 }
 
+/** Extrahiert die YouTube-Video-ID aus einem beliebigen YouTube-Link, sonst null. */
+function getYoutubeVideoId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes('youtu.be')) return u.pathname.slice(1) || null;
+    if (u.hostname.includes('youtube.com')) {
+      if (u.pathname === '/watch') return u.searchParams.get('v');
+      if (u.pathname.startsWith('/embed/')) return u.pathname.split('/embed/')[1] || null;
+      if (u.pathname.startsWith('/shorts/')) return u.pathname.split('/shorts/')[1] || null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Von YouTube bereitgestelltes Vorschaubild des Videos (kein eigener Upload nötig). */
+function getYoutubeThumbnailUrl(url: string): string | null {
+  const id = getYoutubeVideoId(url);
+  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
+}
+
+/** Cover-Bild fürs Item: eigener Upload, sonst bei Videos automatisch das YouTube-Thumbnail. */
+function getDisplayImageUrl(item: { type: ItemType; imageUrl: string; contentUrl: string }): string | null {
+  if (item.imageUrl) return item.imageUrl;
+  if (item.type === 'video') return getYoutubeThumbnailUrl(item.contentUrl);
+  return null;
+}
+
 const TYPE_LABELS: Record<ItemType, string> = {
   song: 'Song',
   video: 'Video',
@@ -113,6 +142,22 @@ function TypeIcon({ type }: { type: ItemType }) {
     case 'nft':       return <FaGem size={11} />;
     case 'exclusive': return <FaStar size={11} />;
   }
+}
+
+/** Kleines Badge oben links auf dem Cover, das den Item-Typ auf einen Blick zeigt. */
+function ItemTypeBadge({ type }: { type: ItemType }) {
+  const config: Record<ItemType, { label: string; icon: React.ReactNode; color: string }> = {
+    song:      { label: 'MP3',   icon: <FaMusic size={8} />, color: 'text-violet-300' },
+    video:     { label: 'Video', icon: <FaVideo size={8} />, color: 'text-red-300' },
+    nft:       { label: 'NFT',   icon: <FaGem size={8} />,   color: 'text-amber-300' },
+    exclusive: { label: 'NFT',   icon: <FaStar size={8} />,  color: 'text-emerald-300' },
+  };
+  const c = config[type];
+  return (
+    <span className={`absolute top-2 left-2 z-10 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-black/60 backdrop-blur-sm border border-white/10 ${c.color}`}>
+      {c.icon} {c.label}
+    </span>
+  );
 }
 
 // ─── Item-Karte (kompakt, öffnet Detail-Modal) ────────────────────────────────
@@ -139,6 +184,7 @@ function ItemCard({
     nft:       'from-amber-900/60 to-zinc-900',
     exclusive: 'from-emerald-900/60 to-zinc-900',
   };
+  const displayImage = getDisplayImageUrl(item);
 
   return (
     <button
@@ -152,10 +198,11 @@ function ItemCard({
     >
       {/* ── Album-Art (quadratisch) ── */}
       <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl m-3 mb-0" style={{ width: 'calc(100% - 1.5rem)' }}>
-        {item.imageUrl ? (
+        <ItemTypeBadge type={item.type} />
+        {displayImage ? (
           <>
-            <Image src={item.imageUrl} alt="" fill className={`object-cover scale-110 blur-xl opacity-40 ${isLocked ? 'grayscale' : ''}`} />
-            <Image src={item.imageUrl} alt={item.title} fill className={`object-contain ${isLocked ? 'grayscale' : ''}`} />
+            <Image src={displayImage} alt="" fill className={`object-cover scale-110 blur-xl opacity-40 ${isLocked ? 'grayscale' : ''}`} />
+            <Image src={displayImage} alt={item.title} fill className={`object-contain ${isLocked ? 'grayscale' : ''}`} />
           </>
         ) : (
           <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
@@ -267,10 +314,11 @@ function ItemDetailModal({
       >
         {/* ── Album-Art (groß) ── */}
         <div className="relative w-full aspect-square overflow-hidden">
-          {item.imageUrl ? (
+          <ItemTypeBadge type={item.type} />
+          {getDisplayImageUrl(item) ? (
             <>
-              <Image src={item.imageUrl} alt="" fill className={`object-cover scale-110 blur-xl opacity-40 ${isLocked ? 'grayscale' : ''}`} />
-              <Image src={item.imageUrl} alt={item.title} fill className={`object-contain ${isLocked ? 'grayscale' : ''}`} />
+              <Image src={getDisplayImageUrl(item)!} alt="" fill className={`object-cover scale-110 blur-xl opacity-40 ${isLocked ? 'grayscale' : ''}`} />
+              <Image src={getDisplayImageUrl(item)!} alt={item.title} fill className={`object-contain ${isLocked ? 'grayscale' : ''}`} />
             </>
           ) : (
             <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
@@ -990,10 +1038,11 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
 
       {/* Quadratisches Album-Art — identisch mit Shop ItemCard */}
       <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl m-3 mb-0" style={{ width: 'calc(100% - 1.5rem)' }}>
-        {item.imageUrl ? (
+        <ItemTypeBadge type={item.type} />
+        {getDisplayImageUrl(item) ? (
           <>
-            <Image src={item.imageUrl} alt="" fill className="object-cover scale-110 blur-xl opacity-40" />
-            <Image src={item.imageUrl} alt={item.title} fill className="object-contain" />
+            <Image src={getDisplayImageUrl(item)!} alt="" fill className="object-cover scale-110 blur-xl opacity-40" />
+            <Image src={getDisplayImageUrl(item)!} alt={item.title} fill className="object-contain" />
           </>
         ) : (
           <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
@@ -1018,7 +1067,7 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
 
         {/* Edition-Badge auf dem Bild */}
         {item.editionNumber != null && item.nftMaxSupply != null && (
-          <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm border border-violet-500/30 rounded-lg px-2 py-0.5">
+          <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm border border-violet-500/30 rounded-lg px-2 py-0.5">
             <p className="text-violet-300 text-[10px] font-bold">Edition #{item.editionNumber} / {item.nftMaxSupply}</p>
           </div>
         )}
