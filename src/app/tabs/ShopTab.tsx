@@ -74,6 +74,24 @@ function shortenWallet(w: string) {
   return w.length > 14 ? `${w.slice(0, 7)}…${w.slice(-5)}` : w;
 }
 
+/** Wandelt einen YouTube-Link (watch/youtu.be/shorts) in eine Embed-URL um, sonst null. */
+function getYoutubeEmbedUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    let id: string | null = null;
+    if (u.hostname.includes('youtu.be')) {
+      id = u.pathname.slice(1);
+    } else if (u.hostname.includes('youtube.com')) {
+      if (u.pathname === '/watch') id = u.searchParams.get('v');
+      else if (u.pathname.startsWith('/embed/')) id = u.pathname.split('/embed/')[1];
+      else if (u.pathname.startsWith('/shorts/')) id = u.pathname.split('/shorts/')[1];
+    }
+    return id ? `https://www.youtube.com/embed/${id}` : null;
+  } catch {
+    return null;
+  }
+}
+
 const TYPE_LABELS: Record<ItemType, string> = {
   song: 'Song',
   video: 'Video',
@@ -389,6 +407,28 @@ function ItemDetailModal({
                 <div className="flex items-center justify-center gap-1.5 py-2.5">
                   <FaLock size={10} className="text-zinc-600 shrink-0" />
                   <p className="text-zinc-600 text-xs">Level {item.requiredLevel} erforderlich</p>
+                </div>
+              ) : item.type === 'video' && (item.ownedCount ?? 0) > 0 ? (
+                /* Pre-Release-Video freigeschaltet — direkt hier im Modal abspielbar */
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-center gap-1 bg-amber-400/10 border border-amber-400/30 rounded-lg py-1.5 text-amber-400 text-xs font-bold">
+                    <FaCheck size={9} /> Freigeschaltet
+                  </div>
+                  {getYoutubeEmbedUrl(item.contentUrl) ? (
+                    <div className="rounded-lg overflow-hidden border border-white/10 bg-black aspect-video">
+                      <iframe
+                        src={`${getYoutubeEmbedUrl(item.contentUrl)}?rel=0`}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  ) : (
+                    <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2.5 text-zinc-300 text-xs font-semibold transition-colors">
+                      <FaExternalLinkAlt size={10} /> {t('shop.watchVideo', lang)}
+                    </a>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-1.5">
@@ -928,6 +968,7 @@ interface InventoryItem {
 function InventoryItemCard({ item }: { item: InventoryItem }) {
   const lang = useLang();
   const [playing, setPlaying] = useState(false);
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const togglePlay = () => {
@@ -1026,10 +1067,28 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
           </a>
         )}
         {item.type === 'video' && item.contentUrl && (
-          <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full bg-red-900/20 hover:bg-red-900/30 border border-red-800/30 rounded-lg py-2 text-red-300 text-xs font-semibold transition-colors">
-            <FaVideo size={11} /> {t('shop.watchVideo', lang)}
-          </a>
+          showVideoPlayer ? (
+            getYoutubeEmbedUrl(item.contentUrl) ? (
+              <div className="rounded-lg overflow-hidden border border-red-800/30 bg-black aspect-video">
+                <iframe
+                  src={`${getYoutubeEmbedUrl(item.contentUrl)}?autoplay=1&rel=0`}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            ) : (
+              <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full bg-red-900/20 hover:bg-red-900/30 border border-red-800/30 rounded-lg py-2 text-red-300 text-xs font-semibold transition-colors">
+                <FaExternalLinkAlt size={10} /> {t('shop.watchVideo', lang)}
+              </a>
+            )
+          ) : (
+            <button onClick={() => setShowVideoPlayer(true)}
+              className="flex items-center justify-center gap-2 w-full bg-red-900/20 hover:bg-red-900/30 border border-red-800/30 rounded-lg py-2 text-red-300 text-xs font-semibold transition-colors">
+              <FaVideo size={11} /> {t('shop.watchVideo', lang)}
+            </button>
+          )
         )}
         {(item.type === 'nft' || item.type === 'exclusive') && item.contentUrl && (
           <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
@@ -1299,6 +1358,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
     if (!fTitle.trim()) { setFormError(lang === 'en' ? 'Title is required' : lang === 'pl' ? 'Tytuł jest wymagany' : 'Titel ist Pflicht'); return; }
     const price = parseInt(fPrice, 10);
     if (isNaN(price) || price < 0) { setFormError(t('shop.invalidPrice', lang)); return; }
+    if (fType === 'video' && !fContent.trim()) { setFormError('Bitte YouTube-Link angeben.'); return; }
     setFormError('');
     setFormSuccess('');
     setSaving(true);
@@ -1562,6 +1622,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                 className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50"
               >
                 <option value="song">Song (NFT)</option>
+                <option value="video">Musikvideo (Pre-Release)</option>
               </select>
             </div>
             <div>
@@ -1596,51 +1657,62 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
             )}
           </div>
 
-          {/* Content-Datei */}
+          {/* Content-Datei / YouTube-Link */}
           <div>
-            <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelContentFile', lang)} *</label>
+            <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">
+              {fType === 'video' ? 'YouTube-Link (unlisted)' : t('shop.labelContentFile', lang)} *
+            </label>
             <div className="flex gap-2">
-              <label className={`flex items-center gap-2 shrink-0 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
-                uploadingContent
-                  ? 'bg-zinc-700 text-zinc-500 pointer-events-none'
-                  : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
-              }`}>
-                {uploadingContent
-                  ? <><span className="w-3 h-3 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" /> {t('shop.uploading', lang)}</>
-                  : <><FaMusic size={11} /> {t('shop.btnUpload', lang)}</>}
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="audio/*,video/*,.pdf,.zip"
-                  disabled={uploadingContent}
-                  onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f, 'content'); e.target.value = ''; }}
-                />
-              </label>
+              {fType !== 'video' && (
+                <label className={`flex items-center gap-2 shrink-0 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
+                  uploadingContent
+                    ? 'bg-zinc-700 text-zinc-500 pointer-events-none'
+                    : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
+                }`}>
+                  {uploadingContent
+                    ? <><span className="w-3 h-3 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" /> {t('shop.uploading', lang)}</>
+                    : <><FaMusic size={11} /> {t('shop.btnUpload', lang)}</>}
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="audio/*,video/*,.pdf,.zip"
+                    disabled={uploadingContent}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f, 'content'); e.target.value = ''; }}
+                  />
+                </label>
+              )}
               <input
                 value={fContent}
                 onChange={e => setFContent(e.target.value)}
-                placeholder={t('shop.urlPlaceholder', lang)}
+                placeholder={fType === 'video' ? 'https://youtu.be/…' : t('shop.urlPlaceholder', lang)}
                 className="flex-1 min-w-0 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-amber-500/50"
               />
             </div>
             {fContent && <p className="text-emerald-400 text-[10px] mt-1 truncate">✓ {fContent}</p>}
+            {fType === 'video' && (
+              <p className="text-zinc-600 text-[10px] mt-1">
+                Video bei YouTube als &quot;Nicht gelistet&quot; hochladen — der Link wird nur Käufern in der App angezeigt und dort direkt abgespielt.
+              </p>
+            )}
           </div>
 
-          {/* Max. Editionen */}
-          <div>
-            <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Max. Editionen (NFT Print Editions)</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min={1}
-                max={10000}
-                value={fMaxEditions}
-                onChange={e => setFMaxEditions(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                className="w-32 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-amber-500/50"
-              />
-              <span className="text-zinc-500 text-[10px]">Käufer erhalten nummerierte Editionen (z.B. #1/100)</span>
+          {/* Max. Editionen (nur NFTs) */}
+          {fType === 'song' && (
+            <div>
+              <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Max. Editionen (NFT Print Editions)</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={10000}
+                  value={fMaxEditions}
+                  onChange={e => setFMaxEditions(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                  className="w-32 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-amber-500/50"
+                />
+                <span className="text-zinc-500 text-[10px]">Käufer erhalten nummerierte Editionen (z.B. #1/100)</span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Vorschaubild */}
           <div>
@@ -1674,8 +1746,8 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
             )}
           </div>
 
-          {/* NFT Preview */}
-          {fImage && fTitle && (
+          {/* NFT Preview (nur Song-NFTs) */}
+          {fType === 'song' && fImage && fTitle && (
             <div className="border border-amber-500/20 bg-amber-500/5 rounded-2xl p-4">
               <p className="text-amber-400 text-[10px] uppercase tracking-widest mb-3 font-semibold">NFT Vorschau — so sieht es auf Magic Eden aus</p>
               <div className="flex gap-4 items-start">

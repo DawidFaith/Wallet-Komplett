@@ -45,11 +45,15 @@ export async function GET(req: NextRequest) {
   const ownedCounts: Record<string, number> = {};
   if (wallet) {
     const itemIds = (items as Array<Record<string, unknown>>).map(i => String(i.id));
+    // Songs/NFTs zählen nur mit erfolgreich geminteter NFT als "besessen";
+    // Pre-Release-Videos haben keinen On-Chain-Mint, jeder Kauf zählt direkt.
     const rows = await sql`
-      SELECT item_id, COUNT(*)::int AS cnt FROM shop_purchases
-      WHERE buyer_wallet = ${wallet} AND item_id = ANY(${itemIds})
-        AND nft_mint_address IS NOT NULL
-      GROUP BY item_id
+      SELECT sp.item_id, COUNT(*)::int AS cnt
+      FROM shop_purchases sp
+      JOIN shop_items si ON si.id = sp.item_id
+      WHERE sp.buyer_wallet = ${wallet} AND sp.item_id = ANY(${itemIds})
+        AND (sp.nft_mint_address IS NOT NULL OR si.type = 'video')
+      GROUP BY sp.item_id
     `;
     for (const r of rows as Array<Record<string, unknown>>) {
       ownedCounts[String(r.item_id)] = Number(r.cnt);

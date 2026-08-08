@@ -112,20 +112,27 @@ export async function GET(req: NextRequest) {
     LEFT JOIN user_profiles p ON LOWER(p.wallet_address) = LOWER(si.artist_wallet)
     LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
     WHERE sp.buyer_wallet = ${wallet}
-      AND sp.nft_mint_address IS NOT NULL
-      AND NOT EXISTS (
-        SELECT 1 FROM nft_listings nl
-        WHERE nl.mint_address = sp.nft_mint_address
-          AND nl.status = 'active'
+      AND (sp.nft_mint_address IS NOT NULL OR si.type = 'video')
+      AND (
+        sp.nft_mint_address IS NULL
+        OR NOT EXISTS (
+          SELECT 1 FROM nft_listings nl
+          WHERE nl.mint_address = sp.nft_mint_address
+            AND nl.status = 'active'
+        )
       )
     ORDER BY sp.purchased_at DESC
   `;
 
-  // On-chain filtern: nur NFTs anzeigen die der User wirklich noch hält
-  // Falls kein Solana-Wallet verknüpft ist, fällt das on-chain-Filter weg (rows wie gehabt)
-  const filtered = solanaAddress
-    ? rows.filter(r => ownedMints.has(r.print_mint as string))
-    : rows;
+  // On-chain filtern: nur NFTs anzeigen die der User wirklich noch hält.
+  // Pre-Release-Videos haben keinen Mint (print_mint = null) — die sind reine
+  // DB-Zugriffskäufe ohne On-Chain-Gegenstück und daher immer enthalten.
+  const filtered = rows.filter(r => {
+    const printMint = r.print_mint as string | null;
+    if (!printMint) return true;
+    if (!solanaAddress) return true;
+    return ownedMints.has(printMint);
+  });
 
   return NextResponse.json(filtered, { headers: { 'Cache-Control': 'no-store' } });
 }

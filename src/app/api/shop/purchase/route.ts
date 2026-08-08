@@ -179,6 +179,27 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── 1b. Pre-Release-Videos: kein On-Chain-Mint, reiner Zugriffskauf ────────
+  if (item.type === 'video') {
+    await sql`
+      INSERT INTO shop_purchases (buyer_wallet, item_id, price_credits_paid, nft_mint_address, edition_number)
+      VALUES (
+        ${buyerWallet.toLowerCase()},
+        ${itemId},
+        ${paymentMethod === 'credits' && !isSelfPurchase ? item.price_credits : 0},
+        NULL,
+        ${editionNumber}
+      )
+    `;
+    return NextResponse.json({
+      success:    true,
+      title:      item.title,
+      contentUrl: item.content_url,
+      type:       item.type,
+      paymentMethod,
+    });
+  }
+
   // ── 2. NFT minten ─────────────────────────────────────────────────────────
   // Artist-Keypair laden damit Artist die Mint-Gebühren zahlt
   const artistKeyRows = await sql`
