@@ -163,7 +163,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       await Promise.all([loadCreatorBalance(), loadCreatorBundles()]);
     } catch { alert(t('cb.networkError', lang)); }
     finally { setCancellingBundleId(null); }
-  }, [effectiveWallet, isPlatformIdentity, walletAddress, loadCreatorBalance, loadCreatorBundles]);
+  }, [effectiveWallet, isPlatformIdentity, walletAddress, loadCreatorBalance, loadCreatorBundles, lang]);
 
   const handleCancel = useCallback(async (questId: string) => {
     setCancellingId(questId);
@@ -186,7 +186,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
     } finally {
       setCancellingId(null);
     }
-  }, [effectiveWallet, loadCreatorBalance, loadCreatorQuests]);
+  }, [effectiveWallet, loadCreatorBalance, loadCreatorQuests, lang]);
 
   useEffect(() => {
     // Erst abgelaufene Quests erstatten, dann Balance + Quests laden
@@ -236,7 +236,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       {/* Credits Box — auch im Platform-Modus wird über das echte Guthaben bezahlt */}
       {isPlatformIdentity && (
         <p className="text-zinc-500 text-xs -mb-2">
-          ⚡ Quests für "{CREATOR_SUB_ACCOUNTS.find(a => a.wallet === effectiveWallet)?.label}" werden von deinem eigenen Guthaben bezahlt.
+          ⚡ Quests für &ldquo;{CREATOR_SUB_ACCOUNTS.find(a => a.wallet === effectiveWallet)?.label}&rdquo; werden von deinem eigenen Guthaben bezahlt.
         </p>
       )}
       <CreditsBox
