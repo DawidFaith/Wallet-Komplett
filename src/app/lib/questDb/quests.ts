@@ -165,8 +165,10 @@ export async function lockQuestBudget(
  */
 export async function refundExpiredQuests(
   creatorWallet: string,
+  refundWallet?: string,
 ): Promise<{ questId: string; refundAmount: number }[]> {
   const sql = getDb();
+  const refundTo = (refundWallet ?? creatorWallet).toLowerCase();
   // Quests die abgelaufen oder ausgeschöpft sind, aber noch nicht erstattet wurden
   const rows = await sql`
     SELECT id, completions, max_completions, reward_amount, credits_locked, bonus_budget
@@ -196,17 +198,17 @@ export async function refundExpiredQuests(
     const refundAmount = Math.max(0, locked - used) + bonusBudgetRemaining;
 
     if (refundAmount > 0) {
-      // Credits dem Creator zurückgeben
+      // Credits dem Creator zurückgeben (bei Platform-Accounts an die Billing-Wallet)
       await sql`
         INSERT INTO dfaith_credits (wallet_address, balance, updated_at)
-        VALUES (${creatorWallet.toLowerCase()}, ${refundAmount}, NOW())
+        VALUES (${refundTo}, ${refundAmount}, NOW())
         ON CONFLICT (wallet_address) DO UPDATE SET
           balance    = dfaith_credits.balance + ${refundAmount},
           updated_at = NOW()
       `;
       await sql`
         INSERT INTO creator_balances (wallet_address, balance, updated_at)
-        VALUES (${creatorWallet.toLowerCase()}, ${refundAmount}, NOW())
+        VALUES (${refundTo}, ${refundAmount}, NOW())
         ON CONFLICT (wallet_address) DO UPDATE SET
           balance    = creator_balances.balance + ${refundAmount},
           updated_at = NOW()
@@ -233,8 +235,10 @@ export async function refundExpiredQuests(
 export async function cancelQuest(
   questId: string,
   creatorWallet: string,
+  refundWallet?: string,
 ): Promise<number> {
   const sql = getDb();
+  const refundTo = (refundWallet ?? creatorWallet).toLowerCase();
 
   const rows = await sql`
     SELECT creator_wallet, completions, reward_amount, credits_locked, bonus_budget, credits_refunded, is_active
@@ -258,14 +262,14 @@ export async function cancelQuest(
   if (refundAmount > 0) {
     await sql`
       INSERT INTO dfaith_credits (wallet_address, balance, updated_at)
-      VALUES (${creatorWallet.toLowerCase()}, ${refundAmount}, NOW())
+      VALUES (${refundTo}, ${refundAmount}, NOW())
       ON CONFLICT (wallet_address) DO UPDATE SET
         balance    = dfaith_credits.balance + ${refundAmount},
         updated_at = NOW()
     `;
     await sql`
       INSERT INTO creator_balances (wallet_address, balance, updated_at)
-      VALUES (${creatorWallet.toLowerCase()}, ${refundAmount}, NOW())
+      VALUES (${refundTo}, ${refundAmount}, NOW())
       ON CONFLICT (wallet_address) DO UPDATE SET
         balance    = creator_balances.balance + ${refundAmount},
         updated_at = NOW()

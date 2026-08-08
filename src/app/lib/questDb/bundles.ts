@@ -376,9 +376,11 @@ export async function claimBundleCompletionBonus(
 export async function cancelQuestBundle(
   bundleId: string,
   creatorWallet: string,
+  refundWallet?: string,
 ): Promise<number> {
   const sql = getDb();
   const wallet = creatorWallet.toLowerCase();
+  const refundTo = (refundWallet ?? creatorWallet).toLowerCase();
 
   const bundleRows = await sql`
     SELECT * FROM quest_bundles WHERE id = ${bundleId} AND creator_wallet = ${wallet} LIMIT 1
@@ -393,14 +395,14 @@ export async function cancelQuestBundle(
   `;
   let totalRefund = 0;
   for (const q of questRows as any[]) {
-    const refund = await cancelQuest(q.id, wallet);
+    const refund = await cancelQuest(q.id, wallet, refundTo);
     if (refund > 0) totalRefund += refund;
   }
 
   // Verbleibendes Bonus-Budget zurückerstatten
   const bonusRemaining = Number(bundle.bonus_budget_remaining);
   if (bonusRemaining > 0) {
-    await addDfaithCredits(wallet, bonusRemaining);
+    await addDfaithCredits(refundTo, bonusRemaining);
     totalRefund += bonusRemaining;
   }
 

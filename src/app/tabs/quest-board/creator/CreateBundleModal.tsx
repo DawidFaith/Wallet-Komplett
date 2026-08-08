@@ -97,6 +97,8 @@ interface CreateBundleModalProps {
   open: boolean;
   onClose: () => void;
   walletAddress: string;
+  /** Bei Platform-Accounts: echte Wallet, deren Guthaben belastet wird (siehe CreatorBoard-Umschalter) */
+  billingWallet?: string;
   creatorBalance: number;
   verified: { youtube: boolean; instagram: boolean; tiktok: boolean; facebook: boolean };
   onCreated: () => void;
@@ -106,7 +108,7 @@ interface CreateBundleModalProps {
 type Step = 1 | 2 | 3 | 4;
 
 export default function CreateBundleModal({
-  open, onClose, walletAddress, creatorBalance, verified, onCreated, onOpenDeposit,
+  open, onClose, walletAddress, billingWallet, creatorBalance, verified, onCreated, onOpenDeposit,
 }: CreateBundleModalProps) {
   const lang = useLang();
 
@@ -370,6 +372,7 @@ export default function CreateBundleModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           creatorWallet:       walletAddress,
+          billingWallet:       billingWallet || undefined,
           platform,
           videoUrl:            videoUrl.trim(),
           videoId:             videoMediaId.trim() || undefined,

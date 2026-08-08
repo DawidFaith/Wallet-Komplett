@@ -88,18 +88,20 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
   const [concertDeleting, setConcertDeleting] = useState<string | null>(null);
   const [concertError, setConcertError] = useState('');
 
+  // Guthaben ist immer an die echte, eingeloggte Wallet gebunden — auch wenn
+  // gerade "als" ein Platform-Account (z.B. Dawid Faith Polska) erstellt wird
   const loadCreatorBalance = useCallback(async () => {
     setBalanceLoading(true);
     try {
       const res = await fetch(
-        `/api/youtube-quests/creator-balance?wallet=${effectiveWallet}&t=${Date.now()}`,
+        `/api/youtube-quests/creator-balance?wallet=${walletAddress}&t=${Date.now()}`,
         { cache: 'no-store' },
       );
       const data = await res.json();
       setCreatorBalance(data.balance ?? 0);
     } catch { /* ignorieren */ }
     finally { setBalanceLoading(false); }
-  }, [effectiveWallet]);
+  }, [walletAddress]);
 
   const loadCreatorQuests = useCallback(async () => {
     setLoading(true);
@@ -151,14 +153,17 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       const res = await fetch(`/api/quest-bundles/${bundleId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ creatorWallet: effectiveWallet }),
+        body: JSON.stringify({
+          creatorWallet: effectiveWallet,
+          billingWallet: isPlatformIdentity ? walletAddress : undefined,
+        }),
       });
       const data = await res.json() as { success?: boolean; error?: string };
       if (!res.ok) { alert(data.error ?? t('cb.cancelError', lang)); return; }
       await Promise.all([loadCreatorBalance(), loadCreatorBundles()]);
     } catch { alert(t('cb.networkError', lang)); }
     finally { setCancellingBundleId(null); }
-  }, [effectiveWallet, loadCreatorBalance, loadCreatorBundles]);
+  }, [effectiveWallet, isPlatformIdentity, walletAddress, loadCreatorBalance, loadCreatorBundles]);
 
   const handleCancel = useCallback(async (questId: string) => {
     setCancellingId(questId);
@@ -188,7 +193,10 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
     fetch('/api/youtube-quests/refund-expired', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ creatorWallet: effectiveWallet }),
+      body: JSON.stringify({
+        creatorWallet: effectiveWallet,
+        billingWallet: isPlatformIdentity ? walletAddress : undefined,
+      }),
     }).finally(() => {
       loadCreatorQuests();
       loadCreatorBalance();
@@ -196,7 +204,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       loadStreamingQuests();
       loadConcerts();
     });
-  }, [loadCreatorQuests, loadCreatorBalance, loadCreatorBundles, loadStreamingQuests, loadConcerts, walletAddress]);
+  }, [loadCreatorQuests, loadCreatorBalance, loadCreatorBundles, loadStreamingQuests, loadConcerts, walletAddress, effectiveWallet, isPlatformIdentity]);
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 space-y-5">
@@ -225,22 +233,21 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         </div>
       )}
 
-      {/* Credits Box (Platform-Accounts brauchen kein eigenes Guthaben) */}
-      {isPlatformIdentity ? (
-        <div className="bg-[#1a1710] rounded-2xl border border-white/[0.08] px-4 py-3 text-sm text-zinc-400">
-          ⚡ Quests für diesen Account laufen über das Platform-Guthaben — kein eigenes Guthaben nötig.
-        </div>
-      ) : (
-        <CreditsBox
-          balance={creatorBalance}
-          tokenName={tokenName}
-          subtitle={creatorBalance > 0 ? t('cb.available', lang) : tFmt('cb.topUp', lang, { token: tokenName })}
-          secondaryLabel={t('cb.topUpBtn', lang)}
-          onSecondary={() => setShowDeposit(true)}
-          onRefresh={loadCreatorBalance}
-          refreshLoading={balanceLoading}
-        />
+      {/* Credits Box — auch im Platform-Modus wird über das echte Guthaben bezahlt */}
+      {isPlatformIdentity && (
+        <p className="text-zinc-500 text-xs -mb-2">
+          ⚡ Quests für "{CREATOR_SUB_ACCOUNTS.find(a => a.wallet === effectiveWallet)?.label}" werden von deinem eigenen Guthaben bezahlt.
+        </p>
       )}
+      <CreditsBox
+        balance={creatorBalance}
+        tokenName={tokenName}
+        subtitle={creatorBalance > 0 ? t('cb.available', lang) : tFmt('cb.topUp', lang, { token: tokenName })}
+        secondaryLabel={t('cb.topUpBtn', lang)}
+        onSecondary={() => setShowDeposit(true)}
+        onRefresh={loadCreatorBalance}
+        refreshLoading={balanceLoading}
+      />
 
       {/* Header + Buttons */}
       <div className="flex items-center justify-between">
@@ -612,7 +619,8 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         open={showBundleModal}
         onClose={() => setShowBundleModal(false)}
         walletAddress={effectiveWallet}
-        creatorBalance={isPlatformIdentity ? 999_999_999 : creatorBalance}
+        billingWallet={isPlatformIdentity ? walletAddress : undefined}
+        creatorBalance={creatorBalance}
         verified={isPlatformIdentity ? { ...verified, instagram: true, tiktok: true } : verified}
         onCreated={() => { loadCreatorBundles(); loadCreatorBalance(); loadStreamingQuests(); }}
         onOpenDeposit={() => setShowDeposit(true)}

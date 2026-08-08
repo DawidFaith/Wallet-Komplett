@@ -16,6 +16,9 @@ import { PLATFORM_ACCOUNTS } from '../../lib/platformAccounts';
 export const dynamic = 'force-dynamic';
 
 const PLATFORM_ACCOUNT_WALLETS = new Set(Object.values(PLATFORM_ACCOUNTS).map(a => a.wallet));
+// Nur Dawid Faith darf Quests für einen Platform-Account erstellen und dabei
+// über sein eigenes echtes Guthaben bezahlen (siehe CreatorBoard-Umschalter).
+const DAWID_FAITH_WALLET = 'user_3dfvunr7ziaywue8bhzdqw2blsw';
 
 const YT_API_KEY = process.env.YOUTUBE_DATA_API_KEY;
 
@@ -60,6 +63,9 @@ export async function POST(req: NextRequest) {
     secretCodes?: Record<string, string>;
     // Optionaler Story-Token für dm_share (vorher im Modal erzeugt)
     storyToken?: string;
+    // Bei Platform-Accounts (z.B. Dawid Faith Polska): welche echte Wallet
+    // das Guthaben stellt. Muss DAWID_FAITH_WALLET sein, sonst wird ignoriert.
+    billingWallet?: string;
   };
 
   try { body = await req.json(); }
@@ -71,12 +77,20 @@ export async function POST(req: NextRequest) {
     durationHours, items,
     videoTitle: manualTitle, videoThumbnail: manualThumbnail,
     videoId: providedVideoId,
-    levelBonusBudget, secretCodes, storyToken,
+    levelBonusBudget, secretCodes, storyToken, billingWallet,
   } = body;
 
   if (!creatorWallet || !platform || !videoUrl || !items?.length) {
     return NextResponse.json({ error: 'creatorWallet, platform, videoUrl und items sind erforderlich' }, { status: 400 });
   }
+
+  // Für Platform-Accounts: Guthaben-Bewegungen laufen über die echte Wallet,
+  // die dafür freigegeben ist (aktuell nur Dawid Faith) — Quest-Zuordnung
+  // (creatorWallet) bleibt beim Platform-Account selbst.
+  const isPlatformAccount = PLATFORM_ACCOUNT_WALLETS.has(creatorWallet.toLowerCase());
+  const chargeWallet = (isPlatformAccount && billingWallet?.toLowerCase() === DAWID_FAITH_WALLET)
+    ? DAWID_FAITH_WALLET
+    : creatorWallet.toLowerCase();
 
   const VALID_PLATFORMS: Platform[] = ['youtube', 'tiktok', 'instagram', 'facebook'];
   if (!VALID_PLATFORMS.includes(platform as Platform)) {
@@ -122,16 +136,12 @@ export async function POST(req: NextRequest) {
 
   const totalBudget = Math.round((poolNum * maxNum + levelBonus) * 100) / 100;
 
-  // Guthaben prüfen — Platform-Accounts (virtuelle Admin-Wallets ohne echtes
-  // Guthaben) sind davon ausgenommen, ihre Quests werden nicht wirklich verrechnet
-  const isPlatformAccount = PLATFORM_ACCOUNT_WALLETS.has(creatorWallet.toLowerCase());
-  if (!isPlatformAccount) {
-    const credits = await getDfaithCredits(creatorWallet.toLowerCase());
-    if (credits < totalBudget) {
-      return NextResponse.json({
-        error: `Nicht genug Credits. Du brauchst ${totalBudget.toFixed(2)} D.FAITH (${poolNum.toFixed(2)} × ${maxNum} Reward + ${levelBonus.toFixed(2)} Level-Bonus-Reserve [${topPcts.length}/${effectiveParticipants} Fans bekannt, Rest ~+${fallbackPct}%${maxCollectibleCreditPct > 0 ? ` + Coll. +${maxCollectibleCreditPct}% × ${effectiveParticipants}` : ''} × 1.02]), hast aber nur ${credits.toFixed(2)}.`,
-      }, { status: 400 });
-    }
+  // Guthaben prüfen (bei Platform-Accounts gegen die freigegebene Billing-Wallet)
+  const credits = await getDfaithCredits(chargeWallet);
+  if (credits < totalBudget) {
+    return NextResponse.json({
+      error: `Nicht genug Credits. Du brauchst ${totalBudget.toFixed(2)} D.FAITH (${poolNum.toFixed(2)} × ${maxNum} Reward + ${levelBonus.toFixed(2)} Level-Bonus-Reserve [${topPcts.length}/${effectiveParticipants} Fans bekannt, Rest ~+${fallbackPct}%${maxCollectibleCreditPct > 0 ? ` + Coll. +${maxCollectibleCreditPct}% × ${effectiveParticipants}` : ''} × 1.02]), hast aber nur ${credits.toFixed(2)}.`,
+    }, { status: 400 });
   }
 
   // Video-Daten ermitteln
@@ -177,12 +187,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Budget sperren — bei Platform-Accounts kein echter Wallet-Abzug nötig
-  if (!isPlatformAccount) {
-    const locked = await lockQuestBudget(creatorWallet.toLowerCase(), totalBudget);
-    if (!locked) {
-      return NextResponse.json({ error: 'Budget konnte nicht gesperrt werden. Bitte Seite neu laden.' }, { status: 400 });
-    }
+  // Budget sperren (bei Platform-Accounts auf der Billing-Wallet)
+  const locked = await lockQuestBudget(chargeWallet, totalBudget);
+  if (!locked) {
+    return NextResponse.json({ error: 'Budget konnte nicht gesperrt werden. Bitte Seite neu laden.' }, { status: 400 });
   }
 
   // Ablaufzeit berechnen
@@ -217,12 +225,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, bundleId, storyToken: createdStoryToken ?? null });
   } catch (e) {
-    // Budget zurückerstatten wenn Bundle-Erstellung fehlschlägt (Platform-Accounts
-    // hatten nie ein echtes Lock, also auch keine Rückerstattung nötig)
-    if (!isPlatformAccount) {
-      const { addDfaithCredits } = await import('../../lib/questDb');
-      await addDfaithCredits(creatorWallet.toLowerCase(), totalBudget);
-    }
+    // Budget zurückerstatten wenn Bundle-Erstellung fehlschlägt
+    const { addDfaithCredits } = await import('../../lib/questDb');
+    await addDfaithCredits(chargeWallet, totalBudget);
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: `Fehler beim Erstellen: ${msg}` }, { status: 500 });
   }
