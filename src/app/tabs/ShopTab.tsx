@@ -144,7 +144,7 @@ function TypeIcon({ type }: { type: ItemType }) {
   }
 }
 
-/** Kleine Badges unten rechts auf dem Cover, die den Item-Typ auf einen Blick zeigen. */
+/** Kleine Badges, die den Item-Typ auf einen Blick zeigen — Teil des Kartentexts, nicht auf dem Cover. */
 function ItemTypeBadge({ type }: { type: ItemType }) {
   const NFT_PILL = { label: 'NFT', icon: <FaCertificate size={8} />, color: 'text-amber-300' };
   const pills: { label: string; icon: React.ReactNode; color: string }[] =
@@ -155,9 +155,9 @@ function ItemTypeBadge({ type }: { type: ItemType }) {
       : [NFT_PILL];
 
   return (
-    <div className="absolute bottom-2 right-2 z-10 flex flex-col items-end gap-1">
+    <div className="flex items-center justify-end gap-1">
       {pills.map(p => (
-        <span key={p.label} className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-black/60 backdrop-blur-sm border border-white/10 ${p.color}`}>
+        <span key={p.label} className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-white/5 border border-white/10 ${p.color}`}>
           {p.icon} {p.label}
         </span>
       ))}
@@ -203,7 +203,6 @@ function ItemCard({
     >
       {/* ── Album-Art (quadratisch) ── */}
       <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl m-3 mb-0" style={{ width: 'calc(100% - 1.5rem)' }}>
-        <ItemTypeBadge type={item.type} />
         {displayImage ? (
           <>
             <Image src={displayImage} alt="" fill className={`object-cover scale-110 blur-xl opacity-40 ${isLocked ? 'grayscale' : ''}`} />
@@ -256,6 +255,7 @@ function ItemCard({
             {item.priceCredits.toLocaleString('de-DE')} {tokenLabel}
           </span>
         </div>
+        <ItemTypeBadge type={item.type} />
       </div>
     </button>
   );
@@ -319,7 +319,6 @@ function ItemDetailModal({
       >
         {/* ── Album-Art (groß) ── */}
         <div className="relative w-full aspect-square overflow-hidden">
-          <ItemTypeBadge type={item.type} />
           {getDisplayImageUrl(item) ? (
             <>
               <Image src={getDisplayImageUrl(item)!} alt="" fill className={`object-cover scale-110 blur-xl opacity-40 ${isLocked ? 'grayscale' : ''}`} />
@@ -389,10 +388,15 @@ function ItemDetailModal({
 
         {/* ── Textbereich ── */}
         <div className="p-4">
-          <p className="text-white font-bold text-base leading-snug">{item.title}</p>
-          {item.artistName && (
-            <p className="text-amber-300/80 text-xs font-semibold mt-0.5">{item.artistName}</p>
-          )}
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-white font-bold text-base leading-snug">{item.title}</p>
+              {item.artistName && (
+                <p className="text-amber-300/80 text-xs font-semibold mt-0.5">{item.artistName}</p>
+              )}
+            </div>
+            <ItemTypeBadge type={item.type} />
+          </div>
           <p className="text-zinc-400 text-xs leading-relaxed mt-2">
             {item.description || TYPE_LABELS[item.type]}
           </p>
@@ -1034,7 +1038,6 @@ function InventoryItemCard({ item, onOpen }: { item: InventoryItem; onOpen: (ite
     >
       {/* Quadratisches Album-Art */}
       <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl m-3 mb-0" style={{ width: 'calc(100% - 1.5rem)' }}>
-        <ItemTypeBadge type={item.type} />
         {getDisplayImageUrl(item) ? (
           <>
             <Image src={getDisplayImageUrl(item)!} alt="" fill className="object-cover scale-110 blur-xl opacity-40" />
@@ -1060,6 +1063,7 @@ function InventoryItemCard({ item, onOpen }: { item: InventoryItem; onOpen: (ite
         {item.artistName && (
           <p className="text-amber-300/80 text-[11px] font-semibold line-clamp-1">{item.artistName}</p>
         )}
+        <ItemTypeBadge type={item.type} />
       </div>
     </button>
   );
@@ -1098,7 +1102,6 @@ function InventoryItemDetailModal({ item, onClose }: { item: InventoryItem; onCl
       >
         {/* ── Album-Art (groß) ── */}
         <div className="relative w-full aspect-square overflow-hidden">
-          <ItemTypeBadge type={item.type} />
           {getDisplayImageUrl(item) ? (
             <>
               <Image src={getDisplayImageUrl(item)!} alt="" fill className="object-cover scale-110 blur-xl opacity-40" />
@@ -1140,10 +1143,15 @@ function InventoryItemDetailModal({ item, onClose }: { item: InventoryItem; onCl
 
         {/* ── Textbereich ── */}
         <div className="p-4">
-          <p className="text-white font-bold text-base leading-snug">{item.title}</p>
-          {item.artistName && (
-            <p className="text-amber-300/80 text-xs font-semibold mt-0.5">{item.artistName}</p>
-          )}
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-white font-bold text-base leading-snug">{item.title}</p>
+              {item.artistName && (
+                <p className="text-amber-300/80 text-xs font-semibold mt-0.5">{item.artistName}</p>
+              )}
+            </div>
+            <ItemTypeBadge type={item.type} />
+          </div>
           {item.description && (
             <p className="text-zinc-400 text-xs leading-relaxed mt-2">{item.description}</p>
           )}

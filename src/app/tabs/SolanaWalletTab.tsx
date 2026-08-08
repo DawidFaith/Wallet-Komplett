@@ -7,7 +7,7 @@ import {
   FaCopy, FaCheckCircle, FaSync, FaPaperPlane, FaExternalLinkAlt,
   FaKey, FaEye, FaEyeSlash, FaSpinner, FaExchangeAlt,
   FaChevronDown, FaChevronUp, FaDownload, FaCreditCard,
-  FaTimes, FaLock, FaUnlock, FaChartLine, FaInfoCircle, FaGem, FaWallet,
+  FaTimes, FaLock, FaUnlock, FaChartLine, FaInfoCircle, FaGem, FaCertificate, FaWallet,
   FaPlay, FaPause,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
@@ -233,6 +233,153 @@ function SongNftDetailModal({ nft, shopNft, onClose, onSend }: {
                 <FaDownload size={9} /> Download
               </a>
             )}
+            <a href={`https://solscan.io/account/${nft.mint}`} target="_blank" rel="noopener noreferrer"
+              className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+              <FaExternalLinkAlt size={8} /> Solscan
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Collectible NFT Card — kompakt, öffnet Detail-Modal ──────────────────────
+function CollectibleNftCard({ nft, onOpen }: { nft: OwnedNft; onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group relative flex flex-col rounded-xl overflow-hidden text-left bg-[#181818] hover:bg-[#282828] transition-all duration-200"
+    >
+      {/* Quadratisches Cover */}
+      <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl m-3 mb-0" style={{ width: 'calc(100% - 1.5rem)' }}>
+        {nft.image ? (
+          <>
+            <Image src={nft.image} alt="" fill className="object-cover scale-110 blur-xl opacity-40" unoptimized />
+            <Image src={nft.image} alt={nft.name} fill className="object-contain" unoptimized />
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-900/60 to-zinc-900">
+            <FaGem size={28} className="text-violet-500/30" />
+          </div>
+        )}
+      </div>
+
+      {/* Textbereich (kompakt) */}
+      <div className="px-3 pt-2 pb-3 flex flex-col gap-0.5">
+        <p className="text-white font-bold text-sm leading-snug line-clamp-1">{nft.name}</p>
+        <div className="flex items-center justify-end">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-white/5 border border-white/10 text-amber-300">
+            <FaCertificate size={8} /> NFT
+          </span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// ─── Collectible NFT Detail-Modal ──────────────────────────────────────────────
+function CollectibleNftDetailModal({ nft, onClose, onSend, onRedeem }: {
+  nft:      OwnedNft;
+  onClose:  () => void;
+  onSend:   () => void;
+  onRedeem: () => void;
+}) {
+  const rarityRaw   = nft.attributes.find(a => a.trait_type === 'Rarity')?.value?.toLowerCase() ?? '';
+  const artistAttr  = nft.attributes.find(a => a.trait_type === 'Artist')?.value;
+  const repBonus    = nft.attributes.find(a => a.trait_type === 'RepBonus'    || a.trait_type === 'REP Bonus')?.value;
+  const creditBonus = nft.attributes.find(a => a.trait_type === 'CreditBonus' || a.trait_type === 'Credit Bonus')?.value;
+  const shardBonus  = nft.attributes.find(a => a.trait_type === 'ShardBonus'  || a.trait_type === 'Shard Bonus')?.value;
+  const dropRate    = nft.attributes.find(a => a.trait_type === 'DropRate'    || a.trait_type === 'Drop Rate')?.value;
+
+  const RARITY_STYLE: Record<string, string> = {
+    common:    'text-zinc-300 bg-zinc-800/80 border-zinc-600/50',
+    uncommon:  'text-green-300 bg-green-900/50 border-green-600/50',
+    rare:      'text-blue-300 bg-blue-900/50 border-blue-600/50',
+    epic:      'text-purple-300 bg-purple-900/50 border-purple-600/50',
+    legendary: 'text-amber-300 bg-amber-900/50 border-amber-600/50',
+    mythic:    'text-red-300 bg-red-900/50 border-red-600/50',
+  };
+  const rarityStyle = RARITY_STYLE[rarityRaw] ?? 'text-zinc-300 bg-zinc-800/80 border-zinc-600/50';
+  const num = (v?: string) => parseFloat((v ?? '').replace(/[^0-9.\-]/g, '')) || 0;
+  const repVal    = num(repBonus);
+  const creditVal = num(creditBonus);
+  const shardVal  = num(shardBonus);
+  const activeSlots  = parseInt(nft.attributes.find(a => a.trait_type === 'ActiveSlots')?.value ?? '', 10);
+  const primaryBonus = nft.attributes.find(a => a.trait_type === 'PrimaryBonus')?.value ?? 'rep';
+  const bonusFor: Record<string, string | null> = {
+    rep:     repVal    > 0 ? `+${repVal}% REP`      : null,
+    credits: creditVal > 0 ? `+${creditVal}% Credit` : null,
+    shard:   shardVal  > 0 ? `+${shardVal}% Shard`  : null,
+  };
+  const slotOrder = [primaryBonus, ...['rep', 'credits', 'shard'].filter(b => b !== primaryBonus)];
+  const bonuses = Number.isFinite(activeSlots) && activeSlots > 0
+    ? slotOrder.slice(0, activeSlots).map(k => bonusFor[k]).filter(Boolean)
+    : [bonusFor.rep, bonusFor.credits, bonusFor.shard].filter(Boolean);
+
+  return (
+    <div
+      className="fixed inset-0 z-[999] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0"
+      onClick={onClose}
+    >
+      <div
+        className="bg-[#161410] border border-white/[0.08] rounded-2xl w-full max-w-sm shadow-2xl max-h-[88vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* ── Cover (groß) ── */}
+        <div className="relative w-full aspect-square overflow-hidden">
+          {nft.image ? (
+            <>
+              <Image src={nft.image} alt="" fill className="object-cover scale-110 blur-xl opacity-40" unoptimized />
+              <Image src={nft.image} alt={nft.name} fill className="object-contain" unoptimized />
+            </>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-900/60 to-zinc-900">
+              <FaGem size={48} className="text-violet-500/30" />
+            </div>
+          )}
+
+          <button
+            onClick={onClose}
+            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition-colors"
+          >
+            <FaTimes size={14} />
+          </button>
+        </div>
+
+        {/* ── Textbereich ── */}
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-white font-bold text-base leading-snug">{nft.name}</p>
+              {artistAttr && <p className="text-amber-300/80 text-xs font-semibold mt-0.5">von {artistAttr}</p>}
+            </div>
+            <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-white/5 border border-white/10 text-amber-300">
+              <FaCertificate size={8} /> NFT
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap mt-3">
+            {rarityRaw && (
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${rarityStyle}`}>
+                {rarityRaw.charAt(0).toUpperCase() + rarityRaw.slice(1)}
+              </span>
+            )}
+            {dropRate && <span className="text-zinc-500 text-[10px]">Drop {dropRate}</span>}
+            {bonuses.length > 0 && <span className="text-zinc-400 text-[11px]">{bonuses.join(' · ')}</span>}
+          </div>
+
+          {/* Action-Buttons */}
+          <div className="flex gap-1.5 flex-wrap mt-4">
+            <button onClick={onSend}
+              className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+              <FaPaperPlane size={9} /> Send
+            </button>
+            <button onClick={onRedeem}
+              className="bg-purple-950/50 hover:bg-purple-900/60 text-purple-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+              ✨ Einlösen
+            </button>
             <a href={`https://solscan.io/account/${nft.mint}`} target="_blank" rel="noopener noreferrer"
               className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
               <FaExternalLinkAlt size={8} /> Solscan
@@ -607,6 +754,7 @@ export default function SolanaWalletTab() {
   const [shopNftsMap, setShopNftsMap]     = useState<Record<string, ShopNftData>>({});
   const [openNftArtists, setOpenNftArtists] = useState<Set<string>>(new Set());
   const [songDetailNft, setSongDetailNft] = useState<OwnedNft | null>(null);
+  const [collectibleDetailNft, setCollectibleDetailNft] = useState<OwnedNft | null>(null);
   const [nftSendTarget, setNftSendTarget] = useState<OwnedNft | null>(null);
   const [nftRecipient, setNftRecipient]   = useState('');
   const [nftSending, setNftSending]       = useState(false);
@@ -1019,131 +1167,6 @@ export default function SolanaWalletTab() {
     return nft.attributes.some(a => a.trait_type === 'Type' && a.value === 'Music')
       || nft.interface !== 'MplCoreAsset';
   };
-  const renderNft = (nft: OwnedNft) => {
-    const isCollectible = !isMusicNft(nft);
-    const rarityRaw   = nft.attributes.find(a => a.trait_type === 'Rarity')?.value?.toLowerCase() ?? '';
-    const artistAttr  = nft.attributes.find(a => a.trait_type === 'Artist')?.value;
-    const repBonus    = nft.attributes.find(a => a.trait_type === 'RepBonus'    || a.trait_type === 'REP Bonus')?.value;
-    const creditBonus = nft.attributes.find(a => a.trait_type === 'CreditBonus' || a.trait_type === 'Credit Bonus')?.value;
-    const shardBonus  = nft.attributes.find(a => a.trait_type === 'ShardBonus'  || a.trait_type === 'Shard Bonus')?.value;
-    const dropRate    = nft.attributes.find(a => a.trait_type === 'DropRate'    || a.trait_type === 'Drop Rate')?.value;
-    const editionAttr = nft.attributes.find(a => a.trait_type === 'Max Editions' || a.trait_type === 'MaxEditions')?.value;
-    const RARITY_STYLE: Record<string, string> = {
-      common:    'text-zinc-300 bg-zinc-800/80 border-zinc-600/50',
-      uncommon:  'text-green-300 bg-green-900/50 border-green-600/50',
-      rare:      'text-blue-300 bg-blue-900/50 border-blue-600/50',
-      epic:      'text-purple-300 bg-purple-900/50 border-purple-600/50',
-      legendary: 'text-amber-300 bg-amber-900/50 border-amber-600/50',
-      mythic:    'text-red-300 bg-red-900/50 border-red-600/50',
-    };
-    const RARITY_BORDER: Record<string, string> = {
-      common:    'border-zinc-700/40',
-      uncommon:  'border-green-700/30',
-      rare:      'border-blue-700/30',
-      epic:      'border-purple-700/30',
-      legendary: 'border-amber-700/30',
-      mythic:    'border-red-700/30',
-    };
-    const rarityStyle = RARITY_STYLE[rarityRaw] ?? 'text-zinc-300 bg-zinc-800/80 border-zinc-600/50';
-    const borderStyle = isCollectible ? (RARITY_BORDER[rarityRaw] ?? 'border-violet-800/25') : 'border-white/[0.08]';
-    const num = (v?: string) => parseFloat((v ?? '').replace(/[^0-9.\-]/g, '')) || 0;
-    const repVal    = num(repBonus);
-    const creditVal = num(creditBonus);
-    const shardVal  = num(shardBonus);
-    const activeSlots  = parseInt(nft.attributes.find(a => a.trait_type === 'ActiveSlots')?.value ?? '', 10);
-    const primaryBonus = nft.attributes.find(a => a.trait_type === 'PrimaryBonus')?.value ?? 'rep';
-    const bonusFor: Record<string, string | null> = {
-      rep:     repVal    > 0 ? `+${repVal}% REP`      : null,
-      credits: creditVal > 0 ? `+${creditVal}% Credit` : null,
-      shard:   shardVal  > 0 ? `+${shardVal}% Shard`  : null,
-    };
-    const slotOrder = [primaryBonus, ...['rep', 'credits', 'shard'].filter(b => b !== primaryBonus)];
-    const bonuses = Number.isFinite(activeSlots) && activeSlots > 0
-      ? slotOrder.slice(0, activeSlots).map(k => bonusFor[k]).filter(Boolean)
-      : [bonusFor.rep, bonusFor.credits, bonusFor.shard].filter(Boolean);
-
-    const nftButtons = (
-      <div className="flex gap-1.5 flex-wrap">
-        <button
-          onClick={() => { setNftSendTarget(nft); setNftSendErr(''); setNftSendOk(''); setNftRecipient(''); }}
-          className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
-          <FaPaperPlane size={9} /> Send
-        </button>
-        {isCollectible ? (
-          <button
-            onClick={() => { setNftRedeemTarget(nft); setNftRedeemErr(''); setNftRedeemOk(''); }}
-            className="bg-purple-950/50 hover:bg-purple-900/60 text-purple-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
-            ✨ Einlösen
-          </button>
-        ) : (
-          <button
-            onClick={() => { setNftBurnTarget(nft); setNftBurnErr(''); setNftBurnOk(''); }}
-            className="bg-red-950/40 hover:bg-red-900/50 text-red-400 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
-            🔥 Burn
-          </button>
-        )}
-        <a href={`https://solscan.io/account/${nft.mint}`} target="_blank" rel="noopener noreferrer"
-          className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
-          <FaExternalLinkAlt size={8} /> Solscan
-        </a>
-      </div>
-    );
-
-    if (isCollectible) {
-      return (
-        <div key={nft.mint} className={`rounded-2xl border overflow-hidden bg-white/[0.03] ${borderStyle}`}>
-          <div className="flex gap-3 p-3">
-            <div className="shrink-0 w-20 h-20 rounded-xl overflow-hidden bg-white/[0.05]">
-              {nft.image
-                ? <Image src={nft.image} alt={nft.name} width={80} height={80} unoptimized
-                    style={{ width: '80px', height: '80px', objectFit: 'cover', display: 'block' }} />
-                : <div className="w-full h-full flex items-center justify-center"><FaGem size={24} className="text-violet-500" /></div>
-              }
-            </div>
-            <div className="flex-1 min-w-0 space-y-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-white text-sm font-bold truncate">{nft.name}</p>
-                <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-900/60 border border-violet-500/30 text-violet-300">D.FAITH</span>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {rarityRaw && (
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${rarityStyle}`}>
-                    {rarityRaw.charAt(0).toUpperCase() + rarityRaw.slice(1)}
-                  </span>
-                )}
-                {dropRate && <span className="text-zinc-500 text-[10px]">Drop {dropRate}</span>}
-              </div>
-              {artistAttr && <p className="text-zinc-400 text-xs">von {artistAttr}</p>}
-              {bonuses.length > 0 && <p className="text-zinc-400 text-[11px]">{bonuses.join(' · ')}</p>}
-            </div>
-          </div>
-          <div className="px-3 pb-3">{nftButtons}</div>
-        </div>
-      );
-    }
-
-    return (
-      <div key={nft.mint} className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-colors bg-white/[0.05] ${borderStyle}`}>
-        {nft.image ? (
-          <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
-            <Image src={nft.image} alt={nft.name} width={40} height={40}
-              style={{ width: '40px', height: '40px', objectFit: 'cover', display: 'block' }} unoptimized />
-          </div>
-        ) : (
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-white/[0.08]">
-            <FaGem size={16} className="text-zinc-500" />
-          </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="text-white text-sm font-semibold truncate">{nft.name}</p>
-          <p className="text-zinc-500 text-xs truncate">
-            {artistAttr ?? ''}{editionAttr ? ` · ${editionAttr} Editionen` : ''}
-          </p>
-        </div>
-        {nftButtons}
-      </div>
-    );
-  };
 
   return (
     <div className="w-full max-w-md mx-auto px-4 py-6 space-y-4">
@@ -1491,7 +1514,11 @@ export default function SolanaWalletTab() {
                       {artistCollectibles.length > 0 && (
                         <div className="space-y-2">
                           <p className="text-zinc-700 text-[10px] font-bold uppercase tracking-widest px-1">Collectibles</p>
-                          <div className="space-y-2">{artistCollectibles.map(renderNft)}</div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {artistCollectibles.map(nft => (
+                              <CollectibleNftCard key={nft.mint} nft={nft} onOpen={() => setCollectibleDetailNft(nft)} />
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1513,6 +1540,24 @@ export default function SolanaWalletTab() {
             const nft = songDetailNft;
             setSongDetailNft(null);
             setNftSendTarget(nft); setNftSendErr(''); setNftSendOk(''); setNftRecipient('');
+          }}
+        />
+      )}
+
+      {/* ── Collectible NFT Detail Modal ── */}
+      {collectibleDetailNft && (
+        <CollectibleNftDetailModal
+          nft={collectibleDetailNft}
+          onClose={() => setCollectibleDetailNft(null)}
+          onSend={() => {
+            const nft = collectibleDetailNft;
+            setCollectibleDetailNft(null);
+            setNftSendTarget(nft); setNftSendErr(''); setNftSendOk(''); setNftRecipient('');
+          }}
+          onRedeem={() => {
+            const nft = collectibleDetailNft;
+            setCollectibleDetailNft(null);
+            setNftRedeemTarget(nft); setNftRedeemErr(''); setNftRedeemOk('');
           }}
         />
       )}
