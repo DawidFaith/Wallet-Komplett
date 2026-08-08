@@ -9,6 +9,7 @@
 
 import nodemailer from 'nodemailer';
 import type { Lang } from '../utils/i18n';
+import { isUnsubscribed, generateUnsubscribeToken } from './unsubscribe';
 
 function createTransporter() {
   const user = process.env.GMAIL_USER;
@@ -114,6 +115,7 @@ const GIVEAWAY_EMAIL_STRINGS: Record<Lang, {
   releaseLine: (dateStr: string) => string;
   mythicIntro: string;
   mythicButton: string;
+  unsubscribeText: string;
 }> = {
   de: {
     subjectCredited: reward => `[D.FAITH] Du hast ${reward} Credits gewonnen! 🎉`,
@@ -132,7 +134,8 @@ const GIVEAWAY_EMAIL_STRINGS: Record<Lang, {
     promoHeading: 'Willst du mehr? 🎵',
     releaseLine: dateStr => `Die neue Single erscheint am <b>${dateStr}</b>.`,
     mythicIntro: 'Sichere dir zusätzlich die Chance auf ein exklusives Mythic NFT.',
-    mythicButton: '💎 Mythic NFT Gewinnen durch Presave',
+    mythicButton: '💎 Mythic NFT gewinnen',
+    unsubscribeText: 'Möchtest du keine Gewinnspiel-E-Mails mehr erhalten?',
   },
   en: {
     subjectCredited: reward => `[D.FAITH] You won ${reward} Credits! 🎉`,
@@ -151,7 +154,8 @@ const GIVEAWAY_EMAIL_STRINGS: Record<Lang, {
     promoHeading: 'Want more? 🎵',
     releaseLine: dateStr => `The new single drops on <b>${dateStr}</b>.`,
     mythicIntro: 'Get an extra chance to win an exclusive Mythic NFT.',
-    mythicButton: '💎 Win a Mythic NFT via Presave',
+    mythicButton: '💎 Win a Mythic NFT',
+    unsubscribeText: 'Don\'t want to receive giveaway emails anymore?',
   },
   pl: {
     subjectCredited: reward => `[D.FAITH] Wygrałeś/aś ${reward} kredytów! 🎉`,
@@ -170,7 +174,8 @@ const GIVEAWAY_EMAIL_STRINGS: Record<Lang, {
     promoHeading: 'Chcesz więcej? 🎵',
     releaseLine: dateStr => `Nowy singiel ukaże się <b>${dateStr}</b>.`,
     mythicIntro: 'Zdobądź dodatkową szansę na wygranie ekskluzywnego Mythic NFT.',
-    mythicButton: '💎 Wygraj Mythic NFT dzięki Presave',
+    mythicButton: '💎 Wygraj Mythic NFT',
+    unsubscribeText: 'Nie chcesz już otrzymywać e-maili konkursowych?',
   },
 };
 
@@ -201,9 +206,15 @@ export async function sendGiveawayParticipationEmail(params: {
     console.log('[email] GMAIL_USER/GMAIL_APP_PASSWORD fehlt – Giveaway-Mail übersprungen');
     return;
   }
+  if (await isUnsubscribed(params.toEmail)) {
+    console.log('[email] Empfänger hat sich abgemeldet – Giveaway-Mail übersprungen:', params.toEmail);
+    return;
+  }
   const lang = params.lang ?? 'de';
   const s = GIVEAWAY_EMAIL_STRINGS[lang];
   const platformLabel = params.platform === 'tiktok' ? 'TikTok' : params.platform.charAt(0).toUpperCase() + params.platform.slice(1);
+  const buttonStyle = 'display:inline-block;background:#f59e0b;color:#000;padding:8px 16px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:13px;';
+  const mythicButtonStyle = 'display:inline-block;background:#a855f7;color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:13px;';
 
   const mainBlock = params.credited
     ? `<h2>${s.creditedHeading}</h2><p>${s.creditedBody(params.campaignTitle, platformLabel, params.handle, params.creditReward)}</p>`
@@ -212,7 +223,7 @@ export async function sendGiveawayParticipationEmail(params: {
       <p>${s.pendingBody1(params.campaignTitle, platformLabel, params.handle)}</p>
       <p>${s.pendingBody2(params.creditReward, platformLabel, params.handle, params.toEmail)}</p>
       <p>
-        <a href="${APP_URL}" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">
+        <a href="${APP_URL}" style="${buttonStyle}">
           ${s.registerButton}
         </a>
       </p>
@@ -228,7 +239,7 @@ export async function sendGiveawayParticipationEmail(params: {
       ? `
         <p>${s.mythicIntro}</p>
         <p>
-          <a href="${params.presaveUrl}" style="background:#a855f7;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">
+          <a href="${params.presaveUrl}" style="${mythicButtonStyle}">
             ${s.mythicButton}
           </a>
         </p>
@@ -237,10 +248,19 @@ export async function sendGiveawayParticipationEmail(params: {
     promoBlock = `<hr/><h3>${s.promoHeading}</h3>${releaseLine}${presaveLine}`;
   }
 
+  const unsubToken = generateUnsubscribeToken(params.toEmail);
+  const unsubUrl = `${APP_URL}/api/unsubscribe?email=${encodeURIComponent(params.toEmail)}&token=${unsubToken}&lang=${lang}`;
+  const footerBlock = `
+    <hr style="margin-top:32px;border:none;border-top:1px solid #333;"/>
+    <p style="color:#666;font-size:11px;margin-top:12px;">
+      ${s.unsubscribeText} <a href="${unsubUrl}" style="color:#888;">${lang === 'en' ? 'Unsubscribe' : lang === 'pl' ? 'Wypisz się' : 'Abmelden'}</a>
+    </p>
+  `;
+
   await transporter.sendMail({
     from: `"D.FAITH App" <${gmailUser}>`,
     to: params.toEmail,
     subject: params.credited ? s.subjectCredited(params.creditReward) : s.subjectPending(params.creditReward),
-    html: `${mainBlock}${promoBlock}`,
+    html: `${mainBlock}${promoBlock}${footerBlock}`,
   });
 }

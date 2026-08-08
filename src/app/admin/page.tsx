@@ -253,7 +253,7 @@ export default function AdminPage() {
     return matchSearch && matchFilter;
   });
 
-  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'collectibles' | 'referral' | 'giveaways' | 'audit'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'collectibles' | 'referral' | 'giveaways' | 'audit' | 'unsubscribes'>('users');
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState('');
   const [resetting, setResetting] = useState(false);
@@ -333,7 +333,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-0">
-        {(['users', 'credits', 'token', 'shop', 'platform', 'collectibles', 'referral', 'giveaways', 'audit'] as const).map((tab) => (
+        {(['users', 'credits', 'token', 'shop', 'platform', 'collectibles', 'referral', 'giveaways', 'audit', 'unsubscribes'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -343,7 +343,7 @@ export default function AdminPage() {
                 : 'text-zinc-500 border-transparent hover:text-zinc-300'
             }`}
           >
-            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'platform' ? '⚡ Platform' : tab === 'collectibles' ? '💎 Collectibles' : tab === 'referral' ? '🔗 Referral' : tab === 'giveaways' ? '🎁 Giveaways' : '🛡️ Audit-Log'}
+            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'platform' ? '⚡ Platform' : tab === 'collectibles' ? '💎 Collectibles' : tab === 'referral' ? '🔗 Referral' : tab === 'giveaways' ? '🎁 Giveaways' : tab === 'audit' ? '🛡️ Audit-Log' : '✉️ Abmeldungen'}
           </button>
         ))}
       </div>
@@ -618,6 +618,11 @@ export default function AdminPage() {
       {/* ── Audit-Log Tab ────────────────────────────────────────────────────── */}
       {activeTab === 'audit' && (
         <AuditLogSection secret={secret} />
+      )}
+
+      {/* ── Abmeldungen Tab ──────────────────────────────────────────────────── */}
+      {activeTab === 'unsubscribes' && (
+        <UnsubscribesSection secret={secret} />
       )}
     </div>
   );
@@ -3401,6 +3406,12 @@ interface AdminAuditEntry {
   created_at: string;
 }
 
+interface AdminUnsubscribeEntry {
+  email: string;
+  source: string | null;
+  unsubscribed_at: string;
+}
+
 interface AdminGiveawayEntry {
   id: string;
   email: string;
@@ -3705,6 +3716,88 @@ function AuditLogSection({ secret }: { secret: string }) {
             {entries.length === 0 && !loading && (
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-center text-zinc-500">Keine Einträge</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── UnsubscribesSection ──────────────────────────────────────────────────────
+function UnsubscribesSection({ secret }: { secret: string }) {
+  const [entries, setEntries] = useState<AdminUnsubscribeEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const r = await fetch('/api/admin/unsubscribes?limit=200', {
+        headers: { 'x-admin-secret': secret },
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? 'Fehler');
+      setEntries(Array.isArray(d.entries) ? d.entries : []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler beim Laden');
+    } finally {
+      setLoading(false);
+    }
+  }, [secret]);
+
+  useEffect(() => { load(); }, [load]);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            ✉️ Abgemeldete E-Mails
+          </h2>
+          <p className="text-xs text-zinc-500 mt-1">
+            Diese Adressen haben sich über den Abmelden-Link von Gewinnspiel-E-Mails abgemeldet und erhalten keine weiteren mehr.
+          </p>
+        </div>
+        <button
+          onClick={load}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50"
+        >
+          <FaSync className={loading ? 'animate-spin' : ''} /> Aktualisieren
+        </button>
+      </div>
+
+      {error && (
+        <div className="bg-red-900/30 border border-red-800/50 text-red-300 text-sm px-4 py-3 rounded-xl">
+          {error}
+        </div>
+      )}
+
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-zinc-500 border-b border-zinc-800">
+              <th className="px-4 py-2 font-semibold">E-Mail</th>
+              <th className="px-4 py-2 font-semibold">Quelle</th>
+              <th className="px-4 py-2 font-semibold">Abgemeldet am</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((e) => (
+              <tr key={e.email} className="border-b border-zinc-800/50 last:border-0">
+                <td className="px-4 py-2 text-zinc-200">{e.email}</td>
+                <td className="px-4 py-2 text-zinc-400">{e.source ?? '—'}</td>
+                <td className="px-4 py-2 text-zinc-400 whitespace-nowrap">
+                  {new Date(e.unsubscribed_at).toLocaleString('de-DE')}
+                </td>
+              </tr>
+            ))}
+            {entries.length === 0 && !loading && (
+              <tr>
+                <td colSpan={3} className="px-4 py-6 text-center text-zinc-500">Keine Abmeldungen</td>
               </tr>
             )}
           </tbody>
