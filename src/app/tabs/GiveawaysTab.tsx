@@ -27,6 +27,15 @@ const AVAILABLE_MEDIA_ENDPOINT: Record<GiveawayPlatformKey, string> = {
   youtube:   '/api/youtube-quests/available-media',
 };
 
+// Zusätzliche Accounts, von denen Dawid Faith Instagram/TikTok-Beiträge für
+// Giveaways auswählen kann (virtuelle Platform-Wallets, siehe lib/platformAccounts.ts).
+// Facebook bewusst ausgenommen: die Kommentar-Verifizierung dort hängt am fest
+// hinterlegten Dawid-Faith-Page-Token, nicht an frei wählbaren Accounts.
+const DAWID_FAITH_WALLET = 'user_3dfvunr7ziaywue8bhzdqw2blsw';
+const GIVEAWAY_SUB_ACCOUNTS = [
+  { key: 'polska', wallet: 'platform_dawid_faith_polska', label: 'Dawid Faith Polska' },
+] as const;
+
 interface MediaPickItem {
   id: string;
   url: string;
@@ -89,6 +98,12 @@ interface GiveawayCampaignData {
 
 function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; artistName: string | null }) {
   const lang = useLang();
+  const isDawidFaith = artistWallet.toLowerCase() === DAWID_FAITH_WALLET;
+  // Nur die Inhalte-Quelle (welcher Instagram/TikTok-Account durchsucht wird)
+  // wechselt hier — die Kampagne selbst gehört immer Dawid Faith (Guthaben,
+  // Verwaltung, Link), genau wie beim Quest-Board-Umschalter.
+  const [mediaSourceAccount, setMediaSourceAccount] = useState<string | null>(null);
+  const mediaSourceWallet = isDawidFaith && mediaSourceAccount ? mediaSourceAccount : artistWallet;
   const [campaigns, setCampaigns] = useState<GiveawayCampaignData[]>([]);
   const [loading, setLoading]     = useState(true);
   const [balance, setBalance]     = useState<number | null>(null);
@@ -145,7 +160,11 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
   const loadMediaForPlatform = async (p: GiveawayPlatformKey) => {
     setMediaLoading(prev => ({ ...prev, [p]: true }));
     setMediaHint(prev => ({ ...prev, [p]: '' }));
-    const { items, hint, error: err } = await fetchAvailableMedia(p, artistWallet, t('gw.errMediaLoad', lang));
+    // Instagram/TikTok dürfen von einem anderen Account durchsucht werden (Kommentar-
+    // Verifizierung läuft über die Post-ID, nicht über die Kampagnen-Wallet) —
+    // Facebook/YouTube bleiben immer beim echten Artist-Account.
+    const wallet = (p === 'instagram' || p === 'tiktok') ? mediaSourceWallet : artistWallet;
+    const { items, hint, error: err } = await fetchAvailableMedia(p, wallet, t('gw.errMediaLoad', lang));
     setMediaLists(prev => ({ ...prev, [p]: items }));
     if (hint || err) setMediaHint(prev => ({ ...prev, [p]: hint || err || '' }));
     setMediaLoading(prev => ({ ...prev, [p]: false }));
@@ -162,6 +181,13 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
     setPlatformUrls(prev => ({ ...prev, [p]: item.url }));
     setPlatformMediaIds(prev => ({ ...prev, [p]: item.id }));
   };
+
+  // Bereits geladene Instagram/TikTok-Listen neu laden, wenn die Inhalte-Quelle wechselt
+  useEffect(() => {
+    if (enabledPlatforms.instagram) loadMediaForPlatform('instagram');
+    if (enabledPlatforms.tiktok) loadMediaForPlatform('tiktok');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mediaSourceAccount]);
 
   const handleCreate = async () => {
     setError('');
@@ -376,6 +402,35 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
             />
             <p className="text-zinc-600 text-[10px] mt-1">{t('gw.presaveUrlHint', lang)}</p>
           </div>
+
+          {isDawidFaith && (
+            <div>
+              <p className="text-zinc-600 text-[10px] uppercase tracking-widest mb-1.5">Inhalte-Quelle (Instagram/TikTok)</p>
+              <div className="flex gap-2 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1.5">
+                <button
+                  type="button"
+                  onClick={() => setMediaSourceAccount(null)}
+                  className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all ${
+                    !mediaSourceAccount ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  Dawid Faith
+                </button>
+                {GIVEAWAY_SUB_ACCOUNTS.map(a => (
+                  <button
+                    key={a.key}
+                    type="button"
+                    onClick={() => setMediaSourceAccount(a.wallet)}
+                    className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all ${
+                      mediaSourceAccount === a.wallet ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <label className="text-zinc-500 text-[10px] uppercase tracking-widest block">{t('gw.platformsLabel', lang)}</label>
