@@ -41,10 +41,12 @@ interface MediaPickItem {
   url: string;
   thumbnail: string;
   title: string;
+  /** Welcher Account dieser Beitrag ist (z.B. "Dawid Faith" / "Dawid Faith Polska") — nur gesetzt wenn mehrere Quellen zusammengeführt werden. */
+  sourceLabel?: string;
 }
 
 /** Normalisiert die unterschiedlichen available-media Antwortformate der 4 Plattformen. */
-async function fetchAvailableMedia(platform: GiveawayPlatformKey, wallet: string, loadErrorMessage: string): Promise<{ items: MediaPickItem[]; hint?: string; error?: string }> {
+async function fetchAvailableMedia(platform: GiveawayPlatformKey, wallet: string, loadErrorMessage: string, sourceLabel?: string): Promise<{ items: MediaPickItem[]; hint?: string; error?: string }> {
   try {
     const res = await fetch(`${AVAILABLE_MEDIA_ENDPOINT[platform]}?wallet=${encodeURIComponent(wallet)}`);
     const data = await res.json();
@@ -59,6 +61,7 @@ async function fetchAvailableMedia(platform: GiveawayPlatformKey, wallet: string
         url: String(m.permalink || ''),
         thumbnail: String(m.thumbnail_url || m.media_url || ''),
         title: String(m.caption || '').slice(0, 70),
+        sourceLabel,
       }));
     } else if (platform === 'facebook') {
       items = raw.map(m => ({
@@ -74,6 +77,7 @@ async function fetchAvailableMedia(platform: GiveawayPlatformKey, wallet: string
         url: String(m.video_url || ''),
         thumbnail: String(m.thumbnail_url || ''),
         title: String(m.title || '').slice(0, 70),
+        sourceLabel,
       }));
     }
 
@@ -99,11 +103,6 @@ interface GiveawayCampaignData {
 function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; artistName: string | null }) {
   const lang = useLang();
   const isDawidFaith = artistWallet.toLowerCase() === DAWID_FAITH_WALLET;
-  // Nur die Inhalte-Quelle (welcher Instagram/TikTok-Account durchsucht wird)
-  // wechselt hier — die Kampagne selbst gehört immer Dawid Faith (Guthaben,
-  // Verwaltung, Link), genau wie beim Quest-Board-Umschalter.
-  const [mediaSourceAccount, setMediaSourceAccount] = useState<string | null>(null);
-  const mediaSourceWallet = isDawidFaith && mediaSourceAccount ? mediaSourceAccount : artistWallet;
   const [campaigns, setCampaigns] = useState<GiveawayCampaignData[]>([]);
   const [loading, setLoading]     = useState(true);
   const [balance, setBalance]     = useState<number | null>(null);
@@ -160,13 +159,19 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
   const loadMediaForPlatform = async (p: GiveawayPlatformKey) => {
     setMediaLoading(prev => ({ ...prev, [p]: true }));
     setMediaHint(prev => ({ ...prev, [p]: '' }));
-    // Instagram/TikTok dürfen von einem anderen Account durchsucht werden (Kommentar-
-    // Verifizierung läuft über die Post-ID, nicht über die Kampagnen-Wallet) —
+    // Instagram/TikTok: Beiträge von Dawid Faith UND seinen Zusatz-Accounts (z.B.
+    // Dawid Faith Polska) werden zu einer Liste zusammengeführt, damit alles über
+    // eine einzige Kampagne läuft (pro Kampagne + E-Mail nur ein Gewinn möglich —
     // Facebook/YouTube bleiben immer beim echten Artist-Account.
-    const wallet = (p === 'instagram' || p === 'tiktok') ? mediaSourceWallet : artistWallet;
-    const { items, hint, error: err } = await fetchAvailableMedia(p, wallet, t('gw.errMediaLoad', lang));
+    const sources = (isDawidFaith && (p === 'instagram' || p === 'tiktok'))
+      ? [{ wallet: artistWallet, label: undefined as string | undefined }, ...GIVEAWAY_SUB_ACCOUNTS.map(a => ({ wallet: a.wallet, label: a.label }))]
+      : [{ wallet: artistWallet, label: undefined as string | undefined }];
+
+    const results = await Promise.all(sources.map(s => fetchAvailableMedia(p, s.wallet, t('gw.errMediaLoad', lang), s.label)));
+    const items = results.flatMap(r => r.items);
+    const hint = results.map(r => r.hint || r.error).find(Boolean);
     setMediaLists(prev => ({ ...prev, [p]: items }));
-    if (hint || err) setMediaHint(prev => ({ ...prev, [p]: hint || err || '' }));
+    if (hint) setMediaHint(prev => ({ ...prev, [p]: hint }));
     setMediaLoading(prev => ({ ...prev, [p]: false }));
   };
 
@@ -181,13 +186,6 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
     setPlatformUrls(prev => ({ ...prev, [p]: item.url }));
     setPlatformMediaIds(prev => ({ ...prev, [p]: item.id }));
   };
-
-  // Bereits geladene Instagram/TikTok-Listen neu laden, wenn die Inhalte-Quelle wechselt
-  useEffect(() => {
-    if (enabledPlatforms.instagram) loadMediaForPlatform('instagram');
-    if (enabledPlatforms.tiktok) loadMediaForPlatform('tiktok');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mediaSourceAccount]);
 
   const handleCreate = async () => {
     setError('');
@@ -403,37 +401,11 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
             <p className="text-zinc-600 text-[10px] mt-1">{t('gw.presaveUrlHint', lang)}</p>
           </div>
 
-          {isDawidFaith && (
-            <div>
-              <p className="text-zinc-600 text-[10px] uppercase tracking-widest mb-1.5">Inhalte-Quelle (Instagram/TikTok)</p>
-              <div className="flex gap-2 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1.5">
-                <button
-                  type="button"
-                  onClick={() => setMediaSourceAccount(null)}
-                  className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all ${
-                    !mediaSourceAccount ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-zinc-300'
-                  }`}
-                >
-                  Dawid Faith
-                </button>
-                {GIVEAWAY_SUB_ACCOUNTS.map(a => (
-                  <button
-                    key={a.key}
-                    type="button"
-                    onClick={() => setMediaSourceAccount(a.wallet)}
-                    className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all ${
-                      mediaSourceAccount === a.wallet ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-zinc-300'
-                    }`}
-                  >
-                    {a.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div className="space-y-2">
             <label className="text-zinc-500 text-[10px] uppercase tracking-widest block">{t('gw.platformsLabel', lang)}</label>
+            {isDawidFaith && (
+              <p className="text-zinc-600 text-[10px] -mt-1">Bei Instagram/TikTok werden Beiträge von Dawid Faith und Dawid Faith Polska zusammen angezeigt.</p>
+            )}
             {GIVEAWAY_PLATFORMS.map(p => (
               <div key={p} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-2.5">
                 <label className="flex items-center gap-2 text-xs font-semibold text-zinc-200 mb-1.5 cursor-pointer">
@@ -466,8 +438,8 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
                           <button
                             key={item.id}
                             onClick={() => pickMedia(p, item)}
-                            title={item.title}
-                            className={`shrink-0 w-16 rounded-lg overflow-hidden border-2 transition-all ${
+                            title={item.sourceLabel ? `${item.sourceLabel} — ${item.title}` : item.title}
+                            className={`relative shrink-0 w-16 rounded-lg overflow-hidden border-2 transition-all ${
                               platformMediaIds[p] === item.id ? 'border-amber-400' : 'border-transparent'
                             }`}
                           >
@@ -475,6 +447,11 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
                               <Image src={item.thumbnail} alt="" width={64} height={64} className="w-16 h-16 object-cover" unoptimized />
                             ) : (
                               <div className="w-16 h-16 bg-white/[0.06] flex items-center justify-center text-zinc-600 text-[9px]">?</div>
+                            )}
+                            {item.sourceLabel && (
+                              <span className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-[7px] font-bold text-center leading-tight py-0.5 truncate px-0.5">
+                                {item.sourceLabel}
+                              </span>
                             )}
                           </button>
                         ))}
