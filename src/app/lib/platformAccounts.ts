@@ -10,6 +10,8 @@ export interface PlatformAccountConfig {
   handle: string;
   facebookPageId: string;
   tiktokHandle: string | null;
+  /** Erscheint dieser Account öffentlich in "Verfügbare Künstler" (mit eigenem Freunde-einladen-Programm)? */
+  publiclyListed: boolean;
 }
 
 export const PLATFORM_ACCOUNTS: Record<string, PlatformAccountConfig> = {
@@ -20,6 +22,7 @@ export const PLATFORM_ACCOUNTS: Record<string, PlatformAccountConfig> = {
     handle: 'dfaith_ecosystem',
     facebookPageId: process.env.FACEBOOK_PAGE_ID ?? '',
     tiktokHandle: null,
+    publiclyListed: true,
   },
   polska: {
     key: 'polska',
@@ -28,6 +31,9 @@ export const PLATFORM_ACCOUNTS: Record<string, PlatformAccountConfig> = {
     handle: 'dawidfaith_polska',
     facebookPageId: '109093575481784', // "Die Melodiker" — nur API-Anbindung, keine echten Posts dort
     tiktokHandle: 'dawidfaith_polska',
+    // Gehört inhaltlich zu Dawid Faith — kein eigener, separat auffindbarer
+    // Künstler mit eigenem Referral-Programm, nur intern für Quest-Erstellung.
+    publiclyListed: false,
   },
 };
 

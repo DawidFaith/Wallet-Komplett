@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
+import { PLATFORM_ACCOUNTS } from '../../../lib/platformAccounts';
+
+const HIDDEN_PLATFORM_WALLETS = new Set(
+  Object.values(PLATFORM_ACCOUNTS).filter(a => !a.publiclyListed).map(a => a.wallet),
+);
 
 export async function GET(req: Request) {
   try {
@@ -107,7 +112,7 @@ export async function GET(req: Request) {
       LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
       WHERE p.is_artist = TRUE
       ORDER BY COALESCE(p.is_platform_user, FALSE) DESC, p.updated_at DESC
-    `;
+    `.then(all => all.filter(r => !HIDDEN_PLATFORM_WALLETS.has(String(r.wallet_address).toLowerCase())));
 
     // Bereits abgeschlossene Quests des Supporters nachladen (mit creator_wallet)
     let completedByCreator: Record<string, number> = {};
