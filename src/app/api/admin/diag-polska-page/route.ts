@@ -1,8 +1,8 @@
 /**
- * Temporärer Diagnose-Endpoint: prüft ob die Page "Die Melodiker" (109093575481784)
- * über das bestehende Meta-Business-Portfolio erreichbar ist und welchen
- * Instagram-Business-Account sie aktuell verknüpft hat.
- * Wird nach der Prüfung wieder gelöscht.
+ * Temporärer Diagnose-Endpoint: holt das Page-eigene Access-Token für
+ * "Die Melodiker" (109093575481784) über die Business-Portfolio-Zuordnung
+ * (wie getPageTokenByPageId in metaApi.ts) und prüft damit den verknüpften
+ * Instagram-Business-Account. Wird nach der Prüfung wieder gelöscht.
  */
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -27,32 +27,48 @@ export async function GET(req: NextRequest) {
   }
 
   const result: Record<string, unknown> = {};
-
-  try {
-    const [ownedRes, clientRes] = await Promise.all([
-      fetch(`${GRAPH}/${bizId}/owned_pages?fields=id,name&limit=200&access_token=${systemToken}`, { cache: 'no-store' }),
-      fetch(`${GRAPH}/${bizId}/client_pages?fields=id,name&limit=200&access_token=${systemToken}`, { cache: 'no-store' }),
-    ]);
-    const owned = await ownedRes.json();
-    const client = await clientRes.json();
-    result.ownedPages = owned;
-    result.clientPages = client;
-    const inOwned = (owned.data ?? []).some((p: { id: string }) => p.id === PAGE_ID);
-    const inClient = (client.data ?? []).some((p: { id: string }) => p.id === PAGE_ID);
-    result.pageFoundInPortfolio = inOwned || inClient;
-  } catch (e) {
-    result.portfolioCheckError = String(e);
-  }
+  let pageToken: string | null = null;
 
   try {
     const res = await fetch(
-      `${GRAPH}/${PAGE_ID}?fields=id,name,access_token,instagram_business_account{id,username}&access_token=${systemToken}`,
+      `${GRAPH}/${bizId}/client_pages?fields=id,access_token&limit=200&access_token=${systemToken}`,
       { cache: 'no-store' },
     );
-    const data = await res.json();
-    result.pageDirectAccess = { ok: res.ok, data };
+    const data = await res.json() as { data?: Array<{ id: string; access_token?: string }>; error?: unknown };
+    result.clientPagesTokens = { ok: res.ok, error: data.error, foundIds: (data.data ?? []).map(p => p.id) };
+    const match = (data.data ?? []).find(p => p.id === PAGE_ID);
+    pageToken = match?.access_token ?? null;
+    result.pageTokenFound = !!pageToken;
   } catch (e) {
-    result.pageDirectAccessError = String(e);
+    result.clientPagesError = String(e);
+  }
+
+  if (!pageToken) {
+    try {
+      const res = await fetch(
+        `${GRAPH}/${bizId}/owned_pages?fields=id,access_token&limit=200&access_token=${systemToken}`,
+        { cache: 'no-store' },
+      );
+      const data = await res.json() as { data?: Array<{ id: string; access_token?: string }> };
+      const match = (data.data ?? []).find(p => p.id === PAGE_ID);
+      pageToken = match?.access_token ?? null;
+      result.pageTokenFoundInOwned = !!pageToken;
+    } catch (e) {
+      result.ownedPagesError = String(e);
+    }
+  }
+
+  if (pageToken) {
+    try {
+      const res = await fetch(
+        `${GRAPH}/${PAGE_ID}?fields=id,name,instagram_business_account{id,username}&access_token=${pageToken}`,
+        { cache: 'no-store' },
+      );
+      const data = await res.json();
+      result.pageInfoViaPageToken = { ok: res.ok, data };
+    } catch (e) {
+      result.pageInfoError = String(e);
+    }
   }
 
   return NextResponse.json(result);
