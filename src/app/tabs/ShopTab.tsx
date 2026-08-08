@@ -1018,7 +1018,56 @@ interface InventoryItem {
   nftMaxSupply: number | null;
 }
 
-function InventoryItemCard({ item }: { item: InventoryItem }) {
+function InventoryItemCard({ item, onOpen }: { item: InventoryItem; onOpen: (item: InventoryItem) => void }) {
+  const fallbackGradient: Record<ItemType, string> = {
+    song:      'from-violet-900/60 to-zinc-900',
+    video:     'from-red-900/60 to-zinc-900',
+    nft:       'from-amber-900/60 to-zinc-900',
+    exclusive: 'from-emerald-900/60 to-zinc-900',
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(item)}
+      className="group relative flex flex-col rounded-xl overflow-hidden text-left bg-[#181818] hover:bg-[#282828] transition-all duration-200"
+    >
+      {/* Quadratisches Album-Art */}
+      <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl m-3 mb-0" style={{ width: 'calc(100% - 1.5rem)' }}>
+        <ItemTypeBadge type={item.type} />
+        {getDisplayImageUrl(item) ? (
+          <>
+            <Image src={getDisplayImageUrl(item)!} alt="" fill className="object-cover scale-110 blur-xl opacity-40" />
+            <Image src={getDisplayImageUrl(item)!} alt={item.title} fill className="object-contain" />
+          </>
+        ) : (
+          <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
+            <span className="opacity-30 text-5xl"><TypeIcon type={item.type} /></span>
+          </div>
+        )}
+
+        {/* Edition-Badge auf dem Bild */}
+        {item.editionNumber != null && item.nftMaxSupply != null && (
+          <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm border border-violet-500/30 rounded-lg px-2 py-0.5">
+            <p className="text-violet-300 text-[10px] font-bold">#{item.editionNumber}/{item.nftMaxSupply}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Textbereich (kompakt) */}
+      <div className="px-3 pt-2 pb-3 flex flex-col gap-0.5">
+        <p className="text-white font-bold text-sm leading-snug line-clamp-1">{item.title}</p>
+        {item.artistName && (
+          <p className="text-amber-300/80 text-[11px] font-semibold line-clamp-1">{item.artistName}</p>
+        )}
+      </div>
+    </button>
+  );
+}
+
+// ─── Inventar-Item-Detail-Modal ────────────────────────────────────────────────
+
+function InventoryItemDetailModal({ item, onClose }: { item: InventoryItem; onClose: () => void }) {
   const lang = useLang();
   const [playing, setPlaying] = useState(false);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
@@ -1039,117 +1088,129 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
   };
 
   return (
-    <div className="group relative flex flex-col rounded-xl overflow-hidden bg-[#181818] hover:bg-[#282828] transition-all duration-200">
-
-      {/* Quadratisches Album-Art — identisch mit Shop ItemCard */}
-      <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl m-3 mb-0" style={{ width: 'calc(100% - 1.5rem)' }}>
-        <ItemTypeBadge type={item.type} />
-        {getDisplayImageUrl(item) ? (
-          <>
-            <Image src={getDisplayImageUrl(item)!} alt="" fill className="object-cover scale-110 blur-xl opacity-40" />
-            <Image src={getDisplayImageUrl(item)!} alt={item.title} fill className="object-contain" />
-          </>
-        ) : (
-          <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
-            <span className="opacity-30 text-5xl"><TypeIcon type={item.type} /></span>
-          </div>
-        )}
-
-        {/* Play-Button auf dem Bild — links unten, amber */}
-        {item.type === 'song' && item.contentUrl && (
-          <>
-            <audio ref={audioRef} src={item.contentUrl} onEnded={() => setPlaying(false)} />
-            <button
-              onClick={e => { e.stopPropagation(); togglePlay(); }}
-              className={`absolute bottom-2 left-2 w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center shadow-xl transition-all duration-200 ${
-                playing ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0'
-              }`}
-            >
-              {playing ? <FaPause size={12} className="text-black" /> : <FaPlay size={12} className="text-black ml-0.5" />}
-            </button>
-          </>
-        )}
-
-        {/* Edition-Badge auf dem Bild */}
-        {item.editionNumber != null && item.nftMaxSupply != null && (
-          <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm border border-violet-500/30 rounded-lg px-2 py-0.5">
-            <p className="text-violet-300 text-[10px] font-bold">Edition #{item.editionNumber} / {item.nftMaxSupply}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Textbereich */}
-      <div className="px-3 pt-3 pb-2 flex flex-col gap-0.5 flex-1">
-        <p className="text-white font-bold text-sm leading-snug line-clamp-1">{item.title}</p>
-        {item.artistName && (
-          <p className="text-amber-300/80 text-[11px] font-semibold">{item.artistName}</p>
-        )}
-        {item.description && (
-          <p className="text-zinc-400 text-[11px] leading-relaxed line-clamp-2 mt-0.5">{item.description}</p>
-        )}
-
-        {/* NFT-Attribut-Chips */}
-        <div className="flex flex-wrap gap-1 mt-2">
-          {[['Type', TYPE_LABELS[item.type]], ['Platform', 'D.FAITH'], ['Royalties', '5%']].map(([k, v]) => (
-            <span key={k} className="bg-zinc-800/80 border border-white/[0.06] rounded-md px-1.5 py-0.5 text-[9px] text-zinc-400">
-              <span className="text-zinc-600">{k}:</span> {v}
-            </span>
-          ))}
-          {item.editionNumber != null && item.nftMaxSupply != null && (
-            <span className="bg-violet-900/40 border border-violet-500/30 rounded-md px-1.5 py-0.5 text-[9px] font-semibold text-violet-300">
-              Edition #{item.editionNumber} / {item.nftMaxSupply}
-            </span>
+    <div
+      className="fixed inset-0 z-[999] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0"
+      onClick={onClose}
+    >
+      <div
+        className="bg-[#161410] border border-white/[0.08] rounded-2xl w-full max-w-sm shadow-2xl max-h-[88vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* ── Album-Art (groß) ── */}
+        <div className="relative w-full aspect-square overflow-hidden">
+          <ItemTypeBadge type={item.type} />
+          {getDisplayImageUrl(item) ? (
+            <>
+              <Image src={getDisplayImageUrl(item)!} alt="" fill className="object-cover scale-110 blur-xl opacity-40" />
+              <Image src={getDisplayImageUrl(item)!} alt={item.title} fill className="object-contain" />
+            </>
+          ) : (
+            <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
+              <span className="opacity-30 text-6xl"><TypeIcon type={item.type} /></span>
+            </div>
           )}
-          {item.printMint && (
-            <a
-              href={`https://solscan.io/token/${item.printMint}`}
-              target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-0.5 bg-violet-900/30 border border-violet-500/20 rounded-md px-1.5 py-0.5 text-[9px] text-violet-400 hover:text-violet-300 transition-colors"
-            >
-              <FaGem size={7} /> On-Chain
-            </a>
+
+          <button
+            onClick={onClose}
+            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition-colors"
+          >
+            <FaTimes size={14} />
+          </button>
+
+          {/* Play-Button — links unten, amber */}
+          {item.type === 'song' && item.contentUrl && (
+            <>
+              <audio ref={audioRef} src={item.contentUrl} onEnded={() => setPlaying(false)} />
+              <button
+                onClick={togglePlay}
+                className="absolute bottom-2 left-2 w-11 h-11 rounded-full bg-amber-400 flex items-center justify-center shadow-xl transition-all duration-200"
+              >
+                {playing ? <FaPause size={13} className="text-black" /> : <FaPlay size={13} className="text-black ml-0.5" />}
+              </button>
+            </>
+          )}
+
+          {/* Edition-Badge auf dem Bild */}
+          {item.editionNumber != null && item.nftMaxSupply != null && (
+            <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm border border-violet-500/30 rounded-lg px-2 py-0.5">
+              <p className="text-violet-300 text-[10px] font-bold">Edition #{item.editionNumber} / {item.nftMaxSupply}</p>
+            </div>
           )}
         </div>
-      </div>
 
-      {/* Kauf-Bereich: Download (Song) / Video / NFT */}
-      <div className="px-3 pb-3 pt-1 space-y-1.5">
-        {item.type === 'song' && item.contentUrl && (
-          <a href={item.contentUrl} download
-            className="flex items-center justify-center gap-2 w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2 text-zinc-300 text-xs font-semibold transition-colors">
-            <FaDownload size={10} /> Download
-          </a>
-        )}
-        {item.type === 'video' && item.contentUrl && (
-          showVideoPlayer ? (
-            getYoutubeEmbedUrl(item.contentUrl) ? (
-              <div className="rounded-lg overflow-hidden border border-red-800/30 bg-black aspect-video">
-                <iframe
-                  src={`${getYoutubeEmbedUrl(item.contentUrl)}?autoplay=1&rel=0`}
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            ) : (
-              <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full bg-red-900/20 hover:bg-red-900/30 border border-red-800/30 rounded-lg py-2 text-red-300 text-xs font-semibold transition-colors">
-                <FaExternalLinkAlt size={10} /> {t('shop.watchVideo', lang)}
+        {/* ── Textbereich ── */}
+        <div className="p-4">
+          <p className="text-white font-bold text-base leading-snug">{item.title}</p>
+          {item.artistName && (
+            <p className="text-amber-300/80 text-xs font-semibold mt-0.5">{item.artistName}</p>
+          )}
+          {item.description && (
+            <p className="text-zinc-400 text-xs leading-relaxed mt-2">{item.description}</p>
+          )}
+
+          {/* NFT-Attribut-Chips */}
+          <div className="flex flex-wrap gap-1 mt-3">
+            {[['Type', TYPE_LABELS[item.type]], ['Platform', 'D.FAITH'], ['Royalties', '5%']].map(([k, v]) => (
+              <span key={k} className="bg-zinc-800/80 border border-white/[0.06] rounded-md px-1.5 py-0.5 text-[9px] text-zinc-400">
+                <span className="text-zinc-600">{k}:</span> {v}
+              </span>
+            ))}
+            {item.editionNumber != null && item.nftMaxSupply != null && (
+              <span className="bg-violet-900/40 border border-violet-500/30 rounded-md px-1.5 py-0.5 text-[9px] font-semibold text-violet-300">
+                Edition #{item.editionNumber} / {item.nftMaxSupply}
+              </span>
+            )}
+            {item.printMint && (
+              <a
+                href={`https://solscan.io/token/${item.printMint}`}
+                target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-0.5 bg-violet-900/30 border border-violet-500/20 rounded-md px-1.5 py-0.5 text-[9px] text-violet-400 hover:text-violet-300 transition-colors"
+              >
+                <FaGem size={7} /> On-Chain
               </a>
-            )
-          ) : (
-            <button onClick={() => setShowVideoPlayer(true)}
-              className="flex items-center justify-center gap-2 w-full bg-red-900/20 hover:bg-red-900/30 border border-red-800/30 rounded-lg py-2 text-red-300 text-xs font-semibold transition-colors">
-              <FaVideo size={11} /> {t('shop.watchVideo', lang)}
-            </button>
-          )
-        )}
-        {(item.type === 'nft' || item.type === 'exclusive') && item.contentUrl && (
-          <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full bg-amber-900/20 hover:bg-amber-900/30 border border-amber-700/30 rounded-lg py-2 text-amber-300 text-xs font-semibold transition-colors">
-            <FaExternalLinkAlt size={10} /> {t('shop.openContent', lang)}
-          </a>
-        )}
+            )}
+          </div>
+
+          {/* ── Kauf-Bereich: Download (Song) / Video / NFT ── */}
+          <div className="mt-4 space-y-1.5">
+            {item.type === 'song' && item.contentUrl && (
+              <a href={item.contentUrl} download
+                className="flex items-center justify-center gap-2 w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2.5 text-zinc-300 text-xs font-semibold transition-colors">
+                <FaDownload size={10} /> Download
+              </a>
+            )}
+            {item.type === 'video' && item.contentUrl && (
+              showVideoPlayer ? (
+                getYoutubeEmbedUrl(item.contentUrl) ? (
+                  <div className="rounded-lg overflow-hidden border border-red-800/30 bg-black aspect-video">
+                    <iframe
+                      src={`${getYoutubeEmbedUrl(item.contentUrl)}?autoplay=1&rel=0`}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                ) : (
+                  <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full bg-red-900/20 hover:bg-red-900/30 border border-red-800/30 rounded-lg py-2.5 text-red-300 text-xs font-semibold transition-colors">
+                    <FaExternalLinkAlt size={10} /> {t('shop.watchVideo', lang)}
+                  </a>
+                )
+              ) : (
+                <button onClick={() => setShowVideoPlayer(true)}
+                  className="flex items-center justify-center gap-2 w-full bg-red-900/20 hover:bg-red-900/30 border border-red-800/30 rounded-lg py-2.5 text-red-300 text-xs font-semibold transition-colors">
+                  <FaVideo size={11} /> {t('shop.watchVideo', lang)}
+                </button>
+              )
+            )}
+            {(item.type === 'nft' || item.type === 'exclusive') && item.contentUrl && (
+              <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full bg-amber-900/20 hover:bg-amber-900/30 border border-amber-700/30 rounded-lg py-2.5 text-amber-300 text-xs font-semibold transition-colors">
+                <FaExternalLinkAlt size={10} /> {t('shop.openContent', lang)}
+              </a>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1161,6 +1222,7 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState('');
   const [expandedArtists, setExpandedArtists] = useState<Set<string>>(new Set());
+  const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -1285,12 +1347,16 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
               {/* Items dieser Gruppe */}
               {expandedArtists.has(group.wallet) && (
                 <div className="grid grid-cols-2 gap-3 pl-2 border-l-2 border-amber-500/20 ml-5">
-                  {group.items.map(item => <InventoryItemCard key={item.id} item={item} />)}
+                  {group.items.map(item => <InventoryItemCard key={item.id} item={item} onOpen={setDetailItem} />)}
                 </div>
               )}
             </div>
           ))}
         </div>
+      )}
+
+      {detailItem && (
+        <InventoryItemDetailModal item={detailItem} onClose={() => setDetailItem(null)} />
       )}
     </div>
   );
