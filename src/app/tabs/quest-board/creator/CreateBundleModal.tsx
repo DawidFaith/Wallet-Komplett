@@ -97,8 +97,10 @@ interface CreateBundleModalProps {
   open: boolean;
   onClose: () => void;
   walletAddress: string;
-  /** Bei Platform-Accounts: echte Wallet, deren Guthaben belastet wird (siehe CreatorBoard-Umschalter) */
-  billingWallet?: string;
+  /** Optional: anderer Account, dessen Instagram/TikTok-Beiträge beim Durchsuchen
+   * angezeigt werden (z.B. Dawid Faith Polska) — Quest/Reputation/Guthaben
+   * bleiben trotzdem bei walletAddress (siehe CreatorBoard-Umschalter). */
+  mediaSourceWallet?: string;
   creatorBalance: number;
   verified: { youtube: boolean; instagram: boolean; tiktok: boolean; facebook: boolean };
   onCreated: () => void;
@@ -108,8 +110,9 @@ interface CreateBundleModalProps {
 type Step = 1 | 2 | 3 | 4;
 
 export default function CreateBundleModal({
-  open, onClose, walletAddress, billingWallet, creatorBalance, verified, onCreated, onOpenDeposit,
+  open, onClose, walletAddress, mediaSourceWallet, creatorBalance, verified, onCreated, onOpenDeposit,
 }: CreateBundleModalProps) {
+  const effectiveMediaWallet = mediaSourceWallet || walletAddress;
   const lang = useLang();
 
   // ── Quest-Typ-Wähler ────────────────────────────────────────────────────────
@@ -293,7 +296,7 @@ export default function CreateBundleModal({
     else if (platform === 'facebook') fetchFbMedia();
     fetchPlatformUserCount(platform);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [platform, open]);
+  }, [platform, open, effectiveMediaWallet]);
 
   // Media-Fetch Funktionen
   const fetchQuestMedia = async () => {
@@ -302,7 +305,7 @@ export default function CreateBundleModal({
     try {
       const endpoint = platform === 'youtube'
         ? `/api/youtube-quests/available-media?wallet=${encodeURIComponent(walletAddress)}`
-        : `/api/tiktok-quests/available-media?wallet=${encodeURIComponent(walletAddress)}`;
+        : `/api/tiktok-quests/available-media?wallet=${encodeURIComponent(effectiveMediaWallet)}`;
       const res  = await fetch(endpoint);
       const data = await res.json().catch(() => ({})) as { media?: AvailableQuestMediaItem[]; error?: string };
       if (!res.ok) { setQuestMediaError(data.error ?? 'Fehler beim Laden'); setAvailableQuestMedia([]); return; }
@@ -314,7 +317,7 @@ export default function CreateBundleModal({
   const fetchIgMedia = async () => {
     setLoadingIgMedia(true);
     try {
-      const res  = await fetch(`/api/instagram-quests/available-media?wallet=${encodeURIComponent(walletAddress)}`);
+      const res  = await fetch(`/api/instagram-quests/available-media?wallet=${encodeURIComponent(effectiveMediaWallet)}`);
       const data = await res.json() as { media?: AvailableIgMediaItem[] };
       setAvailableIgMedia(data.media ?? []);
     } finally { setLoadingIgMedia(false); }
@@ -372,7 +375,6 @@ export default function CreateBundleModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           creatorWallet:       walletAddress,
-          billingWallet:       billingWallet || undefined,
           platform,
           videoUrl:            videoUrl.trim(),
           videoId:             videoMediaId.trim() || undefined,

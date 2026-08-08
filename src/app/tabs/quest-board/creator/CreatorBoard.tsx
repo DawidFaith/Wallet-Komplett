@@ -57,9 +57,12 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
   const lang = useLang();
   const tokenName = rewardToken ?? 'D.FAITH';
   const isDawidFaith = walletAddress.toLowerCase() === DAWID_FAITH_WALLET;
-  const [actingAsWallet, setActingAsWallet] = useState<string | null>(null);
-  const effectiveWallet = isDawidFaith && actingAsWallet ? actingAsWallet : walletAddress;
-  const isPlatformIdentity = effectiveWallet !== walletAddress;
+  // Nur die Inhalte-Quelle (welcher Instagram/TikTok-Account durchsucht wird)
+  // wechselt hier — Quest, Reputation und Guthaben bleiben immer bei Dawid
+  // Faith selbst, damit alles einheitlich unter seiner echten Identität läuft.
+  const [mediaSourceAccount, setMediaSourceAccount] = useState<string | null>(null);
+  const mediaSourceWallet = isDawidFaith && mediaSourceAccount ? mediaSourceAccount : walletAddress;
+  const usingSubAccountMedia = mediaSourceWallet !== walletAddress;
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showBundleModal, setShowBundleModal] = useState(false);
@@ -88,8 +91,6 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
   const [concertDeleting, setConcertDeleting] = useState<string | null>(null);
   const [concertError, setConcertError] = useState('');
 
-  // Guthaben ist immer an die echte, eingeloggte Wallet gebunden — auch wenn
-  // gerade "als" ein Platform-Account (z.B. Dawid Faith Polska) erstellt wird
   const loadCreatorBalance = useCallback(async () => {
     setBalanceLoading(true);
     try {
@@ -109,22 +110,22 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       const res = await fetch('/api/youtube-quests/quests');
       const data = await res.json();
       const mine = (data.quests ?? []).filter(
-        (q: QuestIndexEntry) => q.creatorWallet === effectiveWallet.toLowerCase() && !q.bundleId
+        (q: QuestIndexEntry) => q.creatorWallet === walletAddress.toLowerCase() && !q.bundleId
       );
       setQuests(mine);
     } catch { /* ignorieren */ }
     finally { setLoading(false); }
-  }, [effectiveWallet]);
+  }, [walletAddress]);
 
   const loadCreatorBundles = useCallback(async () => {
     setBundlesLoading(true);
     try {
-      const res  = await fetch(`/api/quest-bundles?wallet=${effectiveWallet}&creator=${effectiveWallet}`);
+      const res  = await fetch(`/api/quest-bundles?wallet=${walletAddress}&creator=${walletAddress}`);
       const data = await res.json() as { bundles?: QuestBundleWithItems[] };
       setBundles(data.bundles ?? []);
     } catch { /* ignorieren */ }
     finally { setBundlesLoading(false); }
-  }, [effectiveWallet]);
+  }, [walletAddress]);
 
   const loadStreamingQuests = useCallback(async () => {
     setStreamingLoading(true);
@@ -153,17 +154,14 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       const res = await fetch(`/api/quest-bundles/${bundleId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          creatorWallet: effectiveWallet,
-          billingWallet: isPlatformIdentity ? walletAddress : undefined,
-        }),
+        body: JSON.stringify({ creatorWallet: walletAddress }),
       });
       const data = await res.json() as { success?: boolean; error?: string };
       if (!res.ok) { alert(data.error ?? t('cb.cancelError', lang)); return; }
       await Promise.all([loadCreatorBalance(), loadCreatorBundles()]);
     } catch { alert(t('cb.networkError', lang)); }
     finally { setCancellingBundleId(null); }
-  }, [effectiveWallet, isPlatformIdentity, walletAddress, loadCreatorBalance, loadCreatorBundles, lang]);
+  }, [walletAddress, loadCreatorBalance, loadCreatorBundles, lang]);
 
   const handleCancel = useCallback(async (questId: string) => {
     setCancellingId(questId);
@@ -172,7 +170,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       const res = await fetch(`/api/youtube-quests/quests/${questId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ creatorWallet: effectiveWallet }),
+        body: JSON.stringify({ creatorWallet: walletAddress }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -186,17 +184,14 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
     } finally {
       setCancellingId(null);
     }
-  }, [effectiveWallet, loadCreatorBalance, loadCreatorQuests, lang]);
+  }, [walletAddress, loadCreatorBalance, loadCreatorQuests, lang]);
 
   useEffect(() => {
     // Erst abgelaufene Quests erstatten, dann Balance + Quests laden
     fetch('/api/youtube-quests/refund-expired', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        creatorWallet: effectiveWallet,
-        billingWallet: isPlatformIdentity ? walletAddress : undefined,
-      }),
+      body: JSON.stringify({ creatorWallet: walletAddress }),
     }).finally(() => {
       loadCreatorQuests();
       loadCreatorBalance();
@@ -204,41 +199,42 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       loadStreamingQuests();
       loadConcerts();
     });
-  }, [loadCreatorQuests, loadCreatorBalance, loadCreatorBundles, loadStreamingQuests, loadConcerts, walletAddress, effectiveWallet, isPlatformIdentity]);
+  }, [loadCreatorQuests, loadCreatorBalance, loadCreatorBundles, loadStreamingQuests, loadConcerts, walletAddress]);
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 space-y-5">
-      {/* Account-Umschalter (nur für Dawid Faith sichtbar) */}
+      {/* Inhalte-Quelle für neue Quests (nur für Dawid Faith sichtbar) — Quest,
+          Reputation und Guthaben bleiben immer bei Dawid Faith selbst, das hier
+          wählt nur, von welchem Instagram/TikTok-Account beim Erstellen die
+          Beiträge zur Auswahl angezeigt werden. */}
       {isDawidFaith && (
-        <div className="flex gap-2 bg-[#1a1710] rounded-xl p-1.5 border border-white/[0.08]">
-          <button
-            onClick={() => setActingAsWallet(null)}
-            className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all ${
-              !actingAsWallet ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            Dawid Faith
-          </button>
-          {CREATOR_SUB_ACCOUNTS.map(a => (
+        <div>
+          <p className="text-zinc-600 text-[10px] uppercase tracking-widest mb-1.5 px-1">Inhalte-Quelle beim Erstellen</p>
+          <div className="flex gap-2 bg-[#1a1710] rounded-xl p-1.5 border border-white/[0.08]">
             <button
-              key={a.key}
-              onClick={() => setActingAsWallet(a.wallet)}
+              onClick={() => setMediaSourceAccount(null)}
               className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all ${
-                actingAsWallet === a.wallet ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-zinc-300'
+                !mediaSourceAccount ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
-              {a.label}
+              Dawid Faith
             </button>
-          ))}
+            {CREATOR_SUB_ACCOUNTS.map(a => (
+              <button
+                key={a.key}
+                onClick={() => setMediaSourceAccount(a.wallet)}
+                className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all ${
+                  mediaSourceAccount === a.wallet ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                {a.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Credits Box — auch im Platform-Modus wird über das echte Guthaben bezahlt */}
-      {isPlatformIdentity && (
-        <p className="text-zinc-500 text-xs -mb-2">
-          ⚡ Quests für &ldquo;{CREATOR_SUB_ACCOUNTS.find(a => a.wallet === effectiveWallet)?.label}&rdquo; werden von deinem eigenen Guthaben bezahlt.
-        </p>
-      )}
+      {/* Credits Box */}
       <CreditsBox
         balance={creatorBalance}
         tokenName={tokenName}
@@ -253,14 +249,12 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       <div className="flex items-center justify-between">
         <h2 className="text-white font-bold text-lg">{t('cb.myQuests', lang)}</h2>
         <div className="flex gap-2">
-          {!isPlatformIdentity && (
-            <button
-              onClick={() => setShowConcertModal(true)}
-              className="bg-green-700 hover:bg-green-600 text-white font-semibold px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
-            >
-              <FaPlus size={12} /> 🎤 Konzert
-            </button>
-          )}
+          <button
+            onClick={() => setShowConcertModal(true)}
+            className="bg-green-700 hover:bg-green-600 text-white font-semibold px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
+          >
+            <FaPlus size={12} /> 🎤 Konzert
+          </button>
           <button
             onClick={() => setShowBundleModal(true)}
             className="bg-purple-700 hover:bg-purple-600 text-white font-semibold px-4 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
@@ -618,10 +612,10 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       <CreateBundleModal
         open={showBundleModal}
         onClose={() => setShowBundleModal(false)}
-        walletAddress={effectiveWallet}
-        billingWallet={isPlatformIdentity ? walletAddress : undefined}
+        walletAddress={walletAddress}
+        mediaSourceWallet={usingSubAccountMedia ? mediaSourceWallet : undefined}
         creatorBalance={creatorBalance}
-        verified={isPlatformIdentity ? { ...verified, instagram: true, tiktok: true } : verified}
+        verified={usingSubAccountMedia ? { ...verified, instagram: true, tiktok: true } : verified}
         onCreated={() => { loadCreatorBundles(); loadCreatorBalance(); loadStreamingQuests(); }}
         onOpenDeposit={() => setShowDeposit(true)}
       />

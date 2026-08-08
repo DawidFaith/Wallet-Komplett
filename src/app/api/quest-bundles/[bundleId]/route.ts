@@ -4,12 +4,8 @@ import {
   claimBundleCompletionBonus,
   getBundlesForCreator,
 } from '../../../lib/questDb';
-import { PLATFORM_ACCOUNTS } from '../../../lib/platformAccounts';
 
 export const dynamic = 'force-dynamic';
-
-const PLATFORM_ACCOUNT_WALLETS = new Set(Object.values(PLATFORM_ACCOUNTS).map(a => a.wallet));
-const DAWID_FAITH_WALLET = 'user_3dfvunr7ziaywue8bhzdqw2blsw';
 
 // ─── DELETE: Bundle stornieren (Creator) ─────────────────────────────────────
 export async function DELETE(
@@ -17,20 +13,15 @@ export async function DELETE(
   { params }: { params: Promise<{ bundleId: string }> },
 ) {
   const { bundleId } = await params;
-  let body: { creatorWallet?: string; billingWallet?: string };
+  let body: { creatorWallet?: string };
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: 'Ungültiger Request-Body' }, { status: 400 }); }
 
-  const { creatorWallet, billingWallet } = body;
+  const { creatorWallet } = body;
   if (!creatorWallet) return NextResponse.json({ error: 'creatorWallet fehlt' }, { status: 400 });
 
-  const isPlatformAccount = PLATFORM_ACCOUNT_WALLETS.has(creatorWallet.toLowerCase());
-  const refundWallet = (isPlatformAccount && billingWallet?.toLowerCase() === DAWID_FAITH_WALLET)
-    ? DAWID_FAITH_WALLET
-    : undefined;
-
   try {
-    const refund = await cancelQuestBundle(bundleId, creatorWallet.toLowerCase(), refundWallet);
+    const refund = await cancelQuestBundle(bundleId, creatorWallet.toLowerCase());
     if (refund === -1) {
       return NextResponse.json({ error: 'Bundle nicht gefunden oder keine Berechtigung' }, { status: 403 });
     }

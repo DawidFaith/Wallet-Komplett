@@ -91,8 +91,8 @@ export async function POST(req: NextRequest) {
         updated_at
       ) VALUES (
         ${account.wallet},
-        TRUE,
-        TRUE,
+        ${account.publiclyListed},
+        ${account.publiclyListed},
         ${account.displayName},
         ${account.handle},
         TRUE,
@@ -107,8 +107,8 @@ export async function POST(req: NextRequest) {
         NOW()
       )
       ON CONFLICT (wallet_address) DO UPDATE SET
-        is_artist          = TRUE,
-        is_platform_user   = TRUE,
+        is_artist          = ${account.publiclyListed},
+        is_platform_user   = ${account.publiclyListed},
         display_name       = ${account.displayName},
         instagram_handle   = ${account.handle},
         instagram_verified = TRUE,

@@ -1784,12 +1784,6 @@ function PlatformSection({ secret }: { secret: string }) {
   const [questsLoading, setQuestsLoading] = React.useState(false);
   const [questMsg, setQuestMsg] = React.useState('');
 
-  // ── TikTok-Quest (nur Accounts mit TikTok-Handle) ──────────────────────────
-  const [tiktokUrl, setTiktokUrl] = React.useState('');
-  const [tiktokDesc, setTiktokDesc] = React.useState('');
-  const [tiktokCreating, setTiktokCreating] = React.useState(false);
-  const [tiktokMsg, setTiktokMsg] = React.useState('');
-
   // ── Credits State ──────────────────────────────────────────────────────────
   const [creditsData, setCreditsData] = React.useState<{
     treasuryWallet: string;
@@ -1909,32 +1903,6 @@ function PlatformSection({ secret }: { secret: string }) {
     finally { setQuestsLoading(false); }
   };
 
-  const createTiktokQuest = async () => {
-    if (!tiktokUrl.trim()) return;
-    setTiktokCreating(true); setTiktokMsg('');
-    try {
-      const res = await fetch(`/api/admin/platform-quests/tiktok?account=${account}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
-        body: JSON.stringify({
-          videoUrl: tiktokUrl.trim(),
-          description: tiktokDesc.trim() || undefined,
-          rewardAmount: 150,
-          maxCompletions: 50,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setTiktokMsg('✅ TikTok-Quest erstellt!');
-        setTiktokUrl(''); setTiktokDesc('');
-        await loadQuests();
-      } else {
-        setTiktokMsg(`❌ ${data.error}`);
-      }
-    } catch { setTiktokMsg('❌ Netzwerkfehler'); }
-    finally { setTiktokCreating(false); }
-  };
-
   const isSetup = status && (status as { exists?: boolean }).exists;
   const metaOk = status && (status as { metaTokenOk?: boolean }).metaTokenOk;
   const igId = status && (status as { igAccountId?: string }).igAccountId;
@@ -2050,7 +2018,10 @@ function PlatformSection({ secret }: { secret: string }) {
         {msg && <p className="mt-3 text-sm text-center">{msg}</p>}
       </div>
 
-      {/* ── Platform-Quests ──────────────────────────────────────────────── */}
+      {/* ── Platform-Quests (nur Ecosystem — Polska-Quests laufen über den
+          CreatorBoard-Umschalter, damit sie unter Dawid Faiths echter
+          Identität/Reputation landen statt separat) ──────────────────────── */}
+      {account === 'ecosystem' && (
       <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
         <h2 className="text-lg font-bold text-white mb-1">📱 Platform-Quests (Instagram)</h2>
         <p className="text-zinc-500 text-sm mb-4">Erstellt automatisch bis zu 5 Comment-Quests aus den neuesten @{accountMeta.handle} Posts.</p>
@@ -2089,40 +2060,6 @@ function PlatformSection({ secret }: { secret: string }) {
           <p className="text-zinc-600 text-sm text-center py-4">Noch keine Platform-Quests vorhanden.</p>
         )}
       </div>
-
-      {/* ── Platform-Quest (TikTok, nur für Accounts mit TikTok-Handle) ──────── */}
-      {accountMeta.hasTiktok && (
-        <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
-          <h2 className="text-lg font-bold text-white mb-1">🎵 Platform-Quest (TikTok)</h2>
-          <p className="text-zinc-500 text-sm mb-4">
-            Kein Auto-Fetch für TikTok verfügbar — Link zu einem Video von @{accountMeta.handle} einfügen.
-            Das Video muss zu diesem Account gehören.
-          </p>
-
-          <div className="space-y-2 mb-3">
-            <input
-              value={tiktokUrl}
-              onChange={e => setTiktokUrl(e.target.value)}
-              placeholder="https://www.tiktok.com/@dawidfaith_polska/video/..."
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/50"
-            />
-            <input
-              value={tiktokDesc}
-              onChange={e => setTiktokDesc(e.target.value)}
-              placeholder="Beschreibung (optional)"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/50"
-            />
-          </div>
-
-          <button
-            onClick={createTiktokQuest}
-            disabled={tiktokCreating || !tiktokUrl.trim() || !isSetup}
-            className="w-full bg-pink-700 hover:bg-pink-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
-          >
-            {tiktokCreating ? 'Erstelle…' : '✨ TikTok-Quest erstellen'}
-          </button>
-          {tiktokMsg && <p className="mt-3 text-sm text-center">{tiktokMsg}</p>}
-        </div>
       )}
 
       {/* ── Platform Credits Übersicht ───────────────────────────────────────── */}
