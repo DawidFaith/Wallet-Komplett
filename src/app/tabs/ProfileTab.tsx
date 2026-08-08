@@ -361,7 +361,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
   // Künstler-Name/-Bild kommen ausschließlich von Clerk — bei jedem Profil-Laden
   // automatisch synchronisieren, kein manueller Bearbeiten-Schritt nötig.
   useEffect(() => {
-    if (!p?.isArtist || !account?.address || !_clerkUser) return;
+    if (!data?.profile?.isArtist || !account?.address || !_clerkUser) return;
     const clerkDisplayName = _clerkUser.fullName || [_clerkUser.firstName, _clerkUser.lastName].filter(Boolean).join(' ') || _clerkUser.username || null;
     fetch('/api/youtube-quests/profile', {
       method: 'POST',
@@ -374,7 +374,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
         displayPlatform: 'clerk',
       }),
     }).catch(() => {});
-  }, [p?.isArtist, account?.address, _clerkUser?.imageUrl, _clerkUser?.fullName, _clerkUser?.firstName, _clerkUser?.lastName, _clerkUser?.username]);
+  }, [data?.profile?.isArtist, account?.address, _clerkUser?.imageUrl, _clerkUser?.fullName, _clerkUser?.firstName, _clerkUser?.lastName, _clerkUser?.username]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
   useEffect(() => { loadDfaithBalance(); }, [loadDfaithBalance]);
