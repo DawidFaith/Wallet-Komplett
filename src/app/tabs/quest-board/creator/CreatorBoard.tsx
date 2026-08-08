@@ -38,6 +38,13 @@ const TYPE_LABELS: Record<QuestType, string> = {
   share:      'share',
 };
 
+// Zusätzliche Accounts, für die Dawid Faith direkt hier Quests erstellen kann
+// (virtuelle Platform-Wallets ohne echten Login, siehe lib/platformAccounts.ts)
+const DAWID_FAITH_WALLET = 'user_3dfvunr7ziaywue8bhzdqw2blsw';
+const CREATOR_SUB_ACCOUNTS = [
+  { key: 'polska', wallet: 'platform_dawid_faith_polska', label: 'Dawid Faith Polska' },
+] as const;
+
 interface CreatorBoardProps {
   walletAddress: string;
   binding: YouTubeBinding | null;
@@ -49,6 +56,10 @@ interface CreatorBoardProps {
 export default function CreatorBoard({ walletAddress, binding: _binding, verified, rewardToken }: CreatorBoardProps) {
   const lang = useLang();
   const tokenName = rewardToken ?? 'D.FAITH';
+  const isDawidFaith = walletAddress.toLowerCase() === DAWID_FAITH_WALLET;
+  const [actingAsWallet, setActingAsWallet] = useState<string | null>(null);
+  const effectiveWallet = isDawidFaith && actingAsWallet ? actingAsWallet : walletAddress;
+  const isPlatformIdentity = effectiveWallet !== walletAddress;
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showBundleModal, setShowBundleModal] = useState(false);
@@ -81,14 +92,14 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
     setBalanceLoading(true);
     try {
       const res = await fetch(
-        `/api/youtube-quests/creator-balance?wallet=${walletAddress}&t=${Date.now()}`,
+        `/api/youtube-quests/creator-balance?wallet=${effectiveWallet}&t=${Date.now()}`,
         { cache: 'no-store' },
       );
       const data = await res.json();
       setCreatorBalance(data.balance ?? 0);
     } catch { /* ignorieren */ }
     finally { setBalanceLoading(false); }
-  }, [walletAddress]);
+  }, [effectiveWallet]);
 
   const loadCreatorQuests = useCallback(async () => {
     setLoading(true);
@@ -96,22 +107,22 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       const res = await fetch('/api/youtube-quests/quests');
       const data = await res.json();
       const mine = (data.quests ?? []).filter(
-        (q: QuestIndexEntry) => q.creatorWallet === walletAddress.toLowerCase() && !q.bundleId
+        (q: QuestIndexEntry) => q.creatorWallet === effectiveWallet.toLowerCase() && !q.bundleId
       );
       setQuests(mine);
     } catch { /* ignorieren */ }
     finally { setLoading(false); }
-  }, [walletAddress]);
+  }, [effectiveWallet]);
 
   const loadCreatorBundles = useCallback(async () => {
     setBundlesLoading(true);
     try {
-      const res  = await fetch(`/api/quest-bundles?wallet=${walletAddress}&creator=${walletAddress}`);
+      const res  = await fetch(`/api/quest-bundles?wallet=${effectiveWallet}&creator=${effectiveWallet}`);
       const data = await res.json() as { bundles?: QuestBundleWithItems[] };
       setBundles(data.bundles ?? []);
     } catch { /* ignorieren */ }
     finally { setBundlesLoading(false); }
-  }, [walletAddress]);
+  }, [effectiveWallet]);
 
   const loadStreamingQuests = useCallback(async () => {
     setStreamingLoading(true);
@@ -140,14 +151,14 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       const res = await fetch(`/api/quest-bundles/${bundleId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ creatorWallet: walletAddress }),
+        body: JSON.stringify({ creatorWallet: effectiveWallet }),
       });
       const data = await res.json() as { success?: boolean; error?: string };
       if (!res.ok) { alert(data.error ?? t('cb.cancelError', lang)); return; }
       await Promise.all([loadCreatorBalance(), loadCreatorBundles()]);
     } catch { alert(t('cb.networkError', lang)); }
     finally { setCancellingBundleId(null); }
-  }, [walletAddress, loadCreatorBalance, loadCreatorBundles]);
+  }, [effectiveWallet, loadCreatorBalance, loadCreatorBundles]);
 
   const handleCancel = useCallback(async (questId: string) => {
     setCancellingId(questId);
@@ -156,7 +167,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       const res = await fetch(`/api/youtube-quests/quests/${questId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ creatorWallet: walletAddress }),
+        body: JSON.stringify({ creatorWallet: effectiveWallet }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -170,14 +181,14 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
     } finally {
       setCancellingId(null);
     }
-  }, [walletAddress, loadCreatorBalance, loadCreatorQuests]);
+  }, [effectiveWallet, loadCreatorBalance, loadCreatorQuests]);
 
   useEffect(() => {
     // Erst abgelaufene Quests erstatten, dann Balance + Quests laden
     fetch('/api/youtube-quests/refund-expired', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ creatorWallet: walletAddress }),
+      body: JSON.stringify({ creatorWallet: effectiveWallet }),
     }).finally(() => {
       loadCreatorQuests();
       loadCreatorBalance();
@@ -189,27 +200,60 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 space-y-5">
-      {/* Credits Box */}
-      <CreditsBox
-        balance={creatorBalance}
-        tokenName={tokenName}
-        subtitle={creatorBalance > 0 ? t('cb.available', lang) : tFmt('cb.topUp', lang, { token: tokenName })}
-        secondaryLabel={t('cb.topUpBtn', lang)}
-        onSecondary={() => setShowDeposit(true)}
-        onRefresh={loadCreatorBalance}
-        refreshLoading={balanceLoading}
-      />
+      {/* Account-Umschalter (nur für Dawid Faith sichtbar) */}
+      {isDawidFaith && (
+        <div className="flex gap-2 bg-[#1a1710] rounded-xl p-1.5 border border-white/[0.08]">
+          <button
+            onClick={() => setActingAsWallet(null)}
+            className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all ${
+              !actingAsWallet ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            Dawid Faith
+          </button>
+          {CREATOR_SUB_ACCOUNTS.map(a => (
+            <button
+              key={a.key}
+              onClick={() => setActingAsWallet(a.wallet)}
+              className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all ${
+                actingAsWallet === a.wallet ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              {a.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Credits Box (Platform-Accounts brauchen kein eigenes Guthaben) */}
+      {isPlatformIdentity ? (
+        <div className="bg-[#1a1710] rounded-2xl border border-white/[0.08] px-4 py-3 text-sm text-zinc-400">
+          ⚡ Quests für diesen Account laufen über das Platform-Guthaben — kein eigenes Guthaben nötig.
+        </div>
+      ) : (
+        <CreditsBox
+          balance={creatorBalance}
+          tokenName={tokenName}
+          subtitle={creatorBalance > 0 ? t('cb.available', lang) : tFmt('cb.topUp', lang, { token: tokenName })}
+          secondaryLabel={t('cb.topUpBtn', lang)}
+          onSecondary={() => setShowDeposit(true)}
+          onRefresh={loadCreatorBalance}
+          refreshLoading={balanceLoading}
+        />
+      )}
 
       {/* Header + Buttons */}
       <div className="flex items-center justify-between">
         <h2 className="text-white font-bold text-lg">{t('cb.myQuests', lang)}</h2>
         <div className="flex gap-2">
-          <button
-            onClick={() => setShowConcertModal(true)}
-            className="bg-green-700 hover:bg-green-600 text-white font-semibold px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
-          >
-            <FaPlus size={12} /> 🎤 Konzert
-          </button>
+          {!isPlatformIdentity && (
+            <button
+              onClick={() => setShowConcertModal(true)}
+              className="bg-green-700 hover:bg-green-600 text-white font-semibold px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
+            >
+              <FaPlus size={12} /> 🎤 Konzert
+            </button>
+          )}
           <button
             onClick={() => setShowBundleModal(true)}
             className="bg-purple-700 hover:bg-purple-600 text-white font-semibold px-4 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm"
@@ -567,9 +611,9 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
       <CreateBundleModal
         open={showBundleModal}
         onClose={() => setShowBundleModal(false)}
-        walletAddress={walletAddress}
-        creatorBalance={creatorBalance}
-        verified={verified}
+        walletAddress={effectiveWallet}
+        creatorBalance={isPlatformIdentity ? 999_999_999 : creatorBalance}
+        verified={isPlatformIdentity ? { ...verified, instagram: true, tiktok: true } : verified}
         onCreated={() => { loadCreatorBundles(); loadCreatorBalance(); loadStreamingQuests(); }}
         onOpenDeposit={() => setShowDeposit(true)}
       />
