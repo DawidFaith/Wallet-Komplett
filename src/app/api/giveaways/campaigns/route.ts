@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 export const revalidate = 0;
 
-const VALID_PLATFORMS: GiveawayPlatform[] = ['instagram', 'tiktok', 'facebook', 'youtube'];
+const VALID_PLATFORMS: GiveawayPlatform[] = ['instagram', 'tiktok', 'facebook', 'youtube', 'instagram_polska', 'tiktok_polska'];
 
 export async function GET(req: NextRequest) {
   const artistWallet = req.nextUrl.searchParams.get('artistWallet');
@@ -60,11 +60,11 @@ export async function POST(req: NextRequest) {
     // manuell eingefügt hat, wird sie hier serverseitig nachträglich aufgelöst.
     let mediaId: string | null = p.mediaId?.trim() || null;
 
-    if (!mediaId && platform === 'tiktok') {
+    if (!mediaId && (platform === 'tiktok' || platform === 'tiktok_polska')) {
       mediaId = extractTiktokVideoId(postUrl);
     } else if (!mediaId && platform === 'youtube') {
       mediaId = extractYoutubeVideoId(postUrl);
-    } else if (!mediaId && platform === 'instagram') {
+    } else if (!mediaId && (platform === 'instagram' || platform === 'instagram_polska')) {
       try {
         const res = await fetch(`${req.nextUrl.origin}/api/instagram-quests/resolve-reel?url=${encodeURIComponent(postUrl)}`);
         if (res.ok) {

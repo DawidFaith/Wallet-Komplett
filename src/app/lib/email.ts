@@ -212,7 +212,11 @@ export async function sendGiveawayParticipationEmail(params: {
   }
   const lang = params.lang ?? 'de';
   const s = GIVEAWAY_EMAIL_STRINGS[lang];
-  const platformLabel = params.platform === 'tiktok' ? 'TikTok' : params.platform.charAt(0).toUpperCase() + params.platform.slice(1);
+  const PLATFORM_LABELS: Record<string, string> = {
+    tiktok: 'TikTok', instagram: 'Instagram', facebook: 'Facebook', youtube: 'YouTube',
+    instagram_polska: 'Instagram', tiktok_polska: 'TikTok',
+  };
+  const platformLabel = PLATFORM_LABELS[params.platform] ?? (params.platform.charAt(0).toUpperCase() + params.platform.slice(1));
   const buttonStyle = 'display:inline-block;background:#f59e0b;color:#000;padding:8px 16px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:13px;';
   const mythicButtonStyle = 'display:inline-block;background:#a855f7;color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:13px;';
 

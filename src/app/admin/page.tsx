@@ -3443,7 +3443,7 @@ interface AdminGiveawayEntry {
   id: string;
   email: string;
   lang: 'de' | 'en' | 'pl';
-  platform: 'instagram' | 'tiktok' | 'facebook' | 'youtube';
+  platform: 'instagram' | 'tiktok' | 'facebook' | 'youtube' | 'instagram_polska' | 'tiktok_polska';
   handle: string;
   status: 'pending' | 'verified' | 'credited' | 'rejected';
   creditedWallet: string | null;
@@ -3460,6 +3460,8 @@ const GIVEAWAY_PLATFORM_ICON: Record<AdminGiveawayEntry['platform'], React.React
   tiktok: <FaTiktok className="text-zinc-200" />,
   facebook: <FaFacebook className="text-blue-500" />,
   youtube: <FaYoutube className="text-red-500" />,
+  instagram_polska: <FaInstagram className="text-pink-500" />,
+  tiktok_polska: <FaTiktok className="text-zinc-200" />,
 };
 
 const GIVEAWAY_STATUS_LABEL: Record<AdminGiveawayEntry['status'], { label: string; className: string }> = {

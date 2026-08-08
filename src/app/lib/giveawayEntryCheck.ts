@@ -34,11 +34,11 @@ export async function checkGiveawayEntryComment(campaign: GiveawayCampaign, entr
     }
     return verifyFacebookEntry(platformCfg.postUrl, entry.code, pageIdHint, campaign.id, entry.handle, entry.id, campaign.createdAt);
   }
-  if (entry.platform === 'instagram') {
+  if (entry.platform === 'instagram' || entry.platform === 'instagram_polska') {
     if (!platformCfg.mediaId) return { found: false };
     return { found: await verifyInstagramEntry(platformCfg.mediaId, entry.handle, campaign.requiredText) };
   }
-  if (entry.platform === 'tiktok') {
+  if (entry.platform === 'tiktok' || entry.platform === 'tiktok_polska') {
     return { found: await verifyTiktokEntry(platformCfg.mediaId ?? platformCfg.postUrl, entry.handle, campaign.requiredText) };
   }
   if (entry.platform === 'youtube') {

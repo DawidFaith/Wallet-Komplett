@@ -10,17 +10,31 @@ import { slugify } from '../utils/slug';
 
 // ─── Giveaways (Artist-Tool) ──────────────────────────────────────────────────
 
-type GiveawayPlatformKey = 'instagram' | 'tiktok' | 'facebook' | 'youtube';
+type GiveawayPlatformKey = 'instagram' | 'tiktok' | 'facebook' | 'youtube' | 'instagram_polska' | 'tiktok_polska';
+// "Wire"-Plattform: welcher available-media-Endpoint + welches Antwortformat gilt.
+// instagram_polska/tiktok_polska sind eigene Kampagnen-Slots (eigener Post, eigene
+// Auswahl), technisch aber identisch zu instagram/tiktok — nur der Account (Wallet)
+// unterscheidet sich.
+type WirePlatform = 'instagram' | 'tiktok' | 'facebook' | 'youtube';
+function wirePlatformOf(p: GiveawayPlatformKey): WirePlatform {
+  if (p === 'instagram_polska') return 'instagram';
+  if (p === 'tiktok_polska') return 'tiktok';
+  return p;
+}
 
 const GIVEAWAY_PLATFORM_META: Record<GiveawayPlatformKey, { label: string; icon: ReactNode }> = {
-  instagram: { label: 'Instagram', icon: <FaInstagram className="text-pink-500" size={13} /> },
-  tiktok:    { label: 'TikTok',    icon: <FaTiktok className="text-zinc-200" size={12} /> },
-  facebook:  { label: 'Facebook',  icon: <FaFacebook className="text-blue-500" size={13} /> },
-  youtube:   { label: 'YouTube',   icon: <FaYoutube className="text-red-500" size={13} /> },
+  instagram:         { label: 'Instagram',        icon: <FaInstagram className="text-pink-500" size={13} /> },
+  tiktok:            { label: 'TikTok',            icon: <FaTiktok className="text-zinc-200" size={12} /> },
+  facebook:          { label: 'Facebook',          icon: <FaFacebook className="text-blue-500" size={13} /> },
+  youtube:           { label: 'YouTube',           icon: <FaYoutube className="text-red-500" size={13} /> },
+  instagram_polska:  { label: 'Instagram (Polska)', icon: <FaInstagram className="text-pink-500" size={13} /> },
+  tiktok_polska:     { label: 'TikTok (Polska)',    icon: <FaTiktok className="text-zinc-200" size={12} /> },
 };
-const GIVEAWAY_PLATFORMS: GiveawayPlatformKey[] = ['instagram', 'tiktok', 'facebook', 'youtube'];
+// Reihenfolge in der Erstellungs-Form; die _polska-Einträge werden nur für Dawid
+// Faith eingeblendet (siehe isDawidFaith-Filter beim Rendern).
+const GIVEAWAY_PLATFORMS: GiveawayPlatformKey[] = ['instagram', 'instagram_polska', 'tiktok', 'tiktok_polska', 'facebook', 'youtube'];
 
-const AVAILABLE_MEDIA_ENDPOINT: Record<GiveawayPlatformKey, string> = {
+const AVAILABLE_MEDIA_ENDPOINT: Record<WirePlatform, string> = {
   instagram: '/api/instagram-quests/available-media',
   tiktok:    '/api/tiktok-quests/available-media',
   facebook:  '/api/facebook-quests/available-media',
@@ -32,38 +46,39 @@ const AVAILABLE_MEDIA_ENDPOINT: Record<GiveawayPlatformKey, string> = {
 // Facebook bewusst ausgenommen: die Kommentar-Verifizierung dort hängt am fest
 // hinterlegten Dawid-Faith-Page-Token, nicht an frei wählbaren Accounts.
 const DAWID_FAITH_WALLET = 'user_3dfvunr7ziaywue8bhzdqw2blsw';
-const GIVEAWAY_SUB_ACCOUNTS = [
-  { key: 'polska', wallet: 'platform_dawid_faith_polska', label: 'Dawid Faith Polska' },
-] as const;
+const POLSKA_WALLET = 'platform_dawid_faith_polska';
+
+/** Für _polska-Slots wird immer die Polska-Wallet durchsucht, sonst die des Artists. */
+function walletForPlatform(p: GiveawayPlatformKey, artistWallet: string): string {
+  return (p === 'instagram_polska' || p === 'tiktok_polska') ? POLSKA_WALLET : artistWallet;
+}
 
 interface MediaPickItem {
   id: string;
   url: string;
   thumbnail: string;
   title: string;
-  /** Welcher Account dieser Beitrag ist (z.B. "Dawid Faith" / "Dawid Faith Polska") — nur gesetzt wenn mehrere Quellen zusammengeführt werden. */
-  sourceLabel?: string;
 }
 
 /** Normalisiert die unterschiedlichen available-media Antwortformate der 4 Plattformen. */
-async function fetchAvailableMedia(platform: GiveawayPlatformKey, wallet: string, loadErrorMessage: string, sourceLabel?: string): Promise<{ items: MediaPickItem[]; hint?: string; error?: string }> {
+async function fetchAvailableMedia(platform: GiveawayPlatformKey, wallet: string, loadErrorMessage: string): Promise<{ items: MediaPickItem[]; hint?: string; error?: string }> {
+  const wire = wirePlatformOf(platform);
   try {
-    const res = await fetch(`${AVAILABLE_MEDIA_ENDPOINT[platform]}?wallet=${encodeURIComponent(wallet)}`);
+    const res = await fetch(`${AVAILABLE_MEDIA_ENDPOINT[wire]}?wallet=${encodeURIComponent(wallet)}`);
     const data = await res.json();
     if (data.error) return { items: [], error: data.error };
 
     const raw: any[] = Array.isArray(data.media) ? data.media : [];
     let items: MediaPickItem[] = [];
 
-    if (platform === 'instagram') {
+    if (wire === 'instagram') {
       items = raw.map(m => ({
         id: String(m.graph_media_id || m.shortcode || ''),
         url: String(m.permalink || ''),
         thumbnail: String(m.thumbnail_url || m.media_url || ''),
         title: String(m.caption || '').slice(0, 70),
-        sourceLabel,
       }));
-    } else if (platform === 'facebook') {
+    } else if (wire === 'facebook') {
       items = raw.map(m => ({
         id: String(m.post_id || ''),
         url: String(m.permalink || ''),
@@ -77,7 +92,6 @@ async function fetchAvailableMedia(platform: GiveawayPlatformKey, wallet: string
         url: String(m.video_url || ''),
         thumbnail: String(m.thumbnail_url || ''),
         title: String(m.title || '').slice(0, 70),
-        sourceLabel,
       }));
     }
 
@@ -159,19 +173,10 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
   const loadMediaForPlatform = async (p: GiveawayPlatformKey) => {
     setMediaLoading(prev => ({ ...prev, [p]: true }));
     setMediaHint(prev => ({ ...prev, [p]: '' }));
-    // Instagram/TikTok: Beiträge von Dawid Faith UND seinen Zusatz-Accounts (z.B.
-    // Dawid Faith Polska) werden zu einer Liste zusammengeführt, damit alles über
-    // eine einzige Kampagne läuft (pro Kampagne + E-Mail nur ein Gewinn möglich —
-    // Facebook/YouTube bleiben immer beim echten Artist-Account.
-    const sources = (isDawidFaith && (p === 'instagram' || p === 'tiktok'))
-      ? [{ wallet: artistWallet, label: undefined as string | undefined }, ...GIVEAWAY_SUB_ACCOUNTS.map(a => ({ wallet: a.wallet, label: a.label }))]
-      : [{ wallet: artistWallet, label: undefined as string | undefined }];
-
-    const results = await Promise.all(sources.map(s => fetchAvailableMedia(p, s.wallet, t('gw.errMediaLoad', lang), s.label)));
-    const items = results.flatMap(r => r.items);
-    const hint = results.map(r => r.hint || r.error).find(Boolean);
+    const wallet = walletForPlatform(p, artistWallet);
+    const { items, hint, error: err } = await fetchAvailableMedia(p, wallet, t('gw.errMediaLoad', lang));
     setMediaLists(prev => ({ ...prev, [p]: items }));
-    if (hint) setMediaHint(prev => ({ ...prev, [p]: hint }));
+    if (hint || err) setMediaHint(prev => ({ ...prev, [p]: hint || err || '' }));
     setMediaLoading(prev => ({ ...prev, [p]: false }));
   };
 
@@ -403,10 +408,7 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
 
           <div className="space-y-2">
             <label className="text-zinc-500 text-[10px] uppercase tracking-widest block">{t('gw.platformsLabel', lang)}</label>
-            {isDawidFaith && (
-              <p className="text-zinc-600 text-[10px] -mt-1">Bei Instagram/TikTok werden Beiträge von Dawid Faith und Dawid Faith Polska zusammen angezeigt.</p>
-            )}
-            {GIVEAWAY_PLATFORMS.map(p => (
+            {GIVEAWAY_PLATFORMS.filter(p => isDawidFaith || !p.endsWith('_polska')).map(p => (
               <div key={p} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-2.5">
                 <label className="flex items-center gap-2 text-xs font-semibold text-zinc-200 mb-1.5 cursor-pointer">
                   <input
@@ -438,8 +440,8 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
                           <button
                             key={item.id}
                             onClick={() => pickMedia(p, item)}
-                            title={item.sourceLabel ? `${item.sourceLabel} — ${item.title}` : item.title}
-                            className={`relative shrink-0 w-16 rounded-lg overflow-hidden border-2 transition-all ${
+                            title={item.title}
+                            className={`shrink-0 w-16 rounded-lg overflow-hidden border-2 transition-all ${
                               platformMediaIds[p] === item.id ? 'border-amber-400' : 'border-transparent'
                             }`}
                           >
@@ -447,11 +449,6 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
                               <Image src={item.thumbnail} alt="" width={64} height={64} className="w-16 h-16 object-cover" unoptimized />
                             ) : (
                               <div className="w-16 h-16 bg-white/[0.06] flex items-center justify-center text-zinc-600 text-[9px]">?</div>
-                            )}
-                            {item.sourceLabel && (
-                              <span className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-[7px] font-bold text-center leading-tight py-0.5 truncate px-0.5">
-                                {item.sourceLabel}
-                              </span>
                             )}
                           </button>
                         ))}

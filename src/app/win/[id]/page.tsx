@@ -8,13 +8,15 @@ import { FaInstagram, FaTiktok, FaFacebook, FaYoutube, FaGift, FaExternalLinkAlt
 import { useLang, useSetLang } from '../../components/LangContext';
 import { t, tFmt, type Lang } from '../../utils/i18n';
 
-type Platform = 'instagram' | 'tiktok' | 'facebook' | 'youtube';
+type Platform = 'instagram' | 'tiktok' | 'facebook' | 'youtube' | 'instagram_polska' | 'tiktok_polska';
 
 const PLATFORM_META: Record<Platform, { label: string; icon: ReactNode; color: string }> = {
-  instagram: { label: 'Instagram', icon: <FaInstagram size={18} />, color: 'text-pink-500' },
-  tiktok:    { label: 'TikTok',    icon: <FaTiktok size={17} />,    color: 'text-zinc-200' },
-  facebook:  { label: 'Facebook',  icon: <FaFacebook size={18} />, color: 'text-blue-500' },
-  youtube:   { label: 'YouTube',   icon: <FaYoutube size={18} />,  color: 'text-red-500' },
+  instagram:        { label: 'Instagram',         icon: <FaInstagram size={18} />, color: 'text-pink-500' },
+  tiktok:           { label: 'TikTok',             icon: <FaTiktok size={17} />,    color: 'text-zinc-200' },
+  facebook:         { label: 'Facebook',           icon: <FaFacebook size={18} />, color: 'text-blue-500' },
+  youtube:          { label: 'YouTube',            icon: <FaYoutube size={18} />,  color: 'text-red-500' },
+  instagram_polska: { label: 'Instagram (PL)',     icon: <FaInstagram size={18} />, color: 'text-pink-500' },
+  tiktok_polska:    { label: 'TikTok (PL)',        icon: <FaTiktok size={17} />,    color: 'text-zinc-200' },
 };
 
 const LANG_FLAGS: Record<Lang, string> = { de: '🇩🇪', en: '🇺🇸', pl: '🇵🇱' };

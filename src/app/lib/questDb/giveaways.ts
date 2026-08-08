@@ -3,7 +3,11 @@ import { addDfaithCredits } from './credits';
 import { lockQuestBudget } from './quests';
 import { slugify } from '../../utils/slug';
 
-export type GiveawayPlatform = 'instagram' | 'tiktok' | 'facebook' | 'youtube';
+// instagram_polska/tiktok_polska: gleiche Verifizierung wie instagram/tiktok
+// (Kommentar-Check läuft über die Post-eigene Media-ID, nicht die Plattform),
+// aber ein eigener campaign-platform-Slot — so kann eine Kampagne gleichzeitig
+// einen Beitrag von Dawid Faith UND einen von Dawid Faith Polska je Plattform haben.
+export type GiveawayPlatform = 'instagram' | 'tiktok' | 'facebook' | 'youtube' | 'instagram_polska' | 'tiktok_polska';
 
 async function ensureTables() {
   const sql = getDb();
