@@ -773,7 +773,7 @@ function ArtistShopView({
           {t('shop.noItems', lang)}
         </div>
       ) : (
-        <div className="px-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="px-4 grid grid-cols-2 gap-3">
           {items.map(item => (
             <ItemCard key={item.id} item={item} onBuy={requestBuy} buying={buying} walletAddress={walletAddress} artistRewardToken={artist.rewardToken} userLevel={userLevel} />
           ))}
@@ -1056,7 +1056,7 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
 
               {/* Items dieser Gruppe */}
               {expandedArtists.has(group.wallet) && (
-                <div className="space-y-3 pl-2 border-l-2 border-amber-500/20 ml-5">
+                <div className="grid grid-cols-2 gap-3 pl-2 border-l-2 border-amber-500/20 ml-5">
                   {group.items.map(item => <InventoryItemCard key={item.id} item={item} />)}
                 </div>
               )}
