@@ -1768,13 +1768,27 @@ function GrantCreditsSection({ secret, users }: { secret: string; users: AdminUs
 
 // ─── PlatformSection ─────────────────────────────────────────────────────────
 
+const PLATFORM_ACCOUNT_OPTIONS = [
+  { key: 'ecosystem', label: 'D.Faith Ecosystem', handle: 'dfaith_ecosystem', hasTiktok: false },
+  { key: 'polska',    label: 'Dawid Faith Polska', handle: 'dawidfaith_polska', hasTiktok: true },
+] as const;
+
 function PlatformSection({ secret }: { secret: string }) {
+  const [account, setAccount] = React.useState<'ecosystem' | 'polska'>('ecosystem');
+  const accountMeta = PLATFORM_ACCOUNT_OPTIONS.find(a => a.key === account)!;
+
   const [status, setStatus] = React.useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [msg, setMsg] = React.useState('');
   const [quests, setQuests] = React.useState<Array<Record<string, unknown>>>([]);
   const [questsLoading, setQuestsLoading] = React.useState(false);
   const [questMsg, setQuestMsg] = React.useState('');
+
+  // ── TikTok-Quest (nur Accounts mit TikTok-Handle) ──────────────────────────
+  const [tiktokUrl, setTiktokUrl] = React.useState('');
+  const [tiktokDesc, setTiktokDesc] = React.useState('');
+  const [tiktokCreating, setTiktokCreating] = React.useState(false);
+  const [tiktokMsg, setTiktokMsg] = React.useState('');
 
   // ── Credits State ──────────────────────────────────────────────────────────
   const [creditsData, setCreditsData] = React.useState<{
@@ -1807,23 +1821,23 @@ function PlatformSection({ secret }: { secret: string }) {
   const [uploadMsg, setUploadMsg] = React.useState('');
   const loadStatus = React.useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/platform-setup', {
+      const res = await fetch(`/api/admin/platform-setup?account=${account}`, {
         headers: { 'x-admin-secret': secret },
       });
       const data = await res.json();
       setStatus(data);
     } catch { setStatus(null); }
-  }, [secret]);
+  }, [secret, account]);
 
   const loadQuests = React.useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/platform-quests', {
+      const res = await fetch(`/api/admin/platform-quests?account=${account}`, {
         headers: { 'x-admin-secret': secret },
       });
       const data = await res.json();
       setQuests(data.quests ?? []);
     } catch { setQuests([]); }
-  }, [secret]);
+  }, [secret, account]);
 
   React.useEffect(() => { loadStatus(); loadQuests(); loadCredits(); }, [loadStatus, loadQuests, loadCredits]);
 
@@ -1845,7 +1859,7 @@ function PlatformSection({ secret }: { secret: string }) {
     try {
       const form = new FormData();
       form.append('image', imageFile);
-      const res = await fetch('/api/admin/platform-setup', {
+      const res = await fetch(`/api/admin/platform-setup?account=${account}`, {
         method: 'PATCH',
         headers: { 'x-admin-secret': secret },
         body: form,
@@ -1865,7 +1879,7 @@ function PlatformSection({ secret }: { secret: string }) {
   const runSetup = async () => {
     setLoading(true); setMsg('');
     try {
-      const res = await fetch('/api/admin/platform-setup', {
+      const res = await fetch(`/api/admin/platform-setup?account=${account}`, {
         method: 'POST',
         headers: { 'x-admin-secret': secret },
       });
@@ -1879,7 +1893,7 @@ function PlatformSection({ secret }: { secret: string }) {
   const createQuests = async () => {
     setQuestsLoading(true); setQuestMsg('');
     try {
-      const res = await fetch('/api/admin/platform-quests', {
+      const res = await fetch(`/api/admin/platform-quests?account=${account}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
         body: JSON.stringify({ rewardAmount: 150, maxCompletions: 50 }),
@@ -1895,6 +1909,32 @@ function PlatformSection({ secret }: { secret: string }) {
     finally { setQuestsLoading(false); }
   };
 
+  const createTiktokQuest = async () => {
+    if (!tiktokUrl.trim()) return;
+    setTiktokCreating(true); setTiktokMsg('');
+    try {
+      const res = await fetch(`/api/admin/platform-quests/tiktok?account=${account}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({
+          videoUrl: tiktokUrl.trim(),
+          description: tiktokDesc.trim() || undefined,
+          rewardAmount: 150,
+          maxCompletions: 50,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setTiktokMsg('✅ TikTok-Quest erstellt!');
+        setTiktokUrl(''); setTiktokDesc('');
+        await loadQuests();
+      } else {
+        setTiktokMsg(`❌ ${data.error}`);
+      }
+    } catch { setTiktokMsg('❌ Netzwerkfehler'); }
+    finally { setTiktokCreating(false); }
+  };
+
   const isSetup = status && (status as { exists?: boolean }).exists;
   const metaOk = status && (status as { metaTokenOk?: boolean }).metaTokenOk;
   const igId = status && (status as { igAccountId?: string }).igAccountId;
@@ -1902,6 +1942,21 @@ function PlatformSection({ secret }: { secret: string }) {
 
   return (
     <div className="space-y-6">
+      {/* ── Account-Umschalter ───────────────────────────────────────────── */}
+      <div className="flex gap-2 bg-zinc-900 rounded-2xl p-1.5 border border-zinc-800">
+        {PLATFORM_ACCOUNT_OPTIONS.map(a => (
+          <button
+            key={a.key}
+            onClick={() => setAccount(a.key)}
+            className={`flex-1 text-sm font-bold py-2.5 rounded-xl transition-all ${
+              account === a.key ? 'bg-pink-700 text-white' : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            {a.label}
+          </button>
+        ))}
+      </div>
+
       {/* ── Profilbild hochladen ──────────────────────────────────────────── */}
       <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
         <h2 className="text-lg font-bold text-white mb-1">🖼️ Profilbild für Platform-Konto</h2>
@@ -1962,7 +2017,7 @@ function PlatformSection({ secret }: { secret: string }) {
 
       {/* ── Platform-User Status ─────────────────────────────────────────── */}
       <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
-        <h2 className="text-lg font-bold text-white mb-4">⚡ Platform-User: dfaith_ecosystem</h2>
+        <h2 className="text-lg font-bold text-white mb-4">⚡ Platform-User: {accountMeta.handle}</h2>
 
         <div className="grid grid-cols-2 gap-3 mb-5">
           <div className={`rounded-xl p-3 border ${isSetup ? 'bg-green-950 border-green-700' : 'bg-zinc-800 border-zinc-700'}`}>
@@ -1998,7 +2053,7 @@ function PlatformSection({ secret }: { secret: string }) {
       {/* ── Platform-Quests ──────────────────────────────────────────────── */}
       <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
         <h2 className="text-lg font-bold text-white mb-1">📱 Platform-Quests (Instagram)</h2>
-        <p className="text-zinc-500 text-sm mb-4">Erstellt automatisch bis zu 5 Comment-Quests aus den neuesten @dfaith_ecosystem Posts.</p>
+        <p className="text-zinc-500 text-sm mb-4">Erstellt automatisch bis zu 5 Comment-Quests aus den neuesten @{accountMeta.handle} Posts.</p>
 
         <div className="flex gap-3 mb-4">
           <button
@@ -2034,6 +2089,41 @@ function PlatformSection({ secret }: { secret: string }) {
           <p className="text-zinc-600 text-sm text-center py-4">Noch keine Platform-Quests vorhanden.</p>
         )}
       </div>
+
+      {/* ── Platform-Quest (TikTok, nur für Accounts mit TikTok-Handle) ──────── */}
+      {accountMeta.hasTiktok && (
+        <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
+          <h2 className="text-lg font-bold text-white mb-1">🎵 Platform-Quest (TikTok)</h2>
+          <p className="text-zinc-500 text-sm mb-4">
+            Kein Auto-Fetch für TikTok verfügbar — Link zu einem Video von @{accountMeta.handle} einfügen.
+            Das Video muss zu diesem Account gehören.
+          </p>
+
+          <div className="space-y-2 mb-3">
+            <input
+              value={tiktokUrl}
+              onChange={e => setTiktokUrl(e.target.value)}
+              placeholder="https://www.tiktok.com/@dawidfaith_polska/video/..."
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/50"
+            />
+            <input
+              value={tiktokDesc}
+              onChange={e => setTiktokDesc(e.target.value)}
+              placeholder="Beschreibung (optional)"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/50"
+            />
+          </div>
+
+          <button
+            onClick={createTiktokQuest}
+            disabled={tiktokCreating || !tiktokUrl.trim() || !isSetup}
+            className="w-full bg-pink-700 hover:bg-pink-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
+          >
+            {tiktokCreating ? 'Erstelle…' : '✨ TikTok-Quest erstellen'}
+          </button>
+          {tiktokMsg && <p className="mt-3 text-sm text-center">{tiktokMsg}</p>}
+        </div>
+      )}
 
       {/* ── Platform Credits Übersicht ───────────────────────────────────────── */}
       <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">

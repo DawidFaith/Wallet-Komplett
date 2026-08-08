@@ -501,21 +501,27 @@ export async function findFacebookConversationByName(
 }
 
 // ─── IG-Account-ID aus Facebook-Page ermitteln ───────────────────────────────
-let cachedIgAccountId: string | null = null;
-export async function getIgAccountId(): Promise<string | null> {
-  if (cachedIgAccountId) return cachedIgAccountId;
-  const token = process.env.META_SYSTEM_USER_TOKEN;
-  const pageId = process.env.FACEBOOK_PAGE_ID;
-  if (!token || !pageId) return null;
+// pageId optional: ohne Angabe wird FACEBOOK_PAGE_ID (dfaith_ecosystem) genutzt,
+// damit bestehende Aufrufe unverändert funktionieren. Für weitere Platform-Accounts
+// (z.B. Dawid Faith Polska) einfach die jeweilige Page-ID übergeben.
+const igAccountIdCache = new Map<string, string>();
+export async function getIgAccountId(pageId?: string): Promise<string | null> {
+  const targetPageId = pageId ?? process.env.FACEBOOK_PAGE_ID;
+  if (!targetPageId) return null;
+  const cached = igAccountIdCache.get(targetPageId);
+  if (cached) return cached;
+
+  const pageToken = await getPageTokenByPageId(targetPageId);
+  if (!pageToken) return null;
   try {
     const res = await fetch(
-      `${GRAPH}/${pageId}?fields=instagram_business_account&access_token=${token}`,
+      `${GRAPH}/${targetPageId}?fields=instagram_business_account&access_token=${pageToken}`,
       { cache: 'no-store' },
     );
     if (!res.ok) return null;
     const data = await res.json() as { instagram_business_account?: { id?: string } };
     const id = data?.instagram_business_account?.id ?? null;
-    if (id) cachedIgAccountId = id;
+    if (id) igAccountIdCache.set(targetPageId, id);
     return id;
   } catch {
     return null;
@@ -537,16 +543,19 @@ export interface IgMediaItem {
   media_product_type: string;
 }
 
-export async function fetchPlatformIgMedia(limit = 20): Promise<IgMediaItem[]> {
-  const token = process.env.META_SYSTEM_USER_TOKEN;
-  if (!token) return [];
+export async function fetchPlatformIgMedia(limit = 20, pageId?: string): Promise<IgMediaItem[]> {
+  const targetPageId = pageId ?? process.env.FACEBOOK_PAGE_ID;
+  if (!targetPageId) return [];
 
-  const igAccountId = await getIgAccountId();
+  const pageToken = await getPageTokenByPageId(targetPageId);
+  if (!pageToken) return [];
+
+  const igAccountId = await getIgAccountId(targetPageId);
   if (!igAccountId) return [];
 
   try {
     const res = await fetch(
-      `${GRAPH}/${igAccountId}/media?fields=id,shortcode,caption,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count,media_type,media_product_type&limit=${limit}&access_token=${token}`,
+      `${GRAPH}/${igAccountId}/media?fields=id,shortcode,caption,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count,media_type,media_product_type&limit=${limit}&access_token=${pageToken}`,
       { cache: 'no-store' },
     );
     if (!res.ok) return [];
