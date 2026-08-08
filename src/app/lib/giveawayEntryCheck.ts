@@ -20,8 +20,14 @@ const DAWID_FAITH_ARTIST_WALLET = 'user_3dfvunr7ziaywue8bhzdqw2blsw';
  * Facebook-Quest-System).
  */
 export async function checkGiveawayEntryComment(campaign: GiveawayCampaign, entry: GiveawayEntry): Promise<{ found: boolean; verifiedName?: string }> {
-  const platformCfg = campaign.platforms.find(p => p.platform === entry.platform);
-  if (!platformCfg) return { found: false };
+  // Fans sehen nur "Instagram"/"TikTok" (nie die _polska-Variante) — die Kampagne
+  // kann aber für beide Plattformen zwei Posts hinterlegt haben (Dawid Faith +
+  // Dawid Faith Polska). Beide werden geprüft, ein Treffer auf irgendeinem reicht.
+  const variantKeys = entry.platform === 'instagram' ? ['instagram', 'instagram_polska']
+    : entry.platform === 'tiktok' ? ['tiktok', 'tiktok_polska']
+    : [entry.platform];
+  const platformCfgs = campaign.platforms.filter(p => variantKeys.includes(p.platform));
+  if (platformCfgs.length === 0) return { found: false };
 
   if (entry.platform === 'facebook') {
     let pageIdHint: string | null;
@@ -32,17 +38,23 @@ export async function checkGiveawayEntryComment(campaign: GiveawayCampaign, entr
       const rows = await sql`SELECT facebook_page_id FROM user_profiles WHERE wallet_address = ${campaign.artistWallet.toLowerCase()} LIMIT 1`;
       pageIdHint = (rows[0]?.facebook_page_id as string | null) ?? null;
     }
-    return verifyFacebookEntry(platformCfg.postUrl, entry.code, pageIdHint, campaign.id, entry.handle, entry.id, campaign.createdAt);
+    return verifyFacebookEntry(platformCfgs[0].postUrl, entry.code, pageIdHint, campaign.id, entry.handle, entry.id, campaign.createdAt);
   }
-  if (entry.platform === 'instagram' || entry.platform === 'instagram_polska') {
-    if (!platformCfg.mediaId) return { found: false };
-    return { found: await verifyInstagramEntry(platformCfg.mediaId, entry.handle, campaign.requiredText) };
+  if (entry.platform === 'instagram') {
+    for (const cfg of platformCfgs) {
+      if (!cfg.mediaId) continue;
+      if (await verifyInstagramEntry(cfg.mediaId, entry.handle, campaign.requiredText)) return { found: true };
+    }
+    return { found: false };
   }
-  if (entry.platform === 'tiktok' || entry.platform === 'tiktok_polska') {
-    return { found: await verifyTiktokEntry(platformCfg.mediaId ?? platformCfg.postUrl, entry.handle, campaign.requiredText) };
+  if (entry.platform === 'tiktok') {
+    for (const cfg of platformCfgs) {
+      if (await verifyTiktokEntry(cfg.mediaId ?? cfg.postUrl, entry.handle, campaign.requiredText)) return { found: true };
+    }
+    return { found: false };
   }
   if (entry.platform === 'youtube') {
-    return { found: await verifyYoutubeEntry(platformCfg.mediaId ?? platformCfg.postUrl, entry.handle, campaign.requiredText) };
+    return { found: await verifyYoutubeEntry(platformCfgs[0].mediaId ?? platformCfgs[0].postUrl, entry.handle, campaign.requiredText) };
   }
   return { found: false };
 }

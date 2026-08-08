@@ -358,7 +358,12 @@ export async function startGiveawayEntry(
   if (!campaign) return { error: 'Gewinnspiel nicht gefunden.', code: 'not_found' };
   if (campaign.status !== 'active') return { error: 'Dieses Gewinnspiel ist bereits beendet.', code: 'ended' };
   if (campaign.winnerCount >= campaign.maxWinners) return { error: 'Alle Plätze sind bereits vergeben.', code: 'sold_out' };
-  if (!campaign.platforms.some(p => p.platform === platform)) return { error: 'Diese Plattform ist für dieses Gewinnspiel nicht verfügbar.', code: 'platform_unavailable' };
+  // Fans wählen nur "instagram"/"tiktok" (nie die _polska-Variante) — die Kampagne
+  // kann den Post aber unter dem _polska-Slot hinterlegt haben.
+  const platformVariants: GiveawayPlatform[] = platform === 'instagram' ? ['instagram', 'instagram_polska']
+    : platform === 'tiktok' ? ['tiktok', 'tiktok_polska']
+    : [platform];
+  if (!campaign.platforms.some(p => platformVariants.includes(p.platform))) return { error: 'Diese Plattform ist für dieses Gewinnspiel nicht verfügbar.', code: 'platform_unavailable' };
 
   const existing = await sql`
     SELECT * FROM giveaway_entries WHERE campaign_id = ${campaignId} AND platform = ${platform} AND handle = ${cleanHandle} LIMIT 1

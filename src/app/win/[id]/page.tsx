@@ -8,15 +8,23 @@ import { FaInstagram, FaTiktok, FaFacebook, FaYoutube, FaGift, FaExternalLinkAlt
 import { useLang, useSetLang } from '../../components/LangContext';
 import { t, tFmt, type Lang } from '../../utils/i18n';
 
-type Platform = 'instagram' | 'tiktok' | 'facebook' | 'youtube' | 'instagram_polska' | 'tiktok_polska';
+// Fans wählen immer nur die Basis-Plattform — eine Kampagne kann intern trotzdem
+// zwei Instagram/TikTok-Posts hinterlegt haben (Dawid Faith + Dawid Faith Polska,
+// Slot "instagram_polska"/"tiktok_polska"); die Verifizierung prüft dann beide.
+type Platform = 'instagram' | 'tiktok' | 'facebook' | 'youtube';
+type CampaignPlatform = Platform | 'instagram_polska' | 'tiktok_polska';
+
+function basePlatformOf(p: CampaignPlatform): Platform {
+  if (p === 'instagram_polska') return 'instagram';
+  if (p === 'tiktok_polska') return 'tiktok';
+  return p;
+}
 
 const PLATFORM_META: Record<Platform, { label: string; icon: ReactNode; color: string }> = {
-  instagram:        { label: 'Instagram',         icon: <FaInstagram size={18} />, color: 'text-pink-500' },
-  tiktok:           { label: 'TikTok',             icon: <FaTiktok size={17} />,    color: 'text-zinc-200' },
-  facebook:         { label: 'Facebook',           icon: <FaFacebook size={18} />, color: 'text-blue-500' },
-  youtube:          { label: 'YouTube',            icon: <FaYoutube size={18} />,  color: 'text-red-500' },
-  instagram_polska: { label: 'Instagram (PL)',     icon: <FaInstagram size={18} />, color: 'text-pink-500' },
-  tiktok_polska:    { label: 'TikTok (PL)',        icon: <FaTiktok size={17} />,    color: 'text-zinc-200' },
+  instagram: { label: 'Instagram', icon: <FaInstagram size={18} />, color: 'text-pink-500' },
+  tiktok:    { label: 'TikTok',    icon: <FaTiktok size={17} />,    color: 'text-zinc-200' },
+  facebook:  { label: 'Facebook',  icon: <FaFacebook size={18} />, color: 'text-blue-500' },
+  youtube:   { label: 'YouTube',   icon: <FaYoutube size={18} />,  color: 'text-red-500' },
 };
 
 const LANG_FLAGS: Record<Lang, string> = { de: '🇩🇪', en: '🇺🇸', pl: '🇵🇱' };
@@ -70,7 +78,7 @@ interface PublicCampaign {
   creditReward: number;
   status: 'active' | 'ended';
   slotsLeft: number;
-  platforms: { platform: Platform; postUrl: string }[];
+  platforms: { platform: CampaignPlatform; postUrl: string }[];
   artistName: string;
   releaseAt: string | null;
   presaveUrl: string | null;
@@ -110,7 +118,10 @@ export default function GiveawayLandingPage() {
       if (!res.ok) { setNotFound(true); return; }
       const data = await res.json();
       setCampaign(data.campaign);
-      if (data.campaign?.platforms?.length === 1) setPlatform(data.campaign.platforms[0].platform);
+      const basePlatforms: Platform[] = data.campaign?.platforms
+        ? Array.from(new Set(data.campaign.platforms.map((p: { platform: CampaignPlatform }) => basePlatformOf(p.platform))))
+        : [];
+      if (basePlatforms.length === 1) setPlatform(basePlatforms[0]);
     } catch {
       setNotFound(true);
     } finally {
@@ -189,7 +200,8 @@ export default function GiveawayLandingPage() {
     );
   }
 
-  const activePlatform = campaign.platforms.find(p => p.platform === platform);
+  const activePlatform = campaign.platforms.find(p => basePlatformOf(p.platform) === platform);
+  const displayPlatforms: Platform[] = Array.from(new Set(campaign.platforms.map(p => basePlatformOf(p.platform))));
 
   return (
     <div className="min-h-screen bg-[#0e0c0a] text-white pb-16">
@@ -277,18 +289,18 @@ export default function GiveawayLandingPage() {
               <div>
                 <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-bold mb-2">{t('win.step1Title', lang)}</p>
                 <div className="grid grid-cols-2 gap-2">
-                  {campaign.platforms.map(p => (
+                  {displayPlatforms.map(p => (
                     <button
-                      key={p.platform}
-                      onClick={() => setPlatform(p.platform)}
+                      key={p}
+                      onClick={() => setPlatform(p)}
                       className={`flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold border transition-all ${
-                        platform === p.platform
+                        platform === p
                           ? 'border-amber-500/50 bg-amber-500/10 text-amber-300'
                           : 'border-white/[0.08] bg-white/[0.03] text-zinc-400'
                       }`}
                     >
-                      <span className={PLATFORM_META[p.platform].color}>{PLATFORM_META[p.platform].icon}</span>
-                      {PLATFORM_META[p.platform].label}
+                      <span className={PLATFORM_META[p].color}>{PLATFORM_META[p].icon}</span>
+                      {PLATFORM_META[p].label}
                     </button>
                   ))}
                 </div>
@@ -312,7 +324,7 @@ export default function GiveawayLandingPage() {
 
               <p className="text-zinc-600 text-[10px] leading-relaxed">
                 {tFmt('win.platformDisclaimer', lang, {
-                  platforms: campaign.platforms.map(p => PLATFORM_META[p.platform].label).join(', '),
+                  platforms: displayPlatforms.map(p => PLATFORM_META[p].label).join(', '),
                 })}
               </p>
 
