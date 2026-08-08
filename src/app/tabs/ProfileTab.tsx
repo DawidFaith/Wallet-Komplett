@@ -7,7 +7,7 @@ import Image from 'next/image';
 import {
   FaInstagram, FaTiktok, FaFacebook, FaYoutube,
   FaCheck, FaStar, FaLock, FaPlus, FaChevronDown,
-  FaPen, FaMusic, FaTimes, FaInfoCircle, FaTrophy, FaTasks, FaShoppingBag,
+  FaMusic, FaTimes, FaInfoCircle, FaTrophy, FaTasks, FaShoppingBag,
   FaCopy, FaUserFriends,
 } from 'react-icons/fa';import SocialVerifyModal from './profile/SocialVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
@@ -167,7 +167,6 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
     const interval = setInterval(loadReferralStats, 60_000);
     return () => clearInterval(interval);
   }, [account?.address, loadReferralStats]);
-  const [artistSaving, setArtistSaving] = useState(false);
   // Meta Business Partner
   const [metaIgVerified, setMetaIgVerified] = useState(false);
   const [metaFbVerified, setMetaFbVerified] = useState(false);
@@ -177,11 +176,6 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
   const [metaFbLoading, setMetaFbLoading] = useState(false);
   const [metaIgMsg, setMetaIgMsg] = useState('');
   const [metaFbMsg, setMetaFbMsg] = useState('');
-  // Artist-Profil bearbeiten
-  const [editingArtist, setEditingArtist] = useState(false);
-  const [artistDisplayNameInput, setArtistDisplayNameInput] = useState('');
-  const [artistTypeInput, setArtistTypeInput] = useState('');
-  const [artistRewardTokenInput, setArtistRewardTokenInput] = useState('');
 
   const [primaryPlatform, setPrimaryPlatformState] = useState<AnyPlatform | null>(null);
 
@@ -364,29 +358,23 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
     }
   }, [account?.address, loadProfile, primaryPlatform, setPrimaryPlatform]);
 
-  const handleSaveArtistInfo = useCallback(async () => {
-    if (!account?.address) return;
-    setArtistSaving(true);
-    try {
-      await fetch('/api/youtube-quests/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          wallet: account.address,
-          artistType: artistTypeInput.trim() || null,
-          rewardToken: artistRewardTokenInput.trim() || null,
-          displayPlatform: 'clerk',
-          clerkImageUrl: _clerkUser?.imageUrl ?? null,
-          clerkName: artistDisplayNameInput.trim() || _clerkUser?.fullName || [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') || _clerkUser?.username || null,
-          displayName: artistDisplayNameInput.trim() || _clerkUser?.fullName || [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') || _clerkUser?.username || null,
-        }),
-      });
-      setEditingArtist(false);
-      await loadProfile();
-    } finally {
-      setArtistSaving(false);
-    }
-  }, [account?.address, artistDisplayNameInput, artistTypeInput, artistRewardTokenInput, _clerkUser?.imageUrl, _clerkUser?.fullName, _clerkUser?.firstName, _clerkUser?.lastName, _clerkUser?.username, loadProfile]);
+  // Künstler-Name/-Bild kommen ausschließlich von Clerk — bei jedem Profil-Laden
+  // automatisch synchronisieren, kein manueller Bearbeiten-Schritt nötig.
+  useEffect(() => {
+    if (!p?.isArtist || !account?.address || !_clerkUser) return;
+    const clerkDisplayName = _clerkUser.fullName || [_clerkUser.firstName, _clerkUser.lastName].filter(Boolean).join(' ') || _clerkUser.username || null;
+    fetch('/api/youtube-quests/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        wallet: account.address,
+        displayName: clerkDisplayName,
+        clerkName: clerkDisplayName,
+        clerkImageUrl: _clerkUser.imageUrl ?? null,
+        displayPlatform: 'clerk',
+      }),
+    }).catch(() => {});
+  }, [p?.isArtist, account?.address, _clerkUser?.imageUrl, _clerkUser?.fullName, _clerkUser?.firstName, _clerkUser?.lastName, _clerkUser?.username]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
   useEffect(() => { loadDfaithBalance(); }, [loadDfaithBalance]);
@@ -578,74 +566,6 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
 
         {/* Divider */}
         <div className="border-t border-white/[0.1]" />
-
-        {/* ── Artist-Info (nur wenn is_artist) ── */}
-        {p?.isArtist && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] flex items-center gap-1.5">
-                <FaMusic size={10} className="text-amber-400" /> {t('profile.artistProfile', lang)}
-              </p>
-              {!editingArtist && (
-                <button
-                  onClick={() => {
-                    setArtistDisplayNameInput(p.displayName ?? _clerkUser?.fullName ?? [_clerkUser?.firstName, _clerkUser?.lastName].filter(Boolean).join(' ') ?? _clerkUser?.username ?? '');
-                    setArtistTypeInput(p.artistType ?? '');
-                    setArtistRewardTokenInput(p.rewardToken ?? 'D.FAITH');
-                    setEditingArtist(true);
-                  }}
-                  className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 bg-white/5 hover:bg-white/10 border border-white/[0.1] px-2 py-1 rounded-lg transition-colors"
-                >
-                  <FaPen size={9} /> {t('profile.edit', lang)}
-                </button>
-              )}
-            </div>
-            {editingArtist ? (
-              <div className="space-y-2">
-                <input
-                  value={artistDisplayNameInput}
-                  onChange={(e) => setArtistDisplayNameInput(e.target.value)}
-                  placeholder={t('profile.namePlaceholder', lang)}
-                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-500/50 transition-colors"
-                />
-                <input
-                  value={artistTypeInput}
-                  onChange={(e) => setArtistTypeInput(e.target.value)}
-                  placeholder={t('profile.artistTypePlaceholder', lang)}
-                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-500/50 transition-colors"
-                />
-                <div className="flex gap-2 justify-end">
-                  <button onClick={() => setEditingArtist(false)}
-                  className="text-xs px-3 py-1.5 rounded-xl bg-white/5 border border-white/8 text-zinc-400 hover:bg-white/10 transition-colors">
-                    {t('btn.cancel', lang)}
-                  </button>
-                  <button
-                    onClick={handleSaveArtistInfo}
-                    disabled={artistSaving}
-                    className="text-xs px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold disabled:opacity-50 transition-colors"
-                  >
-                    {artistSaving ? t('btn.saving', lang) : t('btn.save', lang)}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-[#231e12]/50 rounded-xl p-3 space-y-1.5">
-                {p.artistType && (
-                  <p className="text-amber-400 text-xs font-semibold flex items-center gap-1.5">
-                    <FaMusic size={9} /> {p.artistType}
-                  </p>
-                )}
-                {!p.artistType && (
-                  <p className="text-zinc-400 text-xs italic">{t('profile.editPrompt', lang)}</p>
-                )}
-              </div>
-            )}
-
-          </div>
-        )}
-
-        {/* Divider vor Sozialen Profilen (nur wenn Artist-Sektion sichtbar) */}
-        {p?.isArtist && <div className="border-t border-white/[0.1]" />}
 
         {/* Soziale Profile – kompakte Icon-Reihe */}
         <div>
