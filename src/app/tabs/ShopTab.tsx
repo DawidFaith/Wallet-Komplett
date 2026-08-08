@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Image from 'next/image';
 import { useUser } from '@clerk/nextjs';
 import {
-  FaChevronLeft, FaPlus, FaTimes, FaMusic, FaVideo, FaGem, FaStar,
+  FaChevronLeft, FaPlus, FaTimes, FaMusic, FaVideo, FaGem, FaCertificate, FaStar,
   FaCoins, FaCheck, FaExternalLinkAlt, FaTrash, FaShoppingBag,
   FaPlay, FaPause, FaDownload, FaBoxOpen, FaLock, FaChevronUp, FaChevronDown, FaEdit,
   FaCreditCard,
@@ -144,19 +144,24 @@ function TypeIcon({ type }: { type: ItemType }) {
   }
 }
 
-/** Kleines Badge oben links auf dem Cover, das den Item-Typ auf einen Blick zeigt. */
+/** Kleine Badges unten rechts auf dem Cover, die den Item-Typ auf einen Blick zeigen. */
 function ItemTypeBadge({ type }: { type: ItemType }) {
-  const config: Record<ItemType, { label: string; icon: React.ReactNode; color: string }> = {
-    song:      { label: 'MP3',   icon: <FaMusic size={8} />, color: 'text-violet-300' },
-    video:     { label: 'Video', icon: <FaVideo size={8} />, color: 'text-red-300' },
-    nft:       { label: 'NFT',   icon: <FaGem size={8} />,   color: 'text-amber-300' },
-    exclusive: { label: 'NFT',   icon: <FaStar size={8} />,  color: 'text-emerald-300' },
-  };
-  const c = config[type];
+  const NFT_PILL = { label: 'NFT', icon: <FaCertificate size={8} />, color: 'text-amber-300' };
+  const pills: { label: string; icon: React.ReactNode; color: string }[] =
+    type === 'song'
+      ? [{ label: 'MP3', icon: <FaMusic size={8} />, color: 'text-violet-300' }, NFT_PILL]
+      : type === 'video'
+      ? [{ label: 'Video', icon: <FaVideo size={8} />, color: 'text-red-300' }]
+      : [NFT_PILL];
+
   return (
-    <span className={`absolute top-2 left-2 z-10 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-black/60 backdrop-blur-sm border border-white/10 ${c.color}`}>
-      {c.icon} {c.label}
-    </span>
+    <div className="absolute bottom-2 right-2 z-10 flex flex-col items-end gap-1">
+      {pills.map(p => (
+        <span key={p.label} className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-black/60 backdrop-blur-sm border border-white/10 ${p.color}`}>
+          {p.icon} {p.label}
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -350,7 +355,7 @@ function ItemDetailModal({
               />
               <button
                 onClick={togglePreview}
-                className="absolute bottom-2 right-2 w-11 h-11 rounded-full bg-amber-400 flex items-center justify-center shadow-xl transition-all duration-200"
+                className="absolute bottom-2 left-2 w-11 h-11 rounded-full bg-amber-400 flex items-center justify-center shadow-xl transition-all duration-200"
               >
                 {previewPlaying
                   ? <FaPause size={13} className="text-black" />
@@ -1050,13 +1055,13 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
           </div>
         )}
 
-        {/* Play-Button auf dem Bild — rechts unten, amber */}
+        {/* Play-Button auf dem Bild — links unten, amber */}
         {item.type === 'song' && item.contentUrl && (
           <>
             <audio ref={audioRef} src={item.contentUrl} onEnded={() => setPlaying(false)} />
             <button
               onClick={e => { e.stopPropagation(); togglePlay(); }}
-              className={`absolute bottom-2 right-2 w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center shadow-xl transition-all duration-200 ${
+              className={`absolute bottom-2 left-2 w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center shadow-xl transition-all duration-200 ${
                 playing ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0'
               }`}
             >
