@@ -5,15 +5,15 @@
  *   RESEND_API_KEY – Resend API-Key
  *   ADMIN_EMAIL     – Empfänger für Admin-Benachrichtigungen (optional, fällt auf dawid.faith@gmail.com zurück)
  *
- * Versanddomain ist mail.dawidfaith.de (bei Resend verifiziert, DKIM/SPF/Custom-Return-Path
- * über Cloudflare-DNS eingerichtet) – nicht die nackte Hauptdomain.
+ * Versanddomain ist dawidfaith.de (bei Resend verifiziert, DKIM/SPF/Custom-Return-Path
+ * über Cloudflare-DNS eingerichtet).
  */
 
 import { Resend } from 'resend';
 import type { Lang } from '../utils/i18n';
 import { isUnsubscribed, generateUnsubscribeToken } from './unsubscribe';
 
-const MAIL_FROM_ADDRESS = 'noreply@mail.dawidfaith.de';
+const MAIL_FROM_ADDRESS = 'noreply@dawidfaith.de';
 export const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'dawid.faith@gmail.com';
 
 function getResendClient(): Resend | null {
