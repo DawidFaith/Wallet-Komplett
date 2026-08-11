@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
+import { sendMail, ADMIN_EMAIL } from '@/app/lib/email';
 
 export async function POST(req: Request) {
   try {
@@ -9,25 +9,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Name required' }, { status: 400 });
     }
 
-    const gmailUser = process.env.GMAIL_USER;
-    const gmailPass = process.env.GMAIL_APP_PASSWORD;
-
-    if (!gmailUser || !gmailPass) {
-      console.warn('[artist-apply] GMAIL_USER / GMAIL_APP_PASSWORD not set, skipping email');
-      return NextResponse.json({ ok: true });
-    }
-
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: gmailUser,
-        pass: gmailPass,
-      },
-    });
-
-    await transporter.sendMail({
-      from: `"D.FAITH Ecosystem" <${gmailUser}>`,
-      to: 'dawid.faith@gmail.com',
+    await sendMail({
+      to: ADMIN_EMAIL,
+      fromName: 'D.FAITH Ecosystem',
       subject: `Neue Künstler-Bewerbung: ${name.trim()}`,
       html: `
         <div style="font-family:sans-serif;max-width:480px;padding:24px;background:#0a0908;color:#fff;border-radius:12px">

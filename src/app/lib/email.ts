@@ -1,21 +1,48 @@
 /**
- * E-Mail Helfer via Gmail + Nodemailer
+ * E-Mail Helfer via Resend
  *
- * Verwendet dieselben Env-Vars wie die anderen Mailer im Projekt:
- *   GMAIL_USER         – dawid.faith@gmail.com
- *   GMAIL_APP_PASSWORD – Google App-Passwort
- *   ADMIN_EMAIL        – Empfänger für Admin-Benachrichtigungen (optional, fällt auf GMAIL_USER zurück)
+ * Env-Vars:
+ *   RESEND_API_KEY – Resend API-Key
+ *   ADMIN_EMAIL     – Empfänger für Admin-Benachrichtigungen (optional, fällt auf dawid.faith@gmail.com zurück)
+ *
+ * Versanddomain ist mail.dawidfaith.de (bei Resend verifiziert, DKIM/SPF/Custom-Return-Path
+ * über Cloudflare-DNS eingerichtet) – nicht die nackte Hauptdomain.
  */
 
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import type { Lang } from '../utils/i18n';
 import { isUnsubscribed, generateUnsubscribeToken } from './unsubscribe';
 
-function createTransporter() {
-  const user = process.env.GMAIL_USER;
-  const pass = process.env.GMAIL_APP_PASSWORD;
-  if (!user || !pass) return null;
-  return nodemailer.createTransport({ service: 'gmail', auth: { user, pass } });
+const MAIL_FROM_ADDRESS = 'noreply@mail.dawidfaith.de';
+export const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'dawid.faith@gmail.com';
+
+function getResendClient(): Resend | null {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  return new Resend(apiKey);
+}
+
+/** Geteilter Low-Level-Versand – auch von anderen Routen im Projekt genutzt. */
+export async function sendMail(params: {
+  to: string;
+  subject: string;
+  html: string;
+  fromName?: string;
+}): Promise<void> {
+  const resend = getResendClient();
+  if (!resend) {
+    console.log('[email] RESEND_API_KEY fehlt – E-Mail übersprungen');
+    return;
+  }
+  const { error } = await resend.emails.send({
+    from: `${params.fromName ?? 'D.FAITH'} <${MAIL_FROM_ADDRESS}>`,
+    to: params.to,
+    subject: params.subject,
+    html: params.html,
+  });
+  if (error) {
+    console.error('[email] Resend-Fehler:', error);
+  }
 }
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.dawidfaith.de';
@@ -26,16 +53,9 @@ export async function sendTesterRequestAdminEmail(params: {
   email: string;
   walletAddress: string;
 }): Promise<void> {
-  const transporter = createTransporter();
-  const gmailUser = process.env.GMAIL_USER;
-  const adminEmail = process.env.ADMIN_EMAIL ?? gmailUser;
-  if (!transporter || !adminEmail) {
-    console.log('[email] GMAIL_USER/GMAIL_APP_PASSWORD fehlt – E-Mail übersprungen');
-    return;
-  }
-  await transporter.sendMail({
-    from: `"D.FAITH App" <${gmailUser}>`,
-    to: adminEmail,
+  await sendMail({
+    to: ADMIN_EMAIL,
+    fromName: 'D.FAITH App',
     subject: `[D.FAITH] Neuer Instagram Tester-Antrag: @${params.instagramHandle}`,
     html: `
       <h2>Neuer Tester-Antrag</h2>
@@ -63,16 +83,10 @@ export async function sendTesterApprovedEmail(params: {
   toEmail: string;
   instagramHandle: string;
 }): Promise<void> {
-  const transporter = createTransporter();
-  const gmailUser = process.env.GMAIL_USER;
-  if (!transporter) {
-    console.log('[email] GMAIL_USER/GMAIL_APP_PASSWORD fehlt – User-E-Mail übersprungen');
-    return;
-  }
   const confirmUrl = 'https://www.instagram.com/accounts/manage_access/';
-  await transporter.sendMail({
-    from: `"D.FAITH App" <${gmailUser}>`,
+  await sendMail({
     to: params.toEmail,
+    fromName: 'D.FAITH App',
     subject: `[D.FAITH] Du wurdest als Beta-Tester freigeschaltet! 🎉`,
     html: `
       <h2>Dein Beta-Zugang ist bereit!</h2>
@@ -200,12 +214,6 @@ export async function sendGiveawayParticipationEmail(params: {
   presaveUrl?: string | null;
   lang?: Lang;
 }): Promise<void> {
-  const transporter = createTransporter();
-  const gmailUser = process.env.GMAIL_USER;
-  if (!transporter) {
-    console.log('[email] GMAIL_USER/GMAIL_APP_PASSWORD fehlt – Giveaway-Mail übersprungen');
-    return;
-  }
   if (await isUnsubscribed(params.toEmail)) {
     console.log('[email] Empfänger hat sich abgemeldet – Giveaway-Mail übersprungen:', params.toEmail);
     return;
@@ -261,9 +269,9 @@ export async function sendGiveawayParticipationEmail(params: {
     </p>
   `;
 
-  await transporter.sendMail({
-    from: `"D.FAITH App" <${gmailUser}>`,
+  await sendMail({
     to: params.toEmail,
+    fromName: 'D.FAITH App',
     subject: params.credited ? s.subjectCredited(params.creditReward) : s.subjectPending(params.creditReward),
     html: `${mainBlock}${promoBlock}${footerBlock}`,
   });

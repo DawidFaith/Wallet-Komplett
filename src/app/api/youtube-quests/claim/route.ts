@@ -17,25 +17,15 @@ import {
 import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
 import { getDb } from '@/app/lib/db';
 import { requireOwnWallet } from '@/app/lib/apiAuth';
-import nodemailer from 'nodemailer';
+import { sendMail, ADMIN_EMAIL } from '@/app/lib/email';
 
 /** Sendet eine Betrugs-Warnung per E-Mail an den Admin. */
 async function sendFraudAlert(walletAddress: string, solanaAddress: string): Promise<void> {
-  const gmailUser = process.env.GMAIL_USER;
-  const gmailPass = process.env.GMAIL_APP_PASSWORD;
-  if (!gmailUser || !gmailPass) {
-    console.error('[claim/fraud] GMAIL_USER/GMAIL_APP_PASSWORD nicht gesetzt – keine E-Mail gesendet');
-    return;
-  }
   try {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: gmailUser, pass: gmailPass },
-    });
     const now = new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' });
-    await transporter.sendMail({
-      from: `"D.FAITH Security" <${gmailUser}>`,
-      to: 'dawid.faith@gmail.com',
+    await sendMail({
+      to: ADMIN_EMAIL,
+      fromName: 'D.FAITH Security',
       subject: '⚠️ Betrug erkannt: ATA gelöscht & Einlösung versucht',
       html: `
         <div style="font-family:sans-serif;max-width:520px;padding:24px;background:#0a0908;color:#fff;border-radius:12px;border:1px solid #7f1d1d">
