@@ -113,6 +113,44 @@ export async function sendTesterApprovedEmail(params: {
   });
 }
 
+/** User-Benachrichtigung: Identitätsverifizierung wurde genehmigt oder abgelehnt */
+export async function sendIdentityVerificationResultEmail(params: {
+  toEmail: string;
+  approved: boolean;
+  rejectionReason?: string;
+}): Promise<void> {
+  const html = params.approved
+    ? `
+      <h2>Deine Identität wurde verifiziert! ✅</h2>
+      <p>
+        Du kannst jetzt Credits einlösen, NFTs im Shop kaufen und auf dem Marktplatz verkaufen.
+      </p>
+      <p>
+        <a href="${APP_URL}" style="background:#e11d48;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold;">
+          Zur App
+        </a>
+      </p>
+    `
+    : `
+      <h2>Deine Identitätsprüfung wurde abgelehnt</h2>
+      ${params.rejectionReason ? `<p><b>Grund:</b> ${params.rejectionReason}</p>` : ''}
+      <p>
+        Du kannst deine Verifizierung im Profil-Tab jederzeit erneut einreichen.
+      </p>
+      <p>
+        <a href="${APP_URL}" style="background:#e11d48;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold;">
+          Zur App
+        </a>
+      </p>
+    `;
+  await sendMail({
+    to: params.toEmail,
+    fromName: 'D.FAITH App',
+    subject: params.approved ? '[D.FAITH] Identität verifiziert ✅' : '[D.FAITH] Identitätsprüfung abgelehnt',
+    html,
+  });
+}
+
 /** Admin-Benachrichtigung: neuer Identitätsverifizierungs-Antrag wartet auf Prüfung */
 export async function sendIdentityVerificationAdminEmail(params: {
   walletAddress: string;

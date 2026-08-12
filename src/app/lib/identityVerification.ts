@@ -8,9 +8,20 @@
  * dauerhaft bleibt nur ein HMAC-Hash der Ausweisnummer zur Duplikat-Erkennung.
  */
 import { createHmac } from 'crypto';
+import { clerkClient } from '@clerk/nextjs/server';
 import { getDb } from './db';
 import { encryptKey, decryptKey } from './solanaCrypto';
-import { sendIdentityVerificationAdminEmail } from './email';
+import { sendIdentityVerificationAdminEmail, sendIdentityVerificationResultEmail } from './email';
+
+async function getUserEmail(walletAddress: string): Promise<string | null> {
+  try {
+    const clerk = await clerkClient();
+    const user = await clerk.users.getUser(walletAddress);
+    return user.emailAddresses.find(e => e.id === user.primaryEmailAddressId)?.emailAddress ?? null;
+  } catch {
+    return null;
+  }
+}
 
 const HASH_SECRET = process.env.IDENTITY_HASH_SECRET;
 
@@ -175,6 +186,9 @@ export async function reviewVerification(params: {
           doc_image_enc = NULL, selfie_image_enc = NULL, id_number_hint = NULL, reviewed_at = NOW()
       WHERE id = ${params.id}
     `;
+    getUserEmail(wallet).then(email => {
+      if (email) sendIdentityVerificationResultEmail({ toEmail: email, approved: false, rejectionReason: params.rejectionReason });
+    }).catch(() => {});
     return { ok: true };
   }
 
@@ -207,5 +221,8 @@ export async function reviewVerification(params: {
     SET status = 'approved', doc_image_enc = NULL, selfie_image_enc = NULL, id_number_hint = NULL, reviewed_at = NOW()
     WHERE id = ${params.id}
   `;
+  getUserEmail(wallet).then(email => {
+    if (email) sendIdentityVerificationResultEmail({ toEmail: email, approved: true });
+  }).catch(() => {});
   return { ok: true };
 }
