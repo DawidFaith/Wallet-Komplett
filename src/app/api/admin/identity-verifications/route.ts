@@ -4,7 +4,7 @@
  * Header: x-admin-secret
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { listPendingForAdmin, reviewVerification } from '@/app/lib/identityVerification';
+import { listPendingForAdmin, listVerifiedForAdmin, reviewVerification } from '@/app/lib/identityVerification';
 
 function checkAuth(req: NextRequest): boolean {
   const secret = req.headers.get('x-admin-secret');
@@ -17,8 +17,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
   try {
-    const pending = await listPendingForAdmin();
-    return NextResponse.json({ pending });
+    const [pending, verified] = await Promise.all([listPendingForAdmin(), listVerifiedForAdmin()]);
+    return NextResponse.json({ pending, verified });
   } catch (err) {
     console.error('[admin/identity-verifications GET]', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Daten konnten nicht geladen werden' }, { status: 500 });

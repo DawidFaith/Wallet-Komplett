@@ -158,6 +158,63 @@ export async function listPendingForAdmin(): Promise<PendingVerification[]> {
   }));
 }
 
+export interface VerifiedUser {
+  walletAddress: string;
+  email: string | null;
+  verifiedAt: string | null;
+}
+
+export async function listVerifiedForAdmin(): Promise<VerifiedUser[]> {
+  const sql = getDb();
+  await ensureTable(sql);
+
+  const rows = await sql`
+    SELECT wallet_address FROM user_profiles WHERE identity_verified = TRUE ORDER BY wallet_address
+  `;
+  const wallets = rows.map(r => r.wallet_address as string);
+  if (!wallets.length) return [];
+
+  const reviewedRows = await sql`
+    SELECT DISTINCT ON (wallet_address) wallet_address, reviewed_at
+    FROM identity_verifications
+    WHERE status = 'approved'
+    ORDER BY wallet_address, reviewed_at DESC
+  `;
+  const reviewedAtByWallet = new Map<string, string>();
+  for (const r of reviewedRows) {
+    if (r.reviewed_at) reviewedAtByWallet.set(r.wallet_address as string, (r.reviewed_at as Date).toISOString());
+  }
+
+  // DB speichert wallet_address als lowercase, Clerk-IDs können Großbuchstaben enthalten →
+  // getUserList({ userId: [...] }) findet nichts. Deshalb alle User paginiert laden und
+  // per lowercase-Vergleich matchen (gleiches Muster wie reputation/leaderboard/route.ts).
+  const emailByWallet = new Map<string, string | null>();
+  try {
+    const clerk = await clerkClient();
+    const idSet = new Set(wallets);
+    let offset = 0;
+    const pageSize = 100;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { data: batch, totalCount } = await clerk.users.getUserList({ limit: pageSize, offset });
+      for (const u of batch) {
+        const lcId = u.id.toLowerCase();
+        if (idSet.has(lcId)) {
+          emailByWallet.set(lcId, u.emailAddresses.find(e => e.id === u.primaryEmailAddressId)?.emailAddress ?? null);
+        }
+      }
+      if (batch.length < pageSize || offset + batch.length >= totalCount) break;
+      offset += pageSize;
+    }
+  } catch { /* Emails bleiben null falls Clerk-Abruf fehlschlägt */ }
+
+  return wallets.map(w => ({
+    walletAddress: w,
+    email: emailByWallet.get(w) ?? null,
+    verifiedAt: reviewedAtByWallet.get(w) ?? null,
+  }));
+}
+
 export type ReviewResult =
   | { ok: true }
   | { ok: false; error: string; conflictWallet?: string };

@@ -3675,8 +3675,15 @@ interface AdminPendingVerification {
   submittedAt: string;
 }
 
+interface AdminVerifiedUser {
+  walletAddress: string;
+  email: string | null;
+  verifiedAt: string | null;
+}
+
 function IdentityVerificationSection({ secret }: { secret: string }) {
   const [pending, setPending] = useState<AdminPendingVerification[]>([]);
+  const [verified, setVerified] = useState<AdminVerifiedUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -3693,6 +3700,7 @@ function IdentityVerificationSection({ secret }: { secret: string }) {
       const d = await r.json();
       if (!r.ok) throw new Error(d.error ?? 'Fehler');
       setPending(Array.isArray(d.pending) ? d.pending : []);
+      setVerified(Array.isArray(d.verified) ? d.verified : []);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Fehler beim Laden');
     } finally {
@@ -3724,6 +3732,7 @@ function IdentityVerificationSection({ secret }: { secret: string }) {
         throw new Error(d.error ?? 'Fehler');
       }
       setPending(prev => prev.filter(p => p.id !== id));
+      if (decision === 'approved') load();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Fehler');
     } finally {
@@ -3823,6 +3832,39 @@ function IdentityVerificationSection({ secret }: { secret: string }) {
         {pending.length === 0 && !loading && (
           <p className="text-center text-zinc-500 py-6">Keine offenen Anträge</p>
         )}
+      </div>
+
+      <div>
+        <h3 className="text-sm font-bold text-white flex items-center gap-2 mb-2">
+          <FaCheck className="text-green-400" size={13} /> Verifizierte Nutzer ({verified.length})
+        </h3>
+        <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-zinc-500 border-b border-zinc-800">
+                <th className="px-4 py-2 font-semibold">Wallet</th>
+                <th className="px-4 py-2 font-semibold">E-Mail</th>
+                <th className="px-4 py-2 font-semibold">Verifiziert am</th>
+              </tr>
+            </thead>
+            <tbody>
+              {verified.map((u) => (
+                <tr key={u.walletAddress} className="border-b border-zinc-800/50 last:border-0">
+                  <td className="px-4 py-2 text-zinc-200 whitespace-nowrap font-mono text-xs">{u.walletAddress}</td>
+                  <td className="px-4 py-2 text-zinc-300 whitespace-nowrap">{u.email ?? '—'}</td>
+                  <td className="px-4 py-2 text-zinc-500 whitespace-nowrap">
+                    {u.verifiedAt ? new Date(u.verifiedAt).toLocaleString('de-DE') : '—'}
+                  </td>
+                </tr>
+              ))}
+              {verified.length === 0 && !loading && (
+                <tr>
+                  <td colSpan={3} className="px-4 py-6 text-center text-zinc-500">Noch keine verifizierten Nutzer</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
