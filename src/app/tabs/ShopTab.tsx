@@ -977,19 +977,20 @@ function ArtistShopView({
       {items.length > 0 && (
         <div className="px-4 flex gap-2 overflow-x-auto pb-1">
           {([
-            { key: 'all',   label: t('shop.filterAll', lang) },
-            { key: 'video', label: `🎬 ${TYPE_LABELS.video}` },
-            { key: 'nft',   label: `💎 NFT` },
+            { key: 'all',   label: t('shop.filterAll', lang), icon: null },
+            { key: 'video', label: TYPE_LABELS.video, icon: <FaVideo size={10} /> },
+            { key: 'nft',   label: 'NFT', icon: <FaCertificate size={10} /> },
           ] as const).map(f => (
             <button
               key={f.key}
               onClick={() => setTypeFilter(f.key)}
-              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
                 typeFilter === f.key
                   ? 'bg-amber-500 text-black'
                   : 'bg-white/[0.05] text-zinc-400 hover:bg-white/[0.08]'
               }`}
             >
+              {f.icon}
               {f.label}
             </button>
           ))}
