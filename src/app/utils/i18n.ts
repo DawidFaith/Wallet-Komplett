@@ -269,6 +269,31 @@ const dict: Translations = {
     en: 'Verify identity',
     pl: 'Zweryfikuj tożsamość',
   },
+  'profile.identityHeading': {
+    de: 'Identität',
+    en: 'Identity',
+    pl: 'Tożsamość',
+  },
+  'profile.identityVerified': {
+    de: 'Verifiziert',
+    en: 'Verified',
+    pl: 'Zweryfikowano',
+  },
+  'profile.identityPending': {
+    de: 'In Prüfung',
+    en: 'Under review',
+    pl: 'W trakcie weryfikacji',
+  },
+  'profile.identityRejected': {
+    de: 'Abgelehnt',
+    en: 'Rejected',
+    pl: 'Odrzucono',
+  },
+  'profile.identityNotSubmitted': {
+    de: 'Nicht eingereicht',
+    en: 'Not submitted',
+    pl: 'Nie przesłano',
+  },
   'profile.shopAvailable': {
     de: 'Shop verfügbar',
     en: 'Shop available',
