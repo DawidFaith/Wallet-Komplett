@@ -10,6 +10,7 @@
 import { createHmac } from 'crypto';
 import { getDb } from './db';
 import { encryptKey, decryptKey } from './solanaCrypto';
+import { sendIdentityVerificationAdminEmail } from './email';
 
 const HASH_SECRET = process.env.IDENTITY_HASH_SECRET;
 
@@ -60,6 +61,10 @@ export async function submitVerification(params: {
     INSERT INTO identity_verifications (wallet_address, id_type, id_number_hint, doc_image_enc, selfie_image_enc, status)
     VALUES (${wallet}, ${params.idType}, ${params.idNumber.trim()}, ${docEnc}, ${selfieEnc}, 'pending')
   `;
+
+  sendIdentityVerificationAdminEmail({ walletAddress: wallet, idType: params.idType }).catch(err => {
+    console.error('[identityVerification] Admin-Benachrichtigung fehlgeschlagen:', err instanceof Error ? err.message : err);
+  });
 }
 
 export interface VerificationStatus {

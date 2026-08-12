@@ -113,6 +113,30 @@ export async function sendTesterApprovedEmail(params: {
   });
 }
 
+/** Admin-Benachrichtigung: neuer Identitätsverifizierungs-Antrag wartet auf Prüfung */
+export async function sendIdentityVerificationAdminEmail(params: {
+  walletAddress: string;
+  idType: string;
+}): Promise<void> {
+  await sendMail({
+    to: ADMIN_EMAIL,
+    fromName: 'D.FAITH App',
+    subject: `[D.FAITH] Neuer Identitäts-Verifizierungsantrag wartet auf Prüfung`,
+    html: `
+      <h2>Neuer Verifizierungsantrag</h2>
+      <table>
+        <tr><td><b>Wallet:</b></td><td>${params.walletAddress}</td></tr>
+        <tr><td><b>Dokumenttyp:</b></td><td>${params.idType}</td></tr>
+      </table>
+      <p>
+        <a href="${APP_URL}/admin#identity" style="background:#e11d48;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold;">
+          Admin Panel öffnen
+        </a>
+      </p>
+    `,
+  });
+}
+
 const GIVEAWAY_EMAIL_LOCALE: Record<Lang, string> = { de: 'de-DE', en: 'en-US', pl: 'pl-PL' };
 
 const GIVEAWAY_EMAIL_STRINGS: Record<Lang, {
