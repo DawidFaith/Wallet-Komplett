@@ -689,6 +689,7 @@ function ArtistShopView({
   const [userLevel, setUserLevel] = useState(0);
   const [showDeposit, setShowDeposit] = useState(false);
   const [showIdentityModal, setShowIdentityModal] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<'all' | 'video' | 'nft'>('all');
 
   // User-Level für diesen Artist laden
   useEffect(() => {
@@ -732,6 +733,12 @@ function ArtistShopView({
   }, [artist.artistWallet, walletAddress]);
 
   useEffect(() => { loadItems(); }, [loadItems]);
+
+  const filteredItems = useMemo(() => {
+    if (typeFilter === 'all') return items;
+    if (typeFilter === 'nft') return items.filter(i => i.type !== 'video');
+    return items.filter(i => i.type === 'video');
+  }, [items, typeFilter]);
 
   const handleBuy = async (item: ShopItem, paymentMethod: 'credits' | 'tokens') => {
     if (!walletAddress) return;
@@ -966,6 +973,29 @@ function ArtistShopView({
         </div>
       )}
 
+      {/* Typ-Filter */}
+      {items.length > 0 && (
+        <div className="px-4 flex gap-2 overflow-x-auto pb-1">
+          {([
+            { key: 'all',   label: t('shop.filterAll', lang) },
+            { key: 'video', label: `🎬 ${TYPE_LABELS.video}` },
+            { key: 'nft',   label: `💎 NFT` },
+          ] as const).map(f => (
+            <button
+              key={f.key}
+              onClick={() => setTypeFilter(f.key)}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                typeFilter === f.key
+                  ? 'bg-amber-500 text-black'
+                  : 'bg-white/[0.05] text-zinc-400 hover:bg-white/[0.08]'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Item-Liste */}
       {loading ? (
         <div className="flex justify-center py-12">
@@ -975,9 +1005,13 @@ function ArtistShopView({
         <div className="mx-4 bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
           {t('shop.noItems', lang)}
         </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="mx-4 bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-8 text-center text-zinc-500 text-sm">
+          {t('shop.noItemsFiltered', lang)}
+        </div>
       ) : (
         <div className="px-4 grid grid-cols-2 gap-3">
-          {items.map(item => (
+          {filteredItems.map(item => (
             <ItemCard key={item.id} item={item} artistRewardToken={artist.rewardToken} userLevel={userLevel} onOpen={setDetailItem} />
           ))}
         </div>
