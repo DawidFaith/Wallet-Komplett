@@ -10,6 +10,7 @@ import { RiUserStarFill } from 'react-icons/ri';
 import { useLang } from '../components/LangContext';
 import { t, tFmt } from '../utils/i18n';
 import CreditsCardCheckout from '../components/CreditsCardCheckout';
+import IdentityVerifyModal from './profile/IdentityVerifyModal';
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
 
@@ -689,6 +690,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState('');
   const [done, setDone]               = useState(false);
+  const [showIdentityModal, setShowIdentityModal] = useState(false);
 
   useEffect(() => {
     if (!walletAddress) return;
@@ -854,7 +856,10 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Fehler');
+      if (!res.ok) {
+        if (data.code === 'identity_not_verified') { setShowIdentityModal(true); return; }
+        throw new Error(data.error ?? 'Fehler');
+      }
       setDone(true);
       setTimeout(() => { onSuccess(); onClose(); }, 2000);
     } catch (e) {
@@ -1009,6 +1014,13 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
           </>
         )}
       </div>
+      {showIdentityModal && (
+        <IdentityVerifyModal
+          walletAddress={walletAddress}
+          lang={lang}
+          onClose={() => setShowIdentityModal(false)}
+        />
+      )}
     </div>
   );
 }

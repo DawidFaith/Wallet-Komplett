@@ -10,6 +10,7 @@ import {
   FaCreditCard,
 } from 'react-icons/fa';
 import CreditsCardCheckout from '../components/CreditsCardCheckout';
+import IdentityVerifyModal from './profile/IdentityVerifyModal';
 import { SiSolana } from 'react-icons/si';
 import { useLang } from '../components/LangContext';
 import { t, tFmt } from '../utils/i18n';
@@ -687,6 +688,7 @@ function ArtistShopView({
   const [detailItem, setDetailItem] = useState<ShopItem | null>(null);
   const [userLevel, setUserLevel] = useState(0);
   const [showDeposit, setShowDeposit] = useState(false);
+  const [showIdentityModal, setShowIdentityModal] = useState(false);
 
   // User-Level für diesen Artist laden
   useEffect(() => {
@@ -745,6 +747,7 @@ function ArtistShopView({
         let errMsg = t('shop.buyFailed', lang);
         try {
           const e = await res.json();
+          if (e.code === 'identity_not_verified') { setShowIdentityModal(true); return; }
           const codeKey = e.code ? PURCHASE_ERROR_KEYS[e.code as string] : undefined;
           errMsg = codeKey ? t(codeKey, lang) : (e.error ?? errMsg);
         } catch {}
@@ -997,6 +1000,14 @@ function ArtistShopView({
           walletAddress={walletAddress}
           onClose={() => setShowDeposit(false)}
           onSuccess={() => { onDepositSuccess?.(); setShowDeposit(false); }}
+        />
+      )}
+
+      {showIdentityModal && walletAddress && (
+        <IdentityVerifyModal
+          walletAddress={walletAddress}
+          lang={lang}
+          onClose={() => setShowIdentityModal(false)}
         />
       )}
     </div>

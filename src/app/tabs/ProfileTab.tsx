@@ -10,6 +10,7 @@ import {
   FaMusic, FaTimes, FaInfoCircle, FaTrophy, FaTasks, FaShoppingBag,
   FaCopy, FaUserFriends,
 } from 'react-icons/fa';import SocialVerifyModal from './profile/SocialVerifyModal';
+import IdentityVerifyModal from './profile/IdentityVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
 import { t, tFmt, type Lang } from '../utils/i18n';
@@ -127,6 +128,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
     }));
   };
   const [claimModal, setClaimModal] = useState<{ sentAmount: number } | null>(null);
+  const [showIdentityModal, setShowIdentityModal] = useState(false);
   const [showClaimConfirm, setShowClaimConfirm] = useState(false);
   const [dfaithBalance, setDfaithBalance] = useState<number | null>(null);
   const [repData, setRepData] = useState<{ reputation: number; level: number; levelName: string; progress: number; nextLevelRep: number | null; questRewardBonusPercent: number } | null>(null);
@@ -285,6 +287,9 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
         const sentAmount: number = json.sentAmount ?? data.credits;
         await loadProfile();
         setClaimModal({ sentAmount });
+      } else {
+        const json = await res.json().catch(() => null);
+        if (json?.code === 'identity_not_verified') setShowIdentityModal(true);
       }
     } finally {
       setClaiming(false);
@@ -562,6 +567,12 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               </button>
             </div>
           </div>
+          <button
+            onClick={() => setShowIdentityModal(true)}
+            className="text-amber-400/70 hover:text-amber-300 text-[10px] font-semibold uppercase tracking-wide underline underline-offset-2"
+          >
+            {t('profile.verifyIdentity', lang)}
+          </button>
         </div>
 
         {/* Divider */}
@@ -1116,6 +1127,14 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
             </div>
           </div>
         </div>
+      )}
+
+      {showIdentityModal && account?.address && (
+        <IdentityVerifyModal
+          walletAddress={account.address}
+          lang={lang}
+          onClose={() => setShowIdentityModal(false)}
+        />
       )}
 
       {/* Einlösen-Erfolgs-Modal */}

@@ -25,6 +25,7 @@ import { decryptKey } from '../../../lib/solanaCrypto';
 import { mintSongPrintEdition } from '../../../lib/songNft';
 import { requireOwnWallet } from '../../../lib/apiAuth';
 import { checkRateLimit } from '../../../lib/rateLimit';
+import { isIdentityVerified } from '../../../lib/identityVerification';
 
 const RPC_URL     = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN;
@@ -81,6 +82,14 @@ export async function POST(req: NextRequest) {
     edition_count: number;
     is_nft_enabled: boolean;
   };
+
+  // ── Identitätsverifizierung: nur für Käufe, die ein NFT minten (alles außer 'video') ──
+  if (item.type !== 'video' && !(await isIdentityVerified(buyerWallet))) {
+    return NextResponse.json(
+      { error: 'Bitte verifiziere zuerst deine Identität, um NFTs zu kaufen.', code: 'identity_not_verified' },
+      { status: 403 },
+    );
+  }
 
   // ── Max Supply prüfen ─────────────────────────────────────────────────────
   if (item.is_nft_enabled && item.nft_max_supply !== null) {

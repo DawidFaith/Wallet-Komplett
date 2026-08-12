@@ -14,6 +14,7 @@ import { RARITY_REP_MULTIPLIER, RARITY_CREDIT_MULTIPLIER } from '../../../lib/qu
 import { decryptKey } from '../../../lib/solanaCrypto';
 import { requireOwnWallet } from '../../../lib/apiAuth';
 import { checkRateLimit } from '../../../lib/rateLimit';
+import { isIdentityVerified } from '../../../lib/identityVerification';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 
@@ -43,6 +44,13 @@ export async function POST(req: NextRequest) {
 
     const rl = await checkRateLimit(`collectibles-mint:${authCheck.userId}`, 10, 60);
     if (!rl.ok) return rl.response!;
+
+    if (!(await isIdentityVerified(walletAddress))) {
+      return NextResponse.json(
+        { error: 'Bitte verifiziere zuerst deine Identität, um ein Collectible als NFT zu minten.', code: 'identity_not_verified' },
+        { status: 403 },
+      );
+    }
 
     const sql = getDb();
 

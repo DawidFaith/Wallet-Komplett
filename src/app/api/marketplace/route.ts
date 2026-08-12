@@ -16,6 +16,7 @@ import { getTreasuryKeypair } from '../../lib/solanaOperator';
 import { decryptKey } from '../../lib/solanaCrypto';
 import { requireOwnWallet } from '../../lib/apiAuth';
 import { checkRateLimit } from '../../lib/rateLimit';
+import { isIdentityVerified } from '../../lib/identityVerification';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 
@@ -165,6 +166,13 @@ export async function POST(req: NextRequest) {
     if (!authCheck.ok) return authCheck.response;
     const rl = await checkRateLimit(`marketplace-list:${authCheck.userId}`, 10, 60);
     if (!rl.ok) return rl.response!;
+
+    if (!(await isIdentityVerified(walletAddress))) {
+      return NextResponse.json(
+        { error: 'Bitte verifiziere zuerst deine Identität, um auf dem Marktplatz zu verkaufen.', code: 'identity_not_verified' },
+        { status: 403 },
+      );
+    }
 
     const sql = getDb();
     await ensureTable(sql);

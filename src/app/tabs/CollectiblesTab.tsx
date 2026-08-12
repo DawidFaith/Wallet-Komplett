@@ -7,6 +7,7 @@ import { FaGem, FaFire, FaChevronLeft, FaPlus, FaTimes, FaCheck, FaSync, FaImage
 import { GiCrystalShine, GiMagicSwirl } from 'react-icons/gi';
 import { useLang } from '../components/LangContext';
 import { t, tFmt } from '../utils/i18n';
+import IdentityVerifyModal from './profile/IdentityVerifyModal';
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
 
@@ -532,10 +533,12 @@ function MintConfirmModal({ collection, rarity, walletAddress, onClose }: {
   walletAddress: string;
   onClose: (minted: boolean) => void;
 }) {
+  const lang = useLang();
   const cfg = RARITY_CONFIG[rarity];
   const [phase, setPhase]       = useState<'confirm' | 'loading' | 'success' | 'error'>('confirm');
   const [errorMsg, setErrorMsg] = useState('');
   const [solBalance, setSolBalance] = useState<number | null>(null);
+  const [showIdentityModal, setShowIdentityModal] = useState(false);
 
   useEffect(() => {
     async function loadSol() {
@@ -562,8 +565,11 @@ function MintConfirmModal({ collection, rarity, walletAddress, onClose }: {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ walletAddress, collectionId: collection.id, rarity }),
       });
-      const json = await res.json() as { success?: boolean; error?: string };
-      if (!res.ok || !json.success) throw new Error(json.error ?? 'Fehler beim Minten');
+      const json = await res.json() as { success?: boolean; error?: string; code?: string };
+      if (!res.ok || !json.success) {
+        if (json.code === 'identity_not_verified') { setShowIdentityModal(true); setPhase('confirm'); return; }
+        throw new Error(json.error ?? 'Fehler beim Minten');
+      }
       setPhase('success');
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : String(e));
@@ -681,6 +687,14 @@ function MintConfirmModal({ collection, rarity, walletAddress, onClose }: {
            <><FaGem /> Jetzt minten</>}
         </button>
       </div>
+
+      {showIdentityModal && (
+        <IdentityVerifyModal
+          walletAddress={walletAddress}
+          lang={lang}
+          onClose={() => setShowIdentityModal(false)}
+        />
+      )}
     </div>
   );
 }

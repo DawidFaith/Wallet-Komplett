@@ -264,6 +264,11 @@ const dict: Translations = {
     en: 'Redeem',
     pl: 'Odbierz',
   },
+  'profile.verifyIdentity': {
+    de: 'Identität verifizieren',
+    en: 'Verify identity',
+    pl: 'Zweryfikuj tożsamość',
+  },
   'profile.shopAvailable': {
     de: 'Shop verfügbar',
     en: 'Shop available',

@@ -6,6 +6,7 @@ import {
   FaYoutube, FaInstagram, FaTiktok, FaFacebook,
   FaCheck, FaTimes, FaSearch, FaShieldAlt, FaCoins, FaStar, FaSync, FaPaperPlane,
   FaShoppingBag, FaEdit, FaCopy, FaWallet, FaExternalLinkAlt, FaTrashAlt, FaGift,
+  FaIdCard, FaExclamationTriangle,
 } from 'react-icons/fa';
 import { SiSolana } from 'react-icons/si';
 import { GiCrystalShine } from 'react-icons/gi';
@@ -253,7 +254,7 @@ export default function AdminPage() {
     return matchSearch && matchFilter;
   });
 
-  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'collectibles' | 'referral' | 'giveaways' | 'audit' | 'unsubscribes'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'collectibles' | 'referral' | 'giveaways' | 'audit' | 'unsubscribes' | 'identity'>('users');
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState('');
   const [resetting, setResetting] = useState(false);
@@ -333,7 +334,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-0">
-        {(['users', 'credits', 'token', 'shop', 'platform', 'collectibles', 'referral', 'giveaways', 'audit', 'unsubscribes'] as const).map((tab) => (
+        {(['users', 'credits', 'token', 'shop', 'platform', 'collectibles', 'referral', 'giveaways', 'identity', 'audit', 'unsubscribes'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -343,7 +344,7 @@ export default function AdminPage() {
                 : 'text-zinc-500 border-transparent hover:text-zinc-300'
             }`}
           >
-            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'platform' ? '⚡ Platform' : tab === 'collectibles' ? '💎 Collectibles' : tab === 'referral' ? '🔗 Referral' : tab === 'giveaways' ? '🎁 Giveaways' : tab === 'audit' ? '🛡️ Audit-Log' : '✉️ Abmeldungen'}
+            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'platform' ? '⚡ Platform' : tab === 'collectibles' ? '💎 Collectibles' : tab === 'referral' ? '🔗 Referral' : tab === 'giveaways' ? '🎁 Giveaways' : tab === 'identity' ? '🪪 Identität' : tab === 'audit' ? '🛡️ Audit-Log' : '✉️ Abmeldungen'}
           </button>
         ))}
       </div>
@@ -613,6 +614,11 @@ export default function AdminPage() {
       {/* ── Giveaways Tab ─────────────────────────────────────────────────────── */}
       {activeTab === 'giveaways' && (
         <GiveawayEntriesSection secret={secret} />
+      )}
+
+      {/* ── Identität Tab ────────────────────────────────────────────────────── */}
+      {activeTab === 'identity' && (
+        <IdentityVerificationSection secret={secret} />
       )}
 
       {/* ── Audit-Log Tab ────────────────────────────────────────────────────── */}
@@ -3652,6 +3658,171 @@ function GiveawayEntriesSection({ secret }: { secret: string }) {
             )}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── IdentityVerificationSection ──────────────────────────────────────────────
+
+interface AdminPendingVerification {
+  id: string;
+  walletAddress: string;
+  idType: string;
+  idNumberHint: string | null;
+  docImageDataUrl: string | null;
+  selfieImageDataUrl: string | null;
+  submittedAt: string;
+}
+
+function IdentityVerificationSection({ secret }: { secret: string }) {
+  const [pending, setPending] = useState<AdminPendingVerification[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [conflict, setConflict] = useState<{ id: string; wallet: string } | null>(null);
+  const [confirmedNumbers, setConfirmedNumbers] = useState<Record<string, string>>({});
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const r = await fetch('/api/admin/identity-verifications', {
+        headers: { 'x-admin-secret': secret },
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? 'Fehler');
+      setPending(Array.isArray(d.pending) ? d.pending : []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler beim Laden');
+    } finally {
+      setLoading(false);
+    }
+  }, [secret]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const review = async (id: string, decision: 'approved' | 'rejected', force = false) => {
+    setBusyId(id);
+    setError('');
+    setConflict(null);
+    try {
+      const r = await fetch('/api/admin/identity-verifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({
+          id,
+          decision,
+          confirmedIdNumber: confirmedNumbers[id],
+          force,
+          rejectionReason: decision === 'rejected' ? (window.prompt('Ablehnungsgrund (optional):') ?? undefined) : undefined,
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        if (d.conflictWallet) { setConflict({ id, wallet: d.conflictWallet as string }); return; }
+        throw new Error(d.error ?? 'Fehler');
+      }
+      setPending(prev => prev.filter(p => p.id !== id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <FaIdCard className="text-amber-400" /> Identitätsverifizierung
+          </h2>
+          <p className="text-xs text-zinc-500 mt-1">{pending.length} offene Anträge.</p>
+        </div>
+        <button
+          onClick={load}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50"
+        >
+          <FaSync className={loading ? 'animate-spin' : ''} /> Aktualisieren
+        </button>
+      </div>
+
+      {error && (
+        <div className="bg-red-900/30 border border-red-800/50 text-red-300 text-sm px-4 py-3 rounded-xl">
+          {error}
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {pending.map((p) => (
+          <div key={p.id} className="bg-zinc-900 rounded-xl border border-zinc-800 p-4 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <p className="text-white font-semibold text-sm">{p.walletAddress}</p>
+                <p className="text-zinc-500 text-xs">
+                  {p.idType} · eingereicht {new Date(p.submittedAt).toLocaleString('de-DE')}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              {p.docImageDataUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={p.docImageDataUrl} alt="Dokument" className="w-full rounded-lg border border-zinc-800 object-contain max-h-64" />
+              )}
+              {p.selfieImageDataUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={p.selfieImageDataUrl} alt="Selfie" className="w-full rounded-lg border border-zinc-800 object-contain max-h-64" />
+              )}
+            </div>
+
+            <div>
+              <label className="text-zinc-500 text-xs font-semibold uppercase tracking-wide">Ausweisnummer bestätigen</label>
+              <input
+                value={confirmedNumbers[p.id] ?? p.idNumberHint ?? ''}
+                onChange={(e) => setConfirmedNumbers(prev => ({ ...prev, [p.id]: e.target.value }))}
+                className="w-full mt-1 bg-zinc-800 text-white rounded-lg px-3 py-2 border border-zinc-700 focus:border-amber-500 focus:outline-none text-sm"
+              />
+            </div>
+
+            {conflict?.id === p.id && (
+              <div className="bg-yellow-900/30 border border-yellow-800/50 text-yellow-300 text-xs px-3 py-2 rounded-lg flex items-start gap-2">
+                <FaExclamationTriangle className="shrink-0 mt-0.5" size={12} />
+                <div>
+                  Diese Ausweisnummer ist bereits bei <span className="font-mono">{conflict.wallet}</span> verifiziert.
+                  <button
+                    onClick={() => review(p.id, 'approved', true)}
+                    className="block mt-1 text-yellow-200 underline underline-offset-2"
+                  >
+                    Trotzdem genehmigen
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => review(p.id, 'rejected')}
+                disabled={busyId === p.id}
+                className="flex-1 bg-red-900/40 hover:bg-red-800/60 text-red-400 text-sm font-semibold py-2 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <FaTimes size={12} /> Ablehnen
+              </button>
+              <button
+                onClick={() => review(p.id, 'approved')}
+                disabled={busyId === p.id}
+                className="flex-1 bg-green-700/40 hover:bg-green-600/60 text-green-400 text-sm font-semibold py-2 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <FaCheck size={12} /> Genehmigen
+              </button>
+            </div>
+          </div>
+        ))}
+        {pending.length === 0 && !loading && (
+          <p className="text-center text-zinc-500 py-6">Keine offenen Anträge</p>
+        )}
       </div>
     </div>
   );
