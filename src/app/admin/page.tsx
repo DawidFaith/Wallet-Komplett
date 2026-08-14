@@ -13,6 +13,7 @@ import { GiCrystalShine } from 'react-icons/gi';
 
 interface AdminUser {
   walletAddress: string;
+  email: string | null;
   displayName: string | null;
   isArtist: boolean;
   rewardToken: string | null;
@@ -241,6 +242,7 @@ export default function AdminPage() {
       !q ||
       u.walletAddress.toLowerCase().includes(q) ||
       (u.displayName ?? '').toLowerCase().includes(q) ||
+      (u.email ?? '').toLowerCase().includes(q) ||
       (u.youtubeChannelName ?? '').toLowerCase().includes(q) ||
       (u.instagramHandle ?? '').toLowerCase().includes(q) ||
       (u.tiktokHandle ?? '').toLowerCase().includes(q) ||
@@ -1396,6 +1398,9 @@ function UserRow({
           >
             {copied ? '✓ Kopiert' : shortenAddress(user.walletAddress)}
           </button>
+          {user.email && (
+            <p className="text-zinc-500 text-xs truncate" title={user.email}>{user.email}</p>
+          )}
         </div>
       </div>
 

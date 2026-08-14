@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { clerkClient } from '@clerk/nextjs/server';
 import { getAllUserProfiles, setArtistStatus, upsertUserProfile } from '../../../lib/questDb';
 import { getDb } from '../../../lib/db';
 
@@ -14,7 +15,33 @@ export async function GET(req: NextRequest) {
   }
   try {
     const users = await getAllUserProfiles();
-    return NextResponse.json({ users });
+
+    // Clerk-E-Mails für alle Nutzer abrufen. DB speichert wallet_address als
+    // lowercase, Clerk-IDs können Großbuchstaben enthalten → getUserList({ userId })
+    // findet nichts. Deshalb alle User paginiert laden und per lowercase-Vergleich
+    // matchen (gleiches Muster wie reputation/leaderboard/route.ts).
+    const emailByWallet = new Map<string, string | null>();
+    try {
+      const clerk = await clerkClient();
+      const idSet = new Set(users.map(u => u.walletAddress));
+      let offset = 0;
+      const pageSize = 100;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data: batch, totalCount } = await clerk.users.getUserList({ limit: pageSize, offset });
+        for (const u of batch) {
+          const lcId = u.id.toLowerCase();
+          if (idSet.has(lcId)) {
+            emailByWallet.set(lcId, u.emailAddresses.find(e => e.id === u.primaryEmailAddressId)?.emailAddress ?? null);
+          }
+        }
+        if (batch.length < pageSize || offset + batch.length >= totalCount) break;
+        offset += pageSize;
+      }
+    } catch { /* E-Mails bleiben null falls Clerk-Abruf fehlschlägt */ }
+
+    const enriched = users.map(u => ({ ...u, email: emailByWallet.get(u.walletAddress) ?? null }));
+    return NextResponse.json({ users: enriched });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
