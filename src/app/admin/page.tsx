@@ -46,6 +46,8 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [sendingWelcome, setSendingWelcome] = useState(false);
+  const [welcomeMsg, setWelcomeMsg] = useState('');
   const [search, setSearch] = useState('');
   const [filterArtist, setFilterArtist] = useState<'all' | 'artist' | 'fan'>('all');
   const [toggling, setToggling] = useState<string | null>(null);
@@ -413,6 +415,36 @@ export default function AdminPage() {
               className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-900/60 hover:bg-red-800 text-red-300 disabled:opacity-50 transition-colors border border-red-800/40"
             >
               {resetting ? '…' : 'Full Reset'}
+            </button>
+          </div>
+
+          {/* Willkommensmail */}
+          <div className="flex items-center gap-3 mb-4 p-3 bg-zinc-900 border border-zinc-800 rounded-xl">
+            <div className="flex-1 text-xs text-zinc-400">
+              {welcomeMsg || 'Einmalige Willkommensmail an alle Nutzer senden, die sie noch nicht erhalten haben (in ihrer gespeicherten Sprache).'}
+            </div>
+            <button
+              onClick={async () => {
+                setSendingWelcome(true);
+                setWelcomeMsg('');
+                try {
+                  const res = await fetch('/api/admin/send-welcome-email', {
+                    method: 'POST',
+                    headers: { 'x-admin-secret': secret },
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error ?? 'Fehler');
+                  setWelcomeMsg(`✓ ${data.sent} gesendet, ${data.skippedNoEmail} ohne E-Mail übersprungen (von ${data.total} offenen).`);
+                } catch (e) {
+                  setWelcomeMsg(e instanceof Error ? e.message : 'Fehler');
+                } finally {
+                  setSendingWelcome(false);
+                }
+              }}
+              disabled={sendingWelcome}
+              className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-700/60 hover:bg-amber-600 text-amber-200 disabled:opacity-50 transition-colors border border-amber-700/40"
+            >
+              {sendingWelcome ? 'Sendet…' : 'Willkommensmail senden'}
             </button>
           </div>
 

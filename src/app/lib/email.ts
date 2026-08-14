@@ -175,6 +175,88 @@ export async function sendIdentityVerificationAdminEmail(params: {
   });
 }
 
+const WELCOME_EMAIL_STRINGS: Record<Lang, {
+  subject: string;
+  heading: string;
+  intro: string;
+  step1Title: string;
+  step1Body: string;
+  step2Title: string;
+  step2Body: string;
+  step3Title: string;
+  step3Tokens: string;
+  step3Nfts: string;
+  button: string;
+}> = {
+  de: {
+    subject: 'Willkommen bei D.FAITH – so startest du richtig 🎵',
+    heading: 'Willkommen bei D.FAITH! 🎉',
+    intro: 'Schön, dass du dabei bist. Hier sind deine ersten Schritte, um direkt loszulegen:',
+    step1Title: '1. Social-Media-Account verifizieren',
+    step1Body: 'Verknüpfe deinen Instagram-, TikTok-, YouTube- oder Facebook-Account in deinem Profil. Das ist die Voraussetzung dafür, dass deine Teilnahme an Quests erkannt wird.',
+    step2Title: '2. Deine erste Quest machen',
+    step2Body: 'Sobald dein Account verknüpft ist, kannst du Quests deiner Lieblingskünstler abschließen — z. B. einem Beitrag folgen oder kommentieren — und dafür <b>D.FAITH Credits</b> verdienen.',
+    step3Title: '3. Was du mit Credits machen kannst',
+    step3Tokens: '<b>In echte Token umtauschen</b> — löse deine Credits gegen D.FAITH Token ein, die auf der Solana-Blockchain handelbar sind.',
+    step3Nfts: '<b>Limitierte NFTs im Shop kaufen</b> — exklusive, limitierte NFTs deiner Lieblingskünstler, direkt mit deinen Credits.',
+    button: 'Jetzt starten',
+  },
+  en: {
+    subject: "Welcome to D.FAITH – here's how to get started 🎵",
+    heading: 'Welcome to D.FAITH! 🎉',
+    intro: 'Great to have you here. Here are your first steps to get going right away:',
+    step1Title: '1. Verify your social media account',
+    step1Body: 'Link your Instagram, TikTok, YouTube, or Facebook account in your profile. This is required for your quest participation to be recognized.',
+    step2Title: '2. Complete your first quest',
+    step2Body: 'Once your account is linked, you can complete quests from your favorite artists — like following or commenting on a post — and earn <b>D.FAITH Credits</b>.',
+    step3Title: '3. What you can do with Credits',
+    step3Tokens: '<b>Exchange them for real tokens</b> — redeem your credits for D.FAITH tokens, tradeable on the Solana blockchain.',
+    step3Nfts: '<b>Buy limited NFTs in the shop</b> — exclusive, limited NFTs from your favorite artists, directly with your credits.',
+    button: 'Get started',
+  },
+  pl: {
+    subject: 'Witamy w D.FAITH – jak zacząć 🎵',
+    heading: 'Witamy w D.FAITH! 🎉',
+    intro: 'Cieszymy się, że tu jesteś. Oto Twoje pierwsze kroki, aby zacząć od razu:',
+    step1Title: '1. Zweryfikuj konto w mediach społecznościowych',
+    step1Body: 'Połącz swoje konto Instagram, TikTok, YouTube lub Facebook w swoim profilu. To warunek konieczny, aby Twój udział w questach został rozpoznany.',
+    step2Title: '2. Wykonaj swój pierwszy quest',
+    step2Body: 'Gdy Twoje konto zostanie połączone, możesz wykonywać questy swoich ulubionych artystów — np. obserwować lub komentować post — i zdobywać za to <b>kredyty D.FAITH</b>.',
+    step3Title: '3. Co możesz zrobić z kredytami',
+    step3Tokens: '<b>Wymień je na prawdziwe tokeny</b> — wymień swoje kredyty na tokeny D.FAITH, którymi można handlować na blockchainie Solana.',
+    step3Nfts: '<b>Kup limitowane NFT w sklepie</b> — ekskluzywne, limitowane NFT Twoich ulubionych artystów, bezpośrednio za kredyty.',
+    button: 'Zacznij teraz',
+  },
+};
+
+/** Einmalige Willkommens-Mail für neue/bestehende Nutzer, in ihrer bevorzugten Sprache. */
+export async function sendWelcomeEmail(params: { toEmail: string; lang: Lang }): Promise<void> {
+  const s = WELCOME_EMAIL_STRINGS[params.lang];
+  await sendMail({
+    to: params.toEmail,
+    fromName: 'D.FAITH App',
+    subject: s.subject,
+    html: `
+      <h2>${s.heading}</h2>
+      <p>${s.intro}</p>
+      <h3>${s.step1Title}</h3>
+      <p>${s.step1Body}</p>
+      <h3>${s.step2Title}</h3>
+      <p>${s.step2Body}</p>
+      <h3>${s.step3Title}</h3>
+      <ul>
+        <li>${s.step3Tokens}</li>
+        <li>${s.step3Nfts}</li>
+      </ul>
+      <p>
+        <a href="${APP_URL}" style="background:#e11d48;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">
+          ${s.button}
+        </a>
+      </p>
+    `,
+  });
+}
+
 const GIVEAWAY_EMAIL_LOCALE: Record<Lang, string> = { de: 'de-DE', en: 'en-US', pl: 'pl-PL' };
 
 const GIVEAWAY_EMAIL_STRINGS: Record<Lang, {

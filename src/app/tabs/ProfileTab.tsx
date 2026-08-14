@@ -140,6 +140,16 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
   }, [account?.address]);
 
   useEffect(() => { loadIdentityStatus(); }, [loadIdentityStatus]);
+
+  // Sprachpräferenz serverseitig speichern (für die Sprachwahl automatischer E-Mails)
+  useEffect(() => {
+    if (!account?.address) return;
+    fetch('/api/profile/set-lang', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ walletAddress: account.address, lang }),
+    }).catch(() => {});
+  }, [account?.address, lang]);
   const [showClaimConfirm, setShowClaimConfirm] = useState(false);
   const [dfaithBalance, setDfaithBalance] = useState<number | null>(null);
   const [repData, setRepData] = useState<{ reputation: number; level: number; levelName: string; progress: number; nextLevelRep: number | null; questRewardBonusPercent: number } | null>(null);
