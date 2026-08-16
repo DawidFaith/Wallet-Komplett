@@ -80,13 +80,77 @@ export async function verifyTiktokEntry(videoIdOrUrl: string, handle: string, co
 }
 
 /**
+ * Premiere-Modus: prüft den Live-Chat direkt (statt der später archivierten Kommentare),
+ * damit Fans, die WÄHREND einer laufenden Premiere kommentieren, sofort verifiziert werden
+ * können — commentThreads zeigt Premiere-Chat-Nachrichten erst nach Ende der Premiere.
+ * Braucht kein OAuth, funktioniert mit demselben YOUTUBE_DATA_API_KEY.
+ */
+async function checkYoutubeLiveChat(videoId: string, handle: string, code: string, sinceIso?: string | null): Promise<boolean> {
+  if (!YT_API_KEY) return false;
+  const cleanHandle = handle.toLowerCase().replace(/^@/, '');
+  const sinceMs = sinceIso ? new Date(sinceIso).getTime() : null;
+
+  // Live-Chat-ID auflösen — nur vorhanden, während die Premiere aktuell läuft.
+  let liveChatId: string | undefined;
+  try {
+    const videoUrl = new URL('https://www.googleapis.com/youtube/v3/videos');
+    videoUrl.searchParams.set('part', 'liveStreamingDetails');
+    videoUrl.searchParams.set('id', videoId);
+    videoUrl.searchParams.set('key', YT_API_KEY);
+    const videoRes = await fetch(videoUrl.toString());
+    const videoData = await videoRes.json() as { items?: { liveStreamingDetails?: { activeLiveChatId?: string } }[] };
+    liveChatId = videoData.items?.[0]?.liveStreamingDetails?.activeLiveChatId;
+  } catch {
+    return false;
+  }
+  if (!liveChatId) return false; // Premiere noch nicht gestartet oder schon vorbei
+
+  let pageToken: string | undefined;
+  for (let page = 0; page < 3; page++) {
+    const url = new URL('https://www.googleapis.com/youtube/v3/liveChat/messages');
+    url.searchParams.set('liveChatId', liveChatId);
+    url.searchParams.set('part', 'snippet,authorDetails');
+    url.searchParams.set('key', YT_API_KEY);
+    if (pageToken) url.searchParams.set('pageToken', pageToken);
+
+    let data: {
+      items?: { snippet: { displayMessage?: string; publishedAt?: string }; authorDetails: { displayName?: string } }[];
+      nextPageToken?: string;
+      error?: { code?: number };
+    };
+    try {
+      const res = await fetch(url.toString());
+      data = await res.json();
+    } catch {
+      return false;
+    }
+    if (data.error || !data.items) break;
+    for (const item of data.items) {
+      const authorName = (item.authorDetails.displayName ?? '').toLowerCase().replace(/^@/, '');
+      const text = item.snippet.displayMessage ?? '';
+      if (authorName !== cleanHandle || !text.toLowerCase().includes(code.toLowerCase())) continue;
+      if (sinceMs !== null && item.snippet.publishedAt && new Date(item.snippet.publishedAt).getTime() < sinceMs) continue;
+      return true;
+    }
+    if (!data.nextPageToken) break;
+    pageToken = data.nextPageToken;
+  }
+  return false;
+}
+
+/**
  * YouTube: durchsucht Kommentare nach authorDisplayName === handle und prüft ob der Code im Text steht.
  * `sinceIso` (optional): nur Kommentare ab diesem Zeitpunkt zählen — für Premiere-Giveaways, bei denen
  * nur Kommentare ab Live-Start als Beweis gelten sollen (siehe premiere_starts_at in giveaways.ts).
+ * Im Premiere-Modus wird zuerst der Live-Chat geprüft (siehe checkYoutubeLiveChat), da
+ * commentThreads Premiere-Chat-Nachrichten erst nach Ende der Premiere zeigt.
  */
 export async function verifyYoutubeEntry(videoIdOrUrl: string, handle: string, code: string, sinceIso?: string | null): Promise<boolean> {
   if (!YT_API_KEY) return false;
   const videoId = extractYoutubeVideoId(videoIdOrUrl);
+
+  if (sinceIso && await checkYoutubeLiveChat(videoId, handle, code, sinceIso)) return true;
+
   const cleanHandle = handle.toLowerCase().replace(/^@/, '');
   const sinceMs = sinceIso ? new Date(sinceIso).getTime() : null;
   let pageToken: string | undefined;
