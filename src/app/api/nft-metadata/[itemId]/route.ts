@@ -25,17 +25,8 @@ function guessImageMimeType(url: string): string {
     case 'png':  return 'image/png';
     case 'webp': return 'image/webp';
     case 'avif': return 'image/avif';
-    case 'mp4':  return 'video/mp4';
-    case 'webm': return 'video/webm';
-    case 'mov':  return 'video/quicktime';
     default:     return 'image/jpeg';
   }
-}
-
-/** Als MP4/WebM statt echtem GIF hochgeladenes Cover — braucht animation_url zusätzlich zu image,
- * damit Wallets/Marktplätze es als abspielbares Element statt als statisches Bild behandeln. */
-function isVideoCover(url: string): boolean {
-  return /\.(mp4|webm|mov)(\?.*)?$/i.test(url);
 }
 
 export async function GET(
@@ -76,17 +67,15 @@ export async function GET(
   const audioUrl   = (item.content_url as string | null) ?? '';
 
   if (isCollection) {
-    const isVideo = isVideoCover(coverUrl);
     const collectionMetadata = {
       name:                    `${artistName} — ${item.title as string}`,
       symbol:                  'DFAITH',
       description:             `Official song collection by ${artistName} on D.FAITH. Contains the Master Edition and all numbered Print Editions of "${item.title as string}".`,
       seller_fee_basis_points: 500,
       image:                   coverUrl,
-      ...(isVideo ? { animation_url: coverUrl } : {}),
       external_url:            'https://app.dawidfaith.de',
       properties: {
-        category: isVideo ? 'video' : 'image',
+        category: 'image',
         files:    [{ uri: coverUrl, type: guessImageMimeType(coverUrl) }],
         ...(item.artist_solana_address
           ? { creators: [{ address: item.artist_solana_address as string, share: 100 }] }

@@ -11,7 +11,6 @@ import {
 } from 'react-icons/fa';
 import CreditsCardCheckout from '../components/CreditsCardCheckout';
 import IdentityVerifyModal from './profile/IdentityVerifyModal';
-import CoverMedia, { isVideoCoverUrl } from '../components/CoverMedia';
 import { SiSolana } from 'react-icons/si';
 import { useLang } from '../components/LangContext';
 import { t, tFmt } from '../utils/i18n';
@@ -75,7 +74,6 @@ interface ShopArtist {
 function shortenWallet(w: string) {
   return w.length > 14 ? `${w.slice(0, 7)}…${w.slice(-5)}` : w;
 }
-
 
 /** Wandelt einen YouTube-Link (watch/youtu.be/shorts) in eine Embed-URL um, sonst null. */
 function getYoutubeEmbedUrl(url: string): string | null {
@@ -208,8 +206,8 @@ function ItemCard({
       <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl m-3 mb-0" style={{ width: 'calc(100% - 1.5rem)' }}>
         {displayImage ? (
           <>
-            <CoverMedia src={displayImage} alt="" className={`object-cover scale-110 blur-xl opacity-40 ${isLocked ? 'grayscale' : ''}`} />
-            <CoverMedia src={displayImage} alt={item.title} className={`object-contain ${isLocked ? 'grayscale' : ''}`} />
+            <Image src={displayImage} alt="" fill className={`object-cover scale-110 blur-xl opacity-40 ${isLocked ? 'grayscale' : ''}`} />
+            <Image src={displayImage} alt={item.title} fill className={`object-contain ${isLocked ? 'grayscale' : ''}`} />
           </>
         ) : (
           <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
@@ -324,8 +322,8 @@ function ItemDetailModal({
         <div className="relative w-full aspect-square overflow-hidden">
           {getDisplayImageUrl(item) ? (
             <>
-              <CoverMedia src={getDisplayImageUrl(item)!} alt="" className={`object-cover scale-110 blur-xl opacity-40 ${isLocked ? 'grayscale' : ''}`} />
-              <CoverMedia src={getDisplayImageUrl(item)!} alt={item.title} className={`object-contain ${isLocked ? 'grayscale' : ''}`} />
+              <Image src={getDisplayImageUrl(item)!} alt="" fill className={`object-cover scale-110 blur-xl opacity-40 ${isLocked ? 'grayscale' : ''}`} />
+              <Image src={getDisplayImageUrl(item)!} alt={item.title} fill className={`object-contain ${isLocked ? 'grayscale' : ''}`} />
             </>
           ) : (
             <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
@@ -1088,8 +1086,8 @@ function InventoryItemCard({ item, onOpen }: { item: InventoryItem; onOpen: (ite
       <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl m-3 mb-0" style={{ width: 'calc(100% - 1.5rem)' }}>
         {getDisplayImageUrl(item) ? (
           <>
-            <CoverMedia src={getDisplayImageUrl(item)!} alt="" className="object-cover scale-110 blur-xl opacity-40" />
-            <CoverMedia src={getDisplayImageUrl(item)!} alt={item.title} className="object-contain" />
+            <Image src={getDisplayImageUrl(item)!} alt="" fill className="object-cover scale-110 blur-xl opacity-40" />
+            <Image src={getDisplayImageUrl(item)!} alt={item.title} fill className="object-contain" />
           </>
         ) : (
           <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
@@ -1152,8 +1150,8 @@ function InventoryItemDetailModal({ item, onClose }: { item: InventoryItem; onCl
         <div className="relative w-full aspect-square overflow-hidden">
           {getDisplayImageUrl(item) ? (
             <>
-              <CoverMedia src={getDisplayImageUrl(item)!} alt="" className="object-cover scale-110 blur-xl opacity-40" />
-              <CoverMedia src={getDisplayImageUrl(item)!} alt={item.title} className="object-contain" />
+              <Image src={getDisplayImageUrl(item)!} alt="" fill className="object-cover scale-110 blur-xl opacity-40" />
+              <Image src={getDisplayImageUrl(item)!} alt={item.title} fill className="object-contain" />
             </>
           ) : (
             <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient[item.type]}`}>
@@ -2021,11 +2019,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                     <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Cover-Bild</label>
                     <div className="flex items-center gap-3">
                       {editData.image && (
-                        isVideoCoverUrl(editData.image) ? (
-                          <video src={editData.image} autoPlay loop muted playsInline className="w-12 h-12 rounded-xl object-cover shrink-0 border border-white/10" />
-                        ) : (
-                          <Image src={editData.image} alt="" width={48} height={48} unoptimized className="w-12 h-12 rounded-xl object-cover shrink-0 border border-white/10" />
-                        )
+                        <Image src={editData.image} alt="" width={48} height={48} unoptimized className="w-12 h-12 rounded-xl object-cover shrink-0 border border-white/10" />
                       )}
                       <label className="flex-1 flex items-center justify-center gap-2 bg-black/40 border border-white/10 hover:border-amber-500/50 rounded-xl px-3 py-2.5 text-xs text-zinc-300 cursor-pointer transition-colors">
                         {uploadingEditImage ? (
@@ -2035,7 +2029,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                         )}
                         {uploadingEditImage ? 'Wird hochgeladen…' : 'Bild/GIF ändern'}
                         <input
-                          type="file" accept="image/*,video/mp4,video/webm,video/quicktime" className="hidden" disabled={uploadingEditImage}
+                          type="file" accept="image/*" className="hidden" disabled={uploadingEditImage}
                           onChange={e => { const f = e.target.files?.[0]; if (f) handleEditUpload(f, 'image'); }}
                         />
                       </label>

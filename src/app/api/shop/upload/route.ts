@@ -19,8 +19,6 @@ const ALLOWED_CONTENT_TYPES = [
 
 const ALLOWED_IMAGE_TYPES = [
   'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/avif',
-  // Animierte Cover, die als MP4/WebM statt echtem GIF exportiert wurden (deutlich kleinere Dateigröße)
-  'video/mp4', 'video/webm', 'video/quicktime',
 ];
 
 export async function POST(req: NextRequest) {
