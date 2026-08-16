@@ -11,6 +11,7 @@ import { useLang } from '../components/LangContext';
 import { t, tFmt } from '../utils/i18n';
 import CreditsCardCheckout from '../components/CreditsCardCheckout';
 import IdentityVerifyModal from './profile/IdentityVerifyModal';
+import CoverMedia from '../components/CoverMedia';
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
 
@@ -195,7 +196,7 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
       {/* Bild */}
       <div className="relative w-full aspect-square bg-black/30">
         {listing.image_url ? (
-          <Image src={listing.image_url} alt={displayName} fill className="object-cover" />
+          <CoverMedia src={listing.image_url} alt={displayName} className="object-cover" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             {isSong
@@ -919,7 +920,7 @@ function SellModal({ walletAddress, onClose, onSuccess }: {
                   >
                     <div className="relative w-full aspect-square bg-black/30">
                       {nft.image_url ? (
-                        <Image src={nft.image_url} alt="" fill className="object-cover" />
+                        <CoverMedia src={nft.image_url} alt="" className="object-cover" />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
                           {isSong

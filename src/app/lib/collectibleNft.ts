@@ -125,15 +125,17 @@ export function buildCollectionMetadata(p: {
     rep: 'REP', credits: 'Credits', shard: 'Shard-Chance',
   };
   const image = toHttps(p.imageUrl);
+  const isVideo = isVideoCover(image);
   return {
     name:                    p.name,
     symbol:                  'DFAITH',
     description:             p.description,
     seller_fee_basis_points: 500,
     image,
+    ...(isVideo ? { animation_url: image } : {}),
     external_url:            'https://app.dawidfaith.de',
     properties: {
-      category: 'image',
+      category: isVideo ? 'video' : 'image',
       files:    [{ uri: image, type: guessImageMimeType(image) }],
       creators: [{ address: p.artistSolanaAddress, share: 100 }],
     },
@@ -263,8 +265,17 @@ function guessImageMimeType(url: string): string {
     case 'png':  return 'image/png';
     case 'webp': return 'image/webp';
     case 'avif': return 'image/avif';
+    case 'mp4':  return 'video/mp4';
+    case 'webm': return 'video/webm';
+    case 'mov':  return 'video/quicktime';
     default:     return 'image/jpeg';
   }
+}
+
+/** Als MP4/WebM statt echtem GIF hochgeladenes Cover — braucht animation_url zusätzlich zu image,
+ * damit Wallets/Marktplätze es als abspielbares Element statt als statisches Bild behandeln. */
+function isVideoCover(url: string): boolean {
+  return /\.(mp4|webm|mov)(\?.*)?$/i.test(url);
 }
 
 export function buildAssetMetadata(p: {
@@ -310,6 +321,7 @@ export function buildAssetMetadata(p: {
   attributes.push({ trait_type: 'Website', value: 'app.dawidfaith.de' });
 
   const imageHttps = toHttps(collectionImageUri);
+  const isVideo = isVideoCover(imageHttps);
 
   return {
     name:                    `${collectionName} — ${RARITY_LABELS[rarity]}`,
@@ -317,10 +329,11 @@ export function buildAssetMetadata(p: {
     description:             `${RARITY_LABELS[rarity]} D.FAITH Collectible from the "${collectionName}" series by ${artistName}.\n\nBonuses: ${bonusLine}\n\nTradeable on secondary markets — 5% artist royalties on every resale.`,
     seller_fee_basis_points: 500,
     image:                   imageHttps,
+    ...(isVideo ? { animation_url: imageHttps } : {}),
     external_url:            'https://app.dawidfaith.de',
     background_color:        RARITY_BG_COLOR[rarity],
     properties: {
-      category: 'image',
+      category: isVideo ? 'video' : 'image',
       files:    [{ uri: imageHttps, type: guessImageMimeType(imageHttps) }],
       creators: [{ address: artistSolanaAddress, share: 100 }],
     },

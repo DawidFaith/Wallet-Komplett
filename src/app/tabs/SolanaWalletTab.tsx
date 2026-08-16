@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
 import Image from 'next/image';
+import CoverMedia from '../components/CoverMedia';
 import {
   FaCopy, FaCheckCircle, FaSync, FaPaperPlane, FaExternalLinkAlt,
   FaKey, FaEye, FaEyeSlash, FaSpinner, FaExchangeAlt,
@@ -87,8 +88,8 @@ function SongNftCard({ nft, shopNft, onOpen }: {
       <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl m-3 mb-0" style={{ width: 'calc(100% - 1.5rem)' }}>
         {imageUrl ? (
           <>
-            <Image src={imageUrl} alt="" fill className="object-cover scale-110 blur-xl opacity-40" unoptimized />
-            <Image src={imageUrl} alt={title} fill className="object-contain" unoptimized />
+            <CoverMedia src={imageUrl} alt="" className="object-cover scale-110 blur-xl opacity-40" unoptimized />
+            <CoverMedia src={imageUrl} alt={title} className="object-contain" unoptimized />
           </>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-900/60 to-zinc-900">
@@ -158,8 +159,8 @@ function SongNftDetailModal({ nft, shopNft, onClose, onSend }: {
         <div className="relative w-full aspect-square overflow-hidden">
           {imageUrl ? (
             <>
-              <Image src={imageUrl} alt="" fill className="object-cover scale-110 blur-xl opacity-40" unoptimized />
-              <Image src={imageUrl} alt={title} fill className="object-contain" unoptimized />
+              <CoverMedia src={imageUrl} alt="" className="object-cover scale-110 blur-xl opacity-40" unoptimized />
+              <CoverMedia src={imageUrl} alt={title} className="object-contain" unoptimized />
             </>
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-900/60 to-zinc-900">
@@ -256,8 +257,8 @@ function CollectibleNftCard({ nft, onOpen }: { nft: OwnedNft; onOpen: () => void
       <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl m-3 mb-0" style={{ width: 'calc(100% - 1.5rem)' }}>
         {nft.image ? (
           <>
-            <Image src={nft.image} alt="" fill className="object-cover scale-110 blur-xl opacity-40" unoptimized />
-            <Image src={nft.image} alt={nft.name} fill className="object-contain" unoptimized />
+            <CoverMedia src={nft.image} alt="" className="object-cover scale-110 blur-xl opacity-40" unoptimized />
+            <CoverMedia src={nft.image} alt={nft.name} className="object-contain" unoptimized />
           </>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-900/60 to-zinc-900">
@@ -331,8 +332,8 @@ function CollectibleNftDetailModal({ nft, onClose, onSend, onRedeem }: {
         <div className="relative w-full aspect-square overflow-hidden">
           {nft.image ? (
             <>
-              <Image src={nft.image} alt="" fill className="object-cover scale-110 blur-xl opacity-40" unoptimized />
-              <Image src={nft.image} alt={nft.name} fill className="object-contain" unoptimized />
+              <CoverMedia src={nft.image} alt="" className="object-cover scale-110 blur-xl opacity-40" unoptimized />
+              <CoverMedia src={nft.image} alt={nft.name} className="object-contain" unoptimized />
             </>
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-900/60 to-zinc-900">
