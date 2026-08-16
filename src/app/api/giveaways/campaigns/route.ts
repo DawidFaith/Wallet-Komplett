@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     requiredText?: string;
     creditReward?: number;
     maxWinners?: number;
-    platforms?: { platform: string; postUrl: string; mediaId?: string | null }[];
+    platforms?: { platform: string; postUrl: string; mediaId?: string | null; premiereStartsAt?: string | null }[];
     releaseAt?: string | null;
     presaveUrl?: string | null;
   };
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   const rewardNum = Math.max(1, Math.round(Number(creditReward)));
   const winnersNum = Math.max(1, Math.round(Number(maxWinners)));
 
-  const resolvedPlatforms: { platform: GiveawayPlatform; postUrl: string; mediaId: string | null }[] = [];
+  const resolvedPlatforms: { platform: GiveawayPlatform; postUrl: string; mediaId: string | null; premiereStartsAt: string | null }[] = [];
   for (const p of platforms) {
     if (!VALID_PLATFORMS.includes(p.platform as GiveawayPlatform) || !p.postUrl?.trim()) continue;
     const platform = p.platform as GiveawayPlatform;
@@ -76,8 +76,18 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `Instagram-Link konnte nicht aufgelöst werden: ${postUrl}` }, { status: 400 });
       }
     }
+    // Premiere-Zeitfenster: nur für YouTube relevant, sonst ignoriert.
+    let premiereStartsAt: string | null = null;
+    if (platform === 'youtube' && p.premiereStartsAt?.trim()) {
+      const parsed = new Date(p.premiereStartsAt);
+      if (isNaN(parsed.getTime())) {
+        return NextResponse.json({ error: 'Ungültiger Premiere-Zeitstempel.' }, { status: 400 });
+      }
+      premiereStartsAt = parsed.toISOString();
+    }
+
     // facebook ohne mediaId: wird erst zur Verifikationszeit aufgelöst (Page-ID-Kombination nötig)
-    resolvedPlatforms.push({ platform, postUrl, mediaId });
+    resolvedPlatforms.push({ platform, postUrl, mediaId, premiereStartsAt });
   }
 
   if (resolvedPlatforms.length === 0) {

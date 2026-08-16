@@ -79,11 +79,16 @@ export async function verifyTiktokEntry(videoIdOrUrl: string, handle: string, co
   return false;
 }
 
-/** YouTube: durchsucht Kommentare nach authorDisplayName === handle und prüft ob der Code im Text steht. */
-export async function verifyYoutubeEntry(videoIdOrUrl: string, handle: string, code: string): Promise<boolean> {
+/**
+ * YouTube: durchsucht Kommentare nach authorDisplayName === handle und prüft ob der Code im Text steht.
+ * `sinceIso` (optional): nur Kommentare ab diesem Zeitpunkt zählen — für Premiere-Giveaways, bei denen
+ * nur Kommentare ab Live-Start als Beweis gelten sollen (siehe premiere_starts_at in giveaways.ts).
+ */
+export async function verifyYoutubeEntry(videoIdOrUrl: string, handle: string, code: string, sinceIso?: string | null): Promise<boolean> {
   if (!YT_API_KEY) return false;
   const videoId = extractYoutubeVideoId(videoIdOrUrl);
   const cleanHandle = handle.toLowerCase().replace(/^@/, '');
+  const sinceMs = sinceIso ? new Date(sinceIso).getTime() : null;
   let pageToken: string | undefined;
   for (let page = 0; page < 3; page++) {
     const url = new URL('https://www.googleapis.com/youtube/v3/commentThreads');
@@ -95,7 +100,7 @@ export async function verifyYoutubeEntry(videoIdOrUrl: string, handle: string, c
     if (pageToken) url.searchParams.set('pageToken', pageToken);
 
     let data: {
-      items?: { snippet: { topLevelComment: { snippet: { authorDisplayName?: string; textDisplay: string } } } }[];
+      items?: { snippet: { topLevelComment: { snippet: { authorDisplayName?: string; textDisplay: string; publishedAt?: string } } } }[];
       nextPageToken?: string;
       error?: { code?: number };
     };
@@ -109,9 +114,9 @@ export async function verifyYoutubeEntry(videoIdOrUrl: string, handle: string, c
     for (const item of data.items) {
       const c = item.snippet.topLevelComment.snippet;
       const authorName = (c.authorDisplayName ?? '').toLowerCase().replace(/^@/, '');
-      if (authorName === cleanHandle && c.textDisplay.toLowerCase().includes(code.toLowerCase())) {
-        return true;
-      }
+      if (authorName !== cleanHandle || !c.textDisplay.toLowerCase().includes(code.toLowerCase())) continue;
+      if (sinceMs !== null && c.publishedAt && new Date(c.publishedAt).getTime() < sinceMs) continue;
+      return true;
     }
     if (!data.nextPageToken) break;
     pageToken = data.nextPageToken;

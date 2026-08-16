@@ -54,7 +54,7 @@ export async function checkGiveawayEntryComment(campaign: GiveawayCampaign, entr
     return { found: false };
   }
   if (entry.platform === 'youtube') {
-    return { found: await verifyYoutubeEntry(platformCfgs[0].mediaId ?? platformCfgs[0].postUrl, entry.handle, campaign.requiredText) };
+    return { found: await verifyYoutubeEntry(platformCfgs[0].mediaId ?? platformCfgs[0].postUrl, entry.handle, campaign.requiredText, platformCfgs[0].premiereStartsAt) };
   }
   return { found: false };
 }

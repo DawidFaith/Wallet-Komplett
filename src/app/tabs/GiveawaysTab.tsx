@@ -140,6 +140,10 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
   const [mediaLists, setMediaLists]     = useState<Partial<Record<GiveawayPlatformKey, MediaPickItem[]>>>({});
   const [mediaLoading, setMediaLoading] = useState<Partial<Record<GiveawayPlatformKey, boolean>>>({});
   const [mediaHint, setMediaHint]       = useState<Partial<Record<GiveawayPlatformKey, string>>>({});
+  // Premiere-Giveaway (nur YouTube): Checkbox + automatisch/manuell gesetzter Live-Start.
+  const [premiereEnabled, setPremiereEnabled]   = useState(false);
+  const [premiereStartsAt, setPremiereStartsAt] = useState('');
+  const [premiereLoading, setPremiereLoading]   = useState(false);
 
   const load = useCallback(async () => {
     if (!artistWallet) return;
@@ -168,6 +172,7 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
     setReleaseAt(''); setPresaveUrl('');
     setEnabledPlatforms({}); setPlatformUrls({}); setPlatformMediaIds({});
     setMediaLists({}); setMediaLoading({}); setMediaHint({});
+    setPremiereEnabled(false); setPremiereStartsAt('');
   };
 
   const loadMediaForPlatform = async (p: GiveawayPlatformKey) => {
@@ -190,6 +195,22 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
   const pickMedia = (p: GiveawayPlatformKey, item: MediaPickItem) => {
     setPlatformUrls(prev => ({ ...prev, [p]: item.url }));
     setPlatformMediaIds(prev => ({ ...prev, [p]: item.id }));
+    if (p === 'youtube' && premiereEnabled) {
+      setPremiereLoading(true);
+      setPremiereStartsAt('');
+      fetch(`/api/giveaways/youtube-premiere-info?videoId=${encodeURIComponent(item.id)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.startsAt) {
+            // datetime-local erwartet lokale Zeit ohne Zeitzonen-Suffix
+            const local = new Date(data.startsAt);
+            local.setMinutes(local.getMinutes() - local.getTimezoneOffset());
+            setPremiereStartsAt(local.toISOString().slice(0, 16));
+          }
+        })
+        .catch(() => {})
+        .finally(() => setPremiereLoading(false));
+    }
   };
 
   const handleCreate = async () => {
@@ -198,7 +219,14 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
     const winners = Math.round(Number(maxWinners));
     const platforms = GIVEAWAY_PLATFORMS
       .filter(p => enabledPlatforms[p])
-      .map(p => ({ platform: p, postUrl: (platformUrls[p] ?? '').trim(), mediaId: platformMediaIds[p] ?? null }));
+      .map(p => ({
+        platform: p,
+        postUrl: (platformUrls[p] ?? '').trim(),
+        mediaId: platformMediaIds[p] ?? null,
+        premiereStartsAt: p === 'youtube' && premiereEnabled && premiereStartsAt
+          ? new Date(premiereStartsAt).toISOString()
+          : null,
+      }));
 
     if (!title.trim()) return setError(t('gw.errTitleRequired', lang));
     if (!reward || reward <= 0) return setError(t('gw.errInvalidReward', lang));
@@ -468,6 +496,32 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
                       placeholder={t('gw.manualLinkPlaceholder', lang)}
                       className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500/60"
                     />
+
+                    {p === 'youtube' && (
+                      <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-2 space-y-1.5">
+                        <label className="flex items-center gap-2 text-[11px] font-semibold text-zinc-200 cursor-pointer">
+                          <input
+                            type="checkbox" checked={premiereEnabled}
+                            onChange={e => { setPremiereEnabled(e.target.checked); if (!e.target.checked) setPremiereStartsAt(''); }}
+                          />
+                          🔴 {t('gw.premiereLabel', lang)}
+                        </label>
+                        {premiereEnabled && (
+                          <>
+                            <p className="text-zinc-600 text-[10px]">{t('gw.premiereHint', lang)}</p>
+                            {premiereLoading ? (
+                              <p className="text-zinc-500 text-[10px]">{t('gw.premiereLoading', lang)}</p>
+                            ) : (
+                              <input
+                                type="datetime-local" value={premiereStartsAt}
+                                onChange={e => setPremiereStartsAt(e.target.value)}
+                                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500/60"
+                              />
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -40,6 +40,9 @@ async function ensureTables() {
       UNIQUE(campaign_id, platform)
     )
   `;
+  // Nur für platform='youtube' genutzt: nur Kommentare ab diesem Zeitpunkt zählen
+  // (Premiere-Giveaway — Beweis, dass der Fan live beim Release-Stream dabei war).
+  await sql`ALTER TABLE giveaway_campaign_platforms ADD COLUMN IF NOT EXISTS premiere_starts_at TIMESTAMPTZ`;
   await sql`
     CREATE TABLE IF NOT EXISTS giveaway_entries (
       id TEXT PRIMARY KEY,
@@ -98,6 +101,7 @@ export interface GiveawayCampaignPlatform {
   platform: GiveawayPlatform;
   postUrl: string;
   mediaId: string | null;
+  premiereStartsAt: string | null;
 }
 
 export interface GiveawayEntry {
@@ -193,7 +197,7 @@ export async function createGiveawayCampaign(
   requiredText: string,
   creditReward: number,
   maxWinners: number,
-  platforms: { platform: GiveawayPlatform; postUrl: string; mediaId: string | null }[],
+  platforms: { platform: GiveawayPlatform; postUrl: string; mediaId: string | null; premiereStartsAt?: string | null }[],
   releaseAt: string | null = null,
   presaveUrl: string | null = null,
 ): Promise<{ id: string } | { error: string }> {
@@ -216,8 +220,8 @@ export async function createGiveawayCampaign(
     for (const p of platforms) {
       const pid = `gwp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       await sql`
-        INSERT INTO giveaway_campaign_platforms (id, campaign_id, platform, post_url, media_id)
-        VALUES (${pid}, ${id}, ${p.platform}, ${p.postUrl}, ${p.mediaId})
+        INSERT INTO giveaway_campaign_platforms (id, campaign_id, platform, post_url, media_id, premiere_starts_at)
+        VALUES (${pid}, ${id}, ${p.platform}, ${p.postUrl}, ${p.mediaId}, ${p.premiereStartsAt ?? null})
       `;
     }
     return { id };
@@ -243,8 +247,8 @@ export async function getGiveawayCampaignsByArtist(artistWallet: string): Promis
   `;
   const result: GiveawayCampaign[] = [];
   for (const r of rows) {
-    const platRows = await sql`SELECT platform, post_url, media_id FROM giveaway_campaign_platforms WHERE campaign_id = ${r.id}`;
-    result.push(rowToCampaign(r, platRows.map(p => ({ platform: p.platform as GiveawayPlatform, postUrl: p.post_url as string, mediaId: p.media_id as string | null }))));
+    const platRows = await sql`SELECT platform, post_url, media_id, premiere_starts_at FROM giveaway_campaign_platforms WHERE campaign_id = ${r.id}`;
+    result.push(rowToCampaign(r, platRows.map(p => ({ platform: p.platform as GiveawayPlatform, postUrl: p.post_url as string, mediaId: p.media_id as string | null, premiereStartsAt: (p.premiere_starts_at as Date | null)?.toISOString() ?? null }))));
   }
   return result;
 }
@@ -255,8 +259,8 @@ export async function getPublicGiveawayCampaign(campaignId: string): Promise<Giv
   const sql = getDb();
   const rows = await sql`SELECT * FROM giveaway_campaigns WHERE id = ${campaignId} LIMIT 1`;
   if (rows.length === 0) return null;
-  const platRows = await sql`SELECT platform, post_url, media_id FROM giveaway_campaign_platforms WHERE campaign_id = ${campaignId}`;
-  return rowToCampaign(rows[0], platRows.map(p => ({ platform: p.platform as GiveawayPlatform, postUrl: p.post_url as string, mediaId: p.media_id as string | null })));
+  const platRows = await sql`SELECT platform, post_url, media_id, premiere_starts_at FROM giveaway_campaign_platforms WHERE campaign_id = ${campaignId}`;
+  return rowToCampaign(rows[0], platRows.map(p => ({ platform: p.platform as GiveawayPlatform, postUrl: p.post_url as string, mediaId: p.media_id as string | null, premiereStartsAt: (p.premiere_starts_at as Date | null)?.toISOString() ?? null })));
 }
 
 /**
@@ -293,8 +297,8 @@ export async function getLatestGiveawayCampaignByArtist(artistWallet: string): P
     ORDER BY created_at DESC LIMIT 1
   `;
   if (rows.length === 0) return null;
-  const platRows = await sql`SELECT platform, post_url, media_id FROM giveaway_campaign_platforms WHERE campaign_id = ${rows[0].id}`;
-  return rowToCampaign(rows[0], platRows.map(p => ({ platform: p.platform as GiveawayPlatform, postUrl: p.post_url as string, mediaId: p.media_id as string | null })));
+  const platRows = await sql`SELECT platform, post_url, media_id, premiere_starts_at FROM giveaway_campaign_platforms WHERE campaign_id = ${rows[0].id}`;
+  return rowToCampaign(rows[0], platRows.map(p => ({ platform: p.platform as GiveawayPlatform, postUrl: p.post_url as string, mediaId: p.media_id as string | null, premiereStartsAt: (p.premiere_starts_at as Date | null)?.toISOString() ?? null })));
 }
 
 /** Kampagne manuell beenden: verhindert neue Teilnahmen, gibt ungenutztes Budget zurück. */
