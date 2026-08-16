@@ -192,25 +192,28 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
     }
   };
 
+  const fetchPremiereStart = (videoIdOrUrl: string) => {
+    if (!videoIdOrUrl.trim()) return;
+    setPremiereLoading(true);
+    setPremiereStartsAt('');
+    fetch(`/api/giveaways/youtube-premiere-info?videoId=${encodeURIComponent(videoIdOrUrl)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.startsAt) {
+          // datetime-local erwartet lokale Zeit ohne Zeitzonen-Suffix
+          const local = new Date(data.startsAt);
+          local.setMinutes(local.getMinutes() - local.getTimezoneOffset());
+          setPremiereStartsAt(local.toISOString().slice(0, 16));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setPremiereLoading(false));
+  };
+
   const pickMedia = (p: GiveawayPlatformKey, item: MediaPickItem) => {
     setPlatformUrls(prev => ({ ...prev, [p]: item.url }));
     setPlatformMediaIds(prev => ({ ...prev, [p]: item.id }));
-    if (p === 'youtube' && premiereEnabled) {
-      setPremiereLoading(true);
-      setPremiereStartsAt('');
-      fetch(`/api/giveaways/youtube-premiere-info?videoId=${encodeURIComponent(item.id)}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.startsAt) {
-            // datetime-local erwartet lokale Zeit ohne Zeitzonen-Suffix
-            const local = new Date(data.startsAt);
-            local.setMinutes(local.getMinutes() - local.getTimezoneOffset());
-            setPremiereStartsAt(local.toISOString().slice(0, 16));
-          }
-        })
-        .catch(() => {})
-        .finally(() => setPremiereLoading(false));
-    }
+    if (p === 'youtube' && premiereEnabled) fetchPremiereStart(item.id);
   };
 
   const handleCreate = async () => {
@@ -492,6 +495,9 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
                       onChange={e => {
                         setPlatformUrls(prev => ({ ...prev, [p]: e.target.value }));
                         setPlatformMediaIds(prev => ({ ...prev, [p]: '' }));
+                      }}
+                      onBlur={e => {
+                        if (p === 'youtube' && premiereEnabled && e.target.value.trim()) fetchPremiereStart(e.target.value.trim());
                       }}
                       placeholder={t('gw.manualLinkPlaceholder', lang)}
                       className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500/60"
