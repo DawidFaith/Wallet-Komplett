@@ -2011,8 +2011,29 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                 /* ── Inline-Edit-Formular (nur Preis) ── */
                 <div className="space-y-3">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-zinc-500 text-[10px]">NFT-Inhalt (Bild/Audio) kann nicht geändert werden</p>
+                    <p className="text-zinc-500 text-[10px]">Audio-Inhalt kann nicht geändert werden</p>
                     <button onClick={cancelEdit} className="text-zinc-500 hover:text-zinc-300"><FaTimes size={13} /></button>
+                  </div>
+
+                  <div>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Cover-Bild</label>
+                    <div className="flex items-center gap-3">
+                      {editData.image && (
+                        <Image src={editData.image} alt="" width={48} height={48} unoptimized className="w-12 h-12 rounded-xl object-cover shrink-0 border border-white/10" />
+                      )}
+                      <label className="flex-1 flex items-center justify-center gap-2 bg-black/40 border border-white/10 hover:border-amber-500/50 rounded-xl px-3 py-2.5 text-xs text-zinc-300 cursor-pointer transition-colors">
+                        {uploadingEditImage ? (
+                          <span className="w-3.5 h-3.5 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+                        ) : (
+                          <FaEdit size={11} className="text-zinc-500" />
+                        )}
+                        {uploadingEditImage ? 'Wird hochgeladen…' : 'Bild/GIF ändern'}
+                        <input
+                          type="file" accept="image/*" className="hidden" disabled={uploadingEditImage}
+                          onChange={e => { const f = e.target.files?.[0]; if (f) handleEditUpload(f, 'image'); }}
+                        />
+                      </label>
+                    </div>
                   </div>
 
                   <div>
