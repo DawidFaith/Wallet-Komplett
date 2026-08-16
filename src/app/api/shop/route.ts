@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
     LEFT JOIN shop_purchases sp ON sp.item_id = si.id
     WHERE si.artist_wallet = ${artistWallet} AND (si.is_active = TRUE OR ${includeInactive})
     GROUP BY si.id, p.display_name
-    ORDER BY si.created_at DESC
+    ORDER BY (CASE WHEN si.type = 'video' THEN 1 ELSE 0 END), si.created_at DESC
   `;
 
   // Wie viele Exemplare der Nutzer von jedem Item besitzt
