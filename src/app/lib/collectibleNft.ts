@@ -134,7 +134,7 @@ export function buildCollectionMetadata(p: {
     external_url:            'https://app.dawidfaith.de',
     properties: {
       category: 'image',
-      files:    [{ uri: image, type: 'image/jpeg' }],
+      files:    [{ uri: image, type: guessImageMimeType(image) }],
       creators: [{ address: p.artistSolanaAddress, share: 100 }],
     },
     attributes: [
@@ -254,6 +254,19 @@ export interface CollectibleAssetResult {
  * Metadata-JSON eines Collectible-Assets — wird von
  * /api/nft-metadata/collectible/[collectibleId] live aus der DB generiert.
  */
+/** Grobe MIME-Type-Erkennung anhand der Dateiendung — Wallets/Marktplätze nutzen
+ * das u.a. um zu entscheiden, ob ein Cover animiert (GIF) gerendert werden soll. */
+function guessImageMimeType(url: string): string {
+  const ext = url.split('?')[0].split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'gif':  return 'image/gif';
+    case 'png':  return 'image/png';
+    case 'webp': return 'image/webp';
+    case 'avif': return 'image/avif';
+    default:     return 'image/jpeg';
+  }
+}
+
 export function buildAssetMetadata(p: {
   collectionName:      string;
   collectionImageUri:  string;
@@ -308,7 +321,7 @@ export function buildAssetMetadata(p: {
     background_color:        RARITY_BG_COLOR[rarity],
     properties: {
       category: 'image',
-      files:    [{ uri: imageHttps, type: 'image/jpeg' }],
+      files:    [{ uri: imageHttps, type: guessImageMimeType(imageHttps) }],
       creators: [{ address: artistSolanaAddress, share: 100 }],
     },
     attributes,

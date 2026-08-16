@@ -16,6 +16,19 @@ export const dynamic = 'force-dynamic';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Grobe MIME-Type-Erkennung anhand der Dateiendung — Wallets/Marktplätze nutzen
+ * das u.a. um zu entscheiden, ob ein Cover animiert (GIF) gerendert werden soll. */
+function guessImageMimeType(url: string): string {
+  const ext = url.split('?')[0].split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'gif':  return 'image/gif';
+    case 'png':  return 'image/png';
+    case 'webp': return 'image/webp';
+    case 'avif': return 'image/avif';
+    default:     return 'image/jpeg';
+  }
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { itemId: string } },
@@ -63,7 +76,7 @@ export async function GET(
       external_url:            'https://app.dawidfaith.de',
       properties: {
         category: 'image',
-        files:    [{ uri: coverUrl, type: 'image/jpeg' }],
+        files:    [{ uri: coverUrl, type: guessImageMimeType(coverUrl) }],
         ...(item.artist_solana_address
           ? { creators: [{ address: item.artist_solana_address as string, share: 100 }] }
           : {}),
@@ -94,7 +107,7 @@ export async function GET(
     properties: {
       category: 'audio',
       files: [
-        { uri: coverUrl, type: 'image/jpeg' },
+        { uri: coverUrl, type: guessImageMimeType(coverUrl) },
         { uri: audioUrl, type: 'audio/mpeg' },
       ],
       ...(item.artist_solana_address
