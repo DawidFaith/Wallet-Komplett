@@ -61,7 +61,10 @@ export async function GET(
   }
 
   const item       = rows[0] as Record<string, unknown>;
-  const maxSupply  = Number(item.nft_max_supply) > 0 ? Number(item.nft_max_supply) : 100;
+  // null = unbegrenzte Auflage (kein stiller Fallback mehr auf 100 — sonst würden
+  // die on-chain-Metadaten von auf "unbegrenzt" gestellten Items fälschlich weiterhin
+  // eine feste Editionszahl behaupten).
+  const maxSupply: number | null = Number(item.nft_max_supply) > 0 ? Number(item.nft_max_supply) : null;
   const artistName = (item.artist_name as string | null) ?? 'D.FAITH Artist';
   const coverUrl   = (item.image_url as string | null) ?? '';
   const audioUrl   = (item.content_url as string | null) ?? '';
@@ -99,7 +102,7 @@ export async function GET(
   const metadata = {
     name:                    editionNumber !== null ? `${item.title as string} #${editionNumber}` : item.title as string,
     symbol:                  'DFAITH',
-    description:             `${(item.description as string | null) ?? ''}\n\nLimited to ${maxSupply} numbered editions — each holder receives a unique Edition NFT. Tradeable on secondary markets with 5% artist royalties on every resale.`,
+    description:             `${(item.description as string | null) ?? ''}\n\n${maxSupply !== null ? `Limited to ${maxSupply} numbered editions` : 'Open edition — unlimited numbered copies'} — each holder receives a unique Edition NFT. Tradeable on secondary markets with 5% artist royalties on every resale.`,
     seller_fee_basis_points: 500,
     image:                   coverUrl,
     animation_url:           audioUrl,
@@ -119,7 +122,7 @@ export async function GET(
       { trait_type: 'Artist',       value: artistName },
       { trait_type: 'Platform',     value: 'D.FAITH' },
       ...(editionNumber !== null ? [{ trait_type: 'Edition', value: String(editionNumber) }] : []),
-      { trait_type: 'Max Editions', value: String(maxSupply) },
+      { trait_type: 'Max Editions', value: maxSupply !== null ? String(maxSupply) : 'Open Edition' },
       { trait_type: 'Royalties',    value: '5%' },
       { trait_type: 'Release Year', value: String(new Date(item.created_at as string).getFullYear()) },
       { trait_type: 'Website',      value: 'app.dawidfaith.de' },

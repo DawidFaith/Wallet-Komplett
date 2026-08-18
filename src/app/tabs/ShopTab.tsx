@@ -1984,7 +1984,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                   onChange={e => setFMaxEditions(Math.max(1, parseInt(e.target.value, 10) || 1))}
                   className="w-32 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-amber-500/50"
                 />
-                <span className="text-zinc-500 text-[10px]">Käufer erhalten nummerierte Editionen (z.B. #1/100)</span>
+                <span className="text-zinc-500 text-[10px]">Käufer erhalten nummerierte Editionen (z.B. #1/{fMaxEditions})</span>
               </div>
             </div>
           )}
