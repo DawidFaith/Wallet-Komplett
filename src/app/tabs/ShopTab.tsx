@@ -156,13 +156,14 @@ function TypeIcon({ type }: { type: ItemType }) {
 }
 
 /** Kleine Badges, die den Item-Typ auf einen Blick zeigen — Teil des Kartentexts, nicht auf dem Cover. */
-function ItemTypeBadge({ type }: { type: ItemType }) {
+function ItemTypeBadge({ type, hasAudioDownload }: { type: ItemType; hasAudioDownload?: boolean }) {
   const NFT_PILL = { label: 'NFT', icon: <FaCertificate size={8} />, color: 'text-amber-300' };
+  const MP3_PILL = { label: 'MP3', icon: <FaMusic size={8} />, color: 'text-violet-300' };
   const pills: { label: string; icon: React.ReactNode; color: string }[] =
     type === 'song'
-      ? [{ label: 'MP3', icon: <FaMusic size={8} />, color: 'text-violet-300' }, NFT_PILL]
+      ? [MP3_PILL, NFT_PILL]
       : type === 'video'
-      ? [{ label: 'Video', icon: <FaVideo size={8} />, color: 'text-red-300' }]
+      ? [{ label: 'Video', icon: <FaVideo size={8} />, color: 'text-red-300' }, ...(hasAudioDownload ? [MP3_PILL] : [])]
       : [NFT_PILL];
 
   return (
@@ -266,7 +267,7 @@ function ItemCard({
             {item.priceCredits.toLocaleString('de-DE')} {tokenLabel}
           </span>
         </div>
-        <ItemTypeBadge type={item.type} />
+        <ItemTypeBadge type={item.type} hasAudioDownload={!!item.audioDownloadUrl} />
       </div>
     </button>
   );
@@ -406,7 +407,7 @@ function ItemDetailModal({
                 <p className="text-amber-300/80 text-xs font-semibold mt-0.5">{item.artistName}</p>
               )}
             </div>
-            <ItemTypeBadge type={item.type} />
+            <ItemTypeBadge type={item.type} hasAudioDownload={!!item.audioDownloadUrl} />
           </div>
           <p className="text-zinc-400 text-xs leading-relaxed mt-2">
             {item.description || TYPE_LABELS[item.type]}
@@ -1134,7 +1135,7 @@ function InventoryItemCard({ item, onOpen }: { item: InventoryItem; onOpen: (ite
         {item.artistName && (
           <p className="text-amber-300/80 text-[11px] font-semibold line-clamp-1">{item.artistName}</p>
         )}
-        <ItemTypeBadge type={item.type} />
+        <ItemTypeBadge type={item.type} hasAudioDownload={!!item.audioDownloadUrl} />
       </div>
     </button>
   );
@@ -1221,7 +1222,7 @@ function InventoryItemDetailModal({ item, onClose }: { item: InventoryItem; onCl
                 <p className="text-amber-300/80 text-xs font-semibold mt-0.5">{item.artistName}</p>
               )}
             </div>
-            <ItemTypeBadge type={item.type} />
+            <ItemTypeBadge type={item.type} hasAudioDownload={!!item.audioDownloadUrl} />
           </div>
           {item.description && (
             <p className="text-zinc-400 text-xs leading-relaxed mt-2">{item.description}</p>
