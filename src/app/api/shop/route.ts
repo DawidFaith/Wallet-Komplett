@@ -11,10 +11,14 @@ import { checkRateLimit } from '../../lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
-// available_until: lazy statt zentraler Migration, damit die Spalte garantiert
-// existiert ohne dass erst /api/admin/migrate manuell aufgerufen werden muss.
-async function ensureAvailableUntilColumn(sql: ReturnType<typeof getDb>) {
+// Lazy statt zentraler Migration, damit die Spalten garantiert existieren
+// ohne dass erst /api/admin/migrate manuell aufgerufen werden muss.
+async function ensureShopItemColumns(sql: ReturnType<typeof getDb>) {
   await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS available_until TIMESTAMPTZ`;
+  // Nur für type='video' genutzt: optionaler MP3-Download zusätzlich zum YouTube-Link.
+  await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS audio_download_url TEXT`;
+  // Manuelle Reihenfolge im Shop — niedrigster Wert zuerst.
+  await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0`;
 }
 
 // ─── GET ─────────────────────────────────────────────────────────────────────
@@ -31,13 +35,14 @@ export async function GET(req: NextRequest) {
   }
 
   const sql = getDb();
-  await ensureAvailableUntilColumn(sql);
+  await ensureShopItemColumns(sql);
 
   const items = await sql`
     SELECT si.id, si.artist_wallet, si.title, si.description, si.type,
            si.price_credits, si.price_tokens, si.content_url, si.image_url,
            si.is_active, si.created_at, si.required_level, si.available_until,
            si.nft_max_supply, si.is_nft_enabled, si.master_edition_mint, si.edition_count,
+           si.audio_download_url, si.sort_order,
            p.display_name AS artist_name,
            COUNT(sp.id)::int AS sold_count
     FROM shop_items si
@@ -46,7 +51,7 @@ export async function GET(req: NextRequest) {
     WHERE si.artist_wallet = ${artistWallet} AND (si.is_active = TRUE OR ${includeInactive})
       AND (${includeInactive} OR si.available_until IS NULL OR si.available_until > NOW())
     GROUP BY si.id, p.display_name
-    ORDER BY (CASE WHEN si.type = 'video' THEN 1 ELSE 0 END), si.created_at DESC
+    ORDER BY si.sort_order ASC, si.created_at DESC
   `;
 
   // Wie viele Exemplare der Nutzer von jedem Item besitzt
@@ -84,7 +89,7 @@ export async function POST(req: NextRequest) {
   const {
     wallet, title, description, type, priceCredits, priceTokens,
     contentUrl, imageUrl, requiredLevel,
-    mintAsNft = false, nftMaxSupply = 100, availableUntil,
+    mintAsNft = false, nftMaxSupply = 100, availableUntil, audioDownloadUrl,
   } = body as {
     wallet?: string;
     title?: string;
@@ -98,6 +103,7 @@ export async function POST(req: NextRequest) {
     mintAsNft?: boolean;
     nftMaxSupply?: number;
     availableUntil?: string | null;
+    audioDownloadUrl?: string | null;
   };
 
   if (!wallet || !title || !type) {
@@ -121,7 +127,7 @@ export async function POST(req: NextRequest) {
   }
 
   const sql = getDb();
-  await ensureAvailableUntilColumn(sql);
+  await ensureShopItemColumns(sql);
 
   // Sicherstellen, dass der Nutzer ein Artist ist + Pflichtfelder für Songs vorab prüfen
   const [profileRows, artistRows, artistNameRows] = await Promise.all([
@@ -150,8 +156,15 @@ export async function POST(req: NextRequest) {
   // nft_max_supply schon beim INSERT setzen: DAS-Indexer holen die Metadata-URL
   // sekundenschnell nach dem Mint — zu dem Zeitpunkt muss der Wert schon in der DB stehen
   const effectiveMaxSupply = typeof nftMaxSupply === 'number' && nftMaxSupply > 0 ? nftMaxSupply : 100;
+
+  // Neues Item ans Ende der manuellen Reihenfolge anhängen
+  const maxSortRows = await sql`
+    SELECT COALESCE(MAX(sort_order), -1) AS max_sort FROM shop_items WHERE artist_wallet = ${wallet.toLowerCase()}
+  `;
+  const nextSortOrder = Number(maxSortRows[0].max_sort) + 1;
+
   const rows = await sql`
-    INSERT INTO shop_items (artist_wallet, title, description, type, price_credits, price_tokens, content_url, image_url, required_level, nft_max_supply, available_until)
+    INSERT INTO shop_items (artist_wallet, title, description, type, price_credits, price_tokens, content_url, image_url, required_level, nft_max_supply, available_until, audio_download_url, sort_order)
     VALUES (
       ${wallet.toLowerCase()},
       ${title.trim()},
@@ -163,9 +176,11 @@ export async function POST(req: NextRequest) {
       ${imageUrl?.trim() ?? ''},
       ${typeof requiredLevel === 'number' && requiredLevel > 0 ? requiredLevel : 0},
       ${type === 'song' ? effectiveMaxSupply : null},
-      ${availableUntilIso}
+      ${availableUntilIso},
+      ${type === 'video' ? (audioDownloadUrl?.trim() ?? null) : null},
+      ${nextSortOrder}
     )
-    RETURNING id, title, type, price_credits, price_tokens, is_active, created_at, required_level, available_until
+    RETURNING id, title, type, price_credits, price_tokens, is_active, created_at, required_level, available_until, audio_download_url, sort_order
   `;
 
   const item = rows[0] as { id: string; title: string; type: string; [k: string]: unknown };
@@ -215,7 +230,7 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: 'Kein Body' }, { status: 400 });
 
-  const { wallet, itemId, title, description, type, priceCredits, priceTokens, contentUrl, imageUrl, requiredLevel, isActive, nftMaxSupply, availableUntil } = body as {
+  const { wallet, itemId, title, description, type, priceCredits, priceTokens, contentUrl, imageUrl, requiredLevel, isActive, nftMaxSupply, availableUntil, audioDownloadUrl } = body as {
     wallet?: string;
     itemId?: string;
     title?: string;
@@ -229,6 +244,7 @@ export async function PATCH(req: NextRequest) {
     isActive?: boolean;
     nftMaxSupply?: number | null;
     availableUntil?: string | null;
+    audioDownloadUrl?: string | null;
   };
 
   if (!wallet || !itemId) {
@@ -257,7 +273,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const sql = getDb();
-  await ensureAvailableUntilColumn(sql);
+  await ensureShopItemColumns(sql);
 
   // Nur eigene Items bearbeiten
   const rows = await sql`
@@ -275,8 +291,9 @@ export async function PATCH(req: NextRequest) {
       image_url       = COALESCE(${imageUrl?.trim() ?? null}, image_url),
       required_level  = COALESCE(${requiredLevel ?? null}, required_level),
       is_active       = CASE WHEN ${isActive !== undefined} THEN ${isActive ?? null} ELSE is_active END,
-      nft_max_supply  = CASE WHEN ${nftMaxSupply !== undefined} THEN ${nftMaxSupply ?? null} ELSE nft_max_supply END,
-      available_until = CASE WHEN ${availableUntilIso !== undefined} THEN ${availableUntilIso ?? null} ELSE available_until END
+      nft_max_supply     = CASE WHEN ${nftMaxSupply !== undefined} THEN ${nftMaxSupply ?? null} ELSE nft_max_supply END,
+      available_until    = CASE WHEN ${availableUntilIso !== undefined} THEN ${availableUntilIso ?? null} ELSE available_until END,
+      audio_download_url = CASE WHEN ${audioDownloadUrl !== undefined} THEN ${audioDownloadUrl?.trim() || null} ELSE audio_download_url END
     WHERE id = ${itemId} AND artist_wallet = ${wallet.toLowerCase()}
     RETURNING id
   `;

@@ -56,6 +56,7 @@ export async function GET(req: NextRequest) {
   }
 
   const sql = getDb();
+  await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS audio_download_url TEXT`;
 
   // Solana-Adresse des Users holen für on-chain Prüfung
   const solanaRows = await sql`
@@ -81,6 +82,7 @@ export async function GET(req: NextRequest) {
       si.created_at,
       si.nft_max_supply,
       si.master_edition_mint,
+      si.audio_download_url,
       sp.purchased_at,
       sp.nft_mint_address AS print_mint,
       sp.edition_number,

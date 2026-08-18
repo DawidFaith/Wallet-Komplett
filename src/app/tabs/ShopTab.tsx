@@ -60,6 +60,8 @@ interface ShopItem {
   soldCount: number;
   editionCount?: number;
   availableUntil: string | null;
+  audioDownloadUrl: string | null;
+  sortOrder: number;
 }
 
 interface ShopArtist {
@@ -744,6 +746,8 @@ function ArtistShopView({
         requiredLevel: Number(i.required_level ?? 0),
         nftMaxSupply: i.nft_max_supply != null ? Number(i.nft_max_supply) : null,
         availableUntil: (i.available_until as string | null) ?? null,
+        audioDownloadUrl: (i.audio_download_url as string | null) ?? null,
+        sortOrder: Number(i.sort_order ?? 0),
         isNftEnabled: Boolean(i.is_nft_enabled),
         masterEditionMint: (i.master_edition_mint as string | null) ?? null,
         soldCount: Number(i.sold_count ?? 0),
@@ -1086,6 +1090,7 @@ interface InventoryItem {
   printMint: string | null;
   editionNumber: number | null;
   nftMaxSupply: number | null;
+  audioDownloadUrl: string | null;
 }
 
 function InventoryItemCard({ item, onOpen }: { item: InventoryItem; onOpen: (item: InventoryItem) => void }) {
@@ -1277,6 +1282,12 @@ function InventoryItemDetailModal({ item, onClose }: { item: InventoryItem; onCl
                 </button>
               )
             )}
+            {item.type === 'video' && item.audioDownloadUrl && (
+              <a href={item.audioDownloadUrl} download
+                className="flex items-center justify-center gap-2 w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2.5 text-zinc-300 text-xs font-semibold transition-colors">
+                <FaDownload size={10} /> MP3-Download
+              </a>
+            )}
             {(item.type === 'nft' || item.type === 'exclusive') && item.contentUrl && (
               <a href={item.contentUrl} target="_blank" rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full bg-amber-900/20 hover:bg-amber-900/30 border border-amber-700/30 rounded-lg py-2.5 text-amber-300 text-xs font-semibold transition-colors">
@@ -1322,7 +1333,7 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
           printMint: i.print_mint ? String(i.print_mint) : null,
           editionNumber: i.edition_number != null ? Number(i.edition_number) : null,
           nftMaxSupply: i.nft_max_supply != null ? Number(i.nft_max_supply) : null,
-        availableUntil: (i.available_until as string | null) ?? null,
+          audioDownloadUrl: (i.audio_download_url as string | null) ?? null,
         }));
         setItems(mapped);
         // Alle Artists standardmäßig ausklappen
@@ -1457,13 +1468,14 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
   type EditData = {
     id: string; title: string; desc: string; type: ItemType;
     price: string; tokens: string; level: string; content: string; image: string; maxSupply: string;
-    availableUntil: string;
+    availableUntil: string; audioDownloadUrl: string;
   };
   const [editData, setEditData] = useState<EditData | null>(null);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState('');
   const [uploadingEditContent, setUploadingEditContent] = useState(false);
   const [uploadingEditImage, setUploadingEditImage] = useState(false);
+  const [uploadingEditAudioDownload, setUploadingEditAudioDownload] = useState(false);
 
   // Formular-State
   const [fTitle, setFTitle] = useState('');
@@ -1475,8 +1487,10 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
   const [fImage, setFImage] = useState('');
   const [fMaxEditions, setFMaxEditions] = useState(100);
   const [fAvailableUntil, setFAvailableUntil] = useState('');
+  const [fAudioDownloadUrl, setFAudioDownloadUrl] = useState('');
   const [uploadingContent, setUploadingContent] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingAudioDownload, setUploadingAudioDownload] = useState(false);
 
   // Artist-Profil für NFT-Preview
   type ArtistProfile = {
@@ -1491,9 +1505,9 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
       .catch(() => {});
   }, [showForm, walletAddress, artistProfile]);
 
-  const handleUpload = async (file: File, type: 'content' | 'image') => {
-    const setUploading = type === 'content' ? setUploadingContent : setUploadingImage;
-    const setUrl       = type === 'content' ? setFContent : setFImage;
+  const handleUpload = async (file: File, type: 'content' | 'image' | 'audioDownload') => {
+    const setUploading = type === 'content' ? setUploadingContent : type === 'image' ? setUploadingImage : setUploadingAudioDownload;
+    const setUrl       = type === 'content' ? setFContent : type === 'image' ? setFImage : setFAudioDownloadUrl;
     setUploading(true);
     setFormError('');
     try {
@@ -1504,7 +1518,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
       const blob = await upload(pathname, file, {
         access:          'public',
         handleUploadUrl: '/api/shop/upload',
-        clientPayload:   JSON.stringify({ fileType: type, wallet: walletAddress }),
+        clientPayload:   JSON.stringify({ fileType: type === 'image' ? 'image' : 'content', wallet: walletAddress }),
       });
       setUrl(blob.url);
     } catch (err) {
@@ -1535,6 +1549,8 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
         requiredLevel: Number(i.required_level ?? 0),
         nftMaxSupply: i.nft_max_supply != null ? Number(i.nft_max_supply) : null,
         availableUntil: (i.available_until as string | null) ?? null,
+        audioDownloadUrl: (i.audio_download_url as string | null) ?? null,
+        sortOrder: Number(i.sort_order ?? 0),
         isNftEnabled: Boolean(i.is_nft_enabled),
         masterEditionMint: (i.master_edition_mint as string | null) ?? null,
         soldCount: Number(i.sold_count ?? 0),
@@ -1548,7 +1564,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
 
   const resetForm = () => {
     setFTitle(''); setFDesc(''); setFType('song'); setFPrice('0');
-    setFRequiredLevel('0'); setFContent(''); setFImage(''); setFAvailableUntil(''); setFormError('');
+    setFRequiredLevel('0'); setFContent(''); setFImage(''); setFAvailableUntil(''); setFAudioDownloadUrl(''); setFormError('');
     setShowForm(false);
   };
 
@@ -1575,6 +1591,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
           requiredLevel: parseInt(fRequiredLevel, 10) || 0,
           nftMaxSupply: fMaxEditions,
           availableUntil: fAvailableUntil || null,
+          audioDownloadUrl: fType === 'video' ? (fAudioDownloadUrl || null) : null,
         }),
       });
       if (!res.ok) {
@@ -1632,6 +1649,21 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
     }
   };
 
+  const [reordering, setReordering] = useState<string | null>(null);
+  const handleReorder = async (itemId: string, direction: 'up' | 'down') => {
+    setReordering(itemId);
+    try {
+      const res = await fetch('/api/shop/reorder', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: walletAddress, itemId, direction }),
+      });
+      if (res.ok) await loadMyItems();
+    } finally {
+      setReordering(null);
+    }
+  };
+
   const handleReactivate = async (itemId: string) => {
     setReactivating(itemId);
     try {
@@ -1659,6 +1691,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
       image: item.imageUrl,
       maxSupply: item.nftMaxSupply != null ? String(item.nftMaxSupply) : '',
       availableUntil: item.availableUntil ? toDatetimeLocal(item.availableUntil) : '',
+      audioDownloadUrl: item.audioDownloadUrl ?? '',
     });
     setEditError('');
   };
@@ -1666,8 +1699,8 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
   const cancelEdit = () => { setEditData(null); setEditError(''); };
 
 
-  const handleEditUpload = async (file: File, field: 'content' | 'image') => {
-    const setUploading = field === 'content' ? setUploadingEditContent : setUploadingEditImage;
+  const handleEditUpload = async (file: File, field: 'content' | 'image' | 'audioDownload') => {
+    const setUploading = field === 'content' ? setUploadingEditContent : field === 'image' ? setUploadingEditImage : setUploadingEditAudioDownload;
     setUploading(true);
     setEditError('');
     try {
@@ -1678,9 +1711,10 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
       const blob = await upload(pathname, file, {
         access:          'public',
         handleUploadUrl: '/api/shop/upload',
-        clientPayload:   JSON.stringify({ fileType: field, wallet: walletAddress }),
+        clientPayload:   JSON.stringify({ fileType: field === 'image' ? 'image' : 'content', wallet: walletAddress }),
       });
-      setEditData(prev => prev ? { ...prev, [field === 'content' ? 'content' : 'image']: blob.url } : prev);
+      const targetKey = field === 'content' ? 'content' : field === 'image' ? 'image' : 'audioDownloadUrl';
+      setEditData(prev => prev ? { ...prev, [targetKey]: blob.url } : prev);
     } catch (err) {
       setEditError(err instanceof Error ? err.message : 'Upload fehlgeschlagen');
     } finally {
@@ -1724,6 +1758,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
           requiredLevel: parseInt(editData.level, 10) || 0,
           nftMaxSupply: maxSupply,
           availableUntil: editData.availableUntil ? new Date(editData.availableUntil).toISOString() : null,
+          audioDownloadUrl: editData.type === 'video' ? (editData.audioDownloadUrl || null) : undefined,
         }),
       });
       if (!res.ok) {
@@ -1738,7 +1773,8 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
               priceCredits: price, priceTokens: tokens, contentUrl: editData.content,
               imageUrl: editData.image, requiredLevel: parseInt(editData.level, 10) || 0,
               ...(maxSupply !== undefined ? { nftMaxSupply: maxSupply } : {}),
-              availableUntil: newAvailableUntil }
+              availableUntil: newAvailableUntil,
+              ...(editData.type === 'video' ? { audioDownloadUrl: editData.audioDownloadUrl || null } : {}) }
           : i,
       ));
       setEditData(null);
@@ -1912,6 +1948,28 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
             )}
           </div>
 
+          {/* MP3-Download (nur bei Musikvideos) */}
+          {fType === 'video' && (
+            <div>
+              <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">MP3-Download (optional)</label>
+              <div className="flex gap-2 items-center">
+                <input
+                  value={fAudioDownloadUrl}
+                  onChange={e => setFAudioDownloadUrl(e.target.value)}
+                  placeholder="https://…"
+                  className="flex-1 min-w-0 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-amber-500/50"
+                />
+                <label className="shrink-0 flex items-center justify-center gap-1.5 bg-black/40 border border-white/10 hover:border-amber-500/50 rounded-xl px-3 py-2 text-xs text-zinc-300 cursor-pointer transition-colors">
+                  {uploadingAudioDownload ? <span className="w-3.5 h-3.5 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" /> : <FaMusic size={11} className="text-zinc-500" />}
+                  <input type="file" accept="audio/*" className="hidden" disabled={uploadingAudioDownload}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f, 'audioDownload'); }} />
+                </label>
+              </div>
+              {fAudioDownloadUrl && <p className="text-emerald-400 text-[10px] mt-1 truncate">✓ {fAudioDownloadUrl}</p>}
+              <p className="text-zinc-600 text-[10px] mt-1">Käufer können den Song zusätzlich zum Video als MP3 herunterladen.</p>
+            </div>
+          )}
+
           {/* Max. Editionen (nur NFTs) */}
           {fType === 'song' && (
             <div>
@@ -2058,7 +2116,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
         </div>
       ) : (
         <div className="space-y-3">
-          {items.map(item => (
+          {items.map((item, itemIdx) => (
             <div key={item.id} className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl p-4">
               {editData?.id === item.id ? (
                 /* ── Inline-Edit-Formular (nur Preis) ── */
@@ -2127,6 +2185,25 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                     </div>
                   )}
 
+                  {editData.type === 'video' && (
+                    <div>
+                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">MP3-Download (optional)</label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          value={editData.audioDownloadUrl}
+                          onChange={e => setEditData(d => d && { ...d, audioDownloadUrl: e.target.value })}
+                          placeholder="https://…"
+                          className="flex-1 min-w-0 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-amber-500/50"
+                        />
+                        <label className="shrink-0 flex items-center justify-center gap-1.5 bg-black/40 border border-white/10 hover:border-amber-500/50 rounded-xl px-3 py-2 text-xs text-zinc-300 cursor-pointer transition-colors">
+                          {uploadingEditAudioDownload ? <span className="w-3.5 h-3.5 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" /> : <FaMusic size={11} className="text-zinc-500" />}
+                          <input type="file" accept="audio/*" className="hidden" disabled={uploadingEditAudioDownload}
+                            onChange={e => { const f = e.target.files?.[0]; if (f) handleEditUpload(f, 'audioDownload'); }} />
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Verfügbar bis (leer = dauerhaft)</label>
                     <input type="datetime-local" value={editData.availableUntil}
@@ -2190,6 +2267,24 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex flex-col">
+                      <button
+                        onClick={() => handleReorder(item.id, 'up')}
+                        disabled={itemIdx === 0 || reordering === item.id}
+                        className="text-zinc-500 hover:text-amber-400 disabled:opacity-20 disabled:hover:text-zinc-500 transition-colors p-0.5"
+                        title="Nach oben"
+                      >
+                        <FaChevronUp size={10} />
+                      </button>
+                      <button
+                        onClick={() => handleReorder(item.id, 'down')}
+                        disabled={itemIdx === items.length - 1 || reordering === item.id}
+                        className="text-zinc-500 hover:text-amber-400 disabled:opacity-20 disabled:hover:text-zinc-500 transition-colors p-0.5"
+                        title="Nach unten"
+                      >
+                        <FaChevronDown size={10} />
+                      </button>
+                    </div>
                     {!item.isActive && (
                       <button
                         onClick={() => handleReactivate(item.id)}
