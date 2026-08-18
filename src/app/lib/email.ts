@@ -291,8 +291,8 @@ const GIVEAWAY_EMAIL_STRINGS: Record<Lang, {
       `Falls du bereits einen Account mit dieser E-Mail-Adresse hast, öffne einfach die App – dein ${platform}-Account wird automatisch erkannt und die Credits erscheinen in deinem Guthaben. Solltest du eine andere E-Mail-Adresse für deinen Account nutzen, verknüpfe deinen ${platform}-Account stattdessen manuell in den "Sozialen Profilen".`,
     promoHeading: 'Willst du mehr? 🎵',
     releaseLine: dateStr => `Die neue Single erscheint am <b>${dateStr}</b>.`,
-    mythicIntro: 'Sichere dir zusätzlich die Chance auf ein exklusives Mythic NFT.',
-    mythicButton: '💎 Mythic NFT gewinnen',
+    mythicIntro: 'Sichere dir zusätzlich die Chance auf ein exklusives Mythic NFT oder eines der limitierten Song-NFTs.',
+    mythicButton: '🎁 Exklusive NFTs gewinnen',
     unsubscribeText: 'Möchtest du keine Gewinnspiel-E-Mails mehr erhalten?',
   },
   en: {
@@ -311,8 +311,8 @@ const GIVEAWAY_EMAIL_STRINGS: Record<Lang, {
       `If you already have an account with this email address, just open the app — your ${platform} account will be recognized automatically and the credits will appear in your balance. If your account uses a different email address, link your ${platform} account manually under "Social Profiles" instead.`,
     promoHeading: 'Want more? 🎵',
     releaseLine: dateStr => `The new single drops on <b>${dateStr}</b>.`,
-    mythicIntro: 'Get an extra chance to win an exclusive Mythic NFT.',
-    mythicButton: '💎 Win a Mythic NFT',
+    mythicIntro: 'Get an extra chance to win an exclusive Mythic NFT or one of the limited song NFTs.',
+    mythicButton: '🎁 Win exclusive NFTs',
     unsubscribeText: 'Don\'t want to receive giveaway emails anymore?',
   },
   pl: {
@@ -331,8 +331,8 @@ const GIVEAWAY_EMAIL_STRINGS: Record<Lang, {
       `Jeśli masz już konto z tym adresem e-mail, po prostu otwórz aplikację — Twoje konto ${platform} zostanie rozpoznane automatycznie, a kredyty pojawią się na Twoim koncie. Jeśli Twoje konto korzysta z innego adresu e-mail, połącz swoje konto ${platform} ręcznie w „Profilach społecznościowych".`,
     promoHeading: 'Chcesz więcej? 🎵',
     releaseLine: dateStr => `Nowy singiel ukaże się <b>${dateStr}</b>.`,
-    mythicIntro: 'Zdobądź dodatkową szansę na wygranie ekskluzywnego Mythic NFT.',
-    mythicButton: '💎 Wygraj Mythic NFT',
+    mythicIntro: 'Zdobądź dodatkową szansę na wygranie ekskluzywnego Mythic NFT lub jednego z limitowanych NFT utworu.',
+    mythicButton: '🎁 Wygraj ekskluzywne NFT',
     unsubscribeText: 'Nie chcesz już otrzymywać e-maili konkursowych?',
   },
 };
