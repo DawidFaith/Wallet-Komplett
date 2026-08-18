@@ -198,7 +198,7 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: 'Kein Body' }, { status: 400 });
 
-  const { wallet, itemId, title, description, type, priceCredits, priceTokens, contentUrl, imageUrl, requiredLevel, isActive } = body as {
+  const { wallet, itemId, title, description, type, priceCredits, priceTokens, contentUrl, imageUrl, requiredLevel, isActive, nftMaxSupply } = body as {
     wallet?: string;
     itemId?: string;
     title?: string;
@@ -210,6 +210,7 @@ export async function PATCH(req: NextRequest) {
     imageUrl?: string;
     requiredLevel?: number;
     isActive?: boolean;
+    nftMaxSupply?: number | null;
   };
 
   if (!wallet || !itemId) {
@@ -222,6 +223,9 @@ export async function PATCH(req: NextRequest) {
   }
   if (priceCredits !== undefined && (typeof priceCredits !== 'number' || priceCredits < 0)) {
     return NextResponse.json({ error: 'priceCredits muss >= 0 sein' }, { status: 400 });
+  }
+  if (nftMaxSupply !== undefined && nftMaxSupply !== null && (typeof nftMaxSupply !== 'number' || nftMaxSupply < 1)) {
+    return NextResponse.json({ error: 'nftMaxSupply muss >= 1 sein (oder null für unbegrenzt)' }, { status: 400 });
   }
 
   const sql = getDb();
@@ -241,7 +245,8 @@ export async function PATCH(req: NextRequest) {
       content_url    = COALESCE(${contentUrl?.trim() ?? null}, content_url),
       image_url      = COALESCE(${imageUrl?.trim() ?? null}, image_url),
       required_level = COALESCE(${requiredLevel ?? null}, required_level),
-      is_active      = CASE WHEN ${isActive !== undefined} THEN ${isActive ?? null} ELSE is_active END
+      is_active      = CASE WHEN ${isActive !== undefined} THEN ${isActive ?? null} ELSE is_active END,
+      nft_max_supply = CASE WHEN ${nftMaxSupply !== undefined} THEN ${nftMaxSupply ?? null} ELSE nft_max_supply END
     WHERE id = ${itemId} AND artist_wallet = ${wallet.toLowerCase()}
     RETURNING id
   `;

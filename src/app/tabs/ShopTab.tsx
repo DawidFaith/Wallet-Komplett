@@ -1435,7 +1435,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
   // Edit-State (inline Bearbeitung bestehender Items)
   type EditData = {
     id: string; title: string; desc: string; type: ItemType;
-    price: string; tokens: string; level: string; content: string; image: string;
+    price: string; tokens: string; level: string; content: string; image: string; maxSupply: string;
   };
   const [editData, setEditData] = useState<EditData | null>(null);
   const [editSaving, setEditSaving] = useState(false);
@@ -1632,6 +1632,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
       level: String(item.requiredLevel),
       content: item.contentUrl,
       image: item.imageUrl,
+      maxSupply: item.nftMaxSupply != null ? String(item.nftMaxSupply) : '',
     });
     setEditError('');
   };
@@ -1667,6 +1668,16 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
     const price = parseInt(editData.price, 10);
     if (isNaN(price) || price < 0) { setEditError(t('shop.invalidPrice', lang)); return; }
     const tokens = price; // Credits = Tokens (1:1)
+    let maxSupply: number | null | undefined = undefined;
+    if (editData.type !== 'video') {
+      if (editData.maxSupply.trim() === '') {
+        maxSupply = null; // unbegrenzt
+      } else {
+        const parsed = parseInt(editData.maxSupply, 10);
+        if (isNaN(parsed) || parsed < 1) { setEditError('Max. Editionen muss >= 1 sein oder leer für unbegrenzt'); return; }
+        maxSupply = parsed;
+      }
+    }
 
     setEditSaving(true);
     setEditError('');
@@ -1685,6 +1696,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
           contentUrl: editData.content,
           imageUrl: editData.image,
           requiredLevel: parseInt(editData.level, 10) || 0,
+          nftMaxSupply: maxSupply,
         }),
       });
       if (!res.ok) {
@@ -1696,7 +1708,8 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
         i.id === editData.id
           ? { ...i, title: editData.title, description: editData.desc, type: editData.type,
               priceCredits: price, priceTokens: tokens, contentUrl: editData.content,
-              imageUrl: editData.image, requiredLevel: parseInt(editData.level, 10) || 0 }
+              imageUrl: editData.image, requiredLevel: parseInt(editData.level, 10) || 0,
+              ...(maxSupply !== undefined ? { nftMaxSupply: maxSupply } : {}) }
           : i,
       ));
       setEditData(null);
@@ -2057,6 +2070,15 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                         className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
                     </div>
                   </div>
+
+                  {editData.type !== 'video' && (
+                    <div>
+                      <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Max. Editionen (leer = unbegrenzt)</label>
+                      <input type="number" min="1" value={editData.maxSupply} placeholder="unbegrenzt"
+                        onChange={e => setEditData(d => d && { ...d, maxSupply: e.target.value })}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
+                    </div>
+                  )}
 
                   {editError && <p className="text-red-400 text-xs">{editError}</p>}
 
