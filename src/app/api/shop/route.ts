@@ -11,6 +11,12 @@ import { checkRateLimit } from '../../lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
+// available_until: lazy statt zentraler Migration, damit die Spalte garantiert
+// existiert ohne dass erst /api/admin/migrate manuell aufgerufen werden muss.
+async function ensureAvailableUntilColumn(sql: ReturnType<typeof getDb>) {
+  await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS available_until TIMESTAMPTZ`;
+}
+
 // ─── GET ─────────────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -25,11 +31,12 @@ export async function GET(req: NextRequest) {
   }
 
   const sql = getDb();
+  await ensureAvailableUntilColumn(sql);
 
   const items = await sql`
     SELECT si.id, si.artist_wallet, si.title, si.description, si.type,
            si.price_credits, si.price_tokens, si.content_url, si.image_url,
-           si.is_active, si.created_at, si.required_level,
+           si.is_active, si.created_at, si.required_level, si.available_until,
            si.nft_max_supply, si.is_nft_enabled, si.master_edition_mint, si.edition_count,
            p.display_name AS artist_name,
            COUNT(sp.id)::int AS sold_count
@@ -37,6 +44,7 @@ export async function GET(req: NextRequest) {
     LEFT JOIN user_profiles p ON LOWER(p.wallet_address) = si.artist_wallet
     LEFT JOIN shop_purchases sp ON sp.item_id = si.id
     WHERE si.artist_wallet = ${artistWallet} AND (si.is_active = TRUE OR ${includeInactive})
+      AND (${includeInactive} OR si.available_until IS NULL OR si.available_until > NOW())
     GROUP BY si.id, p.display_name
     ORDER BY (CASE WHEN si.type = 'video' THEN 1 ELSE 0 END), si.created_at DESC
   `;
@@ -76,7 +84,7 @@ export async function POST(req: NextRequest) {
   const {
     wallet, title, description, type, priceCredits, priceTokens,
     contentUrl, imageUrl, requiredLevel,
-    mintAsNft = false, nftMaxSupply = 100,
+    mintAsNft = false, nftMaxSupply = 100, availableUntil,
   } = body as {
     wallet?: string;
     title?: string;
@@ -89,6 +97,7 @@ export async function POST(req: NextRequest) {
     requiredLevel?: number;
     mintAsNft?: boolean;
     nftMaxSupply?: number;
+    availableUntil?: string | null;
   };
 
   if (!wallet || !title || !type) {
@@ -104,8 +113,15 @@ export async function POST(req: NextRequest) {
   if (typeof priceCredits !== 'number' || priceCredits < 0) {
     return NextResponse.json({ error: 'priceCredits muss >= 0 sein' }, { status: 400 });
   }
+  let availableUntilIso: string | null = null;
+  if (availableUntil?.trim()) {
+    const parsed = new Date(availableUntil);
+    if (isNaN(parsed.getTime())) return NextResponse.json({ error: 'Ungültiges "Verfügbar bis"-Datum' }, { status: 400 });
+    availableUntilIso = parsed.toISOString();
+  }
 
   const sql = getDb();
+  await ensureAvailableUntilColumn(sql);
 
   // Sicherstellen, dass der Nutzer ein Artist ist + Pflichtfelder für Songs vorab prüfen
   const [profileRows, artistRows, artistNameRows] = await Promise.all([
@@ -135,7 +151,7 @@ export async function POST(req: NextRequest) {
   // sekundenschnell nach dem Mint — zu dem Zeitpunkt muss der Wert schon in der DB stehen
   const effectiveMaxSupply = typeof nftMaxSupply === 'number' && nftMaxSupply > 0 ? nftMaxSupply : 100;
   const rows = await sql`
-    INSERT INTO shop_items (artist_wallet, title, description, type, price_credits, price_tokens, content_url, image_url, required_level, nft_max_supply)
+    INSERT INTO shop_items (artist_wallet, title, description, type, price_credits, price_tokens, content_url, image_url, required_level, nft_max_supply, available_until)
     VALUES (
       ${wallet.toLowerCase()},
       ${title.trim()},
@@ -146,9 +162,10 @@ export async function POST(req: NextRequest) {
       ${contentUrl?.trim() ?? ''},
       ${imageUrl?.trim() ?? ''},
       ${typeof requiredLevel === 'number' && requiredLevel > 0 ? requiredLevel : 0},
-      ${type === 'song' ? effectiveMaxSupply : null}
+      ${type === 'song' ? effectiveMaxSupply : null},
+      ${availableUntilIso}
     )
-    RETURNING id, title, type, price_credits, price_tokens, is_active, created_at, required_level
+    RETURNING id, title, type, price_credits, price_tokens, is_active, created_at, required_level, available_until
   `;
 
   const item = rows[0] as { id: string; title: string; type: string; [k: string]: unknown };
@@ -198,7 +215,7 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: 'Kein Body' }, { status: 400 });
 
-  const { wallet, itemId, title, description, type, priceCredits, priceTokens, contentUrl, imageUrl, requiredLevel, isActive, nftMaxSupply } = body as {
+  const { wallet, itemId, title, description, type, priceCredits, priceTokens, contentUrl, imageUrl, requiredLevel, isActive, nftMaxSupply, availableUntil } = body as {
     wallet?: string;
     itemId?: string;
     title?: string;
@@ -211,6 +228,7 @@ export async function PATCH(req: NextRequest) {
     requiredLevel?: number;
     isActive?: boolean;
     nftMaxSupply?: number | null;
+    availableUntil?: string | null;
   };
 
   if (!wallet || !itemId) {
@@ -227,26 +245,38 @@ export async function PATCH(req: NextRequest) {
   if (nftMaxSupply !== undefined && nftMaxSupply !== null && (typeof nftMaxSupply !== 'number' || nftMaxSupply < 1)) {
     return NextResponse.json({ error: 'nftMaxSupply muss >= 1 sein (oder null für unbegrenzt)' }, { status: 400 });
   }
+  let availableUntilIso: string | null | undefined = undefined;
+  if (availableUntil !== undefined) {
+    if (availableUntil === null || availableUntil.trim() === '') {
+      availableUntilIso = null;
+    } else {
+      const parsed = new Date(availableUntil);
+      if (isNaN(parsed.getTime())) return NextResponse.json({ error: 'Ungültiges "Verfügbar bis"-Datum' }, { status: 400 });
+      availableUntilIso = parsed.toISOString();
+    }
+  }
 
   const sql = getDb();
+  await ensureAvailableUntilColumn(sql);
 
   // Nur eigene Items bearbeiten
   const rows = await sql`
     UPDATE shop_items
     SET
-      title          = COALESCE(${title?.trim() ?? null}, title),
-      description    = COALESCE(${description?.trim() ?? null}, description),
-      type           = COALESCE(${type ?? null}, type),
-      price_credits  = COALESCE(${priceCredits ?? null}, price_credits),
-      price_tokens   = CASE
-                         WHEN ${priceTokens !== undefined} THEN ${priceTokens ?? null}
-                         ELSE price_tokens
-                       END,
-      content_url    = COALESCE(${contentUrl?.trim() ?? null}, content_url),
-      image_url      = COALESCE(${imageUrl?.trim() ?? null}, image_url),
-      required_level = COALESCE(${requiredLevel ?? null}, required_level),
-      is_active      = CASE WHEN ${isActive !== undefined} THEN ${isActive ?? null} ELSE is_active END,
-      nft_max_supply = CASE WHEN ${nftMaxSupply !== undefined} THEN ${nftMaxSupply ?? null} ELSE nft_max_supply END
+      title           = COALESCE(${title?.trim() ?? null}, title),
+      description     = COALESCE(${description?.trim() ?? null}, description),
+      type            = COALESCE(${type ?? null}, type),
+      price_credits   = COALESCE(${priceCredits ?? null}, price_credits),
+      price_tokens    = CASE
+                          WHEN ${priceTokens !== undefined} THEN ${priceTokens ?? null}
+                          ELSE price_tokens
+                        END,
+      content_url     = COALESCE(${contentUrl?.trim() ?? null}, content_url),
+      image_url       = COALESCE(${imageUrl?.trim() ?? null}, image_url),
+      required_level  = COALESCE(${requiredLevel ?? null}, required_level),
+      is_active       = CASE WHEN ${isActive !== undefined} THEN ${isActive ?? null} ELSE is_active END,
+      nft_max_supply  = CASE WHEN ${nftMaxSupply !== undefined} THEN ${nftMaxSupply ?? null} ELSE nft_max_supply END,
+      available_until = CASE WHEN ${availableUntilIso !== undefined} THEN ${availableUntilIso ?? null} ELSE available_until END
     WHERE id = ${itemId} AND artist_wallet = ${wallet.toLowerCase()}
     RETURNING id
   `;

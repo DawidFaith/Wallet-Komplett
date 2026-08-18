@@ -59,6 +59,7 @@ interface ShopItem {
   masterEditionMint: string | null;
   soldCount: number;
   editionCount?: number;
+  availableUntil: string | null;
 }
 
 interface ShopArtist {
@@ -73,6 +74,13 @@ interface ShopArtist {
 
 function shortenWallet(w: string) {
   return w.length > 14 ? `${w.slice(0, 7)}…${w.slice(-5)}` : w;
+}
+
+/** ISO-Zeitstempel → lokale Zeit im <input type="datetime-local">-Format (ohne Zeitzonen-Suffix). */
+function toDatetimeLocal(iso: string): string {
+  const d = new Date(iso);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
 }
 
 /** Wandelt einen YouTube-Link (watch/youtu.be/shorts) in eine Embed-URL um, sonst null. */
@@ -402,6 +410,12 @@ function ItemDetailModal({
             {item.description || TYPE_LABELS[item.type]}
           </p>
 
+          {item.availableUntil && (
+            <p className="text-blue-300 text-[11px] font-semibold mt-2 flex items-center gap-1">
+              ⏳ Nur verfügbar bis {new Date(item.availableUntil).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}
+            </p>
+          )}
+
           {/* NFT-Attribute */}
           {item.isNftEnabled && (
             <div className="flex flex-wrap gap-1 mt-3">
@@ -724,6 +738,7 @@ function ArtistShopView({
         ownedCount: Number(i.owned_count ?? 0),
         requiredLevel: Number(i.required_level ?? 0),
         nftMaxSupply: i.nft_max_supply != null ? Number(i.nft_max_supply) : null,
+        availableUntil: (i.available_until as string | null) ?? null,
         isNftEnabled: Boolean(i.is_nft_enabled),
         masterEditionMint: (i.master_edition_mint as string | null) ?? null,
         soldCount: Number(i.sold_count ?? 0),
@@ -1302,6 +1317,7 @@ function InventoryPanel({ walletAddress }: { walletAddress: string }) {
           printMint: i.print_mint ? String(i.print_mint) : null,
           editionNumber: i.edition_number != null ? Number(i.edition_number) : null,
           nftMaxSupply: i.nft_max_supply != null ? Number(i.nft_max_supply) : null,
+        availableUntil: (i.available_until as string | null) ?? null,
         }));
         setItems(mapped);
         // Alle Artists standardmäßig ausklappen
@@ -1436,6 +1452,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
   type EditData = {
     id: string; title: string; desc: string; type: ItemType;
     price: string; tokens: string; level: string; content: string; image: string; maxSupply: string;
+    availableUntil: string;
   };
   const [editData, setEditData] = useState<EditData | null>(null);
   const [editSaving, setEditSaving] = useState(false);
@@ -1452,6 +1469,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
   const [fContent, setFContent] = useState('');
   const [fImage, setFImage] = useState('');
   const [fMaxEditions, setFMaxEditions] = useState(100);
+  const [fAvailableUntil, setFAvailableUntil] = useState('');
   const [uploadingContent, setUploadingContent] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -1511,6 +1529,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
         createdAt: i.created_at as string,
         requiredLevel: Number(i.required_level ?? 0),
         nftMaxSupply: i.nft_max_supply != null ? Number(i.nft_max_supply) : null,
+        availableUntil: (i.available_until as string | null) ?? null,
         isNftEnabled: Boolean(i.is_nft_enabled),
         masterEditionMint: (i.master_edition_mint as string | null) ?? null,
         soldCount: Number(i.sold_count ?? 0),
@@ -1524,7 +1543,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
 
   const resetForm = () => {
     setFTitle(''); setFDesc(''); setFType('song'); setFPrice('0');
-    setFRequiredLevel('0'); setFContent(''); setFImage(''); setFormError('');
+    setFRequiredLevel('0'); setFContent(''); setFImage(''); setFAvailableUntil(''); setFormError('');
     setShowForm(false);
   };
 
@@ -1550,6 +1569,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
           imageUrl: fImage,
           requiredLevel: parseInt(fRequiredLevel, 10) || 0,
           nftMaxSupply: fMaxEditions,
+          availableUntil: fAvailableUntil || null,
         }),
       });
       if (!res.ok) {
@@ -1633,6 +1653,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
       content: item.contentUrl,
       image: item.imageUrl,
       maxSupply: item.nftMaxSupply != null ? String(item.nftMaxSupply) : '',
+      availableUntil: item.availableUntil ? toDatetimeLocal(item.availableUntil) : '',
     });
     setEditError('');
   };
@@ -1697,6 +1718,7 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
           imageUrl: editData.image,
           requiredLevel: parseInt(editData.level, 10) || 0,
           nftMaxSupply: maxSupply,
+          availableUntil: editData.availableUntil ? new Date(editData.availableUntil).toISOString() : null,
         }),
       });
       if (!res.ok) {
@@ -1704,12 +1726,14 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
         setEditError(err.error ?? 'Fehler beim Speichern');
         return;
       }
+      const newAvailableUntil = editData.availableUntil ? new Date(editData.availableUntil).toISOString() : null;
       setItems(prev => prev.map(i =>
         i.id === editData.id
           ? { ...i, title: editData.title, description: editData.desc, type: editData.type,
               priceCredits: price, priceTokens: tokens, contentUrl: editData.content,
               imageUrl: editData.image, requiredLevel: parseInt(editData.level, 10) || 0,
-              ...(maxSupply !== undefined ? { nftMaxSupply: maxSupply } : {}) }
+              ...(maxSupply !== undefined ? { nftMaxSupply: maxSupply } : {}),
+              availableUntil: newAvailableUntil }
           : i,
       ));
       setEditData(null);
@@ -1901,6 +1925,17 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
             </div>
           )}
 
+          {/* Verfügbar bis (optional) */}
+          <div>
+            <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Verfügbar bis (optional)</label>
+            <input
+              type="datetime-local" value={fAvailableUntil}
+              onChange={e => setFAvailableUntil(e.target.value)}
+              className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-amber-500/50"
+            />
+            <p className="text-zinc-600 text-[10px] mt-1">Danach wird das Item automatisch aus dem Shop ausgeblendet. Leer lassen für dauerhaft verfügbar.</p>
+          </div>
+
           {/* Vorschaubild */}
           <div>
             <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelPreviewImage', lang)}</label>
@@ -2080,6 +2115,13 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                     </div>
                   )}
 
+                  <div>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Verfügbar bis (leer = dauerhaft)</label>
+                    <input type="datetime-local" value={editData.availableUntil}
+                      onChange={e => setEditData(d => d && { ...d, availableUntil: e.target.value })}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
+                  </div>
+
                   {editError && <p className="text-red-400 text-xs">{editError}</p>}
 
                   <div className="flex gap-2 pt-1">
@@ -2113,6 +2155,15 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                         {item.requiredLevel > 0 && (
                           <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-amber-900/40 border-amber-700/40 text-amber-400">
                             <FaLock size={7} /> Lvl {item.requiredLevel}+
+                          </span>
+                        )}
+                        {item.availableUntil && (
+                          <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${
+                            new Date(item.availableUntil).getTime() < Date.now()
+                              ? 'bg-red-900/40 border-red-700/40 text-red-400'
+                              : 'bg-blue-900/40 border-blue-700/40 text-blue-300'
+                          }`}>
+                            {new Date(item.availableUntil).getTime() < Date.now() ? 'Abgelaufen' : 'Bis'} {new Date(item.availableUntil).toLocaleDateString('de-DE')}
                           </span>
                         )}
                       </div>

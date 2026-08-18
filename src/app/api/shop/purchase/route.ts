@@ -58,13 +58,17 @@ export async function POST(req: NextRequest) {
   // ── Item laden ────────────────────────────────────────────────────────────
   const items = await sql`
     SELECT id, artist_wallet, price_credits, price_tokens, title, content_url, type, is_active,
-           master_edition_mint, nft_collection_mint, nft_max_supply, edition_count, is_nft_enabled
+           master_edition_mint, nft_collection_mint, nft_max_supply, edition_count, is_nft_enabled,
+           available_until
     FROM shop_items
     WHERE id = ${itemId}
     LIMIT 1
   `;
   if (!items.length || !items[0].is_active) {
     return NextResponse.json({ error: 'Item nicht gefunden oder nicht aktiv', code: 'item_not_found' }, { status: 404 });
+  }
+  if (items[0].available_until && new Date(items[0].available_until as string).getTime() < Date.now()) {
+    return NextResponse.json({ error: 'Dieses Item ist nicht mehr verfügbar', code: 'item_expired' }, { status: 410 });
   }
 
   const item = items[0] as {
