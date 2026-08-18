@@ -2096,6 +2096,13 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                       className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
                   </div>
 
+                  <div>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Beschreibung</label>
+                    <textarea value={editData.desc} rows={3}
+                      onChange={e => setEditData(d => d && { ...d, desc: e.target.value })}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50 resize-none" />
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">{t('shop.labelPriceCredits', lang)} *</label>
