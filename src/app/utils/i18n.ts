@@ -843,6 +843,7 @@ const dict: Translations = {
   'shop.title': { de: 'Shop', en: 'Shop', pl: 'Sklep' },
   'shop.noItems': { de: 'Dieser Künstler hat noch keine Items im Shop.', en: 'This artist has no items in the shop yet.', pl: 'Ten artysta nie ma jeszcze produktów w sklepie.' },
   'shop.noItemsFiltered': { de: 'Keine Items für diesen Filter gefunden.', en: 'No items found for this filter.', pl: 'Nie znaleziono produktów dla tego filtra.' },
+  'shop.availableUntil': { de: 'Nur verfügbar bis {date}', en: 'Only available until {date}', pl: 'Dostępne tylko do {date}' },
   'shop.filterAll': { de: 'Alle', en: 'All', pl: 'Wszystkie' },
   'shop.noArtists': { de: 'Noch keine Künstler haben Items im Shop.', en: 'No artists have items in the shop yet.', pl: 'Żaden artysta nie ma jeszcze produktów w sklepie.' },
   'shop.openDirect': { de: 'Direkt öffnen', en: 'Open directly', pl: 'Otwórz bezpośrednio' },

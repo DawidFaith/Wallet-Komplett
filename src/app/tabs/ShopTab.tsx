@@ -412,7 +412,12 @@ function ItemDetailModal({
 
           {item.availableUntil && (
             <p className="text-blue-300 text-[11px] font-semibold mt-2 flex items-center gap-1">
-              ⏳ Nur verfügbar bis {new Date(item.availableUntil).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}
+              ⏳ {tFmt('shop.availableUntil', lang, {
+                date: new Date(item.availableUntil).toLocaleString(
+                  lang === 'de' ? 'de-DE' : lang === 'pl' ? 'pl-PL' : 'en-US',
+                  { dateStyle: 'medium', timeStyle: 'short' },
+                ),
+              })}
             </p>
           )}
 
