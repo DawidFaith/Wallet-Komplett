@@ -45,9 +45,10 @@ export async function GET(
   const editionNumber = editionParam && /^\d{1,6}$/.test(editionParam) ? Number(editionParam) : null;
 
   const sql  = getDb();
+  await sql`ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS available_until TIMESTAMPTZ`;
   const rows = await sql`
     SELECT si.title, si.description, si.image_url, si.content_url,
-           si.nft_max_supply, si.created_at,
+           si.nft_max_supply, si.created_at, si.available_until,
            p.display_name AS artist_name,
            sa.solana_address AS artist_solana_address
     FROM shop_items si
@@ -68,6 +69,24 @@ export async function GET(
   const artistName = (item.artist_name as string | null) ?? 'D.FAITH Artist';
   const coverUrl   = (item.image_url as string | null) ?? '';
   const audioUrl   = (item.content_url as string | null) ?? '';
+
+  // Auch ohne Stückzahl-Limit ist ein Item mit "Verfügbar bis" real limitiert
+  // (zeitlich statt mengenmäßig) — soll dann trotzdem als Limited Edition gelten,
+  // nicht als "Open Edition" (das würde fälschlich keinerlei Limitierung suggerieren).
+  const availableUntilRaw = item.available_until as string | null;
+  const availableUntilLabel = availableUntilRaw
+    ? new Date(availableUntilRaw).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+    : null;
+  const editionDescription = maxSupply !== null
+    ? `Limited to ${maxSupply} numbered editions`
+    : availableUntilLabel
+      ? `Limited Edition — mintable only until ${availableUntilLabel}`
+      : 'Limited Edition';
+  const maxEditionsTraitValue = maxSupply !== null
+    ? String(maxSupply)
+    : availableUntilLabel
+      ? `Limited (until ${availableUntilLabel})`
+      : 'Limited Edition';
 
   if (isCollection) {
     const collectionMetadata = {
@@ -102,7 +121,7 @@ export async function GET(
   const metadata = {
     name:                    editionNumber !== null ? `${item.title as string} #${editionNumber}` : item.title as string,
     symbol:                  'DFAITH',
-    description:             `${(item.description as string | null) ?? ''}\n\n${maxSupply !== null ? `Limited to ${maxSupply} numbered editions` : 'Open edition — unlimited numbered copies'} — each holder receives a unique Edition NFT. Tradeable on secondary markets with 5% artist royalties on every resale.`,
+    description:             `${(item.description as string | null) ?? ''}\n\n${editionDescription} — each holder receives a unique Edition NFT. Tradeable on secondary markets with 5% artist royalties on every resale.`,
     seller_fee_basis_points: 500,
     image:                   coverUrl,
     animation_url:           audioUrl,
@@ -122,7 +141,7 @@ export async function GET(
       { trait_type: 'Artist',       value: artistName },
       { trait_type: 'Platform',     value: 'D.FAITH' },
       ...(editionNumber !== null ? [{ trait_type: 'Edition', value: String(editionNumber) }] : []),
-      { trait_type: 'Max Editions', value: maxSupply !== null ? String(maxSupply) : 'Open Edition' },
+      { trait_type: 'Max Editions', value: maxEditionsTraitValue },
       { trait_type: 'Royalties',    value: '5%' },
       { trait_type: 'Release Year', value: String(new Date(item.created_at as string).getFullYear()) },
       { trait_type: 'Website',      value: 'app.dawidfaith.de' },
