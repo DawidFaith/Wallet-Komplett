@@ -264,6 +264,11 @@ function ItemCard({
             {item.priceCredits.toLocaleString('de-DE')} {tokenLabel}
           </span>
         </div>
+        {item.availableUntil && (
+          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-300 mt-0.5">
+            ⏳ Bis {new Date(item.availableUntil).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+          </span>
+        )}
         <ItemTypeBadge type={item.type} />
       </div>
     </button>
