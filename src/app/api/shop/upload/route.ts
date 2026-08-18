@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
 
         const isImage   = fileType === 'image';
         const allowedTypes = isImage ? ALLOWED_IMAGE_TYPES : ALLOWED_CONTENT_TYPES;
-        const maxSize      = isImage ? 10 * 1024 * 1024 : 100 * 1024 * 1024;
+        const maxSize      = isImage ? 20 * 1024 * 1024 : 100 * 1024 * 1024;
 
         return {
           allowedContentTypes: allowedTypes,
