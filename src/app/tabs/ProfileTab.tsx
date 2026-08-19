@@ -8,7 +8,7 @@ import {
   FaInstagram, FaTiktok, FaFacebook, FaYoutube,
   FaCheck, FaStar, FaLock, FaPlus, FaChevronDown,
   FaMusic, FaTimes, FaInfoCircle, FaTrophy, FaTasks, FaShoppingBag,
-  FaCopy, FaUserFriends, FaIdCard,
+  FaCopy, FaUserFriends, FaIdCard, FaExclamationTriangle,
 } from 'react-icons/fa';import SocialVerifyModal from './profile/SocialVerifyModal';
 import IdentityVerifyModal from './profile/IdentityVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
@@ -128,6 +128,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
     }));
   };
   const [claimModal, setClaimModal] = useState<{ sentAmount: number } | null>(null);
+  const [claimError, setClaimError] = useState<string | null>(null);
   const [showIdentityModal, setShowIdentityModal] = useState(false);
   const [identityStatus, setIdentityStatus] = useState<{ verified: boolean; status: 'none' | 'pending' | 'approved' | 'rejected' } | null>(null);
 
@@ -310,12 +311,18 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
         setClaimModal({ sentAmount });
       } else {
         const json = await res.json().catch(() => null);
-        if (json?.code === 'identity_not_verified') setShowIdentityModal(true);
+        if (json?.code === 'identity_not_verified') {
+          setShowIdentityModal(true);
+        } else {
+          setClaimError(json?.error ?? t('profile.networkError', lang));
+        }
       }
+    } catch {
+      setClaimError(t('profile.networkError', lang));
     } finally {
       setClaiming(false);
     }
-  }, [account?.address, data, loadProfile]);
+  }, [account?.address, data, loadProfile, lang]);
 
   const handleReferralClaim = useCallback(async () => {
     if (!account?.address || referralClaiming) return;
@@ -1210,6 +1217,29 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 rounded-xl transition-colors"
             >
               OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Einlösen-Fehler-Modal */}
+      {claimError && (
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+          onClick={() => setClaimError(null)}
+        >
+          <div
+            className="w-full max-w-sm bg-[#1a0a0a] border border-red-700/40 rounded-2xl p-6 space-y-4 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <FaExclamationTriangle className="mx-auto text-red-400" size={32} />
+            <h3 className="text-white font-bold text-lg">{t('profile.claimErrorTitle', lang)}</h3>
+            <p className="text-zinc-300 text-sm">{claimError}</p>
+            <button
+              onClick={() => setClaimError(null)}
+              className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl transition-colors"
+            >
+              {t('common.close', lang)}
             </button>
           </div>
         </div>

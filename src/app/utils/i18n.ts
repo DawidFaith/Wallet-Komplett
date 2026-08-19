@@ -384,6 +384,11 @@ const dict: Translations = {
     en: 'The following amount was sent to your wallet:',
     pl: 'Następująca kwota została wysłana na twój portfel:',
   },
+  'profile.claimErrorTitle': {
+    de: 'Einlösen nicht möglich',
+    en: 'Redeem not possible',
+    pl: 'Odbiór niemożliwy',
+  },
   'profile.edit': {
     de: 'Bearbeiten',
     en: 'Edit',
