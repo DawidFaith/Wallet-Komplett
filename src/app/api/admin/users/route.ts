@@ -68,9 +68,14 @@ export async function PATCH(req: NextRequest) {
     }
     if (unblockAtaFraud === true) {
       const sql = getDb();
+      // ata_first_sent_at muss mit zurückgesetzt werden, sonst erkennt der nächste
+      // Claim-Versuch das (weiterhin fehlende) ATA erneut als "Betrug" und sperrt
+      // sofort wieder — die reine Flag-Aufhebung allein greift nicht, weil die
+      // eigentliche Erkennungs-Bedingung (ATA fehlt, aber wurde schon mal befüllt)
+      // sonst unverändert bleibt.
       await sql`
         UPDATE solana_accounts
-        SET ata_fraud_blocked = FALSE, ata_fraud_blocked_at = NULL
+        SET ata_fraud_blocked = FALSE, ata_fraud_blocked_at = NULL, ata_first_sent_at = NULL
         WHERE wallet_address = ${walletAddress.toLowerCase()}
       `;
     }
