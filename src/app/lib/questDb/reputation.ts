@@ -513,6 +513,20 @@ export async function upsertReputationContest(
   return contestId;
 }
 
+/** Alle noch nicht verteilten Contests (artistübergreifend) — für den Auto-Distribute-Cron */
+export async function getAllUndistributedContests(): Promise<{ id: string; artistWallet: string }[]> {
+  const sql = getDb();
+  const rows = await sql`SELECT id, artist_wallet FROM reputation_contests WHERE distributed = FALSE`;
+  return rows.map(r => ({ id: r.id as string, artistWallet: r.artist_wallet as string }));
+}
+
+/** Alle Artists mit gespeicherter Quartals-Reward-Konfiguration — für den Auto-Distribute-Cron */
+export async function getArtistsWithQuarterlyConfig(): Promise<string[]> {
+  const sql = getDb();
+  const rows = await sql`SELECT DISTINCT artist_wallet FROM leaderboard_quarterly_config`;
+  return rows.map(r => r.artist_wallet as string);
+}
+
 /** Contest-Rewards verteilen: Credits vom Artist an Top-Fans */
 export async function distributeReputationContest(
   contestId: string,
