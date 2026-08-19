@@ -812,6 +812,16 @@ const dict: Translations = {
 
   'common.back': { de: 'Zurück', en: 'Back', pl: 'Wróć' },
   'common.close': { de: 'Schließen', en: 'Close', pl: 'Zamknij' },
+  'common.depositFailedGeneric': {
+    de: 'Einzahlung fehlgeschlagen. Bitte versuche es erneut.',
+    en: 'Deposit failed. Please try again.',
+    pl: 'Wpłata nie powiodła się. Spróbuj ponownie.',
+  },
+  'common.depositInsufficientOnChain': {
+    de: 'Nicht genug D.FAITH-Guthaben für diesen Betrag. Bitte reduziere den Betrag etwas.',
+    en: 'Not enough D.FAITH balance for this amount. Please reduce the amount slightly.',
+    pl: 'Za mało środków D.FAITH na tę kwotę. Zmniejsz nieco kwotę.',
+  },
   'common.cancel': { de: 'Abbrechen', en: 'Cancel', pl: 'Anuluj' },
   'common.save': { de: 'Speichern', en: 'Save', pl: 'Zapisz' },
   'common.edit': { de: 'Bearbeiten', en: 'Edit', pl: 'Edytuj' },

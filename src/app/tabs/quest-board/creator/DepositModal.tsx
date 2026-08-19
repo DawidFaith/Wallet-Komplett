@@ -50,7 +50,12 @@ export default function DepositModal({ open, onClose, walletAddress, onDeposited
       });
       const data = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.error ?? 'Fehler beim Senden');
+        const localized = data.code === 'deposit_insufficient_onchain'
+          ? t('common.depositInsufficientOnChain', lang)
+          : data.code === 'deposit_failed'
+            ? t('common.depositFailedGeneric', lang)
+            : (data.error ?? t('common.error', lang));
+        setErrorMsg(localized);
         setStep('error');
         return;
       }

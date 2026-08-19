@@ -104,7 +104,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Transaktion bauen: Treasury zahlt Fees, User überträgt Tokens
-    const rawAmount = BigInt(Math.round(amount * 10 ** decimals));
+    // Math.floor statt Math.round: bei einem per "MAX"-Button übernommenen
+    // Float-Guthaben darf der on-chain angeforderte Betrag nie über dem
+    // tatsächlichen Kontostand liegen — sonst schlägt die Transaktion durch
+    // Floating-Point-Rundung nach oben mit "insufficient funds" fehl.
+    const rawAmount = BigInt(Math.floor(amount * 10 ** decimals));
     const tx = new Transaction({ feePayer: treasury.publicKey });
 
     // Treasury-ATA erstellen falls nicht vorhanden
@@ -141,6 +145,15 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error('deposit-tokens Fehler:', msg);
-    return NextResponse.json({ error: 'Einzahlung fehlgeschlagen. Bitte versuche es erneut.' }, { status: 500 });
+    if (msg.includes('insufficient') || msg.includes('0x1')) {
+      return NextResponse.json(
+        { error: 'Nicht genug D.FAITH-Guthaben für diesen Betrag.', code: 'deposit_insufficient_onchain' },
+        { status: 402 },
+      );
+    }
+    return NextResponse.json(
+      { error: 'Einzahlung fehlgeschlagen. Bitte versuche es erneut.', code: 'deposit_failed' },
+      { status: 500 },
+    );
   }
 }

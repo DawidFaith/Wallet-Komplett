@@ -109,7 +109,9 @@ export async function POST(req: NextRequest) {
     ));
   }
 
-  const rawAmount = BigInt(Math.round(amount * 10 ** decimals));
+  // Math.floor statt Math.round: bei per "MAX"-Button übernommenem Float-Guthaben
+  // darf der angeforderte Betrag nie über dem tatsächlichen Kontostand liegen.
+  const rawAmount = BigInt(Math.floor(amount * 10 ** decimals));
   tx.add(createTransferInstruction(fromAta, toAta, userKp.publicKey, rawAmount, [], TOKEN_PROGRAM_ID));
 
   // ── Transaktion senden ─────────────────────────────────────────────────────
@@ -120,12 +122,12 @@ export async function POST(req: NextRequest) {
     const msg = (e as Error)?.message ?? '';
     if (msg.includes('insufficient') || msg.includes('0x1')) {
       return NextResponse.json(
-        { error: 'Nicht genug D.FAITH Token im Wallet.' },
+        { error: 'Nicht genug D.FAITH-Guthaben für diesen Betrag.', code: 'deposit_insufficient_onchain' },
         { status: 402 },
       );
     }
     console.error('[deposit-credits] Transfer fehlgeschlagen:', e);
-    return NextResponse.json({ error: 'Transaktion fehlgeschlagen. Bitte erneut versuchen.' }, { status: 502 });
+    return NextResponse.json({ error: 'Transaktion fehlgeschlagen. Bitte erneut versuchen.', code: 'deposit_failed' }, { status: 502 });
   }
 
   // ── Credits gutschreiben ───────────────────────────────────────────────────

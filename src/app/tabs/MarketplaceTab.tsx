@@ -536,11 +536,18 @@ function DepositModal({ walletAddress, onClose, onSuccess }: {
         body: JSON.stringify({ walletAddress, amount: amt }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Fehler');
+      if (!res.ok) {
+        const localized = data.code === 'deposit_insufficient_onchain'
+          ? t('common.depositInsufficientOnChain', lang)
+          : data.code === 'deposit_failed'
+            ? t('common.depositFailedGeneric', lang)
+            : (data.error ?? t('common.error', lang));
+        throw new Error(localized);
+      }
       setDone(true);
       setTimeout(() => { onSuccess(amt); onClose(); }, 2000);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Fehler');
+      setError(e instanceof Error ? e.message : t('common.error', lang));
     } finally {
       setDepositing(false);
     }
