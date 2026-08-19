@@ -102,7 +102,10 @@ export async function POST(req: NextRequest) {
   // ── Betrug-Sperre: Account dauerhaft gesperrt ───────────────────────────────
   if (ataRecord.ata_fraud_blocked) {
     return NextResponse.json(
-      { error: 'Das Einlösen wurde aufgrund von Betrug dauerhaft gesperrt. Bitte wende dich an den Support.' },
+      {
+        error: 'Einlösen gesperrt: Dein Token-Konto auf der Blockchain wurde nach einer früheren Einlösung gelöscht, deshalb ist aus Sicherheitsgründen keine erneute Einlösung mehr möglich. Deine Credits gehen dabei nicht verloren. Bitte kontaktiere den Support, damit wir die Sperre prüfen können.',
+        code: 'ata_fraud_blocked',
+      },
       { status: 403 },
     );
   }
@@ -156,7 +159,10 @@ export async function POST(req: NextRequest) {
       // Admin-E-Mail senden (fire & forget – kein await um Response nicht zu verzögern)
       sendFraudAlert(walletAddress, recipientSolana).catch(() => {});
       return NextResponse.json(
-        { error: 'Das Einlösen wurde wegen Betrugs gesperrt. Deine Credits bleiben erhalten. Bitte wende dich an den Support.' },
+        {
+          error: 'Einlösen nicht möglich: Dein Token-Konto, an das wir bereits einmal D.FAITH gesendet haben, wurde auf der Blockchain gelöscht. Aus Sicherheitsgründen ist eine erneute Einlösung deshalb gesperrt. Deine Credits bleiben erhalten — bitte kontaktiere den Support, damit die Sperre geprüft und ggf. aufgehoben werden kann.',
+          code: 'ata_fraud_blocked',
+        },
         { status: 403 },
       );
     }
