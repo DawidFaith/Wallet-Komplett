@@ -32,6 +32,7 @@ interface AdminUser {
   level: number;
   updatedAt: string;
   solanaAddress: string | null;
+  ataFraudBlocked: boolean;
 }
 
 function shortenAddress(addr: string) {
@@ -61,6 +62,7 @@ export default function AdminPage() {
   const [editingSolana, setEditingSolana] = useState<string | null>(null);
   const [solanaInput, setSolanaInput] = useState('');
   const [savingSolana, setSavingSolana] = useState<string | null>(null);
+  const [unblockingFraud, setUnblockingFraud] = useState<string | null>(null);
 
   // Passwort aus sessionStorage laden
   useEffect(() => {
@@ -222,6 +224,28 @@ export default function AdminPage() {
       setError(e instanceof Error ? e.message : 'Fehler beim Speichern');
     } finally {
       setSavingSolana(null);
+    }
+  };
+
+  const handleUnblockAtaFraud = async (walletAddress: string) => {
+    if (!confirm(`ATA-Betrugssperre für diesen Account aufheben?\n\n${walletAddress}\n\nDanach kann er wieder Credits gegen Token einlösen.`)) return;
+    setUnblockingFraud(walletAddress);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ walletAddress, unblockAtaFraud: true }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.walletAddress === walletAddress ? { ...u, ataFraudBlocked: false } : u,
+        ),
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler beim Entsperren');
+    } finally {
+      setUnblockingFraud(null);
     }
   };
 
@@ -602,6 +626,8 @@ export default function AdminPage() {
                   onToggleInviteAccepted={() => {}}
                   deleting={deleting === user.walletAddress}
                   onDelete={() => handleDeleteUser(user.walletAddress)}
+                  unblockingFraud={unblockingFraud === user.walletAddress}
+                  onUnblockFraud={() => handleUnblockAtaFraud(user.walletAddress)}
                 />
               ))}
             </div>
@@ -1351,6 +1377,8 @@ function UserRow({
   onToggleInviteAccepted,
   deleting,
   onDelete,
+  unblockingFraud,
+  onUnblockFraud,
 }: {
   user: AdminUser;
   toggling: boolean;
@@ -1383,6 +1411,8 @@ function UserRow({
   onToggleInviteAccepted: () => void;
   deleting: boolean;
   onDelete: () => void;
+  unblockingFraud: boolean;
+  onUnblockFraud: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -1418,6 +1448,14 @@ function UserRow({
         >
           {user.isArtist ? 'Künstler' : 'Fan'}
         </div>
+        {user.ataFraudBlocked && (
+          <div
+            className="shrink-0 px-2 py-0.5 rounded-lg text-xs font-bold bg-red-900/40 text-red-300 border border-red-800/60 flex items-center gap-1"
+            title="ATA gelöscht & erneuter Einlösungsversuch erkannt — Einlösen gesperrt"
+          >
+            <FaExclamationTriangle size={9} /> ATA gesperrt
+          </div>
+        )}
 
         <div className="min-w-0">
           <p className="text-white text-sm font-semibold truncate">
@@ -1569,6 +1607,20 @@ function UserRow({
           )}
 
         </div>
+        {/* ATA-Betrugssperre aufheben */}
+        {user.ataFraudBlocked && (
+          <button
+            onClick={onUnblockFraud}
+            disabled={unblockingFraud}
+            className="mt-1 flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
+            title="ATA-Betrugssperre aufheben"
+          >
+            {unblockingFraud
+              ? <span className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" />
+              : <FaShieldAlt size={9} />}
+            {unblockingFraud ? 'Entsperre…' : 'ATA-Sperre aufheben'}
+          </button>
+        )}
         {/* Löschen-Button */}
         <button
           onClick={onDelete}

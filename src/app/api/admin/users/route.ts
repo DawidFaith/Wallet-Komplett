@@ -52,19 +52,27 @@ export async function PATCH(req: NextRequest) {
   if (!checkAuth(req)) {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
-  let body: { walletAddress?: string; isArtist?: boolean; rewardToken?: string; solanaAddress?: string; tokenMintAddress?: string | null };
+  let body: { walletAddress?: string; isArtist?: boolean; rewardToken?: string; solanaAddress?: string; tokenMintAddress?: string | null; unblockAtaFraud?: boolean };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Ungültiger JSON-Body' }, { status: 400 });
   }
-  const { walletAddress, isArtist, rewardToken, solanaAddress, tokenMintAddress } = body;
+  const { walletAddress, isArtist, rewardToken, solanaAddress, tokenMintAddress, unblockAtaFraud } = body;
   if (!walletAddress) {
     return NextResponse.json({ error: 'walletAddress erforderlich' }, { status: 400 });
   }
   try {
     if (typeof isArtist === 'boolean') {
       await setArtistStatus(walletAddress, isArtist);
+    }
+    if (unblockAtaFraud === true) {
+      const sql = getDb();
+      await sql`
+        UPDATE solana_accounts
+        SET ata_fraud_blocked = FALSE, ata_fraud_blocked_at = NULL
+        WHERE wallet_address = ${walletAddress.toLowerCase()}
+      `;
     }
     if (rewardToken !== undefined) {
       await upsertUserProfile(walletAddress, { rewardToken });

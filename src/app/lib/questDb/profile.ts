@@ -55,6 +55,7 @@ export interface AdminUserRow {
   solanaAddress: string | null;
   rewardToken: string | null;
   tokenMintAddress: string | null;
+  ataFraudBlocked: boolean;
 }
 
 export async function getUserProfile(walletAddress: string): Promise<SocialProfile> {
@@ -344,7 +345,8 @@ export async function getAllUserProfiles(): Promise<AdminUserRow[]> {
       yb.channel_id IS NOT NULL AS youtube_verified,
       COALESCE(dc.balance, 0) AS credits,
       COALESCE(ux.xp, 0)     AS xp,
-      sa.solana_address
+      sa.solana_address,
+      COALESCE(sa.ata_fraud_blocked, FALSE) AS ata_fraud_blocked
     FROM user_profiles p
     LEFT JOIN youtube_bindings yb ON yb.wallet_address = p.wallet_address
     LEFT JOIN dfaith_credits   dc ON dc.wallet_address = p.wallet_address
@@ -375,6 +377,7 @@ export async function getAllUserProfiles(): Promise<AdminUserRow[]> {
       solanaAddress: r.solana_address ?? null,
       rewardToken: r.reward_token ?? null,
       tokenMintAddress: r.token_mint_address ?? null,
+      ataFraudBlocked: Boolean(r.ata_fraud_blocked),
     };
   });
 }
