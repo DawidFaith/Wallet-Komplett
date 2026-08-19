@@ -1,7 +1,10 @@
 import { unstable_noStore as noStore } from 'next/cache';
+import { clerkClient } from '@clerk/nextjs/server';
 import { getDb } from '../db';
 import { addDfaithCredits, redeemDfaithCredits, savePendingReward } from './credits';
 import { addShard } from './collectibles';
+import { sendRewardsWaitingEmail } from '../email';
+import type { Lang } from '../../utils/i18n';
 import type {
   Platform, QuestType, QuestIndexEntry, ReputationLevel, ReputationContest,
   UserArtistReputation, ReputationLeaderboardEntry, QuestDetail, YouTubeBinding,
@@ -527,6 +530,83 @@ export async function getArtistsWithQuarterlyConfig(): Promise<string[]> {
   return rows.map(r => r.artist_wallet as string);
 }
 
+const VALID_LANGS: Lang[] = ['de', 'en', 'pl'];
+
+/** Einfacher Artist-Anzeigename für die Rewards-Mail (kein Plattform-Fallback nötig, nur Betreff-Text) */
+async function getArtistDisplayNameForEmail(artistWallet: string): Promise<string> {
+  const sql = getDb();
+  const rows = await sql`SELECT display_name FROM user_profiles WHERE wallet_address = ${artistWallet.toLowerCase()} LIMIT 1`;
+  return (rows[0]?.display_name as string | null) ?? 'D.FAITH Artist';
+}
+
+/**
+ * Benachrichtigt jeden Gewinner mit Credit-Reward > 0 per Mail, dass Rewards
+ * jetzt im Reputation-Tab abholbereit sind. Best-effort: Fehler hier dürfen
+ * die bereits abgeschlossene Verteilung nicht als fehlgeschlagen erscheinen
+ * lassen, deshalb wird intern gefangen statt an den Aufrufer geworfen.
+ */
+async function notifyRewardWinners(
+  artistWallet: string,
+  results: { rank: number; walletAddress: string; credited: number }[],
+  kind: 'contest' | 'leaderboard',
+  quarter?: string,
+): Promise<void> {
+  try {
+    const winners = results.filter(r => r.credited > 0);
+    if (winners.length === 0) return;
+
+    const sql = getDb();
+    const artistName = await getArtistDisplayNameForEmail(artistWallet);
+    const wallets = winners.map(w => w.walletAddress.toLowerCase());
+
+    const langRows = await sql`
+      SELECT wallet_address, preferred_lang FROM user_profiles WHERE wallet_address = ANY(${wallets})
+    `;
+    const langByWallet = new Map<string, string | null>();
+    for (const r of langRows) langByWallet.set(r.wallet_address as string, (r.preferred_lang as string | null) ?? null);
+
+    // Gleiches Clerk-Pagination-Muster wie welcomeEmail.ts — Clerk-IDs können
+    // Großbuchstaben enthalten, DB speichert lowercase, deshalb kein direkter
+    // userId-Filter, sondern Abgleich über lowercase Vergleich.
+    const idSet = new Set(wallets);
+    const emailByWallet = new Map<string, string | null>();
+    try {
+      const clerk = await clerkClient();
+      let offset = 0;
+      const pageSize = 100;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data: batch, totalCount } = await clerk.users.getUserList({ limit: pageSize, offset });
+        for (const u of batch) {
+          const lcId = u.id.toLowerCase();
+          if (idSet.has(lcId)) {
+            emailByWallet.set(lcId, u.emailAddresses.find(e => e.id === u.primaryEmailAddressId)?.emailAddress ?? null);
+          }
+        }
+        if (batch.length < pageSize || offset + batch.length >= totalCount) break;
+        offset += pageSize;
+      }
+    } catch { /* Emails bleiben null falls Clerk-Abruf fehlschlägt */ }
+
+    await Promise.all(winners.map(async (w) => {
+      const wallet = w.walletAddress.toLowerCase();
+      const email = emailByWallet.get(wallet);
+      if (!email) return;
+      const rawLang = langByWallet.get(wallet);
+      const lang: Lang = VALID_LANGS.includes(rawLang as Lang) ? (rawLang as Lang) : 'de';
+      try {
+        await sendRewardsWaitingEmail({
+          toEmail: email, lang, artistName, rank: w.rank, amount: w.credited, kind, quarter,
+        });
+      } catch (err) {
+        console.error('[notifyRewardWinners] Versand fehlgeschlagen:', wallet, err instanceof Error ? err.message : err);
+      }
+    }));
+  } catch (err) {
+    console.error('[notifyRewardWinners] Fehler:', err instanceof Error ? err.message : err);
+  }
+}
+
 /** Contest-Rewards verteilen: Credits vom Artist an Top-Fans */
 export async function distributeReputationContest(
   contestId: string,
@@ -591,6 +671,7 @@ export async function distributeReputationContest(
   }
 
   await sql`UPDATE reputation_contests SET distributed = TRUE WHERE id = ${contestId}`;
+  await notifyRewardWinners(artistWallet, results, 'contest');
   return results;
 }
 
@@ -844,6 +925,7 @@ export async function distributeLeaderboardQuarterly(
           distributed_at = NOW()
   `;
 
+  await notifyRewardWinners(wallet, results, 'leaderboard', quarter);
   return { quarter, distributed: results };
 }
 

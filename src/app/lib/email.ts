@@ -337,6 +337,97 @@ const GIVEAWAY_EMAIL_STRINGS: Record<Lang, {
   },
 };
 
+const REWARDS_WAITING_EMAIL_STRINGS: Record<Lang, {
+  subject: (amount: number) => string;
+  heading: string;
+  contestBody: (artistName: string, rank: number, amount: number) => string;
+  leaderboardBody: (artistName: string, quarter: string, rank: number, amount: number) => string;
+  button: string;
+  unsubscribeText: string;
+}> = {
+  de: {
+    subject: amount => `[D.FAITH] ${amount} Credits warten auf dich! 🏆`,
+    heading: 'Du hast gewonnen! 🏆',
+    contestBody: (artistName, rank, amount) =>
+      `Du hast beim Contest von <b>${artistName}</b> Platz <b>#${rank}</b> erreicht — <b>${amount} D.FAITH Credits</b> warten darauf, von dir abgeholt zu werden!`,
+    leaderboardBody: (artistName, quarter, rank, amount) =>
+      `Du hast im Quartals-Leaderboard von <b>${artistName}</b> (${quarter}) Platz <b>#${rank}</b> erreicht — <b>${amount} D.FAITH Credits</b> warten darauf, von dir abgeholt zu werden!`,
+    button: 'Jetzt abholen',
+    unsubscribeText: 'Möchtest du keine Gewinn-Benachrichtigungen mehr erhalten?',
+  },
+  en: {
+    subject: amount => `[D.FAITH] ${amount} Credits are waiting for you! 🏆`,
+    heading: 'You won! 🏆',
+    contestBody: (artistName, rank, amount) =>
+      `You placed <b>#${rank}</b> in <b>${artistName}</b>'s contest — <b>${amount} D.FAITH Credits</b> are waiting for you to claim!`,
+    leaderboardBody: (artistName, quarter, rank, amount) =>
+      `You placed <b>#${rank}</b> in <b>${artistName}</b>'s quarterly leaderboard (${quarter}) — <b>${amount} D.FAITH Credits</b> are waiting for you to claim!`,
+    button: 'Claim now',
+    unsubscribeText: 'Don\'t want to receive win notifications anymore?',
+  },
+  pl: {
+    subject: amount => `[D.FAITH] ${amount} kredytów czeka na Ciebie! 🏆`,
+    heading: 'Wygrałeś/aś! 🏆',
+    contestBody: (artistName, rank, amount) =>
+      `Zająłeś/aś <b>#${rank}</b> miejsce w konkursie <b>${artistName}</b> — <b>${amount} kredytów D.FAITH</b> czeka na odebranie!`,
+    leaderboardBody: (artistName, quarter, rank, amount) =>
+      `Zająłeś/aś <b>#${rank}</b> miejsce w kwartalnym rankingu <b>${artistName}</b> (${quarter}) — <b>${amount} kredytów D.FAITH</b> czeka na odebranie!`,
+    button: 'Odbierz teraz',
+    unsubscribeText: 'Nie chcesz już otrzymywać powiadomień o wygranych?',
+  },
+};
+
+/**
+ * Geht an Contest-/Quartals-Leaderboard-Gewinner, sobald die Rewards verteilt
+ * wurden (siehe distributeReputationContest/distributeLeaderboardQuarterly).
+ * Die Credits liegen zu diesem Zeitpunkt als "pending reward" vor — der
+ * Gewinner muss sie im Reputation-Tab noch aktiv abholen, deshalb der
+ * "Jetzt abholen"-Button statt einer reinen Info-Mail.
+ */
+export async function sendRewardsWaitingEmail(params: {
+  toEmail: string;
+  lang?: Lang;
+  artistName: string;
+  rank: number;
+  amount: number;
+  kind: 'contest' | 'leaderboard';
+  quarter?: string;
+}): Promise<void> {
+  if (await isUnsubscribed(params.toEmail)) {
+    console.log('[email] Empfänger hat sich abgemeldet – Rewards-Mail übersprungen:', params.toEmail);
+    return;
+  }
+  const lang = params.lang ?? 'de';
+  const s = REWARDS_WAITING_EMAIL_STRINGS[lang];
+  const buttonStyle = 'display:inline-block;background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;';
+
+  const body = params.kind === 'contest'
+    ? s.contestBody(params.artistName, params.rank, params.amount)
+    : s.leaderboardBody(params.artistName, params.quarter ?? '', params.rank, params.amount);
+
+  const unsubToken = generateUnsubscribeToken(params.toEmail);
+  const unsubUrl = `${APP_URL}/api/unsubscribe?email=${encodeURIComponent(params.toEmail)}&token=${unsubToken}&lang=${lang}`;
+
+  await sendMail({
+    to: params.toEmail,
+    fromName: 'D.FAITH App',
+    subject: s.subject(params.amount),
+    html: `
+      <h2>${s.heading}</h2>
+      <p>${body}</p>
+      <p>
+        <a href="${APP_URL}" style="${buttonStyle}">
+          ${s.button}
+        </a>
+      </p>
+      <hr style="margin-top:32px;border:none;border-top:1px solid #333;"/>
+      <p style="color:#666;font-size:11px;margin-top:12px;">
+        ${s.unsubscribeText} <a href="${unsubUrl}" style="color:#888;">${lang === 'en' ? 'Unsubscribe' : lang === 'pl' ? 'Wypisz się' : 'Abmelden'}</a>
+      </p>
+    `,
+  });
+}
+
 /**
  * Giveaway: geht an JEDE erfolgreich verifizierte Teilnahme — sowohl an Personen,
  * die sofort automatisch gutgeschrieben wurden (credited=true), als auch an
