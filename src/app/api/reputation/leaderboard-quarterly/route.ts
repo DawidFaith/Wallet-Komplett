@@ -16,11 +16,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'artistWallet erforderlich' }, { status: 400 });
   }
   try {
+    const quarterInfo = getQuarterInfo();
+
+    // Lazy Auto-Distribute: dieser Endpunkt wird ohnehin bei jedem Öffnen des
+    // Reputation-Tabs abgerufen — kein separater Cron nötig, um ein
+    // abgelaufenes, noch nicht verteiltes Quartal auszuzahlen.
+    if (new Date() >= quarterInfo.end) {
+      try { await distributeLeaderboardQuarterly(artistWallet); } catch { /* schon verteilt / keine Config / läuft noch */ }
+    }
+
     const [config, history] = await Promise.all([
       getLeaderboardQuarterlyConfig(artistWallet),
       getLeaderboardQuarterlyHistory(artistWallet),
     ]);
-    const quarterInfo = getQuarterInfo();
 
     // Clerk-Namen für History-Gewinner anreichern
     const allWallets = Array.from(new Set(history.flatMap(h => h.results.map(r => r.walletAddress))));

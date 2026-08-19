@@ -15,8 +15,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'artistWallet required' }, { status: 400 });
   }
   try {
-    const contest = await getActiveReputationContest(artistWallet);
+    let contest = await getActiveReputationContest(artistWallet);
     if (!contest) return NextResponse.json(null);
+
+    // Lazy Auto-Distribute: dieser Endpunkt wird ohnehin bei jedem Öffnen des
+    // Reputation-Tabs (Fan wie Artist) abgerufen — kein separater Cron nötig,
+    // um einen abgelaufenen, noch nicht verteilten Contest auszuzahlen.
+    if (!contest.distributed && new Date(contest.endDate) <= new Date()) {
+      try {
+        await distributeReputationContest(contest.id, artistWallet);
+        contest = await getActiveReputationContest(artistWallet);
+        if (!contest) return NextResponse.json(null);
+      } catch { /* Race mit Parallel-Request o.ä. — beim nächsten Abruf erneut versuchen */ }
+    }
+
     const contestLeaderboard = await getContestLeaderboard(contest.id, artistWallet, 50);
 
     // Clerk-Profilbilder + Namen anreichern (wie reguläre Leaderboard-Route)
