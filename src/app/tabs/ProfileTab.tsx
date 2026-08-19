@@ -307,7 +307,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
       if (res.ok) {
         const json = await res.json();
         const sentAmount: number = json.sentAmount ?? data.credits;
-        await loadProfile();
+        await Promise.all([loadProfile(), loadDfaithBalance()]);
         setClaimModal({ sentAmount });
       } else {
         const json = await res.json().catch(() => null);
@@ -322,7 +322,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
     } finally {
       setClaiming(false);
     }
-  }, [account?.address, data, loadProfile, lang]);
+  }, [account?.address, data, loadProfile, loadDfaithBalance, lang]);
 
   const handleReferralClaim = useCallback(async () => {
     if (!account?.address || referralClaiming) return;
