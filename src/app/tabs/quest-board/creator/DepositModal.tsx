@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { FaCheck, FaExternalLinkAlt } from 'react-icons/fa';
 import Modal from '../components/Modal';
@@ -20,6 +20,22 @@ export default function DepositModal({ open, onClose, walletAddress, onDeposited
   const [step, setStep] = useState<'form' | 'sending' | 'success' | 'error'>('form');
   const [errorMsg, setErrorMsg] = useState('');
   const [result, setResult] = useState<{ credited: number; signature: string; explorerUrl: string } | null>(null);
+  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      try {
+        const addrRes  = await fetch(`/api/solana/create-account?walletAddress=${walletAddress}`);
+        const addrData = await addrRes.json();
+        const solAddr: string | null = addrData.solanaAddress ?? null;
+        if (!solAddr) return;
+        const balRes  = await fetch(`/api/solana/balance?solanaAddress=${solAddr}`);
+        const balData = await balRes.json();
+        setTokenBalance(Number(balData.dfaithBalance ?? 0));
+      } catch { setTokenBalance(0); }
+    })();
+  }, [open, walletAddress]);
 
   const handleSend = async () => {
     const num = Math.round(parseFloat(amount) * 100) / 100;
@@ -73,19 +89,36 @@ export default function DepositModal({ open, onClose, walletAddress, onDeposited
 
           {/* Betrag */}
           <div>
-            <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest block mb-1.5">
-              {t('deposit.amountLabel', lang)}
-            </label>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder={t('deposit.placeholder', lang)}
-              min="0.01"
-              step="0.01"
-              className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 focus:border-amber-500/50 focus:outline-none text-sm placeholder-zinc-600"
-            />
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
+                {t('deposit.amountLabel', lang)}
+              </label>
+              {tokenBalance !== null && (
+                <span className="text-zinc-600 text-[10px]">
+                  {tokenBalance.toLocaleString('de-DE', { maximumFractionDigits: 2 })} D.FAITH
+                </span>
+              )}
+            </div>
+            <div className="relative">
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                placeholder={t('deposit.placeholder', lang)}
+                min="0.01"
+                step="0.01"
+                className="w-full bg-white/5 border border-white/10 text-white rounded-xl pl-4 pr-16 py-3 focus:border-amber-500/50 focus:outline-none text-sm placeholder-zinc-600"
+              />
+              <button
+                type="button"
+                onClick={() => tokenBalance && setAmount(String(tokenBalance))}
+                disabled={!tokenBalance}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-amber-500/15 hover:bg-amber-500/25 disabled:opacity-40 text-amber-300 font-black text-[10px] tracking-wide rounded-lg px-2.5 py-1.5 transition-colors"
+              >
+                MAX
+              </button>
+            </div>
           </div>
 
           <div className="flex gap-2.5">

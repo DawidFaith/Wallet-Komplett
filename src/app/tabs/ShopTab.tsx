@@ -656,11 +656,21 @@ function ShopDepositModal({ walletAddress, onClose, onSuccess }: {
                 : <span className="text-amber-300 font-black text-sm">{(tokenBalance ?? 0).toLocaleString('de-DE', { maximumFractionDigits: 2 })}</span>
               }
             </div>
-            <input
-              type="number" min="1" value={amount} onChange={e => setAmount(e.target.value)}
-              placeholder={t('shop.depositAmountPlaceholder', lang)}
-              className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-amber-500/60 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none transition-colors mb-3"
-            />
+            <div className="relative mb-3">
+              <input
+                type="number" min="1" value={amount} onChange={e => setAmount(e.target.value)}
+                placeholder={t('shop.depositAmountPlaceholder', lang)}
+                className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-amber-500/60 rounded-xl pl-4 pr-16 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none transition-colors"
+              />
+              <button
+                type="button"
+                onClick={() => tokenBalance !== null && setAmount(String(tokenBalance))}
+                disabled={!tokenBalance}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-amber-500/15 hover:bg-amber-500/25 disabled:opacity-40 text-amber-300 font-black text-[10px] tracking-wide rounded-lg px-2.5 py-1.5 transition-colors"
+              >
+                MAX
+              </button>
+            </div>
             {error && <p className="text-red-400 text-xs mb-3 bg-red-500/10 border border-red-500/20 rounded-lg p-2">{error}</p>}
             <button
               onClick={handleDeposit}
