@@ -25,9 +25,9 @@ export async function GET(req: NextRequest) {
       try {
         await distributeReputationContest(contest.id, artistWallet);
         contest = await getActiveReputationContest(artistWallet);
-        if (!contest) return NextResponse.json(null);
       } catch { /* Race mit Parallel-Request o.ä. — beim nächsten Abruf erneut versuchen */ }
     }
+    if (!contest) return NextResponse.json(null);
 
     const contestLeaderboard = await getContestLeaderboard(contest.id, artistWallet, 50);
 
