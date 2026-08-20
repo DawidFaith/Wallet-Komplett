@@ -45,7 +45,7 @@ export default function FacebookQuestCard({ quest, isCompleted, isVerified = tru
     <div className={`bg-zinc-900 rounded-2xl border border-blue-600/40 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
       <div className="h-1 bg-gradient-to-r from-blue-600 to-indigo-600" />
       {/* Thumbnail */}
-      <div className="relative h-40">
+      <div className="relative h-40 md:h-28">
         {quest.videoThumbnail
           ? <Image src={quest.videoThumbnail} alt={quest.videoTitle} fill unoptimized className="object-cover" />
           : <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 to-zinc-900" />
@@ -72,7 +72,7 @@ export default function FacebookQuestCard({ quest, isCompleted, isVerified = tru
         )}
       </div>
 
-      <div className="p-4 space-y-3">
+      <div className="p-4 md:p-3 space-y-3 md:space-y-2">
         <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{quest.videoTitle}</h3>
 
         {/* Fortschrittsbalken */}
@@ -94,18 +94,18 @@ export default function FacebookQuestCard({ quest, isCompleted, isVerified = tru
         </p>
 
         {isCompleted ? (
-          <button disabled className="w-full bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30">
+          <button disabled className="w-full bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 md:py-2 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30">
             <FaFacebook size={12} /> {t('btn.done', language)}
           </button>
         ) : isFull ? (
-          <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">
+          <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 md:py-2 rounded-xl cursor-default">
             {t('btn.full', language)}
           </button>
         ) : (
           <button
             onClick={() => onComplete(quest.id)}
             disabled={!isVerified}
-            className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 md:py-2 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             <FaFacebook size={12} /> {t('btn.start', language)}
           </button>

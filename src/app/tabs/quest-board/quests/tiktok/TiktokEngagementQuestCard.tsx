@@ -34,7 +34,7 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, isVerifi
     <div className={`bg-zinc-900 rounded-2xl border border-cyan-600/40 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
       <div className="h-1 bg-gradient-to-r from-cyan-500 to-purple-500" />
       {/* Thumbnail */}
-      <div className="relative h-40">
+      <div className="relative h-40 md:h-28">
         {quest.videoThumbnail
           ? <Image
               src={quest.videoThumbnail}
@@ -65,7 +65,7 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, isVerifi
           )}
         </div>
 
-      <div className="p-4 space-y-3">
+      <div className="p-4 md:p-3 space-y-3 md:space-y-2">
         <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{quest.videoTitle}</h3>
 
         {/* 3 Aktionen mit Reward */}
@@ -100,14 +100,14 @@ export default function TiktokEngagementQuestCard({ quest, isCompleted, isVerifi
         </div>
 
         {isCompleted ? (
-          <button disabled className="w-full bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30">
+          <button disabled className="w-full bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 md:py-2 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30">
             <FaCheck size={12} /> {t('btn.done', language)}
           </button>
         ) : (
           <button
             onClick={() => !isFull && isVerified && onComplete(quest.id)}
             disabled={isFull || !isVerified}
-            className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-black text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-black text-sm font-semibold py-2.5 md:py-2 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             {isFull ? t('btn.full', language) : <><FaCheck size={12} /> {t('btn.start', language)}</>}
           </button>

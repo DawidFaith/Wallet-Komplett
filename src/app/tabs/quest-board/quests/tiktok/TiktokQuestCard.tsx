@@ -32,7 +32,7 @@ export default function TiktokQuestCard({ quest, isCompleted, isVerified = true,
     <div className={`bg-zinc-900 rounded-2xl border border-cyan-600/40 overflow-hidden transition-all ${isCompleted ? 'opacity-60' : ''}`}>
       <div className="h-1 bg-gradient-to-r from-cyan-500 to-blue-500" />
       {/* Thumbnail */}
-      <div className="relative h-40">
+      <div className="relative h-40 md:h-28">
         <Image
           src={quest.videoThumbnail}
           alt={quest.videoTitle}
@@ -60,7 +60,7 @@ export default function TiktokQuestCard({ quest, isCompleted, isVerified = true,
         )}
       </div>
 
-      <div className="p-4 space-y-3">
+      <div className="p-4 md:p-3 space-y-3 md:space-y-2">
         <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{quest.videoTitle}</h3>
 
         {/* Fortschrittsbalken */}
@@ -82,18 +82,18 @@ export default function TiktokQuestCard({ quest, isCompleted, isVerified = true,
         </p>
 
         {isCompleted ? (
-          <button disabled className="w-full bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30">
+          <button disabled className="w-full bg-green-900/40 text-green-400 text-sm font-semibold py-2.5 md:py-2 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-700/30">
           <FaCheck size={12} /> {t('btn.done', language)}
           </button>
         ) : isFull ? (
-          <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 rounded-xl cursor-default">
+          <button disabled className="w-full bg-zinc-800 text-zinc-500 text-sm font-semibold py-2.5 md:py-2 rounded-xl cursor-default">
             {t('btn.full', language)}
           </button>
         ) : (
           <button
             onClick={() => onComplete(quest.id)}
             disabled={!isVerified}
-            className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 md:py-2 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             <FaTrophy size={12} /> {t('btn.start', language)}
           </button>
