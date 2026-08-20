@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
 
   if (!found) {
     return NextResponse.json(
-      { error: `Kein Kommentar gefunden. Hinterlasse zuerst einen positiven Kommentar unter dem Reel mit deinem Instagram-Account @${profile.instagramHandle}` },
+      { error: `Kein Kommentar gefunden. Hinterlasse zuerst einen Kommentar unter dem Reel mit deinem Instagram-Account @${profile.instagramHandle}` },
       { status: 404 }
     );
   }

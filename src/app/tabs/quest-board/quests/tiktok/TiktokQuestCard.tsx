@@ -78,7 +78,7 @@ export default function TiktokQuestCard({ quest, isCompleted, isVerified = true,
         </div>
 
         <p className="text-zinc-400 text-xs">
-          Aufgabe: <span className="text-zinc-300">{quest.description || (quest.type === 'secret' ? '🔑 Finde den geheimen Code im Video und gib ihn ein!' : quest.type === 'share' ? '🔁 Teile dieses TikTok-Video und beweise es mit deinem Originalsound!' : '💬 Schreibe einen positiven Kommentar unter dieses TikTok-Video!')}</span>
+          Aufgabe: <span className="text-zinc-300">{quest.description || (quest.type === 'secret' ? '🔑 Finde den geheimen Code im Video und gib ihn ein!' : quest.type === 'share' ? '🔁 Teile dieses TikTok-Video und beweise es mit deinem Originalsound!' : '💬 Schreibe einen Kommentar unter dieses TikTok-Video!')}</span>
         </p>
 
         {isCompleted ? (

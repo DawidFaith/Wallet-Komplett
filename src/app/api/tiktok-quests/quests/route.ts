@@ -253,7 +253,7 @@ export async function POST(req: NextRequest) {
       ? '👍 Like, 🔄 Teile und 🔖 Speichere dieses TikTok-Video!'
       : finalQuestType === 'secret'
       ? '🔑 Finde den geheimen Code im Video und gib ihn ein!'
-      : '💬 Schreibe einen positiven Kommentar unter dieses TikTok-Video!');
+      : '💬 Schreibe einen Kommentar unter dieses TikTok-Video!');
 
   const questDetail: QuestDetail = {
     id: questId,

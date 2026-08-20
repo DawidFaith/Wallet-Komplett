@@ -297,7 +297,7 @@ export default function CreateQuestModal({
             ? '🔑 Finde den geheimen Code im TikTok-Video und gib ihn ein!'
             : questType === 'share'
             ? '🔁 Teile dieses TikTok-Video und beweise es mit deinem Originalton!'
-            : '💬 Schreibe einen positiven Kommentar unter dieses TikTok-Video!'
+            : '💬 Schreibe einen Kommentar unter dieses TikTok-Video!'
           : platform === 'instagram'
           ? questType === 'engagement'
             ? '❤️ Like und 🔖 Speichere dieses Instagram Reel! (Teilbelohnung möglich)'
@@ -314,7 +314,7 @@ export default function CreateQuestModal({
           ? '👍 Like dieses YouTube Short!'
           : questType === 'secret'
           ? '🔑 Finde den geheimen Code im Video und gib ihn ein!'
-          : '💬 Schreibe einen positiven Kommentar unter diesen YouTube Short!'
+          : '💬 Schreibe einen Kommentar unter diesen YouTube Short!'
       );
 
       // Instagram: muss ein Video ausgewählt sein
@@ -1122,7 +1122,7 @@ export default function CreateQuestModal({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="💬 Schreibe einen positiven Kommentar unter diesen YouTube Short!"
+              placeholder="💬 Schreibe einen Kommentar unter diesen YouTube Short!"
               rows={2}
               className="w-full bg-[#231e12] text-white rounded-xl px-4 py-3 border border-white/[0.1] focus:border-amber-500 focus:outline-none text-sm placeholder-zinc-500 resize-none"
             />

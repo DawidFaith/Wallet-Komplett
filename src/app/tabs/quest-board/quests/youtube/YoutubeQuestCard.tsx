@@ -77,7 +77,7 @@ export default function YoutubeQuestCard({ quest, isCompleted, isVerified = true
         </div>
 
         <p className="text-zinc-400 text-xs">
-          Aufgabe: <span className="text-zinc-300">{quest.description || (quest.type === 'like' ? '👍 Like dieses YouTube Short!' : quest.type === 'secret' ? '🔑 Finde den geheimen Code im Video und gib ihn ein!' : '💬 Schreibe einen positiven Kommentar unter diesem Short!')}</span>
+          Aufgabe: <span className="text-zinc-300">{quest.description || (quest.type === 'like' ? '👍 Like dieses YouTube Short!' : quest.type === 'secret' ? '🔑 Finde den geheimen Code im Video und gib ihn ein!' : '💬 Schreibe einen Kommentar unter diesem Short!')}</span>
         </p>
 
         {isCompleted ? (

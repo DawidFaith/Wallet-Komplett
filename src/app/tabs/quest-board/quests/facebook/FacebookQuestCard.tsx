@@ -90,7 +90,7 @@ export default function FacebookQuestCard({ quest, isCompleted, isVerified = tru
         </div>
 
         <p className="text-zinc-400 text-xs">
-          Aufgabe: <span className="text-zinc-300">{quest.description || (isSecret ? '🔑 Finde den geheimen Code und gib ihn ein!' : isLike ? '👍 Like dieses Video!' : '💬 Schreibe einen positiven Kommentar!')}</span>
+          Aufgabe: <span className="text-zinc-300">{quest.description || (isSecret ? '🔑 Finde den geheimen Code und gib ihn ein!' : isLike ? '👍 Like dieses Video!' : '💬 Schreibe einen Kommentar!')}</span>
         </p>
 
         {isCompleted ? (

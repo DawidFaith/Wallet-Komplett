@@ -1441,9 +1441,9 @@ const dict: Translations = {
 
   // ── Quest Board – neue Keys ──────────────────────────────────────────────
   'verify.hintLabel': { de: '⚠️ Hinweis', en: '⚠️ Note', pl: '⚠️ Uwaga' },
-  'verify.leaveCommentYT': { de: 'Hinterlasse einen positiven Kommentar mit deinem YouTube-Account', en: 'Leave a positive comment with your YouTube account', pl: 'Zostaw pozytywny komentarz ze swoim kontem YouTube' },
-  'verify.leaveCommentTT': { de: 'Hinterlasse einen positiven Kommentar mit deinem TikTok-Account', en: 'Leave a positive comment with your TikTok account', pl: 'Zostaw pozytywny komentarz ze swoim kontem TikTok' },
-  'verify.leaveCommentIG': { de: 'Hinterlasse einen positiven Kommentar mit deinem Instagram-Account', en: 'Leave a positive comment with your Instagram account', pl: 'Zostaw pozytywny komentarz ze swoim kontem Instagram' },
+  'verify.leaveCommentYT': { de: 'Hinterlasse einen Kommentar mit deinem YouTube-Account', en: 'Leave a comment with your YouTube account', pl: 'Zostaw komentarz ze swoim kontem YouTube' },
+  'verify.leaveCommentTT': { de: 'Hinterlasse einen Kommentar mit deinem TikTok-Account', en: 'Leave a comment with your TikTok account', pl: 'Zostaw komentarz ze swoim kontem TikTok' },
+  'verify.leaveCommentIG': { de: 'Hinterlasse einen Kommentar mit deinem Instagram-Account', en: 'Leave a comment with your Instagram account', pl: 'Zostaw komentarz ze swoim kontem Instagram' },
   'verify.toVideoFindCode': { de: 'Zum Video (Code suchen) ↗', en: 'To video (find code) ↗', pl: 'Do wideo (znajdź kod) ↗' },
   'qb.noActiveQuests': { de: 'Noch keine Künstler haben aktive Quests.', en: 'No artists have active quests yet.', pl: 'Żaden artysta nie ma aktywnych questów.' },
   'qb.artistsLabel': { de: 'Künstler', en: 'Artists', pl: 'Artyści' },
