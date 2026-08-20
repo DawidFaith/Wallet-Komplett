@@ -622,72 +622,58 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
           {activeBundles.length > 0 && (
             <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">{t('quest.bundles', language)}</p>
           )}
-          {activeBundles.map((bundle) => (
-            <BundleCard
-              key={bundle.id}
-              bundle={bundle}
-              fanWallet={walletAddress}
-              verified={verified}
-              levelBonusPercent={getTotalBonusPercent(bundle.creatorWallet)}
-              creditBonusPct={creditBonusByCreator[bundle.creatorWallet.toLowerCase()] ?? 0}
-              shardBonusPct={shardBonusByCreator[bundle.creatorWallet.toLowerCase()] ?? 0}
-              repBonusPercent={getRepBonusPercent(bundle.creatorWallet)}
-              language={language}
-              onBonusClaimed={(bonusAmount, bundleTitle, shardDropped) => { 
-                // Sofort aus der Liste entfernen (kein Flackern bis loadBundles fertig ist)
-                setBundles((prev) => prev.filter((b) => b.id !== bundle.id));
-                loadBundles(); 
-                loadQuests(); 
-                setCelebration({ amount: 0, questTitle: bundleTitle, reputationReward: 0, levelBonus: 0, shardDropped, isBundleCompletion: true });
-              }}
-              renderQuestCard={(quest) => {
-                const isCompleted = completedIds.includes(quest.id);
-                if (quest.platform === 'youtube') {
-                  return <YoutubeQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.youtube} onComplete={handleVerify} rewardTokenName={tokenName} repBonusPercent={getRepBonusPercent(quest.creatorWallet)} levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)} language={language} />;
-                }
-                if (quest.platform === 'tiktok') {
-                  return quest.type === 'engagement'
-                    ? <TiktokEngagementQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.tiktok} onComplete={handleTikTokVerify} rewardTokenName={tokenName} repBonusPercent={getRepBonusPercent(quest.creatorWallet)} levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)} language={language} />
-                    : <TiktokQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.tiktok} onComplete={handleTikTokVerify} rewardTokenName={tokenName} repBonusPercent={getRepBonusPercent(quest.creatorWallet)} levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)} language={language} />;
-                }
-                if (quest.platform === 'instagram') {
-                  return <InstagramQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.instagram} onComplete={handleInstagramVerify} rewardTokenName={tokenName} repBonusPercent={getRepBonusPercent(quest.creatorWallet)} levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)} language={language} />;
-                }
-                if (quest.platform === 'facebook') {
-                  return <FacebookQuestCard quest={quest} isCompleted={isCompleted} isVerified={verified.facebook} onComplete={handleFacebookVerify} rewardTokenName={tokenName} repBonusPercent={getRepBonusPercent(quest.creatorWallet)} levelBonusPercent={getTotalBonusPercent(quest.creatorWallet)} language={language} />;
-                }
-                return null;
-              }}
-              onOpenQuest={(quest) => {
-                if (quest.platform === 'instagram' && (quest.type as string) === 'dm_share') {
-                  setInstagramDmShareQuest(quest);
-                } else if (quest.platform === 'instagram') {
-                  if (quest.type === 'secret') {
-                    setSecretVerifyQuest(quest);
-                  } else if (quest.type === 'like' || quest.type === 'save' || (quest.type as string) === 'engagement' || (quest.type as string) === 'repost') {
-                    setInstagramLikeQuest(quest);
-                  } else {
-                    setInstagramCommentQuest(quest);
-                  }
-                } else if (quest.platform === 'youtube') {
-                  if (quest.type === 'like') setLikeVerifyQuest(quest);
-                  else if (quest.type === 'secret') setSecretVerifyQuest(quest);
-                  else setVerifyingQuest(quest);
-                } else if (quest.platform === 'tiktok') {
-                  if (quest.type === 'engagement') setTiktokEngagementQuest(quest);
-                  else if (quest.type === 'like') setTiktokLikeQuest(quest);
-                  else if (quest.type === 'save') setTiktokSaveQuest(quest);
-                  else if (quest.type === 'share') setTiktokShareQuest(quest);
-                  else if (quest.type === 'secret') setSecretVerifyQuest(quest);
-                  else setVerifyingQuest(quest);
-                } else if (quest.platform === 'facebook') {
-                  if (quest.type === 'like') setFacebookLikeQuest(quest);
-                  else if (quest.type === 'secret') setSecretVerifyQuest(quest);
-                  else setFacebookCommentQuest(quest);
-                }
-              }}
-            />
-          ))}
+          {activeBundles.length > 0 && (
+            <div className="grid grid-cols-2 gap-3">
+              {activeBundles.map((bundle) => (
+                <BundleCard
+                  key={bundle.id}
+                  bundle={bundle}
+                  fanWallet={walletAddress}
+                  verified={verified}
+                  levelBonusPercent={getTotalBonusPercent(bundle.creatorWallet)}
+                  creditBonusPct={creditBonusByCreator[bundle.creatorWallet.toLowerCase()] ?? 0}
+                  shardBonusPct={shardBonusByCreator[bundle.creatorWallet.toLowerCase()] ?? 0}
+                  repBonusPercent={getRepBonusPercent(bundle.creatorWallet)}
+                  language={language}
+                  onBonusClaimed={(bonusAmount, bundleTitle, shardDropped) => {
+                    // Sofort aus der Liste entfernen (kein Flackern bis loadBundles fertig ist)
+                    setBundles((prev) => prev.filter((b) => b.id !== bundle.id));
+                    loadBundles();
+                    loadQuests();
+                    setCelebration({ amount: 0, questTitle: bundleTitle, reputationReward: 0, levelBonus: 0, shardDropped, isBundleCompletion: true });
+                  }}
+                  onOpenQuest={(quest) => {
+                    if (quest.platform === 'instagram' && (quest.type as string) === 'dm_share') {
+                      setInstagramDmShareQuest(quest);
+                    } else if (quest.platform === 'instagram') {
+                      if (quest.type === 'secret') {
+                        setSecretVerifyQuest(quest);
+                      } else if (quest.type === 'like' || quest.type === 'save' || (quest.type as string) === 'engagement' || (quest.type as string) === 'repost') {
+                        setInstagramLikeQuest(quest);
+                      } else {
+                        setInstagramCommentQuest(quest);
+                      }
+                    } else if (quest.platform === 'youtube') {
+                      if (quest.type === 'like') setLikeVerifyQuest(quest);
+                      else if (quest.type === 'secret') setSecretVerifyQuest(quest);
+                      else setVerifyingQuest(quest);
+                    } else if (quest.platform === 'tiktok') {
+                      if (quest.type === 'engagement') setTiktokEngagementQuest(quest);
+                      else if (quest.type === 'like') setTiktokLikeQuest(quest);
+                      else if (quest.type === 'save') setTiktokSaveQuest(quest);
+                      else if (quest.type === 'share') setTiktokShareQuest(quest);
+                      else if (quest.type === 'secret') setSecretVerifyQuest(quest);
+                      else setVerifyingQuest(quest);
+                    } else if (quest.platform === 'facebook') {
+                      if (quest.type === 'like') setFacebookLikeQuest(quest);
+                      else if (quest.type === 'secret') setSecretVerifyQuest(quest);
+                      else setFacebookCommentQuest(quest);
+                    }
+                  }}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Einzelne Quest-Karten nach den Bundles */}
           {youtubeQuests.length > 0 && (

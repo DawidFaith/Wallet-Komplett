@@ -756,9 +756,9 @@ const dict: Translations = {
     pl: 'Połącz co najmniej jedno konto w mediach społecznościowych w swoim profilu, aby zobaczyć pasujące questy.',
   },
   'quest.allCompleteDesc': {
-    de: 'Alle {n} Quests abschließen → Abschluss-Bonus!',
-    en: 'Complete all {n} quests → Completion Bonus!',
-    pl: 'Ukończ wszystkie {n} questy → Bonus Ukończenia!',
+    de: 'Alle {n} Quests abschließen → Chance auf Shards als Bonus!',
+    en: 'Complete all {n} quests → Chance for Shards as bonus!',
+    pl: 'Ukończ wszystkie {n} questy → Szansa na Shardy jako bonus!',
   },
   'quest.levelBonus': {
     de: 'inkl. +{n}% Level-Bonus',
@@ -1346,6 +1346,7 @@ const dict: Translations = {
   'bc.engagementDesc': { de: 'Führe das Engagement-Paket aus!', en: 'Complete the engagement package!', pl: 'Wykonaj pakiet zaangażowania!' },
   'bc.repostTiktokDesc': { de: 'Reposte dieses Video auf TikTok!', en: 'Repost this video on TikTok!', pl: 'Repostuj ten film na TikTok!' },
   'bc.questDefault': { de: 'Schließe diese Quest ab!', en: 'Complete this quest!', pl: 'Ukończ ten quest!' },
+  'bc.shardBonusHint': { de: 'Beim Einlösen des Bonus hast du eine {pct}%-Chance, zusätzlich einen Shard zu erhalten.', en: 'When claiming the bonus you have a {pct}% chance to also receive a Shard.', pl: 'Odbierając bonus masz {pct}% szansy na dodatkowe otrzymanie Shardu.' },
   'bc.lockYT': { de: 'YouTube verknüpfen', en: 'Connect YouTube', pl: 'Połącz YouTube' },
   'bc.lockIG': { de: 'Instagram verknüpfen', en: 'Connect Instagram', pl: 'Połącz Instagram' },
   'bc.lockTT': { de: 'TikTok verknüpfen', en: 'Connect TikTok', pl: 'Połącz TikTok' },
