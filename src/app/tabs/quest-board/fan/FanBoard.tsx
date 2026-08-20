@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { FaTrophy, FaSync, FaLock, FaStar } from 'react-icons/fa';
-import CreditsBox from '../components/CreditsBox';
 import VerifyModal from './VerifyModal';
 import LikeVerifyModal from './LikeVerifyModal';
 import SecretVerifyModal from './SecretVerifyModal';
@@ -21,7 +20,7 @@ import FacebookQuestCard from '../quests/facebook/FacebookQuestCard';
 import FacebookLikeVerifyModal from './FacebookLikeVerifyModal';
 import BundleCard from './BundleCard';
 import StreamingQuestCard, { type StreamingQuest } from './StreamingQuestCard';
-import type { QuestIndexEntry, VerifiedPlatforms, VerifyResult, ClaimResult } from '../types';
+import type { QuestIndexEntry, VerifiedPlatforms, VerifyResult } from '../types';
 import type { QuestBundleWithItems } from '../../../lib/questDb';
 import { formatCredits } from '../utils';
 import { t, tFmt, type Lang } from '../../../utils/i18n';
@@ -45,10 +44,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const [quests, setQuests] = useState<QuestIndexEntry[]>([]);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const [credits, setCredits] = useState(0);
-  const [claiming, setClaiming] = useState(false);
-  const [claimResult, setClaimResult] = useState<ClaimResult | null>(null);
 
   const [verifyingQuest, setVerifyingQuest] = useState<QuestIndexEntry | null>(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
@@ -95,18 +90,11 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const loadQuests = useCallback(async () => {
     setLoading(true);
     try {
-      const [questsRes, balRes] = await Promise.all([
-        fetch(`/api/youtube-quests/quests?wallet=${walletAddress}`),
-        fetch(`/api/youtube-quests/creator-balance?wallet=${walletAddress}`),
-      ]);
+      const questsRes = await fetch(`/api/youtube-quests/quests?wallet=${walletAddress}`);
       const questsData = await questsRes.json();
       const loadedQuests: QuestIndexEntry[] = questsData.quests ?? [];
       setQuests(loadedQuests);
       setCompletedIds(questsData.completedIds ?? []);
-      if (balRes.ok) {
-        const balData = await balRes.json();
-        setCredits(balData.balance ?? 0);
-      }
 
       // Auto-open story-claim modal wenn storyToken in URL vorhanden
       if (typeof window !== 'undefined') {
@@ -333,7 +321,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
           creditBonus: data.creditBonus,
         });
         setCompletedIds((prev) => [...prev, questId]);
-        setCredits((prev) => prev + (data.rewardAmount ?? 0));
         setQuests((prev) =>
           prev.map((q) => q.id === questId ? { ...q, completions: q.completions + 1 } : q)
         );
@@ -400,7 +387,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
           creditBonus: data.creditBonus,
         });
         setCompletedIds((prev) => [...prev, questId]);
-        setCredits((prev) => prev + (data.rewardAmount ?? 0));
         setQuests((prev) =>
           prev.map((q) => q.id === questId ? { ...q, completions: q.completions + 1 } : q)
         );
@@ -412,30 +398,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
       setVerifyResult({ success: false, message: 'Netzwerkfehler. Bitte versuche es erneut.' });
     } finally {
       setVerifyLoading(false);
-    }
-  };
-
-  const handleClaim = async () => {
-    setClaimResult(null);
-    try {
-      const res = await fetch('/api/youtube-quests/claim', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress, amount: credits, ...(filterCreator ? { creatorWallet: filterCreator } : {}) }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setClaimResult({ success: true, message: `${formatCredits(data.sentAmount)} ${tokenName} wurden an deine Wallet gesendet!`, txHash: data.txHash });
-        setCredits(0);
-      } else if (res.status === 403) {
-        setClaimResult({ success: false, message: data.error, fraud: true });
-      } else {
-        setClaimResult({ success: false, message: data.error });
-      }
-    } catch {
-      setClaimResult({ success: false, message: 'Netzwerkfehler. Bitte versuche es erneut.' });
-    } finally {
-      setClaiming(false);
     }
   };
 
@@ -483,38 +445,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 space-y-5">
-      {/* Credits Box mit Einlösen-Button */}
-      <CreditsBox
-        balance={credits}
-        tokenName={tokenName}
-        subtitle={credits > 0 ? t('fan.credits', lang).replace('{token}', tokenName) : t('fan.noCredits', lang)}
-        actionLabel={t('fan.redeem', lang)}
-        actionLoading={claiming}
-        onAction={() => { setClaiming(true); handleClaim(); }}
-        onRefresh={loadQuests}
-        refreshLoading={loading}
-      />
-
-      {/* Claim-Ergebnis */}
-      {claimResult && (
-        <div className={`rounded-2xl p-4 border ${claimResult.success ? 'bg-green-900/30 border-green-700/40' : claimResult.fraud ? 'bg-amber-950/60 border-amber-600/60' : 'bg-amber-900/30 border-amber-700/40'}`}>
-          {claimResult.fraud && (
-            <p className="text-amber-400 font-black text-xs uppercase tracking-widest mb-1">{t('fan.claimBlocked', lang)}</p>
-          )}
-          <p className={`font-semibold text-sm ${claimResult.success ? 'text-green-300' : 'text-amber-300'}`}>
-            {claimResult.message}
-          </p>
-          {claimResult.txHash && (
-            <a href={`https://basescan.org/tx/${claimResult.txHash}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-xs underline mt-1 block">
-              {t('fan.txView', lang)}
-            </a>
-          )}
-          {!claimResult.fraud && (
-            <button onClick={() => setClaimResult(null)} className="text-zinc-500 text-xs mt-2 hover:text-zinc-300">{t('btn.close', lang)}</button>
-          )}
-        </div>
-      )}
-
       <div className="flex items-center justify-between">
         <p className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest">{t('quest.available', language)}</p>
         <button onClick={() => { loadQuests(); loadBundles(); }} className="text-zinc-400 hover:text-white p-2 transition-colors">
@@ -864,7 +794,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onCompleted={(amount, levelBonus, creditBonus) => {
           if (likeVerifyQuest) {
             setCompletedIds((prev) => [...prev, likeVerifyQuest.id]);
-            setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === likeVerifyQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
@@ -887,7 +816,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onCompleted={(amount, levelBonus, creditBonus) => {
           if (secretVerifyQuest) {
             setCompletedIds((prev) => [...prev, secretVerifyQuest.id]);
-            setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === secretVerifyQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
@@ -910,7 +838,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onCompleted={(amount, levelBonus, creditBonus) => {
           if (tiktokEngagementQuest) {
             setCompletedIds((prev) => [...prev, tiktokEngagementQuest.id]);
-            setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === tiktokEngagementQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
@@ -934,7 +861,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onCompleted={(amount, levelBonus, creditBonus) => {
           if (tiktokLikeQuest) {
             setCompletedIds((prev) => [...prev, tiktokLikeQuest.id]);
-            setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === tiktokLikeQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
@@ -958,7 +884,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onCompleted={(amount, levelBonus, creditBonus) => {
           if (tiktokSaveQuest) {
             setCompletedIds((prev) => [...prev, tiktokSaveQuest.id]);
-            setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === tiktokSaveQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
@@ -981,7 +906,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onCompleted={(amount, levelBonus, creditBonus) => {
           if (tiktokShareQuest) {
             setCompletedIds((prev) => [...prev, tiktokShareQuest.id]);
-            setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === tiktokShareQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
@@ -1004,7 +928,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onCompleted={(amount, levelBonus, creditBonus) => {
           if (instagramLikeQuest) {
             setCompletedIds((prev) => [...prev, instagramLikeQuest.id]);
-            setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === instagramLikeQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
@@ -1028,7 +951,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onCompleted={(amount, levelBonus, creditBonus) => {
           if (instagramCommentQuest) {
             setCompletedIds((prev) => [...prev, instagramCommentQuest.id]);
-            setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === instagramCommentQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
@@ -1051,7 +973,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onCompleted={(amount, levelBonus, creditBonus) => {
           if (facebookCommentQuest) {
             setCompletedIds((prev) => [...prev, facebookCommentQuest.id]);
-            setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === facebookCommentQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
@@ -1074,7 +995,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onCompleted={(amount, levelBonus, creditBonus) => {
           if (facebookLikeQuest) {
             setCompletedIds((prev) => [...prev, facebookLikeQuest.id]);
-            setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === facebookLikeQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
@@ -1098,7 +1018,6 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onCompleted={(amount, levelBonus, creditBonus) => {
           if (instagramDmShareQuest) {
             setCompletedIds((prev) => [...prev, instagramDmShareQuest.id]);
-            setCredits((prev) => prev + amount);
             setQuests((prev) =>
               prev.map((q) => q.id === instagramDmShareQuest.id ? { ...q, completions: q.completions + 1 } : q)
             );
