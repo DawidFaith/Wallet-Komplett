@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
 import { GiCrystalShine } from 'react-icons/gi';
@@ -130,68 +130,28 @@ function fmtBonus(v: string): string {
   return withPlus.endsWith('%') ? withPlus : `${withPlus}%`;
 }
 
-function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
+function ListingCard({ listing, isSelf, onOpen }: {
   listing: Listing;
   isSelf: boolean;
-  onBuy: (l: Listing) => void;
-  onCancel: (l: Listing) => void;
-  cancelLoading: boolean;
+  onOpen: (l: Listing) => void;
 }) {
   const lang = useLang();
   const isSong = listing.nft_type === 'song' || detectCategory(listing) === 'song';
   const cfg    = isSong ? null : rc(listing.rarity);
 
-  const [playing, setPlaying] = useState(false);
-  const audioRef = useState<HTMLAudioElement | null>(null);
-
-  const togglePlay = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!listing.content_url) return;
-    if (!audioRef[0]) {
-      const audio = new Audio(listing.content_url);
-      audioRef[1](audio);
-      audio.play();
-      setPlaying(true);
-      audio.onended = () => setPlaying(false);
-    } else if (playing) {
-      audioRef[0].pause();
-      setPlaying(false);
-    } else {
-      audioRef[0].play();
-      setPlaying(true);
-    }
-  };
-
   const displayName = listing.collection_name ?? listing.nft_name ?? '—';
   const artist      = listing.artist_name && !RARITY_WORDS.has(listing.artist_name.toLowerCase())
     ? listing.artist_name : null;
 
-  const cleanName = stripRarity(listing.collection_name ?? listing.nft_name ?? '');
-
-  // Fallback-Beschreibung für Collectibles die ohne Beschreibung erstellt wurden
-  const description = listing.description
-    || (!isSong && cleanName
-        ? `${cfg!.label} D.FAITH Collectible from the "${cleanName}" series.`
-        : null);
-
-  const attrs       = listing.attributes ?? [];
-  const repBonus    = attrs.find(a => a.trait_type.toLowerCase().includes('rep'));
-  const creditBonus = attrs.find(a => a.trait_type.toLowerCase().includes('credit'));
-  const shardBonus  = attrs.find(a => a.trait_type.toLowerCase().includes('shard'));
-  const hasBoosts   = repBonus || creditBonus || shardBonus;
-
   const cardBorder = isSong ? 'border-amber-500/30' : cfg!.border;
   const cardBg     = isSong ? 'bg-[#181818]'        : cfg!.bg;
-  const cardGlow   = isSong ? ''                    : cfg!.glow;
 
   return (
-    <div className={`relative flex flex-col rounded-2xl border ${cardBorder} ${cardBg} ${cardGlow} overflow-hidden group transition-all duration-200 hover:scale-[1.02]`}>
-      {isSelf && (
-        <div className="absolute top-2 left-2 z-10 text-[9px] font-black uppercase tracking-wider bg-amber-500/90 text-black rounded-full px-2 py-0.5">
-          {t('mp.badgeOwn', lang)}
-        </div>
-      )}
-
+    <button
+      type="button"
+      onClick={() => onOpen(listing)}
+      className={`group relative flex flex-col rounded-xl border ${cardBorder} ${cardBg} overflow-hidden text-left transition-all duration-200 hover:bg-[#242424]`}
+    >
       {/* Bild */}
       <div className="relative w-full aspect-square bg-black/30">
         {listing.image_url ? (
@@ -203,158 +163,92 @@ function ListingCard({ listing, isSelf, onBuy, onCancel, cancelLoading }: {
               : <GiCrystalShine className={`${cfg!.text} opacity-30`} size={40} />}
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+
+        {isSelf && (
+          <div className="absolute top-1.5 left-1.5 z-10 text-[9px] font-black uppercase tracking-wider bg-amber-500/90 text-black rounded-full px-1.5 py-0.5">
+            {t('mp.badgeOwn', lang)}
+          </div>
+        )}
 
         {/* Badge oben rechts */}
         {isSong ? (
-          <div className="absolute top-2 right-2 z-10 text-[8px] font-bold rounded-full px-1.5 py-0.5 bg-amber-500/80 text-black flex items-center gap-0.5">
+          <div className="absolute top-1.5 right-1.5 z-10 text-[8px] font-bold rounded-full px-1.5 py-0.5 bg-amber-500/80 text-black flex items-center gap-0.5">
             <FaMusic size={6} />
             {listing.edition_number != null ? `#${listing.edition_number}` : 'Song'}
           </div>
         ) : (
-          <div className={`absolute top-2 right-2 z-10 text-[9px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 ${cfg!.badge}`}>
+          <div className={`absolute top-1.5 right-1.5 z-10 text-[9px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 ${cfg!.badge}`}>
             {cfg!.label}
           </div>
         )}
-
-        {/* Play-Button für Song-NFTs */}
-        {isSong && listing.content_url && (
-          <button
-            onClick={togglePlay}
-            className="absolute bottom-2 right-2 z-10 w-10 h-10 rounded-full bg-amber-400 text-black flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"
-          >
-            {playing
-              ? <span className="flex gap-0.5"><span className="w-[3px] h-3 bg-black rounded-sm" /><span className="w-[3px] h-3 bg-black rounded-sm" /></span>
-              : <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 ml-0.5"><path d="M8 5v14l11-7z" /></svg>
-            }
-          </button>
-        )}
-
-        {/* Boost-Overlay (nur Collectibles) */}
-        {hasBoosts && !isSong && (
-          <div className="absolute bottom-0 left-0 right-0 px-2 pb-2 flex gap-1.5">
-            {repBonus && (
-              <div className="flex items-center gap-1 bg-violet-900/80 border border-violet-500/50 rounded-lg px-1.5 py-0.5 backdrop-blur-sm">
-                <FaStar size={7} className="text-violet-300 shrink-0" />
-                <span className="text-violet-200 text-[9px] font-black leading-none">{fmtBonus(repBonus.value)}</span>
-              </div>
-            )}
-            {creditBonus && (
-              <div className="flex items-center gap-1 bg-amber-900/80 border border-amber-500/50 rounded-lg px-1.5 py-0.5 backdrop-blur-sm">
-                <FaCoins size={7} className="text-amber-300 shrink-0" />
-                <span className="text-amber-200 text-[9px] font-black leading-none">{fmtBonus(creditBonus.value)}</span>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Info */}
-      <div className="p-2.5 flex flex-col gap-2 flex-1">
-        {/* Name + Artist */}
-        <div className="flex items-start gap-1.5 min-w-0">
-          {artist && <ArtistAvatar name={artist} picture={listing.artist_picture} size="sm" />}
-          <div className="min-w-0 flex-1">
-            <p className={`font-black text-[11px] truncate leading-tight ${isSong ? 'text-amber-300' : cfg!.text}`}>
-              {displayName}
-            </p>
-            {artist && (
-              <p className="text-zinc-500 text-[9px] truncate leading-tight">{artist}</p>
-            )}
-          </div>
-        </div>
-
-        {/* Beschreibung */}
-        {description && (
-          <p className="text-zinc-400 text-[9px] leading-relaxed">{description}</p>
-        )}
-
-        {/* Attribute-Chips */}
-        {isSong ? (
-          <div className="flex flex-wrap gap-1">
-            <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">{t('mp.tagMusic', lang)}</span>
-            <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">D.FAITH</span>
-            {listing.edition_number != null && (
-              <span className="text-[8px] bg-amber-900/40 text-amber-400 rounded-full px-1.5 py-0.5 border border-amber-500/30">Edition #{listing.edition_number}</span>
-            )}
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-1">
-            <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">Collectible</span>
-            <span className="text-[8px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">D.FAITH</span>
-            {repBonus && (
-              <span className={`text-[8px] rounded-full px-1.5 py-0.5 border ${cfg!.border} ${cfg!.text} bg-black/30`}>
-                REP {fmtBonus(repBonus.value)}
-              </span>
-            )}
-            {creditBonus && (
-              <span className="text-[8px] bg-amber-900/30 text-amber-400 rounded-full px-1.5 py-0.5 border border-amber-500/30">
-                Credits {fmtBonus(creditBonus.value)}
-              </span>
-            )}
-            {shardBonus && (
-              <span className="text-[8px] bg-cyan-900/30 text-cyan-400 rounded-full px-1.5 py-0.5 border border-cyan-500/30">
-                Shard {fmtBonus(shardBonus.value)}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Preis + Aktion */}
-        <div className="flex items-center justify-between mt-auto pt-1.5 border-t border-white/[0.06]">
-          <div>
-            <span className={`font-black text-sm flex items-center gap-1 ${isSong ? 'text-amber-400' : cfg!.text}`}>
-              <FaTag size={8} />
-              {Number(listing.price_dfaith).toLocaleString('de-DE')}
-            </span>
-            <span className="text-[9px] text-zinc-600">D.FAITH</span>
-          </div>
-
-          {isSelf ? (
-            <button
-              onClick={() => onCancel(listing)}
-              disabled={cancelLoading}
-              className="text-[10px] bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl px-2.5 py-1 transition-colors disabled:opacity-50 font-semibold"
-            >
-              {cancelLoading ? '…' : t('mp.cancel', lang)}
-            </button>
-          ) : (
-            <button
-              onClick={() => onBuy(listing)}
-              className={`text-[10px] font-bold rounded-xl px-2.5 py-1 transition-all border ${isSong ? 'border-amber-500/40 bg-amber-950/20 text-amber-400 hover:bg-amber-900/30' : `${cfg!.border} ${cfg!.bg} ${cfg!.text} hover:brightness-125`} active:scale-95`}
-            >
-              {t('mp.buy', lang)}
-            </button>
-          )}
-        </div>
+      {/* Info (kompakt) */}
+      <div className="px-2.5 pt-2 pb-2.5 flex flex-col gap-1">
+        <p className={`font-black text-xs truncate leading-tight ${isSong ? 'text-amber-300' : cfg!.text}`}>
+          {displayName}
+        </p>
+        {artist && <p className="text-zinc-500 text-[10px] truncate leading-tight">{artist}</p>}
+        <span className={`font-black text-xs flex items-center gap-1 mt-0.5 ${isSong ? 'text-amber-400' : cfg!.text}`}>
+          <FaTag size={7} />
+          {Number(listing.price_dfaith).toLocaleString('de-DE')} D.FAITH
+        </span>
       </div>
-    </div>
+    </button>
   );
 }
 
 // ─── Kauf-Modal ───────────────────────────────────────────────────────────────
 
-function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
+function ListingDetailModal({ listing, isSelf, balance, walletAddress, onClose, onSuccess, onCancel, cancelLoading }: {
   listing: Listing;
+  isSelf: boolean;
   balance: number;
   walletAddress: string;
   onClose: () => void;
   onSuccess: () => void;
+  onCancel: (l: Listing) => void;
+  cancelLoading: boolean;
 }) {
   const lang = useLang();
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
   const [done, setDone]       = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const price   = Number(listing.price_dfaith);
   const enough  = balance >= price;
   const isSong  = listing.nft_type === 'song' || detectCategory(listing) === 'song';
   const cfg     = isSong ? null : rc(listing.rarity);
+  const displayName = listing.collection_name ?? listing.nft_name ?? '—';
+  const artist       = listing.artist_name && !RARITY_WORDS.has(listing.artist_name.toLowerCase())
+    ? listing.artist_name : null;
   const cleanName   = stripRarity(listing.collection_name ?? listing.nft_name ?? '');
   const description = listing.description
     || (!isSong && cleanName
         ? `${cfg!.label} D.FAITH Collectible from the "${cleanName}" series.`
         : null);
+
+  const attrs       = listing.attributes ?? [];
+  const repBonus    = attrs.find(a => a.trait_type.toLowerCase().includes('rep'));
+  const creditBonus = attrs.find(a => a.trait_type.toLowerCase().includes('credit'));
+  const shardBonus  = attrs.find(a => a.trait_type.toLowerCase().includes('shard'));
+
+  const togglePlay = () => {
+    if (!listing.content_url) return;
+    if (!audioRef.current) {
+      audioRef.current = new Audio(listing.content_url);
+      audioRef.current.onended = () => setPlaying(false);
+    }
+    if (playing) {
+      audioRef.current.pause();
+      setPlaying(false);
+    } else {
+      audioRef.current.play();
+      setPlaying(true);
+    }
+  };
 
   const handleBuy = async () => {
     setLoading(true);
@@ -377,112 +271,172 @@ function BuyModal({ listing, balance, walletAddress, onClose, onSuccess }: {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:pb-0">
-      <div className="bg-[#161410] border border-white/[0.08] rounded-2xl p-5 w-full max-w-sm shadow-2xl">
-        <div className="flex justify-between items-center mb-5">
-          <h3 className="font-black text-white text-base">{t('mp.buyTitle', lang)}</h3>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
-            <FaTimes size={14} />
-          </button>
-        </div>
-
-        {/* NFT-Vorschau */}
-        <div className={`rounded-xl border p-3 mb-4 flex gap-3 items-start ${isSong ? 'border-amber-500/30 bg-amber-950/20' : `${cfg!.border} ${cfg!.bg} ${cfg!.glow}`}`}>
+    <div
+      className="fixed inset-0 z-[999] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0"
+      onClick={onClose}
+    >
+      <div
+        className="bg-[#161410] border border-white/[0.08] rounded-2xl w-full max-w-sm shadow-2xl max-h-[88vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Bild (groß) */}
+        <div className="relative w-full aspect-square overflow-hidden bg-black/30">
           {listing.image_url ? (
-            <Image src={listing.image_url} alt="" width={56} height={56} className="w-14 h-14 rounded-lg object-cover shrink-0 border border-white/10" />
+            <Image src={listing.image_url} alt={displayName} fill className="object-cover" />
           ) : (
-            <div className={`w-14 h-14 rounded-lg bg-black/30 shrink-0 flex items-center justify-center border ${isSong ? 'border-amber-500/30' : cfg!.border}`}>
-              {isSong ? <FaMusic className="text-amber-400" size={20} /> : <GiCrystalShine className={cfg!.text} size={20} />}
+            <div className="w-full h-full flex items-center justify-center">
+              {isSong
+                ? <FaMusic className="text-amber-400 opacity-30" size={56} />
+                : <GiCrystalShine className={`${cfg!.text} opacity-30`} size={56} />}
             </div>
           )}
-          <div className="min-w-0 flex-1">
+
+          <button
+            onClick={onClose}
+            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition-colors"
+          >
+            <FaTimes size={14} />
+          </button>
+
+          {isSelf && (
+            <div className="absolute top-2 left-2 text-[9px] font-black uppercase tracking-wider bg-amber-500/90 text-black rounded-full px-2 py-0.5">
+              {t('mp.badgeOwn', lang)}
+            </div>
+          )}
+
+          {/* Play-Button für Song-NFTs */}
+          {isSong && listing.content_url && (
+            <button
+              onClick={togglePlay}
+              className="absolute bottom-2 right-2 w-11 h-11 rounded-full bg-amber-400 text-black flex items-center justify-center shadow-xl transition-all duration-200 hover:scale-110 active:scale-95"
+            >
+              {playing
+                ? <span className="flex gap-0.5"><span className="w-[3px] h-3.5 bg-black rounded-sm" /><span className="w-[3px] h-3.5 bg-black rounded-sm" /></span>
+                : <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 ml-0.5"><path d="M8 5v14l11-7z" /></svg>
+              }
+            </button>
+          )}
+        </div>
+
+        {/* Textbereich */}
+        <div className="p-4">
+          <div className="flex items-start gap-2">
+            {artist && <ArtistAvatar name={artist} picture={listing.artist_picture} size="md" />}
+            <div className="min-w-0 flex-1">
+              <p className={`font-black text-base leading-snug ${isSong ? 'text-amber-300' : cfg!.text}`}>{displayName}</p>
+              {artist && <p className="text-zinc-500 text-xs mt-0.5">{artist}</p>}
+            </div>
             {isSong ? (
-              <div className="flex items-center gap-1 mb-1">
-                <span className="text-[8px] font-bold rounded-full px-1.5 py-0.5 bg-amber-500/80 text-black flex items-center gap-0.5">
-                  <FaMusic size={6} /> {listing.edition_number != null ? `Edition #${listing.edition_number}` : 'Song NFT'}
-                </span>
+              <div className="text-[8px] font-bold rounded-full px-1.5 py-0.5 bg-amber-500/80 text-black flex items-center gap-0.5 shrink-0">
+                <FaMusic size={6} /> {listing.edition_number != null ? `#${listing.edition_number}` : 'Song'}
               </div>
             ) : (
-              <div className={`inline-block text-[9px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 mb-1 ${cfg!.badge}`}>
+              <div className={`text-[9px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 shrink-0 ${cfg!.badge}`}>
                 {cfg!.label}
               </div>
             )}
-            <p className={`font-black text-sm truncate ${isSong ? 'text-amber-300' : cfg!.text}`}>{listing.collection_name ?? listing.nft_name ?? '—'}</p>
-            {listing.artist_name && <p className="text-zinc-500 text-[10px]">{t('mp.buyFrom', lang)} {listing.artist_name}</p>}
-            {isSong && description && (
-              <p className="text-zinc-400 text-[9px] leading-relaxed mt-1">{description}</p>
+          </div>
+
+          {description && (
+            <p className="text-zinc-400 text-xs leading-relaxed mt-2">{description}</p>
+          )}
+
+          {/* Attribute-Chips */}
+          <div className="flex flex-wrap gap-1 mt-3">
+            <span className="text-[9px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">{isSong ? t('mp.tagMusic', lang) : 'Collectible'}</span>
+            <span className="text-[9px] bg-zinc-800 text-zinc-400 rounded-full px-1.5 py-0.5">D.FAITH</span>
+            {isSong && listing.edition_number != null && (
+              <span className="text-[9px] bg-amber-900/40 text-amber-400 rounded-full px-1.5 py-0.5 border border-amber-500/30">Edition #{listing.edition_number}</span>
             )}
-            {!isSong && listing.attributes && (() => {
-              const boosts = listing.attributes!.filter(a =>
-                ['Rep Bonus', 'Credit Bonus', 'Shard Bonus', 'Bonus'].some(k => a.trait_type.includes(k))
-              );
-              return boosts.length > 0 ? (
-                <div className="flex flex-wrap gap-1 mt-1.5">
-                  {boosts.map(a => (
-                    <span key={a.trait_type} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${cfg!.border} ${cfg!.text} bg-black/30`}>
-                      {a.trait_type.replace(' Bonus', '')} {a.value}
-                    </span>
-                  ))}
+            {repBonus && (
+              <span className={`text-[9px] rounded-full px-1.5 py-0.5 border ${cfg!.border} ${cfg!.text} bg-black/30`}>
+                REP {fmtBonus(repBonus.value)}
+              </span>
+            )}
+            {creditBonus && (
+              <span className="text-[9px] bg-amber-900/30 text-amber-400 rounded-full px-1.5 py-0.5 border border-amber-500/30">
+                Credits {fmtBonus(creditBonus.value)}
+              </span>
+            )}
+            {shardBonus && (
+              <span className="text-[9px] bg-cyan-900/30 text-cyan-400 rounded-full px-1.5 py-0.5 border border-cyan-500/30">
+                Shard {fmtBonus(shardBonus.value)}
+              </span>
+            )}
+          </div>
+
+          {/* Preisübersicht */}
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 space-y-2 mt-4">
+            <div className="flex justify-between text-sm">
+              <span className="text-zinc-400">{t('mp.buyPrice', lang)}</span>
+              <span className={`font-black ${isSong ? 'text-amber-400' : cfg!.text}`}>{price.toLocaleString('de-DE')} D.FAITH</span>
+            </div>
+            {!isSelf && (
+              <>
+                <div className="h-px bg-white/[0.06]" />
+                <div className="flex justify-between text-xs text-zinc-500">
+                  <span>{t('mp.buyRoyalty', lang)}</span>
+                  <span>{(price * 0.05).toFixed(2)}</span>
                 </div>
-              ) : null;
-            })()}
+                <div className="flex justify-between text-xs text-zinc-500">
+                  <span>{t('mp.buyFee', lang)}</span>
+                  <span>{(price * 0.025).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-zinc-500">
+                  <span>{t('mp.buySellerGets', lang)}</span>
+                  <span>{(price * 0.925).toFixed(2)}</span>
+                </div>
+                <div className="h-px bg-white/[0.06]" />
+                <div className={`flex justify-between text-xs font-semibold ${enough ? 'text-zinc-300' : 'text-red-400'}`}>
+                  <span>{t('mp.buyBalance', lang)}</span>
+                  <span>{balance.toLocaleString('de-DE')} D.FAITH</span>
+                </div>
+              </>
+            )}
           </div>
-        </div>
 
-        {/* Preisübersicht */}
-        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 space-y-2 mb-4">
-          <div className="flex justify-between text-sm">
-            <span className="text-zinc-400">{t('mp.buyPrice', lang)}</span>
-            <span className={`font-black ${isSong ? 'text-amber-400' : cfg!.text}`}>{price.toLocaleString('de-DE')} D.FAITH</span>
-          </div>
-          <div className="h-px bg-white/[0.06]" />
-          <div className="flex justify-between text-xs text-zinc-500">
-            <span>{t('mp.buyRoyalty', lang)}</span>
-            <span>{(price * 0.05).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-xs text-zinc-500">
-            <span>{t('mp.buyFee', lang)}</span>
-            <span>{(price * 0.025).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-xs text-zinc-500">
-            <span>{t('mp.buySellerGets', lang)}</span>
-            <span>{(price * 0.925).toFixed(2)}</span>
-          </div>
-          <div className="h-px bg-white/[0.06]" />
-          <div className={`flex justify-between text-xs font-semibold ${enough ? 'text-zinc-300' : 'text-red-400'}`}>
-            <span>{t('mp.buyBalance', lang)}</span>
-            <span>{balance.toLocaleString('de-DE')} D.FAITH</span>
-          </div>
-        </div>
-
-        {!enough && (
-          <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-xs mb-4">
-            <FaExclamationTriangle size={12} className="shrink-0" />
-            <span>{tFmt('mp.buyNotEnough', lang, { n: price.toLocaleString('de-DE') })}</span>
-          </div>
-        )}
-
-        {done ? (
-          <div className="flex items-center gap-2 justify-center bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-green-400 text-sm font-semibold">
-            <FaCheckCircle size={14} /> {t('mp.buySuccess', lang)}
-          </div>
-        ) : (
-          <>
-            {error && <p className="text-red-400 text-xs mb-3 bg-red-500/10 border border-red-500/20 rounded-lg p-2">{error}</p>}
+          {/* Aktion: eigenes Listing → Stornieren, sonst → Kaufen */}
+          {isSelf ? (
             <button
-              onClick={handleBuy}
-              disabled={loading || !enough}
-              className="w-full bg-amber-500 hover:bg-amber-400 active:bg-amber-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-black font-black rounded-xl py-3 text-sm transition-all"
+              onClick={() => onCancel(listing)}
+              disabled={cancelLoading}
+              className="w-full mt-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl py-3 text-sm font-bold transition-colors disabled:opacity-50"
             >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                  {t('mp.buyLoading', lang)}
-                </span>
-              ) : tFmt('mp.buyPay', lang, { n: price.toLocaleString('de-DE') })}
+              {cancelLoading ? '…' : t('mp.cancel', lang)}
             </button>
-          </>
-        )}
+          ) : (
+            <>
+              {!enough && (
+                <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-xs mt-4">
+                  <FaExclamationTriangle size={12} className="shrink-0" />
+                  <span>{tFmt('mp.buyNotEnough', lang, { n: price.toLocaleString('de-DE') })}</span>
+                </div>
+              )}
+
+              {done ? (
+                <div className="flex items-center gap-2 justify-center bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-green-400 text-sm font-semibold mt-4">
+                  <FaCheckCircle size={14} /> {t('mp.buySuccess', lang)}
+                </div>
+              ) : (
+                <>
+                  {error && <p className="text-red-400 text-xs mt-3 bg-red-500/10 border border-red-500/20 rounded-lg p-2">{error}</p>}
+                  <button
+                    onClick={handleBuy}
+                    disabled={loading || !enough}
+                    className="w-full bg-amber-500 hover:bg-amber-400 active:bg-amber-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-black font-black rounded-xl py-3 text-sm transition-all mt-4"
+                  >
+                    {loading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                        {t('mp.buyLoading', lang)}
+                      </span>
+                    ) : tFmt('mp.buyPay', lang, { n: price.toLocaleString('de-DE') })}
+                  </button>
+                </>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -1514,9 +1468,7 @@ export default function MarketplaceTab() {
                   key={l.id}
                   listing={l}
                   isSelf={l.seller_wallet === walletAddress.toLowerCase()}
-                  onBuy={setBuyTarget}
-                  onCancel={handleCancel}
-                  cancelLoading={cancelLoading === l.id}
+                  onOpen={setBuyTarget}
                 />
               ))}
             </div>
@@ -1524,14 +1476,17 @@ export default function MarketplaceTab() {
         </div>
       </div>
 
-      {/* ── Kauf-Modal ──────────────────────────────────────────────────────────── */}
+      {/* ── Detail-/Kauf-Modal ──────────────────────────────────────────────────── */}
       {buyTarget && (
-        <BuyModal
+        <ListingDetailModal
           listing={buyTarget}
+          isSelf={buyTarget.seller_wallet === walletAddress.toLowerCase()}
           balance={balance}
           walletAddress={walletAddress}
           onClose={() => setBuyTarget(null)}
           onSuccess={() => { setBuyTarget(null); loadListings(); }}
+          onCancel={(l) => { setBuyTarget(null); handleCancel(l); }}
+          cancelLoading={cancelLoading === buyTarget.id}
         />
       )}
 
