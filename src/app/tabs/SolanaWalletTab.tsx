@@ -1436,7 +1436,7 @@ export default function SolanaWalletTab() {
                           <div className={`w-14 h-14 rounded-full transition-all group-hover:scale-105 overflow-hidden
                             ${isOpen
                               ? 'ring-2 ring-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.6)]'
-                              : 'ring-2 ring-amber-500/40 shadow-[0_0_8px_rgba(245,158,11,0.2)] opacity-60 group-hover:opacity-100 group-hover:ring-amber-500'
+                              : 'ring-2 ring-amber-500/40 shadow-[0_0_8px_rgba(245,158,11,0.2)] group-hover:ring-amber-500'
                             }`}>
                             {picture
                               ? <Image src={picture} alt={artistName} width={56} height={56}
