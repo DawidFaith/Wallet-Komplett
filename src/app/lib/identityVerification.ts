@@ -107,7 +107,11 @@ export async function getVerificationStatus(walletAddress: string): Promise<Veri
   };
 }
 
+/** Temporär deaktiviert, um das Onboarding zu vereinfachen — Einreichung/Admin-Review bleiben nutzbar, nur die Sperre entfällt. */
+const IDENTITY_CHECK_ENABLED = false;
+
 export async function isIdentityVerified(walletAddress: string): Promise<boolean> {
+  if (!IDENTITY_CHECK_ENABLED) return true;
   const sql = getDb();
   await ensureTable(sql);
   const rows = await sql`SELECT identity_verified FROM user_profiles WHERE wallet_address = ${walletAddress.toLowerCase()} LIMIT 1`;

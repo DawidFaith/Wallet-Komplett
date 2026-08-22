@@ -184,6 +184,7 @@ const WELCOME_EMAIL_STRINGS: Record<Lang, {
   step2Title: string;
   step2Body: string;
   step3Title: string;
+  step3Intro: string;
   step3Tokens: string;
   step3Nfts: string;
   button: string;
@@ -197,6 +198,7 @@ const WELCOME_EMAIL_STRINGS: Record<Lang, {
     step2Title: '2. Deine erste Quest machen',
     step2Body: 'Sobald dein Account verknüpft ist, kannst du Quests deiner Lieblingskünstler abschließen — z. B. einem Beitrag folgen oder kommentieren — und dafür <b>D.FAITH Credits</b> verdienen.',
     step3Title: '3. Was du mit Credits machen kannst',
+    step3Intro: 'Und zwar sofort, ganz ohne zusätzliche Verifizierung:',
     step3Tokens: '<b>In echte Token umtauschen</b> — löse deine Credits gegen D.FAITH Token ein, die auf der Solana-Blockchain handelbar sind.',
     step3Nfts: '<b>Limitierte NFTs im Shop kaufen</b> — exklusive, limitierte NFTs deiner Lieblingskünstler, direkt mit deinen Credits.',
     button: 'Jetzt starten',
@@ -210,6 +212,7 @@ const WELCOME_EMAIL_STRINGS: Record<Lang, {
     step2Title: '2. Complete your first quest',
     step2Body: 'Once your account is linked, you can complete quests from your favorite artists — like following or commenting on a post — and earn <b>D.FAITH Credits</b>.',
     step3Title: '3. What you can do with Credits',
+    step3Intro: 'Right away, with no extra verification needed:',
     step3Tokens: '<b>Exchange them for real tokens</b> — redeem your credits for D.FAITH tokens, tradeable on the Solana blockchain.',
     step3Nfts: '<b>Buy limited NFTs in the shop</b> — exclusive, limited NFTs from your favorite artists, directly with your credits.',
     button: 'Get started',
@@ -223,6 +226,7 @@ const WELCOME_EMAIL_STRINGS: Record<Lang, {
     step2Title: '2. Wykonaj swój pierwszy quest',
     step2Body: 'Gdy Twoje konto zostanie połączone, możesz wykonywać questy swoich ulubionych artystów — np. obserwować lub komentować post — i zdobywać za to <b>kredyty D.FAITH</b>.',
     step3Title: '3. Co możesz zrobić z kredytami',
+    step3Intro: 'Od razu, bez dodatkowej weryfikacji:',
     step3Tokens: '<b>Wymień je na prawdziwe tokeny</b> — wymień swoje kredyty na tokeny D.FAITH, którymi można handlować na blockchainie Solana.',
     step3Nfts: '<b>Kup limitowane NFT w sklepie</b> — ekskluzywne, limitowane NFT Twoich ulubionych artystów, bezpośrednio za kredyty.',
     button: 'Zacznij teraz',
@@ -244,6 +248,7 @@ export async function sendWelcomeEmail(params: { toEmail: string; lang: Lang }):
       <h3>${s.step2Title}</h3>
       <p>${s.step2Body}</p>
       <h3>${s.step3Title}</h3>
+      <p>${s.step3Intro}</p>
       <ul>
         <li>${s.step3Tokens}</li>
         <li>${s.step3Nfts}</li>
