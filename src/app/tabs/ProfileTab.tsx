@@ -8,9 +8,8 @@ import {
   FaInstagram, FaTiktok, FaFacebook, FaYoutube,
   FaCheck, FaStar, FaLock, FaPlus, FaChevronDown,
   FaMusic, FaTimes, FaInfoCircle, FaTrophy, FaTasks, FaShoppingBag,
-  FaCopy, FaUserFriends, FaIdCard, FaExclamationTriangle,
+  FaCopy, FaUserFriends, FaExclamationTriangle,
 } from 'react-icons/fa';import SocialVerifyModal from './profile/SocialVerifyModal';
-import IdentityVerifyModal from './profile/IdentityVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
 import { t, tFmt, type Lang } from '../utils/i18n';
@@ -129,18 +128,6 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
   };
   const [claimModal, setClaimModal] = useState<{ sentAmount: number } | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
-  const [showIdentityModal, setShowIdentityModal] = useState(false);
-  const [identityStatus, setIdentityStatus] = useState<{ verified: boolean; status: 'none' | 'pending' | 'approved' | 'rejected' } | null>(null);
-
-  const loadIdentityStatus = useCallback(async () => {
-    if (!account?.address) return;
-    try {
-      const res = await fetch(`/api/identity/status?walletAddress=${encodeURIComponent(account.address)}`);
-      if (res.ok) setIdentityStatus(await res.json());
-    } catch { /* ignore */ }
-  }, [account?.address]);
-
-  useEffect(() => { loadIdentityStatus(); }, [loadIdentityStatus]);
 
   // Sprachpräferenz serverseitig speichern (für die Sprachwahl automatischer E-Mails)
   useEffect(() => {
@@ -311,11 +298,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
         setClaimModal({ sentAmount });
       } else {
         const json = await res.json().catch(() => null);
-        if (json?.code === 'identity_not_verified') {
-          setShowIdentityModal(true);
-        } else {
-          setClaimError(json?.error ?? t('profile.networkError', lang));
-        }
+        setClaimError(json?.error ?? t('profile.networkError', lang));
       }
     } catch {
       setClaimError(t('profile.networkError', lang));
@@ -595,38 +578,6 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               </button>
             </div>
           </div>
-        </div>
-
-        {/* Divider */}
-        <div className="border-t border-white/[0.1]" />
-
-        {/* Identität */}
-        <div>
-          <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em] mb-3">{t('profile.identityHeading', lang)}</p>
-          <button
-            onClick={() => setShowIdentityModal(true)}
-            className="w-full flex items-center justify-between gap-3 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] rounded-xl px-4 py-3 transition-colors"
-          >
-            <div className="flex items-center gap-2.5">
-              <FaIdCard className="text-amber-400 shrink-0" size={16} />
-              <span className="text-white text-sm font-semibold text-left">{t('profile.verifyIdentity', lang)}</span>
-            </div>
-            {identityStatus?.status === 'approved' ? (
-              <span className="shrink-0 flex items-center gap-1 text-green-400 text-xs font-semibold bg-green-900/30 px-2 py-1 rounded-full">
-                <FaCheck size={9} /> {t('profile.identityVerified', lang)}
-              </span>
-            ) : identityStatus?.status === 'pending' ? (
-              <span className="shrink-0 text-yellow-400 text-xs font-semibold bg-yellow-900/30 px-2 py-1 rounded-full">
-                {t('profile.identityPending', lang)}
-              </span>
-            ) : identityStatus?.status === 'rejected' ? (
-              <span className="shrink-0 text-red-400 text-xs font-semibold bg-red-900/30 px-2 py-1 rounded-full">
-                {t('profile.identityRejected', lang)}
-              </span>
-            ) : (
-              <span className="shrink-0 text-zinc-500 text-xs">{t('profile.identityNotSubmitted', lang)}</span>
-            )}
-          </button>
         </div>
 
         {/* Divider */}
@@ -1181,15 +1132,6 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
             </div>
           </div>
         </div>
-      )}
-
-      {showIdentityModal && account?.address && (
-        <IdentityVerifyModal
-          walletAddress={account.address}
-          lang={lang}
-          onClose={() => { setShowIdentityModal(false); loadIdentityStatus(); }}
-          onVerified={loadIdentityStatus}
-        />
       )}
 
       {/* Einlösen-Erfolgs-Modal */}
