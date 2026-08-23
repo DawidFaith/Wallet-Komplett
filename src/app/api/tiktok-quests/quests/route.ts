@@ -18,6 +18,7 @@ import {
   getUserProfile,
   QuestDetail,
 } from '../../../lib/questDb';
+import { uploadProfileImageToBlob } from '../../../lib/profileImageStorage';
 
 export const maxDuration = 30;
 
@@ -203,6 +204,13 @@ export async function POST(req: NextRequest) {
     finalVideoTitle = videoInfo.title;
     finalThumbnailUrl = videoInfo.thumbnail;
     finalAuthorHandle = videoInfo.authorUniqueId;
+  }
+
+  // TikToks eigene Cover-URLs sind signiert und laufen nach einer Weile ab —
+  // dauerhaft auf Vercel Blob spiegeln, damit die Karte nicht später bildlos wird.
+  if (finalThumbnailUrl) {
+    const rehosted = await uploadProfileImageToBlob(finalThumbnailUrl, 'tiktok-video', videoId);
+    if (rehosted) finalThumbnailUrl = rehosted;
   }
 
   const rewardAmountNum = Math.round((Number(rewardAmount) || 100) * 100) / 100;

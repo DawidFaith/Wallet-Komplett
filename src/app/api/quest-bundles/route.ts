@@ -167,6 +167,14 @@ export async function POST(req: NextRequest) {
     if (!finalTitle) {
       return NextResponse.json({ error: 'videoTitle ist für diese Plattform erforderlich' }, { status: 400 });
     }
+
+    // TikToks eigene Cover-URLs sind signiert und laufen nach einer Weile ab —
+    // dauerhaft auf Vercel Blob spiegeln, damit die Bundle-Karte nicht später bildlos wird.
+    if (platform === 'tiktok' && finalThumbnail) {
+      const { uploadProfileImageToBlob } = await import('../../lib/profileImageStorage');
+      const rehosted = await uploadProfileImageToBlob(finalThumbnail, 'tiktok-video', finalVideoId || 'video');
+      if (rehosted) finalThumbnail = rehosted;
+    }
   }
 
   // Budget sperren
