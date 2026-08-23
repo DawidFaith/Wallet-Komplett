@@ -25,3 +25,22 @@ export function formatCredits(amount: number | string | null | undefined): strin
   if (!Number.isFinite(n)) return '0.00';
   return n.toFixed(2);
 }
+
+/**
+ * Für TikTok-Links auf Android: liefert einen intent://-Link statt der normalen
+ * https://-URL, damit Android die TikTok-App (oder als Fallback den Standard-Browser)
+ * öffnet — auch wenn die Seite gerade in einem eingebetteten In-App-Browser
+ * (z.B. Instagram, Facebook) läuft, der normale Links sonst bei sich festhält.
+ * Auf iOS/Desktop bzw. für andere Plattformen wird die URL unverändert zurückgegeben.
+ */
+export function getExternalLinkHref(url: string): string {
+  if (typeof navigator === 'undefined' || !/Android/i.test(navigator.userAgent)) return url;
+  if (!/tiktok\.com/i.test(url)) return url;
+  try {
+    const u = new URL(url);
+    const rest = `${u.host}${u.pathname}${u.search}`;
+    return `intent://${rest}#Intent;scheme=https;package=com.zhiliaoapp.musically;S.browser_fallback_url=${encodeURIComponent(url)};end`;
+  } catch {
+    return url;
+  }
+}

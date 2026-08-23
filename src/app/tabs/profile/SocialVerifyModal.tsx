@@ -7,6 +7,7 @@ import {
   FaCheck, FaSync, FaCopy, FaUnlink, FaChevronRight, FaUserCheck,
 } from 'react-icons/fa';
 import { t, tFmt, type Lang } from '../../utils/i18n';
+import { getExternalLinkHref } from '../quest-board/utils';
 
 type Platform = 'instagram' | 'tiktok' | 'facebook';
 
@@ -217,7 +218,7 @@ export default function SocialVerifyModal({
               </div>
 
               <a
-                href={cfg.profileUrl(handle)}
+                href={getExternalLinkHref(cfg.profileUrl(handle))}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block text-center text-zinc-400 text-xs hover:text-white transition-colors"

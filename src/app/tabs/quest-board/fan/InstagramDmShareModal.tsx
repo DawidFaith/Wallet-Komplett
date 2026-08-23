@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { FaInstagram, FaShareAlt, FaRedo, FaCheck, FaPaperPlane, FaStar } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
-import { formatCredits } from '../utils';
+import { formatCredits, getExternalLinkHref } from '../utils';
 import { useLang } from '../../../components/LangContext';
 import { t, tFmt } from '../../../utils/i18n';
 
@@ -256,7 +256,7 @@ export default function InstagramDmShareModal({
 
                 {quest.videoUrl && (
                   <a
-                    href={quest.videoUrl}
+                    href={getExternalLinkHref(quest.videoUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={handleStart}
@@ -323,7 +323,7 @@ export default function InstagramDmShareModal({
 
             {quest.videoUrl && (
               <a
-                href={quest.videoUrl}
+                href={getExternalLinkHref(quest.videoUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 bg-pink-600 hover:bg-pink-500 rounded-xl px-3 py-2.5 text-sm text-white font-semibold transition-colors"

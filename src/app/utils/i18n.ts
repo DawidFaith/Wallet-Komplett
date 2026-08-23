@@ -1262,6 +1262,19 @@ const dict: Translations = {
   'fan.txView': { de: 'Transaktion ansehen →', en: 'View transaction →', pl: 'Zobacz transakcję →' },
   'fan.celebration': { de: 'Glückwunsch!', en: 'Congratulations!', pl: 'Gratulacje!' },
 
+  // ── In-App-Browser-Hinweis (Instagram/Facebook) ─────────────────────────────
+
+  'inAppBrowser.title': {
+    de: 'Du bist im Instagram/Facebook-Browser',
+    en: "You're in Instagram/Facebook's browser",
+    pl: 'Jesteś w przeglądarce Instagram/Facebook',
+  },
+  'inAppBrowser.body': {
+    de: 'Manche Funktionen (z. B. TikTok-Links) funktionieren dort nicht richtig. Tippe oben rechts auf ⋯ und wähle „Im Browser öffnen" für die beste Erfahrung.',
+    en: "Some features (like TikTok links) don't work properly in here. Tap ⋯ at the top and choose \"Open in browser\" for the best experience.",
+    pl: 'Niektóre funkcje (np. linki do TikToka) nie działają tu poprawnie. Dotknij ⋯ u góry i wybierz „Otwórz w przeglądarce", aby uzyskać najlepsze wrażenia.',
+  },
+
   // ── Common buttons (extended) ───────────────────────────────────────────────
 
   'btn.close': { de: 'Schließen', en: 'Close', pl: 'Zamknij' },

@@ -4,6 +4,7 @@ import "./globals.css";
 import QueryProvider from "./QueryProvider";
 import { LangProvider } from "./components/LangContext";
 import { ClerkLocalizationProvider } from "./components/ClerkLocalizationProvider";
+import InAppBrowserBanner from "./components/InAppBrowserBanner";
 
 const inter = Inter({ subsets: ["latin"] });
 const orbitron = Orbitron({ 
@@ -38,6 +39,7 @@ export default function RootLayout({
         <body className={`${inter.className} ${orbitron.variable} ${pirataOne.variable} bg-[#13120e]`}>
           <QueryProvider>
             <LangProvider>
+              <InAppBrowserBanner />
               <ClerkLocalizationProvider>
                 {children}
               </ClerkLocalizationProvider>

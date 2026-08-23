@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { FaThumbsUp, FaExternalLinkAlt, FaStar, FaRedo } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
-import { formatCredits } from '../utils';
+import { formatCredits, getExternalLinkHref } from '../utils';
 import { useLang } from '../../../components/LangContext';
 import { t } from '../../../utils/i18n';
 
@@ -185,7 +185,7 @@ export default function LikeVerifyModal({
           </div>
 
           <a
-            href={quest.videoUrl}
+            href={getExternalLinkHref(quest.videoUrl)}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full bg-amber-500 hover:bg-amber-400 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"

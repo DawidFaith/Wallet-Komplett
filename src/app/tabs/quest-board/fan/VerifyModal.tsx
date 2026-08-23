@@ -6,7 +6,7 @@ import { FaCheck, FaSync, FaExternalLinkAlt, FaStar, FaYoutube } from 'react-ico
 import { SiTiktok } from 'react-icons/si';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry, VerifyResult } from '../types';
-import { formatCredits } from '../utils';
+import { formatCredits, getExternalLinkHref } from '../utils';
 import { useLang } from '../../../components/LangContext';
 import { t } from '../../../utils/i18n';
 
@@ -109,7 +109,7 @@ export default function VerifyModal({ quest, loading, result, levelBonusPercent 
           {/* Video-Link */}
           {quest.videoUrl && (
             <a
-              href={quest.videoUrl}
+              href={getExternalLinkHref(quest.videoUrl)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl p-3 transition-colors"

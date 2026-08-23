@@ -6,7 +6,7 @@ import { FaExternalLinkAlt, FaRedo, FaCheck, FaStar } from 'react-icons/fa';
 import { FiThumbsUp, FiShare2, FiBookmark } from 'react-icons/fi';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
-import { formatCredits } from '../utils';
+import { formatCredits, getExternalLinkHref } from '../utils';
 import { useLang } from '../../../components/LangContext';
 import { t } from '../../../utils/i18n';
 
@@ -272,7 +272,7 @@ export default function TiktokEngagementVerifyModal({
           </div>
 
           <a
-            href={quest.videoUrl}
+            href={getExternalLinkHref(quest.videoUrl)}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"

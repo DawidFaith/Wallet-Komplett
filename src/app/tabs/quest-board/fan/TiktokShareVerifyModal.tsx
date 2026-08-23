@@ -6,7 +6,7 @@ import { FaExternalLinkAlt, FaRedo, FaStar } from 'react-icons/fa';
 import { FiShare2 } from 'react-icons/fi';
 import Modal from '../components/Modal';
 import type { QuestIndexEntry } from '../types';
-import { formatCredits } from '../utils';
+import { formatCredits, getExternalLinkHref } from '../utils';
 import { useLang } from '../../../components/LangContext';
 import { t } from '../../../utils/i18n';
 
@@ -208,7 +208,7 @@ export default function TiktokShareVerifyModal({
           {/* Buttons */}
           <div className="flex gap-2">
             <a
-              href={quest.videoUrl}
+              href={getExternalLinkHref(quest.videoUrl)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold py-3 rounded-xl transition-colors"

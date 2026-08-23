@@ -14,7 +14,7 @@ import type { QuestIndexEntry, YouTubeBinding, VerifiedPlatforms, Platform, Ques
 import type { QuestBundleWithItems } from '../../../lib/questDb';
 import { useLang } from '../../../components/LangContext';
 import { t, tFmt } from '../../../utils/i18n';
-import { getProgressPercent, formatCredits } from '../utils';
+import { getProgressPercent, formatCredits, getExternalLinkHref } from '../utils';
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
   youtube:   <FaYoutube   className="text-red-500"  size={13} />,
@@ -293,7 +293,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
                   </span>
                 </div>
                 <p className="text-white text-sm font-semibold line-clamp-2">{quest.videoTitle}</p>
-                <a href={quest.videoUrl} target="_blank" rel="noopener noreferrer" className="text-amber-400 text-xs flex items-center gap-1 hover:underline">
+                <a href={getExternalLinkHref(quest.videoUrl)} target="_blank" rel="noopener noreferrer" className="text-amber-400 text-xs flex items-center gap-1 hover:underline">
                   <FaExternalLinkAlt size={10} /> {lang === 'en' ? 'Open' : lang === 'pl' ? 'Otwórz' : 'Öffnen'}
                 </a>
                 {/* Story-Link für dm_share Quests */}
