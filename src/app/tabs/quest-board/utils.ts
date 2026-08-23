@@ -26,20 +26,28 @@ export function formatCredits(amount: number | string | null | undefined): strin
   return n.toFixed(2);
 }
 
+const ANDROID_APP_PACKAGES: { pattern: RegExp; appPackage: string }[] = [
+  { pattern: /tiktok\.com/i, appPackage: 'com.zhiliaoapp.musically' },
+  { pattern: /instagram\.com/i, appPackage: 'com.instagram.android' },
+];
+
 /**
- * Für TikTok-Links auf Android: liefert einen intent://-Link statt der normalen
- * https://-URL, damit Android die TikTok-App (oder als Fallback den Standard-Browser)
- * öffnet — auch wenn die Seite gerade in einem eingebetteten In-App-Browser
- * (z.B. Instagram, Facebook) läuft, der normale Links sonst bei sich festhält.
+ * Für TikTok-/Instagram-Links auf Android: liefert einen intent://-Link statt der
+ * normalen https://-URL, damit Android die jeweilige App (oder als Fallback den
+ * Standard-Browser) öffnet — auch wenn die Seite gerade in einem eingebetteten
+ * In-App-Browser (z.B. Instagram, Facebook) läuft, der normale Links sonst bei
+ * sich festhält bzw. auf die eingeschränkte Web-Version führt (z.B. "Story
+ * hinzufügen" fehlt dort bei Instagram-Posts).
  * Auf iOS/Desktop bzw. für andere Plattformen wird die URL unverändert zurückgegeben.
  */
 export function getExternalLinkHref(url: string): string {
   if (typeof navigator === 'undefined' || !/Android/i.test(navigator.userAgent)) return url;
-  if (!/tiktok\.com/i.test(url)) return url;
+  const match = ANDROID_APP_PACKAGES.find((p) => p.pattern.test(url));
+  if (!match) return url;
   try {
     const u = new URL(url);
     const rest = `${u.host}${u.pathname}${u.search}`;
-    return `intent://${rest}#Intent;scheme=https;package=com.zhiliaoapp.musically;S.browser_fallback_url=${encodeURIComponent(url)};end`;
+    return `intent://${rest}#Intent;scheme=https;package=${match.appPackage};S.browser_fallback_url=${encodeURIComponent(url)};end`;
   } catch {
     return url;
   }
