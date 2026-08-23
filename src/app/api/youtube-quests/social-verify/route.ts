@@ -24,6 +24,9 @@ export const maxDuration = 30; // Vercel Pro: 30s für Bright Data Web Unlocker
 
 type Platform = 'instagram' | 'tiktok' | 'facebook';
 
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+const RAPIDAPI_HOST = 'tiktok-api23.p.rapidapi.com';
+
 // ─── Profil-Daten via unavatar.io (Bild) + inoffizielle APIs (Name/Bio) ─────
 
 async function fetchInstagramProfile(handle: string): Promise<{ name: string; picture: string; bio: string } | null> {
@@ -47,8 +50,42 @@ async function fetchInstagramProfile(handle: string): Promise<{ name: string; pi
   }
 }
 
+// RapidAPI (tiktok-api23) — gleicher Anbieter, den wir für die Kommentar-Quests
+// nutzen. Läuft über eine bezahlte, stabile Schnittstelle statt einer
+// inoffiziellen/gescrapten Quelle, deshalb als primärer Weg.
+async function tryRapidApiTikTok(handle: string): Promise<{ name: string; picture: string; bio: string } | null> {
+  if (!RAPIDAPI_KEY) return null;
+  try {
+    const res = await fetch(
+      `https://${RAPIDAPI_HOST}/api/user/info?uniqueId=${encodeURIComponent(handle)}`,
+      { headers: { 'x-rapidapi-host': RAPIDAPI_HOST, 'x-rapidapi-key': RAPIDAPI_KEY }, cache: 'no-store' }
+    );
+    if (!res.ok) {
+      console.error('[social-verify] RapidAPI TikTok HTTP', res.status, 'für', handle);
+      return null;
+    }
+    const data = await res.json() as { userInfo?: { user?: { uniqueId?: string; nickname?: string; signature?: string } } };
+    const user = data.userInfo?.user;
+    if (!user?.uniqueId && !user?.nickname) {
+      console.error('[social-verify] RapidAPI TikTok: kein User im Response für', handle, JSON.stringify(data).slice(0, 300));
+      return null;
+    }
+    return {
+      name: user.nickname || handle,
+      picture: `/api/avatar?platform=tiktok&handle=${encodeURIComponent(handle)}`,
+      bio: user.signature ?? '',
+    };
+  } catch (e) {
+    console.error('[social-verify] RapidAPI TikTok Fehler für', handle, e instanceof Error ? e.message : e);
+    return null;
+  }
+}
+
 async function fetchTikTokProfile(handle: string): Promise<{ name: string; picture: string; bio: string } | null> {
   const cleanHandle = handle.startsWith('@') ? handle.slice(1) : handle;
+
+  const viaRapidApi = await tryRapidApiTikTok(cleanHandle);
+  if (viaRapidApi) return viaRapidApi;
 
   // Hilfsfunktion: tikwm.com einmal abfragen
   const tryTikwm = async (): Promise<{ name: string; picture: string; bio: string } | null> => {
