@@ -1116,7 +1116,7 @@ export async function getContestLeaderboard(
   const rows = await sql`
     SELECT
       ur.wallet_address,
-      ur.reputation - COALESCE(s.reputation_at_start, ur.reputation) AS contest_rep,
+      ur.reputation - COALESCE(s.reputation_at_start, 0) AS contest_rep,
       COALESCE(
         p.display_name,
         p.instagram_name,
@@ -1130,7 +1130,7 @@ export async function getContestLeaderboard(
     LEFT JOIN user_profiles p  ON p.wallet_address  = ur.wallet_address
     LEFT JOIN youtube_bindings yb ON yb.wallet_address = ur.wallet_address
     WHERE ur.artist_wallet = ${artistWallet.toLowerCase()}
-      AND ur.reputation - COALESCE(s.reputation_at_start, ur.reputation) > 0
+      AND ur.reputation - COALESCE(s.reputation_at_start, 0) > 0
     ORDER BY contest_rep DESC
     LIMIT ${limit}
   `;
