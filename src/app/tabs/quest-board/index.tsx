@@ -139,16 +139,9 @@ export default function QuestBoard({ language, artistWallet, filterArtist, onCle
   const [loaded, setLoaded] = useState(false);
   const [internalFilterArtist, setInternalFilterArtist] = useState<ArtistInfo | null>(null);
   const [loadingArtist, setLoadingArtist] = useState(false);
+  // Automatisches Anzeigen beim Login läuft zentral in home/page.tsx (unabhängig
+  // vom aktiven Tab) — hier nur der manuelle Aufruf über den "?"-Button im Header.
   const [showTutorial, setShowTutorial] = useState(false);
-
-  // Tutorial bei jedem Login automatisch zeigen, bis der User es dauerhaft wegklickt (pro Wallet, per localStorage)
-  useEffect(() => {
-    if (!loaded || !account?.address) return;
-    try {
-      const key = `${TUTORIAL_DISMISSED_KEY}:${account.address.toLowerCase()}`;
-      if (!localStorage.getItem(key)) setShowTutorial(true);
-    } catch { /* ignore */ }
-  }, [loaded, account?.address]);
 
   const dismissTutorialForever = () => {
     try {

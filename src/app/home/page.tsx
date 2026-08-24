@@ -12,6 +12,8 @@ import ShopTab from "../tabs/ShopTab";
 import CollectiblesTab from "../tabs/CollectiblesTab";
 import MarketplaceTab from "../tabs/MarketplaceTab";
 import GiveawaysTab from "../tabs/GiveawaysTab";
+import OnboardingTutorialModal from "../tabs/quest-board/components/OnboardingTutorialModal";
+import { TUTORIAL_DISMISSED_KEY } from "../tabs/quest-board/utils";
 import type { SupportedLanguage } from "../utils/deepLTranslation";
 import type { ArtistInfo } from "../tabs/quest-board/index";
 import { useLang, useSetLang } from "../components/LangContext";
@@ -28,6 +30,17 @@ function HomeContent() {
   const [questArtist, setQuestArtist] = useState<ArtistInfo | null>(null);
   const [shopArtistWallet, setShopArtistWallet] = useState<string | null>(null);
   const searchParams = useSearchParams();
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // Onboarding-Tutorial bei jedem Login automatisch zeigen (unabhängig vom aktiven Tab),
+  // bis der User "Nicht mehr anzeigen" wählt (siehe TUTORIAL_DISMISSED_KEY).
+  useEffect(() => {
+    if (!user?.id) return;
+    try {
+      const key = `${TUTORIAL_DISMISSED_KEY}:${user.id.toLowerCase()}`;
+      if (!localStorage.getItem(key)) setShowTutorial(true);
+    } catch { /* ignore */ }
+  }, [user?.id]);
 
   const handleSetLanguage = (lang: SupportedLanguage) => {
     setLangCtx(lang);
@@ -154,6 +167,18 @@ function HomeContent() {
         {activeTab === "marketplace" && <MarketplaceTab />}
         {activeTab === "giveaways" && <GiveawaysTab />}
       </section>
+
+      <OnboardingTutorialModal
+        open={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        onDontShowAgain={() => {
+          try {
+            if (user?.id) localStorage.setItem(`${TUTORIAL_DISMISSED_KEY}:${user.id.toLowerCase()}`, '1');
+          } catch { /* ignore */ }
+          setShowTutorial(false);
+        }}
+        language={language}
+      />
     </main>
   );
 }
