@@ -8,9 +8,11 @@ import {
   FaInstagram, FaTiktok, FaFacebook, FaYoutube,
   FaCheck, FaStar, FaLock, FaPlus, FaChevronDown,
   FaMusic, FaTimes, FaInfoCircle, FaTrophy, FaTasks, FaShoppingBag,
-  FaCopy, FaUserFriends, FaExclamationTriangle,
+  FaCopy, FaUserFriends, FaExclamationTriangle, FaQuestion,
 } from 'react-icons/fa';import SocialVerifyModal from './profile/SocialVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
+import OnboardingTutorialModal from './quest-board/components/OnboardingTutorialModal';
+import { TUTORIAL_DISMISSED_KEY } from './quest-board/utils';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
 import { t, tFmt, type Lang } from '../utils/i18n';
 import { useLang } from '../components/LangContext';
@@ -112,6 +114,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
   const [unlinkPending, setUnlinkPending] = useState<AnyPlatform | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
   // YouTube: manage (already linked) vs. link-flow
   const [showYoutubeManage, setShowYoutubeManage] = useState(false);
   const [artists, setArtists] = useState<ArtistEntry[]>([]);
@@ -511,11 +514,31 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
       {/* ── Page Title ─────────────────────────────────────────── */}
       <div className="flex items-center gap-3 pt-1">
         <Image src="/D.FAITH.png" alt="D.FAITH" width={40} height={40} className="w-10 h-10 rounded-full object-contain shrink-0" />
-        <div>
+        <div className="flex-1 min-w-0">
           <h1 className="text-white font-bold text-xl tracking-wide">{t('profile.ecosystem', lang)}</h1>
           <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">{t('profile.subtitle', lang)}</p>
         </div>
+        <button
+          onClick={() => setShowTutorial(true)}
+          title={t('onboarding.helpTooltip', lang)}
+          aria-label={t('onboarding.helpTooltip', lang)}
+          className="shrink-0 w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white flex items-center justify-center transition-colors"
+        >
+          <FaQuestion size={14} />
+        </button>
       </div>
+
+      <OnboardingTutorialModal
+        open={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        onDontShowAgain={() => {
+          try {
+            if (account?.address) localStorage.setItem(`${TUTORIAL_DISMISSED_KEY}:${account.address.toLowerCase()}`, '1');
+          } catch { /* ignore */ }
+          setShowTutorial(false);
+        }}
+        language={lang}
+      />
 
       {/* ── Supporter ─────────────────────────────────────────── */}
       <div className="bg-white/[0.06] rounded-2xl border border-white/[0.1] p-5 space-y-4">

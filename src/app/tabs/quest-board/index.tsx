@@ -11,8 +11,7 @@ import type { YouTubeBinding, QuestBoardView, VerifiedPlatforms } from './types'
 import type { SupportedLanguage } from '../../utils/deepLTranslation';
 import { useLang } from '../../components/LangContext';
 import { t } from '../../utils/i18n';
-
-const TUTORIAL_SEEN_KEY = 'dfaith_tutorial_seen';
+import { TUTORIAL_DISMISSED_KEY } from './utils';
 
 export interface ArtistInfo {
   walletAddress: string;
@@ -142,17 +141,21 @@ export default function QuestBoard({ language, artistWallet, filterArtist, onCle
   const [loadingArtist, setLoadingArtist] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
 
-  // Tutorial beim allerersten Besuch automatisch zeigen (pro Wallet, per localStorage)
+  // Tutorial bei jedem Login automatisch zeigen, bis der User es dauerhaft wegklickt (pro Wallet, per localStorage)
   useEffect(() => {
     if (!loaded || !account?.address) return;
     try {
-      const key = `${TUTORIAL_SEEN_KEY}:${account.address.toLowerCase()}`;
-      if (!localStorage.getItem(key)) {
-        setShowTutorial(true);
-        localStorage.setItem(key, '1');
-      }
+      const key = `${TUTORIAL_DISMISSED_KEY}:${account.address.toLowerCase()}`;
+      if (!localStorage.getItem(key)) setShowTutorial(true);
     } catch { /* ignore */ }
   }, [loaded, account?.address]);
+
+  const dismissTutorialForever = () => {
+    try {
+      if (account?.address) localStorage.setItem(`${TUTORIAL_DISMISSED_KEY}:${account.address.toLowerCase()}`, '1');
+    } catch { /* ignore */ }
+    setShowTutorial(false);
+  };
 
   // Lade Artist-Daten wenn artistWallet URL-Parameter gesetzt ist
   useEffect(() => {
@@ -355,7 +358,12 @@ export default function QuestBoard({ language, artistWallet, filterArtist, onCle
 
       </div>
 
-      <OnboardingTutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} language={lang} />
+      <OnboardingTutorialModal
+        open={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        onDontShowAgain={dismissTutorialForever}
+        language={lang}
+      />
     </div>
   );
 }

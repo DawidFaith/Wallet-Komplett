@@ -1,5 +1,8 @@
 // ─── Gemeinsame Hilfsfunktionen für das Quest Board ──────────────────────────
 
+/** localStorage-Key-Präfix (mit :<wallet> suffix) für "Onboarding-Tutorial dauerhaft ausgeblendet" */
+export const TUTORIAL_DISMISSED_KEY = 'dfaith_tutorial_dismissed';
+
 export function shortenWallet(addr: string): string {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }

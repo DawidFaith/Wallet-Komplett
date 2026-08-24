@@ -7,13 +7,15 @@ import { t, type Lang } from '../../../utils/i18n';
 interface OnboardingTutorialModalProps {
   open: boolean;
   onClose: () => void;
+  /** Wird aufgerufen wenn der User explizit "Nicht mehr anzeigen" wählt (dauerhaft, im Gegensatz zu onClose) */
+  onDontShowAgain?: () => void;
   language?: Lang;
 }
 
 const STEP_ICONS = [FaUserCheck, FaTasks, FaCoins, FaGem];
 const STEP_COLORS = ['text-pink-400', 'text-cyan-400', 'text-amber-400', 'text-purple-400'];
 
-export default function OnboardingTutorialModal({ open, onClose, language = 'de' }: OnboardingTutorialModalProps) {
+export default function OnboardingTutorialModal({ open, onClose, onDontShowAgain, language = 'de' }: OnboardingTutorialModalProps) {
   const [step, setStep] = useState(0);
   if (!open) return null;
 
@@ -29,6 +31,11 @@ export default function OnboardingTutorialModal({ open, onClose, language = 'de'
   const handleClose = () => {
     setStep(0);
     onClose();
+  };
+
+  const handleDontShowAgain = () => {
+    setStep(0);
+    onDontShowAgain?.();
   };
 
   return (
@@ -87,14 +94,12 @@ export default function OnboardingTutorialModal({ open, onClose, language = 'de'
             )}
           </button>
         </div>
-        {!isLast && (
-          <button
-            onClick={handleClose}
-            className="w-full text-zinc-600 hover:text-zinc-400 text-xs pb-4 transition-colors"
-          >
-            {t('onboarding.skip', language)}
-          </button>
-        )}
+        <button
+          onClick={handleDontShowAgain}
+          className="w-full text-zinc-600 hover:text-zinc-400 text-xs pb-4 transition-colors"
+        >
+          {t('onboarding.dontShowAgain', language)}
+        </button>
       </div>
     </div>
   );

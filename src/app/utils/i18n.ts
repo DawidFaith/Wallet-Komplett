@@ -1308,6 +1308,7 @@ const dict: Translations = {
   'onboarding.next': { de: 'Weiter', en: 'Next', pl: 'Dalej' },
   'onboarding.done': { de: 'Los geht\'s', en: "Let's go", pl: 'Zaczynamy' },
   'onboarding.skip': { de: 'Überspringen', en: 'Skip', pl: 'Pomiń' },
+  'onboarding.dontShowAgain': { de: 'Nicht mehr anzeigen', en: "Don't show again", pl: 'Nie pokazuj ponownie' },
   'onboarding.helpTooltip': { de: 'Anleitung anzeigen', en: 'Show tutorial', pl: 'Pokaż samouczek' },
 
   // ── In-App-Browser-Hinweis (Instagram/Facebook) ─────────────────────────────
