@@ -1262,6 +1262,54 @@ const dict: Translations = {
   'fan.txView': { de: 'Transaktion ansehen →', en: 'View transaction →', pl: 'Zobacz transakcję →' },
   'fan.celebration': { de: 'Glückwunsch!', en: 'Congratulations!', pl: 'Gratulacje!' },
 
+  // ── Onboarding-Tutorial (Quest Board) ───────────────────────────────────────
+
+  'onboarding.title': { de: 'So funktioniert\'s', en: "How it works", pl: 'Jak to działa' },
+  'onboarding.step1Title': {
+    de: 'Social-Account verifizieren',
+    en: 'Verify your social account',
+    pl: 'Zweryfikuj konto społecznościowe',
+  },
+  'onboarding.step1Body': {
+    de: 'Verknüpfe deinen Instagram-, TikTok-, YouTube- oder Facebook-Account in deinem Profil. Das ist die Voraussetzung, damit deine Quest-Teilnahme erkannt wird.',
+    en: 'Link your Instagram, TikTok, YouTube or Facebook account in your profile. This is required so your quest participation gets recognized.',
+    pl: 'Połącz swoje konto Instagram, TikTok, YouTube lub Facebook w profilu. To warunek konieczny, aby Twój udział w questach został rozpoznany.',
+  },
+  'onboarding.step2Title': {
+    de: 'Künstler & Quest wählen',
+    en: 'Pick an artist & quest',
+    pl: 'Wybierz artystę i quest',
+  },
+  'onboarding.step2Body': {
+    de: 'Wähle einen Künstler und tippe auf eine Quest-Karte. Dort siehst du genau, was zu tun ist — z. B. kommentieren, liken oder teilen.',
+    en: 'Pick an artist and tap a quest card. You\'ll see exactly what to do — e.g. comment, like or share.',
+    pl: 'Wybierz artystę i dotknij karty questa. Zobaczysz dokładnie, co robić — np. skomentować, polubić lub udostępnić.',
+  },
+  'onboarding.step3Title': {
+    de: 'Quest abschließen',
+    en: 'Complete the quest',
+    pl: 'Ukończ quest',
+  },
+  'onboarding.step3Body': {
+    de: 'Folge der Anleitung in der Quest-Karte und bestätige anschließend im selben Fenster. Wir prüfen automatisch, ob alles geklappt hat.',
+    en: 'Follow the instructions in the quest card, then confirm in the same window. We check automatically whether everything worked.',
+    pl: 'Postępuj zgodnie z instrukcją w karcie questa, a następnie potwierdź w tym samym oknie. Automatycznie sprawdzimy, czy wszystko się udało.',
+  },
+  'onboarding.step4Title': {
+    de: 'Credits verdienen & einlösen',
+    en: 'Earn & redeem Credits',
+    pl: 'Zdobywaj i wymieniaj kredyty',
+  },
+  'onboarding.step4Body': {
+    de: 'Für jede abgeschlossene Quest bekommst du D.FAITH Credits. Tausche sie gegen echte D.FAITH Token ein oder kaufe damit limitierte NFTs im Shop.',
+    en: 'You earn D.FAITH Credits for every completed quest. Redeem them for real D.FAITH tokens or use them to buy limited NFTs in the shop.',
+    pl: 'Za każdy ukończony quest otrzymujesz kredyty D.FAITH. Wymień je na prawdziwe tokeny D.FAITH lub kup za nie limitowane NFT w sklepie.',
+  },
+  'onboarding.next': { de: 'Weiter', en: 'Next', pl: 'Dalej' },
+  'onboarding.done': { de: 'Los geht\'s', en: "Let's go", pl: 'Zaczynamy' },
+  'onboarding.skip': { de: 'Überspringen', en: 'Skip', pl: 'Pomiń' },
+  'onboarding.helpTooltip': { de: 'Anleitung anzeigen', en: 'Show tutorial', pl: 'Pokaż samouczek' },
+
   // ── In-App-Browser-Hinweis (Instagram/Facebook) ─────────────────────────────
 
   'inAppBrowser.title': {

@@ -2,14 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { FaTrophy, FaYoutube, FaInstagram, FaTiktok, FaFacebookF, FaCheck, FaMusic, FaTimes, FaChevronLeft } from 'react-icons/fa';
+import { FaTrophy, FaYoutube, FaInstagram, FaTiktok, FaFacebookF, FaCheck, FaMusic, FaTimes, FaChevronLeft, FaQuestion } from 'react-icons/fa';
 import Image from 'next/image';
 import FanBoard from './fan/FanBoard';
 import CreatorBoard from './creator/CreatorBoard';
+import OnboardingTutorialModal from './components/OnboardingTutorialModal';
 import type { YouTubeBinding, QuestBoardView, VerifiedPlatforms } from './types';
 import type { SupportedLanguage } from '../../utils/deepLTranslation';
 import { useLang } from '../../components/LangContext';
 import { t } from '../../utils/i18n';
+
+const TUTORIAL_SEEN_KEY = 'dfaith_tutorial_seen';
 
 export interface ArtistInfo {
   walletAddress: string;
@@ -137,6 +140,19 @@ export default function QuestBoard({ language, artistWallet, filterArtist, onCle
   const [loaded, setLoaded] = useState(false);
   const [internalFilterArtist, setInternalFilterArtist] = useState<ArtistInfo | null>(null);
   const [loadingArtist, setLoadingArtist] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // Tutorial beim allerersten Besuch automatisch zeigen (pro Wallet, per localStorage)
+  useEffect(() => {
+    if (!loaded || !account?.address) return;
+    try {
+      const key = `${TUTORIAL_SEEN_KEY}:${account.address.toLowerCase()}`;
+      if (!localStorage.getItem(key)) {
+        setShowTutorial(true);
+        localStorage.setItem(key, '1');
+      }
+    } catch { /* ignore */ }
+  }, [loaded, account?.address]);
 
   // Lade Artist-Daten wenn artistWallet URL-Parameter gesetzt ist
   useEffect(() => {
@@ -232,12 +248,20 @@ export default function QuestBoard({ language, artistWallet, filterArtist, onCle
         <div className="px-4 pt-6 pb-4">
           <div className="flex items-center gap-3 pt-1">
             <Image src="/D.FAITH.png" alt="D.FAITH" width={40} height={40} className="w-10 h-10 rounded-full object-contain shrink-0" />
-            <div>
+            <div className="flex-1 min-w-0">
               <h1 className="text-white font-bold text-xl tracking-wide">D.FAITH Ecosystem</h1>
               <p className="text-zinc-300 text-[10px] tracking-widest uppercase font-semibold mt-0.5">
                 Quest Board · Missions
               </p>
             </div>
+            <button
+              onClick={() => setShowTutorial(true)}
+              title={t('onboarding.helpTooltip', lang)}
+              aria-label={t('onboarding.helpTooltip', lang)}
+              className="shrink-0 w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white flex items-center justify-center transition-colors"
+            >
+              <FaQuestion size={14} />
+            </button>
           </div>
         </div>
 
@@ -330,6 +354,8 @@ export default function QuestBoard({ language, artistWallet, filterArtist, onCle
         })()}
 
       </div>
+
+      <OnboardingTutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} language={lang} />
     </div>
   );
 }
