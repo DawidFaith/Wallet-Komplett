@@ -5,6 +5,7 @@ import type {
   QuestCompletion, QuestsByWalletEntry, PendingReward,
   QuestBundle, QuestBundleItem, QuestBundleWithItems,
 } from "./types";
+import type { Lang } from '../../utils/i18n';
 
 // ─── YouTube Shorts Helpers ───────────────────────────────────────────────────
 
@@ -35,7 +36,7 @@ export function getVerificationCode(walletAddress: string): string {
 // Pro (wallet, questId) wird IMMER derselbe Kommentar generiert, jeder
 // User bekommt aber einen anderen → Eindeutigkeit gegeben.
 
-const QUEST_COMMENT_POOL: ReadonlyArray<string> = [
+const QUEST_COMMENT_POOL_DE: ReadonlyArray<string> = [
   // Track / Sound (1-40)
   'Mega Track, läuft bei mir auf Repeat! 🔥',
   'Krass produziert, Respekt 🙌',
@@ -247,17 +248,181 @@ const QUEST_COMMENT_POOL: ReadonlyArray<string> = [
   'Endlich mal wieder Musik mit Charakter 🎭',
 ];
 
+const QUEST_COMMENT_POOL_EN: ReadonlyArray<string> = [
+  'This track is insane, on repeat all day 🔥',
+  'Incredible production, so much respect 🙌',
+  'Finally new music from you, what a banger 💯',
+  'Straight into my playlist, love it 🎶',
+  'This is next level, seriously 🚀',
+  "That drop though, I'm speechless 🤯",
+  'Exactly the vibes I needed ✨',
+  'You keep leveling up every time 💪',
+  "Banger, can't stop listening 🎧",
+  'Sound design is on point, hats off 👏',
+  'This hits different, so good 🔊',
+  'Beautiful work, thank you for the music 🙏',
+  "That hook is stuck in my head already 🎵",
+  'Setting the mood, playing this all night 🌙',
+  'Really really good, keep it up 🚀',
+  'Pure atmosphere, gave me chills ❄️',
+  'Production goes hard, love it 🔥',
+  "Been on loop for hours, can't stop 🔁",
+  'New favorite song, love this ❤️',
+  'Perfect for late night vibes 🌌',
+  'This is art, thanks for the inspiration 🎨',
+  'Vibes on max, well delivered 👌',
+  'That energy! So strong 💥',
+  'This track got stuck immediately, congrats 🎯',
+  'You nailed my taste exactly, more please 🙏',
+  'Really strong tune, playing it everywhere now 📻',
+  'Pure magic for the ears, amazing 🪄',
+  'Love at first beat ❤️‍🔥',
+  'Definitely on repeat today 🔁',
+  "So atmospheric, you've got the talent 🎼",
+  'Straight to favorites, top sound 🌟',
+  'What a mood, feeling every beat 🥁',
+  'Beat slaps, love it 🤝',
+  "First note and I'm hooked already 🌊",
+  'Mixing is clean, mastering even cleaner 🎚️',
+  "Can't get enough, playing since this morning 🌅",
+  'This track has character, feels real 🫶',
+  'This is how music should sound, thank you 💎',
+  'Really smooth, could listen for hours 🍃',
+  'A statement sound, just huge ✨',
+  "You're a real talent, keep going 🌟",
+  'One of the few artists that catch me right now 🎯',
+  'Just discovered you, already a fan ✨',
+  "Been here since day one, always strong 🚀",
+  'You deserve so much more reach, honestly 🌍',
+  "Hope you tour someday, I'd be there 🎤",
+  'Following since day one, congrats 🥂',
+  "Your career is taking off, happy for you 📈",
+  "You make exactly the music that's missing 🧩",
+  'Real voice, real vision, top tier 🎙️',
+  'You have style, you can hear it in every track 💼',
+  'One of the best releases this year for me 🏅',
+  "You're going to blow up, this is just the start 🌱",
+  'Wow, just wow 😍',
+  "Didn't expect that, wild 😳",
+  'Fits perfectly into my routine 📅',
+  'This sound is pure love, honestly 💗',
+  'Hard hitting, no exaggeration 🔨',
+  'Pure fire, nothing more to say 🔥',
+  'Vibe check passed, with honors ✅',
+  'Straight into my top 10 this year 🔝',
+  "Can't get over this sound 🤤",
+  'Definitely track of the month 🗓️',
+  'Got chills on the first beat 🥶',
+  "Nobody's doing it like you right now 🥇",
+  'This track deserves more attention, shared it 🔁',
+];
+
+const QUEST_COMMENT_POOL_PL: ReadonlyArray<string> = [
+  'Ten kawałek jest szalony, lecę na repeat cały dzień 🔥',
+  'Niesamowita produkcja, wielki szacunek 🙌',
+  'Nareszcie nowy kawałek od ciebie, co za bomba 💯',
+  'Od razu ląduje w mojej playliście 🎶',
+  'To jest poziom wyżej, serio 🚀',
+  'Ten drop, nie mam słów 🤯',
+  'Dokładnie ten klimat, którego potrzebowałem/am ✨',
+  'Za każdym razem podnosisz poprzeczkę 💪',
+  'Bomba, nie mogę przestać słuchać 🎧',
+  'Sound design jest na miejscu, szacun 👏',
+  'To wchodzi mocno, po prostu super 🔊',
+  'Piękna robota, dzięki za muzykę 🙏',
+  'Ten hook siedzi mi w głowie już teraz 🎵',
+  'Klimat ustawiony, gram cały wieczór 🌙',
+  'Naprawdę bardzo dobre, tak trzymaj! 🚀',
+  'Czysta atmosfera, gęsia skórka ❄️',
+  'Produkcja mocno wchodzi, bardzo mi się podoba 🔥',
+  'Loop leci od godzin, nie mogę przestać 🔁',
+  'To mój nowy ulubiony kawałek ❤️',
+  'Idealne na nocne klimaty 🌌',
+  'To jest sztuka, dzięki za inspirację 🎨',
+  'Klimat na maksa, świetnie dowieziony 👌',
+  'Ta energia! Po prostu mocna 💥',
+  'Kawałek od razu wpadł w ucho, gratulacje 🎯',
+  'Trafiasz dokładnie w mój gust, chcę więcej 🙏',
+  'Bardzo mocny numer, teraz leci wszędzie 📻',
+  'Czysta magia dla uszu, super 🪄',
+  'To jest miłość od pierwszego beatu ❤️‍🔥',
+  'Dziś zdecydowanie na repeat, tak dalej 🔁',
+  'Bardzo klimatyczne, masz to po prostu 🎼',
+  'Od razu do ulubionych, super brzmienie 🌟',
+  'Co za nastrój, czuję każdy beat 🥁',
+  'Beat wali, bardzo mi się podoba 🤝',
+  'Pierwsza nuta i już w to wchodzę 🌊',
+  'Miks jest czysty, mastering jeszcze czystszy 🎚️',
+  'Nie mogę się nasłuchać, leci od rana 🌅',
+  'Ten kawałek ma charakter, brzmi autentycznie 🫶',
+  'Tak powinna brzmieć muzyka, dzięki za to 💎',
+  'Bardzo smooth, mogę słuchać godzinami 🍃',
+  'Brzmieniowo to jest stwierdzenie, po prostu wielkie ✨',
+  'Masz prawdziwy talent, tak trzymaj 🌟',
+  'Jeden z niewielu artystów, którzy teraz mnie łapią 🎯',
+  'Dopiero cię odkryłem/am, już jestem fanem ✨',
+  'Jestem od pierwszego dnia, zawsze mocno 🚀',
+  'Zasługujesz na dużo większy zasięg, szczerze 🌍',
+  'Mam nadzieję na trasę kiedyś, byłbym/byłabym tam 🎤',
+  'Śledzę cię od dnia pierwszego, gratulacje 🥂',
+  'Kariera idzie ostro w górę, cieszę się 📈',
+  'Robisz dokładnie tę muzykę, której brakuje 🧩',
+  'Prawdziwy głos, prawdziwa wizja, super 🎙️',
+  'Masz styl, słychać to w każdym kawałku 💼',
+  'Jeden z najlepszych wydań tego roku dla mnie 🏅',
+  'Będziesz wielki/wielka, to dopiero początek 🌱',
+  'Wow, po prostu wow 😍',
+  'Nie spodziewałem/am się tego, szał 😳',
+  'Idealnie pasuje do mojej rutyny 📅',
+  'To brzmienie to czysta miłość, szczerze 💗',
+  'Mocno uderza, bez przesady 🔨',
+  'Czysty ogień, nic więcej nie muszę dodać 🔥',
+  'Test klimatu zaliczony, z wyróżnieniem ✅',
+  'Od razu w moim TOP 10 tego roku 🔝',
+  'Nie mogę przestać myśleć o tym brzmieniu 🤤',
+  'Zdecydowanie utwór miesiąca 🗓️',
+  'Gęsia skórka już przy pierwszym beacie 🥶',
+  'Nikt nie robi tego teraz tak jak ty 🥇',
+  'Ten kawałek zasługuje na więcej uwagi, udostępnione 🔁',
+];
+
+/**
+ * Kombinierter Pool aus allen Sprachen — jede Sprache belegt einen festen,
+ * nicht überlappenden Indexbereich (siehe LANG_RANGES). So bleibt die
+ * bestehende UNIQUE(quest_id, slot_index)-Spalte gültig, ohne dass sich
+ * Slots zwischen Sprachen überschneiden können.
+ */
+const QUEST_COMMENT_POOL: ReadonlyArray<string> = [
+  ...QUEST_COMMENT_POOL_DE,
+  ...QUEST_COMMENT_POOL_EN,
+  ...QUEST_COMMENT_POOL_PL,
+];
+
+const LANG_RANGES: Record<Lang, { start: number; end: number }> = {
+  de: { start: 0, end: QUEST_COMMENT_POOL_DE.length },
+  en: {
+    start: QUEST_COMMENT_POOL_DE.length,
+    end: QUEST_COMMENT_POOL_DE.length + QUEST_COMMENT_POOL_EN.length,
+  },
+  pl: {
+    start: QUEST_COMMENT_POOL_DE.length + QUEST_COMMENT_POOL_EN.length,
+    end: QUEST_COMMENT_POOL.length,
+  },
+};
+
 /**
  * Gibt den Hash-basierten Fallback-Text zurück (nur intern als Seed-Fallback,
  * nicht mehr direkt in der Route verwendet).
  */
-export function getQuestCommentText(walletAddress: string, questId: string): string {
+export function getQuestCommentText(walletAddress: string, questId: string, lang: Lang = 'de'): string {
+  const range = LANG_RANGES[lang] ?? LANG_RANGES.de;
+  const rangeSize = range.end - range.start;
   const seed = `${walletAddress.toLowerCase()}::${questId}`;
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
     hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
   }
-  const idx = Math.abs(hash) % QUEST_COMMENT_POOL.length;
+  const idx = range.start + (Math.abs(hash) % rangeSize);
   return QUEST_COMMENT_POOL[idx];
 }
 
@@ -274,11 +439,13 @@ export function getQuestCommentText(walletAddress: string, questId: string): str
 export async function reserveQuestCommentSlot(
   questId: string,
   walletAddress: string,
+  lang: Lang = 'de',
 ): Promise<string> {
   const sql = getDb();
   const normalized = walletAddress.toLowerCase();
 
-  // Bereits reserviert?
+  // Bereits reserviert? (unabhängig von der aktuell übergebenen Sprache — der
+  // beim ersten Aufruf zugeteilte Text bleibt für diese Wallet+Quest fix)
   const existing = await sql`
     SELECT comment_text FROM facebook_comment_slots
     WHERE quest_id = ${questId} AND wallet_address = ${normalized}
@@ -286,15 +453,16 @@ export async function reserveQuestCommentSlot(
   `;
   if (existing.length > 0) return existing[0].comment_text as string;
 
-  const poolSize = QUEST_COMMENT_POOL.length;
+  const range = LANG_RANGES[lang] ?? LANG_RANGES.de;
+  const rangeSize = range.end - range.start;
 
-  // Zufälligen Startpunkt wählen → jede Wallet bekommt beim ersten Aufruf einen zufälligen Kommentar.
-  // Bei weiteren Aufrufen wird der gespeicherte Slot aus der DB zurückgegeben (s.o.).
-  const preferredStart = Math.floor(Math.random() * poolSize);
+  // Zufälligen Startpunkt innerhalb des Sprachbereichs wählen → jede Wallet
+  // bekommt beim ersten Aufruf einen zufälligen Kommentar in ihrer Sprache.
+  const preferredStart = Math.floor(Math.random() * rangeSize);
 
-  // Alle Slots ab dem Startpunkt (ringförmig) durchprobieren bis ein freier gefunden wird
-  for (let offset = 0; offset < poolSize; offset++) {
-    const slotIndex = (preferredStart + offset) % poolSize;
+  // Alle Slots im Sprachbereich (ringförmig) durchprobieren bis ein freier gefunden wird
+  for (let offset = 0; offset < rangeSize; offset++) {
+    const slotIndex = range.start + ((preferredStart + offset) % rangeSize);
     const text = QUEST_COMMENT_POOL[slotIndex];
     try {
       await sql`
@@ -315,8 +483,8 @@ export async function reserveQuestCommentSlot(
     }
   }
 
-  // Pool komplett belegt → Hash-Fallback (Text wird evtl. doppelt vergeben)
-  return getQuestCommentText(normalized, questId);
+  // Sprachbereich komplett belegt → Hash-Fallback (Text wird evtl. doppelt vergeben)
+  return getQuestCommentText(normalized, questId, lang);
 }
 
 /**

@@ -47,14 +47,14 @@ export default function FacebookCommentVerifyModal({
         const res = await fetch('/api/facebook-quests/comment-verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ walletAddress, questId: quest.id, action: 'preview' }),
+          body: JSON.stringify({ walletAddress, questId: quest.id, action: 'preview', lang }),
         });
         const data = await res.json();
         if (!cancelled && res.ok && data.commentText) setCommentText(data.commentText);
       } catch { /* ignore */ }
     })();
     return () => { cancelled = true; };
-  }, [quest, walletAddress]);
+  }, [quest, walletAddress, lang]);
 
   const handleCopy = async () => {
     if (!commentText) return;
@@ -73,7 +73,7 @@ export default function FacebookCommentVerifyModal({
       const res = await fetch('/api/facebook-quests/comment-verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress, questId: quest.id, action: 'verify' }),
+        body: JSON.stringify({ walletAddress, questId: quest.id, action: 'verify', lang }),
       });
       const data = await res.json();
       if (res.ok && data.success) {

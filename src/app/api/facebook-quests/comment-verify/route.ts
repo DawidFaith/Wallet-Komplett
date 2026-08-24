@@ -40,6 +40,7 @@ import {
 import { findFacebookComment, extractFacebookPostId, resolvePostIdFromUrl } from '../../../lib/metaApi';
 import { getDb } from '../../../lib/db';
 import { requireOwnWallet } from '../../../lib/apiAuth';
+import type { Lang } from '../../../utils/i18n';
 
 export const maxDuration = 30;
 
@@ -51,14 +52,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { walletAddress?: string; questId?: string; action?: 'preview' | 'verify' };
+  let body: { walletAddress?: string; questId?: string; action?: 'preview' | 'verify'; lang?: Lang };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 });
   }
 
-  const { walletAddress, questId, action = 'verify' } = body;
+  const { walletAddress, questId, action = 'verify', lang = 'de' } = body;
   if (!walletAddress || !questId) {
     return NextResponse.json(
       { error: 'walletAddress und questId sind erforderlich' },
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
   // ── action: preview – Slot in DB reservieren und Text zurückgeben ───────
   if (action === 'preview') {
     try {
-      const commentText = await reserveQuestCommentSlot(questId, normalized);
+      const commentText = await reserveQuestCommentSlot(questId, normalized, lang);
       return NextResponse.json({ commentText });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -132,7 +133,7 @@ export async function POST(req: NextRequest) {
 
   // 4. Reservierten Kommentartext aus DB holen
   //    (falls preview noch nicht aufgerufen → Slot jetzt anlegen)
-  const commentText = await reserveQuestCommentSlot(questId, normalized);
+  const commentText = await reserveQuestCommentSlot(questId, normalized, lang);
 
   // 5. Post-ID auflösen
   let postId = quest.videoId;
