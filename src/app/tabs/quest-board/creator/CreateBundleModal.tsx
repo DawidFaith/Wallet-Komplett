@@ -326,7 +326,7 @@ export default function CreateBundleModal({
   const fetchFbMedia = async () => {
     setLoadingFbMedia(true);
     try {
-      const res  = await fetch(`/api/facebook-quests/available-media?wallet=${encodeURIComponent(walletAddress)}`);
+      const res  = await fetch(`/api/facebook-quests/available-media?wallet=${encodeURIComponent(effectiveMediaWallet)}`);
       const data = await res.json() as { media?: AvailableFbMediaItem[] };
       setAvailableFbMedia(data.media ?? []);
     } finally { setLoadingFbMedia(false); }
