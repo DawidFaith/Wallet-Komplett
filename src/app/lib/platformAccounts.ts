@@ -29,7 +29,7 @@ export const PLATFORM_ACCOUNTS: Record<string, PlatformAccountConfig> = {
     wallet: 'platform_dawid_faith_polska',
     displayName: 'Dawid Faith Polska',
     handle: 'dawidfaith_polska',
-    facebookPageId: '109093575481784', // "Die Melodiker" — nur API-Anbindung, keine echten Posts dort
+    facebookPageId: '528116477058109', // "Dawid Faith Polska"
     tiktokHandle: 'dawidfaith_polska',
     // Gehört inhaltlich zu Dawid Faith — kein eigener, separat auffindbarer
     // Künstler mit eigenem Referral-Programm, nur intern für Quest-Erstellung.
