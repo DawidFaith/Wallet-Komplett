@@ -2101,6 +2101,22 @@ function PlatformSection({ secret }: { secret: string }) {
               {profile ? String((profile as { instagram_handle?: string }).instagram_handle ?? '–') : '–'}
             </p>
           </div>
+          {accountMeta.hasTiktok && (() => {
+            const tiktokVerified = Boolean((profile as { tiktok_verified?: boolean } | null)?.tiktok_verified);
+            const tiktokHandle = (profile as { tiktok_handle?: string } | null)?.tiktok_handle ?? null;
+            return (
+              <>
+                <div className={`rounded-xl p-3 border ${tiktokVerified ? 'bg-green-950 border-green-700' : 'bg-zinc-800 border-zinc-700'}`}>
+                  <p className="text-xs text-zinc-400">TikTok Status</p>
+                  <p className={`font-bold ${tiktokVerified ? 'text-green-400' : 'text-red-400'}`}>{tiktokVerified ? '✅ Verifiziert' : '❌ Nicht verifiziert'}</p>
+                </div>
+                <div className="rounded-xl p-3 border bg-zinc-800 border-zinc-700">
+                  <p className="text-xs text-zinc-400">TikTok Handle</p>
+                  <p className="font-bold text-cyan-400">{tiktokHandle ?? '–'}</p>
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         <button
