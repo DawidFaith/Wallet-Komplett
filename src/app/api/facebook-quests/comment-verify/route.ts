@@ -40,7 +40,24 @@ import {
 import { findFacebookComment, extractFacebookPostId, resolvePostIdFromUrl } from '../../../lib/metaApi';
 import { getDb } from '../../../lib/db';
 import { requireOwnWallet } from '../../../lib/apiAuth';
+import { PLATFORM_ACCOUNTS } from '../../../lib/platformAccounts';
 import type { Lang } from '../../../utils/i18n';
+
+// Dawid Faiths echte (Germany-)Wallet — gleicher Wert wie DAWID_FAITH_WALLET in CreatorBoard.tsx
+const DAWID_FAITH_WALLET = 'user_3dfvunr7ziaywue8bhzdqw2blsw';
+
+/**
+ * Kommentarsprache für Dawid Faiths beide Facebook-Seiten fest an die Seite gebunden
+ * (Polska-Seite → Polnisch, Germany-Seite → Deutsch), statt an die App-Sprache des Fans —
+ * die Fans sollen auf der jeweiligen Seite in deren Publikums-Sprache kommentieren.
+ * Für alle anderen Artists bleibt es bei der App-Sprache des Fans (fanLang).
+ */
+function commentLangForCreator(creatorWallet: string, fanLang: Lang): Lang {
+  const w = creatorWallet.toLowerCase();
+  if (w === PLATFORM_ACCOUNTS.polska.wallet) return 'pl';
+  if (w === DAWID_FAITH_WALLET) return 'de';
+  return fanLang;
+}
 
 export const maxDuration = 30;
 
@@ -73,10 +90,21 @@ export async function POST(req: NextRequest) {
 
   const normalized = walletAddress.toLowerCase();
 
+  // Quest vorab laden — wird sowohl für die Sprachwahl (preview) als auch für
+  // die eigentliche Prüfung (verify) gebraucht.
+  const quest = await loadQuestDetail(questId);
+  if (!quest) {
+    return NextResponse.json({ error: 'Quest nicht gefunden' }, { status: 404 });
+  }
+  if (quest.platform !== 'facebook') {
+    return NextResponse.json({ error: 'Kein Facebook-Quest' }, { status: 400 });
+  }
+  const commentLang = commentLangForCreator(quest.creatorWallet, lang);
+
   // ── action: preview – Slot in DB reservieren und Text zurückgeben ───────
   if (action === 'preview') {
     try {
-      const commentText = await reserveQuestCommentSlot(questId, normalized, lang);
+      const commentText = await reserveQuestCommentSlot(questId, normalized, commentLang);
       return NextResponse.json({ commentText });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -94,14 +122,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 2. Quest laden
-  const quest = await loadQuestDetail(questId);
-  if (!quest) {
-    return NextResponse.json({ error: 'Quest nicht gefunden' }, { status: 404 });
-  }
-  if (quest.platform !== 'facebook') {
-    return NextResponse.json({ error: 'Kein Facebook-Quest' }, { status: 400 });
-  }
   if (!quest.isActive) {
     return NextResponse.json({ error: 'Dieser Quest ist nicht mehr aktiv' }, { status: 400 });
   }
@@ -133,7 +153,7 @@ export async function POST(req: NextRequest) {
 
   // 4. Reservierten Kommentartext aus DB holen
   //    (falls preview noch nicht aufgerufen → Slot jetzt anlegen)
-  const commentText = await reserveQuestCommentSlot(questId, normalized, lang);
+  const commentText = await reserveQuestCommentSlot(questId, normalized, commentLang);
 
   // 5. Post-ID auflösen
   let postId = quest.videoId;
