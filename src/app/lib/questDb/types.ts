@@ -1,7 +1,7 @@
 // ─── Typen ───────────────────────────────────────────────────────────────────
 
 export type Platform = 'youtube' | 'tiktok' | 'instagram' | 'facebook';
-export type QuestType = 'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost' | 'dm_share' | 'share'; // erweiterbar: | 'subscribe'
+export type QuestType = 'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost' | 'dm_share' | 'share' | 'ugc'; // erweiterbar: | 'subscribe'
 
 export interface QuestIndexEntry {
   id: string;
@@ -74,6 +74,8 @@ export interface QuestDetail extends QuestIndexEntry {
   updatedAt: string;
   secretCode?: string | null;
   storyToken?: string | null;
+  /** Nur bei type === 'ugc': geforderter Hashtag/Erwähnung im eigenen Fan-Post */
+  requiredTag?: string | null;
 }
 
 export interface YouTubeBinding {
@@ -130,6 +132,7 @@ export const DEFAULT_REACH_WEIGHTS: Record<QuestType, number> = {
   share:      4,  // TikTok-Share = starke Verbreitung
   engagement: 2,  // TikTok-Engagement-Paket
   secret:     2,  // Geheimcode = mittleres Signal
+  ugc:        5,  // Eigener Beitrag = höchstes Signal (echter neuer Content)
 };
 
 export interface QuestBundle {
@@ -162,6 +165,7 @@ export interface QuestBundleItem {
   maxCompletions: number;
   isActive: boolean;
   storyToken?: string | null; // Story-Token für dm_share-Tasks (zum Teilen als Link)
+  requiredTag?: string | null; // Geforderter Hashtag/Erwähnung für ugc-Tasks
 }
 
 export interface QuestBundleWithItems extends QuestBundle {

@@ -34,6 +34,7 @@ export function rowToQuestDetail(row: any): QuestDetail {
     bonusBudget: Number(row.bonus_budget ?? 0),
     storyToken: row.story_token ?? null,
     bundleId: row.bundle_id ?? null,
+    requiredTag: row.required_tag ?? null,
   };
 }
 
@@ -83,25 +84,27 @@ export async function loadQuestDetail(questId: string): Promise<QuestDetail | nu
 /** Neuen Quest anlegen (INSERT) */
 export async function saveQuestDetail(quest: QuestDetail): Promise<void> {
   const sql = getDb();
+  await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS required_tag TEXT`;
   const expiresAt = quest.expiresAt ?? null;
   const creditsLocked = quest.creditsLocked ?? 0;
   const bonusBudget = quest.bonusBudget ?? 0;
   const secretCode = quest.secretCode?.trim().toUpperCase() ?? null;
   const reputationReward = quest.reputationReward ?? 50;
   const storyToken = quest.storyToken ?? null;
+  const requiredTag = quest.requiredTag?.trim() || null;
   await sql`
     INSERT INTO quests (
       id, platform, quest_type, creator_wallet,
       video_id, video_title, video_thumbnail, video_url,
       description, reward_amount, reputation_reward, max_completions,
       completions, is_active, expires_at, credits_locked, credits_refunded,
-      bonus_budget, secret_code, story_token, created_at, updated_at
+      bonus_budget, secret_code, story_token, required_tag, created_at, updated_at
     ) VALUES (
       ${quest.id}, ${quest.platform}, ${quest.type}, ${quest.creatorWallet},
       ${quest.videoId}, ${quest.videoTitle}, ${quest.videoThumbnail}, ${quest.videoUrl},
       ${quest.description}, ${quest.rewardAmount}, ${reputationReward}, ${quest.maxCompletions},
       ${quest.completions}, ${quest.isActive}, ${expiresAt}, ${creditsLocked}, false,
-      ${bonusBudget}, ${secretCode}, ${storyToken}, ${quest.createdAt}, ${quest.updatedAt}
+      ${bonusBudget}, ${secretCode}, ${storyToken}, ${requiredTag}, ${quest.createdAt}, ${quest.updatedAt}
     )
     ON CONFLICT (id) DO UPDATE SET
       video_title        = EXCLUDED.video_title,
@@ -114,6 +117,7 @@ export async function saveQuestDetail(quest: QuestDetail): Promise<void> {
       expires_at         = EXCLUDED.expires_at,
       secret_code        = EXCLUDED.secret_code,
       story_token        = EXCLUDED.story_token,
+      required_tag       = EXCLUDED.required_tag,
       updated_at         = NOW()
   `;
 }

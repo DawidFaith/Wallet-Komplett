@@ -63,6 +63,7 @@ const TYPE_ICONS: Record<QuestType, React.ReactNode> = {
   share:      <FaShareAlt  size={11} />,
   engagement: <FaThumbsUp  size={11} />,
   secret:     <FaKey       size={11} />,
+  ugc:        <FaComment   size={11} />,
 };
 
 interface BundleCardProps {
@@ -79,8 +80,13 @@ interface BundleCardProps {
   language?: Lang;
 }
 
-function questConfigFor(type: QuestType, lang: Lang) {
+function questConfigFor(type: QuestType, lang: Lang, requiredTag?: string | null) {
   switch (type) {
+    case 'ugc':
+      return {
+        badge: { icon: <FaComment size={10} />, label: t('ugc.badge', lang) },
+        description: requiredTag ? tFmt('ugc.cardDescription', lang, { tag: requiredTag }) : t('ugc.title', lang),
+      };
     case 'secret':
       return { badge: { icon: '🔑', label: t('bc.secretBadge', lang) }, description: t('bc.secretDesc', lang) };
     case 'dm_share':
@@ -338,7 +344,7 @@ export default function BundleCard({ bundle, fanWallet, verified, levelBonusPerc
               const entry = buildQuestEntry(item);
               const isDone = completedSet.has(item.questType);
               const full = item.completions >= item.maxCompletions;
-              const cfg = questConfigFor(item.questType, lang);
+              const cfg = questConfigFor(item.questType, lang, item.requiredTag);
               return (
                 <div key={item.questId} className={`rounded-xl border px-3 py-2.5 flex items-center gap-3 ${isDone ? 'bg-green-950/20 border-green-800/30' : 'bg-zinc-800/60 border-zinc-700/40'}`}>
                   <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${isDone ? 'bg-green-600/30 text-green-300' : 'bg-zinc-700 text-zinc-300'}`}>

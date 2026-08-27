@@ -36,6 +36,7 @@ const TYPE_LABELS: Record<QuestType, string> = {
   repost:     'repost',
   dm_share:   'dm_share',
   share:      'share',
+  ugc:        'ugc',
 };
 
 // Zusätzliche Accounts, für die Dawid Faith direkt hier Quests erstellen kann

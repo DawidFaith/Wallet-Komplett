@@ -54,6 +54,8 @@ export async function POST(req: NextRequest) {
     levelBonusBudget?: number;
     // Geheim-Codes pro Quest-Typ (nur für 'secret')
     secretCodes?: Record<string, string>;
+    // Erforderlicher Hashtag/Erwähnung pro Quest-Typ (nur für 'ugc')
+    requiredTags?: Record<string, string>;
     // Optionaler Story-Token für dm_share (vorher im Modal erzeugt)
     storyToken?: string;
   };
@@ -67,7 +69,7 @@ export async function POST(req: NextRequest) {
     durationHours, items,
     videoTitle: manualTitle, videoThumbnail: manualThumbnail,
     videoId: providedVideoId,
-    levelBonusBudget, secretCodes, storyToken,
+    levelBonusBudget, secretCodes, requiredTags, storyToken,
   } = body;
 
   if (!creatorWallet || !platform || !videoUrl || !items?.length) {
@@ -205,6 +207,7 @@ export async function POST(req: NextRequest) {
         expiresAt,
         levelBonusBudget: levelBonus,
         secretCodes: secretCodes ?? {},
+        requiredTags: requiredTags ?? {},
         storyToken: storyToken?.trim() || null,
       },
       items.map((i) => ({

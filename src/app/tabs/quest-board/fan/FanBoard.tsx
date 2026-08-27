@@ -18,6 +18,7 @@ import InstagramDmShareModal from './InstagramDmShareModal';
 import FacebookCommentVerifyModal from './FacebookCommentVerifyModal';
 import FacebookQuestCard from '../quests/facebook/FacebookQuestCard';
 import FacebookLikeVerifyModal from './FacebookLikeVerifyModal';
+import UgcSubmitModal from './UgcSubmitModal';
 import BundleCard from './BundleCard';
 import StreamingQuestCard, { type StreamingQuest } from './StreamingQuestCard';
 import type { QuestIndexEntry, VerifiedPlatforms, VerifyResult } from '../types';
@@ -60,6 +61,7 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const [instagramDmShareToken, setInstagramDmShareToken] = useState<string | null>(null);
   const [facebookCommentQuest, setFacebookCommentQuest] = useState<QuestIndexEntry | null>(null);
   const [facebookLikeQuest, setFacebookLikeQuest] = useState<QuestIndexEntry | null>(null);
+  const [ugcQuest, setUgcQuest] = useState<QuestIndexEntry | null>(null);
   const [bundles, setBundles] = useState<QuestBundleWithItems[]>([]);
   const [bundlesLoading, setBundlesLoading] = useState(false);
   const [streamingQuests, setStreamingQuests] = useState<StreamingQuest[]>([]);
@@ -286,6 +288,11 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
 
   const handleVerify = async (questId: string) => {
     const quest = quests.find((q) => q.id === questId) ?? null;
+    // UGC-Quest → eigener Beitrag einreichen
+    if (quest?.type === 'ugc') {
+      setUgcQuest(quest);
+      return;
+    }
     // Like-Quest → eigener 3-Schritt-Flow
     if (quest?.type === 'like') {
       setLikeVerifyQuest(quest);
@@ -337,6 +344,11 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
 
   const handleTikTokVerify = async (questId: string) => {
     const quest = quests.find((q) => q.id === questId) ?? null;
+    // UGC-Quest → eigener Beitrag einreichen
+    if (quest?.type === 'ugc') {
+      setUgcQuest(quest);
+      return;
+    }
     // Engagement-Quest → eigener Verify-Modal
     if (quest?.type === 'engagement') {
       setTiktokEngagementQuest(quest);
@@ -404,7 +416,9 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const handleInstagramVerify = (questId: string) => {
     const quest = quests.find((q) => q.id === questId) ?? null;
     if (!quest) return;
-    if ((quest.type as string) === 'dm_share') {
+    if (quest.type === 'ugc') {
+      setUgcQuest(quest);
+    } else if ((quest.type as string) === 'dm_share') {
       setInstagramDmShareQuest(quest);
     } else if (quest.type === 'secret') {
       setSecretVerifyQuest(quest);
@@ -418,7 +432,9 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
   const handleFacebookVerify = (questId: string) => {
     const quest = quests.find((q) => q.id === questId) ?? null;
     if (!quest) return;
-    if (quest.type === 'like') {
+    if (quest.type === 'ugc') {
+      setUgcQuest(quest);
+    } else if (quest.type === 'like') {
       setFacebookLikeQuest(quest);
     } else if (quest.type === 'secret') {
       setSecretVerifyQuest(quest);
@@ -573,7 +589,9 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
                     setCelebration({ amount: 0, questTitle: bundleTitle, reputationReward: 0, levelBonus: 0, shardDropped, isBundleCompletion: true });
                   }}
                   onOpenQuest={(quest) => {
-                    if (quest.platform === 'instagram' && (quest.type as string) === 'dm_share') {
+                    if (quest.type === 'ugc') {
+                      setUgcQuest(quest);
+                    } else if (quest.platform === 'instagram' && (quest.type as string) === 'dm_share') {
                       setInstagramDmShareQuest(quest);
                     } else if (quest.platform === 'instagram') {
                       if (quest.type === 'secret') {
@@ -1005,6 +1023,28 @@ export default function FanBoard({ walletAddress, verified, filterCreator, rewar
         onClose={() => {
           if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
           setFacebookLikeQuest(null);
+        }}
+      />
+
+      {/* Verifizierungs-Modal (UGC – eigener Beitrag) */}
+      <UgcSubmitModal
+        quest={ugcQuest}
+        walletAddress={walletAddress}
+        levelBonusPercent={ugcQuest ? getTotalBonusPercent(ugcQuest.creatorWallet) : 0}
+        repBonusPercent={ugcQuest ? getRepBonusPercent(ugcQuest.creatorWallet) : 0}
+        onCompleted={(amount, levelBonus, creditBonus) => {
+          if (ugcQuest) {
+            setCompletedIds((prev) => [...prev, ugcQuest.id]);
+            setQuests((prev) =>
+              prev.map((q) => q.id === ugcQuest.id ? { ...q, completions: q.completions + 1 } : q)
+            );
+            pendingCelebration.current = { amount, questTitle: ugcQuest.videoTitle, reputationReward: getDisplayRep(ugcQuest), levelBonus, collectiblesBonus: creditBonus };
+            loadBundles();
+          }
+        }}
+        onClose={() => {
+          if (pendingCelebration.current) { setCelebration(pendingCelebration.current); pendingCelebration.current = null; }
+          setUgcQuest(null);
         }}
       />
 

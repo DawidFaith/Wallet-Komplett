@@ -282,7 +282,7 @@ export default function AdminPage() {
     return matchSearch && matchFilter;
   });
 
-  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'collectibles' | 'referral' | 'giveaways' | 'audit' | 'unsubscribes' | 'identity'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'token' | 'credits' | 'shop' | 'platform' | 'collectibles' | 'referral' | 'giveaways' | 'audit' | 'unsubscribes' | 'identity' | 'ugc'>('users');
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState('');
   const [resetting, setResetting] = useState(false);
@@ -362,7 +362,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-0">
-        {(['users', 'credits', 'token', 'shop', 'platform', 'collectibles', 'referral', 'giveaways', 'identity', 'audit', 'unsubscribes'] as const).map((tab) => (
+        {(['users', 'credits', 'token', 'shop', 'platform', 'collectibles', 'referral', 'giveaways', 'identity', 'ugc', 'audit', 'unsubscribes'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -372,7 +372,7 @@ export default function AdminPage() {
                 : 'text-zinc-500 border-transparent hover:text-zinc-300'
             }`}
           >
-            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'platform' ? '⚡ Platform' : tab === 'collectibles' ? '💎 Collectibles' : tab === 'referral' ? '🔗 Referral' : tab === 'giveaways' ? '🎁 Giveaways' : tab === 'identity' ? '🪪 Identität' : tab === 'audit' ? '🛡️ Audit-Log' : '✉️ Abmeldungen'}
+            {tab === 'users' ? 'Benutzer' : tab === 'credits' ? 'Credits' : tab === 'token' ? 'Token' : tab === 'shop' ? 'Shop' : tab === 'platform' ? '⚡ Platform' : tab === 'collectibles' ? '💎 Collectibles' : tab === 'referral' ? '🔗 Referral' : tab === 'giveaways' ? '🎁 Giveaways' : tab === 'identity' ? '🪪 Identität' : tab === 'ugc' ? '🎬 UGC-Quests' : tab === 'audit' ? '🛡️ Audit-Log' : '✉️ Abmeldungen'}
           </button>
         ))}
       </div>
@@ -679,6 +679,11 @@ export default function AdminPage() {
       {/* ── Identität Tab ────────────────────────────────────────────────────── */}
       {activeTab === 'identity' && (
         <IdentityVerificationSection secret={secret} />
+      )}
+
+      {/* ── UGC-Quests Tab ───────────────────────────────────────────────────── */}
+      {activeTab === 'ugc' && (
+        <UgcReviewSection secret={secret} />
       )}
 
       {/* ── Audit-Log Tab ────────────────────────────────────────────────────── */}
@@ -3784,6 +3789,146 @@ interface AdminVerifiedUser {
   walletAddress: string;
   email: string | null;
   verifiedAt: string | null;
+}
+
+interface AdminUgcSubmission {
+  id: string;
+  questId: string;
+  walletAddress: string;
+  platform: string;
+  submittedUrl: string;
+  detectedCaption: string | null;
+  submittedAt: string;
+}
+
+function UgcReviewSection({ secret }: { secret: string }) {
+  const [pending, setPending] = useState<AdminUgcSubmission[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const r = await fetch('/api/admin/ugc-submissions', {
+        headers: { 'x-admin-secret': secret },
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? 'Fehler');
+      setPending(Array.isArray(d.submissions) ? d.submissions : []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler beim Laden');
+    } finally {
+      setLoading(false);
+    }
+  }, [secret]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const review = async (id: string, decision: 'approved' | 'rejected') => {
+    setBusyId(id);
+    setError('');
+    try {
+      const r = await fetch('/api/admin/ugc-submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({
+          id,
+          decision,
+          rejectionReason: decision === 'rejected' ? (window.prompt('Ablehnungsgrund (optional):') ?? undefined) : undefined,
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? 'Fehler');
+      setPending(prev => prev.filter(p => p.id !== id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            🎬 UGC-Quests zur Prüfung
+          </h2>
+          <p className="text-xs text-zinc-500 mt-1">
+            {pending.length} offene Einreichungen — landen nur hier, wenn die automatische Hashtag-Prüfung technisch fehlgeschlagen ist.
+          </p>
+        </div>
+        <button
+          onClick={load}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50"
+        >
+          <FaSync className={loading ? 'animate-spin' : ''} /> Aktualisieren
+        </button>
+      </div>
+
+      {error && (
+        <div className="bg-red-900/30 border border-red-800/50 text-red-300 text-sm px-4 py-3 rounded-xl">
+          {error}
+        </div>
+      )}
+
+      {pending.length === 0 && !loading && (
+        <p className="text-zinc-600 text-sm text-center py-8">Keine offenen Einreichungen.</p>
+      )}
+
+      <div className="space-y-3">
+        {pending.map((p) => (
+          <div key={p.id} className="bg-zinc-900 rounded-xl border border-zinc-800 p-4 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <p className="text-white font-semibold text-sm">{p.walletAddress}</p>
+                <p className="text-zinc-500 text-xs">
+                  {p.platform} · eingereicht {new Date(p.submittedAt).toLocaleString('de-DE')}
+                </p>
+              </div>
+              <a
+                href={p.submittedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 text-xs font-semibold"
+              >
+                <FaExternalLinkAlt size={10} /> Post öffnen
+              </a>
+            </div>
+
+            {p.detectedCaption && (
+              <p className="text-zinc-400 text-xs bg-zinc-800/60 rounded-lg p-2.5 whitespace-pre-wrap">
+                {p.detectedCaption}
+              </p>
+            )}
+            {!p.detectedCaption && (
+              <p className="text-amber-400/80 text-xs">Caption konnte nicht automatisch geladen werden — bitte Post manuell öffnen und prüfen.</p>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => review(p.id, 'rejected')}
+                disabled={busyId === p.id}
+                className="flex-1 flex items-center justify-center gap-2 bg-red-900/30 hover:bg-red-900/50 text-red-300 text-sm font-semibold py-2.5 rounded-xl disabled:opacity-50"
+              >
+                <FaTimes size={12} /> Ablehnen
+              </button>
+              <button
+                onClick={() => review(p.id, 'approved')}
+                disabled={busyId === p.id}
+                className="flex-1 flex items-center justify-center gap-2 bg-green-900/30 hover:bg-green-900/50 text-green-300 text-sm font-semibold py-2.5 rounded-xl disabled:opacity-50"
+              >
+                {busyId === p.id ? '…' : <><FaCheck size={12} /> Freigeben</>}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function IdentityVerificationSection({ secret }: { secret: string }) {

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaCheck, FaInfoCircle, FaSync, FaHeart, FaComment, FaBookmark, FaShareAlt, FaPaperPlane, FaThumbsUp, FaKey, FaLink, FaCopy } from 'react-icons/fa';
+import { FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaCheck, FaInfoCircle, FaSync, FaHeart, FaComment, FaBookmark, FaShareAlt, FaPaperPlane, FaThumbsUp, FaKey, FaLink, FaCopy, FaPenNib } from 'react-icons/fa';
 import Modal from '../components/Modal';
 import type { Platform, QuestType } from '../types';
 import { useLang } from '../../../components/LangContext';
@@ -60,11 +60,13 @@ const DEFAULT_WEIGHTS: Record<QuestType, number> = {
   share:      4,
   engagement: 2,
   secret:     2,
+  ugc:        5,
 };
 
 const TYPE_LABEL_KEYS: Record<QuestType, string> = {
   comment: 'qt.comment', like: 'qt.like', save: 'qt.save',
   repost: 'qt.repost', dm_share: 'qt.dmShare', share: 'qt.share', engagement: 'qt.engagement', secret: 'qt.secret',
+  ugc: 'qt.ugc',
 };
 function getTypeLabel(qt: QuestType, lang: Lang) { return t(TYPE_LABEL_KEYS[qt], lang); }
 
@@ -77,13 +79,14 @@ const TYPE_ICONS: Record<QuestType, React.ReactNode> = {
   share:      <FaShareAlt   size={12} />,
   engagement: <FaThumbsUp   size={12} />,
   secret:     <FaKey        size={12} />,
+  ugc:        <FaPenNib     size={12} />,
 };
 
 const PLATFORM_TYPES: Record<Platform, QuestType[]> = {
-  youtube:   ['comment', 'like', 'secret'],
-  instagram: ['like', 'comment', 'save', 'repost', 'dm_share', 'secret'],
-  tiktok:    ['like', 'save', 'comment', 'share', 'secret'],
-  facebook:  ['like', 'comment', 'secret'],
+  youtube:   ['comment', 'like', 'secret', 'ugc'],
+  instagram: ['like', 'comment', 'save', 'repost', 'dm_share', 'secret', 'ugc'],
+  tiktok:    ['like', 'save', 'comment', 'share', 'secret', 'ugc'],
+  facebook:  ['like', 'comment', 'secret', 'ugc'],
 };
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
@@ -151,6 +154,7 @@ export default function CreateBundleModal({
   const [maxP, setMaxP]     = useState('20');
   const [duration, setDuration] = useState('72');
   const [secretCodes, setSecretCodes] = useState<Record<string, string>>({});
+  const [requiredTags, setRequiredTags] = useState<Record<string, string>>({});
 
   const [creating, setCreating]   = useState(false);
   const [error, setError]         = useState('');
@@ -388,6 +392,7 @@ export default function CreateBundleModal({
           items:               items.map((i) => ({ questType: i.questType, reachWeight: i.reachWeight })),
           levelBonusBudget:    levelBonusReserve,
           secretCodes,
+          requiredTags,
           storyToken:          hasDmShare ? (storyToken ?? undefined) : undefined,
         }),
       });
@@ -1066,6 +1071,21 @@ export default function CreateBundleModal({
               </div>
             )}
 
+            {/* Erforderlicher Hashtag/Erwähnung festlegen (nur wenn 'ugc'-Typ ausgewählt) */}
+            {items.some((i) => i.questType === 'ugc') && (
+              <div className="bg-zinc-900/60 border border-amber-800/40 rounded-xl p-3 space-y-2">
+                <p className="text-amber-300 text-xs font-semibold">{t('ugc.creatorTagInputLabel', lang)}</p>
+                <input
+                  type="text"
+                  placeholder={t('ugc.creatorTagInputPlaceholder', lang)}
+                  value={requiredTags['ugc'] ?? ''}
+                  onChange={(e) => setRequiredTags((prev) => ({ ...prev, ugc: e.target.value }))}
+                  className="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-amber-500"
+                  maxLength={100}
+                />
+              </div>
+            )}
+
             <div className="flex gap-3">
               <button onClick={() => setStep(1)} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl py-3 font-semibold text-sm">
                 {t('cb.back', lang)}
@@ -1075,6 +1095,10 @@ export default function CreateBundleModal({
                   if (items.length < 1) { setError(t('cb.errSelectType', lang)); return; }
                   if (items.some((i) => i.questType === 'secret') && !secretCodes['secret']?.trim()) {
                     setError(t('cb.errSecretCode', lang));
+                    return;
+                  }
+                  if (items.some((i) => i.questType === 'ugc') && !requiredTags['ugc']?.trim()) {
+                    setError(t('cb.errRequiredTag', lang));
                     return;
                   }
                   setError('');

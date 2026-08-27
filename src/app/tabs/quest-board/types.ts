@@ -1,7 +1,7 @@
 // ─── Gemeinsame Typen für das Quest Board ────────────────────────────────────
 
 export type Platform = 'youtube' | 'instagram' | 'tiktok' | 'facebook';
-export type QuestType = 'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost' | 'dm_share' | 'share';
+export type QuestType = 'comment' | 'like' | 'save' | 'secret' | 'engagement' | 'repost' | 'dm_share' | 'share' | 'ugc';
 
 export const DFAITH_TOKEN = '0x69eFD833288605f320d77eB2aB99DDE62919BbC1';
 export const DFAITH_DECIMALS = 2;
@@ -25,6 +25,8 @@ export interface QuestIndexEntry {
   expiresAt?: string | null;
   storyToken?: string | null;
   bundleId?: string | null;
+  /** Nur bei type === 'ugc': geforderter Hashtag/Erwähnung im eigenen Fan-Post */
+  requiredTag?: string | null;
 }
 
 export interface YouTubeBinding {

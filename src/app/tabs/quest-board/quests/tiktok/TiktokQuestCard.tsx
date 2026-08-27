@@ -6,7 +6,7 @@ import { FaTrophy, FaCheck, FaClock, FaStar } from 'react-icons/fa';
 import { SiTiktok } from 'react-icons/si';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
-import { t, type Lang } from '../../../../utils/i18n';
+import { t, tFmt, type Lang } from '../../../../utils/i18n';
 import Modal from '../../components/Modal';
 
 interface TiktokQuestCardProps {
@@ -29,7 +29,7 @@ export default function TiktokQuestCard({ quest, isCompleted, isVerified = true,
   const levelBonusAmount = Math.round(quest.rewardAmount * levelBonusPercent) / 100;
   const displayReward = quest.rewardAmount + levelBonusAmount;
   const displayRep = Math.round((quest.reputationReward ?? 0) * (1 + repBonusPercent / 100));
-  const typeLabel = quest.type === 'secret' ? 'Secret' : quest.type === 'engagement' ? 'Engagement' : quest.type === 'like' ? 'Like' : quest.type === 'save' ? 'Speichern' : quest.type === 'share' ? 'Teilen' : 'Kommentar';
+  const typeLabel = quest.type === 'secret' ? 'Secret' : quest.type === 'engagement' ? 'Engagement' : quest.type === 'like' ? 'Like' : quest.type === 'save' ? 'Speichern' : quest.type === 'share' ? 'Teilen' : quest.type === 'ugc' ? t('ugc.badge', language) : 'Kommentar';
 
   return (
     <>
@@ -106,7 +106,7 @@ export default function TiktokQuestCard({ quest, isCompleted, isVerified = true,
           </div>
 
           <p className="text-zinc-400 text-xs">
-            Aufgabe: <span className="text-zinc-300">{quest.description || (quest.type === 'secret' ? '🔑 Finde den geheimen Code im Video und gib ihn ein!' : quest.type === 'share' ? '🔁 Teile dieses TikTok-Video und beweise es mit deinem Originalsound!' : '💬 Schreibe einen Kommentar unter dieses TikTok-Video!')}</span>
+            Aufgabe: <span className="text-zinc-300">{quest.type === 'ugc' && quest.requiredTag ? tFmt('ugc.cardDescription', language, { tag: quest.requiredTag }) : quest.description || (quest.type === 'secret' ? '🔑 Finde den geheimen Code im Video und gib ihn ein!' : quest.type === 'share' ? '🔁 Teile dieses TikTok-Video und beweise es mit deinem Originalsound!' : '💬 Schreibe einen Kommentar unter dieses TikTok-Video!')}</span>
           </p>
 
           {isCompleted ? (

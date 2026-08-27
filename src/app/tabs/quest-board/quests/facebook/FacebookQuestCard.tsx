@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { FaFacebook, FaClock, FaComment, FaThumbsUp, FaKey, FaStar, FaCheck } from 'react-icons/fa';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
-import { t, type Lang } from '../../../../utils/i18n';
+import { t, tFmt, type Lang } from '../../../../utils/i18n';
 import Modal from '../../components/Modal';
 
 interface FacebookQuestCardProps {
@@ -33,9 +33,10 @@ export default function FacebookQuestCard({ quest, isCompleted, isVerified = tru
 
   const isLike = quest.type === 'like';
   const isSecret = quest.type === 'secret';
+  const isUgc = quest.type === 'ugc';
 
   const badgeIcon = isLike ? <FaThumbsUp size={8} /> : isSecret ? <FaKey size={8} /> : <FaComment size={8} />;
-  const badgeLabel = isLike ? 'Like' : isSecret ? 'Secret' : 'Kommentar';
+  const badgeLabel = isLike ? 'Like' : isSecret ? 'Secret' : isUgc ? t('ugc.badge', language) : 'Kommentar';
   const badgeBg = 'bg-blue-600/90';
 
   return (
@@ -122,7 +123,7 @@ export default function FacebookQuestCard({ quest, isCompleted, isVerified = tru
           </div>
 
           <p className="text-zinc-400 text-xs">
-            Aufgabe: <span className="text-zinc-300">{quest.description || (isSecret ? '🔑 Finde den geheimen Code und gib ihn ein!' : isLike ? '👍 Like dieses Video!' : '💬 Schreibe einen Kommentar!')}</span>
+            Aufgabe: <span className="text-zinc-300">{isUgc && quest.requiredTag ? tFmt('ugc.cardDescription', language, { tag: quest.requiredTag }) : quest.description || (isSecret ? '🔑 Finde den geheimen Code und gib ihn ein!' : isLike ? '👍 Like dieses Video!' : '💬 Schreibe einen Kommentar!')}</span>
           </p>
 
           {isCompleted ? (

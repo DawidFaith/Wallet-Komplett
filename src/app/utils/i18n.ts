@@ -1311,6 +1311,47 @@ const dict: Translations = {
   'onboarding.dontShowAgain': { de: 'Nicht mehr anzeigen', en: "Don't show again", pl: 'Nie pokazuj ponownie' },
   'onboarding.helpTooltip': { de: 'Anleitung anzeigen', en: 'Show tutorial', pl: 'Pokaż samouczek' },
 
+  // ── UGC-Quests (eigener Beitrag statt Interaktion mit Künstler-Post) ───────
+
+  'ugc.badge': { de: 'Eigener Beitrag', en: 'Own post', pl: 'Własny post' },
+  'ugc.title': { de: 'Eigenen Beitrag erstellen', en: 'Create your own post', pl: 'Stwórz własny post' },
+  'ugc.cardDescription': {
+    de: 'Erstelle einen eigenen Beitrag mit {tag}',
+    en: 'Create your own post with {tag}',
+    pl: 'Stwórz własny post z {tag}',
+  },
+  'ugc.howTitle': { de: 'So funktioniert\'s', en: 'How it works', pl: 'Jak to działa' },
+  'ugc.step1': {
+    de: 'Erstelle einen eigenen Beitrag zum Thema des Künstlers auf dieser Plattform',
+    en: "Create your own post about the artist's topic on this platform",
+    pl: 'Stwórz własny post na temat artysty na tej platformie',
+  },
+  'ugc.step2': {
+    de: 'Füge {tag} in deinen Text/deine Beschreibung ein',
+    en: 'Include {tag} in your caption/description',
+    pl: 'Dodaj {tag} do swojego opisu/podpisu',
+  },
+  'ugc.step3': {
+    de: 'Kopiere den Link zu deinem Beitrag und füge ihn unten ein',
+    en: 'Copy the link to your post and paste it below',
+    pl: 'Skopiuj link do swojego posta i wklej go poniżej',
+  },
+  'ugc.requiredTagLabel': { de: 'Erforderlich in deinem Beitrag', en: 'Required in your post', pl: 'Wymagane w Twoim poście' },
+  'ugc.urlLabel': { de: 'Link zu deinem Beitrag', en: 'Link to your post', pl: 'Link do Twojego posta' },
+  'ugc.urlPlaceholder': { de: 'https://...', en: 'https://...', pl: 'https://...' },
+  'ugc.submit': { de: 'Einreichen', en: 'Submit', pl: 'Wyślij' },
+  'ugc.submitting': { de: 'Wird geprüft…', en: 'Checking…', pl: 'Sprawdzanie…' },
+  'ugc.pendingTitle': { de: 'Wird manuell geprüft', en: 'Under manual review', pl: 'W trakcie ręcznej weryfikacji' },
+  'ugc.pendingBody': {
+    de: 'Dein Link konnte nicht automatisch geprüft werden und wartet jetzt auf manuelle Prüfung durch den Künstler.',
+    en: "Your link couldn't be checked automatically and is now waiting for manual review by the artist.",
+    pl: 'Twój link nie mógł zostać sprawdzony automatycznie i czeka teraz na ręczną weryfikację przez artystę.',
+  },
+  'ugc.missingUrl': { de: 'Bitte gib den Link zu deinem Beitrag ein.', en: 'Please enter the link to your post.', pl: 'Podaj link do swojego posta.' },
+  'ugc.creatorTypeLabel': { de: 'Eigener Beitrag (UGC)', en: 'Own post (UGC)', pl: 'Własny post (UGC)' },
+  'ugc.creatorTagInputLabel': { de: 'Erforderlicher Hashtag/Erwähnung', en: 'Required hashtag/mention', pl: 'Wymagany hashtag/wzmianka' },
+  'ugc.creatorTagInputPlaceholder': { de: 'z.B. #dawidfaithkatze', en: 'e.g. #dawidfaithkatze', pl: 'np. #dawidfaithkatze' },
+
   // ── In-App-Browser-Hinweis (Instagram/Facebook) ─────────────────────────────
 
   'inAppBrowser.title': {
@@ -1522,6 +1563,7 @@ const dict: Translations = {
   'qt.share':      { de: 'Teilen', en: 'Share', pl: 'Udostępnij' },
   'qt.engagement': { de: 'Engagement', en: 'Engagement', pl: 'Zaangażowanie' },
   'qt.secret':     { de: 'Geheimcode', en: 'Secret Code', pl: 'Tajny Kod' },
+  'qt.ugc':        { de: 'Eigener Beitrag', en: 'Own Post', pl: 'Własny Post' },
 
   // ── Bundle erstellen Modal ───────────────────────────────────────────────
   'cb.modalTitle':        { de: 'Quest erstellen', en: 'Create Quest', pl: 'Utwórz quest' },
@@ -1554,6 +1596,7 @@ const dict: Translations = {
   'cb.secretCodePh':      { de: 'z.B. DAWIDFAITH2025', en: 'e.g. DAWIDFAITH2025', pl: 'np. DAWIDFAITH2025' },
   'cb.errSelectType':     { de: 'Mindestens einen Quest-Typ auswählen', en: 'Select at least one quest type', pl: 'Wybierz co najmniej jeden typ questa' },
   'cb.errSecretCode':     { de: 'Bitte gib einen Geheimcode ein, bevor du fortfährst.', en: 'Please enter a secret code before continuing.', pl: 'Proszę wpisać tajny kod przed kontynuowaniem.' },
+  'cb.errRequiredTag':    { de: 'Bitte gib einen Hashtag/Erwähnung ein, bevor du fortfährst.', en: 'Please enter a hashtag/mention before continuing.', pl: 'Proszę wpisać hashtag/wzmiankę przed kontynuowaniem.' },
   'cb.errUrlMissing':     { de: 'URL/Link fehlt', en: 'URL/link missing', pl: 'Brakuje URL/linku' },
   'cb.errTitleMissing':   { de: 'Titel fehlt', en: 'Title missing', pl: 'Brakuje tytułu' },
   'cb.rewardFanLabel':    { de: 'Reward/Fan (D.FAITH)', en: 'Reward/Fan (D.FAITH)', pl: 'Nagroda/Fan (D.FAITH)' },

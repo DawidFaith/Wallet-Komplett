@@ -13,6 +13,7 @@
  *   - profile.ts        – User-Profile, XP/Level, Admin
  *   - reputation.ts     – Reputation-Core, Contests, Leaderboard
  *   - bundles.ts        – Bundle-Operationen
+ *   - ugc.ts            – UGC-Quest-Einreichungen (eigener Beitrag statt Interaktion)
  */
 
 export * from './types';
@@ -29,3 +30,4 @@ export * from './collectibles';
 export * from './concerts';
 export * from './giveaways';
 export * from './youtubeBot';
+export * from './ugc';

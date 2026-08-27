@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { FaYoutube, FaTrophy, FaCheck, FaClock, FaStar } from 'react-icons/fa';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
-import { t, type Lang } from '../../../../utils/i18n';
+import { t, tFmt, type Lang } from '../../../../utils/i18n';
 import Modal from '../../components/Modal';
 
 interface YoutubeQuestCardProps {
@@ -28,7 +28,7 @@ export default function YoutubeQuestCard({ quest, isCompleted, isVerified = true
   const levelBonusAmount = Math.round(quest.rewardAmount * levelBonusPercent) / 100;
   const displayReward = quest.rewardAmount + levelBonusAmount;
   const displayRep = Math.round((quest.reputationReward ?? 0) * (1 + repBonusPercent / 100));
-  const typeLabel = quest.type === 'like' ? 'Like' : quest.type === 'secret' ? 'Secret' : 'Kommentar';
+  const typeLabel = quest.type === 'like' ? 'Like' : quest.type === 'secret' ? 'Secret' : quest.type === 'ugc' ? t('ugc.badge', language) : 'Kommentar';
 
   return (
     <>
@@ -105,7 +105,7 @@ export default function YoutubeQuestCard({ quest, isCompleted, isVerified = true
           </div>
 
           <p className="text-zinc-400 text-xs">
-            Aufgabe: <span className="text-zinc-300">{quest.description || (quest.type === 'like' ? '👍 Like dieses YouTube Short!' : quest.type === 'secret' ? '🔑 Finde den geheimen Code im Video und gib ihn ein!' : '💬 Schreibe einen Kommentar unter diesem Short!')}</span>
+            Aufgabe: <span className="text-zinc-300">{quest.type === 'ugc' && quest.requiredTag ? tFmt('ugc.cardDescription', language, { tag: quest.requiredTag }) : quest.description || (quest.type === 'like' ? '👍 Like dieses YouTube Short!' : quest.type === 'secret' ? '🔑 Finde den geheimen Code im Video und gib ihn ein!' : '💬 Schreibe einen Kommentar unter diesem Short!')}</span>
           </p>
 
           {isCompleted ? (

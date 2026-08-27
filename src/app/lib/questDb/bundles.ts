@@ -33,11 +33,13 @@ export async function createQuestBundle(
     reputationReward?: number;
     levelBonusBudget?: number;
     secretCodes?: Record<string, string>;
+    requiredTags?: Record<string, string>;
     storyToken?: string | null;
   },
   itemTypes: Array<{ questType: QuestType; reachWeight: number }>,
 ): Promise<{ bundleId: string; storyToken: string | null }> {
   const sql = getDb();
+  await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS required_tag TEXT`;
   const bundleId = crypto.randomUUID();
   const now = new Date().toISOString();
   const wallet = params.creatorWallet.toLowerCase();
@@ -86,19 +88,24 @@ export async function createQuestBundle(
       : null;
     if (storyToken) generatedStoryToken = storyToken;
 
+    // Geforderter Hashtag/Erwähnung (nur für 'ugc'-Typ)
+    const requiredTag = item.questType === 'ugc'
+      ? ((params.requiredTags?.[item.questType] ?? '').trim() || null)
+      : null;
+
     await sql`
       INSERT INTO quests (
         id, platform, quest_type, creator_wallet,
         video_id, video_title, video_thumbnail, video_url,
         description, reward_amount, reputation_reward, max_completions,
         completions, is_active, expires_at, credits_locked, credits_refunded,
-        bonus_budget, bundle_id, reach_weight, secret_code, story_token, created_at, updated_at
+        bonus_budget, bundle_id, reach_weight, secret_code, story_token, required_tag, created_at, updated_at
       ) VALUES (
         ${questId}, ${params.platform}, ${item.questType}, ${wallet},
         ${params.videoId}, ${params.videoTitle}, ${params.videoThumbnail}, ${params.videoUrl},
         ${params.description}, ${rewardAmount}, ${reputationReward}, ${params.maxParticipants},
         0, true, ${params.expiresAt ?? null}, ${creditsLocked}, false,
-        ${questLevelBonusBudget}, ${bundleId}, ${item.reachWeight}, ${secretCode}, ${storyToken}, ${now}, ${now}
+        ${questLevelBonusBudget}, ${bundleId}, ${item.reachWeight}, ${secretCode}, ${storyToken}, ${requiredTag}, ${now}, ${now}
       )
     `;
   }
@@ -134,6 +141,7 @@ export async function getBundlesWithProgressForFan(
   filterCreator?: string,
 ): Promise<QuestBundleWithItems[]> {
   const sql = getDb();
+  await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS required_tag TEXT`;
   const normalized = fanWallet.toLowerCase();
 
   const bundleRows = filterCreator
@@ -159,7 +167,7 @@ export async function getBundlesWithProgressForFan(
   const [questRows, completionRows, bonusRows, fanRepRows, levelRows] = await Promise.all([
     sql`
       SELECT id, bundle_id, quest_type, reach_weight, reward_amount,
-             reputation_reward, completions, max_completions, is_active, story_token
+             reputation_reward, completions, max_completions, is_active, story_token, required_tag
       FROM quests
       WHERE bundle_id = ANY(${bundleIds}::uuid[])
       ORDER BY reach_weight DESC
@@ -223,6 +231,7 @@ export async function getBundlesWithProgressForFan(
         maxCompletions:    Number(q.max_completions),
         isActive:          q.is_active,
         storyToken:        q.story_token ?? null,
+        requiredTag:       q.required_tag ?? null,
       }));
 
     const fanCompletedTypes = items
@@ -252,6 +261,7 @@ export async function getBundlesForCreator(
   creatorWallet: string,
 ): Promise<QuestBundleWithItems[]> {
   const sql = getDb();
+  await sql`ALTER TABLE quests ADD COLUMN IF NOT EXISTS required_tag TEXT`;
   const wallet = creatorWallet.toLowerCase();
 
   const bundleRows = await sql`
@@ -263,7 +273,7 @@ export async function getBundlesForCreator(
   const bundleIds: string[] = bundleRows.map((r: any) => r.id as string);
   const questRows = await sql`
     SELECT id, bundle_id, quest_type, reach_weight, reward_amount,
-           reputation_reward, completions, max_completions, is_active, story_token
+           reputation_reward, completions, max_completions, is_active, story_token, required_tag
     FROM quests
     WHERE bundle_id = ANY(${bundleIds}::uuid[])
     ORDER BY reach_weight DESC
@@ -282,6 +292,7 @@ export async function getBundlesForCreator(
         maxCompletions:    Number(q.max_completions),
         isActive:          q.is_active,
         storyToken:        q.story_token ?? null,
+        requiredTag:       q.required_tag ?? null,
       }));
     return { ...rowToBundle(bRow), items };
   });

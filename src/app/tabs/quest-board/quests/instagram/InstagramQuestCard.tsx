@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { FaInstagram, FaClock, FaComment, FaHeart, FaBookmark, FaShareAlt, FaStar, FaCheck } from 'react-icons/fa';
 import type { QuestIndexEntry } from '../../types';
 import { getProgressPercent, formatExpiry, formatCredits } from '../../utils';
-import { t, type Lang } from '../../../../utils/i18n';
+import { t, tFmt, type Lang } from '../../../../utils/i18n';
 import Modal from '../../components/Modal';
 
 interface InstagramQuestCardProps {
@@ -26,6 +26,7 @@ const QUEST_TYPE_CONFIG = {
   engagement: { label: 'Like & Speichern', icon: <FaHeart size={8} />,   bg: 'bg-gradient-to-r from-pink-600 to-purple-600',  btn: 'Engagement verifizieren' },
   repost:     { label: 'Repost',           icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-pink-600 to-purple-600',  btn: 'Repost verifizieren' },
   dm_share:   { label: 'Story Quest',      icon: <FaShareAlt size={8} />, bg: 'bg-gradient-to-r from-pink-600 to-purple-600',  btn: 'Story Quest starten' },
+  ugc:        { label: 'Eigener Beitrag',  icon: <FaComment size={8} />,  bg: 'bg-gradient-to-r from-amber-600 to-pink-600',   btn: 'Beitrag einreichen' },
 } as const;
 
 export default function InstagramQuestCard({ quest, isCompleted, isVerified = true, onComplete, rewardTokenName, levelBonusPercent = 0, repBonusPercent = 0, language = 'de' }: InstagramQuestCardProps) {
@@ -123,7 +124,7 @@ export default function InstagramQuestCard({ quest, isCompleted, isVerified = tr
           </div>
 
           <p className="text-zinc-400 text-xs">
-            Aufgabe: <span className="text-zinc-300">{quest.description || `${typeConfig.icon} ${typeConfig.label} dieses Reel!`}</span>
+            Aufgabe: <span className="text-zinc-300">{quest.type === 'ugc' && quest.requiredTag ? tFmt('ugc.cardDescription', language, { tag: quest.requiredTag }) : quest.description || `${typeConfig.icon} ${typeConfig.label} dieses Reel!`}</span>
           </p>
 
           {isCompleted ? (
