@@ -755,6 +755,11 @@ const dict: Translations = {
     en: 'Connect at least one of your social media accounts in your profile to see matching quests.',
     pl: 'Połącz co najmniej jedno konto w mediach społecznościowych w swoim profilu, aby zobaczyć pasujące questy.',
   },
+  'quest.connectNowBtn': {
+    de: 'Jetzt Social-Konto verknüpfen',
+    en: 'Connect social account now',
+    pl: 'Połącz teraz konto społecznościowe',
+  },
   'quest.allCompleteDesc': {
     de: 'Alle {n} Quests abschließen → Chance auf Shards als Bonus!',
     en: 'Complete all {n} quests → Chance for Shards as bonus!',

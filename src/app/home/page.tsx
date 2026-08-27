@@ -159,7 +159,7 @@ function HomeContent() {
       />
       <section className="flex-1 flex flex-col items-center justify-center pt-24 pb-8">
         {activeTab === "profile" && <ProfileTab language={language} onNavigate={handleTabChange} onNavigateToArtistQuests={handleNavigateToArtistQuests} onNavigateToArtistShop={handleNavigateToArtistShop} />}
-        {activeTab === "quest-board" && <QuestBoardTab language={language} filterArtist={questArtist} onClearArtist={() => setQuestArtist(null)} artistWallet={artistParam} />}
+        {activeTab === "quest-board" && <QuestBoardTab language={language} filterArtist={questArtist} onClearArtist={() => setQuestArtist(null)} artistWallet={artistParam} onNavigate={handleTabChange} />}
         {activeTab === "solana-wallet" && <SolanaWalletTab />}
         {activeTab === "reputation" && <ReputationTab artistWallet={artistParam} />}
         {activeTab === "shop" && <ShopTab initialArtistWallet={shopArtistWallet ?? artistParam} />}

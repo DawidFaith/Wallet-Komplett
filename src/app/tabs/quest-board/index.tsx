@@ -38,6 +38,7 @@ interface QuestBoardProps {
   artistWallet?: string | null;
   filterArtist?: ArtistInfo | null;
   onClearArtist?: () => void;
+  onNavigate?: (tab: string) => void;
 }
 
 // ─── Artist-Selektor ────────────────────────────────────────────────────────
@@ -125,7 +126,7 @@ interface ProfileResponse {
   };
 }
 
-export default function QuestBoard({ language, artistWallet, filterArtist, onClearArtist }: QuestBoardProps) {
+export default function QuestBoard({ language, artistWallet, filterArtist, onClearArtist, onNavigate }: QuestBoardProps) {
   const { user: _clerkUser } = useUser();
   const account = _clerkUser?.id ? { address: _clerkUser.id } : null;
   const lang = useLang();
@@ -299,6 +300,14 @@ export default function QuestBoard({ language, artistWallet, filterArtist, onCle
               <FaTiktok size={18} className="text-cyan-400" />
               <FaFacebookF size={18} className="text-blue-500" />
             </div>
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('profile')}
+                className="mt-2 bg-amber-500 hover:bg-amber-400 text-black font-semibold text-sm rounded-xl px-5 py-2.5 transition-colors"
+              >
+                {t('quest.connectNowBtn', lang)}
+              </button>
+            )}
           </div>
         ) : (() => {
           // Aktiver Artist: entweder per Prop (von Profil-Tab) oder intern gewählt
