@@ -41,7 +41,7 @@ const socialIcons = {
 
 const languageFlags = {
   de: "🇩🇪",
-  en: "🇺🇸", 
+  en: "EN",
   pl: "🇵🇱"
 };
 
@@ -238,7 +238,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
                   language === "en" ? "bg-zinc-700" : ""
                 }`}
               >
-                <span className="text-lg">🇺🇸</span>
+                <span className="text-lg font-bold w-[1.35rem] text-center">EN</span>
                 <span className="font-medium">English</span>
               </button>
               <button
