@@ -35,6 +35,22 @@ const PLATFORM_CONFIG = {
   },
 };
 
+// Backend liefert stabile Fehler-Codes statt fertiger Texte, damit hier je nach
+// gewählter Sprache übersetzt werden kann (statt immer den deutschen Rohtext zu zeigen).
+const ERROR_CODE_KEYS: Record<string, string> = {
+  DUPLICATE_HANDLE: 'sv.errDuplicateHandle',
+  TIKTOK_UNAVAILABLE: 'sv.errTiktokUnavailable',
+  TIKTOK_BIO_EMPTY: 'sv.errTiktokBioEmpty',
+  FACEBOOK_NOT_CONFIGURED: 'sv.errFacebookNotConfigured',
+  INVALID_INPUT: 'sv.errInvalidInput',
+};
+
+function translateApiError(data: { error?: string; handle?: string }, lang: Lang, platformLabel: string): string {
+  const key = data.error ? ERROR_CODE_KEYS[data.error] : undefined;
+  if (key) return tFmt(key, lang, { platform: platformLabel, handle: data.handle ?? '' });
+  return t('sv.serverError', lang);
+}
+
 interface SocialVerifyModalProps {
   platform: Platform;
   walletAddress: string;
@@ -125,14 +141,14 @@ export default function SocialVerifyModal({
       if (platform === 'facebook') {
         // Facebook Preview: social-verify aufrufen für Verifizierungscode
         const { ok, data } = await call({ handle: handle.trim(), action: 'preview' });
-        if (!ok) { setError(data.error ?? t('sv.serverError', lang)); return; }
+        if (!ok) { setError(translateApiError(data, lang, cfg.label)); return; }
         setPreview(data);
         savePreviewCache(handle.trim(), data);
         setStep('instructions');
         return;
       }
       const { ok, data } = await call({ handle: handle.trim(), action: 'preview' });
-      if (!ok) { setError(data.error ?? t('sv.serverError', lang)); return; }
+      if (!ok) { setError(translateApiError(data, lang, cfg.label)); return; }
       setPreview(data);
       savePreviewCache(handle.trim(), data);
       setStep('instructions');
@@ -146,7 +162,7 @@ export default function SocialVerifyModal({
     try {
       const extraBody = {};
       const { ok, data } = await call({ handle: handle.trim(), action: 'verify', ...extraBody });
-      if (!ok) { setError(data.error ?? t('sv.serverError', lang)); return; }
+      if (!ok) { setError(translateApiError(data, lang, cfg.label)); return; }
       if (data.notFound) {
         const cleanHandle = handle.replace(/^@/, '').trim();
         const key = platform === 'instagram' ? 'sv.notFoundInstagram' : platform === 'facebook' ? 'sv.notFoundFacebook' : 'sv.notFoundTiktok';

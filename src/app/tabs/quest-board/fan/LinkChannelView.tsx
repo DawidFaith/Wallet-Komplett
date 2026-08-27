@@ -5,7 +5,28 @@ import { FaYoutube, FaChevronRight, FaSync, FaCheck, FaUserCheck } from 'react-i
 import Image from 'next/image';
 import type { YouTubeBinding } from '../types';
 import { useLang } from '../../../components/LangContext';
-import { t } from '../../../utils/i18n';
+import { t, tFmt, type Lang } from '../../../utils/i18n';
+
+// Backend liefert stabile Fehler-Codes statt fertiger Texte, damit hier je nach
+// gewählter Sprache übersetzt werden kann (statt immer den deutschen Rohtext zu zeigen).
+const ERROR_CODE_KEYS: Record<string, string> = {
+  SERVICE_UNAVAILABLE: 'yt.errServiceUnavailable',
+  INVALID_INPUT: 'sv.errInvalidInput',
+  INVALID_CHANNEL_INPUT: 'yt.errInvalidChannelInput',
+  YOUTUBE_API_UNREACHABLE: 'yt.errApiUnreachable',
+  YOUTUBE_API_ERROR: 'yt.errApiError',
+  YOUTUBE_CHANNEL_NOT_FOUND: 'yt.errChannelNotFound',
+  CODE_NOT_FOUND: 'yt.errCodeNotFound',
+  DUPLICATE_CHANNEL: 'yt.errDuplicateChannel',
+  DUPLICATE_WALLET_CHANNEL: 'yt.errDuplicateWalletChannel',
+  SAVE_FAILED: 'yt.errSaveFailed',
+};
+
+function translateApiError(data: { error?: string; code?: string }, lang: Lang): string {
+  const key = data.error ? ERROR_CODE_KEYS[data.error] : undefined;
+  if (key) return tFmt(key, lang, { code: data.code ?? '' });
+  return t('sv.serverError', lang);
+}
 
 interface LinkChannelViewProps {
   walletAddress: string;
@@ -37,12 +58,12 @@ export default function LinkChannelView({ walletAddress, onLinked }: LinkChannel
         body: JSON.stringify({ walletAddress, channelInput: channelInput.trim(), action: 'preview' }),
       });
       let data: { error?: string; channelId?: string; channelName?: string; channelThumbnail?: string; verificationCode?: string };
-      try { data = await res.json(); } catch { data = { error: `Server-Fehler (${res.status})` }; }
-      if (!res.ok) { setError(data.error ?? 'Unbekannter Fehler'); return; }
+      try { data = await res.json(); } catch { data = {}; }
+      if (!res.ok) { setError(translateApiError(data, lang)); return; }
       setPreview(data as { channelId: string; channelName: string; channelThumbnail: string; verificationCode: string });
       setStep('verify');
     } catch {
-      setError(lang === 'en' ? 'Network error. Check your connection.' : lang === 'pl' ? 'Błąd sieci. Sprawdź połączenie.' : 'Netzwerkfehler. Prüfe deine Internetverbindung und versuche es erneut.');
+      setError(t('sv.networkError', lang));
     } finally {
       setLoading(false);
     }
@@ -58,12 +79,12 @@ export default function LinkChannelView({ walletAddress, onLinked }: LinkChannel
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ walletAddress, channelInput: channelInput.trim(), action: 'verify' }),
       });
-      let data: { error?: string; binding?: YouTubeBinding };
-      try { data = await res.json(); } catch { data = { error: `Server-Fehler (${res.status})` }; }
-      if (!res.ok) { setError(data.error ?? 'Unbekannter Fehler'); return; }
+      let data: { error?: string; code?: string; binding?: YouTubeBinding };
+      try { data = await res.json(); } catch { data = {}; }
+      if (!res.ok) { setError(translateApiError(data, lang)); return; }
       if (data.binding) onLinked(data.binding);
     } catch {
-      setError('Netzwerkfehler.');
+      setError(t('sv.networkError', lang));
     } finally {
       setLoading(false);
     }

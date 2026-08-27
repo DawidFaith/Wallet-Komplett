@@ -254,18 +254,18 @@ async function handlePost(req: NextRequest) {
     postId?: string;
   };
   try { body = await req.json(); } catch {
-    return NextResponse.json({ error: 'Ungültiger Body' }, { status: 400 });
+    return NextResponse.json({ error: 'INVALID_INPUT' }, { status: 400 });
   }
 
   const { walletAddress, platform, handle, action, fingerprint, postId } = body;
 
   if (!walletAddress) {
-    return NextResponse.json({ error: 'walletAddress fehlt' }, { status: 400 });
+    return NextResponse.json({ error: 'INVALID_INPUT' }, { status: 400 });
   }
   const authCheck = requireOwnWallet(walletAddress);
   if (!authCheck.ok) return authCheck.response;
   if (!platform || !['instagram', 'tiktok', 'facebook'].includes(platform)) {
-    return NextResponse.json({ error: 'Ungültige Plattform' }, { status: 400 });
+    return NextResponse.json({ error: 'INVALID_INPUT' }, { status: 400 });
   }
   const p = platform as Platform;
 
@@ -287,7 +287,7 @@ async function handlePost(req: NextRequest) {
   }
 
   if (!handle) {
-    return NextResponse.json({ error: 'handle fehlt' }, { status: 400 });
+    return NextResponse.json({ error: 'INVALID_INPUT' }, { status: 400 });
   }
   const cleanHandle = handle.replace(/^@/, '').trim();
   const verificationCode = getVerificationCode(walletAddress);
@@ -377,7 +377,7 @@ async function handlePost(req: NextRequest) {
       `;
       if (existingIg.length > 0) {
         return NextResponse.json(
-          { error: 'Dieser Instagram-Account ist bereits mit einer anderen Wallet verknüpft.' },
+          { error: 'DUPLICATE_HANDLE' },
           { status: 409 }
         );
       }
@@ -421,13 +421,13 @@ async function handlePost(req: NextRequest) {
       `;
       if (existing.length > 0) {
         return NextResponse.json(
-          { error: 'Dieser Facebook-Account ist bereits mit einer anderen Wallet verknüpft.' },
+          { error: 'DUPLICATE_HANDLE' },
           { status: 409 }
         );
       }
 
       if (!process.env.META_SYSTEM_USER_TOKEN) {
-        return NextResponse.json({ error: 'Facebook-Verifikation nicht konfiguriert.' }, { status: 500 });
+        return NextResponse.json({ error: 'FACEBOOK_NOT_CONFIGURED' }, { status: 500 });
       }
 
       // Neueste Facebook-Posts der dfaith_ecosystem-Seite prüfen
@@ -476,7 +476,7 @@ async function handlePost(req: NextRequest) {
 
     if (!freshProfile) {
       return NextResponse.json(
-        { error: `Profil von @${cleanHandle} konnte nicht abgerufen werden. TikTok blockiert gerade den Zugriff – bitte versuche es in 1–2 Minuten erneut.` },
+        { error: 'TIKTOK_UNAVAILABLE', handle: cleanHandle },
         { status: 400 }
       );
     }
@@ -487,7 +487,7 @@ async function handlePost(req: NextRequest) {
 
     if (!bio) {
       return NextResponse.json(
-        { error: `Deine TikTok-Bio von @${cleanHandle} ist leer. Bitte füge den Verifizierungscode in deine Bio ein und versuche es erneut.` },
+        { error: 'TIKTOK_BIO_EMPTY', handle: cleanHandle },
         { status: 400 }
       );
     }
@@ -515,7 +515,7 @@ async function handlePost(req: NextRequest) {
     `;
     if (existingTt.length > 0) {
       return NextResponse.json(
-        { error: 'Dieser TikTok-Account ist bereits mit einer anderen Wallet verknüpft.' },
+        { error: 'DUPLICATE_HANDLE' },
         { status: 409 }
       );
     }
@@ -537,5 +537,5 @@ async function handlePost(req: NextRequest) {
     return NextResponse.json({ success: true, name, picture });
   }
 
-  return NextResponse.json({ error: 'Ungültige action' }, { status: 400 });
+  return NextResponse.json({ error: 'INVALID_INPUT' }, { status: 400 });
 }
