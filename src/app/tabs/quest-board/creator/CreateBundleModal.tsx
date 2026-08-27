@@ -1120,7 +1120,7 @@ export default function CreateBundleModal({
             <div className="grid grid-cols-2 gap-2">
               {[
                 { label: t('cb.rewardFanLabel', lang), val: reward, set: setReward, min: '0.01', stp: '0.01', disabled: false },
-                { label: t('cb.shardChanceLabel', lang), val: shardChance, set: setShardChance, min: '0', stp: '1', disabled: items.length < 2 },
+                { label: t('cb.shardChanceLabel', lang), val: shardChance, set: setShardChance, min: '0', stp: '1', disabled: false },
                 { label: t('cb.maxParticipants', lang), val: maxP, set: setMaxP, min: '1', stp: '1', disabled: false },
                 { label: t('cb.durationLabel', lang), val: duration, set: setDuration, min: '0', stp: '1', disabled: false },
               ].map(({ label, val, set, min, stp, disabled }) => (
@@ -1183,12 +1183,10 @@ export default function CreateBundleModal({
                   <span>{t('cb.rewards', lang)} ({rewardNum.toFixed(2)} × {maxNum})</span>
                   <span className="font-mono">{(rewardNum * maxNum).toFixed(2)}</span>
                 </div>
-                {items.length >= 2 && (
-                  <div className="flex justify-between">
-                    <span className="flex items-center gap-1">{t('cb.shardDropBudget', lang)}</span>
-                    <span className="font-mono text-amber-400">{shardChanceNum}%</span>
-                  </div>
-                )}
+                <div className="flex justify-between">
+                  <span className="flex items-center gap-1">{t('cb.shardDropBudget', lang)}</span>
+                  <span className="font-mono text-amber-400">{shardChanceNum}%</span>
+                </div>
                 <div className="flex justify-between">
                   <span className="flex items-center gap-1">
                     {t('cb.levelBonusReserve', lang)}
