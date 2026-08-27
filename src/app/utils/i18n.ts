@@ -609,6 +609,41 @@ const dict: Translations = {
     en: 'Shop',
     pl: 'Sklep',
   },
+  'nav.profile': {
+    de: 'Profil',
+    en: 'Profile',
+    pl: 'Profil',
+  },
+  'nav.menu': {
+    de: 'Menü',
+    en: 'Menu',
+    pl: 'Menu',
+  },
+  'nav.collectibles': {
+    de: 'Collectibles',
+    en: 'Collectibles',
+    pl: 'Kolekcje',
+  },
+  'nav.marketplace': {
+    de: 'Marktplatz',
+    en: 'Marketplace',
+    pl: 'Rynek',
+  },
+  'nav.giveaways': {
+    de: 'Giveaways',
+    en: 'Giveaways',
+    pl: 'Konkursy',
+  },
+  'nav.solanaWallet': {
+    de: 'Solana Wallet',
+    en: 'Solana Wallet',
+    pl: 'Portfel Solana',
+  },
+  'nav.language': {
+    de: 'Sprache',
+    en: 'Language',
+    pl: 'Język',
+  },
 
   // ── Common buttons ──────────────────────────────────────────────────────────
 

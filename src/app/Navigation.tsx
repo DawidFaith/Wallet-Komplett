@@ -24,6 +24,7 @@ import { GiCrystalShine } from "react-icons/gi";
 import { FiChevronDown } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import { useLang, useSetLang } from "./components/LangContext";
+import { t } from "./utils/i18n";
 
 type NavigationProps = {
   activeTab: string;
@@ -85,7 +86,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
         {/* Profil – ganz links */}
         <li>
           <button
-            title="Profil"
+            title={t('nav.profile', language)}
             onClick={() => navigateToTab("profile")}
             className="flex items-center"
           >
@@ -100,7 +101,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
         {/* Verbundene Plattformen Dropdown */}
         <li className="relative flex items-center">
           <button
-            title="Verbundene Plattformen"
+            title={t('nav.menu', language)}
             onClick={() => { setOpen((v) => !v); setLangOpen(false); }}
             className="flex items-center gap-1"
             aria-haspopup="true"
@@ -130,7 +131,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
                 }`}
               >
                 <FaTasks size={15} className={activeTab === "quest-board" ? "text-red-400" : "text-zinc-400"} />
-                <span className="font-medium text-sm">Quest Board</span>
+                <span className="font-medium text-sm">{t('nav.questBoard', language)}</span>
               </button>
               <button
                 onClick={() => { navigateToTab("reputation"); setOpen(false); }}
@@ -139,7 +140,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
                 }`}
               >
                 <FaStar size={15} className={activeTab === "reputation" ? "text-amber-400" : "text-zinc-400"} />
-                <span className="font-medium text-sm">Reputation</span>
+                <span className="font-medium text-sm">{t('nav.reputation', language)}</span>
               </button>
               <button
                 onClick={() => { navigateToTab("shop"); setOpen(false); }}
@@ -148,7 +149,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
                 }`}
               >
                 <FaTshirt size={15} className={activeTab === "shop" ? "text-amber-400" : "text-zinc-400"} />
-                <span className="font-medium text-sm">Artist Shop</span>
+                <span className="font-medium text-sm">{t('nav.shop', language)}</span>
               </button>
               <button
                 onClick={() => { navigateToTab("collectibles"); setOpen(false); }}
@@ -157,7 +158,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
                 }`}
               >
                 <GiCrystalShine size={15} className={activeTab === "collectibles" ? "text-amber-400" : "text-zinc-400"} />
-                <span className="font-medium text-sm">Collectibles</span>
+                <span className="font-medium text-sm">{t('nav.collectibles', language)}</span>
               </button>
               <button
                 onClick={() => { navigateToTab("marketplace"); setOpen(false); }}
@@ -168,7 +169,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
                 }`}
               >
                 <MdStorefront size={15} className={activeTab === "marketplace" ? "text-amber-400" : "text-zinc-400"} />
-                <span className="font-medium text-sm">Marktplatz</span>
+                <span className="font-medium text-sm">{t('nav.marketplace', language)}</span>
               </button>
               {isArtist && (
                 <button
@@ -178,7 +179,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
                   }`}
                 >
                   <FaGift size={15} className={activeTab === "giveaways" ? "text-amber-400" : "text-zinc-400"} />
-                  <span className="font-medium text-sm">Giveaways</span>
+                  <span className="font-medium text-sm">{t('nav.giveaways', language)}</span>
                 </button>
               )}
             </div>
@@ -187,7 +188,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
         {/* Solana Wallet */}
         <li>
           <button
-            title="Solana Wallet"
+            title={t('nav.solanaWallet', language)}
             onClick={() => navigateToTab("solana-wallet")}
             className="flex items-center"
           >
@@ -201,7 +202,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
         </li>
         <li className="relative flex items-center">
           <button
-            title="Sprache / Language / Język"
+            title={t('nav.language', language)}
             onClick={() => setLangOpen((v) => !v)}
             className="flex items-center gap-1"
             aria-haspopup="true"
