@@ -8,10 +8,11 @@ import {
   FaInstagram, FaTiktok, FaFacebook, FaYoutube,
   FaCheck, FaStar, FaLock, FaPlus, FaChevronDown,
   FaMusic, FaTimes, FaInfoCircle, FaTrophy, FaTasks, FaShoppingBag,
-  FaCopy, FaUserFriends, FaExclamationTriangle, FaQuestion,
+  FaCopy, FaUserFriends, FaExclamationTriangle, FaQuestion, FaCreditCard,
 } from 'react-icons/fa';import SocialVerifyModal from './profile/SocialVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
 import IdentityVerifyModal from './profile/IdentityVerifyModal';
+import CreditsCardCheckout from '../components/CreditsCardCheckout';
 import OnboardingTutorialModal from './quest-board/components/OnboardingTutorialModal';
 import { TUTORIAL_DISMISSED_KEY } from './quest-board/utils';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
@@ -133,6 +134,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
   const [claimModal, setClaimModal] = useState<{ sentAmount: number } | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [showIdentityModal, setShowIdentityModal] = useState(false);
+  const [showDepositModal, setShowDepositModal] = useState(false);
 
   // Sprachpräferenz serverseitig speichern (für die Sprachwahl automatischer E-Mails)
   useEffect(() => {
@@ -595,13 +597,21 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                 <p className="text-white font-bold text-sm leading-tight">{(data?.credits ?? 0).toFixed(2)}</p>
                 <p className="text-zinc-500 text-[9px] font-semibold uppercase tracking-wide truncate">{t('profile.creditsLabel', lang)}</p>
               </div>
-              <button
-                onClick={() => setShowClaimConfirm(true)}
-                disabled={claiming || (data?.credits ?? 0) <= 0}
-                className="shrink-0 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition-colors"
-              >
-                {claiming ? '…' : t('profile.redeem', lang)}
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => setShowDepositModal(true)}
+                  className="shrink-0 bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.08] text-white font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                >
+                  <FaPlus size={9} /> {t('shop.depositTitle', lang)}
+                </button>
+                <button
+                  onClick={() => setShowClaimConfirm(true)}
+                  disabled={claiming || (data?.credits ?? 0) <= 0}
+                  className="shrink-0 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition-colors"
+                >
+                  {claiming ? '…' : t('profile.redeem', lang)}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1198,6 +1208,15 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
         />
       )}
 
+      {showDepositModal && account?.address && (
+        <ProfileDepositModal
+          walletAddress={account.address}
+          lang={lang}
+          onClose={() => setShowDepositModal(false)}
+          onSuccess={() => { loadProfile(); loadDfaithBalance(); }}
+        />
+      )}
+
       {/* Einlösen-Fehler-Modal */}
       {claimError && (
         <div
@@ -1251,6 +1270,163 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
           onClose={() => { setVerifyModal(null); loadProfile(); }}
         />
       )}
+    </div>
+  );
+}
+
+// ─── ProfileDepositModal (Credits aufladen: Token oder Karte) ─────────────────
+
+function ProfileDepositModal({ walletAddress, lang, onClose, onSuccess }: {
+  walletAddress: string;
+  lang: Lang;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [mode, setMode]                 = useState<'tokens' | 'card'>('tokens');
+  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+  const [loading, setLoading]           = useState(true);
+  const [amount, setAmount]             = useState('');
+  const [depositing, setDepositing]     = useState(false);
+  const [error, setError]               = useState('');
+  const [done, setDone]                 = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const addrRes = await fetch(`/api/solana/create-account?walletAddress=${walletAddress}`);
+        const addrData = await addrRes.json();
+        const solAddr: string | null = addrData.solanaAddress ?? null;
+        if (!solAddr) { setLoading(false); return; }
+        const balRes  = await fetch(`/api/solana/balance?solanaAddress=${solAddr}`);
+        const balData = await balRes.json();
+        setTokenBalance(Number(balData.dfaithBalance ?? 0));
+      } catch { setTokenBalance(0); }
+      finally   { setLoading(false); }
+    })();
+  }, [walletAddress]);
+
+  const handleDeposit = async () => {
+    const amt = Number(amount);
+    if (!amt || amt <= 0) return;
+    if (tokenBalance !== null && amt > tokenBalance) { setError(tFmt('shop.depositInsufficientTokens', lang, { n: tokenBalance.toFixed(2) })); return; }
+    setDepositing(true); setError('');
+    try {
+      const res  = await fetch('/api/marketplace/deposit-tokens', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress, amount: amt }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const localized = data.code === 'deposit_insufficient_onchain'
+          ? t('common.depositInsufficientOnChain', lang)
+          : data.code === 'deposit_failed'
+            ? t('common.depositFailedGeneric', lang)
+            : (data.error ?? t('common.error', lang));
+        throw new Error(localized);
+      }
+      setDone(true);
+      setTimeout(() => { onSuccess(); onClose(); }, 2000);
+    } catch (e) { setError(e instanceof Error ? e.message : t('common.error', lang)); }
+    finally     { setDepositing(false); }
+  };
+
+  const handleCardSuccess = () => {
+    setDone(true);
+    setTimeout(() => { onSuccess(); onClose(); }, 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:pb-0">
+      <div className="bg-[#161410] border border-white/[0.08] rounded-2xl p-5 w-full max-w-sm shadow-2xl">
+        <div className="flex justify-between items-center mb-5">
+          <h3 className="font-black text-white text-base flex items-center gap-2">
+            <FaPlus className="text-amber-400" size={14} /> {t('shop.depositTitle', lang)}
+          </h3>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
+            <FaTimes size={14} />
+          </button>
+        </div>
+
+        {!done && (
+          <div className="flex gap-1.5 mb-4 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1">
+            <button
+              onClick={() => { setMode('tokens'); setError(''); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-colors ${
+                mode === 'tokens' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Image src="/D.FAITH.png" alt="" width={12} height={12} className="w-3 h-3 rounded-full" /> {t('shop.depositTabTokens', lang)}
+            </button>
+            <button
+              onClick={() => { setMode('card'); setError(''); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-colors ${
+                mode === 'card' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              <FaCreditCard size={11} /> {t('shop.depositTabCard', lang)}
+            </button>
+          </div>
+        )}
+
+        {done ? (
+          <div className="flex items-center gap-2 justify-center bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-green-400 text-sm font-semibold">
+            <FaCheck size={14} /> {t('shop.depositSuccess', lang)}
+          </div>
+        ) : mode === 'tokens' ? (
+          <>
+            <div className="bg-white/[0.04] border border-white/[0.07] rounded-xl p-4 mb-4 space-y-2">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-3">{t('mp.depositHowTitle', lang)}</p>
+              <div className="flex items-start gap-2 text-xs text-zinc-400">
+                <span className="text-amber-400 font-black shrink-0">1.</span>
+                <span>{t('mp.depositStep1', lang)}</span>
+              </div>
+              <div className="flex items-start gap-2 text-xs text-zinc-400">
+                <span className="text-amber-400 font-black shrink-0">2.</span>
+                <span>{t('mp.depositStep2', lang)}</span>
+              </div>
+              <div className="flex items-start gap-2 text-xs text-zinc-400">
+                <span className="text-amber-400 font-black shrink-0">3.</span>
+                <span>{t('shop.depositStep3', lang)}</span>
+              </div>
+            </div>
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 mb-4 flex justify-between items-center">
+              <span className="text-zinc-500 text-xs">{t('shop.depositAvailableTokens', lang)}</span>
+              {loading
+                ? <span className="text-zinc-600 text-xs">{t('common.loading', lang)}</span>
+                : <span className="text-amber-300 font-black text-sm">{(tokenBalance ?? 0).toLocaleString('de-DE', { maximumFractionDigits: 2 })}</span>
+              }
+            </div>
+            <div className="relative mb-3">
+              <input
+                type="number" min="1" value={amount} onChange={e => setAmount(e.target.value)}
+                placeholder={t('shop.depositAmountPlaceholder', lang)}
+                className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-amber-500/60 rounded-xl pl-4 pr-16 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none transition-colors"
+              />
+              <button
+                type="button"
+                onClick={() => tokenBalance !== null && setAmount(String(tokenBalance))}
+                disabled={!tokenBalance}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-amber-500/15 hover:bg-amber-500/25 disabled:opacity-40 text-amber-300 font-black text-[10px] tracking-wide rounded-lg px-2.5 py-1.5 transition-colors"
+              >
+                MAX
+              </button>
+            </div>
+            {error && <p className="text-red-400 text-xs mb-3 bg-red-500/10 border border-red-500/20 rounded-lg p-2">{error}</p>}
+            <button
+              onClick={handleDeposit}
+              disabled={depositing || !amount || Number(amount) <= 0}
+              className="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-800 disabled:text-zinc-500 text-black font-black rounded-xl py-3 text-sm transition-all"
+            >
+              {depositing
+                ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> {t('shop.depositProcessing', lang)}</span>
+                : t('shop.depositTokensButton', lang)
+              }
+            </button>
+          </>
+        ) : (
+          <CreditsCardCheckout walletAddress={walletAddress} onSuccess={handleCardSuccess} lang={lang} />
+        )}
+      </div>
     </div>
   );
 }
