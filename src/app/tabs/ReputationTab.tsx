@@ -6,7 +6,7 @@ import { upload } from '@vercel/blob/client';
 import { useUser } from '@clerk/nextjs';
 import { FaTrophy, FaStar, FaChevronDown, FaChevronUp, FaChevronLeft, FaEdit, FaCheck, FaTimes, FaUsers, FaMedal, FaPlus, FaGift } from 'react-icons/fa';
 import { useLang } from '../components/LangContext';
-import { t, tFmt } from '../utils/i18n';
+import { t, tFmt, type Lang } from '../utils/i18n';
 
 interface ReputationEntry {
   artistWallet: string;
@@ -72,26 +72,27 @@ const toDatetimeLocalValue = (iso: string): string => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-function useCountdown(targetDate: string | null): { label: string; urgent: boolean } {
+function useCountdown(targetDate: string | null, lang: Lang): { label: string; urgent: boolean } {
   const [state, setState] = useState({ label: '', urgent: false });
   useEffect(() => {
     if (!targetDate) return;
+    const dayLetter = lang === 'de' ? 'T' : 'd';
     const update = () => {
       const diff = new Date(targetDate).getTime() - Date.now();
-      if (diff <= 0) { setState({ label: 'Abgelaufen', urgent: true }); return; }
+      if (diff <= 0) { setState({ label: t('countdown.expired', lang), urgent: true }); return; }
       const d = Math.floor(diff / 86_400_000);
       const h = Math.floor((diff % 86_400_000) / 3_600_000);
       const m = Math.floor((diff % 3_600_000) / 60_000);
       const s = Math.floor((diff % 60_000) / 1_000);
       const urgent = diff < 3 * 3_600_000;
-      if (d > 0)      setState({ label: `${d}T ${h}h ${m}m`, urgent });
+      if (d > 0)      setState({ label: `${d}${dayLetter} ${h}h ${m}m`, urgent });
       else if (h > 0) setState({ label: `${h}h ${m}m ${s}s`, urgent });
       else            setState({ label: `${m}m ${s}s`, urgent: true });
     };
     update();
     const id = setInterval(update, 1_000);
     return () => clearInterval(id);
-  }, [targetDate]);
+  }, [targetDate, lang]);
   return state;
 }
 
@@ -119,10 +120,10 @@ function ArtistDetailView({
   const [quarterlyAlreadyDistributed, setQuarterlyAlreadyDistributed] = useState(false);
   const [loading, setLoading] = useState(true);
   // Countdowns auf Top-Level (Rules of Hooks)
-  const quarterlyCountdown = useCountdown(quarterlyInfo?.end ?? null);
+  const quarterlyCountdown = useCountdown(quarterlyInfo?.end ?? null, lang);
   const contestEndDate = contest && !contest.distributed && new Date((contest as ReputationContest).endDate) > new Date()
     ? (contest as ReputationContest).endDate : null;
-  const contestCountdown = useCountdown(contestEndDate);
+  const contestCountdown = useCountdown(contestEndDate, lang);
 
   // Unclaimed Rewards (Level, Contest, Leaderboard)
   const [unclaimedTotal, setUnclaimedTotal] = useState(0);
@@ -626,7 +627,7 @@ function ArtistDetailView({
                           <p className="text-3xl mb-1">🏆</p>
                           {contest.title && <p className="text-amber-300 font-black text-lg mb-0.5">{contest.title}</p>}
                           <p className="text-white font-black text-base">{t('rep.contestCompletedTitle', lang)}</p>
-                          <p className="text-zinc-500 text-xs mt-0.5">{tFmt('rep.endedAt', lang, { date: new Date(contest.endDate).toLocaleDateString('de-DE') })}</p>
+                          <p className="text-zinc-500 text-xs mt-0.5">{tFmt('rep.endedAt', lang, { date: new Date(contest.endDate).toLocaleDateString(lang === 'de' ? 'de-DE' : lang === 'pl' ? 'pl-PL' : 'en-US') })}</p>
                         </div>
                         <div className="p-3 space-y-2">
                           {contest.prizes.map(p => {
@@ -699,7 +700,7 @@ function ArtistDetailView({
                             </p>
                           )}
                           <p className="text-zinc-500 text-xs">
-                            {isRunning ? t('rep.earnRepNowSecurePlace', lang) : tFmt('rep.endsAt', lang, { date: new Date(contest.endDate).toLocaleString('de-DE') })}
+                            {isRunning ? t('rep.earnRepNowSecurePlace', lang) : tFmt('rep.endsAt', lang, { date: new Date(contest.endDate).toLocaleString(lang === 'de' ? 'de-DE' : lang === 'pl' ? 'pl-PL' : 'en-US') })}
                           </p>
                         </div>
                         {isRunning && (
@@ -1308,7 +1309,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                       {contest.distributed ? t('rep.contestEnded', lang) : contestExpired ? t('rep.contestExpired', lang) : t('rep.contestRunning', lang)}
                     </p>
                     <p className="text-zinc-400 text-[11px] mt-0.5">
-                      {tFmt('rep.endsAt', lang, { date: new Date(contest.endDate).toLocaleString('de-DE') })}
+                      {tFmt('rep.endsAt', lang, { date: new Date(contest.endDate).toLocaleString(lang === 'de' ? 'de-DE' : lang === 'pl' ? 'pl-PL' : 'en-US') })}
                     </p>
                   </div>
                   {contestExpired && (
@@ -1537,7 +1538,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                 <p className="text-white font-semibold text-sm">{t('rep.quarterlyRewards', lang)}</p>
                 {quarterlyInfo && (
                   <p className="text-zinc-500 text-xs mt-0.5">
-                    {quarterlyInfo.quarter} &bull; endet {new Date(quarterlyInfo.end).toLocaleDateString('de-DE')}
+                    {quarterlyInfo.quarter} &bull; {tFmt('rep.endsOn', lang, { date: new Date(quarterlyInfo.end).toLocaleDateString(lang === 'de' ? 'de-DE' : lang === 'pl' ? 'pl-PL' : 'en-US') })}
                   </p>
                 )}
               </div>
@@ -1571,7 +1572,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                         <div className="px-4 py-4 text-center border-b border-white/[0.07]">
                           <p className="text-3xl mb-1">🏆</p>
                           <p className="text-white font-black text-base">{t('rep.quarterlyEnded', lang)}</p>
-                          <p className="text-zinc-500 text-xs mt-0.5">{quarterlyInfo.quarter} &bull; {new Date(doneEntry.distributedAt).toLocaleDateString('de-DE')}</p>
+                          <p className="text-zinc-500 text-xs mt-0.5">{quarterlyInfo.quarter} &bull; {new Date(doneEntry.distributedAt).toLocaleDateString(lang === 'de' ? 'de-DE' : lang === 'pl' ? 'pl-PL' : 'en-US')}</p>
                         </div>
                         <div className="p-3 space-y-2">
                           {doneEntry.prizes.map(p => {
@@ -1626,7 +1627,7 @@ function ArtistPanel({ walletAddress }: { walletAddress: string }) {
                           {ended ? tFmt('rep.quarterExpired', lang, { q: quarterlyInfo.quarter }) : tFmt('rep.quarterRunning', lang, { q: quarterlyInfo.quarter })}
                         </p>
                         <p className="text-zinc-400 text-[11px] mt-0.5">
-                          {new Date(quarterlyInfo.start).toLocaleDateString('de-DE')} – {new Date(quarterlyInfo.end).toLocaleDateString('de-DE')}
+                          {new Date(quarterlyInfo.start).toLocaleDateString(lang === 'de' ? 'de-DE' : lang === 'pl' ? 'pl-PL' : 'en-US')} – {new Date(quarterlyInfo.end).toLocaleDateString(lang === 'de' ? 'de-DE' : lang === 'pl' ? 'pl-PL' : 'en-US')}
                         </p>
                       </div>
                       <div className="flex gap-2">

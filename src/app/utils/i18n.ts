@@ -795,6 +795,16 @@ const dict: Translations = {
     en: 'Connect social account now',
     pl: 'Połącz teraz konto społecznościowe',
   },
+  'countdown.expired': {
+    de: 'Abgelaufen',
+    en: 'Expired',
+    pl: 'Wygasło',
+  },
+  'rep.endsOn': {
+    de: 'endet {date}',
+    en: 'ends {date}',
+    pl: 'kończy się {date}',
+  },
   'quest.allCompleteDesc': {
     de: 'Alle {n} Quests abschließen → Chance auf Shards als Bonus!',
     en: 'Complete all {n} quests → Chance for Shards as bonus!',
