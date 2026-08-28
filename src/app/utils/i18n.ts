@@ -1203,6 +1203,11 @@ const dict: Translations = {
   'sol.noArtistTokens': { de: 'Noch keine Künstler Tokens', en: 'No artist tokens yet', pl: 'Brak tokenów artysty' },
   'sol.noArtistTokensHint': { de: 'Schließe Quests ab, um Künstler Tokens zu verdienen.', en: 'Complete quests to earn artist tokens.', pl: 'Ukończ questy, aby zdobyć tokeny artysty.' },
   'sol.privateKeyWarning': { de: '⚠ Diesen Key sicher speichern und nie teilen! BS58-Format für Phantom / Solflare.', en: '⚠ Save this key securely and never share it! BS58 format for Phantom / Solflare.', pl: '⚠ Zapisz ten klucz bezpiecznie i nigdy go nie udostępniaj! Format BS58 dla Phantom / Solflare.' },
+  'sol.privateKeyExplain': {
+    de: 'Dein Private Key ist wie das Passwort für dieses Wallet — wer ihn kennt, hat vollen Zugriff auf deine Tokens. Du brauchst ihn nur, wenn du dieses Wallet zusätzlich in einer anderen App wie Phantom oder Solflare nutzen möchtest.',
+    en: 'Your private key is like the password to this wallet — anyone who knows it gets full access to your tokens. You only need it if you want to also use this wallet in another app like Phantom or Solflare.',
+    pl: 'Twój klucz prywatny to jak hasło do tego portfela — każdy, kto go zna, ma pełny dostęp do Twoich tokenów. Potrzebujesz go tylko, jeśli chcesz używać tego portfela też w innej aplikacji, np. Phantom lub Solflare.',
+  },
   'sol.labelRecipient': { de: 'Empfänger (Solana-Adresse)', en: 'Recipient (Solana address)', pl: 'Odbiorca (adres Solana)' },
   'sol.fullBalanceMinusFee': { de: 'Gesamte Balance (abzgl. Fee)', en: 'Full balance (minus fee)', pl: 'Pełne saldo (minus opłata)' },
   'sol.sending': { de: 'Wird gesendet…', en: 'Sending…', pl: 'Wysyłanie…' },

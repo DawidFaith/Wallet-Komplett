@@ -1345,6 +1345,7 @@ export default function SolanaWalletTab() {
         </button>
         {panel === 'key' && (
           <div className="px-4 pb-4 space-y-3 border-t border-white/5 pt-3">
+            <p className="text-zinc-400 text-xs leading-relaxed">{t('sol.privateKeyExplain', lang)}</p>
             {!showExport ? (
               <button onClick={handleExport} disabled={exportLoading}
                 className="w-full bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-40 text-zinc-300 font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2">
