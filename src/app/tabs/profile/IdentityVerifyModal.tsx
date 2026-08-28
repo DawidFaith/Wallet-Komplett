@@ -20,6 +20,7 @@ const STRINGS: Record<Lang, {
   idTypePersonalausweis: string;
   idTypeReisepass: string;
   idTypeFuehrerschein: string;
+  idTypeContact: string;
   idNumber: string;
   idNumberPlaceholder: string;
   docPhoto: string;
@@ -45,6 +46,7 @@ const STRINGS: Record<Lang, {
     idTypePersonalausweis: 'Personalausweis',
     idTypeReisepass: 'Reisepass',
     idTypeFuehrerschein: 'Führerschein',
+    idTypeContact: 'Geht nicht anders? Dawid Faith kontaktieren',
     idNumber: 'Ausweisnummer',
     idNumberPlaceholder: 'z.B. L01X00T47',
     docPhoto: 'Foto des Dokuments',
@@ -70,6 +72,7 @@ const STRINGS: Record<Lang, {
     idTypePersonalausweis: 'National ID card',
     idTypeReisepass: 'Passport',
     idTypeFuehrerschein: "Driver's license",
+    idTypeContact: "Can't do this? Contact Dawid Faith",
     idNumber: 'Document number',
     idNumberPlaceholder: 'e.g. L01X00T47',
     docPhoto: 'Photo of the document',
@@ -95,6 +98,7 @@ const STRINGS: Record<Lang, {
     idTypePersonalausweis: 'Dowód osobisty',
     idTypeReisepass: 'Paszport',
     idTypeFuehrerschein: 'Prawo jazdy',
+    idTypeContact: 'Nie możesz tak? Skontaktuj się z Dawidem Faith',
     idNumber: 'Numer dokumentu',
     idNumberPlaceholder: 'np. L01X00T47',
     docPhoto: 'Zdjęcie dokumentu',
@@ -150,7 +154,7 @@ export default function IdentityVerifyModal({ walletAddress, lang, onClose, onVe
   const s = STRINGS[lang];
   const [status, setStatus] = useState<Status>('loading');
   const [rejectionReason, setRejectionReason] = useState<string | undefined>(undefined);
-  const [idType, setIdType] = useState<'personalausweis' | 'reisepass' | 'fuehrerschein'>('personalausweis');
+  const [idType, setIdType] = useState<'personalausweis' | 'reisepass' | 'fuehrerschein' | 'social_contact'>('personalausweis');
   const [idNumber, setIdNumber] = useState('');
   const [docFile, setDocFile] = useState<File | null>(null);
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
@@ -270,51 +274,58 @@ export default function IdentityVerifyModal({ walletAddress, lang, onClose, onVe
                   <option value="personalausweis">{s.idTypePersonalausweis}</option>
                   <option value="reisepass">{s.idTypeReisepass}</option>
                   <option value="fuehrerschein">{s.idTypeFuehrerschein}</option>
+                  <option value="social_contact">{s.idTypeContact}</option>
                 </select>
               </div>
 
-              <div>
-                <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wide">{s.idNumber}</label>
-                <input
-                  value={idNumber}
-                  onChange={(e) => setIdNumber(e.target.value)}
-                  placeholder={s.idNumberPlaceholder}
-                  className="w-full mt-1.5 bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-yellow-500 focus:outline-none text-sm placeholder-zinc-500"
-                />
-              </div>
+              {idType === 'social_contact' ? (
+                <p className="text-zinc-300 text-sm bg-zinc-800/60 border border-zinc-700/50 rounded-xl p-3">{s.altOption}</p>
+              ) : (
+                <>
+                  <div>
+                    <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wide">{s.idNumber}</label>
+                    <input
+                      value={idNumber}
+                      onChange={(e) => setIdNumber(e.target.value)}
+                      placeholder={s.idNumberPlaceholder}
+                      className="w-full mt-1.5 bg-zinc-800 text-white rounded-xl px-4 py-3 border border-zinc-700 focus:border-yellow-500 focus:outline-none text-sm placeholder-zinc-500"
+                    />
+                  </div>
 
-              <div>
-                <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wide">{s.docPhoto}</label>
-                <label className="mt-1.5 flex items-center gap-3 bg-zinc-800 rounded-xl px-4 py-3 border border-zinc-700 cursor-pointer hover:border-yellow-500 transition-colors">
-                  <FaCamera className="text-zinc-500 shrink-0" size={16} />
-                  <span className="text-zinc-300 text-sm truncate">{docFile?.name ?? '—'}</span>
-                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => setDocFile(e.target.files?.[0] ?? null)} />
-                </label>
-              </div>
+                  <div>
+                    <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wide">{s.docPhoto}</label>
+                    <label className="mt-1.5 flex items-center gap-3 bg-zinc-800 rounded-xl px-4 py-3 border border-zinc-700 cursor-pointer hover:border-yellow-500 transition-colors">
+                      <FaCamera className="text-zinc-500 shrink-0" size={16} />
+                      <span className="text-zinc-300 text-sm truncate">{docFile?.name ?? '—'}</span>
+                      <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => setDocFile(e.target.files?.[0] ?? null)} />
+                    </label>
+                  </div>
 
-              <div>
-                <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wide">{s.selfiePhoto}</label>
-                <label className="mt-1.5 flex items-center gap-3 bg-zinc-800 rounded-xl px-4 py-3 border border-zinc-700 cursor-pointer hover:border-yellow-500 transition-colors">
-                  <FaCamera className="text-zinc-500 shrink-0" size={16} />
-                  <span className="text-zinc-300 text-sm truncate">{selfieFile?.name ?? '—'}</span>
-                  <input type="file" accept="image/*" capture="user" className="hidden" onChange={(e) => setSelfieFile(e.target.files?.[0] ?? null)} />
-                </label>
-              </div>
+                  <div>
+                    <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wide">{s.selfiePhoto}</label>
+                    <label className="mt-1.5 flex items-center gap-3 bg-zinc-800 rounded-xl px-4 py-3 border border-zinc-700 cursor-pointer hover:border-yellow-500 transition-colors">
+                      <FaCamera className="text-zinc-500 shrink-0" size={16} />
+                      <span className="text-zinc-300 text-sm truncate">{selfieFile?.name ?? '—'}</span>
+                      <input type="file" accept="image/*" capture="user" className="hidden" onChange={(e) => setSelfieFile(e.target.files?.[0] ?? null)} />
+                    </label>
+                  </div>
 
-              <p className="text-zinc-500 text-xs">{s.privacyHint}</p>
-
-              <p className="text-zinc-500 text-xs bg-zinc-800/60 border border-zinc-700/50 rounded-xl p-3">{s.altOption}</p>
+                  <p className="text-zinc-500 text-xs">{s.privacyHint}</p>
+                </>
+              )}
 
               {error && <p className="text-red-400 text-sm">{error}</p>}
 
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="w-full bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 text-black font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
-              >
-                {submitting ? <FaSync className="animate-spin" size={13} /> : <FaIdCard size={14} />}
-                {submitting ? s.submitting : status === 'rejected' ? s.resubmit : s.submit}
-              </button>
+              {idType !== 'social_contact' && (
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="w-full bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 text-black font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
+                >
+                  {submitting ? <FaSync className="animate-spin" size={13} /> : <FaIdCard size={14} />}
+                  {submitting ? s.submitting : status === 'rejected' ? s.resubmit : s.submit}
+                </button>
+              )}
             </div>
           )}
         </div>
