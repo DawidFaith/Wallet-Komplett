@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { upload } from '@vercel/blob/client';
 import { useUser } from '@clerk/nextjs';
@@ -111,6 +112,8 @@ function ArtistDetailView({
   onBack: () => void;
 }) {
   const lang = useLang();
+  const router = useRouter();
+  const [infoModal, setInfoModal] = useState<'leaderboard' | 'contest' | null>(null);
   const [tab, setTab] = useState<'leaderboard' | 'contest'>('leaderboard');
   const [levels, setLevels] = useState<ReputationLevel[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -472,7 +475,11 @@ function ArtistDetailView({
               {quarterlyConfig && quarterlyConfig.prizes.length > 0 && quarterlyInfo && (() => {
                 const countdown = quarterlyCountdown;
                 return (
-                  <div className="bg-gradient-to-br from-amber-950/40 to-zinc-900/60 border border-amber-500/20 rounded-2xl overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setInfoModal('leaderboard')}
+                    className="w-full text-left bg-gradient-to-br from-amber-950/40 to-zinc-900/60 border border-amber-500/20 rounded-2xl overflow-hidden hover:border-amber-500/40 transition-colors"
+                  >
                     <div className="px-4 py-3 border-b border-amber-500/10 flex items-center justify-between">
                       <div>
                         <p className="text-amber-300 font-black text-sm tracking-wide">{tFmt('rep.quarterLabel', lang, { q: quarterlyInfo.quarter })}</p>
@@ -536,7 +543,7 @@ function ArtistDetailView({
                         ))}
                       </div>
                     )}
-                  </div>
+                  </button>
                 );
               })()}
 
@@ -617,7 +624,11 @@ function ArtistDetailView({
                   <>
                     {/* Beendeter Contest — Ergebnisansicht */}
                     {contest.distributed && (
-                      <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setInfoModal('contest')}
+                        className="w-full text-left bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden hover:border-white/[0.15] transition-colors"
+                      >
                         {contest.imageUrl && (
                           <div className="w-full h-32 overflow-hidden">
                             <img src={contest.imageUrl} alt="" className="w-full h-full object-cover" />
@@ -671,16 +682,19 @@ function ArtistDetailView({
                             );
                           })}
                         </div>
-                      </div>
+                      </button>
                     )}
 
                     {/* Laufender / abgelaufener Contest */}
                     {!contest.distributed && (<>
                     {/* Status-Header */}
-                    <div className={`rounded-2xl overflow-hidden ${
-                      isExpired ? 'bg-amber-950/40 border border-amber-700/30' :
-                      'bg-gradient-to-br from-green-950/50 to-zinc-900/60 border border-green-600/25'
-                    }`}>
+                    <button
+                      type="button"
+                      onClick={() => setInfoModal('contest')}
+                      className={`w-full text-left rounded-2xl overflow-hidden transition-colors ${
+                        isExpired ? 'bg-amber-950/40 border border-amber-700/30 hover:border-amber-700/50' :
+                        'bg-gradient-to-br from-green-950/50 to-zinc-900/60 border border-green-600/25 hover:border-green-600/40'
+                      }`}>
                       {contest.imageUrl && (
                         <div className="w-full h-32 overflow-hidden">
                           <img src={contest.imageUrl} alt="" className="w-full h-full object-cover" />
@@ -710,7 +724,7 @@ function ArtistDetailView({
                           </div>
                         )}
                       </div>
-                    </div>
+                    </button>
 
                     {/* Prize + Live-Ranking Cards */}
                     <div className="bg-zinc-900/60 border border-white/[0.07] rounded-2xl overflow-hidden">
@@ -774,6 +788,36 @@ function ArtistDetailView({
               })()}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Info-Modal: Leaderboard/Contest erklären + Link zum Quest Board */}
+      {infoModal && (
+        <div
+          className="fixed inset-0 z-[999] bg-black/70 flex items-end sm:items-center justify-center p-4"
+          onClick={() => setInfoModal(null)}
+        >
+          <div
+            className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-white font-bold text-base flex items-center gap-2">
+                <FaTrophy className="text-amber-400" size={16} />
+                {infoModal === 'leaderboard' ? t('rep.leaderboardInfoTitle', lang) : t('rep.contestInfoTitle', lang)}
+              </p>
+              <button onClick={() => setInfoModal(null)} className="text-zinc-500 hover:text-white text-xl leading-none">×</button>
+            </div>
+            <p className="text-zinc-400 text-sm leading-relaxed">
+              {infoModal === 'leaderboard' ? t('rep.leaderboardInfoBody', lang) : t('rep.contestInfoBody', lang)}
+            </p>
+            <button
+              onClick={() => router.push(`/home?tab=quest-board&artist=${encodeURIComponent(entry.artistWallet)}`)}
+              className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold py-3 rounded-xl transition-colors text-sm"
+            >
+              {t('rep.goToQuestBoard', lang)}
+            </button>
+          </div>
         </div>
       )}
     </div>
