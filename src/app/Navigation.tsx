@@ -208,7 +208,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
             aria-haspopup="true"
             aria-expanded={langOpen}
           >
-            <span className="text-lg">{languageFlags[language]}</span>
+            <span className={language === "en" ? "text-sm font-bold" : "text-lg"}>{languageFlags[language]}</span>
             <FiChevronDown
               size={20}
               className={`transition-transform duration-300 ${
@@ -239,7 +239,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
                   language === "en" ? "bg-zinc-700" : ""
                 }`}
               >
-                <span className="text-lg font-bold w-[1.35rem] text-center">EN</span>
+                <span className="text-sm font-bold w-[1.35rem] text-center">EN</span>
                 <span className="font-medium">English</span>
               </button>
               <button
