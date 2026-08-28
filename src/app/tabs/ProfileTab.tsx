@@ -971,8 +971,8 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
 
               {/* Reputation bei diesem Artist */}
               {!selectedArtist.isPlatformUser && repData && (
-                <div className="flex items-center gap-3 bg-amber-950/30 border border-amber-700/20 rounded-xl px-3 py-2">
-                  <FaTrophy className="text-amber-400 shrink-0" size={14} />
+                <div className="flex items-start gap-3 bg-amber-950/30 border border-amber-700/20 rounded-xl px-3 py-2">
+                  <FaTrophy className="text-amber-400 shrink-0 mt-0.5" size={14} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-amber-300 text-xs font-semibold">
@@ -994,7 +994,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                           onNavigate('reputation');
                         }
                       }}
-                      className="text-amber-400 hover:text-amber-300 text-xs font-semibold shrink-0 transition-colors"
+                      className="text-amber-400 hover:text-amber-300 text-xs font-semibold shrink-0 transition-colors mt-0.5"
                     >
                       {t('profile.details', lang)}
                     </button>
@@ -1003,11 +1003,11 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               )}
               {/* Shop-Info bei diesem Artist */}
               {!selectedArtist.isPlatformUser && selectedArtist.shopItemCount > 0 && (
-                <div className="flex items-center gap-3 bg-amber-950/30 border border-amber-700/20 rounded-xl px-3 py-2">
-                  <FaShoppingBag className="text-amber-400 shrink-0" size={14} />
+                <div className="flex items-start gap-3 bg-amber-950/30 border border-amber-700/20 rounded-xl px-3 py-2">
+                  <FaShoppingBag className="text-amber-400 shrink-0 mt-0.5" size={14} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-amber-300 text-xs font-semibold">{t('profile.shopAvailable', lang)}</p>
-                    <p className="text-zinc-500 text-[10px]">{selectedArtist.shopItemCount} {selectedArtist.shopItemCount === 1 ? t('profile.items_one', lang) : t('profile.items_other', lang)}</p>
+                    <p className="text-amber-300 text-xs font-semibold truncate">{t('profile.shopAvailable', lang)}</p>
+                    <p className="text-zinc-500 text-[10px] truncate">{selectedArtist.shopItemCount} {selectedArtist.shopItemCount === 1 ? t('profile.items_one', lang) : t('profile.items_other', lang)}</p>
                   </div>
                   <button
                     onClick={() => {
@@ -1015,7 +1015,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                         onNavigateToArtistShop(selectedArtist.walletAddress);
                       }
                     }}
-                    className="text-amber-400 hover:text-amber-300 text-xs font-semibold shrink-0 transition-colors"
+                    className="text-amber-400 hover:text-amber-300 text-xs font-semibold shrink-0 transition-colors mt-0.5"
                   >
                     {t('profile.open', lang)}
                   </button>
