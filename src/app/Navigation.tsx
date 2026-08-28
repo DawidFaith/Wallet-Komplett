@@ -22,7 +22,7 @@ import {
 import { MdStorefront } from "react-icons/md";
 import { GiCrystalShine } from "react-icons/gi";
 import { FiChevronDown } from "react-icons/fi";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLang, useSetLang } from "./components/LangContext";
 import { t } from "./utils/i18n";
 
@@ -62,6 +62,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
   const setLanguage = useSetLang();
   const { user } = useUser();
   const [isArtist, setIsArtist] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -71,8 +72,23 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
       .catch(() => {});
   }, [user?.id]);
 
+  // Dropdowns schließen, sobald irgendwo außerhalb der Navigation geklickt wird
+  useEffect(() => {
+    if (!open && !langOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setLangOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open, langOpen]);
+
   // Funktionen für Navigation
   const navigateToTab = (tab: string) => {
+    setOpen(false);
+    setLangOpen(false);
     if (pathname === "/home") {
       setActiveTab(tab);
     } else {
@@ -81,7 +97,7 @@ export default function Navigation({ activeTab, setActiveTab, language: _languag
   };
 
   return (
-    <nav className="fixed top-0 left-0 w-full bg-[#1a180f] border-b border-white/8 z-50">
+    <nav ref={navRef} className="fixed top-0 left-0 w-full bg-[#1a180f] border-b border-white/8 z-50">
       <ul className="flex justify-center items-center gap-8 py-3">
         {/* Profil – ganz links */}
         <li>
