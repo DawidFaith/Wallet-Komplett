@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { FaCheck, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaCheck, FaExternalLinkAlt, FaCreditCard } from 'react-icons/fa';
 import Modal from '../components/Modal';
+import CreditsCardCheckout from '../../../components/CreditsCardCheckout';
 import { useLang } from '../../../components/LangContext';
 import { t, tFmt } from '../../../utils/i18n';
 
@@ -11,16 +12,19 @@ interface DepositModalProps {
   open: boolean;
   onClose: () => void;
   walletAddress: string;
-  onDeposited: (amount: number) => void;
+  /** Wird nach erfolgreicher Einzahlung (Tokens ODER Karte) aufgerufen, damit der Aufrufer das echte Guthaben neu lädt. */
+  onDeposited: () => void;
 }
 
 export default function DepositModal({ open, onClose, walletAddress, onDeposited }: DepositModalProps) {
   const lang = useLang();
+  const [mode, setMode] = useState<'tokens' | 'card'>('tokens');
   const [amount, setAmount] = useState('');
   const [step, setStep] = useState<'form' | 'sending' | 'success' | 'error'>('form');
   const [errorMsg, setErrorMsg] = useState('');
   const [result, setResult] = useState<{ credited: number; signature: string; explorerUrl: string } | null>(null);
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+  const [cardDone, setCardDone] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -60,7 +64,7 @@ export default function DepositModal({ open, onClose, walletAddress, onDeposited
         return;
       }
       setResult(data);
-      onDeposited(data.credited);
+      onDeposited();
       setStep('success');
     } catch (e: unknown) {
       setErrorMsg((e as Error)?.message ?? 'Unbekannter Fehler');
@@ -68,18 +72,57 @@ export default function DepositModal({ open, onClose, walletAddress, onDeposited
     }
   };
 
+  const handleCardSuccess = () => {
+    setCardDone(true);
+    onDeposited();
+    setTimeout(() => { handleClose(); }, 2000);
+  };
+
   const handleClose = () => {
     setStep('form');
+    setMode('tokens');
     setAmount('');
     setErrorMsg('');
     setResult(null);
+    setCardDone(false);
     onClose();
   };
 
   return (
     <Modal open={open} onClose={handleClose} title={t('deposit.title', lang)}>
 
-      {step === 'form' && (
+      {step === 'form' && !cardDone && (
+        <div className="flex gap-1.5 mb-4 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1">
+          <button
+            onClick={() => setMode('tokens')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-colors ${
+              mode === 'tokens' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Image src="/D.FAITH.png" alt="" width={12} height={12} className="w-3 h-3 rounded-full" /> {t('shop.depositTabTokens', lang)}
+          </button>
+          <button
+            onClick={() => setMode('card')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-colors ${
+              mode === 'card' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <FaCreditCard size={11} /> {t('shop.depositTabCard', lang)}
+          </button>
+        </div>
+      )}
+
+      {step === 'form' && mode === 'card' && (
+        cardDone ? (
+          <div className="flex items-center gap-2 justify-center bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-green-400 text-sm font-semibold">
+            <FaCheck size={14} /> {t('shop.depositSuccess', lang)}
+          </div>
+        ) : (
+          <CreditsCardCheckout walletAddress={walletAddress} onSuccess={handleCardSuccess} lang={lang} />
+        )
+      )}
+
+      {step === 'form' && mode === 'tokens' && (
         <div className="space-y-5">
           {/* Header */}
           <div className="flex items-center gap-4">

@@ -624,7 +624,7 @@ export default function CreatorBoard({ walletAddress, binding: _binding, verifie
         open={showDeposit}
         onClose={() => setShowDeposit(false)}
         walletAddress={walletAddress}
-        onDeposited={(amount) => setCreatorBalance((prev) => prev + amount)}
+        onDeposited={loadCreatorBalance}
       />
       <CreateConcertModal
         open={showConcertModal}
