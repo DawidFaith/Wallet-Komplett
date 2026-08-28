@@ -18,7 +18,7 @@ import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
 import { getDb } from '@/app/lib/db';
 import { requireOwnWallet } from '@/app/lib/apiAuth';
 import { sendMail, ADMIN_EMAIL } from '@/app/lib/email';
-import { isIdentityVerified } from '@/app/lib/identityVerification';
+import { isIdentityVerifiedForClaim } from '@/app/lib/identityVerification';
 
 /** Sendet eine Betrugs-Warnung per E-Mail an den Admin. */
 async function sendFraudAlert(walletAddress: string, solanaAddress: string): Promise<void> {
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
   const authCheck = requireOwnWallet(walletAddress);
   if (!authCheck.ok) return authCheck.response;
 
-  if (!(await isIdentityVerified(walletAddress))) {
+  if (!(await isIdentityVerifiedForClaim(walletAddress))) {
     return NextResponse.json(
       { error: 'Bitte verifiziere zuerst deine Identität, um Credits einzulösen.', code: 'identity_not_verified' },
       { status: 403 },

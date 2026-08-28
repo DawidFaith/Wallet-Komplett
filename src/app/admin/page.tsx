@@ -3939,6 +3939,9 @@ function IdentityVerificationSection({ secret }: { secret: string }) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [conflict, setConflict] = useState<{ id: string; wallet: string } | null>(null);
   const [confirmedNumbers, setConfirmedNumbers] = useState<Record<string, string>>({});
+  const [manualWallet, setManualWallet] = useState('');
+  const [manualBusy, setManualBusy] = useState(false);
+  const [manualMsg, setManualMsg] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -3959,6 +3962,29 @@ function IdentityVerificationSection({ secret }: { secret: string }) {
   }, [secret]);
 
   useEffect(() => { load(); }, [load]);
+
+  const manualVerify = async () => {
+    const wallet = manualWallet.trim();
+    if (!wallet) return;
+    setManualBusy(true);
+    setManualMsg('');
+    try {
+      const r = await fetch('/api/admin/identity-verifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ manualWalletAddress: wallet }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? 'Fehler');
+      setManualWallet('');
+      setManualMsg(`✅ ${wallet} manuell verifiziert.`);
+      load();
+    } catch (e) {
+      setManualMsg(`❌ ${e instanceof Error ? e.message : 'Fehler'}`);
+    } finally {
+      setManualBusy(false);
+    }
+  };
 
   const review = async (id: string, decision: 'approved' | 'rejected', force = false) => {
     setBusyId(id);
@@ -4013,6 +4039,29 @@ function IdentityVerificationSection({ secret }: { secret: string }) {
           {error}
         </div>
       )}
+
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-4 space-y-2">
+        <p className="text-sm font-semibold text-white">Manuell verifizieren</p>
+        <p className="text-xs text-zinc-500">
+          Fallback ohne Ausweis-Antrag — z.B. wenn ein Fan Dawid Faith direkt über Social Media kontaktiert hat.
+        </p>
+        <div className="flex gap-2">
+          <input
+            value={manualWallet}
+            onChange={(e) => setManualWallet(e.target.value)}
+            placeholder="Wallet-Adresse / Clerk-ID"
+            className="flex-1 bg-zinc-800 text-white rounded-lg px-3 py-2 border border-zinc-700 focus:border-amber-500 focus:outline-none text-sm font-mono"
+          />
+          <button
+            onClick={manualVerify}
+            disabled={manualBusy || !manualWallet.trim()}
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-black text-sm font-semibold rounded-lg"
+          >
+            {manualBusy ? '…' : 'Verifizieren'}
+          </button>
+        </div>
+        {manualMsg && <p className="text-xs text-zinc-400">{manualMsg}</p>}
+      </div>
 
       <div className="space-y-4">
         {pending.map((p) => (

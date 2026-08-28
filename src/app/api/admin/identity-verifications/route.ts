@@ -4,7 +4,7 @@
  * Header: x-admin-secret
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { listPendingForAdmin, listVerifiedForAdmin, reviewVerification } from '@/app/lib/identityVerification';
+import { listPendingForAdmin, listVerifiedForAdmin, reviewVerification, manuallyVerifyWallet } from '@/app/lib/identityVerification';
 
 function checkAuth(req: NextRequest): boolean {
   const secret = req.headers.get('x-admin-secret');
@@ -33,13 +33,21 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json().catch(() => null);
     if (!body) return NextResponse.json({ error: 'Kein Body' }, { status: 400 });
 
-    const { id, decision, rejectionReason, confirmedIdNumber, force } = body as {
+    const { id, decision, rejectionReason, confirmedIdNumber, force, manualWalletAddress } = body as {
       id?: string;
       decision?: 'approved' | 'rejected';
       rejectionReason?: string;
       confirmedIdNumber?: string;
       force?: boolean;
+      /** Fallback-Weg ohne Ausweis-Antrag, z.B. nach Social-Media-Kontakt mit Dawid Faith. */
+      manualWalletAddress?: string;
     };
+
+    if (manualWalletAddress) {
+      await manuallyVerifyWallet(manualWalletAddress);
+      return NextResponse.json({ success: true });
+    }
+
     if (!id || !decision) {
       return NextResponse.json({ error: 'id und decision erforderlich' }, { status: 400 });
     }

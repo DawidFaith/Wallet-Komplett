@@ -11,6 +11,7 @@ import {
   FaCopy, FaUserFriends, FaExclamationTriangle, FaQuestion,
 } from 'react-icons/fa';import SocialVerifyModal from './profile/SocialVerifyModal';
 import LinkChannelView from './quest-board/fan/LinkChannelView';
+import IdentityVerifyModal from './profile/IdentityVerifyModal';
 import OnboardingTutorialModal from './quest-board/components/OnboardingTutorialModal';
 import { TUTORIAL_DISMISSED_KEY } from './quest-board/utils';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
@@ -131,6 +132,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
   };
   const [claimModal, setClaimModal] = useState<{ sentAmount: number } | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
+  const [showIdentityModal, setShowIdentityModal] = useState(false);
 
   // Sprachpräferenz serverseitig speichern (für die Sprachwahl automatischer E-Mails)
   useEffect(() => {
@@ -301,6 +303,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
         setClaimModal({ sentAmount });
       } else {
         const json = await res.json().catch(() => null);
+        if (json?.code === 'identity_not_verified') { setShowIdentityModal(true); return; }
         setClaimError(json?.error ?? t('profile.networkError', lang));
       }
     } catch {
@@ -1185,6 +1188,14 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
             </button>
           </div>
         </div>
+      )}
+
+      {showIdentityModal && account?.address && (
+        <IdentityVerifyModal
+          walletAddress={account.address}
+          lang={lang}
+          onClose={() => setShowIdentityModal(false)}
+        />
       )}
 
       {/* Einlösen-Fehler-Modal */}

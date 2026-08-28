@@ -107,15 +107,50 @@ export async function getVerificationStatus(walletAddress: string): Promise<Veri
   };
 }
 
-/** Temporär deaktiviert, um das Onboarding zu vereinfachen — Einreichung/Admin-Review bleiben nutzbar, nur die Sperre entfällt. */
-const IDENTITY_CHECK_ENABLED = false;
-
-export async function isIdentityVerified(walletAddress: string): Promise<boolean> {
-  if (!IDENTITY_CHECK_ENABLED) return true;
+async function checkIdentityVerifiedInDb(walletAddress: string): Promise<boolean> {
   const sql = getDb();
   await ensureTable(sql);
   const rows = await sql`SELECT identity_verified FROM user_profiles WHERE wallet_address = ${walletAddress.toLowerCase()} LIMIT 1`;
   return Boolean(rows[0]?.identity_verified);
+}
+
+/**
+ * Deaktiviert für NFT-Kauf/Minting/Marktplatz, um das Onboarding dort einfach zu
+ * halten — Einreichung/Admin-Review bleiben nutzbar, nur die Sperre entfällt.
+ * Für die Credit-Einlösung gilt das NICHT, siehe isIdentityVerifiedForClaim().
+ */
+const IDENTITY_CHECK_ENABLED = false;
+
+export async function isIdentityVerified(walletAddress: string): Promise<boolean> {
+  if (!IDENTITY_CHECK_ENABLED) return true;
+  return checkIdentityVerifiedInDb(walletAddress);
+}
+
+/** Immer aktiv, unabhängig von IDENTITY_CHECK_ENABLED — nur für die D.FAITH-Credit-Einlösung (claim/route.ts). */
+export async function isIdentityVerifiedForClaim(walletAddress: string): Promise<boolean> {
+  return checkIdentityVerifiedInDb(walletAddress);
+}
+
+/**
+ * Manuelle Freigabe durch den Admin, ohne dass ein Ausweis-Antrag eingereicht wurde —
+ * z.B. wenn ein Fan Dawid Faith direkt über Social Media kontaktiert und er die
+ * Identität auf diesem Weg bestätigt (Fallback-Option in IdentityVerifyModal).
+ */
+export async function manuallyVerifyWallet(walletAddress: string): Promise<void> {
+  const sql = getDb();
+  await ensureTable(sql);
+  const wallet = walletAddress.toLowerCase();
+  await sql`
+    INSERT INTO user_profiles (wallet_address, identity_verified)
+    VALUES (${wallet}, TRUE)
+    ON CONFLICT (wallet_address) DO UPDATE SET identity_verified = TRUE
+  `;
+  // Offene automatische Anträge dieser Wallet als erledigt markieren, falls vorhanden.
+  await sql`
+    UPDATE identity_verifications
+    SET status = 'approved', doc_image_enc = NULL, selfie_image_enc = NULL, id_number_hint = NULL, reviewed_at = NOW()
+    WHERE wallet_address = ${wallet} AND status = 'pending'
+  `;
 }
 
 export interface PendingVerification {

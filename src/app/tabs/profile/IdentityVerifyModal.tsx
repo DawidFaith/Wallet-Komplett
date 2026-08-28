@@ -36,6 +36,7 @@ const STRINGS: Record<Lang, {
   missingFields: string;
   networkError: string;
   close: string;
+  altOption: string;
 }> = {
   de: {
     title: 'Identität verifizieren',
@@ -60,6 +61,7 @@ const STRINGS: Record<Lang, {
     missingFields: 'Bitte alle Felder ausfüllen und beide Fotos hochladen.',
     networkError: 'Netzwerkfehler. Bitte versuche es erneut.',
     close: 'Schließen',
+    altOption: 'Geht nicht anders? Kontaktiere Dawid Faith (@dfaith_ecosystem) auf Instagram, TikTok oder Facebook — er kann deine Identität als letzte Option auch manuell bestätigen.',
   },
   en: {
     title: 'Verify your identity',
@@ -84,6 +86,7 @@ const STRINGS: Record<Lang, {
     missingFields: 'Please fill in all fields and upload both photos.',
     networkError: 'Network error. Please try again.',
     close: 'Close',
+    altOption: "Can't do this right now? Contact Dawid Faith (@dfaith_ecosystem) on Instagram, TikTok, or Facebook — as a last option, he can confirm your identity manually.",
   },
   pl: {
     title: 'Zweryfikuj swoją tożsamość',
@@ -108,6 +111,7 @@ const STRINGS: Record<Lang, {
     missingFields: 'Wypełnij wszystkie pola i prześlij oba zdjęcia.',
     networkError: 'Błąd sieci. Spróbuj ponownie.',
     close: 'Zamknij',
+    altOption: 'Nie możesz teraz? Skontaktuj się z Dawidem Faith (@dfaith_ecosystem) na Instagramie, TikToku lub Facebooku — jako ostatnia opcja może on potwierdzić Twoją tożsamość ręcznie.',
   },
 };
 
@@ -298,6 +302,8 @@ export default function IdentityVerifyModal({ walletAddress, lang, onClose, onVe
               </div>
 
               <p className="text-zinc-500 text-xs">{s.privacyHint}</p>
+
+              <p className="text-zinc-500 text-xs bg-zinc-800/60 border border-zinc-700/50 rounded-xl p-3">{s.altOption}</p>
 
               {error && <p className="text-red-400 text-sm">{error}</p>}
 
