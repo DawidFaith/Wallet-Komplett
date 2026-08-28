@@ -592,27 +592,25 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               </p>
               <p className="text-zinc-500 text-[9px] font-semibold uppercase tracking-wide truncate">{t('profile.dfaithWalletLabel', lang)}</p>
             </div>
-            <div className="flex items-center justify-between gap-2 min-w-0">
-              <div className="min-w-0">
-                <p className="text-white font-bold text-sm leading-tight">{(data?.credits ?? 0).toFixed(2)}</p>
-                <p className="text-zinc-500 text-[9px] font-semibold uppercase tracking-wide truncate">{t('profile.creditsLabel', lang)}</p>
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  onClick={() => setShowDepositModal(true)}
-                  className="shrink-0 bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.08] text-white font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1"
-                >
-                  <FaPlus size={9} /> {t('shop.depositTitle', lang)}
-                </button>
-                <button
-                  onClick={() => setShowClaimConfirm(true)}
-                  disabled={claiming || (data?.credits ?? 0) <= 0}
-                  className="shrink-0 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition-colors"
-                >
-                  {claiming ? '…' : t('profile.redeem', lang)}
-                </button>
-              </div>
+            <div className="min-w-0">
+              <p className="text-white font-bold text-sm leading-tight">{(data?.credits ?? 0).toFixed(2)}</p>
+              <p className="text-zinc-500 text-[9px] font-semibold uppercase tracking-wide truncate">{t('profile.creditsLabel', lang)}</p>
             </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowDepositModal(true)}
+              className="flex-1 bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.08] text-white font-bold text-xs py-2.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+            >
+              <FaPlus size={10} /> {t('shop.depositTitle', lang)}
+            </button>
+            <button
+              onClick={() => setShowClaimConfirm(true)}
+              disabled={claiming || (data?.credits ?? 0) <= 0}
+              className="flex-1 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold text-xs py-2.5 rounded-lg transition-colors"
+            >
+              {claiming ? '…' : t('profile.redeem', lang)}
+            </button>
           </div>
         </div>
 
