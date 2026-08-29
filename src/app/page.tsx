@@ -47,6 +47,7 @@ export default function LandingPage() {
   };
   const [sending, setSending] = useState(false);
   const [artistName, setArtistName] = useState('');
+  const [artistEmail, setArtistEmail] = useState('');
   const [artistSocial, setArtistSocial] = useState('');
   const [artists, setArtists] = useState<Artist[]>([]);
   const [stats, setStats] = useState<EcosystemStats>({ openQuests: 0 });
@@ -85,13 +86,13 @@ export default function LandingPage() {
   }
 
   const handleApply = async () => {
-    if (!artistName.trim()) return;
+    if (!artistName.trim() || !/^\S+@\S+\.\S+$/.test(artistEmail)) return;
     setSending(true);
     try {
       await fetch('/api/artist-apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: artistName, social: artistSocial }),
+        body: JSON.stringify({ name: artistName, email: artistEmail, social: artistSocial }),
       });
     } catch (_) {}
     setSending(false);
@@ -165,15 +166,15 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════════════ */}
       <div className="lg:hidden flex flex-col pt-14">
 
-        {/* Foto */}
+        {/* D.FAITH Token Showcase */}
         <div className="relative w-full" style={{ aspectRatio: '16/7' }}>
-          <Image
-            src="/Still%202025-03-19%20193121_19.7.1.jpg"
-            alt="Dawid Faith"
-            fill
-            className="object-cover object-top"
-            sizes="100vw"
-            priority
+          <video
+            src="/D.FAITH%20Token%20Showcase.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover object-top"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0908]/80 via-transparent to-transparent" />
         </div>
@@ -292,6 +293,18 @@ export default function LandingPage() {
                       </div>
                       <div>
                         <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
+                          {t('landing.form.emailLabel', language)}
+                        </label>
+                        <input
+                          type="email"
+                          value={artistEmail}
+                          onChange={(e) => setArtistEmail(e.target.value)}
+                          placeholder={t('landing.form.emailPlaceholder', language)}
+                          className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-700 outline-none transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
                           {t('landing.form.socialLabel', language)}
                         </label>
                         <input
@@ -303,7 +316,7 @@ export default function LandingPage() {
                       </div>
                       <button
                         onClick={handleApply}
-                        disabled={!artistName.trim() || sending}
+                        disabled={!artistName.trim() || !/^\S+@\S+\.\S+$/.test(artistEmail) || sending}
                         className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 disabled:opacity-20 disabled:cursor-not-allowed text-black font-black text-xs tracking-[0.1em] uppercase rounded-xl transition-colors flex items-center justify-center gap-2"
                       >
                         {sending ? t('landing.form.submitting', language) : <>{t('landing.form.submit', language)} <FaChevronRight size={9} /></>}
@@ -342,15 +355,15 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════════════ */}
       <div className="hidden lg:flex" style={{ height: 'calc(100svh - 3.5rem)', marginTop: '3.5rem' }}>
 
-        {/* ── LINKE HÄLFTE: Foto + Overlay-Content ── */}
+        {/* ── LINKE HÄLFTE: D.FAITH Token Showcase + Overlay-Content ── */}
         <div className="relative w-[50%] h-full overflow-hidden shrink-0">
-          <Image
-            src="/Still%202025-03-19%20193121_19.7.1.jpg"
-            alt="Dawid Faith"
-            fill
-            className="object-cover object-top"
-            sizes="50vw"
-            priority
+          <video
+            src="/D.FAITH%20Token%20Showcase.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover object-top"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0a0908]/50" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0908] via-[#0a0908]/55 to-transparent" />
@@ -486,6 +499,18 @@ export default function LandingPage() {
                         </div>
                         <div>
                           <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
+                            {t('landing.form.emailLabel', language)}
+                          </label>
+                          <input
+                            type="email"
+                            value={artistEmail}
+                            onChange={(e) => setArtistEmail(e.target.value)}
+                            placeholder={t('landing.form.emailPlaceholder', language)}
+                            className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-700 outline-none transition-colors"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
                             {t('landing.form.socialLabel', language)}
                           </label>
                           <input
@@ -497,7 +522,7 @@ export default function LandingPage() {
                         </div>
                         <button
                           onClick={handleApply}
-                          disabled={!artistName.trim() || sending}
+                          disabled={!artistName.trim() || !/^\S+@\S+\.\S+$/.test(artistEmail) || sending}
                           className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 disabled:opacity-20 disabled:cursor-not-allowed text-black font-black text-xs tracking-[0.1em] uppercase rounded-xl transition-colors flex items-center justify-center gap-2"
                         >
                           {sending ? t('landing.form.submitting', language) : <>{t('landing.form.submit', language)} <FaChevronRight size={9} /></>}

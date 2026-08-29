@@ -3,10 +3,13 @@ import { sendMail, ADMIN_EMAIL } from '@/app/lib/email';
 
 export async function POST(req: Request) {
   try {
-    const { name, social } = await req.json();
+    const { name, email, social } = await req.json();
 
     if (!name?.trim()) {
       return NextResponse.json({ error: 'Name required' }, { status: 400 });
+    }
+    if (!email?.trim() || !/^\S+@\S+\.\S+$/.test(email)) {
+      return NextResponse.json({ error: 'Valid email required' }, { status: 400 });
     }
 
     await sendMail({
@@ -21,6 +24,10 @@ export async function POST(req: Request) {
             <tr>
               <td style="padding:10px 0;border-bottom:1px solid #27272a;color:#71717a;font-size:11px;text-transform:uppercase;letter-spacing:.1em;width:80px">Name</td>
               <td style="padding:10px 0;border-bottom:1px solid #27272a;color:#fff;font-size:14px;font-weight:700">${name.trim()}</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 0;border-bottom:1px solid #27272a;color:#71717a;font-size:11px;text-transform:uppercase;letter-spacing:.1em">E-Mail</td>
+              <td style="padding:10px 0;border-bottom:1px solid #27272a;color:#fff;font-size:14px"><a href="mailto:${email.trim()}" style="color:#fbbf24;text-decoration:none">${email.trim()}</a></td>
             </tr>
             <tr>
               <td style="padding:10px 0;color:#71717a;font-size:11px;text-transform:uppercase;letter-spacing:.1em">Social</td>

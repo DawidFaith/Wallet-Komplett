@@ -189,10 +189,20 @@ const dict: Translations = {
     en: 'Your Name',
     pl: 'Twoja nazwa',
   },
+  'landing.form.emailLabel': {
+    de: 'E-Mail *',
+    en: 'Email *',
+    pl: 'E-mail *',
+  },
+  'landing.form.emailPlaceholder': {
+    de: 'deine@email.de',
+    en: 'you@email.com',
+    pl: 'twoj@email.pl',
+  },
   'landing.form.socialLabel': {
-    de: 'Social Link',
-    en: 'Social Link',
-    pl: 'Link społecznościowy',
+    de: 'Social Link (optional)',
+    en: 'Social Link (optional)',
+    pl: 'Link społecznościowy (opcjonalnie)',
   },
   'landing.form.socialPlaceholder': {
     de: 'instagram.com/…',
