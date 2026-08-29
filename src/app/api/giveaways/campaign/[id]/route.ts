@@ -31,6 +31,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       mediaType: campaign.mediaType,
       requiredText: campaign.requiredText,
       creditReward: campaign.creditReward,
+      repReward: campaign.repReward,
+      shardReward: campaign.shardReward,
       status: campaign.status,
       slotsLeft: Math.max(0, campaign.maxWinners - campaign.winnerCount),
       platforms: campaign.platforms.map(p => ({ platform: p.platform, postUrl: p.postUrl })),

@@ -30,6 +30,8 @@ async function ensureTables() {
   await sql`ALTER TABLE giveaway_campaigns ADD COLUMN IF NOT EXISTS media_type TEXT NOT NULL DEFAULT 'image'`;
   await sql`ALTER TABLE giveaway_campaigns ADD COLUMN IF NOT EXISTS release_at TIMESTAMPTZ`;
   await sql`ALTER TABLE giveaway_campaigns ADD COLUMN IF NOT EXISTS presave_url TEXT`;
+  await sql`ALTER TABLE giveaway_campaigns ADD COLUMN IF NOT EXISTS rep_reward INTEGER NOT NULL DEFAULT 0`;
+  await sql`ALTER TABLE giveaway_campaigns ADD COLUMN IF NOT EXISTS shard_reward INTEGER NOT NULL DEFAULT 0`;
   await sql`
     CREATE TABLE IF NOT EXISTS giveaway_campaign_platforms (
       id TEXT PRIMARY KEY,
@@ -86,6 +88,8 @@ export interface GiveawayCampaign {
   mediaType: 'image' | 'video';
   requiredText: string;
   creditReward: number;
+  repReward: number;
+  shardReward: number;
   maxWinners: number;
   winnerCount: number;
   creditsLocked: number;
@@ -128,6 +132,8 @@ function rowToCampaign(r: any, platforms: GiveawayCampaignPlatform[]): GiveawayC
     mediaType: (r.media_type as 'image' | 'video') ?? 'image',
     requiredText: r.required_text as string,
     creditReward: Number(r.credit_reward),
+    repReward: Number(r.rep_reward ?? 0),
+    shardReward: Number(r.shard_reward ?? 0),
     maxWinners: Number(r.max_winners),
     winnerCount: Number(r.winner_count),
     creditsLocked: Number(r.credits_locked),
@@ -188,7 +194,12 @@ export async function hasActiveGiveawayCampaign(artistWallet: string): Promise<b
   return rows.length > 0;
 }
 
-/** Kampagne erstellen. Sperrt sofort creditReward * maxWinners vom Künstler-Guthaben (Escrow). */
+/**
+ * Kampagne erstellen. Sperrt sofort creditReward * maxWinners vom Künstler-Guthaben (Escrow).
+ * repReward/shardReward sind optionale zusätzliche Belohnungen pro Gewinner:in — beide werden
+ * NICHT vom Künstler-Guthaben abgebucht (genau wie bei Quest-Bundles: nur Credits sind ein
+ * begrenztes Budget, Reputation und Shards sind frei vergebbar).
+ */
 export async function createGiveawayCampaign(
   artistWallet: string,
   title: string,
@@ -200,6 +211,8 @@ export async function createGiveawayCampaign(
   platforms: { platform: GiveawayPlatform; postUrl: string; mediaId: string | null; premiereStartsAt?: string | null }[],
   releaseAt: string | null = null,
   presaveUrl: string | null = null,
+  repReward: number = 0,
+  shardReward: number = 0,
 ): Promise<{ id: string } | { error: string }> {
   await ensureTables();
   if (platforms.length === 0) return { error: 'Mindestens eine Plattform muss konfiguriert werden.' };
@@ -214,8 +227,8 @@ export async function createGiveawayCampaign(
   const id = `gw_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   try {
     await sql`
-      INSERT INTO giveaway_campaigns (id, artist_wallet, title, image_url, media_type, required_text, credit_reward, max_winners, credits_locked, status, release_at, presave_url)
-      VALUES (${id}, ${artistWallet.toLowerCase()}, ${title}, ${imageUrl}, ${mediaType}, ${requiredText}, ${creditReward}, ${maxWinners}, ${totalBudget}, 'active', ${releaseAt}, ${presaveUrl})
+      INSERT INTO giveaway_campaigns (id, artist_wallet, title, image_url, media_type, required_text, credit_reward, rep_reward, shard_reward, max_winners, credits_locked, status, release_at, presave_url)
+      VALUES (${id}, ${artistWallet.toLowerCase()}, ${title}, ${imageUrl}, ${mediaType}, ${requiredText}, ${creditReward}, ${repReward}, ${shardReward}, ${maxWinners}, ${totalBudget}, 'active', ${releaseAt}, ${presaveUrl})
     `;
     for (const p of platforms) {
       const pid = `gwp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -423,14 +436,23 @@ async function emailAlreadyWonCampaign(sql: ReturnType<typeof getDb>, campaignId
   return rows.length > 0;
 }
 
+interface GiveawayCreditResult {
+  credited: boolean;
+  creditAmount?: number;
+  repAmount?: number;
+  shardAmount?: number;
+}
+
 /**
  * Kredit einem Gewinner gutschreiben (atomar gegen Kampagnenbudget UND Mehrfach-Gewinn
  * derselben E-Mail-Adresse geprüft — die NOT EXISTS-Bedingung läuft in derselben
  * Query wie das Budget-Update und ist damit race-sicher, auch wenn zwei Plattformen
  * derselben Person nahezu gleichzeitig verifiziert werden).
- * Gibt false zurück, wenn keine Plätze mehr frei sind oder die E-Mail bereits gewonnen hat.
+ * Vergibt zusätzlich zu den Credits auch Reputation und Shards beim Künstler, falls die
+ * Kampagne das konfiguriert hat (repReward/shardReward). Gibt credited=false zurück, wenn
+ * keine Plätze mehr frei sind oder die E-Mail bereits gewonnen hat.
  */
-async function creditGiveawayWinner(campaignId: string, entryId: string, email: string, wallet: string): Promise<boolean> {
+async function creditGiveawayWinner(campaignId: string, entryId: string, email: string, wallet: string): Promise<GiveawayCreditResult> {
   const sql = getDb();
   const rows = await sql`
     UPDATE giveaway_campaigns
@@ -440,11 +462,22 @@ async function creditGiveawayWinner(campaignId: string, entryId: string, email: 
         SELECT 1 FROM giveaway_entries
         WHERE campaign_id = ${campaignId} AND email = ${email} AND status = 'credited' AND id != ${entryId}
       )
-    RETURNING credit_reward, winner_count, max_winners
+    RETURNING credit_reward, rep_reward, shard_reward, artist_wallet, winner_count, max_winners
   `;
-  if (rows.length === 0) return false;
+  if (rows.length === 0) return { credited: false };
   const reward = Number(rows[0].credit_reward);
+  const repReward = Number(rows[0].rep_reward ?? 0);
+  const shardReward = Number(rows[0].shard_reward ?? 0);
+  const artistWallet = rows[0].artist_wallet as string;
   await addDfaithCredits(wallet, reward);
+  if (repReward > 0) {
+    const { addUserReputationWithBonus } = await import('./reputation');
+    await addUserReputationWithBonus(wallet, artistWallet, repReward);
+  }
+  if (shardReward > 0) {
+    const { addShard } = await import('./collectibles');
+    await addShard(wallet, artistWallet, shardReward);
+  }
   await sql`
     UPDATE giveaway_entries SET status = 'credited', credited_wallet = ${wallet}, verified_at = NOW()
     WHERE id = ${entryId}
@@ -452,7 +485,7 @@ async function creditGiveawayWinner(campaignId: string, entryId: string, email: 
   if (Number(rows[0].winner_count) >= Number(rows[0].max_winners)) {
     await sql`UPDATE giveaway_campaigns SET status = 'ended', credits_refunded = TRUE WHERE id = ${campaignId}`;
   }
-  return true;
+  return { credited: true, creditAmount: reward, repAmount: repReward, shardAmount: shardReward };
 }
 
 /**
@@ -560,8 +593,8 @@ export async function claimPendingGiveawayEntriesForEmail(walletAddress: string,
   for (const r of rows) {
     const entry = rowToEntry(r);
     await autoVerifyPlatformForWallet(sql, wallet, entry.platform, entry.handle, entry.verifiedName);
-    const credited = await creditGiveawayWinner(entry.campaignId, entry.id, entry.email, wallet);
-    if (!credited && await emailAlreadyWonCampaign(sql, entry.campaignId, entry.email, entry.id)) {
+    const result = await creditGiveawayWinner(entry.campaignId, entry.id, entry.email, wallet);
+    if (!result.credited && await emailAlreadyWonCampaign(sql, entry.campaignId, entry.email, entry.id)) {
       await sql`UPDATE giveaway_entries SET status = 'rejected', verified_at = NOW() WHERE id = ${entry.id}`;
     }
   }
@@ -574,7 +607,7 @@ export async function claimPendingGiveawayEntriesForEmail(walletAddress: string,
  * Hat diese E-Mail-Adresse in dieser Kampagne bereits über eine andere Plattform
  * gewonnen, wird die Teilnahme abgelehnt (verhindert Mehrfach-Gewinn einer Person).
  */
-export async function markGiveawayEntryVerified(entryId: string, verifiedName?: string): Promise<{ status: 'credited' | 'verified' | 'duplicate_email'; wallet?: string; amount?: number }> {
+export async function markGiveawayEntryVerified(entryId: string, verifiedName?: string): Promise<{ status: 'credited' | 'verified' | 'duplicate_email'; wallet?: string; amount?: number; repAmount?: number; shardAmount?: number }> {
   const sql = getDb();
   const entry = await getGiveawayEntry(entryId);
   if (!entry) throw new Error('Entry nicht gefunden');
@@ -604,10 +637,9 @@ export async function markGiveawayEntryVerified(entryId: string, verifiedName?: 
   }
 
   if (matchedWallet) {
-    const credited = await creditGiveawayWinner(entry.campaignId, entry.id, entry.email, matchedWallet);
-    if (credited) {
-      const campaign = await getPublicGiveawayCampaign(entry.campaignId);
-      return { status: 'credited', wallet: matchedWallet, amount: campaign?.creditReward };
+    const result = await creditGiveawayWinner(entry.campaignId, entry.id, entry.email, matchedWallet);
+    if (result.credited) {
+      return { status: 'credited', wallet: matchedWallet, amount: result.creditAmount, repAmount: result.repAmount, shardAmount: result.shardAmount };
     }
     // Budget in der Zwischenzeit ausgeschöpft oder E-Mail parallel andernorts gewonnen
     if (await emailAlreadyWonCampaign(sql, entry.campaignId, entry.email, entry.id)) {
@@ -638,8 +670,8 @@ export async function creditPendingGiveawayEntriesForHandle(
   `;
   for (const r of rows) {
     const entry = rowToEntry(r);
-    const credited = await creditGiveawayWinner(entry.campaignId, entry.id, entry.email, walletAddress.toLowerCase());
-    if (!credited && await emailAlreadyWonCampaign(sql, entry.campaignId, entry.email, entry.id)) {
+    const result = await creditGiveawayWinner(entry.campaignId, entry.id, entry.email, walletAddress.toLowerCase());
+    if (!result.credited && await emailAlreadyWonCampaign(sql, entry.campaignId, entry.email, entry.id)) {
       await sql`UPDATE giveaway_entries SET status = 'rejected', verified_at = NOW() WHERE id = ${entry.id}`;
     }
   }

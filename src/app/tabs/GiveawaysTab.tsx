@@ -108,6 +108,8 @@ interface GiveawayCampaignData {
   mediaType: 'image' | 'video';
   requiredText: string;
   creditReward: number;
+  repReward: number;
+  shardReward: number;
   maxWinners: number;
   winnerCount: number;
   status: 'active' | 'ended';
@@ -130,6 +132,8 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
   const [mediaPreview, setMediaPreview]   = useState<string | null>(null);
   const [mediaType, setMediaType]         = useState<'image' | 'video'>('image');
   const [creditReward, setCreditReward]   = useState('50');
+  const [repReward, setRepReward]         = useState('0');
+  const [shardReward, setShardReward]     = useState('0');
   const [maxWinners, setMaxWinners]       = useState('20');
   const [requiredText, setRequiredText]   = useState('dfaith');
   const [releaseAt, setReleaseAt]         = useState('');
@@ -168,7 +172,7 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
 
   const resetForm = () => {
     setTitle(''); setMediaFile(null); setMediaPreview(null); setMediaType('image');
-    setCreditReward('50'); setMaxWinners('20'); setRequiredText('dfaith');
+    setCreditReward('50'); setRepReward('0'); setShardReward('0'); setMaxWinners('20'); setRequiredText('dfaith');
     setReleaseAt(''); setPresaveUrl('');
     setEnabledPlatforms({}); setPlatformUrls({}); setPlatformMediaIds({});
     setMediaLists({}); setMediaLoading({}); setMediaHint({});
@@ -219,6 +223,8 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
   const handleCreate = async () => {
     setError('');
     const reward  = Math.round(Number(creditReward));
+    const repRewardNum = Math.max(0, Math.round(Number(repReward) || 0));
+    const shardRewardNum = Math.max(0, Math.round(Number(shardReward) || 0));
     const winners = Math.round(Number(maxWinners));
     const platforms = GIVEAWAY_PLATFORMS
       .filter(p => enabledPlatforms[p])
@@ -260,7 +266,7 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
         body: JSON.stringify({
           artistWallet, title: title.trim(), imageUrl: mediaUrl, mediaType,
           requiredText: requiredText.trim() || 'dfaith',
-          creditReward: reward, maxWinners: winners, platforms,
+          creditReward: reward, repReward: repRewardNum, shardReward: shardRewardNum, maxWinners: winners, platforms,
           releaseAt: releaseAt || null,
           presaveUrl: presaveUrl.trim() || null,
         }),
@@ -395,6 +401,23 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
               <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">{t('gw.maxWinnersLabel', lang)}</label>
               <input
                 type="number" min={1} value={maxWinners} onChange={e => setMaxWinners(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">{t('gw.repPerWinnerLabel', lang)}</label>
+              <input
+                type="number" min={0} value={repReward} onChange={e => setRepReward(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60"
+              />
+            </div>
+            <div>
+              <label className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-1.5">{t('gw.shardPerWinnerLabel', lang)}</label>
+              <input
+                type="number" min={0} value={shardReward} onChange={e => setShardReward(e.target.value)}
                 className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60"
               />
             </div>
@@ -578,9 +601,18 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
                 <div className="flex items-center gap-2 mb-2">
                   {c.platforms.map(p => <span key={p.platform}>{GIVEAWAY_PLATFORM_META[p.platform]?.icon}</span>)}
                 </div>
-                <p className="text-zinc-500 text-xs mb-3">
-                  {tFmt('gw.winnersProgress', lang, { count: c.winnerCount, max: c.maxWinners, reward: c.creditReward })}
-                </p>
+                <div className="mb-3">
+                  <p className="text-zinc-500 text-xs">
+                    {tFmt('gw.winnersProgress', lang, { count: c.winnerCount, max: c.maxWinners, reward: c.creditReward })}
+                  </p>
+                  {(c.repReward > 0 || c.shardReward > 0) && (
+                    <p className="text-zinc-600 text-xs mt-0.5">
+                      {c.repReward > 0 && tFmt('gw.plusRep', lang, { n: c.repReward })}
+                      {c.repReward > 0 && c.shardReward > 0 && ' · '}
+                      {c.shardReward > 0 && tFmt('gw.plusShard', lang, { n: c.shardReward })}
+                    </p>
+                  )}
+                </div>
                 {c.status === 'active' ? (
                   <button
                     onClick={() => handleEnd(c.id)}

@@ -27,6 +27,8 @@ export async function POST(req: NextRequest) {
     mediaType?: string;
     requiredText?: string;
     creditReward?: number;
+    repReward?: number;
+    shardReward?: number;
     maxWinners?: number;
     platforms?: { platform: string; postUrl: string; mediaId?: string | null; premiereStartsAt?: string | null }[];
     releaseAt?: string | null;
@@ -35,7 +37,7 @@ export async function POST(req: NextRequest) {
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: 'Ungültiger Request Body' }, { status: 400 }); }
 
-  const { artistWallet, title, imageUrl, mediaType, requiredText, creditReward, maxWinners, platforms, releaseAt, presaveUrl } = body;
+  const { artistWallet, title, imageUrl, mediaType, requiredText, creditReward, repReward, shardReward, maxWinners, platforms, releaseAt, presaveUrl } = body;
   if (!artistWallet || !title?.trim() || !creditReward || !maxWinners || !platforms?.length) {
     return NextResponse.json({ error: 'artistWallet, title, creditReward, maxWinners und platforms sind erforderlich.' }, { status: 400 });
   }
@@ -49,6 +51,8 @@ export async function POST(req: NextRequest) {
 
   const rewardNum = Math.max(1, Math.round(Number(creditReward)));
   const winnersNum = Math.max(1, Math.round(Number(maxWinners)));
+  const repRewardNum = Math.max(0, Math.round(Number(repReward) || 0));
+  const shardRewardNum = Math.max(0, Math.round(Number(shardReward) || 0));
 
   const resolvedPlatforms: { platform: GiveawayPlatform; postUrl: string; mediaId: string | null; premiereStartsAt: string | null }[] = [];
   for (const p of platforms) {
@@ -113,6 +117,8 @@ export async function POST(req: NextRequest) {
       resolvedPlatforms,
       releaseAtIso,
       presaveUrl?.trim() || null,
+      repRewardNum,
+      shardRewardNum,
     );
     if ('error' in result) return NextResponse.json({ error: result.error }, { status: 400 });
     return NextResponse.json({ success: true, campaignId: result.id });

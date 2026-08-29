@@ -87,5 +87,7 @@ export async function POST(req: NextRequest) {
     verified: true,
     credited: result.status === 'credited',
     amount: result.status === 'credited' ? result.amount : undefined,
+    repAmount: result.status === 'credited' ? result.repAmount : undefined,
+    shardAmount: result.status === 'credited' ? result.shardAmount : undefined,
   });
 }

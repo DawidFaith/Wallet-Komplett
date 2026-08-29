@@ -44,6 +44,8 @@ export async function POST(req: NextRequest) {
       credited: entry.status === 'credited',
       alreadyProcessed: true,
       amount: entry.status === 'credited' ? campaign.creditReward : undefined,
+      repAmount: entry.status === 'credited' ? campaign.repReward : undefined,
+      shardAmount: entry.status === 'credited' ? campaign.shardReward : undefined,
     });
   }
 
@@ -100,5 +102,7 @@ export async function POST(req: NextRequest) {
     verified: true,
     credited: markResult.status === 'credited',
     amount: markResult.status === 'credited' ? markResult.amount : undefined,
+    repAmount: markResult.status === 'credited' ? markResult.repAmount : undefined,
+    shardAmount: markResult.status === 'credited' ? markResult.shardAmount : undefined,
   });
 }

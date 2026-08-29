@@ -76,6 +76,8 @@ interface PublicCampaign {
   mediaType: 'image' | 'video';
   requiredText: string;
   creditReward: number;
+  repReward: number;
+  shardReward: number;
   status: 'active' | 'ended';
   slotsLeft: number;
   platforms: { platform: CampaignPlatform; postUrl: string }[];
@@ -109,7 +111,7 @@ export default function GiveawayLandingPage() {
   const [pending, setPending]     = useState<PendingState | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [verifyMsg, setVerifyMsg] = useState('');
-  const [result, setResult]     = useState<{ credited: boolean; amount?: number } | null>(null);
+  const [result, setResult]     = useState<{ credited: boolean; amount?: number; repAmount?: number; shardAmount?: number } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -151,7 +153,7 @@ export default function GiveawayLandingPage() {
       const data = await res.json();
       if (!res.ok) { setError(errorCodeToMessage(data.errorCode, lang)); return; }
       if (data.verified) {
-        setResult({ credited: !!data.credited, amount: data.amount });
+        setResult({ credited: !!data.credited, amount: data.amount, repAmount: data.repAmount, shardAmount: data.shardAmount });
       } else {
         setPending({ entryId: data.entryId, code: data.code, requiredText: data.requiredText });
       }
@@ -175,7 +177,7 @@ export default function GiveawayLandingPage() {
       const data = await res.json();
       if (!res.ok) { setVerifyMsg(errorCodeToMessage(data.errorCode, lang)); return; }
       if (!data.verified) { setVerifyMsg(t('win.verifyNotFound', lang)); return; }
-      setResult({ credited: !!data.credited, amount: data.amount });
+      setResult({ credited: !!data.credited, amount: data.amount, repAmount: data.repAmount, shardAmount: data.shardAmount });
     } catch {
       setVerifyMsg(t('win.errGeneric', lang));
     } finally {
@@ -221,10 +223,20 @@ export default function GiveawayLandingPage() {
             </div>
             <LanguageSwitcher />
           </div>
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-center gap-2 mb-6 flex-wrap">
             <span className="bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-full px-3 py-1">
               {tFmt('win.reward', lang, { n: campaign.creditReward })}
             </span>
+            {campaign.repReward > 0 && (
+              <span className="bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 text-xs font-bold rounded-full px-3 py-1">
+                {tFmt('win.rewardRep', lang, { n: campaign.repReward })}
+              </span>
+            )}
+            {campaign.shardReward > 0 && (
+              <span className="bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-bold rounded-full px-3 py-1">
+                {tFmt('win.rewardShard', lang, { n: campaign.shardReward })}
+              </span>
+            )}
             {campaign.status === 'active' && (
               <span className="bg-white/[0.06] border border-white/[0.1] text-zinc-300 text-xs font-bold rounded-full px-3 py-1">
                 {tFmt('win.slotsLeft', lang, { n: campaign.slotsLeft })}
@@ -242,6 +254,12 @@ export default function GiveawayLandingPage() {
               <p className="font-bold mb-1.5">{result.credited ? t('win.creditedTitle', lang) : t('win.pendingTitle', lang)}</p>
               <p className="text-zinc-300 text-sm mb-4">
                 {result.credited ? tFmt('win.creditedBody', lang, { n: result.amount ?? campaign.creditReward }) : t('win.pendingBody', lang)}
+                {result.credited && (result.repAmount ?? 0) > 0 && (result.shardAmount ?? 0) > 0 &&
+                  tFmt('win.creditedBodyExtra', lang, { rep: result.repAmount!, shard: result.shardAmount! })}
+                {result.credited && (result.repAmount ?? 0) > 0 && !((result.shardAmount ?? 0) > 0) &&
+                  tFmt('win.creditedBodyExtraRep', lang, { rep: result.repAmount! })}
+                {result.credited && (result.shardAmount ?? 0) > 0 && !((result.repAmount ?? 0) > 0) &&
+                  tFmt('win.creditedBodyExtraShard', lang, { shard: result.shardAmount! })}
               </p>
               <a
                 href="/"
