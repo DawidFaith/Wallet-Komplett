@@ -74,9 +74,14 @@ const dict: Translations = {
     pl: 'Dla Supporterów',
   },
   'landing.forArtists': {
-    de: 'Für Künstler',
-    en: 'For Artists',
-    pl: 'Dla Artystów',
+    de: '+ Als Künstler',
+    en: '+ As an Artist',
+    pl: '+ Jako Artysta',
+  },
+  'landing.roleHint': {
+    de: 'Jeder Account ist automatisch Supporter — als Künstler kommt das einfach dazu.',
+    en: 'Every account is automatically a Supporter — being an Artist simply comes on top.',
+    pl: 'Każde konto jest automatycznie Supporterem — bycie Artystą po prostu się do tego dokłada.',
   },
   'landing.cta.signup': {
     de: 'Jetzt Supporter werden',

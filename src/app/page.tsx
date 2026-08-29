@@ -236,6 +236,7 @@ export default function LandingPage() {
 
           {/* Mobile Feature-Tabs */}
           <div className="mb-8">
+            <p className="text-[11px] text-zinc-600 leading-relaxed mb-3">{t('landing.roleHint', language)}</p>
             <div className="flex gap-6 border-b border-white/[0.07] mb-6">
               {(['fan', 'artist'] as const).map((tabVal) => (
                 <button
@@ -428,7 +429,8 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="flex gap-6 border-b border-white/[0.07] mt-8 mb-7 pb-0">
+            <p className="text-[11px] text-zinc-600 leading-relaxed mt-8">{t('landing.roleHint', language)}</p>
+            <div className="flex gap-6 border-b border-white/[0.07] mt-3 mb-7 pb-0">
               {(['fan', 'artist'] as const).map((tabVal) => (
                 <button
                   key={tabVal}
