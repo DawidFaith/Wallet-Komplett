@@ -337,17 +337,22 @@ export default function LandingPage() {
           </div>
 
           {/* Mobile CTAs */}
-          <div className="mt-8 space-y-2.5">
-            <SignUpButton mode="modal">
-              <button className="w-full py-[14px] bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-black font-black text-sm tracking-[0.08em] uppercase rounded-2xl transition-all">
-                {t('landing.cta.signup', language)}
-              </button>
-            </SignUpButton>
-            <SignInButton mode="modal">
-              <button className="w-full py-3 text-zinc-600 hover:text-zinc-300 font-semibold text-[11px] tracking-[0.2em] uppercase transition-colors">
-                {t('landing.cta.login', language)}
-              </button>
-            </SignInButton>
+          <div className="mt-8">
+            {tab === 'artist' && (
+              <p className="text-[11px] text-zinc-600 leading-relaxed mb-3">{t('landing.cta.independentNote', language)}</p>
+            )}
+            <div className="space-y-2.5">
+              <SignUpButton mode="modal">
+                <button className="w-full py-[14px] bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-black font-black text-sm tracking-[0.08em] uppercase rounded-2xl transition-all">
+                  {tab === 'artist' ? t('landing.cta.signupArtist', language) : t('landing.cta.signup', language)}
+                </button>
+              </SignUpButton>
+              <SignInButton mode="modal">
+                <button className="w-full py-3 text-zinc-600 hover:text-zinc-300 font-semibold text-[11px] tracking-[0.2em] uppercase transition-colors">
+                  {t('landing.cta.login', language)}
+                </button>
+              </SignInButton>
+            </div>
           </div>
         </div>
       </div>
@@ -542,17 +547,22 @@ export default function LandingPage() {
               )}
             </div>
 
-            <div className="space-y-3 pt-10">
-              <SignUpButton mode="modal">
-                <button className="w-full py-4 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-black font-black text-[13px] tracking-[0.1em] uppercase rounded-2xl transition-all shadow-[0_0_40px_rgba(251,191,36,0.15)]">
-                  {t('landing.cta.signup', language)}
-                </button>
-              </SignUpButton>
-              <SignInButton mode="modal">
-                <button className="w-full py-3 border border-white/[0.06] hover:border-amber-400/20 text-zinc-600 hover:text-zinc-300 font-semibold text-[11px] tracking-[0.2em] uppercase transition-all rounded-xl">
-                  {t('landing.cta.login', language)}
-                </button>
-              </SignInButton>
+            <div className="pt-10">
+              {tab === 'artist' && (
+                <p className="text-[11px] text-zinc-600 leading-relaxed mb-3">{t('landing.cta.independentNote', language)}</p>
+              )}
+              <div className="space-y-3">
+                <SignUpButton mode="modal">
+                  <button className="w-full py-4 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-black font-black text-[13px] tracking-[0.1em] uppercase rounded-2xl transition-all shadow-[0_0_40px_rgba(251,191,36,0.15)]">
+                    {tab === 'artist' ? t('landing.cta.signupArtist', language) : t('landing.cta.signup', language)}
+                  </button>
+                </SignUpButton>
+                <SignInButton mode="modal">
+                  <button className="w-full py-3 border border-white/[0.06] hover:border-amber-400/20 text-zinc-600 hover:text-zinc-300 font-semibold text-[11px] tracking-[0.2em] uppercase transition-all rounded-xl">
+                    {t('landing.cta.login', language)}
+                  </button>
+                </SignInButton>
+              </div>
             </div>
 
           </div>

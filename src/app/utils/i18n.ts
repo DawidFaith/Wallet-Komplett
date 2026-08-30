@@ -88,6 +88,16 @@ const dict: Translations = {
     en: 'Become a Supporter Now',
     pl: 'Zostań Supporterem',
   },
+  'landing.cta.signupArtist': {
+    de: 'Jetzt Account erstellen',
+    en: 'Create Account Now',
+    pl: 'Utwórz konto',
+  },
+  'landing.cta.independentNote': {
+    de: 'Unabhängig von deiner Bewerbung: Um die App zu nutzen, brauchst du trotzdem einen Account.',
+    en: 'Independent of your application: you still need an account to use the app.',
+    pl: 'Niezależnie od zgłoszenia: aby korzystać z aplikacji, nadal potrzebujesz konta.',
+  },
   'landing.cta.login': {
     de: 'Bereits registriert? Einloggen',
     en: 'Already registered? Log in',
