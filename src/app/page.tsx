@@ -166,8 +166,8 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════════════ */}
       <div className="lg:hidden flex flex-col pt-14">
 
-        {/* D.FAITH Token Showcase — Video als Hero-Hintergrund, Text darüber (wie Desktop) */}
-        <div className="relative w-full" style={{ aspectRatio: '3/4' }}>
+        {/* D.FAITH Token Showcase — Video als Hero-Hintergrund, nur Badge + Überschrift darüber */}
+        <div className="relative w-full" style={{ aspectRatio: '4/5' }}>
           <video
             src="/D.FAITH%20Token%20Showcase.mp4"
             autoPlay
@@ -176,67 +176,67 @@ export default function LandingPage() {
             playsInline
             className="absolute inset-0 w-full h-full object-cover object-top"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0908] via-[#0a0908]/60 to-[#0a0908]/10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0908] via-[#0a0908]/25 to-[#0a0908]/40" />
 
-          <div className="absolute bottom-0 left-0 right-0 px-6 pb-6">
+          <div className="absolute bottom-0 left-0 right-0 px-6 pb-5">
             {stats.openQuests > 0 && (
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-3">
                 <FaFire size={11} className="text-amber-400" />
                 <span className="text-xs font-bold tracking-[0.2em] uppercase text-amber-400">
                   {stats.openQuests} {tPlural('landing.questsAvailable_one', 'landing.questsAvailable_other', stats.openQuests, language)}
                 </span>
               </div>
             )}
-
-            <h1 className="text-[2.6rem] font-black leading-[1.0] tracking-tight mb-4">
+            <h1 className="text-[2.4rem] font-black leading-[1.0] tracking-tight [text-shadow:0_2px_16px_rgba(0,0,0,0.6)]">
               {t('landing.headline1', language)}<br />
               {t('landing.headline2', language)}<br />
               <span className="text-amber-400">{t('landing.headline3', language)}</span><br />
               {t('landing.headline4', language)}
             </h1>
-            <p className="text-sm text-zinc-300 leading-relaxed mb-1 max-w-sm">
-              {t('landing.sub', language)}
-            </p>
-            <p className="text-xs text-zinc-500 font-medium tracking-widest mb-1">— Dawid Faith</p>
-
-            {artists.length > 0 && (
-              <div className="mt-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-400">{t('landing.activeArtists', language)}</span>
-                  {totalQuests > 0 && (
-                    <>
-                      <span className="text-zinc-700">·</span>
-                      <span className="text-[9px] font-black tracking-[0.2em] uppercase text-amber-500">{totalQuests} {t('landing.open', language)}</span>
-                    </>
-                  )}
-                </div>
-                <div className="flex gap-3 flex-wrap">
-                  {artists.slice(0, 8).map((a) => (
-                    <div key={a.walletAddress} className="relative flex flex-col items-center gap-1 cursor-default">
-                      {a.picture ? (
-                        <Image src={a.picture} alt={a.name} width={40} height={40} className="w-10 h-10 rounded-full object-cover shrink-0 ring-1 ring-white/10" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                          <FaMusic size={11} className="text-zinc-600" />
-                        </div>
-                      )}
-                      <span className="text-[9px] font-semibold text-zinc-300 truncate max-w-[60px] text-center">{a.name}</span>
-                      {a.questCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-amber-400 text-black text-[8px] font-black rounded-full w-4 h-4 flex items-center justify-center ring-1 ring-[#0a0908]">
-                          {a.questCount > 9 ? '9+' : a.questCount}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
         {/* Content */}
         <div className="flex flex-col flex-1 px-6 py-8">
+          <p className="text-sm text-zinc-500 leading-relaxed mb-1 max-w-sm">
+            {t('landing.sub', language)}
+          </p>
+          <p className="text-xs text-zinc-700 font-medium tracking-widest mb-8">— Dawid Faith</p>
+
+          {artists.length > 0 && (
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-500">{t('landing.activeArtists', language)}</span>
+                {totalQuests > 0 && (
+                  <>
+                    <span className="text-zinc-800">·</span>
+                    <span className="text-[9px] font-black tracking-[0.2em] uppercase text-amber-500">{totalQuests} {t('landing.open', language)}</span>
+                  </>
+                )}
+              </div>
+              <div className="flex gap-3 flex-wrap">
+                {artists.slice(0, 8).map((a) => (
+                  <div key={a.walletAddress} className="relative flex flex-col items-center gap-1 cursor-default">
+                    {a.picture ? (
+                      <Image src={a.picture} alt={a.name} width={40} height={40} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                        <FaMusic size={11} className="text-zinc-600" />
+                      </div>
+                    )}
+                    <span className="text-[9px] font-semibold text-zinc-400 truncate max-w-[60px] text-center">{a.name}</span>
+                    {a.questCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-amber-400 text-black text-[8px] font-black rounded-full w-4 h-4 flex items-center justify-center ring-1 ring-[#0a0908]">
+                        {a.questCount > 9 ? '9+' : a.questCount}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Mobile Feature-Tabs */}
           <div className="mb-8">
             <p className="text-[11px] text-zinc-600 leading-relaxed mb-3">{t('landing.roleHint', language)}</p>
