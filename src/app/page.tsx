@@ -373,7 +373,7 @@ export default function LandingPage() {
             className="absolute inset-0 w-full h-full object-cover object-top"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0a0908]/50" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0908] via-[#0a0908]/55 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0908] via-[#0a0908]/20 to-[#0a0908]/35" />
 
           <div className="absolute bottom-0 left-0 right-0 px-12 pb-12">
             {stats.openQuests > 0 && (
@@ -385,50 +385,12 @@ export default function LandingPage() {
               </div>
             )}
 
-            <h1 className="text-[3.6rem] font-black leading-[0.95] tracking-tight mb-5">
+            <h1 className="text-[3.6rem] font-black leading-[0.95] tracking-tight [text-shadow:0_2px_20px_rgba(0,0,0,0.6)]">
               {t('landing.headline1', language)}<br />
               {t('landing.headline2', language)}<br />
               <span className="text-amber-400">{t('landing.headline3', language)}</span><br />
               {t('landing.headline4', language)}
             </h1>
-            <p className="text-sm text-zinc-400 leading-relaxed mb-1 max-w-xs">
-              {t('landing.sub', language)}
-            </p>
-            <p className="text-xs text-zinc-600 font-medium tracking-widest mb-8">— Dawid Faith</p>
-
-            {artists.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-500">{t('landing.activeArtists', language)}</span>
-                  {totalQuests > 0 && (
-                    <>
-                      <span className="text-zinc-800">·</span>
-                      <span className="text-[9px] font-black tracking-[0.2em] uppercase text-amber-500">{totalQuests} {t('landing.open', language)}</span>
-                    </>
-                  )}
-                </div>
-                <div className="flex gap-4 flex-wrap">
-                  {artists.slice(0, 8).map((a) => (
-                    <div key={a.walletAddress} className="relative flex flex-col items-center gap-1.5 cursor-default">
-                      {a.picture ? (
-                        <Image src={a.picture} alt={a.name} width={40} height={40} className="w-10 h-10 rounded-full object-cover shrink-0" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                          <FaMusic size={11} className="text-zinc-600" />
-                        </div>
-                      )}
-                      <span className="text-[9px] font-semibold text-zinc-400 truncate max-w-[60px] text-center">{a.name}</span>
-                      {a.questCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-amber-400 text-black text-[8px] font-black rounded-full w-4 h-4 flex items-center justify-center ring-1 ring-[#0a0908]">
-                          {a.questCount > 9 ? '9+' : a.questCount}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -443,10 +405,48 @@ export default function LandingPage() {
               <p className="text-[10px] font-black tracking-[0.4em] uppercase text-zinc-700 mb-2">
                 {t('landing.tagline', language)}
               </p>
-              <p className="text-[1.45rem] font-black text-white leading-snug">
+              <p className="text-[1.45rem] font-black text-white leading-snug mb-4">
                 {t('landing.movement', language).split('\n')[0]}<br />
                 <span className="text-amber-400">{t('landing.movement', language).split('\n')[1]}</span>
               </p>
+              <p className="text-sm text-zinc-400 leading-relaxed mb-1 max-w-xs">
+                {t('landing.sub', language)}
+              </p>
+              <p className="text-xs text-zinc-600 font-medium tracking-widest">— Dawid Faith</p>
+
+              {artists.length > 0 && (
+                <div className="mt-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-500">{t('landing.activeArtists', language)}</span>
+                    {totalQuests > 0 && (
+                      <>
+                        <span className="text-zinc-800">·</span>
+                        <span className="text-[9px] font-black tracking-[0.2em] uppercase text-amber-500">{totalQuests} {t('landing.open', language)}</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="flex gap-4 flex-wrap">
+                    {artists.slice(0, 8).map((a) => (
+                      <div key={a.walletAddress} className="relative flex flex-col items-center gap-1.5 cursor-default">
+                        {a.picture ? (
+                          <Image src={a.picture} alt={a.name} width={40} height={40} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                            <FaMusic size={11} className="text-zinc-600" />
+                          </div>
+                        )}
+                        <span className="text-[9px] font-semibold text-zinc-400 truncate max-w-[60px] text-center">{a.name}</span>
+                        {a.questCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-amber-400 text-black text-[8px] font-black rounded-full w-4 h-4 flex items-center justify-center ring-1 ring-[#0a0908]">
+                            {a.questCount > 9 ? '9+' : a.questCount}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <p className="text-[11px] text-zinc-600 leading-relaxed mt-8">{t('landing.roleHint', language)}</p>
