@@ -155,6 +155,10 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
   const [addPlatformOpenFor, setAddPlatformOpenFor] = useState<string | null>(null);
   const [addPlatformSelected, setAddPlatformSelected] = useState<GiveawayPlatformKey | ''>('');
   const [addPlatformUrl, setAddPlatformUrl] = useState('');
+  const [addPlatformMediaId, setAddPlatformMediaId] = useState('');
+  const [addPlatformMediaList, setAddPlatformMediaList] = useState<MediaPickItem[]>([]);
+  const [addPlatformMediaLoading, setAddPlatformMediaLoading] = useState(false);
+  const [addPlatformMediaHint, setAddPlatformMediaHint] = useState('');
   const [addPlatformPremiereEnabled, setAddPlatformPremiereEnabled] = useState(false);
   const [addPlatformPremiereStartsAt, setAddPlatformPremiereStartsAt] = useState('');
   const [addPlatformSubmitting, setAddPlatformSubmitting] = useState(false);
@@ -308,9 +312,46 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
 
   const openAddPlatform = (campaignId: string) => {
     setAddPlatformOpenFor(prev => prev === campaignId ? null : campaignId);
-    setAddPlatformSelected(''); setAddPlatformUrl('');
+    setAddPlatformSelected(''); setAddPlatformUrl(''); setAddPlatformMediaId('');
+    setAddPlatformMediaList([]); setAddPlatformMediaHint('');
     setAddPlatformPremiereEnabled(false); setAddPlatformPremiereStartsAt('');
     setAddPlatformError('');
+  };
+
+  const loadAddPlatformMedia = async (p: GiveawayPlatformKey) => {
+    setAddPlatformMediaLoading(true);
+    setAddPlatformMediaHint('');
+    const wallet = walletForPlatform(p, artistWallet);
+    const { items, hint, error: err } = await fetchAvailableMedia(p, wallet, t('gw.errMediaLoad', lang));
+    setAddPlatformMediaList(items);
+    if (hint || err) setAddPlatformMediaHint(hint || err || '');
+    setAddPlatformMediaLoading(false);
+  };
+
+  const selectAddPlatform = (p: GiveawayPlatformKey) => {
+    setAddPlatformSelected(p);
+    setAddPlatformUrl(''); setAddPlatformMediaId('');
+    setAddPlatformMediaList([]); setAddPlatformMediaHint('');
+    setAddPlatformError('');
+    if (p !== 'facebook') loadAddPlatformMedia(p);
+  };
+
+  const pickAddPlatformMedia = (item: MediaPickItem) => {
+    setAddPlatformUrl(item.url);
+    setAddPlatformMediaId(item.id);
+    if (addPlatformSelected === 'youtube' && addPlatformPremiereEnabled) {
+      setAddPlatformPremiereStartsAt('');
+      fetch(`/api/giveaways/youtube-premiere-info?videoId=${encodeURIComponent(item.id)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.startsAt) {
+            const local = new Date(data.startsAt);
+            local.setMinutes(local.getMinutes() - local.getTimezoneOffset());
+            setAddPlatformPremiereStartsAt(local.toISOString().slice(0, 16));
+          }
+        })
+        .catch(() => {});
+    }
   };
 
   const handleAddPlatform = async (campaignId: string) => {
@@ -325,6 +366,7 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
           artistWallet,
           platform: addPlatformSelected,
           postUrl: addPlatformUrl.trim(),
+          mediaId: addPlatformMediaId || null,
           premiereStartsAt: addPlatformSelected === 'youtube' && addPlatformPremiereEnabled && addPlatformPremiereStartsAt
             ? new Date(addPlatformPremiereStartsAt).toISOString()
             : null,
@@ -660,7 +702,7 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
                   <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 mb-3 space-y-2">
                     <select
                       value={addPlatformSelected}
-                      onChange={e => { setAddPlatformSelected(e.target.value as GiveawayPlatformKey); setAddPlatformUrl(''); setAddPlatformError(''); }}
+                      onChange={e => selectAddPlatform(e.target.value as GiveawayPlatformKey)}
                       className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500/60"
                     >
                       <option value="">{t('gw.selectPlatform', lang)}</option>
@@ -670,9 +712,51 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
                     </select>
                     {addPlatformSelected && (
                       <>
+                        {addPlatformSelected !== 'facebook' && (
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <p className="text-zinc-500 text-[10px]">{t('gw.availableMedia', lang)}</p>
+                              <button
+                                onClick={() => loadAddPlatformMedia(addPlatformSelected)}
+                                disabled={addPlatformMediaLoading}
+                                className="flex items-center gap-1 text-[10px] text-amber-400 hover:text-amber-300 font-semibold disabled:opacity-50"
+                              >
+                                <FaSync size={9} className={addPlatformMediaLoading ? 'animate-spin' : ''} /> {t('gw.refresh', lang)}
+                              </button>
+                            </div>
+                            {addPlatformMediaLoading ? (
+                              <div className="flex justify-center py-4">
+                                <span className="w-5 h-5 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+                              </div>
+                            ) : addPlatformMediaList.length > 0 ? (
+                              <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+                                {addPlatformMediaList.map(item => (
+                                  <button
+                                    key={item.id}
+                                    onClick={() => pickAddPlatformMedia(item)}
+                                    title={item.title}
+                                    className={`shrink-0 w-16 rounded-lg overflow-hidden border-2 transition-all ${
+                                      addPlatformMediaId === item.id ? 'border-amber-400' : 'border-transparent'
+                                    }`}
+                                  >
+                                    {item.thumbnail ? (
+                                      <Image src={item.thumbnail} alt="" width={64} height={64} className="w-16 h-16 object-cover" unoptimized />
+                                    ) : (
+                                      <div className="w-16 h-16 bg-white/[0.06] flex items-center justify-center text-zinc-600 text-[9px]">?</div>
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : addPlatformMediaHint ? (
+                              <p className="text-amber-400/80 text-[10px] bg-amber-500/5 rounded-lg p-2">{addPlatformMediaHint}</p>
+                            ) : (
+                              <p className="text-zinc-600 text-[10px]">{t('gw.noVideosFound', lang)}</p>
+                            )}
+                          </div>
+                        )}
                         <input
                           value={addPlatformUrl}
-                          onChange={e => setAddPlatformUrl(e.target.value)}
+                          onChange={e => { setAddPlatformUrl(e.target.value); setAddPlatformMediaId(''); }}
                           placeholder={t('gw.manualLinkPlaceholder', lang)}
                           className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500/60"
                         />
